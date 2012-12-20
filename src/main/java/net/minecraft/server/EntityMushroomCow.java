@@ -42,7 +42,7 @@ public class EntityMushroomCow extends EntityCow {
 
                 entitycow.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
                 entitycow.setHealth(this.getHealth());
-                entitycow.aw = this.aw;
+                entitycow.ax = this.ax;
                 this.world.addEntity(entitycow);
 
                 for (int i = 0; i < 5; ++i) {

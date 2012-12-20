@@ -12,11 +12,11 @@ public class EntitySkeleton extends EntityMonster implements IRangedEntity {
     public EntitySkeleton(World world) {
         super(world);
         this.texture = "/mob/skeleton.png";
-        this.bG = 0.25F;
+        this.bH = 0.25F;
         this.goalSelector.a(1, new PathfinderGoalFloat(this));
         this.goalSelector.a(2, new PathfinderGoalRestrictSun(this));
-        this.goalSelector.a(3, new PathfinderGoalFleeSun(this, this.bG));
-        this.goalSelector.a(5, new PathfinderGoalRandomStroll(this, this.bG));
+        this.goalSelector.a(3, new PathfinderGoalFleeSun(this, this.bH));
+        this.goalSelector.a(5, new PathfinderGoalRandomStroll(this, this.bH));
         this.goalSelector.a(6, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 8.0F));
         this.goalSelector.a(6, new PathfinderGoalRandomLookaround(this));
         this.targetSelector.a(1, new PathfinderGoalHurtByTarget(this, false));
@@ -201,11 +201,7 @@ public class EntitySkeleton extends EntityMonster implements IRangedEntity {
             this.bF();
         }
 
-        if (this.random.nextFloat() >= as[this.world.difficulty]) {
-            ;
-        }
-
-        this.canPickUpLoot = true;
+        this.canPickUpLoot = this.random.nextFloat() < at[this.world.difficulty];
         if (this.getEquipment(4) == null) {
             Calendar calendar = this.world.T();
 

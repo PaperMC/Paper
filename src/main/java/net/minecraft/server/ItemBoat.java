@@ -73,6 +73,7 @@ public class ItemBoat extends Item {
 
                     EntityBoat entityboat = new EntityBoat(world, (double) ((float) i + 0.5F), (double) ((float) j + 1.0F), (double) ((float) k + 0.5F));
 
+                    entityboat.yaw = (float) (((MathHelper.floor((double) (entityhuman.yaw * 4.0F / 360.0F) + 0.5D) & 3) - 1) * 90);
                     if (!world.getCubes(entityboat, entityboat.boundingBox.grow(-0.1D, -0.1D, -0.1D)).isEmpty()) {
                         return itemstack;
                     }

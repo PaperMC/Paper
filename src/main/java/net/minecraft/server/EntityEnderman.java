@@ -15,7 +15,7 @@ public class EntityEnderman extends EntityMonster {
     public EntityEnderman(World world) {
         super(world);
         this.texture = "/mob/enderman.png";
-        this.bG = 0.2F;
+        this.bH = 0.2F;
         this.a(0.6F, 2.9F);
         this.X = 1.0F;
     }
@@ -87,7 +87,7 @@ public class EntityEnderman extends EntityMonster {
             this.damageEntity(DamageSource.DROWN, 1);
         }
 
-        this.bG = this.target != null ? 6.5F : 0.3F;
+        this.bH = this.target != null ? 6.5F : 0.3F;
         int i;
 
         if (!this.world.isStatic && this.world.getGameRules().getBoolean("mobGriefing")) {
@@ -143,13 +143,13 @@ public class EntityEnderman extends EntityMonster {
             }
         }
 
-        if (this.G()) {
+        if (this.G() || this.isBurning()) {
             this.target = null;
             this.f(false);
             this.m();
         }
 
-        this.bE = false;
+        this.bF = false;
         if (this.target != null) {
             this.a(this.target, 100.0F, 100.0F);
         }
@@ -157,8 +157,8 @@ public class EntityEnderman extends EntityMonster {
         if (!this.world.isStatic && this.isAlive()) {
             if (this.target != null) {
                 if (this.target instanceof EntityHuman && this.d((EntityHuman) this.target)) {
-                    this.bB = this.bC = 0.0F;
-                    this.bG = 0.0F;
+                    this.bC = this.bD = 0.0F;
+                    this.bH = 0.0F;
                     if (this.target.e((Entity) this) < 16.0D) {
                         this.m();
                     }
@@ -317,20 +317,19 @@ public class EntityEnderman extends EntityMonster {
     public boolean damageEntity(DamageSource damagesource, int i) {
         if (this.isInvulnerable()) {
             return false;
-        } else if (damagesource instanceof EntityDamageSourceIndirect) {
-            for (int j = 0; j < 64; ++j) {
-                if (this.m()) {
-                    return true;
-                }
-            }
-
-            return false;
         } else {
-            if (damagesource.getEntity() instanceof EntityHuman) {
-                this.f(true);
-            }
+            this.f(true);
+            if (damagesource instanceof EntityDamageSourceIndirect) {
+                for (int j = 0; j < 64; ++j) {
+                    if (this.m()) {
+                        return true;
+                    }
+                }
 
-            return super.damageEntity(damagesource, i);
+                return false;
+            } else {
+                return super.damageEntity(damagesource, i);
+            }
         }
     }
 

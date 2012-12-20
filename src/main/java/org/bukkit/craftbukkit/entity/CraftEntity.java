@@ -148,6 +148,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             else { return new CraftHanging(server, (EntityHanging) entity); }
         }
         else if (entity instanceof EntityTNTPrimed) { return new CraftTNTPrimed(server, (EntityTNTPrimed) entity); }
+        else if (entity instanceof EntityFireworks) { return new CraftFirework(server, (EntityFireworks) entity); }
 
         throw new IllegalArgumentException("Unknown entity");
     }

@@ -163,7 +163,7 @@ public class BlockLeaves extends BlockTransparant {
     }
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        if (!world.isStatic && entityhuman.bT() != null && entityhuman.bT().id == Item.SHEARS.id) {
+        if (!world.isStatic && entityhuman.bS() != null && entityhuman.bS().id == Item.SHEARS.id) {
             entityhuman.a(StatisticList.C[this.id], 1);
             this.b(world, i, j, k, new ItemStack(Block.LEAVES.id, 1, l & 3));
         } else {
@@ -181,5 +181,9 @@ public class BlockLeaves extends BlockTransparant {
 
     public int a(int i, int j) {
         return (j & 3) == 1 ? this.textureId + 80 : ((j & 3) == 3 ? this.textureId + 144 : this.textureId);
+    }
+
+    protected ItemStack f_(int i) {
+        return new ItemStack(this.id, 1, i & 3);
     }
 }

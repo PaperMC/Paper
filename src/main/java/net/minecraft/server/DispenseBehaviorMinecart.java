@@ -28,10 +28,10 @@ public class DispenseBehaviorMinecart extends DispenseBehaviorItem {
         int l = world.getTypeId(i, j, k);
         double d3;
 
-        if (BlockMinecartTrack.d(l)) {
+        if (BlockMinecartTrack.e(l)) {
             d3 = 0.0D;
         } else {
-            if (l != 0 || !BlockMinecartTrack.d(world.getTypeId(i, j - 1, k))) {
+            if (l != 0 || !BlockMinecartTrack.e(world.getTypeId(i, j - 1, k))) {
                 return this.c.a(isourceblock, itemstack);
             }
 

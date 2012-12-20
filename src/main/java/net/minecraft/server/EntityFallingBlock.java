@@ -25,7 +25,7 @@ public class EntityFallingBlock extends Entity {
         this.dropItem = true;
         this.e = false;
         this.hurtEntities = false;
-        this.fallHurtMax = 20;
+        this.fallHurtMax = 40;
         this.fallHurtAmount = 2.0F;
     }
 
@@ -39,7 +39,7 @@ public class EntityFallingBlock extends Entity {
         this.dropItem = true;
         this.e = false;
         this.hurtEntities = false;
-        this.fallHurtMax = 20;
+        this.fallHurtMax = 40;
         this.fallHurtAmount = 2.0F;
         this.id = i;
         this.data = j;
@@ -84,12 +84,13 @@ public class EntityFallingBlock extends Entity {
                 int k = MathHelper.floor(this.locZ);
 
                 if (this.c == 1) {
-                    if (this.c == 1 && this.world.getTypeId(i, j, k) == this.id && this.world.getData(i, j, k) == this.data && !CraftEventFactory.callEntityChangeBlockEvent(this, i, j, k, 0, 0).isCancelled()) { // CraftBukkit - compare data and call event
-                        this.world.setTypeId(i, j, k, 0);
-                    } else {
+                    // CraftBukkit - compare data and call event
+                    if (this.c != 1 || this.world.getTypeId(i, j, k) != this.id || this.world.getData(i, j, k) != this.data || CraftEventFactory.callEntityChangeBlockEvent(this, i, j, k, 0, 0).isCancelled()) {
                         this.die();
-                        return; // CraftBukkit
+                        return;
                     }
+
+                    this.world.setTypeId(i, j, k, 0);
                 }
 
                 if (this.onGround) {
@@ -195,5 +196,11 @@ public class EntityFallingBlock extends Entity {
 
     public void e(boolean flag) {
         this.hurtEntities = flag;
+    }
+
+    public void a(CrashReportSystemDetails crashreportsystemdetails) {
+        super.a(crashreportsystemdetails);
+        crashreportsystemdetails.a("Immitating block ID", Integer.valueOf(this.id));
+        crashreportsystemdetails.a("Immitating block data", Integer.valueOf(this.data));
     }
 }

@@ -101,7 +101,7 @@ public class ItemBlock extends Item {
         }
     }
 
-    public String c_(ItemStack itemstack) {
+    public String d(ItemStack itemstack) {
         return Block.byId[this.id].a();
     }
 

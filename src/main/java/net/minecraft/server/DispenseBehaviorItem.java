@@ -61,7 +61,7 @@ public class DispenseBehaviorItem implements IDispenseBehavior {
             return false;
         }
 
-        entityitem.itemStack = CraftItemStack.asNMSCopy(event.getItem());
+        entityitem.setItemStack(CraftItemStack.asNMSCopy(event.getItem()));
         entityitem.motX = event.getVelocity().getX();
         entityitem.motY = event.getVelocity().getY();
         entityitem.motZ = event.getVelocity().getZ();

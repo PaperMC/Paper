@@ -22,16 +22,12 @@ public abstract class EntityAgeable extends EntityCreature {
                     entityageable.setAge(-24000);
                     entityageable.setPositionRotation(this.locX, this.locY, this.locZ, 0.0F, 0.0F);
                     this.world.addEntity(entityageable, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // CraftBukkit
-
-                    // CraftBukkit start
                     if (!entityhuman.abilities.canInstantlyBuild) {
-                        itemstack.count--;
-
-                        if (itemstack.count == 0) {
-                            entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, null);
+                        --itemstack.count;
+                        if (itemstack.count == 0) { // CraftBukkit - allow less than 0 stacks as "infinit"
+                            entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, (ItemStack) null);
                         }
                     }
-                    // CraftBukkit end
                 }
             }
         }

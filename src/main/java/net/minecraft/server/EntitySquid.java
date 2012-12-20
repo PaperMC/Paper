@@ -11,19 +11,19 @@ public class EntitySquid extends EntityWaterAnimal {
     public float h = 0.0F;
     public float i = 0.0F;
     public float j = 0.0F;
-    public float bI = 0.0F;
-    private float bJ = 0.0F;
+    public float bJ = 0.0F;
     private float bK = 0.0F;
     private float bL = 0.0F;
     private float bM = 0.0F;
     private float bN = 0.0F;
     private float bO = 0.0F;
+    private float bP = 0.0F;
 
     public EntitySquid(World world) {
         super(world);
         this.texture = "/mob/squid.png";
         this.a(0.95F, 0.95F);
-        this.bK = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
+        this.bL = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
     }
 
     public int getMaxHealth() {
@@ -72,12 +72,12 @@ public class EntitySquid extends EntityWaterAnimal {
         this.e = this.d;
         this.g = this.f;
         this.i = this.h;
-        this.bI = this.j;
-        this.h += this.bK;
+        this.bJ = this.j;
+        this.h += this.bL;
         if (this.h > 6.2831855F) {
             this.h -= 6.2831855F;
             if (this.random.nextInt(10) == 0) {
-                this.bK = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
+                this.bL = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
             }
         }
 
@@ -88,28 +88,28 @@ public class EntitySquid extends EntityWaterAnimal {
                 f = this.h / 3.1415927F;
                 this.j = MathHelper.sin(f * f * 3.1415927F) * 3.1415927F * 0.25F;
                 if ((double) f > 0.75D) {
-                    this.bJ = 1.0F;
-                    this.bL = 1.0F;
+                    this.bK = 1.0F;
+                    this.bM = 1.0F;
                 } else {
-                    this.bL *= 0.8F;
+                    this.bM *= 0.8F;
                 }
             } else {
                 this.j = 0.0F;
-                this.bJ *= 0.9F;
-                this.bL *= 0.99F;
+                this.bK *= 0.9F;
+                this.bM *= 0.99F;
             }
 
             if (!this.world.isStatic) {
-                this.motX = (double) (this.bM * this.bJ);
-                this.motY = (double) (this.bN * this.bJ);
-                this.motZ = (double) (this.bO * this.bJ);
+                this.motX = (double) (this.bN * this.bK);
+                this.motY = (double) (this.bO * this.bK);
+                this.motZ = (double) (this.bP * this.bK);
             }
 
             f = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
             // CraftBukkit - Math -> TrigMath
-            this.aw += (-((float) TrigMath.atan2(this.motX, this.motZ)) * 180.0F / 3.1415927F - this.aw) * 0.1F;
-            this.yaw = this.aw;
-            this.f += 3.1415927F * this.bL * 1.5F;
+            this.ax += (-((float) TrigMath.atan2(this.motX, this.motZ)) * 180.0F / 3.1415927F - this.ax) * 0.1F;
+            this.yaw = this.ax;
+            this.f += 3.1415927F * this.bM * 1.5F;
             // CraftBukkit - Math -> TrigMath
             this.d += (-((float) TrigMath.atan2((double) f, this.motY)) * 180.0F / 3.1415927F - this.d) * 0.1F;
         } else {
@@ -130,15 +130,15 @@ public class EntitySquid extends EntityWaterAnimal {
     }
 
     protected void bn() {
-        ++this.bA;
-        if (this.bA > 100) {
-            this.bM = this.bN = this.bO = 0.0F;
-        } else if (this.random.nextInt(50) == 0 || !this.ad || this.bM == 0.0F && this.bN == 0.0F && this.bO == 0.0F) {
+        ++this.bB;
+        if (this.bB > 100) {
+            this.bN = this.bO = this.bP = 0.0F;
+        } else if (this.random.nextInt(50) == 0 || !this.ad || this.bN == 0.0F && this.bO == 0.0F && this.bP == 0.0F) {
             float f = this.random.nextFloat() * 3.1415927F * 2.0F;
 
-            this.bM = MathHelper.cos(f) * 0.2F;
-            this.bN = -0.1F + this.random.nextFloat() * 0.2F;
-            this.bO = MathHelper.sin(f) * 0.2F;
+            this.bN = MathHelper.cos(f) * 0.2F;
+            this.bO = -0.1F + this.random.nextFloat() * 0.2F;
+            this.bP = MathHelper.sin(f) * 0.2F;
         }
 
         this.bk();

@@ -10,7 +10,7 @@ public class EntitySilverfish extends EntityMonster {
         super(world);
         this.texture = "/mob/silverfish.png";
         this.a(0.3F, 0.7F);
-        this.bG = 0.6F;
+        this.bH = 0.6F;
     }
 
     public int getMaxHealth() {
@@ -54,7 +54,7 @@ public class EntitySilverfish extends EntityMonster {
     protected void a(Entity entity, float f) {
         if (this.attackTicks <= 0 && f < 1.2F && entity.boundingBox.e > this.boundingBox.b && entity.boundingBox.b < this.boundingBox.e) {
             this.attackTicks = 20;
-            entity.damageEntity(DamageSource.mobAttack(this), this.c(entity));
+            this.m(entity);
         }
     }
 
@@ -67,7 +67,7 @@ public class EntitySilverfish extends EntityMonster {
     }
 
     public void j_() {
-        this.aw = this.yaw;
+        this.ax = this.yaw;
         super.j_();
     }
 

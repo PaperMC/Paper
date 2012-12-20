@@ -186,7 +186,7 @@ public abstract class Container {
 
                             slot.a(entityhuman, playerinventory.getCarried());
                         } else if (slot.isAllowed(itemstack3)) {
-                            if (itemstack1.id == itemstack3.id && (!itemstack1.usesData() || itemstack1.getData() == itemstack3.getData()) && ItemStack.equals(itemstack1, itemstack3)) {
+                            if (itemstack1.id == itemstack3.id && itemstack1.getData() == itemstack3.getData() && ItemStack.equals(itemstack1, itemstack3)) {
                                 l = j == 0 ? itemstack3.count : 1;
                                 if (l > slot.a() - itemstack1.count) {
                                     l = slot.a() - itemstack1.count;
@@ -241,10 +241,12 @@ public abstract class Container {
                     if ((slot.inventory != playerinventory || !slot.isAllowed(itemstack1)) && itemstack1 != null) {
                         if (l > -1) {
                             playerinventory.pickup(itemstack1);
+                            slot.a(itemstack2.count);
                             slot.set((ItemStack) null);
                             slot.a(entityhuman, itemstack2);
                         }
                     } else {
+                        slot.a(itemstack2.count);
                         slot.set(itemstack1);
                         slot.a(entityhuman, itemstack2);
                     }

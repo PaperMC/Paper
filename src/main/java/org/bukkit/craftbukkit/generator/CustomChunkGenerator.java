@@ -91,7 +91,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                     }
                 }
                 // Build chunk section
-                csect[sec] = new ChunkSection(sec << 4, secBlkID, secExtBlkID);
+                csect[sec] = new ChunkSection(sec << 4, true, secBlkID, secExtBlkID);
             }
         }
         else { // Else check for byte-per-block section data
@@ -107,7 +107,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                     if (btypes[sec] == null) {
                         continue;
                     }
-                    csect[sec] = new ChunkSection(sec << 4, btypes[sec], null);
+                    csect[sec] = new ChunkSection(sec << 4, true, btypes[sec], null);
                 }
             }
             else { // Else, fall back to pre 1.2 method
@@ -137,7 +137,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
 
                                 if (blk != 0) { // If non-empty
                                     if (cs == null) { // If no section yet, get one
-                                        cs = csect[sec] = new ChunkSection(sec << 4);
+                                        cs = csect[sec] = new ChunkSection(sec << 4, true);
                                         csbytes = cs.g();
                                     }
                                     csbytes[(cy << 8) | (cz << 4) | cx] = blk;

@@ -8,7 +8,7 @@ import org.bukkit.event.entity.SheepDyeWoolEvent;
 public class ItemDye extends Item {
 
     public static final String[] a = new String[] { "black", "red", "green", "brown", "blue", "purple", "cyan", "silver", "gray", "pink", "lime", "yellow", "lightBlue", "magenta", "orange", "white"};
-    public static final int[] b = new int[] { 1973019, 11743532, 3887386, 5320730, 2437522, 8073150, 2651799, 2651799, 4408131, 14188952, 4312372, 14602026, 6719955, 12801229, 15435844, 15790320};
+    public static final int[] b = new int[] { 1973019, 11743532, 3887386, 5320730, 2437522, 8073150, 2651799, 11250603, 4408131, 14188952, 4312372, 14602026, 6719955, 12801229, 15435844, 15790320};
 
     public ItemDye(int i) {
         super(i);
@@ -17,7 +17,7 @@ public class ItemDye extends Item {
         this.a(CreativeModeTab.l);
     }
 
-    public String c_(ItemStack itemstack) {
+    public String d(ItemStack itemstack) {
         int i = MathHelper.a(itemstack.getData(), 0, 15);
 
         return super.getName() + "." + a[i];

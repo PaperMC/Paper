@@ -14,7 +14,7 @@ public class EntityTracker {
 
     public EntityTracker(WorldServer worldserver) {
         this.world = worldserver;
-        this.d = worldserver.getMinecraftServer().getServerConfigurationManager().a();
+        this.d = worldserver.getMinecraftServer().getPlayerList().a();
     }
 
     // CraftBukkit - synchronized
@@ -50,6 +50,8 @@ public class EntityTracker {
         } else if (entity instanceof EntityPotion) {
             this.addEntity(entity, 64, 10, true);
         } else if (entity instanceof EntityThrownExpBottle) {
+            this.addEntity(entity, 64, 10, true);
+        } else if (entity instanceof EntityFireworks) {
             this.addEntity(entity, 64, 10, true);
         } else if (entity instanceof EntityItem) {
             this.addEntity(entity, 64, 20, true);

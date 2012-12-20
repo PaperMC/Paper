@@ -11,16 +11,18 @@ public class ChunkSection {
     private NibbleArray blockLight;
     private NibbleArray skyLight;
 
-    public ChunkSection(int i) {
+    public ChunkSection(int i, boolean flag) {
         this.yPos = i;
         this.blockIds = new byte[4096];
         this.blockData = new NibbleArray(this.blockIds.length, 4);
-        this.skyLight = new NibbleArray(this.blockIds.length, 4);
         this.blockLight = new NibbleArray(this.blockIds.length, 4);
+        if (flag) {
+            this.skyLight = new NibbleArray(this.blockIds.length, 4);
+        }
     }
 
     // CraftBukkit start
-    public ChunkSection(int y, byte[] blkIds, byte[] extBlkIds) {
+    public ChunkSection(int y, boolean flag, byte[] blkIds, byte[] extBlkIds) {
         this.yPos = y;
         this.blockIds = blkIds;
         if (extBlkIds != null) {
@@ -28,7 +30,9 @@ public class ChunkSection {
         }
         this.blockData = new NibbleArray(this.blockIds.length, 4);
         this.blockLight = new NibbleArray(this.blockIds.length, 4);
-        this.skyLight = new NibbleArray(this.blockIds.length, 4);
+        if (flag) {
+            this.skyLight = new NibbleArray(this.blockIds.length, 4);
+        }
         this.recalcBlockCounts();
     }
     // CraftBukkit end

@@ -502,5 +502,7 @@ public class PlayerInventory implements IInventory {
         for (i = 0; i < this.armor.length; ++i) {
             this.armor[i] = ItemStack.b(playerinventory.armor[i]);
         }
+
+        this.itemInHandIndex = playerinventory.itemInHandIndex;
     }
 }

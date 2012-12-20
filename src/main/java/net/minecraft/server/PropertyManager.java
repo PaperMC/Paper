@@ -91,7 +91,6 @@ public class PropertyManager {
 
     public String getString(String s, String s1) {
         if (!this.properties.containsKey(s)) {
-            s1 = this.getOverride(s, s1); // CraftBukkit
             this.properties.setProperty(s, s1);
             this.savePropertiesFile();
         }
@@ -103,7 +102,6 @@ public class PropertyManager {
         try {
             return this.getOverride(s, Integer.parseInt(this.getString(s, "" + i))); // CraftBukkit
         } catch (Exception exception) {
-            i = this.getOverride(s, i); // CraftBukkit
             this.properties.setProperty(s, "" + i);
             return i;
         }
@@ -113,7 +111,6 @@ public class PropertyManager {
         try {
             return this.getOverride(s, Boolean.parseBoolean(this.getString(s, "" + flag))); // CraftBukkit
         } catch (Exception exception) {
-            flag = this.getOverride(s, flag); // CraftBukkit
             this.properties.setProperty(s, "" + flag);
             return flag;
         }

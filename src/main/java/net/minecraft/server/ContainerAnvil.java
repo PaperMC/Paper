@@ -72,6 +72,7 @@ public class ContainerAnvil extends Container {
             ItemStack itemstack1 = itemstack.cloneItemStack();
             ItemStack itemstack2 = this.g.getItem(1);
             Map map = EnchantmentManager.a(itemstack1);
+            boolean flag = false;
             int k = b0 + itemstack.getRepairCost() + (itemstack2 == null ? 0 : itemstack2.getRepairCost());
 
             this.l = 0;
@@ -79,10 +80,12 @@ public class ContainerAnvil extends Container {
             int i1;
             int j1;
             int k1;
-            Enchantment enchantment;
+            int l1;
             Iterator iterator;
+            Enchantment enchantment;
 
             if (itemstack2 != null) {
+                flag = itemstack2.id == Item.ENCHANTED_BOOK.id && Item.ENCHANTED_BOOK.g(itemstack2).size() > 0;
                 if (itemstack1.f() && Item.byId[itemstack1.id].a(itemstack, itemstack2)) {
                     l = Math.min(itemstack1.i(), itemstack1.k() / 4);
                     if (l <= 0) {
@@ -100,19 +103,19 @@ public class ContainerAnvil extends Container {
 
                     this.l = i1;
                 } else {
-                    if (itemstack1.id != itemstack2.id || !itemstack1.f()) {
+                    if (!flag && (itemstack1.id != itemstack2.id || !itemstack1.f())) {
                         this.f.setItem(0, (ItemStack) null);
                         this.a = 0;
                         return;
                     }
 
-                    if (itemstack1.f()) {
+                    if (itemstack1.f() && !flag) {
                         l = itemstack.k() - itemstack.i();
                         i1 = itemstack2.k() - itemstack2.i();
                         j1 = i1 + itemstack1.k() * 12 / 100;
-                        int l1 = l + j1;
+                        int i2 = l + j1;
 
-                        k1 = itemstack1.k() - l1;
+                        k1 = itemstack1.k() - i2;
                         if (k1 < 0) {
                             k1 = 0;
                         }
@@ -131,45 +134,50 @@ public class ContainerAnvil extends Container {
                         j1 = ((Integer) iterator.next()).intValue();
                         enchantment = Enchantment.byId[j1];
                         k1 = map.containsKey(Integer.valueOf(j1)) ? ((Integer) map.get(Integer.valueOf(j1))).intValue() : 0;
-                        int i2 = ((Integer) map1.get(Integer.valueOf(j1))).intValue();
+                        l1 = ((Integer) map1.get(Integer.valueOf(j1))).intValue();
                         int j2;
 
-                        if (k1 == i2) {
-                            ++i2;
-                            j2 = i2;
+                        if (k1 == l1) {
+                            ++l1;
+                            j2 = l1;
                         } else {
-                            j2 = Math.max(i2, k1);
+                            j2 = Math.max(l1, k1);
                         }
 
-                        i2 = j2;
-                        int k2 = i2 - k1;
-                        boolean flag = true;
+                        l1 = j2;
+                        int k2 = l1 - k1;
+                        boolean flag1 = enchantment.canEnchant(itemstack);
+
+                        if (this.n.abilities.canInstantlyBuild) {
+                            flag1 = true;
+                        }
+
                         Iterator iterator1 = map.keySet().iterator();
 
                         while (iterator1.hasNext()) {
                             int l2 = ((Integer) iterator1.next()).intValue();
 
                             if (l2 != j1 && !enchantment.a(Enchantment.byId[l2])) {
-                                flag = false;
+                                flag1 = false;
                                 i += k2;
                             }
                         }
 
-                        if (flag) {
-                            if (i2 > enchantment.getMaxLevel()) {
-                                i2 = enchantment.getMaxLevel();
+                        if (flag1) {
+                            if (l1 > enchantment.getMaxLevel()) {
+                                l1 = enchantment.getMaxLevel();
                             }
 
-                            map.put(Integer.valueOf(j1), Integer.valueOf(i2));
-                            byte b1 = 0;
+                            map.put(Integer.valueOf(j1), Integer.valueOf(l1));
+                            int i3 = 0;
 
                             switch (enchantment.getRandomWeight()) {
                             case 1:
-                                b1 = 8;
+                                i3 = 8;
                                 break;
 
                             case 2:
-                                b1 = 4;
+                                i3 = 4;
 
                             case 3:
                             case 4:
@@ -181,14 +189,14 @@ public class ContainerAnvil extends Container {
                                 break;
 
                             case 5:
-                                b1 = 2;
+                                i3 = 2;
                                 break;
 
                             case 10:
-                                b1 = 1;
+                                i3 = 1;
                             }
 
-                            i += b1 * k2;
+                            i += i3 * k2;
                         }
                     }
                 }
@@ -206,21 +214,19 @@ public class ContainerAnvil extends Container {
 
             l = 0;
 
-            byte b2;
-
-            for (iterator = map.keySet().iterator(); iterator.hasNext(); k += l + k1 * b2) {
+            for (iterator = map.keySet().iterator(); iterator.hasNext(); k += l + k1 * l1) {
                 j1 = ((Integer) iterator.next()).intValue();
                 enchantment = Enchantment.byId[j1];
                 k1 = ((Integer) map.get(Integer.valueOf(j1))).intValue();
-                b2 = 0;
+                l1 = 0;
                 ++l;
                 switch (enchantment.getRandomWeight()) {
                 case 1:
-                    b2 = 8;
+                    l1 = 8;
                     break;
 
                 case 2:
-                    b2 = 4;
+                    l1 = 4;
 
                 case 3:
                 case 4:
@@ -232,12 +238,20 @@ public class ContainerAnvil extends Container {
                     break;
 
                 case 5:
-                    b2 = 2;
+                    l1 = 2;
                     break;
 
                 case 10:
-                    b2 = 1;
+                    l1 = 1;
                 }
+
+                if (flag) {
+                    l1 = Math.max(1, l1 / 2);
+                }
+            }
+
+            if (flag) {
+                k = Math.max(1, k / 2);
             }
 
             this.a = k + i;

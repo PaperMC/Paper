@@ -104,17 +104,19 @@ public class EntityLightning extends EntityWeather {
             }
         }
 
-        if (!this.world.isStatic && this.lifeTicks >= 0 && !this.isEffect) { // CraftBukkit
-            double d0 = 3.0D;
-            List list = this.world.getEntities(this, AxisAlignedBB.a().a(this.locX - d0, this.locY - d0, this.locZ - d0, this.locX + d0, this.locY + 6.0D + d0, this.locZ + d0));
+        if (this.lifeTicks >= 0 && !this.isEffect) { // CraftBukkit - add !this.isEffect
+            if (this.world.isStatic) {
+                this.world.q = 2;
+            } else {
+                double d0 = 3.0D;
+                List list = this.world.getEntities(this, AxisAlignedBB.a().a(this.locX - d0, this.locY - d0, this.locZ - d0, this.locX + d0, this.locY + 6.0D + d0, this.locZ + d0));
 
-            for (int l = 0; l < list.size(); ++l) {
-                Entity entity = (Entity) list.get(l);
+                for (int l = 0; l < list.size(); ++l) {
+                    Entity entity = (Entity) list.get(l);
 
-                entity.a(this);
+                    entity.a(this);
+                }
             }
-
-            this.world.r = 2;
         }
     }
 

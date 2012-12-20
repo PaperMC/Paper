@@ -6,7 +6,7 @@ public class EntityMagmaCube extends EntitySlime {
         super(world);
         this.texture = "/mob/lava.png";
         this.fireProof = true;
-        this.aM = 0.2F;
+        this.aN = 0.2F;
     }
 
     public boolean canSpawn() {

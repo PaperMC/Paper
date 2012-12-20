@@ -62,7 +62,7 @@ public class EntityPotion extends EntityProjectile {
 
     protected void a(MovingObjectPosition movingobjectposition) {
         if (!this.world.isStatic) {
-            List list = Item.POTION.l(this.c);
+            List list = Item.POTION.g(this.c);
 
             if (list != null && !list.isEmpty()) {
                 AxisAlignedBB axisalignedbb = this.boundingBox.grow(4.0D, 2.0D, 4.0D);

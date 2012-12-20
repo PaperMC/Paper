@@ -72,6 +72,8 @@ public class CraftEnchantment extends Enchantment {
             return "OXYGEN";
         case 6:
             return "WATER_WORKER";
+        case 7:
+            return "THORNS";
         case 16:
             return "DAMAGE_ALL";
         case 17:

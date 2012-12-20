@@ -52,8 +52,4 @@ public class DispenseBehaviorMonsterEgg extends DispenseBehaviorItem {
         // CraftBukkit end
         return itemstack;
     }
-
-    protected void a(ISourceBlock isourceblock) {
-        isourceblock.k().triggerEffect(1002, isourceblock.getBlockX(), isourceblock.getBlockY(), isourceblock.getBlockZ(), 0);
-    }
 }

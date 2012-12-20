@@ -8,6 +8,7 @@ public class BlockDragonEgg extends Block {
 
     public BlockDragonEgg(int i, int j) {
         super(i, j, Material.DRAGON_EGG);
+        this.a(0.0625F, 0.0F, 0.0625F, 0.9375F, 1.0F, 0.9375F);
     }
 
     public void onPlace(World world, int i, int j, int k) {

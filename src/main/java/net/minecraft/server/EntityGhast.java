@@ -16,13 +16,14 @@ public class EntityGhast extends EntityFlying implements IMonster {
     private int i = 0;
     public int f = 0;
     public int g = 0;
+    private int explosionPower = 1;
 
     public EntityGhast(World world) {
         super(world);
         this.texture = "/mob/ghast.png";
         this.a(4.0F, 4.0F);
         this.fireProof = true;
-        this.bc = 5;
+        this.bd = 5;
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
@@ -129,7 +130,7 @@ public class EntityGhast extends EntityFlying implements IMonster {
             double d6 = this.target.boundingBox.b + (double) (this.target.length / 2.0F) - (this.locY + (double) (this.length / 2.0F));
             double d7 = this.target.locZ - this.locZ;
 
-            this.aw = this.yaw = -((float) Math.atan2(d5, d7)) * 180.0F / 3.1415927F;
+            this.ax = this.yaw = -((float) Math.atan2(d5, d7)) * 180.0F / 3.1415927F;
             if (this.n(this.target)) {
                 if (this.g == 10) {
                     this.world.a((EntityHuman) null, 1007, (int) this.locX, (int) this.locY, (int) this.locZ, 0);
@@ -139,6 +140,8 @@ public class EntityGhast extends EntityFlying implements IMonster {
                 if (this.g == 20) {
                     this.world.a((EntityHuman) null, 1008, (int) this.locX, (int) this.locY, (int) this.locZ, 0);
                     EntityLargeFireball entitylargefireball = new EntityLargeFireball(this.world, this, d5, d6, d7);
+
+                    entitylargefireball.e = this.explosionPower;
                     double d8 = 4.0D;
                     Vec3D vec3d = this.i(1.0F);
 
@@ -152,7 +155,7 @@ public class EntityGhast extends EntityFlying implements IMonster {
                 --this.g;
             }
         } else {
-            this.aw = this.yaw = -((float) Math.atan2(this.motX, this.motZ)) * 180.0F / 3.1415927F;
+            this.ax = this.yaw = -((float) Math.atan2(this.motX, this.motZ)) * 180.0F / 3.1415927F;
             if (this.g > 0) {
                 --this.g;
             }
@@ -231,5 +234,17 @@ public class EntityGhast extends EntityFlying implements IMonster {
 
     public int bv() {
         return 1;
+    }
+
+    public void b(NBTTagCompound nbttagcompound) {
+        super.b(nbttagcompound);
+        nbttagcompound.setInt("ExplosionPower", this.explosionPower);
+    }
+
+    public void a(NBTTagCompound nbttagcompound) {
+        super.a(nbttagcompound);
+        if (nbttagcompound.hasKey("ExplosionPower")) {
+            this.explosionPower = nbttagcompound.getInt("ExplosionPower");
+        }
     }
 }

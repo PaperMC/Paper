@@ -23,17 +23,17 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
 
     private final MinecraftServer server;
     public EntityTracker tracker; // CraftBukkit - private final -> public
-    private final PlayerManager manager;
-    private Set M;
-    private TreeSet N;
+    private final PlayerChunkMap manager;
+    private Set L;
+    private TreeSet M;
     public ChunkProviderServer chunkProviderServer;
     public boolean savingDisabled;
-    private boolean O;
+    private boolean N;
     private int emptyTime = 0;
-    private final PortalTravelAgent Q;
-    private NoteDataList[] R = new NoteDataList[] { new NoteDataList((EmptyClass2) null), new NoteDataList((EmptyClass2) null)};
-    private int S = 0;
-    private static final StructurePieceTreasure[] T = new StructurePieceTreasure[] { new StructurePieceTreasure(Item.STICK.id, 0, 1, 3, 10), new StructurePieceTreasure(Block.WOOD.id, 0, 1, 3, 10), new StructurePieceTreasure(Block.LOG.id, 0, 1, 3, 10), new StructurePieceTreasure(Item.STONE_AXE.id, 0, 1, 1, 3), new StructurePieceTreasure(Item.WOOD_AXE.id, 0, 1, 1, 5), new StructurePieceTreasure(Item.STONE_PICKAXE.id, 0, 1, 1, 3), new StructurePieceTreasure(Item.WOOD_PICKAXE.id, 0, 1, 1, 5), new StructurePieceTreasure(Item.APPLE.id, 0, 2, 3, 5), new StructurePieceTreasure(Item.BREAD.id, 0, 2, 3, 3)};
+    private final PortalTravelAgent P;
+    private NoteDataList[] Q = new NoteDataList[] { new NoteDataList((EmptyClass2) null), new NoteDataList((EmptyClass2) null)};
+    private int R = 0;
+    private static final StructurePieceTreasure[] S = new StructurePieceTreasure[] { new StructurePieceTreasure(Item.STICK.id, 0, 1, 3, 10), new StructurePieceTreasure(Block.WOOD.id, 0, 1, 3, 10), new StructurePieceTreasure(Block.LOG.id, 0, 1, 3, 10), new StructurePieceTreasure(Item.STONE_AXE.id, 0, 1, 1, 3), new StructurePieceTreasure(Item.WOOD_AXE.id, 0, 1, 1, 5), new StructurePieceTreasure(Item.STONE_PICKAXE.id, 0, 1, 1, 3), new StructurePieceTreasure(Item.WOOD_PICKAXE.id, 0, 1, 1, 5), new StructurePieceTreasure(Item.APPLE.id, 0, 2, 3, 5), new StructurePieceTreasure(Item.BREAD.id, 0, 2, 3, 3)};
     private IntHashMap entitiesById;
 
     // CraftBukkit start
@@ -46,20 +46,20 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
         // CraftBukkit end
         this.server = minecraftserver;
         this.tracker = new EntityTracker(this);
-        this.manager = new PlayerManager(this, minecraftserver.getServerConfigurationManager().o());
+        this.manager = new PlayerChunkMap(this, minecraftserver.getPlayerList().o());
         if (this.entitiesById == null) {
             this.entitiesById = new IntHashMap();
         }
 
+        if (this.L == null) {
+            this.L = new HashSet();
+        }
+
         if (this.M == null) {
-            this.M = new HashSet();
+            this.M = new TreeSet();
         }
 
-        if (this.N == null) {
-            this.N = new TreeSet();
-        }
-
-        this.Q = new PortalTravelAgent(this);
+        this.P = new PortalTravelAgent(this);
     }
 
     // CraftBukkit start
@@ -178,7 +178,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
         this.villages.tick();
         this.siegeManager.a();
         this.methodProfiler.c("portalForcer");
-        this.Q.a(this.getTime());
+        this.P.a(this.getTime());
         this.methodProfiler.b();
         this.V();
     }
@@ -190,21 +190,21 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
     }
 
     public void everyoneSleeping() {
-        this.O = !this.players.isEmpty();
+        this.N = !this.players.isEmpty();
         Iterator iterator = this.players.iterator();
 
         while (iterator.hasNext()) {
             EntityHuman entityhuman = (EntityHuman) iterator.next();
 
             if (!entityhuman.isSleeping() && !entityhuman.fauxSleeping) { // CraftBukkit
-                this.O = false;
+                this.N = false;
                 break;
             }
         }
     }
 
     protected void d() {
-        this.O = false;
+        this.N = false;
         Iterator iterator = this.players.iterator();
 
         while (iterator.hasNext()) {
@@ -237,7 +237,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
     }
 
     public boolean everyoneDeeplySleeping() {
-        if (this.O && !this.isStatic) {
+        if (this.N && !this.isStatic) {
             Iterator iterator = this.players.iterator();
 
             // CraftBukkit - This allows us to assume that some people are in bed but not really, allowing time to pass in spite of AFKers
@@ -299,7 +299,6 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
                 l1 = this.h(j1, k1);
                 if (this.D(j1, l1, k1)) {
                     this.strikeLightning(new EntityLightning(this, (double) j1, (double) l1, (double) k1));
-                    this.q = 2;
                 }
             }
 
@@ -412,9 +411,9 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
                 nextticklistentry.a(j1);
             }
 
-            if (!this.M.contains(nextticklistentry)) {
+            if (!this.L.contains(nextticklistentry)) {
+                this.L.add(nextticklistentry);
                 this.M.add(nextticklistentry);
-                this.N.add(nextticklistentry);
             }
         }
     }
@@ -426,9 +425,9 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
             nextticklistentry.a((long) i1 + this.worldData.getTime());
         }
 
-        if (!this.M.contains(nextticklistentry)) {
+        if (!this.L.contains(nextticklistentry)) {
+            this.L.add(nextticklistentry);
             this.M.add(nextticklistentry);
-            this.N.add(nextticklistentry);
         }
     }
 
@@ -449,9 +448,9 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
     }
 
     public boolean a(boolean flag) {
-        int i = this.N.size();
+        int i = this.M.size();
 
-        if (i != this.M.size()) {
+        if (i != this.L.size()) {
             throw new IllegalStateException("TickNextTick list out of synch");
         } else {
             if (i > 1000) {
@@ -465,14 +464,14 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
             }
 
             for (int j = 0; j < i; ++j) {
-                NextTickListEntry nextticklistentry = (NextTickListEntry) this.N.first();
+                NextTickListEntry nextticklistentry = (NextTickListEntry) this.M.first();
 
                 if (!flag && nextticklistentry.e > this.worldData.getTime()) {
                     break;
                 }
 
-                this.N.remove(nextticklistentry);
                 this.M.remove(nextticklistentry);
+                this.L.remove(nextticklistentry);
                 byte b0 = 8;
 
                 if (this.d(nextticklistentry.a - b0, nextticklistentry.b - b0, nextticklistentry.c - b0, nextticklistentry.a + b0, nextticklistentry.b + b0, nextticklistentry.c + b0)) {
@@ -495,11 +494,12 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
 
                             CrashReportSystemDetails.a(crashreportsystemdetails, nextticklistentry.a, nextticklistentry.b, nextticklistentry.c, k, l);
                             throw new ReportedException(crashreport);
-                        }                    }
+                        }
+                    }
                 }
             }
 
-            return !this.N.isEmpty();
+            return !this.M.isEmpty();
         }
     }
 
@@ -510,14 +510,14 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
         int j = i + 16;
         int k = chunkcoordintpair.z << 4;
         int l = k + 16;
-        Iterator iterator = this.N.iterator();
+        Iterator iterator = this.M.iterator();
 
         while (iterator.hasNext()) {
             NextTickListEntry nextticklistentry = (NextTickListEntry) iterator.next();
 
             if (nextticklistentry.a >= i && nextticklistentry.a < j && nextticklistentry.c >= k && nextticklistentry.c < l) {
                 if (flag) {
-                    this.M.remove(nextticklistentry);
+                    this.L.remove(nextticklistentry);
                     iterator.remove();
                 }
 
@@ -599,7 +599,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
         }
 
         // CraftBukkit - Configurable spawn protection
-        return i1 > this.getServer().getSpawnRadius() || this.server.getServerConfigurationManager().isOp(entityhuman.name) || this.server.I();
+        return i1 > this.getServer().getSpawnRadius() || this.server.getPlayerList().isOp(entityhuman.name) || this.server.I();
     }
 
     protected void a(WorldSettings worldsettings) {
@@ -607,12 +607,12 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
             this.entitiesById = new IntHashMap();
         }
 
-        if (this.M == null) {
-            this.M = new HashSet();
+        if (this.L == null) {
+            this.L = new HashSet();
         }
 
-        if (this.N == null) {
-            this.N = new TreeSet();
+        if (this.M == null) {
+            this.M = new TreeSet();
         }
 
         this.b(worldsettings);
@@ -676,7 +676,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
     }
 
     protected void k() {
-        WorldGenBonusChest worldgenbonuschest = new WorldGenBonusChest(T, 10);
+        WorldGenBonusChest worldgenbonuschest = new WorldGenBonusChest(S, 10);
 
         for (int i = 0; i < 10; ++i) {
             int j = this.worldData.c() + this.random.nextInt(6) - this.random.nextInt(6);
@@ -710,7 +710,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
 
     protected void a() throws ExceptionWorldConflict { // CraftBukkit - added throws
         this.D();
-        this.dataManager.saveWorldData(this.worldData, this.server.getServerConfigurationManager().q());
+        this.dataManager.saveWorldData(this.worldData, this.server.getPlayerList().q());
         this.worldMaps.a();
     }
 
@@ -752,7 +752,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
         }
 
         if (super.strikeLightning(entity)) {
-            this.server.getServerConfigurationManager().sendPacketNearby(entity.locX, entity.locY, entity.locZ, 512.0D, this.dimension, new Packet71Weather(entity));
+            this.server.getPlayerList().sendPacketNearby(entity.locX, entity.locY, entity.locZ, 512.0D, this.dimension, new Packet71Weather(entity));
             // CraftBukkit end
             return true;
         } else {
@@ -792,7 +792,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
             EntityHuman entityhuman = (EntityHuman) iterator.next();
 
             if (entityhuman.e(d0, d1, d2) < 4096.0D) {
-                ((EntityPlayer) entityhuman).netServerHandler.sendPacket(new Packet60Explosion(d0, d1, d2, f, explosion.blocks, (Vec3D) explosion.b().get(entityhuman)));
+                ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet60Explosion(d0, d1, d2, f, explosion.blocks, (Vec3D) explosion.b().get(entityhuman)));
             }
         }
 
@@ -801,13 +801,13 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
 
     public void playNote(int i, int j, int k, int l, int i1, int j1) {
         NoteBlockData noteblockdata = new NoteBlockData(i, j, k, l, i1, j1);
-        Iterator iterator = this.R[this.S].iterator();
+        Iterator iterator = this.Q[this.R].iterator();
 
         NoteBlockData noteblockdata1;
 
         do {
             if (!iterator.hasNext()) {
-                this.R[this.S].add(noteblockdata);
+                this.Q[this.R].add(noteblockdata);
                 return;
             }
 
@@ -817,22 +817,22 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
     }
 
     private void V() {
-        while (!this.R[this.S].isEmpty()) {
-            int i = this.S;
+        while (!this.Q[this.R].isEmpty()) {
+            int i = this.R;
 
-            this.S ^= 1;
-            Iterator iterator = this.R[i].iterator();
+            this.R ^= 1;
+            Iterator iterator = this.Q[i].iterator();
 
             while (iterator.hasNext()) {
                 NoteBlockData noteblockdata = (NoteBlockData) iterator.next();
 
                 if (this.a(noteblockdata)) {
                     // CraftBukkit - this.worldProvider.dimension -> this.dimension
-                    this.server.getServerConfigurationManager().sendPacketNearby((double) noteblockdata.a(), (double) noteblockdata.b(), (double) noteblockdata.c(), 64.0D, this.dimension, new Packet54PlayNoteBlock(noteblockdata.a(), noteblockdata.b(), noteblockdata.c(), noteblockdata.f(), noteblockdata.d(), noteblockdata.e()));
+                    this.server.getPlayerList().sendPacketNearby((double) noteblockdata.a(), (double) noteblockdata.b(), (double) noteblockdata.c(), 64.0D, this.dimension, new Packet54PlayNoteBlock(noteblockdata.a(), noteblockdata.b(), noteblockdata.c(), noteblockdata.f(), noteblockdata.d(), noteblockdata.e()));
                 }
             }
 
-            this.R[i].clear();
+            this.Q[i].clear();
         }
     }
 
@@ -859,7 +859,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
             // CraftBukkit start - only sending weather packets to those affected
             for (int i = 0; i < this.players.size(); ++i) {
                 if (((EntityPlayer) this.players.get(i)).world == this) {
-                    ((EntityPlayer) this.players.get(i)).netServerHandler.sendPacket(new Packet70Bed(flag ? 2 : 1, 0));
+                    ((EntityPlayer) this.players.get(i)).playerConnection.sendPacket(new Packet70Bed(flag ? 2 : 1, 0));
                 }
             }
             // CraftBukkit end
@@ -874,11 +874,11 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
         return this.tracker;
     }
 
-    public PlayerManager getPlayerManager() {
+    public PlayerChunkMap getPlayerChunkMap() {
         return this.manager;
     }
 
     public PortalTravelAgent s() {
-        return this.Q;
+        return this.P;
     }
 }

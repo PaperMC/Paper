@@ -222,7 +222,7 @@ public class CraftWorld implements World {
     }
 
     public boolean isChunkInUse(int x, int z) {
-        return world.getPlayerManager().isChunkInUse(x, z);
+        return world.getPlayerChunkMap().isChunkInUse(x, z);
     }
 
     public boolean loadChunk(int x, int z, boolean generate) {
@@ -430,9 +430,9 @@ public class CraftWorld implements World {
         // Forces the client to update to the new time immediately
         for (Player p : getPlayers()) {
             CraftPlayer cp = (CraftPlayer) p;
-            if (cp.getHandle().netServerHandler == null) continue;
+            if (cp.getHandle().playerConnection == null) continue;
 
-            cp.getHandle().netServerHandler.sendPacket(new Packet4UpdateTime(cp.getHandle().world.getTime(), cp.getHandle().getPlayerTime()));
+            cp.getHandle().playerConnection.sendPacket(new Packet4UpdateTime(cp.getHandle().world.getTime(), cp.getHandle().getPlayerTime()));
         }
     }
 
@@ -767,12 +767,12 @@ public class CraftWorld implements World {
         radius *= radius;
 
         for (Player player : getPlayers()) {
-            if (((CraftPlayer) player).getHandle().netServerHandler == null) continue;
+            if (((CraftPlayer) player).getHandle().playerConnection == null) continue;
             if (!location.getWorld().equals(player.getWorld())) continue;
 
             distance = (int) player.getLocation().distanceSquared(location);
             if (distance <= radius) {
-                ((CraftPlayer) player).getHandle().netServerHandler.sendPacket(packet);
+                ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
             }
         }
     }

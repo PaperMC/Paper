@@ -89,7 +89,7 @@ public class ItemSkull extends Item {
         return i;
     }
 
-    public String c_(ItemStack itemstack) {
+    public String d(ItemStack itemstack) {
         int i = itemstack.getData();
 
         if (i < 0 || i >= a.length) {
@@ -99,7 +99,7 @@ public class ItemSkull extends Item {
         return super.getName() + "." + a[i];
     }
 
-    public String j(ItemStack itemstack) {
-        return itemstack.getData() == 3 && itemstack.hasTag() && itemstack.getTag().hasKey("SkullOwner") ? LocaleI18n.get("item.skull.player.name", new Object[] { itemstack.getTag().getString("SkullOwner")}) : super.j(itemstack);
+    public String l(ItemStack itemstack) {
+        return itemstack.getData() == 3 && itemstack.hasTag() && itemstack.getTag().hasKey("SkullOwner") ? LocaleI18n.get("item.skull.player.name", new Object[] { itemstack.getTag().getString("SkullOwner")}) : super.l(itemstack);
     }
 }

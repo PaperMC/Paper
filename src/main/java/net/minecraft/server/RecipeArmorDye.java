@@ -2,10 +2,10 @@ package net.minecraft.server;
 
 import java.util.ArrayList;
 
-public class RecipesArmorDye extends ShapelessRecipes implements IRecipe { // CraftBukkit - added extends
+public class RecipeArmorDye extends ShapelessRecipes implements IRecipe { // CraftBukkit - added extends
 
     // CraftBukkit start - delegate to new parent class with bogus info
-    public RecipesArmorDye() {
+    public RecipeArmorDye() {
         super(new ItemStack(Item.LEATHER_HELMET, 0, 0), java.util.Arrays.asList(new ItemStack(Item.INK_SACK, 0, 5)));
     }
     // CraftBukkit end
@@ -63,7 +63,7 @@ public class RecipesArmorDye extends ShapelessRecipes implements IRecipe { // Cr
                     }
 
                     itemstack = itemstack1.cloneItemStack();
-                    if (itemarmor.b_(itemstack1)) {
+                    if (itemarmor.a(itemstack1)) {
                         l = itemarmor.b(itemstack);
                         f = (float) (l >> 16 & 255) / 255.0F;
                         f1 = (float) (l >> 8 & 255) / 255.0F;

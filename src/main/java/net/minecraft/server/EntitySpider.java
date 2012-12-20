@@ -8,7 +8,7 @@ public class EntitySpider extends EntityMonster {
         super(world);
         this.texture = "/mob/spider.png";
         this.a(1.4F, 0.9F);
-        this.bG = 0.8F;
+        this.bH = 0.8F;
     }
 
     protected void a() {

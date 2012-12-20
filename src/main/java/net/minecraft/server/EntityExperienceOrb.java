@@ -150,8 +150,8 @@ public class EntityExperienceOrb extends Entity {
 
     public void c_(EntityHuman entityhuman) {
         if (!this.world.isStatic) {
-            if (this.c == 0 && entityhuman.bR == 0) {
-                entityhuman.bR = 2;
+            if (this.c == 0 && entityhuman.bS == 0) {
+                entityhuman.bS = 2;
                 this.makeSound("random.orb", 0.1F, 0.5F * ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.8F));
                 entityhuman.receive(this, 1);
                 entityhuman.giveExp(CraftEventFactory.callPlayerExpChangeEvent(entityhuman, this.value).getAmount()); // CraftBukkit - this.value to event.getAmount()

@@ -4,6 +4,8 @@ import org.bukkit.event.entity.ExplosionPrimeEvent; // CraftBukkit
 
 public class EntityLargeFireball extends EntityFireball {
 
+    public int e = 1;
+
     public EntityLargeFireball(World world) {
         super(world);
     }

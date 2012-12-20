@@ -27,7 +27,7 @@ import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.Bukkit;
 // CraftBukkit end
 
-public abstract class ServerConfigurationManagerAbstract {
+public abstract class PlayerList {
 
     private static final SimpleDateFormat e = new SimpleDateFormat("yyyy-MM-dd \'at\' HH:mm:ss z");
     public static final Logger a = Logger.getLogger("Minecraft");
@@ -48,7 +48,7 @@ public abstract class ServerConfigurationManagerAbstract {
     // CraftBukkit start
     private CraftServer cserver;
 
-    public ServerConfigurationManagerAbstract(MinecraftServer minecraftserver) {
+    public PlayerList(MinecraftServer minecraftserver) {
         minecraftserver.server = new CraftServer(minecraftserver, this);
         minecraftserver.console = org.bukkit.craftbukkit.command.ColouredConsoleSender.getInstance();
         this.cserver = minecraftserver.server;
@@ -63,7 +63,7 @@ public abstract class ServerConfigurationManagerAbstract {
     public void a(INetworkManager inetworkmanager, EntityPlayer entityplayer) {
         this.a(entityplayer);
         entityplayer.spawnIn(this.server.getWorldServer(entityplayer.dimension));
-        entityplayer.itemInWorldManager.a((WorldServer) entityplayer.world);
+        entityplayer.playerInteractManager.a((WorldServer) entityplayer.world);
         String s = "local";
 
         if (inetworkmanager.getSocketAddress() != null) {
@@ -76,25 +76,26 @@ public abstract class ServerConfigurationManagerAbstract {
         ChunkCoordinates chunkcoordinates = worldserver.getSpawn();
 
         this.a(entityplayer, (EntityPlayer) null, worldserver);
-        NetServerHandler netserverhandler = new NetServerHandler(this.server, inetworkmanager, entityplayer);
+        PlayerConnection playerconnection = new PlayerConnection(this.server, inetworkmanager, entityplayer);
 
         // CraftBukkit start -- Don't send a higher than 60 MaxPlayer size, otherwise the PlayerInfo window won't render correctly.
         int maxPlayers = this.getMaxPlayers();
         if (maxPlayers > 60) {
             maxPlayers = 60;
         }
-        netserverhandler.sendPacket(new Packet1Login(entityplayer.id, worldserver.getWorldData().getType(), entityplayer.itemInWorldManager.getGameMode(), worldserver.getWorldData().isHardcore(), worldserver.worldProvider.dimension, worldserver.difficulty, worldserver.getHeight(), maxPlayers));
+        playerconnection.sendPacket(new Packet1Login(entityplayer.id, worldserver.getWorldData().getType(), entityplayer.playerInteractManager.getGameMode(), worldserver.getWorldData().isHardcore(), worldserver.worldProvider.dimension, worldserver.difficulty, worldserver.getHeight(), maxPlayers));
         entityplayer.getBukkitEntity().sendSupportedChannels();
         // CraftBukkit end
 
-        netserverhandler.sendPacket(new Packet6SpawnPosition(chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z));
-        netserverhandler.sendPacket(new Packet202Abilities(entityplayer.abilities));
+        playerconnection.sendPacket(new Packet6SpawnPosition(chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z));
+        playerconnection.sendPacket(new Packet202Abilities(entityplayer.abilities));
+        playerconnection.sendPacket(new Packet16BlockItemSwitch(entityplayer.inventory.itemInHandIndex));
         this.b(entityplayer, worldserver);
         // this.sendAll(new Packet3Chat("\u00A7e" + entityplayer.name + " joined the game.")); // CraftBukkit - handled in event
         this.c(entityplayer);
-        netserverhandler.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
-        this.server.ae().a(netserverhandler);
-        netserverhandler.sendPacket(new Packet4UpdateTime(worldserver.getTime(), worldserver.getDayTime()));
+        playerconnection.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
+        this.server.ae().a(playerconnection);
+        playerconnection.sendPacket(new Packet4UpdateTime(worldserver.getTime(), worldserver.getDayTime()));
         if (this.server.getTexturePack().length() > 0) {
             entityplayer.a(this.server.getTexturePack(), this.server.S());
         }
@@ -104,7 +105,7 @@ public abstract class ServerConfigurationManagerAbstract {
         while (iterator.hasNext()) {
             MobEffect mobeffect = (MobEffect) iterator.next();
 
-            netserverhandler.sendPacket(new Packet41MobEffect(entityplayer.id, mobeffect));
+            playerconnection.sendPacket(new Packet41MobEffect(entityplayer.id, mobeffect));
         }
 
         entityplayer.syncInventory();
@@ -119,15 +120,15 @@ public abstract class ServerConfigurationManagerAbstract {
         WorldServer worldserver1 = entityplayer.p();
 
         if (worldserver != null) {
-            worldserver.getPlayerManager().removePlayer(entityplayer);
+            worldserver.getPlayerChunkMap().removePlayer(entityplayer);
         }
 
-        worldserver1.getPlayerManager().addPlayer(entityplayer);
+        worldserver1.getPlayerChunkMap().addPlayer(entityplayer);
         worldserver1.chunkProviderServer.getChunkAt((int) entityplayer.locX >> 4, (int) entityplayer.locZ >> 4);
     }
 
     public int a() {
-        return PlayerManager.getFurthestViewableBlock(this.o());
+        return PlayerChunkMap.getFurthestViewableBlock(this.o());
     }
 
     public void a(EntityPlayer entityplayer) {
@@ -157,7 +158,7 @@ public abstract class ServerConfigurationManagerAbstract {
         String joinMessage = playerJoinEvent.getJoinMessage();
 
         if ((joinMessage != null) && (joinMessage.length() > 0)) {
-            this.server.getServerConfigurationManager().sendAll(new Packet3Chat(joinMessage));
+            this.server.getPlayerList().sendAll(new Packet3Chat(joinMessage));
         }
         this.cserver.onPlayerJoin(playerJoinEvent.getPlayer());
 
@@ -177,7 +178,7 @@ public abstract class ServerConfigurationManagerAbstract {
             EntityPlayer entityplayer1 = (EntityPlayer) this.players.get(i);
 
             if (entityplayer1.getBukkitEntity().canSee(entityplayer.getBukkitEntity())) {
-                entityplayer1.netServerHandler.sendPacket(packet);
+                entityplayer1.playerConnection.sendPacket(packet);
             }
         }
         // CraftBukkit end
@@ -187,18 +188,18 @@ public abstract class ServerConfigurationManagerAbstract {
 
             // CraftBukkit start - .name -> .listName
             if (entityplayer.getBukkitEntity().canSee(entityplayer1.getBukkitEntity())) {
-                entityplayer.netServerHandler.sendPacket(new Packet201PlayerInfo(entityplayer1.listName, true, entityplayer1.ping));
+                entityplayer.playerConnection.sendPacket(new Packet201PlayerInfo(entityplayer1.listName, true, entityplayer1.ping));
             }
             // CraftBukkit end
         }
     }
 
     public void d(EntityPlayer entityplayer) {
-        entityplayer.p().getPlayerManager().movePlayer(entityplayer);
+        entityplayer.p().getPlayerChunkMap().movePlayer(entityplayer);
     }
 
     public String disconnect(EntityPlayer entityplayer) { // CraftBukkit - return string
-        if (entityplayer.netServerHandler.disconnected) return null; // CraftBukkit - exploitsies fix
+        if (entityplayer.playerConnection.disconnected) return null; // CraftBukkit - exploitsies fix
 
         // CraftBukkit start - quitting must be before we do final save of data, in case plugins need to modify it
         PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(this.cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.name + " left the game.");
@@ -209,7 +210,7 @@ public abstract class ServerConfigurationManagerAbstract {
         WorldServer worldserver = entityplayer.p();
 
         worldserver.kill(entityplayer);
-        worldserver.getPlayerManager().removePlayer(entityplayer);
+        worldserver.getPlayerChunkMap().removePlayer(entityplayer);
         this.players.remove(entityplayer);
         ChunkIOExecutor.adjustPoolSize(this.getPlayerCount()); // CraftBukkit
 
@@ -219,7 +220,7 @@ public abstract class ServerConfigurationManagerAbstract {
             EntityPlayer entityplayer1 = (EntityPlayer) this.players.get(i);
 
             if (entityplayer1.getBukkitEntity().canSee(entityplayer.getBukkitEntity())) {
-                entityplayer1.netServerHandler.sendPacket(packet);
+                entityplayer1.playerConnection.sendPacket(packet);
             }
         }
 
@@ -228,15 +229,15 @@ public abstract class ServerConfigurationManagerAbstract {
     }
 
     // CraftBukkit start - Whole method and signature
-    public EntityPlayer attemptLogin(NetLoginHandler netloginhandler, String s, String hostname) {
+    public EntityPlayer attemptLogin(PendingConnection pendingconnection, String s, String hostname) {
         // Instead of kicking then returning, we need to store the kick reason
         // in the event, check with plugins to see if it's ok, and THEN kick
         // depending on the outcome.
-        EntityPlayer entity = new EntityPlayer(this.server, this.server.getWorldServer(0), s, this.server.M() ? new DemoItemInWorldManager(this.server.getWorldServer(0)) : new ItemInWorldManager(this.server.getWorldServer(0)));
+        EntityPlayer entity = new EntityPlayer(this.server, this.server.getWorldServer(0), s, this.server.M() ? new DemoPlayerInteractManager(this.server.getWorldServer(0)) : new PlayerInteractManager(this.server.getWorldServer(0)));
         Player player = entity.getBukkitEntity();
-        PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, netloginhandler.getSocket().getInetAddress());
+        PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, pendingconnection.getSocket().getInetAddress());
 
-        SocketAddress socketaddress = netloginhandler.networkManager.getSocketAddress();
+        SocketAddress socketaddress = pendingconnection.networkManager.getSocketAddress();
 
         if (this.banByName.isBanned(s)) {
             BanEntry banentry = (BanEntry) this.banByName.getEntries().get(s);
@@ -272,7 +273,7 @@ public abstract class ServerConfigurationManagerAbstract {
 
         this.cserver.getPluginManager().callEvent(event);
         if (event.getResult() != PlayerLoginEvent.Result.ALLOWED) {
-            netloginhandler.disconnect(event.getKickMessage());
+            pendingconnection.disconnect(event.getKickMessage());
             return null;
         }
 
@@ -297,19 +298,19 @@ public abstract class ServerConfigurationManagerAbstract {
 
         while (iterator.hasNext()) {
             entityplayer = (EntityPlayer) iterator.next();
-            entityplayer.netServerHandler.disconnect("You logged in from another location");
+            entityplayer.playerConnection.disconnect("You logged in from another location");
         }
 
         /* CraftBukkit start
         Object object;
 
         if (this.server.M()) {
-            object = new DemoItemInWorldManager(this.server.getWorldServer(0));
+            object = new DemoPlayerInteractManager(this.server.getWorldServer(0));
         } else {
-            object = new ItemInWorldManager(this.server.getWorldServer(0));
+            object = new PlayerInteractManager(this.server.getWorldServer(0));
         }
 
-        return new EntityPlayer(this.server, this.server.getWorldServer(0), s, (ItemInWorldManager) object);
+        return new EntityPlayer(this.server, this.server.getWorldServer(0), s, (PlayerInteractManager) object);
         */
         return player;
         // CraftBukkit end
@@ -324,7 +325,7 @@ public abstract class ServerConfigurationManagerAbstract {
         // CraftBukkit end
         entityplayer.p().getTracker().untrackPlayer(entityplayer);
         // entityplayer.p().getTracker().untrackEntity(entityplayer); // CraftBukkit
-        entityplayer.p().getPlayerManager().removePlayer(entityplayer);
+        entityplayer.p().getPlayerChunkMap().removePlayer(entityplayer);
         this.players.remove(entityplayer);
         this.server.getWorldServer(entityplayer.dimension).removeEntity(entityplayer);
         ChunkCoordinates chunkcoordinates = entityplayer.getBed();
@@ -348,7 +349,7 @@ public abstract class ServerConfigurationManagerAbstract {
                     location = new Location(cworld, chunkcoordinates1.x + 0.5, chunkcoordinates1.y, chunkcoordinates1.z + 0.5);
                 } else {
                     entityplayer1.setRespawnPosition(null, true);
-                    entityplayer1.netServerHandler.sendPacket(new Packet70Bed(0, 0));
+                    entityplayer1.playerConnection.sendPacket(new Packet70Bed(0, 0));
                 }
             }
 
@@ -380,18 +381,18 @@ public abstract class ServerConfigurationManagerAbstract {
         // CraftBukkit start
         byte actualDimension = (byte) (worldserver.getWorld().getEnvironment().getId());
         // Force the client to refresh their chunk cache.
-        entityplayer1.netServerHandler.sendPacket(new Packet9Respawn((byte) (actualDimension >= 0 ? -1 : 0), (byte) worldserver.difficulty, worldserver.getWorldData().getType(), worldserver.getHeight(), entityplayer.itemInWorldManager.getGameMode()));
-        entityplayer1.netServerHandler.sendPacket(new Packet9Respawn(actualDimension, (byte) worldserver.difficulty, worldserver.getWorldData().getType(), worldserver.getHeight(), entityplayer.itemInWorldManager.getGameMode()));
+        entityplayer1.playerConnection.sendPacket(new Packet9Respawn((byte) (actualDimension >= 0 ? -1 : 0), (byte) worldserver.difficulty, worldserver.getWorldData().getType(), worldserver.getHeight(), entityplayer.playerInteractManager.getGameMode()));
+        entityplayer1.playerConnection.sendPacket(new Packet9Respawn(actualDimension, (byte) worldserver.difficulty, worldserver.getWorldData().getType(), worldserver.getHeight(), entityplayer.playerInteractManager.getGameMode()));
         entityplayer1.spawnIn(worldserver);
         entityplayer1.dead = false;
-        entityplayer1.netServerHandler.teleport(new Location(worldserver.getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch));
+        entityplayer1.playerConnection.teleport(new Location(worldserver.getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch));
         entityplayer1.setSneaking(false);
         chunkcoordinates1 = worldserver.getSpawn();
         // CraftBukkit end
-        entityplayer1.netServerHandler.sendPacket(new Packet6SpawnPosition(chunkcoordinates1.x, chunkcoordinates1.y, chunkcoordinates1.z));
-        entityplayer1.netServerHandler.sendPacket(new Packet43SetExperience(entityplayer1.exp, entityplayer1.expTotal, entityplayer1.expLevel));
+        entityplayer1.playerConnection.sendPacket(new Packet6SpawnPosition(chunkcoordinates1.x, chunkcoordinates1.y, chunkcoordinates1.z));
+        entityplayer1.playerConnection.sendPacket(new Packet43SetExperience(entityplayer1.exp, entityplayer1.expTotal, entityplayer1.expLevel));
         this.b(entityplayer1, worldserver);
-        worldserver.getPlayerManager().addPlayer(entityplayer1);
+        worldserver.getPlayerChunkMap().addPlayer(entityplayer1);
         worldserver.addEntity(entityplayer1);
         this.players.add(entityplayer1);
         // CraftBukkit start - added from changeDimension
@@ -402,7 +403,7 @@ public abstract class ServerConfigurationManagerAbstract {
         while (iterator.hasNext()) {
             MobEffect mobeffect = (MobEffect) iterator.next();
 
-            entityplayer1.netServerHandler.sendPacket(new Packet41MobEffect(entityplayer1.id, mobeffect));
+            entityplayer1.playerConnection.sendPacket(new Packet41MobEffect(entityplayer1.id, mobeffect));
         }
         // entityplayer1.syncInventory();
         // CraftBukkit end
@@ -562,7 +563,7 @@ public abstract class ServerConfigurationManagerAbstract {
 
     public void sendAll(Packet packet) {
         for (int i = 0; i < this.players.size(); ++i) {
-            ((EntityPlayer) this.players.get(i)).netServerHandler.sendPacket(packet);
+            ((EntityPlayer) this.players.get(i)).playerConnection.sendPacket(packet);
         }
     }
 
@@ -571,7 +572,7 @@ public abstract class ServerConfigurationManagerAbstract {
             EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
 
             if (entityplayer.dimension == i) {
-                entityplayer.netServerHandler.sendPacket(packet);
+                entityplayer.playerConnection.sendPacket(packet);
             }
         }
     }
@@ -678,7 +679,7 @@ public abstract class ServerConfigurationManagerAbstract {
                     }
                 }
 
-                if ((l == EnumGamemode.NONE.a() || l == entityplayer.itemInWorldManager.getGameMode().a()) && (i1 <= 0 || entityplayer.expLevel >= i1) && entityplayer.expLevel <= j1) {
+                if ((l == EnumGamemode.NONE.a() || l == entityplayer.playerInteractManager.getGameMode().a()) && (i1 <= 0 || entityplayer.expLevel >= i1) && entityplayer.expLevel <= j1) {
                     ((List) object).add(entityplayer);
                 }
             }
@@ -718,7 +719,7 @@ public abstract class ServerConfigurationManagerAbstract {
                 double d6 = d2 - entityplayer.locZ;
 
                 if (d4 * d4 + d5 * d5 + d6 * d6 < d3 * d3) {
-                    entityplayer.netServerHandler.sendPacket(packet);
+                    entityplayer.playerConnection.sendPacket(packet);
                 }
             }
         }
@@ -749,15 +750,16 @@ public abstract class ServerConfigurationManagerAbstract {
     public void reloadWhitelist() {}
 
     public void b(EntityPlayer entityplayer, WorldServer worldserver) {
-        entityplayer.netServerHandler.sendPacket(new Packet4UpdateTime(worldserver.getTime(), worldserver.getDayTime()));
+        entityplayer.playerConnection.sendPacket(new Packet4UpdateTime(worldserver.getTime(), worldserver.getDayTime()));
         if (worldserver.N()) {
-            entityplayer.netServerHandler.sendPacket(new Packet70Bed(1, 0));
+            entityplayer.playerConnection.sendPacket(new Packet70Bed(1, 0));
         }
     }
 
     public void updateClient(EntityPlayer entityplayer) {
         entityplayer.updateInventory(entityplayer.defaultContainer);
         entityplayer.m();
+        entityplayer.playerConnection.sendPacket(new Packet16BlockItemSwitch(entityplayer.inventory.itemInHandIndex));
     }
 
     public int getPlayerCount() {
@@ -809,17 +811,22 @@ public abstract class ServerConfigurationManagerAbstract {
 
     private void a(EntityPlayer entityplayer, EntityPlayer entityplayer1, World world) {
         if (entityplayer1 != null) {
-            entityplayer.itemInWorldManager.setGameMode(entityplayer1.itemInWorldManager.getGameMode());
+            entityplayer.playerInteractManager.setGameMode(entityplayer1.playerInteractManager.getGameMode());
         } else if (this.m != null) {
-            entityplayer.itemInWorldManager.setGameMode(this.m);
+            entityplayer.playerInteractManager.setGameMode(this.m);
         }
 
-        entityplayer.itemInWorldManager.b(world.getWorldData().getGameType());
+        entityplayer.playerInteractManager.b(world.getWorldData().getGameType());
     }
 
     public void r() {
         while (!this.players.isEmpty()) {
-            ((EntityPlayer) this.players.get(0)).netServerHandler.disconnect(this.server.server.getShutdownMessage()); // CraftBukkit - add custom shutdown message
+            ((EntityPlayer) this.players.get(0)).playerConnection.disconnect(this.server.server.getShutdownMessage()); // CraftBukkit - add custom shutdown message
         }
+    }
+
+    public void k(String s) {
+        this.server.info(s);
+        this.sendAll(new Packet3Chat(s));
     }
 }

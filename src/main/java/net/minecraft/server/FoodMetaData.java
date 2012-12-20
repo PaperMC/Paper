@@ -39,12 +39,12 @@ public class FoodMetaData {
                     this.foodLevel = event.getFoodLevel();
                 }
 
-                ((EntityPlayer) entityhuman).netServerHandler.sendPacket(new Packet8UpdateHealth(entityhuman.getHealth(), this.foodLevel, this.saturationLevel));
+                ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet8UpdateHealth(entityhuman.getHealth(), this.foodLevel, this.saturationLevel));
                 // CraftBukkit end
             }
         }
 
-        if (this.foodLevel >= 18 && entityhuman.ce()) {
+        if (this.foodLevel >= 18 && entityhuman.cd()) {
             ++this.foodTickTimer;
             if (this.foodTickTimer >= 80) {
                 // CraftBukkit - added RegainReason

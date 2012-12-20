@@ -194,6 +194,7 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
         nbttagcompound.setBoolean("TerrainPopulated", chunk.done);
         ChunkSection[] achunksection = chunk.i();
         NBTTagList nbttaglist = new NBTTagList("Sections");
+        boolean flag = !world.worldProvider.f;
         ChunkSection[] achunksection1 = achunksection;
         int i = achunksection.length;
 
@@ -211,8 +212,13 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
                 }
 
                 nbttagcompound1.setByteArray("Data", chunksection.j().a);
-                nbttagcompound1.setByteArray("SkyLight", chunksection.l().a);
                 nbttagcompound1.setByteArray("BlockLight", chunksection.k().a);
+                if (flag) {
+                    nbttagcompound1.setByteArray("SkyLight", chunksection.l().a);
+                } else {
+                    nbttagcompound1.setByteArray("SkyLight", new byte[chunksection.k().a.length]);
+                }
+
                 nbttaglist.add(nbttagcompound1);
             }
         }
@@ -285,11 +291,12 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
         NBTTagList nbttaglist = nbttagcompound.getList("Sections");
         byte b0 = 16;
         ChunkSection[] achunksection = new ChunkSection[b0];
+        boolean flag = !world.worldProvider.f;
 
         for (int k = 0; k < nbttaglist.size(); ++k) {
             NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.get(k);
             byte b1 = nbttagcompound1.getByte("Y");
-            ChunkSection chunksection = new ChunkSection(b1 << 4);
+            ChunkSection chunksection = new ChunkSection(b1 << 4, flag);
 
             chunksection.a(nbttagcompound1.getByteArray("Blocks"));
             if (nbttagcompound1.hasKey("Add")) {
@@ -297,8 +304,11 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
             }
 
             chunksection.b(new NibbleArray(nbttagcompound1.getByteArray("Data"), 4));
-            chunksection.d(new NibbleArray(nbttagcompound1.getByteArray("SkyLight"), 4));
             chunksection.c(new NibbleArray(nbttagcompound1.getByteArray("BlockLight"), 4));
+            if (flag) {
+                chunksection.d(new NibbleArray(nbttagcompound1.getByteArray("SkyLight"), 4));
+            }
+
             chunksection.recalcBlockCounts();
             achunksection[b1] = chunksection;
         }

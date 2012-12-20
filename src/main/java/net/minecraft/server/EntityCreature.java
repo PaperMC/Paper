@@ -73,7 +73,7 @@ public abstract class EntityCreature extends EntityLiving {
         this.world.methodProfiler.b();
         if (!this.b && this.target != null && (this.pathEntity == null || this.random.nextInt(20) == 0)) {
             this.pathEntity = this.world.findPath(this, this.target, f, true, false, false, true);
-        } else if (!this.b && (this.pathEntity == null && this.random.nextInt(180) == 0 || this.random.nextInt(120) == 0 || this.c > 0) && this.bA < 100) {
+        } else if (!this.b && (this.pathEntity == null && this.random.nextInt(180) == 0 || this.random.nextInt(120) == 0 || this.c > 0) && this.bB < 100) {
             this.i();
         }
 
@@ -97,7 +97,7 @@ public abstract class EntityCreature extends EntityLiving {
                 }
             }
 
-            this.bE = false;
+            this.bF = false;
             if (vec3d != null) {
                 double d1 = vec3d.c - this.locX;
                 double d2 = vec3d.e - this.locZ;
@@ -106,7 +106,7 @@ public abstract class EntityCreature extends EntityLiving {
                 float f2 = (float) (org.bukkit.craftbukkit.TrigMath.atan2(d2, d1) * 180.0D / 3.1415927410125732D) - 90.0F;
                 float f3 = MathHelper.g(f2 - this.yaw);
 
-                this.bC = this.bG;
+                this.bD = this.bH;
                 if (f3 > 30.0F) {
                     f3 = 30.0F;
                 }
@@ -123,12 +123,12 @@ public abstract class EntityCreature extends EntityLiving {
 
                     this.yaw = (float) (Math.atan2(d5, d4) * 180.0D / 3.1415927410125732D) - 90.0F;
                     f3 = (f4 - this.yaw + 90.0F) * 3.1415927F / 180.0F;
-                    this.bB = -MathHelper.sin(f3) * this.bC * 1.0F;
-                    this.bC = MathHelper.cos(f3) * this.bC * 1.0F;
+                    this.bC = -MathHelper.sin(f3) * this.bC * 1.0F;
+                    this.bD = MathHelper.cos(f3) * this.bC * 1.0F;
                 }
 
                 if (d3 > 0.0D) {
-                    this.bE = true;
+                    this.bF = true;
                 }
             }
 
@@ -137,11 +137,11 @@ public abstract class EntityCreature extends EntityLiving {
             }
 
             if (this.positionChanged && !this.k()) {
-                this.bE = true;
+                this.bF = true;
             }
 
             if (this.random.nextFloat() < 0.8F && (flag || flag1)) {
-                this.bE = true;
+                this.bF = true;
             }
 
             this.world.methodProfiler.b();

@@ -1,23 +1,32 @@
 package net.minecraft.server;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 public class TileEntityMobSpawner extends TileEntity {
 
     public int spawnDelay = -1;
     public String mobName = "Pig"; // CraftBukkit - private -> public
-    private NBTTagCompound spawnData = null;
+    private List mobs = null; 
+    private TileEntityMobSpawnerData spawnData = null;
     public double b;
     public double c = 0.0D;
     private int minSpawnDelay = 200;
     private int maxSpawnDelay = 800;
     private int spawnCount = 4;
+    private Entity j;
     private int maxNearbyEntities = 6;
     private int requiredPlayerRange = 16;
     private int spawnRange = 4;
 
     public TileEntityMobSpawner() {
         this.spawnDelay = 20;
+    }
+
+    public String getMobName() {
+        return this.spawnData == null ? this.mobName : this.spawnData.c;
     }
 
     public void a(String s) {
@@ -30,13 +39,15 @@ public class TileEntityMobSpawner extends TileEntity {
 
     public void g() {
         if (this.b()) {
-            if (this.world.isStatic) {
-                double d0 = (double) ((float) this.x + this.world.random.nextFloat());
-                double d1 = (double) ((float) this.y + this.world.random.nextFloat());
-                double d2 = (double) ((float) this.z + this.world.random.nextFloat());
+            double d0;
 
-                this.world.addParticle("smoke", d0, d1, d2, 0.0D, 0.0D, 0.0D);
-                this.world.addParticle("flame", d0, d1, d2, 0.0D, 0.0D, 0.0D);
+            if (this.world.isStatic) {
+                double d1 = (double) ((float) this.x + this.world.random.nextFloat());
+                double d2 = (double) ((float) this.y + this.world.random.nextFloat());
+
+                d0 = (double) ((float) this.z + this.world.random.nextFloat());
+                this.world.addParticle("smoke", d1, d2, d0, 0.0D, 0.0D, 0.0D);
+                this.world.addParticle("flame", d1, d2, d0, 0.0D, 0.0D, 0.0D);
                 if (this.spawnDelay > 0) {
                     --this.spawnDelay;
                 }
@@ -53,8 +64,10 @@ public class TileEntityMobSpawner extends TileEntity {
                     return;
                 }
 
+                boolean flag = false;
+
                 for (int i = 0; i < this.spawnCount; ++i) {
-                    Entity entity = EntityTypes.createEntityByName(this.mobName, this.world);
+                    Entity entity = EntityTypes.createEntityByName(this.getMobName(), this.world);
 
                     if (entity == null) {
                         return;
@@ -68,12 +81,12 @@ public class TileEntityMobSpawner extends TileEntity {
                     }
 
                     if (entity != null) {
-                        double d3 = (double) this.x + (this.world.random.nextDouble() - this.world.random.nextDouble()) * (double) this.spawnRange;
-                        double d4 = (double) (this.y + this.world.random.nextInt(3) - 1);
-                        double d5 = (double) this.z + (this.world.random.nextDouble() - this.world.random.nextDouble()) * (double) this.spawnRange;
+                        d0 = (double) this.x + (this.world.random.nextDouble() - this.world.random.nextDouble()) * (double) this.spawnRange;
+                        double d3 = (double) (this.y + this.world.random.nextInt(3) - 1);
+                        double d4 = (double) this.z + (this.world.random.nextDouble() - this.world.random.nextDouble()) * (double) this.spawnRange;
                         EntityLiving entityliving = entity instanceof EntityLiving ? (EntityLiving) entity : null;
 
-                        entity.setPositionRotation(d3, d4, d5, this.world.random.nextFloat() * 360.0F, 0.0F);
+                        entity.setPositionRotation(d0, d3, d4, this.world.random.nextFloat() * 360.0F, 0.0F);
                         if (entityliving == null || entityliving.canSpawn()) {
                             this.a(entity);
                             this.world.addEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER); // CraftBukkit
@@ -82,9 +95,13 @@ public class TileEntityMobSpawner extends TileEntity {
                                 entityliving.aR();
                             }
 
-                            this.e();
+                            flag = true;
                         }
                     }
+                }
+
+                if (flag) {
+                    this.e();
                 }
             }
 
@@ -97,7 +114,7 @@ public class TileEntityMobSpawner extends TileEntity {
             NBTTagCompound nbttagcompound = new NBTTagCompound();
 
             entity.c(nbttagcompound);
-            Iterator iterator = this.spawnData.c().iterator();
+            Iterator iterator = this.spawnData.b.c().iterator();
 
             while (iterator.hasNext()) {
                 NBTBase nbtbase = (NBTBase) iterator.next();
@@ -118,6 +135,11 @@ public class TileEntityMobSpawner extends TileEntity {
             this.spawnDelay = this.minSpawnDelay + this.world.random.nextInt(this.maxSpawnDelay - this.minSpawnDelay);
         }
 
+        if (this.mobs != null && this.mobs.size() > 0) {
+            this.spawnData = (TileEntityMobSpawnerData) WeightedRandom.a(this.world.random, (Collection) this.mobs);
+            this.world.notify(this.x, this.y, this.z);
+        }
+
         this.world.playNote(this.x, this.y, this.z, this.q().id, 1, 0);
     }
 
@@ -125,8 +147,19 @@ public class TileEntityMobSpawner extends TileEntity {
         super.a(nbttagcompound);
         this.mobName = nbttagcompound.getString("EntityId");
         this.spawnDelay = nbttagcompound.getShort("Delay");
+        if (nbttagcompound.hasKey("SpawnPotentials")) {
+            this.mobs = new ArrayList();
+            NBTTagList nbttaglist = nbttagcompound.getList("SpawnPotentials");
+
+            for (int i = 0; i < nbttaglist.size(); ++i) {
+                this.mobs.add(new TileEntityMobSpawnerData(this, (NBTTagCompound) nbttaglist.get(i)));
+            }
+        } else {
+            this.mobs = null;
+        }
+
         if (nbttagcompound.hasKey("SpawnData")) {
-            this.spawnData = nbttagcompound.getCompound("SpawnData");
+            this.spawnData = new TileEntityMobSpawnerData(this, nbttagcompound.getCompound("SpawnData"), this.mobName);
         } else {
             this.spawnData = null;
         }
@@ -145,11 +178,15 @@ public class TileEntityMobSpawner extends TileEntity {
         if (nbttagcompound.hasKey("SpawnRange")) {
             this.spawnRange = nbttagcompound.getShort("SpawnRange");
         }
+
+        if (this.world != null && this.world.isStatic) {
+            this.j = null;
+        }
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.setString("EntityId", this.mobName);
+        nbttagcompound.setString("EntityId", this.getMobName());
         nbttagcompound.setShort("Delay", (short) this.spawnDelay);
         nbttagcompound.setShort("MinSpawnDelay", (short) this.minSpawnDelay);
         nbttagcompound.setShort("MaxSpawnDelay", (short) this.maxSpawnDelay);
@@ -158,7 +195,25 @@ public class TileEntityMobSpawner extends TileEntity {
         nbttagcompound.setShort("RequiredPlayerRange", (short) this.requiredPlayerRange);
         nbttagcompound.setShort("SpawnRange", (short) this.spawnRange);
         if (this.spawnData != null) {
-            nbttagcompound.setCompound("SpawnData", this.spawnData);
+            nbttagcompound.setCompound("SpawnData", (NBTTagCompound) this.spawnData.b.clone());
+        }
+
+        if (this.spawnData != null || this.mobs != null && this.mobs.size() > 0) {
+            NBTTagList nbttaglist = new NBTTagList();
+
+            if (this.mobs != null && this.mobs.size() > 0) {
+                Iterator iterator = this.mobs.iterator();
+
+                while (iterator.hasNext()) {
+                    TileEntityMobSpawnerData tileentitymobspawnerdata = (TileEntityMobSpawnerData) iterator.next();
+
+                    nbttaglist.add(tileentitymobspawnerdata.a());
+                }
+            } else {
+                nbttaglist.add(this.spawnData.a());
+            }
+
+            nbttagcompound.set("SpawnPotentials", nbttaglist);
         }
     }
 
@@ -166,6 +221,7 @@ public class TileEntityMobSpawner extends TileEntity {
         NBTTagCompound nbttagcompound = new NBTTagCompound();
 
         this.b(nbttagcompound);
+        nbttagcompound.o("SpawnPotentials");
         return new Packet132TileEntityData(this.x, this.y, this.z, 1, nbttagcompound);
     }
 

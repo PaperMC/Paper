@@ -1,15 +1,9 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import java.util.List;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
-// CraftBukkit end
-
-public class RecipesMapClone extends ShapelessRecipes implements IRecipe { // CraftBukkit - added extends
+public class RecipeMapClone extends ShapelessRecipes implements IRecipe { // CraftBukkit - added extends
 
     // CraftBukkit start - delegate to new parent class
-    public RecipesMapClone() {
+    public RecipeMapClone() {
         super(new ItemStack(Item.MAP, 0, -1), java.util.Arrays.asList(new ItemStack(Item.MAP_EMPTY, 0, 0)));
     }
     // CraftBukkit end

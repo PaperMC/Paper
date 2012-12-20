@@ -65,7 +65,7 @@ public class BlockLever extends Block {
         return k1 + j1;
     }
 
-    public static int d(int i) {
+    public static int e(int i) {
         switch (i) {
         case 0:
             return 0;

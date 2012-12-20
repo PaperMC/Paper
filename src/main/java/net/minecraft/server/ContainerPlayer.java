@@ -61,7 +61,7 @@ public class ContainerPlayer extends Container {
         }
 
         EntityPlayer player = (EntityPlayer) super.listeners.get(0); // TODO: Is this _always_ correct? Seems like it.
-        player.netServerHandler.sendPacket(new Packet103SetSlot(player.activeContainer.windowId, 0, craftResult));
+        player.playerConnection.sendPacket(new Packet103SetSlot(player.activeContainer.windowId, 0, craftResult));
         // CraftBukkit end
     }
 

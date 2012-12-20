@@ -144,10 +144,11 @@ public class Explosion {
                         if (!event.isCancelled()) {
                             damagee.setLastDamageCause(event);
                             entity.damageEntity(DamageSource.EXPLOSION, event.getDamage());
+                            double d11 = EnchantmentProtection.a(entity, d10);
 
-                            entity.motX += d0 * d10;
-                            entity.motY += d1 * d10;
-                            entity.motZ += d2 * d10;
+                            entity.motX += d0 * d11;
+                            entity.motY += d1 * d11;
+                            entity.motZ += d2 * d11;
                             if (entity instanceof EntityHuman) {
                                 this.l.put((EntityHuman) entity, this.world.getVec3DPool().create(d0 * d10, d1 * d10, d2 * d10));
                             }

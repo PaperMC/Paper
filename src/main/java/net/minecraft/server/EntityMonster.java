@@ -6,7 +6,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
 
     public EntityMonster(World world) {
         super(world);
-        this.bc = 5;
+        this.bd = 5;
     }
 
     public void c() {
@@ -14,7 +14,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         float f = this.c(1.0F);
 
         if (f > 0.5F) {
-            this.bA += 2;
+            this.bB += 2;
         }
 
         super.c();
@@ -98,6 +98,10 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
 
             if (k > 0) {
                 entity.setOnFire(k * 4);
+            }
+
+            if (entity instanceof EntityLiving) {
+                EnchantmentThorns.a(this, (EntityLiving) entity, this.random);
             }
         }
 

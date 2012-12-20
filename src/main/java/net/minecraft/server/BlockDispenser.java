@@ -5,8 +5,8 @@ import java.util.Random;
 public class BlockDispenser extends BlockContainer {
 
     public static final IRegistry a = new RegistryDefault(new DispenseBehaviorItem());
-    private Random b = new Random();
     public static boolean eventFired = false; // CraftBukkit
+    private Random b = new Random();
 
     protected BlockDispenser(int i) {
         super(i, Material.STONE);
@@ -160,7 +160,7 @@ public class BlockDispenser extends BlockContainer {
                         EntityItem entityitem = new EntityItem(world, (double) ((float) i + f), (double) ((float) j + f1), (double) ((float) k + f2), new ItemStack(itemstack.id, k1, itemstack.getData()));
 
                         if (itemstack.hasTag()) {
-                            entityitem.itemStack.setTag((NBTTagCompound) itemstack.getTag().clone());
+                            entityitem.getItemStack().setTag((NBTTagCompound) itemstack.getTag().clone());
                         }
 
                         float f3 = 0.05F;
@@ -179,9 +179,9 @@ public class BlockDispenser extends BlockContainer {
 
     public static IPosition a(ISourceBlock isourceblock) {
         EnumFacing enumfacing = EnumFacing.a(isourceblock.h());
-        double d0 = isourceblock.getX() + 0.6D * (double) enumfacing.c();
+        double d0 = isourceblock.getX() + 0.7D * (double) enumfacing.c();
         double d1 = isourceblock.getY();
-        double d2 = isourceblock.getZ() + 0.6D * (double) enumfacing.e();
+        double d2 = isourceblock.getZ() + 0.7D * (double) enumfacing.e();
 
         return new Position(d0, d1, d2);
     }
