@@ -36,8 +36,8 @@ import com.google.common.collect.ImmutableMap;
  * <li> void applyToItem(NBTTagCompound tag)
  * <li> boolean applicableTo(Material type)
  * <br><br>
- * <li> boolean notUncommon(CraftMetaItem meta)
  * <li> boolean equalsCommon(CraftMetaItem meta)
+ * <li> boolean notUncommon(CraftMetaItem meta)
  * <br><br>
  * <li> boolean isEmpty()
  * <li> boolean is{Type}Empty()
