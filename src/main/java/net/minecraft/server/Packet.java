@@ -210,7 +210,7 @@ public abstract class Packet {
     }
 
     public static void a(ItemStack itemstack, DataOutputStream dataoutputstream) throws IOException { // CraftBukkit - throws IOException
-        if (itemstack == null) {
+        if (itemstack == null || itemstack.getItem() == null) { // CraftBukkit - NPE fix itemstack.getItem()
             dataoutputstream.writeShort(-1);
         } else {
             dataoutputstream.writeShort(itemstack.id);
