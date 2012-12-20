@@ -22,6 +22,7 @@ public enum EntityType {
     WITHER_SKULL("WitherSkull", WitherSkull.class, 19),
     PRIMED_TNT("PrimedTnt", TNTPrimed.class, 20),
     FALLING_BLOCK("FallingSand", FallingBlock.class, 21, false),
+    FIREWORK("FireworksRocketEntity", Firework.class, 22, false),
     MINECART("Minecart", Minecart.class, 40),
     BOAT("Boat", Boat.class, 41),
     CREEPER("Creeper", Creeper.class, 50),
