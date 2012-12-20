@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 // CraftBukkit start
 import org.bukkit.Location;
 import org.bukkit.TravelAgent;
+import org.bukkit.WeatherType;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.chunkio.ChunkIOExecutor;
@@ -975,7 +976,7 @@ public abstract class PlayerList {
     public void b(EntityPlayer entityplayer, WorldServer worldserver) {
         entityplayer.playerConnection.sendPacket(new Packet4UpdateTime(worldserver.getTime(), worldserver.getDayTime()));
         if (worldserver.O()) {
-            entityplayer.playerConnection.sendPacket(new Packet70Bed(1, 0));
+            entityplayer.setPlayerWeather(WeatherType.DOWNFALL, false); // CraftBukkit - handle player specific weather
         }
     }
 

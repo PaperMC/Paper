@@ -12,6 +12,7 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.Bukkit;
+import org.bukkit.WeatherType;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -827,6 +828,26 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             // Adds timeOffset to the beginning of this day.
             return this.world.getDayTime() - (this.world.getDayTime() % 24000) + this.timeOffset;
         }
+    }
+
+    public WeatherType weather = null;
+
+    public WeatherType getPlayerWeather() {
+        return this.weather;
+    }
+   
+    public void setPlayerWeather(WeatherType type, boolean plugin) {
+        if (!plugin && this.weather != null) {
+            return;
+        }
+
+        this.weather = type;
+        this.playerConnection.sendPacket(new Packet70Bed(type == WeatherType.DOWNFALL ? 1 : 2, 0));
+    }
+   
+    public void resetPlayerWeather() {
+        this.weather = null;
+        this.setPlayerWeather(this.o().getWorldData().hasStorm() ? WeatherType.DOWNFALL : WeatherType.CLEAR, false);
     }
 
     @Override

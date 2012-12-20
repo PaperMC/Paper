@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 // CraftBukkit start
+import org.bukkit.WeatherType;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.util.LongHash;
 
@@ -896,7 +897,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
             // CraftBukkit start - only sending weather packets to those affected
             for (int i = 0; i < this.players.size(); ++i) {
                 if (((EntityPlayer) this.players.get(i)).world == this) {
-                    ((EntityPlayer) this.players.get(i)).playerConnection.sendPacket(new Packet70Bed(flag ? 2 : 1, 0));
+                    ((EntityPlayer) this.players.get(i)).setPlayerWeather((!flag ? WeatherType.DOWNFALL : WeatherType.CLEAR), false);
                 }
             }
             // CraftBukkit end

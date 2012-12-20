@@ -24,6 +24,7 @@ import org.bukkit.*;
 import org.bukkit.Achievement;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
+import org.bukkit.WeatherType;
 import org.bukkit.World;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.conversations.Conversation;
@@ -495,6 +496,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void resetPlayerTime() {
         setPlayerTime(0, true);
+    }
+
+    public void setPlayerWeather(WeatherType type) {
+        getHandle().setPlayerWeather(type, true);
+    }
+
+    public WeatherType getPlayerWeather() {
+        return getHandle().getPlayerWeather();
+    }
+
+    public void resetPlayerWeather() {
+        getHandle().resetPlayerWeather();
     }
 
     public boolean isBanned() {
