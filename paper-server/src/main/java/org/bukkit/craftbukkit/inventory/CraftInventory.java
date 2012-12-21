@@ -290,6 +290,7 @@ public class CraftInventory implements Inventory {
                         // More than a single stack!
                         if (item.getAmount() > getMaxItemStack()) {
                             CraftItemStack stack = CraftItemStack.asCraftCopy(item);
+                            stack.setAmount(getMaxItemStack());
                             setItem(firstFree, stack);
                             item.setAmount(item.getAmount() - getMaxItemStack());
                         } else {
