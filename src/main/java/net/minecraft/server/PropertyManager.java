@@ -69,6 +69,11 @@ public class PropertyManager {
         FileOutputStream fileoutputstream = null;
 
         try {
+            // CraftBukkit start - Don't attempt writing to file if it's read only
+            if (!this.c.canWrite()) {
+                return;
+            }
+            // CraftBukkit end
             fileoutputstream = new FileOutputStream(this.c);
             this.properties.store(fileoutputstream, "Minecraft server properties");
         } catch (Exception exception) {
