@@ -1,10 +1,15 @@
 package org.bukkit.craftbukkit.inventory;
 
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import org.bukkit.Material;
+import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.Overridden;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,14 +20,10 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public class ItemMetaImplementationOverrideTest {
     static final Class<CraftMetaItem> parent = CraftMetaItem.class;
-    static final Class<Overridden> annotation = Overridden.class;
 
-    static final List<Object[]> testData = new ArrayList<Object[]>();
-    static final Method[] methods;
-
-    static final Class<? extends CraftMetaItem>[] subclasses;
-
-    static {
+    @Parameters(name="[{index}]:{1}")
+    public static List<Object[]> data() {
+        final List<Object[]> testData = new ArrayList<Object[]>();
         List<Class<? extends CraftMetaItem>> classes = new ArrayList<Class<? extends CraftMetaItem>>();
 
         for (Material material : ItemStackTest.COMPOUND_MATERIALS) {
@@ -31,37 +32,49 @@ public class ItemMetaImplementationOverrideTest {
                 classes.add(clazz);
             }
         }
-        subclasses = classes.toArray(new Class[0]);
-
 
         List<Method> list = new ArrayList<Method>();
 
         for (Method method: parent.getDeclaredMethods()) {
-            if (method.isAnnotationPresent(annotation)) {
+            if (method.isAnnotationPresent(Overridden.class)) {
                 list.add(method);
             }
         }
 
-        for (Class<?> clazz : subclasses) {
-            for (Method method : list) {
-                testData.add(new Object[]{clazz, method, clazz.getSimpleName() + " contains " + method.getName()});
+        for (final Class<?> clazz : classes) {
+            for (final Method method : list) {
+                testData.add(
+                    new Object[] {
+                        new Callable<Method>() {
+                            public Method call() throws Exception {
+                                return clazz.getDeclaredMethod(method.getName(), method.getParameterTypes());
+                            }
+                        },
+                        clazz.getSimpleName() + " contains " + method.getName()
+                    }
+                );
             }
+
+            testData.add(
+                new Object[] {
+                    new Callable<DelegateDeserialization>() {
+                        public DelegateDeserialization call() throws Exception {
+                            return clazz.getAnnotation(DelegateDeserialization.class);
+                        }
+                    },
+                    clazz.getSimpleName() + " contains annotation " + DelegateDeserialization.class
+                }
+            );
         }
 
-        methods = list.toArray(new Method[list.size()]);
-    }
-
-    @Parameters(name="[{index}]:{2}")
-    public static List<Object[]> data() {
         return testData;
     }
 
-    @Parameter(0) public Class clazz;
-    @Parameter(1) public Method method;
-    @Parameter(2) public String name;
+    @Parameter(0) public Callable<?> test;
+    @Parameter(1) public String name;
 
     @Test
     public void testClass() throws Throwable {
-        clazz.getDeclaredMethod(method.getName(), method.getParameterTypes());
+        assertThat(name, test.call(), is(not(nullValue())));
     }
 }

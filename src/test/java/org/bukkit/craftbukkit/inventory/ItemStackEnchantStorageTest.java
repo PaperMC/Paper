@@ -3,11 +3,10 @@ package org.bukkit.craftbukkit.inventory;
 import java.util.Arrays;
 import java.util.List;
 
-import org.bukkit.Color;
 import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.LeatherArmorMeta;
-
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -15,11 +14,11 @@ import org.junit.runners.Parameterized.Parameters;
 import com.google.common.base.Joiner;
 
 @RunWith(Parameterized.class)
-public class ItemStackLeatherTest extends ItemStackTest {
+public class ItemStackEnchantStorageTest extends ItemStackTest {
 
     @Parameters(name="[{index}]:{" + NAME_PARAMETER + "}")
     public static List<Object[]> data() {
-        return StackProvider.compound(operators(), "%s %s", NAME_PARAMETER, Material.LEATHER_BOOTS, Material.LEATHER_CHESTPLATE, Material.LEATHER_HELMET, Material.LEATHER_LEGGINGS);
+        return StackProvider.compound(operators(), "%s %s", NAME_PARAMETER, Material.ENCHANTED_BOOK);
     }
 
     @SuppressWarnings("unchecked")
@@ -33,55 +32,75 @@ public class ItemStackLeatherTest extends ItemStackTest {
                 new Object[] {
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
-                            LeatherArmorMeta meta = (LeatherArmorMeta) cleanStack.getItemMeta();
-                            meta.setColor(Color.FUCHSIA);
+                            EnchantmentStorageMeta meta = (EnchantmentStorageMeta) cleanStack.getItemMeta();
+                            meta.addStoredEnchant(Enchantment.DURABILITY, 1, true);
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
                     },
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
+                            EnchantmentStorageMeta meta = (EnchantmentStorageMeta) cleanStack.getItemMeta();
+                            cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
                     },
-                    "Color vs Null"
+                    "Enchantable vs Blank"
                 },
                 new Object[] {
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
-                            LeatherArmorMeta meta = (LeatherArmorMeta) cleanStack.getItemMeta();
-                            meta.setColor(Color.GRAY);
+                            EnchantmentStorageMeta meta = (EnchantmentStorageMeta) cleanStack.getItemMeta();
+                            meta.addStoredEnchant(Enchantment.KNOCKBACK, 1, true);
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
                     },
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
-                            LeatherArmorMeta meta = (LeatherArmorMeta) cleanStack.getItemMeta();
-                            cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
                     },
-                    "Color vs Blank"
+                    "Enchantable vs Null"
                 },
                 new Object[] {
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
-                            LeatherArmorMeta meta = (LeatherArmorMeta) cleanStack.getItemMeta();
-                            meta.setColor(Color.MAROON);
+                            EnchantmentStorageMeta meta = (EnchantmentStorageMeta) cleanStack.getItemMeta();
+                            meta.addStoredEnchant(Enchantment.DAMAGE_UNDEAD, 1, true);
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
                     },
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
-                            LeatherArmorMeta meta = (LeatherArmorMeta) cleanStack.getItemMeta();
-                            meta.setColor(Color.ORANGE);
+                            EnchantmentStorageMeta meta = (EnchantmentStorageMeta) cleanStack.getItemMeta();
+                            meta.addStoredEnchant(Enchantment.DAMAGE_UNDEAD, 1, true);
+                            meta.addStoredEnchant(Enchantment.FIRE_ASPECT, 1, true);
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
                     },
-                    "Color vs Other"
+                    "Enchantable vs More"
+                },
+                new Object[] {
+                    new Operator() {
+                        public ItemStack operate(ItemStack cleanStack) {
+                            EnchantmentStorageMeta meta = (EnchantmentStorageMeta) cleanStack.getItemMeta();
+                            meta.addStoredEnchant(Enchantment.PROTECTION_FIRE, 1, true);
+                            cleanStack.setItemMeta(meta);
+                            return cleanStack;
+                        }
+                    },
+                    new Operator() {
+                        public ItemStack operate(ItemStack cleanStack) {
+                            EnchantmentStorageMeta meta = (EnchantmentStorageMeta) cleanStack.getItemMeta();
+                            meta.addEnchant(Enchantment.PROTECTION_FIRE, 2, true);
+                            cleanStack.setItemMeta(meta);
+                            return cleanStack;
+                        }
+                    },
+                    "Enchantable vs Other"
                 }
             )
         );

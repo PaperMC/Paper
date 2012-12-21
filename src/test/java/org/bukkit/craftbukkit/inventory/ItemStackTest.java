@@ -184,6 +184,7 @@ public class ItemStackTest extends AbstractTestingBase {
                 out.addAll(primarySingleton);
             }
 
+            @SuppressWarnings("unchecked")
             final List<Object[]>[] lists = new List[notSingletons.size() + 1];
             notSingletons.toArray(lists);
             lists[lists.length - 1] = out;

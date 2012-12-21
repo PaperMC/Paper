@@ -1,5 +1,9 @@
 package org.bukkit.craftbukkit.inventory;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -18,6 +22,7 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.craftbukkit.Overridden;
+import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey.Specific;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.Repairable;
@@ -50,7 +55,20 @@ import com.google.common.collect.ImmutableMap;
  */
 @DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
 class CraftMetaItem implements ItemMeta, Repairable {
+
     static class ItemMetaKey {
+
+        @Retention(RetentionPolicy.SOURCE)
+        @Target(ElementType.FIELD)
+        @interface Specific {
+            enum To {
+                BUKKIT,
+                NBT,
+                ;
+            }
+            To value();
+        }
+
         final String BUKKIT;
         final String NBT;
 
@@ -97,6 +115,24 @@ class CraftMetaItem implements ItemMeta, Repairable {
                 @Override
                 CraftMetaPotion deserialize(Map<String, Object> map) {
                     return new CraftMetaPotion(map);
+                }
+            },
+            ENCHANTED {
+                @Override
+                CraftMetaEnchantedBook deserialize(Map<String, Object> map) {
+                    return new CraftMetaEnchantedBook(map);
+                }
+            },
+            FIREWORK {
+                @Override
+                CraftMetaFirework deserialize(Map<String, Object> map) {
+                    return new CraftMetaFirework(map);
+                }
+            },
+            FIREWORK_EFFECT {
+                @Override
+                CraftMetaCharge deserialize(Map<String, Object> map) {
+                    return new CraftMetaCharge(map);
                 }
             },
             UNSPECIFIC {
@@ -155,10 +191,13 @@ class CraftMetaItem implements ItemMeta, Repairable {
     }
 
     static final ItemMetaKey NAME = new ItemMetaKey("Name", "display-name");
+    @Specific(Specific.To.NBT)
     static final ItemMetaKey DISPLAY = new ItemMetaKey("display");
     static final ItemMetaKey LORE = new ItemMetaKey("Lore", "lore");
     static final ItemMetaKey ENCHANTMENTS = new ItemMetaKey("ench", "enchants");
+    @Specific(Specific.To.NBT)
     static final ItemMetaKey ENCHANTMENTS_ID = new ItemMetaKey("id");
+    @Specific(Specific.To.NBT)
     static final ItemMetaKey ENCHANTMENTS_LVL = new ItemMetaKey("lvl");
     static final ItemMetaKey REPAIR = new ItemMetaKey("RepairCost", "repair-cost");
 
@@ -204,21 +243,29 @@ class CraftMetaItem implements ItemMeta, Repairable {
             }
         }
 
-        if (tag.hasKey(ENCHANTMENTS.NBT)) {
-            NBTTagList ench = tag.getList(ENCHANTMENTS.NBT);
-            enchantments = new HashMap<Enchantment, Integer>(ench.size());
-
-            for (int i = 0; i < ench.size(); i++) {
-                short id = ((NBTTagCompound) ench.get(i)).getShort(ENCHANTMENTS_ID.NBT);
-                short level = ((NBTTagCompound) ench.get(i)).getShort(ENCHANTMENTS_LVL.NBT);
-
-                addEnchant(Enchantment.getById(id), (int) level, true);
-            }
-        }
+        this.enchantments = buildEnchantments(tag, ENCHANTMENTS);
 
         if (tag.hasKey(REPAIR.NBT)) {
             repairCost = tag.getInt(REPAIR.NBT);
         }
+    }
+
+    static Map<Enchantment, Integer> buildEnchantments(NBTTagCompound tag, ItemMetaKey key) {
+        if (!tag.hasKey(key.NBT)) {
+            return null;
+        }
+
+        NBTTagList ench = tag.getList(key.NBT);
+        Map<Enchantment, Integer> enchantments = new HashMap<Enchantment, Integer>(ench.size());
+
+        for (int i = 0; i < ench.size(); i++) {
+            int id = 0xffff & ((NBTTagCompound) ench.get(i)).getShort(ENCHANTMENTS_ID.NBT);
+            int level = 0xffff & ((NBTTagCompound) ench.get(i)).getShort(ENCHANTMENTS_LVL.NBT);
+
+            enchantments.put(Enchantment.getById(id), level);
+        }
+
+        return enchantments;
     }
 
     CraftMetaItem(Map<String, Object> map) {
@@ -228,21 +275,29 @@ class CraftMetaItem implements ItemMeta, Repairable {
             lore = (List<String>) map.get(LORE.BUKKIT);
         }
 
-        Map<?, ?> ench = SerializableMeta.getObject(Map.class, map, ENCHANTMENTS.BUKKIT, true);
-        if (ench != null) {
-            enchantments = new HashMap<Enchantment, Integer>(ench.size());
-            for (Map.Entry<?, ?> entry : ench.entrySet()) {
-                Enchantment enchantment = Enchantment.getByName(entry.getKey().toString());
-
-                if ((enchantment != null) && (entry.getValue() instanceof Integer)) {
-                    addEnchant(enchantment, (Integer) entry.getValue(), true);
-                }
-            }
-        }
+        enchantments = buildEnchantments(map, ENCHANTMENTS);
 
         if (map.containsKey(REPAIR.BUKKIT)) {
             repairCost = (Integer) map.get(REPAIR.BUKKIT);
         }
+    }
+
+    static Map<Enchantment, Integer> buildEnchantments(Map<String, Object> map, ItemMetaKey key) {
+        Map<?, ?> ench = SerializableMeta.getObject(Map.class, map, key.BUKKIT, true);
+        if (ench == null) {
+            return null;
+        }
+
+        Map<Enchantment, Integer> enchantments = new HashMap<Enchantment, Integer>(ench.size());
+        for (Map.Entry<?, ?> entry : ench.entrySet()) {
+            Enchantment enchantment = Enchantment.getByName(entry.getKey().toString());
+
+            if ((enchantment != null) && (entry.getValue() instanceof Integer)) {
+                enchantments.put(enchantment, (Integer) entry.getValue());
+            }
+        }
+
+        return enchantments;
     }
 
     @Overridden
@@ -259,24 +314,30 @@ class CraftMetaItem implements ItemMeta, Repairable {
             setDisplayTag(itemTag, LORE.NBT, list);
         }
 
-        if (hasEnchants()) {
-            NBTTagList list = new NBTTagList(ENCHANTMENTS.NBT);
-
-            for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
-                NBTTagCompound subtag = new NBTTagCompound();
-
-                subtag.setShort(ENCHANTMENTS_ID.NBT, (short) entry.getKey().getId());
-                subtag.setShort(ENCHANTMENTS_LVL.NBT, (short) (int) entry.getValue());
-
-                list.add(subtag);
-            }
-
-            itemTag.set(ENCHANTMENTS.NBT, list);
-        }
+        applyEnchantments(enchantments, itemTag, ENCHANTMENTS);
 
         if (hasRepairCost()) {
             itemTag.setInt(REPAIR.NBT, repairCost);
         }
+    }
+
+    static void applyEnchantments(Map<Enchantment, Integer> enchantments, NBTTagCompound tag, ItemMetaKey key) {
+        if (enchantments == null || enchantments.size() == 0) {
+            return;
+        }
+
+        NBTTagList list = new NBTTagList(key.NBT);
+
+        for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
+            NBTTagCompound subtag = new NBTTagCompound();
+
+            subtag.setShort(ENCHANTMENTS_ID.NBT, (short) entry.getKey().getId());
+            subtag.setShort(ENCHANTMENTS_LVL.NBT, entry.getValue().shortValue());
+
+            list.add(subtag);
+        }
+
+        tag.set(key.NBT, list);
     }
 
     void setDisplayTag(NBTTagCompound tag, String key, NBTBase value) {
@@ -459,19 +520,26 @@ class CraftMetaItem implements ItemMeta, Repairable {
             builder.put(LORE.BUKKIT, ImmutableList.copyOf(lore));
         }
 
-        if (hasEnchants()) {
-            ImmutableMap.Builder<String, Integer> enchantments = ImmutableMap.builder();
-            for (Map.Entry<Enchantment, Integer> enchant : this.enchantments.entrySet()) {
-                enchantments.put(enchant.getKey().getName(), enchant.getValue());
-            }
-            builder.put(ENCHANTMENTS.BUKKIT, enchantments.build());
-        }
+        serializeEnchantments(enchantments, builder, ENCHANTMENTS);
 
         if (hasRepairCost()) {
             builder.put(REPAIR.BUKKIT, repairCost);
         }
 
         return builder;
+    }
+
+    static void serializeEnchantments(Map<Enchantment, Integer> enchantments, ImmutableMap.Builder<String, Object> builder, ItemMetaKey key) {
+        if (enchantments == null || enchantments.isEmpty()) {
+            return;
+        }
+
+        ImmutableMap.Builder<String, Integer> enchants = ImmutableMap.builder();
+        for (Map.Entry<? extends Enchantment, Integer> enchant : enchantments.entrySet()) {
+            enchants.put(enchant.getKey().getName(), enchant.getValue());
+        }
+
+        builder.put(key.BUKKIT, enchants.build());
     }
 
     @Overridden
@@ -505,6 +573,6 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
     @Override
     public final String toString() {
-        return serialize().toString(); // TODO: cry
+        return deserializer().toString() + "_META:" + serialize(); // TODO: cry
     }
 }

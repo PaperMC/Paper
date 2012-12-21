@@ -62,6 +62,12 @@ public final class CraftItemFactory implements ItemFactory {
             return meta instanceof CraftMetaPotion ? meta : new CraftMetaPotion(meta);
         case MAP:
             return meta instanceof CraftMetaMap ? meta : new CraftMetaMap(meta);
+        case FIREWORK:
+            return meta instanceof CraftMetaFirework ? meta : new CraftMetaFirework(meta);
+        case FIREWORK_CHARGE:
+            return meta instanceof CraftMetaCharge ? meta : new CraftMetaCharge(meta);
+        case ENCHANTED_BOOK:
+            return meta instanceof CraftMetaEnchantedBook ? meta : new CraftMetaEnchantedBook(meta);
         default:
             return new CraftMetaItem(meta);
         }

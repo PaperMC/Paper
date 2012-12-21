@@ -3,9 +3,12 @@ package org.bukkit.craftbukkit.inventory;
 import java.util.Arrays;
 import java.util.List;
 
+import org.bukkit.Color;
+import org.bukkit.FireworkEffect;
 import org.bukkit.Material;
+import org.bukkit.FireworkEffect.Type;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.BookMeta;
+import org.bukkit.inventory.meta.FireworkMeta;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -13,11 +16,11 @@ import org.junit.runners.Parameterized.Parameters;
 import com.google.common.base.Joiner;
 
 @RunWith(Parameterized.class)
-public class ItemStackBookTest extends ItemStackTest {
+public class ItemStackFireworkTest extends ItemStackTest {
 
     @Parameters(name="[{index}]:{" + NAME_PARAMETER + "}")
     public static List<Object[]> data() {
-        return StackProvider.compound(operators(), "%s %s", NAME_PARAMETER, Material.WRITTEN_BOOK, Material.BOOK_AND_QUILL);
+        return StackProvider.compound(operators(), "%s %s", NAME_PARAMETER, Material.FIREWORK);
     }
 
     @SuppressWarnings("unchecked")
@@ -25,141 +28,145 @@ public class ItemStackBookTest extends ItemStackTest {
         return CompoundOperator.compound(
             Joiner.on('+'),
             NAME_PARAMETER,
-            Long.parseLong("1110", 2),
+            Long.parseLong("110", 2),
             ItemStackLoreEnchantmentTest.operators(),
             Arrays.asList(
                 new Object[] {
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
-                            BookMeta meta = (BookMeta) cleanStack.getItemMeta();
-                            meta.addPage("Page 1", "Page 2");
+                            FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
+                            meta.addEffect(FireworkEffect.builder().withColor(Color.WHITE).build());
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
                     },
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
+                            FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
+                            meta.addEffect(FireworkEffect.builder().withColor(Color.BLACK).build());
+                            meta.addEffect(FireworkEffect.builder().withColor(Color.GREEN).build());
+                            cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
                     },
-                    "Pages vs. Null"
+                    "Effect Color 1 vs. Effect Color 2"
                 },
                 new Object[] {
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
-                            BookMeta meta = (BookMeta) cleanStack.getItemMeta();
-                            meta.addPage("Page 1", "Page 2");
+                            FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
+                            meta.addEffect(FireworkEffect.builder().withColor(Color.WHITE).with(Type.CREEPER).build());
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
                     },
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
-                            cleanStack.setItemMeta(cleanStack.getItemMeta());
+                            FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
+                            meta.addEffect(FireworkEffect.builder().withColor(Color.WHITE).with(Type.BURST).build());
+                            cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
                     },
-                    "Pages vs. blank"
+                    "Effect type 1 vs. Effect type 2"
                 },
                 new Object[] {
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
-                            BookMeta meta = (BookMeta) cleanStack.getItemMeta();
-                            meta.addPage("Page 1", "Page 2");
+                            FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
+                            meta.addEffect(FireworkEffect.builder().withColor(Color.WHITE).withFade(Color.BLUE).build());
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
                     },
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
-                            BookMeta meta = (BookMeta) cleanStack.getItemMeta();
-                            meta.addPage("Page 2", "Page 1");
+                            FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
+                            meta.addEffect(FireworkEffect.builder().withColor(Color.WHITE).withFade(Color.RED).build());
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
                     },
-                    "Pages switched"
+                    "Effect fade 1 vs. Effect fade 2"
                 },
                 new Object[] {
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
-                            BookMeta meta = (BookMeta) cleanStack.getItemMeta();
-                            meta.addPage("Page 1", "Page 2");
+                            FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
+                            meta.addEffect(FireworkEffect.builder().withColor(Color.WHITE).withFlicker().build());
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
                     },
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
-                            BookMeta meta = (BookMeta) cleanStack.getItemMeta();
-                            meta.addPage("Page 1");
+                            FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
                     },
-                    "Pages short"
+                    "Effect vs. Null"
+                },
+                new Object[] {
+                    new Operator() {
+                        public ItemStack operate(ItemStack cleanStack) {
+                            FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
+                            meta.addEffect(FireworkEffect.builder().withColor(Color.WHITE).withTrail().build());
+                            cleanStack.setItemMeta(meta);
+                            return cleanStack;
+                        }
+                    },
+                    new Operator() {
+                        public ItemStack operate(ItemStack cleanStack) {
+                            return cleanStack;
+                        }
+                    },
+                    "Effect vs. None"
                 }
             ),
             Arrays.asList(
                 new Object[] {
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
-                            BookMeta meta = (BookMeta) cleanStack.getItemMeta();
-                            meta.setAuthor("AnAuthor");
+                            FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
+                            meta.setPower(150);
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
                     },
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
+                            FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
+                            meta.setPower(100);
+                            cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
                     },
-                    "Author vs. Null"
+                    "Height vs. Other"
                 },
                 new Object[] {
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
-                            BookMeta meta = (BookMeta) cleanStack.getItemMeta();
-                            meta.setAuthor("AnAuthor");
+                            FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
+                            meta.setPower(200);
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
                     },
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
-                            cleanStack.setItemMeta(cleanStack.getItemMeta());
+                            FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
+                            cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
                     },
-                    "Author vs. blank"
+                    "Height vs. Null"
                 },
                 new Object[] {
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
-                            BookMeta meta = (BookMeta) cleanStack.getItemMeta();
-                            meta.setAuthor("AnAuthor");
-                            cleanStack.setItemMeta(meta);
-                            return cleanStack;
-                        }
-                    },
-                    new Operator() {
-                        public ItemStack operate(ItemStack cleanStack) {
-                            BookMeta meta = (BookMeta) cleanStack.getItemMeta();
-                            meta.setAuthor("AnotherAuthor");
-                            cleanStack.setItemMeta(meta);
-                            return cleanStack;
-                        }
-                    },
-                    "Authors"
-                }
-            ),
-            Arrays.asList(
-                new Object[] {
-                    new Operator() {
-                        public ItemStack operate(ItemStack cleanStack) {
-                            BookMeta meta = (BookMeta) cleanStack.getItemMeta();
-                            meta.setTitle("Some title");
+                            FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
+                            meta.setPower(10);
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
@@ -169,43 +176,7 @@ public class ItemStackBookTest extends ItemStackTest {
                             return cleanStack;
                         }
                     },
-                    "Title vs. Null"
-                },
-                new Object[] {
-                    new Operator() {
-                        public ItemStack operate(ItemStack cleanStack) {
-                            BookMeta meta = (BookMeta) cleanStack.getItemMeta();
-                            meta.setTitle("Some title");
-                            cleanStack.setItemMeta(meta);
-                            return cleanStack;
-                        }
-                    },
-                    new Operator() {
-                        public ItemStack operate(ItemStack cleanStack) {
-                            cleanStack.setItemMeta(cleanStack.getItemMeta());
-                            return cleanStack;
-                        }
-                    },
-                    "title vs. blank"
-                },
-                new Object[] {
-                    new Operator() {
-                        public ItemStack operate(ItemStack cleanStack) {
-                            BookMeta meta = (BookMeta) cleanStack.getItemMeta();
-                            meta.setTitle("Some title");
-                            cleanStack.setItemMeta(meta);
-                            return cleanStack;
-                        }
-                    },
-                    new Operator() {
-                        public ItemStack operate(ItemStack cleanStack) {
-                            BookMeta meta = (BookMeta) cleanStack.getItemMeta();
-                            meta.setTitle("Different title");
-                            cleanStack.setItemMeta(meta);
-                            return cleanStack;
-                        }
-                    },
-                    "Titles"
+                    "Height vs. None"
                 }
             )
         );
