@@ -195,7 +195,18 @@ public class EntityItem extends Entity {
         this.age = nbttagcompound.getShort("Age");
         NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("Item");
 
-        this.setItemStack(ItemStack.a(nbttagcompound1));
+        // CraftBukkit start
+        if (nbttagcompound1 != null) {
+            ItemStack itemstack = ItemStack.a(nbttagcompound1);
+            if (itemstack != null) {
+                this.setItemStack(itemstack);
+            } else {
+                this.die();
+            }
+        } else {
+            this.die();
+        }
+        // CraftBukkit end
         if (this.getItemStack() == null) {
             this.die();
         }
