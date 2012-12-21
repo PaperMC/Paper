@@ -255,6 +255,8 @@ public class CraftBlock implements Block {
             return new CraftJukebox(this);
         case BREWING_STAND:
             return new CraftBrewingStand(this);
+        case SKULL:
+            return new CraftSkull(this);
         default:
             return new CraftBlockState(this);
         }
