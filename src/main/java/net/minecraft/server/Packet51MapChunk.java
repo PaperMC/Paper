@@ -172,16 +172,6 @@ public class Packet51MapChunk extends Packet {
             }
         }
 
-        // CraftBukkit start - Hackiest hack to have ever hacked.
-        // First of all, check to see if we flagged it to send, and all data is "0"
-        // This means that it's an "EmptyChunk," HOWEVER... It's not a physical EmptyChunk on the server, there is simply no data present
-        if (flag && i == 0xffff && j == 0 && chunkmap.b == 0 && chunkmap.c == 0) {
-            chunkmap.b = 1;
-            j = 10240;
-            java.util.Arrays.fill(abyte, 0, j, (byte) 0);
-        }
-        // CraftBukkit end
-
         if (flag) {
             byte[] abyte2 = chunk.m();
 
