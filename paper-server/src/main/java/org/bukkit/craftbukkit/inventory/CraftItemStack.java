@@ -1,5 +1,9 @@
 package org.bukkit.craftbukkit.inventory;
 
+import static org.bukkit.craftbukkit.inventory.CraftMetaItem.ENCHANTMENTS;
+import static org.bukkit.craftbukkit.inventory.CraftMetaItem.ENCHANTMENTS_ID;
+import static org.bukkit.craftbukkit.inventory.CraftMetaItem.ENCHANTMENTS_LVL;
+
 import java.util.Map;
 
 import net.minecraft.server.EnchantmentManager;
@@ -7,10 +11,10 @@ import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.NBTTagList;
 
 import org.apache.commons.lang.Validate;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import com.google.common.collect.ImmutableMap;
@@ -162,24 +166,24 @@ public final class CraftItemStack extends ItemStack {
         if (!makeTag(handle)) {
             return;
         }
-        NBTTagList list = getEnchantmentList(handle), listCopy;
+        NBTTagList list = getEnchantmentList(handle);
         if (list == null) {
-            list = new NBTTagList("ench");
-            handle.tag.set("ench", list);
+            list = new NBTTagList(ENCHANTMENTS.NBT);
+            handle.tag.set(ENCHANTMENTS.NBT, list);
         }
         int size = list.size();
 
         for (int i = 0; i < size; i++) {
             NBTTagCompound tag = (NBTTagCompound) list.get(i);
-            short id = tag.getShort("id");
+            short id = tag.getShort(ENCHANTMENTS_ID.NBT);
             if (id == ench.getId()) {
-                tag.setShort("lvl", (short) level);
+                tag.setShort(ENCHANTMENTS_LVL.NBT, (short) level);
                 return;
             }
         }
         NBTTagCompound tag = new NBTTagCompound();
-        tag.setShort("id", (short) ench.getId());
-        tag.setShort("lvl", (short) level);
+        tag.setShort(ENCHANTMENTS_ID.NBT, (short) ench.getId());
+        tag.setShort(ENCHANTMENTS_LVL.NBT, (short) level);
         list.add(tag);
     }
 
@@ -219,7 +223,7 @@ public final class CraftItemStack extends ItemStack {
         int index = Integer.MIN_VALUE, size = list.size(), level;
 
         for (int i = 0; i < size; i++) {
-            short id = ((NBTTagCompound) list.get(i)).getShort("id");
+            short id = ((NBTTagCompound) list.get(i)).getShort(ENCHANTMENTS_ID.NBT);
             if (id == ench.getId()) {
                 index = i;
                 break;
@@ -230,22 +234,22 @@ public final class CraftItemStack extends ItemStack {
             return 0;
         }
         if (index == 0 && size == 0) {
-            handle.tag.o("ench");
+            handle.tag.o(ENCHANTMENTS.NBT);
             if (handle.tag.d()) {
                 handle.tag = null;
             }
         }
 
-        listCopy = new NBTTagList("ench");
+        listCopy = new NBTTagList(ENCHANTMENTS.NBT);
         level = Integer.MAX_VALUE;
         for (int i = 0; i < size; i++) {
             if (i == index) {
-                level = ((NBTTagCompound) list.get(i)).getShort("id");
+                level = ((NBTTagCompound) list.get(i)).getShort(ENCHANTMENTS_ID.NBT);
                 continue;
             }
             listCopy.add(list.get(i));
         }
-        handle.tag.set("ench", listCopy);
+        handle.tag.set(ENCHANTMENTS.NBT, listCopy);
         return level;
     }
 
@@ -263,10 +267,10 @@ public final class CraftItemStack extends ItemStack {
         }
 
         for (int i = 0; i < list.size(); i++) {
-            short id = ((NBTTagCompound) list.get(i)).getShort("id");
-            short level = ((NBTTagCompound) list.get(i)).getShort("lvl");
+            int id = 0xffff & ((NBTTagCompound) list.get(i)).getShort(ENCHANTMENTS_ID.NBT);
+            int level = 0xffff & ((NBTTagCompound) list.get(i)).getShort(ENCHANTMENTS_LVL.NBT);
 
-            result.put(Enchantment.getById(id), (int) level);
+            result.put(Enchantment.getById(id), level);
         }
 
         return result.build();
@@ -309,6 +313,12 @@ public final class CraftItemStack extends ItemStack {
                 return new CraftMetaPotion(item.tag);
             case MAP:
                 return new CraftMetaMap(item.tag);
+            case FIREWORK:
+                return new CraftMetaFirework(item.tag);
+            case FIREWORK_CHARGE:
+                return new CraftMetaCharge(item.tag);
+            case ENCHANTED_BOOK:
+                return new CraftMetaEnchantedBook(item.tag);
             default:
                 return new CraftMetaItem(item.tag);
         }
