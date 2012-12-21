@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.Color;
+import org.bukkit.FireworkEffect;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -31,6 +32,7 @@ public class ConfigurationSerialization {
         registerClass(ItemStack.class);
         registerClass(Color.class);
         registerClass(PotionEffect.class);
+        registerClass(FireworkEffect.class);
     }
 
     protected ConfigurationSerialization(Class<? extends ConfigurationSerializable> clazz) {
