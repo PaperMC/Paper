@@ -28,6 +28,11 @@ public class EntityItem extends Entity {
 
     public EntityItem(World world, double d0, double d1, double d2, ItemStack itemstack) {
         this(world, d0, d1, d2);
+        // CraftBukkit start - Can't set null items in the datawatcher
+        if (itemstack == null || itemstack.getItem() == null) {
+            return;
+        }
+        // CraftBukkit end
         this.setItemStack(itemstack);
     }
 
