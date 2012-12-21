@@ -103,7 +103,7 @@ public class PropertyManager {
             return this.getOverride(s, Integer.parseInt(this.getString(s, "" + i))); // CraftBukkit
         } catch (Exception exception) {
             this.properties.setProperty(s, "" + i);
-            return i;
+            return this.getOverride(s, i); // CraftBukkit
         }
     }
 
@@ -112,7 +112,7 @@ public class PropertyManager {
             return this.getOverride(s, Boolean.parseBoolean(this.getString(s, "" + flag))); // CraftBukkit
         } catch (Exception exception) {
             this.properties.setProperty(s, "" + flag);
-            return flag;
+            return this.getOverride(s, flag); // CraftBukkit
         }
     }
 
