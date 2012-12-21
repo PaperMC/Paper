@@ -170,16 +170,33 @@ public class ContainerEnchantTable extends Container {
                         return false;
                     }
 
-                    // TODO: Apply Diffs
-                    entityhuman.levelDown(-level);
+                    boolean applied = !flag;
                     for (Map.Entry<org.bukkit.enchantments.Enchantment, Integer> entry : event.getEnchantsToAdd().entrySet()) {
                         try {
-                            item.addEnchantment(entry.getKey(), entry.getValue());
+                            if (flag) {
+                                int enchantId = entry.getKey().getId();
+                                if (Enchantment.byId[enchantId] == null) {
+                                    continue;
+                                }
+
+                                EnchantmentInstance enchantment = new EnchantmentInstance(enchantId, entry.getValue());
+                                Item.ENCHANTED_BOOK.a(itemstack, enchantment);
+                                applied = true;
+                                itemstack.id = Item.ENCHANTED_BOOK.id;
+                                break;
+                            } else {
+                                item.addEnchantment(entry.getKey(), entry.getValue());
+                            }
                         } catch (IllegalArgumentException e) {
                             /* Just swallow invalid enchantments */
                         }
-                        // CraftBukkit end
                     }
+
+                    // Only down level if we've applied the enchantments
+                    if (applied) {
+                        entityhuman.levelDown(-level);
+                    }
+                    // CraftBukkit end
 
                     this.a(this.enchantSlots);
                 }
