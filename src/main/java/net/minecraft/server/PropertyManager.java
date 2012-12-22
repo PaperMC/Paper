@@ -70,7 +70,7 @@ public class PropertyManager {
 
         try {
             // CraftBukkit start - Don't attempt writing to file if it's read only
-            if (!this.c.canWrite()) {
+            if (this.c.exists() && !this.c.canWrite()) {
                 return;
             }
             // CraftBukkit end
