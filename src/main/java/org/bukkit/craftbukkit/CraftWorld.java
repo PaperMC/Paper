@@ -991,6 +991,8 @@ public class CraftWorld implements World {
             // this is not a fish, it's a bobber, and it's probably useless
             entity = new EntityFishingHook(world);
             entity.setLocation(x, y, z, pitch, yaw);
+        } else if (Firework.class.isAssignableFrom(clazz)) {
+            entity = new EntityFireworks(world, x, y, z, null);
         }
 
         if (entity != null) {
