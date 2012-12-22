@@ -385,7 +385,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
     }
 
     public void setPower(int power) {
-        Validate.isTrue(power > 0, "Power cannot be less than zero: ", power);
+        Validate.isTrue(power >= 0, "Power cannot be less than zero: ", power);
         Validate.isTrue(power < 0x80, "Power cannot be more than 127: ", power);
         this.power = power;
     }
