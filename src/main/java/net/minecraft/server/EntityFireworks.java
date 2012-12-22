@@ -3,7 +3,7 @@ package net.minecraft.server;
 public class EntityFireworks extends Entity {
 
     private int a;
-    private int b;
+    public int b; // CraftBukkit - private -> public
 
     public EntityFireworks(World world) {
         super(world);
