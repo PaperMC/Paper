@@ -26,6 +26,7 @@ public class BlockJukeBox extends BlockContainer {
 
             if (tileentityrecordplayer != null) {
                 tileentityrecordplayer.record = itemstack.cloneItemStack();
+                tileentityrecordplayer.record.count = 1; // CraftBukkit - There can be only one
                 tileentityrecordplayer.update();
                 world.setData(i, j, k, 1);
             }
