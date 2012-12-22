@@ -37,6 +37,7 @@ import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.event.player.PlayerToggleSprintEvent;
 import org.bukkit.event.inventory.*;
@@ -1126,26 +1127,7 @@ public class PlayerConnection extends Connection {
     public void a(Packet205ClientCommand packet205clientcommand) {
         if (packet205clientcommand.a == 1) {
             if (this.player.viewingCredits) {
-                // CraftBukkit start
-                org.bukkit.craftbukkit.PortalTravelAgent pta = new org.bukkit.craftbukkit.PortalTravelAgent();
-                Location toLocation;
-
-                if (this.player.getBukkitEntity().getBedSpawnLocation() == null) {
-                    CraftWorld cworld = (CraftWorld) this.server.getWorlds().get(0);
-                    ChunkCoordinates chunkcoordinates = cworld.getHandle().getSpawn();
-                    toLocation = new Location(cworld, chunkcoordinates.x + 0.5, chunkcoordinates.y, chunkcoordinates.z + 0.5);
-                    this.player.playerConnection.sendPacket(new Packet70Bed(0, 0));
-                } else {
-                    toLocation = this.player.getBukkitEntity().getBedSpawnLocation();
-                    toLocation = new Location(toLocation.getWorld(), toLocation.getX() + 0.5, toLocation.getY(), toLocation.getZ() + 0.5);
-                }
-
-                PlayerPortalEvent event = new PlayerPortalEvent(this.player.getBukkitEntity(), this.player.getBukkitEntity().getLocation(), toLocation, pta, PlayerPortalEvent.TeleportCause.END_PORTAL);
-                event.useTravelAgent(false);
-
-                Bukkit.getServer().getPluginManager().callEvent(event);
-                this.player = this.minecraftServer.getPlayerList().moveToWorld(this.player, 0, true, event.getTo());
-                // CraftBukkit end
+                this.minecraftServer.getPlayerList().changeDimension(this.player, 0, TeleportCause.END_PORTAL); // CraftBukkit - reroute logic through custom portal management
             } else if (this.player.p().getWorldData().isHardcore()) {
                 if (this.minecraftServer.I() && this.player.name.equals(this.minecraftServer.H())) {
                     this.player.playerConnection.disconnect("You have died. Game over, man, it\'s game over!");

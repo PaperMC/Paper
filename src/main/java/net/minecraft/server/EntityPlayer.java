@@ -15,6 +15,7 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 // CraftBukkit end
 
 public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -321,21 +322,27 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             this.viewingCredits = true;
             this.playerConnection.sendPacket(new Packet70Bed(4, 0));
         } else {
-            this.a((Statistic) AchievementList.B);
-            /* CraftBukkit start - removed to fix our handling of The End portals
-            ChunkCoordinates chunkcoordinates = this.server.getWorldServer(i).getDimensionSpawn();
+            if (this.dimension == 1 && i == 0) {
+                this.a((Statistic) AchievementList.B);
+                // CraftBukkit start - rely on custom portal management
+                /*
+                ChunkCoordinates chunkcoordinates = this.server.getWorldServer(i).getDimensionSpawn();
 
                 if (chunkcoordinates != null) {
                     this.netServerHandler.a((double) chunkcoordinates.x, (double) chunkcoordinates.y, (double) chunkcoordinates.z, 0.0F, 0.0F);
                 }
 
                 i = 1;
+                */
+                // CraftBukkit end
             } else {
                 this.a((Statistic) AchievementList.x);
             }
-            // CraftBukkit end */
 
-            this.server.getPlayerList().changeDimension(this, i);
+            // CraftBukkit start
+            TeleportCause cause = (this.dimension == 1 || i == 1) ? TeleportCause.END_PORTAL : TeleportCause.NETHER_PORTAL;
+            this.server.getPlayerList().changeDimension(this, i, cause);
+            // CraftBukkit end
             this.lastSentExp = -1;
             this.cl = -1;
             this.cm = -1;

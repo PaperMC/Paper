@@ -59,7 +59,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
             this.M = new TreeSet();
         }
 
-        this.P = new PortalTravelAgent(this);
+        this.P = new org.bukkit.craftbukkit.CraftTravelAgent(this); // CraftBukkit
     }
 
     // CraftBukkit start

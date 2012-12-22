@@ -6,13 +6,9 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
-/*
- * HEAR ME, HE WHOM WISHES TO COMMAND THE UPDATERING
- *
- * FOR SOME REASON WE HAVE OUR OWN PORTAL TRAVEL AGENT IN OBC, WE NEED TO UPDATE
- * THAT WITH ANY NEW UPDATES TO THIS FILE. THIS FILE LEFT HERE AS A REMINDER.
- *
- */
+import org.bukkit.Location;
+import org.bukkit.event.entity.EntityPortalExitEvent;
+import org.bukkit.util.Vector;
 // CraftBukkit end
 
 public class PortalTravelAgent {
@@ -34,9 +30,19 @@ public class PortalTravelAgent {
                 this.b(entity, d0, d1, d2, f);
             }
         } else {
-            int i = MathHelper.floor(entity.locX);
-            int j = MathHelper.floor(entity.locY) - 1;
-            int k = MathHelper.floor(entity.locZ);
+            // CraftBukkit start - modularize end portal creation
+            ChunkCoordinates created = this.createEndPortal(d0, d1, d2);
+            entity.setPositionRotation((double) created.x, (double) created.y, (double) created.z, entity.yaw, 0.0F);
+            entity.motX = entity.motY = entity.motZ = 0.0D;
+        }
+    }
+
+    // split out from original a(Entity, double, double, double, float) method in order to enable being called from createPortal
+    private ChunkCoordinates createEndPortal(double x, double y, double z) {
+            int i = MathHelper.floor(x);
+            int j = MathHelper.floor(y) - 1;
+            int k = MathHelper.floor(z);
+            // CraftBukkit end
             byte b0 = 1;
             byte b1 = 0;
 
@@ -53,19 +59,66 @@ public class PortalTravelAgent {
                 }
             }
 
-            entity.setPositionRotation((double) i, (double) j, (double) k, entity.yaw, 0.0F);
-            entity.motX = entity.motY = entity.motZ = 0.0D;
-        }
+        // CraftBukkit start
+        return new ChunkCoordinates(i, j, k);
     }
 
+    // use logic based on creation to verify end portal
+    private ChunkCoordinates findEndPortal(ChunkCoordinates portal) {
+        int i = portal.x;
+        int j = portal.y - 1;
+        int k = portal.z;
+        byte b0 = 1;
+        byte b1 = 0;
+
+        for (int l = -2; l <= 2; ++l) {
+            for (int i1 = -2; i1 <= 2; ++i1) {
+                for (int j1 = -1; j1 < 3; ++j1) {
+                    int k1 = i + i1 * b0 + l * b1;
+                    int l1 = j + j1;
+                    int i2 = k + i1 * b1 - l * b0;
+                    boolean flag = j1 < 0;
+
+                    if (this.a.getTypeId(k1, l1, i2) != (flag ? Block.OBSIDIAN.id : 0)) {
+                        return null;
+                    }
+                }
+            }
+        }
+        return new ChunkCoordinates(i, j, k);
+    }
+    // CraftBukkit end
+
     public boolean b(Entity entity, double d0, double d1, double d2, float f) {
-        short short1 = 128;
+        // CraftBukkit start - modularize portal search process and entity teleportation
+        ChunkCoordinates found = this.findPortal(entity.locX, entity.locY, entity.locZ, 128);
+        if (found == null) {
+            return false;
+        }
+
+        Location exit = new Location(this.a.getWorld(), found.x, found.y, found.z, f, entity.pitch);
+        Vector velocity = entity.getBukkitEntity().getVelocity();
+        this.adjustExit(entity, exit, velocity);
+        entity.setPositionRotation(exit.getX(), exit.getY(), exit.getZ(), exit.getYaw(), exit.getPitch());
+        if (entity.motX != velocity.getX() || entity.motY != velocity.getY() || entity.motZ != velocity.getZ()) {
+            entity.getBukkitEntity().setVelocity(velocity);
+        }
+        return true;
+    }
+
+    public ChunkCoordinates findPortal(double x, double y, double z, int short1) {
+        if (this.a.getWorld().getEnvironment() == org.bukkit.World.Environment.THE_END) {
+            return this.findEndPortal(this.a.worldProvider.h());
+        }
+        // CraftBukkit end
         double d3 = -1.0D;
         int i = 0;
         int j = 0;
         int k = 0;
-        int l = MathHelper.floor(entity.locX);
-        int i1 = MathHelper.floor(entity.locZ);
+        // CraftBukkit start
+        int l = MathHelper.floor(x);
+        int i1 = MathHelper.floor(z);
+        // CraftBukkit end
         long j1 = ChunkCoordIntPair.a(l, i1);
         boolean flag = true;
         double d4;
@@ -82,10 +135,10 @@ public class PortalTravelAgent {
             flag = false;
         } else {
             for (k1 = l - short1; k1 <= l + short1; ++k1) {
-                double d5 = (double) k1 + 0.5D - entity.locX;
+                double d5 = (double) k1 + 0.5D - x; // CraftBukkit
 
                 for (int l1 = i1 - short1; l1 <= i1 + short1; ++l1) {
-                    double d6 = (double) l1 + 0.5D - entity.locZ;
+                    double d6 = (double) l1 + 0.5D - z; // CraftBukkit
 
                     for (int i2 = this.a.P() - 1; i2 >= 0; --i2) {
                         if (this.a.getTypeId(k1, i2, l1) == Block.PORTAL.id) {
@@ -93,7 +146,7 @@ public class PortalTravelAgent {
                                 --i2;
                             }
 
-                            d4 = (double) i2 + 0.5D - entity.locY;
+                            d4 = (double) i2 + 0.5D - y; // CraftBukkit
                             double d7 = d5 * d5 + d4 * d4 + d6 * d6;
 
                             if (d3 < 0.0D || d7 < d3) {
@@ -113,6 +166,32 @@ public class PortalTravelAgent {
                 this.c.put(j1, new ChunkCoordinatesPortal(this, i, j, k, this.a.getTime()));
                 this.d.add(Long.valueOf(j1));
             }
+            // CraftBukkit start - moved entity teleportation logic into exit
+            return new ChunkCoordinates(i, j, k);
+        } else {
+            return null;
+        }
+    }
+    // entity repositioning logic split out from original b method and combined with repositioning logic for The End from original a method
+    public void adjustExit(Entity entity, Location position, Vector velocity) {
+        Location from = position.clone();
+        Vector before = velocity.clone();
+        int i = position.getBlockX();
+        int j = position.getBlockY();
+        int k = position.getBlockZ();
+        float f = position.getYaw();
+
+        if (this.a.getWorld().getEnvironment() == org.bukkit.World.Environment.THE_END) {
+            // entity.setPositionRotation((double) i, (double) j, (double) k, entity.yaw, 0.0F);
+            // entity.motX = entity.motY = entity.motZ = 0.0D;
+            position.setPitch(0.0F);
+            position.setX(0);
+            position.setY(0);
+            position.setZ(0);
+        } else {
+            double d4;
+            int k1;
+            // CraftBukkit end
 
             double d8 = (double) i + 0.5D;
             double d9 = (double) j + 0.5D;
@@ -195,29 +274,59 @@ public class PortalTravelAgent {
                     f6 = 1.0F;
                 }
 
-                double d10 = entity.motX;
-                double d11 = entity.motZ;
+                // CraftBukkit start
+                double d10 = velocity.getX();
+                double d11 = velocity.getZ();
+                // CraftBukkit end
 
-                entity.motX = d10 * (double) f3 + d11 * (double) f6;
-                entity.motZ = d10 * (double) f5 + d11 * (double) f4;
-                entity.yaw = f - (float) (k2 * 90) + (float) (j2 * 90);
+                // CraftBukkit start - adjust position and velocity instances instead of entity
+                velocity.setX(d10 * (double) f3 + d11 * (double) f6);
+                velocity.setZ(d10 * (double) f5 + d11 * (double) f4);
+                f = f - (float) (k2 * 90) + (float) (j2 * 90);
             } else {
-                entity.motX = entity.motY = entity.motZ = 0.0D;
+                // entity.motX = entity.motY = entity.motZ = 0.0D;
+                velocity.setX(0);
+                velocity.setY(0);
+                velocity.setZ(0);
             }
 
-            entity.setPositionRotation(d8, d9, d4, entity.yaw, entity.pitch);
-            return true;
-        } else {
-            return false;
+            // entity.setPositionRotation(d8, d9, d4, entity.yaw, entity.pitch);
+            position.setX(d8);
+            position.setY(d9);
+            position.setZ(d4);
+            position.setYaw(f);
         }
+
+        EntityPortalExitEvent event = new EntityPortalExitEvent(entity.getBukkitEntity(), from, position, before, velocity);
+        this.a.getServer().getPluginManager().callEvent(event);
+        Location to = event.getTo();
+        if (event.isCancelled() || to == null || !entity.isAlive()) {
+            position = from;
+            velocity = before;
+        } else {
+            position = to;
+            velocity = event.getAfter();
+        }
+        // CraftBukkit end
     }
 
     public boolean a(Entity entity) {
-        byte b0 = 16;
+        // CraftBukkit start - allow for portal creation to be based on coordinates instead of entity
+        return this.createPortal(entity.locX, entity.locY, entity.locZ, 16);
+    }
+
+    public boolean createPortal(double x, double y, double z, int b0) {
+        if (this.a.getWorld().getEnvironment() == org.bukkit.World.Environment.THE_END) {
+            this.createEndPortal(x, y, z);
+            return true;
+        }
+        // CraftBukkit end
         double d0 = -1.0D;
-        int i = MathHelper.floor(entity.locX);
-        int j = MathHelper.floor(entity.locY);
-        int k = MathHelper.floor(entity.locZ);
+        // CraftBukkit start
+        int i = MathHelper.floor(x);
+        int j = MathHelper.floor(y);
+        int k = MathHelper.floor(z);
+        // CraftBukkit end
         int l = i;
         int i1 = j;
         int j1 = k;
@@ -241,10 +350,10 @@ public class PortalTravelAgent {
         double d4;
 
         for (i2 = i - b0; i2 <= i + b0; ++i2) {
-            d1 = (double) i2 + 0.5D - entity.locX;
+            d1 = (double) i2 + 0.5D - x; // CraftBukkit
 
             for (j2 = k - b0; j2 <= k + b0; ++j2) {
-                d2 = (double) j2 + 0.5D - entity.locZ;
+                d2 = (double) j2 + 0.5D - z; // CraftBukkit
 
                 label274:
                 for (k2 = this.a.P() - 1; k2 >= 0; --k2) {
@@ -275,7 +384,7 @@ public class PortalTravelAgent {
                                 }
                             }
 
-                            d3 = (double) k2 + 0.5D - entity.locY;
+                            d3 = (double) k2 + 0.5D - y; // CraftBukkit
                             d4 = d1 * d1 + d3 * d3 + d2 * d2;
                             if (d0 < 0.0D || d4 < d0) {
                                 d0 = d4;
@@ -292,10 +401,10 @@ public class PortalTravelAgent {
 
         if (d0 < 0.0D) {
             for (i2 = i - b0; i2 <= i + b0; ++i2) {
-                d1 = (double) i2 + 0.5D - entity.locX;
+                d1 = (double) i2 + 0.5D - x; // CraftBukkit
 
                 for (j2 = k - b0; j2 <= k + b0; ++j2) {
-                    d2 = (double) j2 + 0.5D - entity.locZ;
+                    d2 = (double) j2 + 0.5D - z; // CraftBukkit
 
                     label222:
                     for (k2 = this.a.P() - 1; k2 >= 0; --k2) {
@@ -319,7 +428,7 @@ public class PortalTravelAgent {
                                     }
                                 }
 
-                                d3 = (double) k2 + 0.5D - entity.locY;
+                                d3 = (double) k2 + 0.5D - y; // CraftBukkit
                                 d4 = d1 * d1 + d3 * d3 + d2 * d2;
                                 if (d0 < 0.0D || d4 < d0) {
                                     d0 = d4;

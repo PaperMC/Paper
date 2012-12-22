@@ -4,8 +4,8 @@ import java.util.Iterator;
 import java.util.List;
 
 // CraftBukkit start
+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.entity.CraftItem;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityCombustByEntityEvent;
 import org.bukkit.event.player.PlayerBedEnterEvent;
@@ -37,8 +37,9 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
     public boolean fauxSleeping;
     public String spawnWorld = "";
 
-    public HumanEntity getBukkitEntity() {
-        return (HumanEntity) super.getBukkitEntity();
+    @Override
+    public CraftHumanEntity getBukkitEntity() {
+        return (CraftHumanEntity) super.getBukkitEntity();
     }
     // CraftBukkit end
 
