@@ -37,10 +37,6 @@ public class TellCommand extends VanillaCommand {
 
             String result = ChatColor.GRAY + sender.getName() + " whispers " + message;
 
-            if (sender instanceof ConsoleCommandSender) {
-                Bukkit.getLogger().info("[" + sender.getName() + "->" + player.getName() + "] " + message);
-            }
-
             sender.sendMessage("[" + sender.getName() + "->" + player.getName() + "] " + message);
             player.sendMessage(result);
         }
