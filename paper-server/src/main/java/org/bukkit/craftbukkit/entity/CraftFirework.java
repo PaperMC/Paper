@@ -16,6 +16,7 @@ import java.util.Random;
 public class CraftFirework extends CraftEntity implements Firework {
     private static final int FIREWORK_ITEM_INDEX = 8;
 
+    private final Random random = new Random();
     private final CraftItemStack item;
 
     public CraftFirework(CraftServer server, EntityFireworks entity) {
@@ -58,8 +59,7 @@ public class CraftFirework extends CraftEntity implements Firework {
         item.setItemMeta(meta);
 
         // Copied from EntityFireworks constructor, update firework lifetime/power
-        Random random = new Random();
-        getHandle().b = 10 * meta.getPower() + random.nextInt(6) + random.nextInt(7);
+        getHandle().b = 10 * (1 + meta.getPower()) + random.nextInt(6) + random.nextInt(7);
 
         getHandle().getDataWatcher().h(FIREWORK_ITEM_INDEX); // Update
     }
