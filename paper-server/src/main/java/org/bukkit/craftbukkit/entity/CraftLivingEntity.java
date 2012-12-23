@@ -59,7 +59,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public int getHealth() {
-        return getHandle().getHealth();
+        return Math.min(Math.max(0, getHandle().getHealth()), getMaxHealth());
     }
 
     public void setHealth(int health) {
