@@ -82,7 +82,7 @@ public class EntityEnderDragon extends EntityLiving implements IComplex {
         float f1;
 
         if (!this.world.isStatic) {
-            this.datawatcher.watch(16, Integer.valueOf(this.health));
+            this.datawatcher.watch(16, Integer.valueOf(this.getScaledHealth())); // CraftBukkit - this.health -> this.getScaledHealth()
         } else {
             f = MathHelper.cos(this.bN * 3.1415927F * 2.0F);
             f1 = MathHelper.cos(this.bM * 3.1415927F * 2.0F);
@@ -307,7 +307,7 @@ public class EntityEnderDragon extends EntityLiving implements IComplex {
                 }
 
                 this.bR = null;
-            } else if (this.ticksLived % 10 == 0 && this.health < this.getMaxHealth()) {
+            } else if (this.ticksLived % 10 == 0 && this.health < this.maxHealth) { // CraftBukkit - this.getMaxHealth() -> this.maxHealth
                 // CraftBukkit start
                 EntityRegainHealthEvent event = new EntityRegainHealthEvent(this.getBukkitEntity(), 1, EntityRegainHealthEvent.RegainReason.ENDER_CRYSTAL);
                 this.world.getServer().getPluginManager().callEvent(event);

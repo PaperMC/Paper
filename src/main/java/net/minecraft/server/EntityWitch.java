@@ -81,7 +81,7 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
 
                 if (this.random.nextFloat() < 0.15F && this.isBurning() && !this.hasEffect(MobEffectList.FIRE_RESISTANCE)) {
                     short1 = 16307;
-                } else if (this.random.nextFloat() < 0.05F && this.health < this.getMaxHealth()) {
+                } else if (this.random.nextFloat() < 0.05F && this.health < this.maxHealth) { // CraftBukkit - this.getMaxHealth -> this.maxHealth
                     short1 = 16341;
                 } else if (this.random.nextFloat() < 0.25F && this.aG() != null && !this.hasEffect(MobEffectList.FASTER_MOVEMENT) && this.aG().e(this) > 121.0D) {
                     short1 = 16274;

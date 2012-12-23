@@ -70,7 +70,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
 
     public void c() {
         if (!this.world.isStatic) {
-            this.datawatcher.watch(16, Integer.valueOf(this.health));
+            this.datawatcher.watch(16, Integer.valueOf(this.getScaledHealth())); // CraftBukkit - this.health -> this.getScaledHealth()
         }
 
         this.motY *= 0.6000000238418579D;
@@ -458,7 +458,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
     }
 
     public boolean o() {
-        return this.b() <= this.getMaxHealth() / 2;
+        return this.b() <= this.maxHealth / 2; // CraftBukkit - this.getMaxHealth() -> this.maxHealth
     }
 
     public EnumMonsterType getMonsterType() {

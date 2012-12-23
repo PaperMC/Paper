@@ -205,7 +205,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
 
         if (this.getHealth() != this.cl || this.cm != this.foodData.a() || this.foodData.e() == 0.0F != this.cn) {
-            this.playerConnection.sendPacket(new Packet8UpdateHealth(this.getHealth(), this.foodData.a(), this.foodData.e()));
+            // CraftBukkit - this.getHealth() -> this.getScaledHealth()
+            this.playerConnection.sendPacket(new Packet8UpdateHealth(this.getScaledHealth(), this.foodData.a(), this.foodData.e()));
             this.cl = this.getHealth();
             this.cm = this.foodData.a();
             this.cn = this.foodData.e() == 0.0F;
@@ -773,7 +774,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             this.newLevel = this.expLevel;
         }
 
-        this.health = 20;
+        this.health = this.maxHealth;
         this.fireTicks = 0;
         this.fallDistance = 0;
         this.foodData = new FoodMetaData();

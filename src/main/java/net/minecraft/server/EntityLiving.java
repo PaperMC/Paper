@@ -106,8 +106,11 @@ public abstract class EntityLiving extends Entity {
     private int bV = 0;
     private Entity bW;
     protected int bI = 0;
-    public int expToDrop = 0; // CraftBukkit
-    public int maxAirTicks = 300; // CraftBukkit
+    // CraftBukkit start
+    public int expToDrop = 0;
+    public int maxAirTicks = 300;
+    public int maxHealth = this.getMaxHealth();
+    // CraftBukkit end
 
     public EntityLiving(World world) {
         super(world);
@@ -418,6 +421,14 @@ public abstract class EntityLiving extends Entity {
             return 0;
         }
     }
+
+    public int getScaledHealth() {
+        if (this.maxHealth != this.getMaxHealth() && this.getHealth() > 0) {
+            return this.getHealth() * this.getMaxHealth() / this.maxHealth + 1;
+        } else {
+            return this.getHealth();
+        }
+    }
     // CraftBukkit end
 
     protected void aP() {
@@ -626,10 +637,11 @@ public abstract class EntityLiving extends Entity {
             if (!event.isCancelled()) {
                 this.health += event.getAmount();
             }
-            // CraftBukkit end
 
-            if (this.health > this.getMaxHealth()) {
-                this.health = this.getMaxHealth();
+            // this.getMaxHealth() -> this.maxHealth
+            if (this.health > this.maxHealth) {
+                this.health = this.maxHealth;
+                // CraftBukkit end
             }
 
             this.noDamageTicks = this.maxNoDamageTicks / 2;
@@ -1138,12 +1150,19 @@ public abstract class EntityLiving extends Entity {
         }
 
         nbttagcompound.set("DropChances", nbttaglist1);
+        nbttagcompound.setInt("Bukkit.MaxHealth", this.maxHealth); // CraftBukkit
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         this.health = nbttagcompound.getShort("Health");
+        // CraftBukkit start
+        if (nbttagcompound.hasKey("Bukkit.MaxHealth")) {
+            this.maxHealth = nbttagcompound.getInt("Bukkit.MaxHealth");
+        }
+
         if (!nbttagcompound.hasKey("Health")) {
-            this.health = this.getMaxHealth();
+            this.health = this.maxHealth; // this.getMaxHealth() -> this.maxHealth
+            // CraftBukkit
         }
 
         this.hurtTicks = nbttagcompound.getShort("HurtTime");
@@ -1811,7 +1830,7 @@ public abstract class EntityLiving extends Entity {
         if (this.aG() == null) {
             return 3;
         } else {
-            int i = (int) ((float) this.health - (float) this.getMaxHealth() * 0.33F);
+            int i = (int) ((float) this.health - (float) this.maxHealth * 0.33F); // this.getMaxHealth() -> this.maxHealth
 
             i -= (3 - this.world.difficulty) * 4;
             if (i < 0) {

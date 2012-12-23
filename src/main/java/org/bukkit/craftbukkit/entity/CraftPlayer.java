@@ -941,4 +941,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             }
         }
     }
+
+    public void setMaxHealth(int amount) {
+        super.setMaxHealth(amount);
+        getHandle().m(); // Update health
+    }
+
+    public void resetMaxHealth() {
+        super.resetMaxHealth();
+        getHandle().m(); // Update health
+    }
 }
