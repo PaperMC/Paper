@@ -75,7 +75,21 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public int getMaxHealth() {
-        return getHandle().getMaxHealth();
+        return getHandle().maxHealth;
+    }
+
+    public void setMaxHealth(int amount) {
+        Validate.isTrue(amount > 0, "Max health must be greater than 0");
+
+        getHandle().maxHealth = amount;
+
+        if (getHealth() > amount) {
+            setHealth(amount);
+        }
+    }
+
+    public void resetMaxHealth() {
+        setMaxHealth(getHandle().getMaxHealth());
     }
 
     @Deprecated
