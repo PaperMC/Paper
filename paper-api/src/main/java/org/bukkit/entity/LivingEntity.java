@@ -13,30 +13,7 @@ import org.bukkit.potion.PotionEffectType;
 /**
  * Represents a living entity, such as a monster or player
  */
-public interface LivingEntity extends Entity {
-
-    /**
-     * Gets the entity's health from 0 to {@link #getMaxHealth()}, where 0 is dead
-     *
-     * @return Health represented from 0 to max
-     */
-    public int getHealth();
-
-    /**
-     * Sets the entity's health from 0 to {@link #getMaxHealth()}, where 0 is dead
-     *
-     * @param health New health represented from 0 to max
-     * @throws IllegalArgumentException Thrown if the health is < 0 or > max
-     */
-    public void setHealth(int health);
-
-    /**
-     * Gets the maximum health this entity may have
-     *
-     * @return Maximum health
-     */
-    public int getMaxHealth();
-
+public interface LivingEntity extends Entity, Damageable {
     /**
      * Gets the height of the entity's head above its Location
      *
@@ -151,21 +128,6 @@ public interface LivingEntity extends Entity {
      * @param ticks Maximum amount of air
      */
     public void setMaximumAir(int ticks);
-
-    /**
-     * Deals the given amount of damage to this entity
-     *
-     * @param amount Amount of damage to deal
-     */
-    public void damage(int amount);
-
-    /**
-     * Deals the given amount of damage to this entity, from a specified entity
-     *
-     * @param amount Amount of damage to deal
-     * @param source Entity which to attribute this damage from
-     */
-    public void damage(int amount, Entity source);
 
     /**
      * Returns the entities current maximum noDamageTicks
