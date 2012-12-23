@@ -100,6 +100,9 @@ class CraftAsyncTask extends CraftTask {
         synchronized (workers) {
             // Synchronizing here prevents race condition for a completing task
             setPeriod(-2l);
+            if (workers.isEmpty()) {
+                runners.remove(getTaskId());
+            }
         }
         return true;
     }
