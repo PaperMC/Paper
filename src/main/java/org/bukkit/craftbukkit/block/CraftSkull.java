@@ -148,7 +148,7 @@ public class CraftSkull extends CraftBlockState implements Skull {
     }
 
     public boolean setOwner(String name) {
-        if (name != null && name.length() > MAX_OWNER_LENGTH) {
+        if (name == null || name.length() > MAX_OWNER_LENGTH) {
             return false;
         }
         player = name;
@@ -176,7 +176,7 @@ public class CraftSkull extends CraftBlockState implements Skull {
         this.skullType = skullType;
 
         if (skullType != SkullType.PLAYER) {
-            player = null;
+            player = "";
         }
     }
 
