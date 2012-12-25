@@ -199,7 +199,8 @@ public abstract class EntityFireball extends Entity {
         nbttagcompound.setShort("zTile", (short) this.g);
         nbttagcompound.setByte("inTile", (byte) this.h);
         nbttagcompound.setByte("inGround", (byte) (this.i ? 1 : 0));
-        nbttagcompound.set("direction", this.a(new double[] { this.motX, this.motY, this.motZ}));
+        // CraftBukkit - Fix direction being mismapped to invalid variables
+        nbttagcompound.set("power", this.a(new double[] { this.dirX, this.dirY, this.dirZ}));
     }
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -208,12 +209,14 @@ public abstract class EntityFireball extends Entity {
         this.g = nbttagcompound.getShort("zTile");
         this.h = nbttagcompound.getByte("inTile") & 255;
         this.i = nbttagcompound.getByte("inGround") == 1;
-        if (nbttagcompound.hasKey("direction")) {
-            NBTTagList nbttaglist = nbttagcompound.getList("direction");
+        // CraftBukkit - direction -> power
+        if (nbttagcompound.hasKey("power")) {
+            NBTTagList nbttaglist = nbttagcompound.getList("power");
 
-            this.motX = ((NBTTagDouble) nbttaglist.get(0)).data;
-            this.motY = ((NBTTagDouble) nbttaglist.get(1)).data;
-            this.motZ = ((NBTTagDouble) nbttaglist.get(2)).data;
+            this.dirX = ((NBTTagDouble) nbttaglist.get(0)).data;
+            this.dirY = ((NBTTagDouble) nbttaglist.get(1)).data;
+            this.dirZ = ((NBTTagDouble) nbttaglist.get(2)).data;
+            // CraftBukkit end
         } else {
             this.die();
         }
