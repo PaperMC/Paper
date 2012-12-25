@@ -163,7 +163,6 @@ public class PlayerConnection extends Connection {
             if (leaveMessage != null && leaveMessage.length() > 0) {
                 this.minecraftServer.getPlayerList().sendAll(new Packet3Chat(leaveMessage));
             }
-            getPlayer().disconnect(s);
             // CraftBukkit end
 
             this.minecraftServer.getPlayerList().disconnect(this.player);
@@ -1068,9 +1067,6 @@ public class PlayerConnection extends Connection {
     }
 
     public void a(Packet255KickDisconnect packet255kickdisconnect) {
-        // CraftBukkit start
-        getPlayer().disconnect("disconnect.quitting");
-        // CraftBukkit end
         this.networkManager.a("disconnect.quitting", new Object[0]);
     }
 

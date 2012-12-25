@@ -204,6 +204,7 @@ public abstract class PlayerList {
         // CraftBukkit start - quitting must be before we do final save of data, in case plugins need to modify it
         PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(this.cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.name + " left the game.");
         this.cserver.getPluginManager().callEvent(playerQuitEvent);
+        entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
         // CraftBukkit end
 
         this.b(entityplayer);
