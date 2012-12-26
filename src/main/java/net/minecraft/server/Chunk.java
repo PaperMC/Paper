@@ -686,12 +686,10 @@ public class Chunk {
             java.util.Iterator<Object> iter = this.entitySlices[i].iterator();
             while (iter.hasNext()) {
                 Entity entity = (Entity) iter.next();
-                int cx = Location.locToBlock(entity.locX) >> 4;
-                int cz = Location.locToBlock(entity.locZ) >> 4;
 
                 // Do not pass along players, as doing so can get them stuck outside of time.
                 // (which for example disables inventory icon updates and prevents block breaking)
-                if (entity instanceof EntityPlayer && (cx != this.x || cz != this.z)) {
+                if (entity instanceof EntityPlayer) {
                     iter.remove();
                 }
             }
