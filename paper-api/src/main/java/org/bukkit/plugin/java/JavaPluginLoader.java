@@ -281,7 +281,7 @@ public class JavaPluginLoader implements PluginLoader {
     @Deprecated
     public Class<?> getClassByName(final String name) {
         if (warn) {
-            server.getLogger().log(Level.WARNING, "Method \"public Plugin loadPlugin(File, boolean)\" is Deprecated, and may be removed in a future version of Bukkit", new AuthorNagException(""));
+            server.getLogger().log(Level.WARNING, "Method \"public Class<?> getClassByName(String)\" is Deprecated, and may be removed in a future version of Bukkit", new AuthorNagException(""));
             warn = false;
         }
         return getClassByName0(name);
@@ -313,7 +313,7 @@ public class JavaPluginLoader implements PluginLoader {
     @Deprecated
     public void setClass(final String name, final Class<?> clazz) {
         if (warn) {
-            server.getLogger().log(Level.WARNING, "Method \"public Plugin loadPlugin(File, boolean)\" is Deprecated, and may be removed in a future version of Bukkit", new AuthorNagException(""));
+            server.getLogger().log(Level.WARNING, "Method \"public void setClass(String, Class<?>)\" is Deprecated, and may be removed in a future version of Bukkit", new AuthorNagException(""));
             warn = false;
         }
         setClass0(name, clazz);
