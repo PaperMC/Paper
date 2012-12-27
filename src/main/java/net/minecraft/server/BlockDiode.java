@@ -2,6 +2,8 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+
 public class BlockDiode extends BlockDirectional {
 
     public static final double[] a = new double[] { -0.0625D, 0.0625D, 0.1875D, 0.3125D};
@@ -34,8 +36,20 @@ public class BlockDiode extends BlockDirectional {
             boolean flag1 = this.i(world, i, j, k, l);
 
             if (this.c && !flag1) {
+                // CraftBukkit start
+                if (CraftEventFactory.callRedstoneChange(world, i, j, k, 15, 0).getNewCurrent() != 0) {
+                    return;
+                }
+                // CraftBukkit end
+
                 world.setTypeIdAndData(i, j, k, Block.DIODE_OFF.id, l);
             } else if (!this.c) {
+                // CraftBukkit start
+                if (CraftEventFactory.callRedstoneChange(world, i, j, k, 0, 15).getNewCurrent() != 15) {
+                    return;
+                }
+                // CraftBukkit end
+
                 world.setTypeIdAndData(i, j, k, Block.DIODE_ON.id, l);
                 if (!flag1) {
                     int i1 = (l & 12) >> 2;
