@@ -1155,6 +1155,16 @@ public abstract class Entity {
             this.b(this.yaw, this.pitch);
             this.a(nbttagcompound);
 
+            // CraftBukkit start
+            if (this instanceof EntityLiving) {
+                EntityLiving entity = (EntityLiving) this;
+                // If the entity does not have a max health set yet, update it (it may have changed after loading the entity)
+                if (!nbttagcompound.hasKey("Bukkit.MaxHealth")) {
+                    entity.maxHealth = entity.getMaxHealth();
+                }
+            }
+            // CraftBukkit end
+
             // CraftBukkit start - exempt Vehicles from notch's sanity check
             if (!(this.getBukkitEntity() instanceof Vehicle)) {
                 if (Math.abs(this.motX) > 10.0D) {

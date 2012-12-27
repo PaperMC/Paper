@@ -43,7 +43,7 @@ public class EntityWolf extends EntityTameableAnimal {
     }
 
     protected void bm() {
-        this.datawatcher.watch(18, Integer.valueOf(this.getHealth()));
+        this.datawatcher.watch(18, Integer.valueOf(this.getScaledHealth())); // CraftBukkit - this.getHealth() -> this.getScaledHealth()
     }
 
     public int getMaxHealth() {
@@ -80,7 +80,8 @@ public class EntityWolf extends EntityTameableAnimal {
     }
 
     protected String aY() {
-        return this.isAngry() ? "mob.wolf.growl" : (this.random.nextInt(3) == 0 ? (this.isTamed() && this.datawatcher.getInt(18) < 10 ? "mob.wolf.whine" : "mob.wolf.panting") : "mob.wolf.bark");
+        // CraftBukkit - getInt(18) < 10 -> < this.maxHealth / 2
+        return this.isAngry() ? "mob.wolf.growl" : (this.random.nextInt(3) == 0 ? (this.isTamed() && this.datawatcher.getInt(18) < this.maxHealth / 2 ? "mob.wolf.whine" : "mob.wolf.panting") : "mob.wolf.bark");
     }
 
     protected String aZ() {
@@ -235,11 +236,17 @@ public class EntityWolf extends EntityTameableAnimal {
             if (!this.world.isStatic) {
                 // CraftBukkit - added event call and isCancelled check.
                 if (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) {
+                    boolean updateMaxHealth = this.getMaxHealth() == this.maxHealth; // CraftBukkit
                     this.setTamed(true);
                     this.setPathEntity((PathEntity) null);
                     this.b((EntityLiving) null);
                     this.d.a(true);
-                    this.setHealth(20);
+                    // CraftBukkit start
+                    if (updateMaxHealth) {
+                        this.maxHealth = this.getMaxHealth();
+                    }
+                    this.setHealth(this.maxHealth);
+                    // CraftBukkit end
                     this.setOwnerName(entityhuman.name);
                     this.f(true);
                     this.world.broadcastEntityEffect(this, (byte) 7);
