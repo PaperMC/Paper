@@ -1,5 +1,6 @@
 package org.bukkit.inventory;
 
+import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.inventory.meta.BookMeta;
@@ -79,4 +80,11 @@ public interface ItemFactory {
      * @throws IllegalArgumentException if the specified meta was not created by this factory
      */
     ItemMeta asMetaFor(final ItemMeta meta, final Material material) throws IllegalArgumentException;
+
+    /**
+     * Returns the default color for all leather armor.
+     *
+     * @return the default color for leather armor
+     */
+    Color getDefaultLeatherColor();
 }
