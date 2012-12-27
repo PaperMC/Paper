@@ -48,17 +48,23 @@ public class ItemSign extends Item {
                 if (l == 1) {
                     int i1 = MathHelper.floor((double) ((entityhuman.yaw + 180.0F) * 16.0F / 360.0F) + 0.5D) & 15;
 
-                    world.setTypeIdAndData(i, j, k, Block.SIGN_POST.id, i1);
+                    // CraftBukkit start - sign
+                    world.setRawTypeIdAndData(i, j, k, Block.SIGN_POST.id, i1);
                 } else {
-                    world.setTypeIdAndData(i, j, k, Block.WALL_SIGN.id, l);
+                    world.setRawTypeIdAndData(i, j, k, Block.WALL_SIGN.id, l);
                 }
 
-                // CraftBukkit start - sign
                 org.bukkit.event.block.BlockPlaceEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ);
 
                 if (event.isCancelled() || !event.canBuild()) {
                     event.getBlockPlaced().setTypeIdAndData(blockState.getTypeId(), blockState.getRawData(), false);
                     return false;
+                } else {
+                    if (l == 1) {
+                        world.update(i, j, k, Block.SIGN_POST.id);
+                    } else {
+                        world.update(i, j, k, Block.WALL_SIGN.id);
+                    }
                 }
                 // CraftBukkit end
 
