@@ -760,6 +760,10 @@ public class PlayerConnection extends Connection {
         if (packet16blockitemswitch.itemInHandIndex >= 0 && packet16blockitemswitch.itemInHandIndex < PlayerInventory.getHotbarSize()) {
             PlayerItemHeldEvent event = new PlayerItemHeldEvent(this.getPlayer(), this.player.inventory.itemInHandIndex, packet16blockitemswitch.itemInHandIndex);
             this.server.getPluginManager().callEvent(event);
+            if (event.isCancelled()) {
+                this.sendPacket(new Packet16BlockItemSwitch(this.player.inventory.itemInHandIndex));
+                return;
+            }
             // CraftBukkit end
 
             this.player.inventory.itemInHandIndex = packet16blockitemswitch.itemInHandIndex;
