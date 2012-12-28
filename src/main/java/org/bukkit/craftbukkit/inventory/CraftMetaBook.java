@@ -91,11 +91,7 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
         }
 
         if (hasPages()) {
-            NBTTagList itemPages = new NBTTagList(BOOK_PAGES.NBT);
-            for (int i = 1; i < pages.size() + 1; i++) {
-                itemPages.add(new NBTTagString(String.valueOf(i), pages.get(i - 1)));
-            }
-            itemData.set(BOOK_PAGES.NBT, itemPages);
+            itemData.set(BOOK_PAGES.NBT, createStringList(pages, BOOK_PAGES));
         }
     }
 

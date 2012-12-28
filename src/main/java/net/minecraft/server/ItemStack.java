@@ -106,7 +106,8 @@ public final class ItemStack {
         this.count = nbttagcompound.getByte("Count");
         this.damage = nbttagcompound.getShort("Damage");
         if (nbttagcompound.hasKey("tag")) {
-            this.tag = nbttagcompound.getCompound("tag");
+            // CraftBukkit - clear name from compound
+            this.tag = (NBTTagCompound) nbttagcompound.getCompound("tag").setName("");
         }
     }
 
