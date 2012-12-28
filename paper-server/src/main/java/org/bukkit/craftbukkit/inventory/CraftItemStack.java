@@ -233,11 +233,12 @@ public final class CraftItemStack extends ItemStack {
         if (index == Integer.MIN_VALUE) {
             return 0;
         }
-        if (index == 0 && size == 0) {
+        if (index == 0 && size == 1) {
             handle.tag.o(ENCHANTMENTS.NBT);
             if (handle.tag.d()) {
                 handle.tag = null;
             }
+            return ((NBTTagCompound) list.get(0)).getShort(ENCHANTMENTS_ID.NBT);
         }
 
         listCopy = new NBTTagList(ENCHANTMENTS.NBT);
