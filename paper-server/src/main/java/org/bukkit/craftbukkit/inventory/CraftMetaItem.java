@@ -307,11 +307,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
         }
 
         if (hasLore()) {
-            NBTTagList list = new NBTTagList(LORE.NBT);
-            for (int i = 0; i < lore.size(); i++) {
-                list.add(new NBTTagString(String.valueOf(i), lore.get(i)));
-            }
-            setDisplayTag(itemTag, LORE.NBT, list);
+            setDisplayTag(itemTag, LORE.NBT, createStringList(lore, LORE));
         }
 
         applyEnchantments(enchantments, itemTag, ENCHANTMENTS);
@@ -319,6 +315,19 @@ class CraftMetaItem implements ItemMeta, Repairable {
         if (hasRepairCost()) {
             itemTag.setInt(REPAIR.NBT, repairCost);
         }
+    }
+
+    static NBTTagList createStringList(List<String> list, ItemMetaKey key) {
+        if (list == null || list.isEmpty()) {
+            return null;
+        }
+
+        NBTTagList tagList = new NBTTagList(key.NBT);
+        for (int i = 0; i < list.size(); i++) {
+            tagList.add(new NBTTagString("", list.get(i)));
+        }
+
+        return tagList;
     }
 
     static void applyEnchantments(Map<Enchantment, Integer> enchantments, NBTTagCompound tag, ItemMetaKey key) {
