@@ -348,6 +348,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
         EntityPlayer entity = getHandle();
 
+        if (getHealth() == 0 || entity.dead) {
+            return false;
+        }
+
         if (entity.playerConnection == null || entity.playerConnection.disconnected) {
             return false;
         }
