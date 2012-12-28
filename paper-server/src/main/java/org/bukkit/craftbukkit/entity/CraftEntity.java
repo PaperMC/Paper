@@ -190,6 +190,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public boolean teleport(Location location, TeleportCause cause) {
+        if (entity.vehicle != null || entity.passenger != null || entity.dead) {
+            return false;
+        }
+
         entity.world = ((CraftWorld) location.getWorld()).getHandle();
         entity.setLocation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         // entity.setLocation() throws no event, and so cannot be cancelled

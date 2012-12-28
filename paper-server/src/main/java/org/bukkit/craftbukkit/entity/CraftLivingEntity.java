@@ -41,6 +41,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.entity.SmallFireball;
 import org.bukkit.entity.Snowball;
 import org.bukkit.entity.WitherSkull;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -345,5 +346,14 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     public boolean getCanPickupItems() {
         return getHandle().canPickUpLoot;
+    }
+
+    @Override
+    public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
+        if (getHealth() == 0) {
+            return false;
+        }
+
+        return super.teleport(location, cause);
     }
 }
