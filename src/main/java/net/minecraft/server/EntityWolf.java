@@ -76,7 +76,8 @@ public class EntityWolf extends EntityTameableAnimal {
     }
 
     protected boolean bj() {
-        return this.isAngry();
+        // CraftBukkit - added && !this.isTamed()
+        return this.isAngry() && !this.isTamed();
     }
 
     protected String aY() {
