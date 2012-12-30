@@ -250,7 +250,11 @@ public class EntityArrow extends Entity implements IProjectile {
                                 }
                             }
 
-                            EnchantmentThorns.a(this.shooter, entityliving, this.random);
+                            // CraftBukkit start
+                            if (this.shooter != null) {
+                                EnchantmentThorns.a(this.shooter, entityliving, this.random);
+                            }
+                            // CraftBukkit end
                             if (this.shooter != null && movingobjectposition.entity != this.shooter && movingobjectposition.entity instanceof EntityHuman && this.shooter instanceof EntityPlayer) {
                                 ((EntityPlayer) this.shooter).playerConnection.sendPacket(new Packet70Bed(6, 0));
                             }
