@@ -1,5 +1,6 @@
 package org.bukkit.event.player;
 
+import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -30,6 +31,9 @@ public class PlayerRespawnEvent extends PlayerEvent {
      * @param respawnLocation new location for the respawn
      */
     public void setRespawnLocation(Location respawnLocation) {
+        Validate.notNull(respawnLocation, "Respawn location can not be null");
+        Validate.notNull(respawnLocation.getWorld(), "Respawn world can not be null");
+
         this.respawnLocation = respawnLocation;
     }
 
