@@ -220,12 +220,16 @@ public final class CraftItemStack extends ItemStack {
         if (list == null) {
             return 0;
         }
-        int index = Integer.MIN_VALUE, size = list.size(), level;
+        int index = Integer.MIN_VALUE;
+        int level = Integer.MIN_VALUE;
+        int size = list.size();
 
         for (int i = 0; i < size; i++) {
-            short id = ((NBTTagCompound) list.get(i)).getShort(ENCHANTMENTS_ID.NBT);
+            NBTTagCompound enchantment = (NBTTagCompound) list.get(i);
+            int id = 0xffff & enchantment.getShort(ENCHANTMENTS_ID.NBT);
             if (id == ench.getId()) {
                 index = i;
+                level = 0xffff & enchantment.getShort(ENCHANTMENTS_LVL.NBT);
                 break;
             }
         }
@@ -233,24 +237,23 @@ public final class CraftItemStack extends ItemStack {
         if (index == Integer.MIN_VALUE) {
             return 0;
         }
-        if (index == 0 && size == 1) {
+        if (size == 1) {
             handle.tag.o(ENCHANTMENTS.NBT);
             if (handle.tag.d()) {
                 handle.tag = null;
             }
-            return ((NBTTagCompound) list.get(0)).getShort(ENCHANTMENTS_ID.NBT);
+            return level;
         }
 
+        // This is workaround for not having an index removal
         listCopy = new NBTTagList(ENCHANTMENTS.NBT);
-        level = Integer.MAX_VALUE;
         for (int i = 0; i < size; i++) {
-            if (i == index) {
-                level = ((NBTTagCompound) list.get(i)).getShort(ENCHANTMENTS_ID.NBT);
-                continue;
+            if (i != index) {
+                listCopy.add(list.get(i));
             }
-            listCopy.add(list.get(i));
         }
         handle.tag.set(ENCHANTMENTS.NBT, listCopy);
+
         return level;
     }
 
