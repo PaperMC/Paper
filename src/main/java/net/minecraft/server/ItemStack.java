@@ -95,7 +95,7 @@ public final class ItemStack {
         nbttagcompound.setByte("Count", (byte) this.count);
         nbttagcompound.setShort("Damage", (short) this.damage);
         if (this.tag != null) {
-            nbttagcompound.set("tag", this.tag);
+            nbttagcompound.set("tag", this.tag.clone()); // CraftBukkit - make defensive copy, data is going to another thread
         }
 
         return nbttagcompound;
@@ -106,8 +106,8 @@ public final class ItemStack {
         this.count = nbttagcompound.getByte("Count");
         this.damage = nbttagcompound.getShort("Damage");
         if (nbttagcompound.hasKey("tag")) {
-            // CraftBukkit - clear name from compound
-            this.tag = (NBTTagCompound) nbttagcompound.getCompound("tag").setName("");
+            // CraftBukkit - clear name from compound and make defensive copy as this data may be coming from the save thread
+            this.tag = (NBTTagCompound) nbttagcompound.getCompound("tag").clone().setName("");
         }
     }
 
