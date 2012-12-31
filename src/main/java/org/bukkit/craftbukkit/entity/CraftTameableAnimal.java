@@ -62,8 +62,7 @@ public class CraftTameableAnimal extends CraftAnimals implements Tameable, Creat
     }
 
     public void setSitting(boolean sitting) {
-        getHandle().setSitting(sitting);
-        getHandle().setPathEntity(null);
+        getHandle().q().a(sitting);
     }
 
     @Override
