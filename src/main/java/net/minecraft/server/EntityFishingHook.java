@@ -333,6 +333,7 @@ public class EntityFishingHook extends Entity {
                 EntityItem entityitem = new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.RAW_FISH));
                 // CraftBukkit start
                 PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) this.owner.getBukkitEntity(), entityitem.getBukkitEntity(), PlayerFishEvent.State.CAUGHT_FISH);
+                playerFishEvent.setExpToDrop(this.random.nextInt(6) + 1);
                 this.world.getServer().getPluginManager().callEvent(playerFishEvent);
 
                 if (playerFishEvent.isCancelled()) {
@@ -353,7 +354,8 @@ public class EntityFishingHook extends Entity {
                 entityitem.motZ = d7 * d9;
                 this.world.addEntity(entityitem);
                 this.owner.a(StatisticList.B, 1);
-                this.owner.world.addEntity(new EntityExperienceOrb(this.owner.world, this.owner.locX, this.owner.locY + 0.5D, this.owner.locZ + 0.5D, this.random.nextInt(6) + 1));
+                // CraftBukkit - this.random.nextInt(6) + 1 -> playerFishEvent.getExpToDrop()
+                this.owner.world.addEntity(new EntityExperienceOrb(this.owner.world, this.owner.locX, this.owner.locY + 0.5D, this.owner.locZ + 0.5D, playerFishEvent.getExpToDrop()));
                 b0 = 1;
             }
 
