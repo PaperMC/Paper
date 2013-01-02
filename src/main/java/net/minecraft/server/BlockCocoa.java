@@ -19,7 +19,7 @@ public class BlockCocoa extends BlockDirectional {
 
             if (i1 < 2) {
                 ++i1;
-                world.setData(i, j, k, i1 << 2 | e(l));
+                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this.id, i1 << 2 | e(l)); // CraftBukkit
             }
         }
     }
