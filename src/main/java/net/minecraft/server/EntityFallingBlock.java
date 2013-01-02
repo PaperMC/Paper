@@ -18,6 +18,7 @@ public class EntityFallingBlock extends Entity {
     private boolean hurtEntities;
     private int fallHurtMax;
     private float fallHurtAmount;
+    private NBTTagCompound tileEntityData; // CraftBukkit
 
     public EntityFallingBlock(World world) {
         super(world);
@@ -90,6 +91,17 @@ public class EntityFallingBlock extends Entity {
                         return;
                     }
 
+                    // CraftBukkit start - Store the block tile entity with this entity
+                    TileEntity tile = this.world.getTileEntity(i, j, k);
+                    if (tile != null) {
+                        tileEntityData = new NBTTagCompound();
+                        // Save the data
+                        tile.b(tileEntityData);
+                        // Remove the existing tile entity
+                        this.world.r(i, j, k);
+                    }
+                    // CraftBukkit end
+
                     this.world.setTypeId(i, j, k, 0);
                 }
 
@@ -105,6 +117,10 @@ public class EntityFallingBlock extends Entity {
                                 return;
                             }
                             this.world.setTypeIdAndData(i, j, k, this.id, this.data);
+
+                            if (this.tileEntityData != null) {
+                                this.world.setTileEntity(i, j, k, TileEntity.c(this.tileEntityData));
+                            }
                             // CraftBukkit end
                             if (Block.byId[this.id] instanceof BlockSand) {
                                 ((BlockSand) Block.byId[this.id]).a_(this.world, i, j, k, this.data);
@@ -171,6 +187,11 @@ public class EntityFallingBlock extends Entity {
         nbttagcompound.setBoolean("HurtEntities", this.hurtEntities);
         nbttagcompound.setFloat("FallHurtAmount", this.fallHurtAmount);
         nbttagcompound.setInt("FallHurtMax", this.fallHurtMax);
+        // CraftBukkit start - store the tile data
+        if (this.tileEntityData != null) {
+            nbttagcompound.set("Bukkit.tileData", this.tileEntityData.clone());
+        }
+        // CraftBukkit end
     }
 
     protected void a(NBTTagCompound nbttagcompound) {
@@ -184,6 +205,12 @@ public class EntityFallingBlock extends Entity {
         } else if (this.id == Block.ANVIL.id) {
             this.hurtEntities = true;
         }
+
+        // CraftBukkit start - load tileData
+        if (nbttagcompound.hasKey("Bukkit.tileData")) {
+            this.tileEntityData = (NBTTagCompound) nbttagcompound.getCompound("Bukkit.tileData").clone();
+        }
+        // CraftBukkit end
 
         if (nbttagcompound.hasKey("DropItem")) {
             this.dropItem = nbttagcompound.getBoolean("DropItem");
