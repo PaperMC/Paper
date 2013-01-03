@@ -68,7 +68,7 @@ public class EntityPotion extends EntityProjectile {
                 AxisAlignedBB axisalignedbb = this.boundingBox.grow(4.0D, 2.0D, 4.0D);
                 List list1 = this.world.a(EntityLiving.class, axisalignedbb);
 
-                if (list1 != null && !list1.isEmpty()) {
+                if (list1 != null) { // CraftBukkit - Run code even if there are no entities around
                     Iterator iterator = list1.iterator();
 
                     // CraftBukkit
