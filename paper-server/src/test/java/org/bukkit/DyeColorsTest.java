@@ -33,7 +33,7 @@ public class DyeColorsTest extends AbstractTestingBase {
     @Test
     public void checkColor() {
         Color color = dye.getColor();
-        float[] nmsColorArray = EntitySheep.d[dye.getData()];
+        float[] nmsColorArray = EntitySheep.d[dye.getWoolData()];
         Color nmsColor = Color.fromRGB((int) (nmsColorArray[0] * 255), (int) (nmsColorArray[1] * 255), (int) (nmsColorArray[2] * 255));
         assertThat(color, is(nmsColor));
     }
@@ -41,7 +41,7 @@ public class DyeColorsTest extends AbstractTestingBase {
     @Test
     public void checkFireworkColor() {
         Color color = dye.getFireworkColor();
-        int nmsColor = ItemDye.b[dye.getData()];
+        int nmsColor = ItemDye.b[dye.getWoolData()];
         assertThat(color, is(Color.fromRGB(nmsColor)));
     }
 }
