@@ -33,7 +33,7 @@ public class Dye extends MaterialData implements Colorable {
      * @return DyeColor of this dye
      */
     public DyeColor getColor() {
-        return DyeColor.getByData((byte) (15 - getData()));
+        return DyeColor.getByDyeData(getData());
     }
 
     /**
@@ -42,7 +42,7 @@ public class Dye extends MaterialData implements Colorable {
      * @param color New color of this dye
      */
     public void setColor(DyeColor color) {
-        setData((byte) (15 - color.getData()));
+        setData(color.getDyeData());
     }
 
     @Override
