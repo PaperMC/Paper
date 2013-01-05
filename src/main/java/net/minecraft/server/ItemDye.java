@@ -188,7 +188,7 @@ public class ItemDye extends Item {
                     return false;
                 }
 
-                i = (byte) event.getColor().getData();
+                i = (byte) event.getColor().getWoolData();
                 // CraftBukkit end
 
                 entitysheep.setColor(i);
