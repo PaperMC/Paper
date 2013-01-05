@@ -41,7 +41,7 @@ public class DyeColorsTest extends AbstractTestingBase {
     @Test
     public void checkFireworkColor() {
         Color color = dye.getFireworkColor();
-        int nmsColor = ItemDye.b[dye.getWoolData()];
+        int nmsColor = ItemDye.b[dye.getDyeData()];
         assertThat(color, is(Color.fromRGB(nmsColor)));
     }
 }
