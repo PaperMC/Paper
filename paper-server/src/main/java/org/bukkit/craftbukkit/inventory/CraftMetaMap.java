@@ -42,8 +42,9 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
     CraftMetaMap(Map<String, Object> map) {
         super(map);
 
-        if (map.containsKey(MAP_SCALING.BUKKIT)) {
-            this.scaling = SerializableMeta.getBoolean(map, MAP_SCALING.BUKKIT) ? SCALING_TRUE : SCALING_FALSE;
+        Boolean scaling = SerializableMeta.getObject(Boolean.class, map, MAP_SCALING.BUKKIT, true);
+        if (scaling != null) {
+            setScaling(scaling);
         }
     }
 
@@ -126,7 +127,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
         super.serialize(builder);
 
         if (hasScaling()) {
-            builder.put(MAP_SCALING.BUKKIT, scaling);
+            builder.put(MAP_SCALING.BUKKIT, isScaling());
         }
 
         return builder;

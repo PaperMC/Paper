@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -74,7 +73,7 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
 
         setTitle(SerializableMeta.getString(map, BOOK_TITLE.BUKKIT, true));
 
-        Collection<?> pages = SerializableMeta.getObject(Collection.class, map, BOOK_PAGES.BUKKIT, true);
+        Iterable<?> pages = SerializableMeta.getObject(Iterable.class, map, BOOK_PAGES.BUKKIT, true);
         CraftMetaItem.safelyAdd(pages, this.pages, MAX_PAGE_LENGTH);
     }
 

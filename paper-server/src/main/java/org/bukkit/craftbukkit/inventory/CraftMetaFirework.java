@@ -172,7 +172,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
 
         Integer power = SerializableMeta.getObject(Integer.class, map, FLIGHT.BUKKIT, true);
         if (power != null) {
-            this.power = power;
+            setPower(power);
         }
 
         Iterable<?> effects = SerializableMeta.getObject(Iterable.class, map, EXPLOSIONS.BUKKIT, true);

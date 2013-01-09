@@ -271,14 +271,16 @@ class CraftMetaItem implements ItemMeta, Repairable {
     CraftMetaItem(Map<String, Object> map) {
         setDisplayName(SerializableMeta.getString(map, NAME.BUKKIT, true));
 
-        if (map.containsKey(LORE.BUKKIT)) {
-            lore = (List<String>) map.get(LORE.BUKKIT);
+        Iterable<?> lore = SerializableMeta.getObject(Iterable.class, map, LORE.BUKKIT, true);
+        if (lore != null) {
+            safelyAdd(lore, this.lore = new ArrayList<String>(), Integer.MAX_VALUE);
         }
 
         enchantments = buildEnchantments(map, ENCHANTMENTS);
 
-        if (map.containsKey(REPAIR.BUKKIT)) {
-            repairCost = (Integer) map.get(REPAIR.BUKKIT);
+        Integer repairCost = SerializableMeta.getObject(Integer.class, map, REPAIR.BUKKIT, true);
+        if (repairCost != null) {
+            setRepairCost(repairCost);
         }
     }
 
@@ -556,7 +558,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
         return SerializableMeta.Deserializers.UNSPECIFIC;
     }
 
-    static void safelyAdd(Collection<?> addFrom, Collection<String> addTo, int maxItemLength) {
+    static void safelyAdd(Iterable<?> addFrom, Collection<String> addTo, int maxItemLength) {
         if (addFrom == null) {
             return;
         }
