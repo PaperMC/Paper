@@ -64,7 +64,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     CraftMetaPotion(Map<String, Object> map) {
         super(map);
 
-        List<?> rawEffectList = SerializableMeta.getObject(List.class, map, POTION_EFFECTS.BUKKIT, true);
+        Iterable<?> rawEffectList = SerializableMeta.getObject(Iterable.class, map, POTION_EFFECTS.BUKKIT, true);
         if (rawEffectList == null) {
             return;
         }
