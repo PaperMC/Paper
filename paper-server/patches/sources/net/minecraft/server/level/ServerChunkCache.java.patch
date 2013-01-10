@@ -17,7 +17,7 @@
      @Override
      public ThreadedLevelLightEngine getLightEngine() {
          return this.lightEngine;
-@@ -138,7 +148,7 @@
+@@ -138,20 +148,22 @@
                  if (k == this.lastChunkPos[l] && leastStatus == this.lastChunkStatus[l]) {
                      ChunkAccess ichunkaccess = this.lastChunk[l];
  
@@ -26,16 +26,23 @@
                          return ichunkaccess;
                      }
                  }
-@@ -151,7 +161,7 @@
+             }
+ 
+             gameprofilerfiller.incrementCounter("getChunkCacheMiss");
++            this.level.timings.syncChunkLoadTimer.startTiming(); // Spigot
+             CompletableFuture<ChunkResult<ChunkAccess>> completablefuture = this.getChunkFutureMainThread(x, z, leastStatus, create);
+             ServerChunkCache.MainThreadExecutor chunkproviderserver_b = this.mainThreadProcessor;
+ 
              Objects.requireNonNull(completablefuture);
              chunkproviderserver_b.managedBlock(completablefuture::isDone);
++            this.level.timings.syncChunkLoadTimer.stopTiming(); // Spigot
              ChunkResult<ChunkAccess> chunkresult = (ChunkResult) completablefuture.join();
 -            ChunkAccess ichunkaccess1 = (ChunkAccess) chunkresult.orElse((Object) null);
 +            ChunkAccess ichunkaccess1 = (ChunkAccess) chunkresult.orElse(null); // CraftBukkit - decompile error
  
              if (ichunkaccess1 == null && create) {
                  throw (IllegalStateException) Util.pauseInIde(new IllegalStateException("Chunk not there when requested: " + chunkresult.getError()));
-@@ -231,7 +241,15 @@
+@@ -231,7 +243,15 @@
          int l = ChunkLevel.byStatus(leastStatus);
          ChunkHolder playerchunk = this.getVisibleChunkIfPresent(k);
  
@@ -52,7 +59,7 @@
              this.distanceManager.addTicket(TicketType.UNKNOWN, chunkcoordintpair, l, chunkcoordintpair);
              if (this.chunkAbsent(playerchunk, l)) {
                  ProfilerFiller gameprofilerfiller = Profiler.get();
-@@ -250,7 +268,7 @@
+@@ -250,7 +270,7 @@
      }
  
      private boolean chunkAbsent(@Nullable ChunkHolder holder, int maxLevel) {
@@ -61,7 +68,7 @@
      }
  
      @Override
-@@ -309,11 +327,33 @@
+@@ -309,30 +329,58 @@
  
      @Override
      public void close() throws IOException {
@@ -96,7 +103,32 @@
  
      @Override
      public void tick(BooleanSupplier shouldKeepTicking, boolean tickChunks) {
-@@ -401,14 +441,14 @@
+         ProfilerFiller gameprofilerfiller = Profiler.get();
+ 
+         gameprofilerfiller.push("purge");
++        this.level.timings.doChunkMap.startTiming(); // Spigot
+         if (this.level.tickRateManager().runsNormally() || !tickChunks) {
+             this.distanceManager.purgeStaleTickets();
+         }
+ 
+         this.runDistanceManagerUpdates();
++        this.level.timings.doChunkMap.stopTiming(); // Spigot
+         gameprofilerfiller.popPush("chunks");
+         if (tickChunks) {
+             this.tickChunks();
++            this.level.timings.tracker.startTiming(); // Spigot
+             this.chunkMap.tick();
++            this.level.timings.tracker.stopTiming(); // Spigot
+         }
+ 
++        this.level.timings.doChunkUnload.startTiming(); // Spigot
+         gameprofilerfiller.popPush("unload");
+         this.chunkMap.tick(shouldKeepTicking);
++        this.level.timings.doChunkUnload.stopTiming(); // Spigot
+         gameprofilerfiller.pop();
+         this.clearCache();
+     }
+@@ -401,14 +449,14 @@
  
          this.lastSpawnState = spawnercreature_d;
          profiler.popPush("spawnAndTick");
@@ -114,7 +146,17 @@
          } else {
              list1 = List.of();
          }
-@@ -541,10 +581,16 @@
+@@ -425,7 +473,9 @@
+             }
+ 
+             if (this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) {
++                this.level.timings.doTickTiles.startTiming(); // Spigot
+                 this.level.tickChunk(chunk, k);
++                this.level.timings.doTickTiles.stopTiming(); // Spigot
+             }
+         }
+ 
+@@ -541,10 +591,16 @@
  
      @Override
      public void setSpawnSettings(boolean spawnMonsters) {
@@ -133,7 +175,7 @@
      public String getChunkDebugData(ChunkPos pos) {
          return this.chunkMap.getChunkDebugData(pos);
      }
-@@ -618,14 +664,20 @@
+@@ -618,14 +674,20 @@
          }
  
          @Override

@@ -411,7 +411,9 @@ public class CraftScheduler implements BukkitScheduler {
             if (task.isSync()) {
                 this.currentTask = task;
                 try {
+                    task.timings.startTiming(); // Spigot
                     task.run();
+                    task.timings.stopTiming(); // Spigot
                 } catch (final Throwable throwable) {
                     task.getOwner().getLogger().log(
                             Level.WARNING,

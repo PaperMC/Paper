@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -54,11 +54,22 @@
+@@ -54,11 +54,23 @@
  import net.minecraft.world.entity.player.Player;
  import net.minecraft.world.level.GameRules;
  import net.minecraft.world.level.GameType;
@@ -15,6 +15,7 @@
 +import org.apache.logging.log4j.LogManager;
 +import org.apache.logging.log4j.io.IoBuilder;
 +import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.SpigotTimings; // Spigot
 +import org.bukkit.craftbukkit.util.TerminalCompletionHandler;
 +import org.bukkit.craftbukkit.util.TerminalConsoleWriterThread;
 +import org.bukkit.event.server.ServerCommandEvent;
@@ -24,7 +25,7 @@
  public class DedicatedServer extends MinecraftServer implements ServerInterface {
  
      static final Logger LOGGER = LogUtils.getLogger();
-@@ -67,7 +78,7 @@
+@@ -67,7 +79,7 @@
      private final List<ConsoleInput> consoleInput = Collections.synchronizedList(Lists.newArrayList());
      @Nullable
      private QueryThreadGs4 queryThreadGs4;
@@ -33,7 +34,7 @@
      @Nullable
      private RconThread rconThread;
      public DedicatedServerSettings settings;
-@@ -81,25 +92,58 @@
+@@ -81,25 +93,58 @@
      private DebugSampleSubscriptionTracker debugSampleSubscriptionTracker;
      public ServerLinks serverLinks;
  
@@ -101,7 +102,7 @@
                      }
                  } catch (IOException ioexception) {
                      DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
-@@ -108,6 +152,29 @@
+@@ -108,6 +153,29 @@
              }
          };
  
@@ -131,7 +132,7 @@
          thread.setDaemon(true);
          thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(DedicatedServer.LOGGER));
          thread.start();
-@@ -126,13 +193,18 @@
+@@ -126,13 +194,18 @@
              this.setPreventProxyConnections(dedicatedserverproperties.preventProxyConnections);
              this.setLocalIp(dedicatedserverproperties.serverIp);
          }
@@ -151,7 +152,7 @@
          DedicatedServer.LOGGER.info("Default game type: {}", dedicatedserverproperties.gamemode);
          InetAddress inetaddress = null;
  
-@@ -156,6 +228,12 @@
+@@ -156,6 +229,12 @@
              return false;
          }
  
@@ -164,7 +165,7 @@
          if (!this.usesAuthentication()) {
              DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
              DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
-@@ -170,7 +248,7 @@
+@@ -170,7 +249,7 @@
          if (!OldUsersConverter.serverReadyAfterUserconversion(this)) {
              return false;
          } else {
@@ -173,7 +174,7 @@
              this.debugSampleSubscriptionTracker = new DebugSampleSubscriptionTracker(this.getPlayerList());
              this.tickTimeLogger = new RemoteSampleLogger(TpsDebugDimensions.values().length, this.debugSampleSubscriptionTracker, RemoteDebugSampleType.TICK_TIME);
              long i = Util.getNanos();
-@@ -178,13 +256,13 @@
+@@ -178,13 +257,13 @@
              SkullBlockEntity.setup(this.services, this);
              GameProfileCache.setUsesAuthentication(this.usesAuthentication());
              DedicatedServer.LOGGER.info("Preparing level \"{}\"", this.getLevelIdName());
@@ -189,7 +190,7 @@
              }
  
              if (dedicatedserverproperties.enableQuery) {
-@@ -293,6 +371,7 @@
+@@ -293,6 +372,7 @@
              this.queryThreadGs4.stop();
          }
  
@@ -197,7 +198,7 @@
      }
  
      @Override
-@@ -302,8 +381,8 @@
+@@ -302,8 +382,8 @@
      }
  
      @Override
@@ -208,7 +209,11 @@
      }
  
      public void handleConsoleInput(String command, CommandSourceStack commandSource) {
-@@ -314,7 +393,15 @@
+@@ -311,12 +391,22 @@
+     }
+ 
+     public void handleConsoleInputs() {
++        SpigotTimings.serverCommandTimer.startTiming(); // Spigot
          while (!this.consoleInput.isEmpty()) {
              ConsoleInput servercommand = (ConsoleInput) this.consoleInput.remove(0);
  
@@ -224,8 +229,11 @@
 +            // CraftBukkit end
          }
  
++        SpigotTimings.serverCommandTimer.stopTiming(); // Spigot
      }
-@@ -383,7 +470,7 @@
+ 
+     @Override
+@@ -383,7 +473,7 @@
  
      @Override
      public boolean isUnderSpawnProtection(ServerLevel world, BlockPos pos, Player player) {
@@ -234,7 +242,7 @@
              return false;
          } else if (this.getPlayerList().getOps().isEmpty()) {
              return false;
-@@ -541,16 +628,52 @@
+@@ -541,16 +631,52 @@
  
      @Override
      public String getPluginNames() {
@@ -291,7 +299,7 @@
      }
  
      public void storeUsingWhiteList(boolean useWhitelist) {
-@@ -660,4 +783,15 @@
+@@ -660,4 +786,15 @@
              }
          }
      }

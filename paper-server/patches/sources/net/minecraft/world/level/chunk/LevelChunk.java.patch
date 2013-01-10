@@ -188,10 +188,14 @@
              if (tileentity != null) {
                  Level world = this.level;
  
-@@ -553,6 +582,57 @@
- 
-     }
- 
+@@ -549,10 +578,61 @@
+         if (this.postLoad != null) {
+             this.postLoad.run(this);
+             this.postLoad = null;
++        }
++
++    }
++
 +    // CraftBukkit start
 +    public void loadCallback() {
 +        org.bukkit.Server server = this.level.getCraftServer();
@@ -225,9 +229,9 @@
 +                }
 +                server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(bukkitChunk));
 +            }
-+        }
+         }
 +    }
-+
+ 
 +    public void unloadCallback() {
 +        org.bukkit.Server server = this.level.getCraftServer();
 +        org.bukkit.Chunk bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
@@ -235,8 +239,8 @@
 +        server.getPluginManager().callEvent(unloadEvent);
 +        // note: saving can be prevented, but not forced if no saving is actually required
 +        this.mustNotSave = !unloadEvent.isSaveChunk();
-+    }
-+
+     }
+ 
 +    @Override
 +    public boolean isUnsaved() {
 +        return super.isUnsaved() && !this.mustNotSave;
@@ -264,3 +268,22 @@
              this.ticker = blockentityticker;
          }
  
+@@ -855,6 +935,7 @@
+                         ProfilerFiller gameprofilerfiller = Profiler.get();
+ 
+                         gameprofilerfiller.push(this::getType);
++                        this.blockEntity.tickTimer.startTiming(); // Spigot
+                         BlockState iblockdata = LevelChunk.this.getBlockState(blockposition);
+ 
+                         if (this.blockEntity.getType().isValid(iblockdata)) {
+@@ -872,6 +953,10 @@
+ 
+                         this.blockEntity.fillCrashReportCategory(crashreportsystemdetails);
+                         throw new ReportedException(crashreport);
++                        // Spigot start
++                    } finally {
++                        this.blockEntity.tickTimer.stopTiming();
++                        // Spigot end
+                     }
+                 }
+             }
