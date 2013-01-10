@@ -65,6 +65,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.Main;
 import org.bukkit.event.server.ServerLoadEvent;
 // CraftBukkit end
+import org.bukkit.craftbukkit.SpigotTimings; // Spigot
 
 public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTask> implements IMojangStatistics, ICommandListener, AutoCloseable {
 
@@ -957,6 +958,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
     protected void exit() {}
 
     protected void a(BooleanSupplier booleansupplier) {
+        SpigotTimings.serverTickTimer.startTiming(); // Spigot
         long i = SystemUtils.getMonotonicNanos();
 
         ++this.ticks;
@@ -976,12 +978,14 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         }
 
         if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit
+            SpigotTimings.worldSaveTimer.startTiming(); // Spigot
             MinecraftServer.LOGGER.debug("Autosave started");
             this.methodProfiler.enter("save");
             this.playerList.savePlayers();
             this.saveChunks(true, false, false);
             this.methodProfiler.exit();
             MinecraftServer.LOGGER.debug("Autosave finished");
+            SpigotTimings.worldSaveTimer.stopTiming(); // Spigot
         }
 
         this.methodProfiler.enter("snooper");
@@ -1002,21 +1006,30 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
 
         this.circularTimer.a(i1 - i);
         this.methodProfiler.exit();
+        SpigotTimings.serverTickTimer.stopTiming(); // Spigot
+        org.spigotmc.CustomTimingsHandler.tick(); // Spigot
     }
 
     protected void b(BooleanSupplier booleansupplier) {
+        SpigotTimings.schedulerTimer.startTiming(); // Spigot
         this.server.getScheduler().mainThreadHeartbeat(this.ticks); // CraftBukkit
+        SpigotTimings.schedulerTimer.stopTiming(); // Spigot
         this.methodProfiler.enter("commandFunctions");
+        SpigotTimings.commandFunctionsTimer.startTiming(); // Spigot
         this.getFunctionData().tick();
+        SpigotTimings.commandFunctionsTimer.stopTiming(); // Spigot
         this.methodProfiler.exitEnter("levels");
         Iterator iterator = this.getWorlds().iterator();
 
         // CraftBukkit start
         // Run tasks that are waiting on processing
+        SpigotTimings.processQueueTimer.startTiming(); // Spigot
         while (!processQueue.isEmpty()) {
             processQueue.remove().run();
         }
+        SpigotTimings.processQueueTimer.stopTiming(); // Spigot
 
+        SpigotTimings.timeUpdateTimer.startTiming(); // Spigot
         // Send time updates to everyone, it will get the right time from the world the player is in.
         if (this.ticks % 20 == 0) {
             for (int i = 0; i < this.getPlayerList().players.size(); ++i) {
@@ -1024,6 +1037,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                 entityplayer.playerConnection.sendPacket(new PacketPlayOutUpdateTime(entityplayer.world.getTime(), entityplayer.getPlayerTime(), entityplayer.world.getGameRules().getBoolean(GameRules.DO_DAYLIGHT_CYCLE))); // Add support for per player time
             }
         }
+        SpigotTimings.timeUpdateTimer.stopTiming(); // Spigot
 
         while (iterator.hasNext()) {
             WorldServer worldserver = (WorldServer) iterator.next();
@@ -1042,7 +1056,9 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
             this.methodProfiler.enter("tick");
 
             try {
+                worldserver.timings.doTick.startTiming(); // Spigot
                 worldserver.doTick(booleansupplier);
+                worldserver.timings.doTick.stopTiming(); // Spigot
             } catch (Throwable throwable) {
                 CrashReport crashreport = CrashReport.a(throwable, "Exception ticking world");
 
@@ -1055,18 +1071,24 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         }
 
         this.methodProfiler.exitEnter("connection");
+        SpigotTimings.connectionTimer.startTiming(); // Spigot
         this.getServerConnection().c();
+        SpigotTimings.connectionTimer.stopTiming(); // Spigot
         this.methodProfiler.exitEnter("players");
+        SpigotTimings.playerListTimer.startTiming(); // Spigot
         this.playerList.tick();
+        SpigotTimings.playerListTimer.stopTiming(); // Spigot
         if (SharedConstants.d) {
             GameTestHarnessTicker.a.b();
         }
 
         this.methodProfiler.exitEnter("server gui refresh");
 
+        SpigotTimings.tickablesTimer.startTiming(); // Spigot
         for (int i = 0; i < this.tickables.size(); ++i) {
             ((Runnable) this.tickables.get(i)).run();
         }
+        SpigotTimings.tickablesTimer.stopTiming(); // Spigot
 
         this.methodProfiler.exit();
     }

@@ -71,6 +71,7 @@ public final class SpawnerCreature {
 
     public static void a(WorldServer worldserver, Chunk chunk, SpawnerCreature.d spawnercreature_d, boolean flag, boolean flag1, boolean flag2) {
         worldserver.getMethodProfiler().enter("spawner");
+        worldserver.timings.mobSpawn.startTiming(); // Spigot
         EnumCreatureType[] aenumcreaturetype = SpawnerCreature.c;
         int i = aenumcreaturetype.length;
 
@@ -125,6 +126,7 @@ public final class SpawnerCreature {
             }
         }
 
+        worldserver.timings.mobSpawn.stopTiming(); // Spigot
         worldserver.getMethodProfiler().exit();
     }
 
