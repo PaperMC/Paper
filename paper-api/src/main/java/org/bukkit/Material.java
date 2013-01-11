@@ -528,7 +528,7 @@ public enum Material {
      * @return Material if found, or null
      */
     public static Material getMaterial(final int id) {
-        if (byId.length > id) {
+        if (byId.length > id && id >= 0) {
             return byId[id];
         } else {
             return null;

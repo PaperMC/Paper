@@ -33,6 +33,7 @@ public class MaterialTest {
     @Test
     public void getByOutOfRangeId() {
         assertThat(Material.getMaterial(Integer.MAX_VALUE), is(nullValue()));
+        assertThat(Material.getMaterial(Integer.MIN_VALUE), is(nullValue()));
     }
 
     @Test
