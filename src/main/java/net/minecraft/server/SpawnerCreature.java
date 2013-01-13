@@ -86,7 +86,7 @@ public final class SpawnerCreature {
                 }
 
                 if (limit == 0) {
-                    return 0;
+                    continue;
                 }
                 // CraftBukkit end
 
