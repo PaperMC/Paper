@@ -581,11 +581,11 @@ public final class SimplePluginManager implements PluginManager {
     }
 
     public void removePermission(Permission perm) {
-        removePermission(perm.getName().toLowerCase());
+        removePermission(perm.getName());
     }
 
     public void removePermission(String name) {
-        permissions.remove(name);
+        permissions.remove(name.toLowerCase());
     }
 
     public void recalculatePermissionDefaults(Permission perm) {
