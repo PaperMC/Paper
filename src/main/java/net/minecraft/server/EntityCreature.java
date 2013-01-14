@@ -123,8 +123,8 @@ public abstract class EntityCreature extends EntityLiving {
 
                     this.yaw = (float) (Math.atan2(d5, d4) * 180.0D / 3.1415927410125732D) - 90.0F;
                     f3 = (f4 - this.yaw + 90.0F) * 3.1415927F / 180.0F;
-                    this.bC = -MathHelper.sin(f3) * this.bC * 1.0F;
-                    this.bD = MathHelper.cos(f3) * this.bC * 1.0F;
+                    this.bC = -MathHelper.sin(f3) * this.bD * 1.0F;
+                    this.bD = MathHelper.cos(f3) * this.bD * 1.0F;
                 }
 
                 if (d3 > 0.0D) {
