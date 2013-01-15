@@ -1,0 +1,125 @@
+From c496c06761b4bda4b215743b3cd33039aef8d5ac Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 11 Jan 2013 11:08:45 -0500
+Subject: [PATCH 10/13] Fix various crop growth modifier formula issues
+
+---
+ src/main/java/net/minecraft/server/BlockCactus.java   | 2 +-
+ src/main/java/net/minecraft/server/BlockCrops.java    | 2 +-
+ src/main/java/net/minecraft/server/BlockGrass.java    | 3 ++-
+ src/main/java/net/minecraft/server/BlockMushroom.java | 2 +-
+ src/main/java/net/minecraft/server/BlockMycel.java    | 3 ++-
+ src/main/java/net/minecraft/server/BlockReed.java     | 2 +-
+ src/main/java/net/minecraft/server/BlockSapling.java  | 2 +-
+ src/main/java/net/minecraft/server/BlockStem.java     | 2 +-
+ 8 files changed, 10 insertions(+), 8 deletions(-)
+
+diff --git a/src/main/java/net/minecraft/server/BlockCactus.java b/src/main/java/net/minecraft/server/BlockCactus.java
+index 1cb89fa..57bedfc 100644
+--- a/src/main/java/net/minecraft/server/BlockCactus.java
++++ b/src/main/java/net/minecraft/server/BlockCactus.java
+@@ -23,7 +23,7 @@ public class BlockCactus extends Block {
+             if (l < 3) {
+                 int i1 = world.getData(i, j, k);
+ 
+-                if (i1 >= (byte) range(3, (world.growthOdds * 100 / world.getWorld().cactusGrowthModifier * 15 / 100F) + 0.5F, 15)) { // Spigot
++                if (i1 >= (byte) range(3, (world.growthOdds / world.getWorld().cactusGrowthModifier * 15) + 0.5F, 15)) { // Spigot
+                     org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j + 1, k, this.id, 0); // CraftBukkit
+                     world.setData(i, j, k, 0);
+                 } else {
+diff --git a/src/main/java/net/minecraft/server/BlockCrops.java b/src/main/java/net/minecraft/server/BlockCrops.java
+index 4d3b448..815e050 100644
+--- a/src/main/java/net/minecraft/server/BlockCrops.java
++++ b/src/main/java/net/minecraft/server/BlockCrops.java
+@@ -30,7 +30,7 @@ public class BlockCrops extends BlockFlower {
+             if (l < 7) {
+                 float f = this.l(world, i, j, k);
+ 
+-                if (random.nextInt((int) ((world.growthOdds * 100 / world.getWorld().wheatGrowthModifier / 25.0F) / f) + 1) == 0) { // Spigot
++                if (random.nextInt((int) (world.growthOdds / world.getWorld().wheatGrowthModifier * ((25.0F / f) + 1))) == 0) { // Spigot
+                     org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this.id, ++l); // CraftBukkit
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/server/BlockGrass.java b/src/main/java/net/minecraft/server/BlockGrass.java
+index 0bc7882..bf117bc 100644
+--- a/src/main/java/net/minecraft/server/BlockGrass.java
++++ b/src/main/java/net/minecraft/server/BlockGrass.java
+@@ -37,7 +37,8 @@ public class BlockGrass extends Block {
+                 }
+                 // CraftBukkit end
+             } else if (world.getLightLevel(i, j + 1, k) >= 9) {
+-                for (int l = 0; l < Math.max(4, Math.max(20, (int) (4 * 100F / world.growthOdds))); ++l) { // Spigot
++                int numGrowth = Math.min(4, Math.max(20, (int) (4 * 100F / world.growthOdds))); // Spigot
++                for (int l = 0; l < numGrowth; ++l) { // Spigot
+                     int i1 = i + random.nextInt(3) - 1;
+                     int j1 = j + random.nextInt(5) - 3;
+                     int k1 = k + random.nextInt(3) - 1;
+diff --git a/src/main/java/net/minecraft/server/BlockMushroom.java b/src/main/java/net/minecraft/server/BlockMushroom.java
+index 8fa8302..f66ea7a 100644
+--- a/src/main/java/net/minecraft/server/BlockMushroom.java
++++ b/src/main/java/net/minecraft/server/BlockMushroom.java
+@@ -23,7 +23,7 @@ public class BlockMushroom extends BlockFlower {
+     }
+ 
+     public void b(World world, int i, int j, int k, Random random) {
+-        if (random.nextInt((int) (world.growthOdds * 100 / world.getWorld().mushroomGrowthModifier * 25)) == 0) { // Spigot
++        if (random.nextInt((int) (world.growthOdds / world.getWorld().mushroomGrowthModifier * 25)) == 0) { // Spigot
+             byte b0 = 4;
+             int l = 5;
+ 
+diff --git a/src/main/java/net/minecraft/server/BlockMycel.java b/src/main/java/net/minecraft/server/BlockMycel.java
+index afef94d..b7cfa69 100644
+--- a/src/main/java/net/minecraft/server/BlockMycel.java
++++ b/src/main/java/net/minecraft/server/BlockMycel.java
+@@ -37,7 +37,8 @@ public class BlockMycel extends Block {
+                 }
+                 // CraftBukkit end
+             } else if (world.getLightLevel(i, j + 1, k) >= 9) {
+-                for (int l = 0; l < Math.max(4, Math.max(20, (int) (4 * 100F / world.growthOdds))); ++l) { // Spigot
++                int numGrowth = Math.min(4, Math.max(20, (int) (4 * 100F / world.growthOdds))); // Spigot
++                for (int l = 0; l < numGrowth; ++l) { // Spigot
+                     int i1 = i + random.nextInt(3) - 1;
+                     int j1 = j + random.nextInt(5) - 3;
+                     int k1 = k + random.nextInt(3) - 1;
+diff --git a/src/main/java/net/minecraft/server/BlockReed.java b/src/main/java/net/minecraft/server/BlockReed.java
+index 66ad508..c5a8d8a 100644
+--- a/src/main/java/net/minecraft/server/BlockReed.java
++++ b/src/main/java/net/minecraft/server/BlockReed.java
+@@ -24,7 +24,7 @@ public class BlockReed extends Block {
+             if (l < 3) {
+                 int i1 = world.getData(i, j, k);
+ 
+-                if (i1 >= (byte) range(3, (world.growthOdds * 100 / world.getWorld().sugarGrowthModifier * 15 / 100F) + 0.5F, 15)) { // Spigot
++                if (i1 >= (byte) range(3, (world.growthOdds / world.getWorld().sugarGrowthModifier * 15) + 0.5F, 15)) { // Spigot
+                     org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j + 1, k, this.id, 0); // CraftBukkit
+                     world.setData(i, j, k, 0);
+                 } else {
+diff --git a/src/main/java/net/minecraft/server/BlockSapling.java b/src/main/java/net/minecraft/server/BlockSapling.java
+index e8b0f96..d30fe65 100644
+--- a/src/main/java/net/minecraft/server/BlockSapling.java
++++ b/src/main/java/net/minecraft/server/BlockSapling.java
+@@ -27,7 +27,7 @@ public class BlockSapling extends BlockFlower {
+             if (world.getLightLevel(i, j + 1, k) >= 9 && random.nextInt(7) == 0) {
+                 int l = world.getData(i, j, k);
+ 
+-                if (world.getLightLevel(i, j + 1, k) >= 9 && (random.nextInt(Math.max(2, (int) ((world.growthOdds * 100 / world.getWorld().treeGrowthModifier * 7 / 100F) + 0.5F))) == 0)) { // Spigot
++                if (random.nextInt(Math.max(2, (int) ((world.growthOdds / world.getWorld().treeGrowthModifier * 7) + 0.5F))) == 0) { // Spigot
+                     world.setData(i, j, k, l | 8);
+                 } else {
+                     this.grow(world, i, j, k, random, false, null, null); // CraftBukkit - added bonemeal, player and itemstack
+diff --git a/src/main/java/net/minecraft/server/BlockStem.java b/src/main/java/net/minecraft/server/BlockStem.java
+index dfaf45d..82be68e 100644
+--- a/src/main/java/net/minecraft/server/BlockStem.java
++++ b/src/main/java/net/minecraft/server/BlockStem.java
+@@ -27,7 +27,7 @@ public class BlockStem extends BlockFlower {
+         if (world.getLightLevel(i, j + 1, k) >= 9) {
+             float f = this.n(world, i, j, k);
+ 
+-            if (random.nextInt((int) ((world.growthOdds * 100 / ((this.id == Block.PUMPKIN_STEM.id) ? world.getWorld().pumpkinGrowthModifier : world.getWorld().melonGrowthModifier) / 25.0F) / f) + 1) == 0) { // Spigot
++            if (random.nextInt((int) (world.growthOdds / (this.id == Block.PUMPKIN_STEM.id ? world.getWorld().pumpkinGrowthModifier : world.getWorld().melonGrowthModifier) * ((25.0F / f) + 1))) == 0) { // Spigot
+                 int l = world.getData(i, j, k);
+ 
+                 if (l < 7) {
+-- 
+1.8.1-rc2
+

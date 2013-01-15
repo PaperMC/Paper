@@ -1,0 +1,46 @@
+From ac06044ae6bcc052df0c71fe3c7fcacef84467bc Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@bigpond.com>
+Date: Thu, 10 Jan 2013 12:33:37 +1100
+Subject: [PATCH 08/13] Update timeout time to new default value.
+
+---
+ src/main/java/org/bukkit/craftbukkit/CraftServer.java | 9 ++++++++-
+ src/main/resources/configurations/bukkit.yml          | 2 +-
+ 2 files changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 67593d5..047378a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -226,7 +226,14 @@ public final class CraftServer implements Server {
+         commandMap.register("bukkit", new org.bukkit.craftbukkit.command.RestartCommand("restart"));
+         commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
+ 
+-        org.bukkit.craftbukkit.util.WatchdogThread.startThread(configuration.getInt("settings.timeout-time", 180), configuration.getBoolean("settings.restart-on-crash", false));
++        int timeout = configuration.getInt("settings.timeout-time", 300);
++        if (timeout == 180) {
++            timeout = 300;
++            getLogger().info("Migrating to new timeout time of 300");
++            configuration.set("settings.timeout-time", timeout);
++            saveConfig();
++        }
++        org.bukkit.craftbukkit.util.WatchdogThread.startThread(timeout, configuration.getBoolean("settings.restart-on-crash", false));
+ 
+         whitelistMessage = configuration.getString("settings.whitelist-message", whitelistMessage);
+         stopMessage = configuration.getString("settings.stop-message", stopMessage);
+diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
+index e192700..78134f9 100644
+--- a/src/main/resources/configurations/bukkit.yml
++++ b/src/main/resources/configurations/bukkit.yml
+@@ -26,7 +26,7 @@ settings:
+     deprecated-verbose: default
+     shutdown-message: Server closed
+     restart-script-location: start.bat
+-    timeout-time: 180
++    timeout-time: 300
+     restart-on-crash: false
+     filter-unsafe-ips: false
+     whitelist-message: You are not white-listed on this server!
+-- 
+1.8.1-rc2
+
