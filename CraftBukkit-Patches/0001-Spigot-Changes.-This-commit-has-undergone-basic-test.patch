@@ -1,7 +1,7 @@
-From 181e716d4433066069208693b6b494d5944cb0b6 Mon Sep 17 00:00:00 2001
+From 6b8688ec60bde099d830d49b86211ac90d295af5 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@bigpond.com>
 Date: Sun, 30 Dec 2012 23:56:05 -0600
-Subject: [PATCH 01/13] Spigot Changes. This commit has undergone basic testing
+Subject: [PATCH 01/15] Spigot Changes. This commit has undergone basic testing
  and appears to now be safe for careful production usage. Please report any
  bugs to IRC as soon as you encounter them. Long live Spigot!
 
@@ -28,7 +28,7 @@ Subject: [PATCH 01/13] Spigot Changes. This commit has undergone basic testing
  src/main/java/net/minecraft/server/PlayerList.java |  10 +-
  .../java/net/minecraft/server/SpawnerCreature.java |  23 +-
  .../net/minecraft/server/ThreadLoginVerifier.java  |  23 +
- src/main/java/net/minecraft/server/World.java      | 206 ++++++++-
+ src/main/java/net/minecraft/server/World.java      | 202 ++++++++-
  .../java/net/minecraft/server/WorldServer.java     | 133 ++++--
  .../java/org/bukkit/craftbukkit/CraftServer.java   | 108 ++++-
  .../java/org/bukkit/craftbukkit/CraftWorld.java    |  76 +++-
@@ -47,7 +47,7 @@ Subject: [PATCH 01/13] Spigot Changes. This commit has undergone basic testing
  .../org/bukkit/craftbukkit/util/TimedThread.java   |  37 ++
  .../bukkit/craftbukkit/util/WatchdogThread.java    |  88 ++++
  src/main/resources/configurations/bukkit.yml       |  55 +++
- 41 files changed, 1660 insertions(+), 158 deletions(-)
+ 41 files changed, 1658 insertions(+), 156 deletions(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/command/RestartCommand.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/command/TicksPerSecondCommand.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/util/ExceptionHandler.java
@@ -69,7 +69,7 @@ index a689360..4138573 100644
 +
 +/dependency-reduced-pom.xml
 diff --git a/pom.xml b/pom.xml
-index 47e7e52..c923f94 100644
+index 6a75d75..f331d53 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -51,8 +51,8 @@
@@ -716,7 +716,7 @@ index 0686ba0..58d30eb 100644
              URL url = new URL("http://session.minecraft.net/game/checkserver.jsp?user=" + URLEncoder.encode(PendingConnection.d(this.pendingConnection), "UTF-8") + "&serverId=" + URLEncoder.encode(s, "UTF-8"));
              BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(url.openStream()));
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index e2fd0df..c50b814 100644
+index e2fd0df..263cbd3 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -64,7 +64,8 @@ public abstract class World implements IBlockAccess {
@@ -786,23 +786,6 @@ index e2fd0df..c50b814 100644
          if (worldprovider != null) {
              this.worldProvider = worldprovider;
          } else if (this.worldData != null && this.worldData.j() != 0) {
-@@ -276,14 +298,14 @@ public abstract class World implements IBlockAccess {
-     // CraftBukkit start
-     public Chunk getChunkAt(int i, int j) {
-         Chunk result = null;
--        synchronized (this.chunkLock) {
-+        // Spigot start - remove sync
-             if (this.lastChunkAccessed == null || this.lastXAccessed != i || this.lastZAccessed != j) {
-                 this.lastChunkAccessed = this.chunkProvider.getOrCreateChunk(i, j);
-                 this.lastXAccessed = i;
-                 this.lastZAccessed = j;
-             }
-             result = this.lastChunkAccessed;
--        }
-+        // Spigot end
-         return result;
-     }
-     // CraftBukkit end
 @@ -903,6 +925,47 @@ public abstract class World implements IBlockAccess {
              event = CraftEventFactory.callCreatureSpawnEvent((EntityLiving) entity, spawnReason);
          } else if (entity instanceof EntityItem) {
