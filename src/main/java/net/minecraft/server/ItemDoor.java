@@ -1,7 +1,5 @@
 package net.minecraft.server;
 
-import org.bukkit.craftbukkit.block.CraftBlockState; // CraftBukkit
-
 public class ItemDoor extends Item {
 
     private Material a;
@@ -85,17 +83,22 @@ public class ItemDoor extends Item {
             flag2 = true;
         }
 
-        CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
         world.suppressPhysics = true;
-        world.setTypeIdAndData(i, j, k, block.id, l);
         // CraftBukkit start
         if (entityhuman != null) {
-            org.bukkit.event.block.BlockPlaceEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, i, j, k);
-
-            if (event.isCancelled() || !event.canBuild()) {
-                event.getBlockPlaced().setTypeIdAndData(blockState.getTypeId(), blockState.getRawData(), false);
+            if(!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, block.id, l)) {
+                ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet53BlockChange(i, j + 1, k, world));
                 return false;
             }
+
+            if (world.getTypeId(i, j, k) != block.id) {
+                ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet53BlockChange(i, j + 1, k, world));
+                return true;
+            }
+
+            world.suppressPhysics = true;
+        } else {
+            world.setTypeIdAndData(i, j, k, block.id, l);
         }
         // CraftBukkit end
         world.setTypeIdAndData(i, j + 1, k, block.id, 8 | (flag2 ? 1 : 0));
