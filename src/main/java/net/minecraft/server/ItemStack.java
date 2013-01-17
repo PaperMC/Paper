@@ -41,7 +41,7 @@ public final class ItemStack {
         this.setData(k); // CraftBukkit
     }
 
-    public static ItemStack a(NBTTagCompound nbttagcompound) {
+    public static ItemStack createStack(NBTTagCompound nbttagcompound) {
         ItemStack itemstack = new ItemStack();
 
         itemstack.c(nbttagcompound);

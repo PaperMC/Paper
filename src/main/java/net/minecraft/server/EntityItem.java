@@ -197,7 +197,7 @@ public class EntityItem extends Entity {
 
         // CraftBukkit start
         if (nbttagcompound1 != null) {
-            ItemStack itemstack = ItemStack.a(nbttagcompound1);
+            ItemStack itemstack = ItemStack.createStack(nbttagcompound1);
             if (itemstack != null) {
                 this.setItemStack(itemstack);
             } else {
@@ -279,7 +279,7 @@ public class EntityItem extends Entity {
     }
 
     public ItemStack getItemStack() {
-        ItemStack itemstack = this.getDataWatcher().f(10);
+        ItemStack itemstack = this.getDataWatcher().getItemStack(10);
 
         if (itemstack == null) {
             System.out.println("Item entity " + this.id + " has no item?!");

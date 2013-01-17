@@ -48,7 +48,7 @@ public class EntityOcelot extends EntityTameableAnimal {
         }
     }
 
-    protected boolean bj() {
+    protected boolean isTypeNotPersistent() {
         return !this.isTamed();
     }
 
@@ -100,7 +100,7 @@ public class EntityOcelot extends EntityTameableAnimal {
         if (this.isInvulnerable()) {
             return false;
         } else {
-            this.d.a(false);
+            this.d.setSitting(false);
             return super.damageEntity(damagesource, i);
         }
     }
@@ -114,7 +114,7 @@ public class EntityOcelot extends EntityTameableAnimal {
 
         if (this.isTamed()) {
             if (entityhuman.name.equalsIgnoreCase(this.getOwnerName()) && !this.world.isStatic && !this.c(itemstack)) {
-                this.d.a(!this.isSitting());
+                this.d.setSitting(!this.isSitting());
             }
         } else if (this.e.f() && itemstack != null && itemstack.id == Item.RAW_FISH.id && entityhuman.e(this) < 9.0D) {
             if (!entityhuman.abilities.canInstantlyBuild) {
@@ -132,7 +132,7 @@ public class EntityOcelot extends EntityTameableAnimal {
                     this.setCatType(1 + this.world.random.nextInt(3));
                     this.setOwnerName(entityhuman.name);
                     this.f(true);
-                    this.d.a(true);
+                    this.d.setSitting(true);
                     this.world.broadcastEntityEffect(this, (byte) 7);
                 } else {
                     this.f(false);

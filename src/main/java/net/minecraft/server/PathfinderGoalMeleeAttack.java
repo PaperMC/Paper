@@ -29,7 +29,7 @@ public class PathfinderGoalMeleeAttack extends PathfinderGoal {
     }
 
     public boolean a() {
-        EntityLiving entityliving = this.b.aG();
+        EntityLiving entityliving = this.b.getGoalTarget();
 
         if (entityliving == null) {
             return false;
@@ -43,7 +43,7 @@ public class PathfinderGoalMeleeAttack extends PathfinderGoal {
     }
 
     public boolean b() {
-        EntityLiving entityliving = this.b.aG();
+        EntityLiving entityliving = this.b.getGoalTarget();
 
         return entityliving == null ? false : (!this.c.isAlive() ? false : (!this.f ? !this.b.getNavigation().f() : this.b.e(MathHelper.floor(this.c.locX), MathHelper.floor(this.c.locY), MathHelper.floor(this.c.locZ))));
     }

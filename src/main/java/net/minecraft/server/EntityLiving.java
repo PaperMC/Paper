@@ -76,7 +76,7 @@ public abstract class EntityLiving extends Entity {
     private Navigation navigation;
     protected final PathfinderGoalSelector goalSelector;
     protected final PathfinderGoalSelector targetSelector;
-    private EntityLiving bN;
+    private EntityLiving goalTarget;
     private EntitySenses bO;
     private float bP;
     private ChunkCoordinates bQ = new ChunkCoordinates(0, 0, 0);
@@ -87,7 +87,7 @@ public abstract class EntityLiving extends Entity {
     public boolean bq = false;
     public int br = 0;
     public boolean canPickUpLoot = false; // CraftBukkit - protected -> public
-    public boolean persistent = !this.bj(); // CraftBukkit - private -> public, change value
+    public boolean persistent = !this.isTypeNotPersistent(); // CraftBukkit - private -> public, change value
     protected int bt;
     protected double bu;
     protected double bv;
@@ -196,12 +196,12 @@ public abstract class EntityLiving extends Entity {
         return false;
     }
 
-    public EntityLiving aG() {
-        return this.bN;
+    public EntityLiving getGoalTarget() {
+        return this.goalTarget;
     }
 
-    public void b(EntityLiving entityliving) {
-        this.bN = entityliving;
+    public void setGoalTarget(EntityLiving entityliving) {
+        this.goalTarget = entityliving;
     }
 
     public boolean a(Class oclass) {
@@ -1187,7 +1187,7 @@ public abstract class EntityLiving extends Entity {
             nbttaglist = nbttagcompound.getList("Equipment");
 
             for (i = 0; i < this.equipment.length; ++i) {
-                this.equipment[i] = ItemStack.a((NBTTagCompound) nbttaglist.get(i));
+                this.equipment[i] = ItemStack.createStack((NBTTagCompound) nbttaglist.get(i));
             }
         }
 
@@ -1430,7 +1430,7 @@ public abstract class EntityLiving extends Entity {
         this.am = true;
     }
 
-    protected boolean bj() {
+    protected boolean isTypeNotPersistent() {
         return true;
     }
 
@@ -1827,7 +1827,7 @@ public abstract class EntityLiving extends Entity {
     }
 
     public int as() {
-        if (this.aG() == null) {
+        if (this.getGoalTarget() == null) {
             return 3;
         } else {
             int i = (int) ((float) this.health - (float) this.maxHealth * 0.33F); // this.getMaxHealth() -> this.maxHealth

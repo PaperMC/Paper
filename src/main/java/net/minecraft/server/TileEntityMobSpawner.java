@@ -9,7 +9,7 @@ public class TileEntityMobSpawner extends TileEntity {
 
     public int spawnDelay = -1;
     public String mobName = "Pig"; // CraftBukkit - private -> public
-    private List mobs = null; 
+    private List mobs = null;
     private TileEntityMobSpawnerData spawnData = null;
     public double b;
     public double c = 0.0D;
@@ -221,7 +221,7 @@ public class TileEntityMobSpawner extends TileEntity {
         NBTTagCompound nbttagcompound = new NBTTagCompound();
 
         this.b(nbttagcompound);
-        nbttagcompound.o("SpawnPotentials");
+        nbttagcompound.remove("SpawnPotentials");
         return new Packet132TileEntityData(this.x, this.y, this.z, 1, nbttagcompound);
     }
 

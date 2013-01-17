@@ -60,7 +60,7 @@ public class PlayerConnection extends Connection {
     private long j;
     private static Random k = new Random();
     private long l;
-    private volatile int m = 0; private static final AtomicIntegerFieldUpdater chatSpamField = AtomicIntegerFieldUpdater.newUpdater(PlayerConnection.class, "m"); // CraftBukkit - multithreaded field
+    private volatile int chatThrottle = 0; private static final AtomicIntegerFieldUpdater chatSpamField = AtomicIntegerFieldUpdater.newUpdater(PlayerConnection.class, "chatThrottle"); // CraftBukkit - multithreaded field
     private int x = 0;
     private double y;
     private double z;
@@ -119,7 +119,7 @@ public class PlayerConnection extends Connection {
         }
 
         // CraftBukkit start
-        for (int spam; (spam = this.m) > 0 && !chatSpamField.compareAndSet(this, spam, spam - 1); ) ;
+        for (int spam; (spam = this.chatThrottle) > 0 && !chatSpamField.compareAndSet(this, spam, spam - 1); ) ;
         /* Use thread-safe field access instead
         if (this.m > 0) {
             --this.m;

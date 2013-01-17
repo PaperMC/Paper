@@ -107,7 +107,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
             byte b0 = nbttagcompound1.getByte("Slot");
 
             if (b0 >= 0 && b0 < this.items.length) {
-                this.items[b0] = ItemStack.a(nbttagcompound1);
+                this.items[b0] = ItemStack.createStack(nbttagcompound1);
             }
         }
 

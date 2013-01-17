@@ -138,7 +138,7 @@ public class EntityPotion extends EntityProjectile {
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
         if (nbttagcompound.hasKey("Potion")) {
-            this.c = ItemStack.a(nbttagcompound.getCompound("Potion"));
+            this.c = ItemStack.createStack(nbttagcompound.getCompound("Potion"));
         } else {
             this.setPotionValue(nbttagcompound.getInt("potionValue"));
         }

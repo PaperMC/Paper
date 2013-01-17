@@ -344,7 +344,7 @@ public class PlayerInventory implements IInventory {
         for (int i = 0; i < nbttaglist.size(); ++i) {
             NBTTagCompound nbttagcompound = (NBTTagCompound) nbttaglist.get(i);
             int j = nbttagcompound.getByte("Slot") & 255;
-            ItemStack itemstack = ItemStack.a(nbttagcompound);
+            ItemStack itemstack = ItemStack.createStack(nbttagcompound);
 
             if (itemstack != null) {
                 if (j >= 0 && j < this.items.length) {

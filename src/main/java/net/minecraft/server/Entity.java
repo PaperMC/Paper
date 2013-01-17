@@ -1165,7 +1165,7 @@ public abstract class Entity {
 
                 // Reset the persistence for tamed animals
                 if (entity instanceof EntityTameableAnimal && !isLevelAtLeast(nbttagcompound, 2) && !nbttagcompound.getBoolean("PersistenceRequired")) {
-                    entity.persistent = !entity.bj();
+                    entity.persistent = !entity.isTypeNotPersistent();
                 }
             }
             // CraftBukkit end

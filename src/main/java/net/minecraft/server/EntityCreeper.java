@@ -32,7 +32,7 @@ public class EntityCreeper extends EntityMonster {
     }
 
     public int as() {
-        return this.aG() == null ? 3 : 3 + (this.health - 1);
+        return this.getGoalTarget() == null ? 3 : 3 + (this.health - 1);
     }
 
     protected void a(float f) {

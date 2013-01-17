@@ -2,8 +2,8 @@ package net.minecraft.server;
 
 public class EntityFireworks extends Entity {
 
-    private int a;
-    public int b; // CraftBukkit - private -> public
+    private int ticksFlown;
+    public int expectedLifespan; // CraftBukkit - private -> public
 
     public EntityFireworks(World world) {
         super(world);
@@ -11,12 +11,12 @@ public class EntityFireworks extends Entity {
     }
 
     protected void a() {
-        this.datawatcher.a(8, new ItemStack(0, 0, 0));
+        this.datawatcher.a(8, 5);
     }
 
     public EntityFireworks(World world, double d0, double d1, double d2, ItemStack itemstack) {
         super(world);
-        this.a = 0;
+        this.ticksFlown = 0;
         this.a(0.25F, 0.25F);
         this.setPosition(d0, d1, d2);
         this.height = 0.0F;
@@ -35,7 +35,7 @@ public class EntityFireworks extends Entity {
         this.motX = this.random.nextGaussian() * 0.001D;
         this.motZ = this.random.nextGaussian() * 0.001D;
         this.motY = 0.05D;
-        this.b = 10 * i + this.random.nextInt(6) + this.random.nextInt(7);
+        this.expectedLifespan = 10 * i + this.random.nextInt(6) + this.random.nextInt(7);
     }
 
     public void j_() {
@@ -69,25 +69,25 @@ public class EntityFireworks extends Entity {
 
         this.pitch = this.lastPitch + (this.pitch - this.lastPitch) * 0.2F;
         this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
-        if (this.a == 0) {
+        if (this.ticksFlown == 0) {
             this.world.makeSound(this, "fireworks.launch", 3.0F, 1.0F);
         }
 
-        ++this.a;
-        if (this.world.isStatic && this.a % 2 < 2) {
+        ++this.ticksFlown;
+        if (this.world.isStatic && this.ticksFlown % 2 < 2) {
             this.world.addParticle("fireworksSpark", this.locX, this.locY - 0.3D, this.locZ, this.random.nextGaussian() * 0.05D, -this.motY * 0.5D, this.random.nextGaussian() * 0.05D);
         }
 
-        if (!this.world.isStatic && this.a > this.b) {
+        if (!this.world.isStatic && this.ticksFlown > this.expectedLifespan) {
             this.world.broadcastEntityEffect(this, (byte) 17);
             this.die();
         }
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.setInt("Life", this.a);
-        nbttagcompound.setInt("LifeTime", this.b);
-        ItemStack itemstack = this.datawatcher.f(8);
+        nbttagcompound.setInt("Life", this.ticksFlown);
+        nbttagcompound.setInt("LifeTime", this.expectedLifespan);
+        ItemStack itemstack = this.datawatcher.getItemStack(8);
 
         if (itemstack != null) {
             NBTTagCompound nbttagcompound1 = new NBTTagCompound();
@@ -98,12 +98,12 @@ public class EntityFireworks extends Entity {
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.a = nbttagcompound.getInt("Life");
-        this.b = nbttagcompound.getInt("LifeTime");
+        this.ticksFlown = nbttagcompound.getInt("Life");
+        this.expectedLifespan = nbttagcompound.getInt("LifeTime");
         NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("FireworksItem");
 
         if (nbttagcompound1 != null) {
-            ItemStack itemstack = ItemStack.a(nbttagcompound1);
+            ItemStack itemstack = ItemStack.createStack(nbttagcompound1);
 
             if (itemstack != null) {
                 this.datawatcher.watch(8, itemstack);

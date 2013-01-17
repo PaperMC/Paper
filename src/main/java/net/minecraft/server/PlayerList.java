@@ -759,7 +759,7 @@ public abstract class PlayerList {
 
     public void updateClient(EntityPlayer entityplayer) {
         entityplayer.updateInventory(entityplayer.defaultContainer);
-        entityplayer.m();
+        entityplayer.triggerHealthUpdate();
         entityplayer.playerConnection.sendPacket(new Packet16BlockItemSwitch(entityplayer.inventory.itemInHandIndex));
     }
 

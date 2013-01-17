@@ -12,7 +12,7 @@ public class PathfinderGoalSit extends PathfinderGoal {
 
     public boolean a() {
         if (!this.a.isTamed()) {
-            return this.b && this.a.aG() == null; // CraftBukkit - Allow sitting for wild animals
+            return this.b && this.a.getGoalTarget() == null; // CraftBukkit - Allow sitting for wild animals
         } else if (this.a.H()) {
             return false;
         } else if (!this.a.onGround) {
@@ -33,7 +33,7 @@ public class PathfinderGoalSit extends PathfinderGoal {
         this.a.setSitting(false);
     }
 
-    public void a(boolean flag) {
+    public void setSitting(boolean flag) {
         this.b = flag;
     }
 }

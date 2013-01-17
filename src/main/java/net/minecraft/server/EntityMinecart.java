@@ -801,7 +801,7 @@ public class EntityMinecart extends Entity implements IInventory {
                 int j = nbttagcompound1.getByte("Slot") & 255;
 
                 if (j >= 0 && j < this.items.length) {
-                    this.items[j] = ItemStack.a(nbttagcompound1);
+                    this.items[j] = ItemStack.createStack(nbttagcompound1);
                 }
             }
         }

@@ -62,7 +62,7 @@ public class EntityIronGolem extends EntityGolem {
 
     protected void o(Entity entity) {
         if (entity instanceof IMonster && this.aB().nextInt(20) == 0) {
-            this.b((EntityLiving) entity);
+            this.setGoalTarget((EntityLiving) entity);
         }
 
         super.o(entity);

@@ -758,7 +758,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
     }
 
     public String getVersion() {
-        return "1.4.6";
+        return "1.4.7";
     }
 
     public int y() {
