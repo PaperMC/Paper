@@ -22,11 +22,11 @@ public class CraftFirework extends CraftEntity implements Firework {
     public CraftFirework(CraftServer server, EntityFireworks entity) {
         super(server, entity);
 
-        ItemStack item = getHandle().getDataWatcher().f(FIREWORK_ITEM_INDEX);
+        ItemStack item = getHandle().getDataWatcher().getItemStack(FIREWORK_ITEM_INDEX);
 
         if (item == null) {
             item = new ItemStack(Item.FIREWORKS);
-            getHandle().getDataWatcher().a(FIREWORK_ITEM_INDEX, item); // register
+            getHandle().getDataWatcher().watch(FIREWORK_ITEM_INDEX, item);
         }
 
         this.item = CraftItemStack.asCraftMirror(item);
@@ -59,7 +59,7 @@ public class CraftFirework extends CraftEntity implements Firework {
         item.setItemMeta(meta);
 
         // Copied from EntityFireworks constructor, update firework lifetime/power
-        getHandle().b = 10 * (1 + meta.getPower()) + random.nextInt(6) + random.nextInt(7);
+        getHandle().expectedLifespan = 10 * (1 + meta.getPower()) + random.nextInt(6) + random.nextInt(7);
 
         getHandle().getDataWatcher().h(FIREWORK_ITEM_INDEX); // Update
     }
