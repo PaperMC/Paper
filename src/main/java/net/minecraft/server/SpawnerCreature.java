@@ -154,9 +154,10 @@ public final class SpawnerCreature {
                                                             entityliving.setPositionRotation((double) f, (double) f1, (double) f2, worldserver.random.nextFloat() * 360.0F, 0.0F);
                                                             if (entityliving.canSpawn()) {
                                                                 ++j2;
-                                                                // CraftBukkit - added a reason for spawning this creature
-                                                                worldserver.addEntity(entityliving, SpawnReason.NATURAL);
+                                                                // CraftBukkit start - added a reason for spawning this creature, moved a(entityliving, world...) up
                                                                 a(entityliving, worldserver, f, f1, f2);
+                                                                worldserver.addEntity(entityliving, SpawnReason.NATURAL);
+                                                                // CraftBukkit end
                                                                 if (j2 >= entityliving.bv()) {
                                                                     continue label110;
                                                                 }
@@ -199,7 +200,6 @@ public final class SpawnerCreature {
     }
 
     private static void a(EntityLiving entityliving, World world, float f, float f1, float f2) {
-        if (entityliving.dead) return; // CraftBukkit
         entityliving.bG();
     }
 
@@ -236,9 +236,10 @@ public final class SpawnerCreature {
                             }
 
                             entityliving.setPositionRotation((double) f, (double) f1, (double) f2, random.nextFloat() * 360.0F, 0.0F);
-                            // CraftBukkit - added a reason for spawning this creature
-                            world.addEntity(entityliving, SpawnReason.CHUNK_GEN);
+                            // CraftBukkit start - added a reason for spawning this creature, moved a(entity, world...) up
                             a(entityliving, world, f, f1, f2);
+                            world.addEntity(entityliving, SpawnReason.CHUNK_GEN);
+                            // CraftBukkit end
                             flag = true;
                         }
 
