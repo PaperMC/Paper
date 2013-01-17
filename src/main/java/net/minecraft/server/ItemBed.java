@@ -41,7 +41,7 @@ public class ItemBed extends Item {
                 if (world.isEmpty(i, j, k) && world.isEmpty(i + b0, j, k + b1) && world.v(i, j - 1, k) && world.v(i + b0, j - 1, k + b1)) {
                     // CraftBukkit start
                     //world.setTypeIdAndData(i, j, k, blockbed.id, i1);
-                    if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, blockbed.id, l)) {
+                    if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, blockbed.id, i1)) {
                         return false;
                     }
                     // CraftBukkit end
