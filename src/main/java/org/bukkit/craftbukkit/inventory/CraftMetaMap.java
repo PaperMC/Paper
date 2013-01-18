@@ -132,9 +132,4 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
         return builder;
     }
-
-    @Override
-    SerializableMeta.Deserializers deserializer() {
-        return SerializableMeta.Deserializers.MAP;
-    }
 }

@@ -46,6 +46,7 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
         setColor(SerializableMeta.getObject(Color.class, map, COLOR.BUKKIT, true));
     }
 
+    @Override
     void applyToItem(NBTTagCompound itemTag) {
         super.applyToItem(itemTag);
 
@@ -63,6 +64,7 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
         return !(hasColor());
     }
 
+    @Override
     boolean applicableTo(Material type) {
         switch(type) {
             case LEATHER_HELMET:
@@ -104,11 +106,6 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
     }
 
     @Override
-    SerializableMeta.Deserializers deserializer() {
-        return SerializableMeta.Deserializers.LEATHER_ARMOR;
-    }
-
-    @Override
     boolean equalsCommon(CraftMetaItem meta) {
         if (!super.equalsCommon(meta)) {
             return false;
@@ -126,6 +123,7 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
         return super.notUncommon(meta) && (meta instanceof CraftMetaLeatherArmor || isLeatherArmorEmpty());
     }
 
+    @Override
     int applyHash() {
         final int original;
         int hash = original = super.applyHash();

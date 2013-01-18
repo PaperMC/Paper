@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.*;
 import java.util.Arrays;
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Material;
@@ -29,6 +30,41 @@ import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;
 
 public class ItemMetaTest extends AbstractTestingBase {
+
+    static final int MAX_FIREWORK_POWER = 127; // Please update ItemStackFireworkTest if/when this gets changed.
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testPowerLimitExact() {
+        newFireworkMeta().setPower(MAX_FIREWORK_POWER + 1);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testPowerLimitMax() {
+        newFireworkMeta().setPower(Integer.MAX_VALUE);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testPowerLimitMin() {
+        newFireworkMeta().setPower(Integer.MIN_VALUE);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testPowerLimitNegative() {
+        newFireworkMeta().setPower(-1);
+    }
+
+    @Test
+    public void testPowers() {
+        for (int i = 0; i <= MAX_FIREWORK_POWER; i++) {
+            FireworkMeta firework = newFireworkMeta();
+            firework.setPower(i);
+            assertThat(String.valueOf(i), firework.getPower(), is(i));
+        }
+    }
+
+    private static FireworkMeta newFireworkMeta() {
+        return ((FireworkMeta) Bukkit.getItemFactory().getItemMeta(Material.FIREWORK));
+    }
 
     @Test
     public void testCrazyEquality() {

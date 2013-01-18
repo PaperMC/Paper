@@ -4,6 +4,8 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -86,79 +88,55 @@ class CraftMetaItem implements ItemMeta, Repairable {
     public static class SerializableMeta implements ConfigurationSerializable {
         static final String TYPE_FIELD = "meta-type";
 
-        enum Deserializers {
-            BOOK {
-                @Override
-                CraftMetaBook deserialize(Map<String, Object> map) {
-                    return new CraftMetaBook(map);
-                }
-            },
-            SKULL {
-                @Override
-                CraftMetaSkull deserialize(Map<String, Object> map) {
-                    return new CraftMetaSkull(map);
-                }
-            },
-            LEATHER_ARMOR {
-                @Override
-                CraftMetaLeatherArmor deserialize(Map<String, Object> map) {
-                    return new CraftMetaLeatherArmor(map);
-                }
-            },
-            MAP {
-                @Override
-                CraftMetaMap deserialize(Map<String, Object> map) {
-                    return new CraftMetaMap(map);
-                }
-            },
-            POTION {
-                @Override
-                CraftMetaPotion deserialize(Map<String, Object> map) {
-                    return new CraftMetaPotion(map);
-                }
-            },
-            ENCHANTED {
-                @Override
-                CraftMetaEnchantedBook deserialize(Map<String, Object> map) {
-                    return new CraftMetaEnchantedBook(map);
-                }
-            },
-            FIREWORK {
-                @Override
-                CraftMetaFirework deserialize(Map<String, Object> map) {
-                    return new CraftMetaFirework(map);
-                }
-            },
-            FIREWORK_EFFECT {
-                @Override
-                CraftMetaCharge deserialize(Map<String, Object> map) {
-                    return new CraftMetaCharge(map);
-                }
-            },
-            UNSPECIFIC {
-                @Override
-                CraftMetaItem deserialize(Map<String, Object> map) {
-                    return new CraftMetaItem(map);
-                }
-            };
+        static final ImmutableMap<Class<? extends CraftMetaItem>, String> classMap;
+        static final ImmutableMap<String, Constructor<? extends CraftMetaItem>> constructorMap;
 
-            abstract CraftMetaItem deserialize(Map<String, Object> map);
+        static {
+            classMap = ImmutableMap.<Class<? extends CraftMetaItem>, String>builder()
+                    .put(CraftMetaBook.class, "BOOK")
+                    .put(CraftMetaSkull.class, "SKULL")
+                    .put(CraftMetaLeatherArmor.class, "LEATHER_ARMOR")
+                    .put(CraftMetaMap.class, "MAP")
+                    .put(CraftMetaPotion.class, "POTION")
+                    .put(CraftMetaEnchantedBook.class, "ENCHANTED")
+                    .put(CraftMetaFirework.class, "FIREWORK")
+                    .put(CraftMetaCharge.class, "FIREWORK_EFFECT")
+                    .put(CraftMetaItem.class, "UNSPECIFIC")
+                    .build();
+
+            final ImmutableMap.Builder<String, Constructor<? extends CraftMetaItem>> classConstructorBuilder = ImmutableMap.builder();
+            for (Map.Entry<Class<? extends CraftMetaItem>, String> mapping : classMap.entrySet()) {
+                try {
+                    classConstructorBuilder.put(mapping.getValue(), mapping.getKey().getDeclaredConstructor(Map.class));
+                } catch (NoSuchMethodException e) {
+                    throw new AssertionError(e);
+                }
+            }
+            constructorMap = classConstructorBuilder.build();
         }
 
         private SerializableMeta() {
         }
 
-        public static ItemMeta deserialize(Map<String, Object> map) {
+        public static ItemMeta deserialize(Map<String, Object> map) throws Throwable {
             Validate.notNull(map, "Cannot deserialize null map");
 
             String type = getString(map, TYPE_FIELD, false);
-            Deserializers deserializer = Deserializers.valueOf(type);
+            Constructor<? extends CraftMetaItem> constructor = constructorMap.get(type);
 
-            if (deserializer == null) {
+            if (constructor == null) {
                 throw new IllegalArgumentException(type + " is not a valid " + TYPE_FIELD);
             }
 
-            return deserializer.deserialize(map);
+            try {
+                return constructor.newInstance(map);
+            } catch (final InstantiationException e) {
+                throw new AssertionError(e);
+            } catch (final IllegalAccessException e) {
+                throw new AssertionError(e);
+            } catch (final InvocationTargetException e) {
+                throw e.getCause();
+            }
         }
 
         public Map<String, Object> serialize() {
@@ -516,7 +494,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
     public final Map<String, Object> serialize() {
         ImmutableMap.Builder<String, Object> map = ImmutableMap.builder();
-        map.put(SerializableMeta.TYPE_FIELD, deserializer().name());
+        map.put(SerializableMeta.TYPE_FIELD, SerializableMeta.classMap.get(getClass()));
         serialize(map);
         return map.build();
     }
@@ -553,11 +531,6 @@ class CraftMetaItem implements ItemMeta, Repairable {
         builder.put(key.BUKKIT, enchants.build());
     }
 
-    @Overridden
-    SerializableMeta.Deserializers deserializer() {
-        return SerializableMeta.Deserializers.UNSPECIFIC;
-    }
-
     static void safelyAdd(Iterable<?> addFrom, Collection<String> addTo, int maxItemLength) {
         if (addFrom == null) {
             return;
@@ -584,6 +557,6 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
     @Override
     public final String toString() {
-        return deserializer().toString() + "_META:" + serialize(); // TODO: cry
+        return SerializableMeta.classMap.get(getClass()) + "_META:" + serialize(); // TODO: cry
     }
 }

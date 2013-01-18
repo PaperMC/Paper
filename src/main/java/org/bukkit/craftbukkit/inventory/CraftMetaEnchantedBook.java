@@ -8,7 +8,6 @@ import net.minecraft.server.NBTTagCompound;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta.Deserializers;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 
@@ -121,11 +120,6 @@ class CraftMetaEnchantedBook extends CraftMetaItem implements EnchantmentStorage
         serializeEnchantments(enchantments, builder, STORED_ENCHANTMENTS);
 
         return builder;
-    }
-
-    @Override
-    Deserializers deserializer() {
-        return Deserializers.ENCHANTED;
     }
 
     boolean isEnchantedEmpty() {
