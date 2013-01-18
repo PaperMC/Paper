@@ -18,10 +18,13 @@ import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPotion;
 import net.minecraft.server.Explosion;
+import net.minecraft.server.IInventory;
 import net.minecraft.server.InventoryCrafting;
 import net.minecraft.server.Item;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.Packet101CloseWindow;
+import net.minecraft.server.Packet103SetSlot;
+import net.minecraft.server.Slot;
 import net.minecraft.server.World;
 import net.minecraft.server.WorldServer;
 
@@ -64,6 +67,7 @@ import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.event.server.ServerListPingEvent;
 import org.bukkit.inventory.InventoryView;
+import org.bukkit.inventory.meta.BookMeta;
 
 public class CraftEventFactory {
     public static final DamageSource MELTING = CraftDamageSource.copyOf(DamageSource.BURN);
@@ -671,5 +675,27 @@ public class CraftEventFactory {
         InventoryCloseEvent event = new InventoryCloseEvent(human.activeContainer.getBukkitView());
         human.world.getServer().getPluginManager().callEvent(event);
         human.activeContainer.transferTo(human.defaultContainer, human.getBukkitEntity());
+    }
+
+    public static void handleEditBookEvent(EntityPlayer player, ItemStack newBookItem) {
+        int itemInHandIndex = player.inventory.itemInHandIndex;
+
+        PlayerEditBookEvent editBookEvent = new PlayerEditBookEvent(player.getBukkitEntity(), player.inventory.itemInHandIndex, (BookMeta) CraftItemStack.getItemMeta(player.inventory.getItemInHand()), (BookMeta) CraftItemStack.getItemMeta(newBookItem), newBookItem.id == Item.WRITTEN_BOOK.id);
+        player.world.getServer().getPluginManager().callEvent(editBookEvent);
+        ItemStack itemInHand = player.inventory.getItem(itemInHandIndex);
+
+        // If they've got the same item in their hand, it'll need to be updated.
+        if (itemInHand.id == Item.BOOK_AND_QUILL.id) {
+            if (!editBookEvent.isCancelled()) {
+                CraftItemStack.setItemMeta(itemInHand, editBookEvent.getNewBookMeta());
+                if (editBookEvent.isSigning()) {
+                    itemInHand.id = Item.WRITTEN_BOOK.id;
+                }
+            }
+
+            // Client will have updated its idea of the book item; we need to overwrite that
+            Slot slot = player.activeContainer.a((IInventory) player.inventory, itemInHandIndex);
+            player.playerConnection.sendPacket(new Packet103SetSlot(player.activeContainer.windowId, slot.g, itemInHand));
+        }
     }
 }
