@@ -1661,10 +1661,10 @@ public class PlayerConnection extends Connection {
 
                 itemstack1 = this.player.inventory.getItemInHand();
                 if (itemstack != null && itemstack.id == Item.BOOK_AND_QUILL.id && itemstack.id == itemstack1.id) {
-                    itemstack1.a("pages", (NBTBase) itemstack.getTag().getList("pages"));
+                    CraftEventFactory.handleEditBookEvent(player, itemstack); // CraftBukkit
                 }
-            } catch (Exception exception) {
                 // CraftBukkit start
+            } catch (Throwable exception) {
                 this.minecraftServer.getLogger().warning(this.player.name + " sent invalid MC|BEdit data", exception);
                 this.disconnect("Invalid book data!");
                 // CraftBukkit end
@@ -1679,13 +1679,10 @@ public class PlayerConnection extends Connection {
 
                 itemstack1 = this.player.inventory.getItemInHand();
                 if (itemstack != null && itemstack.id == Item.WRITTEN_BOOK.id && itemstack1.id == Item.BOOK_AND_QUILL.id) {
-                    itemstack1.a("author", (NBTBase) (new NBTTagString("author", this.player.name)));
-                    itemstack1.a("title", (NBTBase) (new NBTTagString("title", itemstack.getTag().getString("title"))));
-                    itemstack1.a("pages", (NBTBase) itemstack.getTag().getList("pages"));
-                    itemstack1.id = Item.WRITTEN_BOOK.id;
+                    CraftEventFactory.handleEditBookEvent(player, itemstack); // CraftBukkit
                 }
-            } catch (Exception exception1) {
                 // CraftBukkit start
+            } catch (Throwable exception1) {
                 this.minecraftServer.getLogger().warning(this.player.name + " sent invalid MC|BSign data", exception1);
                 this.disconnect("Invalid book data!");
                 // CraftBukkit end
