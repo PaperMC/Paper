@@ -129,7 +129,7 @@ public class ItemStackFireworkTest extends ItemStackTest {
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
                             FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
-                            meta.setPower(150);
+                            meta.setPower(127);
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
@@ -148,7 +148,7 @@ public class ItemStackFireworkTest extends ItemStackTest {
                     new Operator() {
                         public ItemStack operate(ItemStack cleanStack) {
                             FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
-                            meta.setPower(200);
+                            meta.setPower(42);
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }

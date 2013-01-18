@@ -8,7 +8,6 @@ import org.bukkit.FireworkEffect;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta.Deserializers;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
 
 import com.google.common.collect.ImmutableMap.Builder;
@@ -125,10 +124,5 @@ class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
         }
 
         return builder;
-    }
-
-    @Override
-    Deserializers deserializer() {
-        return Deserializers.FIREWORK_EFFECT;
     }
 }
