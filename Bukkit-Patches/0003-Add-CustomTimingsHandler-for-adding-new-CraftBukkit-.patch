@@ -1,0 +1,133 @@
+From 1b7af1803b6c1fdcc7f0d8574f37000bbe10923f Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 9 Jan 2013 22:18:26 -0500
+Subject: [PATCH] Add CustomTimingsHandler for adding new CraftBukkit custom
+ timings
+
+---
+ .../org/bukkit/command/defaults/ReloadCommand.java |  2 +
+ .../bukkit/command/defaults/TimingsCommand.java    |  4 ++
+ .../org/bukkit/event/CustomTimingsHandler.java     | 60 ++++++++++++++++++++++
+ 3 files changed, 66 insertions(+)
+ create mode 100644 src/main/java/org/bukkit/event/CustomTimingsHandler.java
+
+diff --git a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+index fb3c90f..fffafa5 100644
+--- a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+@@ -6,6 +6,7 @@ import org.bukkit.Bukkit;
+ import org.bukkit.ChatColor;
+ import org.bukkit.command.Command;
+ import org.bukkit.command.CommandSender;
++import org.bukkit.event.CustomTimingsHandler;
+ 
+ public class ReloadCommand extends BukkitCommand {
+     public ReloadCommand(String name) {
+@@ -20,6 +21,7 @@ public class ReloadCommand extends BukkitCommand {
+     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
+         if (!testPermission(sender)) return true;
+ 
++        CustomTimingsHandler.reload(); // Spigot
+         Bukkit.reload();
+         Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Reload complete.");
+ 
+diff --git a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java b/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
+index 94cd62c..e0628d0 100644
+--- a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
+@@ -10,6 +10,7 @@ import org.apache.commons.lang.Validate;
+ import org.bukkit.Bukkit;
+ import org.bukkit.ChatColor;
+ import org.bukkit.command.CommandSender;
++import org.bukkit.event.CustomTimingsHandler;
+ import org.bukkit.event.Event;
+ import org.bukkit.event.HandlerList;
+ import org.bukkit.plugin.Plugin;
+@@ -51,6 +52,7 @@ public class TimingsCommand extends BukkitCommand {
+                     }
+                 }
+             }
++            CustomTimingsHandler.reload(); // Spigot
+             timingStart = System.nanoTime(); // Spigot
+             sender.sendMessage("Timings reset");
+         } else if ("merged".equals(args[0]) || separate) {
+@@ -95,8 +97,10 @@ public class TimingsCommand extends BukkitCommand {
+                     }
+                     fileTimings.println("    Total time " + totalTime + " (" + totalTime / 1000000000 + "s)");
+                 }
++                CustomTimingsHandler.printTimings(fileTimings); // Spigot
+                 fileTimings.println("Sample time " + sampleTime + " (" + sampleTime / 1000000000 + "s)"); // Spigot
+                 sender.sendMessage("Timings written to " + timings.getPath());
++                sender.sendMessage("Paste contents of file into form at http://aikar.co/timings.php to read results."); // Spigot
+                 if (separate) sender.sendMessage("Names written to " + names.getPath());
+             } catch (IOException e) {
+             } finally {
+diff --git a/src/main/java/org/bukkit/event/CustomTimingsHandler.java b/src/main/java/org/bukkit/event/CustomTimingsHandler.java
+new file mode 100644
+index 0000000..83294e3
+--- /dev/null
++++ b/src/main/java/org/bukkit/event/CustomTimingsHandler.java
+@@ -0,0 +1,60 @@
++package org.bukkit.event;
++
++
++import org.bukkit.Bukkit;
++
++import java.io.PrintStream;
++import java.util.ArrayList;
++
++/**
++ * Extends RegisteredListener to include timing information
++ */
++public class CustomTimingsHandler {
++
++    private final String name;
++    public int count = 0;
++    public long totalTime = 0;
++    long start = 0;
++
++    static public ArrayList<CustomTimingsHandler> allList = new ArrayList<>();
++    public CustomTimingsHandler(String name) {
++        this.name = name;
++        allList.add(this);
++    }
++
++    static public void printTimings(PrintStream printStream) {
++        printStream.println("Minecraft - ** indicates it's already counted by another timing");
++        for (CustomTimingsHandler t : allList) {
++            long time = t.totalTime;
++            int count = t.count;
++            if (count == 0) continue;
++            long avg = time / count;
++
++            printStream.println("    " + t.name + " Time: " + time + " Count: " + count + " Avg: " + avg);
++        }
++    }
++
++    static public void reload() {
++        if (!Bukkit.getServer().getPluginManager().useTimings()) return;
++        for (CustomTimingsHandler t : allList) {
++            t.reset();
++        }
++    }
++
++    public void startTiming() {
++        if (!Bukkit.getServer().getPluginManager().useTimings()) return;
++        start = System.nanoTime();
++    }
++
++    public void stopTiming() {
++        if (!Bukkit.getServer().getPluginManager().useTimings()) return;
++        totalTime += System.nanoTime() - start;
++        count++;
++    }
++
++    public void reset() {
++        count = 0;
++        totalTime = 0;
++    }
++}
++
+-- 
+1.8.1-rc2
+
