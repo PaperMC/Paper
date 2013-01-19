@@ -5,7 +5,7 @@ echo "Rebuilding patch files from current fork state..."
 function cleanupPatches {
     cd $1
     for patch in *.patch; do
-        lines=$(git diff --staged $patch | grep -E "^(\+|\-)" | grep -Ev "(From [a-z0-9]{32,}|--- a|+++ b)" | wc -l)
+        lines=$(git diff --staged $patch | grep -E "^(\+|\-)" | grep -Ev "(From [a-z0-9]{32,}|\-\-\- a|\+\+\+ b|.index)" | wc -l)
         if [ "$lines" == "0" ] ; then
             git reset HEAD $patch >/dev/null
             git checkout -- $patch >/dev/null
