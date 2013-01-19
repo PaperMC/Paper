@@ -23,10 +23,10 @@ function applyPatch {
         echo "  Something did not apply cleanly to $target."
         echo "  Please review above details and finish the apply then"
         echo "  save the changes with rebuildPatches.sh"
+        exit 1
     else
         echo "  Patches applied cleanly to $target"
     fi
 }
 
-applyPatch Bukkit Spigot-API
-applyPatch CraftBukkit Spigot
+applyPatch Bukkit Spigot-API && applyPatch CraftBukkit Spigot
