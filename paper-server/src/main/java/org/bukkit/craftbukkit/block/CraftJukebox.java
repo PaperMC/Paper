@@ -23,14 +23,20 @@ public class CraftJukebox extends CraftBlockState implements Jukebox {
     }
 
     public Material getPlaying() {
-        return Material.getMaterial(jukebox.record.id);
+        ItemStack record = jukebox.record;
+        if (record == null) {
+            return Material.AIR;
+        }
+        return Material.getMaterial(record.id);
     }
 
     public void setPlaying(Material record) {
-        if (record == null) {
+        if (record == null || Item.byId[record.getId()] == null) {
             record = Material.AIR;
+            jukebox.record = null;
+        } else {
+            jukebox.record = new ItemStack(Item.byId[record.getId()], 1);
         }
-        jukebox.record = new ItemStack(Item.byId[record.getId()], 1);
         jukebox.update();
         if (record == Material.AIR) {
             world.getHandle().setData(getX(), getY(), getZ(), 0);
