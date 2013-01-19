@@ -196,7 +196,6 @@ public class BlockRedstoneWire extends Block {
     }
 
     public void onPlace(World world, int i, int j, int k) {
-        if (world.suppressPhysics) return; // CraftBukkit
         super.onPlace(world, i, j, k);
         if (!world.isStatic) {
             this.l(world, i, j, k);

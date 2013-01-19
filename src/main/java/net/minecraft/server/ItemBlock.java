@@ -80,7 +80,7 @@ public class ItemBlock extends Item {
         org.bukkit.block.BlockState blockstate = org.bukkit.craftbukkit.block.CraftBlockState.getBlockState(world, x, y, z);
 
         world.suppressPhysics = true;
-        world.setTypeIdAndData(x, y, z, id, data);
+        world.setRawTypeIdAndData(x, y, z, id, data);
 
         org.bukkit.event.block.BlockPlaceEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockstate, x, y, z);
         if (event.isCancelled() || !event.canBuild()) {
@@ -90,12 +90,20 @@ public class ItemBlock extends Item {
         }
 
         world.suppressPhysics = false;
-        world.applyPhysics(x, y, z, world.getTypeId(x, y, z));
 
-        Block block = Block.byId[world.getTypeId(x, y, z)];
+        int newId = world.getTypeId(x, y, z);
+        int newData = world.getData(x, y, z);
+
+        Block block = Block.byId[newId];
+        if (block != null) {
+            block.onPlace(world, x, y, z);
+        }
+
+        world.update(x, y, z, newId);
+
         if (block != null) {
             block.postPlace(world, x, y, z, entityhuman);
-            block.postPlace(world, x, y, z, world.getData(x, y, z));
+            block.postPlace(world, x, y, z, newData);
 
             world.makeSound((double) ((float) x + 0.5F), (double) ((float) y + 0.5F), (double) ((float) z + 0.5F), block.stepSound.getPlaceSound(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
         }
