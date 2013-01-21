@@ -1,6 +1,6 @@
 #!/bin/bash
 
-basedir=$(dirname $(readlink -f $0))
+basedir=`pwd`
 echo "Rebuilding Forked projects.... "
 
 function applyPatch {
