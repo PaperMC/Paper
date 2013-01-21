@@ -1,0 +1,279 @@
+From 8333c7bb34c29dbd71462ef6320e62ca390cdff6 Mon Sep 17 00:00:00 2001
+From: lishid <lishid@gmail.com>
+Date: Mon, 21 Jan 2013 16:59:04 +1100
+Subject: [PATCH] Add oreobfuscator for Spigot.
+
+---
+ src/main/java/net/minecraft/server/Explosion.java  |  1 +
+ .../net/minecraft/server/Packet51MapChunk.java     |  1 +
+ .../net/minecraft/server/Packet56MapChunkBulk.java | 21 ++++-
+ .../minecraft/server/PlayerInteractManager.java    |  5 ++
+ .../java/org/bukkit/craftbukkit/CraftServer.java   |  9 +++
+ .../java/org/bukkit/craftbukkit/CraftWorld.java    |  4 +
+ .../bukkit/craftbukkit/OrebfuscatorManager.java    | 91 ++++++++++++++++++++++
+ src/main/resources/configurations/bukkit.yml       |  5 ++
+ 8 files changed, 136 insertions(+), 1 deletion(-)
+ create mode 100644 src/main/java/org/bukkit/craftbukkit/OrebfuscatorManager.java
+
+diff --git a/src/main/java/net/minecraft/server/Explosion.java b/src/main/java/net/minecraft/server/Explosion.java
+index ba2f88f..8d5b1d8 100644
+--- a/src/main/java/net/minecraft/server/Explosion.java
++++ b/src/main/java/net/minecraft/server/Explosion.java
+@@ -240,6 +240,7 @@ public class Explosion {
+                 j = chunkposition.y;
+                 k = chunkposition.z;
+                 l = this.world.getTypeId(i, j, k);
++                org.bukkit.craftbukkit.OrebfuscatorManager.updateNearbyBlocks(world, i, j, k); // Spigot (Orebfuscator)
+                 if (flag) {
+                     double d0 = (double) ((float) i + this.world.random.nextFloat());
+                     double d1 = (double) ((float) j + this.world.random.nextFloat());
+diff --git a/src/main/java/net/minecraft/server/Packet51MapChunk.java b/src/main/java/net/minecraft/server/Packet51MapChunk.java
+index b51d90c..365116a 100644
+--- a/src/main/java/net/minecraft/server/Packet51MapChunk.java
++++ b/src/main/java/net/minecraft/server/Packet51MapChunk.java
+@@ -46,6 +46,7 @@ public class Packet51MapChunk extends Packet {
+ 
+         this.d = chunkmap.c;
+         this.c = chunkmap.b;
++        org.bukkit.craftbukkit.OrebfuscatorManager.obfuscate(chunk.x, chunk.z, i, chunkmap.a, chunk.world); // Spigot (Orebfuscator)
+ 
+         try {
+             this.inflatedBuffer = chunkmap.a;
+diff --git a/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java b/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
+index 867ebd3..9d5cee7 100644
+--- a/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
++++ b/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
+@@ -28,6 +28,7 @@ public class Packet56MapChunkBulk extends Packet {
+         }
+     };
+     // CraftBukkit end
++    private World world; // Spigot (Orebfuscator) Keep track of world
+ 
+     public Packet56MapChunkBulk() {}
+ 
+@@ -46,6 +47,9 @@ public class Packet56MapChunkBulk extends Packet {
+             Chunk chunk = (Chunk) list.get(k);
+             ChunkMap chunkmap = Packet51MapChunk.a(chunk, true, '\uffff');
+ 
++            world = chunk.world; // Spigot (Orebfuscator)
++            /* Spigot (Orebfuscator) - Don't use the build buffer yet. Copy to it more efficiently once the chunk is obfuscated
++            // Moved to compress()
+             if (buildBuffer.length < j + chunkmap.a.length) {
+                 byte[] abyte = new byte[j + chunkmap.a.length];
+ 
+@@ -53,7 +57,7 @@ public class Packet56MapChunkBulk extends Packet {
+                 buildBuffer = abyte;
+             }
+ 
+-            System.arraycopy(chunkmap.a, 0, buildBuffer, j, chunkmap.a.length);
++            System.arraycopy(chunkmap.a, 0, buildBuffer, j, chunkmap.a.length); */
+             j += chunkmap.a.length;
+             this.c[k] = chunk.x;
+             this.d[k] = chunk.z;
+@@ -82,6 +86,21 @@ public class Packet56MapChunkBulk extends Packet {
+             return;
+         }
+ 
++        // Spigot (Orebfuscator) start - Obfuscate chunks
++        int finalBufferSize = 0;
++        for (int i = 0; i < a.length; i++) {
++            org.bukkit.craftbukkit.OrebfuscatorManager.obfuscate(c[i], d[i], a[i], inflatedBuffers[i], world);
++            finalBufferSize += inflatedBuffers[i].length;
++        }
++
++        // Now it's time to efficiently copy the chunk to the build buffer
++        buildBuffer = new byte[finalBufferSize];
++        int bufferLocation = 0;
++        for (int i = 0; i < a.length; i++) {
++            System.arraycopy(inflatedBuffers[i], 0, buildBuffer, bufferLocation, inflatedBuffers[i].length);
++            bufferLocation += inflatedBuffers[i].length;
++        }
++        // Spigot (Orebfuscator) end
+         Deflater deflater = localDeflater.get();
+         deflater.reset();
+         deflater.setInput(this.buildBuffer);
+diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+index 5faee12..55f9ffa 100644
+--- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
++++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+@@ -291,6 +291,11 @@ public class PlayerInteractManager {
+                 }
+                 return false;
+             }
++            // Spigot (Orebfuscator) start
++            else {
++                org.bukkit.craftbukkit.OrebfuscatorManager.updateNearbyBlocks(world, i, j, k);
++            }
++            // Spigot (Orebfuscator) end
+         }
+ 
+         if (false) { // Never trigger
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 047378a..4a75fb1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -163,6 +163,11 @@ public final class CraftServer implements Server {
+     private WarningState warningState = WarningState.DEFAULT;
+     private final BooleanWrapper online = new BooleanWrapper();
+ 
++    // Orebfuscator use
++    public boolean orebfuscatorEnabled = false;
++    public int orebfuscatorUpdateRadius = 2;
++    public List<String> orebfuscatorDisabledWorlds;
++
+     private final class BooleanWrapper {
+         private boolean value = true;
+     }
+@@ -242,6 +247,10 @@ public final class CraftServer implements Server {
+         commandComplete = configuration.getBoolean("settings.command-complete", true);
+         spamGuardExclusions = configuration.getStringList("settings.spam-exclusions");
+ 
++        orebfuscatorEnabled = configuration.getBoolean("orebfuscator.enable", false);
++        orebfuscatorUpdateRadius = configuration.getInt("orebfuscator.update-radius", 2);
++        orebfuscatorDisabledWorlds = configuration.getStringList("orebfuscator.disabled-worlds");
++
+         org.bukkit.craftbukkit.util.LightningSimulator.configure(configuration);
+ 
+         try {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 856307f..4861609 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -117,6 +117,8 @@ public class CraftWorld implements World {
+         viewDistance = Bukkit.getServer().getViewDistance();
+         viewDistance = configuration.getInt("world-settings." + name + ".view-distance", viewDistance);
+ 
++        obfuscated = !world.getServer().orebfuscatorDisabledWorlds.contains(name);
++
+         server.getLogger().info("-------------- Spigot ----------------");
+         server.getLogger().info("-------- World Settings For [" + name + "] --------");
+         server.getLogger().info("Growth Per Chunk: " + growthPerTick);
+@@ -133,6 +135,7 @@ public class CraftWorld implements World {
+         server.getLogger().info("Tree Growth Modifier: " + treeGrowthModifier);
+         server.getLogger().info("Mushroom Growth Modifier: " + mushroomGrowthModifier);
+         server.getLogger().info("View distance: " + viewDistance);
++        server.getLogger().info("Oreobfuscator: " + obfuscated);
+         server.getLogger().info("-------------------------------------------------");
+         // Spigot end
+     }
+@@ -144,6 +147,7 @@ public class CraftWorld implements World {
+     public int mobSpawnRange = 4;
+     public int aggregateTicks = 4;
+     public int viewDistance;
++    public boolean obfuscated = false;
+     //Crop growth rates:
+     public int wheatGrowthModifier = 100;
+     public int cactusGrowthModifier = 100;
+diff --git a/src/main/java/org/bukkit/craftbukkit/OrebfuscatorManager.java b/src/main/java/org/bukkit/craftbukkit/OrebfuscatorManager.java
+new file mode 100644
+index 0000000..a130ba1
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/OrebfuscatorManager.java
+@@ -0,0 +1,91 @@
++package org.bukkit.craftbukkit;
++
++import net.minecraft.server.Block;
++import net.minecraft.server.World;
++
++public class OrebfuscatorManager {
++
++    // Used to keep track of which blocks to obfuscate
++    private static boolean[] obfuscateBlocks = new boolean[Short.MAX_VALUE];
++
++    // Default blocks
++    static {
++        obfuscateBlocks[Block.STONE.id] = true;
++        obfuscateBlocks[Block.GOLD_ORE.id] = true;
++        obfuscateBlocks[Block.IRON_ORE.id] = true;
++        obfuscateBlocks[Block.COAL_ORE.id] = true;
++        obfuscateBlocks[Block.LAPIS_ORE.id] = true;
++        obfuscateBlocks[Block.CHEST.id] = true;
++        obfuscateBlocks[Block.DIAMOND_ORE.id] = true;
++        obfuscateBlocks[Block.REDSTONE_ORE.id] = true;
++        obfuscateBlocks[Block.GLOWING_REDSTONE_ORE.id] = true;
++        obfuscateBlocks[Block.EMERALD_ORE.id] = true;
++        obfuscateBlocks[Block.ENDER_CHEST.id] = true;
++    }
++
++    public static void updateNearbyBlocks(World world, int x, int y, int z) {
++        updateNearbyBlocks(world, x, y, z, world.getServer().orebfuscatorUpdateRadius);
++    }
++
++    public static void obfuscate(int chunkX, int chunkY, int bitmask, byte[] buffer, World world) {
++        if (world.getServer().orebfuscatorEnabled && world.getWorld().obfuscated) {
++            int initialRadius = 1;
++            int index = 0;
++            int startX = chunkX << 4;
++            int startZ = chunkY << 4;
++            for (int i = 0; i < 16; i++) {
++                // If the bitmask indicates this chunk is sent...
++                if ((bitmask & 1 << i) != 0) {
++                    for (int y = 0; y < 16; y++) {
++                        for (int z = 0; z < 16; z++) {
++                            for (int x = 0; x < 16; x++) {
++                                byte data = buffer[index];
++                                // Check if the block should be obfuscated for the default engine modes
++                                if (obfuscateBlocks[data & 0xFF]) {
++                                    if (initialRadius == 0 || !areAjacentBlocksTransparent(world, startX + x, (i << 4) + y, startZ + z, initialRadius)) {
++                                        // Replace with stone
++                                        buffer[index] = (byte) Block.STONE.id;
++                                    }
++                                }
++                                index++;
++                            }
++                        }
++                    }
++                }
++            }
++        }
++    }
++
++    private static void updateNearbyBlocks(World world, int x, int y, int z, int radius) {
++        if (world.getServer().orebfuscatorEnabled && world.getWorld().obfuscated && world.isLoaded(x, y, z)) {
++            // Get block id
++            int id = world.getTypeId(x, y, z);
++
++            // See if it needs update
++            if (obfuscateBlocks[id]) {
++                // Send the update
++                world.notify(x, y, z);
++
++                if (radius != 0) {
++                    updateNearbyBlocks(world, x + 1, y, z, radius - 1);
++                    updateNearbyBlocks(world, x - 1, y, z, radius - 1);
++                    updateNearbyBlocks(world, x, y + 1, z, radius - 1);
++                    updateNearbyBlocks(world, x, y - 1, z, radius - 1);
++                    updateNearbyBlocks(world, x, y, z + 1, radius - 1);
++                    updateNearbyBlocks(world, x, y, z - 1, radius - 1);
++                }
++            }
++        }
++    }
++
++    private static boolean areAjacentBlocksTransparent(World world, int x, int y, int z, int radius) {
++        return radius > 0 && y > 0 && y <= world.getHeight()
++                && (!Block.i(world.getTypeId(x, y, z))
++                || areAjacentBlocksTransparent(world, x, y + 1, z, radius - 1)
++                || areAjacentBlocksTransparent(world, x, y - 1, z, radius - 1)
++                || areAjacentBlocksTransparent(world, x + 1, y, z, radius - 1)
++                || areAjacentBlocksTransparent(world, x - 1, y, z, radius - 1)
++                || areAjacentBlocksTransparent(world, x, y, z + 1, radius - 1)
++                || areAjacentBlocksTransparent(world, x, y, z - 1, radius - 1));
++    }
++}
+diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
+index c41fac1..fee0bb1 100644
+--- a/src/main/resources/configurations/bukkit.yml
++++ b/src/main/resources/configurations/bukkit.yml
+@@ -109,3 +109,8 @@ database:
+     driver: org.sqlite.JDBC
+     password: walrus
+     url: jdbc:sqlite:{DIR}{NAME}.db
++orebfuscator:
++    enable: false
++    update-radius: 2
++    disabled-worlds:
++       - world_the_end
+-- 
+1.8.1-rc2
+
