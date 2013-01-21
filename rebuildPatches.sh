@@ -1,6 +1,6 @@
 #!/bin/bash
 
-basedir=$(dirname $(readlink -f $0))
+basedir=`pwd`
 echo "Rebuilding patch files from current fork state..."
 function cleanupPatches {
     cd $1

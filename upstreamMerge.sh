@@ -1,5 +1,5 @@
 #!/bin/bash
-basedir=$(dirname $(readlink -f $0))
+basedir=`pwd`
 function update {
     cd $basedir/$1
     git fetch && git reset --hard origin/master
