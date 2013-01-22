@@ -1,4 +1,4 @@
-From b0f3a478531964dc847038cb0292af5dc78f3534 Mon Sep 17 00:00:00 2001
+From 90c324d6ba0cda9717efb4bd93cb21c666cc4b75 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@bigpond.com>
 Date: Sun, 30 Dec 2012 23:56:05 -0600
 Subject: [PATCH] Spigot Changes. This commit has undergone basic testing and
@@ -32,7 +32,7 @@ Subject: [PATCH] Spigot Changes. This commit has undergone basic testing and
  .../java/net/minecraft/server/WorldServer.java     | 133 ++++--
  .../java/org/bukkit/craftbukkit/CraftServer.java   |  98 ++++-
  .../java/org/bukkit/craftbukkit/CraftWorld.java    |  76 +++-
- src/main/java/org/bukkit/craftbukkit/Spigot.java   |  22 +
+ src/main/java/org/bukkit/craftbukkit/Spigot.java   |  27 ++
  .../craftbukkit/chunkio/ChunkIOProvider.java       |   2 +-
  .../bukkit/craftbukkit/command/RestartCommand.java |  24 +
  .../craftbukkit/command/TicksPerSecondCommand.java |  35 ++
@@ -48,7 +48,7 @@ Subject: [PATCH] Spigot Changes. This commit has undergone basic testing and
  .../org/bukkit/craftbukkit/util/TimedThread.java   |  37 ++
  .../bukkit/craftbukkit/util/WatchdogThread.java    |  88 ++++
  src/main/resources/configurations/bukkit.yml       |  55 +++
- 42 files changed, 1670 insertions(+), 156 deletions(-)
+ 42 files changed, 1675 insertions(+), 156 deletions(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/Spigot.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/command/RestartCommand.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/command/TicksPerSecondCommand.java
@@ -1579,10 +1579,10 @@ index cb20066..3544aa3 100644
          return getChunkAt(x >> 4, z >> 4).getBlock(x & 0xF, y & 0xFF, z & 0xF);
 diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
 new file mode 100644
-index 0000000..e11aee4
+index 0000000..0e04773
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,27 @@
 +package org.bukkit.craftbukkit;
 +
 +import org.bukkit.command.SimpleCommandMap;
@@ -1601,6 +1601,11 @@ index 0000000..e11aee4
 +        server.ipFilter = configuration.getBoolean("settings.filter-unsafe-ips", false);
 +        server.commandComplete = configuration.getBoolean("settings.command-complete", true);
 +        server.spamGuardExclusions = configuration.getStringList("settings.spam-exclusions");
++
++        if (server.chunkGCPeriod == 0) {
++            server.getLogger().severe("[Spigot] You should not disable chunk-gc. Resetting period-in-ticks to 600 ticks.");
++            server.chunkGCPeriod = 600;
++        }
 +
 +        org.bukkit.craftbukkit.util.LightningSimulator.configure(configuration);
 +    }
