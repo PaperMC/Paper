@@ -1,4 +1,4 @@
-From 0cac70d6eea0e2fb6a1b222d569cd3b464d9de23 Mon Sep 17 00:00:00 2001
+From b0f3a478531964dc847038cb0292af5dc78f3534 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@bigpond.com>
 Date: Sun, 30 Dec 2012 23:56:05 -0600
 Subject: [PATCH] Spigot Changes. This commit has undergone basic testing and
@@ -30,8 +30,9 @@ Subject: [PATCH] Spigot Changes. This commit has undergone basic testing and
  .../net/minecraft/server/ThreadLoginVerifier.java  |  23 +
  src/main/java/net/minecraft/server/World.java      | 202 ++++++++-
  .../java/net/minecraft/server/WorldServer.java     | 133 ++++--
- .../java/org/bukkit/craftbukkit/CraftServer.java   | 108 ++++-
+ .../java/org/bukkit/craftbukkit/CraftServer.java   |  98 ++++-
  .../java/org/bukkit/craftbukkit/CraftWorld.java    |  76 +++-
+ src/main/java/org/bukkit/craftbukkit/Spigot.java   |  22 +
  .../craftbukkit/chunkio/ChunkIOProvider.java       |   2 +-
  .../bukkit/craftbukkit/command/RestartCommand.java |  24 +
  .../craftbukkit/command/TicksPerSecondCommand.java |  35 ++
@@ -47,7 +48,8 @@ Subject: [PATCH] Spigot Changes. This commit has undergone basic testing and
  .../org/bukkit/craftbukkit/util/TimedThread.java   |  37 ++
  .../bukkit/craftbukkit/util/WatchdogThread.java    |  88 ++++
  src/main/resources/configurations/bukkit.yml       |  55 +++
- 41 files changed, 1658 insertions(+), 156 deletions(-)
+ 42 files changed, 1670 insertions(+), 156 deletions(-)
+ create mode 100644 src/main/java/org/bukkit/craftbukkit/Spigot.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/command/RestartCommand.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/command/TicksPerSecondCommand.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/util/ExceptionHandler.java
@@ -1306,7 +1308,7 @@ index 3f73ef9..6764bef 100644
 +    // Spigot end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 936cbc6..67593d5 100644
+index 936cbc6..b8e9085 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -146,7 +146,7 @@ public final class CraftServer implements Server {
@@ -1333,7 +1335,7 @@ index 936cbc6..67593d5 100644
  
      static {
          ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
-@@ -208,12 +216,37 @@ public final class CraftServer implements Server {
+@@ -208,12 +216,25 @@ public final class CraftServer implements Server {
          chunkGCLoadThresh = configuration.getInt("chunk-gc.load-threshold");
  
          updater = new AutoUpdater(new BukkitDLUpdaterService(configuration.getString("auto-updater.host")), getLogger(), configuration.getString("auto-updater.preferred-channel"));
@@ -1345,19 +1347,7 @@ index 936cbc6..67593d5 100644
          updater.check(serverVersion);
  
 +        // Spigot start
-+        commandMap.register("bukkit", new org.bukkit.craftbukkit.command.RestartCommand("restart"));
-+        commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
-+
-+        org.bukkit.craftbukkit.util.WatchdogThread.startThread(configuration.getInt("settings.timeout-time", 180), configuration.getBoolean("settings.restart-on-crash", false));
-+
-+        whitelistMessage = configuration.getString("settings.whitelist-message", whitelistMessage);
-+        stopMessage = configuration.getString("settings.stop-message", stopMessage);
-+        logCommands = configuration.getBoolean("settings.log-commands", true);
-+        ipFilter = configuration.getBoolean("settings.filter-unsafe-ips", false);
-+        commandComplete = configuration.getBoolean("settings.command-complete", true);
-+        spamGuardExclusions = configuration.getStringList("settings.spam-exclusions");
-+
-+        org.bukkit.craftbukkit.util.LightningSimulator.configure(configuration);
++        Spigot.initialize(this, commandMap, configuration);
 +
 +        try {
 +            configuration.save(getConfigFile());
@@ -1372,7 +1362,7 @@ index 936cbc6..67593d5 100644
          loadPlugins();
          enablePlugins(PluginLoadOrder.STARTUP);
      }
-@@ -222,7 +255,7 @@ public final class CraftServer implements Server {
+@@ -222,7 +243,7 @@ public final class CraftServer implements Server {
          return (File) console.options.valueOf("bukkit-settings");
      }
  
@@ -1381,7 +1371,23 @@ index 936cbc6..67593d5 100644
          try {
              configuration.save(getConfigFile());
          } catch (IOException ex) {
-@@ -1036,11 +1069,8 @@ public final class CraftServer implements Server {
+@@ -526,6 +547,7 @@ public final class CraftServer implements Server {
+ 
+         ((DedicatedServer) console).propertyManager = config;
+ 
++        ((SimplePluginManager) pluginManager).useTimings(configuration.getBoolean("settings.plugin-profiling")); // Spigot
+         boolean animals = config.getBoolean("spawn-animals", console.getSpawnAnimals());
+         boolean monsters = config.getBoolean("spawn-monsters", console.worlds.get(0).difficulty > 0);
+         int difficulty = config.getInt("difficulty", console.worlds.get(0).difficulty);
+@@ -588,6 +610,7 @@ public final class CraftServer implements Server {
+                 "This plugin is not properly shutting down its async tasks when it is being reloaded.  This may cause conflicts with the newly loaded version of the plugin"
+             ));
+         }
++        Spigot.initialize(this, commandMap, configuration); // Spigot
+         loadPlugins();
+         enablePlugins(PluginLoadOrder.STARTUP);
+         enablePlugins(PluginLoadOrder.POSTWORLD);
+@@ -1036,11 +1059,8 @@ public final class CraftServer implements Server {
          return count;
      }
  
@@ -1394,7 +1400,7 @@ index 936cbc6..67593d5 100644
          OfflinePlayer result = getPlayerExact(name);
          String lname = name.toLowerCase();
  
-@@ -1048,17 +1078,7 @@ public final class CraftServer implements Server {
+@@ -1048,17 +1068,7 @@ public final class CraftServer implements Server {
              result = offlinePlayers.get(lname);
  
              if (result == null) {
@@ -1413,7 +1419,7 @@ index 936cbc6..67593d5 100644
                  result = new CraftOfflinePlayer(this, name);
                  offlinePlayers.put(lname, result);
              }
-@@ -1196,7 +1216,7 @@ public final class CraftServer implements Server {
+@@ -1196,7 +1206,7 @@ public final class CraftServer implements Server {
          Set<OfflinePlayer> players = new HashSet<OfflinePlayer>();
  
          for (String file : files) {
@@ -1422,7 +1428,7 @@ index 936cbc6..67593d5 100644
          }
          players.addAll(Arrays.asList(getOnlinePlayers()));
  
-@@ -1302,7 +1322,7 @@ public final class CraftServer implements Server {
+@@ -1302,7 +1312,7 @@ public final class CraftServer implements Server {
      public List<String> tabCompleteCommand(Player player, String message) {
          List<String> completions = null;
          try {
@@ -1431,7 +1437,7 @@ index 936cbc6..67593d5 100644
          } catch (CommandException ex) {
              player.sendMessage(ChatColor.RED + "An internal error occurred while attempting to tab-complete this command");
              getLogger().log(Level.SEVERE, "Exception when " + player.getName() + " attempted to tab complete " + message, ex);
-@@ -1338,4 +1358,52 @@ public final class CraftServer implements Server {
+@@ -1338,4 +1348,52 @@ public final class CraftServer implements Server {
      public CraftItemFactory getItemFactory() {
          return CraftItemFactory.instance();
      }
@@ -1571,6 +1577,34 @@ index cb20066..3544aa3 100644
  
      public Block getBlockAt(int x, int y, int z) {
          return getChunkAt(x >> 4, z >> 4).getBlock(x & 0xF, y & 0xFF, z & 0xF);
+diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+new file mode 100644
+index 0000000..e11aee4
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+@@ -0,0 +1,22 @@
++package org.bukkit.craftbukkit;
++
++import org.bukkit.command.SimpleCommandMap;
++import org.bukkit.configuration.file.YamlConfiguration;
++
++public class Spigot {
++    public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
++        commandMap.register("bukkit", new org.bukkit.craftbukkit.command.RestartCommand("restart"));
++        commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
++
++        org.bukkit.craftbukkit.util.WatchdogThread.startThread(configuration.getInt("settings.timeout-time", 180), configuration.getBoolean("settings.restart-on-crash", false));
++
++        server.whitelistMessage = configuration.getString("settings.whitelist-message", server.whitelistMessage);
++        server.stopMessage = configuration.getString("settings.stop-message", server.stopMessage);
++        server.logCommands = configuration.getBoolean("settings.log-commands", true);
++        server.ipFilter = configuration.getBoolean("settings.filter-unsafe-ips", false);
++        server.commandComplete = configuration.getBoolean("settings.command-complete", true);
++        server.spamGuardExclusions = configuration.getStringList("settings.spam-exclusions");
++
++        org.bukkit.craftbukkit.util.LightningSimulator.configure(configuration);
++    }
++}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
 index 48cf5ba..1d4764c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
@@ -2834,5 +2868,5 @@ index 61a95e3..e192700 100644
      monsters: 70
      animals: 15
 -- 
-1.8.1-rc2
+1.8.0.3
 
