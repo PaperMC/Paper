@@ -35,7 +35,7 @@ public class Crops extends MaterialData {
     /**
      * Gets the current growth state of this crop
      *
-     * @return CropState of this leave
+     * @return CropState of this crop
      */
     public CropState getState() {
         return CropState.getByData(getData());

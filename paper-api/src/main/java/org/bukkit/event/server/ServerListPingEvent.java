@@ -60,7 +60,7 @@ public class ServerListPingEvent extends ServerEvent {
     /**
      * Get the maximum number of players sent.
      *
-     * @return the the maximum number of player
+     * @return the maximum number of players
      */
     public int getMaxPlayers() {
         return maxPlayers;

@@ -157,8 +157,8 @@ public final class Color implements ConfigurationSerializable {
 
     private Color(int red, int green, int blue) {
         Validate.isTrue(red >= 0 && red <= BIT_MASK, "Red is not between 0-255: ", red);
-        Validate.isTrue(green >= 0 && green <= BIT_MASK, "Red is not between 0-255: ", green);
-        Validate.isTrue(blue >= 0 && blue <= BIT_MASK, "Red is not between 0-255: ", blue);
+        Validate.isTrue(green >= 0 && green <= BIT_MASK, "Green is not between 0-255: ", green);
+        Validate.isTrue(blue >= 0 && blue <= BIT_MASK, "Blue is not between 0-255: ", blue);
 
         this.red = (byte) red;
         this.green = (byte) green;

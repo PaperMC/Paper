@@ -20,7 +20,7 @@ public interface Entity extends Metadatable {
     /**
      * Gets the entity's current position
      *
-     * @return Location containing the position of this entity
+     * @return a new copy of Location containing the position of this entity
      */
     public Location getLocation();
 

@@ -201,9 +201,9 @@ public interface EntityEquipment {
     void setBootsDropChance(float chance);
 
     /**
-     * Get the entity this CreatureEquipment belongs to
+     * Get the entity this EntityEquipment belongs to
      *
-     * @return the entity this CreatureEquipment belongs to
+     * @return the entity this EntityEquipment belongs to
      */
     Entity getHolder();
 }

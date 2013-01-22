@@ -634,19 +634,19 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * Gets user-specified limit for number of monsters that can spawn in a chunk
-     * @returns The monster spawn limit
+     * @return The monster spawn limit
      */
     int getMonsterSpawnLimit();
 
     /**
      * Gets user-specified limit for number of animals that can spawn in a chunk
-     * @returns The animal spawn limit
+     * @return The animal spawn limit
      */
     int getAnimalSpawnLimit();
 
     /**
      * Gets user-specified limit for number of water animals that can spawn in a chunk
-     * @returns The water animal spawn limit
+     * @return The water animal spawn limit
      */
     int getWaterAnimalSpawnLimit();
 
@@ -664,7 +664,7 @@ public interface Server extends PluginMessageRecipient {
     /**
      * Gets the message that is displayed on the server list
      *
-     * @returns the servers MOTD
+     * @return the servers MOTD
      */
     String getMotd();
 

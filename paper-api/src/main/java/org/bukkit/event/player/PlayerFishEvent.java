@@ -84,11 +84,11 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
     public enum State {
 
         /**
-         * When a player is fishing
+         * When a player is fishing, ie casting the line out.
          */
         FISHING,
         /**
-         * When a player has successfully caught a fish
+         * When a player has successfully caught a fish and is reeling it in.
          */
         CAUGHT_FISH,
         /**
@@ -96,7 +96,7 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
          */
         CAUGHT_ENTITY,
         /**
-         * When a bobber is stuck in the grund
+         * When a bobber is stuck in the ground
          */
         IN_GROUND,
         /**

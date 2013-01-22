@@ -3,27 +3,79 @@ package org.bukkit.entity;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.Location;
 import org.bukkit.World;
 
 public enum EntityType {
     // These strings MUST match the strings in nms.EntityTypes and are case sensitive.
+    /**
+     * An item resting on the ground.
+     *
+     * Spawn with {@link World#dropItem(Location, ItemStack)}
+     * or {@link World#dropItemNaturally(Location, ItemStack)}
+     */
     DROPPED_ITEM("Item", Item.class, 1, false),
+    /**
+     * An experience orb.
+     */
     EXPERIENCE_ORB("XPOrb", ExperienceOrb.class, 2),
+    /**
+     * A painting on a wall.
+     */
     PAINTING("Painting", Painting.class, 9),
+    /**
+     * An arrow projectile; may get stuck in the ground.
+     */
     ARROW("Arrow", Arrow.class, 10),
+    /**
+     * A flyinf snowball.
+     */
     SNOWBALL("Snowball", Snowball.class, 11),
+    /**
+     * A flying large fireball, as thrown by a Ghast for example.
+     */
     FIREBALL("Fireball", LargeFireball.class, 12),
+    /**
+     * A flying small fireball, such as thrown by a Blaze or player.
+     */
     SMALL_FIREBALL("SmallFireball", SmallFireball.class, 13),
+    /**
+     * A flying ender pearl.
+     */
     ENDER_PEARL("ThrownEnderpearl", EnderPearl.class, 14),
+    /**
+     * An ender eye signal.
+     */
     ENDER_SIGNAL("EyeOfEnderSignal", EnderSignal.class, 15),
+    /**
+     * A flying experience bottle.
+     */
     THROWN_EXP_BOTTLE("ThrownExpBottle", ThrownExpBottle.class, 17),
+    /**
+     * An item frame on a wall.
+     */
     ITEM_FRAME("ItemFrame", ItemFrame.class, 18),
+    /**
+     * A flying wither skull projectile.
+     */
     WITHER_SKULL("WitherSkull", WitherSkull.class, 19),
+    /**
+     * Primed TNT that is about to explode.
+     */
     PRIMED_TNT("PrimedTnt", TNTPrimed.class, 20),
+    /**
+     * A block that is going to or is about to fall.
+     */
     FALLING_BLOCK("FallingSand", FallingBlock.class, 21, false),
     FIREWORK("FireworksRocketEntity", Firework.class, 22, false),
+    /**
+     * A placed minecart of any type.
+     */
     MINECART("Minecart", Minecart.class, 40),
+    /**
+     * A placed boat.
+     */
     BOAT("Boat", Boat.class, 41),
     CREEPER("Creeper", Creeper.class, 50),
     SKELETON("Skeleton", Skeleton.class, 51),
@@ -55,11 +107,22 @@ public enum EntityType {
     VILLAGER("Villager", Villager.class, 120),
     ENDER_CRYSTAL("EnderCrystal", EnderCrystal.class, 200),
     // These don't have an entity ID in nms.EntityTypes.
+    /**
+     * A flying splash potion.
+     */
     SPLASH_POTION(null, ThrownPotion.class, -1, false),
+    /**
+     * A flying chicken egg.
+     */
     EGG(null, Egg.class, -1, false),
+    /**
+     * A fishing line and bobber.
+     */
     FISHING_HOOK(null, Fish.class, -1, false),
     /**
-     * Spawn with {@link World#strikeLightning(org.bukkit.Location)}.
+     * A bolt of lightning.
+     *
+     * Spawn with {@link World#strikeLightning(Location)}.
      */
     LIGHTNING(null, LightningStrike.class, -1, false),
     WEATHER(null, Weather.class, -1, false),
@@ -130,7 +193,7 @@ public enum EntityType {
     }
 
     /**
-     * Some entities cannot be spawned using {@link World#spawnCreature(Location, EntityType)}
+     * Some entities cannot be spawned using {@link World#spawnEntity(Location, EntityType)}
      * or {@link World#spawn(Location, Class)}, usually
      * because they require additional information in order to spawn.
      * @return False if the entity type cannot be spawned

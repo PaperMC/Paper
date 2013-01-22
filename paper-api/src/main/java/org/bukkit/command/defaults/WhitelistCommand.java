@@ -18,7 +18,7 @@ public class WhitelistCommand extends VanillaCommand {
 
     public WhitelistCommand() {
         super("whitelist");
-        this.description = "Prevents the specified player from using this server";
+        this.description = "Manages the list of players allowed to use this server";
         this.usageMessage = "/whitelist (add|remove) <player>\n/whitelist (on|off|list|reload)";
         this.setPermission("bukkit.command.whitelist.reload;bukkit.command.whitelist.enable;bukkit.command.whitelist.disable;bukkit.command.whitelist.list;bukkit.command.whitelist.add;bukkit.command.whitelist.remove");
     }

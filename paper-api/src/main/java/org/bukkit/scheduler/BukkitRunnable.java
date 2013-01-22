@@ -10,7 +10,8 @@ public abstract class BukkitRunnable implements Runnable {
     private int taskId = -1;
 
     /**
-     * Attempts to cancel this task
+     * Attempts to cancel this task.
+     *
      * @throws IllegalStateException if task was not scheduled yet
      */
     public synchronized void cancel() throws IllegalStateException {
@@ -18,7 +19,7 @@ public abstract class BukkitRunnable implements Runnable {
     }
 
     /**
-     * Schedules this in the Bukkit scheduler to run on next tick
+     * Schedules this in the Bukkit scheduler to run on next tick.
      *
      * @param plugin the reference to the plugin scheduling task
      * @return a BukkitTask that contains the id number
@@ -83,7 +84,7 @@ public abstract class BukkitRunnable implements Runnable {
     }
 
     /**
-     * Schedules this to repeatedly run until cancelled, starting after the specified number of server ticks
+     * Schedules this to repeatedly run until cancelled, starting after the specified number of server ticks.
      *
      * @param plugin the reference to the plugin scheduling task
      * @param delay the ticks to wait before running the task
@@ -118,7 +119,8 @@ public abstract class BukkitRunnable implements Runnable {
     }
 
     /**
-     * Gets the task id for this runnable
+     * Gets the task id for this runnable.
+     *
      * @return the task id that this runnable was scheduled as
      * @throws IllegalStateException if task was not scheduled yet
      */

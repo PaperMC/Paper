@@ -957,7 +957,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
 
     /**
      * Gets limit for number of monsters that can spawn in a chunk in this world
-     * @returns The monster spawn limit
+     * @return The monster spawn limit
      */
     int getMonsterSpawnLimit();
 
@@ -971,7 +971,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
 
     /**
      * Gets the limit for number of animals that can spawn in a chunk in this world
-     * @returns The animal spawn limit
+     * @return The animal spawn limit
      */
     int getAnimalSpawnLimit();
 
@@ -985,7 +985,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
 
     /**
      * Gets the limit for number of water animals that can spawn in a chunk in this world
-     * @returns The water animal spawn limit
+     * @return The water animal spawn limit
      */
     int getWaterAnimalSpawnLimit();
 
