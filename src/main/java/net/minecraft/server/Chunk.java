@@ -429,8 +429,8 @@ public class Chunk {
 
                 if (l != 0) {
                     if (!this.world.isStatic) {
-                        // CraftBukkit start - Don't extend piston until data is set, don't "place" if we're processing the event
-                        if (!this.world.suppressPhysics && (!(Block.byId[l] instanceof BlockPiston) || i2 != 0)) {
+                        // CraftBukkit start - Don't "place" if we're processing the event
+                        if (!this.world.suppressPhysics) {
                             Block.byId[l].onPlace(this.world, j2, j, k2);
                         }
                         // CraftBukkit end

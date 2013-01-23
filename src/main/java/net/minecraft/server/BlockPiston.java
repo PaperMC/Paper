@@ -217,7 +217,7 @@ public class BlockPiston extends Block {
     }
 
     public static int e(int i) {
-        if ((i & 7) >= Facing.OPPOSITE_FACING.length) return 0; // CraftBukkit - check for AIOOB on piston data
+        if ((i & 7) >= Facing.OPPOSITE_FACING.length) return 7; // CraftBukkit - check for AIOOB on piston data
         return i & 7;
     }
 
