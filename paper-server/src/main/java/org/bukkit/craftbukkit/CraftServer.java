@@ -694,7 +694,7 @@ public final class CraftServer implements Server {
             converter.convert(name, new ConvertProgressUpdater(console));
         }
 
-        int dimension = 10 + console.worlds.size();
+        int dimension = CraftWorld.CUSTOM_DIMENSION_OFFSET + console.worlds.size();
         boolean used = false;
         do {
             for (WorldServer server : console.worlds) {
