@@ -1750,10 +1750,20 @@ public abstract class Entity {
             MinecraftServer minecraftserver = MinecraftServer.getServer();
             // CraftBukkit start - move logic into new function "teleportToLocation"
             // int j = this.dimension;
-            Location enter = this.getBukkitEntity().getLocation();
-            Location exit = minecraftserver.getPlayerList().calculateTarget(enter, minecraftserver.getWorldServer(i));
+            WorldServer exitWorld = null;
+            if (this.dimension < CraftWorld.CUSTOM_DIMENSION_OFFSET) { // plugins must specify exit from custom Bukkit worlds
+                // only target existing worlds (compensate for allow-nether/allow-end as false)
+                for (WorldServer world : minecraftserver.worlds) {
+                    if (world.dimension == i) {
+                        exitWorld = world;
+                    }
+                }
+            }
 
-            TravelAgent agent = (TravelAgent) ((CraftWorld) exit.getWorld()).getHandle().s();
+            Location enter = this.getBukkitEntity().getLocation();
+            Location exit = exitWorld != null ? minecraftserver.getPlayerList().calculateTarget(enter, minecraftserver.getWorldServer(i)) : null;
+
+            TravelAgent agent = exit != null ? (TravelAgent) ((CraftWorld) exit.getWorld()).getHandle().s() : null;
             EntityPortalEvent event = new EntityPortalEvent(this.getBukkitEntity(), enter, exit, agent);
             event.getEntity().getServer().getPluginManager().callEvent(event);
             if (event.isCancelled() || event.getTo() == null || !this.isAlive()) {

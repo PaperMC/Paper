@@ -49,6 +49,8 @@ import org.bukkit.plugin.messaging.StandardMessenger;
 import org.bukkit.craftbukkit.util.LongHash;
 
 public class CraftWorld implements World {
+    public static final int CUSTOM_DIMENSION_OFFSET = 10;
+
     private final WorldServer world;
     private Environment environment;
     private final CraftServer server = (CraftServer) Bukkit.getServer();
