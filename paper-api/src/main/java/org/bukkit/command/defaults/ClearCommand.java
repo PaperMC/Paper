@@ -62,6 +62,8 @@ public class ClearCommand extends VanillaCommand {
             int count = player.getInventory().clear(id, data);
 
             Command.broadcastCommandMessage(sender, "Cleared the inventory of " + player.getDisplayName() + ", removing " + count + " items");
+        } else if (args.length == 0) {
+            sender.sendMessage(ChatColor.RED + "Please provide a player!");
         } else {
             sender.sendMessage(ChatColor.RED + "Can't find player " + args[0]);
         }
