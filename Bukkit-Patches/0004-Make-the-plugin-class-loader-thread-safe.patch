@@ -1,0 +1,65 @@
+From a62dabb02fe7405059ceb42495ed5dbc9704c1ea Mon Sep 17 00:00:00 2001
+From: snowleo <schneeleo@gmail.com>
+Date: Wed, 17 Oct 2012 22:30:45 +0200
+Subject: [PATCH] Make the plugin class loader thread safe
+
+---
+ .../org/bukkit/plugin/java/JavaPluginLoader.java    | 21 ++++++++++++---------
+ 1 file changed, 12 insertions(+), 9 deletions(-)
+
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+index 10fc26a..f9a09ef 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+@@ -45,6 +45,7 @@ import org.bukkit.plugin.UnknownDependencyException;
+ import org.yaml.snakeyaml.error.YAMLException;
+ 
+ import com.google.common.collect.ImmutableList;
++import java.util.concurrent.ConcurrentHashMap;
+ 
+ /**
+  * Represents a Java plugin loader, allowing plugins in the form of .jar
+@@ -61,14 +62,14 @@ public class JavaPluginLoader implements PluginLoader {
+     @Deprecated
+     protected final Pattern[] fileFilters = fileFilters0;
+ 
+-    private final Map<String, Class<?>> classes0 = new HashMap<String, Class<?>>();
++    private final Map<String, Class<?>> classes0 = new ConcurrentHashMap<String, Class<?>>();
+     /**
+      * @deprecated Internal field that wasn't intended to be exposed
+      */
+     @Deprecated
+     protected final Map<String, Class<?>> classes = classes0;
+ 
+-    private final Map<String, PluginClassLoader> loaders0 = new LinkedHashMap<String, PluginClassLoader>();
++    private final Map<String, PluginClassLoader> loaders0 = new ConcurrentHashMap<String, PluginClassLoader>();
+     /**
+      * @deprecated Internal field that wasn't intended to be exposed
+      */
+@@ -293,14 +294,16 @@ public class JavaPluginLoader implements PluginLoader {
+         if (cachedClass != null) {
+             return cachedClass;
+         } else {
+-            for (String current : loaders0.keySet()) {
+-                PluginClassLoader loader = loaders0.get(current);
++            synchronized (loaders) {
++                for (String current : loaders0.keySet()) {
++                    PluginClassLoader loader = loaders0.get(current);
+ 
+-                try {
+-                    cachedClass = loader.extended ? loader.findClass(name, false) : loader.findClass0(name, false); // Don't warn on deprecation, but maintain overridability
+-                } catch (ClassNotFoundException cnfe) {}
+-                if (cachedClass != null) {
+-                    return cachedClass;
++                    try {
++                        cachedClass = loader.extended ? loader.findClass(name, false) : loader.findClass0(name, false); // Don't warn on deprecation, but maintain overridability
++                    } catch (ClassNotFoundException cnfe) {}
++                    if (cachedClass != null) {
++                        return cachedClass;
++                    }
+                 }
+             }
+         }
+-- 
+1.8.1-rc2
+
