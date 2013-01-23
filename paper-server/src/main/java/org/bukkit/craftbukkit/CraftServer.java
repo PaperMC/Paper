@@ -544,6 +544,9 @@ public final class CraftServer implements Server {
         chunkGCPeriod = configuration.getInt("chunk-gc.period-in-ticks");
         chunkGCLoadThresh = configuration.getInt("chunk-gc.load-threshold");
 
+        playerList.getIPBans().load();
+        playerList.getNameBans().load();
+
         for (WorldServer world : console.worlds) {
             world.difficulty = difficulty;
             world.setSpawnFlags(monsters, animals);
