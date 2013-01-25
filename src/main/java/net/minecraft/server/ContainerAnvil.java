@@ -196,6 +196,10 @@ public class ContainerAnvil extends Container {
                                 i3 = 1;
                             }
 
+                            if (flag) {
+                                i3 = Math.max(1, i3 / 2);
+                            }
+
                             i += i3 * k2;
                         }
                     }
