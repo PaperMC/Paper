@@ -1,0 +1,53 @@
+From c7fe2d7f3ac2abda1bcda274e0fd36648a2f7c3d Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Fri, 25 Jan 2013 13:15:42 +1100
+Subject: [PATCH] Track Xray timings.
+
+---
+ src/main/java/org/bukkit/craftbukkit/OrebfuscatorManager.java | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/OrebfuscatorManager.java b/src/main/java/org/bukkit/craftbukkit/OrebfuscatorManager.java
+index 7178dfb..723fd9f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/OrebfuscatorManager.java
++++ b/src/main/java/org/bukkit/craftbukkit/OrebfuscatorManager.java
+@@ -2,11 +2,14 @@ package org.bukkit.craftbukkit;
+ 
+ import net.minecraft.server.Block;
+ import net.minecraft.server.World;
++import org.bukkit.event.CustomTimingsHandler;
+ 
+ public class OrebfuscatorManager {
+ 
+     // Used to keep track of which blocks to obfuscate
+     private static boolean[] obfuscateBlocks = new boolean[Short.MAX_VALUE];
++    private static final CustomTimingsHandler obfuscate = new CustomTimingsHandler("xray - obfuscate");
++    private static final CustomTimingsHandler update = new CustomTimingsHandler("xray - update");
+ 
+     // Default blocks
+     static {
+@@ -24,10 +27,13 @@ public class OrebfuscatorManager {
+     }
+ 
+     public static void updateNearbyBlocks(World world, int x, int y, int z) {
++        update.startTiming();
+         updateNearbyBlocks(world, x, y, z, world.getServer().orebfuscatorUpdateRadius);
++        update.stopTiming();
+     }
+ 
+     public static void obfuscate(int chunkX, int chunkY, int bitmask, byte[] buffer, World world) {
++        obfuscate.startTiming();
+         if (world.getServer().orebfuscatorEnabled && world.getWorld().obfuscated) {
+             int initialRadius = 1;
+             int index = 0;
+@@ -56,6 +62,7 @@ public class OrebfuscatorManager {
+                 }
+             }
+         }
++        obfuscate.stopTiming();
+     }
+ 
+     private static void updateNearbyBlocks(World world, int x, int y, int z, int radius) {
+-- 
+1.8.1-rc2
+
