@@ -185,9 +185,9 @@ public class PortalTravelAgent {
             // entity.setPositionRotation((double) i, (double) j, (double) k, entity.yaw, 0.0F);
             // entity.motX = entity.motY = entity.motZ = 0.0D;
             position.setPitch(0.0F);
-            position.setX(0);
-            position.setY(0);
-            position.setZ(0);
+            velocity.setX(0);
+            velocity.setY(0);
+            velocity.setZ(0);
         } else {
             double d4;
             int k1;
