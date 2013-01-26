@@ -26,12 +26,20 @@ public abstract class VanillaCommand extends Command {
         return getInteger(sender, value, min, Integer.MAX_VALUE);
     }
 
-    protected int getInteger(CommandSender sender, String value, int min, int max) {
+    int getInteger(CommandSender sender, String value, int min, int max) {
+        return getInteger(sender, value, min, max, false);
+    }
+
+    int getInteger(CommandSender sender, String value, int min, int max, boolean Throws) {
         int i = min;
 
         try {
             i = Integer.valueOf(value);
-        } catch (NumberFormatException ex) {}
+        } catch (NumberFormatException ex) {
+            if (Throws) {
+                throw new NumberFormatException(String.format("%s is not a valid number", value));
+            }
+        }
 
         if (i < min) {
             i = min;
