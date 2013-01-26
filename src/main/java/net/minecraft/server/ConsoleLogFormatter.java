@@ -15,7 +15,7 @@ class ConsoleLogFormatter extends Formatter {
 
     final ConsoleLogManager a;
     // CraftBukkit start - add color stripping
-    private Pattern pattern = Pattern.compile("\\x1B\\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]");
+    private Pattern pattern = Pattern.compile("\\x1B\\[([0-9]{1,2}(;[0-9]{1,2})*)?[m|K]");
     private boolean strip = false;
     // CraftBukkit end
 
