@@ -105,7 +105,8 @@ public class ItemBlock extends Item {
 
         world.update(x, y, z, newId);
 
-        if (block != null) {
+        // Skulls don't get block data applied to them
+        if (block != null && block != Block.SKULL) {
             block.postPlace(world, x, y, z, entityhuman);
             block.postPlace(world, x, y, z, newData);
 
