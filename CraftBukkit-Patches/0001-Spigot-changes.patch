@@ -1,4 +1,4 @@
-From 773d5d2e6c47548c120cb5c33619964136a384e5 Mon Sep 17 00:00:00 2001
+From 1f766e4a465e4eed65061fd7a908ea22e8c0d6fa Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 22 Jan 2013 15:56:54 +1100
 Subject: [PATCH] Spigot changes.
@@ -163,13 +163,13 @@ index 79a007c..0bc7882 100644
                      int j1 = j + random.nextInt(5) - 3;
                      int k1 = k + random.nextInt(3) - 1;
 diff --git a/src/main/java/net/minecraft/server/BlockMushroom.java b/src/main/java/net/minecraft/server/BlockMushroom.java
-index 38fac4c..4ff3111 100644
+index db90874..9647bb2 100644
 --- a/src/main/java/net/minecraft/server/BlockMushroom.java
 +++ b/src/main/java/net/minecraft/server/BlockMushroom.java
-@@ -23,7 +23,7 @@ public class BlockMushroom extends BlockFlower {
-     }
+@@ -24,7 +24,7 @@ public class BlockMushroom extends BlockFlower {
  
      public void b(World world, int i, int j, int k, Random random) {
+         final int sourceX = i, sourceY = j, sourceZ = k; // CraftBukkit
 -        if (random.nextInt(25) == 0) {
 +        if (random.nextInt((int) (world.growthOdds * 100 / world.getWorld().mushroomGrowthModifier * 25)) == 0) { // Spigot
              byte b0 = 4;
@@ -714,10 +714,10 @@ index 0686ba0..58d30eb 100644
              URL url = new URL("http://session.minecraft.net/game/checkserver.jsp?user=" + URLEncoder.encode(PendingConnection.d(this.pendingConnection), "UTF-8") + "&serverId=" + URLEncoder.encode(s, "UTF-8"));
              BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(url.openStream()));
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index e2fd0df..5a01944 100644
+index c3dc4a4..9906b9e 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -64,7 +64,7 @@ public abstract class World implements IBlockAccess {
+@@ -65,7 +65,7 @@ public abstract class World implements IBlockAccess {
      // CraftBukkit start - public, longhashset
      public boolean allowMonsters = true;
      public boolean allowAnimals = true;
@@ -726,7 +726,7 @@ index e2fd0df..5a01944 100644
      public long ticksPerAnimalSpawns;
      public long ticksPerMonsterSpawns;
      // CraftBukkit end
-@@ -72,7 +72,20 @@ public abstract class World implements IBlockAccess {
+@@ -73,7 +73,20 @@ public abstract class World implements IBlockAccess {
      int[] H;
      private List O;
      public boolean isStatic;
@@ -747,7 +747,7 @@ index e2fd0df..5a01944 100644
      public BiomeBase getBiome(int i, int j) {
          if (this.isLoaded(i, 0, j)) {
              Chunk chunk = this.getChunkAtWorldCoords(i, j);
-@@ -98,6 +111,7 @@ public abstract class World implements IBlockAccess {
+@@ -99,6 +112,7 @@ public abstract class World implements IBlockAccess {
      int lastXAccessed = Integer.MIN_VALUE;
      int lastZAccessed = Integer.MIN_VALUE;
      final Object chunkLock = new Object();
@@ -755,7 +755,7 @@ index e2fd0df..5a01944 100644
  
      public CraftWorld getWorld() {
          return this.world;
-@@ -110,11 +124,18 @@ public abstract class World implements IBlockAccess {
+@@ -111,11 +125,18 @@ public abstract class World implements IBlockAccess {
      // Changed signature
      public World(IDataManager idatamanager, String s, WorldSettings worldsettings, WorldProvider worldprovider, MethodProfiler methodprofiler, ChunkGenerator gen, org.bukkit.World.Environment env) {
          this.generator = gen;
@@ -774,7 +774,7 @@ index e2fd0df..5a01944 100644
          this.N = this.random.nextInt(12000);
          this.H = new int['\u8000'];
          this.O = new UnsafeList(); // CraftBukkit - ArrayList -> UnsafeList
-@@ -122,7 +143,7 @@ public abstract class World implements IBlockAccess {
+@@ -123,7 +144,7 @@ public abstract class World implements IBlockAccess {
          this.dataManager = idatamanager;
          this.methodProfiler = methodprofiler;
          this.worldMaps = new WorldMapCollection(idatamanager);
@@ -783,7 +783,7 @@ index e2fd0df..5a01944 100644
          if (worldprovider != null) {
              this.worldProvider = worldprovider;
          } else if (this.worldData != null && this.worldData.j() != 0) {
-@@ -903,6 +924,47 @@ public abstract class World implements IBlockAccess {
+@@ -901,6 +922,47 @@ public abstract class World implements IBlockAccess {
              event = CraftEventFactory.callCreatureSpawnEvent((EntityLiving) entity, spawnReason);
          } else if (entity instanceof EntityItem) {
              event = CraftEventFactory.callItemSpawnEvent((EntityItem) entity);
@@ -831,7 +831,7 @@ index e2fd0df..5a01944 100644
          } else if (entity.getBukkitEntity() instanceof org.bukkit.entity.Projectile) {
              // Not all projectiles extend EntityProjectile, so check for Bukkit interface instead
              event = CraftEventFactory.callProjectileLaunchEvent(entity);
-@@ -995,6 +1057,39 @@ public abstract class World implements IBlockAccess {
+@@ -993,6 +1055,39 @@ public abstract class World implements IBlockAccess {
          int i1 = MathHelper.floor(axisalignedbb.c);
          int j1 = MathHelper.floor(axisalignedbb.f + 1.0D);
  
@@ -871,7 +871,7 @@ index e2fd0df..5a01944 100644
          for (int k1 = i; k1 < j; ++k1) {
              for (int l1 = i1; l1 < j1; ++l1) {
                  if (this.isLoaded(k1, 64, l1)) {
-@@ -1008,6 +1103,7 @@ public abstract class World implements IBlockAccess {
+@@ -1006,6 +1101,7 @@ public abstract class World implements IBlockAccess {
                  }
              }
          }
@@ -879,7 +879,7 @@ index e2fd0df..5a01944 100644
  
          double d0 = 0.25D;
          List list = this.getEntities(entity, axisalignedbb.grow(d0, d0, d0));
-@@ -1315,7 +1411,37 @@ public abstract class World implements IBlockAccess {
+@@ -1313,7 +1409,37 @@ public abstract class World implements IBlockAccess {
          this.entityJoinedWorld(entity, true);
      }
  
@@ -918,7 +918,7 @@ index e2fd0df..5a01944 100644
          int i = MathHelper.floor(entity.locX);
          int j = MathHelper.floor(entity.locZ);
          byte b0 = 32;
-@@ -1896,6 +2022,11 @@ public abstract class World implements IBlockAccess {
+@@ -1894,6 +2020,11 @@ public abstract class World implements IBlockAccess {
          this.worldData.setWeatherDuration(1);
      }
  
@@ -930,7 +930,7 @@ index e2fd0df..5a01944 100644
      protected void z() {
          // this.chunkTickList.clear(); // CraftBukkit - removed
          this.methodProfiler.a("buildList");
-@@ -1905,25 +2036,42 @@ public abstract class World implements IBlockAccess {
+@@ -1903,25 +2034,42 @@ public abstract class World implements IBlockAccess {
          int j;
          int k;
  
@@ -987,7 +987,7 @@ index e2fd0df..5a01944 100644
  
          this.methodProfiler.b();
          if (this.N > 0) {
-@@ -1931,7 +2079,7 @@ public abstract class World implements IBlockAccess {
+@@ -1929,7 +2077,7 @@ public abstract class World implements IBlockAccess {
          }
  
          this.methodProfiler.a("playerCheckLight");
@@ -996,7 +996,7 @@ index e2fd0df..5a01944 100644
              i = this.random.nextInt(this.players.size());
              entityhuman = (EntityHuman) this.players.get(i);
              j = MathHelper.floor(entityhuman.locX) + this.random.nextInt(11) - 5;
-@@ -1970,9 +2118,16 @@ public abstract class World implements IBlockAccess {
+@@ -1968,9 +2116,16 @@ public abstract class World implements IBlockAccess {
          chunk.o();
      }
  
@@ -1013,7 +1013,7 @@ index e2fd0df..5a01944 100644
  
      public boolean w(int i, int j, int k) {
          return this.c(i, j, k, false);
-@@ -2310,7 +2465,10 @@ public abstract class World implements IBlockAccess {
+@@ -2308,7 +2463,10 @@ public abstract class World implements IBlockAccess {
      }
  
      public List getEntities(Entity entity, AxisAlignedBB axisalignedbb) {
@@ -1025,7 +1025,7 @@ index e2fd0df..5a01944 100644
          int i = MathHelper.floor((axisalignedbb.a - 2.0D) / 16.0D);
          int j = MathHelper.floor((axisalignedbb.d + 2.0D) / 16.0D);
          int k = MathHelper.floor((axisalignedbb.c - 2.0D) / 16.0D);
-@@ -2319,12 +2477,12 @@ public abstract class World implements IBlockAccess {
+@@ -2317,12 +2475,12 @@ public abstract class World implements IBlockAccess {
          for (int i1 = i; i1 <= j; ++i1) {
              for (int j1 = k; j1 <= l; ++j1) {
                  if (this.isChunkLoaded(i1, j1)) {
