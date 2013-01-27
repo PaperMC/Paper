@@ -1,7 +1,5 @@
 package net.minecraft.server;
 
-import org.bukkit.craftbukkit.block.CraftBlockState; // CraftBukkit
-
 public class ItemSeeds extends Item {
 
     private int id;
@@ -15,21 +13,16 @@ public class ItemSeeds extends Item {
     }
 
     public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
+        final int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
         if (l != 1) {
             return false;
         } else if (entityhuman.e(i, j, k) && entityhuman.e(i, j + 1, k)) {
             int i1 = world.getTypeId(i, j, k);
 
             if (i1 == this.b && world.isEmpty(i, j + 1, k)) {
-                CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j + 1, k); // CraftBukkit
-
-                world.setTypeId(i, j + 1, k, this.id);
-
                 // CraftBukkit start - seeds
-                org.bukkit.event.block.BlockPlaceEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, i, j, k);
-
-                if (event.isCancelled() || !event.canBuild()) {
-                    event.getBlockPlaced().setTypeId(0);
+                // world.setTypeId(i, j + 1, k, this.id);
+                if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j + 1, k, this.id, 0, clickedX, clickedY, clickedZ)) {
                     return false;
                 }
                 // CraftBukkit end

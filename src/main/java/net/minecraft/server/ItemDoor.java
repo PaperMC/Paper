@@ -12,6 +12,7 @@ public class ItemDoor extends Item {
     }
 
     public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
+        final int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
         if (l != 1) {
             return false;
         } else {
@@ -31,7 +32,7 @@ public class ItemDoor extends Item {
                     int i1 = MathHelper.floor((double) ((entityhuman.yaw + 180.0F) * 4.0F / 360.0F) - 0.5D) & 3;
 
                     // CraftBukkit start
-                    if (!place(world, i, j, k, i1, block, entityhuman)) {
+                    if (!place(world, i, j, k, i1, block, entityhuman, clickedX, clickedY, clickedZ)) {
                         return false;
                     }
                     // CraftBukkit end
@@ -47,10 +48,10 @@ public class ItemDoor extends Item {
 
     public static void place(World world, int i, int j, int k, int l, Block block) {
         // CraftBukkit start
-        place(world, i, j, k, l, block, null);
+        place(world, i, j, k, l, block, null, i, j, k);
     }
 
-    public static boolean place(World world, int i, int j, int k, int l, Block block, EntityHuman entityhuman) {
+    public static boolean place(World world, int i, int j, int k, int l, Block block, EntityHuman entityhuman, int clickedX, int clickedY, int clickedZ) {
         // CraftBukkit end
         byte b0 = 0;
         byte b1 = 0;
@@ -86,7 +87,7 @@ public class ItemDoor extends Item {
         world.suppressPhysics = true;
         // CraftBukkit start
         if (entityhuman != null) {
-            if(!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, block.id, l)) {
+            if(!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, block.id, l, clickedX, clickedY, clickedZ)) {
                 ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet53BlockChange(i, j + 1, k, world));
                 return false;
             }

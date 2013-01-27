@@ -23,6 +23,7 @@ public class BlockMushroom extends BlockFlower {
     }
 
     public void b(World world, int i, int j, int k, Random random) {
+        final int sourceX = i, sourceY = j, sourceZ = k; // CraftBukkit
         if (random.nextInt(25) == 0) {
             byte b0 = 4;
             int l = 5;
@@ -47,12 +48,6 @@ public class BlockMushroom extends BlockFlower {
             i1 = i + random.nextInt(3) - 1;
             j1 = j + random.nextInt(2) - random.nextInt(2);
             k1 = k + random.nextInt(3) - 1;
-
-            // CraftBukkit start - preserve source block coordinates
-            int sourceX = i;
-            int sourceY = j;
-            int sourceZ = k;
-            // CraftBukkit end
 
             for (int l1 = 0; l1 < 4; ++l1) {
                 if (world.isEmpty(i1, j1, k1) && this.d(world, i1, j1, k1)) {

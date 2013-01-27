@@ -13,6 +13,7 @@ public class ItemSkull extends Item {
     }
 
     public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
+        final int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
         if (l == 0) {
             return false;
         } else if (!world.getMaterial(i, j, k).isBuildable()) {
@@ -45,7 +46,7 @@ public class ItemSkull extends Item {
             } else {
                 // CraftBukkit start - handle in ItemBlock
                 // world.setTypeIdAndData(i, j, k, Block.SKULL.id, l);
-                if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, Block.SKULL.id, l)) {
+                if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, Block.SKULL.id, l, clickedX, clickedY, clickedZ)) {
                     return false;
                 }
                 l = world.getData(i, j, k);
