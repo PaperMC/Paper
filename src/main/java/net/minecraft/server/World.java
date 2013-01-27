@@ -45,6 +45,7 @@ public abstract class World implements IBlockAccess {
     protected float p;
     public int q = 0;
     public boolean suppressPhysics = false;
+    public boolean callingPlaceEvent = false; // CraftBukkit
     public int difficulty;
     public Random random = new Random();
     public WorldProvider worldProvider; // CraftBukkit - remove final
@@ -394,11 +395,8 @@ public abstract class World implements IBlockAccess {
     }
 
     public boolean setTypeId(int i, int j, int k, int l) {
-        // CraftBukkit start
-        int old = this.getTypeId(i, j, k);
         if (this.setRawTypeId(i, j, k, l)) {
-            this.update(i, j, k, l == 0 ? old : l);
-            // CraftBukkit end
+            this.update(i, j, k, l);
             return true;
         } else {
             return false;

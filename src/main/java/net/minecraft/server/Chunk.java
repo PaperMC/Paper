@@ -428,12 +428,9 @@ public class Chunk {
                 TileEntity tileentity;
 
                 if (l != 0) {
-                    if (!this.world.isStatic) {
-                        // CraftBukkit start - Don't "place" if we're processing the event
-                        if (!this.world.suppressPhysics) {
-                            Block.byId[l].onPlace(this.world, j2, j, k2);
-                        }
-                        // CraftBukkit end
+                    // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer
+                    if (!this.world.isStatic && (!this.world.callingPlaceEvent || (Block.byId[l] instanceof BlockContainer))) {
+                        Block.byId[l].onPlace(this.world, j2, j, k2);
                     }
 
                     if (Block.byId[l] instanceof BlockContainer) {

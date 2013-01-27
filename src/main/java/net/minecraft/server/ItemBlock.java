@@ -80,22 +80,25 @@ public class ItemBlock extends Item {
         org.bukkit.block.BlockState blockstate = org.bukkit.craftbukkit.block.CraftBlockState.getBlockState(world, x, y, z);
 
         world.suppressPhysics = true;
+        world.callingPlaceEvent = true;
         world.setRawTypeIdAndData(x, y, z, id, data);
 
         org.bukkit.event.block.BlockPlaceEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockstate, x, y, z);
         if (event.isCancelled() || !event.canBuild()) {
             blockstate.update(true);
             world.suppressPhysics = false;
+            world.callingPlaceEvent = false;
             return false;
         }
 
         world.suppressPhysics = false;
+        world.callingPlaceEvent = false;
 
         int newId = world.getTypeId(x, y, z);
         int newData = world.getData(x, y, z);
 
         Block block = Block.byId[newId];
-        if (block != null) {
+        if (block != null && !(block instanceof BlockContainer)) { // Containers get placed automatically
             block.onPlace(world, x, y, z);
         }
 
