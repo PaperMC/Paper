@@ -11,6 +11,12 @@ public class CraftLargeFireball extends CraftFireball implements LargeFireball {
     }
 
     @Override
+    public void setYield(float yield) {
+        super.setYield(yield);
+        getHandle().e = (int) yield;
+    }
+
+    @Override
     public EntityLargeFireball getHandle() {
         return (EntityLargeFireball) entity;
     }

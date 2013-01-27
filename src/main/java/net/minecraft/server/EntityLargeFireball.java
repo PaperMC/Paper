@@ -33,4 +33,17 @@ public class EntityLargeFireball extends EntityFireball {
             this.die();
         }
     }
+
+    public void b(NBTTagCompound nbttagcompound) {
+        super.b(nbttagcompound);
+        nbttagcompound.setInt("ExplosionPower", this.e);
+    }
+
+    public void a(NBTTagCompound nbttagcompound) {
+        super.a(nbttagcompound);
+        if (nbttagcompound.hasKey("ExplosionPower")) {
+            // CraftBukkit - set yield when setting explosionpower
+            this.yield = this.e = nbttagcompound.getInt("ExplosionPower");
+        }
+    }
 }
