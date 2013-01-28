@@ -83,6 +83,9 @@ public class TileEntityCommand extends TileEntity implements ICommandListener {
         EntityPlayer[] players = PlayerSelector.getPlayers(this, args[pos]);
         if (players != null) {
             for (EntityPlayer player : players) {
+                if (player.world != this.world) {
+                    continue;
+                }
                 String[] command = args.clone();
                 command[pos] = player.getLocalizedName();
                 commands.add(command);
