@@ -211,7 +211,6 @@ public class CraftScheduler implements BukkitScheduler {
                                 if (task.isSync()) {
                                     runners.remove(task.getTaskId());
                                 }
-                                break;
                             }
                         }
                     }
