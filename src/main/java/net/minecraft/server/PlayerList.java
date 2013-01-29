@@ -441,7 +441,9 @@ public abstract class PlayerList {
             if ((cause == TeleportCause.END_PORTAL) && (i == 0)) {
                 // THE_END -> NORMAL; use bed if available, otherwise default spawn
                 exit = ((CraftPlayer) entityplayer.getBukkitEntity()).getBedSpawnLocation();
-                if (exit == null) exit = exitWorld.getWorld().getSpawnLocation();
+                if (exit == null || ((CraftWorld) exit.getWorld()).getHandle().dimension != 0) {
+                    exit = exitWorld.getWorld().getSpawnLocation();
+                }
             } else {
                 // NORMAL <-> NETHER or NORMAL -> THE_END
                 exit = this.calculateTarget(enter, exitWorld);
