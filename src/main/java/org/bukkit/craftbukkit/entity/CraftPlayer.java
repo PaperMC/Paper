@@ -610,7 +610,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         World world = getServer().getWorld(getHandle().spawnWorld);
         ChunkCoordinates bed = getHandle().getBed();
 
-        if (world != null) {
+        if (world != null && bed != null) {
             bed = EntityHuman.getBed(((CraftWorld) world).getHandle(), bed, getHandle().isRespawnForced());
             if (bed != null) {
                 return new Location(world, bed.x, bed.y, bed.z);
