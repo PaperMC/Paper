@@ -39,7 +39,7 @@ public final class PluginDescriptionFile {
     private PermissionDefault defaultPerm = PermissionDefault.OP;
 
     public PluginDescriptionFile(final InputStream stream) throws InvalidDescriptionException {
-        loadMap((Map<?, ?>) yaml.load(stream));
+        loadMap(asMap(yaml.load(stream)));
     }
 
     /**
@@ -49,7 +49,7 @@ public final class PluginDescriptionFile {
      * @throws InvalidDescriptionException If the PluginDescriptionFile is invalid
      */
     public PluginDescriptionFile(final Reader reader) throws InvalidDescriptionException {
-        loadMap((Map<?, ?>) yaml.load(reader));
+        loadMap(asMap(yaml.load(reader)));
     }
 
     /**
@@ -399,5 +399,12 @@ public final class PluginDescriptionFile {
         }
 
         return map;
+    }
+
+    private Map<?,?> asMap(Object object) throws InvalidDescriptionException {
+        if (object instanceof Map) {
+            return (Map<?,?>) object;
+        }
+        throw new InvalidDescriptionException(object + " is not properly structured.");
     }
 }
