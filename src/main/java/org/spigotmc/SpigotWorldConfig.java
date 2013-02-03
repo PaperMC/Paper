@@ -175,4 +175,19 @@ public class SpigotWorldConfig
         itemDespawnRate = getInt( "item-despawn-rate", 6000 );
         log( "Item Despawn Rate: " + itemDespawnRate );
     }
+
+    public int animalActivationRange = 32;
+    public int monsterActivationRange = 32;
+    public int raiderActivationRange = 48;
+    public int miscActivationRange = 16;
+    public boolean tickInactiveVillagers = true;
+    private void activationRange()
+    {
+        animalActivationRange = getInt( "entity-activation-range.animals", animalActivationRange );
+        monsterActivationRange = getInt( "entity-activation-range.monsters", monsterActivationRange );
+        raiderActivationRange = getInt( "entity-activation-range.raiders", raiderActivationRange );
+        miscActivationRange = getInt( "entity-activation-range.misc", miscActivationRange );
+        tickInactiveVillagers = getBoolean( "entity-activation-range.tick-inactive-villagers", tickInactiveVillagers );
+        log( "Entity Activation Range: An " + animalActivationRange + " / Mo " + monsterActivationRange + " / Ra " + raiderActivationRange + " / Mi " + miscActivationRange + " / Tiv " + tickInactiveVillagers );
+    }
 }

@@ -144,6 +144,28 @@ public class EntityItem extends Entity {
         }
     }
 
+    // Spigot start - copied from above
+    @Override
+    public void inactiveTick() {
+        // CraftBukkit start - Use wall time for pickup and despawn timers
+        int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
+        if (this.pickupDelay != 32767) this.pickupDelay -= elapsedTicks;
+        if (this.age != -32768) this.age += elapsedTicks;
+        this.lastTick = MinecraftServer.currentTick;
+        // CraftBukkit end
+
+        if (!this.world.isClientSide && this.age >= world.spigotConfig.itemDespawnRate) { // Spigot
+            // CraftBukkit start - fire ItemDespawnEvent
+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
+                this.age = 0;
+                return;
+            }
+            // CraftBukkit end
+            this.die();
+        }
+    }
+    // Spigot end
+
     private void u() {
         Vec3D vec3d = this.getMot();
 

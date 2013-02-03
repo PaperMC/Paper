@@ -358,6 +358,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
             this.tickingEntities = true;
             ObjectIterator objectiterator = this.entitiesById.int2ObjectEntrySet().iterator();
 
+            org.spigotmc.ActivationRange.activateEntities(this); // Spigot
             timings.entityTick.startTiming(); // Spigot
             while (objectiterator.hasNext()) {
                 Entry<Entity> entry = (Entry) objectiterator.next();
@@ -636,6 +637,13 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         if (!(entity instanceof EntityHuman) && !this.getChunkProvider().a(entity)) {
             this.chunkCheck(entity);
         } else {
+            // Spigot start
+            if (!org.spigotmc.ActivationRange.checkIfActive(entity)) {
+                entity.ticksLived++;
+                entity.inactiveTick();
+                return;
+            }
+            // Spigot end
             entity.tickTimer.startTiming(); // Spigot
             entity.g(entity.locX(), entity.locY(), entity.locZ());
             entity.lastYaw = entity.yaw;

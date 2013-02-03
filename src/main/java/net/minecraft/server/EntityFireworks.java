@@ -55,6 +55,22 @@ public class EntityFireworks extends IProjectile {
         this.setShooter(entity);
     }
 
+    // Spigot Start - copied from tick
+    @Override
+    public void inactiveTick() {
+        this.ticksFlown += 1;
+
+        if (!this.world.isClientSide && this.ticksFlown > this.expectedLifespan) {
+            // CraftBukkit start
+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
+                this.explode();
+            }
+            // CraftBukkit end
+        }
+        super.inactiveTick();
+    }
+    // Spigot End
+
     @Override
     protected void initDatawatcher() {
         this.datawatcher.register(EntityFireworks.FIREWORK_ITEM, ItemStack.b);

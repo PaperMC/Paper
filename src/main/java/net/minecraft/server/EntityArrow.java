@@ -30,6 +30,18 @@ public abstract class EntityArrow extends IProjectile {
     private IntOpenHashSet al;
     private List<Entity> am;
 
+    // Spigot Start
+    @Override
+    public void inactiveTick()
+    {
+        if ( this.inGround )
+        {
+            this.despawnCounter += 1;
+        }
+        super.inactiveTick();
+    }
+    // Spigot End
+
     protected EntityArrow(EntityTypes<? extends EntityArrow> entitytypes, World world) {
         super(entitytypes, world);
         this.fromPlayer = EntityArrow.PickupStatus.DISALLOWED;

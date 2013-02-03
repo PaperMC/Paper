@@ -158,6 +158,18 @@ public class EntityAreaEffectCloud extends Entity {
         this.duration = i;
     }
 
+    // Spigot start - copied from below
+    @Override
+    public void inactiveTick() {
+        super.inactiveTick();
+
+        if (this.ticksLived >= this.waitTime + this.duration) {
+            this.die();
+            return;
+        }
+    }
+    // Spigot end
+
     @Override
     public void tick() {
         super.tick();
