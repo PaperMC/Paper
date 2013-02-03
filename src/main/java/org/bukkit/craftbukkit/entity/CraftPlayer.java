@@ -389,7 +389,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             if (getHandle().activeContainer != getHandle().defaultContainer){
                 getHandle().closeInventory();
             }
-            server.getHandle().moveToWorld(entity, toWorld.dimension, true, to);
+            server.getHandle().moveToWorld(entity, toWorld.dimension, true, to, true);
         }
         return true;
     }

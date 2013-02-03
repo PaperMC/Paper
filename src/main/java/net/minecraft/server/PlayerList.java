@@ -322,10 +322,10 @@ public abstract class PlayerList {
 
     // CraftBukkit start
     public EntityPlayer moveToWorld(EntityPlayer entityplayer, int i, boolean flag) {
-        return this.moveToWorld(entityplayer, i, flag, null);
+        return this.moveToWorld(entityplayer, i, flag, null, true);
     }
 
-    public EntityPlayer moveToWorld(EntityPlayer entityplayer, int i, boolean flag, Location location) {
+    public EntityPlayer moveToWorld(EntityPlayer entityplayer, int i, boolean flag, Location location, boolean avoidSuffocation) {
         // CraftBukkit end
         entityplayer.p().getTracker().untrackPlayer(entityplayer);
         // entityplayer.p().getTracker().untrackEntity(entityplayer); // CraftBukkit
@@ -378,7 +378,7 @@ public abstract class PlayerList {
 
         worldserver.chunkProviderServer.getChunkAt((int) entityplayer1.locX >> 4, (int) entityplayer1.locZ >> 4);
 
-        while (!worldserver.getCubes(entityplayer1, entityplayer1.boundingBox).isEmpty()) {
+        while (avoidSuffocation && !worldserver.getCubes(entityplayer1, entityplayer1.boundingBox).isEmpty()) { // CraftBukkit
             entityplayer1.setPosition(entityplayer1.locX, entityplayer1.locY + 1.0D, entityplayer1.locZ);
         }
 
@@ -468,7 +468,7 @@ public abstract class PlayerList {
         exitWorld.s().adjustExit(entityplayer, exit, velocity);
         exitWorld.chunkProviderServer.forceChunkLoad = before;
 
-        this.moveToWorld(entityplayer, exitWorld.dimension, true, exit);
+        this.moveToWorld(entityplayer, exitWorld.dimension, true, exit, false); // Vanilla doesn't check for suffocation when handling portals, so neither should we
         if (entityplayer.motX != velocity.getX() || entityplayer.motY != velocity.getY() || entityplayer.motZ != velocity.getZ()) {
             entityplayer.getBukkitEntity().setVelocity(velocity);
         }
