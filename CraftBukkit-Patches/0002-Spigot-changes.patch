@@ -1,6 +1,6 @@
-From 1fe7705634f785cb08d806d318a11cc762ad9c9a Mon Sep 17 00:00:00 2001
+From 66460583cb37502069f54314e886b1ea4477d98c Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Sat, 2 Feb 2013 19:38:11 +1100
+Date: Sun, 3 Feb 2013 12:21:52 +1100
 Subject: [PATCH] Spigot changes.
 
 ---
@@ -18,7 +18,7 @@ Subject: [PATCH] Spigot changes.
  .../java/net/minecraft/server/ChunkSection.java    |  31 +-
  src/main/java/net/minecraft/server/EntityItem.java |   3 +-
  .../java/net/minecraft/server/EntitySquid.java     |   4 -
- .../java/net/minecraft/server/MinecraftServer.java |  51 +--
+ .../java/net/minecraft/server/MinecraftServer.java |   3 +
  .../net/minecraft/server/PlayerConnection.java     |  18 +-
  src/main/java/net/minecraft/server/PlayerList.java |  10 +-
  .../net/minecraft/server/ThreadLoginVerifier.java  |  23 +
@@ -29,7 +29,6 @@ Subject: [PATCH] Spigot changes.
  src/main/java/org/bukkit/craftbukkit/Spigot.java   |  25 ++
  .../craftbukkit/chunkio/ChunkIOProvider.java       |   2 +-
  .../bukkit/craftbukkit/command/RestartCommand.java |  24 +
- .../craftbukkit/command/TicksPerSecondCommand.java |  35 ++
  .../org/bukkit/craftbukkit/entity/CraftPlayer.java |   7 +
  .../bukkit/craftbukkit/util/ExceptionHandler.java  |  31 ++
  .../bukkit/craftbukkit/util/ExceptionReporter.java |  26 ++
@@ -40,10 +39,9 @@ Subject: [PATCH] Spigot changes.
  .../org/bukkit/craftbukkit/util/TimedThread.java   |  37 ++
  .../bukkit/craftbukkit/util/WatchdogThread.java    |  88 ++++
  src/main/resources/configurations/bukkit.yml       |  30 ++
- 36 files changed, 1413 insertions(+), 131 deletions(-)
+ 35 files changed, 1361 insertions(+), 100 deletions(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/Spigot.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/command/RestartCommand.java
- create mode 100644 src/main/java/org/bukkit/craftbukkit/command/TicksPerSecondCommand.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/util/ExceptionHandler.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/util/ExceptionReporter.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/util/FlatMap.java
@@ -377,74 +375,10 @@ index 961d83a..188d477 100644
          super.c();
          this.e = this.d;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 4bdf8aa..4ee2b8b 100644
+index 4bdf8aa..955a3ac 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -86,6 +86,11 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
-     public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
-     public int autosavePeriod;
-     // CraftBukkit end
-+    // Spigot start
-+    private static final int TPS = 20;
-+    private static final int TICK_TIME = 1000000000 / TPS;
-+    public static double currentTPS = 0;
-+    // Spigot end
- 
-     public MinecraftServer(OptionSet options) { // CraftBukkit - signature file -> OptionSet
-         l = this;
-@@ -397,39 +402,20 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
-     public void run() {
-         try {
-             if (this.init()) {
--                long i = System.currentTimeMillis();
--
--                for (long j = 0L; this.isRunning; this.Q = true) {
--                    long k = System.currentTimeMillis();
--                    long l = k - i;
--
--                    if (l > 2000L && i - this.R >= 15000L) {
--                        if (this.server.getWarnOnOverload()) // CraftBukkit - Added option to suppress warning messages
--                        log.warning("Can\'t keep up! Did the system time change, or is the server overloaded?");
--                        l = 2000L;
--                        this.R = i;
-+                // Spigot start
-+                for (long lastTick = 0L; this.isRunning; this.Q = true) {
-+                    long curTime = System.nanoTime();
-+                    long wait = TICK_TIME - (curTime - lastTick);
-+                    if (wait > 0) {
-+                        Thread.sleep(wait / 1000000);
-+                        continue;
-                     }
--
--                    if (l < 0L) {
--                        log.warning("Time ran backwards! Did the system time change?");
--                        l = 0L;
--                    }
--
--                    j += l;
--                    i = k;
--                    if (this.worlds.get(0).everyoneDeeplySleeping()) { // CraftBukkit
--                        this.q();
--                        j = 0L;
--                    } else {
--                        while (j > 50L) {
--                            MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
--                            j -= 50L;
--                            this.q();
--                        }
--                    }
--
--                    Thread.sleep(1L);
-+                    currentTPS = (currentTPS * 0.95) + (1E9 / (curTime - lastTick) * 0.05);
-+                    lastTick = curTime;
-+                    MinecraftServer.currentTick++;
-+                    this.q();
-                 }
-+                // Spigot end
-             } else {
-                 this.a((CrashReport) null);
-             }
-@@ -454,6 +440,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -454,6 +454,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
  
              this.a(crashreport);
          } finally {
@@ -452,7 +386,7 @@ index 4bdf8aa..4ee2b8b 100644
              try {
                  this.stop();
                  this.isStopped = true;
-@@ -605,6 +592,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -605,6 +606,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
          }
  
          this.methodProfiler.b();
@@ -460,7 +394,7 @@ index 4bdf8aa..4ee2b8b 100644
      }
  
      public boolean getAllowNether() {
-@@ -708,6 +696,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -708,6 +710,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
                  dedicatedserver.an();
              }
              */
@@ -1483,47 +1417,6 @@ index 0000000..fba4b4a
 +    }
 +}
 \ No newline at end of file
-diff --git a/src/main/java/org/bukkit/craftbukkit/command/TicksPerSecondCommand.java b/src/main/java/org/bukkit/craftbukkit/command/TicksPerSecondCommand.java
-new file mode 100644
-index 0000000..e30615f
---- /dev/null
-+++ b/src/main/java/org/bukkit/craftbukkit/command/TicksPerSecondCommand.java
-@@ -0,0 +1,35 @@
-+package org.bukkit.craftbukkit.command;
-+
-+import net.minecraft.server.MinecraftServer;
-+import org.bukkit.ChatColor;
-+import org.bukkit.command.Command;
-+import org.bukkit.command.CommandSender;
-+
-+public class TicksPerSecondCommand extends Command {
-+
-+    public TicksPerSecondCommand(String name) {
-+        super(name);
-+        this.description = "Gets the current ticks per second for the server";
-+        this.usageMessage = "/tps";
-+        this.setPermission("bukkit.command.tps");
-+    }
-+
-+    @Override
-+    public boolean execute(CommandSender sender, String currentAlias, String[] args) {
-+        if (!testPermission(sender)) return true;
-+
-+        double tps = (double) Math.round(MinecraftServer.currentTPS * 10) / 10;
-+        ChatColor color;
-+        if (tps > 19.2D) {
-+            color = ChatColor.GREEN;
-+        } else if (tps > 17.4D) {
-+            color = ChatColor.YELLOW;
-+        } else {
-+            color = ChatColor.RED;
-+        }
-+
-+        sender.sendMessage(ChatColor.GOLD + "[TPS] " + color + tps);
-+
-+        return true;
-+    }
-+}
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index b6c7b1c..992131c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
