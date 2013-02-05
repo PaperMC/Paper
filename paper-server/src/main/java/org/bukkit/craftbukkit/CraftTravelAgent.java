@@ -18,7 +18,7 @@ public class CraftTravelAgent extends PortalTravelAgent implements TravelAgent {
     public CraftTravelAgent(WorldServer worldserver) {
         super(worldserver);
         if (DEFAULT == null && worldserver.dimension == 0) {
-            DEFAULT = (TravelAgent) worldserver.s();
+            DEFAULT = this;
         }
     }
 
