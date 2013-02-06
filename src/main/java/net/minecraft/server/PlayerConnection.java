@@ -1463,7 +1463,10 @@ public class PlayerConnection extends Connection {
                     itemstack1.a("pages", (NBTBase) itemstack.getTag().getList("pages"));
                 }
             } catch (Exception exception) {
-                exception.printStackTrace();
+                // CraftBukkit start
+                logger.log(Level.WARNING, this.player.name + " sent invalid MC|BEdit data", exception);
+                this.disconnect("Invalid book data!");
+                // CraftBukkit end
             }
         } else if ("MC|BSign".equals(packet250custompayload.tag)) {
             try {
@@ -1482,7 +1485,8 @@ public class PlayerConnection extends Connection {
                 }
             } catch (Exception exception1) {
                 // CraftBukkit start
-                // exception1.printStackTrace();
+                logger.log(Level.WARNING, this.player.name + " sent invalid MC|BSign data", exception);
+                this.disconnect("Invalid book data!");
                 // CraftBukkit end
             }
         } else {
@@ -1498,7 +1502,10 @@ public class PlayerConnection extends Connection {
                         ((ContainerMerchant) container).b(i);
                     }
                 } catch (Exception exception2) {
-                    exception2.printStackTrace();
+                    // CraftBukkit start
+                    logger.log(Level.WARNING, this.player.name + " sent invalid MC|TrSel data", exception);
+                    this.disconnect("Invalid trade data!");
+                    // CraftBukkit end
                 }
             } else {
                 int j;
@@ -1521,7 +1528,10 @@ public class PlayerConnection extends Connection {
                                 this.player.sendMessage("Command set: " + s);
                             }
                         } catch (Exception exception3) {
-                            exception3.printStackTrace();
+                            // CraftBukkit start
+                            logger.log(Level.WARNING, this.player.name + " sent invalid MC|AdvCdm data", exception);
+                            this.disconnect("Invalid CommandBlock data!");
+                            // CraftBukkit end
                         }
                     } else {
                         this.player.sendMessage(this.player.a("advMode.notAllowed", new Object[0]));
@@ -1544,7 +1554,10 @@ public class PlayerConnection extends Connection {
                                 tileentitybeacon.update();
                             }
                         } catch (Exception exception4) {
-                            exception4.printStackTrace();
+                            // CraftBukkit start
+                            logger.log(Level.WARNING, this.player.name + " sent invalid MC|Beacon data", exception);
+                            this.disconnect("Invalid beacon data!");
+                            // CraftBukkit end
                         }
                     }
                 } else if ("MC|ItemName".equals(packet250custompayload.tag) && this.player.activeContainer instanceof ContainerAnvil) {
@@ -1568,7 +1581,7 @@ public class PlayerConnection extends Connection {
                             getPlayer().addChannel(channel);
                         }
                     } catch (UnsupportedEncodingException ex) {
-                        Logger.getLogger(PlayerConnection.class.getName()).log(Level.SEVERE, "Could not parse REGISTER payload in plugin message packet", ex);
+                        throw new AssertionError(ex);
                     }
                 } else if (packet250custompayload.tag.equals("UNREGISTER")) {
                     try {
@@ -1577,7 +1590,7 @@ public class PlayerConnection extends Connection {
                             getPlayer().removeChannel(channel);
                         }
                     } catch (UnsupportedEncodingException ex) {
-                        Logger.getLogger(PlayerConnection.class.getName()).log(Level.SEVERE, "Could not parse UNREGISTER payload in plugin message packet", ex);
+                        throw new AssertionError(ex);
                     }
                 } else {
                     server.getMessenger().dispatchIncomingMessage(player.getBukkitEntity(), packet250custompayload.tag, packet250custompayload.data);
