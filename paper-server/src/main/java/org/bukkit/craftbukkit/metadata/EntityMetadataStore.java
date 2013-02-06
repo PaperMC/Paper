@@ -9,7 +9,8 @@ import org.bukkit.metadata.MetadataStoreBase;
  */
 public class EntityMetadataStore extends MetadataStoreBase<Entity> implements MetadataStore<Entity> {
     /**
-     * Generates a unique metadata key for an {@link Entity} entity ID.
+     * Generates a unique metadata key for an {@link Entity} UUID.
+     *
      * @see MetadataStoreBase#disambiguate(Object, String)
      * @param entity the entity
      * @param metadataKey The name identifying the metadata value
@@ -17,6 +18,6 @@ public class EntityMetadataStore extends MetadataStoreBase<Entity> implements Me
      */
     @Override
     protected String disambiguate(Entity entity, String metadataKey) {
-        return Integer.toString(entity.getEntityId()) + ":" + metadataKey;
+        return entity.getUniqueId().toString() + ":" + metadataKey;
     }
 }
