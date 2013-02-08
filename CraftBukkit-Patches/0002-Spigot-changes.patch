@@ -1,4 +1,4 @@
-From 66460583cb37502069f54314e886b1ea4477d98c Mon Sep 17 00:00:00 2001
+From 80afd7d84a7d9092281b41183190bff1bc84480e Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 3 Feb 2013 12:21:52 +1100
 Subject: [PATCH] Spigot changes.
@@ -26,7 +26,7 @@ Subject: [PATCH] Spigot changes.
  .../java/net/minecraft/server/WorldServer.java     | 122 +++++-
  .../java/org/bukkit/craftbukkit/CraftServer.java   |  98 ++++-
  .../java/org/bukkit/craftbukkit/CraftWorld.java    |  76 +++-
- src/main/java/org/bukkit/craftbukkit/Spigot.java   |  25 ++
+ src/main/java/org/bukkit/craftbukkit/Spigot.java   |  24 +
  .../craftbukkit/chunkio/ChunkIOProvider.java       |   2 +-
  .../bukkit/craftbukkit/command/RestartCommand.java |  24 +
  .../org/bukkit/craftbukkit/entity/CraftPlayer.java |   7 +
@@ -39,7 +39,7 @@ Subject: [PATCH] Spigot changes.
  .../org/bukkit/craftbukkit/util/TimedThread.java   |  37 ++
  .../bukkit/craftbukkit/util/WatchdogThread.java    |  88 ++++
  src/main/resources/configurations/bukkit.yml       |  30 ++
- 35 files changed, 1361 insertions(+), 100 deletions(-)
+ 35 files changed, 1360 insertions(+), 100 deletions(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/Spigot.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/command/RestartCommand.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/util/ExceptionHandler.java
@@ -448,7 +448,7 @@ index fac9ea5..43a24f5 100644
                      }
                  }
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index e9f6a6b..b15a1d1 100644
+index b0bb672..b650f55 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -253,7 +253,7 @@ public abstract class PlayerList {
@@ -1344,10 +1344,10 @@ index 6e364b1..45217cd 100644
          return getChunkAt(x >> 4, z >> 4).getBlock(x & 0xF, y & 0xFF, z & 0xF);
 diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
 new file mode 100644
-index 0000000..9e8b12e
+index 0000000..a53c7b0
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,24 @@
 +package org.bukkit.craftbukkit;
 +
 +import org.bukkit.command.SimpleCommandMap;
@@ -1356,7 +1356,6 @@ index 0000000..9e8b12e
 +public class Spigot {
 +    public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
 +        commandMap.register("bukkit", new org.bukkit.craftbukkit.command.RestartCommand("restart"));
-+        commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
 +
 +        org.bukkit.craftbukkit.util.WatchdogThread.startThread(configuration.getInt("settings.timeout-time", 180), configuration.getBoolean("settings.restart-on-crash", false));
 +
@@ -1418,7 +1417,7 @@ index 0000000..fba4b4a
 +}
 \ No newline at end of file
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index b6c7b1c..992131c 100644
+index b0c23a0..747a88e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -212,10 +212,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -1441,7 +1440,7 @@ index b6c7b1c..992131c 100644
          if (getHandle().playerConnection == null) return;
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/ExceptionHandler.java b/src/main/java/org/bukkit/craftbukkit/util/ExceptionHandler.java
 new file mode 100644
-index 0000000..392155e
+index 0000000..7ee3665
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/util/ExceptionHandler.java
 @@ -0,0 +1,31 @@
@@ -1478,7 +1477,7 @@ index 0000000..392155e
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/ExceptionReporter.java b/src/main/java/org/bukkit/craftbukkit/util/ExceptionReporter.java
 new file mode 100644
-index 0000000..1d0e284
+index 0000000..a396f17
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/util/ExceptionReporter.java
 @@ -0,0 +1,26 @@
@@ -2176,7 +2175,7 @@ index 0000000..d8d2c7c
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/WatchdogThread.java b/src/main/java/org/bukkit/craftbukkit/util/WatchdogThread.java
 new file mode 100644
-index 0000000..9e92ea2
+index 0000000..da6df8f
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/util/WatchdogThread.java
 @@ -0,0 +1,88 @@
