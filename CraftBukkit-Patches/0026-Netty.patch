@@ -1,4 +1,4 @@
-From 7c291f31800391938b5f0e3af1a05940e65a73ba Mon Sep 17 00:00:00 2001
+From 7c5deba6cc92d48692d23ae5a7aef77a6bf18e45 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 3 Feb 2013 10:24:33 +1100
 Subject: [PATCH] Netty
@@ -16,13 +16,13 @@ This commit is licensed under the Creative Commons Attribution-ShareAlike 3.0 Un
  .../java/net/minecraft/server/DedicatedServer.java |   2 +-
  .../net/minecraft/server/PendingConnection.java    |  11 +-
  src/main/java/org/spigotmc/netty/CipherCodec.java  |  65 ++++++
- .../org/spigotmc/netty/NettyNetworkManager.java    | 200 +++++++++++++++++
+ .../org/spigotmc/netty/NettyNetworkManager.java    | 204 +++++++++++++++++
  .../org/spigotmc/netty/NettyServerConnection.java  |  98 ++++++++
  .../org/spigotmc/netty/NettySocketAdaptor.java     | 248 +++++++++++++++++++++
  .../java/org/spigotmc/netty/PacketDecoder.java     |  52 +++++
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
- 10 files changed, 825 insertions(+), 4 deletions(-)
+ 10 files changed, 829 insertions(+), 4 deletions(-)
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyServerConnection.java
@@ -176,10 +176,10 @@ index 0000000..cfc0535
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..8236faa
+index 0000000..0e5bb8c
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,200 @@
+@@ -0,0 +1,204 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.channel.Channel;
@@ -240,9 +240,8 @@ index 0000000..8236faa
 +
 +    @Override
 +    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-+        // Disconnect via the handler - this performs all plugin related cleanup + logging
-+        if (dcReason != null || dcArgs != null) {
-+            handler.a(dcReason, dcArgs);
++        if (dcReason == null || dcArgs == null) {
++            a("disconnect.endOfStream", new Object[0]);
 +        }
 +        // Remove channel reference to indicate we are done
 +        channel = null;
@@ -332,6 +331,11 @@ index 0000000..8236faa
 +            }
 +
 +            syncPackets.poll().handle(handler);
++        }
++
++        // Disconnect via the handler - this performs all plugin related cleanup + logging
++        if (syncPackets.isEmpty() && (dcReason != null || dcArgs != null)) {
++            handler.a(dcReason, dcArgs);
 +        }
 +    }
 +
