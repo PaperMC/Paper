@@ -1,4 +1,4 @@
-From ea8906370c4d5a459abe66dc442fbde9bcaf3cf1 Mon Sep 17 00:00:00 2001
+From beb9da65b2dc609c0bbc2a89e673a5556e64e832 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 3 Feb 2013 10:24:33 +1100
 Subject: [PATCH] Netty
@@ -14,7 +14,8 @@ This commit is licensed under the Creative Commons Attribution-ShareAlike 3.0 Un
 ---
  pom.xml                                            |  10 +
  .../java/net/minecraft/server/DedicatedServer.java |   2 +-
- .../net/minecraft/server/PendingConnection.java    |  11 +-
+ .../net/minecraft/server/PendingConnection.java    |  13 +-
+ .../net/minecraft/server/PlayerConnection.java     |   2 +-
  src/main/java/org/spigotmc/netty/CipherCodec.java  |  65 ++++++
  .../org/spigotmc/netty/NettyNetworkManager.java    | 203 +++++++++++++++++
  .../org/spigotmc/netty/NettyServerConnection.java  |  98 ++++++++
@@ -22,7 +23,7 @@ This commit is licensed under the Creative Commons Attribution-ShareAlike 3.0 Un
  .../java/org/spigotmc/netty/PacketDecoder.java     |  52 +++++
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
- 10 files changed, 828 insertions(+), 4 deletions(-)
+ 11 files changed, 830 insertions(+), 6 deletions(-)
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyServerConnection.java
@@ -73,7 +74,7 @@ index bd0377a..68feb71 100644
              log.warning("**** FAILED TO BIND TO PORT!");
              log.log(Level.WARNING, "The exception was: " + ioexception.toString());
 diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
-index 8413a15..b586386 100644
+index 8413a15..42eaa47 100644
 --- a/src/main/java/net/minecraft/server/PendingConnection.java
 +++ b/src/main/java/net/minecraft/server/PendingConnection.java
 @@ -17,7 +17,7 @@ public class PendingConnection extends Connection {
@@ -103,6 +104,28 @@ index 8413a15..b586386 100644
      }
  
      // CraftBukkit start
+@@ -135,7 +140,7 @@ public class PendingConnection extends Connection {
+     }
+ 
+     public void a(String s, Object[] aobject) {
+-        logger.info(this.getName() + " lost connection");
++        logger.info(this.getName() + " lost connection - " + java.util.Arrays.toString(aobject));
+         this.c = true;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 7ca0acf..de5e47d 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -714,7 +714,7 @@ public class PlayerConnection extends Connection {
+     public void a(String s, Object[] aobject) {
+         if (this.disconnected) return; // CraftBukkit - rarely it would send a disconnect line twice
+ 
+-        logger.info(this.player.name + " lost connection: " + s);
++        logger.info(this.player.name + " lost connection: " + s + " - " + java.util.Arrays.toString(aobject));
+         // CraftBukkit start - we need to handle custom quit messages
+         String quitMessage = this.minecraftServer.getPlayerList().disconnect(this.player);
+         if ((quitMessage != null) && (quitMessage.length() > 0)) {
 diff --git a/src/main/java/org/spigotmc/netty/CipherCodec.java b/src/main/java/org/spigotmc/netty/CipherCodec.java
 new file mode 100644
 index 0000000..cfc0535
