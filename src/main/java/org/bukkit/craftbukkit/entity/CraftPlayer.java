@@ -381,14 +381,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         WorldServer fromWorld = ((CraftWorld) from.getWorld()).getHandle();
         WorldServer toWorld = ((CraftWorld) to.getWorld()).getHandle();
 
+        // Close any foreign inventory
+        if (getHandle().activeContainer != getHandle().defaultContainer) {
+            getHandle().closeInventory();
+        }
+
         // Check if the fromWorld and toWorld are the same.
         if (fromWorld == toWorld) {
             entity.playerConnection.teleport(to);
         } else {
-            // Close any foreign inventory
-            if (getHandle().activeContainer != getHandle().defaultContainer){
-                getHandle().closeInventory();
-            }
             server.getHandle().moveToWorld(entity, toWorld.dimension, true, to, true);
         }
         return true;
