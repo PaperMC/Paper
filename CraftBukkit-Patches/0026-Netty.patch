@@ -1,4 +1,4 @@
-From 20a2411ebb5b4457fd41cecf165b02f2acd0864f Mon Sep 17 00:00:00 2001
+From fa32c4180449ac65ffd01f6a59f143b7a791fda6 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 3 Feb 2013 10:24:33 +1100
 Subject: [PATCH] Netty
@@ -17,12 +17,12 @@ This commit is licensed under the Creative Commons Attribution-ShareAlike 3.0 Un
  .../net/minecraft/server/PendingConnection.java    |  11 +-
  src/main/java/org/spigotmc/netty/CipherCodec.java  |  65 ++++++
  .../org/spigotmc/netty/NettyNetworkManager.java    | 185 +++++++++++++++
- .../org/spigotmc/netty/NettyServerConnection.java  |  97 ++++++++
+ .../org/spigotmc/netty/NettyServerConnection.java  |  99 ++++++++
  .../org/spigotmc/netty/NettySocketAdaptor.java     | 248 +++++++++++++++++++++
- .../java/org/spigotmc/netty/PacketDecoder.java     |  51 +++++
+ .../java/org/spigotmc/netty/PacketDecoder.java     |  52 +++++
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
- 10 files changed, 808 insertions(+), 4 deletions(-)
+ 10 files changed, 811 insertions(+), 4 deletions(-)
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyServerConnection.java
@@ -367,12 +367,13 @@ index 0000000..f0ca696
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyServerConnection.java b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
 new file mode 100644
-index 0000000..476267b
+index 0000000..c051e32
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,99 @@
 +package org.spigotmc.netty;
 +
++import com.google.common.collect.Lists;
 +import io.netty.bootstrap.ServerBootstrap;
 +import io.netty.channel.Channel;
 +import io.netty.channel.ChannelFuture;
@@ -384,6 +385,7 @@ index 0000000..476267b
 +import java.net.InetAddress;
 +import java.security.Key;
 +import java.util.ArrayList;
++import java.util.Collections;
 +import java.util.List;
 +import java.util.logging.Level;
 +import net.minecraft.server.MinecraftServer;
@@ -405,7 +407,7 @@ index 0000000..476267b
 +public class NettyServerConnection extends ServerConnection {
 +
 +    private final ChannelFuture socket;
-+    final List<PendingConnection> pendingConnections = new ArrayList<PendingConnection>();
++    final List<PendingConnection> pendingConnections = Collections.synchronizedList(new ArrayList<PendingConnection>());
 +
 +    public NettyServerConnection(MinecraftServer ms, InetAddress host, int port) {
 +        super(ms);
@@ -724,10 +726,10 @@ index 0000000..a3b86b8
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketDecoder.java b/src/main/java/org/spigotmc/netty/PacketDecoder.java
 new file mode 100644
-index 0000000..f865311
+index 0000000..e3fdd95
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketDecoder.java
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,52 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -777,6 +779,7 @@ index 0000000..f865311
 +    public void freeInboundBuffer(ChannelHandlerContext ctx) throws Exception {
 +        super.freeInboundBuffer(ctx);
 +        input = null;
++        lastPingRead = 0;
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketEncoder.java b/src/main/java/org/spigotmc/netty/PacketEncoder.java
