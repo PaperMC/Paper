@@ -1,4 +1,4 @@
-From 2fce59cd82dd5f03174884b81b94d8ddecf484a3 Mon Sep 17 00:00:00 2001
+From 390fe6af47a05b76129811792a4e16b804b89f37 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 3 Feb 2013 10:24:33 +1100
 Subject: [PATCH] Netty
@@ -16,13 +16,13 @@ This commit is licensed under the Creative Commons Attribution-ShareAlike 3.0 Un
  .../java/net/minecraft/server/DedicatedServer.java |   2 +-
  .../net/minecraft/server/PendingConnection.java    |  11 +-
  src/main/java/org/spigotmc/netty/CipherCodec.java  |  65 ++++++
- .../org/spigotmc/netty/NettyNetworkManager.java    | 192 ++++++++++++++++
+ .../org/spigotmc/netty/NettyNetworkManager.java    | 193 ++++++++++++++++
  .../org/spigotmc/netty/NettyServerConnection.java  |  98 ++++++++
  .../org/spigotmc/netty/NettySocketAdaptor.java     | 248 +++++++++++++++++++++
  .../java/org/spigotmc/netty/PacketDecoder.java     |  52 +++++
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
- 10 files changed, 817 insertions(+), 4 deletions(-)
+ 10 files changed, 818 insertions(+), 4 deletions(-)
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyServerConnection.java
@@ -176,10 +176,10 @@ index 0000000..cfc0535
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..a281ff9
+index 0000000..27fd665
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,192 @@
+@@ -0,0 +1,193 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.channel.Channel;
@@ -188,11 +188,11 @@ index 0000000..a281ff9
 +import io.netty.channel.socket.SocketChannel;
 +import java.net.Socket;
 +import java.net.SocketAddress;
++import java.security.PrivateKey;
 +import java.util.Queue;
 +import java.util.concurrent.ConcurrentLinkedQueue;
 +import java.util.concurrent.ExecutorService;
 +import java.util.concurrent.Executors;
-+import java.util.logging.Level;
 +import javax.crypto.SecretKey;
 +import net.minecraft.server.Connection;
 +import net.minecraft.server.INetworkManager;
@@ -201,7 +201,6 @@ index 0000000..a281ff9
 +import net.minecraft.server.Packet252KeyResponse;
 +import net.minecraft.server.PendingConnection;
 +import org.bouncycastle.crypto.BufferedBlockCipher;
-+import org.bukkit.Bukkit;
 +
 +/**
 + * This class forms the basis of the Netty integration. It implements
@@ -212,6 +211,7 @@ index 0000000..a281ff9
 +
 +    private static final ExecutorService threadPool = Executors.newCachedThreadPool();
 +    private static final MinecraftServer server = MinecraftServer.getServer();
++    private static final PrivateKey key = server.F().getPrivate();
 +    private static final NettyServerConnection serverConnection = (NettyServerConnection) server.ae();
 +    /*========================================================================*/
 +    private Queue<Packet> syncPackets = new ConcurrentLinkedQueue<Packet>();
@@ -251,7 +251,7 @@ index 0000000..a281ff9
 +        // TODO: Remove this once we are more stable
 +        // Bukkit.getServer().getLogger().severe("======================= Start Netty Debug Log =======================");
 +        // Bukkit.getServer().getLogger().log(Level.SEVERE, "Error caught whilst handling " + channel, cause);
-+        //  Bukkit.getServer().getLogger().severe("======================= End Netty Debug Log =======================");
++        // Bukkit.getServer().getLogger().severe("======================= End Netty Debug Log =======================");
 +
 +        // Disconnect with generic reason + exception
 +        a("disconnect.genericReason", new Object[]{"Internal exception: " + cause});
@@ -260,8 +260,9 @@ index 0000000..a281ff9
 +    @Override
 +    public void messageReceived(ChannelHandlerContext ctx, final Packet msg) throws Exception {
 +        if (msg instanceof Packet252KeyResponse) {
-+            secret = ((Packet252KeyResponse) msg).a(MinecraftServer.getServer().F().getPrivate());
++            secret = ((Packet252KeyResponse) msg).a(key);
 +        }
++
 +        final Packet packet = PacketListener.callReceived(this, handler, msg);
 +        if (packet != null) {
 +            if (msg.a_()) {
@@ -300,12 +301,12 @@ index 0000000..a281ff9
 +            packet = PacketListener.callQueued(this, handler, packet);
 +            if (packet != null) {
 +                channel.write(packet);
-+            }
 +
-+            if (packet instanceof Packet252KeyResponse) {
-+                BufferedBlockCipher encrypt = NettyServerConnection.getCipher(true, secret);
-+                BufferedBlockCipher decrypt = NettyServerConnection.getCipher(false, secret);
-+                channel.pipeline().addBefore("decoder", "cipher", new CipherCodec(encrypt, decrypt));
++                if (packet instanceof Packet252KeyResponse) {
++                    BufferedBlockCipher encrypt = NettyServerConnection.getCipher(true, secret);
++                    BufferedBlockCipher decrypt = NettyServerConnection.getCipher(false, secret);
++                    channel.pipeline().addBefore("decoder", "cipher", new CipherCodec(encrypt, decrypt));
++                }
 +            }
 +        }
 +    }
