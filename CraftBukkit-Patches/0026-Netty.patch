@@ -1,4 +1,4 @@
-From fa32c4180449ac65ffd01f6a59f143b7a791fda6 Mon Sep 17 00:00:00 2001
+From fd95cfd6ba9e74b9c1d8a62f2c53e321bf142681 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 3 Feb 2013 10:24:33 +1100
 Subject: [PATCH] Netty
@@ -16,13 +16,13 @@ This commit is licensed under the Creative Commons Attribution-ShareAlike 3.0 Un
  .../java/net/minecraft/server/DedicatedServer.java |   2 +-
  .../net/minecraft/server/PendingConnection.java    |  11 +-
  src/main/java/org/spigotmc/netty/CipherCodec.java  |  65 ++++++
- .../org/spigotmc/netty/NettyNetworkManager.java    | 185 +++++++++++++++
+ .../org/spigotmc/netty/NettyNetworkManager.java    | 178 +++++++++++++++
  .../org/spigotmc/netty/NettyServerConnection.java  |  99 ++++++++
  .../org/spigotmc/netty/NettySocketAdaptor.java     | 248 +++++++++++++++++++++
  .../java/org/spigotmc/netty/PacketDecoder.java     |  52 +++++
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
- 10 files changed, 811 insertions(+), 4 deletions(-)
+ 10 files changed, 804 insertions(+), 4 deletions(-)
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyServerConnection.java
@@ -176,10 +176,10 @@ index 0000000..cfc0535
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..f0ca696
+index 0000000..2da2422
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,185 @@
+@@ -0,0 +1,178 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.channel.Channel;
@@ -233,13 +233,7 @@ index 0000000..f0ca696
 +            handler.a(dcReason, dcArgs);
 +        }
 +        channel = null;
-+        socketAdaptor = null;
-+        handler = null;
-+        secret = null;
-+        dcReason = null;
-+        dcArgs = null;
 +        syncPackets.clear();
-+        syncPackets = null;
 +    }
 +
 +    @Override
@@ -297,7 +291,6 @@ index 0000000..f0ca696
 +            if (packet instanceof Packet252KeyResponse) {
 +                BufferedBlockCipher encrypt = NettyServerConnection.getCipher(true, secret);
 +                BufferedBlockCipher decrypt = NettyServerConnection.getCipher(false, secret);
-+                secret = null;
 +                channel.pipeline().addBefore("decoder", "cipher", new CipherCodec(encrypt, decrypt));
 +            }
 +        }
@@ -315,7 +308,7 @@ index 0000000..f0ca696
 +     * them. This method should only be called from the main server thread.
 +     */
 +    public void b() {
-+        for (int i = 1000; syncPackets != null && !syncPackets.isEmpty() && i >= 0; i--) {
++        for (int i = 1000; channel != null && syncPackets != null && !syncPackets.isEmpty() && i >= 0; i--) {
 +            syncPackets.poll().handle(handler);
 +        }
 +    }
