@@ -1,4 +1,4 @@
-From 38d50a9b4c47c13727aaecf2da4f58fe2020532d Mon Sep 17 00:00:00 2001
+From 61c1e45f834dc0ecbd2859a2ee98150e860187c7 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 3 Feb 2013 10:24:33 +1100
 Subject: [PATCH] Netty
@@ -17,13 +17,13 @@ This commit is licensed under the Creative Commons Attribution-ShareAlike 3.0 Un
  .../net/minecraft/server/PendingConnection.java    |  13 +-
  .../net/minecraft/server/PlayerConnection.java     |   2 +-
  src/main/java/org/spigotmc/netty/CipherCodec.java  |  65 ++++++
- .../org/spigotmc/netty/NettyNetworkManager.java    | 211 ++++++++++++++++++
- .../org/spigotmc/netty/NettyServerConnection.java  | 104 +++++++++
+ .../org/spigotmc/netty/NettyNetworkManager.java    | 224 +++++++++++++++++++
+ .../org/spigotmc/netty/NettyServerConnection.java  | 106 +++++++++
  .../org/spigotmc/netty/NettySocketAdaptor.java     | 248 +++++++++++++++++++++
- .../java/org/spigotmc/netty/PacketDecoder.java     |  57 +++++
+ .../java/org/spigotmc/netty/PacketDecoder.java     |  62 ++++++
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
- 11 files changed, 849 insertions(+), 6 deletions(-)
+ 11 files changed, 869 insertions(+), 6 deletions(-)
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyServerConnection.java
@@ -199,10 +199,10 @@ index 0000000..cfc0535
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..effd1ee
+index 0000000..998659d
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,211 @@
+@@ -0,0 +1,224 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.channel.Channel;
@@ -222,6 +222,7 @@ index 0000000..effd1ee
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.Packet;
 +import net.minecraft.server.Packet252KeyResponse;
++import net.minecraft.server.Packet254GetInfo;
 +import net.minecraft.server.PendingConnection;
 +import net.minecraft.server.PlayerConnection;
 +import org.bouncycastle.crypto.BufferedBlockCipher;
@@ -237,6 +238,10 @@ index 0000000..effd1ee
 +    private static final MinecraftServer server = MinecraftServer.getServer();
 +    private static final PrivateKey key = server.F().getPrivate();
 +    private static final NettyServerConnection serverConnection = (NettyServerConnection) server.ae();
++    /*========================================================================*/
++    static final int LEGACY_PING_TIME = 1500;
++    Packet254GetInfo pingRequest;
++    long lastPingRead;
 +    /*========================================================================*/
 +    private Queue<Packet> syncPackets = new ConcurrentLinkedQueue<Packet>();
 +    private volatile Channel channel;
@@ -354,6 +359,14 @@ index 0000000..effd1ee
 +     * them. This method should only be called from the main server thread.
 +     */
 +    public void b() {
++        // Horrible hack for legacy clients / server lists
++        if (pingRequest != null) {
++            if (System.currentTimeMillis() - lastPingRead > LEGACY_PING_TIME) {
++                syncPackets.add(pingRequest);
++                pingRequest = null;
++            }
++        }
++
 +        for (int i = 1000; !syncPackets.isEmpty() && i >= 0; i--) {
 +            if (handler instanceof PendingConnection ? ((PendingConnection) handler).c : ((PlayerConnection) handler).disconnected) {
 +                syncPackets.clear();
@@ -416,10 +429,10 @@ index 0000000..effd1ee
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyServerConnection.java b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
 new file mode 100644
-index 0000000..781c2cc
+index 0000000..f80637a
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
-@@ -0,0 +1,104 @@
+@@ -0,0 +1,106 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.bootstrap.ServerBootstrap;
@@ -468,11 +481,13 @@ index 0000000..781c2cc
 +                } catch (ChannelException ex) {
 +                    // IP_TOS is not supported (Windows XP / Windows Server 2003)
 +                }
++                NettyNetworkManager networkManager = new NettyNetworkManager();
++
 +                ch.pipeline()
 +                        .addLast("timer", new ReadTimeoutHandler(30))
-+                        .addLast("decoder", new PacketDecoder())
++                        .addLast("decoder", new PacketDecoder(networkManager))
 +                        .addLast("encoder", new PacketEncoder())
-+                        .addLast("manager", new NettyNetworkManager());
++                        .addLast("manager", networkManager);
 +            }
 +        }).group(new NioEventLoopGroup()).localAddress(host, port).bind();
 +    }
@@ -780,10 +795,10 @@ index 0000000..a3b86b8
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketDecoder.java b/src/main/java/org/spigotmc/netty/PacketDecoder.java
 new file mode 100644
-index 0000000..dc0222e
+index 0000000..4c72256
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketDecoder.java
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,62 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -803,8 +818,12 @@ index 0000000..dc0222e
 + */
 +public class PacketDecoder extends ReplayingDecoder<Packet> {
 +
++    private final NettyNetworkManager networkManager;
 +    private DataInputStream input;
-+    private long lastPingRead;
++
++    public PacketDecoder(NettyNetworkManager networkManager) {
++        this.networkManager = networkManager;
++    }
 +
 +    @Override
 +    public Packet decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
@@ -825,8 +844,10 @@ index 0000000..dc0222e
 +        }
 +
 +        if (packetId == 0xFE && ((Packet254GetInfo) packet).a == 0) {
++            networkManager.pingRequest = (Packet254GetInfo) packet;
 +            long currentTime = System.currentTimeMillis();
-+            if ((lastPingRead == 0 && (lastPingRead = currentTime) == currentTime) || currentTime - lastPingRead < 1500) {
++            if ((networkManager.lastPingRead == 0 && (networkManager.lastPingRead = currentTime) == currentTime)
++                    || currentTime - networkManager.lastPingRead < NettyNetworkManager.LEGACY_PING_TIME) {
 +                return null;
 +            }
 +        }
@@ -838,7 +859,6 @@ index 0000000..dc0222e
 +    public void freeInboundBuffer(ChannelHandlerContext ctx) throws Exception {
 +        super.freeInboundBuffer(ctx);
 +        input = null;
-+        lastPingRead = 0;
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketEncoder.java b/src/main/java/org/spigotmc/netty/PacketEncoder.java
