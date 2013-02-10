@@ -460,6 +460,9 @@ public abstract class PlayerList {
         }
 
         exit = event.useTravelAgent() ? event.getPortalTravelAgent().findOrCreate(event.getTo()) : event.getTo();
+        if (exit == null) {
+            return;
+        }
         exitWorld = ((CraftWorld) exit.getWorld()).getHandle();
 
         Vector velocity = entityplayer.getBukkitEntity().getVelocity();
