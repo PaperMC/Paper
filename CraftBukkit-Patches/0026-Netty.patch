@@ -1,4 +1,4 @@
-From b6830bc7718824f5ca347193d674f338178b6e31 Mon Sep 17 00:00:00 2001
+From 5c1fed55ae914287aa9c78644a6908ff533cd843 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 3 Feb 2013 10:24:33 +1100
 Subject: [PATCH] Netty
@@ -20,10 +20,10 @@ This commit is licensed under the Creative Commons Attribution-ShareAlike 3.0 Un
  .../org/spigotmc/netty/NettyNetworkManager.java    | 211 ++++++++++++++++++
  .../org/spigotmc/netty/NettyServerConnection.java  |  98 ++++++++
  .../org/spigotmc/netty/NettySocketAdaptor.java     | 248 +++++++++++++++++++++
- .../java/org/spigotmc/netty/PacketDecoder.java     |  52 +++++
+ .../java/org/spigotmc/netty/PacketDecoder.java     |  57 +++++
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
- 11 files changed, 838 insertions(+), 6 deletions(-)
+ 11 files changed, 843 insertions(+), 6 deletions(-)
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyServerConnection.java
@@ -774,10 +774,10 @@ index 0000000..a3b86b8
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketDecoder.java b/src/main/java/org/spigotmc/netty/PacketDecoder.java
 new file mode 100644
-index 0000000..e3fdd95
+index 0000000..dc0222e
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketDecoder.java
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,57 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -785,6 +785,7 @@ index 0000000..e3fdd95
 +import io.netty.channel.ChannelHandlerContext;
 +import io.netty.handler.codec.ReplayingDecoder;
 +import java.io.DataInputStream;
++import java.io.EOFException;
 +import java.io.IOException;
 +import net.minecraft.server.Packet;
 +import net.minecraft.server.Packet254GetInfo;
@@ -811,7 +812,11 @@ index 0000000..e3fdd95
 +            throw new IOException("Bad packet id " + packetId);
 +        }
 +
-+        packet.a(input);
++        try {
++            packet.a(input);
++        } catch (EOFException ex) {
++            return null;
++        }
 +
 +        if (packetId == 0xFE && ((Packet254GetInfo) packet).a == 0) {
 +            long currentTime = System.currentTimeMillis();
