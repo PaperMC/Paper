@@ -1,4 +1,4 @@
-From 16294b7515b83c209c7160e9966fce2fa8dc84e0 Mon Sep 17 00:00:00 2001
+From 8794e1bc1ae9773a9f7c9943c7696a76e66691aa Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 3 Feb 2013 10:24:33 +1100
 Subject: [PATCH] Netty
@@ -14,16 +14,16 @@ This commit is licensed under the Creative Commons Attribution-ShareAlike 3.0 Un
 ---
  pom.xml                                            |  10 +
  .../java/net/minecraft/server/DedicatedServer.java |   2 +-
- .../net/minecraft/server/PendingConnection.java    |  13 +-
+ .../net/minecraft/server/PendingConnection.java    |  15 +-
  .../net/minecraft/server/PlayerConnection.java     |   2 +-
  src/main/java/org/spigotmc/netty/CipherCodec.java  |  65 ++++++
- .../org/spigotmc/netty/NettyNetworkManager.java    | 224 +++++++++++++++++++
- .../org/spigotmc/netty/NettyServerConnection.java  | 106 +++++++++
+ .../org/spigotmc/netty/NettyNetworkManager.java    | 211 ++++++++++++++++++
+ .../org/spigotmc/netty/NettyServerConnection.java  | 105 +++++++++
  .../org/spigotmc/netty/NettySocketAdaptor.java     | 248 +++++++++++++++++++++
- .../java/org/spigotmc/netty/PacketDecoder.java     |  71 ++++++
+ .../java/org/spigotmc/netty/PacketDecoder.java     |  47 ++++
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
- 11 files changed, 878 insertions(+), 6 deletions(-)
+ 11 files changed, 841 insertions(+), 7 deletions(-)
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyServerConnection.java
@@ -74,7 +74,7 @@ index bd0377a..68feb71 100644
              log.warning("**** FAILED TO BIND TO PORT!");
              log.log(Level.WARNING, "The exception was: " + ioexception.toString());
 diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
-index 8413a15..42eaa47 100644
+index 8413a15..d64e34e 100644
 --- a/src/main/java/net/minecraft/server/PendingConnection.java
 +++ b/src/main/java/net/minecraft/server/PendingConnection.java
 @@ -17,7 +17,7 @@ public class PendingConnection extends Connection {
@@ -112,6 +112,15 @@ index 8413a15..42eaa47 100644
 +        logger.info(this.getName() + " lost connection - " + java.util.Arrays.toString(aobject));
          this.c = true;
      }
+ 
+@@ -147,7 +152,7 @@ public class PendingConnection extends Connection {
+             // CraftBukkit
+             org.bukkit.event.server.ServerListPingEvent pingEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callServerListPingEvent(this.server.server, getSocket().getInetAddress(), this.server.getMotd(), playerlist.getPlayerCount(), playerlist.getMaxPlayers());
+ 
+-            if (packet254getinfo.a == 1) {
++            if (true) {
+                 // CraftBukkit start - fix decompile issues, don't create a list from an array
+                 Object[] list = new Object[] { 1, 51, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
  
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
 index 7ca0acf..de5e47d 100644
@@ -199,10 +208,10 @@ index 0000000..cfc0535
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..46493ef
+index 0000000..effd1ee
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,224 @@
+@@ -0,0 +1,211 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.channel.Channel;
@@ -222,7 +231,6 @@ index 0000000..46493ef
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.Packet;
 +import net.minecraft.server.Packet252KeyResponse;
-+import net.minecraft.server.Packet254GetInfo;
 +import net.minecraft.server.PendingConnection;
 +import net.minecraft.server.PlayerConnection;
 +import org.bouncycastle.crypto.BufferedBlockCipher;
@@ -238,10 +246,6 @@ index 0000000..46493ef
 +    private static final MinecraftServer server = MinecraftServer.getServer();
 +    private static final PrivateKey key = server.F().getPrivate();
 +    private static final NettyServerConnection serverConnection = (NettyServerConnection) server.ae();
-+    /*========================================================================*/
-+    static final int LEGACY_PING_TIME = 1000;
-+    volatile Packet254GetInfo pingRequest;
-+    long lastPingRead;
 +    /*========================================================================*/
 +    private Queue<Packet> syncPackets = new ConcurrentLinkedQueue<Packet>();
 +    private volatile Channel channel;
@@ -359,14 +363,6 @@ index 0000000..46493ef
 +     * them. This method should only be called from the main server thread.
 +     */
 +    public void b() {
-+        // Horrible hack for legacy clients / server lists
-+        if (pingRequest != null) {
-+            if (System.currentTimeMillis() - lastPingRead > LEGACY_PING_TIME) {
-+                syncPackets.add(pingRequest);
-+                pingRequest = null;
-+            }
-+        }
-+
 +        for (int i = 1000; !syncPackets.isEmpty() && i >= 0; i--) {
 +            if (handler instanceof PendingConnection ? ((PendingConnection) handler).c : ((PlayerConnection) handler).disconnected) {
 +                syncPackets.clear();
@@ -429,10 +425,10 @@ index 0000000..46493ef
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyServerConnection.java b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
 new file mode 100644
-index 0000000..f80637a
+index 0000000..a7f0c90
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
-@@ -0,0 +1,106 @@
+@@ -0,0 +1,105 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.bootstrap.ServerBootstrap;
@@ -481,13 +477,12 @@ index 0000000..f80637a
 +                } catch (ChannelException ex) {
 +                    // IP_TOS is not supported (Windows XP / Windows Server 2003)
 +                }
-+                NettyNetworkManager networkManager = new NettyNetworkManager();
 +
 +                ch.pipeline()
 +                        .addLast("timer", new ReadTimeoutHandler(30))
-+                        .addLast("decoder", new PacketDecoder(networkManager))
++                        .addLast("decoder", new PacketDecoder())
 +                        .addLast("encoder", new PacketEncoder())
-+                        .addLast("manager", networkManager);
++                        .addLast("manager", new NettyNetworkManager());
 +            }
 +        }).group(new NioEventLoopGroup()).localAddress(host, port).bind();
 +    }
@@ -795,10 +790,10 @@ index 0000000..a3b86b8
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketDecoder.java b/src/main/java/org/spigotmc/netty/PacketDecoder.java
 new file mode 100644
-index 0000000..a93810a
+index 0000000..089aa21
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketDecoder.java
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,47 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -809,7 +804,6 @@ index 0000000..a93810a
 +import java.io.EOFException;
 +import java.io.IOException;
 +import net.minecraft.server.Packet;
-+import net.minecraft.server.Packet254GetInfo;
 +
 +/**
 + * Packet decoding class backed by a reusable {@link DataInputStream} which
@@ -818,12 +812,7 @@ index 0000000..a93810a
 + */
 +public class PacketDecoder extends ReplayingDecoder<Packet> {
 +
-+    private final NettyNetworkManager networkManager;
 +    private DataInputStream input;
-+
-+    public PacketDecoder(NettyNetworkManager networkManager) {
-+        this.networkManager = networkManager;
-+    }
 +
 +    @Override
 +    public Packet decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
@@ -841,24 +830,6 @@ index 0000000..a93810a
 +            packet.a(input);
 +        } catch (EOFException ex) {
 +            return null;
-+        }
-+
-+        // Check if its a ping packet
-+        if (packetId == 0xFE) {
-+            // If we have read it as an old packet
-+            if (((Packet254GetInfo) packet).a == 0) {
-+                // Store it for later use
-+                networkManager.pingRequest = (Packet254GetInfo) packet;
-+                long currentTime = System.currentTimeMillis();
-+                // If we have read in the last LGEGACY_PING_TIME milliseconds, return no packet
-+                if ((networkManager.lastPingRead == 0 && (networkManager.lastPingRead = currentTime) == currentTime)
-+                        || currentTime - networkManager.lastPingRead < NettyNetworkManager.LEGACY_PING_TIME) {
-+                    return null;
-+                }
-+            } else {
-+                // Else if its a new packet, we can safely discard the sotred one
-+                networkManager.pingRequest = null;
-+            }
 +        }
 +
 +        return packet;
