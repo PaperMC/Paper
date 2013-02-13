@@ -1,4 +1,4 @@
-From 9f9f234ce35b796858b65bb85c5260f2ddd80b16 Mon Sep 17 00:00:00 2001
+From 840a6fa0c4febdcdb5b9e0a7af30a7d04d7e3172 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 3 Feb 2013 10:24:33 +1100
 Subject: [PATCH] Netty
@@ -20,10 +20,11 @@ This commit is licensed under the Creative Commons Attribution-ShareAlike 3.0 Un
  .../org/spigotmc/netty/NettyNetworkManager.java    | 221 ++++++++++++++++++
  .../org/spigotmc/netty/NettyServerConnection.java  | 105 +++++++++
  .../org/spigotmc/netty/NettySocketAdaptor.java     | 248 +++++++++++++++++++++
- .../java/org/spigotmc/netty/PacketDecoder.java     |  47 ++++
+ .../java/org/spigotmc/netty/PacketDecoder.java     |  63 ++++++
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
- 11 files changed, 851 insertions(+), 7 deletions(-)
+ src/main/java/org/spigotmc/netty/ReadState.java    |  16 ++
+ 12 files changed, 883 insertions(+), 7 deletions(-)
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyServerConnection.java
@@ -31,6 +32,7 @@ This commit is licensed under the Creative Commons Attribution-ShareAlike 3.0 Un
  create mode 100644 src/main/java/org/spigotmc/netty/PacketDecoder.java
  create mode 100644 src/main/java/org/spigotmc/netty/PacketEncoder.java
  create mode 100644 src/main/java/org/spigotmc/netty/PacketListener.java
+ create mode 100644 src/main/java/org/spigotmc/netty/ReadState.java
 
 diff --git a/pom.xml b/pom.xml
 index f17bd19..fc7bfa0 100644
@@ -800,10 +802,10 @@ index 0000000..a3b86b8
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketDecoder.java b/src/main/java/org/spigotmc/netty/PacketDecoder.java
 new file mode 100644
-index 0000000..089aa21
+index 0000000..6ecbca7
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketDecoder.java
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,63 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -820,9 +822,14 @@ index 0000000..089aa21
 + * backs the input {@link ByteBuf}. Reads an unsigned byte packet header and
 + * then decodes the packet accordingly.
 + */
-+public class PacketDecoder extends ReplayingDecoder<Packet> {
++public class PacketDecoder extends ReplayingDecoder<ReadState> {
 +
 +    private DataInputStream input;
++    private Packet packet;
++
++    public PacketDecoder() {
++        super(ReadState.HEADER);
++    }
 +
 +    @Override
 +    public Packet decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
@@ -830,25 +837,36 @@ index 0000000..089aa21
 +            input = new DataInputStream(new ByteBufInputStream(in));
 +        }
 +
-+        short packetId = in.readUnsignedByte();
-+        Packet packet = Packet.d(packetId);
-+        if (packet == null) {
-+            throw new IOException("Bad packet id " + packetId);
-+        }
++        switch (state()) {
++            case HEADER:
++                short packetId = in.readUnsignedByte();
++                packet = Packet.d(packetId);
++                if (packet == null) {
++                    throw new IOException("Bad packet id " + packetId);
++                }
++                checkpoint(ReadState.DATA);
++            case DATA:
++                try {
++                    packet.a(input);
++                } catch (EOFException ex) {
++                    return null;
++                }
 +
-+        try {
-+            packet.a(input);
-+        } catch (EOFException ex) {
-+            return null;
-+        }
++                checkpoint(ReadState.HEADER);
++                Packet ret = packet;
++                packet = null;
 +
-+        return packet;
++                return ret;
++            default:
++                throw new IllegalStateException();
++        }
 +    }
 +
 +    @Override
 +    public void freeInboundBuffer(ChannelHandlerContext ctx) throws Exception {
 +        super.freeInboundBuffer(ctx);
 +        input = null;
++        packet = null;
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketEncoder.java b/src/main/java/org/spigotmc/netty/PacketEncoder.java
@@ -1005,6 +1023,28 @@ index 0000000..8e3b932
 +    public Packet packetQueued(INetworkManager networkManager, Connection connection, Packet packet) {
 +        return packet;
 +    }
++}
+diff --git a/src/main/java/org/spigotmc/netty/ReadState.java b/src/main/java/org/spigotmc/netty/ReadState.java
+new file mode 100644
+index 0000000..5dc3754
+--- /dev/null
++++ b/src/main/java/org/spigotmc/netty/ReadState.java
+@@ -0,0 +1,16 @@
++package org.spigotmc.netty;
++
++/**
++ * Stores the state of the packet currently being read.
++ */
++public enum ReadState {
++
++    /**
++     * Indicates the byte representing the ID has been read.
++     */
++    HEADER,
++    /**
++     * Shows the packet body is being read.
++     */
++    DATA;
 +}
 -- 
 1.8.1-rc2
