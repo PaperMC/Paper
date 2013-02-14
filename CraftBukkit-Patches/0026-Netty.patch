@@ -1,6 +1,6 @@
-From d5543f1ee66f0f7e7ad7dad7220887d6014feb5f Mon Sep 17 00:00:00 2001
+From de2471c4b58082edcbe6c7222446d1a5087f935f Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Sun, 3 Feb 2013 10:24:33 +1100
+Date: Thu, 14 Feb 2013 17:32:20 +1100
 Subject: [PATCH] Netty
 
 Implement an uber efficient network engine based on the Java NIO framework Netty. This is basically a complete rewrite of the Minecraft network engine with many distinct advantages. First and foremost, there will no longer be the horrid, and redundant case of 2, or even at times, 3 threads per a connection. Instead low level select/epoll based NIO is used. The number of threads used for network reading and writing will scale automatically to the number of cores for use on your server. In most cases this will be around 8 threads for a 4 core server, much better than the up to 1000 threads that could be in use at one time with the old engine. To facilitate asynchronous packet sending or receiving (currently only chat), a thread pool of 16 threads is kept handy.
@@ -14,8 +14,7 @@ This commit is licensed under the Creative Commons Attribution-ShareAlike 3.0 Un
 ---
  pom.xml                                            |  10 +
  .../java/net/minecraft/server/DedicatedServer.java |   2 +-
- .../net/minecraft/server/PendingConnection.java    |  15 +-
- .../net/minecraft/server/PlayerConnection.java     |   2 +-
+ .../net/minecraft/server/PendingConnection.java    |  13 +-
  src/main/java/org/spigotmc/netty/CipherCodec.java  |  65 ++++++
  .../org/spigotmc/netty/NettyNetworkManager.java    | 206 +++++++++++++++++
  .../org/spigotmc/netty/NettyServerConnection.java  | 105 +++++++++
@@ -24,7 +23,7 @@ This commit is licensed under the Creative Commons Attribution-ShareAlike 3.0 Un
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
  src/main/java/org/spigotmc/netty/ReadState.java    |  16 ++
- 12 files changed, 868 insertions(+), 7 deletions(-)
+ 11 files changed, 866 insertions(+), 5 deletions(-)
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyServerConnection.java
@@ -76,7 +75,7 @@ index bd0377a..68feb71 100644
              log.warning("**** FAILED TO BIND TO PORT!");
              log.log(Level.WARNING, "The exception was: " + ioexception.toString());
 diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
-index 8413a15..d64e34e 100644
+index 8413a15..70fe839 100644
 --- a/src/main/java/net/minecraft/server/PendingConnection.java
 +++ b/src/main/java/net/minecraft/server/PendingConnection.java
 @@ -17,7 +17,7 @@ public class PendingConnection extends Connection {
@@ -106,15 +105,6 @@ index 8413a15..d64e34e 100644
      }
  
      // CraftBukkit start
-@@ -135,7 +140,7 @@ public class PendingConnection extends Connection {
-     }
- 
-     public void a(String s, Object[] aobject) {
--        logger.info(this.getName() + " lost connection");
-+        logger.info(this.getName() + " lost connection - " + java.util.Arrays.toString(aobject));
-         this.c = true;
-     }
- 
 @@ -147,7 +152,7 @@ public class PendingConnection extends Connection {
              // CraftBukkit
              org.bukkit.event.server.ServerListPingEvent pingEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callServerListPingEvent(this.server.server, getSocket().getInetAddress(), this.server.getMotd(), playerlist.getPlayerCount(), playerlist.getMaxPlayers());
@@ -124,19 +114,6 @@ index 8413a15..d64e34e 100644
                  // CraftBukkit start - fix decompile issues, don't create a list from an array
                  Object[] list = new Object[] { 1, 51, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
  
-diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 7ca0acf..de5e47d 100644
---- a/src/main/java/net/minecraft/server/PlayerConnection.java
-+++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -714,7 +714,7 @@ public class PlayerConnection extends Connection {
-     public void a(String s, Object[] aobject) {
-         if (this.disconnected) return; // CraftBukkit - rarely it would send a disconnect line twice
- 
--        logger.info(this.player.name + " lost connection: " + s);
-+        logger.info(this.player.name + " lost connection: " + s + " - " + java.util.Arrays.toString(aobject));
-         // CraftBukkit start - we need to handle custom quit messages
-         String quitMessage = this.minecraftServer.getPlayerList().disconnect(this.player);
-         if ((quitMessage != null) && (quitMessage.length() > 0)) {
 diff --git a/src/main/java/org/spigotmc/netty/CipherCodec.java b/src/main/java/org/spigotmc/netty/CipherCodec.java
 new file mode 100644
 index 0000000..cfc0535
