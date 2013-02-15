@@ -10,6 +10,7 @@ import net.minecraft.server.BlockFire;
 import net.minecraft.server.Item;
 import net.minecraft.server.ItemFood;
 import net.minecraft.server.ItemRecord;
+import net.minecraft.server.BlockSand;
 
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
@@ -125,6 +126,15 @@ public class PerMaterialTest extends AbstractTestingBase {
             assertThat(material.isOccluding(), is(Block.l(material.getId())));
         } else {
             assertFalse(material.isOccluding());
+        }
+    }
+
+    @Test
+    public void hasGravity() {
+        if (material.isBlock()) {
+            assertThat(material.hasGravity(), is(Block.byId[material.getId()] instanceof BlockSand));
+        } else {
+            assertFalse(material.hasGravity());
         }
     }
 }
