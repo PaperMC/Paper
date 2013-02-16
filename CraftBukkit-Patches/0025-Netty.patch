@@ -1,4 +1,4 @@
-From 4203ea2e84a0c75510a1acdcf8a9f914f1c9403c Mon Sep 17 00:00:00 2001
+From aab6f0b02be084cfd920a2b185433705e2dd6534 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 14 Feb 2013 17:32:20 +1100
 Subject: [PATCH] Netty
@@ -14,6 +14,8 @@ This commit is licensed under the Creative Commons Attribution-ShareAlike 3.0 Un
 ---
  pom.xml                                            |  10 +
  .../java/net/minecraft/server/DedicatedServer.java |   2 +-
+ .../net/minecraft/server/Packet51MapChunk.java     |   2 +-
+ .../net/minecraft/server/Packet56MapChunkBulk.java |   2 +-
  .../net/minecraft/server/PendingConnection.java    |  13 +-
  src/main/java/org/spigotmc/netty/CipherCodec.java  |  65 ++++++
  .../org/spigotmc/netty/NettyNetworkManager.java    | 206 +++++++++++++++++
@@ -23,7 +25,7 @@ This commit is licensed under the Creative Commons Attribution-ShareAlike 3.0 Un
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
  src/main/java/org/spigotmc/netty/ReadState.java    |  16 ++
- 11 files changed, 866 insertions(+), 5 deletions(-)
+ 13 files changed, 868 insertions(+), 7 deletions(-)
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyServerConnection.java
@@ -74,6 +76,32 @@ index bd0377a..68feb71 100644
          } catch (Throwable ioexception) { // CraftBukkit - IOException -> Throwable
              log.warning("**** FAILED TO BIND TO PORT!");
              log.log(Level.WARNING, "The exception was: " + ioexception.toString());
+diff --git a/src/main/java/net/minecraft/server/Packet51MapChunk.java b/src/main/java/net/minecraft/server/Packet51MapChunk.java
+index 230dd62..2ba0464 100644
+--- a/src/main/java/net/minecraft/server/Packet51MapChunk.java
++++ b/src/main/java/net/minecraft/server/Packet51MapChunk.java
+@@ -42,7 +42,7 @@ public class Packet51MapChunk extends Packet {
+         this.b = chunk.z;
+         this.e = flag;
+         ChunkMap chunkmap = a(chunk, flag, i);
+-        Deflater deflater = new Deflater(-1);
++        Deflater deflater = new Deflater(4);
+ 
+         this.d = chunkmap.c;
+         this.c = chunkmap.b;
+diff --git a/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java b/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
+index 9d5cee7..8486d82 100644
+--- a/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
++++ b/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
+@@ -24,7 +24,7 @@ public class Packet56MapChunkBulk extends Packet {
+         @Override
+         protected Deflater initialValue() {
+             // Don't use higher compression level, slows things down too much
+-            return new Deflater(6);
++            return new Deflater(4);
+         }
+     };
+     // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
 index 8413a15..70fe839 100644
 --- a/src/main/java/net/minecraft/server/PendingConnection.java
