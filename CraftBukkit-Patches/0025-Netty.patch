@@ -1,4 +1,4 @@
-From 29bb417ab7f2b19d07cbf9a31395346e3ac804ec Mon Sep 17 00:00:00 2001
+From a83d974ced13c39e515fdfc3fa729e2dc68c7cfc Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 14 Feb 2013 17:32:20 +1100
 Subject: [PATCH] Netty
@@ -18,14 +18,14 @@ This commit is licensed under the Creative Commons Attribution-ShareAlike 3.0 Un
  .../net/minecraft/server/Packet56MapChunkBulk.java |   2 +-
  .../net/minecraft/server/PendingConnection.java    |  13 +-
  src/main/java/org/spigotmc/netty/CipherCodec.java  |  65 ++++++
- .../org/spigotmc/netty/NettyNetworkManager.java    | 206 +++++++++++++++++
+ .../org/spigotmc/netty/NettyNetworkManager.java    | 209 +++++++++++++++++
  .../org/spigotmc/netty/NettyServerConnection.java  | 105 +++++++++
  .../org/spigotmc/netty/NettySocketAdaptor.java     | 248 +++++++++++++++++++++
  .../java/org/spigotmc/netty/PacketDecoder.java     |  63 ++++++
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
  src/main/java/org/spigotmc/netty/ReadState.java    |  16 ++
- 13 files changed, 863 insertions(+), 7 deletions(-)
+ 13 files changed, 866 insertions(+), 7 deletions(-)
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyServerConnection.java
@@ -203,10 +203,10 @@ index 0000000..f25af14
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..027cc31
+index 0000000..5ae8a79
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,206 @@
+@@ -0,0 +1,209 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.channel.Channel;
@@ -287,17 +287,17 @@ index 0000000..027cc31
 +            secret = ((Packet252KeyResponse) msg).a(key);
 +        }
 +
-+        final Packet packet = PacketListener.callReceived(this, handler, msg);
-+        if (packet != null) {
-+            if (msg.a_()) {
-+                threadPool.submit(new Runnable() {
-+                    public void run() {
-+                        msg.handle(handler);
++        if (msg.a_()) {
++            threadPool.submit(new Runnable() {
++                public void run() {
++                    Packet packet = PacketListener.callReceived(NettyNetworkManager.this, handler, msg);
++                    if (packet != null) {
++                        packet.handle(handler);
 +                    }
-+                });
-+            } else {
-+                syncPackets.add(msg);
-+            }
++                }
++            });
++        } else {
++            syncPackets.add(msg);
 +        }
 +    }
 +
@@ -358,7 +358,10 @@ index 0000000..027cc31
 +                break;
 +            }
 +
-+            syncPackets.poll().handle(handler);
++            Packet packet = PacketListener.callReceived(this, handler, syncPackets.poll());
++            if (packet != null) {
++                packet.handle(handler);
++            }
 +        }
 +
 +        // Disconnect via the handler - this performs all plugin related cleanup + logging
@@ -415,7 +418,7 @@ index 0000000..027cc31
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyServerConnection.java b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
 new file mode 100644
-index 0000000..cb1687c
+index 0000000..4f08e23
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
 @@ -0,0 +1,105 @@
@@ -474,7 +477,7 @@ index 0000000..cb1687c
 +                        .addLast("encoder", new PacketEncoder())
 +                        .addLast("manager", new NettyNetworkManager());
 +            }
-+        }).group(new NioEventLoopGroup(32)).localAddress(host, port).bind();
++        }).group(new NioEventLoopGroup(3)).localAddress(host, port).bind();
 +    }
 +
 +    /**
