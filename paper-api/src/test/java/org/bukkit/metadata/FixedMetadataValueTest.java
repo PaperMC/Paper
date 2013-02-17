@@ -1,6 +1,7 @@
 package org.bukkit.metadata;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.TestPlugin;
@@ -10,21 +11,32 @@ public class FixedMetadataValueTest {
     private Plugin plugin = new TestPlugin("X");
     private FixedMetadataValue subject;
 
-    private void valueEquals(Object value) {
-        subject = new FixedMetadataValue(plugin, value);
-        assertEquals(value, subject.value());
+    @Test
+    public void testBasic() {
+        subject = new FixedMetadataValue(plugin, new Integer(50));
+        assertSame(plugin, subject.getOwningPlugin());
+        assertEquals(new Integer(50), subject.value());
     }
 
     @Test
-    public void testTypes() {
-        valueEquals(10);
-        valueEquals(0.1);
-        valueEquals("TEN");
-        valueEquals(true);
-        valueEquals(null);
-        valueEquals((float) 10.5);
-        valueEquals((long) 10);
-        valueEquals((short) 10);
-        valueEquals((byte) 10);
+    public void testNumberTypes() {
+        subject = new FixedMetadataValue(plugin, new Integer(5));
+        assertEquals(new Integer(5), subject.value());
+        assertEquals(5, subject.asInt());
+        assertEquals(true, subject.asBoolean());
+        assertEquals(5, subject.asByte());
+        assertEquals(5.0, subject.asFloat(), 0.1e-8);
+        assertEquals(5.0D, subject.asDouble(), 0.1e-8D);
+        assertEquals(5L, subject.asLong());
+        assertEquals(5, subject.asShort());
+        assertEquals("5", subject.asString());
+    }
+
+    @Test
+    public void testInvalidateDoesNothing() {
+        Object o = new Object();
+        subject = new FixedMetadataValue(plugin, o);
+        subject.invalidate();
+        assertSame(o, subject.value());
     }
 }
