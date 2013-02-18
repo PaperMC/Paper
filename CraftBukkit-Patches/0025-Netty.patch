@@ -1,16 +1,8 @@
-From 9a36abf31107d61dfaef4185db9753b098245ae8 Mon Sep 17 00:00:00 2001
+From daff8e1d2c3840fcfdd7c66e31890caa57153533 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 14 Feb 2013 17:32:20 +1100
 Subject: [PATCH] Netty
 
-Implement an uber efficient network engine based on the Java NIO framework Netty. This is basically a complete rewrite of the Minecraft network engine with many distinct advantages. First and foremost, there will no longer be the horrid, and redundant case of 2, or even at times, 3 threads per a connection. Instead low level select/epoll based NIO is used. The number of threads used for network reading and writing will scale automatically to the number of cores for use on your server. In most cases this will be around 8 threads for a 4 core server, much better than the up to 1000 threads that could be in use at one time with the old engine. To facilitate asynchronous packet sending or receiving (currently only chat), a thread pool of 16 threads is kept handy.
-== Plugin incompatibilities
-As a side effect of this change, plugins which rely on very specific implementation level details within Minecraft are broken. At this point in time, TagAPI and ProtocolLib are affected. If you are a user of ProtocolLib you are advised to update to the latest build, where full support is enabled. If you are a user of TagAPI, support has not yet been added, so you will need to install the updated ProtocolLib so that TagAPI may use its functions.
-== Stability
-The code within this commit has been very lightly tested in production (300 players for approximately 24 hours), however it is not guaranteed to be free from all bugs. If you experence weird connection behaviour, reporting the bug and steps to reproduce are advised. You are also free to downgrade to the latest recommend build, which is guaranteed to be stable.
-== Summary
-This commit provides a reduction in threads, which gives the CPU / operating system more time to allocate to the main server threads, as well as various other side benefits such as chat thread pooling and a slight reduction in latency.
-This commit is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported license.
 ---
  pom.xml                                            |   5 +
  .../java/net/minecraft/server/DedicatedServer.java |   2 +-
@@ -203,7 +195,7 @@ index 0000000..f25af14
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..5730244
+index 0000000..674a54b
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 @@ -0,0 +1,228 @@
@@ -258,7 +250,7 @@ index 0000000..5730244
 +
 +        @Override
 +        public int size() {
-+            throw new UnsupportedOperationException();
++            return 0;
 +        }
 +    };
 +    private volatile boolean connected;
