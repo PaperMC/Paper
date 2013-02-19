@@ -1,0 +1,126 @@
+From c3405bf6fd35a6b90d17bde92a33872b8c9b9404 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Tue, 19 Feb 2013 18:30:10 +1100
+Subject: [PATCH] Implement TagAPI into Spigot - much more efficient and only a
+ dozen lines of code.
+
+---
+ .../net/minecraft/server/EntityTrackerEntry.java   | 12 ++++--
+ .../java/org/bukkit/craftbukkit/CraftServer.java   |  7 ++++
+ .../org/kitteh/tag/PlayerReceiveNameTagEvent.java  | 49 ++++++++++++++++++++++
+ 3 files changed, 65 insertions(+), 3 deletions(-)
+ create mode 100644 src/main/java/org/kitteh/tag/PlayerReceiveNameTagEvent.java
+
+diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+index 27a548f..d95d5af 100644
+--- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+@@ -301,7 +301,7 @@ public class EntityTrackerEntry {
+                     // CraftBukkit end
+ 
+                     this.trackedPlayers.add(entityplayer);
+-                    Packet packet = this.b();
++                    Packet packet = this.b(entityplayer); // Spigot
+ 
+                     entityplayer.playerConnection.sendPacket(packet);
+                     if (!this.tracker.getDataWatcher().d()) {
+@@ -370,7 +370,7 @@ public class EntityTrackerEntry {
+         }
+     }
+ 
+-    private Packet b() {
++    private Packet b(EntityPlayer target) { // Spigot
+         if (this.tracker.dead) {
+             // CraftBukkit start - remove useless error spam, just return
+             // System.out.println("Fetching addPacket for removed entity");
+@@ -381,7 +381,13 @@ public class EntityTrackerEntry {
+         if (this.tracker instanceof EntityItem) {
+             return new Packet23VehicleSpawn(this.tracker, 2, 1);
+         } else if (this.tracker instanceof EntityPlayer) {
+-            return new Packet20NamedEntitySpawn((EntityHuman) this.tracker);
++            // Spigot start
++            Packet20NamedEntitySpawn packet = new Packet20NamedEntitySpawn((EntityHuman) this.tracker);
++            org.kitteh.tag.PlayerReceiveNameTagEvent event = new org.kitteh.tag.PlayerReceiveNameTagEvent(target.getBukkitEntity(), ((EntityPlayer) tracker).getBukkitEntity());
++            tracker.world.getServer().getPluginManager().callEvent(event);
++            packet.b = event.getTag();
++            return packet;
++            // Spigot end
+         } else {
+             if (this.tracker instanceof EntityMinecart) {
+                 EntityMinecart entityminecart = (EntityMinecart) this.tracker;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index f00b28d..c42d1c3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -266,6 +266,13 @@ public final class CraftServer implements Server {
+         if (pluginFolder.exists()) {
+             Plugin[] plugins = pluginManager.loadPlugins(pluginFolder);
+             for (Plugin plugin : plugins) {
++                // Spigot start
++                if (plugin.getName().equals("TagAPI")) {
++                    getLogger().log(Level.SEVERE, "*** Disabled TagAPI - It is inbuilt into Spigot, and not required ***", new Exception());
++                    pluginManager.disablePlugin(plugin);
++                    continue;
++                }
++                // Spigot end
+                 try {
+                     String message = String.format("Loading %s", plugin.getDescription().getFullName());
+                     plugin.getLogger().info(message);
+diff --git a/src/main/java/org/kitteh/tag/PlayerReceiveNameTagEvent.java b/src/main/java/org/kitteh/tag/PlayerReceiveNameTagEvent.java
+new file mode 100644
+index 0000000..2ea9e07
+--- /dev/null
++++ b/src/main/java/org/kitteh/tag/PlayerReceiveNameTagEvent.java
+@@ -0,0 +1,49 @@
++package org.kitteh.tag;
++
++import org.apache.commons.lang.Validate;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++
++public class PlayerReceiveNameTagEvent extends PlayerEvent {
++
++    private static final HandlerList handlers = new HandlerList();
++    private boolean modified;
++    private final Player named;
++    private String tag;
++
++    public PlayerReceiveNameTagEvent(Player who, Player named) {
++        super(who);
++        this.modified = false;
++        this.named = named;
++        this.tag = named.getName();
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++
++    public Player getNamedPlayer() {
++        return named;
++    }
++
++    public String getTag() {
++        return tag;
++    }
++
++    public boolean isModified() {
++        return modified;
++    }
++
++    public boolean setTag(String newTag) {
++        Validate.notNull(newTag, "New nametag cannot be null!");
++        tag = newTag;
++        modified = true;
++        return (newTag.length() < 16) ? true : false;
++    }
++}
+-- 
+1.8.1-rc2
+
