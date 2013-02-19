@@ -1,4 +1,4 @@
-From daff8e1d2c3840fcfdd7c66e31890caa57153533 Mon Sep 17 00:00:00 2001
+From 632f1fe0d5566c3eb3df1f3ad1cd0619225e5f5f Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 14 Feb 2013 17:32:20 +1100
 Subject: [PATCH] Netty
@@ -195,7 +195,7 @@ index 0000000..f25af14
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..674a54b
+index 0000000..adfd877
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 @@ -0,0 +1,228 @@
@@ -256,7 +256,7 @@ index 0000000..674a54b
 +    private volatile boolean connected;
 +    private Channel channel;
 +    private SocketAddress address;
-+    private Connection handler;
++    private Connection connection;
 +    private SecretKey secret;
 +    private String dcReason;
 +    private Object[] dcArgs;
@@ -270,10 +270,10 @@ index 0000000..674a54b
 +        // Then the socket adaptor
 +        socketAdaptor = NettySocketAdaptor.adapt((SocketChannel) channel);
 +        // Followed by their first handler
-+        handler = new PendingConnection(server, this);
++        connection = new PendingConnection(server, this);
 +        // Finally register the connection
 +        connected = true;
-+        serverConnection.pendingConnections.add((PendingConnection) handler);
++        serverConnection.pendingConnections.add((PendingConnection) connection);
 +    }
 +
 +    @Override
@@ -300,9 +300,9 @@ index 0000000..674a54b
 +        if (msg.a_()) {
 +            threadPool.submit(new Runnable() {
 +                public void run() {
-+                    Packet packet = PacketListener.callReceived(NettyNetworkManager.this, handler, msg);
++                    Packet packet = PacketListener.callReceived(NettyNetworkManager.this, connection, msg);
 +                    if (packet != null) {
-+                        packet.handle(handler);
++                        packet.handle(connection);
 +                    }
 +                }
 +            });
@@ -321,7 +321,7 @@ index 0000000..674a54b
 +     * @param nh the new {@link NetHandler} instance
 +     */
 +    public void a(Connection nh) {
-+        handler = nh;
++        connection = nh;
 +    }
 +
 +    /**
@@ -334,7 +334,7 @@ index 0000000..674a54b
 +        // Only send if channel is still connected
 +        if (connected) {
 +            // Process packet via handler
-+            packet = PacketListener.callQueued(this, handler, packet);
++            packet = PacketListener.callQueued(this, connection, packet);
 +            // If handler indicates packet send
 +            if (packet != null) {
 +                highPriorityQueue.add(packet);
@@ -364,20 +364,20 @@ index 0000000..674a54b
 +     */
 +    public void b() {
 +        for (int i = 1000; !syncPackets.isEmpty() && i >= 0; i--) {
-+            if (handler instanceof PendingConnection ? ((PendingConnection) handler).c : ((PlayerConnection) handler).disconnected) {
++            if (connection instanceof PendingConnection ? ((PendingConnection) connection).c : ((PlayerConnection) connection).disconnected) {
 +                syncPackets.clear();
 +                break;
 +            }
 +
-+            Packet packet = PacketListener.callReceived(this, handler, syncPackets.poll());
++            Packet packet = PacketListener.callReceived(this, connection, syncPackets.poll());
 +            if (packet != null) {
-+                packet.handle(handler);
++                packet.handle(connection);
 +            }
 +        }
 +
 +        // Disconnect via the handler - this performs all plugin related cleanup + logging
 +        if (!connected && (dcReason != null || dcArgs != null)) {
-+            handler.a(dcReason, dcArgs);
++            connection.a(dcReason, dcArgs);
 +        }
 +    }
 +
