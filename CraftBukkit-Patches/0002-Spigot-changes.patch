@@ -1,4 +1,4 @@
-From dcdcd6631d28acb723e1086a142210b3e77001fd Mon Sep 17 00:00:00 2001
+From 20626aff9b21bae3c593e776dd70a820fbf27210 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 3 Feb 2013 12:21:52 +1100
 Subject: [PATCH] Spigot changes.
@@ -23,7 +23,7 @@ Subject: [PATCH] Spigot changes.
  src/main/java/net/minecraft/server/PlayerList.java |  10 +-
  .../net/minecraft/server/ThreadLoginVerifier.java  |  23 +
  src/main/java/net/minecraft/server/World.java      | 200 ++++++++-
- .../java/net/minecraft/server/WorldServer.java     | 122 +++++-
+ .../java/net/minecraft/server/WorldServer.java     | 121 ++++-
  .../java/org/bukkit/craftbukkit/CraftServer.java   |  98 ++++-
  .../java/org/bukkit/craftbukkit/CraftWorld.java    |  76 +++-
  src/main/java/org/bukkit/craftbukkit/Spigot.java   |  24 +
@@ -39,7 +39,7 @@ Subject: [PATCH] Spigot changes.
  .../org/bukkit/craftbukkit/util/TimedThread.java   |  37 ++
  .../bukkit/craftbukkit/util/WatchdogThread.java    |  88 ++++
  src/main/resources/configurations/bukkit.yml       |  30 ++
- 35 files changed, 1360 insertions(+), 100 deletions(-)
+ 35 files changed, 1359 insertions(+), 100 deletions(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/Spigot.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/command/RestartCommand.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/util/ExceptionHandler.java
@@ -837,7 +837,7 @@ index c3dc4a4..9906b9e 100644
  
      public List a(Class oclass, AxisAlignedBB axisalignedbb) {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 3f73ef9..a42aa1e 100644
+index 3f73ef9..7032c61 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -1,5 +1,7 @@
@@ -874,15 +874,7 @@ index 3f73ef9..a42aa1e 100644
          }
  
          if (this.M == null) {
-@@ -157,6 +160,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
-             SpawnerCreature.spawnEntities(this, this.allowMonsters && (this.ticksPerMonsterSpawns != 0 && time % this.ticksPerMonsterSpawns == 0L), this.allowAnimals && (this.ticksPerAnimalSpawns != 0 && time % this.ticksPerAnimalSpawns == 0L), this.worldData.getTime() % 400L == 0L);
-         }
-         // CraftBukkit end
-+        this.getWorld().processChunkGC();   // Spigot
-         this.methodProfiler.c("chunkSource");
-         this.chunkProvider.unloadChunks();
-         int j = this.a(1.0F);
-@@ -267,15 +271,31 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -267,15 +270,31 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
      }
  
      protected void g() {
@@ -918,7 +910,7 @@ index 3f73ef9..a42aa1e 100644
              // ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) iterator.next();
              int k = chunkX * 16;
              int l = chunkZ * 16;
-@@ -373,6 +393,14 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -373,6 +392,14 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
  
                          if (block != null && block.isTicking()) {
                              ++i;
@@ -933,7 +925,7 @@ index 3f73ef9..a42aa1e 100644
                              block.b(this, k2 + k, i3 + chunksection.d(), l2 + l, this.random);
                          }
                      }
-@@ -413,10 +441,11 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -413,10 +440,11 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
                  nextticklistentry.a(j1);
              }
  
@@ -949,7 +941,7 @@ index 3f73ef9..a42aa1e 100644
          }
      }
  
-@@ -427,10 +456,11 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -427,10 +455,11 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
              nextticklistentry.a((long) i1 + this.worldData.getTime());
          }
  
@@ -965,7 +957,7 @@ index 3f73ef9..a42aa1e 100644
      }
  
      public void tickEntities() {
-@@ -452,9 +482,9 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -452,9 +481,9 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
      public boolean a(boolean flag) {
          int i = this.M.size();
  
@@ -978,7 +970,7 @@ index 3f73ef9..a42aa1e 100644
              if (i > 1000) {
                  // CraftBukkit start - if the server has too much to process over time, try to alleviate that
                  if (i > 20 * 1000) {
-@@ -472,8 +502,11 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -472,8 +501,11 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
                      break;
                  }
  
@@ -992,7 +984,7 @@ index 3f73ef9..a42aa1e 100644
                  byte b0 = 8;
  
                  if (this.d(nextticklistentry.a - b0, nextticklistentry.b - b0, nextticklistentry.c - b0, nextticklistentry.a + b0, nextticklistentry.b + b0, nextticklistentry.c + b0)) {
-@@ -502,10 +535,12 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -502,10 +534,12 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
              }
  
              return !this.M.isEmpty();
@@ -1006,7 +998,7 @@ index 3f73ef9..a42aa1e 100644
          ArrayList arraylist = null;
          ChunkCoordIntPair chunkcoordintpair = chunk.l();
          int i = chunkcoordintpair.x << 4;
-@@ -532,6 +567,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -532,6 +566,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
          }
  
          return arraylist;
@@ -1014,7 +1006,7 @@ index 3f73ef9..a42aa1e 100644
      }
  
      public void entityJoinedWorld(Entity entity, boolean flag) {
-@@ -610,7 +646,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -610,7 +645,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
          }
  
          if (this.L == null) {
@@ -1023,7 +1015,7 @@ index 3f73ef9..a42aa1e 100644
          }
  
          if (this.M == null) {
-@@ -883,4 +919,48 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -883,4 +918,48 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
      public PortalTravelAgent s() {
          return this.P;
      }
@@ -2309,5 +2301,5 @@ index 61a95e3..5262ae1 100644
      monsters: 70
      animals: 15
 -- 
-1.8.1-rc2
+1.8.1.1
 
