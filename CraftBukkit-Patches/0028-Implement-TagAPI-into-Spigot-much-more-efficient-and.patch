@@ -1,15 +1,18 @@
-From b4957d9a35c28888d9f56ed176d396f5f6d9d944 Mon Sep 17 00:00:00 2001
+From a338352538a36defae230b9cc8b8019e0fd5bc61 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 19 Feb 2013 18:30:10 +1100
 Subject: [PATCH] Implement TagAPI into Spigot - much more efficient and only a
  dozen lines of code.
 
 ---
- .../net/minecraft/server/EntityTrackerEntry.java   | 12 ++++--
- .../java/org/bukkit/craftbukkit/CraftServer.java   |  7 ++++
- .../org/kitteh/tag/PlayerReceiveNameTagEvent.java  | 49 ++++++++++++++++++++++
- 3 files changed, 65 insertions(+), 3 deletions(-)
+ .../net/minecraft/server/EntityTrackerEntry.java   | 12 +++-
+ .../java/net/minecraft/server/MinecraftServer.java |  1 +
+ .../java/org/bukkit/craftbukkit/CraftServer.java   |  7 +++
+ .../org/kitteh/tag/PlayerReceiveNameTagEvent.java  | 49 +++++++++++++++
+ src/main/java/org/kitteh/tag/TagAPI.java           | 73 ++++++++++++++++++++++
+ 5 files changed, 139 insertions(+), 3 deletions(-)
  create mode 100644 src/main/java/org/kitteh/tag/PlayerReceiveNameTagEvent.java
+ create mode 100644 src/main/java/org/kitteh/tag/TagAPI.java
 
 diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 index 27a548f..d95d5af 100644
@@ -48,6 +51,18 @@ index 27a548f..d95d5af 100644
          } else {
              if (this.tracker instanceof EntityMinecart) {
                  EntityMinecart entityminecart = (EntityMinecart) this.tracker;
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 99a6cf4..69564cd 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -512,6 +512,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+ 
+         this.methodProfiler.b();
+         this.methodProfiler.b();
++        org.kitteh.tag.TagAPI.tick(); // Spigot
+     }
+ 
+     public void r() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index f00b28d..ed7598e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
@@ -119,6 +134,85 @@ index 0000000..2ea9e07
 +        tag = newTag;
 +        modified = true;
 +        return (newTag.length() < 16) ? true : false;
++    }
++}
+diff --git a/src/main/java/org/kitteh/tag/TagAPI.java b/src/main/java/org/kitteh/tag/TagAPI.java
+new file mode 100644
+index 0000000..1e2693c
+--- /dev/null
++++ b/src/main/java/org/kitteh/tag/TagAPI.java
+@@ -0,0 +1,73 @@
++package org.kitteh.tag;
++
++import com.google.common.base.Preconditions;
++import java.util.HashMap;
++import java.util.HashSet;
++import java.util.Iterator;
++import java.util.Map;
++import java.util.Set;
++import org.bukkit.entity.Player;
++
++public class TagAPI {
++
++    private static Set<DelayedShowTask> tasks = new HashSet<DelayedShowTask>();
++
++    private static class DelayedShowTask {
++
++        private final Map<Player, Player> pairs = new HashMap<Player, Player>();
++        private int countdown = 2;
++    }
++
++    public static void tick() {
++        for (Iterator<DelayedShowTask> iter = tasks.iterator(); iter.hasNext();) {
++            DelayedShowTask task = iter.next();
++            if (--task.countdown == 0) {
++                iter.remove();
++                for (Map.Entry<Player, Player> pair : task.pairs.entrySet()) {
++                    if (pair.getKey() != null && pair.getValue() != null) {
++                        pair.getValue().showPlayer(pair.getValue());
++                    }
++                }
++            }
++        }
++    }
++
++    public static void refreshPlayer(Player player) {
++        Preconditions.checkArgument(player != null, "player");
++        Preconditions.checkArgument(player.isOnline(), "offline");
++
++        DelayedShowTask task = new DelayedShowTask();
++        for (Player otherGuy : player.getWorld().getPlayers()) {
++            if (player != otherGuy && otherGuy.canSee(player)) {
++                otherGuy.hidePlayer(player);
++                task.pairs.put(otherGuy, player);
++            }
++        }
++
++        tasks.add(task);
++    }
++
++    public static void refreshPlayer(Player player, Player forWhom) {
++        Preconditions.checkArgument(player != null, "player");
++        Preconditions.checkArgument(forWhom != null, "forWhom");
++        Preconditions.checkArgument(player != forWhom, "self");
++        DelayedShowTask task = new DelayedShowTask();
++
++        if (forWhom.canSee(player) && player.getWorld() == forWhom.getWorld()) {
++            forWhom.hidePlayer(player);
++            task.pairs.put(forWhom, player);
++        }
++
++        tasks.add(task);
++    }
++
++    public static void refreshPlayer(Player player, Set<Player> forWhom) {
++        Preconditions.checkArgument(player != null, "player");
++        Preconditions.checkArgument(forWhom != null, "forWhom");
++        for (Player whom : forWhom) {
++            if (player != whom) {
++                refreshPlayer(player, whom);
++            }
++        }
 +    }
 +}
 -- 
