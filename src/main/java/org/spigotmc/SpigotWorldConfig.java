@@ -190,4 +190,19 @@ public class SpigotWorldConfig
         tickInactiveVillagers = getBoolean( "entity-activation-range.tick-inactive-villagers", tickInactiveVillagers );
         log( "Entity Activation Range: An " + animalActivationRange + " / Mo " + monsterActivationRange + " / Ra " + raiderActivationRange + " / Mi " + miscActivationRange + " / Tiv " + tickInactiveVillagers );
     }
+
+    public int playerTrackingRange = 48;
+    public int animalTrackingRange = 48;
+    public int monsterTrackingRange = 48;
+    public int miscTrackingRange = 32;
+    public int otherTrackingRange = 64;
+    private void trackingRange()
+    {
+        playerTrackingRange = getInt( "entity-tracking-range.players", playerTrackingRange );
+        animalTrackingRange = getInt( "entity-tracking-range.animals", animalTrackingRange );
+        monsterTrackingRange = getInt( "entity-tracking-range.monsters", monsterTrackingRange );
+        miscTrackingRange = getInt( "entity-tracking-range.misc", miscTrackingRange );
+        otherTrackingRange = getInt( "entity-tracking-range.other", otherTrackingRange );
+        log( "Entity Tracking Range: Pl " + playerTrackingRange + " / An " + animalTrackingRange + " / Mo " + monsterTrackingRange + " / Mi " + miscTrackingRange + " / Other " + otherTrackingRange );
+    }
 }
