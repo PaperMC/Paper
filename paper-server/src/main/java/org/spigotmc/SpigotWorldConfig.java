@@ -211,4 +211,21 @@ public class SpigotWorldConfig
         this.ignoreSpectatorActivation = this.getBoolean( "entity-activation-range.ignore-spectators", this.ignoreSpectatorActivation );
         this.log( "Entity Activation Range: An " + this.animalActivationRange + " / Mo " + this.monsterActivationRange + " / Ra " + this.raiderActivationRange + " / Mi " + this.miscActivationRange + " / Tiv " + this.tickInactiveVillagers + " / Isa " + this.ignoreSpectatorActivation );
     }
+
+    public int playerTrackingRange = 48;
+    public int animalTrackingRange = 48;
+    public int monsterTrackingRange = 48;
+    public int miscTrackingRange = 32;
+    public int displayTrackingRange = 128;
+    public int otherTrackingRange = 64;
+    private void trackingRange()
+    {
+        this.playerTrackingRange = this.getInt( "entity-tracking-range.players", this.playerTrackingRange );
+        this.animalTrackingRange = this.getInt( "entity-tracking-range.animals", this.animalTrackingRange );
+        this.monsterTrackingRange = this.getInt( "entity-tracking-range.monsters", this.monsterTrackingRange );
+        this.miscTrackingRange = this.getInt( "entity-tracking-range.misc", this.miscTrackingRange );
+        this.displayTrackingRange = this.getInt( "entity-tracking-range.display", this.displayTrackingRange );
+        this.otherTrackingRange = this.getInt( "entity-tracking-range.other", this.otherTrackingRange );
+        this.log( "Entity Tracking Range: Pl " + this.playerTrackingRange + " / An " + this.animalTrackingRange + " / Mo " + this.monsterTrackingRange + " / Mi " + this.miscTrackingRange + " / Di " + this.displayTrackingRange + " / Other " + this.otherTrackingRange );
+    }
 }
