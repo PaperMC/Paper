@@ -75,7 +75,7 @@ public class CraftInventoryView extends InventoryView {
 
     public static SlotType getSlotType(InventoryView inventory, int slot) {
         SlotType type = SlotType.CONTAINER;
-        if (slot < inventory.getTopInventory().getSize()) {
+        if (slot >= 0 && slot < inventory.getTopInventory().getSize()) {
             switch(inventory.getType()) {
             case FURNACE:
                 if (slot == 2) {
