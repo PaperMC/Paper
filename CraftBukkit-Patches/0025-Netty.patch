@@ -1,4 +1,4 @@
-From ec5dafb9483f9548b702c382eebf8c2051663531 Mon Sep 17 00:00:00 2001
+From 4383e778b06659440cd8ce0e62366b035387c6d1 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 14 Feb 2013 17:32:20 +1100
 Subject: [PATCH] Netty
@@ -40,14 +40,14 @@ Subject: [PATCH] Netty
  .../net/minecraft/server/ThreadLoginVerifier.java  |   1 +
  .../craftbukkit/scheduler/CraftScheduler.java      |   2 +-
  src/main/java/org/spigotmc/netty/CipherCodec.java  |  65 ++++++
- .../org/spigotmc/netty/NettyNetworkManager.java    | 210 +++++++++++++++++
+ .../org/spigotmc/netty/NettyNetworkManager.java    | 229 +++++++++++++++++++
  .../org/spigotmc/netty/NettyServerConnection.java  | 106 +++++++++
  .../org/spigotmc/netty/NettySocketAdaptor.java     | 248 +++++++++++++++++++++
  .../java/org/spigotmc/netty/PacketDecoder.java     |  63 ++++++
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
  src/main/java/org/spigotmc/netty/ReadState.java    |  16 ++
- 16 files changed, 872 insertions(+), 9 deletions(-)
+ 16 files changed, 891 insertions(+), 9 deletions(-)
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyServerConnection.java
@@ -271,10 +271,10 @@ index 0000000..f25af14
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..0edb062
+index 0000000..baca853
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,210 @@
+@@ -0,0 +1,229 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -285,6 +285,8 @@ index 0000000..0edb062
 +import java.net.Socket;
 +import java.net.SocketAddress;
 +import java.security.PrivateKey;
++import java.util.AbstractList;
++import java.util.List;
 +import java.util.Queue;
 +import java.util.concurrent.ConcurrentLinkedQueue;
 +import java.util.concurrent.ExecutorService;
@@ -312,6 +314,22 @@ index 0000000..0edb062
 +    private static final NettyServerConnection serverConnection = (NettyServerConnection) server.ae();
 +    /*========================================================================*/
 +    private final Queue<Packet> syncPackets = new ConcurrentLinkedQueue<Packet>();
++    private final List<Packet> highPriorityQueue = new AbstractList<Packet>() {
++        @Override
++        public void add(int index, Packet element) {
++            // NOP
++        }
++
++        @Override
++        public Packet get(int index) {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public int size() {
++            return 0;
++        }
++    };
 +    private volatile boolean connected;
 +    private Channel channel;
 +    private SocketAddress address;
@@ -396,6 +414,7 @@ index 0000000..0edb062
 +            packet = PacketListener.callQueued(this, connection, packet);
 +            // If handler indicates packet send
 +            if (packet != null) {
++                highPriorityQueue.add(packet);
 +                channel.write(packet);
 +
 +                // If needed, check and prepare encryption phase
