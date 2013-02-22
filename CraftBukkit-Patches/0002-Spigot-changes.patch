@@ -1,11 +1,11 @@
-From a79861261884846b740f136b75bff9a91466a1ad Mon Sep 17 00:00:00 2001
+From a07bdb7064b9f0e6408d06ee7e827711d198ddd6 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 3 Feb 2013 12:21:52 +1100
 Subject: [PATCH] Spigot changes.
 
 ---
  .gitignore                                         |   2 +
- src/main/java/net/minecraft/server/Block.java      |  12 +
+ src/main/java/net/minecraft/server/Block.java      |  12 ++
  .../java/net/minecraft/server/BlockCactus.java     |   2 +-
  src/main/java/net/minecraft/server/BlockCrops.java |   2 +-
  src/main/java/net/minecraft/server/BlockGrass.java |   2 +-
@@ -14,39 +14,35 @@ Subject: [PATCH] Spigot changes.
  src/main/java/net/minecraft/server/BlockReed.java  |   2 +-
  .../java/net/minecraft/server/BlockSapling.java    |   2 +-
  src/main/java/net/minecraft/server/BlockStem.java  |   2 +-
- .../net/minecraft/server/ChunkRegionLoader.java    |  35 +-
- .../java/net/minecraft/server/ChunkSection.java    |  31 +-
+ .../net/minecraft/server/ChunkRegionLoader.java    |  35 +++-
+ .../java/net/minecraft/server/ChunkSection.java    |  31 +++-
  src/main/java/net/minecraft/server/EntityItem.java |   3 +-
  .../java/net/minecraft/server/EntitySquid.java     |   4 -
  .../java/net/minecraft/server/MinecraftServer.java |   3 +
  .../net/minecraft/server/PlayerConnection.java     |  18 +-
  src/main/java/net/minecraft/server/PlayerList.java |  10 +-
- .../net/minecraft/server/ThreadLoginVerifier.java  |  23 +
- src/main/java/net/minecraft/server/World.java      | 200 ++++++++-
- .../java/net/minecraft/server/WorldServer.java     | 121 ++++-
- .../java/org/bukkit/craftbukkit/CraftServer.java   |  98 ++++-
- .../java/org/bukkit/craftbukkit/CraftWorld.java    |  76 +++-
- src/main/java/org/bukkit/craftbukkit/Spigot.java   |  23 +
+ .../net/minecraft/server/ThreadLoginVerifier.java  |  23 +++
+ src/main/java/net/minecraft/server/World.java      | 200 ++++++++++++++++++---
+ .../java/net/minecraft/server/WorldServer.java     | 121 ++++++++++---
+ .../java/org/bukkit/craftbukkit/CraftServer.java   |  93 +++++++---
+ .../java/org/bukkit/craftbukkit/CraftWorld.java    |  76 +++++++-
+ src/main/java/org/bukkit/craftbukkit/Spigot.java   |  23 +++
  .../craftbukkit/chunkio/ChunkIOProvider.java       |   2 +-
- .../bukkit/craftbukkit/command/RestartCommand.java |  24 +
+ .../bukkit/craftbukkit/command/RestartCommand.java |  24 +++
  .../org/bukkit/craftbukkit/entity/CraftPlayer.java |   7 +
- .../bukkit/craftbukkit/util/ExceptionHandler.java  |  31 ++
- .../bukkit/craftbukkit/util/ExceptionReporter.java |  26 ++
- .../java/org/bukkit/craftbukkit/util/FlatMap.java  |  34 ++
+ .../bukkit/craftbukkit/util/ExceptionHandler.java  |  31 ++++
+ .../bukkit/craftbukkit/util/ExceptionReporter.java |  26 +++
+ .../java/org/bukkit/craftbukkit/util/FlatMap.java  |  34 ++++
  .../org/bukkit/craftbukkit/util/LongHashSet.java   |  11 +-
  .../bukkit/craftbukkit/util/LongObjectHashMap.java |   5 +
- .../java/org/bukkit/craftbukkit/util/Metrics.java  | 488 +++++++++++++++++++++
- .../org/bukkit/craftbukkit/util/TimedThread.java   |  37 ++
- .../bukkit/craftbukkit/util/WatchdogThread.java    |  88 ++++
- src/main/resources/configurations/bukkit.yml       |  30 ++
- 35 files changed, 1358 insertions(+), 100 deletions(-)
+ .../bukkit/craftbukkit/util/WatchdogThread.java    |  88 +++++++++
+ src/main/resources/configurations/bukkit.yml       |  30 ++++
+ 33 files changed, 828 insertions(+), 100 deletions(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/Spigot.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/command/RestartCommand.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/util/ExceptionHandler.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/util/ExceptionReporter.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/util/FlatMap.java
- create mode 100644 src/main/java/org/bukkit/craftbukkit/util/Metrics.java
- create mode 100644 src/main/java/org/bukkit/craftbukkit/util/TimedThread.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/util/WatchdogThread.java
 
 diff --git a/.gitignore b/.gitignore
@@ -1065,7 +1061,7 @@ index 3f73ef9..7032c61 100644
 +    // Spigot end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index e7c0760..a7785b7 100644
+index e7c0760..2b3c60a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -146,7 +146,7 @@ public final class CraftServer implements Server {
@@ -1092,7 +1088,7 @@ index e7c0760..a7785b7 100644
  
      static {
          ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
-@@ -208,12 +216,25 @@ public final class CraftServer implements Server {
+@@ -208,12 +216,20 @@ public final class CraftServer implements Server {
          chunkGCLoadThresh = configuration.getInt("chunk-gc.load-threshold");
  
          updater = new AutoUpdater(new BukkitDLUpdaterService(configuration.getString("auto-updater.host")), getLogger(), configuration.getString("auto-updater.preferred-channel"));
@@ -1110,16 +1106,11 @@ index e7c0760..a7785b7 100644
 +            configuration.save(getConfigFile());
 +        } catch (IOException e) {
 +        }
-+        try {
-+            new org.bukkit.craftbukkit.util.Metrics().start();
-+        } catch (IOException e) {
-+            getLogger().log(Level.SEVERE, "Could not start metrics", e);
-+        }
 +        // Spigot end
          loadPlugins();
          enablePlugins(PluginLoadOrder.STARTUP);
      }
-@@ -222,7 +243,7 @@ public final class CraftServer implements Server {
+@@ -222,7 +238,7 @@ public final class CraftServer implements Server {
          return (File) console.options.valueOf("bukkit-settings");
      }
  
@@ -1128,7 +1119,7 @@ index e7c0760..a7785b7 100644
          try {
              configuration.save(getConfigFile());
          } catch (IOException ex) {
-@@ -526,6 +547,7 @@ public final class CraftServer implements Server {
+@@ -526,6 +542,7 @@ public final class CraftServer implements Server {
  
          ((DedicatedServer) console).propertyManager = config;
  
@@ -1136,7 +1127,7 @@ index e7c0760..a7785b7 100644
          boolean animals = config.getBoolean("spawn-animals", console.getSpawnAnimals());
          boolean monsters = config.getBoolean("spawn-monsters", console.worlds.get(0).difficulty > 0);
          int difficulty = config.getInt("difficulty", console.worlds.get(0).difficulty);
-@@ -591,6 +613,7 @@ public final class CraftServer implements Server {
+@@ -591,6 +608,7 @@ public final class CraftServer implements Server {
                  "This plugin is not properly shutting down its async tasks when it is being reloaded.  This may cause conflicts with the newly loaded version of the plugin"
              ));
          }
@@ -1144,7 +1135,7 @@ index e7c0760..a7785b7 100644
          loadPlugins();
          enablePlugins(PluginLoadOrder.STARTUP);
          enablePlugins(PluginLoadOrder.POSTWORLD);
-@@ -1039,11 +1062,8 @@ public final class CraftServer implements Server {
+@@ -1039,11 +1057,8 @@ public final class CraftServer implements Server {
          return count;
      }
  
@@ -1157,7 +1148,7 @@ index e7c0760..a7785b7 100644
          OfflinePlayer result = getPlayerExact(name);
          String lname = name.toLowerCase();
  
-@@ -1051,17 +1071,7 @@ public final class CraftServer implements Server {
+@@ -1051,17 +1066,7 @@ public final class CraftServer implements Server {
              result = offlinePlayers.get(lname);
  
              if (result == null) {
@@ -1176,7 +1167,7 @@ index e7c0760..a7785b7 100644
                  result = new CraftOfflinePlayer(this, name);
                  offlinePlayers.put(lname, result);
              }
-@@ -1199,7 +1209,7 @@ public final class CraftServer implements Server {
+@@ -1199,7 +1204,7 @@ public final class CraftServer implements Server {
          Set<OfflinePlayer> players = new HashSet<OfflinePlayer>();
  
          for (String file : files) {
@@ -1185,7 +1176,7 @@ index e7c0760..a7785b7 100644
          }
          players.addAll(Arrays.asList(getOnlinePlayers()));
  
-@@ -1305,7 +1315,7 @@ public final class CraftServer implements Server {
+@@ -1305,7 +1310,7 @@ public final class CraftServer implements Server {
      public List<String> tabCompleteCommand(Player player, String message) {
          List<String> completions = null;
          try {
@@ -1194,7 +1185,7 @@ index e7c0760..a7785b7 100644
          } catch (CommandException ex) {
              player.sendMessage(ChatColor.RED + "An internal error occurred while attempting to tab-complete this command");
              getLogger().log(Level.SEVERE, "Exception when " + player.getName() + " attempted to tab complete " + message, ex);
-@@ -1341,4 +1351,52 @@ public final class CraftServer implements Server {
+@@ -1341,4 +1346,52 @@ public final class CraftServer implements Server {
      public CraftItemFactory getItemFactory() {
          return CraftItemFactory.instance();
      }
@@ -1627,543 +1618,6 @@ index 01861cc..dbd33fa 100644
          int index = (int) (keyIndex(key) & (BUCKET_SIZE - 1));
          long[] inner = keys[index];
          if (inner == null) {
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/Metrics.java b/src/main/java/org/bukkit/craftbukkit/util/Metrics.java
-new file mode 100644
-index 0000000..da05b80
---- /dev/null
-+++ b/src/main/java/org/bukkit/craftbukkit/util/Metrics.java
-@@ -0,0 +1,488 @@
-+package org.bukkit.craftbukkit.util;
-+
-+import org.bukkit.Bukkit;
-+import org.bukkit.configuration.file.YamlConfiguration;
-+import java.io.BufferedReader;
-+import java.io.File;
-+import java.io.IOException;
-+import java.io.InputStreamReader;
-+import java.io.OutputStreamWriter;
-+import java.io.UnsupportedEncodingException;
-+import java.net.Proxy;
-+import java.net.URL;
-+import java.net.URLConnection;
-+import java.net.URLEncoder;
-+import java.util.Collections;
-+import java.util.HashSet;
-+import java.util.Iterator;
-+import java.util.LinkedHashSet;
-+import java.util.Set;
-+import java.util.UUID;
-+
-+/**
-+ * <p> The metrics class obtains data about a plugin and submits statistics
-+ * about it to the metrics backend. </p> <p> Public methods provided by this
-+ * class: </p>
-+ * <code>
-+ * Graph createGraph(String name); <br/>
-+ * void addCustomData(Metrics.Plotter plotter); <br/>
-+ * void start(); <br/>
-+ * </code>
-+ */
-+public class Metrics {
-+
-+    /**
-+     * The current revision number
-+     */
-+    private final static int REVISION = 5;
-+    /**
-+     * The base url of the metrics domain
-+     */
-+    private static final String BASE_URL = "http://mcstats.org";
-+    /**
-+     * The url used to report a server's status
-+     */
-+    private static final String REPORT_URL = "/report/%s";
-+    /**
-+     * The file where guid and opt out is stored in
-+     */
-+    private static final String CONFIG_FILE = "plugins/PluginMetrics/config.yml";
-+    /**
-+     * The separator to use for custom data. This MUST NOT change unless you are
-+     * hosting your own version of metrics and want to change it.
-+     */
-+    private static final String CUSTOM_DATA_SEPARATOR = "~~";
-+    /**
-+     * Interval of time to ping (in minutes)
-+     */
-+    private final static int PING_INTERVAL = 5;
-+    /**
-+     * All of the custom graphs to submit to metrics
-+     */
-+    private final Set<Graph> graphs = Collections.synchronizedSet(new HashSet<Graph>());
-+    /**
-+     * The default graph, used for addCustomData when you don't want a specific
-+     * graph
-+     */
-+    private final Graph defaultGraph = new Graph("Default");
-+    /**
-+     * The plugin configuration file
-+     */
-+    private final YamlConfiguration configuration;
-+    /**
-+     * Unique server id
-+     */
-+    private final String guid;
-+
-+    public Metrics() throws IOException {
-+        // load the config
-+        File file = new File(CONFIG_FILE);
-+        configuration = YamlConfiguration.loadConfiguration(file);
-+
-+        // add some defaults
-+        configuration.addDefault("opt-out", false);
-+        configuration.addDefault("guid", UUID.randomUUID().toString());
-+
-+        // Do we need to create the file?
-+        if (configuration.get("guid", null) == null) {
-+            configuration.options().header("http://metrics.griefcraft.com").copyDefaults(true);
-+            configuration.save(file);
-+        }
-+
-+        // Load the guid then
-+        guid = configuration.getString("guid");
-+
-+        Graph graph = createGraph("Operating System");
-+        // Plot the total amount of protections
-+        graph.addPlotter(new Metrics.Plotter(System.getProperty("os.name")) {
-+            @Override
-+            public int getValue() {
-+                return 1;
-+            }
-+        });
-+
-+        graph = createGraph("System Cores");
-+        // Plot the total amount of protections
-+        graph.addPlotter(new Metrics.Plotter(Integer.toString(Runtime.getRuntime().availableProcessors())) {
-+            @Override
-+            public int getValue() {
-+                return 1;
-+            }
-+        });
-+
-+        graph = createGraph("System RAM");
-+        long RAM = Runtime.getRuntime().maxMemory() / 1024L / 1024L;
-+        String plotName;
-+        if (RAM < 1024) {
-+            plotName = "< 1024mb";
-+        } else if (RAM < 2048) {
-+            plotName = "1024-2048mb";
-+        } else if (RAM < 4096) {
-+            plotName = "2048-4096mb";
-+        } else if (RAM < 8192) {
-+            plotName = "4096-8192mb";
-+        } else if (RAM < 16384) {
-+            plotName = "8192-16384mb";
-+        } else {
-+            plotName = "16384+ mb";
-+        }
-+
-+        // Plot the total amount of protections
-+        graph.addPlotter(new Metrics.Plotter(plotName) {
-+            @Override
-+            public int getValue() {
-+                return 1;
-+            }
-+        });
-+    }
-+
-+    /**
-+     * Construct and create a Graph that can be used to separate specific
-+     * plotters to their own graphs on the metrics website. Plotters can be
-+     * added to the graph object returned.
-+     *
-+     * @param name
-+     * @return Graph object created. Will never return NULL under normal
-+     * circumstances unless bad parameters are given
-+     */
-+    public Graph createGraph(String name) {
-+        if (name == null) {
-+            throw new IllegalArgumentException("Graph name cannot be null");
-+        }
-+
-+        // Construct the graph object
-+        Graph graph = new Graph(name);
-+
-+        // Now we can add our graph
-+        graphs.add(graph);
-+
-+        // and return back
-+        return graph;
-+    }
-+
-+    /**
-+     * Adds a custom data plotter to the default graph
-+     *
-+     * @param plotter
-+     */
-+    public void addCustomData(Plotter plotter) {
-+        if (plotter == null) {
-+            throw new IllegalArgumentException("Plotter cannot be null");
-+        }
-+
-+        // Add the plotter to the graph o/
-+        defaultGraph.addPlotter(plotter);
-+
-+        // Ensure the default graph is included in the submitted graphs
-+        graphs.add(defaultGraph);
-+    }
-+
-+    /**
-+     * Start measuring statistics. This will immediately create an async
-+     * repeating task as the plugin and send the initial data to the metrics
-+     * backend, and then after that it will post in increments of PING_INTERVAL
-+     * * 1200 ticks.
-+     */
-+    public void start() {
-+        // Did we opt out?
-+        if (configuration.getBoolean("opt-out", false)) {
-+            return;
-+        }
-+
-+        // Begin hitting the server with glorious data
-+        new TimedThread(new Runnable() {
-+            private boolean firstPost = true;
-+
-+            public void run() {
-+                try {
-+                    // We use the inverse of firstPost because if it is the first time we are posting,
-+                    // it is not a interval ping, so it evaluates to FALSE
-+                    // Each time thereafter it will evaluate to TRUE, i.e PING!
-+                    postPlugin(!firstPost);
-+
-+                    // After the first post we set firstPost to false
-+                    // Each post thereafter will be a ping
-+                    firstPost = false;
-+                } catch (IOException e) {
-+                    System.err.println("[Metrics] " + e.getMessage());
-+                }
-+            }
-+        }, PING_INTERVAL * 60000).start();
-+    }
-+
-+    /**
-+     * Generic method that posts a plugin to the metrics website
-+     */
-+    private void postPlugin(boolean isPing) throws IOException {
-+        // Construct the post data
-+        String data = encode("guid") + '=' + encode(guid)
-+                + encodeDataPair("version", "Spigot 1.4")
-+                + encodeDataPair("server", Bukkit.getVersion())
-+                + encodeDataPair("players", Integer.toString(Bukkit.getServer().getOnlinePlayers().length))
-+                + encodeDataPair("revision", String.valueOf(REVISION));
-+
-+        // If we're pinging, append it
-+        if (isPing) {
-+            data += encodeDataPair("ping", "true");
-+        }
-+
-+        // Acquire a lock on the graphs, which lets us make the assumption we also lock everything
-+        // inside of the graph (e.g plotters)
-+        synchronized (graphs) {
-+            Iterator<Graph> iter = graphs.iterator();
-+
-+            while (iter.hasNext()) {
-+                Graph graph = iter.next();
-+
-+                //System.out.println("Sending data for " + graph.getName());
-+
-+                // Because we have a lock on the graphs set already, it is reasonable to assume
-+                // that our lock transcends down to the individual plotters in the graphs also.
-+                // Because our methods are private, no one but us can reasonably access this list
-+                // without reflection so this is a safe assumption without adding more code.
-+                for (Plotter plotter : graph.getPlotters()) {
-+                    // The key name to send to the metrics server
-+                    // The format is C-GRAPHNAME-PLOTTERNAME where separator - is defined at the top
-+                    // Legacy (R4) submitters use the format Custom%s, or CustomPLOTTERNAME
-+                    String key = String.format("C%s%s%s%s", CUSTOM_DATA_SEPARATOR, graph.getName(), CUSTOM_DATA_SEPARATOR, plotter.getColumnName());
-+
-+                    // The value to send, which for the foreseeable future is just the string
-+                    // value of plotter.getValue()
-+                    String value = Integer.toString(plotter.getValue());
-+
-+                    //System.out.println("Plotter data for " + plotter.getColumnName() + " is " + plotter.getValue());
-+
-+                    // Add it to the http post data :)
-+                    data += encodeDataPair(key, value);
-+                }
-+            }
-+        }
-+
-+        // Create the url
-+        URL url = new URL(BASE_URL + String.format(REPORT_URL, "Spigot"));
-+
-+        // Connect to the website
-+        URLConnection connection;
-+
-+        // Mineshafter creates a socks proxy, so we can safely bypass it
-+        // It does not reroute POST requests so we need to go around it
-+        if (isMineshafterPresent()) {
-+            connection = url.openConnection(Proxy.NO_PROXY);
-+        } else {
-+            connection = url.openConnection();
-+        }
-+
-+        connection.setDoOutput(true);
-+
-+        // Write the data
-+        OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
-+        writer.write(data);
-+        writer.flush();
-+
-+        // System.out.println(data);
-+
-+        // Now read the response
-+        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-+        String response = reader.readLine();
-+
-+        // close resources
-+        writer.close();
-+        reader.close();
-+
-+        if (response.startsWith("ERR")) {
-+            throw new IOException(response); //Throw the exception
-+        } else {
-+            // Is this the first update this hour?
-+            if (response.contains("OK This is your first update this hour")) {
-+                synchronized (graphs) {
-+                    Iterator<Graph> iter = graphs.iterator();
-+
-+                    while (iter.hasNext()) {
-+                        Graph graph = iter.next();
-+
-+                        for (Plotter plotter : graph.getPlotters()) {
-+                            plotter.reset();
-+                        }
-+                    }
-+                }
-+            }
-+        }
-+        //if (response.startsWith("OK")) - We should get "OK" followed by an optional description if everything goes right
-+    }
-+
-+    /**
-+     * Check if mineshafter is present. If it is, we need to bypass it to send
-+     * POST requests
-+     *
-+     * @return
-+     */
-+    private boolean isMineshafterPresent() {
-+        try {
-+            Class.forName("mineshafter.MineServer");
-+            return true;
-+        } catch (Exception e) {
-+            return false;
-+        }
-+    }
-+
-+    /**
-+     * <p>Encode a key/value data pair to be used in a HTTP post request. This
-+     * INCLUDES a & so the first key/value pair MUST be included manually,
-+     * e.g:</p>
-+     * <code>
-+     * String httpData = encode("guid") + '=' + encode("1234") + encodeDataPair("authors") + "..";
-+     * </code>
-+     *
-+     * @param key
-+     * @param value
-+     * @return
-+     */
-+    private static String encodeDataPair(String key, String value) throws UnsupportedEncodingException {
-+        return '&' + encode(key) + '=' + encode(value);
-+    }
-+
-+    /**
-+     * Encode text as UTF-8
-+     *
-+     * @param text
-+     * @return
-+     */
-+    private static String encode(String text) throws UnsupportedEncodingException {
-+        return URLEncoder.encode(text, "UTF-8");
-+    }
-+
-+    /**
-+     * Represents a custom graph on the website
-+     */
-+    public static class Graph {
-+
-+        /**
-+         * The graph's name, alphanumeric and spaces only :) If it does not
-+         * comply to the above when submitted, it is rejected
-+         */
-+        private final String name;
-+        /**
-+         * The set of plotters that are contained within this graph
-+         */
-+        private final Set<Plotter> plotters = new LinkedHashSet<Plotter>();
-+
-+        public Graph(String name) {
-+            this.name = name;
-+        }
-+
-+        /**
-+         * Gets the graph's name
-+         *
-+         * @return
-+         */
-+        public String getName() {
-+            return name;
-+        }
-+
-+        /**
-+         * Add a plotter to the graph, which will be used to plot entries
-+         *
-+         * @param plotter
-+         */
-+        public void addPlotter(Plotter plotter) {
-+            plotters.add(plotter);
-+        }
-+
-+        /**
-+         * Remove a plotter from the graph
-+         *
-+         * @param plotter
-+         */
-+        public void removePlotter(Plotter plotter) {
-+            plotters.remove(plotter);
-+        }
-+
-+        /**
-+         * Gets an <b>unmodifiable</b> set of the plotter objects in the graph
-+         *
-+         * @return
-+         */
-+        public Set<Plotter> getPlotters() {
-+            return Collections.unmodifiableSet(plotters);
-+        }
-+
-+        @Override
-+        public int hashCode() {
-+            return name.hashCode();
-+        }
-+
-+        @Override
-+        public boolean equals(Object object) {
-+            if (!(object instanceof Graph)) {
-+                return false;
-+            }
-+
-+            Graph graph = (Graph) object;
-+            return graph.name.equals(name);
-+        }
-+    }
-+
-+    /**
-+     * Interface used to collect custom data for a plugin
-+     */
-+    public static abstract class Plotter {
-+
-+        /**
-+         * The plot's name
-+         */
-+        private final String name;
-+
-+        /**
-+         * Construct a plotter with the default plot name
-+         */
-+        public Plotter() {
-+            this("Default");
-+        }
-+
-+        /**
-+         * Construct a plotter with a specific plot name
-+         *
-+         * @param name
-+         */
-+        public Plotter(String name) {
-+            this.name = name;
-+        }
-+
-+        /**
-+         * Get the current value for the plotted point
-+         *
-+         * @return
-+         */
-+        public abstract int getValue();
-+
-+        /**
-+         * Get the column name for the plotted point
-+         *
-+         * @return the plotted point's column name
-+         */
-+        public String getColumnName() {
-+            return name;
-+        }
-+
-+        /**
-+         * Called after the website graphs have been updated
-+         */
-+        public void reset() {
-+        }
-+
-+        @Override
-+        public int hashCode() {
-+            return getColumnName().hashCode() + getValue();
-+        }
-+
-+        @Override
-+        public boolean equals(Object object) {
-+            if (!(object instanceof Plotter)) {
-+                return false;
-+            }
-+
-+            Plotter plotter = (Plotter) object;
-+            return plotter.name.equals(name) && plotter.getValue() == getValue();
-+        }
-+    }
-+}
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/TimedThread.java b/src/main/java/org/bukkit/craftbukkit/util/TimedThread.java
-new file mode 100644
-index 0000000..d8d2c7c
---- /dev/null
-+++ b/src/main/java/org/bukkit/craftbukkit/util/TimedThread.java
-@@ -0,0 +1,37 @@
-+/*
-+ * To change this template, choose Tools | Templates
-+ * and open the template in the editor.
-+ */
-+package org.bukkit.craftbukkit.util;
-+
-+public class TimedThread extends Thread {
-+
-+    final Runnable runnable;
-+    final long time;
-+
-+    public TimedThread(Runnable runnable, long time) {
-+        super("Spigot Metrics Gathering Thread");
-+        setDaemon(true);
-+        this.runnable = runnable;
-+        this.time = time;
-+    }
-+
-+    @Override
-+    public void run() {
-+        try {
-+            sleep(60000);
-+        } catch (InterruptedException ie) {
-+        }
-+
-+        while (!isInterrupted()) {
-+            try {
-+                runnable.run();
-+                sleep(time);
-+            } catch (InterruptedException ie) {
-+            } catch (Exception ex) {
-+                ex.printStackTrace();
-+                interrupt();
-+            }
-+        }
-+    }
-+}
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/WatchdogThread.java b/src/main/java/org/bukkit/craftbukkit/util/WatchdogThread.java
 new file mode 100644
 index 0000000..da6df8f
