@@ -36,6 +36,7 @@ public class SpigotConfig
     static int version;
     static Map<String, Command> commands;
     /*========================================================================*/
+    private static Metrics metrics;
 
     public static void init(File configFile)
     {
@@ -68,6 +69,18 @@ public class SpigotConfig
         for ( Map.Entry<String, Command> entry : commands.entrySet() )
         {
             MinecraftServer.getServer().server.getCommandMap().register( entry.getKey(), "Spigot", entry.getValue() );
+        }
+
+        if ( metrics == null )
+        {
+            try
+            {
+                metrics = new Metrics();
+                metrics.start();
+            } catch ( IOException ex )
+            {
+                Bukkit.getServer().getLogger().log( Level.SEVERE, "Could not start metrics service", ex );
+            }
         }
     }
 
