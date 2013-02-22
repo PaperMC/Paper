@@ -1,20 +1,20 @@
-From 3583a35105b3cbd73efc7c0a9ae240ed87b2d7ec Mon Sep 17 00:00:00 2001
+From 9371abd26d6cac2503d48f67ce8a6580349027bd Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sat, 23 Feb 2013 08:58:35 +1100
 Subject: [PATCH] Metrics. Rewrite the Metrics system to be closer to the
  Bukkit version.
 
 ---
- src/main/java/org/bukkit/craftbukkit/Spigot.java |  11 +
+ src/main/java/org/bukkit/craftbukkit/Spigot.java |  15 +
  src/main/java/org/spigotmc/Metrics.java          | 645 +++++++++++++++++++++++
- 2 files changed, 656 insertions(+)
+ 2 files changed, 660 insertions(+)
  create mode 100644 src/main/java/org/spigotmc/Metrics.java
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-index e0ecf21..537861a 100644
+index e0ecf21..95ff3c1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-@@ -1,10 +1,15 @@
+@@ -1,13 +1,19 @@
  package org.bukkit.craftbukkit;
  
 +import java.io.IOException;
@@ -30,15 +30,22 @@ index e0ecf21..537861a 100644
  
  public class Spigot {
      public static boolean tabPing = false;
-@@ -42,6 +47,12 @@ public class Spigot {
++    private static Metrics metrics;
+     public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
+         commandMap.register("bukkit", new org.bukkit.craftbukkit.command.RestartCommand("restart"));
+         commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
+@@ -42,6 +48,15 @@ public class Spigot {
          }
  
          tabPing = configuration.getBoolean("settings.tab-ping", tabPing);
 +
-+        try {
-+            new Metrics().start();
-+        } catch (IOException ex) {
-+            Bukkit.getServer().getLogger().log(Level.SEVERE, "Could not start metrics service", ex);
++        if (metrics != null) {
++            try {
++                metrics = new Metrics();
++                metrics.start();
++            } catch (IOException ex) {
++                Bukkit.getServer().getLogger().log(Level.SEVERE, "Could not start metrics service", ex);
++            }
 +        }
      }
  
