@@ -1,17 +1,17 @@
-From c7b127737d0df2cfbbae9fa5abe6bbb85312139a Mon Sep 17 00:00:00 2001
+From 5edc0ce11f85c023f0d9afb33dc152d0e26bd15f Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 3 Feb 2013 12:28:17 +1100
 Subject: [PATCH] Tick loop optimization - sleep for as long as possible.
 
 ---
  .../java/net/minecraft/server/MinecraftServer.java | 50 +++++++++-------------
- src/main/java/org/bukkit/craftbukkit/Spigot.java   |  1 +
+ src/main/java/org/bukkit/craftbukkit/Spigot.java   |  2 +
  .../craftbukkit/command/TicksPerSecondCommand.java | 35 +++++++++++++++
- 3 files changed, 56 insertions(+), 30 deletions(-)
+ 3 files changed, 57 insertions(+), 30 deletions(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/command/TicksPerSecondCommand.java
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 955a3ac..99a6cf4 100644
+index 4bdf8aa..128016f 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -86,6 +86,12 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
@@ -82,17 +82,18 @@ index 955a3ac..99a6cf4 100644
                  this.a((CrashReport) null);
              }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-index c712b52..582dbab 100644
+index 5827820..1ead152 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-@@ -6,6 +6,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
+@@ -6,6 +6,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
  public class Spigot {
-     public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
-         commandMap.register("bukkit", new org.bukkit.craftbukkit.command.RestartCommand("restart"));
-+        commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
  
-         int timeout = configuration.getInt("settings.timeout-time", 300);
-         if (timeout == 180) {
+     public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
++        commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
++
+         server.whitelistMessage = configuration.getString("settings.whitelist-message", server.whitelistMessage);
+         server.stopMessage = configuration.getString("settings.stop-message", server.stopMessage);
+         server.logCommands = configuration.getBoolean("settings.log-commands", true);
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/TicksPerSecondCommand.java b/src/main/java/org/bukkit/craftbukkit/command/TicksPerSecondCommand.java
 new file mode 100644
 index 0000000..f114a31
