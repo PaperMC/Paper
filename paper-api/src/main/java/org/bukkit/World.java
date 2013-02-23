@@ -671,10 +671,11 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * Spawn a {@link FallingBlock} entity at the given {@link Location} of the specified blockId (converted to {@link Material})
      *
      * @param location The {@link Location} to spawn the FallingBlock
-     * @param blockId see {@see #spawnFallingBlock(org.bukkit.Location, org.bukkit.Material, byte)} material
+     * @param blockId The id of the intended material
      * @param blockData The block data
      * @return The spawned FallingBlock instance
-     * @throws IllegalArgumentException see {@see #spawnFallingBlock(org.bukkit.Location, org.bukkit.Material, byte)}
+     * @throws IllegalArgumentException if location is null, or blockId is invalid
+     * @see #spawnFallingBlock(org.bukkit.Location, org.bukkit.Material, byte)
      */
     public FallingBlock spawnFallingBlock(Location location, int blockId, byte blockData) throws IllegalArgumentException;
 
@@ -999,7 +1000,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
 
     /**
      * Gets the limit for number of ambient mobs that can spawn in a chunk in this world
-     * @returns The ambient spawn limit
+     * @return The ambient spawn limit
      */
     int getAmbientSpawnLimit();
 
@@ -1021,7 +1022,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
      */
-    void playSound(Location loc, Sound sound, float volume, float pitch);
+    void playSound(Location location, Sound sound, float volume, float pitch);
 
     /**
      * Get existing rules

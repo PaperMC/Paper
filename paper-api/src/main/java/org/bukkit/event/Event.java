@@ -17,6 +17,7 @@ public abstract class Event {
 
     /**
      * This constructor is used to explicitly declare an event as synchronous or asynchronous.
+     *
      * @param isAsync true indicates the event will fire asynchronously. false by default
      */
     public Event(boolean isAsync) {
@@ -47,6 +48,7 @@ public abstract class Event {
      * <li>Some implementations may selectively declare a specific event use as asynchronous.
      *          This behavior should be clearly defined.</li>
      * <li>Asynchronous calls are not calculated in the plugin timing system.</li>
+     *
      * @return false by default, true if the event fires asynchronously
      */
     public final boolean isAsynchronous() {

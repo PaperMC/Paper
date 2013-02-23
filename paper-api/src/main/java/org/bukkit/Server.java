@@ -652,7 +652,7 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * Gets user-specified limit for number of ambient mobs that can spawn in a chunk
-     * @returns The ambient spawn limit
+     * @return The ambient spawn limit
      */
     int getAmbientSpawnLimit();
 
