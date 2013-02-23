@@ -1,4 +1,4 @@
-From 805e4bb891c7e5a8bcdec220fb952fec33cbc1dd Mon Sep 17 00:00:00 2001
+From f097ee841d58b9a3051598d193d24c726331e668 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 16 Feb 2013 19:45:09 +1100
 Subject: [PATCH] Entity Activation Range# This feature gives 3 new
@@ -10,12 +10,12 @@ This change can have dramatic impact on gameplay if configured too low. Balance 
 ---
  src/main/java/net/minecraft/server/Entity.java     |   8 ++
  .../java/net/minecraft/server/EntityArrow.java     |   2 +-
- src/main/java/net/minecraft/server/World.java      |  10 +-
+ src/main/java/net/minecraft/server/World.java      |   3 +-
  .../java/org/bukkit/craftbukkit/CraftWorld.java    |  13 ++
  src/main/java/org/bukkit/craftbukkit/Spigot.java   | 149 +++++++++++++++++++++
  .../java/org/bukkit/event/WorldTimingsHandler.java |   2 +
  src/main/resources/configurations/bukkit.yml       |   3 +
- 7 files changed, 185 insertions(+), 2 deletions(-)
+ 7 files changed, 178 insertions(+), 2 deletions(-)
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
 index d0a58f8..9da5035 100644
@@ -57,7 +57,7 @@ index 916b9dc..bdd18f6 100644
      public int shake = 0;
      public Entity shooter;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index cd7ad64..53834a9 100644
+index 9f05a52..b1ccf1f 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1241,6 +1241,7 @@ public abstract class World implements IBlockAccess {
@@ -68,21 +68,7 @@ index cd7ad64..53834a9 100644
          timings.entityTick.startTiming(); // Spigot
          for (i = 0; i < this.entityList.size(); ++i) {
              entity = (Entity) this.entityList.get(i);
-@@ -1405,6 +1406,13 @@ public abstract class World implements IBlockAccess {
-         if (entity == null) {
-             return;
-         }
-+        if (!entity.isActivated && !org.bukkit.craftbukkit.Spigot.checkIfActive(entity)) {
-+            if (entity.vehicle == null) {
-+                entity.ticksLived++;
-+            }
-+            return;
-+        }
-+        entity.isActivated = entity.defaultActivationState;
-         try {
-             tickEntity(entity, flag);
-         } catch (Exception e) {
-@@ -1434,7 +1442,7 @@ public abstract class World implements IBlockAccess {
+@@ -1404,7 +1405,7 @@ public abstract class World implements IBlockAccess {
          int j = MathHelper.floor(entity.locZ);
          byte b0 = 32;
  
@@ -137,7 +123,7 @@ index 21bd64a..a083ae4 100644
  
      public Block getBlockAt(int x, int y, int z) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-index 6eeabec..2a5fd45 100644
+index 1ead152..a5b05ed 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
 @@ -1,7 +1,10 @@
@@ -150,8 +136,8 @@ index 6eeabec..2a5fd45 100644
 +import java.util.List;
  
  public class Spigot {
-     public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
-@@ -36,5 +39,151 @@ public class Spigot {
+ 
+@@ -27,5 +30,151 @@ public class Spigot {
          if (server.chunkGCPeriod == 0) {
              server.getLogger().severe("[Spigot] You should not disable chunk-gc, unexpected behaviour may occur!");
          }
@@ -323,10 +309,10 @@ index bb0c191..6a4a05e 100644
      }
  }
 diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
-index 3122a14..5933a88 100644
+index 548f7c1..eea3265 100644
 --- a/src/main/resources/configurations/bukkit.yml
 +++ b/src/main/resources/configurations/bukkit.yml
-@@ -50,6 +50,9 @@ world-settings:
+@@ -47,6 +47,9 @@ world-settings:
          sugar-growth-modifier: 100
          tree-growth-modifier: 100
          mushroom-growth-modifier: 100

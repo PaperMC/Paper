@@ -1,6 +1,6 @@
-From a07bdb7064b9f0e6408d06ee7e827711d198ddd6 Mon Sep 17 00:00:00 2001
+From 39ee91305fceb9c3c57cfb73471b0e760af3af80 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Sun, 3 Feb 2013 12:21:52 +1100
+Date: Sat, 23 Feb 2013 11:47:02 +1100
 Subject: [PATCH] Spigot changes.
 
 ---
@@ -14,36 +14,27 @@ Subject: [PATCH] Spigot changes.
  src/main/java/net/minecraft/server/BlockReed.java  |   2 +-
  .../java/net/minecraft/server/BlockSapling.java    |   2 +-
  src/main/java/net/minecraft/server/BlockStem.java  |   2 +-
- .../net/minecraft/server/ChunkRegionLoader.java    |  35 +++-
+ .../net/minecraft/server/ChunkRegionLoader.java    |  35 +++--
  .../java/net/minecraft/server/ChunkSection.java    |  31 +++-
  src/main/java/net/minecraft/server/EntityItem.java |   3 +-
  .../java/net/minecraft/server/EntitySquid.java     |   4 -
- .../java/net/minecraft/server/MinecraftServer.java |   3 +
- .../net/minecraft/server/PlayerConnection.java     |  18 +-
+ .../net/minecraft/server/PlayerConnection.java     |  18 ++-
  src/main/java/net/minecraft/server/PlayerList.java |  10 +-
  .../net/minecraft/server/ThreadLoginVerifier.java  |  23 +++
- src/main/java/net/minecraft/server/World.java      | 200 ++++++++++++++++++---
- .../java/net/minecraft/server/WorldServer.java     | 121 ++++++++++---
- .../java/org/bukkit/craftbukkit/CraftServer.java   |  93 +++++++---
- .../java/org/bukkit/craftbukkit/CraftWorld.java    |  76 +++++++-
- src/main/java/org/bukkit/craftbukkit/Spigot.java   |  23 +++
+ src/main/java/net/minecraft/server/World.java      | 161 ++++++++++++++++++---
+ .../java/net/minecraft/server/WorldServer.java     | 121 +++++++++++++---
+ .../java/org/bukkit/craftbukkit/CraftServer.java   |  45 +++---
+ .../java/org/bukkit/craftbukkit/CraftWorld.java    |  76 +++++++++-
+ src/main/java/org/bukkit/craftbukkit/Spigot.java   |  20 +++
  .../craftbukkit/chunkio/ChunkIOProvider.java       |   2 +-
- .../bukkit/craftbukkit/command/RestartCommand.java |  24 +++
  .../org/bukkit/craftbukkit/entity/CraftPlayer.java |   7 +
- .../bukkit/craftbukkit/util/ExceptionHandler.java  |  31 ++++
- .../bukkit/craftbukkit/util/ExceptionReporter.java |  26 +++
- .../java/org/bukkit/craftbukkit/util/FlatMap.java  |  34 ++++
+ .../java/org/bukkit/craftbukkit/util/FlatMap.java  |  34 +++++
  .../org/bukkit/craftbukkit/util/LongHashSet.java   |  11 +-
  .../bukkit/craftbukkit/util/LongObjectHashMap.java |   5 +
- .../bukkit/craftbukkit/util/WatchdogThread.java    |  88 +++++++++
- src/main/resources/configurations/bukkit.yml       |  30 ++++
- 33 files changed, 828 insertions(+), 100 deletions(-)
+ src/main/resources/configurations/bukkit.yml       |  27 ++++
+ 28 files changed, 564 insertions(+), 99 deletions(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/Spigot.java
- create mode 100644 src/main/java/org/bukkit/craftbukkit/command/RestartCommand.java
- create mode 100644 src/main/java/org/bukkit/craftbukkit/util/ExceptionHandler.java
- create mode 100644 src/main/java/org/bukkit/craftbukkit/util/ExceptionReporter.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/util/FlatMap.java
- create mode 100644 src/main/java/org/bukkit/craftbukkit/util/WatchdogThread.java
 
 diff --git a/.gitignore b/.gitignore
 index a689360..b97a549 100644
@@ -370,34 +361,6 @@ index 961d83a..188d477 100644
      public void c() {
          super.c();
          this.e = this.d;
-diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 4bdf8aa..955a3ac 100644
---- a/src/main/java/net/minecraft/server/MinecraftServer.java
-+++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -454,6 +454,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
- 
-             this.a(crashreport);
-         } finally {
-+            org.bukkit.craftbukkit.util.WatchdogThread.stopping(); // Spigot
-             try {
-                 this.stop();
-                 this.isStopped = true;
-@@ -605,6 +606,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
-         }
- 
-         this.methodProfiler.b();
-+        org.bukkit.craftbukkit.util.WatchdogThread.tick(); // Spigot
-     }
- 
-     public boolean getAllowNether() {
-@@ -708,6 +710,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
-                 dedicatedserver.an();
-             }
-             */
-+            dedicatedserver.primaryThread.setUncaughtExceptionHandler(new org.bukkit.craftbukkit.util.ExceptionHandler()); // Spigot
- 
-             dedicatedserver.primaryThread.start();
-             // Runtime.getRuntime().addShutdownHook(new ThreadShutdown(dedicatedserver));
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
 index fac9ea5..43a24f5 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
@@ -506,7 +469,7 @@ index 0686ba0..58d30eb 100644
              URL url = new URL("http://session.minecraft.net/game/checkserver.jsp?user=" + URLEncoder.encode(PendingConnection.d(this.pendingConnection), "UTF-8") + "&serverId=" + URLEncoder.encode(s, "UTF-8"));
              BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(url.openStream()));
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index c3dc4a4..9906b9e 100644
+index c3dc4a4..6c9857b 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -65,7 +65,7 @@ public abstract class World implements IBlockAccess {
@@ -671,46 +634,7 @@ index c3dc4a4..9906b9e 100644
  
          double d0 = 0.25D;
          List list = this.getEntities(entity, axisalignedbb.grow(d0, d0, d0));
-@@ -1313,7 +1409,37 @@ public abstract class World implements IBlockAccess {
-         this.entityJoinedWorld(entity, true);
-     }
- 
--    public void entityJoinedWorld(Entity entity, boolean flag) {
-+    // Spigot start
-+    public int tickEntityExceptions = 0;
-+    public void entityJoinedWorld(final Entity entity, final boolean flag) {
-+        if (entity == null) {
-+            return;
-+        }
-+        try {
-+            tickEntity(entity, flag);
-+        } catch (Exception e) {
-+            try {
-+                tickEntityExceptions++;
-+                List<String> report = new ArrayList<String>();
-+                report.add("Spigot has detected an unexpected exception while handling");
-+                if (!(entity instanceof EntityPlayer)) {
-+                    report.add("entity " + entity.toString() + " (id: " + entity.id + ")");
-+                    report.add("Spigot will kill the entity from the game instead of crashing your server.");
-+                    entity.die();
-+                } else {
-+                    report.add("player '" + ((EntityPlayer) entity).name + "'. They will be kicked instead of crashing your server.");
-+                    ((EntityPlayer) entity).getBukkitEntity().kickPlayer("The server experienced and error and was forced to kick you. Please re-login.");
-+                }
-+                org.bukkit.craftbukkit.util.ExceptionReporter.handle(e, report.toArray(new String[0]));
-+            } catch (Throwable t) {
-+                org.bukkit.craftbukkit.util.ExceptionReporter.handle(t, "Spigot has detected an unexpected exception while attempting to handle an exception (yes you read that correctly).");
-+                Bukkit.shutdown();
-+            }
-+        }
-+    }
-+
-+    public void tickEntity(Entity entity, boolean flag) {
-+        // Spigot end
-         int i = MathHelper.floor(entity.locX);
-         int j = MathHelper.floor(entity.locZ);
-         byte b0 = 32;
-@@ -1894,6 +2020,11 @@ public abstract class World implements IBlockAccess {
+@@ -1894,6 +1990,11 @@ public abstract class World implements IBlockAccess {
          this.worldData.setWeatherDuration(1);
      }
  
@@ -722,7 +646,7 @@ index c3dc4a4..9906b9e 100644
      protected void z() {
          // this.chunkTickList.clear(); // CraftBukkit - removed
          this.methodProfiler.a("buildList");
-@@ -1903,25 +2034,42 @@ public abstract class World implements IBlockAccess {
+@@ -1903,25 +2004,42 @@ public abstract class World implements IBlockAccess {
          int j;
          int k;
  
@@ -779,7 +703,7 @@ index c3dc4a4..9906b9e 100644
  
          this.methodProfiler.b();
          if (this.N > 0) {
-@@ -1929,7 +2077,7 @@ public abstract class World implements IBlockAccess {
+@@ -1929,7 +2047,7 @@ public abstract class World implements IBlockAccess {
          }
  
          this.methodProfiler.a("playerCheckLight");
@@ -788,24 +712,7 @@ index c3dc4a4..9906b9e 100644
              i = this.random.nextInt(this.players.size());
              entityhuman = (EntityHuman) this.players.get(i);
              j = MathHelper.floor(entityhuman.locX) + this.random.nextInt(11) - 5;
-@@ -1968,9 +2116,16 @@ public abstract class World implements IBlockAccess {
-         chunk.o();
-     }
- 
-+    // Spigot start
-     protected void g() {
-+        try {
-         this.z();
-     }
-+        catch (Exception e) {
-+            org.bukkit.craftbukkit.util.ExceptionReporter.handle(e, "Spigot has detected an unexpected exception while ticking chunks");
-+        }
-+    }
-+    // Spigot end
- 
-     public boolean w(int i, int j, int k) {
-         return this.c(i, j, k, false);
-@@ -2308,7 +2463,10 @@ public abstract class World implements IBlockAccess {
+@@ -2308,7 +2426,10 @@ public abstract class World implements IBlockAccess {
      }
  
      public List getEntities(Entity entity, AxisAlignedBB axisalignedbb) {
@@ -817,7 +724,7 @@ index c3dc4a4..9906b9e 100644
          int i = MathHelper.floor((axisalignedbb.a - 2.0D) / 16.0D);
          int j = MathHelper.floor((axisalignedbb.d + 2.0D) / 16.0D);
          int k = MathHelper.floor((axisalignedbb.c - 2.0D) / 16.0D);
-@@ -2317,12 +2475,12 @@ public abstract class World implements IBlockAccess {
+@@ -2317,12 +2438,12 @@ public abstract class World implements IBlockAccess {
          for (int i1 = i; i1 <= j; ++i1) {
              for (int j1 = k; j1 <= l; ++j1) {
                  if (this.isChunkLoaded(i1, j1)) {
@@ -1061,7 +968,7 @@ index 3f73ef9..7032c61 100644
 +    // Spigot end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index e7c0760..2b3c60a 100644
+index e7c0760..257497e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -146,7 +146,7 @@ public final class CraftServer implements Server {
@@ -1185,59 +1092,6 @@ index e7c0760..2b3c60a 100644
          } catch (CommandException ex) {
              player.sendMessage(ChatColor.RED + "An internal error occurred while attempting to tab-complete this command");
              getLogger().log(Level.SEVERE, "Exception when " + player.getName() + " attempted to tab complete " + message, ex);
-@@ -1341,4 +1346,52 @@ public final class CraftServer implements Server {
-     public CraftItemFactory getItemFactory() {
-         return CraftItemFactory.instance();
-     }
-+
-+    // Spigot start
-+    public void restart() {
-+        try {
-+            String startupScript = configuration.getString("settings.restart-script-location", "");
-+            File file = new File(startupScript);
-+            if (file.isFile()) {
-+                System.out.println("Attempting to restart with " + startupScript);
-+
-+                // Kick all players
-+                for (Player p : this.getOnlinePlayers()) {
-+                   ((org.bukkit.craftbukkit.entity.CraftPlayer) p).kickPlayer("Server is restarting", true);
-+                }
-+                // Give the socket a chance to send the packets
-+                try {
-+                    Thread.sleep(100);
-+                } catch (InterruptedException ex) {
-+                }
-+                // Close the socket so we can rebind with the new process
-+                this.getServer().ae().a();
-+
-+                // Give time for it to kick in
-+                try {
-+                    Thread.sleep(100);
-+                } catch (InterruptedException ex) {
-+                }
-+
-+                // Actually shutdown
-+                try {
-+                    this.getServer().stop();
-+                } catch (Throwable t) {
-+                }
-+
-+                String os = System.getProperty("os.name").toLowerCase();
-+                if (os.contains("win")) {
-+                    Runtime.getRuntime().exec("cmd /c start " + file.getPath());
-+                } else {
-+                    Runtime.getRuntime().exec(file.getPath());
-+                }
-+                System.exit(0);
-+            } else {
-+                System.out.println("Startup script '" + startupScript + "' does not exist!");
-+            }
-+        } catch (Exception ex) {
-+            ex.printStackTrace();
-+        }
-+    }
-+    // Spigot end
- }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 index 6e364b1..45217cd 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
@@ -1327,21 +1181,18 @@ index 6e364b1..45217cd 100644
          return getChunkAt(x >> 4, z >> 4).getBlock(x & 0xF, y & 0xFF, z & 0xF);
 diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
 new file mode 100644
-index 0000000..eab9abe
+index 0000000..4a4f949
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,20 @@
 +package org.bukkit.craftbukkit;
 +
 +import org.bukkit.command.SimpleCommandMap;
 +import org.bukkit.configuration.file.YamlConfiguration;
 +
 +public class Spigot {
++
 +    public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
-+        commandMap.register("bukkit", new org.bukkit.craftbukkit.command.RestartCommand("restart"));
-+
-+        org.bukkit.craftbukkit.util.WatchdogThread.startThread(configuration.getInt("settings.timeout-time", 180), configuration.getBoolean("settings.restart-on-crash", false));
-+
 +        server.whitelistMessage = configuration.getString("settings.whitelist-message", server.whitelistMessage);
 +        server.stopMessage = configuration.getString("settings.stop-message", server.stopMessage);
 +        server.logCommands = configuration.getBoolean("settings.log-commands", true);
@@ -1367,37 +1218,6 @@ index 48cf5ba..1d4764c 100644
              return;
          }
  
-diff --git a/src/main/java/org/bukkit/craftbukkit/command/RestartCommand.java b/src/main/java/org/bukkit/craftbukkit/command/RestartCommand.java
-new file mode 100644
-index 0000000..fba4b4a
---- /dev/null
-+++ b/src/main/java/org/bukkit/craftbukkit/command/RestartCommand.java
-@@ -0,0 +1,24 @@
-+package org.bukkit.craftbukkit.command;
-+
-+import org.bukkit.Bukkit;
-+import org.bukkit.command.Command;
-+import org.bukkit.command.CommandSender;
-+import org.bukkit.craftbukkit.CraftServer;
-+
-+public class RestartCommand extends Command {
-+    public RestartCommand(String name) {
-+        super(name);
-+        this.description = "Restarts the server";
-+        this.usageMessage = "/restart";
-+        this.setPermission("bukkit.command.restart");
-+    }
-+
-+    @Override
-+    public boolean execute(CommandSender sender, String currentAlias, String[] args) {
-+        if (!testPermission(sender)) return true;
-+
-+       ((CraftServer)Bukkit.getServer()).restart();
-+
-+        return true;
-+    }
-+}
-\ No newline at end of file
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index f8dbbee..c79f352 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
@@ -1420,75 +1240,6 @@ index f8dbbee..c79f352 100644
  
      public void setCompassTarget(Location loc) {
          if (getHandle().playerConnection == null) return;
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/ExceptionHandler.java b/src/main/java/org/bukkit/craftbukkit/util/ExceptionHandler.java
-new file mode 100644
-index 0000000..7ee3665
---- /dev/null
-+++ b/src/main/java/org/bukkit/craftbukkit/util/ExceptionHandler.java
-@@ -0,0 +1,31 @@
-+package org.bukkit.craftbukkit.util;
-+
-+import java.lang.Thread.UncaughtExceptionHandler;
-+import java.util.logging.Level;
-+import java.util.logging.Logger;
-+import org.bukkit.Bukkit;
-+import org.bukkit.craftbukkit.CraftServer;
-+
-+public class ExceptionHandler implements UncaughtExceptionHandler {
-+
-+    public void uncaughtException(Thread t, Throwable e) {
-+        Logger log = ((CraftServer) Bukkit.getServer()).getLogger();
-+        log.log(Level.SEVERE, "The server has crashed!");
-+        log.log(Level.SEVERE, "Please report this to http://www.spigotmc.org/!");
-+        log.log(Level.SEVERE, "Begin Exception Trace:");
-+        log.log(Level.SEVERE, "");
-+        StackTraceElement[] stack = e.getStackTrace();
-+        for (int line = 0; line < stack.length; line++) {
-+            log.log(Level.SEVERE, "        " + stack[line].toString());
-+        }
-+        log.log(Level.SEVERE, "End Exception Trace:");
-+        log.log(Level.SEVERE, "");
-+        log.log(Level.SEVERE, "Begin Thread Stack Trace:");
-+        stack = t.getStackTrace();
-+        for (int line = 0; line < stack.length; line++) {
-+            log.log(Level.SEVERE, "        " + stack[line].toString());
-+        }
-+        log.log(Level.SEVERE, "End Exception Trace:");
-+        log.log(Level.SEVERE, "");
-+    }
-+}
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/ExceptionReporter.java b/src/main/java/org/bukkit/craftbukkit/util/ExceptionReporter.java
-new file mode 100644
-index 0000000..a396f17
---- /dev/null
-+++ b/src/main/java/org/bukkit/craftbukkit/util/ExceptionReporter.java
-@@ -0,0 +1,26 @@
-+package org.bukkit.craftbukkit.util;
-+
-+import org.bukkit.Bukkit;
-+
-+public final class ExceptionReporter {
-+
-+    public static void handle(Throwable t, String... messages) {
-+        for (String message : messages) {
-+            Bukkit.getLogger().severe(message);
-+        }
-+        Bukkit.getLogger().severe("Spigot recommends you report this to http://www.spigotmc.org/");
-+        Bukkit.getLogger().severe("");
-+        Bukkit.getLogger().severe("Spigot version: " + Bukkit.getBukkitVersion());
-+        Bukkit.getLogger().severe("Exception Trace Begins:");
-+        StackTraceElement[] stack = t.getStackTrace();
-+        for (int line = 0; line < stack.length; line++) {
-+            Bukkit.getLogger().severe("    " + stack[line].toString());
-+        }
-+        Bukkit.getLogger().severe("Exception Trace Ends.");
-+        Bukkit.getLogger().severe("");
-+    }
-+
-+    public static void handle(Throwable t) {
-+        handle(t, "Spigot has encountered an unexpected exception!");
-+    }
-+}
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/FlatMap.java b/src/main/java/org/bukkit/craftbukkit/util/FlatMap.java
 new file mode 100644
 index 0000000..e8a7725
@@ -1618,111 +1369,14 @@ index 01861cc..dbd33fa 100644
          int index = (int) (keyIndex(key) & (BUCKET_SIZE - 1));
          long[] inner = keys[index];
          if (inner == null) {
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/WatchdogThread.java b/src/main/java/org/bukkit/craftbukkit/util/WatchdogThread.java
-new file mode 100644
-index 0000000..da6df8f
---- /dev/null
-+++ b/src/main/java/org/bukkit/craftbukkit/util/WatchdogThread.java
-@@ -0,0 +1,88 @@
-+package org.bukkit.craftbukkit.util;
-+
-+import java.util.Iterator;
-+import java.util.Map;
-+import java.util.Map.Entry;
-+import java.util.concurrent.atomic.AtomicLong;
-+import java.util.logging.Level;
-+import java.util.logging.Logger;
-+import org.bukkit.Bukkit;
-+import org.bukkit.craftbukkit.CraftServer;
-+
-+public class WatchdogThread extends Thread {
-+
-+    private static WatchdogThread instance;
-+    private static final String LINE = "------------------------------";
-+    private AtomicLong lastTick = new AtomicLong(System.currentTimeMillis());
-+    private final long timeoutTime;
-+    private final boolean restart;
-+    private boolean stopping;
-+
-+    private WatchdogThread(long timeoutTime, boolean restart) {
-+        super("Spigot Watchdog Thread");
-+        this.timeoutTime = timeoutTime;
-+        this.restart = restart;
-+    }
-+
-+    public static void startThread(int timeoutTime, boolean restart) {
-+        if (instance == null) {
-+            instance = new WatchdogThread(timeoutTime * 1000L, restart);
-+            instance.start();
-+        }
-+        instance.stopping = false;
-+    }
-+
-+    public static void tick() {
-+        instance.lastTick.set(System.currentTimeMillis());
-+    }
-+    
-+    public static void stopping() {
-+        if (instance != null) {
-+            instance.stopping = true;
-+        }
-+    }
-+
-+    @Override
-+    public void run() {
-+        while (!this.isInterrupted()) {
-+            try {
-+                sleep(10000);
-+            } catch (InterruptedException ignore) {
-+            }
-+            if (stopping)
-+                continue;
-+            if (System.currentTimeMillis() > (lastTick.get() + timeoutTime)) {
-+                Logger log = ((CraftServer) Bukkit.getServer()).getLogger();
-+                log.log(Level.SEVERE, "The server has stopped responding!");
-+                log.log(Level.SEVERE, "Please report this to http://www.spigotmc.org/!");
-+                log.log(Level.SEVERE, "Spigot version: " + Bukkit.getBukkitVersion());
-+                log.log(Level.SEVERE, "Begin Exception Trace For All Threads:");
-+                Map<Thread, StackTraceElement[]> traces = Thread.getAllStackTraces();
-+                Iterator<Entry<Thread, StackTraceElement[]>> i = traces.entrySet().iterator();
-+                while (i.hasNext()) {
-+                    Entry<Thread, StackTraceElement[]> entry = i.next();
-+                    Thread thread = entry.getKey();
-+                    if (thread.getState() != State.WAITING) {
-+                        System.err.println(LINE);
-+
-+                        log.log(Level.SEVERE, "Current Thread: " + thread.getName());
-+                        log.log(Level.SEVERE, "    PID: " + thread.getId() + " | Alive: " + thread.isAlive() + " | State: " + thread.getState());
-+                        log.log(Level.SEVERE, "    Stack:");
-+                        StackTraceElement[] stack = entry.getValue();
-+                        for (int line = 0; line < stack.length; line++) {
-+                            log.log(Level.SEVERE, "        " + stack[line].toString());
-+                        }
-+                    }
-+                }
-+                System.err.println(LINE);
-+
-+                if (this.restart) {
-+                    ((CraftServer) Bukkit.getServer()).restart();
-+                }
-+
-+                //Give up
-+                this.interrupt();
-+            }
-+        }
-+    }
-+}
 diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
-index 61a95e3..5262ae1 100644
+index 61a95e3..f44d5d0 100644
 --- a/src/main/resources/configurations/bukkit.yml
 +++ b/src/main/resources/configurations/bukkit.yml
-@@ -25,6 +25,36 @@ settings:
+@@ -25,6 +25,33 @@ settings:
      query-plugins: true
      deprecated-verbose: default
      shutdown-message: Server closed
-+    restart-script-location: start.bat
-+    timeout-time: 180
-+    restart-on-crash: false
 +    filter-unsafe-ips: false
 +    whitelist-message: You are not white-listed on this server!
 +    log-commands: true
