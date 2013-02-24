@@ -1,0 +1,77 @@
+From 3cf26dc98a5f1484603b8b0ad04e8faaa6eba697 Mon Sep 17 00:00:00 2001
+From: Eimref <me@eimref.com>
+Date: Wed, 6 Feb 2013 18:59:07 -0500
+Subject: [PATCH] Kick player on exception for built-in PluginChannels; Fixes
+ BUKKIT-3583
+
+---
+ src/main/java/net/minecraft/server/PlayerConnection.java | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 7ca0acf..d1e0207 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -1483,6 +1483,7 @@ public class PlayerConnection extends Connection {
+                 }
+             } catch (Exception exception) {
+                 exception.printStackTrace();
++                this.disconnect("Invalid book data!"); // CraftBukkit - prevent exception spam
+             }
+         } else if ("MC|BSign".equals(packet250custompayload.tag)) {
+             try {
+@@ -1500,9 +1501,8 @@ public class PlayerConnection extends Connection {
+                     itemstack1.id = Item.WRITTEN_BOOK.id;
+                 }
+             } catch (Exception exception1) {
+-                // CraftBukkit start
+-                // exception1.printStackTrace();
+-                // CraftBukkit end
++                exception1.printStackTrace();
++                this.disconnect("Invalid book data!"); // CraftBukkit - prevent exception spam
+             }
+         } else {
+             int i;
+@@ -1518,6 +1518,7 @@ public class PlayerConnection extends Connection {
+                     }
+                 } catch (Exception exception2) {
+                     exception2.printStackTrace();
++                    this.disconnect("Invalid trade data!"); // CraftBukkit - prevent exception spam
+                 }
+             } else {
+                 int j;
+@@ -1541,6 +1542,7 @@ public class PlayerConnection extends Connection {
+                             }
+                         } catch (Exception exception3) {
+                             exception3.printStackTrace();
++                            this.disconnect("Invalid CommandBlock data!"); // CraftBukkit - prevent exception spam
+                         }
+                     } else {
+                         this.player.sendMessage(this.player.a("advMode.notAllowed", new Object[0]));
+@@ -1564,6 +1566,7 @@ public class PlayerConnection extends Connection {
+                             }
+                         } catch (Exception exception4) {
+                             exception4.printStackTrace();
++                            this.disconnect("Invalid beacon data!"); // CraftBukkit - prevent exception spam
+                         }
+                     }
+                 } else if ("MC|ItemName".equals(packet250custompayload.tag) && this.player.activeContainer instanceof ContainerAnvil) {
+@@ -1588,6 +1591,7 @@ public class PlayerConnection extends Connection {
+                         }
+                     } catch (UnsupportedEncodingException ex) {
+                         Logger.getLogger(PlayerConnection.class.getName()).log(Level.SEVERE, "Could not parse REGISTER payload in plugin message packet", ex);
++                        throw new AssertionError("UTF-8 is an unknown encoding");
+                     }
+                 } else if (packet250custompayload.tag.equals("UNREGISTER")) {
+                     try {
+@@ -1597,6 +1601,7 @@ public class PlayerConnection extends Connection {
+                         }
+                     } catch (UnsupportedEncodingException ex) {
+                         Logger.getLogger(PlayerConnection.class.getName()).log(Level.SEVERE, "Could not parse UNREGISTER payload in plugin message packet", ex);
++                        throw new AssertionError("UTF-8 is an unknown encoding");
+                     }
+                 } else {
+                     server.getMessenger().dispatchIncomingMessage(player.getBukkitEntity(), packet250custompayload.tag, packet250custompayload.data);
+-- 
+1.8.1-rc2
+
