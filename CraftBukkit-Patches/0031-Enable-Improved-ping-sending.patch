@@ -1,0 +1,53 @@
+From 0374f99776040c7e5f14ac38c132bcc1bd43051f Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 24 Feb 2013 20:45:20 +1100
+Subject: [PATCH] Enable Improved ping sending
+
+---
+ src/main/java/net/minecraft/server/EntityPlayer.java |  1 +
+ src/main/java/net/minecraft/server/PlayerList.java   | 16 ++++++++++++++++
+ 2 files changed, 17 insertions(+)
+
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 28f462b..933a2e7 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -48,6 +48,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public int newLevel = 0;
+     public int newTotalExp = 0;
+     public boolean keepLevel = false;
++    public int lastPing = -1; // Spigot
+     // CraftBukkit end
+ 
+     public EntityPlayer(MinecraftServer minecraftserver, World world, String s, PlayerInteractManager playerinteractmanager) {
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index d13fa19..6c19ad7 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -662,7 +662,23 @@ public abstract class PlayerList {
+             this.sendAll(new Packet201PlayerInfo(entityplayer.name, true, entityplayer.ping));
+         }
+         // CraftBukkit end */
++        // Spigot start
++        if (this.players.size() == 0 || !org.bukkit.craftbukkit.Spigot.tabPing) {
++            return;
++        }
++        int index = MinecraftServer.currentTick % this.players.size();
++        EntityPlayer player = (EntityPlayer) this.players.get(index);
++        if (player.lastPing == -1 || Math.abs(player.ping - player.lastPing) > 20) {
++            Packet packet = new Packet201PlayerInfo(player.listName, true, player.ping);
++            for (EntityPlayer splayer : (List<EntityPlayer>) this.players) {
++                if (splayer.getBukkitEntity().canSee(player.getBukkitEntity())) {
++                    splayer.playerConnection.sendPacket(packet);
++                }
++            }
++            player.lastPing = player.ping;
++        }
+     }
++    // Spigot end
+ 
+     public void sendAll(Packet packet) {
+         for (int i = 0; i < this.players.size(); ++i) {
+-- 
+1.8.1-rc2
+
