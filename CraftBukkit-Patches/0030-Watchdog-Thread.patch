@@ -1,14 +1,14 @@
-From 6c8c769a97f22a7d9d5f8fa7692ae087dd717497 Mon Sep 17 00:00:00 2001
+From c460271ea26061d827f8731461901706ce483e49 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sat, 23 Feb 2013 12:33:20 +1100
 Subject: [PATCH] Watchdog Thread.
 
 ---
  .../java/net/minecraft/server/MinecraftServer.java |  2 +
- src/main/java/org/bukkit/craftbukkit/Spigot.java   | 64 ++++++++++++++-
+ src/main/java/org/bukkit/craftbukkit/Spigot.java   | 77 +++++++++++++++++-
  src/main/java/org/spigotmc/RestartCommand.java     | 23 ++++++
  src/main/java/org/spigotmc/WatchdogThread.java     | 93 ++++++++++++++++++++++
- 4 files changed, 180 insertions(+), 2 deletions(-)
+ 4 files changed, 193 insertions(+), 2 deletions(-)
  create mode 100644 src/main/java/org/spigotmc/RestartCommand.java
  create mode 100644 src/main/java/org/spigotmc/WatchdogThread.java
 
@@ -33,7 +33,7 @@ index 128016f..3a6b620 100644
                  this.isStopped = true;
              } catch (Throwable throwable1) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-index 5729cd6..6a4cbac 100644
+index 5729cd6..68c1b42 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
 @@ -1,5 +1,6 @@
@@ -88,7 +88,7 @@ index 5729cd6..6a4cbac 100644
          }
  
          if (server.chunkGCPeriod == 0) {
-@@ -194,4 +208,50 @@ public class Spigot {
+@@ -194,4 +208,63 @@ public class Spigot {
          return (entity instanceof EntityArrow && !((EntityArrow) entity).inGround);
  
      }
@@ -96,13 +96,13 @@ index 5729cd6..6a4cbac 100644
 +    public static void restart() {
 +        try {
 +            String startupScript = MinecraftServer.getServer().server.configuration.getString("settings.restart-script-location", "");
-+            File file = new File(startupScript);
++            final File file = new File(startupScript);
 +            if (file.isFile()) {
 +                System.out.println("Attempting to restart with " + startupScript);
 +
 +                // Kick all players
 +                for (Player p : Bukkit.getServer().getOnlinePlayers()) {
-+                    ((org.bukkit.craftbukkit.entity.CraftPlayer) p).kickPlayer("Server is restarting", true);
++                   ((org.bukkit.craftbukkit.entity.CraftPlayer) p).kickPlayer("Server is restarting", true);
 +                }
 +                // Give the socket a chance to send the packets
 +                try {
@@ -124,12 +124,25 @@ index 5729cd6..6a4cbac 100644
 +                } catch (Throwable t) {
 +                }
 +
-+                String os = System.getProperty("os.name").toLowerCase();
-+                if (os.contains("win")) {
-+                    Runtime.getRuntime().exec("cmd /c start " + file.getPath());
-+                } else {
-+                    Runtime.getRuntime().exec(file.getPath());
-+                }
++                // This will be done AFTER the server has completely halted
++                Thread shutdownHook = new Thread() {
++                    @Override
++                    public void run(){
++                        try {
++                            String os = System.getProperty("os.name").toLowerCase();
++                            if (os.contains("win")) {
++                                Runtime.getRuntime().exec("cmd /c start " + file.getPath());
++                            } else {
++                                Runtime.getRuntime().exec(new String[] { "sh", file.getPath()});
++                            }
++                        } catch (Exception e){
++                            e.printStackTrace();
++                        }
++                    }
++                };
++
++                shutdownHook.setDaemon(true);
++                Runtime.getRuntime().addShutdownHook(shutdownHook);
 +                System.exit(0);
 +            } else {
 +                System.out.println("Startup script '" + startupScript + "' does not exist!");
