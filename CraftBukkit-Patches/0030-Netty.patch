@@ -1,4 +1,4 @@
-From 172038b7a42efce24c5f98e126fae460d9085d58 Mon Sep 17 00:00:00 2001
+From 0afe6bde8bccf04189ddb6775d60bcfa0e3b8025 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 14 Feb 2013 17:32:20 +1100
 Subject: [PATCH] Netty
@@ -41,15 +41,15 @@ Subject: [PATCH] Netty
  .../net/minecraft/server/ThreadLoginVerifier.java  |   1 +
  src/main/java/org/bukkit/craftbukkit/Spigot.java   |   8 +
  .../craftbukkit/scheduler/CraftScheduler.java      |   2 +-
- src/main/java/org/spigotmc/netty/CipherCodec.java  |  65 ++++++
+ src/main/java/org/spigotmc/netty/CipherCodec.java  |  67 ++++++
  .../org/spigotmc/netty/NettyNetworkManager.java    | 229 +++++++++++++++++++
- .../org/spigotmc/netty/NettyServerConnection.java  | 108 +++++++++
+ .../org/spigotmc/netty/NettyServerConnection.java  | 109 +++++++++
  .../org/spigotmc/netty/NettySocketAdaptor.java     | 248 +++++++++++++++++++++
  .../java/org/spigotmc/netty/PacketDecoder.java     |  63 ++++++
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
  src/main/java/org/spigotmc/netty/ReadState.java    |  16 ++
- 18 files changed, 928 insertions(+), 8 deletions(-)
+ 18 files changed, 931 insertions(+), 8 deletions(-)
  create mode 100644 src/main/java/net/minecraft/server/INetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
@@ -262,15 +262,17 @@ index 0a5c61a..35badf3 100644
      private static final int RECENT_TICKS;
 diff --git a/src/main/java/org/spigotmc/netty/CipherCodec.java b/src/main/java/org/spigotmc/netty/CipherCodec.java
 new file mode 100644
-index 0000000..f25af14
+index 0000000..15e3466
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/CipherCodec.java
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,67 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
 +import io.netty.channel.ChannelHandlerContext;
 +import io.netty.handler.codec.ByteToByteCodec;
++import javax.crypto.Cipher;
++import javax.crypto.ShortBufferException;
 +import org.bouncycastle.crypto.BufferedBlockCipher;
 +
 +/**
@@ -280,11 +282,11 @@ index 0000000..f25af14
 + */
 +public class CipherCodec extends ByteToByteCodec {
 +
-+    private BufferedBlockCipher encrypt;
-+    private BufferedBlockCipher decrypt;
++    private Cipher encrypt;
++    private Cipher decrypt;
 +    private ByteBuf heapOut;
 +
-+    public CipherCodec(BufferedBlockCipher encrypt, BufferedBlockCipher decrypt) {
++    public CipherCodec(Cipher encrypt, Cipher decrypt) {
 +        this.encrypt = encrypt;
 +        this.decrypt = decrypt;
 +    }
@@ -317,23 +319,23 @@ index 0000000..f25af14
 +            heapOut.release();
 +            heapOut = null;
 +        }
-+        decrypt = null;
++        encrypt = null;
 +    }
 +
-+    private void cipher(BufferedBlockCipher cipher, ByteBuf in, ByteBuf out) {
++    private void cipher(Cipher cipher, ByteBuf in, ByteBuf out) throws ShortBufferException {
 +        int available = in.readableBytes();
-+        int outputSize = cipher.b(available); // getUpdateOutputSize
++        int outputSize = cipher.getOutputSize(available);
 +        if (out.capacity() < outputSize) {
 +            out.capacity(outputSize);
 +        }
-+        int processed = cipher.a(in.array(), in.arrayOffset() + in.readerIndex(), available, out.array(), out.arrayOffset() + out.writerIndex()); // processBytes
++        int processed = cipher.update(in.array(), in.arrayOffset() + in.readerIndex(), available, out.array(), out.arrayOffset() + out.writerIndex());
 +        in.readerIndex(in.readerIndex() + processed);
 +        out.writerIndex(out.writerIndex() + processed);
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..fe978fe
+index 0000000..6cb1b98
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 @@ -0,0 +1,229 @@
@@ -353,6 +355,7 @@ index 0000000..fe978fe
 +import java.util.concurrent.ConcurrentLinkedQueue;
 +import java.util.concurrent.ExecutorService;
 +import java.util.concurrent.Executors;
++import javax.crypto.Cipher;
 +import javax.crypto.SecretKey;
 +import net.minecraft.server.Connection;
 +import net.minecraft.server.INetworkManager;
@@ -361,7 +364,6 @@ index 0000000..fe978fe
 +import net.minecraft.server.Packet252KeyResponse;
 +import net.minecraft.server.PendingConnection;
 +import net.minecraft.server.PlayerConnection;
-+import org.bouncycastle.crypto.BufferedBlockCipher;
 +
 +/**
 + * This class forms the basis of the Netty integration. It implements
@@ -481,8 +483,8 @@ index 0000000..fe978fe
 +
 +                // If needed, check and prepare encryption phase
 +                if (packet instanceof Packet252KeyResponse) {
-+                    BufferedBlockCipher encrypt = NettyServerConnection.getCipher(true, secret);
-+                    BufferedBlockCipher decrypt = NettyServerConnection.getCipher(false, secret);
++                    Cipher encrypt = NettyServerConnection.getCipher(Cipher.ENCRYPT_MODE, secret);
++                    Cipher decrypt = NettyServerConnection.getCipher(Cipher.DECRYPT_MODE, secret);
 +                    CipherCodec codec = new CipherCodec(encrypt, decrypt);
 +                    channel.pipeline().addBefore("decoder", "cipher", codec);
 +                }
@@ -568,10 +570,10 @@ index 0000000..fe978fe
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyServerConnection.java b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
 new file mode 100644
-index 0000000..da8c95e
+index 0000000..586be63
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
-@@ -0,0 +1,108 @@
+@@ -0,0 +1,109 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -585,19 +587,17 @@ index 0000000..da8c95e
 +import io.netty.channel.socket.nio.NioServerSocketChannel;
 +import io.netty.handler.timeout.ReadTimeoutHandler;
 +import java.net.InetAddress;
++import java.security.GeneralSecurityException;
 +import java.security.Key;
 +import java.util.ArrayList;
 +import java.util.Collections;
 +import java.util.List;
 +import java.util.logging.Level;
++import javax.crypto.Cipher;
++import javax.crypto.spec.IvParameterSpec;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.PendingConnection;
 +import net.minecraft.server.ServerConnection;
-+import org.bouncycastle.crypto.BufferedBlockCipher;
-+import org.bouncycastle.crypto.engines.AESFastEngine;
-+import org.bouncycastle.crypto.modes.CFBBlockCipher;
-+import org.bouncycastle.crypto.params.KeyParameter;
-+import org.bouncycastle.crypto.params.ParametersWithIV;
 +import org.bukkit.Bukkit;
 +import org.bukkit.craftbukkit.Spigot;
 +
@@ -669,15 +669,18 @@ index 0000000..da8c95e
 +    /**
 +     * Return a Minecraft compatible cipher instance from the specified key.
 +     *
-+     * @param forEncryption whether the returned cipher shall be usable for
-+     * encryption or decryption
++     * @param opMode the mode to initialize the cipher in
 +     * @param key to use as the initial vector
 +     * @return the initialized cipher
 +     */
-+    public static BufferedBlockCipher getCipher(boolean forEncryption, Key key) {
-+        BufferedBlockCipher cip = new BufferedBlockCipher(new CFBBlockCipher(new AESFastEngine(), 8));
-+        cip.a(forEncryption, new ParametersWithIV(new KeyParameter(key.getEncoded()), key.getEncoded(), 0, 16));
-+        return cip;
++    public static Cipher getCipher(int opMode, Key key) {
++        try {
++            Cipher cip = Cipher.getInstance("AES/CFB8/NoPadding");
++            cip.init(opMode, key, new IvParameterSpec(key.getEncoded()));
++            return cip;
++        } catch (GeneralSecurityException ex) {
++            throw new RuntimeException(ex);
++        }
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettySocketAdaptor.java b/src/main/java/org/spigotmc/netty/NettySocketAdaptor.java
