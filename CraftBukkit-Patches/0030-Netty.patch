@@ -1,4 +1,4 @@
-From 867ce3ffd326ffc743d0fe6e75072ed34fb97755 Mon Sep 17 00:00:00 2001
+From a71fdc50b01a0ebf977007cb47f0d4a839d2f76d Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 14 Feb 2013 17:32:20 +1100
 Subject: [PATCH] Netty
@@ -32,22 +32,25 @@ Subject: [PATCH] Netty
  Commons Attribution-ShareAlike 3.0 Unported license.
 ---
  pom.xml                                            |   5 +
- .../java/net/minecraft/server/DedicatedServer.java |   4 +-
+ .../java/net/minecraft/server/DedicatedServer.java |   8 +-
+ .../java/net/minecraft/server/INetworkManager.java |  24 ++
  .../net/minecraft/server/Packet51MapChunk.java     |   2 +-
  .../net/minecraft/server/Packet56MapChunkBulk.java |   2 +-
- .../net/minecraft/server/PendingConnection.java    |  13 +-
+ .../net/minecraft/server/PendingConnection.java    |  11 +-
  .../net/minecraft/server/ThreadCommandReader.java  |   1 +
  .../net/minecraft/server/ThreadLoginVerifier.java  |   1 +
+ src/main/java/org/bukkit/craftbukkit/Spigot.java   |   8 +
  .../craftbukkit/scheduler/CraftScheduler.java      |   2 +-
  src/main/java/org/spigotmc/netty/CipherCodec.java  |  65 ++++++
  .../org/spigotmc/netty/NettyNetworkManager.java    | 229 +++++++++++++++++++
- .../org/spigotmc/netty/NettyServerConnection.java  | 106 +++++++++
+ .../org/spigotmc/netty/NettyServerConnection.java  | 108 +++++++++
  .../org/spigotmc/netty/NettySocketAdaptor.java     | 248 +++++++++++++++++++++
  .../java/org/spigotmc/netty/PacketDecoder.java     |  63 ++++++
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
  src/main/java/org/spigotmc/netty/ReadState.java    |  16 ++
- 16 files changed, 891 insertions(+), 9 deletions(-)
+ 18 files changed, 928 insertions(+), 8 deletions(-)
+ create mode 100644 src/main/java/net/minecraft/server/INetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyServerConnection.java
@@ -74,7 +77,7 @@ index f17bd19..6b314ec 100644
  
    <!-- This builds a completely 'ready to start' jar with all dependencies inside -->
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index bd0377a..729177b 100644
+index bd0377a..273b60e 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -32,7 +32,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
@@ -86,15 +89,49 @@ index bd0377a..729177b 100644
      }
  
      protected boolean init() throws java.net.UnknownHostException { // CraftBukkit - throws UnknownHostException
-@@ -93,7 +93,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -93,7 +93,11 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
          log.info("Starting Minecraft server on " + (this.getServerIp().length() == 0 ? "*" : this.getServerIp()) + ":" + this.G());
  
          try {
 -            this.r = new DedicatedServerConnection(this, inetaddress, this.G());
-+            this.r = new org.spigotmc.netty.NettyServerConnection(this, inetaddress, this.G());
++            // Spigot start
++            this.r = (org.bukkit.craftbukkit.Spigot.netty)
++                    ? new org.spigotmc.netty.NettyServerConnection(this, inetaddress, this.G())
++                    : new DedicatedServerConnection(this, inetaddress, this.G());
++            // Spigot end
          } catch (Throwable ioexception) { // CraftBukkit - IOException -> Throwable
              log.warning("**** FAILED TO BIND TO PORT!");
              log.log(Level.WARNING, "The exception was: " + ioexception.toString());
+diff --git a/src/main/java/net/minecraft/server/INetworkManager.java b/src/main/java/net/minecraft/server/INetworkManager.java
+new file mode 100644
+index 0000000..ff3daae
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/INetworkManager.java
+@@ -0,0 +1,24 @@
++package net.minecraft.server;
++
++import java.net.SocketAddress;
++
++public interface INetworkManager {
++
++    void a(Connection connection);
++
++    void queue(Packet packet);
++
++    void a();
++
++    void b();
++
++    SocketAddress getSocketAddress();
++
++    void d();
++
++    int e();
++
++    void a(String s, Object... aobject);
++    
++    java.net.Socket getSocket();
++}
 diff --git a/src/main/java/net/minecraft/server/Packet51MapChunk.java b/src/main/java/net/minecraft/server/Packet51MapChunk.java
 index 230dd62..2ba0464 100644
 --- a/src/main/java/net/minecraft/server/Packet51MapChunk.java
@@ -122,7 +159,7 @@ index 9d5cee7..8486d82 100644
      };
      // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
-index 8413a15..70fe839 100644
+index 8413a15..cdd456f 100644
 --- a/src/main/java/net/minecraft/server/PendingConnection.java
 +++ b/src/main/java/net/minecraft/server/PendingConnection.java
 @@ -17,7 +17,7 @@ public class PendingConnection extends Connection {
@@ -130,7 +167,7 @@ index 8413a15..70fe839 100644
      public static Logger logger = Logger.getLogger("Minecraft");
      private static Random random = new Random();
 -    public NetworkManager networkManager;
-+    public org.spigotmc.netty.NettyNetworkManager networkManager;
++    public INetworkManager networkManager;
      public boolean c = false;
      private MinecraftServer server;
      private int g = 0;
@@ -145,9 +182,8 @@ index 8413a15..70fe839 100644
 +
      public PendingConnection(MinecraftServer minecraftserver, Socket socket, String s) throws java.io.IOException { // CraftBukkit - throws IOException
          this.server = minecraftserver;
--        this.networkManager = new NetworkManager(socket, s, this, minecraftserver.F().getPrivate());
+         this.networkManager = new NetworkManager(socket, s, this, minecraftserver.F().getPrivate());
 -        this.networkManager.e = 0;
-+        // this.networkManager = new NetworkManager(socket, s, this, minecraftserver.F().getPrivate());
 +        // this.networkManager.e = 0;
      }
  
@@ -185,6 +221,32 @@ index 58d30eb..e4e5049 100644
          this.server = server;
          // CraftBukkit end
          this.pendingConnection = pendingconnection;
+diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+index 68c1b42..6c54638 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
++++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+@@ -18,6 +18,8 @@ public class Spigot {
+ 
+     public static boolean tabPing = false;
+     private static Metrics metrics;
++    public static boolean netty = true;
++    public static int nettyThreads = 3;
+ 
+     public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
+         commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
+@@ -54,6 +56,12 @@ public class Spigot {
+ 
+         tabPing = configuration.getBoolean("settings.tab-ping", tabPing);
+ 
++        netty = configuration.getBoolean("settings.use-netty", netty);
++        nettyThreads = configuration.getInt("settings.netty-threads", nettyThreads);
++        if (!netty) {
++            server.getLogger().severe("[Warning] You have opted not to use Netty, in the future this option may be removed!");
++        }
++
+         if (metrics != null) {
+             try {
+                 metrics = new Metrics();
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 index 0a5c61a..35badf3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
@@ -506,10 +568,10 @@ index 0000000..fe978fe
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyServerConnection.java b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
 new file mode 100644
-index 0000000..b6c2db7
+index 0000000..e388dbf
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
-@@ -0,0 +1,106 @@
+@@ -0,0 +1,108 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -537,6 +599,7 @@ index 0000000..b6c2db7
 +import org.bouncycastle.crypto.params.KeyParameter;
 +import org.bouncycastle.crypto.params.ParametersWithIV;
 +import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.Spigot;
 +
 +/**
 + * This is the NettyServerConnection class. It implements
@@ -566,7 +629,8 @@ index 0000000..b6c2db7
 +                        .addLast("encoder", new PacketEncoder())
 +                        .addLast("manager", new NettyNetworkManager());
 +            }
-+        }).group(new NioEventLoopGroup(2, new ThreadFactoryBuilder().setNameFormat("Netty IO Thread - %1$d").build())).localAddress(host, port).bind();
++        }).group(new NioEventLoopGroup(Spigot.nettyThreads, new ThreadFactoryBuilder().setNameFormat("Netty IO Thread - %1$d").build())).localAddress(host, port).bind();
++        Bukkit.getServer().getLogger().info("Using Netty NIO with {0} threads for network connections.");
 +    }
 +
 +    /**
