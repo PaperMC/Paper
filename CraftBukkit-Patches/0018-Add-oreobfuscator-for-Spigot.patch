@@ -1,4 +1,4 @@
-From 2bbaa8a04d59da56e08aa738dfc96b19c8f01db4 Mon Sep 17 00:00:00 2001
+From f7efe872d9e6c29ebdc4f8c9857a8724eee1300d Mon Sep 17 00:00:00 2001
 From: lishid <lishid@gmail.com>
 Date: Sat, 16 Feb 2013 10:05:25 +1100
 Subject: [PATCH] Add oreobfuscator for Spigot.
@@ -7,14 +7,14 @@ Subject: [PATCH] Add oreobfuscator for Spigot.
  .../net/minecraft/server/EntityFallingBlock.java   |   1 +
  src/main/java/net/minecraft/server/Explosion.java  |   1 +
  .../net/minecraft/server/Packet51MapChunk.java     |   1 +
- .../net/minecraft/server/Packet56MapChunkBulk.java |  21 +++-
+ .../net/minecraft/server/Packet56MapChunkBulk.java |  21 ++-
  .../minecraft/server/PlayerInteractManager.java    |   5 +
  .../java/org/bukkit/craftbukkit/CraftServer.java   |   6 +
  .../java/org/bukkit/craftbukkit/CraftWorld.java    |   4 +
- .../bukkit/craftbukkit/OrebfuscatorManager.java    | 130 +++++++++++++++++++++
+ .../bukkit/craftbukkit/OrebfuscatorManager.java    | 146 +++++++++++++++++++++
  src/main/java/org/bukkit/craftbukkit/Spigot.java   |   8 ++
  src/main/resources/configurations/bukkit.yml       |   6 +
- 10 files changed, 182 insertions(+), 1 deletion(-)
+ 10 files changed, 198 insertions(+), 1 deletion(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/OrebfuscatorManager.java
 
 diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
@@ -170,10 +170,10 @@ index 94e07fe..21bd64a 100644
      public int cactusGrowthModifier = 100;
 diff --git a/src/main/java/org/bukkit/craftbukkit/OrebfuscatorManager.java b/src/main/java/org/bukkit/craftbukkit/OrebfuscatorManager.java
 new file mode 100644
-index 0000000..3e74103
+index 0000000..fe14f6d
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/OrebfuscatorManager.java
-@@ -0,0 +1,130 @@
+@@ -0,0 +1,146 @@
 +package org.bukkit.craftbukkit;
 +
 +import java.util.ArrayList;
@@ -243,6 +243,9 @@ index 0000000..3e74103
 +                                byte data = buffer[index];
 +                                // Check if the block should be obfuscated for the default engine modes
 +                                if (obfuscateBlocks[data & 0xFF]) {
++                                    if (initialRadius != 0 && !isWorldLoaded(world, startX + x, (i << 4) + y, startZ + z, initialRadius)) {
++                                        continue;
++                                    }
 +                                    if (initialRadius == 0 || !areAjacentBlocksTransparent(world, startX + x, (i << 4) + y, startZ + z, initialRadius)) {
 +                                        if (world.getServer().orebfuscatorEngineMode == 2) {
 +                                            // Replace with random ore.
@@ -291,10 +294,23 @@ index 0000000..3e74103
 +            }
 +        }
 +    }
++    
++    private static boolean isWorldLoaded(World world, int x, int y, int z, int radius) {
++        boolean toret = (y > 0 && y <= world.getHeight() && world.isLoaded(x, y, z));
++        if (toret) {
++            return toret || (radius > 0 && (isWorldLoaded(world, x, y + 1, z, radius - 1)
++                    || isWorldLoaded(world, x, y - 1, z, radius - 1)
++                    || isWorldLoaded(world, x + 1, y, z, radius - 1)
++                    || isWorldLoaded(world, x - 1, y, z, radius - 1)
++                    || isWorldLoaded(world, x, y, z + 1, radius - 1)
++                    || isWorldLoaded(world, x, y, z - 1, radius - 1)));
++        }
++        
++        return false;
++    }
 +
 +    private static boolean areAjacentBlocksTransparent(World world, int x, int y, int z, int radius) {
 +        return y > 0 && y <= world.getHeight()
-+                && world.isLoaded(x, y, z)
 +                && !Block.i(world.getTypeId(x, y, z))
 +                || (radius > 0 && (areAjacentBlocksTransparent(world, x, y + 1, z, radius - 1)
 +                || areAjacentBlocksTransparent(world, x, y - 1, z, radius - 1)
