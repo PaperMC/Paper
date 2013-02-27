@@ -1,4 +1,4 @@
-From a4fdbca267e36d8b233d2922a0104b208c3af50d Mon Sep 17 00:00:00 2001
+From 9ee2b803e738023d85d05bfaf16e61aedf600d0e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 3 Feb 2013 05:10:21 -0500
 Subject: [PATCH] Entity Activation Range
@@ -13,10 +13,10 @@ This change can have dramatic impact on gameplay if configured too low. Balance 
  src/main/java/net/minecraft/server/EntityItem.java |   5 +-
  src/main/java/net/minecraft/server/World.java      |  14 +-
  .../java/org/bukkit/craftbukkit/CraftWorld.java    |  15 +-
- src/main/java/org/bukkit/craftbukkit/Spigot.java   | 219 +++++++++++++++++++++
+ src/main/java/org/bukkit/craftbukkit/Spigot.java   | 218 +++++++++++++++++++++
  .../java/org/bukkit/craftbukkit/SpigotTimings.java |   3 +
  src/main/resources/configurations/bukkit.yml       |   3 +
- 8 files changed, 259 insertions(+), 11 deletions(-)
+ 8 files changed, 258 insertions(+), 11 deletions(-)
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
 index bf9108a..807b4d1 100644
@@ -173,7 +173,7 @@ index 21bd64a..33df602 100644
  
      public Block getBlockAt(int x, int y, int z) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-index ad65bca..572527f 100644
+index ad65bca..32954fa 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
 @@ -1,9 +1,16 @@
@@ -193,7 +193,7 @@ index ad65bca..572527f 100644
  
      public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
          commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
-@@ -26,5 +33,217 @@ public class Spigot {
+@@ -26,5 +33,216 @@ public class Spigot {
          if (server.chunkGCPeriod == 0) {
              server.getLogger().severe("[Spigot] You should not disable chunk-gc, unexpected behaviour may occur!");
          }
@@ -384,13 +384,6 @@ index ad65bca..572527f 100644
 +     */
 +    public static boolean checkIfActive(Entity entity) {
 +        SpigotTimings.checkIfActiveTimer.startTiming();
-+        int x = MathHelper.floor(entity.locX);
-+        int z = MathHelper.floor(entity.locZ);
-+        // Make sure not on edge of unloaded chunk
-+        if (!entity.world.areChunksLoaded(x, 0, z, 16)) {
-+            SpigotTimings.checkIfActiveTimer.stopTiming();
-+            return false;
-+        }
 +        boolean isActive = entity.activatedTick >= MinecraftServer.currentTick || entity.defaultActivationState;
 +
 +        // Should this entity tick?
@@ -407,12 +400,18 @@ index ad65bca..572527f 100644
 +        } else if (!entity.defaultActivationState && entity.ticksLived % 4 == 0 && !checkEntityImmunities(entity)) {
 +            isActive = false;
 +        }
++        int x = MathHelper.floor(entity.locX);
++        int z = MathHelper.floor(entity.locZ);
++        // Make sure not on edge of unloaded chunk
++        if (isActive && !entity.world.areChunksLoaded(x, 0, z, 16)) {
++            isActive = false;
++        }
 +        SpigotTimings.checkIfActiveTimer.stopTiming();
 +        return isActive;
      }
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java b/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java
-index df837a3..9a1bcc5 100644
+index dec3110..c4e7dda 100644
 --- a/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java
 +++ b/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java
 @@ -30,6 +30,9 @@ public class SpigotTimings {
