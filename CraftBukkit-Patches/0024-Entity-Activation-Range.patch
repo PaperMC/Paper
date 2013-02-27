@@ -1,4 +1,4 @@
-From 9ee2b803e738023d85d05bfaf16e61aedf600d0e Mon Sep 17 00:00:00 2001
+From b15c950c96a0321950dcb86edf666dd844a01765 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 3 Feb 2013 05:10:21 -0500
 Subject: [PATCH] Entity Activation Range
@@ -8,7 +8,7 @@ This feature gives 3 new configurable ranges that if an entity of the matching t
 This will drastically cut down on tick timings for entities that are not in range of a user to actually be "used".
 This change can have dramatic impact on gameplay if configured too low. Balance according to your servers desired gameplay.
 ---
- src/main/java/net/minecraft/server/Entity.java     |   9 +-
+ src/main/java/net/minecraft/server/Entity.java     |  13 +-
  .../java/net/minecraft/server/EntityArrow.java     |   2 +-
  src/main/java/net/minecraft/server/EntityItem.java |   5 +-
  src/main/java/net/minecraft/server/World.java      |  14 +-
@@ -16,10 +16,10 @@ This change can have dramatic impact on gameplay if configured too low. Balance 
  src/main/java/org/bukkit/craftbukkit/Spigot.java   | 218 +++++++++++++++++++++
  .../java/org/bukkit/craftbukkit/SpigotTimings.java |   3 +
  src/main/resources/configurations/bukkit.yml       |   3 +
- 8 files changed, 258 insertions(+), 11 deletions(-)
+ 8 files changed, 262 insertions(+), 11 deletions(-)
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index bf9108a..807b4d1 100644
+index bf9108a..8cbe086 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -89,7 +89,7 @@ public abstract class Entity {
@@ -46,14 +46,19 @@ index bf9108a..807b4d1 100644
      public Entity(World world) {
          this.id = entityCount++;
          this.l = 1.0D;
-@@ -150,6 +156,7 @@ public abstract class Entity {
-         this.invulnerable = false;
-         this.as = EnumEntitySize.SIZE_2;
-         this.world = world;
-+        this.defaultActivationState = org.bukkit.craftbukkit.Spigot.initializeEntityActivationState(this, world.getWorld()); // Spigot
+@@ -153,7 +159,12 @@ public abstract class Entity {
          this.setPosition(0.0D, 0.0D, 0.0D);
          if (world != null) {
              this.dimension = world.worldProvider.dimension;
++            // Spigot start
++            this.defaultActivationState = org.bukkit.craftbukkit.Spigot.initializeEntityActivationState(this, world.getWorld());
++        } else {
++            this.defaultActivationState = false;
+         }
++        // Spigot end
+ 
+         this.datawatcher.a(0, Byte.valueOf((byte) 0));
+         this.datawatcher.a(1, Short.valueOf((short) 300));
 diff --git a/src/main/java/net/minecraft/server/EntityArrow.java b/src/main/java/net/minecraft/server/EntityArrow.java
 index 916b9dc..bdd18f6 100644
 --- a/src/main/java/net/minecraft/server/EntityArrow.java
