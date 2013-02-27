@@ -1,4 +1,4 @@
-From ef3c54902fe9772967964f6c7ad03b9d4d803379 Mon Sep 17 00:00:00 2001
+From ef6504ec0d62667ac417c746cb1c7616359c05a8 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 14 Feb 2013 17:32:20 +1100
 Subject: [PATCH] Netty
@@ -39,18 +39,16 @@ Subject: [PATCH] Netty
  .../net/minecraft/server/PendingConnection.java    |  11 +-
  .../net/minecraft/server/ThreadCommandReader.java  |   1 +
  .../net/minecraft/server/ThreadLoginVerifier.java  |   1 +
- src/main/java/org/bukkit/craftbukkit/Spigot.java   |   8 +
  .../craftbukkit/scheduler/CraftScheduler.java      |   2 +-
  src/main/java/org/spigotmc/netty/CipherCodec.java  |  67 ++++++
  .../org/spigotmc/netty/NettyNetworkManager.java    | 229 +++++++++++++++++++
- .../org/spigotmc/netty/NettyServerConnection.java  | 109 +++++++++
+ .../org/spigotmc/netty/NettyServerConnection.java  | 110 +++++++++
  .../org/spigotmc/netty/NettySocketAdaptor.java     | 248 +++++++++++++++++++++
  .../java/org/spigotmc/netty/PacketDecoder.java     |  63 ++++++
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
  src/main/java/org/spigotmc/netty/ReadState.java    |  16 ++
- src/main/resources/configurations/bukkit.yml       |   2 +
- 19 files changed, 933 insertions(+), 8 deletions(-)
+ 17 files changed, 924 insertions(+), 8 deletions(-)
  create mode 100644 src/main/java/net/minecraft/server/INetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
@@ -78,7 +76,7 @@ index f17bd19..6b314ec 100644
  
    <!-- This builds a completely 'ready to start' jar with all dependencies inside -->
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index bd0377a..273b60e 100644
+index bd0377a..73cb5b1 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -32,7 +32,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
@@ -96,7 +94,7 @@ index bd0377a..273b60e 100644
          try {
 -            this.r = new DedicatedServerConnection(this, inetaddress, this.G());
 +            // Spigot start
-+            this.r = (org.bukkit.craftbukkit.Spigot.netty)
++            this.r = (Boolean.getBoolean("org.spigotmc.netty.enabled"))
 +                    ? new org.spigotmc.netty.NettyServerConnection(this, inetaddress, this.G())
 +                    : new DedicatedServerConnection(this, inetaddress, this.G());
 +            // Spigot end
@@ -222,32 +220,6 @@ index 58d30eb..e4e5049 100644
          this.server = server;
          // CraftBukkit end
          this.pendingConnection = pendingconnection;
-diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-index c0335fa..8ecaeeb 100644
---- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
-+++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-@@ -23,6 +23,8 @@ public class Spigot {
- 
-     public static boolean tabPing = false;
-     private static Metrics metrics;
-+    public static boolean netty = true;
-+    public static int nettyThreads = 3;
- 
-     public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
-         commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
-@@ -60,6 +62,12 @@ public class Spigot {
- 
-         tabPing = configuration.getBoolean("settings.tab-ping", tabPing);
- 
-+        netty = configuration.getBoolean("settings.use-netty", netty);
-+        nettyThreads = configuration.getInt("settings.netty-threads", nettyThreads);
-+        if (!netty) {
-+            server.getLogger().severe("[Warning] You have opted not to use Netty, in the future this option may be removed!");
-+        }
-+
-         if (metrics == null) {
-             try {
-                 metrics = new Metrics();
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 index 0a5c61a..35badf3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
@@ -571,10 +543,10 @@ index 0000000..6cb1b98
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyServerConnection.java b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
 new file mode 100644
-index 0000000..ed9dd12
+index 0000000..1656ff0
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
-@@ -0,0 +1,109 @@
+@@ -0,0 +1,110 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -615,6 +587,7 @@ index 0000000..ed9dd12
 +
 +    public NettyServerConnection(MinecraftServer ms, InetAddress host, int port) {
 +        super(ms);
++        int threads = Integer.getInteger("org.spigotmc.netty.threads",3);
 +        socket = new ServerBootstrap().channel(NioServerSocketChannel.class).childHandler(new ChannelInitializer() {
 +            @Override
 +            public void initChannel(Channel ch) throws Exception {
@@ -630,8 +603,8 @@ index 0000000..ed9dd12
 +                        .addLast("encoder", new PacketEncoder())
 +                        .addLast("manager", new NettyNetworkManager());
 +            }
-+        }).group(new NioEventLoopGroup(Spigot.nettyThreads, new ThreadFactoryBuilder().setNameFormat("Netty IO Thread - %1$d").build())).localAddress(host, port).bind();
-+        MinecraftServer.log.info("Using Netty NIO with " + Spigot.nettyThreads + "threads for network connections.");
++        }).group(new NioEventLoopGroup(threads, new ThreadFactoryBuilder().setNameFormat("Netty IO Thread - %1$d").build())).localAddress(host, port).bind();
++        MinecraftServer.log.info("Using Netty NIO with " + threads + " threads for network connections.");
 +    }
 +
 +    /**
@@ -1184,19 +1157,6 @@ index 0000000..5dc3754
 +     */
 +    DATA;
 +}
-diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
-index 7c18391..45a8a00 100644
---- a/src/main/resources/configurations/bukkit.yml
-+++ b/src/main/resources/configurations/bukkit.yml
-@@ -34,6 +34,8 @@ settings:
-     timeout-time: 30
-     restart-on-crash: false
-     restart-script-location: /path/to/server/start.sh
-+    use-netty: true
-+    netty-threads: 3
- world-settings:
-     default:
-         growth-chunks-per-tick: 650
 -- 
-1.8.1.1
+1.8.1-rc2
 
