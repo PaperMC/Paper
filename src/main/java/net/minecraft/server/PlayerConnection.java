@@ -1485,7 +1485,7 @@ public class PlayerConnection extends Connection {
                 }
             } catch (Exception exception1) {
                 // CraftBukkit start
-                logger.log(Level.WARNING, this.player.name + " sent invalid MC|BSign data", exception);
+                logger.log(Level.WARNING, this.player.name + " sent invalid MC|BSign data", exception1);
                 this.disconnect("Invalid book data!");
                 // CraftBukkit end
             }
@@ -1503,7 +1503,7 @@ public class PlayerConnection extends Connection {
                     }
                 } catch (Exception exception2) {
                     // CraftBukkit start
-                    logger.log(Level.WARNING, this.player.name + " sent invalid MC|TrSel data", exception);
+                    logger.log(Level.WARNING, this.player.name + " sent invalid MC|TrSel data", exception2);
                     this.disconnect("Invalid trade data!");
                     // CraftBukkit end
                 }
@@ -1529,7 +1529,7 @@ public class PlayerConnection extends Connection {
                             }
                         } catch (Exception exception3) {
                             // CraftBukkit start
-                            logger.log(Level.WARNING, this.player.name + " sent invalid MC|AdvCdm data", exception);
+                            logger.log(Level.WARNING, this.player.name + " sent invalid MC|AdvCdm data", exception3);
                             this.disconnect("Invalid CommandBlock data!");
                             // CraftBukkit end
                         }
@@ -1555,7 +1555,7 @@ public class PlayerConnection extends Connection {
                             }
                         } catch (Exception exception4) {
                             // CraftBukkit start
-                            logger.log(Level.WARNING, this.player.name + " sent invalid MC|Beacon data", exception);
+                            logger.log(Level.WARNING, this.player.name + " sent invalid MC|Beacon data", exception4);
                             this.disconnect("Invalid beacon data!");
                             // CraftBukkit end
                         }
