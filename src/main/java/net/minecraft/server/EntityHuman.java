@@ -6,11 +6,13 @@ import java.util.List;
 // CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.entity.CraftItem;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityCombustByEntityEvent;
 import org.bukkit.event.player.PlayerBedEnterEvent;
 import org.bukkit.event.player.PlayerBedLeaveEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
 // CraftBukkit end
 
 public abstract class EntityHuman extends EntityLiving implements ICommandListener {
@@ -246,6 +248,32 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         if (this.f != null) {
             this.c(this.f, 16);
             int i = this.f.count;
+
+            // CraftBukkit start
+            org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.f);
+            PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem);
+            world.getServer().getPluginManager().callEvent(event);
+
+            if (event.isCancelled()) {
+                // Update client
+                if (this instanceof EntityPlayer) {
+                    ((EntityPlayer) this).playerConnection.sendPacket(new Packet103SetSlot((byte) 0, activeContainer.a((IInventory) this.inventory, this.inventory.itemInHandIndex).index, this.f));
+                }
+                return;
+            }
+
+            // Plugin modified the item, process it but don't remove it
+            if (!craftItem.equals(event.getItem())) {
+                CraftItemStack.asNMSCopy(event.getItem()).b(this.world, this);
+
+                // Update client
+                if (this instanceof EntityPlayer) {
+                    ((EntityPlayer) this).playerConnection.sendPacket(new Packet103SetSlot((byte) 0, activeContainer.a((IInventory) this.inventory, this.inventory.itemInHandIndex).index, this.f));
+                }
+                return;
+            }
+            // CraftBukkit end
+
             ItemStack itemstack = this.f.b(this.world, this);
 
             if (itemstack != this.f || itemstack != null && itemstack.count != i) {
