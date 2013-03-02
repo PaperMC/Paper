@@ -1,0 +1,158 @@
+From 1482ff76e60f8e69e48c4a7210715a7fcb03b19c Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Sat, 2 Mar 2013 13:34:17 +1100
+Subject: [PATCH] Snapshot support.
+
+---
+ src/main/java/net/minecraft/server/ItemStack.java  |  1 +
+ .../java/net/minecraft/server/MinecraftServer.java |  2 +-
+ .../net/minecraft/server/Packet100OpenWindow.java  | 46 ++++++++++++++++++++++
+ .../net/minecraft/server/PendingConnection.java    |  6 +--
+ src/main/java/org/bukkit/craftbukkit/Spigot.java   |  8 ++++
+ src/main/resources/configurations/bukkit.yml       |  2 +
+ 6 files changed, 61 insertions(+), 4 deletions(-)
+ create mode 100644 src/main/java/net/minecraft/server/Packet100OpenWindow.java
+
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index 8f0a5ad..2bda8a7 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -39,6 +39,7 @@ public final class ItemStack {
+         this.id = i;
+         this.count = j;
+         this.setData(k); // CraftBukkit
++        if (org.bukkit.craftbukkit.Spigot.snapshotSupport && this.id >= 146 && this.id <= 158) this.id = 0; // Spigot
+     }
+ 
+     public static ItemStack createStack(NBTTagCompound nbttagcompound) {
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 6005fac..79b4369 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -765,7 +765,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+     }
+ 
+     public String getVersion() {
+-        return "1.4.7";
++        return (org.bukkit.craftbukkit.Spigot.snapshotSupport) ? org.bukkit.craftbukkit.Spigot.snapshotVersion : "1.4.7";
+     }
+ 
+     public int y() {
+diff --git a/src/main/java/net/minecraft/server/Packet100OpenWindow.java b/src/main/java/net/minecraft/server/Packet100OpenWindow.java
+new file mode 100644
+index 0000000..5182bfa
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/Packet100OpenWindow.java
+@@ -0,0 +1,46 @@
++package net.minecraft.server;
++
++import java.io.DataInputStream;
++import java.io.DataOutputStream;
++import java.io.IOException;
++
++public class Packet100OpenWindow extends Packet {
++
++    public int a;
++    public int b;
++    public String c;
++    public int d;
++
++    public Packet100OpenWindow() {}
++
++    public Packet100OpenWindow(int i, int j, String s, int k) {
++        this.a = i;
++        this.b = j;
++        this.c = s;
++        this.d = k;
++    }
++
++    public void handle(Connection connection) {
++        connection.a(this);
++    }
++
++    public void a(DataInputStream datainputstream) throws IOException {
++        this.a = datainputstream.readByte() & 255;
++        this.b = datainputstream.readByte() & 255;
++        this.c = a(datainputstream, 32);
++        this.d = datainputstream.readByte() & 255;
++        if (org.bukkit.craftbukkit.Spigot.snapshotSupport) datainputstream.readBoolean(); // Spigot
++    }
++
++    public void a(DataOutputStream dataoutputstream) throws IOException {
++        dataoutputstream.writeByte(this.a & 255);
++        dataoutputstream.writeByte(this.b & 255);
++        a(this.c, dataoutputstream);
++        dataoutputstream.writeByte(this.d & 255);
++        if (org.bukkit.craftbukkit.Spigot.snapshotSupport) dataoutputstream.writeBoolean(false); // Spigot
++    }
++
++    public int a() {
++        return 3 + this.c.length();
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
+index cdd456f..08aa314 100644
+--- a/src/main/java/net/minecraft/server/PendingConnection.java
++++ b/src/main/java/net/minecraft/server/PendingConnection.java
+@@ -78,8 +78,8 @@ public class PendingConnection extends Connection {
+         } else {
+             PublicKey publickey = this.server.F().getPublic();
+ 
+-            if (packet2handshake.d() != 51) {
+-                if (packet2handshake.d() > 51) {
++            if (packet2handshake.d() != ((org.bukkit.craftbukkit.Spigot.snapshotSupport) ? org.bukkit.craftbukkit.Spigot.snapshotProtocolVersion : 51)) {
++                if (packet2handshake.d() > ((org.bukkit.craftbukkit.Spigot.snapshotSupport) ? org.bukkit.craftbukkit.Spigot.snapshotProtocolVersion : 51)) {
+                     this.disconnect("Outdated server!");
+                 } else {
+                     this.disconnect("Outdated client!");
+@@ -154,7 +154,7 @@ public class PendingConnection extends Connection {
+ 
+             if (true) {
+                 // CraftBukkit start - fix decompile issues, don't create a list from an array
+-                Object[] list = new Object[] { 1, 51, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
++                Object[] list = new Object[] { 1, ((org.bukkit.craftbukkit.Spigot.snapshotSupport) ? org.bukkit.craftbukkit.Spigot.snapshotProtocolVersion : 51), this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
+ 
+                 for (Object object : list) {
+                     if (s == null) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+index 7785d45..f1dbe0c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
++++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+@@ -23,6 +23,9 @@ public class Spigot {
+ 
+     public static boolean tabPing = false;
+     private static Metrics metrics;
++    public static boolean snapshotSupport;
++    public static int snapshotProtocolVersion = 59;
++    public static String snapshotVersion = "13w09c";
+ 
+     public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
+         commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
+@@ -60,6 +63,11 @@ public class Spigot {
+ 
+         tabPing = configuration.getBoolean("settings.tab-ping", tabPing);
+ 
++        snapshotSupport = configuration.getBoolean("settings.snapshot-protocol", snapshotSupport);
++        if (snapshotSupport) {
++            server.getLogger().log(Level.INFO, "Enabled support for pre release / snapshot version {0}", snapshotVersion);
++        }
++
+         if (metrics == null) {
+             try {
+                 metrics = new Metrics();
+diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
+index aac1406..0351530 100644
+--- a/src/main/resources/configurations/bukkit.yml
++++ b/src/main/resources/configurations/bukkit.yml
+@@ -35,6 +35,8 @@ settings:
+     timeout-time: 30
+     restart-on-crash: false
+     restart-script-location: /path/to/server/start.sh
++    # fakes the latest pre release / snapshot
++    snapshot-protocol: false
+ world-settings:
+     default:
+         growth-chunks-per-tick: 650
+-- 
+1.8.1-rc2
+
