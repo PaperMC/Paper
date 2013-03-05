@@ -88,6 +88,7 @@ public final class RegionFileCache implements AutoCloseable {
 
     protected void write(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException {
         RegionFile regionfile = this.getFile(chunkcoordintpair, false); // CraftBukkit
+        int attempts = 0; Exception laste = null; while (attempts++ < 5) { try { // Paper
         DataOutputStream dataoutputstream = regionfile.c(chunkcoordintpair);
         Throwable throwable = null;
 
@@ -111,6 +112,18 @@ public final class RegionFileCache implements AutoCloseable {
 
         }
 
+            // Paper start
+            return;
+        } catch (Exception ex)  {
+            laste = ex;
+        }
+        }
+
+        if (laste != null) {
+            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(laste);
+            MinecraftServer.LOGGER.error("Failed to save chunk", laste);
+        }
+        // Paper end
     }
 
     public void close() throws IOException {
