@@ -32,4 +32,4 @@ function savePatches {
 }
 
 savePatches Bukkit Spigot-API
-savePatches CraftBukkit Spigot
+savePatches CraftBukkit Spigot-Server

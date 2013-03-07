@@ -32,4 +32,4 @@ function applyPatch {
     fi
 }
 
-applyPatch Bukkit Spigot-API && applyPatch CraftBukkit Spigot
+applyPatch Bukkit Spigot-API && applyPatch CraftBukkit Spigot-Server
