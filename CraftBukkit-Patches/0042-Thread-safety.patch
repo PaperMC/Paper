@@ -1,0 +1,41 @@
+From f0e5f9a31e0f31cc0eae14c4c277bc47beef8b10 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Thu, 7 Mar 2013 20:12:46 +1100
+Subject: [PATCH] Thread safety. Adds thread safety for chunk load / unload
+ methods.
+
+---
+ src/main/java/org/bukkit/craftbukkit/CraftWorld.java | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 33df602..1238f3b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -254,6 +254,7 @@ public class CraftWorld implements World {
+     }
+ 
+     public boolean unloadChunkRequest(int x, int z, boolean safe) {
++        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous chunk unload!");
+         if (safe && isChunkInUse(x, z)) {
+             return false;
+         }
+@@ -264,6 +265,7 @@ public class CraftWorld implements World {
+     }
+ 
+     public boolean unloadChunk(int x, int z, boolean save, boolean safe) {
++        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous chunk unload!");
+         if (safe && isChunkInUse(x, z)) {
+             return false;
+         }
+@@ -331,6 +333,7 @@ public class CraftWorld implements World {
+     }
+ 
+     public boolean loadChunk(int x, int z, boolean generate) {
++        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous chunk load!");
+         chunkLoadCount++;
+         if (generate) {
+             // Use the default variant of loadChunk when generate == true.
+-- 
+1.8.1-rc2
+
