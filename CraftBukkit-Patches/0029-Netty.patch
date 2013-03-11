@@ -1,4 +1,4 @@
-From 34adc051b7105236256a095f78baaec100f5ac2f Mon Sep 17 00:00:00 2001
+From 4f645adb9e1b754aca5511bb1960a4205e6982c4 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 14 Feb 2013 17:32:20 +1100
 Subject: [PATCH] Netty
@@ -40,7 +40,7 @@ Subject: [PATCH] Netty
  .../net/minecraft/server/ThreadCommandReader.java  |   1 +
  .../net/minecraft/server/ThreadLoginVerifier.java  |   1 +
  .../craftbukkit/scheduler/CraftScheduler.java      |   2 +-
- src/main/java/org/spigotmc/netty/CipherCodec.java  |  49 ++++
+ src/main/java/org/spigotmc/netty/CipherCodec.java  |  50 +++++
  .../org/spigotmc/netty/NettyNetworkManager.java    | 229 +++++++++++++++++++
  .../org/spigotmc/netty/NettyServerConnection.java  | 110 +++++++++
  .../org/spigotmc/netty/NettySocketAdaptor.java     | 248 +++++++++++++++++++++
@@ -48,7 +48,7 @@ Subject: [PATCH] Netty
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
  src/main/java/org/spigotmc/netty/ReadState.java    |  16 ++
- 17 files changed, 906 insertions(+), 8 deletions(-)
+ 17 files changed, 907 insertions(+), 8 deletions(-)
  create mode 100644 src/main/java/net/minecraft/server/INetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
@@ -235,10 +235,10 @@ index 0a5c61a..35badf3 100644
      private static final int RECENT_TICKS;
 diff --git a/src/main/java/org/spigotmc/netty/CipherCodec.java b/src/main/java/org/spigotmc/netty/CipherCodec.java
 new file mode 100644
-index 0000000..06d6191
+index 0000000..cb1a5c8
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/CipherCodec.java
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,50 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -276,12 +276,13 @@ index 0000000..06d6191
 +        try {
 +            int available = in.readableBytes();
 +            int outputSize = cipher.getOutputSize(available);
-+            if (out.capacity() < outputSize) {
-+                out.capacity(outputSize);
++            int writerIndex = out.writerIndex();
++            if (out.capacity() + writerIndex < outputSize) {
++                out.capacity(outputSize + writerIndex);
 +            }
 +            int processed = cipher.update(in.nioBuffer(), out.nioBuffer(out.writerIndex(), outputSize));
 +            in.readerIndex(in.readerIndex() + processed);
-+            out.writerIndex(out.writerIndex() + processed);
++            out.writerIndex(writerIndex + processed);
 +        } catch (Exception ex) {
 +            ex.printStackTrace();
 +            throw ex;
