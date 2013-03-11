@@ -90,7 +90,6 @@ public class PermissionAttachment {
      */
     public void setPermission(Permission perm, boolean value) {
         setPermission(perm.getName(), value);
-        permissible.recalculatePermissions();
     }
 
     /**
@@ -114,7 +113,6 @@ public class PermissionAttachment {
      */
     public void unsetPermission(Permission perm) {
         unsetPermission(perm.getName());
-        permissible.recalculatePermissions();
     }
 
     /**
