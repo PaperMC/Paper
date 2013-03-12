@@ -57,6 +57,41 @@ public class PlayerDeathEvent extends EntityDeathEvent {
         this.deathMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserializeOrNull(deathMessage); // Paper
     }
 
+    @Deprecated // Paper
+    // Paper start
+    private List<ItemStack> itemsToKeep = new java.util.ArrayList<>();
+
+    /**
+     * A mutable collection to add items that the player should retain in their inventory on death (Similar to KeepInventory game rule)
+     *
+     * You <b>MUST</b> remove the item from the .getDrops() collection too or it will duplicate!
+     * <pre>{@code
+     *    {@literal @EventHandler(ignoreCancelled = true)}
+     *     public void onPlayerDeath(PlayerDeathEvent event) {
+     *         for (Iterator<ItemStack> iterator = event.getDrops().iterator(); iterator.hasNext(); ) {
+     *             ItemStack drop = iterator.next();
+     *             List<String> lore = drop.getLore();
+     *             if (lore != null && !lore.isEmpty()) {
+     *                 if (lore.get(0).contains("(SOULBOUND)")) {
+     *                     iterator.remove();
+     *                     event.getItemsToKeep().add(drop);
+     *                 }
+     *             }
+     *         }
+     *     }
+     * }</pre>
+     *
+     * Adding an item to this list that the player did not previously have will give them the item on death.
+     * An example case could be a "Note" that "You died at X/Y/Z coordinates"
+     *
+     * @return The list to hold items to keep
+     */
+    @NotNull
+    public List<ItemStack> getItemsToKeep() {
+        return itemsToKeep;
+    }
+    // Paper end
+
     @NotNull
     @Override
     public Player getEntity() {
