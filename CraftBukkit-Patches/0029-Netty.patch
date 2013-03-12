@@ -1,4 +1,4 @@
-From 4f645adb9e1b754aca5511bb1960a4205e6982c4 Mon Sep 17 00:00:00 2001
+From a6b6583baf41c2a3043bae060eca88e7f6faf22d Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 14 Feb 2013 17:32:20 +1100
 Subject: [PATCH] Netty
@@ -40,7 +40,7 @@ Subject: [PATCH] Netty
  .../net/minecraft/server/ThreadCommandReader.java  |   1 +
  .../net/minecraft/server/ThreadLoginVerifier.java  |   1 +
  .../craftbukkit/scheduler/CraftScheduler.java      |   2 +-
- src/main/java/org/spigotmc/netty/CipherCodec.java  |  50 +++++
+ src/main/java/org/spigotmc/netty/CipherCodec.java  |  67 ++++++
  .../org/spigotmc/netty/NettyNetworkManager.java    | 229 +++++++++++++++++++
  .../org/spigotmc/netty/NettyServerConnection.java  | 110 +++++++++
  .../org/spigotmc/netty/NettySocketAdaptor.java     | 248 +++++++++++++++++++++
@@ -48,7 +48,7 @@ Subject: [PATCH] Netty
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
  src/main/java/org/spigotmc/netty/ReadState.java    |  16 ++
- 17 files changed, 907 insertions(+), 8 deletions(-)
+ 17 files changed, 924 insertions(+), 8 deletions(-)
  create mode 100644 src/main/java/net/minecraft/server/INetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
@@ -60,7 +60,7 @@ Subject: [PATCH] Netty
  create mode 100644 src/main/java/org/spigotmc/netty/ReadState.java
 
 diff --git a/pom.xml b/pom.xml
-index a92e73d..83917bb 100644
+index f17bd19..8efab09 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -132,6 +132,11 @@
@@ -70,13 +70,13 @@ index a92e73d..83917bb 100644
 +    <dependency>
 +      <groupId>io.netty</groupId>
 +      <artifactId>netty-all</artifactId>
-+      <version>4.0.0.Beta3-SNAPSHOT</version>
++      <version>4.0.0.Beta2</version>
 +    </dependency>
    </dependencies>
  
    <!-- This builds a completely 'ready to start' jar with all dependencies inside -->
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index bd0377a..aefe20f 100644
+index bd0377a..73cb5b1 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -32,7 +32,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
@@ -235,10 +235,10 @@ index 0a5c61a..35badf3 100644
      private static final int RECENT_TICKS;
 diff --git a/src/main/java/org/spigotmc/netty/CipherCodec.java b/src/main/java/org/spigotmc/netty/CipherCodec.java
 new file mode 100644
-index 0000000..cb1a5c8
+index 0000000..15e3466
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/CipherCodec.java
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,67 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -246,16 +246,18 @@ index 0000000..cb1a5c8
 +import io.netty.handler.codec.ByteToByteCodec;
 +import javax.crypto.Cipher;
 +import javax.crypto.ShortBufferException;
++import org.bouncycastle.crypto.BufferedBlockCipher;
 +
 +/**
 + * This class is a complete solution for encrypting and decoding bytes in a
-+ * Netty stream. It takes two {@link Cipher} instances, used for encryption and
-+ * decryption respectively.
++ * Netty stream. It takes two {@link BufferedBlockCipher} instances, used for
++ * encryption and decryption respectively.
 + */
 +public class CipherCodec extends ByteToByteCodec {
 +
 +    private Cipher encrypt;
 +    private Cipher decrypt;
++    private ByteBuf heapOut;
 +
 +    public CipherCodec(Cipher encrypt, Cipher decrypt) {
 +        this.encrypt = encrypt;
@@ -264,7 +266,12 @@ index 0000000..cb1a5c8
 +
 +    @Override
 +    public void encode(ChannelHandlerContext ctx, ByteBuf in, ByteBuf out) throws Exception {
-+        cipher(encrypt, in, out);
++        if (heapOut == null) {
++            heapOut = ctx.alloc().heapBuffer();
++        }
++        cipher(encrypt, in, heapOut);
++        out.writeBytes(heapOut);
++        heapOut.discardSomeReadBytes();
 +    }
 +
 +    @Override
@@ -272,21 +279,31 @@ index 0000000..cb1a5c8
 +        cipher(decrypt, in, out);
 +    }
 +
-+    private void cipher(Cipher cipher, ByteBuf in, ByteBuf out) throws Exception {
-+        try {
-+            int available = in.readableBytes();
-+            int outputSize = cipher.getOutputSize(available);
-+            int writerIndex = out.writerIndex();
-+            if (out.capacity() + writerIndex < outputSize) {
-+                out.capacity(outputSize + writerIndex);
-+            }
-+            int processed = cipher.update(in.nioBuffer(), out.nioBuffer(out.writerIndex(), outputSize));
-+            in.readerIndex(in.readerIndex() + processed);
-+            out.writerIndex(writerIndex + processed);
-+        } catch (Exception ex) {
-+            ex.printStackTrace();
-+            throw ex;
++    @Override
++    public void freeInboundBuffer(ChannelHandlerContext ctx) throws Exception {
++        super.freeInboundBuffer(ctx);
++        decrypt = null;
++    }
++
++    @Override
++    public void freeOutboundBuffer(ChannelHandlerContext ctx) throws Exception {
++        super.freeOutboundBuffer(ctx);
++        if (heapOut != null) {
++            heapOut.release();
++            heapOut = null;
 +        }
++        encrypt = null;
++    }
++
++    private void cipher(Cipher cipher, ByteBuf in, ByteBuf out) throws ShortBufferException {
++        int available = in.readableBytes();
++        int outputSize = cipher.getOutputSize(available);
++        if (out.capacity() < outputSize) {
++            out.capacity(outputSize);
++        }
++        int processed = cipher.update(in.array(), in.arrayOffset() + in.readerIndex(), available, out.array(), out.arrayOffset() + out.writerIndex());
++        in.readerIndex(in.readerIndex() + processed);
++        out.writerIndex(out.writerIndex() + processed);
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
