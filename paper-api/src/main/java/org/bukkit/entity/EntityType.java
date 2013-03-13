@@ -70,13 +70,18 @@ public enum EntityType {
     FALLING_BLOCK("FallingSand", FallingBlock.class, 21, false),
     FIREWORK("FireworksRocketEntity", Firework.class, 22, false),
     /**
-     * A placed minecart of any type.
-     */
-    MINECART("Minecart", Minecart.class, 40),
-    /**
      * A placed boat.
      */
     BOAT("Boat", Boat.class, 41),
+    /**
+     * A minecart entities can ride
+     */
+    MINECART("MinecartRideable", Minecart.class, 42),
+    MINECART_CHEST("MinecartChest", StorageMinecart.class, 43),
+    MINECART_FURNACE("MinecartFurnace", PoweredMinecart.class, 44),
+    MINECART_TNT("MinecartTNT", MinecartTNT.class, 45),
+    MINECART_HOPPER("MinecartHopper", MinecartHopper.class, 46),
+    MINECART_MOB_SPAWNER("MinecartMobSpawner", MinecartMobSpawner.class, 47),
     CREEPER("Creeper", Creeper.class, 50),
     SKELETON("Skeleton", Skeleton.class, 51),
     SPIDER("Spider", Spider.class, 52),

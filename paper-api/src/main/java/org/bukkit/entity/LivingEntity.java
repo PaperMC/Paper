@@ -277,4 +277,45 @@ public interface LivingEntity extends Entity, Damageable {
      * @return whether or not the entity can pick up items
      */
     public boolean getCanPickupItems();
+
+    /**
+     * Sets a custom name on a mob. This name will be used in death messages
+     * and can be sent to the client as a nameplate over the mob.
+     * <p>
+     * Setting the name to null or an empty string will clear it.
+     * <p>
+     * This value has no effect on players, they will always use their real
+     * name.
+     * @param name name to set
+     */
+    public void setCustomName(String name);
+
+    /**
+     * Gets the custom name on a mob. If there is no name this method will
+     * return null.
+     * <p>
+     * This value has no effect on players, they will always use their real
+     * name.
+     * @return name of the mob or null
+     */
+    public String getCustomName();
+
+    /**
+     * Sets whether or not to display the mob's custom name client side.
+     * The name will be displayed above the mob similarly to a player.
+     * <p>
+     * This value has no effect on players, they will always display their
+     * name.
+     * @param flag show custom name
+     */
+    public void setCustomNameVisible(boolean flag);
+
+    /**
+     * Gets whether or not the mob's custom name is displayed client side.
+     * <p>
+     * This value has no effect on players, they will always display their
+     * name.
+     * @return if the custom name is displayed
+     */
+    public boolean getCustomNameVisible();
 }
