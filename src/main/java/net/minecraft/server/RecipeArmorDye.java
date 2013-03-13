@@ -63,6 +63,7 @@ public class RecipeArmorDye extends ShapelessRecipes implements IRecipe { // Cra
                     }
 
                     itemstack = itemstack1.cloneItemStack();
+                    itemstack.count = 1;
                     if (itemarmor.a(itemstack1)) {
                         l = itemarmor.b(itemstack);
                         f = (float) (l >> 16 & 255) / 255.0F;
@@ -80,7 +81,7 @@ public class RecipeArmorDye extends ShapelessRecipes implements IRecipe { // Cra
                         return null;
                     }
 
-                    float[] afloat = EntitySheep.d[BlockCloth.e_(itemstack1.getData())];
+                    float[] afloat = EntitySheep.d[BlockCloth.g_(itemstack1.getData())];
                     int j1 = (int) (afloat[0] * 255.0F);
                     int k1 = (int) (afloat[1] * 255.0F);
 

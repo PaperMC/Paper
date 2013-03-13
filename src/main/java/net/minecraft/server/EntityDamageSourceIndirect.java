@@ -9,16 +9,21 @@ public class EntityDamageSourceIndirect extends EntityDamageSource {
         this.owner = entity1;
     }
 
-    public Entity f() {
-        return this.r;
+    public Entity h() {
+        return this.p;
     }
 
     public Entity getEntity() {
         return this.owner;
     }
 
-    public String getLocalizedDeathMessage(EntityHuman entityhuman) {
-        return LocaleI18n.get("death." + this.translationIndex, new Object[] { entityhuman.name, this.owner == null ? this.r.getLocalizedName() : this.owner.getLocalizedName()});
+    public String getLocalizedDeathMessage(EntityLiving entityliving) {
+        String s = this.owner == null ? this.p.getScoreboardDisplayName() : this.owner.getScoreboardDisplayName();
+        ItemStack itemstack = this.owner instanceof EntityLiving ? ((EntityLiving) this.owner).bG() : null;
+        String s1 = "death.attack." + this.translationIndex;
+        String s2 = s1 + ".item";
+
+        return itemstack != null && itemstack.hasName() && LocaleI18n.b(s2) ? LocaleI18n.get(s2, new Object[] { entityliving.getScoreboardDisplayName(), s, itemstack.getName()}) : LocaleI18n.get(s1, new Object[] { entityliving.getScoreboardDisplayName(), s});
     }
 
     // CraftBukkit start

@@ -10,32 +10,11 @@ public class BlockPumpkin extends BlockDirectional {
 
     private boolean a;
 
-    protected BlockPumpkin(int i, int j, boolean flag) {
+    protected BlockPumpkin(int i, boolean flag) {
         super(i, Material.PUMPKIN);
-        this.textureId = j;
         this.b(true);
         this.a = flag;
         this.a(CreativeModeTab.b);
-    }
-
-    public int a(int i, int j) {
-        if (i == 1) {
-            return this.textureId;
-        } else if (i == 0) {
-            return this.textureId;
-        } else {
-            int k = this.textureId + 1 + 16;
-
-            if (this.a) {
-                ++k;
-            }
-
-            return j == 2 && i == 2 ? k : (j == 3 && i == 5 ? k : (j == 0 && i == 3 ? k : (j == 1 && i == 4 ? k : this.textureId + 16)));
-        }
-    }
-
-    public int a(int i) {
-        return i == 1 ? this.textureId : (i == 0 ? this.textureId : (i == 3 ? this.textureId + 1 + 16 : this.textureId + 16));
     }
 
     public void onPlace(World world, int i, int j, int k) {
@@ -100,13 +79,13 @@ public class BlockPumpkin extends BlockDirectional {
     public boolean canPlace(World world, int i, int j, int k) {
         int l = world.getTypeId(i, j, k);
 
-        return (l == 0 || Block.byId[l].material.isReplaceable()) && world.v(i, j - 1, k);
+        return (l == 0 || Block.byId[l].material.isReplaceable()) && world.w(i, j - 1, k);
     }
 
-    public void postPlace(World world, int i, int j, int k, EntityLiving entityliving) {
+    public void postPlace(World world, int i, int j, int k, EntityLiving entityliving, ItemStack itemstack) {
         int l = MathHelper.floor((double) (entityliving.yaw * 4.0F / 360.0F) + 2.5D) & 3;
 
-        world.setData(i, j, k, l);
+        world.setData(i, j, k, l, 2);
     }
 
     // CraftBukkit start

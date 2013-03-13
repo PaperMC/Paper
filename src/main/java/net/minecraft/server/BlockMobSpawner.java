@@ -4,11 +4,11 @@ import java.util.Random;
 
 public class BlockMobSpawner extends BlockContainer {
 
-    protected BlockMobSpawner(int i, int j) {
-        super(i, j, Material.STONE);
+    protected BlockMobSpawner(int i) {
+        super(i, Material.STONE);
     }
 
-    public TileEntity a(World world) {
+    public TileEntity b(World world) {
         return new TileEntityMobSpawner();
     }
 
@@ -25,7 +25,7 @@ public class BlockMobSpawner extends BlockContainer {
         /* CraftBukkit start - delegate to getExpDrop
         int j1 = 15 + world.random.nextInt(15) + world.random.nextInt(15);
 
-        this.f(world, i, j, k, j1);*/
+        this.j(world, i, j, k, j1);*/
     }
 
     public int getExpDrop(World world, int data, int enchantmentLevel) {

@@ -37,7 +37,7 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
             return false;
         } else {
             if (this.f) {
-                if (this.d.aA().canSee(entityliving)) {
+                if (this.d.aD().canSee(entityliving)) {
                     this.g = 0;
                 } else if (++this.g > 60) {
                     return false;
@@ -80,9 +80,9 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
                 return false;
             }
 
-            if (!this.d.e(MathHelper.floor(entityliving.locX), MathHelper.floor(entityliving.locY), MathHelper.floor(entityliving.locZ))) {
+            if (!this.d.d(MathHelper.floor(entityliving.locX), MathHelper.floor(entityliving.locY), MathHelper.floor(entityliving.locZ))) {
                 return false;
-            } else if (this.f && !this.d.aA().canSee(entityliving)) {
+            } else if (this.f && !this.d.aD().canSee(entityliving)) {
                 return false;
             } else {
                 if (this.a) {
@@ -134,7 +134,7 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
     }
 
     private boolean a(EntityLiving entityliving) {
-        this.c = 10 + this.d.aB().nextInt(5);
+        this.c = 10 + this.d.aE().nextInt(5);
         PathEntity pathentity = this.d.getNavigation().a(entityliving);
 
         if (pathentity == null) {

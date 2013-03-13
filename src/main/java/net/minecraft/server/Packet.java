@@ -16,11 +16,12 @@ public abstract class Packet {
     private static Map a = new HashMap();
     private static Set b = new HashSet();
     private static Set c = new HashSet();
+    protected IConsoleLogManager m;
     public final long timestamp = System.currentTimeMillis();
-    public static long n;
     public static long o;
     public static long p;
     public static long q;
+    public static long r;
     public boolean lowPriority = false;
     // CraftBukkit start - calculate packet ID once - used a bunch of times
     private int packetID;
@@ -48,14 +49,14 @@ public abstract class Packet {
         }
     }
 
-    public static Packet d(int i) {
+    public static Packet a(IConsoleLogManager iconsolelogmanager, int i) {
         try {
             Class oclass = (Class) l.get(i);
 
             return oclass == null ? null : (Packet) oclass.newInstance();
         } catch (Exception exception) {
             exception.printStackTrace();
-            System.out.println("Skipping packet with id " + i);
+            iconsolelogmanager.severe("Skipping packet with id " + i);
             return null;
         }
     }
@@ -73,16 +74,16 @@ public abstract class Packet {
         } else {
             byte[] abyte = new byte[short1];
 
-            datainputstream.read(abyte);
+            datainputstream.readFully(abyte);
             return abyte;
         }
     }
 
-    public final int k() {
+    public final int n() {
         return packetID; // ((Integer) a.get(this.getClass())).intValue(); // CraftBukkit
     }
 
-    public static Packet a(DataInputStream datainputstream, boolean flag, Socket socket) throws IOException { // CraftBukkit - throws IOException
+    public static Packet a(IConsoleLogManager iconsolelogmanager, DataInputStream datainputstream, boolean flag, Socket socket) throws IOException { // CraftBukkit - throws IOException
         boolean flag1 = false;
         Packet packet = null;
         int i = socket.getSoTimeout();
@@ -99,46 +100,46 @@ public abstract class Packet {
                 throw new IOException("Bad packet id " + j);
             }
 
-            packet = d(j);
+            packet = a(iconsolelogmanager, j);
             if (packet == null) {
                 throw new IOException("Bad packet id " + j);
             }
 
+            packet.m = iconsolelogmanager;
             if (packet instanceof Packet254GetInfo) {
                 socket.setSoTimeout(1500);
             }
 
             packet.a(datainputstream);
-            ++n;
-            o += (long) packet.a();
+            ++o;
+            p += (long) packet.a();
         } catch (EOFException eofexception) {
-            System.out.println("Reached end of stream");
+            iconsolelogmanager.severe("Reached end of stream");
             return null;
         }
 
         // CraftBukkit start
         catch (java.net.SocketTimeoutException exception) {
-            System.out.println("Read timed out");
+            iconsolelogmanager.severe("Read timed out");
             return null;
         } catch (java.net.SocketException exception) {
-            System.out.println("Connection reset");
+            iconsolelogmanager.severe("Connection reset");
             return null;
         }
         // CraftBukkit end
 
-
         PacketCounter.a(j, (long) packet.a());
-        ++n;
-        o += (long) packet.a();
+        ++o;
+        p += (long) packet.a();
         socket.setSoTimeout(i);
         return packet;
     }
 
     public static void a(Packet packet, DataOutputStream dataoutputstream) throws IOException { // CraftBukkit - throws IOException
-        dataoutputstream.write(packet.k());
+        dataoutputstream.write(packet.n());
         packet.a(dataoutputstream);
-        ++p;
-        q += (long) packet.a();
+        ++q;
+        r += (long) packet.a();
     }
 
     public static void a(String s, DataOutputStream dataoutputstream) throws IOException { // CraftBukkit - throws IOException
@@ -218,7 +219,7 @@ public abstract class Packet {
             dataoutputstream.writeShort(itemstack.getData());
             NBTTagCompound nbttagcompound = null;
 
-            if (itemstack.getItem().n() || itemstack.getItem().q()) {
+            if (itemstack.getItem().o() || itemstack.getItem().r()) {
                 nbttagcompound = itemstack.tag;
             }
 
@@ -300,6 +301,7 @@ public abstract class Packet {
         a(60, true, false, Packet60Explosion.class);
         a(61, true, false, Packet61WorldEvent.class);
         a(62, true, false, Packet62NamedSoundEffect.class);
+        a(63, true, false, Packet63WorldParticles.class);
         a(70, true, false, Packet70Bed.class);
         a(71, true, false, Packet71Weather.class);
         a(100, true, false, Packet100OpenWindow.class);
@@ -320,6 +322,10 @@ public abstract class Packet {
         a(203, true, true, Packet203TabComplete.class);
         a(204, false, true, Packet204LocaleAndViewDistance.class);
         a(205, false, true, Packet205ClientCommand.class);
+        a(206, true, false, Packet206SetScoreboardObjective.class);
+        a(207, true, false, Packet207SetScoreboardScore.class);
+        a(208, true, false, Packet208SetScoreboardDisplayObjective.class);
+        a(209, true, false, Packet209SetScoreboardTeam.class);
         a(250, true, true, Packet250CustomPayload.class);
         a(252, true, true, Packet252KeyResponse.class);
         a(253, true, false, Packet253KeyRequest.class);

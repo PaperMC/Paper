@@ -124,7 +124,7 @@ public class ShapedRecipes implements IRecipe {
                         return false;
                     }
 
-                    if (itemstack.getData() != -1 && itemstack.getData() != itemstack1.getData()) {
+                    if (itemstack.getData() != 32767 && itemstack.getData() != itemstack1.getData()) {
                         return false;
                     }
                 }

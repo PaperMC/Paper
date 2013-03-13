@@ -15,9 +15,9 @@ public class EntityEnderman extends EntityMonster {
     public EntityEnderman(World world) {
         super(world);
         this.texture = "/mob/enderman.png";
-        this.bH = 0.2F;
+        this.bI = 0.2F;
         this.a(0.6F, 2.9F);
-        this.X = 1.0F;
+        this.Y = 1.0F;
     }
 
     public int getMaxHealth() {
@@ -47,14 +47,14 @@ public class EntityEnderman extends EntityMonster {
         EntityHuman entityhuman = this.world.findNearbyVulnerablePlayer(this, 64.0D);
 
         if (entityhuman != null) {
-            if (this.d(entityhuman)) {
+            if (this.e(entityhuman)) {
                 if (this.f == 0) {
                     this.world.makeSound(entityhuman, "mob.endermen.stare", 1.0F, 1.0F);
                 }
 
                 if (this.f++ == 5) {
                     this.f = 0;
-                    this.f(true);
+                    this.a(true);
                     return entityhuman;
                 }
             } else {
@@ -65,7 +65,7 @@ public class EntityEnderman extends EntityMonster {
         return null;
     }
 
-    private boolean d(EntityHuman entityhuman) {
+    private boolean e(EntityHuman entityhuman) {
         ItemStack itemstack = entityhuman.inventory.armor[3];
 
         if (itemstack != null && itemstack.id == Block.PUMPKIN.id) {
@@ -83,11 +83,11 @@ public class EntityEnderman extends EntityMonster {
     }
 
     public void c() {
-        if (this.G()) {
+        if (this.F()) {
             this.damageEntity(DamageSource.DROWN, 1);
         }
 
-        this.bH = this.target != null ? 6.5F : 0.3F;
+        this.bI = this.target != null ? 6.5F : 0.3F;
         int i;
 
         if (!this.world.isStatic && this.world.getGameRules().getBoolean("mobGriefing")) {
@@ -106,7 +106,7 @@ public class EntityEnderman extends EntityMonster {
                         if (!CraftEventFactory.callEntityChangeBlockEvent(this, this.world.getWorld().getBlockAt(i, j, k), org.bukkit.Material.AIR).isCancelled()) {
                             this.setCarriedId(this.world.getTypeId(i, j, k));
                             this.setCarriedData(this.world.getData(i, j, k));
-                            this.world.setTypeId(i, j, k, 0);
+                            this.world.setTypeIdUpdate(i, j, k, 0);
                         }
                         // CraftBukkit end
                     }
@@ -121,7 +121,7 @@ public class EntityEnderman extends EntityMonster {
                 if (l == 0 && i1 > 0 && Block.byId[i1].b()) {
                     // CraftBukkit start - place event
                     if (!CraftEventFactory.callEntityChangeBlockEvent(this, i, j, k, this.getCarriedId(), this.getCarriedData()).isCancelled()) {
-                        this.world.setTypeIdAndData(i, j, k, this.getCarriedId(), this.getCarriedData());
+                        this.world.setTypeIdAndData(i, j, k, this.getCarriedId(), this.getCarriedData(), 3);
                         this.setCarriedId(0);
                     }
                     // CraftBukkit end
@@ -136,29 +136,29 @@ public class EntityEnderman extends EntityMonster {
         if (this.world.u() && !this.world.isStatic) {
             float f = this.c(1.0F);
 
-            if (f > 0.5F && this.world.k(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
+            if (f > 0.5F && this.world.l(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
                 this.target = null;
-                this.f(false);
+                this.a(false);
                 this.m();
             }
         }
 
-        if (this.G() || this.isBurning()) {
+        if (this.F() || this.isBurning()) {
             this.target = null;
-            this.f(false);
+            this.a(false);
             this.m();
         }
 
-        this.bF = false;
+        this.bG = false;
         if (this.target != null) {
             this.a(this.target, 100.0F, 100.0F);
         }
 
         if (!this.world.isStatic && this.isAlive()) {
             if (this.target != null) {
-                if (this.target instanceof EntityHuman && this.d((EntityHuman) this.target)) {
-                    this.bC = this.bD = 0.0F;
-                    this.bH = 0.0F;
+                if (this.target instanceof EntityHuman && this.e((EntityHuman) this.target)) {
+                    this.bD = this.bE = 0.0F;
+                    this.bI = 0.0F;
                     if (this.target.e((Entity) this) < 16.0D) {
                         this.m();
                     }
@@ -168,7 +168,7 @@ public class EntityEnderman extends EntityMonster {
                     this.e = 0;
                 }
             } else {
-                this.f(false);
+                this.a(false);
                 this.e = 0;
             }
         }
@@ -265,15 +265,15 @@ public class EntityEnderman extends EntityMonster {
         }
     }
 
-    protected String aY() {
+    protected String bb() {
         return this.q() ? "mob.endermen.scream" : "mob.endermen.idle";
     }
 
-    protected String aZ() {
+    protected String bc() {
         return "mob.endermen.hit";
     }
 
-    protected String ba() {
+    protected String bd() {
         return "mob.endermen.death";
     }
 
@@ -318,7 +318,7 @@ public class EntityEnderman extends EntityMonster {
         if (this.isInvulnerable()) {
             return false;
         } else {
-            this.f(true);
+            this.a(true);
             if (damagesource instanceof EntityDamageSourceIndirect) {
                 for (int j = 0; j < 64; ++j) {
                     if (this.m()) {
@@ -337,7 +337,7 @@ public class EntityEnderman extends EntityMonster {
         return this.datawatcher.getByte(18) > 0;
     }
 
-    public void f(boolean flag) {
+    public void a(boolean flag) {
         this.datawatcher.watch(18, Byte.valueOf((byte) (flag ? 1 : 0)));
     }
 

@@ -12,16 +12,11 @@ public class BlockMycel extends Block {
 
     protected BlockMycel(int i) {
         super(i, Material.GRASS);
-        this.textureId = 77;
         this.b(true);
         this.a(CreativeModeTab.b);
     }
 
-    public int a(int i, int j) {
-        return i == 1 ? 78 : (i == 0 ? 2 : 77);
-    }
-
-    public void b(World world, int i, int j, int k, Random random) {
+    public void a(World world, int i, int j, int k, Random random) {
         if (!world.isStatic) {
             if (world.getLightLevel(i, j + 1, k) < 4 && Block.lightBlock[world.getTypeId(i, j + 1, k)] > 2) {
                 // CraftBukkit start

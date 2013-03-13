@@ -8,29 +8,35 @@ import com.google.common.base.Joiner;
 
 public class TileEntityCommand extends TileEntity implements ICommandListener {
 
-    private String a = "";
+    private int a = 0;
+    private String b = "";
+    private String c = "@";
+    // CraftBukkit start
     private final org.bukkit.command.BlockCommandSender sender;
 
     public TileEntityCommand() {
         sender = new org.bukkit.craftbukkit.command.CraftBlockCommandSender(this);
     }
+    // CraftBukkit end
 
     public void b(String s) {
-        this.a = s;
+        this.b = s;
         this.update();
     }
 
-    public void a(World world) {
-        if (!world.isStatic) {
+    public int a(World world) {
+        if (world.isStatic) {
+            return 0;
+        } else {
             MinecraftServer minecraftserver = MinecraftServer.getServer();
 
             if (minecraftserver != null && minecraftserver.getEnableCommandBlock()) {
                 // CraftBukkit start - handle command block as console
                 org.bukkit.command.SimpleCommandMap commandMap = minecraftserver.server.getCommandMap();
                 Joiner joiner = Joiner.on(" ");
-                String command = this.a;
-                if (this.a.startsWith("/")) {
-                    command = this.a.substring(1);
+                String command = this.b;
+                if (this.b.startsWith("/")) {
+                    command = this.b.substring(1);
                 }
                 String[] args = command.split(" ");
                 ArrayList<String[]> commands = new ArrayList<String[]>();
@@ -39,17 +45,17 @@ public class TileEntityCommand extends TileEntity implements ICommandListener {
                 if (args[0].equalsIgnoreCase("stop") || args[0].equalsIgnoreCase("kick") || args[0].equalsIgnoreCase("op") ||
                         args[0].equalsIgnoreCase("deop") || args[0].equalsIgnoreCase("ban") || args[0].equalsIgnoreCase("ban-ip") ||
                         args[0].equalsIgnoreCase("pardon") || args[0].equalsIgnoreCase("pardon-ip") || args[0].equalsIgnoreCase("reload")) {
-                    return;
+                    return 0;
                 }
 
                 // make sure this is a valid command
                 if (commandMap.getCommand(args[0]) == null) {
-                    return;
+                    return 0;
                 }
 
                 // if the world has no players don't run
                 if (this.world.players.isEmpty()) {
-                    return;
+                    return 0;
                 }
 
                 commands.add(args);
@@ -68,11 +74,22 @@ public class TileEntityCommand extends TileEntity implements ICommandListener {
                     }
                 }
 
+                int completed = 0;
+
                 // now dispatch all of the commands we ended up with
                 for (int i = 0; i < commands.size(); i++) {
-                    commandMap.dispatch(sender, joiner.join(Arrays.asList(commands.get(i))));
+                    try {
+                        if (commandMap.dispatch(sender, joiner.join(Arrays.asList(commands.get(i))))) {
+                            completed++;
+                        }
+                    } catch (Throwable exception) {
+                        minecraftserver.getLogger().warning(String.format("CommandBlock at (%d,%d,%d) failed to handle command", this.x, this.y, this.z), exception);
+                    }
                 }
                 // CraftBukkit end
+                return completed;
+            } else {
+                return 0;
             }
         }
     }
@@ -97,7 +114,11 @@ public class TileEntityCommand extends TileEntity implements ICommandListener {
     // CraftBukkit end
 
     public String getName() {
-        return "@";
+        return this.c;
+    }
+
+    public void c(String s) {
+        this.c = s;
     }
 
     public void sendMessage(String s) {}
@@ -112,12 +133,18 @@ public class TileEntityCommand extends TileEntity implements ICommandListener {
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.setString("Command", this.a);
+        nbttagcompound.setString("Command", this.b);
+        nbttagcompound.setInt("SuccessCount", this.a);
+        nbttagcompound.setString("CustomName", this.c);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.a = nbttagcompound.getString("Command");
+        this.b = nbttagcompound.getString("Command");
+        this.a = nbttagcompound.getInt("SuccessCount");
+        if (nbttagcompound.hasKey("CustomName")) {
+            this.c = nbttagcompound.getString("CustomName");
+        }
     }
 
     public ChunkCoordinates b() {
@@ -129,5 +156,13 @@ public class TileEntityCommand extends TileEntity implements ICommandListener {
 
         this.b(nbttagcompound);
         return new Packet132TileEntityData(this.x, this.y, this.z, 2, nbttagcompound);
+    }
+
+    public int d() {
+        return this.a;
+    }
+
+    public void a(int i) {
+        this.a = i;
     }
 }

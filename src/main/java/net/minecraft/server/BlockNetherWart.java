@@ -4,8 +4,10 @@ import java.util.Random;
 
 public class BlockNetherWart extends BlockFlower {
 
+    private static final String[] a = new String[] { "netherStalk_0", "netherStalk_1", "netherStalk_2"};
+
     protected BlockNetherWart(int i) {
-        super(i, 226);
+        super(i);
         this.b(true);
         float f = 0.5F;
 
@@ -13,26 +15,22 @@ public class BlockNetherWart extends BlockFlower {
         this.a((CreativeModeTab) null);
     }
 
-    protected boolean d_(int i) {
+    protected boolean f_(int i) {
         return i == Block.SOUL_SAND.id;
     }
 
-    public boolean d(World world, int i, int j, int k) {
-        return this.d_(world.getTypeId(i, j - 1, k));
+    public boolean f(World world, int i, int j, int k) {
+        return this.f_(world.getTypeId(i, j - 1, k));
     }
 
-    public void b(World world, int i, int j, int k, Random random) {
+    public void a(World world, int i, int j, int k, Random random) {
         int l = world.getData(i, j, k);
 
         if (l < 3 && random.nextInt(10) == 0) {
             org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this.id, ++l); // CraftBukkit
         }
 
-        super.b(world, i, j, k, random);
-    }
-
-    public int a(int i, int j) {
-        return j >= 3 ? this.textureId + 2 : (j > 0 ? this.textureId + 1 : this.textureId);
+        super.a(world, i, j, k, random);
     }
 
     public int d() {

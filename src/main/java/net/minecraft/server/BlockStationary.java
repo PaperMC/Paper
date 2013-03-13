@@ -17,28 +17,25 @@ public class BlockStationary extends BlockFluids {
         }
     }
 
-    public boolean c(IBlockAccess iblockaccess, int i, int j, int k) {
+    public boolean b(IBlockAccess iblockaccess, int i, int j, int k) {
         return this.material != Material.LAVA;
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
         super.doPhysics(world, i, j, k, l);
         if (world.getTypeId(i, j, k) == this.id) {
-            this.l(world, i, j, k);
+            this.k(world, i, j, k);
         }
     }
 
-    private void l(World world, int i, int j, int k) {
+    private void k(World world, int i, int j, int k) {
         int l = world.getData(i, j, k);
 
-        world.suppressPhysics = true;
-        world.setRawTypeIdAndData(i, j, k, this.id - 1, l);
-        world.e(i, j, k, i, j, k);
-        world.a(i, j, k, this.id - 1, this.r_());
-        world.suppressPhysics = false;
+        world.setTypeIdAndData(i, j, k, this.id - 1, l, 2);
+        world.a(i, j, k, this.id - 1, this.a(world));
     }
 
-    public void b(World world, int i, int j, int k, Random random) {
+    public void a(World world, int i, int j, int k, Random random) {
         if (this.material == Material.LAVA) {
             int l = random.nextInt(3);
 
@@ -56,7 +53,7 @@ public class BlockStationary extends BlockFluids {
                 k += random.nextInt(3) - 1;
                 j1 = world.getTypeId(i, j, k);
                 if (j1 == 0) {
-                    if (this.n(world, i - 1, j, k) || this.n(world, i + 1, j, k) || this.n(world, i, j, k - 1) || this.n(world, i, j, k + 1) || this.n(world, i, j - 1, k) || this.n(world, i, j + 1, k)) {
+                    if (this.m(world, i - 1, j, k) || this.m(world, i + 1, j, k) || this.m(world, i, j, k - 1) || this.m(world, i, j, k + 1) || this.m(world, i, j - 1, k) || this.m(world, i, j + 1, k)) {
                         // CraftBukkit start - prevent lava putting something on fire
                         org.bukkit.block.Block block = bworld.getBlockAt(i, j, k);
                         if (block.getTypeId() != Block.FIRE.id) {
@@ -66,7 +63,7 @@ public class BlockStationary extends BlockFluids {
                         }
                         // CraftBukkit end
 
-                        world.setTypeId(i, j, k, Block.FIRE.id);
+                        world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
                         return;
                     }
                 } else if (Block.byId[j1].material.isSolid()) {
@@ -81,7 +78,7 @@ public class BlockStationary extends BlockFluids {
                 for (int k1 = 0; k1 < 3; ++k1) {
                     i = i1 + random.nextInt(3) - 1;
                     k = j1 + random.nextInt(3) - 1;
-                    if (world.isEmpty(i, j + 1, k) && this.n(world, i, j, k)) {
+                    if (world.isEmpty(i, j + 1, k) && this.m(world, i, j, k)) {
                         // CraftBukkit start - prevent lava putting something on fire
                         org.bukkit.block.Block block = bworld.getBlockAt(i, j + 1, k);
                         if (block.getTypeId() != Block.FIRE.id) {
@@ -91,14 +88,14 @@ public class BlockStationary extends BlockFluids {
                         }
                         // CraftBukkit end
 
-                        world.setTypeId(i, j + 1, k, Block.FIRE.id);
+                        world.setTypeIdUpdate(i, j + 1, k, Block.FIRE.id);
                     }
                 }
             }
         }
     }
 
-    private boolean n(World world, int i, int j, int k) {
+    private boolean m(World world, int i, int j, int k) {
         return world.getMaterial(i, j, k).isBurnable();
     }
 }

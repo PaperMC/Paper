@@ -13,7 +13,7 @@ public abstract class EntityFireball extends Entity {
     private boolean i = false;
     public EntityLiving shooter;
     private int j;
-    private int at = 0;
+    private int au = 0;
     public double dirX;
     public double dirY;
     public double dirZ;
@@ -63,11 +63,11 @@ public abstract class EntityFireball extends Entity {
         this.dirZ = d2 / d3 * 0.1D;
     }
 
-    public void j_() {
+    public void l_() {
         if (!this.world.isStatic && (this.shooter != null && this.shooter.dead || !this.world.isLoaded((int) this.locX, (int) this.locY, (int) this.locZ))) {
             this.die();
         } else {
-            super.j_();
+            super.l_();
             this.setOnFire(1);
             if (this.i) {
                 int i = this.world.getTypeId(this.e, this.f, this.g);
@@ -86,9 +86,9 @@ public abstract class EntityFireball extends Entity {
                 this.motY *= (double) (this.random.nextFloat() * 0.2F);
                 this.motZ *= (double) (this.random.nextFloat() * 0.2F);
                 this.j = 0;
-                this.at = 0;
+                this.au = 0;
             } else {
-                ++this.at;
+                ++this.au;
             }
 
             Vec3D vec3d = this.world.getVec3DPool().create(this.locX, this.locY, this.locZ);
@@ -108,7 +108,7 @@ public abstract class EntityFireball extends Entity {
             for (int j = 0; j < list.size(); ++j) {
                 Entity entity1 = (Entity) list.get(j);
 
-                if (entity1.L() && (!entity1.i(this.shooter) || this.at >= 25)) {
+                if (entity1.K() && (!entity1.i(this.shooter) || this.au >= 25)) {
                     float f = 0.3F;
                     AxisAlignedBB axisalignedbb = entity1.boundingBox.grow((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
@@ -166,7 +166,7 @@ public abstract class EntityFireball extends Entity {
             this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
             float f2 = this.c();
 
-            if (this.H()) {
+            if (this.G()) {
                 for (int k = 0; k < 4; ++k) {
                     float f3 = 0.25F;
 
@@ -222,11 +222,11 @@ public abstract class EntityFireball extends Entity {
         }
     }
 
-    public boolean L() {
+    public boolean K() {
         return true;
     }
 
-    public float Y() {
+    public float X() {
         return 1.0F;
     }
 
@@ -234,9 +234,9 @@ public abstract class EntityFireball extends Entity {
         if (this.isInvulnerable()) {
             return false;
         } else {
-            this.K();
+            this.J();
             if (damagesource.getEntity() != null) {
-                Vec3D vec3d = damagesource.getEntity().Z();
+                Vec3D vec3d = damagesource.getEntity().Y();
 
                 if (vec3d != null) {
                     this.motX = vec3d.c;

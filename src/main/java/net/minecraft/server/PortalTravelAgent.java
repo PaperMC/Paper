@@ -54,7 +54,7 @@ public class PortalTravelAgent {
                         int i2 = k + i1 * b1 - l * b0;
                         boolean flag = j1 < 0;
 
-                        this.a.setTypeId(k1, l1, i2, flag ? Block.OBSIDIAN.id : 0);
+                        this.a.setTypeIdUpdate(k1, l1, i2, flag ? Block.OBSIDIAN.id : 0);
                     }
                 }
             }
@@ -140,7 +140,7 @@ public class PortalTravelAgent {
                 for (int l1 = i1 - short1; l1 <= i1 + short1; ++l1) {
                     double d6 = (double) l1 + 0.5D - z; // CraftBukkit
 
-                    for (int i2 = this.a.P() - 1; i2 >= 0; --i2) {
+                    for (int i2 = this.a.Q() - 1; i2 >= 0; --i2) {
                         if (this.a.getTypeId(k1, i2, l1) == Block.PORTAL.id) {
                             while (this.a.getTypeId(k1, i2 - 1, l1) == Block.PORTAL.id) {
                                 --i2;
@@ -215,7 +215,7 @@ public class PortalTravelAgent {
                 j2 = 1;
             }
 
-            int k2 = entity.at();
+            int k2 = entity.as();
 
             if (j2 > -1) {
                 int l2 = Direction.h[j2];
@@ -364,7 +364,7 @@ public class PortalTravelAgent {
                 d2 = (double) j2 + 0.5D - z; // CraftBukkit
 
                 label274:
-                for (k2 = this.a.P() - 1; k2 >= 0; --k2) {
+                for (k2 = this.a.Q() - 1; k2 >= 0; --k2) {
                     if (this.a.isEmpty(i2, k2, j2)) {
                         while (k2 > 0 && this.a.isEmpty(i2, k2 - 1, j2)) {
                             --k2;
@@ -415,7 +415,7 @@ public class PortalTravelAgent {
                     d2 = (double) j2 + 0.5D - z; // CraftBukkit
 
                     label222:
-                    for (k2 = this.a.P() - 1; k2 >= 0; --k2) {
+                    for (k2 = this.a.Q() - 1; k2 >= 0; --k2) {
                         if (this.a.isEmpty(i2, k2, j2)) {
                             while (k2 > 0 && this.a.isEmpty(i2, k2 - 1, j2)) {
                                 --k2;
@@ -471,8 +471,8 @@ public class PortalTravelAgent {
                 i1 = 70;
             }
 
-            if (i1 > this.a.P() - 10) {
-                i1 = this.a.P() - 10;
+            if (i1 > this.a.Q() - 10) {
+                i1 = this.a.Q() - 10;
             }
 
             j5 = i1;
@@ -484,26 +484,22 @@ public class PortalTravelAgent {
                         j3 = j5 + l2;
                         i4 = j2 + (i3 - 1) * l5 - k2 * k5;
                         flag = l2 < 0;
-                        this.a.setTypeId(k3, j3, i4, flag ? Block.OBSIDIAN.id : 0);
+                        this.a.setTypeIdUpdate(k3, j3, i4, flag ? Block.OBSIDIAN.id : 0);
                     }
                 }
             }
         }
 
         for (k2 = 0; k2 < 4; ++k2) {
-            this.a.suppressPhysics = true;
-
             for (i3 = 0; i3 < 4; ++i3) {
                 for (l2 = -1; l2 < 4; ++l2) {
                     k3 = i5 + (i3 - 1) * k5;
                     j3 = j5 + l2;
                     i4 = j2 + (i3 - 1) * l5;
                     flag = i3 == 0 || i3 == 3 || l2 == -1 || l2 == 3;
-                    this.a.setTypeId(k3, j3, i4, flag ? Block.OBSIDIAN.id : Block.PORTAL.id);
+                    this.a.setTypeIdAndData(k3, j3, i4, flag ? Block.OBSIDIAN.id : Block.PORTAL.id, 0, 2);
                 }
             }
-
-            this.a.suppressPhysics = false;
 
             for (i3 = 0; i3 < 4; ++i3) {
                 for (l2 = -1; l2 < 4; ++l2) {

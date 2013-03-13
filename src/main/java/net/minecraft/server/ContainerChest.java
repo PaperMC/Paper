@@ -64,7 +64,7 @@ public class ContainerChest extends Container {
 
     public boolean a(EntityHuman entityhuman) {
         if (!this.checkReachable) return true; // CraftBukkit
-        return this.container.a_(entityhuman);
+        return this.container.a(entityhuman);
     }
 
     public ItemStack b(EntityHuman entityhuman, int i) {
@@ -95,10 +95,10 @@ public class ContainerChest extends Container {
 
     public void b(EntityHuman entityhuman) {
         super.b(entityhuman);
-        this.container.f();
+        this.container.g();
     }
 
-    public IInventory d() {
+    public IInventory e() {
         return this.container;
     }
 }

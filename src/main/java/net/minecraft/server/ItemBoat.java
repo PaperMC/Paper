@@ -41,8 +41,8 @@ public class ItemBoat extends Item {
             for (i = 0; i < list.size(); ++i) {
                 Entity entity = (Entity) list.get(i);
 
-                if (entity.L()) {
-                    float f10 = entity.Y();
+                if (entity.K()) {
+                    float f10 = entity.X();
                     AxisAlignedBB axisalignedbb = entity.boundingBox.grow((double) f10, (double) f10, (double) f10);
 
                     if (axisalignedbb.a(vec3d)) {

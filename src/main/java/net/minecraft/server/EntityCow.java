@@ -22,7 +22,7 @@ public class EntityCow extends EntityAnimal {
         this.goalSelector.a(7, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean be() {
+    public boolean bh() {
         return true;
     }
 
@@ -30,15 +30,15 @@ public class EntityCow extends EntityAnimal {
         return 10;
     }
 
-    protected String aY() {
+    protected String bb() {
         return "mob.cow.say";
     }
 
-    protected String aZ() {
+    protected String bc() {
         return "mob.cow.hurt";
     }
 
-    protected String ba() {
+    protected String bd() {
         return "mob.cow.hurt";
     }
 
@@ -46,7 +46,7 @@ public class EntityCow extends EntityAnimal {
         this.makeSound("mob.cow.step", 0.15F, 1.0F);
     }
 
-    protected float aX() {
+    protected float ba() {
         return 0.4F;
     }
 
@@ -75,7 +75,7 @@ public class EntityCow extends EntityAnimal {
         // CraftBukkit end
     }
 
-    public boolean a(EntityHuman entityhuman) {
+    public boolean a_(EntityHuman entityhuman) {
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
         if (itemstack != null && itemstack.id == Item.BUCKET.id) {
@@ -96,7 +96,7 @@ public class EntityCow extends EntityAnimal {
 
             return true;
         } else {
-            return super.a(entityhuman);
+            return super.a_(entityhuman);
         }
     }
 

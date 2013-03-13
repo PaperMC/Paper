@@ -5,25 +5,20 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.block.BlockDispenseEvent;
 // CraftBukkit end
 
-public class DispenseBehaviorBoat extends DispenseBehaviorItem {
+final class DispenseBehaviorBoat extends DispenseBehaviorItem {
 
-    private final DispenseBehaviorItem c;
+    private final DispenseBehaviorItem b = new DispenseBehaviorItem();
 
-    final MinecraftServer b;
-
-    public DispenseBehaviorBoat(MinecraftServer minecraftserver) {
-        this.b = minecraftserver;
-        this.c = new DispenseBehaviorItem();
-    }
+    DispenseBehaviorBoat() {}
 
     public ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
-        EnumFacing enumfacing = EnumFacing.a(isourceblock.h());
+        EnumFacing enumfacing = BlockDispenser.j_(isourceblock.h());
         World world = isourceblock.k();
         double d0 = isourceblock.getX() + (double) ((float) enumfacing.c() * 1.125F);
-        double d1 = isourceblock.getY();
+        double d1 = isourceblock.getY() + (double) ((float) enumfacing.d() * 1.125F);
         double d2 = isourceblock.getZ() + (double) ((float) enumfacing.e() * 1.125F);
         int i = isourceblock.getBlockX() + enumfacing.c();
-        int j = isourceblock.getBlockY();
+        int j = isourceblock.getBlockY() + enumfacing.d();
         int k = isourceblock.getBlockZ() + enumfacing.e();
         Material material = world.getMaterial(i, j, k);
         double d3;
@@ -32,7 +27,7 @@ public class DispenseBehaviorBoat extends DispenseBehaviorItem {
             d3 = 1.0D;
         } else {
             if (!Material.AIR.equals(material) || !Material.WATER.equals(world.getMaterial(i, j - 1, k))) {
-                return this.c.a(isourceblock, itemstack);
+                return this.b.a(isourceblock, itemstack);
             }
 
             d3 = 0.0D;

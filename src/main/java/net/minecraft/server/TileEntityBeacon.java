@@ -4,8 +4,6 @@ import java.util.Iterator;
 import java.util.List;
 
 // CraftBukkit start
-import java.util.List;
-
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
 // CraftBukkit end
@@ -18,6 +16,7 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
     private int f;
     private int g;
     private ItemStack h;
+    private String i;
     // CraftBukkit start
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     private int maxStack = MAX_STACK;
@@ -45,7 +44,7 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
 
     public TileEntityBeacon() {}
 
-    public void g() {
+    public void h() {
         if (this.world.getTime() % 80L == 0L) {
             this.v();
             this.u();
@@ -54,7 +53,7 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
 
     private void u() {
         if (this.d && this.e > 0 && !this.world.isStatic && this.f > 0) {
-            double d0 = (double) (this.e * 8 + 8);
+            double d0 = (double) (this.e * 10 + 10);
             byte b0 = 0;
 
             if (this.e >= 4 && this.f == this.g) {
@@ -62,6 +61,8 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
             }
 
             AxisAlignedBB axisalignedbb = AxisAlignedBB.a().a((double) this.x, (double) this.y, (double) this.z, (double) (this.x + 1), (double) (this.y + 1), (double) (this.z + 1)).grow(d0, d0, d0);
+
+            axisalignedbb.e = (double) this.world.getHeight();
             List list = this.world.a(EntityHuman.class, axisalignedbb);
             Iterator iterator = list.iterator();
 
@@ -84,7 +85,7 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
     }
 
     private void v() {
-        if (!this.world.k(this.x, this.y + 1, this.z)) {
+        if (!this.world.l(this.x, this.y + 1, this.z)) {
             this.d = false;
             this.e = 0;
         } else {
@@ -122,15 +123,15 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
         }
     }
 
-    public int i() {
+    public int j() {
         return this.f;
     }
 
-    public int j() {
+    public int k() {
         return this.g;
     }
 
-    public int k() {
+    public int l() {
         return this.e;
     }
 
@@ -234,18 +235,30 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
     }
 
     public String getName() {
-        return "container.beacon";
+        return this.c() ? this.i : "container.beacon";
+    }
+
+    public boolean c() {
+        return this.i != null && this.i.length() > 0;
+    }
+
+    public void a(String s) {
+        this.i = s;
     }
 
     public int getMaxStackSize() {
         return maxStack; // CraftBukkit
     }
 
-    public boolean a_(EntityHuman entityhuman) {
+    public boolean a(EntityHuman entityhuman) {
         return this.world.getTileEntity(this.x, this.y, this.z) != this ? false : entityhuman.e((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D) <= 64.0D;
     }
 
     public void startOpen() {}
 
-    public void f() {}
+    public void g() {}
+
+    public boolean b(int i, ItemStack itemstack) {
+        return itemstack.id == Item.EMERALD.id || itemstack.id == Item.DIAMOND.id || itemstack.id == Item.GOLD_INGOT.id || itemstack.id == Item.IRON_INGOT.id;
+    }
 }

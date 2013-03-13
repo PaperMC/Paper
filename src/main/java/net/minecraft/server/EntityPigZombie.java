@@ -15,21 +15,21 @@ public class EntityPigZombie extends EntityZombie {
     public EntityPigZombie(World world) {
         super(world);
         this.texture = "/mob/pigzombie.png";
-        this.bH = 0.5F;
+        this.bI = 0.5F;
         this.fireProof = true;
     }
 
-    protected boolean be() {
+    protected boolean bh() {
         return false;
     }
 
-    public void j_() {
-        this.bH = this.target != null ? 0.95F : 0.5F;
+    public void l_() {
+        this.bI = this.target != null ? 0.95F : 0.5F;
         if (this.soundDelay > 0 && --this.soundDelay == 0) {
-            this.makeSound("mob.zombiepig.zpigangry", this.aX() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
+            this.makeSound("mob.zombiepig.zpigangry", this.ba() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
         }
 
-        super.j_();
+        super.l_();
     }
 
     public boolean canSpawn() {
@@ -99,15 +99,15 @@ public class EntityPigZombie extends EntityZombie {
         this.soundDelay = this.random.nextInt(40);
     }
 
-    protected String aY() {
+    protected String bb() {
         return "mob.zombiepig.zpig";
     }
 
-    protected String aZ() {
+    protected String bc() {
         return "mob.zombiepig.zpighurt";
     }
 
-    protected String ba() {
+    protected String bd() {
         return "mob.zombiepig.zpigdeath";
     }
 
@@ -142,7 +142,7 @@ public class EntityPigZombie extends EntityZombie {
         // CraftBukkit end
     }
 
-    public boolean a(EntityHuman entityhuman) {
+    public boolean a_(EntityHuman entityhuman) {
         return false;
     }
 
@@ -155,17 +155,17 @@ public class EntityPigZombie extends EntityZombie {
         return Item.ROTTEN_FLESH.id;
     }
 
-    protected void bE() {
+    protected void bH() {
         this.setEquipment(0, new ItemStack(Item.GOLD_SWORD));
     }
 
-    public void bG() {
-        super.bG();
+    public void bJ() {
+        super.bJ();
         this.setVillager(false);
     }
 
     public int c(Entity entity) {
-        ItemStack itemstack = this.bD();
+        ItemStack itemstack = this.bG();
         int i = 5;
 
         if (itemstack != null) {

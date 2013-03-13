@@ -7,7 +7,6 @@ import org.bukkit.BlockChangeDelegate; // CraftBukkit
 public abstract class WorldGenerator {
 
     private final boolean a;
-    private int b = 1;
 
     public WorldGenerator() {
         this.a = false;
@@ -31,7 +30,7 @@ public abstract class WorldGenerator {
         if (this.a) {
             world.setTypeIdAndData(i, j, k, l, i1);
         } else {
-            world.setRawTypeIdAndData(i, j, k, l, i1);
+            world.setTypeIdAndData(i, j, k, l, i1);
         }
     }
 }

@@ -10,12 +10,13 @@ import org.bukkit.event.inventory.FurnaceSmeltEvent;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 // CraftBukkit end
 
-public class TileEntityFurnace extends TileEntity implements IInventory {
+public class TileEntityFurnace extends TileEntity implements IWorldInventory {
 
     private ItemStack[] items = new ItemStack[3];
     public int burnTime = 0;
     public int ticksForCurrentFuel = 0;
     public int cookTime = 0;
+    private String e;
 
     // CraftBukkit start
     private int lastTick = (int) (System.currentTimeMillis() / 50);
@@ -93,7 +94,15 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
     }
 
     public String getName() {
-        return "container.furnace";
+        return this.c() ? this.e : "container.furnace";
+    }
+
+    public boolean c() {
+        return this.e != null && this.e.length() > 0;
+    }
+
+    public void a(String s) {
+        this.e = s;
     }
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -114,6 +123,9 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         this.burnTime = nbttagcompound.getShort("BurnTime");
         this.cookTime = nbttagcompound.getShort("CookTime");
         this.ticksForCurrentFuel = fuelTime(this.items[1]);
+        if (nbttagcompound.hasKey("CustomName")) {
+            this.e = nbttagcompound.getString("CustomName");
+        }
     }
 
     public void b(NBTTagCompound nbttagcompound) {
@@ -133,6 +145,9 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         }
 
         nbttagcompound.set("Items", nbttaglist);
+        if (this.c()) {
+            nbttagcompound.setString("CustomName", this.e);
+        }
     }
 
     public int getMaxStackSize() {
@@ -143,7 +158,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         return this.burnTime > 0;
     }
 
-    public void g() {
+    public void h() {
         boolean flag = this.burnTime > 0;
         boolean flag1 = false;
 
@@ -189,7 +204,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
                     if (this.items[1] != null) {
                         --this.items[1].count;
                         if (this.items[1].count == 0) {
-                            Item item = this.items[1].getItem().r();
+                            Item item = this.items[1].getItem().s();
 
                             this.items[1] = item != null ? new ItemStack(item) : null;
                         }
@@ -292,11 +307,23 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         return fuelTime(itemstack) > 0;
     }
 
-    public boolean a_(EntityHuman entityhuman) {
+    public boolean a(EntityHuman entityhuman) {
         return this.world.getTileEntity(this.x, this.y, this.z) != this ? false : entityhuman.e((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D) <= 64.0D;
     }
 
     public void startOpen() {}
 
-    public void f() {}
+    public void g() {}
+
+    public boolean b(int i, ItemStack itemstack) {
+        return i == 2 ? false : (i == 1 ? isFuel(itemstack) : true);
+    }
+
+    public int c(int i) {
+        return i == 0 ? 2 : (i == 1 ? 0 : 1);
+    }
+
+    public int d(int i) {
+        return 1;
+    }
 }

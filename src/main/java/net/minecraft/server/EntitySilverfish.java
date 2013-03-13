@@ -10,7 +10,7 @@ public class EntitySilverfish extends EntityMonster {
         super(world);
         this.texture = "/mob/silverfish.png";
         this.a(0.3F, 0.7F);
-        this.bH = 0.6F;
+        this.bI = 0.6F;
     }
 
     public int getMaxHealth() {
@@ -27,15 +27,15 @@ public class EntitySilverfish extends EntityMonster {
         return this.world.findNearbyVulnerablePlayer(this, d0);
     }
 
-    protected String aY() {
+    protected String bb() {
         return "mob.silverfish.say";
     }
 
-    protected String aZ() {
+    protected String bc() {
         return "mob.silverfish.hit";
     }
 
-    protected String ba() {
+    protected String bd() {
         return "mob.silverfish.kill";
     }
 
@@ -66,13 +66,13 @@ public class EntitySilverfish extends EntityMonster {
         return 0;
     }
 
-    public void j_() {
-        this.ax = this.yaw;
-        super.j_();
+    public void l_() {
+        this.ay = this.yaw;
+        super.l_();
     }
 
-    protected void bn() {
-        super.bn();
+    protected void bq() {
+        super.bq();
         if (!this.world.isStatic) {
             int i;
             int j;
@@ -99,8 +99,7 @@ public class EntitySilverfish extends EntityMonster {
                                     }
                                     // CraftBukkit end
 
-                                    this.world.triggerEffect(2001, i + i1, j + l, k + j1, Block.MONSTER_EGGS.id + (this.world.getData(i + i1, j + l, k + j1) << 12));
-                                    this.world.setTypeId(i + i1, j + l, k + j1, 0);
+                                    this.world.setAir(i + i1, j + l, k + j1, false);
                                     Block.MONSTER_EGGS.postBreak(this.world, i + i1, j + l, k + j1, 0);
                                     if (this.random.nextBoolean()) {
                                         flag = true;
@@ -120,15 +119,15 @@ public class EntitySilverfish extends EntityMonster {
                 int l1 = this.random.nextInt(6);
 
                 l = this.world.getTypeId(i + Facing.b[l1], j + Facing.c[l1], k + Facing.d[l1]);
-                if (BlockMonsterEggs.e(l)) {
+                if (BlockMonsterEggs.d(l)) {
                     // CraftBukkit start
-                    if (CraftEventFactory.callEntityChangeBlockEvent(this, i + Facing.b[l1], j + Facing.c[l1], k + Facing.d[l1], Block.MONSTER_EGGS.id, BlockMonsterEggs.f(l)).isCancelled()) {
+                    if (CraftEventFactory.callEntityChangeBlockEvent(this, i + Facing.b[l1], j + Facing.c[l1], k + Facing.d[l1], Block.MONSTER_EGGS.id, BlockMonsterEggs.e(l)).isCancelled()) {
                         return;
                     }
                     // CraftBukkit end
 
-                    this.world.setTypeIdAndData(i + Facing.b[l1], j + Facing.c[l1], k + Facing.d[l1], Block.MONSTER_EGGS.id, BlockMonsterEggs.f(l));
-                    this.aR();
+                    this.world.setTypeIdAndData(i + Facing.b[l1], j + Facing.c[l1], k + Facing.d[l1], Block.MONSTER_EGGS.id, BlockMonsterEggs.e(l), 3);
+                    this.aU();
                     this.die();
                 } else {
                     this.i();

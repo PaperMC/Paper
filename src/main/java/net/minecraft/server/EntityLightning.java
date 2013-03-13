@@ -45,7 +45,7 @@ public class EntityLightning extends EntityWeather {
                 world.getServer().getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {
-                    world.setTypeId(i, j, k, Block.FIRE.id);
+                    world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
                 }
                 // CraftBukkit end
             }
@@ -61,7 +61,7 @@ public class EntityLightning extends EntityWeather {
                     world.getServer().getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
-                        world.setTypeId(j, k, l, Block.FIRE.id);
+                        world.setTypeIdUpdate(j, k, l, Block.FIRE.id);
                     }
                     // CraftBukkit end
                 }
@@ -69,8 +69,8 @@ public class EntityLightning extends EntityWeather {
         }
     }
 
-    public void j_() {
-        super.j_();
+    public void l_() {
+        super.l_();
         if (this.lifeTicks == 2) {
             this.world.makeSound(this.locX, this.locY, this.locZ, "ambient.weather.thunder", 10000.0F, 0.8F + this.random.nextFloat() * 0.2F);
             this.world.makeSound(this.locX, this.locY, this.locZ, "random.explode", 2.0F, 0.5F + this.random.nextFloat() * 0.2F);
@@ -96,7 +96,7 @@ public class EntityLightning extends EntityWeather {
                         this.world.getServer().getPluginManager().callEvent(event);
 
                         if (!event.isCancelled()) {
-                            this.world.setTypeId(i, j, k, Block.FIRE.id);
+                            this.world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
                         }
                         // CraftBukkit end
                     }

@@ -32,16 +32,16 @@ public class EntityIronGolem extends EntityGolem {
         this.datawatcher.a(16, Byte.valueOf((byte) 0));
     }
 
-    public boolean be() {
+    public boolean bh() {
         return true;
     }
 
-    protected void bm() {
+    protected void bp() {
         if (--this.e <= 0) {
             this.e = 70 + this.random.nextInt(50);
             this.d = this.world.villages.getClosestVillage(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ), 32);
             if (this.d == null) {
-                this.aL();
+                this.aO();
             } else {
                 ChunkCoordinates chunkcoordinates = this.d.getCenter();
 
@@ -49,19 +49,19 @@ public class EntityIronGolem extends EntityGolem {
             }
         }
 
-        super.bm();
+        super.bp();
     }
 
     public int getMaxHealth() {
         return 100;
     }
 
-    protected int g(int i) {
+    protected int h(int i) {
         return i;
     }
 
     protected void o(Entity entity) {
-        if (entity instanceof IMonster && this.aB().nextInt(20) == 0) {
+        if (entity instanceof IMonster && this.aE().nextInt(20) == 0) {
             this.setGoalTarget((EntityLiving) entity);
         }
 
@@ -121,20 +121,20 @@ public class EntityIronGolem extends EntityGolem {
         return this.d;
     }
 
-    public void f(boolean flag) {
+    public void a(boolean flag) {
         this.g = flag ? 400 : 0;
         this.world.broadcastEntityEffect(this, (byte) 11);
     }
 
-    protected String aY() {
+    protected String bb() {
         return "none";
     }
 
-    protected String aZ() {
+    protected String bc() {
         return "mob.irongolem.hit";
     }
 
-    protected String ba() {
+    protected String bd() {
         return "mob.irongolem.death";
     }
 

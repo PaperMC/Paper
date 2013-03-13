@@ -11,24 +11,28 @@ public class EntityZombie extends EntityMonster {
     public EntityZombie(World world) {
         super(world);
         this.texture = "/mob/zombie.png";
-        this.bH = 0.23F;
+        this.bI = 0.23F;
         this.getNavigation().b(true);
         this.goalSelector.a(0, new PathfinderGoalFloat(this));
         this.goalSelector.a(1, new PathfinderGoalBreakDoor(this));
-        this.goalSelector.a(2, new PathfinderGoalMeleeAttack(this, EntityHuman.class, this.bH, false));
-        this.goalSelector.a(3, new PathfinderGoalMeleeAttack(this, EntityVillager.class, this.bH, true));
-        this.goalSelector.a(4, new PathfinderGoalMoveTowardsRestriction(this, this.bH));
-        this.goalSelector.a(5, new PathfinderGoalMoveThroughVillage(this, this.bH, false));
-        this.goalSelector.a(6, new PathfinderGoalRandomStroll(this, this.bH));
+        this.goalSelector.a(2, new PathfinderGoalMeleeAttack(this, EntityHuman.class, this.bI, false));
+        this.goalSelector.a(3, new PathfinderGoalMeleeAttack(this, EntityVillager.class, this.bI, true));
+        this.goalSelector.a(4, new PathfinderGoalMoveTowardsRestriction(this, this.bI));
+        this.goalSelector.a(5, new PathfinderGoalMoveThroughVillage(this, this.bI, false));
+        this.goalSelector.a(6, new PathfinderGoalRandomStroll(this, this.bI));
         this.goalSelector.a(7, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 8.0F));
         this.goalSelector.a(7, new PathfinderGoalRandomLookaround(this));
-        this.targetSelector.a(1, new PathfinderGoalHurtByTarget(this, false));
+        this.targetSelector.a(1, new PathfinderGoalHurtByTarget(this, true));
         this.targetSelector.a(2, new PathfinderGoalNearestAttackableTarget(this, EntityHuman.class, 16.0F, 0, true));
         this.targetSelector.a(2, new PathfinderGoalNearestAttackableTarget(this, EntityVillager.class, 16.0F, 0, false));
     }
 
-    public float bB() {
-        return super.bB() * (this.isBaby() ? 1.5F : 1.0F);
+    protected int ay() {
+        return 40;
+    }
+
+    public float bE() {
+        return super.bE() * (this.isBaby() ? 1.5F : 1.0F);
     }
 
     protected void a() {
@@ -42,8 +46,8 @@ public class EntityZombie extends EntityMonster {
         return 20;
     }
 
-    public int aW() {
-        int i = super.aW() + 2;
+    public int aZ() {
+        int i = super.aZ() + 2;
 
         if (i > 20) {
             i = 20;
@@ -52,7 +56,7 @@ public class EntityZombie extends EntityMonster {
         return i;
     }
 
-    protected boolean be() {
+    protected boolean bh() {
         return true;
     }
 
@@ -76,14 +80,14 @@ public class EntityZombie extends EntityMonster {
         if (this.world.u() && !this.world.isStatic && !this.isBaby()) {
             float f = this.c(1.0F);
 
-            if (f > 0.5F && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && this.world.k(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ))) {
+            if (f > 0.5F && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && this.world.l(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ))) {
                 boolean flag = true;
                 ItemStack itemstack = this.getEquipment(4);
 
                 if (itemstack != null) {
-                    if (itemstack.f()) {
-                        itemstack.setData(itemstack.i() + this.random.nextInt(2));
-                        if (itemstack.i() >= itemstack.k()) {
+                    if (itemstack.g()) {
+                        itemstack.setData(itemstack.j() + this.random.nextInt(2));
+                        if (itemstack.j() >= itemstack.l()) {
                             this.a(itemstack);
                             this.setEquipment(4, (ItemStack) null);
                         }
@@ -108,7 +112,7 @@ public class EntityZombie extends EntityMonster {
         super.c();
     }
 
-    public void j_() {
+    public void l_() {
         if (!this.world.isStatic && this.o()) {
             int i = this.q();
 
@@ -118,12 +122,23 @@ public class EntityZombie extends EntityMonster {
             }
         }
 
-        super.j_();
+        super.l_();
+    }
+
+    public boolean m(Entity entity) {
+        boolean flag = super.m(entity);
+
+        if (flag && this.bG() == null && this.isBurning() && this.random.nextFloat() < (float) this.world.difficulty * 0.3F) {
+            entity.setOnFire(2 * this.world.difficulty);
+        }
+
+        return flag;
     }
 
     public int c(Entity entity) {
-        ItemStack itemstack = this.bD();
-        int i = 4;
+        ItemStack itemstack = this.bG();
+        float f = (float) (this.getMaxHealth() - this.getHealth()) / (float) this.getMaxHealth();
+        int i = 3 + MathHelper.d(f * 4.0F);
 
         if (itemstack != null) {
             i += itemstack.a((Entity) this);
@@ -132,15 +147,15 @@ public class EntityZombie extends EntityMonster {
         return i;
     }
 
-    protected String aY() {
+    protected String bb() {
         return "mob.zombie.say";
     }
 
-    protected String aZ() {
+    protected String bc() {
         return "mob.zombie.hurt";
     }
 
-    protected String ba() {
+    protected String bd() {
         return "mob.zombie.death";
     }
 
@@ -171,8 +186,8 @@ public class EntityZombie extends EntityMonster {
     }
     // CraftBukkit end
 
-    protected void bE() {
-        super.bE();
+    protected void bH() {
+        super.bH();
         if (this.random.nextFloat() < (this.world.difficulty == 3 ? 0.05F : 0.01F)) {
             int i = this.random.nextInt(3);
 
@@ -223,7 +238,7 @@ public class EntityZombie extends EntityMonster {
 
             entityzombie.k(entityliving);
             this.world.kill(entityliving);
-            entityzombie.bG();
+            entityzombie.bJ();
             entityzombie.setVillager(true);
             if (entityliving.isBaby()) {
                 entityzombie.setBaby(true);
@@ -234,16 +249,16 @@ public class EntityZombie extends EntityMonster {
         }
     }
 
-    public void bG() {
-        this.canPickUpLoot = this.random.nextFloat() < at[this.world.difficulty];
+    public void bJ() {
+        this.h(this.random.nextFloat() < au[this.world.difficulty]);
         if (this.world.random.nextFloat() < 0.05F) {
             this.setVillager(true);
         }
 
-        this.bE();
-        this.bF();
+        this.bH();
+        this.bI();
         if (this.getEquipment(4) == null) {
-            Calendar calendar = this.world.T();
+            Calendar calendar = this.world.U();
 
             if (calendar.get(2) + 1 == 10 && calendar.get(5) == 31 && this.random.nextFloat() < 0.25F) {
                 this.setEquipment(4, new ItemStack(this.random.nextFloat() < 0.1F ? Block.JACK_O_LANTERN : Block.PUMPKIN));
@@ -252,8 +267,8 @@ public class EntityZombie extends EntityMonster {
         }
     }
 
-    public boolean a(EntityHuman entityhuman) {
-        ItemStack itemstack = entityhuman.bS();
+    public boolean a_(EntityHuman entityhuman) {
+        ItemStack itemstack = entityhuman.cb();
 
         if (itemstack != null && itemstack.getItem() == Item.GOLDEN_APPLE && itemstack.getData() == 0 && this.isVillager() && this.hasEffect(MobEffectList.WEAKNESS)) {
             if (!entityhuman.abilities.canInstantlyBuild) {
@@ -290,7 +305,7 @@ public class EntityZombie extends EntityMonster {
         EntityVillager entityvillager = new EntityVillager(this.world);
 
         entityvillager.k(this);
-        entityvillager.bG();
+        entityvillager.bJ();
         entityvillager.q();
         if (this.isBaby()) {
             entityvillager.setAge(-24000);

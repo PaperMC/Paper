@@ -10,7 +10,7 @@ public class TileEntity {
 
     private static Map a = new HashMap();
     private static Map b = new HashMap();
-    public World world; // CraftBukkit - protected -> public
+    protected World world;
     public int x;
     public int y;
     public int z;
@@ -31,6 +31,10 @@ public class TileEntity {
 
     public void b(World world) {
         this.world = world;
+    }
+
+    public World getWorld() {
+        return this.world;
     }
 
     public boolean o() {
@@ -56,7 +60,7 @@ public class TileEntity {
         }
     }
 
-    public void g() {}
+    public void h() {}
 
     public static TileEntity c(NBTTagCompound nbttagcompound) {
         TileEntity tileentity = null;
@@ -74,7 +78,7 @@ public class TileEntity {
         if (tileentity != null) {
             tileentity.a(nbttagcompound);
         } else {
-            System.out.println("Skipping TileEntity with id " + nbttagcompound.getString("id"));
+            MinecraftServer.getServer().getLogger().warning("Skipping TileEntity with id " + nbttagcompound.getString("id"));
         }
 
         return tileentity;
@@ -92,6 +96,9 @@ public class TileEntity {
         if (this.world != null) {
             this.p = this.world.getData(this.x, this.y, this.z);
             this.world.b(this.x, this.y, this.z, this);
+            if (this.q() != null) {
+                this.world.m(this.x, this.y, this.z, this.q().id);
+            }
         }
     }
 
@@ -119,16 +126,20 @@ public class TileEntity {
         this.o = false;
     }
 
-    public void b(int i, int j) {}
+    public boolean b(int i, int j) {
+        return false;
+    }
 
-    public void h() {
+    public void i() {
         this.q = null;
         this.p = -1;
     }
 
     public void a(CrashReportSystemDetails crashreportsystemdetails) {
         crashreportsystemdetails.a("Name", (Callable) (new CrashReportTileEntityName(this)));
-        CrashReportSystemDetails.a(crashreportsystemdetails, this.x, this.y, this.z, this.q.id, this.p);
+        CrashReportSystemDetails.a(crashreportsystemdetails, this.x, this.y, this.z, this.q().id, this.p());
+        crashreportsystemdetails.a("Actual block type", (Callable) (new CrashReportTileEntityType(this)));
+        crashreportsystemdetails.a("Actual block data value", (Callable) (new CrashReportTileEntityData(this)));
     }
 
     static Map t() {
@@ -141,6 +152,7 @@ public class TileEntity {
         a(TileEntityEnderChest.class, "EnderChest");
         a(TileEntityRecordPlayer.class, "RecordPlayer");
         a(TileEntityDispenser.class, "Trap");
+        a(TileEntityDropper.class, "Dropper");
         a(TileEntitySign.class, "Sign");
         a(TileEntityMobSpawner.class, "MobSpawner");
         a(TileEntityNote.class, "Music");
@@ -151,6 +163,9 @@ public class TileEntity {
         a(TileEntityCommand.class, "Control");
         a(TileEntityBeacon.class, "Beacon");
         a(TileEntitySkull.class, "Skull");
+        a(TileEntityLightDetector.class, "DLDetector");
+        a(TileEntityHopper.class, "Hopper");
+        a(TileEntityComparator.class, "Comparator");
     }
 
     // CraftBukkit start

@@ -6,22 +6,22 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
 
     public EntityMonster(World world) {
         super(world);
-        this.bd = 5;
+        this.be = 5;
     }
 
     public void c() {
-        this.bo();
+        this.br();
         float f = this.c(1.0F);
 
         if (f > 0.5F) {
-            this.bB += 2;
+            this.bC += 2;
         }
 
         super.c();
     }
 
-    public void j_() {
-        super.j_();
+    public void l_() {
+        super.l_();
         if (!this.world.isStatic && this.world.difficulty == 0) {
             this.die();
         }
@@ -116,7 +116,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     }
 
     public float a(int i, int j, int k) {
-        return 0.5F - this.world.p(i, j, k);
+        return 0.5F - this.world.q(i, j, k);
     }
 
     protected boolean i_() {
@@ -129,7 +129,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         } else {
             int l = this.world.getLightLevel(i, j, k);
 
-            if (this.world.M()) {
+            if (this.world.N()) {
                 int i1 = this.world.j;
 
                 this.world.j = 10;

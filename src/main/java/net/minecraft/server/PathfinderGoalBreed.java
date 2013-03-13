@@ -38,10 +38,10 @@ public class PathfinderGoalBreed extends PathfinderGoal {
     }
 
     public void e() {
-        this.d.getControllerLook().a(this.e, 10.0F, (float) this.d.bp());
+        this.d.getControllerLook().a(this.e, 10.0F, (float) this.d.bs());
         this.d.getNavigation().a((EntityLiving) this.e, this.c);
         ++this.b;
-        if (this.b == 60) {
+        if (this.b >= 60 && this.d.e(this.e) < 9.0D) {
             this.g();
         }
     }
@@ -49,17 +49,18 @@ public class PathfinderGoalBreed extends PathfinderGoal {
     private EntityAnimal f() {
         float f = 8.0F;
         List list = this.a.a(this.d.getClass(), this.d.boundingBox.grow((double) f, (double) f, (double) f));
+        double d0 = Double.MAX_VALUE;
+        EntityAnimal entityanimal = null;
         Iterator iterator = list.iterator();
 
-        EntityAnimal entityanimal;
+        while (iterator.hasNext()) {
+            EntityAnimal entityanimal1 = (EntityAnimal) iterator.next();
 
-        do {
-            if (!iterator.hasNext()) {
-                return null;
+            if (this.d.mate(entityanimal1) && this.d.e(entityanimal1) < d0) {
+                entityanimal = entityanimal1;
+                d0 = this.d.e(entityanimal1);
             }
-
-            entityanimal = (EntityAnimal) iterator.next();
-        } while (!this.d.mate(entityanimal));
+        }
 
         return entityanimal;
     }
@@ -75,7 +76,7 @@ public class PathfinderGoalBreed extends PathfinderGoal {
             entityageable.setAge(-24000);
             entityageable.setPositionRotation(this.d.locX, this.d.locY, this.d.locZ, 0.0F, 0.0F);
             this.a.addEntity(entityageable, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - added SpawnReason
-            Random random = this.d.aB();
+            Random random = this.d.aE();
 
             for (int i = 0; i < 7; ++i) {
                 double d0 = random.nextGaussian() * 0.02D;

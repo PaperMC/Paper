@@ -8,7 +8,8 @@ import org.bukkit.event.entity.SheepDyeWoolEvent;
 public class ItemDye extends Item {
 
     public static final String[] a = new String[] { "black", "red", "green", "brown", "blue", "purple", "cyan", "silver", "gray", "pink", "lime", "yellow", "lightBlue", "magenta", "orange", "white"};
-    public static final int[] b = new int[] { 1973019, 11743532, 3887386, 5320730, 2437522, 8073150, 2651799, 11250603, 4408131, 14188952, 4312372, 14602026, 6719955, 12801229, 15435844, 15790320};
+    public static final String[] b = new String[] { "dyePowder_black", "dyePowder_red", "dyePowder_green", "dyePowder_brown", "dyePowder_blue", "dyePowder_purple", "dyePowder_cyan", "dyePowder_silver", "dyePowder_gray", "dyePowder_pink", "dyePowder_lime", "dyePowder_yellow", "dyePowder_lightBlue", "dyePowder_magenta", "dyePowder_orange", "dyePowder_white"};
+    public static final int[] c = new int[] { 1973019, 11743532, 3887386, 5320730, 2437522, 8073150, 2651799, 11250603, 4408131, 14188952, 4312372, 14602026, 6719955, 12801229, 15435844, 15790320};
 
     public ItemDye(int i) {
         super(i);
@@ -27,112 +28,19 @@ public class ItemDye extends Item {
         if (!entityhuman.a(i, j, k, l, itemstack)) {
             return false;
         } else {
-            int i1;
-            int j1;
-            int k1;
-
             if (itemstack.getData() == 15) {
-                i1 = world.getTypeId(i, j, k);
-                if (i1 == Block.SAPLING.id) {
+                if (a(itemstack, world, i, j, k, entityhuman)) {
                     if (!world.isStatic) {
-                        // CraftBukkit start
-                        Player player = (entityhuman instanceof EntityPlayer) ? (Player) entityhuman.getBukkitEntity() : null;
-                        ((BlockSapling) Block.SAPLING).grow(world, i, j, k, world.random, true, player, itemstack);
-                        //--itemstack.count; - called later if the bonemeal attempt was succesful
-                        // CraftBukkit end
-                    }
-
-                    return true;
-                }
-
-                if (i1 == Block.BROWN_MUSHROOM.id || i1 == Block.RED_MUSHROOM.id) {
-                    // CraftBukkit start
-                    if (!world.isStatic) {
-                        Player player = (entityhuman instanceof EntityPlayer) ? (Player) entityhuman.getBukkitEntity() : null;
-                        ((BlockMushroom) Block.byId[i1]).grow(world, i, j, k, world.random, true, player, itemstack);
-                        //--itemstack.count; - called later if the bonemeal attempt was succesful
-                        // CraftBukkit end
-                    }
-
-                    return true;
-                }
-
-                if (i1 == Block.MELON_STEM.id || i1 == Block.PUMPKIN_STEM.id) {
-                    if (world.getData(i, j, k) == 7) {
-                        return false;
-                    }
-
-                    if (!world.isStatic) {
-                        ((BlockStem) Block.byId[i1]).l(world, i, j, k);
-                        --itemstack.count;
-                    }
-
-                    return true;
-                }
-
-                if (i1 > 0 && Block.byId[i1] instanceof BlockCrops) {
-                    if (world.getData(i, j, k) == 7) {
-                        return false;
-                    }
-
-                    if (!world.isStatic) {
-                        ((BlockCrops) Block.byId[i1]).c_(world, i, j, k);
-                        --itemstack.count;
-                    }
-
-                    return true;
-                }
-
-                if (i1 == Block.COCOA.id) {
-                    if (!world.isStatic) {
-                        world.setData(i, j, k, 8 | BlockDirectional.e(world.getData(i, j, k)));
-                        --itemstack.count;
-                    }
-
-                    return true;
-                }
-
-                if (i1 == Block.GRASS.id) {
-                    if (!world.isStatic) {
-                        --itemstack.count;
-
-                        label133:
-                        for (j1 = 0; j1 < 128; ++j1) {
-                            k1 = i;
-                            int l1 = j + 1;
-                            int i2 = k;
-
-                            for (int j2 = 0; j2 < j1 / 16; ++j2) {
-                                k1 += d.nextInt(3) - 1;
-                                l1 += (d.nextInt(3) - 1) * d.nextInt(3) / 2;
-                                i2 += d.nextInt(3) - 1;
-                                if (world.getTypeId(k1, l1 - 1, i2) != Block.GRASS.id || world.t(k1, l1, i2)) {
-                                    continue label133;
-                                }
-                            }
-
-                            if (world.getTypeId(k1, l1, i2) == 0) {
-                                if (d.nextInt(10) != 0) {
-                                    if (Block.LONG_GRASS.d(world, k1, l1, i2)) {
-                                        world.setTypeIdAndData(k1, l1, i2, Block.LONG_GRASS.id, 1);
-                                    }
-                                } else if (d.nextInt(3) != 0) {
-                                    if (Block.YELLOW_FLOWER.d(world, k1, l1, i2)) {
-                                        world.setTypeId(k1, l1, i2, Block.YELLOW_FLOWER.id);
-                                    }
-                                } else if (Block.RED_ROSE.d(world, k1, l1, i2)) {
-                                    world.setTypeId(k1, l1, i2, Block.RED_ROSE.id);
-                                }
-                            }
-                        }
+                        world.triggerEffect(2005, i, j, k, 0);
                     }
 
                     return true;
                 }
             } else if (itemstack.getData() == 3) {
-                i1 = world.getTypeId(i, j, k);
-                j1 = world.getData(i, j, k);
-                if (i1 == Block.LOG.id && BlockLog.e(j1) == 3) {
+                int i1 = world.getTypeId(i, j, k);
+                int j1 = world.getData(i, j, k);
+
+                if (i1 == Block.LOG.id && BlockLog.d(j1) == 3) {
                     if (l == 0) {
                         return false;
                     }
@@ -158,8 +66,8 @@ public class ItemDye extends Item {
                     }
 
                     if (world.isEmpty(i, j, k)) {
-                        k1 = Block.byId[Block.COCOA.id].getPlacedData(world, i, j, k, l, f, f1, f2, 0);
-                        world.setTypeIdAndData(i, j, k, Block.COCOA.id, k1);
+                        int k1 = Block.byId[Block.COCOA.id].getPlacedData(world, i, j, k, l, f, f1, f2, 0);
+                        world.setTypeIdAndData(i, j, k, Block.COCOA.id, k1, 2);
                         if (!entityhuman.abilities.canInstantlyBuild) {
                             --itemstack.count;
                         }
@@ -173,10 +81,131 @@ public class ItemDye extends Item {
         }
     }
 
+    // CraftBukkit start
+    public static boolean a(ItemStack itemstack, World world, int i, int j, int k) {
+        return a(itemstack, world, i, j, k, null);
+    }
+
+    public static boolean a(ItemStack itemstack, World world, int i, int j, int k, EntityHuman entityhuman) {
+        // CraftBukkit end
+        int l = world.getTypeId(i, j, k);
+
+        if (l == Block.SAPLING.id) {
+            if (!world.isStatic) {
+                if ((double) world.random.nextFloat() < 0.45D) {
+                    // CraftBukkit start
+                    Player player = (entityhuman instanceof EntityPlayer) ? (Player) entityhuman.getBukkitEntity() : null;
+                    ((BlockSapling) Block.SAPLING).grow(world, i, j, k, world.random, true, player, itemstack);
+                }
+
+                // --itemstack.count; - called later if the bonemeal attempt was succesful
+                // CraftBukkit end
+            }
+
+            return true;
+        } else if (l != Block.BROWN_MUSHROOM.id && l != Block.RED_MUSHROOM.id) {
+            if (l != Block.MELON_STEM.id && l != Block.PUMPKIN_STEM.id) {
+                if (l > 0 && Block.byId[l] instanceof BlockCrops) {
+                    if (world.getData(i, j, k) == 7) {
+                        return false;
+                    } else {
+                        if (!world.isStatic) {
+                            ((BlockCrops) Block.byId[l]).e_(world, i, j, k);
+                            --itemstack.count;
+                        }
+
+                        return true;
+                    }
+                } else {
+                    int i1;
+                    int j1;
+                    int k1;
+
+                    if (l == Block.COCOA.id) {
+                        i1 = world.getData(i, j, k);
+                        j1 = BlockDirectional.j(i1);
+                        k1 = BlockCocoa.c(i1);
+                        if (k1 >= 2) {
+                            return false;
+                        } else {
+                            if (!world.isStatic) {
+                                ++k1;
+                                world.setData(i, j, k, k1 << 2 | j1, 2);
+                                --itemstack.count;
+                            }
+
+                            return true;
+                        }
+                    } else if (l != Block.GRASS.id) {
+                        return false;
+                    } else {
+                        if (!world.isStatic) {
+                            --itemstack.count;
+
+                            label102:
+                            for (i1 = 0; i1 < 128; ++i1) {
+                                j1 = i;
+                                k1 = j + 1;
+                                int l1 = k;
+
+                                for (int i2 = 0; i2 < i1 / 16; ++i2) {
+                                    j1 += e.nextInt(3) - 1;
+                                    k1 += (e.nextInt(3) - 1) * e.nextInt(3) / 2;
+                                    l1 += e.nextInt(3) - 1;
+                                    if (world.getTypeId(j1, k1 - 1, l1) != Block.GRASS.id || world.u(j1, k1, l1)) {
+                                        continue label102;
+                                    }
+                                }
+
+                                if (world.getTypeId(j1, k1, l1) == 0) {
+                                    if (e.nextInt(10) != 0) {
+                                        if (Block.LONG_GRASS.f(world, j1, k1, l1)) {
+                                            world.setTypeIdAndData(j1, k1, l1, Block.LONG_GRASS.id, 1, 3);
+                                        }
+                                    } else if (e.nextInt(3) != 0) {
+                                        if (Block.YELLOW_FLOWER.f(world, j1, k1, l1)) {
+                                            world.setTypeIdUpdate(j1, k1, l1, Block.YELLOW_FLOWER.id);
+                                        }
+                                    } else if (Block.RED_ROSE.f(world, j1, k1, l1)) {
+                                        world.setTypeIdUpdate(j1, k1, l1, Block.RED_ROSE.id);
+                                    }
+                                }
+                            }
+                        }
+
+                        return true;
+                    }
+                }
+            } else if (world.getData(i, j, k) == 7) {
+                return false;
+            } else {
+                if (!world.isStatic) {
+                    ((BlockStem) Block.byId[l]).k(world, i, j, k);
+                    --itemstack.count;
+                }
+
+                return true;
+            }
+        } else {
+            if (!world.isStatic) {
+                if ((double) world.random.nextFloat() < 0.4D) {
+                    // CraftBukkit start - validate
+                        Player player = (entityhuman instanceof EntityPlayer) ? (Player) entityhuman.getBukkitEntity() : null;
+                        ((BlockMushroom) Block.byId[l]).grow(world, i, j, k, world.random, true, player, itemstack);
+                }
+
+                //--itemstack.count; - called later if the bonemeal attempt was succesful
+                // CraftBukkit end
+            }
+
+            return true;
+        }
+    }
+
     public boolean a(ItemStack itemstack, EntityLiving entityliving) {
         if (entityliving instanceof EntitySheep) {
             EntitySheep entitysheep = (EntitySheep) entityliving;
-            int i = BlockCloth.e_(itemstack.getData());
+            int i = BlockCloth.g_(itemstack.getData());
 
             if (!entitysheep.isSheared() && entitysheep.getColor() != i) {
                 // CraftBukkit start

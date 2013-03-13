@@ -5,18 +5,18 @@ public class ItemFood extends Item {
     public final int a;
     private final int b;
     private final float c;
-    private final boolean co;
-    private boolean cp;
-    private int cq;
-    private int cr;
-    private int cs;
-    private float ct;
+    private final boolean d;
+    private boolean cu;
+    private int cv;
+    private int cw;
+    private int cx;
+    private float cy;
 
     public ItemFood(int i, int j, float f, boolean flag) {
         super(i);
         this.a = 32;
         this.b = j;
-        this.co = flag;
+        this.d = flag;
         this.c = f;
         this.a(CreativeModeTab.h);
     }
@@ -45,8 +45,8 @@ public class ItemFood extends Item {
     }
 
     protected void c(ItemStack itemstack, World world, EntityHuman entityhuman) {
-        if (!world.isStatic && this.cq > 0 && world.random.nextFloat() < this.ct) {
-            entityhuman.addEffect(new MobEffect(this.cq, this.cr * 20, this.cs));
+        if (!world.isStatic && this.cv > 0 && world.random.nextFloat() < this.cy) {
+            entityhuman.addEffect(new MobEffect(this.cv, this.cw * 20, this.cx));
         }
     }
 
@@ -55,11 +55,11 @@ public class ItemFood extends Item {
     }
 
     public EnumAnimation b_(ItemStack itemstack) {
-        return EnumAnimation.b;
+        return EnumAnimation.EAT;
     }
 
     public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
-        if (entityhuman.g(this.cp)) {
+        if (entityhuman.i(this.cu)) {
             entityhuman.a(itemstack, this.c_(itemstack));
         }
 
@@ -75,19 +75,19 @@ public class ItemFood extends Item {
     }
 
     public boolean i() {
-        return this.co;
+        return this.d;
     }
 
     public ItemFood a(int i, int j, int k, float f) {
-        this.cq = i;
-        this.cr = j;
-        this.cs = k;
-        this.ct = f;
+        this.cv = i;
+        this.cw = j;
+        this.cx = k;
+        this.cy = f;
         return this;
     }
 
     public ItemFood j() {
-        this.cp = true;
+        this.cu = true;
         return this;
     }
 }

@@ -56,11 +56,11 @@ public class ContainerMerchant extends Container {
     }
 
     public void a(IInventory iinventory) {
-        this.f.g();
+        this.f.h();
         super.a(iinventory);
     }
 
-    public void b(int i) {
+    public void e(int i) {
         this.f.c(i);
     }
 
@@ -112,7 +112,7 @@ public class ContainerMerchant extends Container {
 
     public void b(EntityHuman entityhuman) {
         super.b(entityhuman);
-        this.merchant.b_((EntityHuman) null);
+        this.merchant.a((EntityHuman) null);
         super.b(entityhuman);
         if (!this.g.isStatic) {
             ItemStack itemstack = this.f.splitWithoutUpdate(0);

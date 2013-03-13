@@ -2,6 +2,8 @@ package net.minecraft.server;
 
 public class ItemBow extends Item {
 
+    public static final String[] a = new String[] { "bow_pull_0", "bow_pull_1", "bow_pull_2"};
+
     public ItemBow(int i) {
         super(i);
         this.maxStackSize = 1;
@@ -28,7 +30,7 @@ public class ItemBow extends Item {
             EntityArrow entityarrow = new EntityArrow(world, entityhuman, f * 2.0F);
 
             if (f == 1.0F) {
-                entityarrow.e(true);
+                entityarrow.a(true);
             }
 
             int k = EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_DAMAGE.id, itemstack);
@@ -60,7 +62,7 @@ public class ItemBow extends Item {
             // CraftBukkit end
 
             itemstack.damage(1, entityhuman);
-            world.makeSound(entityhuman, "random.bow", 1.0F, 1.0F / (d.nextFloat() * 0.4F + 1.2F) + f * 0.5F);
+            world.makeSound(entityhuman, "random.bow", 1.0F, 1.0F / (e.nextFloat() * 0.4F + 1.2F) + f * 0.5F);
             if (flag) {
                 entityarrow.fromPlayer = 2;
             } else {
@@ -79,7 +81,7 @@ public class ItemBow extends Item {
     }
 
     public EnumAnimation b_(ItemStack itemstack) {
-        return EnumAnimation.e;
+        return EnumAnimation.BOW;
     }
 
     public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {

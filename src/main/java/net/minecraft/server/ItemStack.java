@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import java.util.Random;
+
 public final class ItemStack {
 
     public int count;
@@ -39,6 +41,9 @@ public final class ItemStack {
         this.id = i;
         this.count = j;
         this.setData(k); // CraftBukkit
+        if (this.damage < 0) {
+            this.damage = 0;
+        }
     }
 
     public static ItemStack createStack(NBTTagCompound nbttagcompound) {
@@ -105,6 +110,10 @@ public final class ItemStack {
         this.id = nbttagcompound.getShort("id");
         this.count = nbttagcompound.getByte("Count");
         this.damage = nbttagcompound.getShort("Damage");
+        if (this.damage < 0) {
+            this.damage = 0;
+        }
+
         if (nbttagcompound.hasKey("tag")) {
             // CraftBukkit - clear name from compound and make defensive copy as this data may be coming from the save thread
             this.tag = (NBTTagCompound) nbttagcompound.getCompound("tag").clone().setName("");
@@ -116,22 +125,22 @@ public final class ItemStack {
     }
 
     public boolean isStackable() {
-        return this.getMaxStackSize() > 1 && (!this.f() || !this.h());
+        return this.getMaxStackSize() > 1 && (!this.g() || !this.i());
     }
 
-    public boolean f() {
+    public boolean g() {
         return Item.byId[this.id].getMaxDurability() > 0;
     }
 
     public boolean usesData() {
-        return Item.byId[this.id].l();
+        return Item.byId[this.id].m();
     }
 
-    public boolean h() {
-        return this.f() && this.damage > 0;
+    public boolean i() {
+        return this.g() && this.damage > 0;
     }
 
-    public int i() {
+    public int j() {
         return this.damage;
     }
 
@@ -140,53 +149,63 @@ public final class ItemStack {
     }
 
     public void setData(int i) {
-        this.damage = (this.id > 0) && (this.id < 256) && (this.id != Block.ANVIL.id) ? Item.byId[this.id].filterData(i) : i; // CraftBukkit
+        this.damage = i;
+        if (this.damage < 0) {
+            this.damage = 0;
+        }
     }
 
-    public int k() {
+    public int l() {
         return Item.byId[this.id].getMaxDurability();
     }
 
-    public void damage(int i, EntityLiving entityliving) {
-        if (this.f()) {
-            if (i > 0 && entityliving instanceof EntityHuman) {
+    public boolean isDamaged(int i, Random random) {
+        if (!this.g()) {
+            return false;
+        } else {
+            if (i > 0) {
                 int j = EnchantmentManager.getEnchantmentLevel(Enchantment.DURABILITY.id, this);
                 int k = 0;
 
                 for (int l = 0; j > 0 && l < i; ++l) {
-                    if (EnchantmentDurability.a(this, j, entityliving.world.random)) {
+                    if (EnchantmentDurability.a(this, j, random)) {
                         ++k;
                     }
                 }
 
                 i -= k;
                 if (i <= 0) {
-                    return;
+                    return false;
                 }
             }
 
-            if (!(entityliving instanceof EntityHuman) || !((EntityHuman) entityliving).abilities.canInstantlyBuild) {
-                this.damage += i;
-            }
+            this.damage += i;
+            return this.damage > this.l();
+        }
+    }
 
-            if (this.damage > this.k()) {
-                entityliving.a(this);
-                if (entityliving instanceof EntityHuman) {
-                    ((EntityHuman) entityliving).a(StatisticList.F[this.id], 1);
+    public void damage(int i, EntityLiving entityliving) {
+        if (!(entityliving instanceof EntityHuman) || !((EntityHuman) entityliving).abilities.canInstantlyBuild) {
+            if (this.g()) {
+                if (this.isDamaged(i, entityliving.aE())) {
+                    entityliving.a(this);
+                    if (entityliving instanceof EntityHuman) {
+                        ((EntityHuman) entityliving).a(StatisticList.F[this.id], 1);
+                    }
+
+                    --this.count;
+                    if (this.count < 0) {
+                        this.count = 0;
+                    }
+
+                    // CraftBukkit start - Check for item breaking
+                    if (this.count == 0 && entityliving instanceof EntityHuman) {
+                        org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent((EntityHuman) entityliving, this);
+                    }
+                    // CraftBukkit end
+
+                    this.damage = 0;
                 }
-
-                --this.count;
-                if (this.count < 0) {
-                    this.count = 0;
-                }
-
-                // CraftBukkit start - Check for item breaking
-                if (this.count == 0 && entityliving instanceof EntityHuman) {
-                    org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent((EntityHuman) entityliving, this);
-                }
-                // CraftBukkit end
-
-                this.damage = 0;
             }
         }
     }
@@ -270,11 +289,11 @@ public final class ItemStack {
         Item.byId[this.id].d(this, world, entityhuman);
     }
 
-    public int m() {
+    public int n() {
         return this.getItem().c_(this);
     }
 
-    public EnumAnimation n() {
+    public EnumAnimation o() {
         return this.getItem().b_(this);
     }
 
@@ -298,7 +317,7 @@ public final class ItemStack {
         this.tag = nbttagcompound;
     }
 
-    public String r() {
+    public String getName() {
         String s = this.getItem().l(this);
 
         if (this.tag != null && this.tag.hasKey("display")) {
@@ -314,7 +333,7 @@ public final class ItemStack {
 
     public void c(String s) {
         if (this.tag == null) {
-            this.tag = new NBTTagCompound();
+            this.tag = new NBTTagCompound("tag");
         }
 
         if (!this.tag.hasKey("display")) {
@@ -324,11 +343,11 @@ public final class ItemStack {
         this.tag.getCompound("display").setString("Name", s);
     }
 
-    public boolean s() {
+    public boolean hasName() {
         return this.tag == null ? false : (!this.tag.hasKey("display") ? false : this.tag.getCompound("display").hasKey("Name"));
     }
 
-    public boolean v() {
+    public boolean w() {
         return !this.getItem().d_(this) ? false : !this.hasEnchantments();
     }
 
@@ -361,11 +380,11 @@ public final class ItemStack {
         this.tag.set(s, nbtbase);
     }
 
-    public boolean x() {
-        return this.getItem().x();
+    public boolean y() {
+        return this.getItem().y();
     }
 
-    public boolean y() {
+    public boolean z() {
         return this.f != null;
     }
 
@@ -373,7 +392,7 @@ public final class ItemStack {
         this.f = entityitemframe;
     }
 
-    public EntityItemFrame z() {
+    public EntityItemFrame A() {
         return this.f;
     }
 
@@ -383,7 +402,7 @@ public final class ItemStack {
 
     public void setRepairCost(int i) {
         if (!this.hasTag()) {
-            this.tag = new NBTTagCompound();
+            this.tag = new NBTTagCompound("tag");
         }
 
         this.tag.setInt("RepairCost", i);

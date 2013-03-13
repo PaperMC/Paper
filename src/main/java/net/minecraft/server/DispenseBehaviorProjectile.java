@@ -12,7 +12,7 @@ public abstract class DispenseBehaviorProjectile extends DispenseBehaviorItem {
     public ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
         World world = isourceblock.k();
         IPosition iposition = BlockDispenser.a(isourceblock);
-        EnumFacing enumfacing = EnumFacing.a(isourceblock.h());
+        EnumFacing enumfacing = BlockDispenser.j_(isourceblock.h());
         IProjectile iprojectile = this.a(world, iposition);
 
         // CraftBukkit start
@@ -20,7 +20,7 @@ public abstract class DispenseBehaviorProjectile extends DispenseBehaviorItem {
         org.bukkit.block.Block block = world.getWorld().getBlockAt(isourceblock.getBlockX(), isourceblock.getBlockY(), isourceblock.getBlockZ());
         CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
 
-        BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector((double) enumfacing.c(), 0.10000000149011612D, (double) enumfacing.e()));
+        BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector((double) enumfacing.c(), (double) ((float) enumfacing.d() + 0.1F), (double) enumfacing.e()));
         if (!BlockDispenser.eventFired) {
             world.getServer().getPluginManager().callEvent(event);
         }

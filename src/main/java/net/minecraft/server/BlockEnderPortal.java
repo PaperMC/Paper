@@ -10,11 +10,11 @@ public class BlockEnderPortal extends BlockContainer {
     public static boolean a = false;
 
     protected BlockEnderPortal(int i, Material material) {
-        super(i, 0, material);
+        super(i, material);
         this.a(1.0F);
     }
 
-    public TileEntity a(World world) {
+    public TileEntity b(World world) {
         return new TileEntityEnderPortal();
     }
 
@@ -44,7 +44,7 @@ public class BlockEnderPortal extends BlockContainer {
             EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), i, j, k));
             world.getServer().getPluginManager().callEvent(event);
             // CraftBukkit end
-            entity.b(1);
+            entity.c(1);
         }
     }
 
@@ -55,7 +55,7 @@ public class BlockEnderPortal extends BlockContainer {
     public void onPlace(World world, int i, int j, int k) {
         if (!a) {
             if (world.worldProvider.dimension != 0) {
-                world.setTypeId(i, j, k, 0);
+                world.setAir(i, j, k);
             }
         }
     }

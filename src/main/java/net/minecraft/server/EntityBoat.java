@@ -66,11 +66,11 @@ public class EntityBoat extends Entity {
         return entity.boundingBox;
     }
 
-    public AxisAlignedBB E() {
+    public AxisAlignedBB D() {
         return this.boundingBox;
     }
 
-    public boolean M() {
+    public boolean L() {
         return true;
     }
 
@@ -87,7 +87,7 @@ public class EntityBoat extends Entity {
         this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit
     }
 
-    public double X() {
+    public double W() {
         return (double) this.length * 0.0D - 0.30000001192092896D;
     }
 
@@ -109,14 +109,12 @@ public class EntityBoat extends Entity {
             // CraftBukkit end
 
             this.h(-this.h());
-            this.g(10);
+            this.b(10);
             this.setDamage(this.getDamage() + i * 10);
-            this.K();
-            if (damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).abilities.canInstantlyBuild) {
-                this.setDamage(100);
-            }
+            this.J();
+            boolean flag = damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).abilities.canInstantlyBuild;
 
-            if (this.getDamage() > 40) {
+            if (flag || this.getDamage() > 40) {
                 // CraftBukkit start
                 VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, attacker);
                 this.world.getServer().getPluginManager().callEvent(destroyEvent);
@@ -131,7 +129,10 @@ public class EntityBoat extends Entity {
                     this.passenger.mount(this);
                 }
 
-                this.a(Item.BOAT.id, 1, 0.0F);
+                if (!flag) {
+                    this.a(Item.BOAT.id, 1, 0.0F);
+                }
+
                 this.die();
             }
 
@@ -141,11 +142,11 @@ public class EntityBoat extends Entity {
         }
     }
 
-    public boolean L() {
+    public boolean K() {
         return !this.dead;
     }
 
-    public void j_() {
+    public void l_() {
         // CraftBukkit start
         double prevX = this.locX;
         double prevY = this.locY;
@@ -154,9 +155,9 @@ public class EntityBoat extends Entity {
         float prevPitch = this.pitch;
         // CraftBukkit end
 
-        super.j_();
+        super.l_();
         if (this.g() > 0) {
-            this.g(this.g() - 1);
+            this.b(this.g() - 1);
         }
 
         if (this.getDamage() > 0) {
@@ -363,7 +364,7 @@ public class EntityBoat extends Entity {
                     for (l = 0; l < list.size(); ++l) {
                         Entity entity = (Entity) list.get(l);
 
-                        if (entity != this.passenger && entity.M() && entity instanceof EntityBoat) {
+                        if (entity != this.passenger && entity.L() && entity instanceof EntityBoat) {
                             entity.collide(this);
                         }
                     }
@@ -376,13 +377,11 @@ public class EntityBoat extends Entity {
                     for (int k1 = 0; k1 < 2; ++k1) {
                         int l1 = MathHelper.floor(this.locY) + k1;
                         int i2 = this.world.getTypeId(i1, l1, j1);
-                        int j2 = this.world.getData(i1, l1, j1);
 
                         if (i2 == Block.SNOW.id) {
-                            this.world.setTypeId(i1, l1, j1, 0);
+                            this.world.setAir(i1, l1, j1);
                         } else if (i2 == Block.WATER_LILY.id) {
-                            Block.WATER_LILY.dropNaturally(this.world, i1, l1, j1, j2, 0.3F, 0);
-                            this.world.setTypeId(i1, l1, j1, 0);
+                            this.world.setAir(i1, l1, j1, true);
                         }
                     }
                 }
@@ -395,12 +394,12 @@ public class EntityBoat extends Entity {
         }
     }
 
-    public void V() {
+    public void U() {
         if (this.passenger != null) {
             double d0 = Math.cos((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
             double d1 = Math.sin((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
 
-            this.passenger.setPosition(this.locX + d0, this.locY + this.X() + this.passenger.W(), this.locZ + d1);
+            this.passenger.setPosition(this.locX + d0, this.locY + this.W() + this.passenger.V(), this.locZ + d1);
         }
     }
 
@@ -408,7 +407,7 @@ public class EntityBoat extends Entity {
 
     protected void a(NBTTagCompound nbttagcompound) {}
 
-    public boolean a(EntityHuman entityhuman) {
+    public boolean a_(EntityHuman entityhuman) {
         if (this.passenger != null && this.passenger instanceof EntityHuman && this.passenger != entityhuman) {
             return true;
         } else {
@@ -428,7 +427,7 @@ public class EntityBoat extends Entity {
         return this.datawatcher.getInt(19);
     }
 
-    public void g(int i) {
+    public void b(int i) {
         this.datawatcher.watch(17, Integer.valueOf(i));
     }
 

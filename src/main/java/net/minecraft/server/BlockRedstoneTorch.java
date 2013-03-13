@@ -13,10 +13,6 @@ public class BlockRedstoneTorch extends BlockTorch {
     private boolean isOn = false;
     private static Map b = new HashMap();
 
-    public int a(int i, int j) {
-        return i == 1 ? Block.REDSTONE_WIRE.a(i, j) : super.a(i, j);
-    }
-
     private boolean a(World world, int i, int j, int k, boolean flag) {
         if (!b.containsKey(world)) {
             b.put(world, new ArrayList());
@@ -44,14 +40,14 @@ public class BlockRedstoneTorch extends BlockTorch {
         return false;
     }
 
-    protected BlockRedstoneTorch(int i, int j, boolean flag) {
-        super(i, j);
+    protected BlockRedstoneTorch(int i, boolean flag) {
+        super(i);
         this.isOn = flag;
         this.b(true);
         this.a((CreativeModeTab) null);
     }
 
-    public int r_() {
+    public int a(World world) {
         return 2;
     }
 
@@ -81,24 +77,24 @@ public class BlockRedstoneTorch extends BlockTorch {
         }
     }
 
-    public boolean b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+    public int b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
         if (!this.isOn) {
-            return false;
+            return 0;
         } else {
             int i1 = iblockaccess.getData(i, j, k);
 
-            return i1 == 5 && l == 1 ? false : (i1 == 3 && l == 3 ? false : (i1 == 4 && l == 2 ? false : (i1 == 1 && l == 5 ? false : i1 != 2 || l != 4)));
+            return i1 == 5 && l == 1 ? 0 : (i1 == 3 && l == 3 ? 0 : (i1 == 4 && l == 2 ? 0 : (i1 == 1 && l == 5 ? 0 : (i1 == 2 && l == 4 ? 0 : 15))));
         }
     }
 
-    private boolean l(World world, int i, int j, int k) {
+    private boolean m(World world, int i, int j, int k) {
         int l = world.getData(i, j, k);
 
-        return l == 5 && world.isBlockFaceIndirectlyPowered(i, j - 1, k, 0) ? true : (l == 3 && world.isBlockFaceIndirectlyPowered(i, j, k - 1, 2) ? true : (l == 4 && world.isBlockFaceIndirectlyPowered(i, j, k + 1, 3) ? true : (l == 1 && world.isBlockFaceIndirectlyPowered(i - 1, j, k, 4) ? true : l == 2 && world.isBlockFaceIndirectlyPowered(i + 1, j, k, 5))));
+        return l == 5 && world.isBlockFacePowered(i, j - 1, k, 0) ? true : (l == 3 && world.isBlockFacePowered(i, j, k - 1, 2) ? true : (l == 4 && world.isBlockFacePowered(i, j, k + 1, 3) ? true : (l == 1 && world.isBlockFacePowered(i - 1, j, k, 4) ? true : l == 2 && world.isBlockFacePowered(i + 1, j, k, 5))));
     }
 
-    public void b(World world, int i, int j, int k, Random random) {
-        boolean flag = this.l(world, i, j, k);
+    public void a(World world, int i, int j, int k, Random random) {
+        boolean flag = this.m(world, i, j, k);
         List list = (List) b.get(world);
 
         while (list != null && !list.isEmpty() && world.getTime() - ((RedstoneUpdateInfo) list.get(0)).d > 60L) {
@@ -125,7 +121,7 @@ public class BlockRedstoneTorch extends BlockTorch {
                 }
                 // CraftBukkit end
 
-                world.setTypeIdAndData(i, j, k, Block.REDSTONE_TORCH_OFF.id, world.getData(i, j, k));
+                world.setTypeIdAndData(i, j, k, Block.REDSTONE_TORCH_OFF.id, world.getData(i, j, k), 3);
                 if (this.a(world, i, j, k, true)) {
                     world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), "random.fizz", 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
 
@@ -149,17 +145,22 @@ public class BlockRedstoneTorch extends BlockTorch {
             }
             // CraftBukkit end
 
-            world.setTypeIdAndData(i, j, k, Block.REDSTONE_TORCH_ON.id, world.getData(i, j, k));
+            world.setTypeIdAndData(i, j, k, Block.REDSTONE_TORCH_ON.id, world.getData(i, j, k), 3);
         }
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
-        super.doPhysics(world, i, j, k, l);
-        world.a(i, j, k, this.id, this.r_());
+        if (!this.d(world, i, j, k, l)) {
+            boolean flag = this.m(world, i, j, k);
+
+            if (this.isOn && flag || !this.isOn && !flag) {
+                world.a(i, j, k, this.id, this.a(world));
+            }
+        }
     }
 
-    public boolean c(IBlockAccess iblockaccess, int i, int j, int k, int l) {
-        return l == 0 ? this.b(iblockaccess, i, j, k, l) : false;
+    public int c(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+        return l == 0 ? this.b(iblockaccess, i, j, k, l) : 0;
     }
 
     public int getDropType(int i, Random random, int j) {
@@ -168,5 +169,9 @@ public class BlockRedstoneTorch extends BlockTorch {
 
     public boolean isPowerSource() {
         return true;
+    }
+
+    public boolean i(int i) {
+        return i == Block.REDSTONE_TORCH_OFF.id || i == Block.REDSTONE_TORCH_ON.id;
     }
 }

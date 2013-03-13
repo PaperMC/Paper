@@ -72,8 +72,8 @@ public class ItemDoor extends Item {
             b0 = 1;
         }
 
-        int i1 = (world.t(i - b0, j, k - b1) ? 1 : 0) + (world.t(i - b0, j + 1, k - b1) ? 1 : 0);
-        int j1 = (world.t(i + b0, j, k + b1) ? 1 : 0) + (world.t(i + b0, j + 1, k + b1) ? 1 : 0);
+        int i1 = (world.u(i - b0, j, k - b1) ? 1 : 0) + (world.u(i - b0, j + 1, k - b1) ? 1 : 0);
+        int j1 = (world.u(i + b0, j, k + b1) ? 1 : 0) + (world.u(i + b0, j + 1, k + b1) ? 1 : 0);
         boolean flag = world.getTypeId(i - b0, j, k - b1) == block.id || world.getTypeId(i - b0, j + 1, k - b1) == block.id;
         boolean flag1 = world.getTypeId(i + b0, j, k + b1) == block.id || world.getTypeId(i + b0, j + 1, k + b1) == block.id;
         boolean flag2 = false;
@@ -84,7 +84,6 @@ public class ItemDoor extends Item {
             flag2 = true;
         }
 
-        world.suppressPhysics = true;
         // CraftBukkit start
         if (entityhuman != null) {
             if(!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, block.id, l, clickedX, clickedY, clickedZ)) {
@@ -96,14 +95,11 @@ public class ItemDoor extends Item {
                 ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet53BlockChange(i, j + 1, k, world));
                 return true;
             }
-
-            world.suppressPhysics = true;
         } else {
-            world.setTypeIdAndData(i, j, k, block.id, l);
+            world.setTypeIdAndData(i, j, k, block.id, l, 2);
         }
         // CraftBukkit end
-        world.setTypeIdAndData(i, j + 1, k, block.id, 8 | (flag2 ? 1 : 0));
-        world.suppressPhysics = false;
+        world.setTypeIdAndData(i, j + 1, k, block.id, 8 | (flag2 ? 1 : 0), 2);
         world.applyPhysics(i, j, k, block.id);
         world.applyPhysics(i, j + 1, k, block.id);
         return true; // CraftBukkit

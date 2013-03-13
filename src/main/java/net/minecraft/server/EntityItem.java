@@ -53,8 +53,8 @@ public class EntityItem extends Entity {
         this.getDataWatcher().a(10, 5);
     }
 
-    public void j_() {
-        super.j_();
+    public void l_() {
+        super.l_();
         // CraftBukkit start
         int currentTick = (int) (System.currentTimeMillis() / 50);
         this.pickupDelay -= (currentTick - this.lastTick);
@@ -65,7 +65,7 @@ public class EntityItem extends Entity {
         this.lastY = this.locY;
         this.lastZ = this.locZ;
         this.motY -= 0.03999999910593033D;
-        this.Y = this.i(this.locX, (this.boundingBox.b + this.boundingBox.e) / 2.0D, this.locZ);
+        this.Z = this.i(this.locX, (this.boundingBox.b + this.boundingBox.e) / 2.0D, this.locZ);
         this.move(this.motX, this.motY, this.motZ);
         boolean flag = (int) this.lastX != (int) this.locX || (int) this.lastY != (int) this.locY || (int) this.lastZ != (int) this.locZ;
 
@@ -135,7 +135,7 @@ public class EntityItem extends Entity {
                 return false;
             } else if (itemstack1.hasTag() && !itemstack1.getTag().equals(itemstack.getTag())) {
                 return false;
-            } else if (itemstack1.getItem().l() && itemstack1.getData() != itemstack.getData()) {
+            } else if (itemstack1.getItem().m() && itemstack1.getData() != itemstack.getData()) {
                 return false;
             } else if (itemstack1.count < itemstack.count) {
                 return entityitem.a(this);
@@ -158,7 +158,7 @@ public class EntityItem extends Entity {
         this.age = 4800;
     }
 
-    public boolean I() {
+    public boolean H() {
         return this.world.a(this.boundingBox, Material.WATER, (Entity) this);
     }
 
@@ -169,10 +169,10 @@ public class EntityItem extends Entity {
     public boolean damageEntity(DamageSource damagesource, int i) {
         if (this.isInvulnerable()) {
             return false;
-        } else if (this.getItemStack() != null && this.getItemStack().id == Item.NETHER_STAR.id && damagesource == DamageSource.EXPLOSION) {
+        } else if (this.getItemStack() != null && this.getItemStack().id == Item.NETHER_STAR.id && damagesource.c()) {
             return false;
         } else {
-            this.K();
+            this.J();
             this.d -= i;
             if (this.d <= 0) {
                 this.die();
@@ -212,7 +212,7 @@ public class EntityItem extends Entity {
         }
     }
 
-    public void c_(EntityHuman entityhuman) {
+    public void b_(EntityHuman entityhuman) {
         if (!this.world.isStatic) {
             ItemStack itemstack = this.getItemStack();
             int i = itemstack.count;
@@ -267,12 +267,12 @@ public class EntityItem extends Entity {
         return LocaleI18n.get("item." + this.getItemStack().a());
     }
 
-    public boolean aq() {
+    public boolean ap() {
         return false;
     }
 
-    public void b(int i) {
-        super.b(i);
+    public void c(int i) {
+        super.c(i);
         if (!this.world.isStatic) {
             this.g();
         }
@@ -282,7 +282,10 @@ public class EntityItem extends Entity {
         ItemStack itemstack = this.getDataWatcher().getItemStack(10);
 
         if (itemstack == null) {
-            System.out.println("Item entity " + this.id + " has no item?!");
+            if (this.world != null) {
+                this.world.getLogger().severe("Item entity " + this.id + " has no item?!");
+            }
+
             return new ItemStack(Block.STONE);
         } else {
             return itemstack;

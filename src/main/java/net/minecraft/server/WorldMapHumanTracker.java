@@ -60,7 +60,7 @@ public class WorldMapHumanTracker {
                 }
                 // CraftBukkit end
 
-                boolean flag = !itemstack.y();
+                boolean flag = !itemstack.z();
 
                 if (this.h != null && this.h.length == abyte.length) {
                     for (j = 0; j < abyte.length; ++j) {

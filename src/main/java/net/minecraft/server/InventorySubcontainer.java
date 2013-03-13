@@ -8,9 +8,11 @@ public abstract class InventorySubcontainer implements IInventory { // CraftBukk
     private int b;
     protected ItemStack[] items; // CraftBukkit - protected
     private List d;
+    private boolean e;
 
-    public InventorySubcontainer(String s, int i) {
+    public InventorySubcontainer(String s, boolean flag, int i) {
         this.a = s;
+        this.e = flag;
         this.b = i;
         this.items = new ItemStack[i];
     }
@@ -70,6 +72,10 @@ public abstract class InventorySubcontainer implements IInventory { // CraftBukk
         return this.a;
     }
 
+    public boolean c() {
+        return this.e;
+    }
+
     public int getMaxStackSize() {
         return 64;
     }
@@ -82,11 +88,15 @@ public abstract class InventorySubcontainer implements IInventory { // CraftBukk
         }
     }
 
-    public boolean a_(EntityHuman entityhuman) {
+    public boolean a(EntityHuman entityhuman) {
         return true;
     }
 
     public void startOpen() {}
 
-    public void f() {}
+    public void g() {}
+
+    public boolean b(int i, ItemStack itemstack) {
+        return true;
+    }
 }

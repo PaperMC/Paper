@@ -16,15 +16,19 @@ public interface IInventory {
 
     String getName();
 
+    boolean c();
+
     int getMaxStackSize();
 
     void update();
 
-    boolean a_(EntityHuman entityhuman);
+    boolean a(EntityHuman entityhuman);
 
     void startOpen();
 
-    void f();
+    void g();
+
+    boolean b(int i, ItemStack itemstack);
 
     // CraftBukkit start
     ItemStack[] getContents();

@@ -21,7 +21,7 @@ public class ItemSeeds extends Item {
 
             if (i1 == this.b && world.isEmpty(i, j + 1, k)) {
                 // CraftBukkit start - seeds
-                // world.setTypeId(i, j + 1, k, this.id);
+                // world.setTypeIdUpdate(i, j + 1, k, this.id);
                 if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j + 1, k, this.id, 0, clickedX, clickedY, clickedZ)) {
                     return false;
                 }

@@ -21,7 +21,7 @@ public final class SpawnerCreature {
         Chunk chunk = world.getChunkAt(i, j);
         int k = i * 16 + world.random.nextInt(16);
         int l = j * 16 + world.random.nextInt(16);
-        int i1 = world.random.nextInt(chunk == null ? world.P() : chunk.h() + 16 - 1);
+        int i1 = world.random.nextInt(chunk == null ? world.Q() : chunk.h() + 16 - 1);
 
         return new ChunkPosition(k, i1, l);
     }
@@ -105,7 +105,7 @@ public final class SpawnerCreature {
                             int l1 = chunkposition.y;
                             int i2 = chunkposition.z;
 
-                            if (!worldserver.t(k1, l1, i2) && worldserver.getMaterial(k1, l1, i2) == enumcreaturetype.c()) {
+                            if (!worldserver.u(k1, l1, i2) && worldserver.getMaterial(k1, l1, i2) == enumcreaturetype.c()) {
                                 int j2 = 0;
                                 int k2 = 0;
 
@@ -158,7 +158,7 @@ public final class SpawnerCreature {
                                                                 a(entityliving, worldserver, f, f1, f2);
                                                                 worldserver.addEntity(entityliving, SpawnReason.NATURAL);
                                                                 // CraftBukkit end
-                                                                if (j2 >= entityliving.bv()) {
+                                                                if (j2 >= entityliving.by()) {
                                                                     continue label110;
                                                                 }
                                                             }
@@ -189,18 +189,18 @@ public final class SpawnerCreature {
 
     public static boolean a(EnumCreatureType enumcreaturetype, World world, int i, int j, int k) {
         if (enumcreaturetype.c() == Material.WATER) {
-            return world.getMaterial(i, j, k).isLiquid() && world.getMaterial(i, j - 1, k).isLiquid() && !world.t(i, j + 1, k);
-        } else if (!world.v(i, j - 1, k)) {
+            return world.getMaterial(i, j, k).isLiquid() && world.getMaterial(i, j - 1, k).isLiquid() && !world.u(i, j + 1, k);
+        } else if (!world.w(i, j - 1, k)) {
             return false;
         } else {
             int l = world.getTypeId(i, j - 1, k);
 
-            return l != Block.BEDROCK.id && !world.t(i, j, k) && !world.getMaterial(i, j, k).isLiquid() && !world.t(i, j + 1, k);
+            return l != Block.BEDROCK.id && !world.u(i, j, k) && !world.getMaterial(i, j, k).isLiquid() && !world.u(i, j + 1, k);
         }
     }
 
     private static void a(EntityLiving entityliving, World world, float f, float f1, float f2) {
-        entityliving.bG();
+        entityliving.bJ();
     }
 
     public static void a(World world, BiomeBase biomebase, int i, int j, int k, int l, Random random) {

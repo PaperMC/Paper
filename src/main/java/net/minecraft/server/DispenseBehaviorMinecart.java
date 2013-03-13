@@ -5,34 +5,29 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.block.BlockDispenseEvent;
 // CraftBukkit end
 
-public class DispenseBehaviorMinecart extends DispenseBehaviorItem {
+final class DispenseBehaviorMinecart extends DispenseBehaviorItem {
 
-    private final DispenseBehaviorItem c;
+    private final DispenseBehaviorItem b = new DispenseBehaviorItem();
 
-    final MinecraftServer b;
-
-    public DispenseBehaviorMinecart(MinecraftServer minecraftserver) {
-        this.b = minecraftserver;
-        this.c = new DispenseBehaviorItem();
-    }
+    DispenseBehaviorMinecart() {}
 
     public ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
-        EnumFacing enumfacing = EnumFacing.a(isourceblock.h());
+        EnumFacing enumfacing = BlockDispenser.j_(isourceblock.h());
         World world = isourceblock.k();
         double d0 = isourceblock.getX() + (double) ((float) enumfacing.c() * 1.125F);
-        double d1 = isourceblock.getY();
+        double d1 = isourceblock.getY() + (double) ((float) enumfacing.d() * 1.125F);
         double d2 = isourceblock.getZ() + (double) ((float) enumfacing.e() * 1.125F);
         int i = isourceblock.getBlockX() + enumfacing.c();
-        int j = isourceblock.getBlockY();
+        int j = isourceblock.getBlockY() + enumfacing.d();
         int k = isourceblock.getBlockZ() + enumfacing.e();
         int l = world.getTypeId(i, j, k);
         double d3;
 
-        if (BlockMinecartTrack.e(l)) {
+        if (BlockMinecartTrackAbstract.d_(l)) {
             d3 = 0.0D;
         } else {
-            if (l != 0 || !BlockMinecartTrack.e(world.getTypeId(i, j - 1, k))) {
-                return this.c.a(isourceblock, itemstack);
+            if (l != 0 || !BlockMinecartTrackAbstract.d_(world.getTypeId(i, j - 1, k))) {
+                return this.b.a(isourceblock, itemstack);
             }
 
             d3 = -1.0D;
@@ -65,10 +60,10 @@ public class DispenseBehaviorMinecart extends DispenseBehaviorItem {
         }
 
         itemstack1 = CraftItemStack.asNMSCopy(event.getItem());
-        EntityMinecart entityminecart = new EntityMinecart(world, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), ((ItemMinecart) itemstack1.getItem()).a);
+        EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.a(world, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), ((ItemMinecart) itemstack1.getItem()).a);
         // CraftBukkit end
 
-        world.addEntity(entityminecart);
+        world.addEntity(entityminecartabstract);
         // itemstack.a(1); // CraftBukkit - handled during event processing
         return itemstack;
     }

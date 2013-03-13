@@ -51,7 +51,7 @@ public class ShapelessRecipes implements IRecipe {
                     while (iterator.hasNext()) {
                         ItemStack itemstack1 = (ItemStack) iterator.next();
 
-                        if (itemstack.id == itemstack1.id && (itemstack1.getData() == -1 || itemstack.getData() == itemstack1.getData())) {
+                        if (itemstack.id == itemstack1.id && (itemstack1.getData() == 32767 || itemstack.getData() == itemstack1.getData())) {
                             flag = true;
                             arraylist.remove(itemstack1);
                             break;

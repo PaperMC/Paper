@@ -72,7 +72,7 @@ public class Village {
     }
 
     private boolean b(int i, int j, int k, int l, int i1, int j1) {
-        if (!this.world.v(i, j - 1, k)) {
+        if (!this.world.w(i, j - 1, k)) {
             return false;
         } else {
             int k1 = i - l / 2;
@@ -81,7 +81,7 @@ public class Village {
             for (int i2 = k1; i2 < k1 + l; ++i2) {
                 for (int j2 = j; j2 < j + i1; ++j2) {
                     for (int k2 = l1; k2 < l1 + j1; ++k2) {
-                        if (this.world.t(i2, j2, k2)) {
+                        if (this.world.u(i2, j2, k2)) {
                             return false;
                         }
                     }

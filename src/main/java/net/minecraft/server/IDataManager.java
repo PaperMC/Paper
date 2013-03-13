@@ -14,7 +14,7 @@ public interface IDataManager {
 
     void saveWorldData(WorldData worlddata);
 
-    PlayerFileData getPlayerFileData();
+    IPlayerFileData getPlayerFileData();
 
     void a();
 

@@ -6,13 +6,13 @@ import org.bukkit.event.block.LeavesDecayEvent; // CraftBukkit
 
 public class BlockLeaves extends BlockTransparant {
 
-    private int cD;
     public static final String[] a = new String[] { "oak", "spruce", "birch", "jungle"};
-    int[] b;
+    public static final String[][] b = new String[][] { { "leaves", "leaves_spruce", "leaves", "leaves_jungle"}, { "leaves_opaque", "leaves_spruce_opaque", "leaves_opaque", "leaves_jungle_opaque"}};
+    private IIcon[][] cR = new IIcon[2][];
+    int[] c;
 
-    protected BlockLeaves(int i, int j) {
-        super(i, j, Material.LEAVES, false);
-        this.cD = j;
+    protected BlockLeaves(int i) {
+        super(i, Material.LEAVES, false);
         this.b(true);
         this.a(CreativeModeTab.c);
     }
@@ -21,7 +21,7 @@ public class BlockLeaves extends BlockTransparant {
         byte b0 = 1;
         int j1 = b0 + 1;
 
-        if (world.d(i - j1, j - j1, k - j1, i + j1, j + j1, k + j1)) {
+        if (world.e(i - j1, j - j1, k - j1, i + j1, j + j1, k + j1)) {
             for (int k1 = -b0; k1 <= b0; ++k1) {
                 for (int l1 = -b0; l1 <= b0; ++l1) {
                     for (int i2 = -b0; i2 <= b0; ++i2) {
@@ -30,7 +30,7 @@ public class BlockLeaves extends BlockTransparant {
                         if (j2 == Block.LEAVES.id) {
                             int k2 = world.getData(i + k1, j + l1, k + i2);
 
-                            world.setRawData(i + k1, j + l1, k + i2, k2 | 8);
+                            world.setData(i + k1, j + l1, k + i2, k2 | 8, 4);
                         }
                     }
                 }
@@ -38,7 +38,7 @@ public class BlockLeaves extends BlockTransparant {
         }
     }
 
-    public void b(World world, int i, int j, int k, Random random) {
+    public void a(World world, int i, int j, int k, Random random) {
         if (!world.isStatic) {
             int l = world.getData(i, j, k);
 
@@ -49,13 +49,13 @@ public class BlockLeaves extends BlockTransparant {
                 int j1 = b1 * b1;
                 int k1 = b1 / 2;
 
-                if (this.b == null) {
-                    this.b = new int[b1 * b1 * b1];
+                if (this.c == null) {
+                    this.c = new int[b1 * b1 * b1];
                 }
 
                 int l1;
 
-                if (world.d(i - i1, j - i1, k - i1, i + i1, j + i1, k + i1)) {
+                if (world.e(i - i1, j - i1, k - i1, i + i1, j + i1, k + i1)) {
                     int i2;
                     int j2;
                     int k2;
@@ -65,11 +65,11 @@ public class BlockLeaves extends BlockTransparant {
                             for (j2 = -b0; j2 <= b0; ++j2) {
                                 k2 = world.getTypeId(i + l1, j + i2, k + j2);
                                 if (k2 == Block.LOG.id) {
-                                    this.b[(l1 + k1) * j1 + (i2 + k1) * b1 + j2 + k1] = 0;
+                                    this.c[(l1 + k1) * j1 + (i2 + k1) * b1 + j2 + k1] = 0;
                                 } else if (k2 == Block.LEAVES.id) {
-                                    this.b[(l1 + k1) * j1 + (i2 + k1) * b1 + j2 + k1] = -2;
+                                    this.c[(l1 + k1) * j1 + (i2 + k1) * b1 + j2 + k1] = -2;
                                 } else {
-                                    this.b[(l1 + k1) * j1 + (i2 + k1) * b1 + j2 + k1] = -1;
+                                    this.c[(l1 + k1) * j1 + (i2 + k1) * b1 + j2 + k1] = -1;
                                 }
                             }
                         }
@@ -79,29 +79,29 @@ public class BlockLeaves extends BlockTransparant {
                         for (i2 = -b0; i2 <= b0; ++i2) {
                             for (j2 = -b0; j2 <= b0; ++j2) {
                                 for (k2 = -b0; k2 <= b0; ++k2) {
-                                    if (this.b[(i2 + k1) * j1 + (j2 + k1) * b1 + k2 + k1] == l1 - 1) {
-                                        if (this.b[(i2 + k1 - 1) * j1 + (j2 + k1) * b1 + k2 + k1] == -2) {
-                                            this.b[(i2 + k1 - 1) * j1 + (j2 + k1) * b1 + k2 + k1] = l1;
+                                    if (this.c[(i2 + k1) * j1 + (j2 + k1) * b1 + k2 + k1] == l1 - 1) {
+                                        if (this.c[(i2 + k1 - 1) * j1 + (j2 + k1) * b1 + k2 + k1] == -2) {
+                                            this.c[(i2 + k1 - 1) * j1 + (j2 + k1) * b1 + k2 + k1] = l1;
                                         }
 
-                                        if (this.b[(i2 + k1 + 1) * j1 + (j2 + k1) * b1 + k2 + k1] == -2) {
-                                            this.b[(i2 + k1 + 1) * j1 + (j2 + k1) * b1 + k2 + k1] = l1;
+                                        if (this.c[(i2 + k1 + 1) * j1 + (j2 + k1) * b1 + k2 + k1] == -2) {
+                                            this.c[(i2 + k1 + 1) * j1 + (j2 + k1) * b1 + k2 + k1] = l1;
                                         }
 
-                                        if (this.b[(i2 + k1) * j1 + (j2 + k1 - 1) * b1 + k2 + k1] == -2) {
-                                            this.b[(i2 + k1) * j1 + (j2 + k1 - 1) * b1 + k2 + k1] = l1;
+                                        if (this.c[(i2 + k1) * j1 + (j2 + k1 - 1) * b1 + k2 + k1] == -2) {
+                                            this.c[(i2 + k1) * j1 + (j2 + k1 - 1) * b1 + k2 + k1] = l1;
                                         }
 
-                                        if (this.b[(i2 + k1) * j1 + (j2 + k1 + 1) * b1 + k2 + k1] == -2) {
-                                            this.b[(i2 + k1) * j1 + (j2 + k1 + 1) * b1 + k2 + k1] = l1;
+                                        if (this.c[(i2 + k1) * j1 + (j2 + k1 + 1) * b1 + k2 + k1] == -2) {
+                                            this.c[(i2 + k1) * j1 + (j2 + k1 + 1) * b1 + k2 + k1] = l1;
                                         }
 
-                                        if (this.b[(i2 + k1) * j1 + (j2 + k1) * b1 + (k2 + k1 - 1)] == -2) {
-                                            this.b[(i2 + k1) * j1 + (j2 + k1) * b1 + (k2 + k1 - 1)] = l1;
+                                        if (this.c[(i2 + k1) * j1 + (j2 + k1) * b1 + (k2 + k1 - 1)] == -2) {
+                                            this.c[(i2 + k1) * j1 + (j2 + k1) * b1 + (k2 + k1 - 1)] = l1;
                                         }
 
-                                        if (this.b[(i2 + k1) * j1 + (j2 + k1) * b1 + k2 + k1 + 1] == -2) {
-                                            this.b[(i2 + k1) * j1 + (j2 + k1) * b1 + k2 + k1 + 1] = l1;
+                                        if (this.c[(i2 + k1) * j1 + (j2 + k1) * b1 + k2 + k1 + 1] == -2) {
+                                            this.c[(i2 + k1) * j1 + (j2 + k1) * b1 + k2 + k1 + 1] = l1;
                                         }
                                     }
                                 }
@@ -110,17 +110,17 @@ public class BlockLeaves extends BlockTransparant {
                     }
                 }
 
-                l1 = this.b[k1 * j1 + k1 * b1 + k1];
+                l1 = this.c[k1 * j1 + k1 * b1 + k1];
                 if (l1 >= 0) {
-                    world.setRawData(i, j, k, l & -9);
+                    world.setData(i, j, k, l & -9, 4);
                 } else {
-                    this.l(world, i, j, k);
+                    this.k(world, i, j, k);
                 }
             }
         }
     }
 
-    private void l(World world, int i, int j, int k) {
+    private void k(World world, int i, int j, int k) {
         // CraftBukkit start
         LeavesDecayEvent event = new LeavesDecayEvent(world.getWorld().getBlockAt(i, j, k));
         world.getServer().getPluginManager().callEvent(event);
@@ -131,7 +131,7 @@ public class BlockLeaves extends BlockTransparant {
         // CraftBukkit end
 
         this.c(world, i, j, k, world.getData(i, j, k), 0);
-        world.setTypeId(i, j, k, 0);
+        world.setAir(i, j, k);
     }
 
     public int a(Random random) {
@@ -144,26 +144,41 @@ public class BlockLeaves extends BlockTransparant {
 
     public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
         if (!world.isStatic) {
-            byte b0 = 20;
+            int j1 = 20;
 
             if ((l & 3) == 3) {
-                b0 = 40;
+                j1 = 40;
             }
 
-            if (world.random.nextInt(b0) == 0) {
-                int j1 = this.getDropType(l, world.random, i1);
-
-                this.b(world, i, j, k, new ItemStack(j1, 1, this.getDropData(l)));
+            if (i1 > 0) {
+                j1 -= 2 << i1;
+                if (j1 < 10) {
+                    j1 = 10;
+                }
             }
 
-            if ((l & 3) == 0 && world.random.nextInt(200) == 0) {
+            if (world.random.nextInt(j1) == 0) {
+                int k1 = this.getDropType(l, world.random, i1);
+
+                this.b(world, i, j, k, new ItemStack(k1, 1, this.getDropData(l)));
+            }
+
+            j1 = 200;
+            if (i1 > 0) {
+                j1 -= 10 << i1;
+                if (j1 < 40) {
+                    j1 = 40;
+                }
+            }
+
+            if ((l & 3) == 0 && world.random.nextInt(j1) == 0) {
                 this.b(world, i, j, k, new ItemStack(Item.APPLE, 1, 0));
             }
         }
     }
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        if (!world.isStatic && entityhuman.bS() != null && entityhuman.bS().id == Item.SHEARS.id) {
+        if (!world.isStatic && entityhuman.cb() != null && entityhuman.cb().id == Item.SHEARS.id) {
             entityhuman.a(StatisticList.C[this.id], 1);
             this.b(world, i, j, k, new ItemStack(Block.LEAVES.id, 1, l & 3));
         } else {
@@ -176,14 +191,10 @@ public class BlockLeaves extends BlockTransparant {
     }
 
     public boolean c() {
-        return !this.c;
+        return !this.d;
     }
 
-    public int a(int i, int j) {
-        return (j & 3) == 1 ? this.textureId + 80 : ((j & 3) == 3 ? this.textureId + 144 : this.textureId);
-    }
-
-    protected ItemStack f_(int i) {
+    protected ItemStack c_(int i) {
         return new ItemStack(this.id, 1, i & 3);
     }
 }

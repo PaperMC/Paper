@@ -8,7 +8,7 @@ public class EntitySpider extends EntityMonster {
         super(world);
         this.texture = "/mob/spider.png";
         this.a(1.4F, 0.9F);
-        this.bH = 0.8F;
+        this.bI = 0.8F;
     }
 
     protected void a() {
@@ -16,10 +16,10 @@ public class EntitySpider extends EntityMonster {
         this.datawatcher.a(16, new Byte((byte) 0));
     }
 
-    public void j_() {
-        super.j_();
+    public void l_() {
+        super.l_();
         if (!this.world.isStatic) {
-            this.f(this.positionChanged);
+            this.a(this.positionChanged);
         }
     }
 
@@ -27,7 +27,7 @@ public class EntitySpider extends EntityMonster {
         return 16;
     }
 
-    public double X() {
+    public double W() {
         return (double) this.length * 0.75D - 0.5D;
     }
 
@@ -43,15 +43,15 @@ public class EntitySpider extends EntityMonster {
         }
     }
 
-    protected String aY() {
+    protected String bb() {
         return "mob.spider.say";
     }
 
-    protected String aZ() {
+    protected String bc() {
         return "mob.spider.say";
     }
 
-    protected String ba() {
+    protected String bd() {
         return "mob.spider.death";
     }
 
@@ -123,7 +123,7 @@ public class EntitySpider extends EntityMonster {
         return this.o();
     }
 
-    public void am() {}
+    public void al() {}
 
     public EnumMonsterType getMonsterType() {
         return EnumMonsterType.ARTHROPOD;
@@ -137,7 +137,7 @@ public class EntitySpider extends EntityMonster {
         return (this.datawatcher.getByte(16) & 1) != 0;
     }
 
-    public void f(boolean flag) {
+    public void a(boolean flag) {
         byte b0 = this.datawatcher.getByte(16);
 
         if (flag) {
@@ -149,12 +149,12 @@ public class EntitySpider extends EntityMonster {
         this.datawatcher.watch(16, Byte.valueOf(b0));
     }
 
-    public void bG() {
+    public void bJ() {
         if (this.world.random.nextInt(100) == 0) {
             EntitySkeleton entityskeleton = new EntitySkeleton(this.world);
 
             entityskeleton.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, 0.0F);
-            entityskeleton.bG();
+            entityskeleton.bJ();
             this.world.addEntity(entityskeleton);
             entityskeleton.mount(this);
         }

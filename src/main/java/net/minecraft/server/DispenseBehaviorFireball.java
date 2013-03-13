@@ -7,24 +7,20 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.block.BlockDispenseEvent;
 // CraftBukkit end
 
-public class DispenseBehaviorFireball extends DispenseBehaviorItem {
+final class DispenseBehaviorFireball extends DispenseBehaviorItem {
 
-    final MinecraftServer b;
-
-    public DispenseBehaviorFireball(MinecraftServer minecraftserver) {
-        this.b = minecraftserver;
-    }
+    DispenseBehaviorFireball() {}
 
     public ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
-        EnumFacing enumfacing = EnumFacing.a(isourceblock.h());
+        EnumFacing enumfacing = BlockDispenser.j_(isourceblock.h());
         IPosition iposition = BlockDispenser.a(isourceblock);
         double d0 = iposition.getX() + (double) ((float) enumfacing.c() * 0.3F);
-        double d1 = iposition.getY();
+        double d1 = iposition.getY() + (double) ((float) enumfacing.c() * 0.3F);
         double d2 = iposition.getZ() + (double) ((float) enumfacing.e() * 0.3F);
         World world = isourceblock.k();
         Random random = world.random;
         double d3 = random.nextGaussian() * 0.05D + (double) enumfacing.c();
-        double d4 = random.nextGaussian() * 0.05D;
+        double d4 = random.nextGaussian() * 0.05D + (double) enumfacing.d();
         double d5 = random.nextGaussian() * 0.05D + (double) enumfacing.e();
 
         // CraftBukkit start

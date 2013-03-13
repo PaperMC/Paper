@@ -7,13 +7,21 @@ public class PathfinderGoalArrowAttack extends PathfinderGoal {
     private final EntityLiving a;
     private final IRangedEntity b;
     private EntityLiving c;
-    private int d = 0;
+    private int d;
     private float e;
-    private int f = 0;
+    private int f;
     private int g;
-    private float h;
+    private int h;
+    private float i;
+    private float j;
 
     public PathfinderGoalArrowAttack(IRangedEntity irangedentity, float f, int i, float f1) {
+        this(irangedentity, f, i, i, f1);
+    }
+
+    public PathfinderGoalArrowAttack(IRangedEntity irangedentity, float f, int i, int j, float f1) {
+        this.d = -1;
+        this.f = 0;
         if (!(irangedentity instanceof EntityLiving)) {
             throw new IllegalArgumentException("ArrowAttackGoal requires Mob implements RangedAttackMob");
         } else {
@@ -21,8 +29,9 @@ public class PathfinderGoalArrowAttack extends PathfinderGoal {
             this.a = (EntityLiving) irangedentity;
             this.e = f;
             this.g = i;
-            this.h = f1 * f1;
-            this.d = i / 2;
+            this.h = j;
+            this.i = f1;
+            this.j = f1 * f1;
             this.a(3);
         }
     }
@@ -49,12 +58,12 @@ public class PathfinderGoalArrowAttack extends PathfinderGoal {
         // CraftBukkit end
         this.c = null;
         this.f = 0;
-        this.d = this.g / 2;
+        this.d = -1;
     }
 
     public void e() {
         double d0 = this.a.e(this.c.locX, this.c.boundingBox.b, this.c.locZ);
-        boolean flag = this.a.aA().canSee(this.c);
+        boolean flag = this.a.aD().canSee(this.c);
 
         if (flag) {
             ++this.f;
@@ -62,19 +71,36 @@ public class PathfinderGoalArrowAttack extends PathfinderGoal {
             this.f = 0;
         }
 
-        if (d0 <= (double) this.h && this.f >= 20) {
+        if (d0 <= (double) this.j && this.f >= 20) {
             this.a.getNavigation().g();
         } else {
             this.a.getNavigation().a(this.c, this.e);
         }
 
         this.a.getControllerLook().a(this.c, 30.0F, 30.0F);
-        this.d = Math.max(this.d - 1, 0);
-        if (this.d <= 0) {
-            if (d0 <= (double) this.h && flag) {
-                this.b.d(this.c);
-                this.d = this.g;
+        float f;
+
+        if (--this.d == 0) {
+            if (d0 > (double) this.j || !flag) {
+                return;
             }
+
+            f = MathHelper.sqrt(d0) / this.i;
+            float f1 = f;
+
+            if (f < 0.1F) {
+                f1 = 0.1F;
+            }
+
+            if (f1 > 1.0F) {
+                f1 = 1.0F;
+            }
+
+            this.b.a(this.c, f1);
+            this.d = MathHelper.d(f * (float) (this.h - this.g) + (float) this.g);
+        } else if (this.d < 0) {
+            f = MathHelper.sqrt(d0) / this.i;
+            this.d = MathHelper.d(f * (float) (this.h - this.g) + (float) this.g);
         }
     }
 }

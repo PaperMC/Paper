@@ -28,9 +28,11 @@ public class RecipesFurnace {
         this.registerRecipe(Block.LOG.id, new ItemStack(Item.COAL, 1, 1), 0.15F);
         this.registerRecipe(Block.EMERALD_ORE.id, new ItemStack(Item.EMERALD), 1.0F);
         this.registerRecipe(Item.POTATO.id, new ItemStack(Item.POTATO_BAKED), 0.35F);
+        this.registerRecipe(Block.NETHERRACK.id, new ItemStack(Item.NETHER_BRICK), 0.1F);
         this.registerRecipe(Block.COAL_ORE.id, new ItemStack(Item.COAL), 0.1F);
         this.registerRecipe(Block.REDSTONE_ORE.id, new ItemStack(Item.REDSTONE), 0.7F);
         this.registerRecipe(Block.LAPIS_ORE.id, new ItemStack(Item.INK_SACK, 1, 4), 0.2F);
+        this.registerRecipe(Block.QUARTZ_ORE.id, new ItemStack(Item.QUARTZ), 0.2F);
     }
 
     public void registerRecipe(int i, ItemStack itemstack, float f) {

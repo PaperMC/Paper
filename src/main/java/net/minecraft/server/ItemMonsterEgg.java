@@ -34,8 +34,16 @@ public class ItemMonsterEgg extends Item {
                 d0 = 0.5D;
             }
 
-            if (a(world, itemstack.getData(), (double) i + 0.5D, (double) j + d0, (double) k + 0.5D) != null && !entityhuman.abilities.canInstantlyBuild) {
-                --itemstack.count;
+            Entity entity = a(world, itemstack.getData(), (double) i + 0.5D, (double) j + d0, (double) k + 0.5D);
+
+            if (entity != null) {
+                if (entity instanceof EntityLiving && itemstack.hasName()) {
+                    ((EntityLiving) entity).setCustomName(itemstack.getName());
+                }
+
+                if (!entityhuman.abilities.canInstantlyBuild) {
+                    --itemstack.count;
+                }
             }
 
             return true;
@@ -54,11 +62,11 @@ public class ItemMonsterEgg extends Item {
                     EntityLiving entityliving = (EntityLiving) entity;
 
                     entity.setPositionRotation(d0, d1, d2, MathHelper.g(world.random.nextFloat() * 360.0F), 0.0F);
-                    entityliving.az = entityliving.yaw;
-                    entityliving.ax = entityliving.yaw;
-                    entityliving.bG();
+                    entityliving.aA = entityliving.yaw;
+                    entityliving.ay = entityliving.yaw;
+                    entityliving.bJ();
                     world.addEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // CraftBukkit
-                    entityliving.aO();
+                    entityliving.aR();
                 }
             }
 

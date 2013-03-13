@@ -6,177 +6,188 @@ import java.util.Random;
 public class Block {
 
     private CreativeModeTab creativeTab;
-    public static final StepSound d = new StepSound("stone", 1.0F, 1.0F);
-    public static final StepSound e = new StepSound("wood", 1.0F, 1.0F);
-    public static final StepSound f = new StepSound("gravel", 1.0F, 1.0F);
-    public static final StepSound g = new StepSound("grass", 1.0F, 1.0F);
-    public static final StepSound h = new StepSound("stone", 1.0F, 1.0F);
-    public static final StepSound i = new StepSound("stone", 1.0F, 1.5F);
-    public static final StepSound j = new StepSoundStone("stone", 1.0F, 1.0F);
-    public static final StepSound k = new StepSound("cloth", 1.0F, 1.0F);
-    public static final StepSound l = new StepSound("sand", 1.0F, 1.0F);
-    public static final StepSound m = new StepSound("snow", 1.0F, 1.0F);
-    public static final StepSound n = new StepSoundLadder("ladder", 1.0F, 1.0F);
-    public static final StepSound o = new StepSoundAnvil("anvil", 0.3F, 1.0F);
+    public static final StepSound f = new StepSound("stone", 1.0F, 1.0F);
+    public static final StepSound g = new StepSound("wood", 1.0F, 1.0F);
+    public static final StepSound h = new StepSound("gravel", 1.0F, 1.0F);
+    public static final StepSound i = new StepSound("grass", 1.0F, 1.0F);
+    public static final StepSound j = new StepSound("stone", 1.0F, 1.0F);
+    public static final StepSound k = new StepSound("stone", 1.0F, 1.5F);
+    public static final StepSound l = new StepSoundStone("stone", 1.0F, 1.0F);
+    public static final StepSound m = new StepSound("cloth", 1.0F, 1.0F);
+    public static final StepSound n = new StepSound("sand", 1.0F, 1.0F);
+    public static final StepSound o = new StepSound("snow", 1.0F, 1.0F);
+    public static final StepSound p = new StepSoundLadder("ladder", 1.0F, 1.0F);
+    public static final StepSound q = new StepSoundAnvil("anvil", 0.3F, 1.0F);
     public static final Block[] byId = new Block[4096];
-    public static final boolean[] q = new boolean[4096];
-    public static final int[] lightBlock = new int[4096];
     public static final boolean[] s = new boolean[4096];
-    public static final int[] lightEmission = new int[4096];
+    public static final int[] lightBlock = new int[4096];
     public static final boolean[] u = new boolean[4096];
-    public static boolean[] v = new boolean[4096];
-    public static final Block STONE = (new BlockStone(1, 1)).c(1.5F).b(10.0F).a(h).b("stone");
-    public static final BlockGrass GRASS = (BlockGrass) (new BlockGrass(2)).c(0.6F).a(g).b("grass");
-    public static final Block DIRT = (new BlockDirt(3, 2)).c(0.5F).a(f).b("dirt");
-    public static final Block COBBLESTONE = (new Block(4, 16, Material.STONE)).c(2.0F).b(10.0F).a(h).b("stonebrick").a(CreativeModeTab.b);
-    public static final Block WOOD = (new BlockWood(5)).c(2.0F).b(5.0F).a(e).b("wood").r();
-    public static final Block SAPLING = (new BlockSapling(6, 15)).c(0.0F).a(g).b("sapling").r();
-    public static final Block BEDROCK = (new Block(7, 17, Material.STONE)).s().b(6000000.0F).a(h).b("bedrock").D().a(CreativeModeTab.b);
-    public static final Block WATER = (new BlockFlowing(8, Material.WATER)).c(100.0F).h(3).b("water").D().r();
-    public static final Block STATIONARY_WATER = (new BlockStationary(9, Material.WATER)).c(100.0F).h(3).b("water").D().r();
-    public static final Block LAVA = (new BlockFlowing(10, Material.LAVA)).c(0.0F).a(1.0F).h(255).b("lava").D().r();
-    public static final Block STATIONARY_LAVA = (new BlockStationary(11, Material.LAVA)).c(100.0F).a(1.0F).h(255).b("lava").D().r();
-    public static final Block SAND = (new BlockSand(12, 18)).c(0.5F).a(l).b("sand");
-    public static final Block GRAVEL = (new BlockGravel(13, 19)).c(0.6F).a(f).b("gravel");
-    public static final Block GOLD_ORE = (new BlockOre(14, 32)).c(3.0F).b(5.0F).a(h).b("oreGold");
-    public static final Block IRON_ORE = (new BlockOre(15, 33)).c(3.0F).b(5.0F).a(h).b("oreIron");
-    public static final Block COAL_ORE = (new BlockOre(16, 34)).c(3.0F).b(5.0F).a(h).b("oreCoal");
-    public static final Block LOG = (new BlockLog(17)).c(2.0F).a(e).b("log").r();
-    public static final BlockLeaves LEAVES = (BlockLeaves) (new BlockLeaves(18, 52)).c(0.2F).h(1).a(g).b("leaves").r();
-    public static final Block SPONGE = (new BlockSponge(19)).c(0.6F).a(g).b("sponge");
-    public static final Block GLASS = (new BlockGlass(20, 49, Material.SHATTERABLE, false)).c(0.3F).a(j).b("glass");
-    public static final Block LAPIS_ORE = (new BlockOre(21, 160)).c(3.0F).b(5.0F).a(h).b("oreLapis");
-    public static final Block LAPIS_BLOCK = (new Block(22, 144, Material.STONE)).c(3.0F).b(5.0F).a(h).b("blockLapis").a(CreativeModeTab.b);
-    public static final Block DISPENSER = (new BlockDispenser(23)).c(3.5F).a(h).b("dispenser").r();
-    public static final Block SANDSTONE = (new BlockSandStone(24)).a(h).c(0.8F).b("sandStone").r();
-    public static final Block NOTE_BLOCK = (new BlockNote(25)).c(0.8F).b("musicBlock").r();
-    public static final Block BED = (new BlockBed(26)).c(0.2F).b("bed").D().r();
-    public static final Block GOLDEN_RAIL = (new BlockMinecartTrack(27, 179, true)).c(0.7F).a(i).b("goldenRail").r();
-    public static final Block DETECTOR_RAIL = (new BlockMinecartDetector(28, 195)).c(0.7F).a(i).b("detectorRail").r();
-    public static final Block PISTON_STICKY = (new BlockPiston(29, 106, true)).b("pistonStickyBase").r();
-    public static final Block WEB = (new BlockWeb(30, 11)).h(1).c(4.0F).b("web");
-    public static final BlockLongGrass LONG_GRASS = (BlockLongGrass) (new BlockLongGrass(31, 39)).c(0.0F).a(g).b("tallgrass");
-    public static final BlockDeadBush DEAD_BUSH = (BlockDeadBush) (new BlockDeadBush(32, 55)).c(0.0F).a(g).b("deadbush");
-    public static final Block PISTON = (new BlockPiston(33, 107, false)).b("pistonBase").r();
-    public static final BlockPistonExtension PISTON_EXTENSION = (BlockPistonExtension) (new BlockPistonExtension(34, 107)).r();
-    public static final Block WOOL = (new BlockCloth()).c(0.8F).a(k).b("cloth").r();
+    public static final int[] lightEmission = new int[4096];
+    public static boolean[] w = new boolean[4096];
+    public static final Block STONE = (new BlockStone(1)).c(1.5F).b(10.0F).a(j).c("stone");
+    public static final BlockGrass GRASS = (BlockGrass) (new BlockGrass(2)).c(0.6F).a(i).c("grass");
+    public static final Block DIRT = (new BlockDirt(3)).c(0.5F).a(h).c("dirt");
+    public static final Block COBBLESTONE = (new Block(4, Material.STONE)).c(2.0F).b(10.0F).a(j).c("stonebrick").a(CreativeModeTab.b);
+    public static final Block WOOD = (new BlockWood(5)).c(2.0F).b(5.0F).a(g).c("wood");
+    public static final Block SAPLING = (new BlockSapling(6)).c(0.0F).a(i).c("sapling");
+    public static final Block BEDROCK = (new Block(7, Material.STONE)).r().b(6000000.0F).a(j).c("bedrock").D().a(CreativeModeTab.b);
+    public static final BlockFluids WATER = (BlockFluids) (new BlockFlowing(8, Material.WATER)).c(100.0F).k(3).c("water").D();
+    public static final Block STATIONARY_WATER = (new BlockStationary(9, Material.WATER)).c(100.0F).k(3).c("water").D();
+    public static final BlockFluids LAVA = (BlockFluids) (new BlockFlowing(10, Material.LAVA)).c(0.0F).a(1.0F).c("lava").D();
+    public static final Block STATIONARY_LAVA = (new BlockStationary(11, Material.LAVA)).c(100.0F).a(1.0F).c("lava").D();
+    public static final Block SAND = (new BlockSand(12)).c(0.5F).a(n).c("sand");
+    public static final Block GRAVEL = (new BlockGravel(13)).c(0.6F).a(h).c("gravel");
+    public static final Block GOLD_ORE = (new BlockOre(14)).c(3.0F).b(5.0F).a(j).c("oreGold");
+    public static final Block IRON_ORE = (new BlockOre(15)).c(3.0F).b(5.0F).a(j).c("oreIron");
+    public static final Block COAL_ORE = (new BlockOre(16)).c(3.0F).b(5.0F).a(j).c("oreCoal");
+    public static final Block LOG = (new BlockLog(17)).c(2.0F).a(g).c("log");
+    public static final BlockLeaves LEAVES = (BlockLeaves) (new BlockLeaves(18)).c(0.2F).k(1).a(i).c("leaves");
+    public static final Block SPONGE = (new BlockSponge(19)).c(0.6F).a(i).c("sponge");
+    public static final Block GLASS = (new BlockGlass(20, Material.SHATTERABLE, false)).c(0.3F).a(l).c("glass");
+    public static final Block LAPIS_ORE = (new BlockOre(21)).c(3.0F).b(5.0F).a(j).c("oreLapis");
+    public static final Block LAPIS_BLOCK = (new Block(22, Material.STONE)).c(3.0F).b(5.0F).a(j).c("blockLapis").a(CreativeModeTab.b);
+    public static final Block DISPENSER = (new BlockDispenser(23)).c(3.5F).a(j).c("dispenser");
+    public static final Block SANDSTONE = (new BlockSandStone(24)).a(j).c(0.8F).c("sandStone");
+    public static final Block NOTE_BLOCK = (new BlockNote(25)).c(0.8F).c("musicBlock");
+    public static final Block BED = (new BlockBed(26)).c(0.2F).c("bed").D();
+    public static final Block GOLDEN_RAIL = (new BlockPoweredRail(27)).c(0.7F).a(k).c("goldenRail");
+    public static final Block DETECTOR_RAIL = (new BlockMinecartDetector(28)).c(0.7F).a(k).c("detectorRail");
+    public static final BlockPiston PISTON_STICKY = (BlockPiston) (new BlockPiston(29, true)).c("pistonStickyBase");
+    public static final Block WEB = (new BlockWeb(30)).k(1).c(4.0F).c("web");
+    public static final BlockLongGrass LONG_GRASS = (BlockLongGrass) (new BlockLongGrass(31)).c(0.0F).a(i).c("tallgrass");
+    public static final BlockDeadBush DEAD_BUSH = (BlockDeadBush) (new BlockDeadBush(32)).c(0.0F).a(i).c("deadbush");
+    public static final BlockPiston PISTON = (BlockPiston) (new BlockPiston(33, false)).c("pistonBase");
+    public static final BlockPistonExtension PISTON_EXTENSION = new BlockPistonExtension(34);
+    public static final Block WOOL = (new BlockCloth()).c(0.8F).a(m).c("cloth");
     public static final BlockPistonMoving PISTON_MOVING = new BlockPistonMoving(36);
-    public static final BlockFlower YELLOW_FLOWER = (BlockFlower) (new BlockFlower(37, 13)).c(0.0F).a(g).b("flower");
-    public static final BlockFlower RED_ROSE = (BlockFlower) (new BlockFlower(38, 12)).c(0.0F).a(g).b("rose");
-    public static final BlockFlower BROWN_MUSHROOM = (BlockFlower) (new BlockMushroom(39, 29)).c(0.0F).a(g).a(0.125F).b("mushroom");
-    public static final BlockFlower RED_MUSHROOM = (BlockFlower) (new BlockMushroom(40, 28)).c(0.0F).a(g).b("mushroom");
-    public static final Block GOLD_BLOCK = (new BlockOreBlock(41, 23)).c(3.0F).b(10.0F).a(i).b("blockGold");
-    public static final Block IRON_BLOCK = (new BlockOreBlock(42, 22)).c(5.0F).b(10.0F).a(i).b("blockIron");
-    public static final BlockStepAbstract DOUBLE_STEP = (BlockStepAbstract) (new BlockStep(43, true)).c(2.0F).b(10.0F).a(h).b("stoneSlab");
-    public static final BlockStepAbstract STEP = (BlockStepAbstract) (new BlockStep(44, false)).c(2.0F).b(10.0F).a(h).b("stoneSlab");
-    public static final Block BRICK = (new Block(45, 7, Material.STONE)).c(2.0F).b(10.0F).a(h).b("brick").a(CreativeModeTab.b);
-    public static final Block TNT = (new BlockTNT(46, 8)).c(0.0F).a(g).b("tnt");
-    public static final Block BOOKSHELF = (new BlockBookshelf(47, 35)).c(1.5F).a(e).b("bookshelf");
-    public static final Block MOSSY_COBBLESTONE = (new Block(48, 36, Material.STONE)).c(2.0F).b(10.0F).a(h).b("stoneMoss").a(CreativeModeTab.b);
-    public static final Block OBSIDIAN = (new BlockObsidian(49, 37)).c(50.0F).b(2000.0F).a(h).b("obsidian");
-    public static final Block TORCH = (new BlockTorch(50, 80)).c(0.0F).a(0.9375F).a(e).b("torch").r();
-    public static final BlockFire FIRE = (BlockFire) (new BlockFire(51, 31)).c(0.0F).a(1.0F).a(e).b("fire").D();
-    public static final Block MOB_SPAWNER = (new BlockMobSpawner(52, 65)).c(5.0F).a(i).b("mobSpawner").D();
-    public static final Block WOOD_STAIRS = (new BlockStairs(53, WOOD, 0)).b("stairsWood").r();
-    public static final Block CHEST = (new BlockChest(54)).c(2.5F).a(e).b("chest").r();
-    public static final Block REDSTONE_WIRE = (new BlockRedstoneWire(55, 164)).c(0.0F).a(d).b("redstoneDust").D().r();
-    public static final Block DIAMOND_ORE = (new BlockOre(56, 50)).c(3.0F).b(5.0F).a(h).b("oreDiamond");
-    public static final Block DIAMOND_BLOCK = (new BlockOreBlock(57, 24)).c(5.0F).b(10.0F).a(i).b("blockDiamond");
-    public static final Block WORKBENCH = (new BlockWorkbench(58)).c(2.5F).a(e).b("workbench");
-    public static final Block CROPS = (new BlockCrops(59, 88)).b("crops");
-    public static final Block SOIL = (new BlockSoil(60)).c(0.6F).a(f).b("farmland").r();
-    public static final Block FURNACE = (new BlockFurnace(61, false)).c(3.5F).a(h).b("furnace").r().a(CreativeModeTab.c);
-    public static final Block BURNING_FURNACE = (new BlockFurnace(62, true)).c(3.5F).a(h).a(0.875F).b("furnace").r();
-    public static final Block SIGN_POST = (new BlockSign(63, TileEntitySign.class, true)).c(1.0F).a(e).b("sign").D().r();
-    public static final Block WOODEN_DOOR = (new BlockDoor(64, Material.WOOD)).c(3.0F).a(e).b("doorWood").D().r();
-    public static final Block LADDER = (new BlockLadder(65, 83)).c(0.4F).a(n).b("ladder").r();
-    public static final Block RAILS = (new BlockMinecartTrack(66, 128, false)).c(0.7F).a(i).b("rail").r();
-    public static final Block COBBLESTONE_STAIRS = (new BlockStairs(67, COBBLESTONE, 0)).b("stairsStone").r();
-    public static final Block WALL_SIGN = (new BlockSign(68, TileEntitySign.class, false)).c(1.0F).a(e).b("sign").D().r();
-    public static final Block LEVER = (new BlockLever(69, 96)).c(0.5F).a(e).b("lever").r();
-    public static final Block STONE_PLATE = (new BlockPressurePlate(70, STONE.textureId, EnumMobType.MOBS, Material.STONE)).c(0.5F).a(h).b("pressurePlate").r();
-    public static final Block IRON_DOOR_BLOCK = (new BlockDoor(71, Material.ORE)).c(5.0F).a(i).b("doorIron").D().r();
-    public static final Block WOOD_PLATE = (new BlockPressurePlate(72, WOOD.textureId, EnumMobType.EVERYTHING, Material.WOOD)).c(0.5F).a(e).b("pressurePlate").r();
-    public static final Block REDSTONE_ORE = (new BlockRedstoneOre(73, 51, false)).c(3.0F).b(5.0F).a(h).b("oreRedstone").r().a(CreativeModeTab.b);
-    public static final Block GLOWING_REDSTONE_ORE = (new BlockRedstoneOre(74, 51, true)).a(0.625F).c(3.0F).b(5.0F).a(h).b("oreRedstone").r();
-    public static final Block REDSTONE_TORCH_OFF = (new BlockRedstoneTorch(75, 115, false)).c(0.0F).a(e).b("notGate").r();
-    public static final Block REDSTONE_TORCH_ON = (new BlockRedstoneTorch(76, 99, true)).c(0.0F).a(0.5F).a(e).b("notGate").r().a(CreativeModeTab.d);
-    public static final Block STONE_BUTTON = (new BlockButton(77, STONE.textureId, false)).c(0.5F).a(h).b("button").r();
-    public static final Block SNOW = (new BlockSnow(78, 66)).c(0.1F).a(m).b("snow").r().h(0);
-    public static final Block ICE = (new BlockIce(79, 67)).c(0.5F).h(3).a(j).b("ice");
-    public static final Block SNOW_BLOCK = (new BlockSnowBlock(80, 66)).c(0.2F).a(m).b("snow");
-    public static final Block CACTUS = (new BlockCactus(81, 70)).c(0.4F).a(k).b("cactus");
-    public static final Block CLAY = (new BlockClay(82, 72)).c(0.6F).a(f).b("clay");
-    public static final Block SUGAR_CANE_BLOCK = (new BlockReed(83, 73)).c(0.0F).a(g).b("reeds").D();
-    public static final Block JUKEBOX = (new BlockJukeBox(84, 74)).c(2.0F).b(10.0F).a(h).b("jukebox").r();
-    public static final Block FENCE = (new BlockFence(85, 4)).c(2.0F).b(5.0F).a(e).b("fence");
-    public static final Block PUMPKIN = (new BlockPumpkin(86, 102, false)).c(1.0F).a(e).b("pumpkin").r();
-    public static final Block NETHERRACK = (new BlockBloodStone(87, 103)).c(0.4F).a(h).b("hellrock");
-    public static final Block SOUL_SAND = (new BlockSlowSand(88, 104)).c(0.5F).a(l).b("hellsand");
-    public static final Block GLOWSTONE = (new BlockLightStone(89, 105, Material.SHATTERABLE)).c(0.3F).a(j).a(1.0F).b("lightgem");
-    public static final BlockPortal PORTAL = (BlockPortal) (new BlockPortal(90, 14)).c(-1.0F).a(j).a(0.75F).b("portal");
-    public static final Block JACK_O_LANTERN = (new BlockPumpkin(91, 102, true)).c(1.0F).a(e).a(1.0F).b("litpumpkin").r();
-    public static final Block CAKE_BLOCK = (new BlockCake(92, 121)).c(0.5F).a(k).b("cake").D().r();
-    public static final Block DIODE_OFF = (new BlockDiode(93, false)).c(0.0F).a(e).b("diode").D().r();
-    public static final Block DIODE_ON = (new BlockDiode(94, true)).c(0.0F).a(0.625F).a(e).b("diode").D().r();
-    public static final Block LOCKED_CHEST = (new BlockLockedChest(95)).c(0.0F).a(1.0F).a(e).b("lockedchest").b(true).r();
-    public static final Block TRAP_DOOR = (new BlockTrapdoor(96, Material.WOOD)).c(3.0F).a(e).b("trapdoor").D().r();
-    public static final Block MONSTER_EGGS = (new BlockMonsterEggs(97)).c(0.75F).b("monsterStoneEgg");
-    public static final Block SMOOTH_BRICK = (new BlockSmoothBrick(98)).c(1.5F).b(10.0F).a(h).b("stonebricksmooth");
-    public static final Block BIG_MUSHROOM_1 = (new BlockHugeMushroom(99, Material.WOOD, 142, 0)).c(0.2F).a(e).b("mushroom").r();
-    public static final Block BIG_MUSHROOM_2 = (new BlockHugeMushroom(100, Material.WOOD, 142, 1)).c(0.2F).a(e).b("mushroom").r();
-    public static final Block IRON_FENCE = (new BlockThinFence(101, 85, 85, Material.ORE, true)).c(5.0F).b(10.0F).a(i).b("fenceIron");
-    public static final Block THIN_GLASS = (new BlockThinFence(102, 49, 148, Material.SHATTERABLE, false)).c(0.3F).a(j).b("thinGlass");
-    public static final Block MELON = (new BlockMelon(103)).c(1.0F).a(e).b("melon");
-    public static final Block PUMPKIN_STEM = (new BlockStem(104, PUMPKIN)).c(0.0F).a(e).b("pumpkinStem").r();
-    public static final Block MELON_STEM = (new BlockStem(105, MELON)).c(0.0F).a(e).b("pumpkinStem").r();
-    public static final Block VINE = (new BlockVine(106)).c(0.2F).a(g).b("vine").r();
-    public static final Block FENCE_GATE = (new BlockFenceGate(107, 4)).c(2.0F).b(5.0F).a(e).b("fenceGate").r();
-    public static final Block BRICK_STAIRS = (new BlockStairs(108, BRICK, 0)).b("stairsBrick").r();
-    public static final Block STONE_STAIRS = (new BlockStairs(109, SMOOTH_BRICK, 0)).b("stairsStoneBrickSmooth").r();
-    public static final BlockMycel MYCEL = (BlockMycel) (new BlockMycel(110)).c(0.6F).a(g).b("mycel");
-    public static final Block WATER_LILY = (new BlockWaterLily(111, 76)).c(0.0F).a(g).b("waterlily");
-    public static final Block NETHER_BRICK = (new Block(112, 224, Material.STONE)).c(2.0F).b(10.0F).a(h).b("netherBrick").a(CreativeModeTab.b);
-    public static final Block NETHER_FENCE = (new BlockFence(113, 224, Material.STONE)).c(2.0F).b(10.0F).a(h).b("netherFence");
-    public static final Block NETHER_BRICK_STAIRS = (new BlockStairs(114, NETHER_BRICK, 0)).b("stairsNetherBrick").r();
-    public static final Block NETHER_WART = (new BlockNetherWart(115)).b("netherStalk").r();
-    public static final Block ENCHANTMENT_TABLE = (new BlockEnchantmentTable(116)).c(5.0F).b(2000.0F).b("enchantmentTable");
-    public static final Block BREWING_STAND = (new BlockBrewingStand(117)).c(0.5F).a(0.125F).b("brewingStand").r();
-    public static final Block CAULDRON = (new BlockCauldron(118)).c(2.0F).b("cauldron").r();
+    public static final BlockFlower YELLOW_FLOWER = (BlockFlower) (new BlockFlower(37)).c(0.0F).a(i).c("flower");
+    public static final BlockFlower RED_ROSE = (BlockFlower) (new BlockFlower(38)).c(0.0F).a(i).c("rose");
+    public static final BlockFlower BROWN_MUSHROOM = (BlockFlower) (new BlockMushroom(39, "mushroom_brown")).c(0.0F).a(i).a(0.125F).c("mushroom");
+    public static final BlockFlower RED_MUSHROOM = (BlockFlower) (new BlockMushroom(40, "mushroom_red")).c(0.0F).a(i).c("mushroom");
+    public static final Block GOLD_BLOCK = (new BlockOreBlock(41)).c(3.0F).b(10.0F).a(k).c("blockGold");
+    public static final Block IRON_BLOCK = (new BlockOreBlock(42)).c(5.0F).b(10.0F).a(k).c("blockIron");
+    public static final BlockStepAbstract DOUBLE_STEP = (BlockStepAbstract) (new BlockStep(43, true)).c(2.0F).b(10.0F).a(j).c("stoneSlab");
+    public static final BlockStepAbstract STEP = (BlockStepAbstract) (new BlockStep(44, false)).c(2.0F).b(10.0F).a(j).c("stoneSlab");
+    public static final Block BRICK = (new Block(45, Material.STONE)).c(2.0F).b(10.0F).a(j).c("brick").a(CreativeModeTab.b);
+    public static final Block TNT = (new BlockTNT(46)).c(0.0F).a(i).c("tnt");
+    public static final Block BOOKSHELF = (new BlockBookshelf(47)).c(1.5F).a(g).c("bookshelf");
+    public static final Block MOSSY_COBBLESTONE = (new Block(48, Material.STONE)).c(2.0F).b(10.0F).a(j).c("stoneMoss").a(CreativeModeTab.b);
+    public static final Block OBSIDIAN = (new BlockObsidian(49)).c(50.0F).b(2000.0F).a(j).c("obsidian");
+    public static final Block TORCH = (new BlockTorch(50)).c(0.0F).a(0.9375F).a(g).c("torch");
+    public static final BlockFire FIRE = (BlockFire) (new BlockFire(51)).c(0.0F).a(1.0F).a(g).c("fire").D();
+    public static final Block MOB_SPAWNER = (new BlockMobSpawner(52)).c(5.0F).a(k).c("mobSpawner").D();
+    public static final Block WOOD_STAIRS = (new BlockStairs(53, WOOD, 0)).c("stairsWood");
+    public static final BlockChest CHEST = (BlockChest) (new BlockChest(54, 0)).c(2.5F).a(g).c("chest");
+    public static final BlockRedstoneWire REDSTONE_WIRE = (BlockRedstoneWire) (new BlockRedstoneWire(55)).c(0.0F).a(f).c("redstoneDust").D();
+    public static final Block DIAMOND_ORE = (new BlockOre(56)).c(3.0F).b(5.0F).a(j).c("oreDiamond");
+    public static final Block DIAMOND_BLOCK = (new BlockOreBlock(57)).c(5.0F).b(10.0F).a(k).c("blockDiamond");
+    public static final Block WORKBENCH = (new BlockWorkbench(58)).c(2.5F).a(g).c("workbench");
+    public static final Block CROPS = (new BlockCrops(59)).c("crops");
+    public static final Block SOIL = (new BlockSoil(60)).c(0.6F).a(h).c("farmland");
+    public static final Block FURNACE = (new BlockFurnace(61, false)).c(3.5F).a(j).c("furnace").a(CreativeModeTab.c);
+    public static final Block BURNING_FURNACE = (new BlockFurnace(62, true)).c(3.5F).a(j).a(0.875F).c("furnace");
+    public static final Block SIGN_POST = (new BlockSign(63, TileEntitySign.class, true)).c(1.0F).a(g).c("sign").D();
+    public static final Block WOODEN_DOOR = (new BlockDoor(64, Material.WOOD)).c(3.0F).a(g).c("doorWood").D();
+    public static final Block LADDER = (new BlockLadder(65)).c(0.4F).a(p).c("ladder");
+    public static final Block RAILS = (new BlockMinecartTrack(66)).c(0.7F).a(k).c("rail");
+    public static final Block COBBLESTONE_STAIRS = (new BlockStairs(67, COBBLESTONE, 0)).c("stairsStone");
+    public static final Block WALL_SIGN = (new BlockSign(68, TileEntitySign.class, false)).c(1.0F).a(g).c("sign").D();
+    public static final Block LEVER = (new BlockLever(69)).c(0.5F).a(g).c("lever");
+    public static final Block STONE_PLATE = (new BlockPressurePlateBinary(70, "stone", Material.STONE, EnumMobType.MOBS)).c(0.5F).a(j).c("pressurePlate");
+    public static final Block IRON_DOOR_BLOCK = (new BlockDoor(71, Material.ORE)).c(5.0F).a(k).c("doorIron").D();
+    public static final Block WOOD_PLATE = (new BlockPressurePlateBinary(72, "wood", Material.WOOD, EnumMobType.EVERYTHING)).c(0.5F).a(g).c("pressurePlate");
+    public static final Block REDSTONE_ORE = (new BlockRedstoneOre(73, false)).c(3.0F).b(5.0F).a(j).c("oreRedstone").a(CreativeModeTab.b);
+    public static final Block GLOWING_REDSTONE_ORE = (new BlockRedstoneOre(74, true)).a(0.625F).c(3.0F).b(5.0F).a(j).c("oreRedstone");
+    public static final Block REDSTONE_TORCH_OFF = (new BlockRedstoneTorch(75, false)).c(0.0F).a(g).c("notGate");
+    public static final Block REDSTONE_TORCH_ON = (new BlockRedstoneTorch(76, true)).c(0.0F).a(0.5F).a(g).c("notGate").a(CreativeModeTab.d);
+    public static final Block STONE_BUTTON = (new BlockStoneButton(77)).c(0.5F).a(j).c("button");
+    public static final Block SNOW = (new BlockSnow(78)).c(0.1F).a(o).c("snow").k(0);
+    public static final Block ICE = (new BlockIce(79)).c(0.5F).k(3).a(l).c("ice");
+    public static final Block SNOW_BLOCK = (new BlockSnowBlock(80)).c(0.2F).a(o).c("snow");
+    public static final Block CACTUS = (new BlockCactus(81)).c(0.4F).a(m).c("cactus");
+    public static final Block CLAY = (new BlockClay(82)).c(0.6F).a(h).c("clay");
+    public static final Block SUGAR_CANE_BLOCK = (new BlockReed(83)).c(0.0F).a(i).c("reeds").D();
+    public static final Block JUKEBOX = (new BlockJukeBox(84)).c(2.0F).b(10.0F).a(j).c("jukebox");
+    public static final Block FENCE = (new BlockFence(85, "wood", Material.WOOD)).c(2.0F).b(5.0F).a(g).c("fence");
+    public static final Block PUMPKIN = (new BlockPumpkin(86, false)).c(1.0F).a(g).c("pumpkin");
+    public static final Block NETHERRACK = (new BlockBloodStone(87)).c(0.4F).a(j).c("hellrock");
+    public static final Block SOUL_SAND = (new BlockSlowSand(88)).c(0.5F).a(n).c("hellsand");
+    public static final Block GLOWSTONE = (new BlockLightStone(89, Material.SHATTERABLE)).c(0.3F).a(l).a(1.0F).c("lightgem");
+    public static final BlockPortal PORTAL = (BlockPortal) (new BlockPortal(90)).c(-1.0F).a(l).a(0.75F).c("portal");
+    public static final Block JACK_O_LANTERN = (new BlockPumpkin(91, true)).c(1.0F).a(g).a(1.0F).c("litpumpkin");
+    public static final Block CAKE_BLOCK = (new BlockCake(92)).c(0.5F).a(m).c("cake").D();
+    public static final BlockRepeater DIODE_OFF = (BlockRepeater) (new BlockRepeater(93, false)).c(0.0F).a(g).c("diode").D();
+    public static final BlockRepeater DIODE_ON = (BlockRepeater) (new BlockRepeater(94, true)).c(0.0F).a(0.625F).a(g).c("diode").D();
+    public static final Block LOCKED_CHEST = (new BlockLockedChest(95)).c(0.0F).a(1.0F).a(g).c("lockedchest").b(true);
+    public static final Block TRAP_DOOR = (new BlockTrapdoor(96, Material.WOOD)).c(3.0F).a(g).c("trapdoor").D();
+    public static final Block MONSTER_EGGS = (new BlockMonsterEggs(97)).c(0.75F).c("monsterStoneEgg");
+    public static final Block SMOOTH_BRICK = (new BlockSmoothBrick(98)).c(1.5F).b(10.0F).a(j).c("stonebricksmooth");
+    public static final Block BIG_MUSHROOM_1 = (new BlockHugeMushroom(99, Material.WOOD, 0)).c(0.2F).a(g).c("mushroom");
+    public static final Block BIG_MUSHROOM_2 = (new BlockHugeMushroom(100, Material.WOOD, 1)).c(0.2F).a(g).c("mushroom");
+    public static final Block IRON_FENCE = (new BlockThinFence(101, "fenceIron", "fenceIron", Material.ORE, true)).c(5.0F).b(10.0F).a(k).c("fenceIron");
+    public static final Block THIN_GLASS = (new BlockThinFence(102, "glass", "thinglass_top", Material.SHATTERABLE, false)).c(0.3F).a(l).c("thinGlass");
+    public static final Block MELON = (new BlockMelon(103)).c(1.0F).a(g).c("melon");
+    public static final Block PUMPKIN_STEM = (new BlockStem(104, PUMPKIN)).c(0.0F).a(g).c("pumpkinStem");
+    public static final Block MELON_STEM = (new BlockStem(105, MELON)).c(0.0F).a(g).c("pumpkinStem");
+    public static final Block VINE = (new BlockVine(106)).c(0.2F).a(i).c("vine");
+    public static final Block FENCE_GATE = (new BlockFenceGate(107)).c(2.0F).b(5.0F).a(g).c("fenceGate");
+    public static final Block BRICK_STAIRS = (new BlockStairs(108, BRICK, 0)).c("stairsBrick");
+    public static final Block STONE_STAIRS = (new BlockStairs(109, SMOOTH_BRICK, 0)).c("stairsStoneBrickSmooth");
+    public static final BlockMycel MYCEL = (BlockMycel) (new BlockMycel(110)).c(0.6F).a(i).c("mycel");
+    public static final Block WATER_LILY = (new BlockWaterLily(111)).c(0.0F).a(i).c("waterlily");
+    public static final Block NETHER_BRICK = (new Block(112, Material.STONE)).c(2.0F).b(10.0F).a(j).c("netherBrick").a(CreativeModeTab.b);
+    public static final Block NETHER_FENCE = (new BlockFence(113, "netherBrick", Material.STONE)).c(2.0F).b(10.0F).a(j).c("netherFence");
+    public static final Block NETHER_BRICK_STAIRS = (new BlockStairs(114, NETHER_BRICK, 0)).c("stairsNetherBrick");
+    public static final Block NETHER_WART = (new BlockNetherWart(115)).c("netherStalk");
+    public static final Block ENCHANTMENT_TABLE = (new BlockEnchantmentTable(116)).c(5.0F).b(2000.0F).c("enchantmentTable");
+    public static final Block BREWING_STAND = (new BlockBrewingStand(117)).c(0.5F).a(0.125F).c("brewingStand");
+    public static final BlockCauldron CAULDRON = (BlockCauldron) (new BlockCauldron(118)).c(2.0F).c("cauldron");
     public static final Block ENDER_PORTAL = (new BlockEnderPortal(119, Material.PORTAL)).c(-1.0F).b(6000000.0F);
-    public static final Block ENDER_PORTAL_FRAME = (new BlockEnderPortalFrame(120)).a(j).a(0.125F).c(-1.0F).b("endPortalFrame").r().b(6000000.0F).a(CreativeModeTab.c);
-    public static final Block WHITESTONE = (new Block(121, 175, Material.STONE)).c(3.0F).b(15.0F).a(h).b("whiteStone").a(CreativeModeTab.b);
-    public static final Block DRAGON_EGG = (new BlockDragonEgg(122, 167)).c(3.0F).b(15.0F).a(h).a(0.125F).b("dragonEgg");
-    public static final Block REDSTONE_LAMP_OFF = (new BlockRedstoneLamp(123, false)).c(0.3F).a(j).b("redstoneLight").a(CreativeModeTab.d);
-    public static final Block REDSTONE_LAMP_ON = (new BlockRedstoneLamp(124, true)).c(0.3F).a(j).b("redstoneLight");
-    public static final BlockStepAbstract WOOD_DOUBLE_STEP = (BlockStepAbstract) (new BlockWoodStep(125, true)).c(2.0F).b(5.0F).a(e).b("woodSlab");
-    public static final BlockStepAbstract WOOD_STEP = (BlockStepAbstract) (new BlockWoodStep(126, false)).c(2.0F).b(5.0F).a(e).b("woodSlab");
-    public static final Block COCOA = (new BlockCocoa(127)).c(0.2F).b(5.0F).a(e).b("cocoa").r();
-    public static final Block SANDSTONE_STAIRS = (new BlockStairs(128, SANDSTONE, 0)).b("stairsSandStone").r();
-    public static final Block EMERALD_ORE = (new BlockOre(129, 171)).c(3.0F).b(5.0F).a(h).b("oreEmerald");
-    public static final Block ENDER_CHEST = (new BlockEnderChest(130)).c(22.5F).b(1000.0F).a(h).b("enderChest").r().a(0.5F);
-    public static final BlockTripwireHook TRIPWIRE_SOURCE = (BlockTripwireHook) (new BlockTripwireHook(131)).b("tripWireSource").r();
-    public static final Block TRIPWIRE = (new BlockTripwire(132)).b("tripWire").r();
-    public static final Block EMERALD_BLOCK = (new BlockOreBlock(133, 25)).c(5.0F).b(10.0F).a(i).b("blockEmerald");
-    public static final Block SPRUCE_WOOD_STAIRS = (new BlockStairs(134, WOOD, 1)).b("stairsWoodSpruce").r();
-    public static final Block BIRCH_WOOD_STAIRS = (new BlockStairs(135, WOOD, 2)).b("stairsWoodBirch").r();
-    public static final Block JUNGLE_WOOD_STAIRS = (new BlockStairs(136, WOOD, 3)).b("stairsWoodJungle").r();
-    public static final Block COMMAND = (new BlockCommand(137)).b("commandBlock");
-    public static final Block BEACON = (new BlockBeacon(138)).b("beacon").a(1.0F);
-    public static final Block COBBLE_WALL = (new BlockCobbleWall(139, COBBLESTONE)).b("cobbleWall");
-    public static final Block FLOWER_POT = (new BlockFlowerPot(140)).c(0.0F).a(d).b("flowerPot");
-    public static final Block CARROTS = (new BlockCarrots(141)).b("carrots");
-    public static final Block POTATOES = (new BlockPotatoes(142)).b("potatoes");
-    public static final Block WOOD_BUTTON = (new BlockButton(143, WOOD.textureId, true)).c(0.5F).a(e).b("button").r();
-    public static final Block SKULL = (new BlockSkull(144)).c(1.0F).a(h).b("skull").r();
-    public static final Block ANVIL = (new BlockAnvil(145)).c(5.0F).a(o).b(2000.0F).b("anvil").r();
-    public int textureId;
+    public static final Block ENDER_PORTAL_FRAME = (new BlockEnderPortalFrame(120)).a(l).a(0.125F).c(-1.0F).c("endPortalFrame").b(6000000.0F).a(CreativeModeTab.c);
+    public static final Block WHITESTONE = (new Block(121, Material.STONE)).c(3.0F).b(15.0F).a(j).c("whiteStone").a(CreativeModeTab.b);
+    public static final Block DRAGON_EGG = (new BlockDragonEgg(122)).c(3.0F).b(15.0F).a(j).a(0.125F).c("dragonEgg");
+    public static final Block REDSTONE_LAMP_OFF = (new BlockRedstoneLamp(123, false)).c(0.3F).a(l).c("redstoneLight").a(CreativeModeTab.d);
+    public static final Block REDSTONE_LAMP_ON = (new BlockRedstoneLamp(124, true)).c(0.3F).a(l).c("redstoneLight");
+    public static final BlockStepAbstract WOOD_DOUBLE_STEP = (BlockStepAbstract) (new BlockWoodStep(125, true)).c(2.0F).b(5.0F).a(g).c("woodSlab");
+    public static final BlockStepAbstract WOOD_STEP = (BlockStepAbstract) (new BlockWoodStep(126, false)).c(2.0F).b(5.0F).a(g).c("woodSlab");
+    public static final Block COCOA = (new BlockCocoa(127)).c(0.2F).b(5.0F).a(g).c("cocoa");
+    public static final Block SANDSTONE_STAIRS = (new BlockStairs(128, SANDSTONE, 0)).c("stairsSandStone");
+    public static final Block EMERALD_ORE = (new BlockOre(129)).c(3.0F).b(5.0F).a(j).c("oreEmerald");
+    public static final Block ENDER_CHEST = (new BlockEnderChest(130)).c(22.5F).b(1000.0F).a(j).c("enderChest").a(0.5F);
+    public static final BlockTripwireHook TRIPWIRE_SOURCE = (BlockTripwireHook) (new BlockTripwireHook(131)).c("tripWireSource");
+    public static final Block TRIPWIRE = (new BlockTripwire(132)).c("tripWire");
+    public static final Block EMERALD_BLOCK = (new BlockOreBlock(133)).c(5.0F).b(10.0F).a(k).c("blockEmerald");
+    public static final Block SPRUCE_WOOD_STAIRS = (new BlockStairs(134, WOOD, 1)).c("stairsWoodSpruce");
+    public static final Block BIRCH_WOOD_STAIRS = (new BlockStairs(135, WOOD, 2)).c("stairsWoodBirch");
+    public static final Block JUNGLE_WOOD_STAIRS = (new BlockStairs(136, WOOD, 3)).c("stairsWoodJungle");
+    public static final Block COMMAND = (new BlockCommand(137)).c("commandBlock");
+    public static final BlockBeacon BEACON = (BlockBeacon) (new BlockBeacon(138)).c("beacon").a(1.0F);
+    public static final Block COBBLE_WALL = (new BlockCobbleWall(139, COBBLESTONE)).c("cobbleWall");
+    public static final Block FLOWER_POT = (new BlockFlowerPot(140)).c(0.0F).a(f).c("flowerPot");
+    public static final Block CARROTS = (new BlockCarrots(141)).c("carrots");
+    public static final Block POTATOES = (new BlockPotatoes(142)).c("potatoes");
+    public static final Block WOOD_BUTTON = (new BlockWoodButton(143)).c(0.5F).a(g).c("button");
+    public static final Block SKULL = (new BlockSkull(144)).c(1.0F).a(j).c("skull");
+    public static final Block ANVIL = (new BlockAnvil(145)).c(5.0F).a(q).b(2000.0F).c("anvil");
+    public static final Block TRAPPED_CHEST = (new BlockChest(146, 1)).c(2.5F).a(g).c("chestTrap");
+    public static final Block GOLD_PLATE = (new BlockPressurePlateWeighted(147, "blockGold", Material.ORE, 64)).c(0.5F).a(g).c("weightedPlate_light");
+    public static final Block IRON_PLATE = (new BlockPressurePlateWeighted(148, "blockIron", Material.ORE, 640)).c(0.5F).a(g).c("weightedPlate_heavy");
+    public static final BlockRedstoneComparator REDSTONE_COMPARATOR_OFF = (BlockRedstoneComparator) (new BlockRedstoneComparator(149, false)).c(0.0F).a(g).c("comparator").D();
+    public static final BlockRedstoneComparator REDSTONE_COMPARATOR_ON = (BlockRedstoneComparator) (new BlockRedstoneComparator(150, true)).c(0.0F).a(0.625F).a(g).c("comparator").D();
+    public static final BlockDaylightDetector DAYLIGHT_DETECTOR = (BlockDaylightDetector) (new BlockDaylightDetector(151)).c(0.2F).a(g).c("daylightDetector");
+    public static final Block REDSTONE_BLOCK = (new BlockRedstone(152)).c(5.0F).b(10.0F).a(k).c("blockRedstone");
+    public static final Block QUARTZ_ORE = (new BlockOre(153)).c(3.0F).b(5.0F).a(j).c("netherquartz");
+    public static final BlockHopper HOPPER = (BlockHopper) (new BlockHopper(154)).c(3.0F).b(8.0F).a(g).c("hopper");
+    public static final Block QUARTZ_BLOCK = (new BlockQuartz(155)).a(j).c(0.8F).c("quartzBlock");
+    public static final Block QUARTZ_STAIRS = (new BlockStairs(156, QUARTZ_BLOCK, 0)).c("stairsQuartz");
+    public static final Block ACTIVATOR_RAIL = (new BlockPoweredRail(157)).c(0.7F).a(k).c("activatorRail");
+    public static final Block DROPPER = (new BlockDropper(158)).c(3.5F).a(j).c("dropper");
     public final int id;
     protected float strength;
     protected float durability;
-    protected boolean cp;
-    protected boolean cq;
-    protected boolean cr;
+    protected boolean cC = true;
+    protected boolean cD = true;
+    protected boolean cE;
     protected boolean isTileEntity;
     protected double minX;
     protected double minY;
@@ -185,16 +196,14 @@ public class Block {
     protected double maxY;
     protected double maxZ;
     public StepSound stepSound;
-    public float cA;
+    public float cN;
     public final Material material;
     public float frictionFactor;
     private String name;
 
     protected Block(int i, Material material) {
-        this.cp = true;
-        this.cq = true;
-        this.stepSound = d;
-        this.cA = 1.0F;
+        this.stepSound = f;
+        this.cN = 1.0F;
         this.frictionFactor = 0.6F;
         if (byId[i] != null) {
             throw new IllegalArgumentException("Slot " + i + " is already occupied by " + byId[i] + " when adding " + this);
@@ -203,30 +212,20 @@ public class Block {
             byId[i] = this;
             this.id = i;
             this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
-            q[i] = this.c();
+            s[i] = this.c();
             lightBlock[i] = this.c() ? 255 : 0;
-            s[i] = !material.blocksLight();
+            u[i] = !material.blocksLight();
         }
     }
 
-    protected Block r() {
-        u[this.id] = true;
-        return this;
-    }
-
-    protected void t_() {}
-
-    protected Block(int i, int j, Material material) {
-        this(i, material);
-        this.textureId = j;
-    }
+    protected void s_() {}
 
     protected Block a(StepSound stepsound) {
         this.stepSound = stepsound;
         return this;
     }
 
-    protected Block h(int i) {
+    protected Block k(int i) {
         lightBlock[this.id] = i;
         return this;
     }
@@ -241,17 +240,17 @@ public class Block {
         return this;
     }
 
-    public static boolean i(int i) {
+    public static boolean l(int i) {
         Block block = byId[i];
 
-        return block == null ? false : block.material.k() && block.b();
+        return block == null ? false : block.material.k() && block.b() && !block.isPowerSource();
     }
 
     public boolean b() {
         return true;
     }
 
-    public boolean c(IBlockAccess iblockaccess, int i, int j, int k) {
+    public boolean b(IBlockAccess iblockaccess, int i, int j, int k) {
         return !this.material.isSolid();
     }
 
@@ -268,25 +267,25 @@ public class Block {
         return this;
     }
 
-    protected Block s() {
+    protected Block r() {
         this.c(-1.0F);
         return this;
     }
 
-    public float m(World world, int i, int j, int k) {
+    public float l(World world, int i, int j, int k) {
         return this.strength;
     }
 
     protected Block b(boolean flag) {
-        this.cr = flag;
+        this.cE = flag;
         return this;
     }
 
     public boolean isTicking() {
-        return this.cr;
+        return this.cE;
     }
 
-    public boolean u() {
+    public boolean t() {
         return this.isTileEntity;
     }
 
@@ -303,23 +302,15 @@ public class Block {
         return iblockaccess.getMaterial(i, j, k).isBuildable();
     }
 
-    public int a(int i, int j) {
-        return this.a(i);
-    }
-
-    public int a(int i) {
-        return this.textureId;
-    }
-
     public void a(World world, int i, int j, int k, AxisAlignedBB axisalignedbb, List list, Entity entity) {
-        AxisAlignedBB axisalignedbb1 = this.e(world, i, j, k);
+        AxisAlignedBB axisalignedbb1 = this.b(world, i, j, k);
 
         if (axisalignedbb1 != null && axisalignedbb.a(axisalignedbb1)) {
             list.add(axisalignedbb1);
         }
     }
 
-    public AxisAlignedBB e(World world, int i, int j, int k) {
+    public AxisAlignedBB b(World world, int i, int j, int k) {
         return AxisAlignedBB.a().a((double) i + this.minX, (double) j + this.minY, (double) k + this.minZ, (double) i + this.maxX, (double) j + this.maxY, (double) k + this.maxZ);
     }
 
@@ -335,13 +326,13 @@ public class Block {
         return true;
     }
 
-    public void b(World world, int i, int j, int k, Random random) {}
+    public void a(World world, int i, int j, int k, Random random) {}
 
     public void postBreak(World world, int i, int j, int k, int l) {}
 
     public void doPhysics(World world, int i, int j, int k, int l) {}
 
-    public int r_() {
+    public int a(World world) {
         return 10;
     }
 
@@ -358,9 +349,9 @@ public class Block {
     }
 
     public float getDamage(EntityHuman entityhuman, World world, int i, int j, int k) {
-        float f = this.m(world, i, j, k);
+        float f = this.l(world, i, j, k);
 
-        return f < 0.0F ? 0.0F : (!entityhuman.b(this) ? 1.0F / f / 100.0F : entityhuman.a(this) / f / 30.0F);
+        return f < 0.0F ? 0.0F : (!entityhuman.a(this) ? entityhuman.a(this, false) / f / 100.0F : entityhuman.a(this, true) / f / 30.0F);
     }
 
     public final void c(World world, int i, int j, int k, int l, int i1) {
@@ -397,7 +388,7 @@ public class Block {
         }
     }
 
-    protected void f(World world, int i, int j, int k, int l) {
+    protected void j(World world, int i, int j, int k, int l) {
         if (!world.isStatic) {
             while (l > 0) {
                 int i1 = EntityExperienceOrb.getOrbValue(l);
@@ -522,7 +513,11 @@ public class Block {
         return vec3d == null ? false : vec3d.c >= this.minX && vec3d.c <= this.maxX && vec3d.d >= this.minY && vec3d.d <= this.maxY;
     }
 
-    public void wasExploded(World world, int i, int j, int k) {}
+    public void wasExploded(World world, int i, int j, int k, Explosion explosion) {}
+
+    public boolean canPlace(World world, int i, int j, int k, int l, ItemStack itemstack) {
+        return this.canPlace(world, i, j, k, l);
+    }
 
     public boolean canPlace(World world, int i, int j, int k, int l) {
         return this.canPlace(world, i, j, k);
@@ -550,32 +545,32 @@ public class Block {
 
     public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {}
 
-    public final double v() {
+    public final double u() {
         return this.minX;
     }
 
-    public final double w() {
+    public final double v() {
         return this.maxX;
     }
 
-    public final double x() {
+    public final double w() {
         return this.minY;
     }
 
-    public final double y() {
+    public final double x() {
         return this.maxY;
     }
 
-    public final double z() {
+    public final double y() {
         return this.minZ;
     }
 
-    public final double A() {
+    public final double z() {
         return this.maxZ;
     }
 
-    public boolean b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
-        return false;
+    public int b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+        return 0;
     }
 
     public boolean isPowerSource() {
@@ -584,17 +579,17 @@ public class Block {
 
     public void a(World world, int i, int j, int k, Entity entity) {}
 
-    public boolean c(IBlockAccess iblockaccess, int i, int j, int k, int l) {
-        return false;
+    public int c(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+        return 0;
     }
 
-    public void f() {}
+    public void g() {}
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
         entityhuman.a(StatisticList.C[this.id], 1);
         entityhuman.j(0.025F);
-        if (this.s_() && EnchantmentManager.hasSilkTouchEnchantment(entityhuman)) {
-            ItemStack itemstack = this.f_(l);
+        if (this.r_() && EnchantmentManager.hasSilkTouchEnchantment(entityhuman)) {
+            ItemStack itemstack = this.c_(l);
 
             if (itemstack != null) {
                 this.b(world, i, j, k, itemstack);
@@ -606,14 +601,14 @@ public class Block {
         }
     }
 
-    protected boolean s_() {
+    protected boolean r_() {
         return this.b() && !this.isTileEntity;
     }
 
-    protected ItemStack f_(int i) {
+    protected ItemStack c_(int i) {
         int j = 0;
 
-        if (this.id >= 0 && this.id < Item.byId.length && Item.byId[this.id].l()) {
+        if (this.id >= 0 && this.id < Item.byId.length && Item.byId[this.id].m()) {
             j = i;
         }
 
@@ -624,16 +619,16 @@ public class Block {
         return this.a(random);
     }
 
-    public boolean d(World world, int i, int j, int k) {
+    public boolean f(World world, int i, int j, int k) {
         return true;
     }
 
-    public void postPlace(World world, int i, int j, int k, EntityLiving entityliving) {}
+    public void postPlace(World world, int i, int j, int k, EntityLiving entityliving, ItemStack itemstack) {}
 
     public void postPlace(World world, int i, int j, int k, int l) {}
 
-    public Block b(String s) {
-        this.name = "tile." + s;
+    public Block c(String s) {
+        this.name = s;
         return this;
     }
 
@@ -642,21 +637,23 @@ public class Block {
     }
 
     public String a() {
-        return this.name;
+        return "tile." + this.name;
     }
 
-    public void b(World world, int i, int j, int k, int l, int i1) {}
+    public boolean b(World world, int i, int j, int k, int l, int i1) {
+        return false;
+    }
 
     public boolean C() {
-        return this.cq;
+        return this.cD;
     }
 
     protected Block D() {
-        this.cq = false;
+        this.cD = false;
         return this;
     }
 
-    public int q_() {
+    public int h() {
         return this.material.getPushReaction();
     }
 
@@ -673,9 +670,9 @@ public class Block {
 
     public void a(World world, int i, int j, int k, int l, EntityHuman entityhuman) {}
 
-    public void h(World world, int i, int j, int k, int l) {}
+    public void l(World world, int i, int j, int k, int l) {}
 
-    public void f(World world, int i, int j, int k) {}
+    public void g(World world, int i, int j, int k) {}
 
     public boolean l() {
         return true;
@@ -685,6 +682,22 @@ public class Block {
         return true;
     }
 
+    public boolean i(int i) {
+        return this.id == i;
+    }
+
+    public static boolean b(int i, int j) {
+        return i == j ? true : (i != 0 && j != 0 && byId[i] != null && byId[j] != null ? byId[i].i(j) : false);
+    }
+
+    public boolean q_() {
+        return false;
+    }
+
+    public int b_(World world, int i, int j, int k, int l) {
+        return 0;
+    }
+
     static {
         Item.byId[WOOL.id] = (new ItemCloth(WOOL.id - 256)).b("cloth");
         Item.byId[LOG.id] = (new ItemMultiTexture(LOG.id - 256, LOG, BlockLog.a)).b("log");
@@ -692,6 +705,7 @@ public class Block {
         Item.byId[MONSTER_EGGS.id] = (new ItemMultiTexture(MONSTER_EGGS.id - 256, MONSTER_EGGS, BlockMonsterEggs.a)).b("monsterStoneEgg");
         Item.byId[SMOOTH_BRICK.id] = (new ItemMultiTexture(SMOOTH_BRICK.id - 256, SMOOTH_BRICK, BlockSmoothBrick.a)).b("stonebricksmooth");
         Item.byId[SANDSTONE.id] = (new ItemMultiTexture(SANDSTONE.id - 256, SANDSTONE, BlockSandStone.a)).b("sandStone");
+        Item.byId[QUARTZ_BLOCK.id] = (new ItemMultiTexture(QUARTZ_BLOCK.id - 256, QUARTZ_BLOCK, BlockQuartz.a)).b("quartzBlock");
         Item.byId[STEP.id] = (new ItemStep(STEP.id - 256, STEP, DOUBLE_STEP, false)).b("stoneSlab");
         Item.byId[DOUBLE_STEP.id] = (new ItemStep(DOUBLE_STEP.id - 256, STEP, DOUBLE_STEP, true)).b("stoneSlab");
         Item.byId[WOOD_STEP.id] = (new ItemStep(WOOD_STEP.id - 256, WOOD_STEP, WOOD_DOUBLE_STEP, false)).b("woodSlab");
@@ -700,6 +714,7 @@ public class Block {
         Item.byId[LEAVES.id] = (new ItemLeaves(LEAVES.id - 256)).b("leaves");
         Item.byId[VINE.id] = new ItemWithAuxData(VINE.id - 256, false);
         Item.byId[LONG_GRASS.id] = (new ItemWithAuxData(LONG_GRASS.id - 256, true)).a(new String[] { "shrub", "grass", "fern"});
+        Item.byId[SNOW.id] = new ItemSnow(SNOW.id - 256, SNOW);
         Item.byId[WATER_LILY.id] = new ItemWaterLily(WATER_LILY.id - 256);
         Item.byId[PISTON.id] = new ItemPiston(PISTON.id - 256);
         Item.byId[PISTON_STICKY.id] = new ItemPiston(PISTON_STICKY.id - 256);
@@ -715,7 +730,7 @@ public class Block {
             if (byId[i] != null) {
                 if (Item.byId[i] == null) {
                     Item.byId[i] = new ItemBlock(i - 256);
-                    byId[i].t_();
+                    byId[i].s_();
                 }
 
                 boolean flag = false;
@@ -732,7 +747,7 @@ public class Block {
                     flag = true;
                 }
 
-                if (s[i]) {
+                if (u[i]) {
                     flag = true;
                 }
 
@@ -740,11 +755,11 @@ public class Block {
                     flag = true;
                 }
 
-                v[i] = flag;
+                w[i] = flag;
             }
         }
 
-        s[0] = true;
+        u[0] = true;
         StatisticList.b();
     }
 

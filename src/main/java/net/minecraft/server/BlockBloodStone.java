@@ -4,8 +4,8 @@ import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 
 public class BlockBloodStone extends Block {
 
-    public BlockBloodStone(int i, int j) {
-        super(i, j, Material.STONE);
+    public BlockBloodStone(int i) {
+        super(i, Material.STONE);
         this.a(CreativeModeTab.b);
     }
 

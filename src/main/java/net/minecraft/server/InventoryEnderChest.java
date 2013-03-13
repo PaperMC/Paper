@@ -45,7 +45,7 @@ public class InventoryEnderChest extends InventorySubcontainer {
     // CraftBukkit end
 
     public InventoryEnderChest() {
-        super("container.enderchest", 27);
+        super("container.enderchest", false, 27);
     }
 
     public void a(TileEntityEnderChest tileentityenderchest) {
@@ -69,7 +69,7 @@ public class InventoryEnderChest extends InventorySubcontainer {
         }
     }
 
-    public NBTTagList g() {
+    public NBTTagList h() {
         NBTTagList nbttaglist = new NBTTagList("EnderItems");
 
         for (int i = 0; i < this.getSize(); ++i) {
@@ -87,8 +87,8 @@ public class InventoryEnderChest extends InventorySubcontainer {
         return nbttaglist;
     }
 
-    public boolean a_(EntityHuman entityhuman) {
-        return this.a != null && !this.a.a(entityhuman) ? false : super.a_(entityhuman);
+    public boolean a(EntityHuman entityhuman) {
+        return this.a != null && !this.a.a(entityhuman) ? false : super.a(entityhuman);
     }
 
     public void startOpen() {
@@ -99,12 +99,16 @@ public class InventoryEnderChest extends InventorySubcontainer {
         super.startOpen();
     }
 
-    public void f() {
+    public void g() {
         if (this.a != null) {
             this.a.b();
         }
 
-        super.f();
+        super.g();
         this.a = null;
+    }
+
+    public boolean b(int i, ItemStack itemstack) {
+        return true;
     }
 }

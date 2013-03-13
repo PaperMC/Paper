@@ -11,8 +11,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class CrashReport {
 
@@ -132,7 +130,7 @@ public class CrashReport {
         return stringbuilder.toString();
     }
 
-    public boolean a(File file1) {
+    public boolean a(File file1,  IConsoleLogManager iconsolelogmanager) {
         if (this.e != null) {
             return false;
         } else {
@@ -148,7 +146,7 @@ public class CrashReport {
                 this.e = file1;
                 return true;
             } catch (Throwable throwable) {
-                Logger.getLogger("Minecraft").log(Level.SEVERE, "Could not save crash report to " + file1, throwable);
+                iconsolelogmanager.severe("Could not save crash report to " + file1, throwable);
                 return false;
             }
         }

@@ -21,37 +21,39 @@ public class NetworkManager implements INetworkManager {
 
     public static AtomicInteger a = new AtomicInteger();
     public static AtomicInteger b = new AtomicInteger();
-    private Object h = new Object();
+    private final Object h = new Object();
+    private final IConsoleLogManager i;
     public Socket socket; // CraftBukkit - private -> public
-    private final SocketAddress j;
+    private final SocketAddress k;
     private volatile DataInputStream input;
     private volatile DataOutputStream output;
-    private volatile boolean m = true;
-    private volatile boolean n = false;
+    private volatile boolean n = true;
+    private volatile boolean o = false;
     private java.util.Queue inboundQueue = new java.util.concurrent.ConcurrentLinkedQueue(); // CraftBukkit - Concurrent linked queue
     private List highPriorityQueue = Collections.synchronizedList(new ArrayList());
     private List lowPriorityQueue = Collections.synchronizedList(new ArrayList());
     private Connection connection;
-    private boolean s = false;
-    private Thread t;
+    private boolean t = false;
     private Thread u;
-    private String v = "";
-    private Object[] w;
-    private int x = 0;
+    private Thread v;
+    private String w = "";
+    private Object[] x;
     private int y = 0;
+    private int z = 0;
     public static int[] c = new int[256];
     public static int[] d = new int[256];
     public int e = 0;
     boolean f = false;
     boolean g = false;
-    private SecretKey z = null;
-    private PrivateKey A = null;
+    private SecretKey A = null;
+    private PrivateKey B = null;
     private int lowPriorityQueueDelay = 50;
 
-    public NetworkManager(Socket socket, String s, Connection connection, PrivateKey privatekey) throws IOException { // CraftBukkit - throws IOException
-        this.A = privatekey;
+    public NetworkManager(IConsoleLogManager iconsolelogmanager, Socket socket, String s, Connection connection, PrivateKey privatekey) throws IOException { // CraftBukkit - throws IOException
+        this.B = privatekey;
         this.socket = socket;
-        this.j = socket.getRemoteSocketAddress();
+        this.i = iconsolelogmanager;
+        this.k = socket.getRemoteSocketAddress();
         this.connection = connection;
 
         try {
@@ -63,10 +65,10 @@ public class NetworkManager implements INetworkManager {
 
         this.input = new DataInputStream(socket.getInputStream());
         this.output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), 5120));
-        this.u = new NetworkReaderThread(this, s + " read thread");
-        this.t = new NetworkWriterThread(this, s + " write thread");
+        this.v = new NetworkReaderThread(this, s + " read thread");
+        this.u = new NetworkWriterThread(this, s + " write thread");
+        this.v.start();
         this.u.start();
-        this.t.start();
     }
 
     public void a(Connection connection) {
@@ -74,11 +76,11 @@ public class NetworkManager implements INetworkManager {
     }
 
     public void queue(Packet packet) {
-        if (!this.s) {
+        if (!this.t) {
             Object object = this.h;
 
             synchronized (this.h) {
-                this.y += packet.a() + 1;
+                this.z += packet.a() + 1;
                 this.highPriorityQueue.add(packet);
             }
         }
@@ -98,14 +100,14 @@ public class NetworkManager implements INetworkManager {
                     Packet.a(packet, this.output);
                     if (packet instanceof Packet252KeyResponse && !this.g) {
                         if (!this.connection.a()) {
-                            this.z = ((Packet252KeyResponse) packet).d();
+                            this.A = ((Packet252KeyResponse) packet).d();
                         }
 
                         this.k();
                     }
 
                     aint = d;
-                    i = packet.k();
+                    i = packet.n();
                     aint[i] += packet.a() + 1;
                     flag = true;
                 }
@@ -117,7 +119,7 @@ public class NetworkManager implements INetworkManager {
                 if (packet != null) {
                     Packet.a(packet, this.output);
                     aint = d;
-                    i = packet.k();
+                    i = packet.n();
                     aint[i] += packet.a() + 1;
                     this.lowPriorityQueueDelay = 0;
                     flag = true;
@@ -126,7 +128,7 @@ public class NetworkManager implements INetworkManager {
 
             return flag;
         } catch (Exception exception) {
-            if (!this.n) {
+            if (!this.o) {
                 this.a(exception);
             }
 
@@ -142,7 +144,7 @@ public class NetworkManager implements INetworkManager {
         synchronized (this.h) {
             while (!list.isEmpty() && packet == null) {
                 packet = (Packet) list.remove(0);
-                this.y -= packet.a() + 1;
+                this.z -= packet.a() + 1;
                 if (this.a(packet, flag)) {
                     packet = null;
                 }
@@ -167,19 +169,19 @@ public class NetworkManager implements INetworkManager {
                 }
 
                 packet1 = (Packet) iterator.next();
-            } while (packet1.k() != packet.k());
+            } while (packet1.n() != packet.n());
 
             return packet.a(packet1);
         }
     }
 
     public void a() {
-        if (this.u != null) {
-            this.u.interrupt();
+        if (this.v != null) {
+            this.v.interrupt();
         }
 
-        if (this.t != null) {
-            this.t.interrupt();
+        if (this.u != null) {
+            this.u.interrupt();
         }
     }
 
@@ -187,24 +189,24 @@ public class NetworkManager implements INetworkManager {
         boolean flag = false;
 
         try {
-            Packet packet = Packet.a(this.input, this.connection.a(), this.socket);
+            Packet packet = Packet.a(this.i, this.input, this.connection.a(), this.socket);
 
             if (packet != null) {
                 if (packet instanceof Packet252KeyResponse && !this.f) {
                     if (this.connection.a()) {
-                        this.z = ((Packet252KeyResponse) packet).a(this.A);
+                        this.A = ((Packet252KeyResponse) packet).a(this.B);
                     }
 
                     this.j();
                 }
 
                 int[] aint = c;
-                int i = packet.k();
+                int i = packet.n();
 
                 aint[i] += packet.a() + 1;
-                if (!this.s) {
+                if (!this.t) {
                     if (packet.a_() && this.connection.b()) {
-                        this.x = 0;
+                        this.y = 0;
                         packet.handle(this.connection);
                     } else {
                         this.inboundQueue.add(packet);
@@ -218,7 +220,7 @@ public class NetworkManager implements INetworkManager {
 
             return flag;
         } catch (Exception exception) {
-            if (!this.n) {
+            if (!this.o) {
                 this.a(exception);
             }
 
@@ -232,11 +234,11 @@ public class NetworkManager implements INetworkManager {
     }
 
     public void a(String s, Object... aobject) {
-        if (this.m) {
-            this.n = true;
-            this.v = s;
-            this.w = aobject;
-            this.m = false;
+        if (this.n) {
+            this.o = true;
+            this.w = s;
+            this.x = aobject;
+            this.n = false;
             (new NetworkMasterThread(this)).start();
 
             try {
@@ -264,16 +266,16 @@ public class NetworkManager implements INetworkManager {
     }
 
     public void b() {
-        if (this.y > 2097152) {
+        if (this.z > 2097152) {
             this.a("disconnect.overflow", new Object[0]);
         }
 
         if (this.inboundQueue.isEmpty()) {
-            if (this.x++ == 1200) {
+            if (this.y++ == 1200) {
                 this.a("disconnect.timeout", new Object[0]);
             }
         } else {
-            this.x = 0;
+            this.y = 0;
         }
 
         int i = 1000;
@@ -282,7 +284,7 @@ public class NetworkManager implements INetworkManager {
             Packet packet = (Packet) this.inboundQueue.poll(); // CraftBukkit - remove -> poll
 
             // CraftBukkit start
-            if (this.connection instanceof PendingConnection ? ((PendingConnection) this.connection).c : ((PlayerConnection) this.connection).disconnected) {
+            if (this.connection instanceof PendingConnection ? ((PendingConnection) this.connection).b : ((PlayerConnection) this.connection).disconnected) {
                 continue;
             }
             // CraftBukkit end
@@ -291,20 +293,20 @@ public class NetworkManager implements INetworkManager {
         }
 
         this.a();
-        if (this.n && this.inboundQueue.isEmpty()) {
-            this.connection.a(this.v, this.w);
+        if (this.o && this.inboundQueue.isEmpty()) {
+            this.connection.a(this.w, this.x);
         }
     }
 
     public SocketAddress getSocketAddress() {
-        return this.j;
+        return this.k;
     }
 
     public void d() {
-        if (!this.s) {
+        if (!this.t) {
             this.a();
-            this.s = true;
-            this.u.interrupt();
+            this.t = true;
+            this.v.interrupt();
             (new NetworkMonitorThread(this)).start();
         }
     }
@@ -313,13 +315,13 @@ public class NetworkManager implements INetworkManager {
         this.f = true;
         InputStream inputstream = this.socket.getInputStream();
 
-        this.input = new DataInputStream(MinecraftEncryption.a(this.z, inputstream));
+        this.input = new DataInputStream(MinecraftEncryption.a(this.A, inputstream));
     }
 
     private void k() throws IOException { // CraftBukkit - throws IOException
         this.output.flush();
         this.g = true;
-        BufferedOutputStream bufferedoutputstream = new BufferedOutputStream(MinecraftEncryption.a(this.z, this.socket.getOutputStream()), 5120);
+        BufferedOutputStream bufferedoutputstream = new BufferedOutputStream(MinecraftEncryption.a(this.A, this.socket.getOutputStream()), 5120);
 
         this.output = new DataOutputStream(bufferedoutputstream);
     }
@@ -333,11 +335,11 @@ public class NetworkManager implements INetworkManager {
     }
 
     static boolean a(NetworkManager networkmanager) {
-        return networkmanager.m;
+        return networkmanager.n;
     }
 
     static boolean b(NetworkManager networkmanager) {
-        return networkmanager.s;
+        return networkmanager.t;
     }
 
     static boolean c(NetworkManager networkmanager) {
@@ -353,7 +355,7 @@ public class NetworkManager implements INetworkManager {
     }
 
     static boolean f(NetworkManager networkmanager) {
-        return networkmanager.n;
+        return networkmanager.o;
     }
 
     static void a(NetworkManager networkmanager, Exception exception) {
@@ -361,10 +363,10 @@ public class NetworkManager implements INetworkManager {
     }
 
     static Thread g(NetworkManager networkmanager) {
-        return networkmanager.u;
+        return networkmanager.v;
     }
 
     static Thread h(NetworkManager networkmanager) {
-        return networkmanager.t;
+        return networkmanager.u;
     }
 }

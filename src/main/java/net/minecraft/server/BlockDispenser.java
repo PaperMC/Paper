@@ -5,29 +5,24 @@ import java.util.Random;
 public class BlockDispenser extends BlockContainer {
 
     public static final IRegistry a = new RegistryDefault(new DispenseBehaviorItem());
+    protected Random b = new Random();
     public static boolean eventFired = false; // CraftBukkit
-    private Random b = new Random();
 
     protected BlockDispenser(int i) {
         super(i, Material.STONE);
-        this.textureId = 45;
         this.a(CreativeModeTab.d);
     }
 
-    public int r_() {
+    public int a(World world) {
         return 4;
-    }
-
-    public int getDropType(int i, Random random, int j) {
-        return Block.DISPENSER.id;
     }
 
     public void onPlace(World world, int i, int j, int k) {
         super.onPlace(world, i, j, k);
-        this.l(world, i, j, k);
+        this.k(world, i, j, k);
     }
 
-    private void l(World world, int i, int j, int k) {
+    private void k(World world, int i, int j, int k) {
         if (!world.isStatic) {
             int l = world.getTypeId(i, j, k - 1);
             int i1 = world.getTypeId(i, j, k + 1);
@@ -35,28 +30,24 @@ public class BlockDispenser extends BlockContainer {
             int k1 = world.getTypeId(i + 1, j, k);
             byte b0 = 3;
 
-            if (Block.q[l] && !Block.q[i1]) {
+            if (Block.s[l] && !Block.s[i1]) {
                 b0 = 3;
             }
 
-            if (Block.q[i1] && !Block.q[l]) {
+            if (Block.s[i1] && !Block.s[l]) {
                 b0 = 2;
             }
 
-            if (Block.q[j1] && !Block.q[k1]) {
+            if (Block.s[j1] && !Block.s[k1]) {
                 b0 = 5;
             }
 
-            if (Block.q[k1] && !Block.q[j1]) {
+            if (Block.s[k1] && !Block.s[j1]) {
                 b0 = 4;
             }
 
-            world.setData(i, j, k, b0);
+            world.setData(i, j, k, b0, 2);
         }
-    }
-
-    public int a(int i) {
-        return i == 1 ? this.textureId + 17 : (i == 0 ? this.textureId + 17 : (i == 3 ? this.textureId + 1 : this.textureId));
     }
 
     public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
@@ -79,13 +70,13 @@ public class BlockDispenser extends BlockContainer {
         TileEntityDispenser tileentitydispenser = (TileEntityDispenser) sourceblock.getTileEntity();
 
         if (tileentitydispenser != null) {
-            int l = tileentitydispenser.i();
+            int l = tileentitydispenser.j();
 
             if (l < 0) {
                 world.triggerEffect(1001, i, j, k, 0);
             } else {
                 ItemStack itemstack = tileentitydispenser.getItem(l);
-                IDispenseBehavior idispensebehavior = (IDispenseBehavior) a.a(itemstack.getItem());
+                IDispenseBehavior idispensebehavior = this.a(itemstack);
 
                 if (idispensebehavior != IDispenseBehavior.a) {
                     ItemStack itemstack1 = idispensebehavior.a(sourceblock, itemstack);
@@ -97,43 +88,39 @@ public class BlockDispenser extends BlockContainer {
         }
     }
 
-    public void doPhysics(World world, int i, int j, int k, int l) {
-        if (l > 0 && Block.byId[l].isPowerSource()) {
-            boolean flag = world.isBlockIndirectlyPowered(i, j, k) || world.isBlockIndirectlyPowered(i, j + 1, k);
+    protected IDispenseBehavior a(ItemStack itemstack) {
+        return (IDispenseBehavior) a.a(itemstack.getItem());
+    }
 
-            if (flag) {
-                world.a(i, j, k, this.id, this.r_());
-            }
+    public void doPhysics(World world, int i, int j, int k, int l) {
+        boolean flag = world.isBlockIndirectlyPowered(i, j, k) || world.isBlockIndirectlyPowered(i, j + 1, k);
+        int i1 = world.getData(i, j, k);
+        boolean flag1 = (i1 & 8) != 0;
+
+        if (flag && !flag1) {
+            world.a(i, j, k, this.id, this.a(world));
+            world.setData(i, j, k, i1 | 8, 4);
+        } else if (!flag && flag1) {
+            world.setData(i, j, k, i1 & -9, 4);
         }
     }
 
-    public void b(World world, int i, int j, int k, Random random) {
-        if (!world.isStatic && (world.isBlockIndirectlyPowered(i, j, k) || world.isBlockIndirectlyPowered(i, j + 1, k))) {
+    public void a(World world, int i, int j, int k, Random random) {
+        if (!world.isStatic) {
             this.dispense(world, i, j, k);
         }
     }
 
-    public TileEntity a(World world) {
+    public TileEntity b(World world) {
         return new TileEntityDispenser();
     }
 
-    public void postPlace(World world, int i, int j, int k, EntityLiving entityliving) {
-        int l = MathHelper.floor((double) (entityliving.yaw * 4.0F / 360.0F) + 0.5D) & 3;
+    public void postPlace(World world, int i, int j, int k, EntityLiving entityliving, ItemStack itemstack) {
+        int l = BlockPiston.a(world, i, j, k, entityliving);
 
-        if (l == 0) {
-            world.setData(i, j, k, 2);
-        }
-
-        if (l == 1) {
-            world.setData(i, j, k, 5);
-        }
-
-        if (l == 2) {
-            world.setData(i, j, k, 3);
-        }
-
-        if (l == 3) {
-            world.setData(i, j, k, 4);
+        world.setData(i, j, k, l, 2);
+        if (itemstack.hasName()) {
+            ((TileEntityDispenser) world.getTileEntity(i, j, k)).a(itemstack.getName());
         }
     }
 
@@ -178,11 +165,23 @@ public class BlockDispenser extends BlockContainer {
     }
 
     public static IPosition a(ISourceBlock isourceblock) {
-        EnumFacing enumfacing = EnumFacing.a(isourceblock.h());
+        EnumFacing enumfacing = j_(isourceblock.h());
         double d0 = isourceblock.getX() + 0.7D * (double) enumfacing.c();
-        double d1 = isourceblock.getY();
+        double d1 = isourceblock.getY() + 0.7D * (double) enumfacing.d();
         double d2 = isourceblock.getZ() + 0.7D * (double) enumfacing.e();
 
         return new Position(d0, d1, d2);
+    }
+
+    public static EnumFacing j_(int i) {
+        return EnumFacing.a(i & 7);
+    }
+
+    public boolean q_() {
+        return true;
+    }
+
+    public int b_(World world, int i, int j, int k, int l) {
+        return Container.b((IInventory) world.getTileEntity(i, j, k));
     }
 }

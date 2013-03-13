@@ -25,7 +25,7 @@ public class EntityPig extends EntityAnimal {
         this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean be() {
+    public boolean bh() {
         return true;
     }
 
@@ -33,12 +33,12 @@ public class EntityPig extends EntityAnimal {
         return 10;
     }
 
-    protected void bl() {
-        super.bl();
+    protected void bo() {
+        super.bo();
     }
 
-    public boolean bI() {
-        ItemStack itemstack = ((EntityHuman) this.passenger).bD();
+    public boolean bL() {
+        ItemStack itemstack = ((EntityHuman) this.passenger).bG();
 
         return itemstack != null && itemstack.id == Item.CARROT_STICK.id;
     }
@@ -58,15 +58,15 @@ public class EntityPig extends EntityAnimal {
         this.setSaddle(nbttagcompound.getBoolean("Saddle"));
     }
 
-    protected String aY() {
+    protected String bb() {
         return "mob.pig.say";
     }
 
-    protected String aZ() {
+    protected String bc() {
         return "mob.pig.say";
     }
 
-    protected String ba() {
+    protected String bd() {
         return "mob.pig.death";
     }
 
@@ -74,8 +74,8 @@ public class EntityPig extends EntityAnimal {
         this.makeSound("mob.pig.step", 0.15F, 1.0F);
     }
 
-    public boolean a(EntityHuman entityhuman) {
-        if (super.a(entityhuman)) {
+    public boolean a_(EntityHuman entityhuman) {
+        if (super.a_(entityhuman)) {
             return true;
         } else if (this.hasSaddle() && !this.world.isStatic && (this.passenger == null || this.passenger == entityhuman)) {
             entityhuman.mount(this);

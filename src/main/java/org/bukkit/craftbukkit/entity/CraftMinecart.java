@@ -1,33 +1,13 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityMinecart;
+import net.minecraft.server.EntityMinecartAbstract;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Minecart;
 import org.bukkit.util.Vector;
 
 public class CraftMinecart extends CraftVehicle implements Minecart {
-    /**
-     * Stores the minecart type id, which is used by Minecraft to differentiate
-     * minecart types. Here we use subclasses.
-     */
-    public enum Type {
-        Minecart(0),
-        StorageMinecart(1),
-        PoweredMinecart(2);
-
-        private final int id;
-
-        private Type(int id) {
-            this.id = id;
-        }
-
-        public int getId() {
-            return id;
-        }
-    }
-
-    public CraftMinecart(CraftServer server, EntityMinecart entity) {
+    public CraftMinecart(CraftServer server, EntityMinecartAbstract entity) {
         super(server, entity);
     }
 
@@ -74,8 +54,8 @@ public class CraftMinecart extends CraftVehicle implements Minecart {
     }
 
     @Override
-    public EntityMinecart getHandle() {
-        return (EntityMinecart) entity;
+    public EntityMinecartAbstract getHandle() {
+        return (EntityMinecartAbstract) entity;
     }
 
     @Override

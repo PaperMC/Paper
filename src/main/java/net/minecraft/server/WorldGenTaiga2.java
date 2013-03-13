@@ -74,7 +74,7 @@ public class WorldGenTaiga2 extends WorldGenerator implements BlockSapling.TreeG
                             for (int l3 = k - k2; l3 <= k + k2; ++l3) {
                                 int i4 = l3 - k;
 
-                                if ((Math.abs(k3) != k2 || Math.abs(i4) != k2 || k2 <= 0) && !Block.q[world.getTypeId(i3, j3, l3)]) {
+                                if ((Math.abs(k3) != k2 || Math.abs(i4) != k2 || k2 <= 0) && !Block.s[world.getTypeId(i3, j3, l3)]) {
                                     this.setTypeAndData(world, i3, j3, l3, Block.LEAVES.id, 1);
                                 }
                             }

@@ -7,12 +7,12 @@ import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 public class BlockTripwireHook extends Block {
 
     public BlockTripwireHook(int i) {
-        super(i, 172, Material.ORIENTABLE);
+        super(i, Material.ORIENTABLE);
         this.a(CreativeModeTab.d);
         this.b(true);
     }
 
-    public AxisAlignedBB e(World world, int i, int j, int k) {
+    public AxisAlignedBB b(World world, int i, int j, int k) {
         return null;
     }
 
@@ -28,34 +28,34 @@ public class BlockTripwireHook extends Block {
         return 29;
     }
 
-    public int r_() {
+    public int a(World world) {
         return 10;
     }
 
     public boolean canPlace(World world, int i, int j, int k, int l) {
-        return l == 2 && world.t(i, j, k + 1) ? true : (l == 3 && world.t(i, j, k - 1) ? true : (l == 4 && world.t(i + 1, j, k) ? true : l == 5 && world.t(i - 1, j, k)));
+        return l == 2 && world.u(i, j, k + 1) ? true : (l == 3 && world.u(i, j, k - 1) ? true : (l == 4 && world.u(i + 1, j, k) ? true : l == 5 && world.u(i - 1, j, k)));
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return world.t(i - 1, j, k) ? true : (world.t(i + 1, j, k) ? true : (world.t(i, j, k - 1) ? true : world.t(i, j, k + 1)));
+        return world.u(i - 1, j, k) ? true : (world.u(i + 1, j, k) ? true : (world.u(i, j, k - 1) ? true : world.u(i, j, k + 1)));
     }
 
     public int getPlacedData(World world, int i, int j, int k, int l, float f, float f1, float f2, int i1) {
         byte b0 = 0;
 
-        if (l == 2 && world.b(i, j, k + 1, true)) {
+        if (l == 2 && world.c(i, j, k + 1, true)) {
             b0 = 2;
         }
 
-        if (l == 3 && world.b(i, j, k - 1, true)) {
+        if (l == 3 && world.c(i, j, k - 1, true)) {
             b0 = 0;
         }
 
-        if (l == 4 && world.b(i + 1, j, k, true)) {
+        if (l == 4 && world.c(i + 1, j, k, true)) {
             b0 = 1;
         }
 
-        if (l == 5 && world.b(i - 1, j, k, true)) {
+        if (l == 5 && world.c(i - 1, j, k, true)) {
             b0 = 3;
         }
 
@@ -68,30 +68,30 @@ public class BlockTripwireHook extends Block {
 
     public void doPhysics(World world, int i, int j, int k, int l) {
         if (l != this.id) {
-            if (this.l(world, i, j, k)) {
+            if (this.k(world, i, j, k)) {
                 int i1 = world.getData(i, j, k);
                 int j1 = i1 & 3;
                 boolean flag = false;
 
-                if (!world.t(i - 1, j, k) && j1 == 3) {
+                if (!world.u(i - 1, j, k) && j1 == 3) {
                     flag = true;
                 }
 
-                if (!world.t(i + 1, j, k) && j1 == 1) {
+                if (!world.u(i + 1, j, k) && j1 == 1) {
                     flag = true;
                 }
 
-                if (!world.t(i, j, k - 1) && j1 == 0) {
+                if (!world.u(i, j, k - 1) && j1 == 0) {
                     flag = true;
                 }
 
-                if (!world.t(i, j, k + 1) && j1 == 2) {
+                if (!world.u(i, j, k + 1) && j1 == 2) {
                     flag = true;
                 }
 
                 if (flag) {
                     this.c(world, i, j, k, i1, 0);
-                    world.setTypeId(i, j, k, 0);
+                    world.setAir(i, j, k);
                 }
             }
         }
@@ -103,7 +103,7 @@ public class BlockTripwireHook extends Block {
         boolean flag2 = (i1 & 8) == 8;
         boolean flag3 = l == Block.TRIPWIRE_SOURCE.id;
         boolean flag4 = false;
-        boolean flag5 = !world.v(i, j - 1, k);
+        boolean flag5 = !world.w(i, j - 1, k);
         int i2 = Direction.a[l1];
         int j2 = Direction.b[l1];
         int k2 = 0;
@@ -140,7 +140,7 @@ public class BlockTripwireHook extends Block {
                 flag4 |= flag6 && flag7;
                 aint[i3] = l3;
                 if (i3 == j1) {
-                    world.a(i, j, k, l, this.r_());
+                    world.a(i, j, k, l, this.a(world));
                     flag3 &= flag6;
                 }
             }
@@ -154,7 +154,7 @@ public class BlockTripwireHook extends Block {
             l2 = i + i2 * k2;
             k3 = k + j2 * k2;
             j3 = Direction.f[l1];
-            world.setData(l2, j, k3, j3 | i3);
+            world.setData(l2, j, k3, j3 | i3, 3);
             this.d(world, l2, j, k3, j3);
             this.a(world, l2, j, k3, flag3, flag4, flag1, flag2);
         }
@@ -162,7 +162,7 @@ public class BlockTripwireHook extends Block {
         // CraftBukkit start
         org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
 
-        BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, 1, 0);
+        BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, 15, 0);
         world.getServer().getPluginManager().callEvent(eventRedstone);
 
         if (eventRedstone.getNewCurrent() > 0) {
@@ -172,7 +172,7 @@ public class BlockTripwireHook extends Block {
 
         this.a(world, i, j, k, flag3, flag4, flag1, flag2);
         if (l > 0) {
-            world.setData(i, j, k, i1);
+            world.setData(i, j, k, i1, 3);
             if (flag) {
                 this.d(world, i, j, k, l1);
             }
@@ -190,13 +190,13 @@ public class BlockTripwireHook extends Block {
                         l3 &= -5;
                     }
 
-                    world.setData(k3, j, j3, l3);
+                    world.setData(k3, j, j3, l3, 3);
                 }
             }
         }
     }
 
-    public void b(World world, int i, int j, int k, Random random) {
+    public void a(World world, int i, int j, int k, Random random) {
         this.a(world, i, j, k, this.id, world.getData(i, j, k), true, -1, 0);
     }
 
@@ -225,10 +225,10 @@ public class BlockTripwireHook extends Block {
         }
     }
 
-    private boolean l(World world, int i, int j, int k) {
+    private boolean k(World world, int i, int j, int k) {
         if (!this.canPlace(world, i, j, k)) {
             this.c(world, i, j, k, world.getData(i, j, k), 0);
-            world.setTypeId(i, j, k, 0);
+            world.setAir(i, j, k);
             return false;
         } else {
             return true;
@@ -276,19 +276,19 @@ public class BlockTripwireHook extends Block {
         super.remove(world, i, j, k, l, i1);
     }
 
-    public boolean b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
-        return (iblockaccess.getData(i, j, k) & 8) == 8;
+    public int b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+        return (iblockaccess.getData(i, j, k) & 8) == 8 ? 15 : 0;
     }
 
-    public boolean c(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+    public int c(IBlockAccess iblockaccess, int i, int j, int k, int l) {
         int i1 = iblockaccess.getData(i, j, k);
 
         if ((i1 & 8) != 8) {
-            return false;
+            return 0;
         } else {
             int j1 = i1 & 3;
 
-            return j1 == 2 && l == 2 ? true : (j1 == 0 && l == 3 ? true : (j1 == 1 && l == 4 ? true : j1 == 3 && l == 5));
+            return j1 == 2 && l == 2 ? 15 : (j1 == 0 && l == 3 ? 15 : (j1 == 1 && l == 4 ? 15 : (j1 == 3 && l == 5 ? 15 : 0)));
         }
     }
 

@@ -12,12 +12,13 @@ import joptsimple.OptionSet; // CraftBukkit
 
 public class PropertyManager {
 
-    public static Logger a = Logger.getLogger("Minecraft");
-    public Properties properties = new Properties(); // CraftBukkit - private -> public
-    private File c;
+    public final Properties properties = new Properties(); // CraftBukkit - private -> public
+    private final IConsoleLogManager loggingAgent;
+    private final File c;
 
-    public PropertyManager(File file1) {
+    public PropertyManager(File file1, IConsoleLogManager iconsolelogmanager) {
         this.c = file1;
+        this.loggingAgent = iconsolelogmanager;
         if (file1.exists()) {
             FileInputStream fileinputstream = null;
 
@@ -25,7 +26,7 @@ public class PropertyManager {
                 fileinputstream = new FileInputStream(file1);
                 this.properties.load(fileinputstream);
             } catch (Exception exception) {
-                a.log(Level.WARNING, "Failed to load " + file1, exception);
+                iconsolelogmanager.warning("Failed to load " + file1, exception);
                 this.a();
             } finally {
                 if (fileinputstream != null) {
@@ -37,7 +38,7 @@ public class PropertyManager {
                 }
             }
         } else {
-            a.log(Level.WARNING, file1 + " does not exist");
+            iconsolelogmanager.warning(file1 + " does not exist");
             this.a();
         }
     }
@@ -45,8 +46,8 @@ public class PropertyManager {
     // CraftBukkit start
     private OptionSet options = null;
 
-    public PropertyManager(final OptionSet options) {
-        this((File) options.valueOf("config"));
+    public PropertyManager(final OptionSet options, IConsoleLogManager iconsolelogmanager) {
+        this((File) options.valueOf("config"), iconsolelogmanager);
 
         this.options = options;
     }
@@ -61,7 +62,7 @@ public class PropertyManager {
     // CraftBukkit end
 
     public void a() {
-        a.log(Level.INFO, "Generating new properties file");
+        this.loggingAgent.info("Generating new properties file");
         this.savePropertiesFile();
     }
 
@@ -77,7 +78,7 @@ public class PropertyManager {
             fileoutputstream = new FileOutputStream(this.c);
             this.properties.store(fileoutputstream, "Minecraft server properties");
         } catch (Exception exception) {
-            a.log(Level.WARNING, "Failed to save " + this.c, exception);
+            this.loggingAgent.warning("Failed to save " + this.c, exception);
             this.a();
         } finally {
             if (fileoutputstream != null) {

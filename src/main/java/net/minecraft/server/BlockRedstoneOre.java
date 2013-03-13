@@ -8,8 +8,8 @@ public class BlockRedstoneOre extends Block {
 
     private boolean a;
 
-    public BlockRedstoneOre(int i, int j, boolean flag) {
-        super(i, j, Material.STONE);
+    public BlockRedstoneOre(int i, boolean flag) {
+        super(i, Material.STONE);
         if (flag) {
             this.b(true);
         }
@@ -17,12 +17,12 @@ public class BlockRedstoneOre extends Block {
         this.a = flag;
     }
 
-    public int r_() {
+    public int a(World world) {
         return 30;
     }
 
     public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
-        this.l(world, i, j, k);
+        this.k(world, i, j, k);
         super.attack(world, i, j, k, entityhuman);
     }
 
@@ -31,14 +31,14 @@ public class BlockRedstoneOre extends Block {
         if (entity instanceof EntityHuman) {
             org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, i, j, k, -1, null);
             if (!event.isCancelled()) {
-                this.l(world, i, j, k);
+                this.k(world, i, j, k);
                 super.b(world, i, j, k, entity);
             }
         } else {
             EntityInteractEvent event = new EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(i, j, k));
             world.getServer().getPluginManager().callEvent(event);
             if (!event.isCancelled()) {
-                this.l(world, i, j, k);
+                this.k(world, i, j, k);
                 super.b(world, i, j, k, entity);
             }
         }
@@ -46,20 +46,20 @@ public class BlockRedstoneOre extends Block {
     }
 
     public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
-        this.l(world, i, j, k);
+        this.k(world, i, j, k);
         return super.interact(world, i, j, k, entityhuman, l, f, f1, f2);
     }
 
-    private void l(World world, int i, int j, int k) {
-        this.n(world, i, j, k);
+    private void k(World world, int i, int j, int k) {
+        this.m(world, i, j, k);
         if (this.id == Block.REDSTONE_ORE.id) {
-            world.setTypeId(i, j, k, Block.GLOWING_REDSTONE_ORE.id);
+            world.setTypeIdUpdate(i, j, k, Block.GLOWING_REDSTONE_ORE.id);
         }
     }
 
-    public void b(World world, int i, int j, int k, Random random) {
+    public void a(World world, int i, int j, int k, Random random) {
         if (this.id == Block.GLOWING_REDSTONE_ORE.id) {
-            world.setTypeId(i, j, k, Block.REDSTONE_ORE.id);
+            world.setTypeIdUpdate(i, j, k, Block.REDSTONE_ORE.id);
         }
     }
 
@@ -81,7 +81,7 @@ public class BlockRedstoneOre extends Block {
         if (this.getDropType(l, world.random, i1) != this.id) {
             int j1 = 1 + world.random.nextInt(5);
 
-            this.f(world, i, j, k, j1);
+            this.j(world, i, j, k, j1);
         } */
     }
 
@@ -96,7 +96,7 @@ public class BlockRedstoneOre extends Block {
         // CraftBukkit end
     }
 
-    private void n(World world, int i, int j, int k) {
+    private void m(World world, int i, int j, int k) {
         Random random = world.random;
         double d0 = 0.0625D;
 
@@ -105,27 +105,27 @@ public class BlockRedstoneOre extends Block {
             double d2 = (double) ((float) j + random.nextFloat());
             double d3 = (double) ((float) k + random.nextFloat());
 
-            if (l == 0 && !world.s(i, j + 1, k)) {
+            if (l == 0 && !world.t(i, j + 1, k)) {
                 d2 = (double) (j + 1) + d0;
             }
 
-            if (l == 1 && !world.s(i, j - 1, k)) {
+            if (l == 1 && !world.t(i, j - 1, k)) {
                 d2 = (double) (j + 0) - d0;
             }
 
-            if (l == 2 && !world.s(i, j, k + 1)) {
+            if (l == 2 && !world.t(i, j, k + 1)) {
                 d3 = (double) (k + 1) + d0;
             }
 
-            if (l == 3 && !world.s(i, j, k - 1)) {
+            if (l == 3 && !world.t(i, j, k - 1)) {
                 d3 = (double) (k + 0) - d0;
             }
 
-            if (l == 4 && !world.s(i + 1, j, k)) {
+            if (l == 4 && !world.t(i + 1, j, k)) {
                 d1 = (double) (i + 1) + d0;
             }
 
-            if (l == 5 && !world.s(i - 1, j, k)) {
+            if (l == 5 && !world.t(i - 1, j, k)) {
                 d1 = (double) (i + 0) - d0;
             }
 
@@ -135,7 +135,7 @@ public class BlockRedstoneOre extends Block {
         }
     }
 
-    protected ItemStack f_(int i) {
+    protected ItemStack c_(int i) {
         return new ItemStack(Block.REDSTONE_ORE);
     }
 }

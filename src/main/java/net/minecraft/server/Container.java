@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -16,8 +17,11 @@ public abstract class Container {
     public List c = new ArrayList();
     public int windowId = 0;
     private short a = 0;
+    private int f = -1;
+    private int g = 0;
+    private final Set h = new HashSet();
     protected List listeners = new ArrayList();
-    private Set f = new HashSet();
+    private Set i = new HashSet();
 
     // CraftBukkit start
     public boolean checkReachable = true;
@@ -105,166 +109,274 @@ public abstract class Container {
     public ItemStack clickItem(int i, int j, int k, EntityHuman entityhuman) {
         ItemStack itemstack = null;
         PlayerInventory playerinventory = entityhuman.inventory;
-        Slot slot;
-        ItemStack itemstack1;
         int l;
-        ItemStack itemstack2;
+        ItemStack itemstack1;
 
-        if ((k == 0 || k == 1) && (j == 0 || j == 1)) {
-            if (i == -999) {
-                if (playerinventory.getCarried() != null && i == -999) {
-                    if (j == 0) {
-                        entityhuman.drop(playerinventory.getCarried());
-                        playerinventory.setCarried((ItemStack) null);
+        if (k == 5) {
+            int i1 = this.g;
+
+            this.g = c(j);
+            if ((i1 != 1 || this.g != 2) && i1 != this.g) {
+                this.d();
+            } else if (playerinventory.getCarried() == null) {
+                this.d();
+            } else if (this.g == 0) {
+                this.f = b(j);
+                if (d(this.f)) {
+                    this.g = 1;
+                    this.h.clear();
+                } else {
+                    this.d();
+                }
+            } else if (this.g == 1) {
+                Slot slot = (Slot) this.c.get(i);
+
+                if (slot != null && a(slot, playerinventory.getCarried(), true) && slot.isAllowed(playerinventory.getCarried()) && playerinventory.getCarried().count > this.h.size() && this.b(slot)) {
+                    this.h.add(slot);
+                }
+            } else if (this.g == 2) {
+                if (!this.h.isEmpty()) {
+                    itemstack1 = playerinventory.getCarried().cloneItemStack();
+                    l = playerinventory.getCarried().count;
+                    Iterator iterator = this.h.iterator();
+
+                    while (iterator.hasNext()) {
+                        Slot slot1 = (Slot) iterator.next();
+
+                        if (slot1 != null && a(slot1, playerinventory.getCarried(), true) && slot1.isAllowed(playerinventory.getCarried()) && playerinventory.getCarried().count >= this.h.size() && this.b(slot1)) {
+                            ItemStack itemstack2 = itemstack1.cloneItemStack();
+                            int j1 = slot1.d() ? slot1.getItem().count : 0;
+
+                            a(this.h, this.f, itemstack2, j1);
+                            if (itemstack2.count > itemstack2.getMaxStackSize()) {
+                                itemstack2.count = itemstack2.getMaxStackSize();
+                            }
+
+                            if (itemstack2.count > slot1.a()) {
+                                itemstack2.count = slot1.a();
+                            }
+
+                            l -= itemstack2.count - j1;
+                            slot1.set(itemstack2);
+                        }
                     }
 
-                    if (j == 1) {
-                        // CraftBukkit start - store a reference
-                        ItemStack itemstack3 = playerinventory.getCarried();
-                        if (itemstack3.count > 0) {
-                            entityhuman.drop(itemstack3.a(1));
-                        }
+                    itemstack1.count = l;
+                    if (itemstack1.count <= 0) {
+                        itemstack1 = null;
+                    }
 
-                        if (itemstack3.count == 0) {
-                            // CraftBukkit end
+                    playerinventory.setCarried(itemstack1);
+                }
+
+                this.d();
+            } else {
+                this.d();
+            }
+        } else if (this.g != 0) {
+            this.d();
+        } else {
+            Slot slot2;
+            int k1;
+            ItemStack itemstack3;
+
+            if ((k == 0 || k == 1) && (j == 0 || j == 1)) {
+                if (i == -999) {
+                    if (playerinventory.getCarried() != null && i == -999) {
+                        if (j == 0) {
+                            entityhuman.drop(playerinventory.getCarried());
                             playerinventory.setCarried((ItemStack) null);
                         }
-                    }
-                }
-            } else if (k == 1) {
-                slot = (Slot) this.c.get(i);
-                if (slot != null && slot.a(entityhuman)) {
-                    itemstack1 = this.b(entityhuman, i);
-                    if (itemstack1 != null) {
-                        int i1 = itemstack1.id;
 
-                        itemstack = itemstack1.cloneItemStack();
-                        if (slot != null && slot.getItem() != null && slot.getItem().id == i1) {
-                            this.a(i, j, true, entityhuman);
-                        }
-                    }
-                }
-            } else {
-                if (i < 0) {
-                    return null;
-                }
-
-                slot = (Slot) this.c.get(i);
-                if (slot != null) {
-                    itemstack1 = slot.getItem();
-                    ItemStack itemstack3 = playerinventory.getCarried();
-
-                    if (itemstack1 != null) {
-                        itemstack = itemstack1.cloneItemStack();
-                    }
-
-                    if (itemstack1 == null) {
-                        if (itemstack3 != null && slot.isAllowed(itemstack3)) {
-                            l = j == 0 ? itemstack3.count : 1;
-                            if (l > slot.a()) {
-                                l = slot.a();
+                        if (j == 1) {
+                            // CraftBukkit start - store a reference
+                            ItemStack itemstack4 = playerinventory.getCarried();
+                            if (itemstack4.count > 0) {
+                                entityhuman.drop(itemstack4.a(1));
                             }
 
-                            // CraftBukkit start
-                            if (itemstack3.count >= l) {
-                                slot.set(itemstack3.a(l));
-                            }
-                            // CraftBukkit end
-
-                            if (itemstack3.count == 0) {
+                            if (itemstack4.count == 0) {
+                                // CraftBukkit end
                                 playerinventory.setCarried((ItemStack) null);
                             }
                         }
-                    } else if (slot.a(entityhuman)) {
-                        if (itemstack3 == null) {
-                            l = j == 0 ? itemstack1.count : (itemstack1.count + 1) / 2;
-                            itemstack2 = slot.a(l);
-                            playerinventory.setCarried(itemstack2);
-                            if (itemstack1.count == 0) {
-                                slot.set((ItemStack) null);
+                    }
+                } else if (k == 1) {
+                    if (i < 0) {
+                        return null;
+                    }
+
+                    slot2 = (Slot) this.c.get(i);
+                    if (slot2 != null && slot2.a(entityhuman)) {
+                        itemstack1 = this.b(entityhuman, i);
+                        if (itemstack1 != null) {
+                            l = itemstack1.id;
+                            itemstack = itemstack1.cloneItemStack();
+                            if (slot2 != null && slot2.getItem() != null && slot2.getItem().id == l) {
+                                this.a(i, j, true, entityhuman);
                             }
+                        }
+                    }
+                } else {
+                    if (i < 0) {
+                        return null;
+                    }
 
-                            slot.a(entityhuman, playerinventory.getCarried());
-                        } else if (slot.isAllowed(itemstack3)) {
-                            if (itemstack1.id == itemstack3.id && itemstack1.getData() == itemstack3.getData() && ItemStack.equals(itemstack1, itemstack3)) {
-                                l = j == 0 ? itemstack3.count : 1;
-                                if (l > slot.a() - itemstack1.count) {
-                                    l = slot.a() - itemstack1.count;
+                    slot2 = (Slot) this.c.get(i);
+                    if (slot2 != null) {
+                        itemstack1 = slot2.getItem();
+                        ItemStack itemstack4 = playerinventory.getCarried();
+
+                        if (itemstack1 != null) {
+                            itemstack = itemstack1.cloneItemStack();
+                        }
+
+                        if (itemstack1 == null) {
+                            if (itemstack4 != null && slot2.isAllowed(itemstack4)) {
+                                k1 = j == 0 ? itemstack4.count : 1;
+                                if (k1 > slot2.a()) {
+                                    k1 = slot2.a();
                                 }
 
-                                if (l > itemstack3.getMaxStackSize() - itemstack1.count) {
-                                    l = itemstack3.getMaxStackSize() - itemstack1.count;
+                                // CraftBukkit start
+                                if (itemstack4.count >= k1) {
+                                    slot2.set(itemstack4.a(k1));
                                 }
+                                // CraftBukkit end
 
-                                itemstack3.a(l);
-                                if (itemstack3.count == 0) {
+                                if (itemstack4.count == 0) {
                                     playerinventory.setCarried((ItemStack) null);
                                 }
-
-                                itemstack1.count += l;
-                            } else if (itemstack3.count <= slot.a()) {
-                                slot.set(itemstack3);
-                                playerinventory.setCarried(itemstack1);
                             }
-                        } else if (itemstack1.id == itemstack3.id && itemstack3.getMaxStackSize() > 1 && (!itemstack1.usesData() || itemstack1.getData() == itemstack3.getData()) && ItemStack.equals(itemstack1, itemstack3)) {
-                            l = itemstack1.count;
-                            if (l > 0 && l + itemstack3.count <= itemstack3.getMaxStackSize()) {
-                                itemstack3.count += l;
-                                itemstack1 = slot.a(l);
+                        } else if (slot2.a(entityhuman)) {
+                            if (itemstack4 == null) {
+                                k1 = j == 0 ? itemstack1.count : (itemstack1.count + 1) / 2;
+                                itemstack3 = slot2.a(k1);
+                                playerinventory.setCarried(itemstack3);
                                 if (itemstack1.count == 0) {
-                                    slot.set((ItemStack) null);
+                                    slot2.set((ItemStack) null);
                                 }
 
-                                slot.a(entityhuman, playerinventory.getCarried());
+                                slot2.a(entityhuman, playerinventory.getCarried());
+                            } else if (slot2.isAllowed(itemstack4)) {
+                                if (itemstack1.id == itemstack4.id && itemstack1.getData() == itemstack4.getData() && ItemStack.equals(itemstack1, itemstack4)) {
+                                    k1 = j == 0 ? itemstack4.count : 1;
+                                    if (k1 > slot2.a() - itemstack1.count) {
+                                        k1 = slot2.a() - itemstack1.count;
+                                    }
+
+                                    if (k1 > itemstack4.getMaxStackSize() - itemstack1.count) {
+                                        k1 = itemstack4.getMaxStackSize() - itemstack1.count;
+                                    }
+
+                                    itemstack4.a(k1);
+                                    if (itemstack4.count == 0) {
+                                        playerinventory.setCarried((ItemStack) null);
+                                    }
+
+                                    itemstack1.count += k1;
+                                } else if (itemstack4.count <= slot2.a()) {
+                                    slot2.set(itemstack4);
+                                    playerinventory.setCarried(itemstack1);
+                                }
+                            } else if (itemstack1.id == itemstack4.id && itemstack4.getMaxStackSize() > 1 && (!itemstack1.usesData() || itemstack1.getData() == itemstack4.getData()) && ItemStack.equals(itemstack1, itemstack4)) {
+                                k1 = itemstack1.count;
+                                if (k1 > 0 && k1 + itemstack4.count <= itemstack4.getMaxStackSize()) {
+                                    itemstack4.count += k1;
+                                    itemstack1 = slot2.a(k1);
+                                    if (itemstack1.count == 0) {
+                                        slot2.set((ItemStack) null);
+                                    }
+
+                                    slot2.a(entityhuman, playerinventory.getCarried());
+                                }
+                            }
+                        }
+
+                        slot2.e();
+                    }
+                }
+            } else if (k == 2 && j >= 0 && j < 9) {
+                slot2 = (Slot) this.c.get(i);
+                if (slot2.a(entityhuman)) {
+                    itemstack1 = playerinventory.getItem(j);
+                    boolean flag = itemstack1 == null || slot2.inventory == playerinventory && slot2.isAllowed(itemstack1);
+
+                    k1 = -1;
+                    if (!flag) {
+                        k1 = playerinventory.j();
+                        flag |= k1 > -1;
+                    }
+
+                    if (slot2.d() && flag) {
+                        itemstack3 = slot2.getItem();
+                        playerinventory.setItem(j, itemstack3);
+                        if ((slot2.inventory != playerinventory || !slot2.isAllowed(itemstack1)) && itemstack1 != null) {
+                            if (k1 > -1) {
+                                playerinventory.pickup(itemstack1);
+                                slot2.a(itemstack3.count);
+                                slot2.set((ItemStack) null);
+                                slot2.a(entityhuman, itemstack3);
+                            }
+                        } else {
+                            slot2.a(itemstack3.count);
+                            slot2.set(itemstack1);
+                            slot2.a(entityhuman, itemstack3);
+                        }
+                    } else if (!slot2.d() && itemstack1 != null && slot2.isAllowed(itemstack1)) {
+                        playerinventory.setItem(j, (ItemStack) null);
+                        slot2.set(itemstack1);
+                    }
+                }
+            } else if (k == 3 && entityhuman.abilities.canInstantlyBuild && playerinventory.getCarried() == null && i >= 0) {
+                slot2 = (Slot) this.c.get(i);
+                if (slot2 != null && slot2.d()) {
+                    itemstack1 = slot2.getItem().cloneItemStack();
+                    itemstack1.count = itemstack1.getMaxStackSize();
+                    playerinventory.setCarried(itemstack1);
+                }
+            } else if (k == 4 && playerinventory.getCarried() == null && i >= 0) {
+                slot2 = (Slot) this.c.get(i);
+                if (slot2 != null && slot2.d()) {
+                    itemstack1 = slot2.a(j == 0 ? 1 : slot2.getItem().count);
+                    slot2.a(entityhuman, itemstack1);
+                    entityhuman.drop(itemstack1);
+                }
+            } else if (k == 6 && i >= 0) {
+                slot2 = (Slot) this.c.get(i);
+                itemstack1 = playerinventory.getCarried();
+                if (itemstack1 != null && (slot2 == null || !slot2.d() || !slot2.a(entityhuman))) {
+                    l = j == 0 ? 0 : this.c.size() - 1;
+                    k1 = j == 0 ? 1 : -1;
+
+                    for (int l1 = 0; l1 < 2; ++l1) {
+                        for (int i2 = l; i2 >= 0 && i2 < this.c.size() && itemstack1.count < itemstack1.getMaxStackSize(); i2 += k1) {
+                            Slot slot3 = (Slot) this.c.get(i2);
+
+                            if (slot3.d() && a(slot3, itemstack1, true) && slot3.a(entityhuman) && this.a(itemstack1, slot3) && (l1 != 0 || slot3.getItem().count != slot3.getItem().getMaxStackSize())) {
+                                int j2 = Math.min(itemstack1.getMaxStackSize() - itemstack1.count, slot3.getItem().count);
+                                ItemStack itemstack5 = slot3.a(j2);
+
+                                itemstack1.count += j2;
+                                if (itemstack5.count <= 0) {
+                                    slot3.set((ItemStack) null);
+                                }
+
+                                slot3.a(entityhuman, itemstack5);
                             }
                         }
                     }
-
-                    slot.e();
-                }
-            }
-        } else if (k == 2 && j >= 0 && j < 9) {
-            slot = (Slot) this.c.get(i);
-            if (slot.a(entityhuman)) {
-                itemstack1 = playerinventory.getItem(j);
-                boolean flag = itemstack1 == null || slot.inventory == playerinventory && slot.isAllowed(itemstack1);
-
-                l = -1;
-                if (!flag) {
-                    l = playerinventory.i();
-                    flag |= l > -1;
                 }
 
-                if (slot.d() && flag) {
-                    itemstack2 = slot.getItem();
-                    playerinventory.setItem(j, itemstack2);
-                    if ((slot.inventory != playerinventory || !slot.isAllowed(itemstack1)) && itemstack1 != null) {
-                        if (l > -1) {
-                            playerinventory.pickup(itemstack1);
-                            slot.a(itemstack2.count);
-                            slot.set((ItemStack) null);
-                            slot.a(entityhuman, itemstack2);
-                        }
-                    } else {
-                        slot.a(itemstack2.count);
-                        slot.set(itemstack1);
-                        slot.a(entityhuman, itemstack2);
-                    }
-                } else if (!slot.d() && itemstack1 != null && slot.isAllowed(itemstack1)) {
-                    playerinventory.setItem(j, (ItemStack) null);
-                    slot.set(itemstack1);
-                }
-            }
-        } else if (k == 3 && entityhuman.abilities.canInstantlyBuild && playerinventory.getCarried() == null && i >= 0) {
-            slot = (Slot) this.c.get(i);
-            if (slot != null && slot.d()) {
-                itemstack1 = slot.getItem().cloneItemStack();
-                itemstack1.count = itemstack1.getMaxStackSize();
-                playerinventory.setCarried(itemstack1);
+                this.b();
             }
         }
 
         return itemstack;
+    }
+
+    public boolean a(ItemStack itemstack, Slot slot) {
+        return true;
     }
 
     protected void a(int i, int j, boolean flag, EntityHuman entityhuman) {
@@ -289,14 +401,14 @@ public abstract class Container {
     }
 
     public boolean c(EntityHuman entityhuman) {
-        return !this.f.contains(entityhuman);
+        return !this.i.contains(entityhuman);
     }
 
     public void a(EntityHuman entityhuman, boolean flag) {
         if (flag) {
-            this.f.remove(entityhuman);
+            this.i.remove(entityhuman);
         } else {
-            this.f.add(entityhuman);
+            this.i.add(entityhuman);
         }
     }
 
@@ -368,5 +480,72 @@ public abstract class Container {
         }
 
         return flag1;
+    }
+
+    public static int b(int i) {
+        return i >> 2 & 3;
+    }
+
+    public static int c(int i) {
+        return i & 3;
+    }
+
+    public static boolean d(int i) {
+        return i == 0 || i == 1;
+    }
+
+    protected void d() {
+        this.g = 0;
+        this.h.clear();
+    }
+
+    public static boolean a(Slot slot, ItemStack itemstack, boolean flag) {
+        boolean flag1 = slot == null || !slot.d();
+
+        if (slot != null && slot.d() && itemstack != null && itemstack.doMaterialsMatch(slot.getItem()) && ItemStack.equals(slot.getItem(), itemstack)) {
+            int i = flag ? 0 : itemstack.count;
+
+            flag1 |= slot.getItem().count + i <= itemstack.getMaxStackSize();
+        }
+
+        return flag1;
+    }
+
+    public static void a(Set set, int i, ItemStack itemstack, int j) {
+        switch (i) {
+        case 0:
+            itemstack.count = MathHelper.d((float) itemstack.count / (float) set.size());
+            break;
+
+        case 1:
+            itemstack.count = 1;
+        }
+
+        itemstack.count += j;
+    }
+
+    public boolean b(Slot slot) {
+        return true;
+    }
+
+    public static int b(IInventory iinventory) {
+        if (iinventory == null) {
+            return 0;
+        } else {
+            int i = 0;
+            float f = 0.0F;
+
+            for (int j = 0; j < iinventory.getSize(); ++j) {
+                ItemStack itemstack = iinventory.getItem(j);
+
+                if (itemstack != null) {
+                    f += (float) itemstack.count / (float) Math.min(iinventory.getMaxStackSize(), itemstack.getMaxStackSize());
+                    ++i;
+                }
+            }
+
+            f /= (float) iinventory.getSize();
+            return MathHelper.d(f * 14.0F) + (i > 0 ? 1 : 0);
+        }
     }
 }

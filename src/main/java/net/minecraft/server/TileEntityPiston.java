@@ -79,24 +79,26 @@ public class TileEntityPiston extends TileEntity {
     public void f() {
         if (this.g < 1.0F && this.world != null) {
             this.g = this.f = 1.0F;
-            this.world.r(this.x, this.y, this.z);
+            this.world.s(this.x, this.y, this.z);
             this.w_();
             if (this.world.getTypeId(this.x, this.y, this.z) == Block.PISTON_MOVING.id) {
-                this.world.setTypeIdAndData(this.x, this.y, this.z, this.a, this.b);
+                this.world.setTypeIdAndData(this.x, this.y, this.z, this.a, this.b, 3);
+                this.world.g(this.x, this.y, this.z, this.a);
             }
         }
     }
 
-    public void g() {
+    public void h() {
         if (this.world == null) return; // CraftBukkit
 
         this.g = this.f;
         if (this.g >= 1.0F) {
             this.a(1.0F, 0.25F);
-            this.world.r(this.x, this.y, this.z);
+            this.world.s(this.x, this.y, this.z);
             this.w_();
             if (this.world.getTypeId(this.x, this.y, this.z) == Block.PISTON_MOVING.id) {
-                this.world.setTypeIdAndData(this.x, this.y, this.z, this.a, this.b);
+                this.world.setTypeIdAndData(this.x, this.y, this.z, this.a, this.b, 3);
+                this.world.g(this.x, this.y, this.z, this.a);
             }
         } else {
             this.f += 0.5F;

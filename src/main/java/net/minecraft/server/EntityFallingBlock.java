@@ -14,20 +14,21 @@ public class EntityFallingBlock extends Entity {
     public int data;
     public int c;
     public boolean dropItem;
-    private boolean e;
+    private boolean f;
     private boolean hurtEntities;
     private int fallHurtMax;
     private float fallHurtAmount;
-    private NBTTagCompound tileEntityData; // CraftBukkit
+    public NBTTagCompound tileEntityData;
 
     public EntityFallingBlock(World world) {
         super(world);
         this.c = 0;
         this.dropItem = true;
-        this.e = false;
+        this.f = false;
         this.hurtEntities = false;
         this.fallHurtMax = 40;
         this.fallHurtAmount = 2.0F;
+        this.tileEntityData = null;
     }
 
     public EntityFallingBlock(World world, double d0, double d1, double d2, int i) {
@@ -38,10 +39,11 @@ public class EntityFallingBlock extends Entity {
         super(world);
         this.c = 0;
         this.dropItem = true;
-        this.e = false;
+        this.f = false;
         this.hurtEntities = false;
         this.fallHurtMax = 40;
         this.fallHurtAmount = 2.0F;
+        this.tileEntityData = null;
         this.id = i;
         this.data = j;
         this.m = true;
@@ -62,11 +64,11 @@ public class EntityFallingBlock extends Entity {
 
     protected void a() {}
 
-    public boolean L() {
+    public boolean K() {
         return !this.dead;
     }
 
-    public void j_() {
+    public void l_() {
         if (this.id == 0) {
             this.die();
         } else {
@@ -91,18 +93,7 @@ public class EntityFallingBlock extends Entity {
                         return;
                     }
 
-                    // CraftBukkit start - Store the block tile entity with this entity
-                    TileEntity tile = this.world.getTileEntity(i, j, k);
-                    if (tile != null) {
-                        tileEntityData = new NBTTagCompound();
-                        // Save the data
-                        tile.b(tileEntityData);
-                        // Remove the existing tile entity
-                        this.world.r(i, j, k);
-                    }
-                    // CraftBukkit end
-
-                    this.world.setTypeId(i, j, k, 0);
+                    this.world.setAir(i, j, k);
                 }
 
                 if (this.onGround) {
@@ -112,20 +103,39 @@ public class EntityFallingBlock extends Entity {
                     if (this.world.getTypeId(i, j, k) != Block.PISTON_MOVING.id) {
                         this.die();
                         // CraftBukkit start
-                        if (!this.e && this.world.mayPlace(this.id, i, j, k, true, 1, (Entity) null) && !BlockSand.canFall(this.world, i, j - 1, k) /* mimic the false conditions of setTypeIdAndData */ && i >= -30000000 && k >= -30000000 && i < 30000000 && k < 30000000 && j > 0 && j < 256 && !(this.world.getTypeId(i, j, k) == this.id && this.world.getData(i, j, k) == this.data)) {
+                        if (!this.f && this.world.mayPlace(this.id, i, j, k, true, 1, (Entity) null, (ItemStack) null) && !BlockSand.canFall(this.world, i, j - 1, k) /* mimic the false conditions of setTypeIdAndData */ && i >= -30000000 && k >= -30000000 && i < 30000000 && k < 30000000 && j > 0 && j < 256 && !(this.world.getTypeId(i, j, k) == this.id && this.world.getData(i, j, k) == this.data)) {
                             if (CraftEventFactory.callEntityChangeBlockEvent(this, i, j, k, this.id, this.data).isCancelled()) {
                                 return;
                             }
-                            this.world.setTypeIdAndData(i, j, k, this.id, this.data);
-
-                            if (this.tileEntityData != null) {
-                                this.world.setTileEntity(i, j, k, TileEntity.c(this.tileEntityData));
-                            }
+                            this.world.setTypeIdAndData(i, j, k, this.id, this.data, 3);
                             // CraftBukkit end
+
                             if (Block.byId[this.id] instanceof BlockSand) {
                                 ((BlockSand) Block.byId[this.id]).a_(this.world, i, j, k, this.data);
                             }
-                        } else if (this.dropItem && !this.e) {
+
+                            if (this.tileEntityData != null && Block.byId[this.id] instanceof IContainer) {
+                                TileEntity tileentity = this.world.getTileEntity(i, j, k);
+
+                                if (tileentity != null) {
+                                    NBTTagCompound nbttagcompound = new NBTTagCompound();
+
+                                    tileentity.b(nbttagcompound);
+                                    Iterator iterator = this.tileEntityData.c().iterator();
+
+                                    while (iterator.hasNext()) {
+                                        NBTBase nbtbase = (NBTBase) iterator.next();
+
+                                        if (!nbtbase.getName().equals("x") && !nbtbase.getName().equals("y") && !nbtbase.getName().equals("z")) {
+                                            nbttagcompound.set(nbtbase.getName(), nbtbase.clone());
+                                        }
+                                    }
+
+                                    tileentity.a(nbttagcompound);
+                                    tileentity.update();
+                                }
+                            }
+                        } else if (this.dropItem && !this.f) {
                             this.a(new ItemStack(this.id, 1, Block.byId[this.id].getDropData(this.data)), 0.0F);
                         }
                     }
@@ -170,7 +180,7 @@ public class EntityFallingBlock extends Entity {
 
                     ++j;
                     if (j > 2) {
-                        this.e = true;
+                        this.f = true;
                     } else {
                         this.data = k | j << 2;
                     }
@@ -181,21 +191,25 @@ public class EntityFallingBlock extends Entity {
 
     protected void b(NBTTagCompound nbttagcompound) {
         nbttagcompound.setByte("Tile", (byte) this.id);
+        nbttagcompound.setInt("TileID", this.id);
         nbttagcompound.setByte("Data", (byte) this.data);
         nbttagcompound.setByte("Time", (byte) this.c);
         nbttagcompound.setBoolean("DropItem", this.dropItem);
         nbttagcompound.setBoolean("HurtEntities", this.hurtEntities);
         nbttagcompound.setFloat("FallHurtAmount", this.fallHurtAmount);
         nbttagcompound.setInt("FallHurtMax", this.fallHurtMax);
-        // CraftBukkit start - store the tile data
         if (this.tileEntityData != null) {
-            nbttagcompound.set("Bukkit.tileData", this.tileEntityData.clone());
+            nbttagcompound.setCompound("TileEntityData", this.tileEntityData);
         }
-        // CraftBukkit end
     }
 
     protected void a(NBTTagCompound nbttagcompound) {
-        this.id = nbttagcompound.getByte("Tile") & 255;
+        if (nbttagcompound.hasKey("TileID")) {
+            this.id = nbttagcompound.getInt("TileID");
+        } else {
+            this.id = nbttagcompound.getByte("Tile") & 255;
+        }
+
         this.data = nbttagcompound.getByte("Data") & 255;
         this.c = nbttagcompound.getByte("Time") & 255;
         if (nbttagcompound.hasKey("HurtEntities")) {
@@ -206,22 +220,26 @@ public class EntityFallingBlock extends Entity {
             this.hurtEntities = true;
         }
 
-        // CraftBukkit start - load tileData
+        if (nbttagcompound.hasKey("DropItem")) {
+            this.dropItem = nbttagcompound.getBoolean("DropItem");
+        }
+
+        if (nbttagcompound.hasKey("TileEntityData")) {
+            this.tileEntityData = nbttagcompound.getCompound("TileEntityData");
+        }
+
+        // CraftBukkit start - backward compatibility, remove in 1.6
         if (nbttagcompound.hasKey("Bukkit.tileData")) {
             this.tileEntityData = (NBTTagCompound) nbttagcompound.getCompound("Bukkit.tileData").clone();
         }
         // CraftBukkit end
-
-        if (nbttagcompound.hasKey("DropItem")) {
-            this.dropItem = nbttagcompound.getBoolean("DropItem");
-        }
 
         if (this.id == 0) {
             this.id = Block.SAND.id;
         }
     }
 
-    public void e(boolean flag) {
+    public void a(boolean flag) {
         this.hurtEntities = flag;
     }
 

@@ -38,11 +38,11 @@ public class EntityFireworks extends Entity {
         this.expectedLifespan = 10 * i + this.random.nextInt(6) + this.random.nextInt(7);
     }
 
-    public void j_() {
-        this.T = this.locX;
-        this.U = this.locY;
-        this.V = this.locZ;
-        super.j_();
+    public void l_() {
+        this.U = this.locX;
+        this.V = this.locY;
+        this.W = this.locZ;
+        super.l_();
         this.motX *= 1.15D;
         this.motZ *= 1.15D;
         this.motY += 0.04D;
@@ -115,7 +115,7 @@ public class EntityFireworks extends Entity {
         return super.c(f);
     }
 
-    public boolean aq() {
+    public boolean ap() {
         return false;
     }
 }

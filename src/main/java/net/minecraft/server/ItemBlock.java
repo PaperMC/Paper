@@ -7,7 +7,6 @@ public class ItemBlock extends Item {
     public ItemBlock(int i) {
         super(i);
         this.id = i + 256;
-        this.c(Block.byId[i + 256].a(2));
     }
 
     public int g() {
@@ -18,7 +17,7 @@ public class ItemBlock extends Item {
         final int clickedX = i, clickedY = j, clickedZ = k;
         int i1 = world.getTypeId(i, j, k);
 
-        if (i1 == Block.SNOW.id) {
+        if (i1 == Block.SNOW.id && (world.getData(i, j, k) & 7) < 1) {
             l = 1;
         } else if (i1 != Block.VINE.id && i1 != Block.LONG_GRASS.id && i1 != Block.DEAD_BUSH.id) {
             if (l == 0) {
@@ -52,16 +51,16 @@ public class ItemBlock extends Item {
             return false;
         } else if (j == 255 && Block.byId[this.id].material.isBuildable()) {
             return false;
-        } else if (world.mayPlace(this.id, i, j, k, false, l, entityhuman)) {
+        } else if (world.mayPlace(this.id, i, j, k, false, l, entityhuman, itemstack)) {
             Block block = Block.byId[this.id];
             int j1 = this.filterData(itemstack.getData());
             int k1 = Block.byId[this.id].getPlacedData(world, i, j, k, l, f, f1, f2, j1);
 
             // CraftBukkit start - redirect to common function handler
             /*
-            if (world.setTypeIdAndData(i, j, k, this.id, k1)) {
+            if (world.setTypeIdAndData(i, j, k, this.id, k1, 3)) {
                 if (world.getTypeId(i, j, k) == this.id) {
-                    Block.byId[this.id].postPlace(world, i, j, k, entityhuman);
+                    Block.byId[this.id].postPlace(world, i, j, k, entityhuman, itemstack);
                     Block.byId[this.id].postPlace(world, i, j, k, k1);
                 }
 
@@ -80,19 +79,16 @@ public class ItemBlock extends Item {
     static boolean processBlockPlace(final World world, final EntityHuman entityhuman, final ItemStack itemstack, final int x, final int y, final int z, final int id, final int data, final int clickedX, final int clickedY, final int clickedZ) {
         org.bukkit.block.BlockState blockstate = org.bukkit.craftbukkit.block.CraftBlockState.getBlockState(world, x, y, z);
 
-        world.suppressPhysics = true;
         world.callingPlaceEvent = true;
-        world.setRawTypeIdAndData(x, y, z, id, data);
+        world.setTypeIdAndData(x, y, z, id, data, 3);
 
         org.bukkit.event.block.BlockPlaceEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockstate, clickedX, clickedY, clickedZ);
         if (event.isCancelled() || !event.canBuild()) {
             blockstate.update(true);
-            world.suppressPhysics = false;
             world.callingPlaceEvent = false;
             return false;
         }
 
-        world.suppressPhysics = false;
         world.callingPlaceEvent = false;
 
         int newId = world.getTypeId(x, y, z);
@@ -107,7 +103,7 @@ public class ItemBlock extends Item {
 
         // Skulls don't get block data applied to them
         if (block != null && block != Block.SKULL) {
-            block.postPlace(world, x, y, z, entityhuman);
+            block.postPlace(world, x, y, z, entityhuman, itemstack);
             block.postPlace(world, x, y, z, newData);
 
             world.makeSound((double) ((float) x + 0.5F), (double) ((float) y + 0.5F), (double) ((float) z + 0.5F), block.stepSound.getPlaceSound(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);

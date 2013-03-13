@@ -10,7 +10,7 @@ public class EntityBlaze extends EntityMonster {
         super(world);
         this.texture = "/mob/fire.png";
         this.fireProof = true;
-        this.bd = 10;
+        this.be = 10;
     }
 
     public int getMaxHealth() {
@@ -22,15 +22,15 @@ public class EntityBlaze extends EntityMonster {
         this.datawatcher.a(16, new Byte((byte) 0));
     }
 
-    protected String aY() {
+    protected String bb() {
         return "mob.blaze.breathe";
     }
 
-    protected String aZ() {
+    protected String bc() {
         return "mob.blaze.hit";
     }
 
-    protected String ba() {
+    protected String bd() {
         return "mob.blaze.death";
     }
 
@@ -40,7 +40,7 @@ public class EntityBlaze extends EntityMonster {
 
     public void c() {
         if (!this.world.isStatic) {
-            if (this.G()) {
+            if (this.F()) {
                 this.damageEntity(DamageSource.DROWN, 1);
             }
 
@@ -83,13 +83,13 @@ public class EntityBlaze extends EntityMonster {
                 ++this.f;
                 if (this.f == 1) {
                     this.attackTicks = 60;
-                    this.f(true);
+                    this.a(true);
                 } else if (this.f <= 4) {
                     this.attackTicks = 6;
                 } else {
                     this.attackTicks = 100;
                     this.f = 0;
-                    this.f(false);
+                    this.a(false);
                 }
 
                 if (this.f > 1) {
@@ -140,7 +140,7 @@ public class EntityBlaze extends EntityMonster {
         return (this.datawatcher.getByte(16) & 1) != 0;
     }
 
-    public void f(boolean flag) {
+    public void a(boolean flag) {
         byte b0 = this.datawatcher.getByte(16);
 
         if (flag) {

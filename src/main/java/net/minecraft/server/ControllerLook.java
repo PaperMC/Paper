@@ -53,20 +53,20 @@ public class ControllerLook {
             // CraftBukkit end
 
             this.a.pitch = this.a(this.a.pitch, f1, this.c);
-            this.a.az = this.a(this.a.az, f, this.b);
+            this.a.aA = this.a(this.a.aA, f, this.b);
         } else {
-            this.a.az = this.a(this.a.az, this.a.ax, 10.0F);
+            this.a.aA = this.a(this.a.aA, this.a.ax, 10.0F);
         }
 
-        float f2 = MathHelper.g(this.a.az - this.a.ax);
+        float f2 = MathHelper.g(this.a.aA - this.a.ay);
 
         if (!this.a.getNavigation().f()) {
             if (f2 < -75.0F) {
-                this.a.az = this.a.ax - 75.0F;
+                this.a.aA = this.a.ay - 75.0F;
             }
 
             if (f2 > 75.0F) {
-                this.a.az = this.a.ax + 75.0F;
+                this.a.aA = this.a.ay + 75.0F;
             }
         }
     }

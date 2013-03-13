@@ -2,24 +2,50 @@ package net.minecraft.server;
 
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import java.io.File; // CraftBukkit
 
-public class ConsoleLogManager {
+public class ConsoleLogManager implements IConsoleLogManager {
 
-    public static Logger a = Logger.getLogger("Minecraft");
+    private final Logger a;
+    private final String b;
+    private final String c;
+    private final String d;
     public static Logger global = Logger.getLogger(""); // CraftBukkit
 
-    // CraftBukkit - change of method signature!
-    public static void init(MinecraftServer server) {
-        ConsoleLogFormatter consolelogformatter = new ConsoleLogFormatter(server.options.has("log-strip-color")); // CraftBukkit - pass strip color option
+    public ConsoleLogManager(String s, String s1, String s2) {
+        this.a = Logger.getLogger(s);
+        this.c = s;
+        this.d = s1;
+        this.b = s2;
+        this.b();
+    }
 
-        a.setUseParentHandlers(false);
+    private void b() {
+        this.a.setUseParentHandlers(false);
+        Handler[] ahandler = this.a.getHandlers();
+        int i = ahandler.length;
+
+        for (int j = 0; j < i; ++j) {
+            Handler handler = ahandler[j];
+
+            this.a.removeHandler(handler);
+        }
+
+        ConsoleLogFormatter consolelogformatter = new ConsoleLogFormatter(this, (EmptyClass3) null);
+
         // CraftBukkit start
+        MinecraftServer server = MinecraftServer.getServer();
         ConsoleHandler consolehandler = new org.bukkit.craftbukkit.util.TerminalConsoleHandler(server.reader);
+        // CraftBukkit end
 
+        consolehandler.setFormatter(consolelogformatter);
+        this.a.addHandler(consolehandler);
+
+        // CraftBukkit start
         for (java.util.logging.Handler handler : global.getHandlers()) {
             global.removeHandler(handler);
         }
@@ -27,8 +53,6 @@ public class ConsoleLogManager {
         consolehandler.setFormatter(new org.bukkit.craftbukkit.util.ShortConsoleLogFormatter(server));
         global.addHandler(consolehandler);
         // CraftBukkit end
-
-        a.addHandler(consolehandler);
 
         try {
             // CraftBukkit start
@@ -49,26 +73,26 @@ public class ConsoleLogManager {
                 parentPath = parent.getPath();
             }
 
-            int i = 0;
-            while (i < parentPath.length()) {
-                char ch = parentPath.charAt(i);
+            int j = 0;
+            while (j < parentPath.length()) {
+                char ch = parentPath.charAt(j);
                 char ch2 = 0;
-                if (i + 1 < parentPath.length()) {
-                    ch2 = Character.toLowerCase(pattern.charAt(i + 1));
+                if (j + 1 < parentPath.length()) {
+                    ch2 = Character.toLowerCase(pattern.charAt(j + 1));
                 }
 
                 if (ch == '%') {
                     if (ch2 == 'h') {
-                        i += 2;
+                        j += 2;
                         fixedPattern.append(homeDir);
                         continue;
                     } else if (ch2 == 't') {
-                        i += 2;
+                        j += 2;
                         fixedPattern.append(tmpDir);
                         continue;
                     } else if (ch2 == '%') {
                         // Even though we don't care about this we have to skip it to avoid matching %%t
-                        i += 2;
+                        j += 2;
                         fixedPattern.append("%%");
                         continue;
                     } else if (ch2 != 0) {
@@ -77,7 +101,7 @@ public class ConsoleLogManager {
                 }
 
                 fixedPattern.append(ch);
-                i++;
+                j++;
             }
 
             // Try to create needed parent directories
@@ -93,10 +117,42 @@ public class ConsoleLogManager {
             // CraftBukkit end
 
             filehandler.setFormatter(consolelogformatter);
-            a.addHandler(filehandler);
+            this.a.addHandler(filehandler);
             global.addHandler(filehandler); // CraftBukkit
         } catch (Exception exception) {
-            a.log(Level.WARNING, "Failed to log to server.log", exception);
+            this.a.log(Level.WARNING, "Failed to log " + this.c + " to " + this.b, exception);
         }
+    }
+
+    public Logger getLogger() {
+        return this.a;
+    }
+
+    public void info(String s) {
+        this.a.log(Level.INFO, s);
+    }
+
+    public void warning(String s) {
+        this.a.log(Level.WARNING, s);
+    }
+
+    public void warning(String s, Object... aobject) {
+        this.a.log(Level.WARNING, s, aobject);
+    }
+
+    public void warning(String s, Throwable throwable) {
+        this.a.log(Level.WARNING, s, throwable);
+    }
+
+    public void severe(String s) {
+        this.a.log(Level.SEVERE, s);
+    }
+
+    public void severe(String s, Throwable throwable) {
+        this.a.log(Level.SEVERE, s, throwable);
+    }
+
+    static String a(ConsoleLogManager consolelogmanager) {
+        return consolelogmanager.d;
     }
 }

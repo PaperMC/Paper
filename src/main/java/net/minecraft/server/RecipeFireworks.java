@@ -92,7 +92,7 @@ public class RecipeFireworks extends ShapelessRecipes implements IRecipe { // Cr
 
                     if (itemstack2 != null) {
                         if (itemstack2.id == Item.INK_SACK.id) {
-                            arraylist.add(Integer.valueOf(ItemDye.b[itemstack2.getData()]));
+                            arraylist.add(Integer.valueOf(ItemDye.c[itemstack2.getData()]));
                         } else if (itemstack2.id == Item.GLOWSTONE_DUST.id) {
                             nbttagcompound1.setBoolean("Flicker", true);
                         } else if (itemstack2.id == Item.DIAMOND.id) {
@@ -128,7 +128,7 @@ public class RecipeFireworks extends ShapelessRecipes implements IRecipe { // Cr
 
                     if (itemstack3 != null) {
                         if (itemstack3.id == Item.INK_SACK.id) {
-                            arraylist1.add(Integer.valueOf(ItemDye.b[itemstack3.getData()]));
+                            arraylist1.add(Integer.valueOf(ItemDye.c[itemstack3.getData()]));
                         } else if (itemstack3.id == Item.FIREWORKS_CHARGE.id) {
                             this.a = itemstack3.cloneItemStack();
                             this.a.count = 1;

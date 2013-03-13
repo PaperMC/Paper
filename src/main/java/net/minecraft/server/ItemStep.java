@@ -20,7 +20,7 @@ public class ItemStep extends ItemBlock {
     }
 
     public String d(ItemStack itemstack) {
-        return this.b.d(itemstack.getData());
+        return this.b.c(itemstack.getData());
     }
 
     public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
@@ -39,7 +39,8 @@ public class ItemStep extends ItemBlock {
 
             if ((l == 1 && !flag || l == 0 && flag) && i1 == this.b.id && k1 == itemstack.getData()) {
                 // CraftBukkit start - world.setTypeIdAndData -> processBlockPlace()
-                if (world.b(this.c.e(world, i, j, k)) && processBlockPlace(world, entityhuman, null, i, j, k, this.c.id, k1, clickedX, clickedY, clickedZ)) {
+                // if (world.b(this.c.b(world, i, j, k)) && world.setTypeIdAndData(i, j, k, this.c.id, k1, 3)) {
+                if (world.b(this.c.b(world, i, j, k)) && processBlockPlace(world, entityhuman, null, i, j, k, this.c.id, k1, clickedX, clickedY, clickedZ)) {
                     // world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), this.c.stepSound.getPlaceSound(), (this.c.stepSound.getVolume1() + 1.0F) / 2.0F, this.c.stepSound.getVolume2() * 0.8F);
                     // CraftBukkit end
                     --itemstack.count;
@@ -83,7 +84,8 @@ public class ItemStep extends ItemBlock {
 
         if (i1 == this.b.id && k1 == itemstack.getData()) {
             // CraftBukkit start - world.setTypeIdAndData -> processBlockPlace()
-            if (world.b(this.c.e(world, i, j, k)) && processBlockPlace(world, entityhuman, null, i, j, k, this.c.id, k1, clickedX, clickedY, clickedZ)) {
+            // if (world.b(this.c.b(world, i, j, k)) && world.setTypeIdAndData(i, j, k, this.c.id, k1, 3)) {
+            if (world.b(this.c.b(world, i, j, k)) && processBlockPlace(world, entityhuman, null, i, j, k, this.c.id, k1, clickedX, clickedY, clickedZ)) {
                 // world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F, this.c.stepSound.getPlaceSound(), (this.c.stepSound.getVolume1() + 1.0F) / 2.0F, this.c.stepSound.getVolume2() * 0.8F);
                 // CraftBukkit end
                 --itemstack.count;

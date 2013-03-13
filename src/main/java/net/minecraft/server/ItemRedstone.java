@@ -45,7 +45,7 @@ public class ItemRedstone extends Item {
             if (Block.REDSTONE_WIRE.canPlace(world, i, j, k)) {
                 // CraftBukkit start
                 // --itemstack.count;
-                // world.setTypeId(i, j, k, Block.REDSTONE_WIRE.id);
+                // world.setTypeIdUpdate(i, j, k, Block.REDSTONE_WIRE.id);
                 if (!ItemBlock.processBlockPlace(world, entityhuman, itemstack, i, j, k, Block.REDSTONE_WIRE.id, 0, clickedX, clickedY, clickedZ)) {
                     return false;
                 }

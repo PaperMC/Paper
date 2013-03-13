@@ -159,8 +159,8 @@ public class ChunkProviderServer implements IChunkProvider {
         chunk = chunk == null ? (!this.world.isLoading && !this.forceChunkLoad ? this.emptyChunk : this.getChunkAt(i, j)) : chunk;
         if (chunk == this.emptyChunk) return chunk;
         if (i != chunk.x || j != chunk.z) {
-            MinecraftServer.log.severe("Chunk (" + chunk.x + ", " + chunk.z + ") stored at  (" + i + ", " + j + ") in world '" + world.getWorld().getName() + "'");
-            MinecraftServer.log.severe(chunk.getClass().getName());
+            this.world.getLogger().severe("Chunk (" + chunk.x + ", " + chunk.z + ") stored at  (" + i + ", " + j + ") in world '" + world.getWorld().getName() + "'");
+            this.world.getLogger().severe(chunk.getClass().getName());
             Throwable ex = new Throwable();
             ex.fillInStackTrace();
             ex.printStackTrace();

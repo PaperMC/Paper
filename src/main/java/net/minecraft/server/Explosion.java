@@ -85,12 +85,12 @@ public class Explosion {
 
                             if (k1 > 0) {
                                 Block block = Block.byId[k1];
-                                float f3 = this.source != null ? this.source.a(this, block, l, i1, j1) : block.a(this.source);
+                                float f3 = this.source != null ? this.source.a(this, this.world, l, i1, j1, block) : block.a(this.source);
 
                                 f1 -= (f3 + 0.3F) * f2;
                             }
 
-                            if (f1 > 0.0F && i1 < 256 && i1 >= 0) { // CraftBukkit - don't wrap explosions
+                            if (f1 > 0.0F && (this.source == null || this.source.a(this, this.world, l, i1, j1, k1, f1)) && i1 < 256 && i1 >= 0) { // CraftBukkit - don't wrap explosions
                                 hashset.add(new ChunkPosition(l, i1, j1));
                             }
 
@@ -143,7 +143,7 @@ public class Explosion {
 
                         if (!event.isCancelled()) {
                             damagee.setLastDamageCause(event);
-                            entity.damageEntity(DamageSource.EXPLOSION, event.getDamage());
+                            entity.damageEntity(DamageSource.explosion(this), event.getDamage());
                             double d11 = EnchantmentProtection.a(entity, d10);
 
                             entity.motX += d0 * d11;
@@ -168,7 +168,7 @@ public class Explosion {
 
                         if (!event.isCancelled()) {
                             entity.getBukkitEntity().setLastDamageCause(event);
-                            entity.damageEntity(DamageSource.EXPLOSION, event.getDamage());
+                            entity.damageEntity(DamageSource.explosion(this), event.getDamage());
 
                             entity.motX += d0 * d10;
                             entity.motY += d1 * d10;
@@ -272,11 +272,8 @@ public class Explosion {
                         block.dropNaturally(this.world, i, j, k, this.world.getData(i, j, k), event.getYield(), 0);
                     }
 
-                    if (this.world.setRawTypeIdAndData(i, j, k, 0, 0, this.world.isStatic)) {
-                        this.world.applyPhysics(i, j, k, 0);
-                    }
-
-                    block.wasExploded(this.world, i, j, k);
+                    this.world.setTypeIdAndData(i, j, k, 0, 0, 3);
+                    block.wasExploded(this.world, i, j, k, this);
                 }
             }
         }
@@ -292,8 +289,8 @@ public class Explosion {
                 l = this.world.getTypeId(i, j, k);
                 int i1 = this.world.getTypeId(i, j - 1, k);
 
-                if (l == 0 && Block.q[i1] && this.j.nextInt(3) == 0) {
-                    this.world.setTypeId(i, j, k, Block.FIRE.id);
+                if (l == 0 && Block.s[i1] && this.j.nextInt(3) == 0) {
+                    this.world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
                 }
             }
         }
@@ -301,5 +298,9 @@ public class Explosion {
 
     public Map b() {
         return this.l;
+    }
+
+    public EntityLiving c() {
+        return this.source == null ? null : (this.source instanceof EntityTNTPrimed ? ((EntityTNTPrimed) this.source).getSource() : (this.source instanceof EntityLiving ? (EntityLiving) this.source : null));
     }
 }

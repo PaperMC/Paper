@@ -30,7 +30,7 @@ public class ItemHoe extends Item {
                     return true;
                 } else {
                     // CraftBukkit start - Hoes - blockface -1 for 'SELF'
-                    // world.setTypeId(i, j, k, block.id);
+                    // world.setTypeIdUpdate(i, j, k, block.id);
                     if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, block.id, 0, clickedX, clickedY, clickedZ)) {
                         return false;
                     }

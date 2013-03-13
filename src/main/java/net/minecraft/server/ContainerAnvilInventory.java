@@ -40,8 +40,8 @@ public class ContainerAnvilInventory extends InventorySubcontainer { // CraftBuk
     }
     // CraftBukkit end
 
-    ContainerAnvilInventory(ContainerAnvil containeranvil, String s, int i) {
-        super(s, i);
+    ContainerAnvilInventory(ContainerAnvil containeranvil, String s, boolean flag, int i) {
+        super(s, flag, i);
         this.a = containeranvil;
         this.setMaxStackSize(1); // CraftBukkit
     }
@@ -49,5 +49,9 @@ public class ContainerAnvilInventory extends InventorySubcontainer { // CraftBuk
     public void update() {
         super.update();
         this.a.a((IInventory) this);
+    }
+
+    public boolean b(int i, ItemStack itemstack) {
+        return true;
     }
 }

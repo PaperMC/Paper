@@ -72,7 +72,7 @@ public class EntitySmallFireball extends EntityFireball {
                     world.getServer().getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
-                        this.world.setTypeId(i, j, k, Block.FIRE.id);
+                        this.world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
                     }
                     // CraftBukkit end
                 }
@@ -82,7 +82,7 @@ public class EntitySmallFireball extends EntityFireball {
         }
     }
 
-    public boolean L() {
+    public boolean K() {
         return false;
     }
 

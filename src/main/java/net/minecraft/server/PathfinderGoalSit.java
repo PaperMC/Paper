@@ -13,14 +13,14 @@ public class PathfinderGoalSit extends PathfinderGoal {
     public boolean a() {
         if (!this.a.isTamed()) {
             return this.b && this.a.getGoalTarget() == null; // CraftBukkit - Allow sitting for wild animals
-        } else if (this.a.H()) {
+        } else if (this.a.G()) {
             return false;
         } else if (!this.a.onGround) {
             return false;
         } else {
             EntityLiving entityliving = this.a.getOwner();
 
-            return entityliving == null ? true : (this.a.e(entityliving) < 144.0D && entityliving.aC() != null ? false : this.b);
+            return entityliving == null ? true : (this.a.e(entityliving) < 144.0D && entityliving.aF() != null ? false : this.b);
         }
     }
 

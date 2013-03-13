@@ -23,7 +23,7 @@ public class CraftJukebox extends CraftBlockState implements Jukebox {
     }
 
     public Material getPlaying() {
-        ItemStack record = jukebox.record;
+        ItemStack record = jukebox.getRecord();
         if (record == null) {
             return Material.AIR;
         }
@@ -33,15 +33,15 @@ public class CraftJukebox extends CraftBlockState implements Jukebox {
     public void setPlaying(Material record) {
         if (record == null || Item.byId[record.getId()] == null) {
             record = Material.AIR;
-            jukebox.record = null;
+            jukebox.setRecord(null);
         } else {
-            jukebox.record = new ItemStack(Item.byId[record.getId()], 1);
+            jukebox.setRecord(new ItemStack(Item.byId[record.getId()], 1));
         }
         jukebox.update();
         if (record == Material.AIR) {
-            world.getHandle().setData(getX(), getY(), getZ(), 0);
+            world.getHandle().setData(getX(), getY(), getZ(), 0, 3);
         } else {
-            world.getHandle().setData(getX(), getY(), getZ(), 1);
+            world.getHandle().setData(getX(), getY(), getZ(), 1, 3);
         }
         world.playEffect(getLocation(), Effect.RECORD_PLAY, record.getId());
     }

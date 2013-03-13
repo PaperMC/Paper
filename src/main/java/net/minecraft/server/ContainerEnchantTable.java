@@ -17,7 +17,7 @@ import org.bukkit.entity.Player;
 public class ContainerEnchantTable extends Container {
 
     // CraftBukkit - make type specific (changed from IInventory)
-    public ContainerEnchantTableInventory enchantSlots = new ContainerEnchantTableInventory(this, "Enchant", 1);
+    public ContainerEnchantTableInventory enchantSlots = new ContainerEnchantTableInventory(this, "Enchant", true, 1);
     private World world;
     private int x;
     private int y;
@@ -79,7 +79,7 @@ public class ContainerEnchantTable extends Container {
             ItemStack itemstack = iinventory.getItem(0);
             int i;
 
-            if (itemstack != null && itemstack.v()) {
+            if (itemstack != null && itemstack.w()) {
                 this.f = this.l.nextLong();
                 if (!this.world.isStatic) {
                     i = 0;

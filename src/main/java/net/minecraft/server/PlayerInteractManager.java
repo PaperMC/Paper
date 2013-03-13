@@ -78,7 +78,7 @@ public class PlayerInteractManager {
                 f = block.getDamage(this.player, this.player.world, this.k, this.l, this.m) * (float) (i + 1);
                 j = (int) (f * 10.0F);
                 if (j != this.o) {
-                    this.world.g(this.player.id, this.k, this.l, this.m, j);
+                    this.world.f(this.player.id, this.k, this.l, this.m, j);
                     this.o = j;
                 }
 
@@ -92,7 +92,7 @@ public class PlayerInteractManager {
             Block block1 = Block.byId[i];
 
             if (block1 == null) {
-                this.world.g(this.player.id, this.f, this.g, this.h, -1);
+                this.world.f(this.player.id, this.f, this.g, this.h, -1);
                 this.o = -1;
                 this.d = false;
             } else {
@@ -101,7 +101,7 @@ public class PlayerInteractManager {
                 f = block1.getDamage(this.player, this.player.world, this.f, this.g, this.h) * (float) (l + 1);
                 j = (int) (f * 10.0F);
                 if (j != this.o) {
-                    this.world.g(this.player.id, this.f, this.g, this.h, j);
+                    this.world.f(this.player.id, this.f, this.g, this.h, j);
                     this.o = j;
                 }
             }
@@ -113,7 +113,7 @@ public class PlayerInteractManager {
         // CraftBukkit
         PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, i, j, k, l, this.player.inventory.getItemInHand());
 
-        if (!this.gamemode.isAdventure() || this.player.f(i, j, k)) {
+        if (!this.gamemode.isAdventure() || this.player.e(i, j, k)) {
             // CraftBukkit start
             if (event.isCancelled()) {
                 // Let the client know the block still exists
@@ -131,7 +131,7 @@ public class PlayerInteractManager {
                     this.breakBlock(i, j, k);
                 }
             } else {
-                this.world.douseFire(this.player, i, j, k, l);
+                this.world.douseFire((EntityHuman) null, i, j, k, l);
                 this.lastDigTick = this.currentTick;
                 float f = 1.0F;
                 int i1 = this.world.getTypeId(i, j, k);
@@ -186,7 +186,7 @@ public class PlayerInteractManager {
                     this.h = k;
                     int j1 = (int) (f * 10.0F);
 
-                    this.world.g(this.player.id, i, j, k, j1);
+                    this.world.f(this.player.id, i, j, k, j1);
                     this.o = j1;
                 }
             }
@@ -205,7 +205,7 @@ public class PlayerInteractManager {
 
                 if (f >= 0.7F) {
                     this.d = false;
-                    this.world.g(this.player.id, i, j, k, -1);
+                    this.world.f(this.player.id, i, j, k, -1);
                     this.breakBlock(i, j, k);
                 } else if (!this.j) {
                     this.d = false;
@@ -225,7 +225,7 @@ public class PlayerInteractManager {
 
     public void c(int i, int j, int k) {
         this.d = false;
-        this.world.g(this.player.id, this.f, this.g, this.h, -1);
+        this.world.f(this.player.id, this.f, this.g, this.h, -1);
     }
 
     private boolean d(int i, int j, int k) {
@@ -236,7 +236,7 @@ public class PlayerInteractManager {
             block.a(this.world, i, j, k, l, this.player);
         }
 
-        boolean flag = this.world.setTypeId(i, j, k, 0);
+        boolean flag = this.world.setAir(i, j, k);
 
         if (block != null && flag) {
             block.postBreak(this.world, i, j, k, l);
@@ -264,14 +264,14 @@ public class PlayerInteractManager {
             event = new BlockBreakEvent(block, this.player.getBukkitEntity());
 
             // Adventure mode pre-cancel
-            event.setCancelled(this.gamemode.isAdventure() && !this.player.f(i, j, k));
+            event.setCancelled(this.gamemode.isAdventure() && !this.player.e(i, j, k));
 
             // Calculate default block experience
             Block nmsBlock = Block.byId[block.getTypeId()];
 
-            if (nmsBlock != null && !event.isCancelled() && !this.isCreative() && this.player.b(nmsBlock)) {
+            if (nmsBlock != null && !event.isCancelled() && !this.isCreative() && this.player.a(nmsBlock)) {
                 // Copied from Block.a(world, entityhuman, int, int, int, int)
-                if (!(nmsBlock.s_() && EnchantmentManager.hasSilkTouchEnchantment(this.player))) {
+                if (!(nmsBlock.r_() && EnchantmentManager.hasSilkTouchEnchantment(this.player))) {
                     int data = block.getData();
                     int bonusLevel = EnchantmentManager.getBonusBlockLootEnchantmentLevel(this.player);
 
@@ -314,13 +314,13 @@ public class PlayerInteractManager {
             if (this.isCreative()) {
                 this.player.playerConnection.sendPacket(new Packet53BlockChange(i, j, k, this.world));
             } else {
-                ItemStack itemstack = this.player.bS();
-                boolean flag1 = this.player.b(Block.byId[l]);
+                ItemStack itemstack = this.player.cb();
+                boolean flag1 = this.player.a(Block.byId[l]);
 
                 if (itemstack != null) {
                     itemstack.a(this.world, l, i, j, k, this.player);
                     if (itemstack.count == 0) {
-                        this.player.bT();
+                        this.player.cc();
                     }
                 }
 
@@ -331,7 +331,7 @@ public class PlayerInteractManager {
 
             // CraftBukkit start - drop event experience
             if (flag && event != null) {
-                Block.byId[l].f(this.world, i, j, k, event.getExpToDrop());
+                Block.byId[l].j(this.world, i, j, k, event.getExpToDrop());
             }
             // CraftBukkit end
 
@@ -344,13 +344,13 @@ public class PlayerInteractManager {
         int j = itemstack.getData();
         ItemStack itemstack1 = itemstack.a(world, entityhuman);
 
-        if (itemstack1 == itemstack && (itemstack1 == null || itemstack1.count == i && itemstack1.m() <= 0 && itemstack1.getData() == j)) {
+        if (itemstack1 == itemstack && (itemstack1 == null || itemstack1.count == i && itemstack1.n() <= 0 && itemstack1.getData() == j)) {
             return false;
         } else {
             entityhuman.inventory.items[entityhuman.inventory.itemInHandIndex] = itemstack1;
             if (this.isCreative()) {
                 itemstack1.count = i;
-                if (itemstack1.f()) {
+                if (itemstack1.g()) {
                     itemstack1.setData(j);
                 }
             }
@@ -359,7 +359,7 @@ public class PlayerInteractManager {
                 entityhuman.inventory.items[entityhuman.inventory.itemInHandIndex] = null;
             }
 
-            if (!entityhuman.bM()) {
+            if (!entityhuman.bV()) {
                 ((EntityPlayer) entityhuman).updateInventory(entityhuman.defaultContainer);
             }
 

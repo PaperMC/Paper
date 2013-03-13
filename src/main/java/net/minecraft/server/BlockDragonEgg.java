@@ -6,56 +6,56 @@ import org.bukkit.event.block.BlockFromToEvent; // CraftBukkit
 
 public class BlockDragonEgg extends Block {
 
-    public BlockDragonEgg(int i, int j) {
-        super(i, j, Material.DRAGON_EGG);
+    public BlockDragonEgg(int i) {
+        super(i, Material.DRAGON_EGG);
         this.a(0.0625F, 0.0F, 0.0625F, 0.9375F, 1.0F, 0.9375F);
     }
 
     public void onPlace(World world, int i, int j, int k) {
-        world.a(i, j, k, this.id, this.r_());
+        world.a(i, j, k, this.id, this.a(world));
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
-        world.a(i, j, k, this.id, this.r_());
+        world.a(i, j, k, this.id, this.a(world));
     }
 
-    public void b(World world, int i, int j, int k, Random random) {
-        this.l(world, i, j, k);
+    public void a(World world, int i, int j, int k, Random random) {
+        this.k(world, i, j, k);
     }
 
-    private void l(World world, int i, int j, int k) {
+    private void k(World world, int i, int j, int k) {
         if (BlockSand.canFall(world, i, j - 1, k) && j >= 0) {
             byte b0 = 32;
 
-            if (!BlockSand.instaFall && world.d(i - b0, j - b0, k - b0, i + b0, j + b0, k + b0)) {
+            if (!BlockSand.instaFall && world.e(i - b0, j - b0, k - b0, i + b0, j + b0, k + b0)) {
                 // CraftBukkit - added data
                 EntityFallingBlock entityfallingblock = new EntityFallingBlock(world, (double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), this.id, world.getData(i, j, k));
 
                 world.addEntity(entityfallingblock);
             } else {
-                world.setTypeId(i, j, k, 0);
+                world.setAir(i, j, k);
 
                 while (BlockSand.canFall(world, i, j - 1, k) && j > 0) {
                     --j;
                 }
 
                 if (j > 0) {
-                    world.setTypeId(i, j, k, this.id);
+                    world.setTypeIdAndData(i, j, k, this.id, 0, 2);
                 }
             }
         }
     }
 
     public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
-        this.n(world, i, j, k);
+        this.m(world, i, j, k);
         return true;
     }
 
     public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
-        this.n(world, i, j, k);
+        this.m(world, i, j, k);
     }
 
-    private void n(World world, int i, int j, int k) {
+    private void m(World world, int i, int j, int k) {
         if (world.getTypeId(i, j, k) == this.id) {
             for (int l = 0; l < 1000; ++l) {
                 int i1 = i + world.random.nextInt(16) - world.random.nextInt(16);
@@ -79,8 +79,8 @@ public class BlockDragonEgg extends Block {
                     // CraftBukkit end
 
                     if (!world.isStatic) {
-                        world.setTypeIdAndData(i1, j1, k1, this.id, world.getData(i, j, k));
-                        world.setTypeId(i, j, k, 0);
+                        world.setTypeIdAndData(i1, j1, k1, this.id, world.getData(i, j, k), 2);
+                        world.setAir(i, j, k);
                     } else {
                         short short1 = 128;
 
@@ -103,7 +103,7 @@ public class BlockDragonEgg extends Block {
         }
     }
 
-    public int r_() {
+    public int a(World world) {
         return 5;
     }
 

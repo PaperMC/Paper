@@ -25,8 +25,8 @@ public class EntityWitherSkull extends EntityFireball {
         return false;
     }
 
-    public float a(Explosion explosion, Block block, int i, int j, int k) {
-        float f = super.a(explosion, block, i, j, k);
+    public float a(Explosion explosion, World world, int i, int j, int k, Block block) {
+        float f = super.a(explosion, world, i, j, k, block);
 
         if (this.d() && block != Block.BEDROCK && block != Block.ENDER_PORTAL && block != Block.ENDER_PORTAL_FRAME) {
             f = Math.min(0.8F, f);
@@ -76,7 +76,7 @@ public class EntityWitherSkull extends EntityFireball {
         }
     }
 
-    public boolean L() {
+    public boolean K() {
         return false;
     }
 
@@ -92,7 +92,7 @@ public class EntityWitherSkull extends EntityFireball {
         return this.datawatcher.getByte(10) == 1;
     }
 
-    public void e(boolean flag) {
+    public void a(boolean flag) {
         this.datawatcher.watch(10, Byte.valueOf((byte) (flag ? 1 : 0)));
     }
 }

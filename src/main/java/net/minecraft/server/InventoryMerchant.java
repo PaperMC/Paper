@@ -68,7 +68,7 @@ public class InventoryMerchant implements IInventory {
                 itemstack = this.itemsInSlots[i];
                 this.itemsInSlots[i] = null;
                 if (this.d(i)) {
-                    this.g();
+                    this.h();
                 }
 
                 return itemstack;
@@ -79,7 +79,7 @@ public class InventoryMerchant implements IInventory {
                 }
 
                 if (this.d(i)) {
-                    this.g();
+                    this.h();
                 }
 
                 return itemstack;
@@ -111,7 +111,7 @@ public class InventoryMerchant implements IInventory {
         }
 
         if (this.d(i)) {
-            this.g();
+            this.h();
         }
     }
 
@@ -119,23 +119,31 @@ public class InventoryMerchant implements IInventory {
         return "mob.villager";
     }
 
+    public boolean c() {
+        return false;
+    }
+
     public int getMaxStackSize() {
         return maxStack; // CraftBukkit
     }
 
-    public boolean a_(EntityHuman entityhuman) {
+    public boolean a(EntityHuman entityhuman) {
         return this.merchant.m_() == entityhuman;
     }
 
     public void startOpen() {}
 
-    public void f() {}
+    public void g() {}
 
-    public void update() {
-        this.g();
+    public boolean b(int i, ItemStack itemstack) {
+        return true;
     }
 
-    public void g() {
+    public void update() {
+        this.h();
+    }
+
+    public void h() {
         this.recipe = null;
         ItemStack itemstack = this.itemsInSlots[0];
         ItemStack itemstack1 = this.itemsInSlots[1];
@@ -177,6 +185,6 @@ public class InventoryMerchant implements IInventory {
 
     public void c(int i) {
         this.e = i;
-        this.g();
+        this.h();
     }
 }

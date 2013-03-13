@@ -9,41 +9,32 @@ import java.util.logging.LogRecord;
 
 import java.util.regex.Pattern; // CraftBukkit
 
-final class ConsoleLogFormatter extends Formatter {
+class ConsoleLogFormatter extends Formatter {
 
-    private SimpleDateFormat a = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    // CraftBukkit start - add color stripping, change constructor to take it
+    private SimpleDateFormat b;
+
+    final ConsoleLogManager a;
+    // CraftBukkit start - add color stripping
     private Pattern pattern = Pattern.compile("\\x1B\\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]");
     private boolean strip = false;
-
-    ConsoleLogFormatter(boolean strip) {
-        this.strip = strip;
-    }
     // CraftBukkit end
+
+    private ConsoleLogFormatter(ConsoleLogManager consolelogmanager) {
+        this.a = consolelogmanager;
+        this.b = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        this.strip = MinecraftServer.getServer().options.has("log-strip-color"); // CraftBukkit
+    }
 
     public String format(LogRecord logrecord) {
         StringBuilder stringbuilder = new StringBuilder();
 
-        stringbuilder.append(this.a.format(Long.valueOf(logrecord.getMillis())));
-        Level level = logrecord.getLevel();
-
-        if (level == Level.FINEST) {
-            stringbuilder.append(" [FINEST] ");
-        } else if (level == Level.FINER) {
-            stringbuilder.append(" [FINER] ");
-        } else if (level == Level.FINE) {
-            stringbuilder.append(" [FINE] ");
-        } else if (level == Level.INFO) {
-            stringbuilder.append(" [INFO] ");
-        } else if (level == Level.WARNING) {
-            stringbuilder.append(" [WARNING] ");
-        } else if (level == Level.SEVERE) {
-            stringbuilder.append(" [SEVERE] ");
-        } else { // CraftBukkit
-            stringbuilder.append(" [").append(level.getLocalizedName()).append("] ");
+        stringbuilder.append(this.b.format(Long.valueOf(logrecord.getMillis())));
+        if (ConsoleLogManager.a(this.a) != null) {
+            stringbuilder.append(ConsoleLogManager.a(this.a));
         }
 
-        stringbuilder.append(formatMessage(logrecord)); // CraftBukkit
+        stringbuilder.append(" [").append(logrecord.getLevel().getName()).append("] ");
+        stringbuilder.append(this.formatMessage(logrecord));
         stringbuilder.append('\n');
         Throwable throwable = logrecord.getThrown();
 
@@ -61,5 +52,9 @@ final class ConsoleLogFormatter extends Formatter {
             return stringbuilder.toString();
         }
         // CraftBukkit end
+    }
+
+    ConsoleLogFormatter(ConsoleLogManager consolelogmanager, EmptyClass3 emptyclass3) {
+        this(consolelogmanager);
     }
 }

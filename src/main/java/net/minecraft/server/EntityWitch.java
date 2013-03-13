@@ -11,10 +11,10 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
     public EntityWitch(World world) {
         super(world);
         this.texture = "/mob/villager/witch.png";
-        this.bH = 0.25F;
+        this.bI = 0.25F;
         this.goalSelector.a(1, new PathfinderGoalFloat(this));
-        this.goalSelector.a(2, new PathfinderGoalArrowAttack(this, this.bH, 60, 10.0F));
-        this.goalSelector.a(2, new PathfinderGoalRandomStroll(this, this.bH));
+        this.goalSelector.a(2, new PathfinderGoalArrowAttack(this, this.bI, 60, 10.0F));
+        this.goalSelector.a(2, new PathfinderGoalRandomStroll(this, this.bI));
         this.goalSelector.a(3, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 8.0F));
         this.goalSelector.a(3, new PathfinderGoalRandomLookaround(this));
         this.targetSelector.a(1, new PathfinderGoalHurtByTarget(this, false));
@@ -26,19 +26,19 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
         this.getDataWatcher().a(21, Byte.valueOf((byte) 0));
     }
 
-    protected String aY() {
+    protected String bb() {
         return "mob.witch.idle";
     }
 
-    protected String aZ() {
+    protected String bc() {
         return "mob.witch.hurt";
     }
 
-    protected String ba() {
+    protected String bd() {
         return "mob.witch.death";
     }
 
-    public void f(boolean flag) {
+    public void a(boolean flag) {
         this.getDataWatcher().watch(21, Byte.valueOf((byte) (flag ? 1 : 0)));
     }
 
@@ -50,7 +50,7 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
         return 26;
     }
 
-    public boolean be() {
+    public boolean bh() {
         return true;
     }
 
@@ -58,8 +58,8 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
         if (!this.world.isStatic) {
             if (this.m()) {
                 if (this.e-- <= 0) {
-                    this.f(false);
-                    ItemStack itemstack = this.bD();
+                    this.a(false);
+                    ItemStack itemstack = this.bG();
 
                     this.setEquipment(0, (ItemStack) null);
                     if (itemstack != null && itemstack.id == Item.POTION.id) {
@@ -91,8 +91,8 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
 
                 if (short1 > -1) {
                     this.setEquipment(0, new ItemStack(Item.POTION, 1, short1));
-                    this.e = this.bD().m();
-                    this.f(true);
+                    this.e = this.bG().n();
+                    this.a(true);
                 }
             }
 
@@ -110,15 +110,15 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
             i = 0;
         }
 
-        if (damagesource.o()) {
+        if (damagesource.q()) {
             i = (int) ((double) i * 0.15D);
         }
 
         return i;
     }
 
-    public float bB() {
-        float f = super.bB();
+    public float bE() {
+        float f = super.bE();
 
         if (this.m()) {
             f *= 0.75F;
@@ -148,7 +148,7 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
         // CraftBukkit end
     }
 
-    public void d(EntityLiving entityliving) {
+    public void a(EntityLiving entityliving, float f) {
         if (!this.m()) {
             EntityPotion entitypotion = new EntityPotion(this.world, this, 32732);
 
@@ -156,17 +156,17 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
             double d0 = entityliving.locX + entityliving.motX - this.locX;
             double d1 = entityliving.locY + (double) entityliving.getHeadHeight() - 1.100000023841858D - this.locY;
             double d2 = entityliving.locZ + entityliving.motZ - this.locZ;
-            float f = MathHelper.sqrt(d0 * d0 + d2 * d2);
+            float f1 = MathHelper.sqrt(d0 * d0 + d2 * d2);
 
-            if (f >= 8.0F && !entityliving.hasEffect(MobEffectList.SLOWER_MOVEMENT)) {
+            if (f1 >= 8.0F && !entityliving.hasEffect(MobEffectList.SLOWER_MOVEMENT)) {
                 entitypotion.setPotionValue(32698);
             } else if (entityliving.getHealth() >= 8 && !entityliving.hasEffect(MobEffectList.POISON)) {
                 entitypotion.setPotionValue(32660);
-            } else if (f <= 3.0F && !entityliving.hasEffect(MobEffectList.WEAKNESS) && this.random.nextFloat() < 0.25F) {
+            } else if (f1 <= 3.0F && !entityliving.hasEffect(MobEffectList.WEAKNESS) && this.random.nextFloat() < 0.25F) {
                 entitypotion.setPotionValue(32696);
             }
 
-            entitypotion.shoot(d0, d1 + (double) (f * 0.2F), d2, 0.75F, 8.0F);
+            entitypotion.shoot(d0, d1 + (double) (f1 * 0.2F), d2, 0.75F, 8.0F);
             this.world.addEntity(entitypotion);
         }
     }

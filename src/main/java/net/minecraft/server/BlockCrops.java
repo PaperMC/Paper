@@ -4,31 +4,29 @@ import java.util.Random;
 
 public class BlockCrops extends BlockFlower {
 
-    protected BlockCrops(int i, int j) {
-        super(i, j);
-        this.textureId = j;
+    protected BlockCrops(int i) {
+        super(i);
         this.b(true);
         float f = 0.5F;
 
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.25F, 0.5F + f);
         this.a((CreativeModeTab) null);
         this.c(0.0F);
-        this.a(g);
+        this.a(Block.i); // CraftBukkit - i -> Block.i, decompile error
         this.D();
-        this.r();
     }
 
-    protected boolean d_(int i) {
+    protected boolean f_(int i) {
         return i == Block.SOIL.id;
     }
 
-    public void b(World world, int i, int j, int k, Random random) {
-        super.b(world, i, j, k, random);
+    public void a(World world, int i, int j, int k, Random random) {
+        super.a(world, i, j, k, random);
         if (world.getLightLevel(i, j + 1, k) >= 9) {
             int l = world.getData(i, j, k);
 
             if (l < 7) {
-                float f = this.l(world, i, j, k);
+                float f = this.k(world, i, j, k);
 
                 if (random.nextInt((int) (25.0F / f) + 1) == 0) {
                     org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this.id, ++l); // CraftBukkit
@@ -37,11 +35,17 @@ public class BlockCrops extends BlockFlower {
         }
     }
 
-    public void c_(World world, int i, int j, int k) {
-        world.setData(i, j, k, 7);
+    public void e_(World world, int i, int j, int k) {
+        int l = world.getData(i, j, k) + MathHelper.nextInt(world.random, 2, 5);
+
+        if (l > 7) {
+            l = 7;
+        }
+
+        world.setData(i, j, k, l, 2);
     }
 
-    private float l(World world, int i, int j, int k) {
+    private float k(World world, int i, int j, int k) {
         float f = 1.0F;
         int l = world.getTypeId(i, j, k - 1);
         int i1 = world.getTypeId(i, j, k + 1);
@@ -82,23 +86,15 @@ public class BlockCrops extends BlockFlower {
         return f;
     }
 
-    public int a(int i, int j) {
-        if (j < 0) {
-            j = 7;
-        }
-
-        return this.textureId + j;
-    }
-
     public int d() {
         return 6;
     }
 
-    protected int h() {
+    protected int j() {
         return Item.SEEDS.id;
     }
 
-    protected int j() {
+    protected int k() {
         return Item.WHEAT.id;
     }
 
@@ -110,7 +106,7 @@ public class BlockCrops extends BlockFlower {
 
                 for (int k1 = 0; k1 < j1; ++k1) {
                     if (world.random.nextInt(15) <= l) {
-                        this.b(world, i, j, k, new ItemStack(this.h(), 1, 0));
+                        this.b(world, i, j, k, new ItemStack(this.j(), 1, 0));
                     }
                 }
             }
@@ -118,7 +114,7 @@ public class BlockCrops extends BlockFlower {
     }
 
     public int getDropType(int i, Random random, int j) {
-        return i == 7 ? this.j() : this.h();
+        return i == 7 ? this.k() : this.j();
     }
 
     public int a(Random random) {

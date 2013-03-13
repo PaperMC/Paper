@@ -12,7 +12,6 @@ public class BlockSign extends BlockContainer {
     protected BlockSign(int i, Class oclass, boolean flag) {
         super(i, Material.WOOD);
         this.b = flag;
-        this.textureId = 4;
         this.a = oclass;
         float f = 0.25F;
         float f1 = 1.0F;
@@ -20,7 +19,7 @@ public class BlockSign extends BlockContainer {
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, f1, 0.5F + f);
     }
 
-    public AxisAlignedBB e(World world, int i, int j, int k) {
+    public AxisAlignedBB b(World world, int i, int j, int k) {
         return null;
     }
 
@@ -60,7 +59,7 @@ public class BlockSign extends BlockContainer {
         return false;
     }
 
-    public boolean c(IBlockAccess iblockaccess, int i, int j, int k) {
+    public boolean b(IBlockAccess iblockaccess, int i, int j, int k) {
         return true;
     }
 
@@ -68,7 +67,7 @@ public class BlockSign extends BlockContainer {
         return false;
     }
 
-    public TileEntity a(World world) {
+    public TileEntity b(World world) {
         try {
             return (TileEntity) this.a.newInstance();
         } catch (Exception exception) {
@@ -110,7 +109,7 @@ public class BlockSign extends BlockContainer {
 
         if (flag) {
             this.c(world, i, j, k, world.getData(i, j, k), 0);
-            world.setTypeId(i, j, k, 0);
+            world.setAir(i, j, k);
         }
 
         super.doPhysics(world, i, j, k, l);

@@ -40,8 +40,8 @@ public class ContainerEnchantTableInventory extends InventorySubcontainer { // C
     }
     // CraftBukkit end
 
-    ContainerEnchantTableInventory(ContainerEnchantTable containerenchanttable, String s, int i) {
-        super(s, i);
+    ContainerEnchantTableInventory(ContainerEnchantTable containerenchanttable, String s, boolean flag, int i) {
+        super(s, flag, i);
         this.enchantTable = containerenchanttable;
         this.setMaxStackSize(1); // CraftBukkit
     }
@@ -53,5 +53,9 @@ public class ContainerEnchantTableInventory extends InventorySubcontainer { // C
     public void update() {
         super.update();
         this.enchantTable.a((IInventory) this);
+    }
+
+    public boolean b(int i, ItemStack itemstack) {
+        return true;
     }
 }

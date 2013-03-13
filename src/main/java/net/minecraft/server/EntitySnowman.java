@@ -19,7 +19,7 @@ public class EntitySnowman extends EntityGolem implements IRangedEntity {
         this.targetSelector.a(1, new PathfinderGoalNearestAttackableTarget(this, EntityLiving.class, 16.0F, 0, true, false, IMonster.a));
     }
 
-    public boolean be() {
+    public boolean bh() {
         return true;
     }
 
@@ -29,7 +29,7 @@ public class EntitySnowman extends EntityGolem implements IRangedEntity {
 
     public void c() {
         super.c();
-        if (this.G()) {
+        if (this.F()) {
             // CraftBukkit start
             EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.DROWNING, 1);
             this.world.getServer().getPluginManager().callEvent(event);
@@ -94,15 +94,15 @@ public class EntitySnowman extends EntityGolem implements IRangedEntity {
         // CraftBukkit end
     }
 
-    public void d(EntityLiving entityliving) {
+    public void a(EntityLiving entityliving, float f) {
         EntitySnowball entitysnowball = new EntitySnowball(this.world, this);
         double d0 = entityliving.locX - this.locX;
         double d1 = entityliving.locY + (double) entityliving.getHeadHeight() - 1.100000023841858D - entitysnowball.locY;
         double d2 = entityliving.locZ - this.locZ;
-        float f = MathHelper.sqrt(d0 * d0 + d2 * d2) * 0.2F;
+        float f1 = MathHelper.sqrt(d0 * d0 + d2 * d2) * 0.2F;
 
-        entitysnowball.shoot(d0, d1 + (double) f, d2, 1.6F, 12.0F);
-        this.makeSound("random.bow", 1.0F, 1.0F / (this.aB().nextFloat() * 0.4F + 0.8F));
+        entitysnowball.shoot(d0, d1 + (double) f1, d2, 1.6F, 12.0F);
+        this.makeSound("random.bow", 1.0F, 1.0F / (this.aE().nextFloat() * 0.4F + 0.8F));
         this.world.addEntity(entitysnowball);
     }
 }

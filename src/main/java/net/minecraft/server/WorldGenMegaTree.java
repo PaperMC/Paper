@@ -63,10 +63,10 @@ public class WorldGenMegaTree extends WorldGenerator implements BlockSapling.Tre
             } else {
                 i1 = world.getTypeId(i, j - 1, k);
                 if ((i1 == Block.GRASS.id || i1 == Block.DIRT.id) && j < 256 - l - 1) {
-                    world.setRawTypeId(i, j - 1, k, Block.DIRT.id);
-                    world.setRawTypeId(i + 1, j - 1, k, Block.DIRT.id);
-                    world.setRawTypeId(i, j - 1, k + 1, Block.DIRT.id);
-                    world.setRawTypeId(i + 1, j - 1, k + 1, Block.DIRT.id);
+                    world.setTypeIdAndData(i, j - 1, k, Block.DIRT.id, 0);
+                    world.setTypeIdAndData(i + 1, j - 1, k, Block.DIRT.id, 0);
+                    world.setTypeIdAndData(i, j - 1, k + 1, Block.DIRT.id, 0);
+                    world.setTypeIdAndData(i + 1, j - 1, k + 1, Block.DIRT.id, 0);
                     this.a(world, i, k, j + l, 2, random);
 
                     for (int i2 = j + l - 2 - random.nextInt(4); i2 > j + l / 2; i2 -= 2 + random.nextInt(4)) {
@@ -167,8 +167,12 @@ public class WorldGenMegaTree extends WorldGenerator implements BlockSapling.Tre
                 for (int j2 = j - k1; j2 <= j + k1 + 1; ++j2) {
                     int k2 = j2 - j;
 
-                    if ((i2 >= 0 || k2 >= 0 || i2 * i2 + k2 * k2 <= k1 * k1) && (i2 <= 0 && k2 <= 0 || i2 * i2 + k2 * k2 <= (k1 + 1) * (k1 + 1)) && (random.nextInt(4) != 0 || i2 * i2 + k2 * k2 <= (k1 - 1) * (k1 - 1)) && !Block.q[world.getTypeId(l1, i1, j2)]) {
-                        this.setTypeAndData(world, l1, i1, j2, Block.LEAVES.id, this.c);
+                    if ((i2 >= 0 || k2 >= 0 || i2 * i2 + k2 * k2 <= k1 * k1) && (i2 <= 0 && k2 <= 0 || i2 * i2 + k2 * k2 <= (k1 + 1) * (k1 + 1)) && (random.nextInt(4) != 0 || i2 * i2 + k2 * k2 <= (k1 - 1) * (k1 - 1))) {
+                        int l2 = world.getTypeId(l1, i1, j2);
+
+                        if (l2 == 0 || l2 == Block.LEAVES.id) {
+                            this.setTypeAndData(world, l1, i1, j2, Block.LEAVES.id, this.c);
+                        }
                     }
                 }
             }

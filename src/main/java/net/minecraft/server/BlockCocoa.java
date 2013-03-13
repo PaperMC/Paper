@@ -4,34 +4,36 @@ import java.util.Random;
 
 public class BlockCocoa extends BlockDirectional {
 
+    public static final String[] a = new String[] { "cocoa_0", "cocoa_1", "cocoa_2"};
+
     public BlockCocoa(int i) {
-        super(i, 168, Material.PLANT);
+        super(i, Material.PLANT);
         this.b(true);
     }
 
-    public void b(World world, int i, int j, int k, Random random) {
-        if (!this.d(world, i, j, k)) {
+    public void a(World world, int i, int j, int k, Random random) {
+        if (!this.f(world, i, j, k)) {
             this.c(world, i, j, k, world.getData(i, j, k), 0);
-            world.setTypeId(i, j, k, 0);
+            world.setAir(i, j, k);
         } else if (world.random.nextInt(5) == 0) {
             int l = world.getData(i, j, k);
             int i1 = c(l);
 
             if (i1 < 2) {
                 ++i1;
-                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this.id, i1 << 2 | e(l)); // CraftBukkit
+                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this.id, i1 << 2 | j(l)); // CraftBukkit
             }
         }
     }
 
-    public boolean d(World world, int i, int j, int k) {
-        int l = e(world.getData(i, j, k));
+    public boolean f(World world, int i, int j, int k) {
+        int l = j(world.getData(i, j, k));
 
         i += Direction.a[l];
         k += Direction.b[l];
         int i1 = world.getTypeId(i, j, k);
 
-        return i1 == Block.LOG.id && BlockLog.e(world.getData(i, j, k)) == 3;
+        return i1 == Block.LOG.id && BlockLog.d(world.getData(i, j, k)) == 3;
     }
 
     public int d() {
@@ -46,14 +48,14 @@ public class BlockCocoa extends BlockDirectional {
         return false;
     }
 
-    public AxisAlignedBB e(World world, int i, int j, int k) {
+    public AxisAlignedBB b(World world, int i, int j, int k) {
         this.updateShape(world, i, j, k);
-        return super.e(world, i, j, k);
+        return super.b(world, i, j, k);
     }
 
     public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
         int l = iblockaccess.getData(i, j, k);
-        int i1 = e(l);
+        int i1 = j(l);
         int j1 = c(l);
         int k1 = 4 + j1 * 2;
         int l1 = 5 + j1 * 2;
@@ -77,10 +79,10 @@ public class BlockCocoa extends BlockDirectional {
         }
     }
 
-    public void postPlace(World world, int i, int j, int k, EntityLiving entityliving) {
+    public void postPlace(World world, int i, int j, int k, EntityLiving entityliving, ItemStack itemstack) {
         int l = ((MathHelper.floor((double) (entityliving.yaw * 4.0F / 360.0F) + 0.5D) & 3) + 0) % 4;
 
-        world.setData(i, j, k, l);
+        world.setData(i, j, k, l, 2);
     }
 
     public int getPlacedData(World world, int i, int j, int k, int l, float f, float f1, float f2, int i1) {
@@ -92,9 +94,9 @@ public class BlockCocoa extends BlockDirectional {
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
-        if (!this.d(world, i, j, k)) {
+        if (!this.f(world, i, j, k)) {
             this.c(world, i, j, k, world.getData(i, j, k), 0);
-            world.setTypeId(i, j, k, 0);
+            world.setAir(i, j, k);
         }
     }
 

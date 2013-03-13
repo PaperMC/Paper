@@ -6,13 +6,13 @@ import org.bukkit.event.entity.EntityDamageByBlockEvent; // CraftBukkit
 
 public class BlockCactus extends Block {
 
-    protected BlockCactus(int i, int j) {
-        super(i, j, Material.CACTUS);
+    protected BlockCactus(int i) {
+        super(i, Material.CACTUS);
         this.b(true);
         this.a(CreativeModeTab.c);
     }
 
-    public void b(World world, int i, int j, int k, Random random) {
+    public void a(World world, int i, int j, int k, Random random) {
         if (world.isEmpty(i, j + 1, k)) {
             int l;
 
@@ -25,22 +25,19 @@ public class BlockCactus extends Block {
 
                 if (i1 == 15) {
                     org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j + 1, k, this.id, 0); // CraftBukkit
-                    world.setData(i, j, k, 0);
+                    world.setData(i, j, k, 0, 4);
+                    this.doPhysics(world, i, j + 1, k, this.id);
                 } else {
-                    world.setData(i, j, k, i1 + 1);
+                    world.setData(i, j, k, i1 + 1, 4);
                 }
             }
         }
     }
 
-    public AxisAlignedBB e(World world, int i, int j, int k) {
+    public AxisAlignedBB b(World world, int i, int j, int k) {
         float f = 0.0625F;
 
         return AxisAlignedBB.a().a((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) ((float) (j + 1) - f), (double) ((float) (k + 1) - f));
-    }
-
-    public int a(int i) {
-        return i == 1 ? this.textureId - 1 : (i == 0 ? this.textureId + 1 : this.textureId);
     }
 
     public boolean b() {
@@ -56,17 +53,16 @@ public class BlockCactus extends Block {
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return !super.canPlace(world, i, j, k) ? false : this.d(world, i, j, k);
+        return !super.canPlace(world, i, j, k) ? false : this.f(world, i, j, k);
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
-        if (!this.d(world, i, j, k)) {
-            this.c(world, i, j, k, world.getData(i, j, k), 0);
-            world.setTypeId(i, j, k, 0);
+        if (!this.f(world, i, j, k)) {
+            world.setAir(i, j, k, true);
         }
     }
 
-    public boolean d(World world, int i, int j, int k) {
+    public boolean f(World world, int i, int j, int k) {
         if (world.getMaterial(i - 1, j, k).isBuildable()) {
             return false;
         } else if (world.getMaterial(i + 1, j, k).isBuildable()) {

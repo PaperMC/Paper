@@ -86,8 +86,12 @@ public class WorldGenTrees extends WorldGenerator implements BlockSapling.TreeGe
                             for (int l2 = k - i2; l2 <= k + i2; ++l2) {
                                 int i3 = l2 - k;
 
-                                if ((Math.abs(k2) != i2 || Math.abs(i3) != i2 || random.nextInt(2) != 0 && k1 != 0) && world.isEmpty(j2, j1, l2)) {
-                                    this.setTypeAndData(world, j2, j1, l2, Block.LEAVES.id, this.d);
+                                if (Math.abs(k2) != i2 || Math.abs(i3) != i2 || random.nextInt(2) != 0 && k1 != 0) {
+                                    int j3 = world.getTypeId(j2, j1, l2);
+
+                                    if (j3 == 0 || j3 == Block.LEAVES.id) {
+                                        this.setTypeAndData(world, j2, j1, l2, Block.LEAVES.id, this.d);
+                                    }
                                 }
                             }
                         }

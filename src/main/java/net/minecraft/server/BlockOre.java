@@ -4,13 +4,13 @@ import java.util.Random;
 
 public class BlockOre extends Block {
 
-    public BlockOre(int i, int j) {
-        super(i, j, Material.STONE);
+    public BlockOre(int i) {
+        super(i, Material.STONE);
         this.a(CreativeModeTab.b);
     }
 
     public int getDropType(int i, Random random, int j) {
-        return this.id == Block.COAL_ORE.id ? Item.COAL.id : (this.id == Block.DIAMOND_ORE.id ? Item.DIAMOND.id : (this.id == Block.LAPIS_ORE.id ? Item.INK_SACK.id : (this.id == Block.EMERALD_ORE.id ? Item.EMERALD.id : this.id)));
+        return this.id == Block.COAL_ORE.id ? Item.COAL.id : (this.id == Block.DIAMOND_ORE.id ? Item.DIAMOND.id : (this.id == Block.LAPIS_ORE.id ? Item.INK_SACK.id : (this.id == Block.EMERALD_ORE.id ? Item.EMERALD.id : (this.id == Block.QUARTZ_ORE.id ? Item.QUARTZ.id : this.id))));
     }
 
     public int a(Random random) {
@@ -45,9 +45,11 @@ public class BlockOre extends Block {
                 j1 = MathHelper.nextInt(world.random, 3, 7);
             } else if (this.id == Block.LAPIS_ORE.id) {
                 j1 = MathHelper.nextInt(world.random, 2, 5);
+            } else if (this.id == Block.QUARTZ_ORE.id) {
+                j1 = MathHelper.nextInt(world.random, 2, 5);
             }
 
-            this.f(world, i, j, k, j1);
+            this.j(world, i, j, k, j1);
         } */
     }
 
@@ -62,6 +64,8 @@ public class BlockOre extends Block {
             } else if (this.id == Block.EMERALD_ORE.id) {
                 j1 = MathHelper.nextInt(world.random, 3, 7);
             } else if (this.id == Block.LAPIS_ORE.id) {
+                j1 = MathHelper.nextInt(world.random, 2, 5);
+            } else if (this.id == Block.QUARTZ_ORE.id) {
                 j1 = MathHelper.nextInt(world.random, 2, 5);
             }
 

@@ -20,7 +20,7 @@ public class ItemSeedFood extends ItemFood {
 
             if (i1 == this.c && world.isEmpty(i, j + 1, k)) {
                 // CraftBukkit start
-                // world.setTypeId(i, j + 1, k, this.b);
+                // world.setTypeIdUpdate(i, j + 1, k, this.b);
                 if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j + 1, k, this.b, 0, clickedX, clickedY, clickedZ)) {
                     return false;
                 }

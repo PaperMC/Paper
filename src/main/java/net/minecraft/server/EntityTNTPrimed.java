@@ -5,6 +5,7 @@ import org.bukkit.event.entity.ExplosionPrimeEvent; // CraftBukkit
 public class EntityTNTPrimed extends Entity {
 
     public int fuseTicks;
+    private EntityLiving source;
     public float yield = 4; // CraftBukkit
     public boolean isIncendiary = false; // CraftBukkit
 
@@ -16,7 +17,7 @@ public class EntityTNTPrimed extends Entity {
         this.height = this.length / 2.0F;
     }
 
-    public EntityTNTPrimed(World world, double d0, double d1, double d2) {
+    public EntityTNTPrimed(World world, double d0, double d1, double d2, EntityLiving entityliving) {
         this(world);
         this.setPosition(d0, d1, d2);
         float f = (float) (Math.random() * 3.1415927410125732D * 2.0D);
@@ -28,6 +29,7 @@ public class EntityTNTPrimed extends Entity {
         this.lastX = d0;
         this.lastY = d1;
         this.lastZ = d2;
+        this.source = entityliving;
     }
 
     protected void a() {}
@@ -36,11 +38,11 @@ public class EntityTNTPrimed extends Entity {
         return false;
     }
 
-    public boolean L() {
+    public boolean K() {
         return !this.dead;
     }
 
-    public void j_() {
+    public void l_() {
         this.lastX = this.locX;
         this.lastY = this.locY;
         this.lastZ = this.locZ;
@@ -89,5 +91,9 @@ public class EntityTNTPrimed extends Entity {
 
     protected void a(NBTTagCompound nbttagcompound) {
         this.fuseTicks = nbttagcompound.getByte("Fuse");
+    }
+
+    public EntityLiving getSource() {
+        return this.source;
     }
 }
