@@ -1,6 +1,9 @@
 package net.minecraft.server;
 
-import org.bukkit.event.player.PlayerFishEvent; // CraftBukkit
+// CraftBukkit start
+import org.bukkit.event.player.PlayerFishEvent;
+import org.bukkit.entity.Fish;
+// CraftBukkit end
 
 public class ItemFishingRod extends Item {
 
@@ -19,7 +22,8 @@ public class ItemFishingRod extends Item {
             entityhuman.bK();
         } else {
             // CraftBukkit start
-            PlayerFishEvent playerFishEvent = new PlayerFishEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), null, PlayerFishEvent.State.FISHING);
+            EntityFishingHook hook = new EntityFishingHook(world, entityhuman);
+            PlayerFishEvent playerFishEvent = new PlayerFishEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), null, (Fish) hook.getBukkitEntity(), PlayerFishEvent.State.FISHING);
             world.getServer().getPluginManager().callEvent(playerFishEvent);
 
             if (playerFishEvent.isCancelled()) {
@@ -29,7 +33,7 @@ public class ItemFishingRod extends Item {
 
             world.makeSound(entityhuman, "random.bow", 0.5F, 0.4F / (e.nextFloat() * 0.4F + 0.8F));
             if (!world.isStatic) {
-                world.addEntity(new EntityFishingHook(world, entityhuman));
+                world.addEntity(hook); // CraftBukkit - moved creation up
             }
 
             entityhuman.bK();
