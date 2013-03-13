@@ -108,7 +108,7 @@ public class CraftInventoryCustom extends CraftInventory {
 
         public void update() {}
 
-        public boolean a_(EntityHuman entityhuman) {
+        public boolean a(EntityHuman entityhuman) {
             return true;
         }
 
@@ -132,8 +132,6 @@ public class CraftInventoryCustom extends CraftInventory {
             return type;
         }
 
-        public void f() {}
-
         public void g() {}
 
         public InventoryHolder getOwner() {
@@ -141,5 +139,13 @@ public class CraftInventoryCustom extends CraftInventory {
         }
 
         public void startOpen() {}
+
+        public boolean c() {
+            return false;
+        }
+
+        public boolean b(int i, ItemStack itemstack) {
+            return true;
+        }
     }
 }

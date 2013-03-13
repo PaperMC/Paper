@@ -325,7 +325,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public boolean hasLineOfSight(Entity other) {
-        return getHandle().aA().canSee(((CraftEntity) other).getHandle()); // az should be getEntitySenses
+        return getHandle().aD().canSee(((CraftEntity) other).getHandle()); // az should be getEntitySenses
     }
 
     public boolean getRemoveWhenFarAway() {
@@ -355,5 +355,31 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         }
 
         return super.teleport(location, cause);
+    }
+
+    public void setCustomName(String name) {
+        if (name == null) {
+            name = "";
+        }
+
+        getHandle().setCustomName(name);
+    }
+
+    public String getCustomName() {
+        String name = getHandle().getCustomName();
+
+        if (name == null || name.length() == 0) {
+            return null;
+        }
+
+        return name;
+    }
+
+    public void setCustomNameVisible(boolean flag) {
+        getHandle().setCustomNameVisible(flag);
+    }
+
+    public boolean getCustomNameVisible() {
+        return getHandle().getCustomNameVisible();
     }
 }

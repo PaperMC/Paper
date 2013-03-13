@@ -7,6 +7,7 @@ import java.util.List;
 
 import net.minecraft.server.BiomeBase;
 import net.minecraft.server.BlockRedstoneWire;
+import net.minecraft.server.Direction;
 import net.minecraft.server.EnumSkyBlock;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.TileEntitySkull;
@@ -84,14 +85,14 @@ public class CraftBlock implements Block {
     }
 
     public void setData(final byte data) {
-        chunk.getHandle().world.setData(x, y, z, data);
+        chunk.getHandle().world.setData(x, y, z, data, 3);
     }
 
     public void setData(final byte data, boolean applyPhysics) {
         if (applyPhysics) {
-            chunk.getHandle().world.setData(x, y, z, data);
+            chunk.getHandle().world.setData(x, y, z, data, 3);
         } else {
-            chunk.getHandle().world.setRawData(x, y, z, data);
+            chunk.getHandle().world.setData(x, y, z, data, 4);
         }
     }
 
@@ -104,22 +105,22 @@ public class CraftBlock implements Block {
     }
 
     public boolean setTypeId(final int type) {
-        return chunk.getHandle().world.setTypeId(x, y, z, type);
+        return chunk.getHandle().world.setTypeIdAndData(x, y, z, type, getData(), 3);
     }
 
     public boolean setTypeId(final int type, final boolean applyPhysics) {
         if (applyPhysics) {
             return setTypeId(type);
         } else {
-            return chunk.getHandle().world.setRawTypeId(x, y, z, type);
+            return chunk.getHandle().world.setTypeIdAndData(x, y, z, type, getData(), 4);
         }
     }
 
     public boolean setTypeIdAndData(final int type, final byte data, final boolean applyPhysics) {
         if (applyPhysics) {
-            return chunk.getHandle().world.setTypeIdAndData(x, y, z, type, data);
+            return chunk.getHandle().world.setTypeIdAndData(x, y, z, type, data, 3);
         } else {
-            boolean success = chunk.getHandle().world.setRawTypeIdAndData(x, y, z, type, data);
+            boolean success = chunk.getHandle().world.setTypeIdAndData(x, y, z, type, data, 4);
             if (success) {
                 chunk.getHandle().world.notify(x, y, z);
             }
@@ -294,7 +295,7 @@ public class CraftBlock implements Block {
     }
 
     public boolean isBlockPowered() {
-        return chunk.getHandle().world.isBlockPowered(x, y, z);
+        return chunk.getHandle().world.getBlockPower(x, y, z) > 0;
     }
 
     public boolean isBlockIndirectlyPowered() {
@@ -320,7 +321,14 @@ public class CraftBlock implements Block {
     }
 
     public boolean isBlockFaceIndirectlyPowered(BlockFace face) {
-        return chunk.getHandle().world.isBlockFaceIndirectlyPowered(x, y, z, blockFaceToNotch(face));
+        int power = chunk.getHandle().world.getBlockFacePower(x, y, z, blockFaceToNotch(face));
+
+        Block relative = getRelative(face);
+        if (relative.getType() == Material.REDSTONE_WIRE) {
+            return Math.max(power, relative.getData()) > 0;
+        }
+
+        return power > 0;
     }
 
     public int getBlockPower(BlockFace face) {

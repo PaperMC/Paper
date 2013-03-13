@@ -522,7 +522,7 @@ public final class CraftServer implements Server {
 
     public void reload() {
         configuration = YamlConfiguration.loadConfiguration(getConfigFile());
-        PropertyManager config = new PropertyManager(console.options);
+        PropertyManager config = new PropertyManager(console.options, console.getLogger());
 
         ((DedicatedServer) console).propertyManager = config;
 
@@ -707,7 +707,7 @@ public final class CraftServer implements Server {
         } while(used);
         boolean hardcore = false;
 
-        WorldServer internal = new WorldServer(console, new ServerNBTManager(getWorldContainer(), name, true), name, dimension, new WorldSettings(creator.seed(), EnumGamemode.a(getDefaultGameMode().getValue()), generateStructures, hardcore, type), console.methodProfiler, creator.environment(), generator);
+        WorldServer internal = new WorldServer(console, new ServerNBTManager(getWorldContainer(), name, true), name, dimension, new WorldSettings(creator.seed(), EnumGamemode.a(getDefaultGameMode().getValue()), generateStructures, hardcore, type), console.methodProfiler, console.getLogger(), creator.environment(), generator);
 
         if (!(worlds.containsKey(name.toLowerCase()))) {
             return null;
@@ -830,7 +830,7 @@ public final class CraftServer implements Server {
     }
 
     public Logger getLogger() {
-        return MinecraftServer.log;
+        return console.getLogger().getLogger();
     }
 
     public ConsoleReader getReader() {

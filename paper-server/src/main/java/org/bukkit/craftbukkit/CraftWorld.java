@@ -861,11 +861,17 @@ public class CraftWorld implements World {
             }
         } else if (Minecart.class.isAssignableFrom(clazz)) {
             if (PoweredMinecart.class.isAssignableFrom(clazz)) {
-                entity = new EntityMinecart(world, x, y, z, CraftMinecart.Type.PoweredMinecart.getId());
+                entity = new EntityMinecartFurnace(world, x, y, z);
             } else if (StorageMinecart.class.isAssignableFrom(clazz)) {
-                entity = new EntityMinecart(world, x, y, z, CraftMinecart.Type.StorageMinecart.getId());
+                entity = new EntityMinecartChest(world, x, y, z);
+            } else if (MinecartTNT.class.isAssignableFrom(clazz)) {
+                entity = new EntityMinecartTNT(world, x, y, z);
+            } else if (MinecartHopper.class.isAssignableFrom(clazz)) {
+                entity = new EntityMinecartHopper(world, x, y, z);
+            } else if (MinecartMobSpawner.class.isAssignableFrom(clazz)) {
+                entity = new EntityMinecartMobSpawner(world, x, y, z);
             } else {
-                entity = new EntityMinecart(world, x, y, z, CraftMinecart.Type.Minecart.getId());
+                entity = new EntityMinecartRideable(world, x, y, z);
             }
         } else if (EnderSignal.class.isAssignableFrom(clazz)) {
             entity = new EntityEnderSignal(world, x, y, z);
@@ -989,7 +995,7 @@ public class CraftWorld implements World {
                 entity = null;
             }
         } else if (TNTPrimed.class.isAssignableFrom(clazz)) {
-            entity = new EntityTNTPrimed(world, x, y, z);
+            entity = new EntityTNTPrimed(world, x, y, z, null);
         } else if (ExperienceOrb.class.isAssignableFrom(clazz)) {
             entity = new EntityExperienceOrb(world, x, y, z, 0);
         } else if (Weather.class.isAssignableFrom(clazz)) {
@@ -1102,7 +1108,7 @@ public class CraftWorld implements World {
         block.setType(org.bukkit.Material.AIR);
         // not sure what this does, seems to have something to do with the 'base' material of a block.
         // For example, WOODEN_STAIRS does something with WOOD in this method
-        net.minecraft.server.Block.byId[blockId].wasExploded(this.world, blockX, blockY, blockZ);
+        net.minecraft.server.Block.byId[blockId].wasExploded(this.world, blockX, blockY, blockZ, null);
     }
 
     public void sendPluginMessage(Plugin source, String channel, byte[] message) {

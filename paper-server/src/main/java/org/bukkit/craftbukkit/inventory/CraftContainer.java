@@ -85,7 +85,7 @@ public class CraftContainer extends Container {
                 setupSlots(top, bottom);
             }
             int size = getSize();
-            player.getHandle().playerConnection.sendPacket(new Packet100OpenWindow(this.windowId, type, cachedTitle, size));
+            player.getHandle().playerConnection.sendPacket(new Packet100OpenWindow(this.windowId, type, cachedTitle, size, true));
             player.updateInventory();
         }
         return true;

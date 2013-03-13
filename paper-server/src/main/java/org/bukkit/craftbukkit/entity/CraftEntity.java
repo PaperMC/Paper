@@ -136,13 +136,14 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             if (entity instanceof EntityLightning) { return new CraftLightningStrike(server, (EntityLightning) entity); }
             else { return new CraftWeather(server, (EntityWeather) entity); }
         }
-        else if (entity instanceof EntityMinecart) {
-            EntityMinecart mc = (EntityMinecart) entity;
-            if (mc.type == CraftMinecart.Type.StorageMinecart.getId()) { return new CraftStorageMinecart(server, mc); }
-            else if (mc.type == CraftMinecart.Type.PoweredMinecart.getId()) { return new CraftPoweredMinecart(server, mc); }
-            else { return new CraftMinecart(server, mc); }
-        }
-        else if (entity instanceof EntityHanging) {
+        else if (entity instanceof EntityMinecartAbstract) {
+            if (entity instanceof EntityMinecartFurnace) { return new CraftPoweredMinecart(server, (EntityMinecartFurnace) entity); }
+            else if (entity instanceof EntityMinecartChest) { return new CraftStorageMinecart(server, (EntityMinecartChest) entity); }
+            else if (entity instanceof EntityMinecartTNT) { return new CraftMinecartTNT(server, (EntityMinecartTNT) entity); }
+            else if (entity instanceof EntityMinecartHopper) { return new CraftMinecartHopper(server, (EntityMinecartHopper) entity); }
+            else if (entity instanceof EntityMinecartMobSpawner) { return new CraftMinecartMobSpawner(server, (EntityMinecartMobSpawner) entity); }
+            else { return new CraftMinecart(server, (EntityMinecartRideable) entity); }
+        } else if (entity instanceof EntityHanging) {
             if (entity instanceof EntityPainting) { return new CraftPainting(server, (EntityPainting) entity); }
             else if (entity instanceof EntityItemFrame) { return new CraftItemFrame(server, (EntityItemFrame) entity); }
             else { return new CraftHanging(server, (EntityHanging) entity); }
@@ -302,7 +303,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public UUID getUniqueId() {
-        return getHandle().uniqueId;
+        return getHandle().uniqueID;
     }
 
     public int getTicksLived() {

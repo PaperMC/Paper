@@ -238,7 +238,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         String title = container.getBukkitView().getTitle();
         int size = container.getBukkitView().getTopInventory().getSize();
 
-        player.playerConnection.sendPacket(new Packet100OpenWindow(container.windowId, windowType, title, size));
+        player.playerConnection.sendPacket(new Packet100OpenWindow(container.windowId, windowType, title, size, true));
         getHandle().activeContainer = container;
         getHandle().activeContainer.addSlotListener(player);
     }
@@ -270,7 +270,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (location == null) {
             location = getLocation();
         }
-        getHandle().startEnchanting(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        getHandle().startEnchanting(location.getBlockX(), location.getBlockY(), location.getBlockZ(), null);
         if (force) {
             getHandle().activeContainer.checkReachable = false;
         }
@@ -303,7 +303,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         int windowType = CraftContainer.getNotchInventoryType(type);
         String title = inventory.getTitle();
         int size = inventory.getTopInventory().getSize();
-        player.playerConnection.sendPacket(new Packet100OpenWindow(container.windowId, windowType, title, size));
+        player.playerConnection.sendPacket(new Packet100OpenWindow(container.windowId, windowType, title, size, false));
         player.activeContainer = container;
         player.activeContainer.addSlotListener(player);
     }
@@ -313,7 +313,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     public boolean isBlocking() {
-        return getHandle().bh();
+        return getHandle().bk(); // Should be isBlocking
     }
 
     public boolean setWindowProperty(InventoryView.Property prop, int value) {

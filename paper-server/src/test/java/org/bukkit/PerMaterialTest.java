@@ -122,7 +122,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @Test
     public void isOccluding() {
         if (material.isBlock()) {
-            assertThat(material.isOccluding(), is(Block.i(material.getId())));
+            assertThat(material.isOccluding(), is(Block.l(material.getId())));
         } else {
             assertFalse(material.isOccluding());
         }
