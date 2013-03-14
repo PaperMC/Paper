@@ -1,13 +1,35 @@
-From 48984bf4577dd62bf48e92c4d09bcc39d530fa90 Mon Sep 17 00:00:00 2001
+From 5c0b24378261fd1b5dc1c0911b77a974f7395e70 Mon Sep 17 00:00:00 2001
 From: James Clarke <jamesrtclarke@me.com>
 Date: Sat, 26 Jan 2013 10:39:45 +0000
 Subject: [PATCH] ANSI color codes now reset text attributes. Fixes BUKKIT-3508
 
 The client resets all formatting after a color code is received, but currently the ANSI codes do not, and so the console does not accurately reflect the appearance of the formatted text. Instead, the ANSI color codes are now set to reset all text attributes.
 ---
+ .../net/minecraft/server/ConsoleLogFormatter.java  |  3 +-
  .../craftbukkit/command/ColouredConsoleSender.java | 34 +++++++++++-----------
- 1 file changed, 17 insertions(+), 17 deletions(-)
+ 2 files changed, 18 insertions(+), 19 deletions(-)
 
+diff --git a/src/main/java/net/minecraft/server/ConsoleLogFormatter.java b/src/main/java/net/minecraft/server/ConsoleLogFormatter.java
+index 6a58493..6575ea7 100644
+--- a/src/main/java/net/minecraft/server/ConsoleLogFormatter.java
++++ b/src/main/java/net/minecraft/server/ConsoleLogFormatter.java
+@@ -13,7 +13,6 @@ final class ConsoleLogFormatter extends Formatter {
+ 
+     private SimpleDateFormat a = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+     // CraftBukkit start - add color stripping, change constructor to take it
+-    private Pattern pattern = Pattern.compile("\\x1B\\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]");
+     private boolean strip = false;
+ 
+     ConsoleLogFormatter(boolean strip) {
+@@ -56,7 +55,7 @@ final class ConsoleLogFormatter extends Formatter {
+ 
+         // CraftBukkit start - handle stripping color
+         if (this.strip) {
+-            return this.pattern.matcher(stringbuilder.toString()).replaceAll("");
++            return org.bukkit.ChatColor.stripColor(stringbuilder.toString());
+         } else {
+             return stringbuilder.toString();
+         }
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/ColouredConsoleSender.java b/src/main/java/org/bukkit/craftbukkit/command/ColouredConsoleSender.java
 index c86253c..3ab8f3b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/ColouredConsoleSender.java
