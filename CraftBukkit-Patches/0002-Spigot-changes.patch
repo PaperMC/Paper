@@ -1,6 +1,6 @@
-From e3016c35f320021f736589487349f7a4887c7e38 Mon Sep 17 00:00:00 2001
+From c9ed47ce088878a5e0fdaa3bcf635aa201a6fd82 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Sat, 16 Mar 2013 08:51:12 +1100
+Date: Sat, 16 Mar 2013 10:10:46 +1100
 Subject: [PATCH] Spigot changes.
 
 ---
@@ -22,7 +22,7 @@ Subject: [PATCH] Spigot changes.
  src/main/java/net/minecraft/server/PlayerList.java |  10 +-
  .../net/minecraft/server/ThreadLoginVerifier.java  |  21 +++
  src/main/java/net/minecraft/server/World.java      | 152 ++++++++++++++++++---
- .../java/net/minecraft/server/WorldServer.java     | 126 +++++++++++++----
+ .../java/net/minecraft/server/WorldServer.java     | 123 ++++++++++++++---
  .../java/org/bukkit/craftbukkit/CraftServer.java   |  45 +++---
  .../java/org/bukkit/craftbukkit/CraftWorld.java    |  76 ++++++++++-
  src/main/java/org/bukkit/craftbukkit/Spigot.java   |  20 +++
@@ -32,7 +32,7 @@ Subject: [PATCH] Spigot changes.
  .../org/bukkit/craftbukkit/util/LongHashSet.java   |  11 +-
  .../bukkit/craftbukkit/util/LongObjectHashMap.java |   5 +
  src/main/resources/configurations/bukkit.yml       |  27 ++++
- 28 files changed, 559 insertions(+), 98 deletions(-)
+ 28 files changed, 557 insertions(+), 97 deletions(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/Spigot.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/util/FlatMap.java
 
@@ -467,7 +467,7 @@ index 0686ba0..c185f64 100644
              URL url = new URL("http://session.minecraft.net/game/checkserver.jsp?user=" + URLEncoder.encode(PendingConnection.d(this.pendingConnection), "UTF-8") + "&serverId=" + URLEncoder.encode(s, "UTF-8"));
              BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(url.openStream()));
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 9c39815..7b2539b 100644
+index 9c39815..67f2560 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -67,14 +67,27 @@ public abstract class World implements IBlockAccess {
@@ -484,15 +484,15 @@ index 9c39815..7b2539b 100644
      public boolean isStatic;
 +    // Spigot start
  
-+    public static final long chunkToKey(int x, int z) {
++    public static long chunkToKey(int x, int z) {
 +        long k = ((((long)x) & 0xFFFF0000L) << 16) | ((((long)x) & 0x0000FFFFL) << 0);
 +        k |= ((((long)z) & 0xFFFF0000L) << 32) | ((((long)z) & 0x0000FFFFL) << 16);
 +        return k;
 +    }
-+    public static final int keyToX(long k) {
++    public static int keyToX(long k) {
 +        return (int)(((k >> 16) & 0xFFFF0000) | (k & 0x0000FFFF));
 +    }
-+    public static final int keyToZ(long k) {
++    public static int keyToZ(long k) {
 +        return (int)(((k >> 32) & 0xFFFF0000L) | ((k >> 16) & 0x0000FFFF));
 +    }
 +    // Spigot end
@@ -519,8 +519,8 @@ index 9c39815..7b2539b 100644
          // CraftBukkit end
  
 +        // Spigot start
-+        this.chunkTickList = new gnu.trove.map.hash.TLongShortHashMap(getWorld().growthPerTick * 5, 0.7f, Long.MIN_VALUE, Short.MIN_VALUE);
-+        chunkTickList.setAutoCompactionFactor(0.0F);
++        chunkTickList = new gnu.trove.map.hash.TLongShortHashMap(world.growthPerTick * 5, 0.7f, Long.MIN_VALUE, Short.MIN_VALUE);
++        chunkTickList.setAutoCompactionFactor(0);
 +        // Spigot end
 +
          this.O = this.random.nextInt(12000);
@@ -651,13 +651,13 @@ index 9c39815..7b2539b 100644
 +
 +        if (optimalChunks <= 0) return;
 +        if (players.size() == 0) return;
-+        //Keep chunks with growth inside of the optimal chunk range
-+        int chunksPerPlayer = Math.min(200, Math.max(1, (int)(((optimalChunks - players.size()) / (double)players.size()) + 0.5)));
++        // Keep chunks with growth inside of the optimal chunk range
++        int chunksPerPlayer = Math.min(200, Math.max(1, (int) (((optimalChunks - players.size()) / (double) players.size()) + 0.5)));
 +        int randRange = 3 + chunksPerPlayer / 30;
-+        if(randRange > chunkTickRadius) { // Limit to normal tick radius - including view distance
++        if (randRange > chunkTickRadius) { // Limit to normal tick radius - including view distance
 +            randRange = chunkTickRadius;
 +        }
-+        //odds of growth happening vs growth happening in vanilla
++        // odds of growth happening vs growth happening in vanilla
 +        final float modifiedOdds = Math.max(35, Math.min(100, ((chunksPerPlayer + 1) * 100F) / 15F));
 +        this.modifiedOdds = modifiedOdds;
 +        this.growthOdds = modifiedOdds;
@@ -681,12 +681,12 @@ index 9c39815..7b2539b 100644
 +            int chunkX = MathHelper.floor(entityhuman.locX / 16.0D);
 +            int chunkZ = MathHelper.floor(entityhuman.locZ / 16.0D);
 +
-+            //Always update the chunk the player is on
++            // Always update the chunk the player is on
 +            long key = chunkToKey(chunkX, chunkZ);
 +            int existingPlayers = Math.max(0, chunkTickList.get(key)); //filter out -1's
 +            chunkTickList.put(key, (short) (existingPlayers + 1));
 +
-+            //Check and see if we update the chunks surrounding the player this tick
++            // Check and see if we update the chunks surrounding the player this tick
 +            for (int chunk = 0; chunk < chunksPerPlayer; chunk++) {
 +                int dx = (random.nextBoolean() ? 1 : -1) * random.nextInt(randRange);
 +                int dz = (random.nextBoolean() ? 1 : -1) * random.nextInt(randRange);
@@ -710,7 +710,7 @@ index 9c39815..7b2539b 100644
              entityhuman = (EntityHuman) this.players.get(i);
              j = MathHelper.floor(entityhuman.locX) + this.random.nextInt(11) - 5;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index d99b6a3..35c76bf 100644
+index d99b6a3..b806bdf 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -1,5 +1,7 @@
@@ -747,11 +747,11 @@ index d99b6a3..35c76bf 100644
          }
  
          if (this.M == null) {
-@@ -277,15 +280,31 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -277,15 +280,30 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
      }
  
      protected void g() {
-+    	 // Spigot start
++        // Spigot start
 +        this.aggregateTicks--;
 +        if (this.aggregateTicks != 0) return;
 +        aggregateTicks = this.getWorld().aggregateTicks;
@@ -760,13 +760,11 @@ index d99b6a3..35c76bf 100644
          int i = 0;
          int j = 0;
          // CraftBukkit start
--        // Iterator iterator = this.chunkTickList.iterator();
-+        // Iterator iterator = this.chunkTickList.iterator(); // CraftBukkit
+         // Iterator iterator = this.chunkTickList.iterator();
  
 -        for (long chunkCoord : this.chunkTickList.popAll()) {
 -            int chunkX = LongHash.msw(chunkCoord);
 -            int chunkZ = LongHash.lsw(chunkCoord);
-+        // CraftBukkit start
 +        // Spigot start
 +        for (TLongShortIterator iter = chunkTickList.iterator(); iter.hasNext();) {
 +            iter.advance();
@@ -774,7 +772,7 @@ index d99b6a3..35c76bf 100644
 +            int chunkX = World.keyToX(chunkCoord);
 +            int chunkZ = World.keyToZ(chunkCoord);
 +            // If unloaded, or in procedd of being unloaded, drop it
-+            if ((!this.isChunkLoaded(chunkX,  chunkZ)) || (this.chunkProviderServer.unloadQueue.contains(chunkX, chunkZ))) {
++            if ((!this.isChunkLoaded(chunkX, chunkZ)) || (this.chunkProviderServer.unloadQueue.contains(chunkX, chunkZ))) {
 +                iter.remove();
 +                continue;
 +            }
@@ -783,7 +781,7 @@ index d99b6a3..35c76bf 100644
              // ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) iterator.next();
              int k = chunkX * 16;
              int l = chunkZ * 16;
-@@ -383,7 +402,17 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -383,7 +401,17 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
  
                          if (block != null && block.isTicking()) {
                              ++i;
@@ -802,7 +800,7 @@ index d99b6a3..35c76bf 100644
                          }
                      }
                  }
-@@ -429,10 +458,11 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -429,10 +457,11 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
                  nextticklistentry.a(j1);
              }
  
@@ -818,7 +816,7 @@ index d99b6a3..35c76bf 100644
          }
      }
  
-@@ -444,10 +474,11 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -444,10 +473,11 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
              nextticklistentry.a((long) i1 + this.worldData.getTime());
          }
  
@@ -834,7 +832,7 @@ index d99b6a3..35c76bf 100644
      }
  
      public void tickEntities() {
-@@ -469,9 +500,9 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -469,9 +499,9 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
      public boolean a(boolean flag) {
          int i = this.M.size();
  
@@ -847,7 +845,7 @@ index d99b6a3..35c76bf 100644
              if (i > 1000) {
                  // CraftBukkit start - if the server has too much to process over time, try to alleviate that
                  if (i > 20 * 1000) {
-@@ -492,9 +523,11 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -492,9 +522,11 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
                      break;
                  }
  
@@ -862,7 +860,7 @@ index d99b6a3..35c76bf 100644
              }
  
              this.methodProfiler.b();
-@@ -536,10 +569,12 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -536,10 +568,12 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
              this.methodProfiler.b();
              this.T.clear();
              return !this.M.isEmpty();
@@ -876,7 +874,7 @@ index d99b6a3..35c76bf 100644
          ArrayList arraylist = null;
          ChunkCoordIntPair chunkcoordintpair = chunk.l();
          int i = (chunkcoordintpair.x << 4) - 2;
-@@ -578,6 +613,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -578,6 +612,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
          }
  
          return arraylist;
@@ -884,7 +882,7 @@ index d99b6a3..35c76bf 100644
      }
  
      public void entityJoinedWorld(Entity entity, boolean flag) {
-@@ -648,7 +684,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -648,7 +683,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
          }
  
          if (this.L == null) {
@@ -893,7 +891,7 @@ index d99b6a3..35c76bf 100644
          }
  
          if (this.M == null) {
-@@ -934,4 +970,48 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -934,4 +969,48 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
          return this.setTypeIdAndData(x, y, z, typeId, data, 3);
      }
      // CraftBukkit end
