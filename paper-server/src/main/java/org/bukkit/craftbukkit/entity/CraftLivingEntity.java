@@ -379,7 +379,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         getHandle().setCustomNameVisible(flag);
     }
 
-    public boolean getCustomNameVisible() {
+    public boolean isCustomNameVisible() {
         return getHandle().getCustomNameVisible();
     }
 }
