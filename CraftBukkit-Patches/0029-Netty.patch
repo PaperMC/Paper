@@ -1,4 +1,4 @@
-From a6b6583baf41c2a3043bae060eca88e7f6faf22d Mon Sep 17 00:00:00 2001
+From 5bb73d19023fdf238e475dfe5d97c91b9373a1f3 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 14 Feb 2013 17:32:20 +1100
 Subject: [PATCH] Netty
@@ -36,7 +36,7 @@ Subject: [PATCH] Netty
  .../java/net/minecraft/server/INetworkManager.java |  24 ++
  .../net/minecraft/server/Packet51MapChunk.java     |   2 +-
  .../net/minecraft/server/Packet56MapChunkBulk.java |   2 +-
- .../net/minecraft/server/PendingConnection.java    |  11 +-
+ .../net/minecraft/server/PendingConnection.java    |   9 +-
  .../net/minecraft/server/ThreadCommandReader.java  |   1 +
  .../net/minecraft/server/ThreadLoginVerifier.java  |   1 +
  .../craftbukkit/scheduler/CraftScheduler.java      |   2 +-
@@ -48,7 +48,7 @@ Subject: [PATCH] Netty
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
  src/main/java/org/spigotmc/netty/ReadState.java    |  16 ++
- 17 files changed, 924 insertions(+), 8 deletions(-)
+ 17 files changed, 923 insertions(+), 7 deletions(-)
  create mode 100644 src/main/java/net/minecraft/server/INetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
@@ -60,7 +60,7 @@ Subject: [PATCH] Netty
  create mode 100644 src/main/java/org/spigotmc/netty/ReadState.java
 
 diff --git a/pom.xml b/pom.xml
-index f17bd19..8efab09 100644
+index e04acf9..0f9e86a 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -132,6 +132,11 @@
@@ -76,20 +76,20 @@ index f17bd19..8efab09 100644
  
    <!-- This builds a completely 'ready to start' jar with all dependencies inside -->
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index bd0377a..73cb5b1 100644
+index f985c05..70d05a6 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
-@@ -32,7 +32,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-     public DedicatedServer(joptsimple.OptionSet options) {
+@@ -34,7 +34,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
          super(options);
          // CraftBukkit end
+         this.l = new ConsoleLogManager("Minecraft-Server", (String) null, (String) null); // CraftBukkit - null last argument
 -        new ThreadSleepForever(this);
 +        // new ThreadSleepForever(this); // Spigot
      }
  
      protected boolean init() throws java.net.UnknownHostException { // CraftBukkit - throws UnknownHostException
-@@ -93,7 +93,11 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-         log.info("Starting Minecraft server on " + (this.getServerIp().length() == 0 ? "*" : this.getServerIp()) + ":" + this.G());
+@@ -94,7 +94,11 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+         this.getLogger().info("Starting Minecraft server on " + (this.getServerIp().length() == 0 ? "*" : this.getServerIp()) + ":" + this.G());
  
          try {
 -            this.r = new DedicatedServerConnection(this, inetaddress, this.G());
@@ -99,8 +99,8 @@ index bd0377a..73cb5b1 100644
 +                    : new DedicatedServerConnection(this, inetaddress, this.G());
 +            // Spigot end
          } catch (Throwable ioexception) { // CraftBukkit - IOException -> Throwable
-             log.warning("**** FAILED TO BIND TO PORT!");
-             log.log(Level.WARNING, "The exception was: " + ioexception.toString());
+             this.getLogger().warning("**** FAILED TO BIND TO PORT!");
+             this.getLogger().warning("The exception was: {0}", new Object[] { ioexception.toString()});
 diff --git a/src/main/java/net/minecraft/server/INetworkManager.java b/src/main/java/net/minecraft/server/INetworkManager.java
 new file mode 100644
 index 0000000..ff3daae
@@ -158,20 +158,11 @@ index 9d5cee7..8486d82 100644
      };
      // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
-index 8413a15..cdd456f 100644
+index 5f4bcf2..7b015d7 100644
 --- a/src/main/java/net/minecraft/server/PendingConnection.java
 +++ b/src/main/java/net/minecraft/server/PendingConnection.java
-@@ -17,7 +17,7 @@ public class PendingConnection extends Connection {
-     private byte[] d;
-     public static Logger logger = Logger.getLogger("Minecraft");
-     private static Random random = new Random();
--    public NetworkManager networkManager;
-+    public INetworkManager networkManager;
-     public boolean c = false;
-     private MinecraftServer server;
-     private int g = 0;
-@@ -28,10 +28,15 @@ public class PendingConnection extends Connection {
-     private SecretKey l = null;
+@@ -27,10 +27,15 @@ public class PendingConnection extends Connection {
+     private SecretKey k = null;
      public String hostname = ""; // CraftBukkit - add field
  
 +    public PendingConnection(MinecraftServer minecraftserver, org.spigotmc.netty.NettyNetworkManager networkManager) {
@@ -181,23 +172,23 @@ index 8413a15..cdd456f 100644
 +
      public PendingConnection(MinecraftServer minecraftserver, Socket socket, String s) throws java.io.IOException { // CraftBukkit - throws IOException
          this.server = minecraftserver;
-         this.networkManager = new NetworkManager(socket, s, this, minecraftserver.F().getPrivate());
+         this.networkManager = new NetworkManager(minecraftserver.getLogger(), socket, s, this, minecraftserver.F().getPrivate());
 -        this.networkManager.e = 0;
 +        // this.networkManager.e = 0;
      }
  
      // CraftBukkit start
-@@ -147,7 +152,7 @@ public class PendingConnection extends Connection {
+@@ -146,7 +151,7 @@ public class PendingConnection extends Connection {
              // CraftBukkit
              org.bukkit.event.server.ServerListPingEvent pingEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callServerListPingEvent(this.server.server, getSocket().getInetAddress(), this.server.getMotd(), playerlist.getPlayerCount(), playerlist.getMaxPlayers());
  
 -            if (packet254getinfo.a == 1) {
 +            if (true) {
                  // CraftBukkit start - fix decompile issues, don't create a list from an array
-                 Object[] list = new Object[] { 1, 51, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
+                 Object[] list = new Object[] { 1, 60, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
  
 diff --git a/src/main/java/net/minecraft/server/ThreadCommandReader.java b/src/main/java/net/minecraft/server/ThreadCommandReader.java
-index 64eaa4c..fbf6fe6 100644
+index 489e184..9533b6f 100644
 --- a/src/main/java/net/minecraft/server/ThreadCommandReader.java
 +++ b/src/main/java/net/minecraft/server/ThreadCommandReader.java
 @@ -11,6 +11,7 @@ class ThreadCommandReader extends Thread {

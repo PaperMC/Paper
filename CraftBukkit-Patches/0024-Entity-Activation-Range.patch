@@ -1,4 +1,4 @@
-From 4fb653cd3f94ac7bbd2e0815c89de285db157a09 Mon Sep 17 00:00:00 2001
+From d9054dc5ea2715c2eb9065ad6ef3ceb47446039c Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 3 Feb 2013 05:10:21 -0500
 Subject: [PATCH] Entity Activation Range
@@ -11,28 +11,28 @@ This change can have dramatic impact on gameplay if configured too low. Balance 
  src/main/java/net/minecraft/server/Entity.java     |  13 +-
  .../java/net/minecraft/server/EntityArrow.java     |   2 +-
  src/main/java/net/minecraft/server/EntityItem.java |   5 +-
- src/main/java/net/minecraft/server/World.java      |  14 +-
+ src/main/java/net/minecraft/server/World.java      |  10 +-
  .../java/org/bukkit/craftbukkit/CraftWorld.java    |  15 +-
  src/main/java/org/bukkit/craftbukkit/Spigot.java   | 219 +++++++++++++++++++++
  .../java/org/bukkit/craftbukkit/SpigotTimings.java |   3 +
  src/main/resources/configurations/bukkit.yml       |   3 +
- 8 files changed, 263 insertions(+), 11 deletions(-)
+ 8 files changed, 263 insertions(+), 7 deletions(-)
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index bf9108a..8cbe086 100644
+index c68e9cf..9e5ce4b 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -89,7 +89,7 @@ public abstract class Entity {
      public int ticksLived;
      public int maxFireTicks;
      public int fireTicks; // CraftBukkit - private -> public
--    protected boolean ad;
-+    public boolean ad; // Spigot - private -> public isInWater - If this renames, update Spigot.checkEntityImmunities
+-    protected boolean ae;
++    public boolean ae; // Spigot - private -> public isInWater - If this renames, update Spigot.checkEntityImmunities
      public int noDamageTicks;
      private boolean justCreated;
      protected boolean fireProof;
 @@ -112,8 +112,14 @@ public abstract class Entity {
-     public UUID uniqueId = UUID.randomUUID(); // CraftBukkit
+     public EnumEntitySize at;
      public boolean valid = false; // CraftBukkit
  
 +    // Spigot start
@@ -46,7 +46,7 @@ index bf9108a..8cbe086 100644
      public Entity(World world) {
          this.id = entityCount++;
          this.l = 1.0D;
-@@ -153,7 +159,12 @@ public abstract class Entity {
+@@ -154,7 +160,12 @@ public abstract class Entity {
          this.setPosition(0.0D, 0.0D, 0.0D);
          if (world != null) {
              this.dimension = world.worldProvider.dimension;
@@ -60,7 +60,7 @@ index bf9108a..8cbe086 100644
          this.datawatcher.a(0, Byte.valueOf((byte) 0));
          this.datawatcher.a(1, Short.valueOf((short) 300));
 diff --git a/src/main/java/net/minecraft/server/EntityArrow.java b/src/main/java/net/minecraft/server/EntityArrow.java
-index 916b9dc..bdd18f6 100644
+index 4b47364..647b91f 100644
 --- a/src/main/java/net/minecraft/server/EntityArrow.java
 +++ b/src/main/java/net/minecraft/server/EntityArrow.java
 @@ -16,7 +16,7 @@ public class EntityArrow extends Entity implements IProjectile {
@@ -73,7 +73,7 @@ index 916b9dc..bdd18f6 100644
      public int shake = 0;
      public Entity shooter;
 diff --git a/src/main/java/net/minecraft/server/EntityItem.java b/src/main/java/net/minecraft/server/EntityItem.java
-index 5e3ac84..fdfd763 100644
+index bc69f5d..430dd79 100644
 --- a/src/main/java/net/minecraft/server/EntityItem.java
 +++ b/src/main/java/net/minecraft/server/EntityItem.java
 @@ -100,8 +100,9 @@ public class EntityItem extends Entity {
@@ -89,7 +89,7 @@ index 5e3ac84..fdfd763 100644
              // CraftBukkit start
              if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 4fc1233..7d2bad3 100644
+index 4b6c910..417189e 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -13,6 +13,7 @@ import java.util.concurrent.Callable;
@@ -100,7 +100,7 @@ index 4fc1233..7d2bad3 100644
  import org.bukkit.craftbukkit.SpigotTimings; // Spigot
  import org.bukkit.craftbukkit.util.UnsafeList;
  import org.bukkit.generator.ChunkGenerator;
-@@ -1240,6 +1241,7 @@ public abstract class World implements IBlockAccess {
+@@ -1274,6 +1275,7 @@ public abstract class World implements IBlockAccess {
          this.f.clear();
          this.methodProfiler.c("regular");
  
@@ -108,15 +108,11 @@ index 4fc1233..7d2bad3 100644
          timings.entityTick.startTiming(); // Spigot
          for (i = 0; i < this.entityList.size(); ++i) {
              entity = (Entity) this.entityList.get(i);
-@@ -1406,12 +1408,12 @@ public abstract class World implements IBlockAccess {
-     }
+@@ -1434,8 +1436,12 @@ public abstract class World implements IBlockAccess {
+         int j = MathHelper.floor(entity.locZ);
+         byte b0 = 32;
  
-     public void entityJoinedWorld(Entity entity, boolean flag) {
--        int i = MathHelper.floor(entity.locX);
--        int j = MathHelper.floor(entity.locZ);
--        byte b0 = 32;
--
--        if (!flag || this.d(i - b0, 0, j - b0, i + b0, 0, j + b0)) {
+-        if (!flag || this.e(i - b0, 0, j - b0, i + b0, 0, j + b0)) {
 -            entity.tickTimer.startTiming(); // Spigot
 +        // Spigot start
 +        if (!Spigot.checkIfActive(entity)) {
@@ -124,11 +120,11 @@ index 4fc1233..7d2bad3 100644
 +        } else {
 +            entity.tickTimer.startTiming();
 +            // Spigot end
-             entity.T = entity.locX;
-             entity.U = entity.locY;
-             entity.V = entity.locZ;
+             entity.U = entity.locX;
+             entity.V = entity.locY;
+             entity.W = entity.locZ;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 21bd64a..33df602 100644
+index 449f3e1..25c462e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -100,10 +100,14 @@ public class CraftWorld implements World {
