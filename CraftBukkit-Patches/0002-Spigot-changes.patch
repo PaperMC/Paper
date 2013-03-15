@@ -1,6 +1,6 @@
-From 87633bb351c719a15ec38bf63155fcffa7c89000 Mon Sep 17 00:00:00 2001
+From e3016c35f320021f736589487349f7a4887c7e38 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Sat, 23 Feb 2013 11:47:02 +1100
+Date: Sat, 16 Mar 2013 08:51:12 +1100
 Subject: [PATCH] Spigot changes.
 
 ---
@@ -20,9 +20,9 @@ Subject: [PATCH] Spigot changes.
  .../java/net/minecraft/server/EntitySquid.java     |   4 -
  .../net/minecraft/server/PlayerConnection.java     |  18 ++-
  src/main/java/net/minecraft/server/PlayerList.java |  10 +-
- .../net/minecraft/server/ThreadLoginVerifier.java  |  23 ++++
+ .../net/minecraft/server/ThreadLoginVerifier.java  |  21 +++
  src/main/java/net/minecraft/server/World.java      | 152 ++++++++++++++++++---
- .../java/net/minecraft/server/WorldServer.java     | 128 +++++++++++++----
+ .../java/net/minecraft/server/WorldServer.java     | 126 +++++++++++++----
  .../java/org/bukkit/craftbukkit/CraftServer.java   |  45 +++---
  .../java/org/bukkit/craftbukkit/CraftWorld.java    |  76 ++++++++++-
  src/main/java/org/bukkit/craftbukkit/Spigot.java   |  20 +++
@@ -32,7 +32,7 @@ Subject: [PATCH] Spigot changes.
  .../org/bukkit/craftbukkit/util/LongHashSet.java   |  11 +-
  .../bukkit/craftbukkit/util/LongObjectHashMap.java |   5 +
  src/main/resources/configurations/bukkit.yml       |  27 ++++
- 28 files changed, 562 insertions(+), 99 deletions(-)
+ 28 files changed, 559 insertions(+), 98 deletions(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/Spigot.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/util/FlatMap.java
 
@@ -435,10 +435,10 @@ index 585595d..224c57f 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/ThreadLoginVerifier.java b/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
-index 0686ba0..58d30eb 100644
+index 0686ba0..c185f64 100644
 --- a/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
 +++ b/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
-@@ -28,6 +28,29 @@ class ThreadLoginVerifier extends Thread {
+@@ -28,6 +28,27 @@ class ThreadLoginVerifier extends Thread {
  
      public void run() {
          try {
@@ -455,9 +455,7 @@ index 0686ba0..58d30eb 100644
 +                    if (!ip.contains("127.0.0.1")) {
 +                        lookup.append("xbl.spamhaus.org.");
 +                        if (java.net.InetAddress.getByName(lookup.toString()) != null) {
-+                            this.pendingConnection.networkManager.queue(new Packet255KickDisconnect("Your IP address (" + ip + ") is flagged as unsafe by spamhaus.org/xbl"));
-+                            this.pendingConnection.networkManager.d();
-+                            this.pendingConnection.c = true;
++                            pendingConnection.disconnect("Your IP address (" + ip + ") is flagged as unsafe by spamhaus.org/xbl");
 +                            return;
 +                        }
 +                    }
@@ -469,7 +467,7 @@ index 0686ba0..58d30eb 100644
              URL url = new URL("http://session.minecraft.net/game/checkserver.jsp?user=" + URLEncoder.encode(PendingConnection.d(this.pendingConnection), "UTF-8") + "&serverId=" + URLEncoder.encode(s, "UTF-8"));
              BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(url.openStream()));
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 9c39815..14df580 100644
+index 9c39815..7b2539b 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -67,14 +67,27 @@ public abstract class World implements IBlockAccess {
@@ -600,10 +598,10 @@ index 9c39815..14df580 100644
 +                int cz = chunkz << 4;
 +                Chunk chunk = this.getChunkAt(chunkx, chunkz);
 +                // Compute ranges within chunk
-+                int xstart = (i < cx)?cx:i;
-+                int xend = (j < (cx+16))?j:(cx+16);
-+                int zstart = (i1 < cz)?cz:i1;
-+                int zend = (j1 < (cz+16))?j1:(cz+16);
++                int xstart = (i < cx) ? cx : i;
++                int xend = (j < (cx + 16)) ? j : (cx + 16);
++                int zstart = (i1 < cz) ? cz : i1;
++                int zend = (j1 < (cz + 16)) ? j1 : (cz + 16);
 +                // Loop through blocks within chunk
 +                for (int x = xstart; x < xend; x++) {
 +                    for (int z = zstart; z < zend; z++) {
@@ -613,7 +611,7 @@ index 9c39815..14df580 100644
 +                                Block block = Block.byId[blkid];
 +
 +                                if (block != null) {
-+                                    block.a(this, x, y, z, axisalignedbb, this.L, entity);
++                                    block.a(this, x, y, z, axisalignedbb, this.M, entity);
 +                                }
 +                            }
 +                        }
@@ -712,7 +710,7 @@ index 9c39815..14df580 100644
              entityhuman = (EntityHuman) this.players.get(i);
              j = MathHelper.floor(entityhuman.locX) + this.random.nextInt(11) - 5;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index d99b6a3..f7c1b87 100644
+index d99b6a3..35c76bf 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -1,5 +1,7 @@
@@ -797,7 +795,7 @@ index d99b6a3..f7c1b87 100644
 +                            } else {
 +                                this.growthOdds = 100;
 +                            }
-+                            for (int i = 0; i < getWorld().aggregateTicks; i++) {
++                            for (int c = 0; c < getWorld().aggregateTicks; c++) {
 +                                block.a(this, k2 + k, i3 + chunksection.d(), l2 + l, this.random);
 +                            }
 +                            // Spigot end
@@ -849,23 +847,21 @@ index d99b6a3..f7c1b87 100644
              if (i > 1000) {
                  // CraftBukkit start - if the server has too much to process over time, try to alleviate that
                  if (i > 20 * 1000) {
-@@ -492,10 +523,12 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -492,9 +523,11 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
                      break;
                  }
  
 -                this.M.remove(nextticklistentry);
 -                this.L.remove(nextticklistentry);
 -                this.T.add(nextticklistentry);
--            }
 +                // Spigot start
 +                //this.M.remove(nextticklistentry);
 +                //this.L.remove(nextticklistentry);
 +                this.removeNextTickIfNeeded(nextticklistentry);
 +                // Spigot end
-+                byte b0 = 8;
+             }
  
              this.methodProfiler.b();
-             this.methodProfiler.a("ticking");
 @@ -536,10 +569,12 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
              this.methodProfiler.b();
              this.T.clear();
