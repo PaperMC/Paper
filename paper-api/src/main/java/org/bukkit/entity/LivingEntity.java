@@ -317,5 +317,5 @@ public interface LivingEntity extends Entity, Damageable {
      * name.
      * @return if the custom name is displayed
      */
-    public boolean getCustomNameVisible();
+    public boolean isCustomNameVisible();
 }
