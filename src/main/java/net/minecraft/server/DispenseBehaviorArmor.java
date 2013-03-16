@@ -2,6 +2,11 @@ package net.minecraft.server;
 
 import java.util.List;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.event.block.BlockDispenseEvent;
+// CraftBukkit end
+
 final class DispenseBehaviorArmor extends DispenseBehaviorItem {
 
     DispenseBehaviorArmor() {}
@@ -18,12 +23,39 @@ final class DispenseBehaviorArmor extends DispenseBehaviorItem {
             EntityLiving entityliving = (EntityLiving) list.get(0);
             int l = entityliving instanceof EntityHuman ? 1 : 0;
             int i1 = EntityLiving.b(itemstack);
-            ItemStack itemstack1 = itemstack.cloneItemStack();
+
+            // CraftBukkit start
+            ItemStack itemstack1 = itemstack.a(1);
+            World world = isourceblock.k();
+            org.bukkit.block.Block block = world.getWorld().getBlockAt(isourceblock.getBlockX(), isourceblock.getBlockY(), isourceblock.getBlockZ());
+            CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
+
+            BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
+            if (!BlockDispenser.eventFired) {
+                world.getServer().getPluginManager().callEvent(event);
+            }
+
+            if (event.isCancelled()) {
+                itemstack.count++;
+                return itemstack;
+            }
+
+            if (!event.getItem().equals(craftItem)) {
+                itemstack.count++;
+                // Chain to handler for new item
+                ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+                IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.a(eventStack.getItem());
+                if (idispensebehavior != IDispenseBehavior.a && idispensebehavior != this) {
+                    idispensebehavior.a(isourceblock, eventStack);
+                    return itemstack;
+                }
+            }
+            // CraftBukkit end
 
             itemstack1.count = 1;
             entityliving.setEquipment(i1 - l, itemstack1);
             entityliving.a(i1, 2.0F);
-            --itemstack.count;
+            // --itemstack.count; // CraftBukkit - handled above
             return itemstack;
         } else {
             return super.b(isourceblock, itemstack);
