@@ -8,10 +8,11 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.StorageMinecart;
 import org.bukkit.inventory.Inventory;
 
-public class CraftStorageMinecart extends CraftMinecart implements StorageMinecart {
+@SuppressWarnings("deprecation")
+public class CraftMinecartChest extends CraftMinecart implements StorageMinecart {
     private final CraftInventory inventory;
 
-    public CraftStorageMinecart(CraftServer server, EntityMinecartChest entity) {
+    public CraftMinecartChest(CraftServer server, EntityMinecartChest entity) {
         super(server, entity);
         inventory = new CraftInventory(entity);
     }
@@ -22,7 +23,7 @@ public class CraftStorageMinecart extends CraftMinecart implements StorageMineca
 
     @Override
     public String toString() {
-        return "CraftStorageMinecart{" + "inventory=" + inventory + '}';
+        return "CraftMinecartChest{" + "inventory=" + inventory + '}';
     }
 
     public EntityType getType() {
