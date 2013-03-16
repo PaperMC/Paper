@@ -362,6 +362,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             name = "";
         }
 
+        // Names cannot be more than 64 characters due to DataWatcher limitations
+        if (name.length() > 64) {
+            name = name.substring(0, 64);
+        }
+
         getHandle().setCustomName(name);
     }
 
