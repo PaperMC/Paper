@@ -150,7 +150,7 @@ public final class ItemStack {
 
     public void setData(int i) {
         // CraftBukkit start - filter out data for items that shouldn't have it
-        if (!this.usesData()) {
+        if (!(this.usesData() || Item.byId[this.id].o())) { // Should be canBeDepleted
             i = 0;
         }
 
