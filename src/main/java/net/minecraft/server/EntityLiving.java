@@ -642,12 +642,12 @@ public abstract class EntityLiving extends Entity {
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
-                this.health += event.getAmount();
+                this.setHealth(this.getHealth() + event.getAmount());
             }
 
             // this.getMaxHealth() -> this.maxHealth
             if (this.health > this.maxHealth) {
-                this.health = this.maxHealth;
+                this.setHealth(this.maxHealth);
                 // CraftBukkit end
             }
 
