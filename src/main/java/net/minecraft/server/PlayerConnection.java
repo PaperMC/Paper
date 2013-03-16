@@ -1228,7 +1228,7 @@ public class PlayerConnection extends Connection {
                 this.player.a(this.player.activeContainer, arraylist);
 
                 // CraftBukkit start - send a Set Slot to update the crafting result slot
-                if(type == SlotType.RESULT && itemstack != null) {
+                if (type == SlotType.RESULT && itemstack != null) {
                     this.player.playerConnection.sendPacket((Packet) (new Packet103SetSlot(this.player.activeContainer.windowId, 0, itemstack)));
                 }
                 // CraftBukkit end
