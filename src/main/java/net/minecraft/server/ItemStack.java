@@ -150,6 +150,12 @@ public final class ItemStack {
 
     public void setData(int i) {
         // CraftBukkit start - filter out data for items that shouldn't have it
+        // The crafting system uses this value for a special purpose so we have to allow it
+        if (i == 32767) {
+            this.damage = i;
+            return;
+        }
+
         if (!(this.usesData() || Item.byId[this.id].o())) { // Should be canBeDepleted
             i = 0;
         }
