@@ -26,7 +26,6 @@ public class ItemSnow extends ItemBlockWithAuxData {
                 }
                 /*
                 if (k1 <= 6 && world.b(block.b(world, i, j, k)) && world.setData(i, j, k, k1 + 1 | j1 & -8, 2)) {
-                    // CraftBukkit end
                     world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), block.stepSound.getPlaceSound(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
                     --itemstack.count;
                     return true;

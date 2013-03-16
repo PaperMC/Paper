@@ -95,11 +95,11 @@ public class ItemDye extends Item {
                 if ((double) world.random.nextFloat() < 0.45D) {
                     // CraftBukkit start
                     Player player = (entityhuman instanceof EntityPlayer) ? (Player) entityhuman.getBukkitEntity() : null;
-                    ((BlockSapling) Block.SAPLING).grow(world, i, j, k, world.random, true, player, itemstack);
+                    ((BlockSapling) Block.SAPLING).grow(world, i, j, k, world.random, true, player, null);
+                    // CraftBukkit end
                 }
 
-                // --itemstack.count; - called later if the bonemeal attempt was succesful
-                // CraftBukkit end
+                --itemstack.count;
             }
 
             return true;
@@ -194,7 +194,7 @@ public class ItemDye extends Item {
                         ((BlockMushroom) Block.byId[l]).grow(world, i, j, k, world.random, true, player, itemstack);
                 }
 
-                //--itemstack.count; - called later if the bonemeal attempt was succesful
+                //--itemstack.count; - called later if the bonemeal attempt was not cancelled by a plugin
                 // CraftBukkit end
             }
 

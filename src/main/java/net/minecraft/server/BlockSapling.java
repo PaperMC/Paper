@@ -116,7 +116,11 @@ public class BlockSapling extends BlockFlower {
                     --itemstack.count;
                 }
             }
+        } else if (bonemeal && itemstack != null) {
+            // We always consume bonemeal when trying to grow
+            --itemstack.count;
         }
+
         if (!grownTree) {
             if (flag) {
                 world.setTypeIdAndData(i + i1, j, k + j1, this.id, l, 4);
