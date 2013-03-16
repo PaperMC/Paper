@@ -242,6 +242,7 @@ public class CraftBlock implements Block {
         case WALL_SIGN:
             return new CraftSign(this);
         case CHEST:
+        case TRAPPED_CHEST:
             return new CraftChest(this);
         case BURNING_FURNACE:
         case FURNACE:
