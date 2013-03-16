@@ -1159,6 +1159,11 @@ public class PlayerConnection extends Connection {
 
         if (this.player.activeContainer.windowId == packet102windowclick.a && this.player.activeContainer.c(this.player)) {
             // CraftBukkit start - fire InventoryClickEvent
+            if (packet102windowclick.slot == -1) {
+                // Vanilla doesn't do anything with this, neither should we
+                return;
+            }
+
             InventoryView inventory = this.player.activeContainer.getBukkitView();
             SlotType type = CraftInventoryView.getSlotType(inventory, packet102windowclick.slot);
 
@@ -1223,8 +1228,9 @@ public class PlayerConnection extends Connection {
                 this.player.a(this.player.activeContainer, arraylist);
 
                 // CraftBukkit start - send a Set Slot to update the crafting result slot
-                if(type == SlotType.RESULT && itemstack != null)
+                if(type == SlotType.RESULT && itemstack != null) {
                     this.player.playerConnection.sendPacket((Packet) (new Packet103SetSlot(this.player.activeContainer.windowId, 0, itemstack)));
+                }
                 // CraftBukkit end
             }
         }
