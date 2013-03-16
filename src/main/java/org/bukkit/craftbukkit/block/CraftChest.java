@@ -32,19 +32,28 @@ public class CraftChest extends CraftBlockState implements Chest {
         int z = getZ();
         // The logic here is basically identical to the logic in BlockChest.interact
         CraftInventory inventory = new CraftInventory(chest);
-        if (world.getBlockTypeIdAt(x - 1, y, z) == Material.CHEST.getId()) {
+        int id;
+        if (world.getBlockTypeIdAt(x, y, z) == Material.CHEST.getId()) {
+            id = Material.CHEST.getId();
+        } else if (world.getBlockTypeIdAt(x, y, z) == Material.TRAPPED_CHEST.getId()) {
+            id = Material.TRAPPED_CHEST.getId();
+        } else {
+            throw new IllegalStateException("CraftChest is not a chest but is instead " + world.getBlockAt(x, y, z));
+        }
+
+        if (world.getBlockTypeIdAt(x - 1, y, z) == id) {
             CraftInventory left = new CraftInventory((TileEntityChest)world.getHandle().getTileEntity(x - 1, y, z));
             inventory = new CraftInventoryDoubleChest(left, inventory);
         }
-        if (world.getBlockTypeIdAt(x + 1, y, z) == Material.CHEST.getId()) {
+        if (world.getBlockTypeIdAt(x + 1, y, z) == id) {
             CraftInventory right = new CraftInventory((TileEntityChest) world.getHandle().getTileEntity(x + 1, y, z));
             inventory = new CraftInventoryDoubleChest(inventory, right);
         }
-        if (world.getBlockTypeIdAt(x, y, z - 1) == Material.CHEST.getId()) {
+        if (world.getBlockTypeIdAt(x, y, z - 1) == id) {
             CraftInventory left = new CraftInventory((TileEntityChest) world.getHandle().getTileEntity(x, y, z - 1));
             inventory = new CraftInventoryDoubleChest(left, inventory);
         }
-        if (world.getBlockTypeIdAt(x, y, z + 1) == Material.CHEST.getId()) {
+        if (world.getBlockTypeIdAt(x, y, z + 1) == id) {
             CraftInventory right = new CraftInventory((TileEntityChest) world.getHandle().getTileEntity(x, y, z + 1));
             inventory = new CraftInventoryDoubleChest(inventory, right);
         }
