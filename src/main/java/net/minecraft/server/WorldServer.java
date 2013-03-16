@@ -554,9 +554,11 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
                 iterator = this.M.iterator();
             } else {
                 iterator = this.T.iterator();
+                /* CraftBukkit start - comment out debug spam
                 if (!this.T.isEmpty()) {
                     System.out.println(this.T.size());
                 }
+                // CraftBukkit end */
             }
 
             while (iterator.hasNext()) {
