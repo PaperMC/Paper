@@ -151,14 +151,12 @@ public final class ItemStack {
     public void setData(int i) {
         // CraftBukkit start - filter out data for items that shouldn't have it
         if (!this.usesData()) {
-            this.damage = 0;
-            return;
+            i = 0;
         }
 
         // Filter wool to avoid confusing the client
         if (this.id == Block.WOOL.id) {
-            this.damage = Math.min(15, i);
-            return;
+            i = Math.min(15, i);
         }
         // CraftBukkit end
 
