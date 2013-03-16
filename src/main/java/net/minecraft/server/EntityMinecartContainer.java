@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
+import org.bukkit.inventory.InventoryHolder;
 // CraftBukkit end
 
 public abstract class EntityMinecartContainer extends EntityMinecartAbstract implements IInventory {
@@ -30,6 +31,12 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
 
     public List<HumanEntity> getViewers() {
         return transaction;
+    }
+
+    public InventoryHolder getOwner() {
+        org.bukkit.entity.Entity cart = getBukkitEntity();
+        if(cart instanceof InventoryHolder) return (InventoryHolder) cart;
+        return null;
     }
 
     public void setMaxStackSize(int size) {
