@@ -10,6 +10,7 @@ import net.minecraft.server.Packet101CloseWindow;
 import net.minecraft.server.TileEntityBrewingStand;
 import net.minecraft.server.TileEntityDispenser;
 import net.minecraft.server.TileEntityFurnace;
+import net.minecraft.server.TileEntityHopper;
 
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -215,7 +216,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             }
             break;
         case ENCHANTING:
-                openCustomInventory(inventory, player, 4);
+            openCustomInventory(inventory, player, 4);
+            break;
+        case HOPPER:
+            if (craftinv.getInventory() instanceof TileEntityHopper) {
+                getHandle().openHopper((TileEntityHopper)craftinv.getInventory());
+            }
             break;
         case CREATIVE:
         case CRAFTING:
