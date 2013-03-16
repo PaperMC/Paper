@@ -1,6 +1,9 @@
 package org.bukkit.entity;
 
 /**
- * Represents a powered minecart.
+ * @deprecated This class has been moved into a sub package; {@link
+ * org.bukkit.entity.minecart.PoweredMinecart} should be used instead.
+ * @see org.bukkit.entity.minecart.PoweredMinecart
  */
-public interface PoweredMinecart extends Minecart {}
+@Deprecated
+public interface PoweredMinecart extends org.bukkit.entity.minecart.PoweredMinecart {}
