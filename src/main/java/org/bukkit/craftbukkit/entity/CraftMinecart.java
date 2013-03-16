@@ -1,12 +1,12 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityMinecartAbstract;
+
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Minecart;
 import org.bukkit.util.Vector;
 
-public class CraftMinecart extends CraftVehicle implements Minecart {
+public abstract class CraftMinecart extends CraftVehicle implements Minecart {
     public CraftMinecart(CraftServer server, EntityMinecartAbstract entity) {
         super(server, entity);
     }
@@ -56,14 +56,5 @@ public class CraftMinecart extends CraftVehicle implements Minecart {
     @Override
     public EntityMinecartAbstract getHandle() {
         return (EntityMinecartAbstract) entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftMinecart";
-    }
-
-    public EntityType getType() {
-        return EntityType.MINECART;
     }
 }
