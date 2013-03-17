@@ -47,6 +47,14 @@ public interface Entity extends Metadatable {
     public Vector getVelocity();
 
     /**
+     * Returns true if the entity is supported by a block. This value is a state
+     * updated by the server and is not recalculated unless the entity moves.
+     *
+     * @return True if entity is on ground.
+     */
+    public boolean isOnGround();
+
+    /**
      * Gets the current world this entity resides in
      *
      * @return World

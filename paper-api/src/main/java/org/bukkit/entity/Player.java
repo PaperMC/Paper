@@ -531,6 +531,17 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public boolean canSee(Player player);
 
     /**
+     * Checks to see if this player is currently standing on a block. This information may
+     * not be reliable, as it is a state provided by the client, and may therefore not be accurate.
+     *
+     * @return True if the player standing on a solid block, else false.
+     * @deprecated Inconsistent with {@link org.bukkit.craftbukkit.entity.Entity#isOnGround()}
+     */
+    @Override
+    @Deprecated
+    public boolean isOnGround();
+
+    /**
      * Checks to see if this player is currently flying or not.
      *
      * @return True if the player is flying, else false.
