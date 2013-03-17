@@ -33,7 +33,11 @@ public class EntityEnderCrystal extends Entity {
         int k = MathHelper.floor(this.locZ);
 
         if (this.world.getTypeId(i, j, k) != Block.FIRE.id) {
-            this.world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
+            // CraftBukkit start
+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.world, i, j, k, this).isCancelled()) {
+                this.world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
+            }
+            // CraftBukkit end
         }
     }
 

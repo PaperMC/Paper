@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
 // CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.block.BlockDispenseEvent;
 // CraftBukkit end
@@ -43,10 +44,14 @@ final class DispenseBehaviorFlintAndSteel extends DispenseBehaviorItem {
         // CraftBukkit end
 
         if (world.isEmpty(i, j, k)) {
-            world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
-            if (itemstack.isDamaged(1, world.random)) {
-                itemstack.count = 0;
+            // CraftBukkit - ignition by dispensing flint and steel
+            if (!CraftEventFactory.callBlockIgniteEvent(world, i, j, k, isourceblock.getBlockX(), isourceblock.getBlockY(), isourceblock.getBlockZ()).isCancelled()) {
+                world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
+                if (itemstack.isDamaged(1, world.random)) {
+                    itemstack.count = 0;
+                }
             }
+            // CraftBukkit end
         } else if (world.getTypeId(i, j, k) == Block.TNT.id) {
             Block.TNT.postBreak(world, i, j, k, 1);
             world.setAir(i, j, k);

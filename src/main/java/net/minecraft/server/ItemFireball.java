@@ -1,10 +1,5 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.entity.Player;
-import org.bukkit.event.block.BlockIgniteEvent;
-// CraftBukkit end
-
 public class ItemFireball extends Item {
 
     public ItemFireball(int i) {
@@ -47,13 +42,7 @@ public class ItemFireball extends Item {
 
                 if (i1 == 0) {
                     // CraftBukkit start
-                    org.bukkit.block.Block blockClicked = world.getWorld().getBlockAt(i, j, k);
-                    Player thePlayer = (Player) entityhuman.getBukkitEntity();
-
-                    BlockIgniteEvent eventIgnite = new BlockIgniteEvent(blockClicked, BlockIgniteEvent.IgniteCause.FIREBALL, thePlayer);
-                    world.getServer().getPluginManager().callEvent(eventIgnite);
-
-                    if (eventIgnite.isCancelled()) {
+                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, i, j, k, org.bukkit.event.block.BlockIgniteEvent.IgniteCause.FIREBALL, entityhuman).isCancelled()) {
                         if (!entityhuman.abilities.canInstantlyBuild) {
                             --itemstack.count;
                         }

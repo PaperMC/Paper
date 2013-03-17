@@ -290,7 +290,10 @@ public class Explosion {
                 int i1 = this.world.getTypeId(i, j - 1, k);
 
                 if (l == 0 && Block.s[i1] && this.j.nextInt(3) == 0) {
-                    this.world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
+                    // CraftBukkit start - ignition by explosion.
+                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.world, i, j, k, this).isCancelled()) {
+                        this.world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
+                    } // CraftBukkit end
                 }
             }
         }

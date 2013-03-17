@@ -3,7 +3,7 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.event.block.BlockIgniteEvent;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.BlockBurnEvent;
 import org.bukkit.event.block.BlockSpreadEvent;
 // CraftBukkit end
@@ -111,9 +111,6 @@ public class BlockFire extends Block {
                     // CraftBukkit start - call to stop spread of fire
                     org.bukkit.Server server = world.getServer();
                     org.bukkit.World bworld = world.getWorld();
-
-                    BlockIgniteEvent.IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.SPREAD;
-                    org.bukkit.block.Block fromBlock = bworld.getBlockAt(i, j, k);
                     // CraftBukkit end
 
                     for (int i1 = i - 1; i1 <= i + 1; ++i1) {
@@ -143,13 +140,8 @@ public class BlockFire extends Block {
                                             }
 
                                             // CraftBukkit start - call to stop spread of fire
-                                            org.bukkit.block.Block block = bworld.getBlockAt(i1, k1, j1);
-
-                                            if (block.getTypeId() != Block.FIRE.id) {
-                                                BlockIgniteEvent event = new BlockIgniteEvent(block, igniteCause, null);
-                                                server.getPluginManager().callEvent(event);
-
-                                                if (event.isCancelled()) {
+                                            if (world.getTypeId(i1, k1, j1) != Block.FIRE.id) {
+                                                if (CraftEventFactory.callBlockIgniteEvent(world, i1, k1, j1, i, j, k).isCancelled()) {
                                                     continue;
                                                 }
 
@@ -157,7 +149,7 @@ public class BlockFire extends Block {
                                                 blockState.setTypeId(this.id);
                                                 blockState.setData(new org.bukkit.material.MaterialData(this.id, (byte) k2));
 
-                                                BlockSpreadEvent spreadEvent = new BlockSpreadEvent(blockState.getBlock(), fromBlock, blockState);
+                                                BlockSpreadEvent spreadEvent = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(i, j, k), blockState);
                                                 server.getPluginManager().callEvent(spreadEvent);
 
                                                 if (!spreadEvent.isCancelled()) {

@@ -2,10 +2,7 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.block.BlockIgniteEvent;
-// CraftBukkit end
+import org.bukkit.craftbukkit.event.CraftEventFactory;  // CraftBukkit
 
 public class BlockStationary extends BlockFluids {
 
@@ -42,9 +39,10 @@ public class BlockStationary extends BlockFluids {
             int i1;
             int j1;
 
-            // CraftBukkit start - prevent lava putting something on fire
-            org.bukkit.World bworld = world.getWorld();
-            BlockIgniteEvent.IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.LAVA;
+            // CraftBukkit start - prevent lava putting something on fire, remember igniter block coords
+            int x = i;
+            int y = j;
+            int z = k;
             // CraftBukkit end
 
             for (i1 = 0; i1 < l; ++i1) {
@@ -55,9 +53,8 @@ public class BlockStationary extends BlockFluids {
                 if (j1 == 0) {
                     if (this.m(world, i - 1, j, k) || this.m(world, i + 1, j, k) || this.m(world, i, j, k - 1) || this.m(world, i, j, k + 1) || this.m(world, i, j - 1, k) || this.m(world, i, j + 1, k)) {
                         // CraftBukkit start - prevent lava putting something on fire
-                        org.bukkit.block.Block block = bworld.getBlockAt(i, j, k);
-                        if (block.getTypeId() != Block.FIRE.id) {
-                            if (CraftEventFactory.callEvent(new BlockIgniteEvent(block, igniteCause, null)).isCancelled()) {
+                        if (world.getTypeId(i, j, k) != Block.FIRE.id) {
+                            if (CraftEventFactory.callBlockIgniteEvent(world, i, j, k, x, y, z).isCancelled()) {
                                 continue;
                             }
                         }
@@ -80,9 +77,8 @@ public class BlockStationary extends BlockFluids {
                     k = j1 + random.nextInt(3) - 1;
                     if (world.isEmpty(i, j + 1, k) && this.m(world, i, j, k)) {
                         // CraftBukkit start - prevent lava putting something on fire
-                        org.bukkit.block.Block block = bworld.getBlockAt(i, j + 1, k);
-                        if (block.getTypeId() != Block.FIRE.id) {
-                            if (CraftEventFactory.callEvent(new BlockIgniteEvent(block, igniteCause, null)).isCancelled()) {
+                        if (world.getTypeId(i, j + 1, k) != Block.FIRE.id) {
+                            if (CraftEventFactory.callBlockIgniteEvent(world, i, j + 1, k, x, y, z).isCancelled()) {
                                 continue;
                             }
                         }
