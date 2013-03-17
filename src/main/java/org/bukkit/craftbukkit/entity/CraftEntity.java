@@ -182,6 +182,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         entity.velocityChanged = true;
     }
 
+    public boolean isOnGround() {
+        return entity.onGround;
+    }
+
     public World getWorld() {
         return ((WorldServer) entity.world).getWorld();
     }
