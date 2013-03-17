@@ -17,6 +17,7 @@ import net.minecraft.server.EntityItem;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPotion;
+import net.minecraft.server.Explosion;
 import net.minecraft.server.InventoryCrafting;
 import net.minecraft.server.Item;
 import net.minecraft.server.ItemStack;
@@ -41,6 +42,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Creeper;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Pig;
@@ -51,6 +53,7 @@ import org.bukkit.entity.ThrownExpBottle;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.Event;
 import org.bukkit.event.block.*;
+import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
@@ -550,5 +553,65 @@ public class CraftEventFactory {
         CraftItemStack item = CraftItemStack.asCraftMirror(brokenItem);
         PlayerItemBreakEvent event = new PlayerItemBreakEvent((Player) human.getBukkitEntity(), item);
         Bukkit.getPluginManager().callEvent(event);
+    }
+
+    public static BlockIgniteEvent callBlockIgniteEvent(World world, int x, int y, int z, int igniterX, int igniterY, int igniterZ) {
+        org.bukkit.World bukkitWorld = world.getWorld();
+        Block igniter = bukkitWorld.getBlockAt(igniterX, igniterY, igniterZ);
+        IgniteCause cause;
+        switch (igniter.getType()) {
+        case LAVA:
+            cause = IgniteCause.LAVA;
+            break;
+        case DISPENSER:
+            cause = IgniteCause.FLINT_AND_STEEL;
+            break;
+        case FIRE: // Fire or any other unknown block counts as SPREAD.
+        default:
+            cause = IgniteCause.SPREAD;
+        }
+
+        BlockIgniteEvent event = new BlockIgniteEvent(bukkitWorld.getBlockAt(x, y, z), cause, igniter);
+        world.getServer().getPluginManager().callEvent(event);
+        return event;
+    }
+
+    public static BlockIgniteEvent callBlockIgniteEvent(World world, int x, int y, int z, Entity igniter) {
+        org.bukkit.World bukkitWorld = world.getWorld();
+        org.bukkit.entity.Entity bukkitIgniter = igniter.getBukkitEntity();
+        IgniteCause cause;
+        switch (bukkitIgniter.getType()) {
+        case ENDER_CRYSTAL:
+            cause = IgniteCause.ENDER_CRYSTAL;
+            break;
+        case LIGHTNING:
+            cause = IgniteCause.LIGHTNING;
+            break;
+        case SMALL_FIREBALL:
+        case FIREBALL:
+            cause = IgniteCause.FIREBALL;
+            break;
+        default:
+            cause = IgniteCause.FLINT_AND_STEEL;
+        }
+
+        BlockIgniteEvent event = new BlockIgniteEvent(bukkitWorld.getBlockAt(x, y, z), cause, bukkitIgniter);
+        world.getServer().getPluginManager().callEvent(event);
+        return event;
+    }
+
+    public static BlockIgniteEvent callBlockIgniteEvent(World world, int x, int y, int z, Explosion explosion) {
+        org.bukkit.World bukkitWorld = world.getWorld();
+        org.bukkit.entity.Entity igniter = explosion.source == null ? null : explosion.source.getBukkitEntity();
+
+        BlockIgniteEvent event = new BlockIgniteEvent(bukkitWorld.getBlockAt(x, y, z), IgniteCause.EXPLOSION, igniter);
+        world.getServer().getPluginManager().callEvent(event);
+        return event;
+    }
+
+    public static BlockIgniteEvent callBlockIgniteEvent(World world, int x, int y, int z, IgniteCause cause, Entity igniter) {
+        BlockIgniteEvent event = new BlockIgniteEvent(world.getWorld().getBlockAt(x, y, z), cause, igniter.getBukkitEntity());
+        world.getServer().getPluginManager().callEvent(event);
+        return event;
     }
 }
