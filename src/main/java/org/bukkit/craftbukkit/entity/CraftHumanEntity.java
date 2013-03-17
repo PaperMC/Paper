@@ -4,6 +4,7 @@ import java.util.Set;
 
 import net.minecraft.server.Container;
 import net.minecraft.server.EntityHuman;
+import net.minecraft.server.EntityMinecartHopper;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.Packet100OpenWindow;
 import net.minecraft.server.Packet101CloseWindow;
@@ -193,14 +194,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             break;
         case DISPENSER:
             if (craftinv.getInventory() instanceof TileEntityDispenser) {
-                getHandle().openDispenser((TileEntityDispenser)craftinv.getInventory());
+                getHandle().openDispenser((TileEntityDispenser) craftinv.getInventory());
             } else {
                 openCustomInventory(inventory, player, 3);
             }
             break;
         case FURNACE:
             if (craftinv.getInventory() instanceof TileEntityFurnace) {
-                getHandle().openFurnace((TileEntityFurnace)craftinv.getInventory());
+                getHandle().openFurnace((TileEntityFurnace) craftinv.getInventory());
             } else {
                 openCustomInventory(inventory, player, 2);
             }
@@ -210,7 +211,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             break;
         case BREWING:
             if (craftinv.getInventory() instanceof TileEntityBrewingStand) {
-                getHandle().openBrewingStand((TileEntityBrewingStand)craftinv.getInventory());
+                getHandle().openBrewingStand((TileEntityBrewingStand) craftinv.getInventory());
             } else {
                 openCustomInventory(inventory, player, 5);
             }
@@ -220,7 +221,9 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             break;
         case HOPPER:
             if (craftinv.getInventory() instanceof TileEntityHopper) {
-                getHandle().openHopper((TileEntityHopper)craftinv.getInventory());
+                getHandle().openHopper((TileEntityHopper) craftinv.getInventory());
+            } else if (craftinv.getInventory() instanceof EntityMinecartHopper) {
+                getHandle().openMinecartHopper((EntityMinecartHopper) craftinv.getInventory());
             }
             break;
         case CREATIVE:
