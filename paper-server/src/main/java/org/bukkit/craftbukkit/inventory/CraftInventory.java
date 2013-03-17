@@ -6,6 +6,7 @@ import java.util.ListIterator;
 
 import net.minecraft.server.ContainerAnvilInventory;
 import net.minecraft.server.ContainerEnchantTableInventory;
+import net.minecraft.server.IHopper;
 import net.minecraft.server.IInventory;
 import net.minecraft.server.InventoryCrafting;
 import net.minecraft.server.InventoryEnderChest;
@@ -15,7 +16,6 @@ import net.minecraft.server.TileEntityBeacon;
 import net.minecraft.server.TileEntityBrewingStand;
 import net.minecraft.server.TileEntityDispenser;
 import net.minecraft.server.TileEntityFurnace;
-import net.minecraft.server.TileEntityHopper;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.entity.HumanEntity;
@@ -445,7 +445,7 @@ public class CraftInventory implements Inventory {
             return InventoryType.BEACON;
         } else if (inventory instanceof ContainerAnvilInventory) {
             return InventoryType.ANVIL;
-        } else if (inventory instanceof TileEntityHopper) {
+        } else if (inventory instanceof IHopper) {
             return InventoryType.HOPPER;
         } else {
             return InventoryType.CHEST;
