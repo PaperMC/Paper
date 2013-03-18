@@ -55,6 +55,7 @@ public class SimpleCommandMap implements CommandMap {
         fallbackCommands.add(new ClearCommand());
         fallbackCommands.add(new GameRuleCommand());
         fallbackCommands.add(new EnchantCommand());
+        fallbackCommands.add(new TestForCommand());
     }
 
     public SimpleCommandMap(final Server server) {
