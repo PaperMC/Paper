@@ -841,7 +841,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             return;
         }
 
-        this.weather = type;
+        if (plugin) {
+            this.weather = type;
+        }
+
         this.playerConnection.sendPacket(new Packet70Bed(type == WeatherType.DOWNFALL ? 1 : 2, 0));
     }
    
