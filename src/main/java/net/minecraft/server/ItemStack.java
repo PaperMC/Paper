@@ -156,7 +156,7 @@ public final class ItemStack {
             return;
         }
 
-        if (!(this.usesData() || Item.byId[this.id].o())) { // Should be canBeDepleted
+        if (!(this.usesData() || Item.byId[this.id].o() || this.id > 256)) { // Should be canBeDepleted
             i = 0;
         }
 
