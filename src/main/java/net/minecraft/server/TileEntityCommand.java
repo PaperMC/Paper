@@ -9,7 +9,7 @@ import com.google.common.base.Joiner;
 public class TileEntityCommand extends TileEntity implements ICommandListener {
 
     private int a = 0;
-    private String b = "";
+    public String b = ""; // CraftBukkit - private -> public
     private String c = "@";
     // CraftBukkit start
     private final org.bukkit.command.BlockCommandSender sender;
