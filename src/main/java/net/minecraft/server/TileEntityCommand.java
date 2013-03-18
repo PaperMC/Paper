@@ -31,7 +31,7 @@ public class TileEntityCommand extends TileEntity implements ICommandListener {
             MinecraftServer minecraftserver = MinecraftServer.getServer();
 
             if (minecraftserver != null && minecraftserver.getEnableCommandBlock()) {
-                // CraftBukkit start - handle command block as console
+                // CraftBukkit start - handle command block commands using Bukkit dispatcher
                 org.bukkit.command.SimpleCommandMap commandMap = minecraftserver.server.getCommandMap();
                 Joiner joiner = Joiner.on(" ");
                 String command = this.b;
@@ -56,6 +56,26 @@ public class TileEntityCommand extends TileEntity implements ICommandListener {
                 // if the world has no players don't run
                 if (this.world.players.isEmpty()) {
                     return 0;
+                }
+
+                // testfor command requires special handling
+                if (args[0].equalsIgnoreCase("testfor")) {
+                    if (args.length < 2) {
+                        return 0;
+                    }
+
+                    EntityPlayer[] players = PlayerSelector.getPlayers(this, args[1]);
+
+                    if (players != null && players.length > 0) {
+                        return players.length;
+                    } else {
+                        EntityPlayer player = MinecraftServer.getServer().getPlayerList().f(args[1]); // Should be getPlayer
+                        if (player == null) {
+                            return 0;
+                        } else {
+                            return 1;
+                        }
+                    }
                 }
 
                 commands.add(args);
@@ -86,8 +106,9 @@ public class TileEntityCommand extends TileEntity implements ICommandListener {
                         minecraftserver.getLogger().warning(String.format("CommandBlock at (%d,%d,%d) failed to handle command", this.x, this.y, this.z), exception);
                     }
                 }
-                // CraftBukkit end
+
                 return completed;
+                // CraftBukkit end
             } else {
                 return 0;
             }
