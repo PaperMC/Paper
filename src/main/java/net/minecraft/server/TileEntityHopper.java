@@ -5,6 +5,7 @@ import java.util.List;
 // CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
+import org.bukkit.event.inventory.InventoryPickupItemEvent;
 // CraftBukkit end
 
 public class TileEntityHopper extends TileEntity implements IHopper {
@@ -261,6 +262,14 @@ public class TileEntityHopper extends TileEntity implements IHopper {
         if (entityitem == null) {
             return false;
         } else {
+            // CraftBukkit start
+            InventoryPickupItemEvent event = new InventoryPickupItemEvent(iinventory.getOwner().getInventory(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
+            entityitem.world.getServer().getPluginManager().callEvent(event);
+            if (event.isCancelled()) {
+                return false;
+            }
+            // CraftBukkit end
+
             ItemStack itemstack = entityitem.getItemStack().cloneItemStack();
             ItemStack itemstack1 = a(iinventory, itemstack, -1);
 
