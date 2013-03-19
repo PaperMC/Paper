@@ -1,4 +1,4 @@
-From 8878e09188c2088a60503fade58f989fc7ed12c0 Mon Sep 17 00:00:00 2001
+From 3e3baa72093f845274f47c79673beccc1b081e35 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sat, 16 Mar 2013 10:13:29 +1100
 Subject: [PATCH] Spigot changes.
@@ -23,7 +23,7 @@ Subject: [PATCH] Spigot changes.
  .../net/minecraft/server/ThreadLoginVerifier.java  |  21 +++
  src/main/java/net/minecraft/server/World.java      | 152 ++++++++++++++++++---
  .../java/net/minecraft/server/WorldServer.java     |  36 ++++-
- .../java/org/bukkit/craftbukkit/CraftServer.java   |  45 +++---
+ .../java/org/bukkit/craftbukkit/CraftServer.java   |  47 ++++---
  .../java/org/bukkit/craftbukkit/CraftWorld.java    |  76 ++++++++++-
  src/main/java/org/bukkit/craftbukkit/Spigot.java   |  20 +++
  .../craftbukkit/chunkio/ChunkIOProvider.java       |   2 +-
@@ -32,7 +32,7 @@ Subject: [PATCH] Spigot changes.
  .../org/bukkit/craftbukkit/util/LongHashSet.java   |  11 +-
  .../bukkit/craftbukkit/util/LongObjectHashMap.java |   5 +
  src/main/resources/configurations/bukkit.yml       |  27 ++++
- 28 files changed, 488 insertions(+), 79 deletions(-)
+ 28 files changed, 488 insertions(+), 81 deletions(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/Spigot.java
  create mode 100644 src/main/java/org/bukkit/craftbukkit/util/FlatMap.java
 
@@ -407,10 +407,10 @@ index 13c2705..9ea4ee6 100644
                      }
                  }
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 585595d..224c57f 100644
+index d57ff15..a435f67 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -303,7 +303,7 @@ public abstract class PlayerList {
+@@ -304,7 +304,7 @@ public abstract class PlayerList {
  
              event.disallow(PlayerLoginEvent.Result.KICK_BANNED, s1);
          } else if (!this.isWhitelisted(s)) {
@@ -419,7 +419,7 @@ index 585595d..224c57f 100644
          } else {
              String s2 = socketaddress.toString();
  
-@@ -1044,7 +1044,13 @@ public abstract class PlayerList {
+@@ -1045,7 +1045,13 @@ public abstract class PlayerList {
  
      public void r() {
          while (!this.players.isEmpty()) {
@@ -710,7 +710,7 @@ index 9c39815..67f2560 100644
              entityhuman = (EntityHuman) this.players.get(i);
              j = MathHelper.floor(entityhuman.locX) + this.random.nextInt(11) - 5;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index ddcaaaa..c614ecc 100644
+index ce54462..05b2d6d 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -1,5 +1,7 @@
@@ -721,15 +721,15 @@ index ddcaaaa..c614ecc 100644
  import java.util.ArrayList;
  import java.util.Collection;
  import java.util.HashSet;
-@@ -12,6 +14,7 @@ import java.util.TreeSet;
- // CraftBukkit start
+@@ -13,6 +15,7 @@ import java.util.TreeSet;
+ import org.bukkit.WeatherType;
  import org.bukkit.block.BlockState;
  import org.bukkit.craftbukkit.util.LongHash;
 +import org.bukkit.craftbukkit.util.LongObjectHashMap;
  
  import org.bukkit.event.block.BlockFormEvent;
  import org.bukkit.event.weather.LightningStrikeEvent;
-@@ -277,15 +280,30 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -278,15 +281,30 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
      }
  
      protected void g() {
@@ -763,7 +763,7 @@ index ddcaaaa..c614ecc 100644
              // ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) iterator.next();
              int k = chunkX * 16;
              int l = chunkZ * 16;
-@@ -383,7 +401,17 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -384,7 +402,17 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
  
                          if (block != null && block.isTicking()) {
                              ++i;
@@ -783,7 +783,7 @@ index ddcaaaa..c614ecc 100644
                      }
                  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 3775022..8f65601 100644
+index 6b3b9fe..872c4ac 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -146,7 +146,7 @@ public final class CraftServer implements Server {
@@ -841,7 +841,7 @@ index 3775022..8f65601 100644
          try {
              configuration.save(getConfigFile());
          } catch (IOException ex) {
-@@ -526,6 +542,7 @@ public final class CraftServer implements Server {
+@@ -535,6 +551,7 @@ public final class CraftServer implements Server {
  
          ((DedicatedServer) console).propertyManager = config;
  
@@ -849,7 +849,7 @@ index 3775022..8f65601 100644
          boolean animals = config.getBoolean("spawn-animals", console.getSpawnAnimals());
          boolean monsters = config.getBoolean("spawn-monsters", console.worlds.get(0).difficulty > 0);
          int difficulty = config.getInt("difficulty", console.worlds.get(0).difficulty);
-@@ -591,6 +608,7 @@ public final class CraftServer implements Server {
+@@ -600,6 +617,7 @@ public final class CraftServer implements Server {
                  "This plugin is not properly shutting down its async tasks when it is being reloaded.  This may cause conflicts with the newly loaded version of the plugin"
              ));
          }
@@ -857,7 +857,7 @@ index 3775022..8f65601 100644
          loadPlugins();
          enablePlugins(PluginLoadOrder.STARTUP);
          enablePlugins(PluginLoadOrder.POSTWORLD);
-@@ -1039,11 +1057,8 @@ public final class CraftServer implements Server {
+@@ -1054,13 +1072,8 @@ public final class CraftServer implements Server {
          return count;
      }
  
@@ -867,10 +867,12 @@ index 3775022..8f65601 100644
 -    }
 -
 -    public OfflinePlayer getOfflinePlayer(String name, boolean search) {
+-        Validate.notNull(name, "Name cannot be null");
+-
          OfflinePlayer result = getPlayerExact(name);
          String lname = name.toLowerCase();
  
-@@ -1051,17 +1066,7 @@ public final class CraftServer implements Server {
+@@ -1068,17 +1081,7 @@ public final class CraftServer implements Server {
              result = offlinePlayers.get(lname);
  
              if (result == null) {
@@ -889,7 +891,7 @@ index 3775022..8f65601 100644
                  result = new CraftOfflinePlayer(this, name);
                  offlinePlayers.put(lname, result);
              }
-@@ -1199,7 +1204,7 @@ public final class CraftServer implements Server {
+@@ -1216,7 +1219,7 @@ public final class CraftServer implements Server {
          Set<OfflinePlayer> players = new HashSet<OfflinePlayer>();
  
          for (String file : files) {
@@ -898,7 +900,7 @@ index 3775022..8f65601 100644
          }
          players.addAll(Arrays.asList(getOnlinePlayers()));
  
-@@ -1305,7 +1310,7 @@ public final class CraftServer implements Server {
+@@ -1322,7 +1325,7 @@ public final class CraftServer implements Server {
      public List<String> tabCompleteCommand(Player player, String message) {
          List<String> completions = null;
          try {
@@ -1034,10 +1036,10 @@ index 48cf5ba..1d4764c 100644
          }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index f8dbbee..c79f352 100644
+index 70111e7..1871d3e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -212,10 +212,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -213,10 +213,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      }
  
      public void kickPlayer(String message) {
