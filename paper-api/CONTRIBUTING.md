@@ -8,7 +8,6 @@ The Bukkit project prides itself on being community built and driven.  We love i
 - Fork the repository if you haven't done so already.
 - Make your changes in a new branch (if your change affects both Bukkit and CraftBukkit, we highly suggest you use the same name for your branches in both repos).
 - Test your changes.
-- Squash your commits if necessary.
 - Push to your fork and submit a pull request.
 - **Note:** The project is put under a code freeze leading up to the release of a Minecraft update in order to give the Bukkit team a static code base to work on.
 
