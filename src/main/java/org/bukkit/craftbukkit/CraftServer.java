@@ -320,6 +320,8 @@ public final class CraftServer implements Server {
     }
 
     public Player getPlayer(final String name) {
+        Validate.notNull(name, "Name cannot be null");
+
         Player[] players = getOnlinePlayers();
 
         Player found = null;
@@ -339,6 +341,8 @@ public final class CraftServer implements Server {
     }
 
     public Player getPlayerExact(String name) {
+        Validate.notNull(name, "Name cannot be null");
+
         String lname = name.toLowerCase();
 
         for (Player player : getOnlinePlayers()) {
@@ -359,6 +363,8 @@ public final class CraftServer implements Server {
     }
 
     public List<Player> matchPlayer(String partialName) {
+        Validate.notNull(partialName, "PartialName cannot be null");
+
         List<Player> matchedPlayers = new ArrayList<Player>();
 
         for (Player iterPlayer : this.getOnlinePlayers()) {
@@ -511,6 +517,9 @@ public final class CraftServer implements Server {
     }
 
     public boolean dispatchCommand(CommandSender sender, String commandLine) {
+        Validate.notNull(sender, "Sender cannot be null");
+        Validate.notNull(commandLine, "CommandLine cannot be null");
+
         if (commandMap.dispatch(sender, commandLine)) {
             return true;
         }
@@ -665,9 +674,7 @@ public final class CraftServer implements Server {
     }
 
     public World createWorld(WorldCreator creator) {
-        if (creator == null) {
-            throw new IllegalArgumentException("Creator may not be null");
-        }
+        Validate.notNull(creator, "Creator may not be null");
 
         String name = creator.name();
         ChunkGenerator generator = creator.generator();
@@ -808,6 +815,8 @@ public final class CraftServer implements Server {
     }
 
     public World getWorld(String name) {
+        Validate.notNull(name, "Name cannot be null");
+
         return worlds.get(name.toLowerCase());
     }
 
@@ -852,6 +861,8 @@ public final class CraftServer implements Server {
     }
 
     public void configureDbConfig(ServerConfig config) {
+        Validate.notNull(config, "Config cannot be null");
+
         DataSourceConfig ds = new DataSourceConfig();
         ds.setDriver(configuration.getString("database.driver"));
         ds.setUrl(configuration.getString("database.url"));
@@ -888,6 +899,8 @@ public final class CraftServer implements Server {
     }
 
     public List<Recipe> getRecipesFor(ItemStack result) {
+        Validate.notNull(result, "Result cannot be null");
+
         List<Recipe> results = new ArrayList<Recipe>();
         Iterator<Recipe> iter = recipeIterator();
         while (iter.hasNext()) {
@@ -1015,6 +1028,8 @@ public final class CraftServer implements Server {
     }
 
     public CraftMapView createMap(World world) {
+        Validate.notNull(world, "World cannot be null");
+
         net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(Item.MAP, 1, -1);
         WorldMap worldmap = Item.MAP.getSavedMap(stack, ((CraftWorld) world).getHandle());
         return worldmap.mapView;
@@ -1044,6 +1059,8 @@ public final class CraftServer implements Server {
     }
 
     public OfflinePlayer getOfflinePlayer(String name, boolean search) {
+        Validate.notNull(name, "Name cannot be null");
+
         OfflinePlayer result = getPlayerExact(name);
         String lname = name.toLowerCase();
 
@@ -1078,6 +1095,8 @@ public final class CraftServer implements Server {
     }
 
     public void banIP(String address) {
+        Validate.notNull(address, "Address cannot be null.");
+
         BanEntry entry = new BanEntry(address);
         playerList.getIPBans().add(entry);
         playerList.getIPBans().save();
@@ -1135,9 +1154,7 @@ public final class CraftServer implements Server {
     }
 
     public void setDefaultGameMode(GameMode mode) {
-        if (mode == null) {
-            throw new IllegalArgumentException("Mode cannot be null");
-        }
+        Validate.notNull(mode, "Mode cannot be null");
 
         for (World world : getWorlds()) {
             ((CraftWorld) world).getHandle().worldData.setGameType(EnumGamemode.a(mode.getValue()));
