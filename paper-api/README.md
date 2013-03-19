@@ -4,7 +4,7 @@ Bukkit
 A Minecraft Server API.
 
 Website: [http://bukkit.org](http://bukkit.org)  
-Bugs/Suggestions: [http://leaky.bukkit.org](http://leaky.bukkit.org)
+Bugs/Suggestions: [http://leaky.bukkit.org](http://leaky.bukkit.org)  
 Contributing Guidelines: [CONTRIBUTING.md](https://github.com/Bukkit/Bukkit/blob/master/CONTRIBUTING.md)
 
 Compilation
