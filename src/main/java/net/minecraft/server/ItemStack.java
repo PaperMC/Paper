@@ -156,7 +156,7 @@ public final class ItemStack {
             return;
         }
 
-        if (!(this.usesData() || Item.byId[this.id].o() || this.id > 256)) { // Should be canBeDepleted
+        if (!(this.usesData() || Item.byId[this.id].o() || this.id > 255)) { // Should be usesDurability
             i = 0;
         }
 
@@ -167,7 +167,7 @@ public final class ItemStack {
         // CraftBukkit end
 
         this.damage = i;
-        if (this.damage < 0) {
+        if (this.damage < -1) { // CraftBukkit - don't filter -1, we use it
             this.damage = 0;
         }
     }
