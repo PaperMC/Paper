@@ -71,8 +71,15 @@ public interface Inventory extends Iterable<ItemStack> {
      * <p />
      * The returned HashMap contains what it couldn't store, where the key is the
      * index of the parameter, and the value is the ItemStack at that index
-     * of the variadic parameter. If all items are stored, it will return an
+     * of the varargs parameter. If all items are stored, it will return an
      * empty HashMap.
+     * <p />
+     * If you pass in ItemStacks which exceed the maximum stack size for the
+     * Material, first they will be added to partial stacks where
+     * Material.getMaxStackSize() is not exceeded, up to
+     * Material.getMaxStackSize(). When there are no partial stacks left
+     * stacks will be split on Inventory.getMaxStackSize() allowing you to
+     * exceed the maximum stack size for that material.
      *
      * @param items The ItemStacks to add
      * @return A HashMap containing items that didn't fit.
@@ -88,7 +95,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * <p />
      * The returned HashMap contains what it couldn't remove, where the key is the
      * index of the parameter, and the value is the ItemStack at that index of the
-     * variadic parameter. If all the given ItemStacks are removed, it will return
+     * varargs parameter. If all the given ItemStacks are removed, it will return
      * an empty HashMap.
      *
      * @param items The ItemStacks to remove
@@ -169,12 +176,7 @@ public interface Inventory extends Iterable<ItemStack> {
     public boolean contains(ItemStack item, int amount);
 
     /**
-     * Returns a HashMap with all slots and ItemStacks in the inventory with
-     * given materialId.
-     * <p />
-     * The HashMap contains entries where, the key is the slot index, and the
-     * value is the ItemStack in that slot. If no matching ItemStack with the
-     * given materialId is found, an empty map is returned.
+     * Checks if the inventory contains any ItemStacks matching the given ItemStack and at least the minimum amount specified
      *
      * @param item The ItemStack to match against
      * @param amount The minimum amount
@@ -183,7 +185,12 @@ public interface Inventory extends Iterable<ItemStack> {
     public boolean containsAtLeast(ItemStack item, int amount);
 
     /**
-     * Find all slots in the inventory containing any ItemStacks with the given materialId.
+     * Returns a HashMap with all slots and ItemStacks in the inventory with
+     * given materialId.
+     * <p />
+     * The HashMap contains entries where, the key is the slot index, and the
+     * value is the ItemStack in that slot. If no matching ItemStack with the
+     * given materialId is found, an empty map is returned.
      *
      * @param materialId The materialId to look for
      * @return A HashMap containing the slot index, ItemStack pairs

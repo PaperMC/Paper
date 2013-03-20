@@ -17,7 +17,7 @@ public interface Skull extends BlockState {
     /**
      * Gets the owner of the skull
      *
-     * @return the owner if the skull
+     * @return the owner of the skull
      */
     public String getOwner();
 
