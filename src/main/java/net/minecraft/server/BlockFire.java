@@ -108,11 +108,6 @@ public class BlockFire extends Block {
                     this.a(world, i, j, k - 1, 300 + b0, random, l);
                     this.a(world, i, j, k + 1, 300 + b0, random, l);
 
-                    // CraftBukkit start - call to stop spread of fire
-                    org.bukkit.Server server = world.getServer();
-                    org.bukkit.World bworld = world.getWorld();
-                    // CraftBukkit end
-
                     for (int i1 = i - 1; i1 <= i + 1; ++i1) {
                         for (int j1 = k - 1; j1 <= k + 1; ++j1) {
                             for (int k1 = j - 1; k1 <= j + 4; ++k1) {
@@ -145,6 +140,8 @@ public class BlockFire extends Block {
                                                     continue;
                                                 }
 
+                                                org.bukkit.Server server = world.getServer();
+                                                org.bukkit.World bworld = world.getWorld();
                                                 org.bukkit.block.BlockState blockState = bworld.getBlockAt(i1, k1, j1).getState();
                                                 blockState.setTypeId(this.id);
                                                 blockState.setData(new org.bukkit.material.MaterialData(this.id, (byte) k2));
