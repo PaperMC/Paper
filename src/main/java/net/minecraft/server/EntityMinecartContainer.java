@@ -10,7 +10,7 @@ import org.bukkit.inventory.InventoryHolder;
 
 public abstract class EntityMinecartContainer extends EntityMinecartAbstract implements IInventory {
 
-    private ItemStack[] items = new ItemStack[36];
+    private ItemStack[] items = new ItemStack[27]; // CraftBukkit - 36 -> 27
     private boolean b = true;
 
     // CraftBukkit start
