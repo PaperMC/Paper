@@ -405,6 +405,10 @@ class CraftMetaItem implements ItemMeta, Repairable {
         return !(enchantments == null || enchantments.isEmpty());
     }
 
+    public boolean hasConflictingEnchant(Enchantment ench) {
+        return checkConflictingEnchants(enchantments, ench);
+    }
+
     public List<String> getLore() {
         return this.lore == null ? null : new ArrayList<String>(this.lore);
     }
@@ -553,6 +557,20 @@ class CraftMetaItem implements ItemMeta, Repairable {
                 addTo.add(page);
             }
         }
+    }
+
+    static boolean checkConflictingEnchants(Map<Enchantment, Integer> enchantments, Enchantment ench) {
+        if (enchantments == null || enchantments.isEmpty()) {
+            return false;
+        }
+
+        for (Enchantment enchant : enchantments.keySet()) {
+            if (enchant.conflictsWith(ench)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override

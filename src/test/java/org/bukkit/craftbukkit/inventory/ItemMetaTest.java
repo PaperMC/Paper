@@ -21,6 +21,7 @@ import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
 import org.bukkit.inventory.meta.FireworkMeta;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.inventory.meta.PotionMeta;
@@ -60,6 +61,52 @@ public class ItemMetaTest extends AbstractTestingBase {
             firework.setPower(i);
             assertThat(String.valueOf(i), firework.getPower(), is(i));
         }
+    }
+
+    @Test
+    public void testConflictingEnchantment() {
+        ItemMeta itemMeta = Bukkit.getItemFactory().getItemMeta(Material.DIAMOND_PICKAXE);
+        assertThat(itemMeta.hasConflictingEnchant(Enchantment.DURABILITY), is(false));
+
+        itemMeta.addEnchant(Enchantment.SILK_TOUCH, 1, false);
+        assertThat(itemMeta.hasConflictingEnchant(Enchantment.DURABILITY), is(false));
+        assertThat(itemMeta.hasConflictingEnchant(Enchantment.LOOT_BONUS_BLOCKS), is(true));
+        assertThat(itemMeta.hasConflictingEnchant(null), is(false));
+    }
+
+    @Test
+    public void testConflictingStoredEnchantment() {
+        EnchantmentStorageMeta itemMeta = (EnchantmentStorageMeta) Bukkit.getItemFactory().getItemMeta(Material.ENCHANTED_BOOK);
+        assertThat(itemMeta.hasConflictingStoredEnchant(Enchantment.DURABILITY), is(false));
+
+        itemMeta.addStoredEnchant(Enchantment.SILK_TOUCH, 1, false);
+        assertThat(itemMeta.hasConflictingStoredEnchant(Enchantment.DURABILITY), is(false));
+        assertThat(itemMeta.hasConflictingStoredEnchant(Enchantment.LOOT_BONUS_BLOCKS), is(true));
+        assertThat(itemMeta.hasConflictingStoredEnchant(null), is(false));
+    }
+
+    @Test
+    public void testConflictingEnchantments() {
+        ItemMeta itemMeta = Bukkit.getItemFactory().getItemMeta(Material.DIAMOND_PICKAXE);
+        itemMeta.addEnchant(Enchantment.DURABILITY, 6, true);
+        itemMeta.addEnchant(Enchantment.DIG_SPEED, 6, true);
+        assertThat(itemMeta.hasConflictingEnchant(Enchantment.LOOT_BONUS_BLOCKS), is(false));
+
+        itemMeta.addEnchant(Enchantment.SILK_TOUCH, 1, false);
+        assertThat(itemMeta.hasConflictingEnchant(Enchantment.LOOT_BONUS_BLOCKS), is(true));
+        assertThat(itemMeta.hasConflictingEnchant(null), is(false));
+    }
+
+    @Test
+    public void testConflictingStoredEnchantments() {
+        EnchantmentStorageMeta itemMeta = (EnchantmentStorageMeta) Bukkit.getItemFactory().getItemMeta(Material.ENCHANTED_BOOK);
+        itemMeta.addStoredEnchant(Enchantment.DURABILITY, 6, true);
+        itemMeta.addStoredEnchant(Enchantment.DIG_SPEED, 6, true);
+        assertThat(itemMeta.hasConflictingStoredEnchant(Enchantment.LOOT_BONUS_BLOCKS), is(false));
+
+        itemMeta.addStoredEnchant(Enchantment.SILK_TOUCH, 1, false);
+        assertThat(itemMeta.hasConflictingStoredEnchant(Enchantment.LOOT_BONUS_BLOCKS), is(true));
+        assertThat(itemMeta.hasConflictingStoredEnchant(null), is(false));
     }
 
     private static FireworkMeta newFireworkMeta() {
