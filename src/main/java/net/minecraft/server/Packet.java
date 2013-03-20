@@ -120,10 +120,10 @@ public abstract class Packet {
 
         // CraftBukkit start
         catch (java.net.SocketTimeoutException exception) {
-            iconsolelogmanager.severe("Read timed out");
+            iconsolelogmanager.info("Read timed out");
             return null;
         } catch (java.net.SocketException exception) {
-            iconsolelogmanager.severe("Connection reset");
+            iconsolelogmanager.info("Connection reset");
             return null;
         }
         // CraftBukkit end

@@ -88,7 +88,7 @@ public abstract class Entity {
     public int ticksLived;
     public int maxFireTicks;
     public int fireTicks; // CraftBukkit - private -> public
-    protected boolean ae;
+    protected boolean inWater;
     public int noDamageTicks;
     private boolean justCreated;
     protected boolean fireProof;
@@ -137,7 +137,7 @@ public abstract class Entity {
         this.ticksLived = 0;
         this.maxFireTicks = 1;
         this.fireTicks = 0;
-        this.ae = false;
+        this.inWater = false;
         this.noDamageTicks = 0;
         this.justCreated = true;
         this.fireProof = false;
@@ -819,16 +819,16 @@ public abstract class Entity {
     }
 
     public boolean F() {
-        return this.ae || this.world.F(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) || this.world.F(MathHelper.floor(this.locX), MathHelper.floor(this.locY + (double) this.length), MathHelper.floor(this.locZ));
+        return this.inWater || this.world.F(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) || this.world.F(MathHelper.floor(this.locX), MathHelper.floor(this.locY + (double) this.length), MathHelper.floor(this.locZ));
     }
 
     public boolean G() {
-        return this.ae;
+        return this.inWater;
     }
 
     public boolean H() {
         if (this.world.a(this.boundingBox.grow(0.0D, -0.4000000059604645D, 0.0D).shrink(0.001D, 0.001D, 0.001D), Material.WATER, this)) {
-            if (!this.ae && !this.justCreated) {
+            if (!this.inWater && !this.justCreated) {
                 float f = MathHelper.sqrt(this.motX * this.motX * 0.20000000298023224D + this.motY * this.motY + this.motZ * this.motZ * 0.20000000298023224D) * 0.2F;
 
                 if (f > 1.0F) {
@@ -856,13 +856,13 @@ public abstract class Entity {
             }
 
             this.fallDistance = 0.0F;
-            this.ae = true;
+            this.inWater = true;
             this.fireTicks = 0;
         } else {
-            this.ae = false;
+            this.inWater = false;
         }
 
-        return this.ae;
+        return this.inWater;
     }
 
     public boolean a(Material material) {

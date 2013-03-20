@@ -133,7 +133,7 @@ public class EntitySquid extends EntityWaterAnimal {
         ++this.bC;
         if (this.bC > 100) {
             this.bO = this.bP = this.bQ = 0.0F;
-        } else if (this.random.nextInt(50) == 0 || !this.ae || this.bO == 0.0F && this.bP == 0.0F && this.bQ == 0.0F) {
+        } else if (this.random.nextInt(50) == 0 || !this.inWater || this.bO == 0.0F && this.bP == 0.0F && this.bQ == 0.0F) {
             float f = this.random.nextFloat() * 3.1415927F * 2.0F;
 
             this.bO = MathHelper.cos(f) * 0.2F;

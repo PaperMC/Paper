@@ -1814,7 +1814,11 @@ public abstract class World implements IBlockAccess {
     public boolean w(int i, int j, int k) {
         Block block = Block.byId[this.getTypeId(i, j, k)];
 
-        return block == null ? false : (block.material.k() && block.b() ? true : (block instanceof BlockStairs ? (this.getData(i, j, k) & 4) == 4 : (block instanceof BlockStepAbstract ? (this.getData(i, j, k) & 8) == 8 : (block instanceof BlockHopper ? true : (block instanceof BlockSnow ? (this.getData(i, j, k) & 7) == 7 : false)))));
+        return this.a(block, this.getData(i, j, k));
+    }
+
+    public boolean a(Block block, int i) {
+        return block == null ? false : (block.material.k() && block.b() ? true : (block instanceof BlockStairs ? (i & 4) == 4 : (block instanceof BlockStepAbstract ? (i & 8) == 8 : (block instanceof BlockHopper ? true : (block instanceof BlockSnow ? (i & 7) == 7 : false)))));
     }
 
     public boolean c(int i, int j, int k, boolean flag) {
@@ -2403,7 +2407,7 @@ public abstract class World implements IBlockAccess {
         int l1 = i + l;
         int i2 = j + l;
         int j2 = k + l;
-        ChunkCache chunkcache = new ChunkCache(this, i1, j1, k1, l1, i2, j2);
+        ChunkCache chunkcache = new ChunkCache(this, i1, j1, k1, l1, i2, j2, 0);
         PathEntity pathentity = (new Pathfinder(chunkcache, flag, flag1, flag2, flag3)).a(entity, entity1, f);
 
         this.methodProfiler.b();
@@ -2422,7 +2426,7 @@ public abstract class World implements IBlockAccess {
         int k2 = l + k1;
         int l2 = i1 + k1;
         int i3 = j1 + k1;
-        ChunkCache chunkcache = new ChunkCache(this, l1, i2, j2, k2, l2, i3);
+        ChunkCache chunkcache = new ChunkCache(this, l1, i2, j2, k2, l2, i3, 0);
         PathEntity pathentity = (new Pathfinder(chunkcache, flag, flag1, flag2, flag3)).a(entity, i, j, k, f);
 
         this.methodProfiler.b();

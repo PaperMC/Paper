@@ -129,7 +129,7 @@ public abstract class PlayerList {
 
     protected void a(ScoreboardServer scoreboardserver, EntityPlayer entityplayer) {
         HashSet hashset = new HashSet();
-        Iterator iterator = scoreboardserver.g().iterator();
+        Iterator iterator = scoreboardserver.getTeams().iterator();
 
         while (iterator.hasNext()) {
             ScoreboardTeam scoreboardteam = (ScoreboardTeam) iterator.next();
@@ -138,10 +138,10 @@ public abstract class PlayerList {
         }
 
         for (int i = 0; i < 3; ++i) {
-            ScoreboardObjective scoreboardobjective = scoreboardserver.a(i);
+            ScoreboardObjective scoreboardobjective = scoreboardserver.getObjectiveForSlot(i);
 
             if (scoreboardobjective != null && !hashset.contains(scoreboardobjective)) {
-                List list = scoreboardserver.d(scoreboardobjective);
+                List list = scoreboardserver.getScoreboardScorePacketsForObjective(scoreboardobjective);
                 Iterator iterator1 = list.iterator();
 
                 while (iterator1.hasNext()) {
@@ -845,7 +845,7 @@ public abstract class PlayerList {
                     }
 
                     ScoreboardTeam scoreboardteam = entityplayer.getScoreboardTeam();
-                    String s2 = scoreboardteam == null ? "" : scoreboardteam.b();
+                    String s2 = scoreboardteam == null ? "" : scoreboardteam.getName();
 
                     if (flag1 == s1.equalsIgnoreCase(s2)) {
                         continue;
@@ -904,15 +904,15 @@ public abstract class PlayerList {
                 }
 
                 Scoreboard scoreboard = entityhuman.getScoreboard();
-                ScoreboardObjective scoreboardobjective = scoreboard.b(s);
+                ScoreboardObjective scoreboardobjective = scoreboard.getObjective(s);
 
                 if (scoreboardobjective == null) {
                     return false;
                 }
 
-                ScoreboardScore scoreboardscore = entityhuman.getScoreboard().a(entityhuman.getLocalizedName(), scoreboardobjective);
+                ScoreboardScore scoreboardscore = entityhuman.getScoreboard().getPlayerScoreForObjective(entityhuman.getLocalizedName(), scoreboardobjective);
 
-                i = scoreboardscore.c();
+                i = scoreboardscore.getScore();
                 if (i < ((Integer) entry.getValue()).intValue() && flag) {
                     return false;
                 }

@@ -57,28 +57,28 @@ public class DedicatedServerConnectionThread extends Thread {
         while (this.e.a) {
             try {
                 Socket socket = this.d.accept();
-                InetAddress inetaddress = socket.getInetAddress();
-                long i = System.currentTimeMillis();
-                HashMap hashmap = this.b;
 
-                // CraftBukkit start
+                // CraftBukkit start - connection throttle
+                InetAddress address = socket.getInetAddress();
+                long currentTime = System.currentTimeMillis();
+
                 if (((MinecraftServer) this.e.d()).server == null) {
                     socket.close();
                     continue;
                 }
 
                 connectionThrottle = ((MinecraftServer) this.e.d()).server.getConnectionThrottle();
-                // CraftBukkit end
 
                 synchronized (this.b) {
-                    if (this.b.containsKey(inetaddress) && !b(inetaddress) && i - ((Long) this.b.get(inetaddress)).longValue() < connectionThrottle) {
-                        this.b.put(inetaddress, Long.valueOf(i));
+                    if (this.b.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - ((Long) this.b.get(address)).longValue() < connectionThrottle) {
+                        this.b.put(address, Long.valueOf(currentTime));
                         socket.close();
                         continue;
                     }
 
-                    this.b.put(inetaddress, Long.valueOf(i));
+                    this.b.put(address, Long.valueOf(currentTime));
                 }
+                // CraftBukkit end
 
                 PendingConnection pendingconnection = new PendingConnection(this.e.d(), socket, "Connection #" + this.c++);
 
@@ -101,10 +101,6 @@ public class DedicatedServerConnectionThread extends Thread {
                 this.a.add(pendingconnection);
             }
         }
-    }
-
-    private static boolean b(InetAddress inetaddress) {
-        return "127.0.0.1".equals(inetaddress.getHostAddress());
     }
 
     public void a(InetAddress inetaddress) {

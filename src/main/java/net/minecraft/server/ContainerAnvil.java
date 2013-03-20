@@ -148,7 +148,7 @@ public class ContainerAnvil extends Container {
                         int k2 = l1 - k1;
                         boolean flag1 = enchantment.canEnchant(itemstack);
 
-                        if (this.n.abilities.canInstantlyBuild) {
+                        if (this.n.abilities.canInstantlyBuild || itemstack.id == ItemEnchantedBook.ENCHANTED_BOOK.id) {
                             flag1 = true;
                         }
 

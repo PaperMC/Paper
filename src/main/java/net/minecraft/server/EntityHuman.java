@@ -436,11 +436,11 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
 
     public void c(Entity entity, int i) {
         this.addScore(i);
-        Collection collection = this.getScoreboard().a(IObjective.e);
+        Collection collection = this.getScoreboard().getObjectivesForCriteria(IScoreboardCriteria.e);
 
         if (entity instanceof EntityHuman) {
             this.a(StatisticList.A, 1);
-            collection.addAll(this.getScoreboard().a(IObjective.d));
+            collection.addAll(this.getScoreboard().getObjectivesForCriteria(IScoreboardCriteria.d));
         } else {
             this.a(StatisticList.z, 1);
         }
@@ -449,9 +449,9 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
 
         while (iterator.hasNext()) {
             ScoreboardObjective scoreboardobjective = (ScoreboardObjective) iterator.next();
-            ScoreboardScore scoreboardscore = this.getScoreboard().a(this.getLocalizedName(), scoreboardobjective);
+            ScoreboardScore scoreboardscore = this.getScoreboard().getPlayerScoreForObjective(this.getLocalizedName(), scoreboardobjective);
 
-            scoreboardscore.a();
+            scoreboardscore.incrementScore();
         }
     }
 
@@ -690,7 +690,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         ScoreboardTeam scoreboardteam = this.getScoreboardTeam();
         ScoreboardTeam scoreboardteam1 = entityhuman.getScoreboardTeam();
 
-        return scoreboardteam != scoreboardteam1 ? true : (scoreboardteam != null ? scoreboardteam.g() : true);
+        return scoreboardteam != scoreboardteam1 ? true : (scoreboardteam != null ? scoreboardteam.allowFriendlyFire() : true);
     }
 
     protected void a(EntityLiving entityliving, boolean flag) {
@@ -1490,10 +1490,10 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
     }
 
     public ScoreboardTeam getScoreboardTeam() {
-        return this.getScoreboard().i(this.name);
+        return this.getScoreboard().getPlayerTeam(this.name);
     }
 
     public String getScoreboardDisplayName() {
-        return ScoreboardTeam.a(this.getScoreboardTeam(), this.name);
+        return ScoreboardTeam.getPlayerDisplayName(this.getScoreboardTeam(), this.name);
     }
 }

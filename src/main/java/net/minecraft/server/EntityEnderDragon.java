@@ -430,7 +430,7 @@ public class EntityEnderDragon extends EntityLiving implements IComplex {
                     int j2 = this.world.getTypeId(k1, l1, i2);
 
                     if (j2 != 0) {
-                        if (j2 != Block.OBSIDIAN.id && j2 != Block.WHITESTONE.id && j2 != Block.BEDROCK.id) {
+                        if (j2 != Block.OBSIDIAN.id && j2 != Block.WHITESTONE.id && j2 != Block.BEDROCK.id && this.world.getGameRules().getBoolean("mobGriefing")) {
                             // CraftBukkit start - add blocks to list rather than destroying them
                             // flag1 = this.world.setAir(k1, l1, i2) || flag1;
                             flag1 = true;

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Callable;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -1686,13 +1687,26 @@ public abstract class EntityLiving extends Entity {
             Integer integer = (Integer) iterator.next();
             MobEffect mobeffect = (MobEffect) this.effects.get(integer);
 
-            if (!mobeffect.tick(this)) {
-                if (!this.world.isStatic) {
-                    iterator.remove();
-                    this.c(mobeffect);
+            try {
+                if (!mobeffect.tick(this)) {
+                    if (!this.world.isStatic) {
+                        iterator.remove();
+                        this.c(mobeffect);
+                    }
+                } else if (mobeffect.getDuration() % 600 == 0) {
+                    this.b(mobeffect);
                 }
-            } else if (mobeffect.getDuration() % 600 == 0) {
-                this.b(mobeffect);
+            } catch (Throwable throwable) {
+                CrashReport crashreport = CrashReport.a(throwable, "Ticking mob effect instance");
+                CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Mob effect being ticked");
+
+                crashreportsystemdetails.a("Effect Name", (Callable) (new CrashReportEffectName(this, mobeffect)));
+                crashreportsystemdetails.a("Effect ID", (Callable) (new CrashReportEffectID(this, mobeffect)));
+                crashreportsystemdetails.a("Effect Duration", (Callable) (new CrashReportEffectDuration(this, mobeffect)));
+                crashreportsystemdetails.a("Effect Amplifier", (Callable) (new CrashReportEffectAmplifier(this, mobeffect)));
+                crashreportsystemdetails.a("Effect is Splash", (Callable) (new CrashReportEffectSplash(this, mobeffect)));
+                crashreportsystemdetails.a("Effect is Ambient", (Callable) (new CrashReportEffectAmbient(this, mobeffect)));
+                throw new ReportedException(crashreport);
             }
         }
 
