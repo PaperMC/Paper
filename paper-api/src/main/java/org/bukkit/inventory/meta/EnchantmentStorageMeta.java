@@ -61,5 +61,13 @@ public interface EnchantmentStorageMeta extends ItemMeta {
      */
     boolean removeStoredEnchant(Enchantment ench) throws IllegalArgumentException;
 
+    /**
+     * Checks if the specified enchantment conflicts with any enchantments in this ItemMeta.
+     *
+     * @param ench enchantment to test
+     * @return true if the enchantment conflicts, false otherwise
+     */
+    boolean hasConflictingStoredEnchant(Enchantment ench);
+
     EnchantmentStorageMeta clone();
 }
