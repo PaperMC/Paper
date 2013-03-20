@@ -40,10 +40,12 @@ public final class ItemStack {
         this.f = null;
         this.id = i;
         this.count = j;
-        this.setData(k); // CraftBukkit
-        if (this.damage < 0) {
-            this.damage = 0;
-        }
+        // CraftBukkit start - pass to setData to do filtering
+        this.setData(k);
+        //if (this.damage < 0) {
+        //    this.damage = 0;
+        //}
+        // CraftBukkit end
     }
 
     public static ItemStack createStack(NBTTagCompound nbttagcompound) {
