@@ -17,6 +17,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.conversations.Conversable;
 import org.bukkit.map.MapView;
 import org.bukkit.plugin.messaging.PluginMessageRecipient;
+import org.bukkit.scoreboard.Scoreboard;
 
 /**
  * Represents a player, connected or not
@@ -626,4 +627,19 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * @throws IllegalArgumentException Thrown if the URL is too long.
      */
     public void setTexturePack(String url);
+
+    /**
+     * Gets the Scoreboard displayed to this player
+     *
+     * @return The current scoreboard seen by this player
+     */
+    public Scoreboard getScoreboard();
+
+    /**
+     * Sets the player's visible Scoreboard
+     * Scoreboard must be currently registered or an IllegalArgumentException is thrown
+     *
+     * @param scoreboard New Scoreboard for the player
+     */
+    public void setScoreboard(Scoreboard scoreboard);
 }

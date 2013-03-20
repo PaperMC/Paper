@@ -26,6 +26,7 @@ import org.bukkit.plugin.ServicesManager;
 import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.plugin.messaging.PluginMessageRecipient;
 import org.bukkit.scheduler.BukkitScheduler;
+import org.bukkit.scoreboard.ScoreboardManager;
 
 import com.avaje.ebean.config.ServerConfig;
 import org.bukkit.inventory.ItemFactory;
@@ -689,4 +690,13 @@ public interface Server extends PluginMessageRecipient {
      * @see ItemFactory
      */
     ItemFactory getItemFactory();
+
+    /**
+     * Gets the instance of the scoreboard manager.
+     * <p>
+     * This will only exist after the first world has loaded.
+     *
+     * @return the scoreboard manager or null if no worlds are loaded.
+     */
+    ScoreboardManager getScoreboardManager();
 }
