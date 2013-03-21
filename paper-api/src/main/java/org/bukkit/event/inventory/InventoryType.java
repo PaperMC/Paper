@@ -10,6 +10,10 @@ public enum InventoryType {
      */
     DISPENSER(9,"Dispenser"),
     /**
+     * A dropper inventory, with 9 slots of type CONTAINER.
+     */
+    DROPPER(9, "Dropper"),
+    /**
      * A furnace inventory, with a RESULT slot, a CRAFTING slot, and a FUEL slot.
      */
     FURNACE(3,"Furnace"),

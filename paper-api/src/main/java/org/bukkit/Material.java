@@ -16,6 +16,7 @@ import org.bukkit.material.Command;
 import org.bukkit.material.Crops;
 import org.bukkit.material.DetectorRail;
 import org.bukkit.material.Diode;
+import org.bukkit.material.DirectionalContainer;
 import org.bukkit.material.Dispenser;
 import org.bukkit.material.Door;
 import org.bukkit.material.Dye;
@@ -220,7 +221,7 @@ public enum Material {
     QUARTZ_BLOCK(155),
     QUARTZ_STAIRS(156, Stairs.class),
     ACTIVATOR_RAIL(157),
-    DROPPER(158),
+    DROPPER(158, DirectionalContainer.class),
     // ----- Item Separator -----
     IRON_SPADE(256, 1, 250),
     IRON_PICKAXE(257, 1, 250),
