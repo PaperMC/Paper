@@ -30,17 +30,7 @@ public class TileEntitySign extends TileEntity {
     }
 
     public Packet getUpdatePacket() {
-        String[] astring = new String[4];
-
-        // CraftBukkit start - Limit sign text to 15 chars per line
-        for (int i = 0; i < 4; ++i) {
-            astring[i] = this.lines[i];
-
-            if (this.lines[i].length() > 15) {
-                astring[i] = this.lines[i].substring(0, 15);
-            }
-        }
-        // CraftBukkit end
+        String[] astring = sanitizeLines(this.lines); // CraftBukkit - call sign line sanitizer to limit line length
 
         return new PacketPlayOutUpdateSign(this.x, this.y, this.z, astring);
     }
@@ -56,4 +46,18 @@ public class TileEntitySign extends TileEntity {
     public EntityHuman b() {
         return this.k;
     }
+
+    // CraftBukkit start - central method to limit sign text to 15 chars per line
+    public static String[] sanitizeLines(String[] lines) {
+        String[] astring = new String[4];
+        for (int i = 0; i < 4; ++i) {
+            astring[i] = lines[i];
+
+            if (lines[i].length() > 15) {
+                astring[i] = lines[i].substring(0, 15);
+            }
+        }
+        return astring;
+    }
+    // CraftBukkit end
 }

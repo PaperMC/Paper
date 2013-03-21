@@ -1583,12 +1583,7 @@ public class PlayerConnection implements PacketPlayInListener {
                 this.server.getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {
-                    for (int l = 0; l < 4; ++l) {
-                        tileentitysign1.lines[l] = event.getLine(l);
-                        if(tileentitysign1.lines[l] == null) {
-                            tileentitysign1.lines[l] = "";
-                        }
-                    }
+                    tileentitysign1.lines = org.bukkit.craftbukkit.block.CraftSign.sanitizeLines(event.getLines());
                     tileentitysign1.isEditable = false;
                 }
                 // System.arraycopy(packetplayinupdatesign.f(), 0, tileentitysign1.lines, 0, 4);
