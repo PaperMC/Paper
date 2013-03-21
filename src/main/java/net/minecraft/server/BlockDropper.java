@@ -16,7 +16,7 @@ public class BlockDropper extends BlockDispenser {
         return new TileEntityDropper();
     }
 
-    protected void dispense(World world, int i, int j, int k) {
+    public void dispense(World world, int i, int j, int k) { // CraftBukkit - protected -> public
         SourceBlock sourceblock = new SourceBlock(world, i, j, k);
         TileEntityDispenser tileentitydispenser = (TileEntityDispenser) sourceblock.getTileEntity();
 
