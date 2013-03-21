@@ -35,16 +35,24 @@ public class CraftSign extends CraftBlockState implements Sign {
         boolean result = super.update(force, applyPhysics);
 
         if (result) {
-            for(int i = 0; i < 4; i++) {
-                if(lines[i] != null) {
-                    sign.lines[i] = lines[i];
-                } else {
-                    sign.lines[i] = "";
-                }
-            }
+            sign.lines = sanitizeLines(lines);
             sign.update();
         }
 
         return result;
+    }
+
+    public static String[] sanitizeLines(String[] lines) {
+        String[] astring = new String[4];
+
+        for (int i = 0; i < 4; i++) {
+            if (i < lines.length && lines[i] != null) {
+                astring[i] = lines[i];
+            } else {
+                astring[i] = "";
+            }
+        }
+
+        return TileEntitySign.sanitizeLines(astring);
     }
 }

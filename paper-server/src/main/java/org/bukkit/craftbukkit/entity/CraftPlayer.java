@@ -31,6 +31,7 @@ import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.conversations.Conversation;
 import org.bukkit.conversations.ConversationAbandonedEvent;
 import org.bukkit.conversations.ManuallyAbandonedConversationCanceller;
+import org.bukkit.craftbukkit.block.CraftSign;
 import org.bukkit.craftbukkit.conversations.ConversationTracker;
 import org.bukkit.craftbukkit.CraftEffect;
 import org.bukkit.craftbukkit.CraftOfflinePlayer;
@@ -366,6 +367,27 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         packet.block = CraftMagicNumbers.getBlock(material);
         packet.data = data;
         getHandle().playerConnection.sendPacket(packet);
+    }
+
+    @Override
+    public void sendSignChange(Location loc, String[] lines) {
+        if (getHandle().playerConnection == null) {
+            return;
+        }
+
+        if (lines == null) {
+            lines = new String[4];
+        }
+
+        Validate.notNull(loc, "Location can not be null");
+        if (lines.length < 4) {
+            throw new IllegalArgumentException("Must have at least 4 lines");
+        }
+
+        // Limit to 15 chars per line and set null lines to blank
+        String[] astring = CraftSign.sanitizeLines(lines);
+
+        getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateSign(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), astring));
     }
 
     @Override
