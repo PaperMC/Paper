@@ -249,6 +249,8 @@ public class CraftBlock implements Block {
             return new CraftFurnace(this);
         case DISPENSER:
             return new CraftDispenser(this);
+        case DROPPER:
+            return new CraftDropper(this);
         case HOPPER:
             return new CraftHopper(this);
         case MOB_SPAWNER:
