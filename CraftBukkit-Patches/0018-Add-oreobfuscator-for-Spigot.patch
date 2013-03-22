@@ -1,4 +1,4 @@
-From 2fb3d58ee2c8d00b90304314750d8988cdfb6a91 Mon Sep 17 00:00:00 2001
+From bbd48168b30e50034297a255b3b251fa60631ebb Mon Sep 17 00:00:00 2001
 From: lishid <lishid@gmail.com>
 Date: Sat, 16 Feb 2013 10:05:25 +1100
 Subject: [PATCH] Add oreobfuscator for Spigot.
@@ -10,11 +10,11 @@ Subject: [PATCH] Add oreobfuscator for Spigot.
  .../net/minecraft/server/Packet56MapChunkBulk.java |  21 ++-
  .../minecraft/server/PlayerInteractManager.java    |   5 +
  .../java/org/bukkit/craftbukkit/CraftServer.java   |   6 +
- .../java/org/bukkit/craftbukkit/CraftWorld.java    |   9 ++
+ .../java/org/bukkit/craftbukkit/CraftWorld.java    |   4 +
  .../bukkit/craftbukkit/OrebfuscatorManager.java    | 146 +++++++++++++++++++++
  src/main/java/org/bukkit/craftbukkit/Spigot.java   |   8 ++
  src/main/resources/configurations/bukkit.yml       |   6 +
- 10 files changed, 203 insertions(+), 1 deletion(-)
+ 10 files changed, 198 insertions(+), 1 deletion(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/OrebfuscatorManager.java
 
 diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
@@ -140,35 +140,30 @@ index 872c4ac..83704f0 100644
          private boolean value = true;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 9343d46..fbab028 100644
+index f81ca3e..fbab028 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -118,6 +118,11 @@ public class CraftWorld implements World {
-         treeGrowthModifier = configuration.getInt("world-settings." + name + ".tree-growth-modifier", treeGrowthModifier);
-         mushroomGrowthModifier = configuration.getInt("world-settings." + name + ".mushroom-growth-modifier", mushroomGrowthModifier);
+@@ -121,6 +121,8 @@ public class CraftWorld implements World {
+         viewDistance = Bukkit.getServer().getViewDistance();
+         viewDistance = configuration.getInt("world-settings." + name + ".view-distance", viewDistance);
  
-+        viewDistance = Bukkit.getServer().getViewDistance();
-+        viewDistance = configuration.getInt("world-settings." + name + ".view-distance", viewDistance);
-+
 +        obfuscated = !world.getServer().orebfuscatorDisabledWorlds.contains(name);
 +
          server.getLogger().info("-------------- Spigot ----------------");
          server.getLogger().info("-------- World Settings For [" + name + "] --------");
          server.getLogger().info("Growth Per Chunk: " + growthPerTick);
-@@ -131,6 +136,8 @@ public class CraftWorld implements World {
-         server.getLogger().info("Sugar Growth Modifier: " + sugarGrowthModifier);
+@@ -135,6 +137,7 @@ public class CraftWorld implements World {
          server.getLogger().info("Tree Growth Modifier: " + treeGrowthModifier);
          server.getLogger().info("Mushroom Growth Modifier: " + mushroomGrowthModifier);
-+        server.getLogger().info("View distance: " + viewDistance);
+         server.getLogger().info("View distance: " + viewDistance);
 +        server.getLogger().info("Oreobfuscator: " + obfuscated);
          server.getLogger().info("-------------------------------------------------");
          // Spigot end
      }
-@@ -141,6 +148,8 @@ public class CraftWorld implements World {
-     public int aggregateTicks = 4;
+@@ -146,6 +149,7 @@ public class CraftWorld implements World {
      public double itemMergeRadius = 3.5;
      public double expMergeRadius = 3.5;
-+    public int viewDistance;
+     public int viewDistance;
 +    public boolean obfuscated = false;
      //Crop growth rates:
      public int wheatGrowthModifier = 100;
@@ -345,10 +340,10 @@ index db46037..ad65bca 100644
              server.getLogger().severe("[Spigot] You should not disable chunk-gc, unexpected behaviour may occur!");
          }
 diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
-index 87f9f1c..d0e7244 100644
+index 35fbd06..6c21ca2 100644
 --- a/src/main/resources/configurations/bukkit.yml
 +++ b/src/main/resources/configurations/bukkit.yml
-@@ -80,3 +80,9 @@ database:
+@@ -81,3 +81,9 @@ database:
      driver: org.sqlite.JDBC
      password: walrus
      url: jdbc:sqlite:{DIR}{NAME}.db
