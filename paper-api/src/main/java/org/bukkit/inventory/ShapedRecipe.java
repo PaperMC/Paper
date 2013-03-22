@@ -96,6 +96,12 @@ public class ShapedRecipe implements Recipe {
      */
     public ShapedRecipe setIngredient(char key, Material ingredient, int raw) {
         Validate.isTrue(ingredients.containsKey(key), "Symbol does not appear in the shape:", key);
+
+        // -1 is the old wildcard, map to Short.MAX_VALUE as the new one
+        if (raw == -1) {
+            raw = Short.MAX_VALUE;
+        }
+
         ingredients.put(key, new ItemStack(ingredient, 1, (short) raw));
         return this;
     }
