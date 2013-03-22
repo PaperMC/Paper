@@ -21,6 +21,7 @@ function applyPatch {
     git fetch upstream >/dev/null 2>&1
     git reset --hard upstream/upstream
     echo "  Applying patches to $target..."
+    git am --abort
     git am --3way $basedir/${what}-Patches/*.patch
     if [ "$?" != "0" ]; then
         echo "  Something did not apply cleanly to $target."
