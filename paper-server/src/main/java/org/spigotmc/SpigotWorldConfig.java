@@ -148,4 +148,36 @@ public class SpigotWorldConfig
         this.expMerge = this.getDouble("merge-radius.exp", 3.0 );
         this.log( "Experience Merge Radius: " + this.expMerge );
     }
+
+    public int viewDistance;
+    private void viewDistance()
+    {
+        if ( SpigotConfig.version < 12 )
+        {
+            this.set( "view-distance", null );
+        }
+
+        Object viewDistanceObject = this.get( "view-distance", "default" );
+        this.viewDistance = ( viewDistanceObject ) instanceof Number ? ( (Number) viewDistanceObject ).intValue() : -1;
+        if ( this.viewDistance <= 0 )
+        {
+            this.viewDistance = Bukkit.getViewDistance();
+        }
+
+        this.viewDistance = Math.max( Math.min( this.viewDistance, 32 ), 3 );
+        this.log( "View Distance: " + this.viewDistance );
+    }
+
+    public int simulationDistance;
+    private void simulationDistance()
+    {
+        Object simulationDistanceObject = this.get( "simulation-distance", "default" );
+        this.simulationDistance = ( simulationDistanceObject ) instanceof Number ? ( (Number) simulationDistanceObject ).intValue() : -1;
+        if ( this.simulationDistance <= 0 )
+        {
+            this.simulationDistance = Bukkit.getSimulationDistance();
+        }
+
+        this.log( "Simulation Distance: " + this.simulationDistance );
+    }
 }
