@@ -4,8 +4,11 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.HumanEntity;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.inventory.InventoryPickupItemEvent;
+import org.bukkit.inventory.Inventory;
 // CraftBukkit end
 
 public class TileEntityHopper extends TileEntity implements IHopper {
@@ -199,10 +202,26 @@ public class TileEntityHopper extends TileEntity implements IHopper {
             for (int i = 0; i < this.getSize(); ++i) {
                 if (this.getItem(i) != null) {
                     ItemStack itemstack = this.getItem(i).cloneItemStack();
-                    ItemStack itemstack1 = addItem(iinventory, this.splitStack(i, 1), Facing.OPPOSITE_FACING[BlockHopper.c(this.p())]);
+                    // CraftBukkit start - fire event when pushing items into other inventories
+                    CraftItemStack oitemstack = CraftItemStack.asCraftMirror(this.splitStack(i, 1));
+
+                    Inventory destinationInventory = iinventory.getOwner() != null ? iinventory.getOwner().getInventory() : null;
+                    InventoryMoveItemEvent event = new InventoryMoveItemEvent(this.getOwner().getInventory(), oitemstack.clone(), destinationInventory, true);
+                    this.getWorld().getServer().getPluginManager().callEvent(event);
+                    if (event.isCancelled()) {
+                        this.setItem(i, itemstack);
+                        this.c(8); // delay hopper checks
+                        return false;
+                    }
+                    ItemStack itemstack1 = addItem(iinventory, CraftItemStack.asNMSCopy(event.getItem()), Facing.OPPOSITE_FACING[BlockHopper.c(this.p())]);
 
                     if (itemstack1 == null || itemstack1.count == 0) {
-                        iinventory.update();
+                        if (event.getItem().equals(oitemstack)) {
+                            iinventory.update();
+                        } else {
+                            this.setItem(i, itemstack);
+                        }
+                        // CraftBukkit end
                         return true;
                     }
 
@@ -254,10 +273,27 @@ public class TileEntityHopper extends TileEntity implements IHopper {
 
         if (itemstack != null && canTakeItemFromInventory(iinventory, itemstack, i, j)) {
             ItemStack itemstack1 = itemstack.cloneItemStack();
-            ItemStack itemstack2 = addItem(ihopper, iinventory.splitStack(i, 1), -1);
+            // CraftBukkit start - fire event on collection of items from inventories into the hopper
+            CraftItemStack oitemstack = CraftItemStack.asCraftMirror(iinventory.splitStack(i, 1));
+
+            Inventory sourceInventory = iinventory.getOwner() != null ? iinventory.getOwner().getInventory() : null;
+            InventoryMoveItemEvent event = new InventoryMoveItemEvent(sourceInventory, oitemstack.clone(), ihopper.getOwner().getInventory(), false);
+
+            ihopper.getWorld().getServer().getPluginManager().callEvent(event);
+            if (event.isCancelled()) {
+                iinventory.setItem(i, itemstack1);
+                ((TileEntityHopper) ihopper).c(8); // delay hopper checks
+                return false;
+            }
+            ItemStack itemstack2 = addItem(ihopper, CraftItemStack.asNMSCopy(event.getItem()), -1);
 
             if (itemstack2 == null || itemstack2.count == 0) {
-                iinventory.update();
+                if (event.getItem().equals(oitemstack)) {
+                    iinventory.update();
+                } else {
+                    iinventory.setItem(i, itemstack1);
+                }
+                // CraftBukkit end
                 return true;
             }
 
