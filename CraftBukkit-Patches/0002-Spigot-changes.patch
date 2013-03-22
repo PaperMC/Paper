@@ -1,6 +1,6 @@
-From e487f4eb5d39d9f09a9ffa5dafa8354d94115169 Mon Sep 17 00:00:00 2001
+From 5431f8ebb3020558e602456d8658e58e20dbe5f6 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Sat, 16 Mar 2013 10:13:29 +1100
+Date: Sat, 23 Mar 2013 09:27:15 +1100
 Subject: [PATCH] Spigot changes.
 
 ---
@@ -28,16 +28,12 @@ Subject: [PATCH] Spigot changes.
  src/main/java/org/bukkit/craftbukkit/Spigot.java   |  20 +++
  .../craftbukkit/chunkio/ChunkIOProvider.java       |   2 +-
  .../org/bukkit/craftbukkit/entity/CraftPlayer.java |   7 +
- .../java/org/bukkit/craftbukkit/util/FlatMap.java  |  34 +++++
- .../org/bukkit/craftbukkit/util/LongHashSet.java   |  11 +-
- .../bukkit/craftbukkit/util/LongObjectHashMap.java |   5 +
  src/main/resources/configurations/bukkit.yml       |  27 ++++
- 28 files changed, 488 insertions(+), 81 deletions(-)
+ 25 files changed, 441 insertions(+), 78 deletions(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/Spigot.java
- create mode 100644 src/main/java/org/bukkit/craftbukkit/util/FlatMap.java
 
 diff --git a/.gitignore b/.gitignore
-index a689360..b97a549 100644
+index c3faf57..346b232 100644
 --- a/.gitignore
 +++ b/.gitignore
 @@ -34,3 +34,5 @@
@@ -1057,135 +1053,6 @@ index 70111e7..1871d3e 100644
  
      public void setCompassTarget(Location loc) {
          if (getHandle().playerConnection == null) return;
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/FlatMap.java b/src/main/java/org/bukkit/craftbukkit/util/FlatMap.java
-new file mode 100644
-index 0000000..e8a7725
---- /dev/null
-+++ b/src/main/java/org/bukkit/craftbukkit/util/FlatMap.java
-@@ -0,0 +1,34 @@
-+package org.bukkit.craftbukkit.util;
-+
-+public class FlatMap<V> {
-+
-+    private static final int FLAT_LOOKUP_SIZE = 512;
-+    private final Object[][] flatLookup = new Object[FLAT_LOOKUP_SIZE * 2][FLAT_LOOKUP_SIZE * 2];
-+
-+    public void put(long msw, long lsw, V value) {
-+        long acx = Math.abs(msw);
-+        long acz = Math.abs(lsw);
-+        if (acx < FLAT_LOOKUP_SIZE && acz < FLAT_LOOKUP_SIZE) {
-+            flatLookup[(int) (msw + FLAT_LOOKUP_SIZE)][(int) (lsw + FLAT_LOOKUP_SIZE)] = value;
-+        }
-+    }
-+
-+    public void put(long key, V value) {
-+        put(LongHash.msw(key), LongHash.lsw(key), value);
-+
-+    }
-+
-+    public V get(long msw, long lsw) {
-+        long acx = Math.abs(msw);
-+        long acz = Math.abs(lsw);
-+        if (acx < FLAT_LOOKUP_SIZE && acz < FLAT_LOOKUP_SIZE) {
-+            return (V) flatLookup[(int) (msw + FLAT_LOOKUP_SIZE)][(int) (lsw + FLAT_LOOKUP_SIZE)];
-+        } else {
-+            return null;
-+        }
-+    }
-+
-+    public V get(long key) {
-+        return get(LongHash.msw(key), LongHash.lsw(key));
-+    }
-+}
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/LongHashSet.java b/src/main/java/org/bukkit/craftbukkit/util/LongHashSet.java
-index 22c96c5..3f1617d 100644
---- a/src/main/java/org/bukkit/craftbukkit/util/LongHashSet.java
-+++ b/src/main/java/org/bukkit/craftbukkit/util/LongHashSet.java
-@@ -31,6 +31,8 @@ public class LongHashSet {
-     private int elements;
-     private long[] values;
-     private int modCount;
-+    private static final Object PRESENT = new Object();
-+    private final FlatMap<Object> flat = new FlatMap<Object>();
- 
-     public LongHashSet() {
-         this(INITIAL_SIZE);
-@@ -56,10 +58,11 @@ public class LongHashSet {
-     }
- 
-     public boolean contains(int msw, int lsw) {
-+        if (flat.get(msw, lsw) != null) return true; // Spigot
-         return contains(LongHash.toLong(msw, lsw));
-     }
- 
--    public boolean contains(long value) {
-+    private boolean contains(long value) { // Spigot
-         int hash = hash(value);
-         int index = (hash & 0x7FFFFFFF) % values.length;
-         int offset = 1;
-@@ -78,10 +81,11 @@ public class LongHashSet {
-     }
- 
-     public boolean add(int msw, int lsw) {
-+        flat.put(msw, lsw, PRESENT); // Spigot
-         return add(LongHash.toLong(msw, lsw));
-     }
- 
--    public boolean add(long value) {
-+    private boolean add(long value) { // Spigot
-         int hash = hash(value);
-         int index = (hash & 0x7FFFFFFF) % values.length;
-         int offset = 1;
-@@ -125,10 +129,11 @@ public class LongHashSet {
-     }
- 
-     public void remove(int msw, int lsw) {
-+        flat.put(msw, lsw, null); // Spigot
-         remove(LongHash.toLong(msw, lsw));
-     }
- 
--    public boolean remove(long value) {
-+    private boolean remove(long value) { // Spigot
-         int hash = hash(value);
-         int index = (hash & 0x7FFFFFFF) % values.length;
-         int offset = 1;
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/LongObjectHashMap.java b/src/main/java/org/bukkit/craftbukkit/util/LongObjectHashMap.java
-index 01861cc..dbd33fa 100644
---- a/src/main/java/org/bukkit/craftbukkit/util/LongObjectHashMap.java
-+++ b/src/main/java/org/bukkit/craftbukkit/util/LongObjectHashMap.java
-@@ -28,6 +28,7 @@ public class LongObjectHashMap<V> implements Cloneable, Serializable {
-     private transient V[][]    values;
-     private transient int      modCount;
-     private transient int      size;
-+    private final FlatMap<V> flat = new FlatMap<V>(); // Spigot
- 
-     public LongObjectHashMap() {
-         initialize();
-@@ -61,6 +62,8 @@ public class LongObjectHashMap<V> implements Cloneable, Serializable {
-     }
- 
-     public V get(long key) {
-+        V val = flat.get(key); // Spigot
-+        if (val != null) return val; // Spigot
-         int index = (int) (keyIndex(key) & (BUCKET_SIZE - 1));
-         long[] inner = keys[index];
-         if (inner == null) return null;
-@@ -78,6 +81,7 @@ public class LongObjectHashMap<V> implements Cloneable, Serializable {
-     }
- 
-     public V put(long key, V value) {
-+        flat.put(key, value); // Spigot
-         int index = (int) (keyIndex(key) & (BUCKET_SIZE - 1));
-         long[] innerKeys = keys[index];
-         V[] innerValues = values[index];
-@@ -124,6 +128,7 @@ public class LongObjectHashMap<V> implements Cloneable, Serializable {
-     }
- 
-     public V remove(long key) {
-+        flat.put(key, null); // Spigot
-         int index = (int) (keyIndex(key) & (BUCKET_SIZE - 1));
-         long[] inner = keys[index];
-         if (inner == null) {
 diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
 index 61a95e3..f44d5d0 100644
 --- a/src/main/resources/configurations/bukkit.yml
@@ -1225,5 +1092,5 @@ index 61a95e3..f44d5d0 100644
      monsters: 70
      animals: 15
 -- 
-1.8.2
+1.8.1-rc2
 
