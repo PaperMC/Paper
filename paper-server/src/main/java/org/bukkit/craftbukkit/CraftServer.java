@@ -32,8 +32,6 @@ import net.minecraft.server.EnumGamemode;
 import net.minecraft.server.ExceptionWorldConflict;
 import net.minecraft.server.PlayerList;
 import net.minecraft.server.RecipesFurnace;
-import net.minecraft.server.IProgressUpdate;
-import net.minecraft.server.IWorldAccess;
 import net.minecraft.server.Item;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.MobEffectList;
@@ -82,6 +80,7 @@ import org.bukkit.craftbukkit.metadata.PlayerMetadataStore;
 import org.bukkit.craftbukkit.metadata.WorldMetadataStore;
 import org.bukkit.craftbukkit.potion.CraftPotionBrewer;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
+import org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager;
 import org.bukkit.craftbukkit.updater.AutoUpdater;
 import org.bukkit.craftbukkit.updater.BukkitDLUpdaterService;
 import org.bukkit.craftbukkit.util.DatFileFilter;
@@ -162,6 +161,7 @@ public final class CraftServer implements Server {
     private File container;
     private WarningState warningState = WarningState.DEFAULT;
     private final BooleanWrapper online = new BooleanWrapper();
+    public CraftScoreboardManager scoreboardManager;
 
     private final class BooleanWrapper {
         private boolean value = true;
@@ -1357,5 +1357,9 @@ public final class CraftServer implements Server {
 
     public CraftItemFactory getItemFactory() {
         return CraftItemFactory.instance();
+    }
+
+    public CraftScoreboardManager getScoreboardManager() {
+        return scoreboardManager;
     }
 }
