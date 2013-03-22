@@ -1,0 +1,139 @@
+From 7080e3e4d864249328686c7d04ffba43881a36ed Mon Sep 17 00:00:00 2001
+From: crast <contact@jamescrasta.com>
+Date: Thu, 21 Mar 2013 18:13:20 -0600
+Subject: [PATCH] Prevent classloader leakage in metadata system. Fixes
+ Bukkit-3854
+
+Metadata values keep strong reference to plugins, and they're not
+cleared out when plugins are unloaded. This system adds weak reference
+logic to allow these values to fall out of scope. In addition we get
+some operations turning to O(1) "for free."
+---
+ .../org/bukkit/metadata/MetadataStoreBase.java     | 48 ++++++++--------------
+ .../org/bukkit/metadata/MetadataValueAdapter.java  |  8 ++--
+ 2 files changed, 23 insertions(+), 33 deletions(-)
+
+diff --git a/src/main/java/org/bukkit/metadata/MetadataStoreBase.java b/src/main/java/org/bukkit/metadata/MetadataStoreBase.java
+index 7febbd4..8b7aabc 100644
+--- a/src/main/java/org/bukkit/metadata/MetadataStoreBase.java
++++ b/src/main/java/org/bukkit/metadata/MetadataStoreBase.java
+@@ -6,7 +6,7 @@ import org.bukkit.plugin.Plugin;
+ import java.util.*;
+ 
+ public abstract class MetadataStoreBase<T> {
+-    private Map<String, List<MetadataValue>> metadataMap = new HashMap<String, List<MetadataValue>>();
++    private Map<String, Map<Plugin, MetadataValue>> metadataMap = new HashMap<String, Map<Plugin, MetadataValue>>();
+     private WeakHashMap<T, Map<String, String>> disambiguationCache = new WeakHashMap<T, Map<String, String>>();
+ 
+     /**
+@@ -26,23 +26,16 @@ public abstract class MetadataStoreBase<T> {
+      * @throws IllegalArgumentException If value is null, or the owning plugin is null
+      */
+     public synchronized void setMetadata(T subject, String metadataKey, MetadataValue newMetadataValue) {
++        Plugin owningPlugin = newMetadataValue.getOwningPlugin();
+         Validate.notNull(newMetadataValue, "Value cannot be null");
+-        Validate.notNull(newMetadataValue.getOwningPlugin(), "Plugin cannot be null");
++        Validate.notNull(owningPlugin, "Plugin cannot be null");
+         String key = cachedDisambiguate(subject, metadataKey);
+-        if (!metadataMap.containsKey(key)) {
+-            metadataMap.put(key, new ArrayList<MetadataValue>());
+-        }
+-        // we now have a list of subject's metadata for the given metadata key. If newMetadataValue's owningPlugin
+-        // is found in this list, replace the value rather than add a new one.
+-        List<MetadataValue> metadataList = metadataMap.get(key);
+-        for (int i = 0; i < metadataList.size(); i++) {
+-            if (metadataList.get(i).getOwningPlugin().equals(newMetadataValue.getOwningPlugin())) {
+-                metadataList.set(i, newMetadataValue);
+-                return;
+-            }
++        Map<Plugin, MetadataValue> entry = metadataMap.get(key);
++        if (entry == null) {
++            entry = new WeakHashMap<Plugin, MetadataValue>(1);
++            metadataMap.put(key, entry);
+         }
+-        // we didn't find a duplicate...add the new metadata value
+-        metadataList.add(newMetadataValue);
++        entry.put(owningPlugin, newMetadataValue);
+     }
+ 
+     /**
+@@ -57,7 +50,8 @@ public abstract class MetadataStoreBase<T> {
+     public synchronized List<MetadataValue> getMetadata(T subject, String metadataKey) {
+         String key = cachedDisambiguate(subject, metadataKey);
+         if (metadataMap.containsKey(key)) {
+-            return Collections.unmodifiableList(metadataMap.get(key));
++            Collection<MetadataValue> values = metadataMap.get(key).values();
++            return Collections.unmodifiableList(new ArrayList<MetadataValue>(values));
+         } else {
+             return Collections.emptyList();
+         }
+@@ -87,15 +81,11 @@ public abstract class MetadataStoreBase<T> {
+     public synchronized void removeMetadata(T subject, String metadataKey, Plugin owningPlugin) {
+         Validate.notNull(owningPlugin, "Plugin cannot be null");
+         String key = cachedDisambiguate(subject, metadataKey);
+-        List<MetadataValue> metadataList = metadataMap.get(key);
+-        if (metadataList == null) return;
+-        for (int i = 0; i < metadataList.size(); i++) {
+-            if (metadataList.get(i).getOwningPlugin().equals(owningPlugin)) {
+-                metadataList.remove(i);
+-                if (metadataList.isEmpty()) {
+-                    metadataMap.remove(key);
+-                }
+-            }
++        Map<Plugin, MetadataValue> entry = metadataMap.get(key);
++        if (entry == null) return;
++        entry.remove(owningPlugin);
++        if (entry.isEmpty()) {
++            metadataMap.remove(key);
+         }
+     }
+ 
+@@ -109,11 +99,9 @@ public abstract class MetadataStoreBase<T> {
+      */
+     public synchronized void invalidateAll(Plugin owningPlugin) {
+         Validate.notNull(owningPlugin, "Plugin cannot be null");
+-        for (List<MetadataValue> values : metadataMap.values()) {
+-            for (MetadataValue value : values) {
+-                if (value.getOwningPlugin().equals(owningPlugin)) {
+-                    value.invalidate();
+-                }
++        for (Map<Plugin, MetadataValue> values : metadataMap.values()) {
++            if (values.containsKey(owningPlugin)) {
++                values.get(owningPlugin).invalidate();
+             }
+         }
+     }
+diff --git a/src/main/java/org/bukkit/metadata/MetadataValueAdapter.java b/src/main/java/org/bukkit/metadata/MetadataValueAdapter.java
+index c4b8b39..3b83380 100644
+--- a/src/main/java/org/bukkit/metadata/MetadataValueAdapter.java
++++ b/src/main/java/org/bukkit/metadata/MetadataValueAdapter.java
+@@ -1,5 +1,7 @@
+ package org.bukkit.metadata;
+ 
++import java.lang.ref.WeakReference;
++
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.plugin.Plugin;
+ import org.bukkit.util.NumberConversions;
+@@ -13,15 +15,15 @@ import org.bukkit.util.NumberConversions;
+  *
+  */
+ public abstract class MetadataValueAdapter implements MetadataValue {
+-    protected final Plugin owningPlugin;
++    protected final WeakReference<Plugin> owningPlugin;
+ 
+     protected MetadataValueAdapter(Plugin owningPlugin) {
+         Validate.notNull(owningPlugin, "owningPlugin cannot be null");
+-        this.owningPlugin = owningPlugin;
++        this.owningPlugin = new WeakReference<Plugin>(owningPlugin);
+     }
+ 
+     public Plugin getOwningPlugin() {
+-        return owningPlugin;
++        return owningPlugin.get();
+     }
+ 
+     public int asInt() {
+-- 
+1.8.1-rc2
+
