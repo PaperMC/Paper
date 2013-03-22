@@ -126,7 +126,7 @@ public abstract class PlayerList {
         }
     }
 
-    protected void a(ScoreboardServer scoreboardserver, EntityPlayer entityplayer) {
+    public void a(ScoreboardServer scoreboardserver, EntityPlayer entityplayer) { // CraftBukkit - protected -> public
         HashSet hashset = new HashSet();
         Iterator iterator = scoreboardserver.getTeams().iterator();
 
@@ -277,6 +277,8 @@ public abstract class PlayerList {
                 entityplayer1.playerConnection.sendPacket(packet);
             }
         }
+        // This removes the scoreboard (and player reference) for the specific player in the manager
+        this.cserver.getScoreboardManager().removePlayer(entityplayer.getBukkitEntity());
 
         return playerQuitEvent.getQuitMessage();
         // CraftBukkit end

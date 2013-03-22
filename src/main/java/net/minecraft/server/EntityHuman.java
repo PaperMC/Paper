@@ -436,11 +436,13 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
 
     public void c(Entity entity, int i) {
         this.addScore(i);
-        Collection collection = this.getScoreboard().getObjectivesForCriteria(IScoreboardCriteria.e);
+        // CraftBukkit - Get our scores instead
+        Collection<ScoreboardScore> collection = this.world.getServer().getScoreboardManager().getScoreboardScores(IScoreboardCriteria.e, this.getLocalizedName(), new java.util.ArrayList<ScoreboardScore>());
 
         if (entity instanceof EntityHuman) {
             this.a(StatisticList.A, 1);
-            collection.addAll(this.getScoreboard().getObjectivesForCriteria(IScoreboardCriteria.d));
+            // CraftBukkit - Get our scores instead
+            this.world.getServer().getScoreboardManager().getScoreboardScores(IScoreboardCriteria.d, this.getLocalizedName(), collection);
         } else {
             this.a(StatisticList.z, 1);
         }
@@ -448,8 +450,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         Iterator iterator = collection.iterator();
 
         while (iterator.hasNext()) {
-            ScoreboardObjective scoreboardobjective = (ScoreboardObjective) iterator.next();
-            ScoreboardScore scoreboardscore = this.getScoreboard().getPlayerScoreForObjective(this.getLocalizedName(), scoreboardobjective);
+            ScoreboardScore scoreboardscore = (ScoreboardScore) iterator.next(); // CraftBukkit - Use our scores instead
 
             scoreboardscore.incrementScore();
         }
@@ -687,10 +688,28 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
     }
 
     public boolean a(EntityHuman entityhuman) {
-        ScoreboardTeam scoreboardteam = this.getScoreboardTeam();
-        ScoreboardTeam scoreboardteam1 = entityhuman.getScoreboardTeam();
+        // CraftBukkit start - Change to check player's scoreboard team according to API reference to this (or main) scoreboard
+        org.bukkit.scoreboard.Team team;
+        if (this instanceof EntityPlayer) {
+            EntityPlayer thisPlayer = (EntityPlayer) this;
+            team = thisPlayer.getBukkitEntity().getScoreboard().getPlayerTeam(thisPlayer.getBukkitEntity());
+            if (team == null || team.allowFriendlyFire()) {
+                return true;
+            }
+        } else {
+            // This should never be called, but is implemented anyway
+            org.bukkit.OfflinePlayer thisPlayer = this.world.getServer().getOfflinePlayer(this.name);
+            team = this.world.getServer().getScoreboardManager().getMainScoreboard().getPlayerTeam(thisPlayer);
+            if (team == null || team.allowFriendlyFire()) {
+                return true;
+            }
+        }
 
-        return scoreboardteam != scoreboardteam1 ? true : (scoreboardteam != null ? scoreboardteam.allowFriendlyFire() : true);
+        if (entityhuman instanceof EntityPlayer) {
+            return team.hasPlayer(((EntityPlayer) entityhuman).getBukkitEntity());
+        }
+        return team.hasPlayer(this.world.getServer().getOfflinePlayer(entityhuman.name));
+        // CraftBukkit end
     }
 
     protected void a(EntityLiving entityliving, boolean flag) {
@@ -1494,6 +1513,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
     }
 
     public String getScoreboardDisplayName() {
+        // TODO: fun
         return ScoreboardTeam.getPlayerDisplayName(this.getScoreboardTeam(), this.name);
     }
 }

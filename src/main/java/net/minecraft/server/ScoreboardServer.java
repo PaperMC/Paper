@@ -20,7 +20,7 @@ public class ScoreboardServer extends Scoreboard {
     public void handleScoreChanged(ScoreboardScore scoreboardscore) {
         super.handleScoreChanged(scoreboardscore);
         if (this.b.contains(scoreboardscore.getObjective())) {
-            this.a.getPlayerList().sendAll(new Packet207SetScoreboardScore(scoreboardscore, 0));
+            this.sendAll(new Packet207SetScoreboardScore(scoreboardscore, 0)); // CraftBukkit - Internal packet method
         }
 
         this.b();
@@ -28,7 +28,7 @@ public class ScoreboardServer extends Scoreboard {
 
     public void handlePlayerRemoved(String s) {
         super.handlePlayerRemoved(s);
-        this.a.getPlayerList().sendAll(new Packet207SetScoreboardScore(s));
+        this.sendAll(new Packet207SetScoreboardScore(s)); // CraftBukkit - Internal packet method
         this.b();
     }
 
@@ -38,7 +38,7 @@ public class ScoreboardServer extends Scoreboard {
         super.setDisplaySlot(i, scoreboardobjective);
         if (scoreboardobjective1 != scoreboardobjective && scoreboardobjective1 != null) {
             if (this.h(scoreboardobjective1) > 0) {
-                this.a.getPlayerList().sendAll(new Packet208SetScoreboardDisplayObjective(i, scoreboardobjective));
+                this.sendAll(new Packet208SetScoreboardDisplayObjective(i, scoreboardobjective)); // CraftBukkit - Internal packet method
             } else {
                 this.g(scoreboardobjective1);
             }
@@ -46,7 +46,7 @@ public class ScoreboardServer extends Scoreboard {
 
         if (scoreboardobjective != null) {
             if (this.b.contains(scoreboardobjective)) {
-                this.a.getPlayerList().sendAll(new Packet208SetScoreboardDisplayObjective(i, scoreboardobjective));
+                this.sendAll(new Packet208SetScoreboardDisplayObjective(i, scoreboardobjective)); // CraftBukkit - Internal packet method
             } else {
                 this.e(scoreboardobjective);
             }
@@ -57,13 +57,13 @@ public class ScoreboardServer extends Scoreboard {
 
     public void addPlayerToTeam(String s, ScoreboardTeam scoreboardteam) {
         super.addPlayerToTeam(s, scoreboardteam);
-        this.a.getPlayerList().sendAll(new Packet209SetScoreboardTeam(scoreboardteam, Arrays.asList(new String[] { s}), 3));
+        this.sendAll(new Packet209SetScoreboardTeam(scoreboardteam, Arrays.asList(new String[] { s}), 3)); // CraftBukkit - Internal packet method
         this.b();
     }
 
     public void removePlayerFromTeam(String s, ScoreboardTeam scoreboardteam) {
         super.removePlayerFromTeam(s, scoreboardteam);
-        this.a.getPlayerList().sendAll(new Packet209SetScoreboardTeam(scoreboardteam, Arrays.asList(new String[] { s}), 4));
+        this.sendAll(new Packet209SetScoreboardTeam(scoreboardteam, Arrays.asList(new String[] { s}), 4)); // CraftBukkit - Internal packet method
         this.b();
     }
 
@@ -75,7 +75,7 @@ public class ScoreboardServer extends Scoreboard {
     public void handleObjectiveChanged(ScoreboardObjective scoreboardobjective) {
         super.handleObjectiveChanged(scoreboardobjective);
         if (this.b.contains(scoreboardobjective)) {
-            this.a.getPlayerList().sendAll(new Packet206SetScoreboardObjective(scoreboardobjective, 2));
+            this.sendAll(new Packet206SetScoreboardObjective(scoreboardobjective, 2)); // CraftBukkit - Internal packet method
         }
 
         this.b();
@@ -92,19 +92,19 @@ public class ScoreboardServer extends Scoreboard {
 
     public void handleTeamAdded(ScoreboardTeam scoreboardteam) {
         super.handleTeamAdded(scoreboardteam);
-        this.a.getPlayerList().sendAll(new Packet209SetScoreboardTeam(scoreboardteam, 0));
+        this.sendAll(new Packet209SetScoreboardTeam(scoreboardteam, 0)); // CraftBukkit - Internal packet method
         this.b();
     }
 
     public void handleTeamChanged(ScoreboardTeam scoreboardteam) {
         super.handleTeamChanged(scoreboardteam);
-        this.a.getPlayerList().sendAll(new Packet209SetScoreboardTeam(scoreboardteam, 2));
+        this.sendAll(new Packet209SetScoreboardTeam(scoreboardteam, 2)); // CraftBukkit - Internal packet method
         this.b();
     }
 
     public void handleTeamRemoved(ScoreboardTeam scoreboardteam) {
         super.handleTeamRemoved(scoreboardteam);
-        this.a.getPlayerList().sendAll(new Packet209SetScoreboardTeam(scoreboardteam, 1));
+        this.sendAll(new Packet209SetScoreboardTeam(scoreboardteam, 1)); // CraftBukkit - Internal packet method
         this.b();
     }
 
@@ -146,6 +146,7 @@ public class ScoreboardServer extends Scoreboard {
 
         while (iterator.hasNext()) {
             EntityPlayer entityplayer = (EntityPlayer) iterator.next();
+            if (entityplayer.getBukkitEntity().getScoreboard().getHandle() != this) continue; // CraftBukkit - Only players on this board
             Iterator iterator1 = list.iterator();
 
             while (iterator1.hasNext()) {
@@ -178,6 +179,7 @@ public class ScoreboardServer extends Scoreboard {
 
         while (iterator.hasNext()) {
             EntityPlayer entityplayer = (EntityPlayer) iterator.next();
+            if (entityplayer.getBukkitEntity().getScoreboard().getHandle() != this) continue; // CraftBukkit - Only players on this board
             Iterator iterator1 = list.iterator();
 
             while (iterator1.hasNext()) {
@@ -201,4 +203,14 @@ public class ScoreboardServer extends Scoreboard {
 
         return i;
     }
+
+    // CraftBukkit start - Send to players
+    private void sendAll(Packet packet) {
+        for (EntityPlayer entityplayer : (List<EntityPlayer>) this.a.getPlayerList().players) {
+            if (entityplayer.getBukkitEntity().getScoreboard().getHandle() == this) {
+                entityplayer.playerConnection.sendPacket(packet);
+            }
+        }
+    }
+    // CraftBukkit end
 }

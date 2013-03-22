@@ -201,14 +201,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public void setHealth(int i) {
         super.setHealth(i);
-        Collection collection = this.getScoreboard().getObjectivesForCriteria(IScoreboardCriteria.f);
-        Iterator iterator = collection.iterator();
-
-        while (iterator.hasNext()) {
-            ScoreboardObjective scoreboardobjective = (ScoreboardObjective) iterator.next();
-
-            this.getScoreboard().getPlayerScoreForObjective(this.getLocalizedName(), scoreboardobjective).updateForList(Arrays.asList(new EntityHuman[] { this}));
-        }
+        // CraftBukkit - Update ALL the scores!
+        this.world.getServer().getScoreboardManager().updateAllScoresForList(IScoreboardCriteria.f, this.getLocalizedName(), com.google.common.collect.ImmutableList.of(this));
     }
 
     public void g() {
@@ -304,12 +298,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.closeInventory();
         // CraftBukkit end
 
-        Collection collection = this.world.getScoreboard().getObjectivesForCriteria(IScoreboardCriteria.c);
+        // CraftBukkit - Get our scores instead
+        Collection<ScoreboardScore> collection = this.world.getServer().getScoreboardManager().getScoreboardScores(IScoreboardCriteria.c, this.getLocalizedName(), new java.util.ArrayList<ScoreboardScore>());
         Iterator iterator = collection.iterator();
 
         while (iterator.hasNext()) {
-            ScoreboardObjective scoreboardobjective = (ScoreboardObjective) iterator.next();
-            ScoreboardScore scoreboardscore = this.getScoreboard().getPlayerScoreForObjective(this.getLocalizedName(), scoreboardobjective);
+            ScoreboardScore scoreboardscore = (ScoreboardScore) iterator.next(); // CraftBukkit - Use our scores instead
 
             scoreboardscore.incrementScore();
         }
