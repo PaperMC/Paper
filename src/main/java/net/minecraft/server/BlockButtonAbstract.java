@@ -238,15 +238,6 @@ public abstract class BlockButtonAbstract extends Block {
         if (!world.isStatic) {
             if (this.a) {
                 if ((world.getData(i, j, k) & 8) == 0) {
-                    // CraftBukkit start - Call interaction when entities (currently arrows) hit wooden buttons
-                    EntityInteractEvent event = new EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(i, j, k));
-                    world.getServer().getPluginManager().callEvent(event);
-
-                    if (event.isCancelled()) {
-                        return;
-                    }
-                    // CraftBukkit end
-
                     this.n(world, i, j, k);
                 }
             }
@@ -261,6 +252,30 @@ public abstract class BlockButtonAbstract extends Block {
         this.d(l);
         List list = world.a(EntityArrow.class, AxisAlignedBB.a().a((double) i + this.minX, (double) j + this.minY, (double) k + this.minZ, (double) i + this.maxX, (double) j + this.maxY, (double) k + this.maxZ));
         boolean flag1 = !list.isEmpty();
+
+        // CraftBukkit start - Call interact event when arrows turn on wooden buttons
+        if (flag != flag1 && flag1) {
+            org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
+            boolean allowed = false;
+
+            // If all of the events are cancelled block the button press, else allow
+            for (Object object : list) {
+                if (object != null) {
+                    EntityInteractEvent event = new EntityInteractEvent(((Entity) object).getBukkitEntity(), block);
+                    world.getServer().getPluginManager().callEvent(event);
+
+                    if (!event.isCancelled()) {
+                        allowed = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!allowed) {
+                return;
+            }
+        }
+        // CraftBukkit end
 
         if (flag1 && !flag) {
             world.setData(i, j, k, i1 | 8, 3);

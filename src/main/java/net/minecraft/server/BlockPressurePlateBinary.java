@@ -43,7 +43,7 @@ public class BlockPressurePlateBinary extends BlockPressurePlateAbstract {
             while (iterator.hasNext()) {
                 Entity entity = (Entity) iterator.next();
 
-                // CraftBukkit start
+                // CraftBukkit start - Fire interact event when turning on a pressure plate
                 org.bukkit.World bworld = world.getWorld();
                 org.bukkit.plugin.PluginManager manager = world.getServer().getPluginManager();
                 org.bukkit.event.Cancellable cancellable;
@@ -55,8 +55,9 @@ public class BlockPressurePlateBinary extends BlockPressurePlateAbstract {
                     manager.callEvent((EntityInteractEvent) cancellable);
                 }
 
+                // We only want to block turning the plate on if all events are cancelled
                 if (cancellable.isCancelled()) {
-                    return 0;
+                    continue;
                 }
                 // CraftBukkit end
 
