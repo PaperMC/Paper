@@ -703,6 +703,23 @@ public class CraftEventFactory {
             return false;
         }
 
+        // Spigot start - SPIGOT-7523: Merge after spawn event and only merge if the event was not cancelled (gets checked above)
+        if (entity instanceof net.minecraft.world.entity.ExperienceOrb xp) {
+            double radius = world.spigotConfig.expMerge;
+            if (radius > 0) {
+                List<Entity> entities = world.getEntities(entity, entity.getBoundingBox().inflate(radius, radius, radius));
+                for (Entity e : entities) {
+                    if (e instanceof net.minecraft.world.entity.ExperienceOrb loopItem) {
+                        if (!loopItem.isRemoved()) {
+                            xp.value += loopItem.value;
+                            loopItem.discard(null); // Add Bukkit remove cause
+                        }
+                    }
+                }
+            }
+        }
+        // Spigot end
+
         return true;
     }
 

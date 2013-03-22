@@ -134,4 +134,18 @@ public class SpigotWorldConfig
         this.weepingVinesModifier = this.getAndValidateGrowth( "WeepingVines" );
         this.caveVinesModifier = this.getAndValidateGrowth( "CaveVines" );
     }
+
+    public double itemMerge;
+    private void itemMerge()
+    {
+        this.itemMerge = this.getDouble("merge-radius.item", 2.5 );
+        this.log( "Item Merge Radius: " + this.itemMerge );
+    }
+
+    public double expMerge;
+    private void expMerge()
+    {
+        this.expMerge = this.getDouble("merge-radius.exp", 3.0 );
+        this.log( "Experience Merge Radius: " + this.expMerge );
+    }
 }
