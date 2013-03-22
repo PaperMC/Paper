@@ -6,7 +6,7 @@ import org.bukkit.plugin.Plugin;
 import java.util.*;
 
 public abstract class MetadataStoreBase<T> {
-    private Map<String, List<MetadataValue>> metadataMap = new HashMap<String, List<MetadataValue>>();
+    private Map<String, Map<Plugin, MetadataValue>> metadataMap = new HashMap<String, Map<Plugin, MetadataValue>>();
 
     /**
      * Adds a metadata value to an object. Each metadata value is owned by a specific{@link Plugin}.
@@ -25,23 +25,16 @@ public abstract class MetadataStoreBase<T> {
      * @throws IllegalArgumentException If value is null, or the owning plugin is null
      */
     public synchronized void setMetadata(T subject, String metadataKey, MetadataValue newMetadataValue) {
+        Plugin owningPlugin = newMetadataValue.getOwningPlugin();
         Validate.notNull(newMetadataValue, "Value cannot be null");
-        Validate.notNull(newMetadataValue.getOwningPlugin(), "Plugin cannot be null");
+        Validate.notNull(owningPlugin, "Plugin cannot be null");
         String key = disambiguate(subject, metadataKey);
-        if (!metadataMap.containsKey(key)) {
-            metadataMap.put(key, new ArrayList<MetadataValue>());
+        Map<Plugin, MetadataValue> entry = metadataMap.get(key);
+        if (entry == null) {
+            entry = new WeakHashMap<Plugin, MetadataValue>(1);
+            metadataMap.put(key, entry);
         }
-        // we now have a list of subject's metadata for the given metadata key. If newMetadataValue's owningPlugin
-        // is found in this list, replace the value rather than add a new one.
-        List<MetadataValue> metadataList = metadataMap.get(key);
-        for (int i = 0; i < metadataList.size(); i++) {
-            if (metadataList.get(i).getOwningPlugin().equals(newMetadataValue.getOwningPlugin())) {
-                metadataList.set(i, newMetadataValue);
-                return;
-            }
-        }
-        // we didn't find a duplicate...add the new metadata value
-        metadataList.add(newMetadataValue);
+        entry.put(owningPlugin, newMetadataValue);
     }
 
     /**
@@ -56,7 +49,8 @@ public abstract class MetadataStoreBase<T> {
     public synchronized List<MetadataValue> getMetadata(T subject, String metadataKey) {
         String key = disambiguate(subject, metadataKey);
         if (metadataMap.containsKey(key)) {
-            return Collections.unmodifiableList(metadataMap.get(key));
+            Collection<MetadataValue> values = metadataMap.get(key).values();
+            return Collections.unmodifiableList(new ArrayList<MetadataValue>(values));
         } else {
             return Collections.emptyList();
         }
@@ -86,15 +80,14 @@ public abstract class MetadataStoreBase<T> {
     public synchronized void removeMetadata(T subject, String metadataKey, Plugin owningPlugin) {
         Validate.notNull(owningPlugin, "Plugin cannot be null");
         String key = disambiguate(subject, metadataKey);
-        List<MetadataValue> metadataList = metadataMap.get(key);
-        if (metadataList == null) return;
-        for (int i = 0; i < metadataList.size(); i++) {
-            if (metadataList.get(i).getOwningPlugin().equals(owningPlugin)) {
-                metadataList.remove(i);
-                if (metadataList.isEmpty()) {
-                    metadataMap.remove(key);
-                }
-            }
+        Map<Plugin, MetadataValue> entry = metadataMap.get(key);
+        if (entry == null) {
+            return;
+        }
+
+        entry.remove(owningPlugin);
+        if (entry.isEmpty()) {
+            metadataMap.remove(key);
         }
     }
 
@@ -108,11 +101,9 @@ public abstract class MetadataStoreBase<T> {
      */
     public synchronized void invalidateAll(Plugin owningPlugin) {
         Validate.notNull(owningPlugin, "Plugin cannot be null");
-        for (List<MetadataValue> values : metadataMap.values()) {
-            for (MetadataValue value : values) {
-                if (value.getOwningPlugin().equals(owningPlugin)) {
-                    value.invalidate();
-                }
+        for (Map<Plugin, MetadataValue> values : metadataMap.values()) {
+            if (values.containsKey(owningPlugin)) {
+                values.get(owningPlugin).invalidate();
             }
         }
     }

@@ -1,5 +1,7 @@
 package org.bukkit.metadata;
 
+import java.lang.ref.WeakReference;
+
 import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.NumberConversions;
@@ -13,15 +15,15 @@ import org.bukkit.util.NumberConversions;
  *
  */
 public abstract class MetadataValueAdapter implements MetadataValue {
-    protected final Plugin owningPlugin;
+    protected final WeakReference<Plugin> owningPlugin;
 
     protected MetadataValueAdapter(Plugin owningPlugin) {
         Validate.notNull(owningPlugin, "owningPlugin cannot be null");
-        this.owningPlugin = owningPlugin;
+        this.owningPlugin = new WeakReference<Plugin>(owningPlugin);
     }
 
     public Plugin getOwningPlugin() {
-        return owningPlugin;
+        return owningPlugin.get();
     }
 
     public int asInt() {
