@@ -1,11 +1,11 @@
-From 5431f8ebb3020558e602456d8658e58e20dbe5f6 Mon Sep 17 00:00:00 2001
+From d004dd8e2788cce2d6af393d256ba22c77bf4cd5 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Sat, 23 Mar 2013 09:27:15 +1100
+Date: Sat, 23 Mar 2013 09:39:40 +1100
 Subject: [PATCH] Spigot changes.
 
 ---
  .gitignore                                         |   2 +
- src/main/java/net/minecraft/server/Block.java      |  12 ++
+ src/main/java/net/minecraft/server/Block.java      |  12 +++
  .../java/net/minecraft/server/BlockCactus.java     |   2 +-
  src/main/java/net/minecraft/server/BlockCrops.java |   2 +-
  src/main/java/net/minecraft/server/BlockGrass.java |   2 +-
@@ -14,22 +14,22 @@ Subject: [PATCH] Spigot changes.
  src/main/java/net/minecraft/server/BlockReed.java  |   2 +-
  .../java/net/minecraft/server/BlockSapling.java    |   2 +-
  src/main/java/net/minecraft/server/BlockStem.java  |   2 +-
- .../net/minecraft/server/ChunkRegionLoader.java    |  35 +++--
- .../java/net/minecraft/server/ChunkSection.java    |  31 ++++-
+ .../net/minecraft/server/ChunkRegionLoader.java    |  35 +++++--
+ .../java/net/minecraft/server/ChunkSection.java    |  31 ++++--
  src/main/java/net/minecraft/server/EntityItem.java |   3 +-
  .../java/net/minecraft/server/EntitySquid.java     |   4 -
- .../net/minecraft/server/PlayerConnection.java     |  18 ++-
+ .../net/minecraft/server/PlayerConnection.java     |  18 +++-
  src/main/java/net/minecraft/server/PlayerList.java |  10 +-
- .../net/minecraft/server/ThreadLoginVerifier.java  |  21 +++
- src/main/java/net/minecraft/server/World.java      | 152 ++++++++++++++++++---
- .../java/net/minecraft/server/WorldServer.java     |  36 ++++-
- .../java/org/bukkit/craftbukkit/CraftServer.java   |  47 ++++---
- .../java/org/bukkit/craftbukkit/CraftWorld.java    |  76 ++++++++++-
- src/main/java/org/bukkit/craftbukkit/Spigot.java   |  20 +++
+ .../net/minecraft/server/ThreadLoginVerifier.java  |  21 ++++
+ src/main/java/net/minecraft/server/World.java      | 111 +++++++++++++++++----
+ .../java/net/minecraft/server/WorldServer.java     |  36 ++++++-
+ .../java/org/bukkit/craftbukkit/CraftServer.java   |  47 +++++----
+ .../java/org/bukkit/craftbukkit/CraftWorld.java    |  68 ++++++++++++-
+ src/main/java/org/bukkit/craftbukkit/Spigot.java   |  20 ++++
  .../craftbukkit/chunkio/ChunkIOProvider.java       |   2 +-
- .../org/bukkit/craftbukkit/entity/CraftPlayer.java |   7 +
- src/main/resources/configurations/bukkit.yml       |  27 ++++
- 25 files changed, 441 insertions(+), 78 deletions(-)
+ .../org/bukkit/craftbukkit/entity/CraftPlayer.java |   7 ++
+ src/main/resources/configurations/bukkit.yml       |  25 +++++
+ 25 files changed, 390 insertions(+), 78 deletions(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/Spigot.java
 
 diff --git a/.gitignore b/.gitignore
@@ -463,7 +463,7 @@ index 0686ba0..c185f64 100644
              URL url = new URL("http://session.minecraft.net/game/checkserver.jsp?user=" + URLEncoder.encode(PendingConnection.d(this.pendingConnection), "UTF-8") + "&serverId=" + URLEncoder.encode(s, "UTF-8"));
              BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(url.openStream()));
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index b694789..134ab73 100644
+index b694789..2f8e066 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -67,14 +67,27 @@ public abstract class World implements IBlockAccess {
@@ -531,55 +531,7 @@ index b694789..134ab73 100644
          if (worldprovider != null) {
              this.worldProvider = worldprovider;
          } else if (this.worldData != null && this.worldData.j() != 0) {
-@@ -925,6 +946,47 @@ public abstract class World implements IBlockAccess {
-             event = CraftEventFactory.callCreatureSpawnEvent((EntityLiving) entity, spawnReason);
-         } else if (entity instanceof EntityItem) {
-             event = CraftEventFactory.callItemSpawnEvent((EntityItem) entity);
-+            // Spigot start
-+            ItemStack item = ((EntityItem) entity).getItemStack();
-+            int maxSize = item.getMaxStackSize();
-+            if (item.count < maxSize) {
-+                double radius = this.getWorld().itemMergeRadius;
-+                if (radius > 0) {
-+                    List<Entity> entities = this.getEntities(entity, entity.boundingBox.grow(radius, radius, radius));
-+                    for (Entity e : entities) {
-+                        if (e instanceof EntityItem) {
-+                            EntityItem loopItem = (EntityItem) e;
-+                            ItemStack loopStack = loopItem.getItemStack();
-+                            if (!loopItem.dead && loopStack.id == item.id && loopStack.getData() == item.getData()) {
-+                                if (loopStack.tag == null || item.tag == null || !loopStack.tag.equals(item.tag)) {
-+                                    int toAdd = Math.min(loopStack.count, maxSize - item.count);
-+                                    item.count += toAdd;
-+                                    loopStack.count -= toAdd;
-+                                    if (loopStack.count <= 0) {
-+                                        loopItem.die();
-+                                    }
-+                                }
-+                            }
-+                        }
-+                    }
-+                }
-+            }
-+        } else if (entity instanceof EntityExperienceOrb) {
-+            EntityExperienceOrb xp = (EntityExperienceOrb) entity;
-+            double radius = this.getWorld().expMergeRadius;
-+            if (radius > 0) {
-+                List<Entity> entities = this.getEntities(entity, entity.boundingBox.grow(radius, radius, radius));
-+                for (Entity e : entities) {
-+                    if (e instanceof EntityExperienceOrb) {
-+                        EntityExperienceOrb loopItem = (EntityExperienceOrb) e;
-+                        if (!loopItem.dead) {
-+                            xp.value += loopItem.value;
-+                            loopItem.die();
-+                        }
-+                    }
-+                }
-+            }
-+            // Spigot end
-         } else if (entity.getBukkitEntity() instanceof org.bukkit.entity.Projectile) {
-             // Not all projectiles extend EntityProjectile, so check for Bukkit interface instead
-             event = CraftEventFactory.callProjectileLaunchEvent(entity);
-@@ -1017,6 +1079,39 @@ public abstract class World implements IBlockAccess {
+@@ -1017,6 +1038,39 @@ public abstract class World implements IBlockAccess {
          int i1 = MathHelper.floor(axisalignedbb.c);
          int j1 = MathHelper.floor(axisalignedbb.f + 1.0D);
  
@@ -619,7 +571,7 @@ index b694789..134ab73 100644
          for (int k1 = i; k1 < j; ++k1) {
              for (int l1 = i1; l1 < j1; ++l1) {
                  if (this.isLoaded(k1, 64, l1)) {
-@@ -1030,6 +1125,7 @@ public abstract class World implements IBlockAccess {
+@@ -1030,6 +1084,7 @@ public abstract class World implements IBlockAccess {
                  }
              }
          }
@@ -627,7 +579,7 @@ index b694789..134ab73 100644
  
          double d0 = 0.25D;
          List list = this.getEntities(entity, axisalignedbb.grow(d0, d0, d0));
-@@ -1946,6 +2042,11 @@ public abstract class World implements IBlockAccess {
+@@ -1946,6 +2001,11 @@ public abstract class World implements IBlockAccess {
          this.worldData.setWeatherDuration(1);
      }
  
@@ -639,7 +591,7 @@ index b694789..134ab73 100644
      protected void A() {
          // this.chunkTickList.clear(); // CraftBukkit - removed
          this.methodProfiler.a("buildList");
-@@ -1955,25 +2056,42 @@ public abstract class World implements IBlockAccess {
+@@ -1955,25 +2015,42 @@ public abstract class World implements IBlockAccess {
          int j;
          int k;
  
@@ -696,7 +648,7 @@ index b694789..134ab73 100644
  
          this.methodProfiler.b();
          if (this.O > 0) {
-@@ -1981,7 +2099,7 @@ public abstract class World implements IBlockAccess {
+@@ -1981,7 +2058,7 @@ public abstract class World implements IBlockAccess {
          }
  
          this.methodProfiler.a("playerCheckLight");
@@ -906,10 +858,10 @@ index 6b3b9fe..872c4ac 100644
              player.sendMessage(ChatColor.RED + "An internal error occurred while attempting to tab-complete this command");
              getLogger().log(Level.SEVERE, "Exception when " + player.getName() + " attempted to tab complete " + message, ex);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index adb2bba..3dc6f0e 100644
+index adb2bba..b510748 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -77,7 +77,81 @@ public class CraftWorld implements World {
+@@ -77,7 +77,73 @@ public class CraftWorld implements World {
          if (server.chunkGCPeriod > 0) {
              chunkGCTickCount = rand.nextInt(server.chunkGCPeriod);
          }
@@ -923,10 +875,8 @@ index adb2bba..3dc6f0e 100644
 +            name = world.worldData.getName().replaceAll(" ", "_");
 +        }
 +
-+        //load defaults first
++        // load defaults first
 +        growthPerTick = configuration.getInt("world-settings.default.growth-chunks-per-tick", growthPerTick);
-+        itemMergeRadius = configuration.getDouble("world-settings.default.item-merge-radius", itemMergeRadius);
-+        expMergeRadius = configuration.getDouble("world-settings.default.exp-merge-radius", expMergeRadius);
 +        randomLightingUpdates = configuration.getBoolean("world-settings.default.random-light-updates", randomLightingUpdates);
 +        mobSpawnRange = configuration.getInt("world-settings.default.mob-spawn-range", mobSpawnRange);
 +        aggregateTicks = Math.max(1, configuration.getInt("world-settings.default.aggregate-chunkticks", aggregateTicks));
@@ -941,8 +891,6 @@ index adb2bba..3dc6f0e 100644
 +
 +        //override defaults with world specific, if they exist
 +        growthPerTick = configuration.getInt("world-settings." + name + ".growth-chunks-per-tick", growthPerTick);
-+        itemMergeRadius = configuration.getDouble("world-settings." + name + ".item-merge-radius", itemMergeRadius);
-+      expMergeRadius = configuration.getDouble("world-settings." + name + ".exp-merge-radius", expMergeRadius);
 +        randomLightingUpdates = configuration.getBoolean("world-settings." + name + ".random-light-updates", randomLightingUpdates);
 +        mobSpawnRange = configuration.getInt("world-settings." + name + ".mob-spawn-range", mobSpawnRange);
 +        aggregateTicks = Math.max(1, configuration.getInt("world-settings." + name + ".aggregate-chunkticks", aggregateTicks));
@@ -958,8 +906,6 @@ index adb2bba..3dc6f0e 100644
 +        server.getLogger().info("-------------- Spigot ----------------");
 +        server.getLogger().info("-------- World Settings For [" + name + "] --------");
 +        server.getLogger().info("Growth Per Chunk: " + growthPerTick);
-+        server.getLogger().info("Item Merge Radius: " + itemMergeRadius);
-+        server.getLogger().info("Experience Merge Radius: " + expMergeRadius);
 +        server.getLogger().info("Random Lighting Updates: " + randomLightingUpdates);
 +        server.getLogger().info("Mob Spawn Range: " + mobSpawnRange);
 +        server.getLogger().info("Aggregate Ticks: " + aggregateTicks);
@@ -975,8 +921,6 @@ index adb2bba..3dc6f0e 100644
 +    }
 +    // Spigot Start
 +    public int growthPerTick = 650;
-+    public double itemMergeRadius = 3;
-+    public double expMergeRadius = 3;
 +    public boolean randomLightingUpdates = false;
 +    public int mobSpawnRange = 4;
 +    public int aggregateTicks = 4;
@@ -1054,10 +998,10 @@ index 70111e7..1871d3e 100644
      public void setCompassTarget(Location loc) {
          if (getHandle().playerConnection == null) return;
 diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
-index 61a95e3..f44d5d0 100644
+index 61a95e3..58501ea 100644
 --- a/src/main/resources/configurations/bukkit.yml
 +++ b/src/main/resources/configurations/bukkit.yml
-@@ -25,6 +25,33 @@ settings:
+@@ -25,6 +25,31 @@ settings:
      query-plugins: true
      deprecated-verbose: default
      shutdown-message: Server closed
@@ -1071,8 +1015,6 @@ index 61a95e3..f44d5d0 100644
 +    default:
 +        growth-chunks-per-tick: 650
 +        mob-spawn-range: 4
-+        item-merge-radius: 3.5
-+        exp-merge-radius: 3.5
 +        random-light-updates: false
 +        aggregate-chunkticks: 4
 +        wheat-growth-modifier: 100
