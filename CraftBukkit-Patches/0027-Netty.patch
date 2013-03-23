@@ -1,4 +1,4 @@
-From d6d844fe65d62ff1fe801fe91449b81a501019bc Mon Sep 17 00:00:00 2001
+From 9754489f5dabf0bc73ef3a5a0418f1274a01738d Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 14 Feb 2013 17:32:20 +1100
 Subject: [PATCH] Netty
@@ -33,7 +33,8 @@ Subject: [PATCH] Netty
 ---
  pom.xml                                            |   5 +
  .../java/net/minecraft/server/DedicatedServer.java |   8 +-
- .../java/net/minecraft/server/INetworkManager.java |  24 ++
+ .../java/net/minecraft/server/INetworkManager.java |  26 +++
+ .../java/net/minecraft/server/NetworkManager.java  |   4 +-
  .../net/minecraft/server/Packet51MapChunk.java     |   2 +-
  .../net/minecraft/server/Packet56MapChunkBulk.java |   2 +-
  .../net/minecraft/server/PendingConnection.java    |  11 +-
@@ -41,14 +42,14 @@ Subject: [PATCH] Netty
  .../net/minecraft/server/ThreadLoginVerifier.java  |   1 +
  .../craftbukkit/scheduler/CraftScheduler.java      |   2 +-
  src/main/java/org/spigotmc/netty/CipherCodec.java  |  49 ++++
- .../org/spigotmc/netty/NettyNetworkManager.java    | 229 +++++++++++++++++++
+ .../org/spigotmc/netty/NettyNetworkManager.java    | 233 +++++++++++++++++++
  .../org/spigotmc/netty/NettyServerConnection.java  | 109 +++++++++
  .../org/spigotmc/netty/NettySocketAdaptor.java     | 248 +++++++++++++++++++++
  .../java/org/spigotmc/netty/PacketDecoder.java     |  64 ++++++
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
  src/main/java/org/spigotmc/netty/ReadState.java    |  16 ++
- 17 files changed, 906 insertions(+), 8 deletions(-)
+ 18 files changed, 915 insertions(+), 9 deletions(-)
  create mode 100644 src/main/java/net/minecraft/server/INetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
@@ -103,10 +104,10 @@ index bd7e41c..c189b1b 100644
              this.getLogger().warning("The exception was: {0}", new Object[] { ioexception.toString()});
 diff --git a/src/main/java/net/minecraft/server/INetworkManager.java b/src/main/java/net/minecraft/server/INetworkManager.java
 new file mode 100644
-index 0000000..ff3daae
+index 0000000..6fcc5d7
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/INetworkManager.java
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,26 @@
 +package net.minecraft.server;
 +
 +import java.net.SocketAddress;
@@ -129,10 +130,32 @@ index 0000000..ff3daae
 +
 +    void a(String s, Object... aobject);
 +    
-+    java.net.Socket getSocket();
++    java.net.Socket getSocket(); // Spigot
++    
++    void setSocketAddress(java.net.SocketAddress address); // Spigot
 +}
+diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
+index 1862863..5a24f2a 100644
+--- a/src/main/java/net/minecraft/server/NetworkManager.java
++++ b/src/main/java/net/minecraft/server/NetworkManager.java
+@@ -24,7 +24,7 @@ public class NetworkManager implements INetworkManager {
+     private final Object h = new Object();
+     private final IConsoleLogManager i;
+     public Socket socket; // CraftBukkit - private -> public
+-    private final SocketAddress k;
++    private SocketAddress k; // Spigot - remove final
+     private volatile DataInputStream input;
+     private volatile DataOutputStream output;
+     private volatile boolean n = true;
+@@ -369,4 +369,6 @@ public class NetworkManager implements INetworkManager {
+     static Thread h(NetworkManager networkmanager) {
+         return networkmanager.u;
+     }
++
++    public void setSocketAddress(SocketAddress address) { k = address; } // Spigot
+ }
 diff --git a/src/main/java/net/minecraft/server/Packet51MapChunk.java b/src/main/java/net/minecraft/server/Packet51MapChunk.java
-index 230dd62..2ba0464 100644
+index 9c21129..fd2b9c9 100644
 --- a/src/main/java/net/minecraft/server/Packet51MapChunk.java
 +++ b/src/main/java/net/minecraft/server/Packet51MapChunk.java
 @@ -42,7 +42,7 @@ public class Packet51MapChunk extends Packet {
@@ -145,7 +168,7 @@ index 230dd62..2ba0464 100644
          this.d = chunkmap.c;
          this.c = chunkmap.b;
 diff --git a/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java b/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
-index 9d5cee7..8486d82 100644
+index df63cf7..0d817a2 100644
 --- a/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
 +++ b/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
 @@ -24,7 +24,7 @@ public class Packet56MapChunkBulk extends Packet {
@@ -290,10 +313,10 @@ index 0000000..54928b4
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..be80ee2
+index 0000000..17776e6
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,229 @@
+@@ -0,0 +1,233 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -485,6 +508,10 @@ index 0000000..be80ee2
 +     */
 +    public SocketAddress getSocketAddress() {
 +        return address;
++    }
++
++    public void setSocketAddress(SocketAddress address) {
++        this.address = address;
 +    }
 +
 +    /**
