@@ -532,6 +532,12 @@ public class CraftEventFactory {
         return event;
     }
 
+    public static ProjectileHitEvent callProjectileHitEvent(Entity entity) {
+        ProjectileHitEvent event = new ProjectileHitEvent((Projectile) entity.getBukkitEntity());
+        entity.world.getServer().getPluginManager().callEvent(event);
+        return event;
+    }
+
     public static ExpBottleEvent callExpBottleEvent(Entity entity, int exp) {
         ThrownExpBottle bottle = (ThrownExpBottle) entity.getBukkitEntity();
         ExpBottleEvent event = new ExpBottleEvent(bottle, exp);

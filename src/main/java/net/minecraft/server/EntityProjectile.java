@@ -2,8 +2,6 @@ package net.minecraft.server;
 
 import java.util.List;
 
-import org.bukkit.event.entity.ProjectileHitEvent; // CraftBukkit
-
 public abstract class EntityProjectile extends Entity implements IProjectile {
 
     private int blockX = -1;
@@ -158,8 +156,7 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
                 this.a(movingobjectposition);
                 // CraftBukkit start
                 if (this.dead) {
-                    ProjectileHitEvent hitEvent = new ProjectileHitEvent((org.bukkit.entity.Projectile) this.getBukkitEntity());
-                    org.bukkit.Bukkit.getPluginManager().callEvent(hitEvent);
+                    org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this);
                 }
                 // CraftBukkit end
             }
