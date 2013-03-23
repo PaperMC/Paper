@@ -1,0 +1,47 @@
+From ac30ba224906c71b30b4f9fd50ea27a3ce260b66 Mon Sep 17 00:00:00 2001
+From: Mike Primm <mike@primmhome.com>
+Date: Wed, 20 Feb 2013 23:07:53 -0500
+Subject: [PATCH] Optimize getTileEntities performance
+
+Avoid traversing tile entities for every loaded chunk
+---
+ src/main/java/net/minecraft/server/WorldServer.java | 21 ++++++++++++---------
+ 1 file changed, 12 insertions(+), 9 deletions(-)
+
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 8d2c73e..b7ff543 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -658,17 +658,20 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+ 
+     public List getTileEntities(int i, int j, int k, int l, int i1, int j1) {
+         ArrayList arraylist = new ArrayList();
+-        // CraftBukkit start - use iterator
+-        Iterator iterator = this.tileEntityList.iterator();
+-
+-        while (iterator.hasNext()) {
+-            TileEntity tileentity = (TileEntity) iterator.next();
+-            // CraftBukkit end
+-
+-            if (tileentity.x >= i && tileentity.y >= j && tileentity.z >= k && tileentity.x < l && tileentity.y < i1 && tileentity.z < j1) {
+-                arraylist.add(tileentity);
++        // Spigot start - check in chunks: usually just from one
++        for (int cx = (i >> 4); cx <= ((l - 1) >> 4); cx++) {
++            for (int cz = (k >> 4); cz <= ((j1 - 1) >> 4); cz++) {
++                Chunk c = getChunkAt(cx, cz);
++                if (c == null) continue;
++                for (Object te : c.tileEntities.values()) {
++                    TileEntity tileentity = (TileEntity) te;
++                    if ((tileentity.x >= i) && (tileentity.y >= j) && (tileentity.z >= k) && (tileentity.x < l) && (tileentity.y < i1) && (tileentity.z < j1)) {
++                        arraylist.add(tileentity);
++                    }
++                }
+             }
+         }
++        // Spigot end
+ 
+         return arraylist;
+     }
+-- 
+1.8.1-rc2
+

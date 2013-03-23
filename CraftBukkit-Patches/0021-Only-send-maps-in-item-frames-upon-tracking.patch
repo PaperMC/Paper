@@ -1,0 +1,89 @@
+From 8983a18841624df38cbcdbd03ff22a22268295bb Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 19 Feb 2013 17:26:20 -0500
+Subject: [PATCH] Only send maps in item frames upon tracking
+
+Maps in item frames are full of bugs.
+1) It sends an update of the Maps data to ALL players in the world, not just the players tracking it.
+2) It sends an update EVERY tick, not every 10 ticks as intended.
+
+To optimize performance of maps in item frames, we will only send it once a player tracks the ItemFrame until it completes, then that player will not receive more updates.
+
+This means cursors will not dynamically update, but the map data should refresh every time the player moves away then back.
+---
+ .../net/minecraft/server/EntityTrackerEntry.java   | 25 ++++++++++++++++------
+ 1 file changed, 19 insertions(+), 6 deletions(-)
+
+diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+index ae9ed52..6fa425c 100644
+--- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+@@ -36,6 +36,7 @@ public class EntityTrackerEntry {
+     public boolean n = false;
+     public Set trackedPlayers = new HashSet();
+ 
++    public List<EntityPlayer> playersToUpdate = new java.util.ArrayList<EntityPlayer>(); // Spigot
+     public EntityTrackerEntry(Entity entity, int i, int j, boolean flag) {
+         this.tracker = entity;
+         this.b = i;
+@@ -73,17 +74,17 @@ public class EntityTrackerEntry {
+             this.broadcast(new Packet39AttachEntity(this.tracker, this.tracker.vehicle));
+         }
+ 
+-        if (this.tracker instanceof EntityItemFrame && this.m % 10 == 0) {
++        if (this.tracker instanceof EntityItemFrame) { // Spigot - has to be ran every tick for general frames or they may pop off?
+             EntityItemFrame i4 = (EntityItemFrame) this.tracker;
+             ItemStack i5 = i4.i();
+ 
+-            if (i5 != null && i5.getItem() instanceof ItemWorldMap) {
++            if (this.m++ % 10 == 0 && i5 != null && i5.getItem() instanceof ItemWorldMap && playersToUpdate.size() > 0) { // Spigot
+                 WorldMap i7 = Item.MAP.getSavedMap(i5, this.tracker.world);
+-                Iterator j0 = list.iterator();
++                Iterator j0 = playersToUpdate.iterator(); // Spigot
+ 
+                 while (j0.hasNext()) {
+-                    EntityHuman j1 = (EntityHuman) j0.next();
+-                    EntityPlayer j2 = (EntityPlayer) j1;
++                    //EntityHuman j1 = (EntityHuman) j0.next(); // Spigot - unused
++                    EntityPlayer j2 = (EntityPlayer) j0.next(); // Spigot
+ 
+                     i7.a(j2, i5);
+                     if (j2.playerConnection.lowPriorityCount() <= 5) {
+@@ -91,7 +92,7 @@ public class EntityTrackerEntry {
+ 
+                         if (j3 != null) {
+                             j2.playerConnection.sendPacket(j3);
+-                        }
++                        } else { j0.remove(); } // Spigot
+                     }
+                 }
+             }
+@@ -332,6 +333,17 @@ public class EntityTrackerEntry {
+                         }
+                     }
+ 
++                    // Spigot start - add player to list to receive initial map updates.
++                    if (this.tracker instanceof EntityItemFrame) {
++                        EntityItemFrame i4 = (EntityItemFrame) this.tracker;
++                        ItemStack i5 = i4.i();
++
++                        if (i5 != null && i5.getItem() instanceof ItemWorldMap) {
++                            this.playersToUpdate.add(entityplayer);
++                        }
++                    }
++                    // Spigot end
++
+                     if (this.tracker instanceof EntityHuman) {
+                         EntityHuman entityhuman = (EntityHuman) this.tracker;
+ 
+@@ -358,6 +370,7 @@ public class EntityTrackerEntry {
+                 }
+             } else if (this.trackedPlayers.contains(entityplayer)) {
+                 this.trackedPlayers.remove(entityplayer);
++                this.playersToUpdate.remove(entityplayer); // Spigot
+                 entityplayer.removeQueue.add(Integer.valueOf(this.tracker.id));
+             }
+         }
+-- 
+1.8.1-rc2
+
