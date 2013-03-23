@@ -1,12 +1,13 @@
-From 60bfde2f20cab9fade83e6f34af2a2ee5ed168c9 Mon Sep 17 00:00:00 2001
+From 67cddbc9856c267a110cf7531b8fde518e327613 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 7 Mar 2013 20:12:46 +1100
-Subject: [PATCH] Thread safety. Adds thread safety for chunk load / unload
- methods.
+Subject: [PATCH] Async Operation Catching
 
+Catch and throw an exception when a potentially unsafe operation occurs on a thread other than the main server thread.
 ---
- src/main/java/org/bukkit/craftbukkit/CraftWorld.java | 3 +++
- 1 file changed, 3 insertions(+)
+ src/main/java/org/bukkit/craftbukkit/CraftWorld.java         | 3 +++
+ src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java | 1 +
+ 2 files changed, 4 insertions(+)
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 index 9343d46..b569dc4 100644
@@ -36,6 +37,18 @@ index 9343d46..b569dc4 100644
          chunkLoadCount++;
          if (generate) {
              // Use the default variant of loadChunk when generate == true.
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 70111e7..59e63ef 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -213,6 +213,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+ 
+     public void kickPlayer(String message) {
++        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous player kick!");
+         if (getHandle().playerConnection == null) return;
+ 
+         getHandle().playerConnection.disconnect(message == null ? "" : message);
 -- 
 1.8.1-rc2
 
