@@ -1,4 +1,4 @@
-From 308eaa2dbd96b59ee9bdc253390679070bfd1533 Mon Sep 17 00:00:00 2001
+From 51d316b1bc0e028efaa8c209d72fb3129c3c232e Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sat, 23 Mar 2013 17:57:27 +1100
 Subject: [PATCH] Spigot Changes
@@ -25,11 +25,11 @@ The set of changes which provide core Spigot functionality, which would otherwis
  src/main/java/net/minecraft/server/World.java      | 111 +++++++++++++++++----
  .../java/net/minecraft/server/WorldServer.java     |  36 ++++++-
  .../java/org/bukkit/craftbukkit/CraftServer.java   |  47 +++++----
- .../java/org/bukkit/craftbukkit/CraftWorld.java    |  68 ++++++++++++-
+ .../java/org/bukkit/craftbukkit/CraftWorld.java    |  71 ++++++++++++-
  src/main/java/org/bukkit/craftbukkit/Spigot.java   |  20 ++++
  .../craftbukkit/chunkio/ChunkIOProvider.java       |   2 +-
- src/main/resources/configurations/bukkit.yml       |  25 +++++
- 24 files changed, 385 insertions(+), 78 deletions(-)
+ src/main/resources/configurations/bukkit.yml       |  26 +++++
+ 24 files changed, 389 insertions(+), 78 deletions(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/Spigot.java
 
 diff --git a/.gitignore b/.gitignore
@@ -860,10 +860,10 @@ index 6b3b9fe..872c4ac 100644
              player.sendMessage(ChatColor.RED + "An internal error occurred while attempting to tab-complete this command");
              getLogger().log(Level.SEVERE, "Exception when " + player.getName() + " attempted to tab complete " + message, ex);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index adb2bba..b510748 100644
+index adb2bba..150d581 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -77,7 +77,73 @@ public class CraftWorld implements World {
+@@ -77,7 +77,76 @@ public class CraftWorld implements World {
          if (server.chunkGCPeriod > 0) {
              chunkGCTickCount = rand.nextInt(server.chunkGCPeriod);
          }
@@ -878,6 +878,7 @@ index adb2bba..b510748 100644
 +        }
 +
 +        // load defaults first
++        boolean info = configuration.getBoolean("world-settings.default.info", true); 
 +        growthPerTick = configuration.getInt("world-settings.default.growth-chunks-per-tick", growthPerTick);
 +        randomLightingUpdates = configuration.getBoolean("world-settings.default.random-light-updates", randomLightingUpdates);
 +        mobSpawnRange = configuration.getInt("world-settings.default.mob-spawn-range", mobSpawnRange);
@@ -892,6 +893,7 @@ index adb2bba..b510748 100644
 +        mushroomGrowthModifier = configuration.getInt("world-settings.default.mushroom-growth-modifier", mushroomGrowthModifier);
 +
 +        //override defaults with world specific, if they exist
++        info = configuration.getBoolean("world-settings." + name + ".info", info);
 +        growthPerTick = configuration.getInt("world-settings." + name + ".growth-chunks-per-tick", growthPerTick);
 +        randomLightingUpdates = configuration.getBoolean("world-settings." + name + ".random-light-updates", randomLightingUpdates);
 +        mobSpawnRange = configuration.getInt("world-settings." + name + ".mob-spawn-range", mobSpawnRange);
@@ -905,6 +907,7 @@ index adb2bba..b510748 100644
 +        treeGrowthModifier = configuration.getInt("world-settings." + name + ".tree-growth-modifier", treeGrowthModifier);
 +        mushroomGrowthModifier = configuration.getInt("world-settings." + name + ".mushroom-growth-modifier", mushroomGrowthModifier);
 +
++        if (!info) return;
 +        server.getLogger().info("-------------- Spigot ----------------");
 +        server.getLogger().info("-------- World Settings For [" + name + "] --------");
 +        server.getLogger().info("Growth Per Chunk: " + growthPerTick);
@@ -978,10 +981,10 @@ index 48cf5ba..1d4764c 100644
          }
  
 diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
-index 61a95e3..58501ea 100644
+index 61a95e3..bc00ad4 100644
 --- a/src/main/resources/configurations/bukkit.yml
 +++ b/src/main/resources/configurations/bukkit.yml
-@@ -25,6 +25,31 @@ settings:
+@@ -25,6 +25,32 @@ settings:
      query-plugins: true
      deprecated-verbose: default
      shutdown-message: Server closed
@@ -1004,6 +1007,7 @@ index 61a95e3..58501ea 100644
 +        sugar-growth-modifier: 100
 +        tree-growth-modifier: 100
 +        mushroom-growth-modifier: 100
++        info: true
 +    world:
 +        growth-chunks-per-tick: 1000
 +    world_nether:
