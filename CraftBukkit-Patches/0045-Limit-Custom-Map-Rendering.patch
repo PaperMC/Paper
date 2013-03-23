@@ -1,14 +1,29 @@
-From e730f3308cb5b9849a4833b3eda0de48f56fcc58 Mon Sep 17 00:00:00 2001
+From 8406ab4e0f88e18b43406c8780e345b865251425 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sat, 23 Mar 2013 19:08:41 +1100
 Subject: [PATCH] Limit Custom Map Rendering
 
 The default CraftBukkit render sequence for maps is ridiculously slow. By only using it when a custom renderer has been added (rarely in most cases), we can fallback to the Vanilla renderer for general usage. This leads to a much higher effiency overall, especially if no plugins are rendering such maps.
 ---
+ .../java/net/minecraft/server/ItemWorldMap.java    |  1 +
  .../net/minecraft/server/WorldMapHumanTracker.java | 24 ++++++++++++++--------
+ .../java/org/bukkit/craftbukkit/CraftWorld.java    |  5 +++++
  .../org/bukkit/craftbukkit/map/CraftMapView.java   |  2 +-
- 2 files changed, 16 insertions(+), 10 deletions(-)
+ src/main/resources/configurations/bukkit.yml       |  1 +
+ 5 files changed, 23 insertions(+), 10 deletions(-)
 
+diff --git a/src/main/java/net/minecraft/server/ItemWorldMap.java b/src/main/java/net/minecraft/server/ItemWorldMap.java
+index cf3bb1f..ebc0fc7 100644
+--- a/src/main/java/net/minecraft/server/ItemWorldMap.java
++++ b/src/main/java/net/minecraft/server/ItemWorldMap.java
+@@ -228,6 +228,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
+     }
+ 
+     public Packet c(ItemStack itemstack, World world, EntityHuman entityhuman) {
++        if (!world.getWorld().mapsEnabled) return null; // Spigot
+         byte[] abyte = this.getSavedMap(itemstack, world).getUpdatePacket(itemstack, world, entityhuman);
+ 
+         return abyte == null ? null : new Packet131ItemData((short) Item.MAP.id, (short) itemstack.getData(), abyte);
 diff --git a/src/main/java/net/minecraft/server/WorldMapHumanTracker.java b/src/main/java/net/minecraft/server/WorldMapHumanTracker.java
 index bf3e6fe..49449c9 100644
 --- a/src/main/java/net/minecraft/server/WorldMapHumanTracker.java
@@ -60,6 +75,36 @@ index bf3e6fe..49449c9 100644
                      }
  
                      this.c[i] = -1;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index d463e40..7737870 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -112,6 +112,8 @@ public class CraftWorld implements World {
+         monsterTrackingRange = configuration.getInt("world-settings.default.entity-tracking-range-monsters");
+         maxTrackingRange = configuration.getInt("world-settings.default.entity-tracking-range-max");
+         
++        mapsEnabled = configuration.getBoolean("world-settings.default.maps-enabled", mapsEnabled);
++        
+         //override defaults with world specific, if they exist
+         growthPerTick = configuration.getInt("world-settings." + name + ".growth-chunks-per-tick", growthPerTick);
+         itemMergeRadius = configuration.getDouble("world-settings." + name + ".item-merge-radius", itemMergeRadius);
+@@ -147,6 +149,8 @@ public class CraftWorld implements World {
+         if (maxTrackingRange == 0) {
+             System.err.println("Error! Should not have 0 maxRange");
+         }
++       mapsEnabled = configuration.getBoolean("world-settings." + name + ".maps-enabled", mapsEnabled);
++
+         server.getLogger().info("-------------- Spigot ----------------");
+         server.getLogger().info("-------- World Settings For [" + name + "] --------");
+         server.getLogger().info("Growth Per Chunk: " + growthPerTick);
+@@ -176,6 +180,7 @@ public class CraftWorld implements World {
+     public double expMergeRadius = 3.5;
+     public int viewDistance;
+     public boolean obfuscated = false;
++    public boolean mapsEnabled = true;
+     //Crop growth rates:
+     public int wheatGrowthModifier = 100;
+     public int cactusGrowthModifier = 100;
 diff --git a/src/main/java/org/bukkit/craftbukkit/map/CraftMapView.java b/src/main/java/org/bukkit/craftbukkit/map/CraftMapView.java
 index b28d6a3..e70e4e4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/map/CraftMapView.java
@@ -73,6 +118,18 @@ index b28d6a3..e70e4e4 100644
      private final Map<MapRenderer, Map<CraftPlayer, CraftMapCanvas>> canvases = new HashMap<MapRenderer, Map<CraftPlayer, CraftMapCanvas>>();
      protected final WorldMap worldMap;
  
+diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
+index 4034c6f..a1fe4fe 100644
+--- a/src/main/resources/configurations/bukkit.yml
++++ b/src/main/resources/configurations/bukkit.yml
+@@ -61,6 +61,7 @@ world-settings:
+         entity-tracking-range-monsters: 48
+         entity-tracking-range-misc: 32
+         entity-tracking-range-max: 64
++        maps-enabled: true
+     world:
+         growth-chunks-per-tick: 1000
+     world_nether:
 -- 
 1.8.1-rc2
 
