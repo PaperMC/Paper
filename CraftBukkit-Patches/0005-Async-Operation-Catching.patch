@@ -1,23 +1,86 @@
-From 67cddbc9856c267a110cf7531b8fde518e327613 Mon Sep 17 00:00:00 2001
+From c4e48c299169a97a90a6d75871c39c6998a39cb9 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 7 Mar 2013 20:12:46 +1100
 Subject: [PATCH] Async Operation Catching
 
 Catch and throw an exception when a potentially unsafe operation occurs on a thread other than the main server thread.
 ---
+ src/main/java/net/minecraft/server/EntityTracker.java        | 2 ++
+ src/main/java/net/minecraft/server/EntityTrackerEntry.java   | 2 ++
+ src/main/java/net/minecraft/server/World.java                | 2 ++
  src/main/java/org/bukkit/craftbukkit/CraftWorld.java         | 3 +++
  src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java | 1 +
- 2 files changed, 4 insertions(+)
+ 5 files changed, 10 insertions(+)
 
+diff --git a/src/main/java/net/minecraft/server/EntityTracker.java b/src/main/java/net/minecraft/server/EntityTracker.java
+index 4de1273..db62084 100644
+--- a/src/main/java/net/minecraft/server/EntityTracker.java
++++ b/src/main/java/net/minecraft/server/EntityTracker.java
+@@ -89,6 +89,7 @@ public class EntityTracker {
+     }
+ 
+     public void addEntity(Entity entity, int i, int j, boolean flag) {
++        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous entity track!"); // Spigot
+         if (i > this.d) {
+             i = this.d;
+         }
+@@ -124,6 +125,7 @@ public class EntityTracker {
+     }
+ 
+     public void untrackEntity(Entity entity) {
++        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous entity untrack!"); // Spigot
+         if (entity instanceof EntityPlayer) {
+             EntityPlayer entityplayer = (EntityPlayer) entity;
+             Iterator iterator = this.b.iterator();
+diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+index ae9ed52..9c014ca 100644
+--- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+@@ -286,6 +286,7 @@ public class EntityTrackerEntry {
+     }
+ 
+     public void updatePlayer(EntityPlayer entityplayer) {
++        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous player tracker update!"); // Spigot
+         if (entityplayer != this.tracker) {
+             double d0 = entityplayer.locX - (double) (this.xLoc / 32);
+             double d1 = entityplayer.locZ - (double) (this.zLoc / 32);
+@@ -470,6 +471,7 @@ public class EntityTrackerEntry {
+     }
+ 
+     public void clear(EntityPlayer entityplayer) {
++        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous player tracker clear!"); // Spigot
+         if (this.trackedPlayers.contains(entityplayer)) {
+             this.trackedPlayers.remove(entityplayer);
+             entityplayer.removeQueue.add(Integer.valueOf(this.tracker.id));
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 0c378e7..4518acc 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -919,6 +919,7 @@ public abstract class World implements IBlockAccess {
+     }
+ 
+     public boolean addEntity(Entity entity, SpawnReason spawnReason) { // Changed signature, added SpawnReason
++        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous entity add!"); // Spigot
+         if (entity == null) return false;
+         // CraftBukkit end
+ 
+@@ -1025,6 +1026,7 @@ public abstract class World implements IBlockAccess {
+     }
+ 
+     public void removeEntity(Entity entity) {
++        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous entity remove!"); // Spigot
+         entity.die();
+         if (entity instanceof EntityHuman) {
+             this.players.remove(entity);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 9343d46..b569dc4 100644
+index 9343d46..e3732a0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -232,6 +232,7 @@ public class CraftWorld implements World {
      }
  
      public boolean unloadChunkRequest(int x, int z, boolean safe) {
-+        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous chunk unload!");
++        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous chunk unload!"); // Spigot
          if (safe && isChunkInUse(x, z)) {
              return false;
          }
@@ -25,7 +88,7 @@ index 9343d46..b569dc4 100644
      }
  
      public boolean unloadChunk(int x, int z, boolean save, boolean safe) {
-+        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous chunk unload!");
++        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous chunk unload!"); // Spigot
          if (safe && isChunkInUse(x, z)) {
              return false;
          }
@@ -33,19 +96,19 @@ index 9343d46..b569dc4 100644
      }
  
      public boolean loadChunk(int x, int z, boolean generate) {
-+        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous chunk load!");
++        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous chunk load!"); // Spigot
          chunkLoadCount++;
          if (generate) {
              // Use the default variant of loadChunk when generate == true.
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 70111e7..59e63ef 100644
+index 70111e7..f026c45 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -213,6 +213,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      }
  
      public void kickPlayer(String message) {
-+        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous player kick!");
++        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous player kick!"); // Spigot
          if (getHandle().playerConnection == null) return;
  
          getHandle().playerConnection.disconnect(message == null ? "" : message);
