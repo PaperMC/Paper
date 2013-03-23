@@ -4,6 +4,7 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleDestroyEvent;
@@ -379,8 +380,20 @@ public class EntityBoat extends Entity {
                         int i2 = this.world.getTypeId(i1, l1, j1);
 
                         if (i2 == Block.SNOW.id) {
+                            // CraftBukkit start
+                            if (CraftEventFactory.callEntityChangeBlockEvent(this, i1, l1, j1, 0, 0).isCancelled()) {
+                                continue;
+                            }
+                            // CraftBukkit end
+
                             this.world.setAir(i1, l1, j1);
                         } else if (i2 == Block.WATER_LILY.id) {
+                            // CraftBukkit start
+                            if (CraftEventFactory.callEntityChangeBlockEvent(this, i1, l1, j1, 0, 0).isCancelled()) {
+                                continue;
+                            }
+                            // CraftBukkit end
+
                             this.world.setAir(i1, l1, j1, true);
                         }
                     }
