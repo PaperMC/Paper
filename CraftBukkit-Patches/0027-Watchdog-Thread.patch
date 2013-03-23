@@ -1,15 +1,15 @@
-From 63bf5cad042a511332edc488e25b53df78c64919 Mon Sep 17 00:00:00 2001
+From 82330dae19c04ca1d92033b449536f4f79d1e322 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sat, 23 Feb 2013 12:33:20 +1100
 Subject: [PATCH] Watchdog Thread.
 
 ---
- .../java/net/minecraft/server/MinecraftServer.java |  2 +
- src/main/java/org/bukkit/craftbukkit/Spigot.java   | 78 +++++++++++++++++-
- src/main/java/org/spigotmc/RestartCommand.java     | 23 ++++++
- src/main/java/org/spigotmc/WatchdogThread.java     | 93 ++++++++++++++++++++++
- src/main/resources/configurations/bukkit.yml       |  3 +
- 5 files changed, 197 insertions(+), 2 deletions(-)
+ .../java/net/minecraft/server/MinecraftServer.java |   2 +
+ src/main/java/org/bukkit/craftbukkit/Spigot.java   | 123 +++++++++++++++++----
+ src/main/java/org/spigotmc/RestartCommand.java     |  23 ++++
+ src/main/java/org/spigotmc/WatchdogThread.java     |  93 ++++++++++++++++
+ src/main/resources/configurations/bukkit.yml       |   3 +
+ 5 files changed, 222 insertions(+), 22 deletions(-)
  create mode 100644 src/main/java/org/spigotmc/RestartCommand.java
  create mode 100644 src/main/java/org/spigotmc/WatchdogThread.java
 
@@ -34,7 +34,7 @@ index 28135f4..3689a3d 100644
                  this.isStopped = true;
              } catch (Throwable throwable1) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-index b00c885..dcfac79 100644
+index b00c885..d445c2e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
 @@ -1,5 +1,6 @@
@@ -44,20 +44,29 @@ index b00c885..dcfac79 100644
  import java.io.IOException;
  import java.util.ArrayList;
  import net.minecraft.server.*;
-@@ -8,9 +9,11 @@ import org.bukkit.configuration.file.YamlConfiguration;
+@@ -8,21 +9,24 @@ import org.bukkit.configuration.file.YamlConfiguration;
  
  import java.util.List;
  import java.util.logging.Level;
 -import java.util.logging.Logger;
++import net.minecraft.server.EntityPlayer;
  import org.bukkit.Bukkit;
-+import org.bukkit.entity.Player;
  import org.spigotmc.Metrics;
 +import org.spigotmc.RestartCommand;
 +import org.spigotmc.WatchdogThread;
  
  public class Spigot {
-     static AxisAlignedBB maxBB = AxisAlignedBB.a(0,0,0,0,0,0);
-@@ -23,6 +26,7 @@ public class Spigot {
+-    static AxisAlignedBB maxBB = AxisAlignedBB.a(0,0,0,0,0,0);
+-    static AxisAlignedBB miscBB = AxisAlignedBB.a(0,0,0,0,0,0);
+-    static AxisAlignedBB animalBB = AxisAlignedBB.a(0,0,0,0,0,0);
+-    static AxisAlignedBB monsterBB = AxisAlignedBB.a(0,0,0,0,0,0);
+ 
++    static AxisAlignedBB maxBB = AxisAlignedBB.a(0, 0, 0, 0, 0, 0);
++    static AxisAlignedBB miscBB = AxisAlignedBB.a(0, 0, 0, 0, 0, 0);
++    static AxisAlignedBB animalBB = AxisAlignedBB.a(0, 0, 0, 0, 0, 0);
++    static AxisAlignedBB monsterBB = AxisAlignedBB.a(0, 0, 0, 0, 0, 0);
+     public static boolean tabPing = false;
+     private static Metrics metrics;
  
      public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
          commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
@@ -91,7 +100,100 @@ index b00c885..dcfac79 100644
          }
  
          if (server.chunkGCPeriod == 0) {
-@@ -265,4 +280,63 @@ public class Spigot {
+@@ -59,6 +74,7 @@ public class Spigot {
+     /**
+      * Initializes an entities type on construction to specify what group this
+      * entity is in for activation ranges.
++     *
+      * @param entity
+      * @return group id
+      */
+@@ -80,21 +96,20 @@ public class Spigot {
+      * @return boolean If it should always tick.
+      */
+     public static boolean initializeEntityActivationState(Entity entity, CraftWorld world) {
+-        if (   (entity.activationType == 3 && world.miscEntityActivationRange == 0)
+-            || (entity.activationType == 2 && world.animalEntityActivationRange == 0)
+-            || (entity.activationType == 1 && world.monsterEntityActivationRange == 0)
+-            || entity instanceof EntityHuman
+-            || entity instanceof EntityItemFrame
+-            || entity instanceof EntityProjectile
+-            || entity instanceof EntityEnderDragon
+-            || entity instanceof EntityComplexPart
+-            || entity instanceof EntityWither
+-            || entity instanceof EntityFireball
+-            || entity instanceof EntityWeather
+-            || entity instanceof EntityTNTPrimed
+-            || entity instanceof EntityEnderCrystal
+-            || entity instanceof EntityFireworks
+-            ) {
++        if ((entity.activationType == 3 && world.miscEntityActivationRange == 0)
++                || (entity.activationType == 2 && world.animalEntityActivationRange == 0)
++                || (entity.activationType == 1 && world.monsterEntityActivationRange == 0)
++                || entity instanceof EntityHuman
++                || entity instanceof EntityItemFrame
++                || entity instanceof EntityProjectile
++                || entity instanceof EntityEnderDragon
++                || entity instanceof EntityComplexPart
++                || entity instanceof EntityWither
++                || entity instanceof EntityFireball
++                || entity instanceof EntityWeather
++                || entity instanceof EntityTNTPrimed
++                || entity instanceof EntityEnderCrystal
++                || entity instanceof EntityFireworks) {
+             return true;
+         }
+ 
+@@ -104,6 +119,7 @@ public class Spigot {
+     /**
+      * Utility method to grow an AABB without creating a new AABB or touching
+      * the pool, so we can re-use ones we have.
++     *
+      * @param target
+      * @param source
+      * @param x
+@@ -122,6 +138,7 @@ public class Spigot {
+     /**
+      * Find what entities are in range of the players in the world and set
+      * active if in range.
++     *
+      * @param world
+      */
+     public static void activateEntities(World world) {
+@@ -160,6 +177,7 @@ public class Spigot {
+ 
+     /**
+      * Checks for the activation state of all entities in this chunk.
++     *
+      * @param chunk
+      */
+     private static void activateChunkEntities(Chunk chunk) {
+@@ -195,6 +213,7 @@ public class Spigot {
+     /**
+      * If an entity is not in range, do some more checks to see if we should
+      * give it a shot.
++     *
+      * @param entity
+      * @return
+      */
+@@ -205,7 +224,7 @@ public class Spigot {
+         }
+         if (!(entity instanceof EntityArrow)) {
+             if (!entity.onGround || entity.passenger != null
+-                || entity.vehicle != null) {
++                    || entity.vehicle != null) {
+                 return true;
+             }
+         } else if (!((EntityArrow) entity).inGround) {
+@@ -235,6 +254,7 @@ public class Spigot {
+ 
+     /**
+      * Checks if the entity is active for this tick.
++     *
+      * @param entity
+      * @return
+      */
+@@ -265,4 +285,63 @@ public class Spigot {
          SpigotTimings.checkIfActiveTimer.stopTiming();
          return isActive;
      }
@@ -104,8 +206,8 @@ index b00c885..dcfac79 100644
 +                System.out.println("Attempting to restart with " + startupScript);
 +
 +                // Kick all players
-+                for (Player p : Bukkit.getServer().getOnlinePlayers()) {
-+                   ((org.bukkit.craftbukkit.entity.CraftPlayer) p).kickPlayer("Server is restarting", true);
++                for (EntityPlayer p : (List< EntityPlayer>) MinecraftServer.getServer().getPlayerList().players) {
++                    p.playerConnection.disconnect("Server is restarting");
 +                }
 +                // Give the socket a chance to send the packets
 +                try {
@@ -130,15 +232,15 @@ index b00c885..dcfac79 100644
 +                // This will be done AFTER the server has completely halted
 +                Thread shutdownHook = new Thread() {
 +                    @Override
-+                    public void run(){
++                    public void run() {
 +                        try {
 +                            String os = System.getProperty("os.name").toLowerCase();
 +                            if (os.contains("win")) {
 +                                Runtime.getRuntime().exec("cmd /c start " + file.getPath());
 +                            } else {
-+                                Runtime.getRuntime().exec(new String[] { "sh", file.getPath()});
++                                Runtime.getRuntime().exec(new String[]{"sh", file.getPath()});
 +                            }
-+                        } catch (Exception e){
++                        } catch (Exception e) {
 +                            e.printStackTrace();
 +                        }
 +                    }
