@@ -189,6 +189,12 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         FALLING_BLOCK,
         /**
+         * Damage caused in retaliation to another attack by the Thorns enchantment.
+         * <p />
+         * Damage: 1-4 (Thorns)
+         */
+        THORNS,
+        /**
          * Custom damage.
          * <p />
          * Damage: variable
