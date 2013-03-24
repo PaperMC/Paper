@@ -79,7 +79,7 @@ public class ContainerEnchantTable extends Container {
             ItemStack itemstack = iinventory.getItem(0);
             int i;
 
-            if (itemstack != null && itemstack.w()) {
+            if (itemstack != null) { // CraftBukkit - relax condition
                 this.f = this.l.nextLong();
                 if (!this.world.isStatic) {
                     i = 0;
@@ -125,6 +125,7 @@ public class ContainerEnchantTable extends Container {
                     // CraftBukkit start
                     CraftItemStack item = CraftItemStack.asCraftMirror(itemstack);
                     PrepareItemEnchantEvent event = new PrepareItemEnchantEvent(player, this.getBukkitView(), this.world.getWorld().getBlockAt(this.x, this.y, this.z), item, this.costs, i);
+                    event.setCancelled(!itemstack.w())
                     this.world.getServer().getPluginManager().callEvent(event);
 
                     if (event.isCancelled()) {
