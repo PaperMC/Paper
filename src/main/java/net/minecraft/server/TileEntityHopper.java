@@ -282,7 +282,13 @@ public class TileEntityHopper extends TileEntity implements IHopper {
             ihopper.getWorld().getServer().getPluginManager().callEvent(event);
             if (event.isCancelled()) {
                 iinventory.setItem(i, itemstack1);
-                ((TileEntityHopper) ihopper).c(8); // delay hopper checks
+
+                if (ihopper instanceof TileEntityHopper) {
+                    ((TileEntityHopper) ihopper).c(8); // delay hopper checks
+                } else if (ihopper instanceof EntityMinecartHopper) {
+                    ((EntityMinecartHopper) ihopper).n(4); // delay hopper minecart checks
+                }
+
                 return false;
             }
             ItemStack itemstack2 = addItem(ihopper, CraftItemStack.asNMSCopy(event.getItem()), -1);
@@ -294,6 +300,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
                     iinventory.setItem(i, itemstack1);
                 }
                 // CraftBukkit end
+
                 return true;
             }
 
