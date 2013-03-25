@@ -12,7 +12,7 @@ public abstract class CraftProjectile extends AbstractProjectile implements Proj
     }
 
     public LivingEntity getShooter() {
-        if (getHandle().getShooter() instanceof EntityLiving) {
+        if (getHandle().getShooter() != null) {
             return (LivingEntity) getHandle().getShooter().getBukkitEntity();
         }
 

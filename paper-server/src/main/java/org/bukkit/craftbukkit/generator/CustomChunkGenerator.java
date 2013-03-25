@@ -72,7 +72,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                     continue;
                 }
                 byte[] secBlkID = new byte[4096]; // Allocate blk ID bytes
-                byte[] secExtBlkID = (byte[]) null; // Delay getting extended ID nibbles
+                byte[] secExtBlkID = null; // Delay getting extended ID nibbles
                 short[] bdata = xbtypes[sec];
                 // Loop through data, 2 blocks at a time
                 for (int i = 0, j = 0; i < bdata.length; i += 2, j++) {
@@ -124,7 +124,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                 // Loop through sections
                 for (int sec = 0; sec < scnt; sec++) {
                     ChunkSection cs = null; // Add sections when needed
-                    byte[] csbytes = (byte[]) null;
+                    byte[] csbytes = null;
 
                     for (int cy = 0; cy < 16; cy++) {
                         int cyoff = cy | (sec << 4);

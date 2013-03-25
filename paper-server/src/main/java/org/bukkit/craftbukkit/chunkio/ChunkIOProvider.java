@@ -57,7 +57,7 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
         if (server != null) {
             server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(chunk.bukkitChunk, false));
         }
-        
+
         chunk.a(queuedChunk.provider, queuedChunk.provider, x, z);
     }
 

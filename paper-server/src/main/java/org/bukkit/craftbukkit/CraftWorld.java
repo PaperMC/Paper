@@ -244,7 +244,7 @@ public class CraftWorld implements World {
         }
 
         world.chunkProviderServer.unloadQueue.remove(x, z);
-        net.minecraft.server.Chunk chunk = (net.minecraft.server.Chunk) world.chunkProviderServer.chunks.get(LongHash.toLong(x, z));
+        net.minecraft.server.Chunk chunk = world.chunkProviderServer.chunks.get(LongHash.toLong(x, z));
 
         if (chunk == null) {
             chunk = world.chunkProviderServer.loadChunk(x, z);
@@ -681,7 +681,7 @@ public class CraftWorld implements World {
     public void setStorm(boolean hasStorm) {
         CraftServer server = world.getServer();
 
-        WeatherChangeEvent weather = new WeatherChangeEvent((org.bukkit.World) this, hasStorm);
+        WeatherChangeEvent weather = new WeatherChangeEvent(this, hasStorm);
         server.getPluginManager().callEvent(weather);
         if (!weather.isCancelled()) {
             world.worldData.setStorm(hasStorm);
@@ -711,7 +711,7 @@ public class CraftWorld implements World {
         if (thundering && !hasStorm()) setStorm(true);
         CraftServer server = world.getServer();
 
-        ThunderChangeEvent thunder = new ThunderChangeEvent((org.bukkit.World) this, thundering);
+        ThunderChangeEvent thunder = new ThunderChangeEvent(this, thundering);
         server.getPluginManager().callEvent(thunder);
         if (!thunder.isCancelled()) {
             world.worldData.setThundering(thundering);
@@ -858,7 +858,7 @@ public class CraftWorld implements World {
                 } else {
                     entity = new EntityLargeFireball(world);
                 }
-                ((EntityFireball) entity).setPositionRotation(x, y, z, yaw, pitch);
+                entity.setPositionRotation(x, y, z, yaw, pitch);
                 Vector direction = location.getDirection().multiply(10);
                 ((EntityFireball) entity).setDirection(direction.getX(), direction.getY(), direction.getZ());
             }
@@ -1265,9 +1265,7 @@ public class CraftWorld implements World {
         }
 
         ChunkProviderServer cps = world.chunkProviderServer;
-        Iterator<net.minecraft.server.Chunk> iter = cps.chunks.values().iterator();
-        while (iter.hasNext()) {
-            net.minecraft.server.Chunk chunk = iter.next();
+        for (net.minecraft.server.Chunk chunk : cps.chunks.values()) {
             // If in use, skip it
             if (isChunkInUse(chunk.x, chunk.z)) {
                 continue;
@@ -1279,7 +1277,7 @@ public class CraftWorld implements World {
             }
 
             // Add unload request
-            cps.queueUnload(chunk.x,  chunk.z);
+            cps.queueUnload(chunk.x, chunk.z);
         }
     }
 }

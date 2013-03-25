@@ -6,10 +6,10 @@ import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.World;
 
 class QueuedChunk {
-    long coords;
-    ChunkRegionLoader loader;
-    World world;
-    ChunkProviderServer provider;
+    final long coords;
+    final ChunkRegionLoader loader;
+    final World world;
+    final ChunkProviderServer provider;
     NBTTagCompound compound;
 
     public QueuedChunk(long coords, ChunkRegionLoader loader, World world, ChunkProviderServer provider) {

@@ -10,8 +10,8 @@ import net.minecraft.server.IRecipe;
 import net.minecraft.server.RecipesFurnace;
 
 public class RecipeIterator implements Iterator<Recipe> {
-    private Iterator<IRecipe> recipes;
-    private Iterator<Integer> smelting;
+    private final Iterator<IRecipe> recipes;
+    private final Iterator<Integer> smelting;
     private Iterator<?> removeFrom = null;
 
     public RecipeIterator() {
@@ -35,8 +35,8 @@ public class RecipeIterator implements Iterator<Recipe> {
             removeFrom = smelting;
             int id = smelting.next();
             CraftItemStack stack = CraftItemStack.asCraftMirror(RecipesFurnace.getInstance().getResult(id));
-            CraftFurnaceRecipe recipe = new CraftFurnaceRecipe(stack, new ItemStack(id, 1, (short) -1));
-            return recipe;
+
+            return new CraftFurnaceRecipe(stack, new ItemStack(id, 1, (short) -1));
         }
     }
 

@@ -145,7 +145,7 @@ public class SimpleHelpMap implements HelpMap {
         }
 
         // Add alias sub-index
-        Collection<HelpTopic> filteredTopics = Collections2.<HelpTopic>filter(helpTopics.values(), Predicates.instanceOf(CommandAliasHelpTopic.class));
+        Collection<HelpTopic> filteredTopics = Collections2.filter(helpTopics.values(), Predicates.instanceOf(CommandAliasHelpTopic.class));
         if (!filteredTopics.isEmpty()) {
             addTopic(new IndexHelpTopic("Aliases", "Lists command aliases", null, filteredTopics));
         }

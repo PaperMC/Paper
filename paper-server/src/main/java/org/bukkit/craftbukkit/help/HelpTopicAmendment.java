@@ -4,10 +4,10 @@ package org.bukkit.craftbukkit.help;
  * A HelpTopicAmendment represents the contents of a topic amendment from the help.yml
  */
 public class HelpTopicAmendment {
-    private String topicName;
-    private String shortText;
-    private String fullText;
-    private String permission;
+    private final String topicName;
+    private final String shortText;
+    private final String fullText;
+    private final String permission;
 
     public HelpTopicAmendment(String topicName, String shortText, String fullText, String permission) {
         this.fullText = fullText;

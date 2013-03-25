@@ -54,12 +54,12 @@ public class CraftAgeable extends CraftCreature implements Ageable {
             setAge(6000);
         }
     }
-    
+
     @Override
     public EntityAgeable getHandle() {
         return (EntityAgeable) entity;
     }
-    
+
     @Override
     public String toString() {
         return "CraftAgeable";
