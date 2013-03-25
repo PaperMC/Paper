@@ -1,6 +1,9 @@
 package net.minecraft.server;
 
-import org.bukkit.event.entity.EntityTargetEvent; // CraftBukkit
+// CraftBukkit start
+import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.event.entity.EntityTargetEvent;
+// CraftBukkit end
 
 public abstract class PathfinderGoalTarget extends PathfinderGoal {
 
@@ -99,7 +102,7 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
                     }
                 }
 
-                // CraftBukkit start - check all the different target goals for the reason, default to RANDOM_TARGET
+                // CraftBukkit start - Check all the different target goals for the reason, default to RANDOM_TARGET
                 EntityTargetEvent.TargetReason reason = EntityTargetEvent.TargetReason.RANDOM_TARGET;
 
                 if (this instanceof PathfinderGoalDefendVillage) {
@@ -121,10 +124,10 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
                     this.d.setGoalTarget(null);
                     return false;
                 } else if (entityliving.getBukkitEntity() != event.getTarget()) {
-                    this.d.setGoalTarget((EntityLiving) ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle());
+                    this.d.setGoalTarget((EntityLiving) ((CraftEntity) event.getTarget()).getHandle());
                 }
                 if (this.d instanceof EntityCreature) {
-                    ((EntityCreature) this.d).target = ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle();
+                    ((EntityCreature) this.d).target = ((CraftEntity) event.getTarget()).getHandle();
                 }
                 // CraftBukkit end
 

@@ -77,9 +77,8 @@ public class BukkitDLUpdaterService {
             connection.setRequestProperty("User-Agent", getUserAgent());
             reader = new InputStreamReader(connection.getInputStream());
             Gson gson = new GsonBuilder().registerTypeAdapter(Date.class, dateDeserializer).setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
-            ArtifactDetails.ChannelDetails fromJson = gson.fromJson(reader, ArtifactDetails.ChannelDetails.class);
 
-            return fromJson;
+            return gson.fromJson(reader, ArtifactDetails.ChannelDetails.class);
         } finally {
             if (reader != null) {
                 reader.close();

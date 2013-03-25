@@ -55,7 +55,7 @@ public class BlockSoil extends Block {
                 return;
             }
 
-            // CraftBukkit start - interact soil
+            // CraftBukkit start - Interact soil
             org.bukkit.event.Cancellable cancellable;
             if (entity instanceof EntityHuman) {
                 cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, i, j, k, -1, null);

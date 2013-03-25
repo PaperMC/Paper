@@ -22,7 +22,7 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
     }
 
     public boolean a(World world, Random random, int i, int j, int k) {
-        // CraftBukkit start - moved to generate
+        // CraftBukkit start - Moved to generate
         return grow((BlockChangeDelegate) world, random, i, j, k, null, null, null);
     }
 

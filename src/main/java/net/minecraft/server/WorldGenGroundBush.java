@@ -15,7 +15,7 @@ public class WorldGenGroundBush extends WorldGenerator implements BlockSapling.T
     }
 
     public boolean a(World world, Random random, int i, int j, int k) {
-        // CraftBukkit start - moved to generate
+        // CraftBukkit start - Moved to generate
         return this.generate((BlockChangeDelegate) world, random, i, j, k);
     }
 
@@ -49,7 +49,7 @@ public class WorldGenGroundBush extends WorldGenerator implements BlockSapling.T
                     }
                 }
             }
-        // CraftBukkit start - return false if gen was unsuccessful
+        // CraftBukkit start - Return false if gen was unsuccessful
         } else {
             return false;
         }

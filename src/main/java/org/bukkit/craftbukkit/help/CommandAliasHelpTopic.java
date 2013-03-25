@@ -8,8 +8,8 @@ import org.bukkit.help.HelpTopic;
 
 public class CommandAliasHelpTopic extends HelpTopic {
 
-    private String aliasFor;
-    private HelpMap helpMap;
+    private final String aliasFor;
+    private final HelpMap helpMap;
 
     public CommandAliasHelpTopic(String alias, String aliasFor, HelpMap helpMap) {
         this.aliasFor = aliasFor.startsWith("/") ? aliasFor : "/" + aliasFor;

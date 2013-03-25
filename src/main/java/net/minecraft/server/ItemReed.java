@@ -50,7 +50,7 @@ public class ItemReed extends Item {
                 Block block = Block.byId[this.id];
                 int j1 = block.getPlacedData(world, i, j, k, l, f, f1, f2, 0);
 
-                // CraftBukkit start - redirect to common handler
+                // CraftBukkit start - Redirect to common handler
                 ItemBlock.processBlockPlace(world, entityhuman, itemstack, i, j, k, this.id, j1, clickedX, clickedY, clickedZ);
                 /*
                 if (world.setTypeIdAndData(i, j, k, this.id, j1, 3)) {

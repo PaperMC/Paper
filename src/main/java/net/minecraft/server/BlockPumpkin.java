@@ -21,7 +21,7 @@ public class BlockPumpkin extends BlockDirectional {
         super.onPlace(world, i, j, k);
         if (world.getTypeId(i, j - 1, k) == Block.SNOW_BLOCK.id && world.getTypeId(i, j - 2, k) == Block.SNOW_BLOCK.id) {
             if (!world.isStatic) {
-                // CraftBukkit start - use BlockStateListPopulator
+                // CraftBukkit start - Use BlockStateListPopulator
                 BlockStateListPopulator blockList = new BlockStateListPopulator(world.getWorld());
 
                 blockList.setTypeId(i, j, k, 0);
@@ -45,7 +45,7 @@ public class BlockPumpkin extends BlockDirectional {
             boolean flag1 = world.getTypeId(i, j - 1, k - 1) == Block.IRON_BLOCK.id && world.getTypeId(i, j - 1, k + 1) == Block.IRON_BLOCK.id;
 
             if (flag || flag1) {
-                // CraftBukkit start - use BlockStateListPopulator
+                // CraftBukkit start - Use BlockStateListPopulator
                 BlockStateListPopulator blockList = new BlockStateListPopulator(world.getWorld());
 
                 blockList.setTypeId(i, j, k, 0);

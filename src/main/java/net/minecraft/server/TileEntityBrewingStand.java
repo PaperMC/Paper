@@ -133,11 +133,11 @@ public class TileEntityBrewingStand extends TileEntity implements IWorldInventor
         if (this.l()) {
             ItemStack itemstack = this.items[3];
 
-            // CraftBukkit start - fire BREW event
+            // CraftBukkit start
             if (getOwner() != null) {
                 BrewEvent event = new BrewEvent(world.getWorld().getBlockAt(x, y, z), (org.bukkit.inventory.BrewerInventory) this.getOwner().getInventory());
                 org.bukkit.Bukkit.getPluginManager().callEvent(event);
-                if(event.isCancelled()) {
+                if (event.isCancelled()) {
                     return;
                 }
             }

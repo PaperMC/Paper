@@ -62,7 +62,7 @@ public class Packet56MapChunkBulk extends Packet {
             this.inflatedBuffers[k] = chunkmap.a;
         }
 
-        /* CraftBukkit start - moved to compress()
+        /* CraftBukkit start - Moved to compress()
         Deflater deflater = new Deflater(-1);
 
         try {

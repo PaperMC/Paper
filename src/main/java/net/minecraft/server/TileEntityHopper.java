@@ -202,7 +202,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
             for (int i = 0; i < this.getSize(); ++i) {
                 if (this.getItem(i) != null) {
                     ItemStack itemstack = this.getItem(i).cloneItemStack();
-                    // CraftBukkit start - fire event when pushing items into other inventories
+                    // CraftBukkit start - Call event when pushing items into other inventories
                     CraftItemStack oitemstack = CraftItemStack.asCraftMirror(this.splitStack(i, 1));
 
                     Inventory destinationInventory = iinventory.getOwner() != null ? iinventory.getOwner().getInventory() : null;
@@ -210,7 +210,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
                     this.getWorld().getServer().getPluginManager().callEvent(event);
                     if (event.isCancelled()) {
                         this.setItem(i, itemstack);
-                        this.c(8); // delay hopper checks
+                        this.c(8); // Delay hopper checks
                         return false;
                     }
                     ItemStack itemstack1 = addItem(iinventory, CraftItemStack.asNMSCopy(event.getItem()), Facing.OPPOSITE_FACING[BlockHopper.c(this.p())]);
@@ -273,7 +273,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
 
         if (itemstack != null && canTakeItemFromInventory(iinventory, itemstack, i, j)) {
             ItemStack itemstack1 = itemstack.cloneItemStack();
-            // CraftBukkit start - fire event on collection of items from inventories into the hopper
+            // CraftBukkit start - Call event on collection of items from inventories into the hopper
             CraftItemStack oitemstack = CraftItemStack.asCraftMirror(iinventory.splitStack(i, 1));
 
             Inventory sourceInventory = iinventory.getOwner() != null ? iinventory.getOwner().getInventory() : null;
@@ -284,9 +284,9 @@ public class TileEntityHopper extends TileEntity implements IHopper {
                 iinventory.setItem(i, itemstack1);
 
                 if (ihopper instanceof TileEntityHopper) {
-                    ((TileEntityHopper) ihopper).c(8); // delay hopper checks
+                    ((TileEntityHopper) ihopper).c(8); // Delay hopper checks
                 } else if (ihopper instanceof EntityMinecartHopper) {
-                    ((EntityMinecartHopper) ihopper).n(4); // delay hopper minecart checks
+                    ((EntityMinecartHopper) ihopper).n(4); // Delay hopper minecart checks
                 }
 
                 return false;

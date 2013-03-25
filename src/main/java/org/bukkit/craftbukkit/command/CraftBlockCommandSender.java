@@ -22,9 +22,6 @@ public class CraftBlockCommandSender extends ServerCommandSender implements Bloc
     public void sendMessage(String message) {
     }
 
-    public void sendRawMessage(String message) {
-    }
-
     public void sendMessage(String[] messages) {
     }
 

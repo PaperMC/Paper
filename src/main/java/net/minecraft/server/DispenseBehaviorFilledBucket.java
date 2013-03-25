@@ -51,7 +51,7 @@ final class DispenseBehaviorFilledBucket extends DispenseBehaviorItem {
         // CraftBukkit end
 
         if (itembucket.a(isourceblock.k(), (double) i, (double) j, (double) k, i + enumfacing.c(), j + enumfacing.d(), k + enumfacing.e())) {
-            // CraftBukkit start - handle stacked buckets
+            // CraftBukkit start - Handle stacked buckets
             Item item = Item.BUCKET;
             if (--itemstack.count == 0) {
                 itemstack.id = item.id;

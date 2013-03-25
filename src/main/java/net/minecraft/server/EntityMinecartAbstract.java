@@ -4,13 +4,11 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.Location;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleDestroyEvent;
 import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
 import org.bukkit.util.Vector;
-import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 // CraftBukkit end
 
 public abstract class EntityMinecartAbstract extends Entity {
@@ -864,7 +862,7 @@ public abstract class EntityMinecartAbstract extends Entity {
         return this.c;
     }
 
-    // CraftBukkit start - methods for getting and setting flying and derailed velocity modifiers
+    // CraftBukkit start - Methods for getting and setting flying and derailed velocity modifiers
     public Vector getFlyingVelocityMod() {
         return new Vector(flyingX, flyingY, flyingZ);
     }

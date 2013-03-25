@@ -146,10 +146,11 @@ public class EntityPigZombie extends EntityZombie {
         return false;
     }
 
-    // CraftBukkit start - return rare dropped item instead of dropping it
+    // CraftBukkit start - Return rare dropped item instead of dropping it
     protected ItemStack l(int i) {
         return new ItemStack(Item.GOLD_INGOT.id, 1, 0);
     }
+    // CraftBukkit end
 
     protected int getLootId() {
         return Item.ROTTEN_FLESH.id;

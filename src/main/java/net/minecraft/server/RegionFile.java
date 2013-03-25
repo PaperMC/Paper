@@ -87,7 +87,7 @@ public class RegionFile {
         }
     }
 
-    // CraftBukkit start - this is a copy (sort of) of the method below it, make sure they stay in sync
+    // CraftBukkit start - This is a copy (sort of) of the method below it, make sure they stay in sync
     public synchronized boolean chunkExists(int i, int j) {
         if (this.d(i, j)) {
             return false;

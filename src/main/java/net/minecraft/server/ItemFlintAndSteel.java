@@ -1,6 +1,9 @@
 package net.minecraft.server;
 
-import org.bukkit.craftbukkit.block.CraftBlockState; // CraftBukkit
+// CraftBukkit start
+import org.bukkit.craftbukkit.block.CraftBlockState;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+// CraftBukkit end
 
 public class ItemFlintAndSteel extends Item {
 
@@ -44,8 +47,8 @@ public class ItemFlintAndSteel extends Item {
             int i1 = world.getTypeId(i, j, k);
 
             if (i1 == 0) {
-                // CraftBukkit start - store the clicked block
-                if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, i, j, k, org.bukkit.event.block.BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL, entityhuman).isCancelled()) {
+                // CraftBukkit start - Store the clicked block
+                if (CraftEventFactory.callBlockIgniteEvent(world, i, j, k, org.bukkit.event.block.BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL, entityhuman).isCancelled()) {
                     itemstack.damage(1, entityhuman);
                     return false;
                 }
@@ -57,7 +60,7 @@ public class ItemFlintAndSteel extends Item {
                 world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
 
                 // CraftBukkit start
-                org.bukkit.event.block.BlockPlaceEvent placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ);
+                org.bukkit.event.block.BlockPlaceEvent placeEvent = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ);
 
                 if (placeEvent.isCancelled() || !placeEvent.canBuild()) {
                     placeEvent.getBlockPlaced().setTypeIdAndData(0, (byte) 0, false);

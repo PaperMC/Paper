@@ -4,7 +4,7 @@ import org.bukkit.event.entity.EntityDamageEvent; // CraftBukkit
 
 public class FoodMetaData {
 
-    // CraftBukkit start - all made public
+    // CraftBukkit start - All made public
     public int foodLevel = 20;
     public float saturationLevel = 5.0F;
     public float exhaustionLevel;

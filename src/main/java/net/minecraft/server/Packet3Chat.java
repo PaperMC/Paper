@@ -22,7 +22,7 @@ public class Packet3Chat extends Packet {
     public Packet3Chat(String s, boolean flag) {
         this.c = true;
 
-        /* CraftBukkit start - handle this later
+        /* CraftBukkit start - Handle this later
         if (s.length() > b) {
             s = s.substring(0, b);
         }

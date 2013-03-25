@@ -251,7 +251,7 @@ public class EntityBoat extends Entity {
                 this.motX += this.passenger.motX * this.b;
                 this.motZ += this.passenger.motZ * this.b;
             }
-            // CraftBukkit start - block not in vanilla
+            // CraftBukkit start - Support unoccupied deceleration
             else if (unoccupiedDeceleration >= 0) {
                 this.motX *= unoccupiedDeceleration;
                 this.motZ *= unoccupiedDeceleration;

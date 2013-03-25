@@ -189,7 +189,7 @@ public class ItemDye extends Item {
         } else {
             if (!world.isStatic) {
                 if ((double) world.random.nextFloat() < 0.4D) {
-                    // CraftBukkit start - validate
+                    // CraftBukkit start - Validate
                         Player player = (entityhuman instanceof EntityPlayer) ? (Player) entityhuman.getBukkitEntity() : null;
                         ((BlockMushroom) Block.byId[l]).grow(world, i, j, k, world.random, true, player, itemstack);
                 }

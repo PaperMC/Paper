@@ -121,7 +121,7 @@ public class EntityCreeper extends EntityMonster {
     }
 
     public void die(DamageSource damagesource) {
-        // CraftBukkit start - rearranged the method (super call to end, drop to dropDeathLoot)
+        // CraftBukkit start - Rearranged the method (super call to end, drop to dropDeathLoot)
         if (damagesource.getEntity() instanceof EntitySkeleton) {
             int i = Item.RECORD_1.id + this.random.nextInt(Item.RECORD_12.id - Item.RECORD_1.id + 1);
 
@@ -133,7 +133,7 @@ public class EntityCreeper extends EntityMonster {
         // CraftBukkit end
     }
 
-    // CraftBukkit start - whole method
+    // CraftBukkit start - Whole method
     protected void dropDeathLoot(boolean flag, int i) {
         int j = this.getLootId();
 

@@ -100,7 +100,7 @@ public class BlockFlowing extends BlockFluids {
         }
 
         if (this.o(world, i, j - 1, k)) {
-            // CraftBukkit start - send "down" to the server
+            // CraftBukkit start - Send "down" to the server
             BlockFromToEvent event = new BlockFromToEvent(source, BlockFace.DOWN);
             if (server != null) {
                 server.getPluginManager().callEvent(event);
@@ -132,7 +132,7 @@ public class BlockFlowing extends BlockFluids {
                 return;
             }
 
-            // CraftBukkit start - all four cardinal directions. Do not change the order!
+            // CraftBukkit start - All four cardinal directions. Do not change the order!
             BlockFace[] faces = new BlockFace[] { BlockFace.WEST, BlockFace.EAST, BlockFace.NORTH, BlockFace.SOUTH };
             int index = 0;
 

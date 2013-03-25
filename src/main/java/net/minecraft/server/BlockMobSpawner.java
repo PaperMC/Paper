@@ -22,7 +22,7 @@ public class BlockMobSpawner extends BlockContainer {
 
     public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
         super.dropNaturally(world, i, j, k, l, f, i1);
-        /* CraftBukkit start - delegate to getExpDrop
+        /* CraftBukkit start - Delegate to getExpDrop
         int j1 = 15 + world.random.nextInt(15) + world.random.nextInt(15);
 
         this.j(world, i, j, k, j1);*/

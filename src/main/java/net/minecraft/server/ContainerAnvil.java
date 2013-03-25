@@ -3,11 +3,7 @@ package net.minecraft.server;
 import java.util.Iterator;
 import java.util.Map;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.inventory.CraftInventory;
-import org.bukkit.craftbukkit.inventory.CraftInventoryAnvil;
-import org.bukkit.craftbukkit.inventory.CraftInventoryView;
-// CraftBukkit end
+import org.bukkit.craftbukkit.inventory.CraftInventoryView; // CraftBukkit
 
 public class ContainerAnvil extends Container {
 
@@ -380,7 +376,7 @@ public class ContainerAnvil extends Container {
             return bukkitEntity;
         }
 
-        CraftInventory inventory = new CraftInventoryAnvil(this.g);
+        org.bukkit.craftbukkit.inventory.CraftInventory inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryAnvil(this.g);
         bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
         return bukkitEntity;
     }

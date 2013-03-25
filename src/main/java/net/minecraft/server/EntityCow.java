@@ -55,7 +55,7 @@ public class EntityCow extends EntityAnimal {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        // CraftBukkit start - whole method
+        // CraftBukkit start - Whole method
         java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         int j = this.random.nextInt(3) + this.random.nextInt(1 + i);
 
@@ -79,7 +79,7 @@ public class EntityCow extends EntityAnimal {
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
         if (itemstack != null && itemstack.id == Item.BUCKET.id) {
-            // CraftBukkit start - got milk?
+            // CraftBukkit start - Got milk?
             org.bukkit.Location loc = this.getBukkitEntity().getLocation();
             org.bukkit.event.player.PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), -1, itemstack, Item.MILK_BUCKET);
 

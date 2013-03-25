@@ -58,7 +58,7 @@ public class DedicatedServerConnectionThread extends Thread {
             try {
                 Socket socket = this.d.accept();
 
-                // CraftBukkit start - connection throttle
+                // CraftBukkit start - Connection throttle
                 InetAddress address = socket.getInetAddress();
                 long currentTime = System.currentTimeMillis();
 

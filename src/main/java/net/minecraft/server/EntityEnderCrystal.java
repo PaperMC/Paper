@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+
 public class EntityEnderCrystal extends Entity {
 
     public int a = 0;
@@ -34,7 +36,7 @@ public class EntityEnderCrystal extends Entity {
 
         if (this.world.getTypeId(i, j, k) != Block.FIRE.id) {
             // CraftBukkit start
-            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.world, i, j, k, this).isCancelled()) {
+            if (!CraftEventFactory.callBlockIgniteEvent(this.world, i, j, k, this).isCancelled()) {
                 this.world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
             }
             // CraftBukkit end
@@ -55,7 +57,7 @@ public class EntityEnderCrystal extends Entity {
         } else {
             if (!this.dead && !this.world.isStatic) {
                 // CraftBukkit start - All non-living entities need this
-                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, i)) {
+                if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, i)) {
                     return false;
                 }
                 // CraftBukkit end

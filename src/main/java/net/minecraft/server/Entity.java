@@ -368,7 +368,7 @@ public abstract class Entity {
 
     protected void z() {
         if (!this.fireProof) {
-            // CraftBukkit start - fallen in lava TODO: this event spams!
+            // CraftBukkit start - Fallen in lava TODO: this event spams!
             if (this instanceof EntityLiving) {
                 Server server = this.world.getServer();
 
@@ -705,8 +705,8 @@ public abstract class Entity {
                 this.burn(1);
                 if (!flag2) {
                     ++this.fireTicks;
-                    // CraftBukkit start - not on fire yet
-                    if (this.fireTicks <= 0) { // only throw events on the first combust, otherwise it spams
+                    // CraftBukkit start - Not on fire yet
+                    if (this.fireTicks <= 0) { // Only throw events on the first combust, otherwise it spams
                         EntityCombustEvent event = new EntityCombustEvent(this.getBukkitEntity(), 8);
                         this.world.getServer().getPluginManager().callEvent(event);
 
@@ -1087,7 +1087,7 @@ public abstract class Entity {
             nbttagcompound.set("Pos", this.a(new double[] { this.locX, this.locY + (double) this.X, this.locZ}));
             nbttagcompound.set("Motion", this.a(new double[] { this.motX, this.motY, this.motZ}));
 
-            // CraftBukkit start - checking for NaN pitch/yaw and resetting to zero
+            // CraftBukkit start - Checking for NaN pitch/yaw and resetting to zero
             // TODO: make sure this is the best way to address this.
             if (Float.isNaN(this.yaw)) {
                 this.yaw = 0;
@@ -1139,7 +1139,7 @@ public abstract class Entity {
             this.motX = ((NBTTagDouble) nbttaglist1.get(0)).data;
             this.motY = ((NBTTagDouble) nbttaglist1.get(1)).data;
             this.motZ = ((NBTTagDouble) nbttaglist1.get(2)).data;
-            /* CraftBukkit start - moved section down
+            /* CraftBukkit start - Moved section down
             if (Math.abs(this.motX) > 10.0D) {
                 this.motX = 0.0D;
             }
@@ -1188,7 +1188,7 @@ public abstract class Entity {
             }
             // CraftBukkit end
 
-            // CraftBukkit start - exempt Vehicles from notch's sanity check
+            // CraftBukkit start - Exempt Vehicles from notch's sanity check
             if (!(this.getBukkitEntity() instanceof Vehicle)) {
                 if (Math.abs(this.motX) > 10.0D) {
                     this.motX = 0.0D;
@@ -1204,7 +1204,7 @@ public abstract class Entity {
             }
             // CraftBukkit end
 
-            // CraftBukkit start - reset world
+            // CraftBukkit start - Reset world
             if (this instanceof EntityPlayer) {
                 Server server = Bukkit.getServer();
                 org.bukkit.World bworld = null;
@@ -1402,7 +1402,7 @@ public abstract class Entity {
 
     public CraftEntity getBukkitEntity() {
         if (this.bukkitEntity == null) {
-            this.bukkitEntity = org.bukkit.craftbukkit.entity.CraftEntity.getEntity(this.world.getServer(), this);
+            this.bukkitEntity = CraftEntity.getEntity(this.world.getServer(), this);
         }
         return this.bukkitEntity;
     }
@@ -1607,7 +1607,7 @@ public abstract class Entity {
 
         ++this.fireTicks;
         if (this.fireTicks == 0) {
-            // CraftBukkit start - raise a combust event when lightning strikes
+            // CraftBukkit start - Call a combust event when lightning strikes
             EntityCombustByEntityEvent entityCombustEvent = new EntityCombustByEntityEvent(stormBukkitEntity, thisBukkitEntity, 8);
             pluginManager.callEvent(entityCombustEvent);
             if (!entityCombustEvent.isCancelled()) {
@@ -1755,11 +1755,11 @@ public abstract class Entity {
         if (!this.world.isStatic && !this.dead) {
             this.world.methodProfiler.a("changeDimension");
             MinecraftServer minecraftserver = MinecraftServer.getServer();
-            // CraftBukkit start - move logic into new function "teleportToLocation"
+            // CraftBukkit start - Move logic into new function "teleportToLocation"
             // int j = this.dimension;
             WorldServer exitWorld = null;
-            if (this.dimension < CraftWorld.CUSTOM_DIMENSION_OFFSET) { // plugins must specify exit from custom Bukkit worlds
-                // only target existing worlds (compensate for allow-nether/allow-end as false)
+            if (this.dimension < CraftWorld.CUSTOM_DIMENSION_OFFSET) { // Plugins must specify exit from custom Bukkit worlds
+                // Only target existing worlds (compensate for allow-nether/allow-end as false)
                 for (WorldServer world : minecraftserver.worlds) {
                     if (world.dimension == i) {
                         exitWorld = world;
@@ -1771,7 +1771,7 @@ public abstract class Entity {
             Location exit = exitWorld != null ? minecraftserver.getPlayerList().calculateTarget(enter, minecraftserver.getWorldServer(i)) : null;
             boolean useTravelAgent = exitWorld != null && !(this.dimension == 1 && exitWorld.dimension == 1); // don't use agent for custom worlds or return from THE_END
 
-            TravelAgent agent = exit != null ? (TravelAgent) ((CraftWorld) exit.getWorld()).getHandle().s() : org.bukkit.craftbukkit.CraftTravelAgent.DEFAULT; // return arbitrary TA to compensate for implementation dependent plugins 
+            TravelAgent agent = exit != null ? (TravelAgent) ((CraftWorld) exit.getWorld()).getHandle().s() : org.bukkit.craftbukkit.CraftTravelAgent.DEFAULT; // return arbitrary TA to compensate for implementation dependent plugins
             EntityPortalEvent event = new EntityPortalEvent(this.getBukkitEntity(), enter, exit, agent);
             event.useTravelAgent(useTravelAgent);
             event.getEntity().getServer().getPluginManager().callEvent(event);
@@ -1794,7 +1794,7 @@ public abstract class Entity {
             this.world.kill(this);
             this.dead = false;
             this.world.methodProfiler.a("reposition");
-            // CraftBukkit start - ensure chunks are loaded in case TravelAgent is not used which would initially cause chunks to load during find/create
+            // CraftBukkit start - Ensure chunks are loaded in case TravelAgent is not used which would initially cause chunks to load during find/create
             // minecraftserver.getPlayerList().a(this, j, worldserver, worldserver1);
             boolean before = worldserver1.chunkProviderServer.forceChunkLoad;
             worldserver1.chunkProviderServer.forceChunkLoad = true;
@@ -1807,7 +1807,7 @@ public abstract class Entity {
             if (entity != null) {
                 entity.a(this, true);
                 worldserver1.addEntity(entity);
-                // CraftBukkit start - forward the CraftEntity to the new entity
+                // CraftBukkit start - Forward the CraftEntity to the new entity
                 this.getBukkitEntity().setHandle(entity);
                 entity.bukkitEntity = this.getBukkitEntity();
                 // CraftBukkit end

@@ -51,7 +51,7 @@ public class EntitySquid extends EntityWaterAnimal {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        // CraftBukkit start - whole method
+        // CraftBukkit start - Whole method
         java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
 
         int count = this.random.nextInt(3 + i) + 1;

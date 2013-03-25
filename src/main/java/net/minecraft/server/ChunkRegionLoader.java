@@ -40,7 +40,7 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
     }
     // CraftBukkit end
 
-    // CraftBukkit start - add async variant, provide compatibility
+    // CraftBukkit start - Add async variant, provide compatibility
     public Chunk a(World world, int i, int j) {
         Object[] data = this.loadChunk(world, i, j);
         if (data != null) {
@@ -319,7 +319,7 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
             chunk.a(nbttagcompound.getByteArray("Biomes"));
         }
 
-        // CraftBukkit start - end this method here and split off entity loading to another method
+        // CraftBukkit start - End this method here and split off entity loading to another method
         return chunk;
     }
 

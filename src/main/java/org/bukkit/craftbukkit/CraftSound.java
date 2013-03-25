@@ -6,7 +6,7 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.Sound;
 
 public class CraftSound {
-    private static String[] sounds = new String[Sound.values().length];
+    private static final String[] sounds = new String[Sound.values().length];
 
     static {
         sounds[AMBIENCE_CAVE.ordinal()] = "ambient.cave.cave";

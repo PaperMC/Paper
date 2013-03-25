@@ -892,7 +892,7 @@ public abstract class World implements IBlockAccess {
         return true;
     }
 
-    // CraftBukkit start - used for entities other than creatures
+    // CraftBukkit start - Used for entities other than creatures
     public boolean addEntity(Entity entity) {
         return this.addEntity(entity, SpawnReason.DEFAULT); // Set reason as DEFAULT
     }
@@ -1147,7 +1147,7 @@ public abstract class World implements IBlockAccess {
 
         for (i = 0; i < this.i.size(); ++i) {
             entity = (Entity) this.i.get(i);
-            // CraftBukkit start - fixed an NPE, don't process entities in chunks queued for unload
+            // CraftBukkit start - Fixed an NPE, don't process entities in chunks queued for unload
             if (entity == null) {
                 continue;
             }
@@ -1203,7 +1203,7 @@ public abstract class World implements IBlockAccess {
         for (i = 0; i < this.entityList.size(); ++i) {
             entity = (Entity) this.entityList.get(i);
 
-            // CraftBukkit start - don't tick entities in chunks queued for unload
+            // CraftBukkit start - Don't tick entities in chunks queued for unload
             ChunkProviderServer chunkProviderServer = ((WorldServer) this).chunkProviderServer;
             if (chunkProviderServer.unloadQueue.contains(MathHelper.floor(entity.locX) >> 4, MathHelper.floor(entity.locZ) >> 4)) {
                 continue;
@@ -1253,7 +1253,7 @@ public abstract class World implements IBlockAccess {
 
         while (iterator.hasNext()) {
             TileEntity tileentity = (TileEntity) iterator.next();
-            // CraftBukkit start - don't tick entities in chunks queued for unload
+            // CraftBukkit start - Don't tick entities in chunks queued for unload
             ChunkProviderServer chunkProviderServer = ((WorldServer) this).chunkProviderServer;
             if (chunkProviderServer.unloadQueue.contains(tileentity.x >> 4, tileentity.z >> 4)) {
                 continue;
@@ -1295,7 +1295,7 @@ public abstract class World implements IBlockAccess {
                 TileEntity tileentity1 = (TileEntity) this.a.get(l);
 
                 if (!tileentity1.r()) {
-                    /* CraftBukkit start - order matters, moved down
+                    /* CraftBukkit start - Order matters, moved down
                     if (!this.tileEntityList.contains(tileentity1)) {
                         this.tileEntityList.add(tileentity1);
                     }
@@ -1306,7 +1306,7 @@ public abstract class World implements IBlockAccess {
 
                         if (chunk1 != null) {
                             chunk1.a(tileentity1.x & 15, tileentity1.y, tileentity1.z & 15, tileentity1);
-                            // CraftBukkit start - moved down from above
+                            // CraftBukkit start - Moved down from above
                             if (!this.tileEntityList.contains(tileentity1)) {
                                 this.tileEntityList.add(tileentity1);
                             }
@@ -1963,7 +1963,7 @@ public abstract class World implements IBlockAccess {
 
             for (int l = -b0; l <= b0; ++l) {
                 for (int i1 = -b0; i1 <= b0; ++i1) {
-                    // CraftBukkit start - don't tick chunks queued for unload
+                    // CraftBukkit start - Don't tick chunks queued for unload
                     ChunkProviderServer chunkProviderServer = ((WorldServer) entityhuman.world).chunkProviderServer;
                     if (chunkProviderServer.unloadQueue.contains(l + j, i1 + k)) {
                         continue;
@@ -2517,7 +2517,7 @@ public abstract class World implements IBlockAccess {
 
         for (int i = 0; i < this.players.size(); ++i) {
             EntityHuman entityhuman1 = (EntityHuman) this.players.get(i);
-            // CraftBukkit start - fixed an NPE
+            // CraftBukkit start - Fixed an NPE
             if (entityhuman1 == null || entityhuman1.dead) {
                 continue;
             }
@@ -2543,7 +2543,7 @@ public abstract class World implements IBlockAccess {
 
         for (int i = 0; i < this.players.size(); ++i) {
             EntityHuman entityhuman1 = (EntityHuman) this.players.get(i);
-            // CraftBukkit start - fixed an NPE
+            // CraftBukkit start - Fixed an NPE
             if (entityhuman1 == null || entityhuman1.dead) {
                 continue;
             }

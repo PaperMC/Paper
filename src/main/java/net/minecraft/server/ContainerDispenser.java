@@ -15,7 +15,7 @@ public class ContainerDispenser extends Container {
 
     public ContainerDispenser(IInventory iinventory, TileEntityDispenser tileentitydispenser) {
         this.items = tileentitydispenser;
-        // CraftBukkit start - save player
+        // CraftBukkit start - Save player
         // TODO: Should we check to make sure it really is an InventoryPlayer?
         this.player = (PlayerInventory)iinventory;
         // CraftBukkit end

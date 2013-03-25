@@ -114,7 +114,7 @@ public class MobEffectList {
     }
 
     public void applyInstantEffect(EntityLiving entityliving, EntityLiving entityliving1, int i, double d0) {
-        // CraftBukkit start - delegate; we need EntityPotion
+        // CraftBukkit start - Delegate; we need EntityPotion
         applyInstantEffect(entityliving, entityliving1, i, d0, null);
     }
 

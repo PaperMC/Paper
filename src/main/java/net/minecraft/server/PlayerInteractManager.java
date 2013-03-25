@@ -32,12 +32,6 @@ public class PlayerInteractManager {
         this.world = world;
     }
 
-    // CraftBukkit start - keep this for backwards compatibility
-    public PlayerInteractManager(WorldServer world) {
-        this((World) world);
-    }
-    // CraftBukkit end
-
     public void setGameMode(EnumGamemode enumgamemode) {
         this.gamemode = enumgamemode;
         enumgamemode.a(this.player.abilities);
@@ -216,9 +210,9 @@ public class PlayerInteractManager {
                     this.n = this.lastDigTick;
                 }
             }
-        // CraftBukkit start - force blockreset to client
+        // CraftBukkit start - Force block reset to client
         } else {
-            ((EntityPlayer) this.player).playerConnection.sendPacket(new Packet53BlockChange(i, j, k, this.world));
+            this.player.playerConnection.sendPacket(new Packet53BlockChange(i, j, k, this.world));
             // CraftBukkit end
         }
     }
@@ -298,10 +292,10 @@ public class PlayerInteractManager {
             return false;
         } else {
             int l = this.world.getTypeId(i, j, k);
-            if (Block.byId[l] == null) return false; // CraftBukkit - a plugin set block to air without cancelling
+            if (Block.byId[l] == null) return false; // CraftBukkit - A plugin set block to air without cancelling
             int i1 = this.world.getData(i, j, k);
 
-            // CraftBukkit start - special case skulls, their item data comes from a tile entity
+            // CraftBukkit start - Special case skulls, their item data comes from a tile entity
             if (l == Block.SKULL.id && !this.isCreative()) {
                 Block.SKULL.dropNaturally(world, i, j, k, i1, 1.0F, 0);
                 return this.d(i, j, k);
@@ -329,7 +323,7 @@ public class PlayerInteractManager {
                 }
             }
 
-            // CraftBukkit start - drop event experience
+            // CraftBukkit start - Drop event experience
             if (flag && event != null) {
                 Block.byId[l].j(this.world, i, j, k, event.getExpToDrop());
             }

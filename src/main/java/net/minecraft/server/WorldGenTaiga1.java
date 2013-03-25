@@ -9,7 +9,7 @@ public class WorldGenTaiga1 extends WorldGenerator implements BlockSapling.TreeG
     public WorldGenTaiga1() {}
 
     public boolean a(World world, Random random, int i, int j, int k) {
-        // CraftBukkit start - moved to generate
+        // CraftBukkit start - Moved to generate
         return this.generate((BlockChangeDelegate) world, random, i, j, k);
     }
 

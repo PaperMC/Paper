@@ -134,7 +134,7 @@ public class BlockFire extends Block {
                                                 k2 = 15;
                                             }
 
-                                            // CraftBukkit start - call to stop spread of fire
+                                            // CraftBukkit start - Call to stop spread of fire
                                             if (world.getTypeId(i1, k1, j1) != Block.FIRE.id) {
                                                 if (CraftEventFactory.callBlockIgniteEvent(world, i1, k1, j1, i, j, k).isCancelled()) {
                                                     continue;
@@ -261,7 +261,7 @@ public class BlockFire extends Block {
 
     // CraftBukkit start
     private void fireExtinguished(World world, int x, int y, int z) {
-        if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(x, y, z), 0).isCancelled() == false) {
+        if (!CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(x, y, z), 0).isCancelled()) {
             world.setAir(x, y, z);
         }
     }

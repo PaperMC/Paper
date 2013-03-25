@@ -8,10 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-// CraftBukkit start
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-// CraftBukkit end
+import org.bukkit.Bukkit; // CraftBukkit
 
 public class Chunk {
 
@@ -430,7 +427,7 @@ public class Chunk {
                     }
 
                     if (Block.byId[l] instanceof IContainer) {
-                        // CraftBukkit start - don't create tile entity if placement failed
+                        // CraftBukkit start - Don't create tile entity if placement failed
                         if (this.getTypeId(i, j, k) != l) {
                             return false;
                         }

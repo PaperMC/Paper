@@ -3,7 +3,7 @@ package net.minecraft.server;
 import java.util.List;
 
 // CraftBukkit start
-import org.bukkit.event.entity.EntityRegainHealthEvent;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
 // CraftBukkit end
 
@@ -183,7 +183,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
 
             this.t(i);
             if (this.ticksLived % 10 == 0) {
-                this.heal(10, EntityRegainHealthEvent.RegainReason.WITHER_SPAWN); // CraftBukkit
+                this.heal(10, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.WITHER_SPAWN); // CraftBukkit
             }
         } else {
             super.bo();
@@ -268,7 +268,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
 
                                 if (i3 > 0 && i3 != Block.BEDROCK.id && i3 != Block.ENDER_PORTAL.id && i3 != Block.ENDER_PORTAL_FRAME.id) {
                                     // CraftBukkit start
-                                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this, j2, k2, l2, 0, 0).isCancelled()) {
+                                    if (CraftEventFactory.callEntityChangeBlockEvent(this, j2, k2, l2, 0, 0).isCancelled()) {
                                         continue;
                                     }
                                     // CraftBukkit end
@@ -408,7 +408,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
         // CraftBukkit start
         java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         loot.add(new org.bukkit.inventory.ItemStack(Item.NETHER_STAR.id, 1));
-        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
+        CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
     }
 

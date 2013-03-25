@@ -188,7 +188,7 @@ public class TileEntityFurnace extends TileEntity implements IWorldInventory {
         }
 
         if (!this.world.isStatic) {
-            // CraftBukkit start - handle multiple elapsed ticks
+            // CraftBukkit start - Handle multiple elapsed ticks
             if (this.burnTime <= 0 && this.canBurn() && this.items[1] != null) { // CraftBukkit - == to <=
                 CraftItemStack fuel = CraftItemStack.asCraftMirror(this.items[1]);
 
@@ -215,7 +215,7 @@ public class TileEntityFurnace extends TileEntity implements IWorldInventory {
                 }
             }
 
-            /* CraftBukkit start - moved up
+            /* CraftBukkit start - Moved up
             if (this.isBurning() && this.canBurn()) {
                 ++this.cookTime;
                 if (this.cookTime == 200) {

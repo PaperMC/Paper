@@ -13,23 +13,22 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 // CraftBukkit start
-import org.bukkit.Location;
-import org.bukkit.TravelAgent;
-import org.bukkit.WeatherType;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.chunkio.ChunkIOExecutor;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.TravelAgent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.util.Vector;
-import org.bukkit.Bukkit;
 // CraftBukkit end
 
 public abstract class PlayerList {
@@ -214,7 +213,7 @@ public abstract class PlayerList {
         ChunkIOExecutor.adjustPoolSize(this.getPlayerCount());
         // CraftBukkit end
 
-        // CraftBukkit start - only add if the player wasn't moved in the event
+        // CraftBukkit start - Only add if the player wasn't moved in the event
         if (entityplayer.world == worldserver && !worldserver.players.contains(entityplayer)) {
             worldserver.addEntity(entityplayer);
             this.a(entityplayer, (WorldServer) null);
@@ -250,7 +249,7 @@ public abstract class PlayerList {
     public String disconnect(EntityPlayer entityplayer) { // CraftBukkit - return string
         if (entityplayer.playerConnection.disconnected) return null; // CraftBukkit - exploitsies fix
 
-        // CraftBukkit start - quitting must be before we do final save of data, in case plugins need to modify it
+        // CraftBukkit start - Quitting must be before we do final save of data, in case plugins need to modify it
         PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(this.cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.name + " left the game.");
         this.cserver.getPluginManager().callEvent(playerQuitEvent);
         entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
@@ -450,7 +449,7 @@ public abstract class PlayerList {
         worldserver.getPlayerChunkMap().addPlayer(entityplayer1);
         worldserver.addEntity(entityplayer1);
         this.players.add(entityplayer1);
-        // CraftBukkit start - added from changeDimension
+        // CraftBukkit start - Added from changeDimension
         this.updateClient(entityplayer1); // CraftBukkit
         entityplayer1.updateAbilities();
         Iterator iterator = entityplayer1.getEffects().iterator();
@@ -464,7 +463,7 @@ public abstract class PlayerList {
         // CraftBukkit end
         entityplayer1.setHealth(entityplayer1.getHealth());
 
-        // CraftBukkit start - don't fire on respawn
+        // CraftBukkit start - Don't fire on respawn
         if (fromWorld != location.getWorld()) {
             PlayerChangedWorldEvent event = new PlayerChangedWorldEvent((Player) entityplayer1.getBukkitEntity(), fromWorld);
             Bukkit.getServer().getPluginManager().callEvent(event);
@@ -492,7 +491,7 @@ public abstract class PlayerList {
         if (exitWorld != null) {
             if ((cause == TeleportCause.END_PORTAL) && (i == 0)) {
                 // THE_END -> NORMAL; use bed if available, otherwise default spawn
-                exit = ((CraftPlayer) entityplayer.getBukkitEntity()).getBedSpawnLocation();
+                exit = ((org.bukkit.craftbukkit.entity.CraftPlayer) entityplayer.getBukkitEntity()).getBedSpawnLocation();
                 if (exit == null || ((CraftWorld) exit.getWorld()).getHandle().dimension != 0) {
                     exit = exitWorld.getWorld().getSpawnLocation();
                 }
@@ -531,12 +530,12 @@ public abstract class PlayerList {
     }
 
     public void a(Entity entity, int i, WorldServer worldserver, WorldServer worldserver1) {
-        // CraftBukkit start - split into modular functions
+        // CraftBukkit start - Split into modular functions
         Location exit = this.calculateTarget(entity.getBukkitEntity().getLocation(), worldserver1);
         this.repositionEntity(entity, exit, true);
     }
 
-    // copy of original a(Entity, int, WorldServer, WorldServer) method with only location calculation logic
+    // Copy of original a(Entity, int, WorldServer, WorldServer) method with only location calculation logic
     public Location calculateTarget(Location enter, World target) {
         WorldServer worldserver = ((CraftWorld) enter.getWorld()).getHandle();
         WorldServer worldserver1 = ((CraftWorld) target.getWorld()).getHandle();
@@ -707,7 +706,7 @@ public abstract class PlayerList {
             this.n = 0;
         }
 
-        /* CraftBukkit start - remove updating of lag to players -- it spams way to much on big servers.
+        /* CraftBukkit start - Remove updating of lag to players -- it spams way to much on big servers.
         if (this.n < this.players.size()) {
             EntityPlayer entityplayer = (EntityPlayer) this.players.get(this.n);
 
@@ -976,7 +975,7 @@ public abstract class PlayerList {
     public void b(EntityPlayer entityplayer, WorldServer worldserver) {
         entityplayer.playerConnection.sendPacket(new Packet4UpdateTime(worldserver.getTime(), worldserver.getDayTime()));
         if (worldserver.O()) {
-            entityplayer.setPlayerWeather(WeatherType.DOWNFALL, false); // CraftBukkit - handle player specific weather
+            entityplayer.setPlayerWeather(org.bukkit.WeatherType.DOWNFALL, false); // CraftBukkit - handle player specific weather
         }
     }
 

@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-// CraftBukkit start - strip down to empty
+// CraftBukkit start - Strip down to empty methods, performance cost
 public class MethodProfiler {
     public boolean a = false;
 

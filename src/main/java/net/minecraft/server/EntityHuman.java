@@ -914,7 +914,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
 
                         this.a(StatisticList.w, i);
                         if (l > 0 && flag2) {
-                            // CraftBukkit start - raise a combust event when somebody hits with a fire enchanted item
+                            // CraftBukkit start - Call a combust event when somebody hits with a fire enchanted item
                             EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), l * 4);
                             org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
 
@@ -1414,7 +1414,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         return super.getCustomNameVisible();
     }
 
-    /* CraftBukkit start - we use canPickUpLoot on players, can't have this
+    /* CraftBukkit start - We use canPickUpLoot on players, can't have this
     public boolean bS() {
         return false;
     }

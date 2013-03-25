@@ -37,7 +37,7 @@ public class ContainerChest extends Container {
         this.f = iinventory1.getSize() / 9;
         iinventory1.startOpen();
         int i = (this.f - 4) * 18;
-        // CraftBukkit start - save player
+        // CraftBukkit start - Save player
         // TODO: Should we check to make sure it really is an InventoryPlayer?
         this.player = (PlayerInventory)iinventory;
         // CraftBukkit end

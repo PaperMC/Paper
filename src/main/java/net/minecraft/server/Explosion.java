@@ -131,7 +131,7 @@ public class Explosion {
                     double d9 = (double) this.world.a(vec3d, entity.boundingBox);
                     double d10 = (1.0D - d7) * d9;
 
-                    // CraftBukkit start - explosion damage hook
+                    // CraftBukkit start - Explosion damage hook
                     org.bukkit.entity.Entity damagee = (entity == null) ? null : entity.getBukkitEntity();
                     int damageDone = (int) ((d10 * d10 + d10) / 2.0D * 8.0D * (double) this.size + 1.0D);
 
@@ -290,10 +290,11 @@ public class Explosion {
                 int i1 = this.world.getTypeId(i, j - 1, k);
 
                 if (l == 0 && Block.s[i1] && this.j.nextInt(3) == 0) {
-                    // CraftBukkit start - ignition by explosion.
+                    // CraftBukkit start - Ignition by explosion
                     if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.world, i, j, k, this).isCancelled()) {
                         this.world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
-                    } // CraftBukkit end
+                    }
+                    // CraftBukkit end
                 }
             }
         }

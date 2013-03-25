@@ -3,7 +3,7 @@ package net.minecraft.server;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.entity.EntityDamageEvent;
 // CraftBukkit end
@@ -228,7 +228,7 @@ public class EntityFallingBlock extends Entity {
             this.tileEntityData = nbttagcompound.getCompound("TileEntityData");
         }
 
-        // CraftBukkit start - backward compatibility, remove in 1.6
+        // CraftBukkit start - Backward compatibility, remove in 1.6
         if (nbttagcompound.hasKey("Bukkit.tileData")) {
             this.tileEntityData = (NBTTagCompound) nbttagcompound.getCompound("Bukkit.tileData").clone();
         }

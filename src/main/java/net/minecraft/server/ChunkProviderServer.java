@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.Random;
 
 import org.bukkit.Server;
-import org.bukkit.craftbukkit.chunkio.ChunkIOExecutor;
 import org.bukkit.craftbukkit.util.LongHash;
 import org.bukkit.craftbukkit.util.LongHashSet;
 import org.bukkit.craftbukkit.util.LongObjectHashMap;
@@ -80,7 +79,7 @@ public class ChunkProviderServer implements IChunkProvider {
         }
     }
 
-    // CraftBukkit start - add async variant, provide compatibility
+    // CraftBukkit start - Add async variant, provide compatibility
     public Chunk getChunkAt(int i, int j) {
         return getChunkAt(i, j, null);
     }
@@ -97,7 +96,7 @@ public class ChunkProviderServer implements IChunkProvider {
 
         // If the chunk exists but isn't loaded do it async
         if (chunk == null && runnable != null && loader != null && loader.chunkExists(this.world, i, j)) {
-            ChunkIOExecutor.queueChunkLoad(this.world, loader, this, i, j, runnable);
+            org.bukkit.craftbukkit.chunkio.ChunkIOExecutor.queueChunkLoad(this.world, loader, this, i, j, runnable);
             return null;
         }
         // CraftBukkit end
@@ -115,7 +114,7 @@ public class ChunkProviderServer implements IChunkProvider {
                         CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Chunk to be generated");
 
                         crashreportsystemdetails.a("Location", String.format("%d,%d", new Object[] { Integer.valueOf(i), Integer.valueOf(j)}));
-                        crashreportsystemdetails.a("Position hash", Long.valueOf(LongHash.toLong(i, j)));
+                        crashreportsystemdetails.a("Position hash", Long.valueOf(LongHash.toLong(i, j))); // CraftBukkit - Use LongHash
                         crashreportsystemdetails.a("Generator", this.chunkProvider.getName());
                         throw new ReportedException(crashreport);
                     }
@@ -208,7 +207,7 @@ public class ChunkProviderServer implements IChunkProvider {
                 this.e.a(this.world, chunk);
             } catch (Exception ioexception) { // CraftBukkit - IOException -> Exception
                 ioexception.printStackTrace();
-            // CraftBukkit start - remove extra exception
+            // CraftBukkit start - Remove extra exception
             }
             // } catch (ExceptionWorldConflict exceptionworldconflict) {
             //     exceptionworldconflict.printStackTrace();

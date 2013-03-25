@@ -189,7 +189,7 @@ public abstract class Container {
                         }
 
                         if (j == 1) {
-                            // CraftBukkit start - store a reference
+                            // CraftBukkit start - Store a reference
                             ItemStack itemstack4 = playerinventory.getCarried();
                             if (itemstack4.count > 0) {
                                 entityhuman.drop(itemstack4.a(1));

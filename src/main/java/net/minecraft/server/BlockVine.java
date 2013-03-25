@@ -203,7 +203,7 @@ public class BlockVine extends Block {
                     }
 
                     if (l1 > 0) {
-                        // CraftBukkit start - fire BlockSpreadEvent
+                        // CraftBukkit start - Call BlockSpreadEvent
                         org.bukkit.block.Block source = world.getWorld().getBlockAt(i, j, k);
                         org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j + 1, k);
                         CraftEventFactory.handleBlockSpreadEvent(block, source, this.id, l1);
@@ -227,7 +227,7 @@ public class BlockVine extends Block {
                         i2 = k1 + 1 & 3;
                         j2 = k1 + 3 & 3;
 
-                        // CraftBukkit start - fire BlockSpreadEvent
+                        // CraftBukkit start - Call BlockSpreadEvent
                         org.bukkit.block.Block source = world.getWorld().getBlockAt(i, j, k);
                         org.bukkit.block.Block block = world.getWorld().getBlockAt(i + Direction.a[k1], j, k + Direction.b[k1]);
                         if ((i1 & 1 << i2) != 0 && this.d(world.getTypeId(i + Direction.a[k1] + Direction.a[i2], j, k + Direction.b[k1] + Direction.b[i2]))) {
@@ -250,7 +250,7 @@ public class BlockVine extends Block {
                     if (l1 == 0) {
                         i2 = world.random.nextInt(16) & i1;
                         if (i2 > 0) {
-                            // CraftBukkit start - fire BlockSpreadEvent
+                            // CraftBukkit start - Call BlockSpreadEvent
                             org.bukkit.block.Block source = world.getWorld().getBlockAt(i, j, k);
                             org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j - 1, k);
                             CraftEventFactory.handleBlockSpreadEvent(block, source, this.id, i2);

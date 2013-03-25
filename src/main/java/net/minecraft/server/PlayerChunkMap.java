@@ -6,7 +6,6 @@ import java.util.List;
 // CraftBukkit start
 import java.util.Collections;
 import java.util.Queue;
-import java.util.Iterator;
 import java.util.LinkedList;
 // CraftBukkit end
 
@@ -36,8 +35,8 @@ public class PlayerChunkMap {
     }
 
     public void flush() {
-        // CraftBukkit start - use iterator
-        Iterator iterator = this.d.iterator();
+        // CraftBukkit start - Use iterator
+        java.util.Iterator iterator = this.d.iterator();
 
         while (iterator.hasNext()) {
             PlayerChunk playerinstance = (PlayerChunk) iterator.next();
@@ -46,9 +45,9 @@ public class PlayerChunkMap {
         }
         // CraftBukkit end
 
-        // this.d.clear(); // CraftBukkit - removals are already covered
+        // this.d.clear(); // CraftBukkit - Removals are already covered
         if (this.managedPlayers.isEmpty()) {
-            if (!wasNotEmpty) return; // CraftBukkit - only do unload when we go from non-empty to empty
+            if (!wasNotEmpty) return; // CraftBukkit - Only do unload when we go from non-empty to empty
             WorldProvider worldprovider = this.world.worldProvider;
 
             if (!worldprovider.e()) {
@@ -100,7 +99,7 @@ public class PlayerChunkMap {
         entityplayer.d = entityplayer.locX;
         entityplayer.e = entityplayer.locZ;
 
-        // CraftBukkit start - load nearby chunks first
+        // CraftBukkit start - Load nearby chunks first
         List<ChunkCoordIntPair> chunkList = new LinkedList<ChunkCoordIntPair>();
         for (int k = i - this.e; k <= i + this.e; ++k) {
             for (int l = j - this.e; l <= j + this.e; ++l) {
@@ -258,7 +257,7 @@ public class PlayerChunkMap {
         return playermanager.d;
     }
 
-    // CraftBukkit start - sorter to load nearby chunks first
+    // CraftBukkit start - Sorter to load nearby chunks first
     private static class ChunkCoordComparator implements java.util.Comparator<ChunkCoordIntPair> {
         private int x;
         private int z;

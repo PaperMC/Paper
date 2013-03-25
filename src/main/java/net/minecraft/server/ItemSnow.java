@@ -20,7 +20,7 @@ public class ItemSnow extends ItemBlockWithAuxData {
                 int j1 = world.getData(i, j, k);
                 int k1 = j1 & 7;
 
-                // CraftBukkit start - redirect to common handler
+                // CraftBukkit start - Redirect to common handler
                 if (k1 <= 6 && world.b(block.b(world, i, j, k)) && ItemBlock.processBlockPlace(world, entityhuman, itemstack, i, j, k, Block.SNOW.id, k1 + 1 | j1 & -8, clickedX, clickedY, clickedZ)) {
                     return true;
                 }

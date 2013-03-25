@@ -147,7 +147,7 @@ public class PendingConnection extends Connection {
             org.bukkit.event.server.ServerListPingEvent pingEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callServerListPingEvent(this.server.server, getSocket().getInetAddress(), this.server.getMotd(), playerlist.getPlayerCount(), playerlist.getMaxPlayers());
 
             if (packet254getinfo.a == 1) {
-                // CraftBukkit start - fix decompile issues, don't create a list from an array
+                // CraftBukkit start - Fix decompile issues, don't create a list from an array
                 Object[] list = new Object[] { 1, 60, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
 
                 for (Object object : list) {

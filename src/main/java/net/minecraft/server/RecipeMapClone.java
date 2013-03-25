@@ -2,7 +2,7 @@ package net.minecraft.server;
 
 public class RecipeMapClone extends ShapelessRecipes implements IRecipe { // CraftBukkit - added extends
 
-    // CraftBukkit start - delegate to new parent class
+    // CraftBukkit start - Delegate to new parent class
     public RecipeMapClone() {
         super(new ItemStack(Item.MAP, 0, -1), java.util.Arrays.asList(new ItemStack(Item.MAP_EMPTY, 0, 0)));
     }

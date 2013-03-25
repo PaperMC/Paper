@@ -171,7 +171,7 @@ public class EntityZombie extends EntityMonster {
         return EnumMonsterType.UNDEAD;
     }
 
-    // CraftBukkit start - return rare dropped item instead of dropping it
+    // CraftBukkit start - Return rare dropped item instead of dropping it
     protected ItemStack l(int i) {
         switch (this.random.nextInt(3)) {
         case 0:

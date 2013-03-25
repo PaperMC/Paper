@@ -1,9 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.entity.EntityCombustByEntityEvent;
-// CraftBukkit end
+import org.bukkit.event.entity.EntityCombustByEntityEvent; // CraftBukkit
 
 public class EntitySmallFireball extends EntityFireball {
 
@@ -26,7 +23,7 @@ public class EntitySmallFireball extends EntityFireball {
         if (!this.world.isStatic) {
             if (movingobjectposition.entity != null) {
                 if (!movingobjectposition.entity.isFireproof() && movingobjectposition.entity.damageEntity(DamageSource.fireball(this, this.shooter), 5)) {
-                    // CraftBukkit start - entity damage by entity event + combust event
+                    // CraftBukkit start - Entity damage by entity event + combust event
                     EntityCombustByEntityEvent event = new EntityCombustByEntityEvent((org.bukkit.entity.Projectile) this.getBukkitEntity(), movingobjectposition.entity.getBukkitEntity(), 5);
                     movingobjectposition.entity.world.getServer().getPluginManager().callEvent(event);
 
@@ -67,7 +64,7 @@ public class EntitySmallFireball extends EntityFireball {
 
                 if (this.world.isEmpty(i, j, k)) {
                     // CraftBukkit start
-                    if (!CraftEventFactory.callBlockIgniteEvent(world, i, j, k, this).isCancelled()) {
+                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, i, j, k, this).isCancelled()) {
                         this.world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
                     }
                     // CraftBukkit end

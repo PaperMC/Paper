@@ -40,7 +40,7 @@ public final class ItemStack {
         this.f = null;
         this.id = i;
         this.count = j;
-        // CraftBukkit start - pass to setData to do filtering
+        // CraftBukkit start - Pass to setData to do filtering
         this.setData(k);
         //if (this.damage < 0) {
         //    this.damage = 0;
@@ -151,7 +151,7 @@ public final class ItemStack {
     }
 
     public void setData(int i) {
-        // CraftBukkit start - filter out data for items that shouldn't have it
+        // CraftBukkit start - Filter out data for items that shouldn't have it
         // The crafting system uses this value for a special purpose so we have to allow it
         if (i == 32767) {
             this.damage = i;

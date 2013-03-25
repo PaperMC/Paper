@@ -83,7 +83,7 @@ public class PlayerInventory implements IInventory {
         return -1;
     }
 
-    // CraftBukkit start - watch method above! :D
+    // CraftBukkit start - Watch method above! :D
     public int canHold(ItemStack itemstack) {
         int remains = itemstack.count;
         for (int i = 0; i < this.items.length; ++i) {

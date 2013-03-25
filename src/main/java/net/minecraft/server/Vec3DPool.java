@@ -24,8 +24,8 @@ public class Vec3DPool {
         this.b = j;
     }
 
-    public final Vec3D create(double d0, double d1, double d2) { // CraftBukkit - add final
-        if (this.resizeTime == 0) return Vec3D.a(d0, d1, d2); // CraftBukkit - don't pool objects indefinitely if thread doesn't adhere to contract
+    public final Vec3D create(double d0, double d1, double d2) { // CraftBukkit - Add final
+        if (this.resizeTime == 0) return Vec3D.a(d0, d1, d2); // CraftBukkit - Don't pool objects indefinitely if thread doesn't adhere to contract
         Vec3D vec3d;
 
         if (this.freelist == null) { // CraftBukkit
@@ -43,14 +43,14 @@ public class Vec3DPool {
         if (this.alloclist == null) {
             this.alloclisthead = vec3d;
         }
-        vec3d.next = this.alloclist; // add to allocated list
+        vec3d.next = this.alloclist; // Add to allocated list
         this.alloclist = vec3d;
         // CraftBukkit end
         ++this.position;
         return vec3d;
     }
 
-    // CraftBukkit start - offer back vector (can save LOTS of unneeded bloat) - works about 90% of the time
+    // CraftBukkit start - Offer back vector (can save LOTS of unneeded bloat) - works about 90% of the time
     public void release(Vec3D v) {
         if (this.alloclist == v) {
             this.alloclist = v.next; // Pop off alloc list
@@ -68,7 +68,7 @@ public class Vec3DPool {
             this.largestSize = this.position;
         }
 
-        // CraftBukkit start - intelligent cache
+        // CraftBukkit start - Intelligent cache
         // Take any allocated blocks and put them on free list
         if (this.alloclist != null) {
             if (this.freelist == null) {

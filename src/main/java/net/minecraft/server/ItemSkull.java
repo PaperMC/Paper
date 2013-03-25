@@ -44,7 +44,7 @@ public class ItemSkull extends Item {
             } else if (!Block.SKULL.canPlace(world, i, j, k)) {
                 return false;
             } else {
-                // CraftBukkit start - handle in ItemBlock
+                // CraftBukkit start - Handle in ItemBlock
                 // world.setTypeIdAndData(i, j, k, Block.SKULL.id, l, 2);
                 if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, Block.SKULL.id, l, clickedX, clickedY, clickedZ)) {
                     return false;

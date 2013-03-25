@@ -39,7 +39,7 @@ public class AABBPool {
             this.largestSize = this.d;
         }
 
-        // CraftBukkit start - intelligent cache
+        // CraftBukkit start - Intelligent cache
         if ((this.resizeTime++ & 0xff) == 0) {
             int newSize = this.pool.size() - (this.pool.size() >> 3);
             // newSize will be 87.5%, but if we were not in that range, we clear some of the cache

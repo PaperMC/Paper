@@ -77,7 +77,7 @@ public class BlockSkull extends BlockContainer {
         return i;
     }
 
-    // CraftBukkit start - special case dropping so we can get info from the tile entity
+    // CraftBukkit start - Special case dropping so we can get info from the tile entity
     public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
         if (world.random.nextFloat() < f) {
             ItemStack itemstack = new ItemStack(Item.SKULL.id, 1, this.getDropData(world, i, j, k));
@@ -104,7 +104,7 @@ public class BlockSkull extends BlockContainer {
 
     public void remove(World world, int i, int j, int k, int l, int i1) {
         if (!world.isStatic) {
-            /* CraftBukkit start - drop item in code above, not here
+            /* CraftBukkit start - Drop item in code above, not here
             if ((i1 & 8) == 0) {
                 ItemStack itemstack = new ItemStack(Item.SKULL.id, 1, this.getDropData(world, i, j, k));
                 TileEntitySkull tileentityskull = (TileEntitySkull) world.getTileEntity(i, j, k);
@@ -136,7 +136,7 @@ public class BlockSkull extends BlockContainer {
 
             for (i1 = -2; i1 <= 0; ++i1) {
                 if (world.getTypeId(i, j - 1, k + i1) == l && world.getTypeId(i, j - 1, k + i1 + 1) == l && world.getTypeId(i, j - 2, k + i1 + 1) == l && world.getTypeId(i, j - 1, k + i1 + 2) == l && this.d(world, i, j, k + i1, 1) && this.d(world, i, j, k + i1 + 1, 1) && this.d(world, i, j, k + i1 + 2, 1)) {
-                    // CraftBukkit start - use BlockStateListPopulator
+                    // CraftBukkit start - Use BlockStateListPopulator
                     BlockStateListPopulator blockList = new BlockStateListPopulator(world.getWorld());
 
                     world.setData(i, j, k + i1, 8, 2);
@@ -173,7 +173,7 @@ public class BlockSkull extends BlockContainer {
 
             for (i1 = -2; i1 <= 0; ++i1) {
                 if (world.getTypeId(i + i1, j - 1, k) == l && world.getTypeId(i + i1 + 1, j - 1, k) == l && world.getTypeId(i + i1 + 1, j - 2, k) == l && world.getTypeId(i + i1 + 2, j - 1, k) == l && this.d(world, i + i1, j, k, 1) && this.d(world, i + i1 + 1, j, k, 1) && this.d(world, i + i1 + 2, j, k, 1)) {
-                    // CraftBukkit start - use BlockStateListPopulator
+                    // CraftBukkit start - Use BlockStateListPopulator
                     BlockStateListPopulator blockList = new BlockStateListPopulator(world.getWorld());
 
                     world.setData(i + i1, j, k, 8, 2);

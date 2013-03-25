@@ -26,6 +26,7 @@ class PlayerChunk {
                 PlayerChunk.this.loaded = true;
             }
         });
+        // CraftBukkit end
     }
 
     public void a(final EntityPlayer entityplayer) { // CraftBukkit - added final to argument

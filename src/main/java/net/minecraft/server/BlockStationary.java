@@ -39,7 +39,7 @@ public class BlockStationary extends BlockFluids {
             int i1;
             int j1;
 
-            // CraftBukkit start - prevent lava putting something on fire, remember igniter block coords
+            // CraftBukkit start - Prevent lava putting something on fire, remember igniter block coords
             int x = i;
             int y = j;
             int z = k;
@@ -52,7 +52,7 @@ public class BlockStationary extends BlockFluids {
                 j1 = world.getTypeId(i, j, k);
                 if (j1 == 0) {
                     if (this.m(world, i - 1, j, k) || this.m(world, i + 1, j, k) || this.m(world, i, j, k - 1) || this.m(world, i, j, k + 1) || this.m(world, i, j - 1, k) || this.m(world, i, j + 1, k)) {
-                        // CraftBukkit start - prevent lava putting something on fire
+                        // CraftBukkit start - Prevent lava putting something on fire
                         if (world.getTypeId(i, j, k) != Block.FIRE.id) {
                             if (CraftEventFactory.callBlockIgniteEvent(world, i, j, k, x, y, z).isCancelled()) {
                                 continue;
@@ -76,7 +76,7 @@ public class BlockStationary extends BlockFluids {
                     i = i1 + random.nextInt(3) - 1;
                     k = j1 + random.nextInt(3) - 1;
                     if (world.isEmpty(i, j + 1, k) && this.m(world, i, j, k)) {
-                        // CraftBukkit start - prevent lava putting something on fire
+                        // CraftBukkit start - Prevent lava putting something on fire
                         if (world.getTypeId(i, j + 1, k) != Block.FIRE.id) {
                             if (CraftEventFactory.callBlockIgniteEvent(world, i, j + 1, k, x, y, z).isCancelled()) {
                                 continue;

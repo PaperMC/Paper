@@ -12,22 +12,23 @@ import java.util.concurrent.Callable;
 import java.io.UnsupportedEncodingException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.logging.Level;
 import java.util.HashSet;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.LazyPlayerSet;
 import org.bukkit.craftbukkit.util.Waitable;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
+
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.SignChangeEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryType.SlotType;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerAnimationEvent;
 import org.bukkit.event.player.PlayerChatEvent;
@@ -37,13 +38,9 @@ import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
-import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.event.player.PlayerToggleSprintEvent;
-import org.bukkit.event.inventory.*;
-import org.bukkit.event.inventory.InventoryType.SlotType;
-import org.bukkit.event.player.PlayerPortalEvent;
-import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.InventoryView;
 // CraftBukkit end
@@ -688,10 +685,10 @@ public class PlayerConnection extends Connection {
     }
 
     public void a(String s, Object[] aobject) {
-        if (this.disconnected) return; // CraftBukkit - rarely it would send a disconnect line twice
+        if (this.disconnected) return; // CraftBukkit - Rarely it would send a disconnect line twice
 
         this.minecraftServer.getLogger().info(this.player.name + " lost connection: " + s);
-        // CraftBukkit start - we need to handle custom quit messages
+        // CraftBukkit start - We need to handle custom quit messages
         String quitMessage = this.minecraftServer.getPlayerList().disconnect(this.player);
         if ((quitMessage != null) && (quitMessage.length() > 0)) {
             this.minecraftServer.getPlayerList().sendAll(new Packet3Chat(quitMessage));
@@ -845,7 +842,6 @@ public class PlayerConnection extends Connection {
 
                 // This section stays because it is only applicable to packets
                 if (chatSpamField.addAndGet(this, 20) > 200 && !this.minecraftServer.getPlayerList().isOp(this.player.name)) { // CraftBukkit use thread-safe spam
-                    // CraftBukkit start
                     if (packet3chat.a_()) {
                         Waitable waitable = new Waitable() {
                             @Override
@@ -867,7 +863,6 @@ public class PlayerConnection extends Connection {
                     } else {
                         this.disconnect("disconnect.spam");
                     }
-                    // CraftBukkit end
                 }
             }
         }
@@ -900,7 +895,7 @@ public class PlayerConnection extends Connection {
                     Waitable waitable = new Waitable() {
                         @Override
                         protected Object evaluate() {
-                            Bukkit.getPluginManager().callEvent(queueEvent);
+                            org.bukkit.Bukkit.getPluginManager().callEvent(queueEvent);
 
                             if (queueEvent.isCancelled()) {
                                 return null;
@@ -973,7 +968,7 @@ public class PlayerConnection extends Connection {
             }
         } catch (org.bukkit.command.CommandException ex) {
             player.sendMessage(org.bukkit.ChatColor.RED + "An internal error occurred while attempting to perform this command");
-            java.util.logging.Logger.getLogger(PlayerConnection.class.getName()).log(Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(PlayerConnection.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
             return;
         }
         // CraftBukkit end
@@ -987,7 +982,7 @@ public class PlayerConnection extends Connection {
         if (this.player.dead) return; // CraftBukkit
 
         if (packet18armanimation.b == 1) {
-            // CraftBukkit start - raytrace to look for 'rogue armswings'
+            // CraftBukkit start - Raytrace to look for 'rogue armswings'
             float f = 1.0F;
             float f1 = this.player.lastPitch + (this.player.pitch - this.player.lastPitch) * f;
             float f2 = this.player.lastYaw + (this.player.yaw - this.player.lastYaw) * f;
@@ -1092,7 +1087,7 @@ public class PlayerConnection extends Connection {
                     }
                     // CraftBukkit end
                     this.player.p(entity);
-                    // CraftBukkit start - update the client if the item is an infinite one
+                    // CraftBukkit start - Update the client if the item is an infinite one
                     if (itemInHand != null && itemInHand.count <= -1) {
                         this.player.updateInventory(this.player.activeContainer);
                     }
@@ -1118,7 +1113,7 @@ public class PlayerConnection extends Connection {
     public void a(Packet205ClientCommand packet205clientcommand) {
         if (packet205clientcommand.a == 1) {
             if (this.player.viewingCredits) {
-                this.minecraftServer.getPlayerList().changeDimension(this.player, 0, TeleportCause.END_PORTAL); // CraftBukkit - reroute logic through custom portal management
+                this.minecraftServer.getPlayerList().changeDimension(this.player, 0, PlayerTeleportEvent.TeleportCause.END_PORTAL); // CraftBukkit - reroute logic through custom portal management
             } else if (this.player.o().getWorldData().isHardcore()) {
                 if (this.minecraftServer.I() && this.player.name.equals(this.minecraftServer.H())) {
                     this.player.playerConnection.disconnect("You have died. Game over, man, it\'s game over!");
@@ -1149,7 +1144,7 @@ public class PlayerConnection extends Connection {
     public void handleContainerClose(Packet101CloseWindow packet101closewindow) {
         if (this.player.dead) return; // CraftBukkit
 
-        // CraftBukkit start - INVENTORY_CLOSE hook
+        // CraftBukkit start
         InventoryCloseEvent event = new InventoryCloseEvent(this.player.activeContainer.getBukkitView());
         server.getPluginManager().callEvent(event);
         this.player.activeContainer.transferTo(this.player.defaultContainer, getPlayer());
@@ -1162,7 +1157,7 @@ public class PlayerConnection extends Connection {
         if (this.player.dead) return; // CraftBukkit
 
         if (this.player.activeContainer.windowId == packet102windowclick.a && this.player.activeContainer.c(this.player)) {
-            // CraftBukkit start - fire InventoryClickEvent
+            // CraftBukkit start - Call InventoryClickEvent
             if (packet102windowclick.slot == -1) {
                 // Vanilla doesn't do anything with this, neither should we
                 return;
@@ -1176,7 +1171,7 @@ public class PlayerConnection extends Connection {
             if (packet102windowclick.slot == 0 && top instanceof CraftingInventory) {
                 org.bukkit.inventory.Recipe recipe = ((CraftingInventory) top).getRecipe();
                 if (recipe != null) {
-                    event = new CraftItemEvent(recipe, inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift == 1);
+                    event = new org.bukkit.event.inventory.CraftItemEvent(recipe, inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift == 1);
                 }
             }
             server.getPluginManager().callEvent(event);
@@ -1231,7 +1226,7 @@ public class PlayerConnection extends Connection {
 
                 this.player.a(this.player.activeContainer, arraylist);
 
-                // CraftBukkit start - send a Set Slot to update the crafting result slot
+                // CraftBukkit start - Send a Set Slot to update the crafting result slot
                 if (type == SlotType.RESULT && itemstack != null) {
                     this.player.playerConnection.sendPacket((Packet) (new Packet103SetSlot(this.player.activeContainer.windowId, 0, itemstack)));
                 }
@@ -1256,7 +1251,7 @@ public class PlayerConnection extends Connection {
             boolean flag2 = itemstack == null || itemstack.id < Item.byId.length && itemstack.id >= 0 && Item.byId[itemstack.id] != null && !invalidItems.contains(itemstack.id);
             boolean flag3 = itemstack == null || itemstack.getData() >= 0 && itemstack.getData() >= 0 && itemstack.count <= 64 && itemstack.count > 0;
 
-            // CraftBukkit start - Fire INVENTORY_CLICK event
+            // CraftBukkit start - Call click event
             org.bukkit.entity.HumanEntity player = this.player.getBukkitEntity();
             InventoryView inventory = new CraftInventoryView(player, player.getInventory(), this.player.defaultContainer);
             SlotType slot = SlotType.QUICKBAR;
@@ -1441,7 +1436,7 @@ public class PlayerConnection extends Connection {
         ItemStack itemstack;
         ItemStack itemstack1;
 
-        // CraftBukkit start - ignore empty payloads
+        // CraftBukkit start - Ignore empty payloads
         if (packet250custompayload.length <= 0) {
             return;
         }

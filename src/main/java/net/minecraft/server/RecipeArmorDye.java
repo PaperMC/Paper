@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public class RecipeArmorDye extends ShapelessRecipes implements IRecipe { // CraftBukkit - added extends
 
-    // CraftBukkit start - delegate to new parent class with bogus info
+    // CraftBukkit start - Delegate to new parent class with bogus info
     public RecipeArmorDye() {
         super(new ItemStack(Item.LEATHER_HELMET, 0, 0), java.util.Arrays.asList(new ItemStack(Item.INK_SACK, 0, 5)));
     }

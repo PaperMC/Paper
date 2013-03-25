@@ -56,7 +56,7 @@ public class ItemBlock extends Item {
             int j1 = this.filterData(itemstack.getData());
             int k1 = Block.byId[this.id].getPlacedData(world, i, j, k, l, f, f1, f2, j1);
 
-            // CraftBukkit start - redirect to common function handler
+            // CraftBukkit start - Redirect to common function handler
             /*
             if (world.setTypeIdAndData(i, j, k, this.id, k1, 3)) {
                 if (world.getTypeId(i, j, k) == this.id) {
@@ -75,7 +75,7 @@ public class ItemBlock extends Item {
         }
     }
 
-    // CraftBukkit start - add method to process block placement
+    // CraftBukkit start - Add method to process block placement
     static boolean processBlockPlace(final World world, final EntityHuman entityhuman, final ItemStack itemstack, final int x, final int y, final int z, final int id, final int data, final int clickedX, final int clickedY, final int clickedZ) {
         org.bukkit.block.BlockState blockstate = org.bukkit.craftbukkit.block.CraftBlockState.getBlockState(world, x, y, z);
 

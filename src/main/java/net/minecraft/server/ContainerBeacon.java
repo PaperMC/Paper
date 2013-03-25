@@ -1,10 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.inventory.CraftInventory;
-import org.bukkit.craftbukkit.inventory.CraftInventoryBeacon;
-import org.bukkit.craftbukkit.inventory.CraftInventoryView;
-// CraftBukkit end
+import org.bukkit.craftbukkit.inventory.CraftInventoryView; // CraftBukkit
 
 public class ContainerBeacon extends Container {
 
@@ -114,7 +110,7 @@ public class ContainerBeacon extends Container {
             return bukkitEntity;
         }
 
-        CraftInventory inventory = new CraftInventoryBeacon(this.a);
+        org.bukkit.craftbukkit.inventory.CraftInventory inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryBeacon(this.a);
         bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
         return bukkitEntity;
     }

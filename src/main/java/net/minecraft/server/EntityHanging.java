@@ -6,7 +6,6 @@ import java.util.List;
 // CraftBukkit start
 import org.bukkit.entity.Hanging;
 import org.bukkit.entity.Painting;
-import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.painting.PaintingBreakEvent;
 // CraftBukkit end
@@ -216,7 +215,7 @@ public abstract class EntityHanging extends Entity {
                 HangingBreakEvent event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), HangingBreakEvent.RemoveCause.DEFAULT);
                 PaintingBreakEvent paintingEvent = null;
                 if (damagesource.getEntity() != null) {
-                    event = new HangingBreakByEntityEvent((Hanging) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity());
+                    event = new org.bukkit.event.hanging.HangingBreakByEntityEvent((Hanging) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity());
 
                     if (this instanceof EntityPainting) {
                         // Fire old painting event until it can be removed

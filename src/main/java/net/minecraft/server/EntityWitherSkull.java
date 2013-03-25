@@ -1,9 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.event.entity.EntityRegainHealthEvent;
-import org.bukkit.event.entity.ExplosionPrimeEvent;
-// CraftBukkit end
+import org.bukkit.event.entity.ExplosionPrimeEvent; // CraftBukkit
 
 public class EntityWitherSkull extends EntityFireball {
 
@@ -40,7 +37,7 @@ public class EntityWitherSkull extends EntityFireball {
             if (movingobjectposition.entity != null) {
                 if (this.shooter != null) {
                     if (movingobjectposition.entity.damageEntity(DamageSource.mobAttack(this.shooter), 8) && !movingobjectposition.entity.isAlive()) {
-                        this.shooter.heal(5, EntityRegainHealthEvent.RegainReason.WITHER); // CraftBukkit
+                        this.shooter.heal(5, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.WITHER); // CraftBukkit
                     }
                 } else {
                     movingobjectposition.entity.damageEntity(DamageSource.MAGIC, 5);

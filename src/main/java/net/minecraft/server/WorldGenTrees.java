@@ -24,7 +24,7 @@ public class WorldGenTrees extends WorldGenerator implements BlockSapling.TreeGe
     }
 
     public boolean a(World world, Random random, int i, int j, int k) {
-        // CraftBukkit start - moved to generate
+        // CraftBukkit start - Moved to generate
         return this.generate((BlockChangeDelegate) world, random, i, j, k);
     }
 

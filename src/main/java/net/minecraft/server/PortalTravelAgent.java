@@ -30,14 +30,14 @@ public class PortalTravelAgent {
                 this.b(entity, d0, d1, d2, f);
             }
         } else {
-            // CraftBukkit start - modularize end portal creation
+            // CraftBukkit start - Modularize end portal creation
             ChunkCoordinates created = this.createEndPortal(d0, d1, d2);
             entity.setPositionRotation((double) created.x, (double) created.y, (double) created.z, entity.yaw, 0.0F);
             entity.motX = entity.motY = entity.motZ = 0.0D;
         }
     }
 
-    // split out from original a(Entity, double, double, double, float) method in order to enable being called from createPortal
+    // Split out from original a(Entity, double, double, double, float) method in order to enable being called from createPortal
     private ChunkCoordinates createEndPortal(double x, double y, double z) {
             int i = MathHelper.floor(x);
             int j = MathHelper.floor(y) - 1;
@@ -90,7 +90,7 @@ public class PortalTravelAgent {
     // CraftBukkit end
 
     public boolean b(Entity entity, double d0, double d1, double d2, float f) {
-        // CraftBukkit start - modularize portal search process and entity teleportation
+        // CraftBukkit start - Modularize portal search process and entity teleportation
         ChunkCoordinates found = this.findPortal(entity.locX, entity.locY, entity.locZ, 128);
         if (found == null) {
             return false;
@@ -166,13 +166,13 @@ public class PortalTravelAgent {
                 this.c.put(j1, new ChunkCoordinatesPortal(this, i, j, k, this.a.getTime()));
                 this.d.add(Long.valueOf(j1));
             }
-            // CraftBukkit start - moved entity teleportation logic into exit
+            // CraftBukkit start - Moved entity teleportation logic into exit
             return new ChunkCoordinates(i, j, k);
         } else {
             return null;
         }
     }
-    // entity repositioning logic split out from original b method and combined with repositioning logic for The End from original a method
+    // Entity repositioning logic split out from original b method and combined with repositioning logic for The End from original a method
     public void adjustExit(Entity entity, Location position, Vector velocity) {
         Location from = position.clone();
         Vector before = velocity.clone();
@@ -279,7 +279,7 @@ public class PortalTravelAgent {
                 double d11 = velocity.getZ();
                 // CraftBukkit end
 
-                // CraftBukkit start - adjust position and velocity instances instead of entity
+                // CraftBukkit start - Adjust position and velocity instances instead of entity
                 velocity.setX(d10 * (double) f3 + d11 * (double) f6);
                 velocity.setZ(d10 * (double) f5 + d11 * (double) f4);
                 f = f - (float) (k2 * 90) + (float) (j2 * 90);
@@ -319,7 +319,7 @@ public class PortalTravelAgent {
     }
 
     public boolean a(Entity entity) {
-        // CraftBukkit start - allow for portal creation to be based on coordinates instead of entity
+        // CraftBukkit start - Allow for portal creation to be based on coordinates instead of entity
         return this.createPortal(entity.locX, entity.locY, entity.locZ, 16);
     }
 

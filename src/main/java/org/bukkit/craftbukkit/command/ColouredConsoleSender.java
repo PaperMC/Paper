@@ -2,25 +2,24 @@ package org.bukkit.craftbukkit.command;
 
 import java.util.EnumMap;
 import java.util.Map;
+
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.Ansi.Attribute;
-import jline.console.ConsoleReader;
 import jline.Terminal;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.craftbukkit.CraftServer;
 
 public class ColouredConsoleSender extends CraftConsoleCommandSender {
-    private final ConsoleReader reader;
     private final Terminal terminal;
     private final Map<ChatColor, String> replacements = new EnumMap<ChatColor, String>(ChatColor.class);
     private final ChatColor[] colors = ChatColor.values();
 
     protected ColouredConsoleSender() {
         super();
-        this.reader = ((CraftServer) getServer()).getReader();
-        this.terminal = reader.getTerminal();
+        this.terminal = ((CraftServer) getServer()).getReader().getTerminal();
 
         replacements.put(ChatColor.BLACK, Ansi.ansi().a(Attribute.RESET).fg(Ansi.Color.BLACK).boldOff().toString());
         replacements.put(ChatColor.DARK_BLUE, Ansi.ansi().a(Attribute.RESET).fg(Ansi.Color.BLUE).boldOff().toString());

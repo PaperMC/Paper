@@ -115,18 +115,16 @@ public class CraftBlockState implements BlockState {
     public boolean update(boolean force) {
         Block block = getBlock();
 
-        synchronized (block) {
-            if (block.getType() != this.getType()) {
-                if (force) {
-                    block.setTypeId(this.getTypeId());
-                } else {
-                    return false;
-                }
+        if (block.getType() != this.getType()) {
+            if (force) {
+                block.setTypeId(this.getTypeId());
+            } else {
+                return false;
             }
-
-            block.setData(getRawData());
-            world.getHandle().notify(x, y, z);
         }
+
+        block.setData(getRawData());
+        world.getHandle().notify(x, y, z);
 
         return true;
     }

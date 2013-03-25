@@ -33,7 +33,7 @@ public class BlockOre extends Block {
 
     public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
         super.dropNaturally(world, i, j, k, l, f, i1);
-        /* CraftBukkit start - delegated getExpDrop
+        /* CraftBukkit start - Delegated to getExpDrop
         if (this.getDropType(l, world.random, i1) != this.id) {
             int j1 = 0;
 
