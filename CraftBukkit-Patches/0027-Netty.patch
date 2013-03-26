@@ -1,4 +1,4 @@
-From 6e754817948c35099c0c044f050fba777cb3efce Mon Sep 17 00:00:00 2001
+From 02c3ccb6b9e24a0367962e7581015fc28fd5f053 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 14 Feb 2013 17:32:20 +1100
 Subject: [PATCH] Netty
@@ -42,14 +42,14 @@ Subject: [PATCH] Netty
  .../net/minecraft/server/ThreadLoginVerifier.java  |   1 +
  .../craftbukkit/scheduler/CraftScheduler.java      |   2 +-
  src/main/java/org/spigotmc/netty/CipherCodec.java  |  49 ++++
- .../org/spigotmc/netty/NettyNetworkManager.java    | 233 +++++++++++++++++++
+ .../org/spigotmc/netty/NettyNetworkManager.java    | 235 +++++++++++++++++++
  .../org/spigotmc/netty/NettyServerConnection.java  | 109 +++++++++
  .../org/spigotmc/netty/NettySocketAdaptor.java     | 248 +++++++++++++++++++++
  .../java/org/spigotmc/netty/PacketDecoder.java     |  64 ++++++
  .../java/org/spigotmc/netty/PacketEncoder.java     |  43 ++++
  .../java/org/spigotmc/netty/PacketListener.java    | 100 +++++++++
  src/main/java/org/spigotmc/netty/ReadState.java    |  16 ++
- 18 files changed, 915 insertions(+), 9 deletions(-)
+ 18 files changed, 917 insertions(+), 9 deletions(-)
  create mode 100644 src/main/java/net/minecraft/server/INetworkManager.java
  create mode 100644 src/main/java/org/spigotmc/netty/CipherCodec.java
  create mode 100644 src/main/java/org/spigotmc/netty/NettyNetworkManager.java
@@ -313,10 +313,10 @@ index 0000000..54928b4
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..17776e6
+index 0000000..f551bbe
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,233 @@
+@@ -0,0 +1,235 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -412,21 +412,23 @@ index 0000000..17776e6
 +
 +    @Override
 +    public void messageReceived(ChannelHandlerContext ctx, final Packet msg) throws Exception {
-+        if (msg instanceof Packet252KeyResponse) {
-+            secret = ((Packet252KeyResponse) msg).a(key);
-+        }
++        if (connected) {
++            if (msg instanceof Packet252KeyResponse) {
++                secret = ((Packet252KeyResponse) msg).a(key);
++            }
 +
-+        if (msg.a_()) {
-+            threadPool.submit(new Runnable() {
-+                public void run() {
-+                    Packet packet = PacketListener.callReceived(NettyNetworkManager.this, connection, msg);
-+                    if (packet != null) {
-+                        packet.handle(connection);
++            if (msg.a_()) {
++                threadPool.submit(new Runnable() {
++                    public void run() {
++                        Packet packet = PacketListener.callReceived(NettyNetworkManager.this, connection, msg);
++                        if (packet != null) {
++                            packet.handle(connection);
++                        }
 +                    }
-+                }
-+            });
-+        } else {
-+            syncPackets.add(msg);
++                });
++            } else {
++                syncPackets.add(msg);
++            }
 +        }
 +    }
 +
