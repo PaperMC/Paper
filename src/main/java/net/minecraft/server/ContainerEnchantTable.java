@@ -125,7 +125,7 @@ public class ContainerEnchantTable extends Container {
                     // CraftBukkit start
                     CraftItemStack item = CraftItemStack.asCraftMirror(itemstack);
                     PrepareItemEnchantEvent event = new PrepareItemEnchantEvent(player, this.getBukkitView(), this.world.getWorld().getBlockAt(this.x, this.y, this.z), item, this.costs, i);
-                    event.setCancelled(!itemstack.w())
+                    event.setCancelled(!itemstack.w());
                     this.world.getServer().getPluginManager().callEvent(event);
 
                     if (event.isCancelled()) {
