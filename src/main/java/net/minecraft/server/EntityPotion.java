@@ -64,7 +64,7 @@ public class EntityPotion extends EntityProjectile {
         if (!this.world.isStatic) {
             List list = Item.POTION.g(this.c);
 
-            if (list != null && !list.isEmpty()) {
+            if (true || list != null && !list.isEmpty()) { // CraftBukkit - Call event even if no effects to apply
                 AxisAlignedBB axisalignedbb = this.boundingBox.grow(4.0D, 2.0D, 4.0D);
                 List list1 = this.world.a(EntityLiving.class, axisalignedbb);
 
@@ -91,7 +91,7 @@ public class EntityPotion extends EntityProjectile {
                     }
 
                     org.bukkit.event.entity.PotionSplashEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPotionSplashEvent(this, affected);
-                    if (!event.isCancelled()) {
+                    if (!event.isCancelled() && list != null && !list.isEmpty()) { // do not process effects if there are no effects to process
                         for (LivingEntity victim : event.getAffectedEntities()) {
                             if (!(victim instanceof CraftLivingEntity)) {
                                 continue;
