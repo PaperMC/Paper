@@ -1,15 +1,15 @@
-From 95dfd8902ffe673d170d5b3218d53c23b7c292f2 Mon Sep 17 00:00:00 2001
+From f3e8dba9c5d88017a80d6d39bc79e22ef79cb364 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sat, 23 Feb 2013 12:33:20 +1100
 Subject: [PATCH] Watchdog Thread.
 
 ---
  .../java/net/minecraft/server/MinecraftServer.java |   2 +
- src/main/java/org/bukkit/craftbukkit/Spigot.java   | 123 +++++++++++++++++----
+ src/main/java/org/bukkit/craftbukkit/Spigot.java   | 124 +++++++++++++++++----
  src/main/java/org/spigotmc/RestartCommand.java     |  23 ++++
  src/main/java/org/spigotmc/WatchdogThread.java     |  93 ++++++++++++++++
  src/main/resources/configurations/bukkit.yml       |   3 +
- 5 files changed, 222 insertions(+), 22 deletions(-)
+ 5 files changed, 223 insertions(+), 22 deletions(-)
  create mode 100644 src/main/java/org/spigotmc/RestartCommand.java
  create mode 100644 src/main/java/org/spigotmc/WatchdogThread.java
 
@@ -34,7 +34,7 @@ index 4010cbf..168394f 100644
                  this.isStopped = true;
              } catch (Throwable throwable1) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-index b00c885..d445c2e 100644
+index b00c885..ac99395 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
 @@ -1,5 +1,6 @@
@@ -193,7 +193,7 @@ index b00c885..d445c2e 100644
       * @param entity
       * @return
       */
-@@ -265,4 +285,63 @@ public class Spigot {
+@@ -265,4 +285,64 @@ public class Spigot {
          SpigotTimings.checkIfActiveTimer.stopTiming();
          return isActive;
      }
@@ -207,7 +207,8 @@ index b00c885..d445c2e 100644
 +
 +                // Kick all players
 +                for (EntityPlayer p : (List< EntityPlayer>) MinecraftServer.getServer().getPlayerList().players) {
-+                    p.playerConnection.disconnect("Server is restarting");
++                    p.playerConnection.networkManager.queue(new Packet255KickDisconnect("Server is restarting"));
++                    p.playerConnection.networkManager.d();
 +                }
 +                // Give the socket a chance to send the packets
 +                try {
