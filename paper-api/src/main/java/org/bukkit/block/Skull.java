@@ -30,14 +30,14 @@ public interface Skull extends BlockState {
     public boolean setOwner(String name);
 
     /**
-     * Gets the rotation of the skull
+     * Gets the rotation of the skull in the world
      *
      * @return the rotation of the skull
      */
     public BlockFace getRotation();
 
     /**
-     * Sets the rotation of the skull
+     * Sets the rotation of the skull in the world
      *
      * @param rotation the rotation of the skull
      */

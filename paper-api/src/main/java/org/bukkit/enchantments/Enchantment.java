@@ -176,7 +176,7 @@ public abstract class Enchantment {
 
     /**
      * Checks if this Enchantment may be applied to the given {@link ItemStack}.
-     * This does not check if it conflicts with any enchantmentds already applied to the item.
+     * This does not check if it conflicts with any enchantments already applied to the item.
      *
      * @param item Item to test
      * @return True if the enchantment may be applied, otherwise False
