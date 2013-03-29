@@ -48,6 +48,7 @@ public class BlockDaylightDetector extends BlockContainer {
             }
 
             if (l != i1) {
+                i1 = org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(world, i, j, k, l, i1).getNewCurrent(); // CraftBukkit - Call BlockRedstoneEvent
                 world.setData(i, j, k, i1, 3);
             }
         }

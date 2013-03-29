@@ -339,18 +339,44 @@ public class TileEntityChest extends TileEntity implements IInventory {
             this.h = 0;
         }
 
+        int oldPower = Math.max(0, Math.min(15, this.h)); // CraftBukkit - Get power before new viewer is added
+
         ++this.h;
         if (this.world == null) return; // CraftBukkit
         this.world.playNote(this.x, this.y, this.z, this.q().id, 1, this.h);
+
+        // CraftBukkit start - Call redstone event
+        if (this.q().id == Block.TRAPPED_CHEST.id) {
+            int newPower = Math.max(0, Math.min(15, this.h));
+
+            if (oldPower != newPower) {
+                org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(world, this.x, this.y, this.z, oldPower, newPower);
+            }
+        }
+        // CraftBukkit end
+
         this.world.applyPhysics(this.x, this.y, this.z, this.q().id);
         this.world.applyPhysics(this.x, this.y - 1, this.z, this.q().id);
     }
 
     public void g() {
         if (this.q() != null && this.q() instanceof BlockChest) {
+            int oldPower = Math.max(0, Math.min(15, this.h)); // CraftBukkit - Get power before new viewer is added
+
             --this.h;
             if (this.world == null) return; // CraftBukkit
             this.world.playNote(this.x, this.y, this.z, this.q().id, 1, this.h);
+
+            // CraftBukkit start - Call redstone event
+            if (this.q().id == Block.TRAPPED_CHEST.id) {
+                int newPower = Math.max(0, Math.min(15, this.h));
+
+                if (oldPower != newPower) {
+                    org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(world, this.x, this.y, this.z, oldPower, newPower);
+                }
+            }
+            // CraftBukkit end
+
             this.world.applyPhysics(this.x, this.y, this.z, this.q().id);
             this.world.applyPhysics(this.x, this.y - 1, this.z, this.q().id);
         }
