@@ -117,8 +117,8 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     @Override
     public CraftMetaPotion clone() {
         CraftMetaPotion clone = (CraftMetaPotion) super.clone();
-        if (hasCustomEffects()) {
-            clone.customEffects = new ArrayList<PotionEffect>(customEffects);
+        if (this.customEffects != null) {
+            clone.customEffects = new ArrayList<PotionEffect>(this.customEffects);
         }
         return clone;
     }
