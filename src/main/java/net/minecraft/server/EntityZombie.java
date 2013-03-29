@@ -2,7 +2,10 @@ package net.minecraft.server;
 
 import java.util.Calendar;
 
-import org.bukkit.event.entity.EntityCombustEvent; // CraftBukkit
+//CraftBukkit start
+import org.bukkit.event.entity.EntityCombustByEntityEvent;
+import org.bukkit.event.entity.EntityCombustEvent;
+//CraftBukkit end
 
 public class EntityZombie extends EntityMonster {
 
@@ -129,7 +132,14 @@ public class EntityZombie extends EntityMonster {
         boolean flag = super.m(entity);
 
         if (flag && this.bG() == null && this.isBurning() && this.random.nextFloat() < (float) this.world.difficulty * 0.3F) {
-            entity.setOnFire(2 * this.world.difficulty);
+            // CraftBukkit start
+            EntityCombustByEntityEvent event = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 2 * this.world.difficulty);
+            this.world.getServer().getPluginManager().callEvent(event);
+
+            if (!event.isCancelled()) {
+                entity.setOnFire(event.getDuration());
+            }
+            // CraftBukkit end
         }
 
         return flag;
