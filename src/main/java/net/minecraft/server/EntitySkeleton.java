@@ -6,7 +6,7 @@ import org.bukkit.event.entity.EntityCombustEvent; // CraftBukkit
 
 public class EntitySkeleton extends EntityMonster implements IRangedEntity {
 
-    private PathfinderGoalArrowAttack d = new PathfinderGoalArrowAttack(this, 0.25F, 60, 10.0F);
+    private PathfinderGoalArrowAttack d = new PathfinderGoalArrowAttack(this, 0.25F, 20, 60, 15.0F);
     private PathfinderGoalMeleeAttack e = new PathfinderGoalMeleeAttack(this, EntityHuman.class, 0.31F, false);
 
     public EntitySkeleton(World world) {
