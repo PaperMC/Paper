@@ -265,6 +265,8 @@ public class CraftBlock implements Block {
             return new CraftSkull(this);
         case COMMAND:
             return new CraftCommandBlock(this);
+        case BEACON:
+            return new CraftBeacon(this);
         default:
             return new CraftBlockState(this);
         }
