@@ -54,7 +54,8 @@ public class CraftInventory implements Inventory {
         ItemStack[] items = new ItemStack[getSize()];
         net.minecraft.server.ItemStack[] mcItems = getInventory().getContents();
 
-        for (int i = 0; i < mcItems.length; i++) {
+        int size = Math.min(items.length, mcItems.length);
+        for (int i = 0; i < size; i++) {
             items[i] = mcItems[i] == null ? null : CraftItemStack.asCraftMirror(mcItems[i]);
         }
 
