@@ -22,7 +22,7 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
     private int maxStack = MAX_STACK;
 
     public ItemStack[] getContents() {
-        return null;
+        return new ItemStack[] { this.h }; // Should be inventorySlot
     }
 
     public void onOpen(CraftHumanEntity who) {
