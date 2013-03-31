@@ -145,7 +145,7 @@ public class BlockHopper extends BlockContainer {
     }
 
     public static int c(int i) {
-        return i & 7;
+        return Math.min(i & 7, 5); // CraftBukkit - Fix AIOOBE in callers
     }
 
     public static boolean d(int i) {
