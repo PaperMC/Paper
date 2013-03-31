@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 import org.apache.commons.lang.Validate;
+import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scheduler.BukkitTask;
@@ -389,6 +390,9 @@ public class CraftScheduler implements BukkitScheduler {
     private static void validate(final Plugin plugin, final Object task) {
         Validate.notNull(plugin, "Plugin cannot be null");
         Validate.notNull(task, "Task cannot be null");
+        if (!plugin.isEnabled()) {
+            throw new IllegalPluginAccessException("Plugin attempted to register task while disabled");
+        }
     }
 
     private int nextId() {
