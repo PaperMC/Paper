@@ -181,8 +181,8 @@ public class CraftSkull extends CraftBlockState implements Skull {
     }
 
     @Override
-    public boolean update(boolean force) {
-        boolean result = super.update(force);
+    public boolean update(boolean force, boolean applyPhysics) {
+        boolean result = super.update(force, applyPhysics);
 
         if (result) {
             skull.setSkullType(getSkullType(skullType), player);

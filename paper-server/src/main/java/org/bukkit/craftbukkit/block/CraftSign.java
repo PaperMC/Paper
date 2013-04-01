@@ -31,8 +31,8 @@ public class CraftSign extends CraftBlockState implements Sign {
     }
 
     @Override
-    public boolean update(boolean force) {
-        boolean result = super.update(force);
+    public boolean update(boolean force, boolean applyPhysics) {
+        boolean result = super.update(force, applyPhysics);
 
         if (result) {
             for(int i = 0; i < 4; i++) {

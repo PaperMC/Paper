@@ -113,17 +113,21 @@ public class CraftBlockState implements BlockState {
     }
 
     public boolean update(boolean force) {
+        return update(force, true);
+    }
+
+    public boolean update(boolean force, boolean applyPhysics) {
         Block block = getBlock();
 
-        if (block.getType() != this.getType()) {
+        if (block.getType() != getType()) {
             if (force) {
-                block.setTypeId(this.getTypeId());
+                block.setTypeId(getTypeId(), applyPhysics);
             } else {
                 return false;
             }
         }
 
-        block.setData(getRawData());
+        block.setData(getRawData(), applyPhysics);
         world.getHandle().notify(x, y, z);
 
         return true;
