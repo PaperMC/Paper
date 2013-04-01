@@ -21,8 +21,8 @@ public class CraftBrewingStand extends CraftBlockState implements BrewingStand {
     }
 
     @Override
-    public boolean update(boolean force) {
-        boolean result = super.update(force);
+    public boolean update(boolean force, boolean applyPhysics) {
+        boolean result = super.update(force, applyPhysics);
 
         if (result) {
             brewingStand.update();

@@ -39,8 +39,8 @@ public class CraftDispenser extends CraftBlockState implements Dispenser {
     }
 
     @Override
-    public boolean update(boolean force) {
-        boolean result = super.update(force);
+    public boolean update(boolean force, boolean applyPhysics) {
+        boolean result = super.update(force, applyPhysics);
 
         if (result) {
             dispenser.update();

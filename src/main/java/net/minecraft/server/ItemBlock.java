@@ -80,11 +80,11 @@ public class ItemBlock extends Item {
         org.bukkit.block.BlockState blockstate = org.bukkit.craftbukkit.block.CraftBlockState.getBlockState(world, x, y, z);
 
         world.callingPlaceEvent = true;
-        world.setTypeIdAndData(x, y, z, id, data, 3);
+        world.setTypeIdAndData(x, y, z, id, data, 2);
 
         org.bukkit.event.block.BlockPlaceEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockstate, clickedX, clickedY, clickedZ);
         if (event.isCancelled() || !event.canBuild()) {
-            blockstate.update(true);
+            blockstate.update(true, false);
             world.callingPlaceEvent = false;
             return false;
         }

@@ -35,8 +35,8 @@ public class CraftCommandBlock extends CraftBlockState implements CommandBlock {
         this.name = name != null ? name : "@";
     }
 
-    public boolean update(boolean forced) {
-        boolean result = super.update(forced);
+    public boolean update(boolean force, boolean applyPhysics) {
+        boolean result = super.update(force, applyPhysics);
 
         if (result) {
             commandBlock.b(command);
