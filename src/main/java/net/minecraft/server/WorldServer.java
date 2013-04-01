@@ -88,6 +88,10 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
             if (!(result instanceof TileEntityFurnace)) {
                 result = fixTileEntity(i, j, k, type, result);
             }
+        } else if (type == Block.DROPPER.id) {
+            if (!(result instanceof TileEntityDropper)) {
+                result = fixTileEntity(i, j, k, type, result);
+            }
         } else if (type == Block.DISPENSER.id) {
             if (!(result instanceof TileEntityDispenser)) {
                 result = fixTileEntity(i, j, k, type, result);
@@ -110,6 +114,18 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
             }
         } else if (type == Block.ENDER_CHEST.id) {
             if (!(result instanceof TileEntityEnderChest)) {
+                result = fixTileEntity(i, j, k, type, result);
+            }
+        } else if (type == Block.BREWING_STAND.id) {
+            if (!(result instanceof TileEntityBrewingStand)) {
+                result = fixTileEntity(i, j, k, type, result);
+            }
+        } else if (type == Block.BEACON.id) {
+            if (!(result instanceof TileEntityBeacon)) {
+                result = fixTileEntity(i, j, k, type, result);
+            }
+        } else if (type == Block.HOPPER.id) {
+            if (!(result instanceof TileEntityHopper)) {
                 result = fixTileEntity(i, j, k, type, result);
             }
         }
