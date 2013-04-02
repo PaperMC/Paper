@@ -19,7 +19,7 @@ public class EntityTargetLivingEntityEvent extends EntityTargetEvent{
      * Set the Entity that you want the mob to target.
      * It is possible to be null, null will cause the entity to be
      * target-less.
-     * <p />
+     * <p>
      * Must be a LivingEntity, or null
      *
      * @param target The entity to target

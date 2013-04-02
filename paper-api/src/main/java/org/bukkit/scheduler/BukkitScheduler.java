@@ -91,7 +91,7 @@ public interface BukkitScheduler {
     /**
      * Calls a method on the main thread and returns a Future object
      * This task will be executed by the main server thread.
-     * <p />
+     * <p>
      * Note: The Future.get() methods must NOT be called from the main thread.
      * Note2: There is at least an average of 10ms latency until the isDone() method returns true.
      *
@@ -123,33 +123,33 @@ public interface BukkitScheduler {
 
     /**
      * Check if the task currently running.
-     * <p />
+     * <p>
      * A repeating task might not be running currently, but will be running in the future.
      * A task that has finished, and does not repeat, will not be running ever again.
-     * <p />
+     * <p>
      * Explicitly, a task is running if there exists a thread for it, and that thread is alive.
      *
      * @param taskId The task to check.
-     * <p />
+     * <p>
      * @return If the task is currently running.
      */
     public boolean isCurrentlyRunning(int taskId);
 
     /**
      * Check if the task queued to be run later.
-     * <p />
+     * <p>
      * If a repeating task is currently running, it might not be queued now but could be in the future.
      * A task that is not queued, and not running, will not be queued again.
      *
      * @param taskId The task to check.
-     * <p />
+     * <p>
      * @return If the task is queued to be run.
      */
     public boolean isQueued(int taskId);
 
     /**
      * Returns a list of all active workers.
-     * <p />
+     * <p>
      * This list contains asynch tasks that are being executed by separate threads.
      *
      * @return Active workers

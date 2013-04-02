@@ -49,7 +49,7 @@ public enum Achievement {
 
     /**
      * Gets the ID for this achievement.
-     * <p />
+     * <p>
      * Note that this is offset using {@link #STATISTIC_OFFSET}
      *
      * @return ID of this achievement
@@ -60,7 +60,7 @@ public enum Achievement {
 
     /**
      * Gets the achievement associated with the given ID.
-     * <p />
+     * <p>
      * Note that the ID must already be offset using {@link #STATISTIC_OFFSET}
      *
      * @param id ID of the achievement to return

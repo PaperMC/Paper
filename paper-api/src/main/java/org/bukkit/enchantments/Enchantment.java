@@ -210,7 +210,7 @@ public abstract class Enchantment {
 
     /**
      * Registers an enchantment with the given ID and object.
-     * <p />
+     * <p>
      * Generally not to be used from within a plugin.
      *
      * @param enchantment Enchantment to register

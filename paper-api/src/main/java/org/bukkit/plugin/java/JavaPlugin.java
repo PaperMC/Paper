@@ -223,7 +223,7 @@ public abstract class JavaPlugin extends PluginBase {
 
     /**
      * Initializes this plugin with the given variables.
-     * <p />
+     * <p>
      * This method should never be called manually.
      *
      * @param loader PluginLoader that is responsible for this plugin

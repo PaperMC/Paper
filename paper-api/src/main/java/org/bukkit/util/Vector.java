@@ -279,7 +279,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
     /**
      * Calculates the cross product of this vector with another. The cross
      * product is defined as:
-     * <p />
+     * <p>
      * x = y1 * z2 - y2 * z1<br/>
      * y = z1 * x2 - z2 * x1<br/>
      * z = x1 * y2 - x2 * y1
@@ -507,7 +507,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
 
     /**
      * Checks to see if two objects are equal.
-     * <p />
+     * <p>
      * Only two Vectors can ever return true. This method uses a fuzzy match
      * to account for floating point errors. The epsilon can be retrieved
      * with epsilon.

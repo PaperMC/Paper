@@ -9,10 +9,10 @@ import java.lang.annotation.Target;
  * Represents an "alias" that a {@link ConfigurationSerializable} may be stored as.
  * If this is not present on a {@link ConfigurationSerializable} class, it will use the
  * fully qualified name of the class.
- * <p />
+ * <p>
  * This value will be stored in the configuration so that the configuration deserialization
  * can determine what type it is.
- * <p />
+ * <p>
  * Using this annotation on any other class than a {@link ConfigurationSerializable} will
  * have no effect.
  * @see ConfigurationSerialization#registerClass(Class, String)
@@ -22,7 +22,7 @@ import java.lang.annotation.Target;
 public @interface SerializableAs {
     /**
      * This is the name your class will be stored and retrieved as.
-     * <p />
+     * <p>
      * This name MUST be unique. We recommend using names such as "MyPluginThing" instead of
      * "Thing".
      *

@@ -8,7 +8,7 @@ import org.bukkit.inventory.ItemStack;
 
 /**
  * Called when a block is damaged by a player.
- * <p />
+ * <p>
  * If a Block Damage event is cancelled, the block will not be damaged.
  */
 public class BlockDamageEvent extends BlockEvent implements Cancellable {

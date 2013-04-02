@@ -15,7 +15,7 @@ public abstract class OctaveGenerator {
 
     /**
      * Sets the scale used for all coordinates passed to this generator.
-     * <p />
+     * <p>
      * This is the equivalent to setting each coordinate to the specified value.
      *
      * @param scale New value to scale each coordinate by

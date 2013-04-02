@@ -14,7 +14,7 @@ public interface Sign extends BlockState {
 
     /**
      * Gets the line of text at the specified index.
-     * <p />
+     * <p>
      * For example, getLine(0) will return the first line of text.
      *
      * @param index Line number to get the text from, starting at 0
@@ -25,7 +25,7 @@ public interface Sign extends BlockState {
 
     /**
      * Sets the line of text at the specified index.
-     * <p />
+     * <p>
      * For example, setLine(0, "Line One") will set the first line of text to
      * "Line One".
      *

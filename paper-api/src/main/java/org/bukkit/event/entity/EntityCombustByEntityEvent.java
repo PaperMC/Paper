@@ -11,7 +11,7 @@ public class EntityCombustByEntityEvent extends EntityCombustEvent {
     }
 
     /**
-     * The combuster can be a WeatherStorm a Blaze, or an Entity holding a FIRE_ASPECT enchanted item.
+     * Get the entity that caused the combustion event.
      *
      * @return the Entity that set the combustee alight.
      */

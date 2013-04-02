@@ -7,13 +7,13 @@ import org.bukkit.event.HandlerList;
 
 /**
  * Called when a block fades, melts or disappears based on world conditions
- * <p />
+ * <p>
  * Examples:
  * <ul>
  * <li>Snow melting due to being near a light source.</li>
  * <li>Ice melting due to being near a light source.</li>
  * </ul>
- * <p />
+ * <p>
  * If a Block Fade event is cancelled, the block will not fade, melt or disappear.
  */
 public class BlockFadeEvent extends BlockEvent implements Cancellable {

@@ -4,7 +4,7 @@ public interface Tameable {
 
     /**
      * Check if this is tamed
-     * <p />
+     * <p>
      * If something is tamed then a player can not tame it through normal methods, even if it does not belong to anyone in particular.
      *
      * @return true if this has been tamed
@@ -13,7 +13,7 @@ public interface Tameable {
 
     /**
      * Sets if this has been tamed. Not necessary if the method setOwner has been used, as it tames automatically.
-     * <p />
+     * <p>
      * If something is tamed then a player can not tame it through normal methods, even if it does not belong to anyone in particular.
      *
      * @param tame true if tame

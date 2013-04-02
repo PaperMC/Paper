@@ -126,7 +126,7 @@ public abstract class Command {
 
     /**
      * Tests the given {@link CommandSender} to see if they can perform this command.
-     * <p />
+     * <p>
      * If they do not have permission, they will be informed that they cannot do this.
      *
      * @param target User to test
@@ -150,7 +150,7 @@ public abstract class Command {
 
     /**
      * Tests the given {@link CommandSender} to see if they can perform this command.
-     * <p />
+     * <p>
      * No error is sent to the sender.
      *
      * @param target User to test

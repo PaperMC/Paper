@@ -37,14 +37,14 @@ import org.bukkit.inventory.meta.ItemMeta;
 public interface Server extends PluginMessageRecipient {
     /**
      * Used for all administrative messages, such as an operator using a command.
-     * <p />
+     * <p>
      * For use in {@link #broadcast(java.lang.String, java.lang.String)}
      */
     public static final String BROADCAST_CHANNEL_ADMINISTRATIVE = "bukkit.broadcast.admin";
 
     /**
      * Used for all announcement messages, such as informing users that a player has joined.
-     * <p />
+     * <p>
      * For use in {@link #broadcast(java.lang.String, java.lang.String)}
      */
     public static final String BROADCAST_CHANNEL_USERS = "bukkit.broadcast.user";
@@ -176,7 +176,7 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * Broadcast a message to all players.
-     * <p />
+     * <p>
      * This is the same as calling {@link #broadcast(java.lang.String, java.lang.String)} to {@link #BROADCAST_CHANNEL_USERS}
      *
      * @param message the message
@@ -187,7 +187,7 @@ public interface Server extends PluginMessageRecipient {
     /**
      * Gets the name of the update folder. The update folder is used to safely update
      * plugins at the right moment on a plugin load.
-     * <p />
+     * <p>
      * The update folder name is relative to the plugins folder.
      *
      * @return The name of the update folder
@@ -211,17 +211,17 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * Gets default ticks per animal spawns value
-     * <p />
+     * <p>
      * <b>Example Usage:</b>
      * <ul>
      * <li>A value of 1 will mean the server will attempt to spawn monsters every tick.
      * <li>A value of 400 will mean the server will attempt to spawn monsters every 400th tick.
      * <li>A value below 0 will be reset back to Minecraft's default.
      * </ul>
-     * <p />
+     * <p>
      * <b>Note:</b>
      * If set to 0, animal spawning will be disabled. We recommend using spawn-animals to control this instead.
-     * <p />
+     * <p>
      * Minecraft default: 400.
      *
      * @return The default ticks per animal spawns value
@@ -230,17 +230,17 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * Gets the default ticks per monster spawns value
-     * <p />
+     * <p>
      * <b>Example Usage:</b>
      * <ul>
      * <li>A value of 1 will mean the server will attempt to spawn monsters every tick.
      * <li>A value of 400 will mean the server will attempt to spawn monsters every 400th tick.
      * <li>A value below 0 will be reset back to Minecraft's default.
      * </ul>
-     * <p />
+     * <p>
      * <b>Note:</b>
      * If set to 0, monsters spawning will be disabled. We recommend using spawn-monsters to control this instead.
-     * <p />
+     * <p>
      * Minecraft default: 1.
      *
      * @return The default ticks per monsters spawn value
@@ -249,7 +249,7 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * Gets a player object by the given username
-     * <p />
+     * <p>
      * This method may not return objects for offline players
      *
      * @param name Name to look up
@@ -268,7 +268,7 @@ public interface Server extends PluginMessageRecipient {
     /**
      * Attempts to match any players with the given name, and returns a list
      * of all possibly matches
-     * <p />
+     * <p>
      * This list is not sorted in any particular order. If an exact match is found,
      * the returned list will only contain a single result.
      *
@@ -307,7 +307,7 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * Creates or loads a world with the given name using the specified options.
-     * <p />
+     * <p>
      * If the world is already loaded, it will just return the equivalent of
      * getWorld(creator.name()).
      *
@@ -510,7 +510,7 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * Gets the player by the given name, regardless if they are offline or online.
-     * <p />
+     * <p>
      * This will return an object even if the player does not exist. To this method, all players will exist.
      *
      * @param name Name of the player to retrieve

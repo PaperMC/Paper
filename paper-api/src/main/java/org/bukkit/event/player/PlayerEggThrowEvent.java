@@ -102,7 +102,7 @@ public class PlayerEggThrowEvent extends PlayerEvent {
     /**
      * Get the number of mob hatches from the egg. By default the number
      * will be he number the server would've done
-     * <p />
+     * <p>
      * 7/8 chance of being 0
      * 31/256 ~= 1/8 chance to be 1
      * 1/256 chance to be 4
@@ -115,7 +115,7 @@ public class PlayerEggThrowEvent extends PlayerEvent {
 
     /**
      * Change the number of mobs coming out of the hatched egg
-     * <p />
+     * <p>
      * The boolean hatching will override this number.
      * Ie. If hatching = false, this number will not matter
      *

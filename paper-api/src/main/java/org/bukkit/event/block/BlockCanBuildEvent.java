@@ -6,7 +6,7 @@ import org.bukkit.event.HandlerList;
 
 /**
  * Called when we try to place a block, to see if we can build it here or not.
- * <p />
+ * <p>
  * Note:
  * <ul>
  * <li>The Block returned by getBlock() is the block we are trying to place on, not the block we are trying to place.</li>

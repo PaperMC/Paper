@@ -14,7 +14,7 @@ public @interface EventHandler {
 
     /**
      * Define the priority of the event.
-     * <p />
+     * <p>
      * First priority to the last priority executed:
      * <ol>
      * <li>LOWEST</li>
@@ -29,7 +29,7 @@ public @interface EventHandler {
 
     /**
      * Define if the handler ignores a cancelled event.
-     * <p />
+     * <p>
      * If ignoreCancelled is true and the event is cancelled, the method is
      * not called. Otherwise, the method is always called.
      */

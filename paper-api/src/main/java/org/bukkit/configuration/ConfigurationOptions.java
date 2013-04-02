@@ -23,7 +23,7 @@ public class ConfigurationOptions {
 
     /**
      * Gets the char that will be used to separate {@link ConfigurationSection}s
-     * <p />
+     * <p>
      * This value does not affect how the {@link Configuration} is stored, only in
      * how you access the data. The default value is '.'.
      *
@@ -35,7 +35,7 @@ public class ConfigurationOptions {
 
     /**
      * Sets the char that will be used to separate {@link ConfigurationSection}s
-     * <p />
+     * <p>
      * This value does not affect how the {@link Configuration} is stored, only in
      * how you access the data. The default value is '.'.
      *
@@ -49,7 +49,7 @@ public class ConfigurationOptions {
 
     /**
      * Checks if the {@link Configuration} should copy values from its default {@link Configuration} directly.
-     * <p />
+     * <p>
      * If this is true, all values in the default Configuration will be directly copied,
      * making it impossible to distinguish between values that were set and values that
      * are provided by default. As a result, {@link ConfigurationSection#contains(java.lang.String)} will always
@@ -64,7 +64,7 @@ public class ConfigurationOptions {
 
     /**
      * Sets if the {@link Configuration} should copy values from its default {@link Configuration} directly.
-     * <p />
+     * <p>
      * If this is true, all values in the default Configuration will be directly copied,
      * making it impossible to distinguish between values that were set and values that
      * are provided by default. As a result, {@link ConfigurationSection#contains(java.lang.String)} will always

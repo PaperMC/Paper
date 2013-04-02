@@ -7,7 +7,7 @@ import org.bukkit.util.Vector;
 
 /**
  * Called before an entity exits a portal.
- * <p />
+ * <p>
  * This event allows you to modify the velocity of the entity after they
  * have successfully exeted the portal.
  */

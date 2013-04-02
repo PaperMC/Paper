@@ -39,7 +39,7 @@ public abstract class ChunkGenerator {
     @Deprecated
     /**
      * Shapes the chunk for the given coordinates.
-     * <p />
+     * <p>
      * This method should return a byte[32768] in the following format:
      *
      * <pre>
@@ -51,10 +51,10 @@ public abstract class ChunkGenerator {
      *     }
      * }
      * </pre>
-     * <p />
+     * <p>
      * Note that this method should <b>never</b> attempt to get the Chunk at
      * the passed coordinates, as doing so may cause an infinite loop
-     * <p />
+     * <p>
      * Note this deprecated method will only be called when both generateExtBlockSections()
      * and generateBlockSections() are unimplemented and return null.
 
@@ -70,10 +70,10 @@ public abstract class ChunkGenerator {
 
     /**
      * Shapes the chunk for the given coordinates, with extended block IDs supported (0-4095).
-     * <p />
+     * <p>
      * As of 1.2, chunks are represented by a vertical array of chunk sections, each of which is 16 x 16 x 16 blocks.  If a section
      * is empty (all zero), the section does not need to be supplied, reducing memory usage.
-     * <p />
+     * <p>
      * This method must return a short[][] array in the following format:
      * <pre>
      *     short[][] result = new short[world-height / 16][];
@@ -83,7 +83,7 @@ public abstract class ChunkGenerator {
      *     result[sectionID] = new short[4096];
      * </pre>
      * while sections that are not populated can be left null.
-     * <p />
+     * <p>
      * Setting a block at X, Y, Z within the chunk can be done with the following mapping function:
      * <pre>
      *    void setBlock(short[][] result, int x, int y, int z, short blkid) {
@@ -103,7 +103,7 @@ public abstract class ChunkGenerator {
      *    }
      * </pre>
      * while sections that are not populated can be left null.
-     * <p />
+     * <p>
      * Setting a block at X, Y, Z within the chunk can be done with the following mapping function:
      * <pre>
      *    void setBlock(short[][] result, int x, int y, int z, short blkid) {
@@ -122,10 +122,10 @@ public abstract class ChunkGenerator {
      *        return result[y >> 4][((y & 0xF) << 8) | (z << 4) | x];
      *    }
      * </pre>
-     * <p />
+     * <p>
      * Note that this method should <b>never</b> attempt to get the Chunk at
      * the passed coordinates, as doing so may cause an infinite loop
-     * <p />
+     * <p>
      * Note generators that do not return block IDs above 255 should not implement
      * this method, or should have it return null (which will result in the
      * generateBlockSections() method being called).
@@ -143,10 +143,10 @@ public abstract class ChunkGenerator {
 
     /**
      * Shapes the chunk for the given coordinates.
-     * <p />
+     * <p>
      * As of 1.2, chunks are represented by a vertical array of chunk sections, each of which is 16 x 16 x 16 blocks.  If a section
      * is empty (all zero), the section does not need to be supplied, reducing memory usage.
-     * <p />
+     * <p>
      * This method must return a byte[][] array in the following format:
      * <pre>
      *     byte[][] result = new byte[world-height / 16][];
@@ -156,7 +156,7 @@ public abstract class ChunkGenerator {
      *     result[sectionID] = new byte[4096];
      * </pre>
      * while sections that are not populated can be left null.
-     * <p />
+     * <p>
      * Setting a block at X, Y, Z within the chunk can be done with the following mapping function:
      * <pre>
      *    void setBlock(byte[][] result, int x, int y, int z, byte blkid) {
@@ -224,7 +224,7 @@ public abstract class ChunkGenerator {
 
     /**
      * Gets a fixed spawn location to use for a given world.
-     * <p />
+     * <p>
      * A null value is returned if a world should not use a fixed spawn point,
      * and will instead attempt to find one randomly.
      *

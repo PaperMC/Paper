@@ -36,7 +36,7 @@ public interface Block extends Metadatable {
 
     /**
      * Gets the block at the given face
-     * <p />
+     * <p>
      * This method is equal to getRelative(face, 1)
      *
      * @param face Face of this block to return
@@ -47,7 +47,7 @@ public interface Block extends Metadatable {
 
     /**
      * Gets the block at the given distance of the given face
-     * <p />
+     * <p>
      * For example, the following method places water at 100,102,100; two blocks
      * above 100,100,100.
      *
@@ -86,7 +86,7 @@ public interface Block extends Metadatable {
 
     /**
      * Get the amount of light at this block from the sky.
-     * <p />
+     * <p>
      * Any light given from other sources (such as blocks like torches) will be ignored.
      *
      * @return Sky light level
@@ -95,7 +95,7 @@ public interface Block extends Metadatable {
 
     /**
      * Get the amount of light at this block from nearby blocks.
-     * <p />
+     * <p>
      * Any light given from other sources (such as the sun) will be ignored.
      *
      * @return Block light level
@@ -203,7 +203,7 @@ public interface Block extends Metadatable {
 
     /**
      * Gets the face relation of this block compared to the given block
-     * <p />
+     * <p>
      * For example:
      * <pre>
      * Block current = world.getBlockAt(100, 100, 100);
@@ -222,7 +222,7 @@ public interface Block extends Metadatable {
     /**
      * Captures the current state of this block. You may then cast that state
      * into any accepted type, such as Furnace or Sign.
-     * <p />
+     * <p>
      * The returned object will never be updated, and you are not guaranteed that
      * (for example) a sign is still a sign after you capture its state.
      *
@@ -291,7 +291,7 @@ public interface Block extends Metadatable {
 
     /**
      * Checks if this block is empty.
-     * <p />
+     * <p>
      * A block is considered empty when {@link #getType()} returns {@link Material#AIR}.
      *
      * @return true if this block is empty
@@ -300,7 +300,7 @@ public interface Block extends Metadatable {
 
     /**
      * Checks if this block is liquid.
-     * <p />
+     * <p>
      * A block is considered liquid when {@link #getType()} returns {@link Material#WATER}, {@link Material#STATIONARY_WATER}, {@link Material#LAVA} or {@link Material#STATIONARY_LAVA}.
      *
      * @return true if this block is liquid

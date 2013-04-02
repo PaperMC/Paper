@@ -63,7 +63,7 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
 
     /**
      * Gets the amount of experience received when fishing.
-     * <p />
+     * <p>
      * Note: This value has no default effect unless the event state is {@link State#CAUGHT_FISH}.
      *
      * @return the amount of experience to drop
@@ -74,7 +74,7 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
 
     /**
      * Sets the amount of experience received when fishing.
-     * <p />
+     * <p>
      * Note: This value has no default effect unless the event state is {@link State#CAUGHT_FISH}.
      *
      * @param amount the amount of experience to drop

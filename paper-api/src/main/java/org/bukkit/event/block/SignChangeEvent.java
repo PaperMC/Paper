@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 
 /**
  * Called when a sign is changed by a player.
- * <p />
+ * <p>
  * If a Sign Change event is cancelled, the sign will not be changed.
  */
 public class SignChangeEvent extends BlockEvent implements Cancellable {

@@ -29,7 +29,7 @@ public interface Inventory extends Iterable<ItemStack> {
 
     /**
      * This method allows you to change the maximum stack size for an inventory.
-     * <p /><b>Caveats:</b>
+     * <p><b>Caveats:</b>
      * <ul>
      * <li>Not all inventories respect this value.
      * <li>Stacks larger than 127 may be clipped when the world is saved.
@@ -68,12 +68,12 @@ public interface Inventory extends Iterable<ItemStack> {
     /**
      * Stores the given ItemStacks in the inventory.
      * This will try to fill existing stacks and empty slots as well as it can.
-     * <p />
+     * <p>
      * The returned HashMap contains what it couldn't store, where the key is the
      * index of the parameter, and the value is the ItemStack at that index
      * of the varargs parameter. If all items are stored, it will return an
      * empty HashMap.
-     * <p />
+     * <p>
      * If you pass in ItemStacks which exceed the maximum stack size for the
      * Material, first they will be added to partial stacks where
      * Material.getMaxStackSize() is not exceeded, up to
@@ -89,10 +89,10 @@ public interface Inventory extends Iterable<ItemStack> {
 
     /**
      * Removes the given ItemStacks from the inventory.
-     * <p />
+     * <p>
      * It will try to remove 'as much as possible' from the types and amounts you
      * give as arguments.
-     * <p />
+     * <p>
      * The returned HashMap contains what it couldn't remove, where the key is the
      * index of the parameter, and the value is the ItemStack at that index of the
      * varargs parameter. If all the given ItemStacks are removed, it will return
@@ -187,7 +187,7 @@ public interface Inventory extends Iterable<ItemStack> {
     /**
      * Returns a HashMap with all slots and ItemStacks in the inventory with
      * given materialId.
-     * <p />
+     * <p>
      * The HashMap contains entries where, the key is the slot index, and the
      * value is the ItemStack in that slot. If no matching ItemStack with the
      * given materialId is found, an empty map is returned.
@@ -200,7 +200,7 @@ public interface Inventory extends Iterable<ItemStack> {
     /**
      * Returns a HashMap with all slots and ItemStacks in the inventory with
      * the given Material.
-     * <p />
+     * <p>
      * The HashMap contains entries where, the key is the slot index, and the
      * value is the ItemStack in that slot. If no matching ItemStack with the
      * given Material is found, an empty map is returned.
@@ -214,7 +214,7 @@ public interface Inventory extends Iterable<ItemStack> {
     /**
      * Finds all slots in the inventory containing any ItemStacks with the given ItemStack
      * This will only match slots if both the type and the amount of the stack match
-     * <p />
+     * <p>
      * The HashMap contains entries where, the key is the
      * slot index, and the value is the ItemStack in that slot. If no matching
      * ImemStrack with the given Material is found, an empty map is returned.

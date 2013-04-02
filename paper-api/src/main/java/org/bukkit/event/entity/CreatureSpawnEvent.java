@@ -9,7 +9,7 @@ import org.bukkit.event.HandlerList;
 
 /**
  * Called when a creature is spawned into a world.
- * <p />
+ * <p>
  * If a Creature Spawn event is cancelled, the creature will not spawn.
  */
 public class CreatureSpawnEvent extends EntityEvent implements Cancellable {

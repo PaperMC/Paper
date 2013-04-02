@@ -158,7 +158,7 @@ public class YamlConfiguration extends FileConfiguration {
 
     /**
      * Creates a new {@link YamlConfiguration}, loading from the given file.
-     * <p />
+     * <p>
      * Any errors loading the Configuration will be logged and then ignored.
      * If the specified input is not a valid config, a blank config will be returned.
      *
@@ -185,7 +185,7 @@ public class YamlConfiguration extends FileConfiguration {
 
     /**
      * Creates a new {@link YamlConfiguration}, loading from the given stream.
-     * <p />
+     * <p>
      * Any errors loading the Configuration will be logged and then ignored.
      * If the specified input is not a valid config, a blank config will be returned.
      *

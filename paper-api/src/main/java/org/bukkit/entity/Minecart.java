@@ -67,7 +67,7 @@ public interface Minecart extends Vehicle {
 
     /**
      * Gets the derailed velocity modifier. Used for minecarts that are on the ground, but not on rails.
-     * <p />
+     * <p>
      * A derailed minecart's velocity is multiplied by this factor each tick.
      *
      * @return derailed visible speed

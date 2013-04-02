@@ -13,7 +13,7 @@ import com.avaje.ebean.EbeanServer;
 
 /**
  * Represents a Plugin
- * <p />
+ * <p>
  * The use of {@link PluginBase} is recommended for actual Implementation
  */
 public interface Plugin extends TabExecutor {
@@ -34,7 +34,7 @@ public interface Plugin extends TabExecutor {
 
     /**
      * Gets a {@link FileConfiguration} for this plugin, read through "config.yml"
-     * <p />
+     * <p>
      * If there is a default config.yml embedded in this plugin, it will be provided
      * as a default for this Configuration.
      *

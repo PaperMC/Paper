@@ -6,7 +6,7 @@ import org.bukkit.generator.BlockPopulator;
 
 /**
  * Thrown when a new chunk has finished being populated.
- * <p />
+ * <p>
  * If your intent is to populate the chunk using this event, please see {@link BlockPopulator}
  */
 public class ChunkPopulateEvent extends ChunkEvent {

@@ -161,7 +161,7 @@ public interface Messenger {
 
     /**
      * Checks if the specified plugin message listener registration is valid.
-     * <p />
+     * <p>
      * A registration is considered valid if it has not be unregistered and that the plugin
      * is still enabled.
      *

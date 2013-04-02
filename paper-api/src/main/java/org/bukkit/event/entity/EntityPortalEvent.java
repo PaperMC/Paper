@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 
 /**
  * Called when a non-player entity is about to teleport because it is in contact with a portal
- * <p />
+ * <p>
  * For players see {@link org.bukkit.event.player.PlayerPortalEvent PlayerPortalEvent}
  */
 public class EntityPortalEvent extends EntityTeleportEvent {

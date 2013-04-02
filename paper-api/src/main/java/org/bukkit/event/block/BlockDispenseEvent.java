@@ -8,7 +8,7 @@ import org.bukkit.util.Vector;
 
 /**
  * Called when an item is dispensed from a block.
- * <p />
+ * <p>
  * If a Block Dispense event is cancelled, the block will not dispense the item.
  */
 public class BlockDispenseEvent extends BlockEvent implements Cancellable {
@@ -44,7 +44,7 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
 
     /**
      * Gets the velocity.
-     * <p />
+     * <p>
      * Note: Modifying the returned Vector will not change the velocity, you must use {@link #setVelocity(org.bukkit.util.Vector)} instead.
      *
      * @return A Vector for the dispensed item's velocity

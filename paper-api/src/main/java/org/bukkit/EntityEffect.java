@@ -16,28 +16,28 @@ public enum EntityEffect {
 
     /**
      * When a mob dies.
-     * <p />
+     * <p>
      * <b>This will cause client-glitches!
      */
     DEATH(3),
 
     /**
      * The smoke when taming a wolf fails.
-     * <p />
+     * <p>
      * Without client-mods this will be ignored if the entity is not a wolf.
      */
     WOLF_SMOKE(6),
 
     /**
      * The hearts when taming a wolf succeeds.
-     * <p />
+     * <p>
      * Without client-mods this will be ignored if the entity is not a wolf.
      */
     WOLF_HEARTS(7),
 
     /**
      * When a wolf shakes (after being wet).
-     * <p />
+     * <p>
      * Without client-mods this will be ignored if the entity is not a wolf.
      */
     WOLF_SHAKE(8),

@@ -56,7 +56,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
 
     /**
      * Gets how much EXP the Player should have at respawn.
-     * <p />
+     * <p>
      * This does not indicate how much EXP should be dropped, please see
      * {@link #getDroppedExp()} for that.
      *
@@ -68,7 +68,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
 
     /**
      * Sets how much EXP the Player should have at respawn.
-     * <p />
+     * <p>
      * This does not indicate how much EXP should be dropped, please see
      * {@link #setDroppedExp(int)} for that.
      *
@@ -116,7 +116,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
 
     /**
      * Gets if the Player should keep all EXP at respawn.
-     * <p />
+     * <p>
      * This flag overrides other EXP settings
      *
      * @return True if Player should keep all pre-death exp
@@ -127,7 +127,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
 
     /**
      * Sets if the Player should keep all EXP at respawn.
-     * <p />
+     * <p>
      * This overrides all other EXP settings
      *
      * @param keepLevel True to keep all current value levels

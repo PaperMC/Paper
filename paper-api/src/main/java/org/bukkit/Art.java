@@ -86,7 +86,7 @@ public enum Art {
 
     /**
      * Get a painting by its unique name
-     * <p />
+     * <p>
      * This ignores underscores and capitalization
      *
      * @param name The name

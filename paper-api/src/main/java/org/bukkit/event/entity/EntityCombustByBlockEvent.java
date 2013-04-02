@@ -13,7 +13,7 @@ public class EntityCombustByBlockEvent extends EntityCombustEvent {
 
     /**
      * The combuster can be lava or a block that is on fire.
-     * <p />
+     * <p>
      * WARNING: block may be null.
      *
      * @return the Block that set the combustee alight.
