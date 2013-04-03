@@ -1,35 +1,35 @@
-From f06fbf4660299434b863b47b71e37666062b312b Mon Sep 17 00:00:00 2001
+From 12e671af8e48ce6ae5f0ca2c87d90dee326cff55 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sat, 23 Mar 2013 17:57:27 +1100
 Subject: [PATCH] Spigot Changes
 
 The set of changes which provide core Spigot functionality, which would otherwise be a mess to try and apply individually.
 ---
- .gitignore                                         |   2 +
- src/main/java/net/minecraft/server/Block.java      |  12 +++
- .../java/net/minecraft/server/BlockCactus.java     |   2 +-
- src/main/java/net/minecraft/server/BlockCrops.java |   2 +-
- src/main/java/net/minecraft/server/BlockGrass.java |   3 +-
- .../java/net/minecraft/server/BlockMushroom.java   |   2 +-
- src/main/java/net/minecraft/server/BlockMycel.java |   3 +-
- src/main/java/net/minecraft/server/BlockReed.java  |   2 +-
- .../java/net/minecraft/server/BlockSapling.java    |   2 +-
- src/main/java/net/minecraft/server/BlockStem.java  |   2 +-
- .../net/minecraft/server/ChunkRegionLoader.java    |  35 +++++--
- .../java/net/minecraft/server/ChunkSection.java    |  31 ++++--
- src/main/java/net/minecraft/server/EntityItem.java |   3 +-
- .../java/net/minecraft/server/EntitySquid.java     |   4 -
- .../net/minecraft/server/PlayerConnection.java     |  19 +++-
- src/main/java/net/minecraft/server/PlayerList.java |  10 +-
- .../net/minecraft/server/ThreadLoginVerifier.java  |  21 ++++
- src/main/java/net/minecraft/server/World.java      | 111 +++++++++++++++++----
- .../java/net/minecraft/server/WorldServer.java     |  36 ++++++-
- .../java/org/bukkit/craftbukkit/CraftServer.java   |  47 +++++----
- .../java/org/bukkit/craftbukkit/CraftWorld.java    |  71 ++++++++++++-
- src/main/java/org/bukkit/craftbukkit/Spigot.java   |  20 ++++
- .../craftbukkit/chunkio/ChunkIOProvider.java       |   2 +-
- src/main/resources/configurations/bukkit.yml       |  26 +++++
- 24 files changed, 390 insertions(+), 78 deletions(-)
+ .gitignore                                         |    2 +
+ src/main/java/net/minecraft/server/Block.java      |   12 ++
+ .../java/net/minecraft/server/BlockCactus.java     |    2 +-
+ src/main/java/net/minecraft/server/BlockCrops.java |    2 +-
+ src/main/java/net/minecraft/server/BlockGrass.java |    3 +-
+ .../java/net/minecraft/server/BlockMushroom.java   |    2 +-
+ src/main/java/net/minecraft/server/BlockMycel.java |    3 +-
+ src/main/java/net/minecraft/server/BlockReed.java  |    2 +-
+ .../java/net/minecraft/server/BlockSapling.java    |    2 +-
+ src/main/java/net/minecraft/server/BlockStem.java  |    2 +-
+ .../net/minecraft/server/ChunkRegionLoader.java    |   35 +++++--
+ .../java/net/minecraft/server/ChunkSection.java    |   31 +++++-
+ src/main/java/net/minecraft/server/EntityItem.java |    3 +-
+ .../java/net/minecraft/server/EntitySquid.java     |    4 -
+ .../net/minecraft/server/PlayerConnection.java     |   19 +++-
+ src/main/java/net/minecraft/server/PlayerList.java |   10 ++-
+ .../net/minecraft/server/ThreadLoginVerifier.java  |   21 ++++
+ src/main/java/net/minecraft/server/World.java      |  111 +++++++++++++++++---
+ .../java/net/minecraft/server/WorldServer.java     |   36 ++++++-
+ .../java/org/bukkit/craftbukkit/CraftServer.java   |   47 +++++----
+ .../java/org/bukkit/craftbukkit/CraftWorld.java    |   69 ++++++++++++
+ src/main/java/org/bukkit/craftbukkit/Spigot.java   |   20 ++++
+ .../craftbukkit/chunkio/ChunkIOProvider.java       |    2 +-
+ src/main/resources/configurations/bukkit.yml       |   26 +++++
+ 24 files changed, 389 insertions(+), 77 deletions(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/Spigot.java
 
 diff --git a/.gitignore b/.gitignore
@@ -661,7 +661,7 @@ index 9698185..cddc890 100644
              entityhuman = (EntityHuman) this.players.get(i);
              j = MathHelper.floor(entityhuman.locX) + this.random.nextInt(11) - 5;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index a49419e..39505b2 100644
+index 13f67da..a5a0e04 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -1,5 +1,7 @@
@@ -680,7 +680,7 @@ index a49419e..39505b2 100644
  
  import org.bukkit.event.block.BlockFormEvent;
  import org.bukkit.event.weather.LightningStrikeEvent;
-@@ -278,15 +281,30 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -295,15 +298,30 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
      }
  
      protected void g() {
@@ -714,7 +714,7 @@ index a49419e..39505b2 100644
              // ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) iterator.next();
              int k = chunkX * 16;
              int l = chunkZ * 16;
-@@ -384,7 +402,17 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -401,7 +419,17 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
  
                          if (block != null && block.isTicking()) {
                              ++i;
@@ -1019,5 +1019,5 @@ index 61a95e3..bc00ad4 100644
      monsters: 70
      animals: 15
 -- 
-1.8.1-rc2
+1.7.0.4
 
