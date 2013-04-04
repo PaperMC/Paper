@@ -40,7 +40,14 @@ public class BlockDropper extends BlockDispenser {
                     // CraftBukkit start - Fire event when pushing items into other inventories
                     CraftItemStack oitemstack = CraftItemStack.asCraftMirror(itemstack.cloneItemStack().a(1));
 
-                    org.bukkit.inventory.Inventory destinationInventory = iinventory.getOwner() != null ? iinventory.getOwner().getInventory() : null;
+                    org.bukkit.inventory.Inventory destinationInventory;
+                    // Have to special case large chests as they work oddly
+                    if (iinventory instanceof InventoryLargeChest) {
+                        destinationInventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest((InventoryLargeChest) iinventory);
+                    } else {
+                        destinationInventory = iinventory.getOwner().getInventory();
+                    }
+
                     InventoryMoveItemEvent event = new InventoryMoveItemEvent(tileentitydispenser.getOwner().getInventory(), oitemstack.clone(), destinationInventory, true);
                     world.getServer().getPluginManager().callEvent(event);
                     if (event.isCancelled()) {
