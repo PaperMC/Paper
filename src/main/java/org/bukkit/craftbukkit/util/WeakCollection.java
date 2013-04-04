@@ -61,7 +61,6 @@ public final class WeakCollection<T> implements Collection<T> {
             Iterator<WeakReference<T>> it = collection.iterator();
             Object value = NO_VALUE;
 
-            @Override
             public boolean hasNext() {
                 Object value = this.value;
                 if (value != null && value != NO_VALUE) {
@@ -84,7 +83,6 @@ public final class WeakCollection<T> implements Collection<T> {
                 return false;
             }
 
-            @Override
             public T next() throws NoSuchElementException {
                 if (!hasNext()) {
                     throw new NoSuchElementException("No more elements");
@@ -96,7 +94,6 @@ public final class WeakCollection<T> implements Collection<T> {
                 return value;
             }
 
-            @Override
             public void remove() throws IllegalStateException {
                 if (value != NO_VALUE) {
                     throw new IllegalStateException("No last element");
