@@ -721,8 +721,9 @@ public final class CraftServer implements Server {
         }
 
         internal.worldMaps = console.worlds.get(0).worldMaps;
+        internal.scoreboard = getScoreboardManager().getMainScoreboard().getHandle();
 
-        internal.tracker = new EntityTracker(internal); // CraftBukkit
+        internal.tracker = new EntityTracker(internal);
         internal.addIWorldAccess(new WorldManager(console, internal));
         internal.difficulty = 1;
         internal.setSpawnFlags(true, true);
