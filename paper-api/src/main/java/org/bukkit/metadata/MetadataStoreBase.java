@@ -25,8 +25,8 @@ public abstract class MetadataStoreBase<T> {
      * @throws IllegalArgumentException If value is null, or the owning plugin is null
      */
     public synchronized void setMetadata(T subject, String metadataKey, MetadataValue newMetadataValue) {
-        Plugin owningPlugin = newMetadataValue.getOwningPlugin();
         Validate.notNull(newMetadataValue, "Value cannot be null");
+        Plugin owningPlugin = newMetadataValue.getOwningPlugin();
         Validate.notNull(owningPlugin, "Plugin cannot be null");
         String key = disambiguate(subject, metadataKey);
         Map<Plugin, MetadataValue> entry = metadataMap.get(key);
