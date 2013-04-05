@@ -60,7 +60,7 @@ public abstract class World implements IBlockAccess {
     public final MethodProfiler methodProfiler;
     private final Vec3DPool J = new Vec3DPool(300, 2000);
     private final Calendar K = Calendar.getInstance();
-    protected Scoreboard scoreboard = new Scoreboard();
+    public Scoreboard scoreboard = new Scoreboard(); // CraftBukkit - protected -> public
     private final IConsoleLogManager logAgent;
     private UnsafeList M = new UnsafeList(); // CraftBukkit - ArrayList -> UnsafeList
     private boolean N;
