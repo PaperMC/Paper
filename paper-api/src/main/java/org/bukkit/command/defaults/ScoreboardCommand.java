@@ -382,17 +382,7 @@ public class ScoreboardCommand extends VanillaCommand {
                             addedPlayers.add(offlinePlayer.getName());
                         }
                     }
-                    String[] playerArray = addedPlayers.toArray(new String[0]);
-                    StringBuilder builder = new StringBuilder();
-                    for (int x = 0; x < playerArray.length; x++) {
-                        if (x == playerArray.length - 1) {
-                            builder.append(" and ");
-                        } else if (x > 0) {
-                            builder.append(", ");
-                        }
-                        builder.append(playerArray[x]);
-                    }
-                    sender.sendMessage("Added " + addedPlayers.size() + " player(s) to team " + team.getName() + ": " + builder.toString());
+                    sender.sendMessage("Added " + addedPlayers.size() + " player(s) to team " + team.getName() + ": " + stringCollectionToString(addedPlayers));
                 }
             } else if (args[1].equalsIgnoreCase("leave")) {
                 if ((sender instanceof Player) ? args.length < 2 : args.length < 3) {
