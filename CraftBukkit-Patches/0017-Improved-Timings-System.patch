@@ -1,21 +1,21 @@
-From f911a115312d4fe9347642dac63ba4714b3361fe Mon Sep 17 00:00:00 2001
+From 90d50fe2bd2b0db517e5b30d6e1f0924fb13bb7a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 10 Jan 2013 00:18:11 -0500
 Subject: [PATCH] Improved Timings System
 
 Tracks nearly every point of minecraft internals and plugin events to give a good quick overview on what is causing TPS loss.
 ---
- .../net/minecraft/server/ChunkProviderServer.java  |    2 +
- src/main/java/net/minecraft/server/Entity.java     |    5 +
- .../java/net/minecraft/server/EntityLiving.java    |   10 ++
- .../java/net/minecraft/server/MinecraftServer.java |   17 +++-
- .../net/minecraft/server/PlayerConnection.java     |    5 +
- src/main/java/net/minecraft/server/TileEntity.java |    2 +
- src/main/java/net/minecraft/server/World.java      |   17 +++
- .../java/net/minecraft/server/WorldServer.java     |    4 +
- .../java/org/bukkit/craftbukkit/SpigotTimings.java |  110 ++++++++++++++++++++
- .../bukkit/craftbukkit/scheduler/CraftTask.java    |   18 +++
- 10 files changed, 189 insertions(+), 1 deletions(-)
+ .../net/minecraft/server/ChunkProviderServer.java  |   2 +
+ src/main/java/net/minecraft/server/Entity.java     |   5 +
+ .../java/net/minecraft/server/EntityLiving.java    |  10 ++
+ .../java/net/minecraft/server/MinecraftServer.java |  17 +++-
+ .../net/minecraft/server/PlayerConnection.java     |   5 +
+ src/main/java/net/minecraft/server/TileEntity.java |   2 +
+ src/main/java/net/minecraft/server/World.java      |  17 ++++
+ .../java/net/minecraft/server/WorldServer.java     |   4 +
+ .../java/org/bukkit/craftbukkit/SpigotTimings.java | 110 +++++++++++++++++++++
+ .../bukkit/craftbukkit/scheduler/CraftTask.java    |  18 ++++
+ 10 files changed, 189 insertions(+), 1 deletion(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/SpigotTimings.java
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
@@ -145,7 +145,7 @@ index 9210d96..14854ac 100644
          this.world.methodProfiler.b();
          this.world.methodProfiler.a("looting");
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 9930618..4010cbf 100644
+index 8de8570..16b15df 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -6,7 +6,6 @@ import java.security.KeyPair;
@@ -164,7 +164,7 @@ index 9930618..4010cbf 100644
  import org.bukkit.craftbukkit.util.Waitable;
  import org.bukkit.event.server.RemoteServerCommandEvent;
  import org.bukkit.event.world.WorldSaveEvent;
-@@ -397,7 +397,10 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -399,7 +399,10 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
                      currentTPS = (currentTPS * 0.95) + (1E9 / (curTime - lastTick) * 0.05);
                      lastTick = curTime;
                      MinecraftServer.currentTick++;
@@ -175,7 +175,7 @@ index 9930618..4010cbf 100644
                  }
                  // Spigot end
              } else {
-@@ -496,6 +499,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -498,6 +501,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
      public void r() {
          this.methodProfiler.a("levels");
  
@@ -183,7 +183,7 @@ index 9930618..4010cbf 100644
          // CraftBukkit start
          this.server.getScheduler().mainThreadHeartbeat(this.ticks);
  
-@@ -504,7 +508,10 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -506,7 +510,10 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
              processQueue.remove().run();
          }
  
@@ -194,7 +194,7 @@ index 9930618..4010cbf 100644
  
          // Send time updates to everyone, it will get the right time from the world the player is in.
          if (this.ticks % 20 == 0) {
-@@ -556,7 +563,9 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -558,7 +565,9 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
  
                  this.methodProfiler.b();
                  this.methodProfiler.a("tracker");
@@ -204,7 +204,7 @@ index 9930618..4010cbf 100644
                  this.methodProfiler.b();
                  this.methodProfiler.b();
              // } // CraftBukkit
-@@ -565,14 +574,20 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -567,14 +576,20 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
          }
  
          this.methodProfiler.c("connection");
@@ -279,7 +279,7 @@ index db3fc42..174546d 100644
      private static Map b = new HashMap();
      protected World world;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 307171b..0afe88d 100644
+index b4ec71e..e2d0a88 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -13,6 +13,7 @@ import java.util.concurrent.Callable;
@@ -566,5 +566,5 @@ index 55db3ff..df134e3 100644
  
      long getPeriod() {
 -- 
-1.7.0.4
+1.8.2.1
 

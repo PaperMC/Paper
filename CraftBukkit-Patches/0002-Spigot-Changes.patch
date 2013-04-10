@@ -1,35 +1,35 @@
-From 12e671af8e48ce6ae5f0ca2c87d90dee326cff55 Mon Sep 17 00:00:00 2001
+From 44e3b478f6aeb4b9298b06599679448608345ff0 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sat, 23 Mar 2013 17:57:27 +1100
 Subject: [PATCH] Spigot Changes
 
 The set of changes which provide core Spigot functionality, which would otherwise be a mess to try and apply individually.
 ---
- .gitignore                                         |    2 +
- src/main/java/net/minecraft/server/Block.java      |   12 ++
- .../java/net/minecraft/server/BlockCactus.java     |    2 +-
- src/main/java/net/minecraft/server/BlockCrops.java |    2 +-
- src/main/java/net/minecraft/server/BlockGrass.java |    3 +-
- .../java/net/minecraft/server/BlockMushroom.java   |    2 +-
- src/main/java/net/minecraft/server/BlockMycel.java |    3 +-
- src/main/java/net/minecraft/server/BlockReed.java  |    2 +-
- .../java/net/minecraft/server/BlockSapling.java    |    2 +-
- src/main/java/net/minecraft/server/BlockStem.java  |    2 +-
- .../net/minecraft/server/ChunkRegionLoader.java    |   35 +++++--
- .../java/net/minecraft/server/ChunkSection.java    |   31 +++++-
- src/main/java/net/minecraft/server/EntityItem.java |    3 +-
- .../java/net/minecraft/server/EntitySquid.java     |    4 -
- .../net/minecraft/server/PlayerConnection.java     |   19 +++-
- src/main/java/net/minecraft/server/PlayerList.java |   10 ++-
- .../net/minecraft/server/ThreadLoginVerifier.java  |   21 ++++
- src/main/java/net/minecraft/server/World.java      |  111 +++++++++++++++++---
- .../java/net/minecraft/server/WorldServer.java     |   36 ++++++-
- .../java/org/bukkit/craftbukkit/CraftServer.java   |   47 +++++----
- .../java/org/bukkit/craftbukkit/CraftWorld.java    |   69 ++++++++++++
- src/main/java/org/bukkit/craftbukkit/Spigot.java   |   20 ++++
- .../craftbukkit/chunkio/ChunkIOProvider.java       |    2 +-
- src/main/resources/configurations/bukkit.yml       |   26 +++++
- 24 files changed, 389 insertions(+), 77 deletions(-)
+ .gitignore                                         |   2 +
+ src/main/java/net/minecraft/server/Block.java      |  12 +++
+ .../java/net/minecraft/server/BlockCactus.java     |   2 +-
+ src/main/java/net/minecraft/server/BlockCrops.java |   2 +-
+ src/main/java/net/minecraft/server/BlockGrass.java |   3 +-
+ .../java/net/minecraft/server/BlockMushroom.java   |   2 +-
+ src/main/java/net/minecraft/server/BlockMycel.java |   3 +-
+ src/main/java/net/minecraft/server/BlockReed.java  |   2 +-
+ .../java/net/minecraft/server/BlockSapling.java    |   2 +-
+ src/main/java/net/minecraft/server/BlockStem.java  |   2 +-
+ .../net/minecraft/server/ChunkRegionLoader.java    |  35 +++++--
+ .../java/net/minecraft/server/ChunkSection.java    |  31 ++++--
+ src/main/java/net/minecraft/server/EntityItem.java |   3 +-
+ .../java/net/minecraft/server/EntitySquid.java     |   4 -
+ .../net/minecraft/server/PlayerConnection.java     |  19 +++-
+ src/main/java/net/minecraft/server/PlayerList.java |  10 +-
+ .../net/minecraft/server/ThreadLoginVerifier.java  |  21 ++++
+ src/main/java/net/minecraft/server/World.java      | 111 +++++++++++++++++----
+ .../java/net/minecraft/server/WorldServer.java     |  36 ++++++-
+ .../java/org/bukkit/craftbukkit/CraftServer.java   |  47 +++++----
+ .../java/org/bukkit/craftbukkit/CraftWorld.java    |  71 ++++++++++++-
+ src/main/java/org/bukkit/craftbukkit/Spigot.java   |  20 ++++
+ .../craftbukkit/chunkio/ChunkIOProvider.java       |   2 +-
+ src/main/resources/configurations/bukkit.yml       |  26 +++++
+ 24 files changed, 390 insertions(+), 78 deletions(-)
  create mode 100644 src/main/java/org/bukkit/craftbukkit/Spigot.java
 
 diff --git a/.gitignore b/.gitignore
@@ -406,10 +406,10 @@ index c81793a..133c310 100644
                      }
                  }
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 464b250..28798af 100644
+index ed670d9..da7ad33 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -303,7 +303,7 @@ public abstract class PlayerList {
+@@ -305,7 +305,7 @@ public abstract class PlayerList {
  
              event.disallow(PlayerLoginEvent.Result.KICK_BANNED, s1);
          } else if (!this.isWhitelisted(s)) {
@@ -418,7 +418,7 @@ index 464b250..28798af 100644
          } else {
              String s2 = socketaddress.toString();
  
-@@ -1044,7 +1044,13 @@ public abstract class PlayerList {
+@@ -1046,7 +1046,13 @@ public abstract class PlayerList {
  
      public void r() {
          while (!this.players.isEmpty()) {
@@ -466,7 +466,7 @@ index 0686ba0..c185f64 100644
              URL url = new URL("http://session.minecraft.net/game/checkserver.jsp?user=" + URLEncoder.encode(PendingConnection.d(this.pendingConnection), "UTF-8") + "&serverId=" + URLEncoder.encode(s, "UTF-8"));
              BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(url.openStream()));
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 9698185..cddc890 100644
+index 03b7167..0958209 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -67,14 +67,27 @@ public abstract class World implements IBlockAccess {
@@ -734,10 +734,10 @@ index 13f67da..a5a0e04 100644
                      }
                  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 7b9c787..8e02225 100644
+index 8a079d3..e7c3a0c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -146,7 +146,7 @@ public final class CraftServer implements Server {
+@@ -145,7 +145,7 @@ public final class CraftServer implements Server {
      protected final MinecraftServer console;
      protected final DedicatedPlayerList playerList;
      private final Map<String, World> worlds = new LinkedHashMap<String, World>();
@@ -808,7 +808,7 @@ index 7b9c787..8e02225 100644
          loadPlugins();
          enablePlugins(PluginLoadOrder.STARTUP);
          enablePlugins(PluginLoadOrder.POSTWORLD);
-@@ -1054,13 +1072,8 @@ public final class CraftServer implements Server {
+@@ -1055,13 +1073,8 @@ public final class CraftServer implements Server {
          return count;
      }
  
@@ -823,7 +823,7 @@ index 7b9c787..8e02225 100644
          OfflinePlayer result = getPlayerExact(name);
          String lname = name.toLowerCase();
  
-@@ -1068,17 +1081,7 @@ public final class CraftServer implements Server {
+@@ -1069,17 +1082,7 @@ public final class CraftServer implements Server {
              result = offlinePlayers.get(lname);
  
              if (result == null) {
@@ -842,7 +842,7 @@ index 7b9c787..8e02225 100644
                  result = new CraftOfflinePlayer(this, name);
                  offlinePlayers.put(lname, result);
              }
-@@ -1216,7 +1219,7 @@ public final class CraftServer implements Server {
+@@ -1217,7 +1220,7 @@ public final class CraftServer implements Server {
          Set<OfflinePlayer> players = new HashSet<OfflinePlayer>();
  
          for (String file : files) {
@@ -851,7 +851,7 @@ index 7b9c787..8e02225 100644
          }
          players.addAll(Arrays.asList(getOnlinePlayers()));
  
-@@ -1322,7 +1325,7 @@ public final class CraftServer implements Server {
+@@ -1323,7 +1326,7 @@ public final class CraftServer implements Server {
      public List<String> tabCompleteCommand(Player player, String message) {
          List<String> completions = null;
          try {
@@ -1019,5 +1019,5 @@ index 61a95e3..bc00ad4 100644
      monsters: 70
      animals: 15
 -- 
-1.7.0.4
+1.8.2.1
 
