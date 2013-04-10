@@ -1,0 +1,188 @@
+From 0252b7ffef6ff353b9c4c54d9e53a8b452c2ac47 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Wed, 10 Apr 2013 13:52:52 +1000
+Subject: [PATCH] mc-dev imports
+
+ 2 files changed, 160 insertions(+)
+---
+ .../java/net/minecraft/server/NibbleArray.java     |  40 +++++++
+ .../java/net/minecraft/server/OldChunkLoader.java  | 120 +++++++++++++++++++++
+ 2 files changed, 160 insertions(+)
+ create mode 100644 src/main/java/net/minecraft/server/NibbleArray.java
+ create mode 100644 src/main/java/net/minecraft/server/OldChunkLoader.java
+
+diff --git a/src/main/java/net/minecraft/server/NibbleArray.java b/src/main/java/net/minecraft/server/NibbleArray.java
+new file mode 100644
+index 0000000..5d75a54
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/NibbleArray.java
+@@ -0,0 +1,40 @@
++package net.minecraft.server;
++
++public class NibbleArray {
++
++    public final byte[] a;
++    private final int b;
++    private final int c;
++
++    public NibbleArray(int i, int j) {
++        this.a = new byte[i >> 1];
++        this.b = j;
++        this.c = j + 4;
++    }
++
++    public NibbleArray(byte[] abyte, int i) {
++        this.a = abyte;
++        this.b = i;
++        this.c = i + 4;
++    }
++
++    public int a(int i, int j, int k) {
++        int l = j << this.c | k << this.b | i;
++        int i1 = l >> 1;
++        int j1 = l & 1;
++
++        return j1 == 0 ? this.a[i1] & 15 : this.a[i1] >> 4 & 15;
++    }
++
++    public void a(int i, int j, int k, int l) {
++        int i1 = j << this.c | k << this.b | i;
++        int j1 = i1 >> 1;
++        int k1 = i1 & 1;
++
++        if (k1 == 0) {
++            this.a[j1] = (byte) (this.a[j1] & 240 | l & 15);
++        } else {
++            this.a[j1] = (byte) (this.a[j1] & 15 | (l & 15) << 4);
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/OldChunkLoader.java b/src/main/java/net/minecraft/server/OldChunkLoader.java
+new file mode 100644
+index 0000000..53c1cb5
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/OldChunkLoader.java
+@@ -0,0 +1,120 @@
++package net.minecraft.server;
++
++public class OldChunkLoader {
++
++    public static OldChunk a(NBTTagCompound nbttagcompound) {
++        int i = nbttagcompound.getInt("xPos");
++        int j = nbttagcompound.getInt("zPos");
++        OldChunk oldchunk = new OldChunk(i, j);
++
++        oldchunk.g = nbttagcompound.getByteArray("Blocks");
++        oldchunk.f = new OldNibbleArray(nbttagcompound.getByteArray("Data"), 7);
++        oldchunk.e = new OldNibbleArray(nbttagcompound.getByteArray("SkyLight"), 7);
++        oldchunk.d = new OldNibbleArray(nbttagcompound.getByteArray("BlockLight"), 7);
++        oldchunk.c = nbttagcompound.getByteArray("HeightMap");
++        oldchunk.b = nbttagcompound.getBoolean("TerrainPopulated");
++        oldchunk.h = nbttagcompound.getList("Entities");
++        oldchunk.i = nbttagcompound.getList("TileEntities");
++        oldchunk.j = nbttagcompound.getList("TileTicks");
++
++        try {
++            oldchunk.a = nbttagcompound.getLong("LastUpdate");
++        } catch (ClassCastException classcastexception) {
++            oldchunk.a = (long) nbttagcompound.getInt("LastUpdate");
++        }
++
++        return oldchunk;
++    }
++
++    public static void a(OldChunk oldchunk, NBTTagCompound nbttagcompound, WorldChunkManager worldchunkmanager) {
++        nbttagcompound.setInt("xPos", oldchunk.k);
++        nbttagcompound.setInt("zPos", oldchunk.l);
++        nbttagcompound.setLong("LastUpdate", oldchunk.a);
++        int[] aint = new int[oldchunk.c.length];
++
++        for (int i = 0; i < oldchunk.c.length; ++i) {
++            aint[i] = oldchunk.c[i];
++        }
++
++        nbttagcompound.setIntArray("HeightMap", aint);
++        nbttagcompound.setBoolean("TerrainPopulated", oldchunk.b);
++        NBTTagList nbttaglist = new NBTTagList("Sections");
++
++        int j;
++
++        for (int k = 0; k < 8; ++k) {
++            boolean flag = true;
++
++            for (j = 0; j < 16 && flag; ++j) {
++                int l = 0;
++
++                while (l < 16 && flag) {
++                    int i1 = 0;
++
++                    while (true) {
++                        if (i1 < 16) {
++                            int j1 = j << 11 | i1 << 7 | l + (k << 4);
++                            byte b0 = oldchunk.g[j1];
++
++                            if (b0 == 0) {
++                                ++i1;
++                                continue;
++                            }
++
++                            flag = false;
++                        }
++
++                        ++l;
++                        break;
++                    }
++                }
++            }
++
++            if (!flag) {
++                byte[] abyte = new byte[4096];
++                NibbleArray nibblearray = new NibbleArray(abyte.length, 4);
++                NibbleArray nibblearray1 = new NibbleArray(abyte.length, 4);
++                NibbleArray nibblearray2 = new NibbleArray(abyte.length, 4);
++
++                for (int k1 = 0; k1 < 16; ++k1) {
++                    for (int l1 = 0; l1 < 16; ++l1) {
++                        for (int i2 = 0; i2 < 16; ++i2) {
++                            int j2 = k1 << 11 | i2 << 7 | l1 + (k << 4);
++                            byte b1 = oldchunk.g[j2];
++
++                            abyte[l1 << 8 | i2 << 4 | k1] = (byte) (b1 & 255);
++                            nibblearray.a(k1, l1, i2, oldchunk.f.a(k1, l1 + (k << 4), i2));
++                            nibblearray1.a(k1, l1, i2, oldchunk.e.a(k1, l1 + (k << 4), i2));
++                            nibblearray2.a(k1, l1, i2, oldchunk.d.a(k1, l1 + (k << 4), i2));
++                        }
++                    }
++                }
++
++                NBTTagCompound nbttagcompound1 = new NBTTagCompound();
++
++                nbttagcompound1.setByte("Y", (byte) (k & 255));
++                nbttagcompound1.setByteArray("Blocks", abyte);
++                nbttagcompound1.setByteArray("Data", nibblearray.a);
++                nbttagcompound1.setByteArray("SkyLight", nibblearray1.a);
++                nbttagcompound1.setByteArray("BlockLight", nibblearray2.a);
++                nbttaglist.add(nbttagcompound1);
++            }
++        }
++
++        nbttagcompound.set("Sections", nbttaglist);
++        byte[] abyte1 = new byte[256];
++
++        for (int k2 = 0; k2 < 16; ++k2) {
++            for (j = 0; j < 16; ++j) {
++                abyte1[j << 4 | k2] = (byte) (worldchunkmanager.getBiome(oldchunk.k << 4 | k2, oldchunk.l << 4 | j).id & 255);
++            }
++        }
++
++        nbttagcompound.setByteArray("Biomes", abyte1);
++        nbttagcompound.set("Entities", oldchunk.h);
++        nbttagcompound.set("TileEntities", oldchunk.i);
++        if (oldchunk.j != null) {
++            nbttagcompound.set("TileTicks", oldchunk.j);
++        }
++    }
++}
+-- 
+1.8.2.1
+
