@@ -24,7 +24,6 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.plugin.PluginManager;
@@ -325,19 +324,7 @@ public abstract class Entity {
                 }
             } else {
                 if (this.fireTicks % 20 == 0) {
-                    // CraftBukkit start - TODO: this event spams!
-                    if (this instanceof EntityLiving) {
-                        EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.FIRE_TICK, 1);
-                        this.world.getServer().getPluginManager().callEvent(event);
-
-                        if (!event.isCancelled()) {
-                            event.getEntity().setLastDamageCause(event);
-                            this.damageEntity(DamageSource.BURN, event.getDamage());
-                        }
-                    } else {
-                        this.damageEntity(DamageSource.BURN, 1);
-                    }
-                    // CraftBukkit end
+                    this.damageEntity(DamageSource.BURN, 1);
                 }
 
                 --this.fireTicks;
@@ -790,20 +777,6 @@ public abstract class Entity {
 
     protected void burn(int i) {
         if (!this.fireProof) {
-            // CraftBukkit start
-            if (this instanceof EntityLiving) {
-                EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.FIRE, i);
-                this.world.getServer().getPluginManager().callEvent(event);
-
-                if (event.isCancelled()) {
-                    return;
-                }
-
-                i = event.getDamage();
-                event.getEntity().setLastDamageCause(event);
-            }
-            // CraftBukkit end
-
             this.damageEntity(DamageSource.FIRE, i);
         }
     }
@@ -1594,14 +1567,11 @@ public abstract class Entity {
             }
         }
 
-        EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(stormBukkitEntity, thisBukkitEntity, EntityDamageEvent.DamageCause.LIGHTNING, 5);
-        pluginManager.callEvent(event);
-
+        EntityDamageEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDamageEvent(entitylightning, this, EntityDamageEvent.DamageCause.LIGHTNING, 5);
         if (event.isCancelled()) {
             return;
         }
 
-        thisBukkitEntity.setLastDamageCause(event);
         this.burn(event.getDamage());
         // CraftBukkit end
 

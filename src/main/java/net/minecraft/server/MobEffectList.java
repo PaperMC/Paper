@@ -2,7 +2,6 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
 // CraftBukkit end
 
@@ -80,33 +79,15 @@ public class MobEffectList {
             }
         } else if (this.id == POISON.id) {
             if (entityliving.getHealth() > 1) {
-                // CraftBukkit start
-                EntityDamageEvent event = CraftEventFactory.callEntityDamageEvent(null, entityliving, EntityDamageEvent.DamageCause.POISON, 1);
-
-                if (!event.isCancelled() && event.getDamage() > 0) {
-                    entityliving.damageEntity(DamageSource.MAGIC, event.getDamage());
-                }
-                // CraftBukkit end
+                entityliving.damageEntity(CraftEventFactory.POISON, 1); // CraftBukkit - DamageSource.MAGIC -> CraftEventFactory.POISON
             }
         } else if (this.id == WITHER.id) {
-            // CraftBukkit start
-            EntityDamageEvent event = CraftEventFactory.callEntityDamageEvent(null, entityliving, EntityDamageEvent.DamageCause.WITHER, 1);
-
-            if (!event.isCancelled() && event.getDamage() > 0) {
-                entityliving.damageEntity(DamageSource.WITHER, event.getDamage());
-            }
-            // CraftBukkit end
+            entityliving.damageEntity(DamageSource.WITHER, 1);
         } else if (this.id == HUNGER.id && entityliving instanceof EntityHuman) {
             ((EntityHuman) entityliving).j(0.025F * (float) (i + 1));
         } else if ((this.id != HEAL.id || entityliving.bD()) && (this.id != HARM.id || !entityliving.bD())) {
             if (this.id == HARM.id && !entityliving.bD() || this.id == HEAL.id && entityliving.bD()) {
-                // CraftBukkit start
-                EntityDamageEvent event = CraftEventFactory.callEntityDamageEvent(null, entityliving, EntityDamageEvent.DamageCause.MAGIC, 6 << i);
-
-                if (!event.isCancelled() && event.getDamage() > 0) {
-                    entityliving.damageEntity(DamageSource.MAGIC, event.getDamage());
-                }
-                // CraftBukkit end
+                entityliving.damageEntity(DamageSource.MAGIC, 6 << i);
             }
         } else {
             entityliving.heal(6 << i, RegainReason.MAGIC); // CraftBukkit

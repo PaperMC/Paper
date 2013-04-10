@@ -7,7 +7,6 @@ import java.util.List;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.util.BlockStateListPopulator;
 import org.bukkit.event.entity.EntityCreatePortalEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.Bukkit;
@@ -363,20 +362,7 @@ public class EntityEnderDragon extends EntityLiving implements IComplex {
             Entity entity = (Entity) list.get(i);
 
             if (entity instanceof EntityLiving) {
-                // CraftBukkit start - Throw damage events when the dragon attacks
-                // The EntityHuman case is handled in EntityHuman, so don't throw it here
-                if (!(entity instanceof EntityHuman)) {
-                    EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), org.bukkit.event.entity.EntityDamageEvent.DamageCause.ENTITY_ATTACK, 10);
-                    Bukkit.getPluginManager().callEvent(damageEvent);
-
-                    if (!damageEvent.isCancelled()) {
-                        entity.getBukkitEntity().setLastDamageCause(damageEvent);
-                        entity.damageEntity(DamageSource.mobAttack(this), damageEvent.getDamage());
-                    }
-                } else {
-                    entity.damageEntity(DamageSource.mobAttack(this), 10);
-                }
-                // CraftBukkit end
+                entity.damageEntity(DamageSource.mobAttack(this), 10);
             }
         }
     }

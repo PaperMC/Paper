@@ -1,8 +1,8 @@
 package net.minecraft.server;
 
 // CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.EntityBlockFormEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 // CraftBukkit end
 
 public class EntitySnowman extends EntityGolem implements IRangedEntity {
@@ -30,30 +30,14 @@ public class EntitySnowman extends EntityGolem implements IRangedEntity {
     public void c() {
         super.c();
         if (this.F()) {
-            // CraftBukkit start
-            EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.DROWNING, 1);
-            this.world.getServer().getPluginManager().callEvent(event);
-
-            if (!event.isCancelled()) {
-                event.getEntity().setLastDamageCause(event);
-                this.damageEntity(DamageSource.DROWN, event.getDamage());
-            }
-            // CraftBukkit end
+            this.damageEntity(DamageSource.DROWN, 1);
         }
 
         int i = MathHelper.floor(this.locX);
         int j = MathHelper.floor(this.locZ);
 
         if (this.world.getBiome(i, j).j() > 1.0F) {
-            // CraftBukkit start
-            EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.MELTING, 1);
-            this.world.getServer().getPluginManager().callEvent(event);
-
-            if (!event.isCancelled()) {
-                event.getEntity().setLastDamageCause(event);
-                this.damageEntity(DamageSource.BURN, event.getDamage());
-            }
-            // CraftBukkit end
+            this.damageEntity(CraftEventFactory.MELTING, 1); // CraftBukkit - DamageSource.BURN -> CraftEventFactory.MELTING
         }
 
         for (i = 0; i < 4; ++i) {
@@ -90,7 +74,7 @@ public class EntitySnowman extends EntityGolem implements IRangedEntity {
             loot.add(new org.bukkit.inventory.ItemStack(Item.SNOW_BALL.id, j));
         }
 
-        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
+        CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
     }
 
