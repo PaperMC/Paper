@@ -1,0 +1,405 @@
+From 4372dc651d7320403d3080cc3b381122b14ccf68 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Sat, 23 Feb 2013 12:33:20 +1100
+Subject: [PATCH] Watchdog Thread.
+
+---
+ .../java/net/minecraft/server/MinecraftServer.java |   2 +
+ src/main/java/org/bukkit/craftbukkit/Spigot.java   | 124 +++++++++++++++++----
+ src/main/java/org/spigotmc/RestartCommand.java     |  23 ++++
+ src/main/java/org/spigotmc/WatchdogThread.java     |  93 ++++++++++++++++
+ src/main/resources/configurations/bukkit.yml       |   3 +
+ 5 files changed, 223 insertions(+), 22 deletions(-)
+ create mode 100644 src/main/java/org/spigotmc/RestartCommand.java
+ create mode 100644 src/main/java/org/spigotmc/WatchdogThread.java
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 16b15df..4a9d711 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -403,6 +403,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+                     this.q();
+                     SpigotTimings.serverTickTimer.stopTiming();
+                     org.bukkit.CustomTimingsHandler.tick();
++                    org.spigotmc.WatchdogThread.tick();
+                 }
+                 // Spigot end
+             } else {
+@@ -430,6 +431,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+             this.a(crashreport);
+         } finally {
+             try {
++                org.spigotmc.WatchdogThread.doStop();
+                 this.stop();
+                 this.isStopped = true;
+             } catch (Throwable throwable1) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+index b00c885..ac99395 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
++++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.craftbukkit;
+ 
++import java.io.File;
+ import java.io.IOException;
+ import java.util.ArrayList;
+ import net.minecraft.server.*;
+@@ -8,21 +9,24 @@ import org.bukkit.configuration.file.YamlConfiguration;
+ 
+ import java.util.List;
+ import java.util.logging.Level;
+-import java.util.logging.Logger;
++import net.minecraft.server.EntityPlayer;
+ import org.bukkit.Bukkit;
+ import org.spigotmc.Metrics;
++import org.spigotmc.RestartCommand;
++import org.spigotmc.WatchdogThread;
+ 
+ public class Spigot {
+-    static AxisAlignedBB maxBB = AxisAlignedBB.a(0,0,0,0,0,0);
+-    static AxisAlignedBB miscBB = AxisAlignedBB.a(0,0,0,0,0,0);
+-    static AxisAlignedBB animalBB = AxisAlignedBB.a(0,0,0,0,0,0);
+-    static AxisAlignedBB monsterBB = AxisAlignedBB.a(0,0,0,0,0,0);
+ 
++    static AxisAlignedBB maxBB = AxisAlignedBB.a(0, 0, 0, 0, 0, 0);
++    static AxisAlignedBB miscBB = AxisAlignedBB.a(0, 0, 0, 0, 0, 0);
++    static AxisAlignedBB animalBB = AxisAlignedBB.a(0, 0, 0, 0, 0, 0);
++    static AxisAlignedBB monsterBB = AxisAlignedBB.a(0, 0, 0, 0, 0, 0);
+     public static boolean tabPing = false;
+     private static Metrics metrics;
+ 
+     public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
+         commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
++        commandMap.register("restart", new RestartCommand("restart"));
+ 
+         server.whitelistMessage = configuration.getString("settings.whitelist-message", server.whitelistMessage);
+         server.stopMessage = configuration.getString("settings.stop-message", server.stopMessage);
+@@ -31,13 +35,24 @@ public class Spigot {
+         server.commandComplete = configuration.getBoolean("settings.command-complete", true);
+         server.spamGuardExclusions = configuration.getStringList("settings.spam-exclusions");
+ 
++        int configVersion = configuration.getInt("config-version");
++        switch (configVersion) {
++            case 0:
++                configuration.set("settings.timeout-time", 30);
++            case 1:
++                configuration.set("settings.timeout-time", 60);
++        }
++        configuration.set("config-version", 2);
++
++        WatchdogThread.doStart(configuration.getInt("settings.timeout-time", 60), configuration.getBoolean("settings.restart-on-crash", false));
++
+         server.orebfuscatorEnabled = configuration.getBoolean("orebfuscator.enable", false);
+         server.orebfuscatorEngineMode = configuration.getInt("orebfuscator.engine-mode", 1);
+         server.orebfuscatorUpdateRadius = configuration.getInt("orebfuscator.update-radius", 2);
+         server.orebfuscatorDisabledWorlds = configuration.getStringList("orebfuscator.disabled-worlds");
+         server.orebfuscatorBlocks = configuration.getShortList("orebfuscator.blocks");
+         if (server.orebfuscatorEngineMode != 1 && server.orebfuscatorEngineMode != 2) {
+-        	server.orebfuscatorEngineMode = 1;
++            server.orebfuscatorEngineMode = 1;
+         }
+ 
+         if (server.chunkGCPeriod == 0) {
+@@ -59,6 +74,7 @@ public class Spigot {
+     /**
+      * Initializes an entities type on construction to specify what group this
+      * entity is in for activation ranges.
++     *
+      * @param entity
+      * @return group id
+      */
+@@ -80,21 +96,20 @@ public class Spigot {
+      * @return boolean If it should always tick.
+      */
+     public static boolean initializeEntityActivationState(Entity entity, CraftWorld world) {
+-        if (   (entity.activationType == 3 && world.miscEntityActivationRange == 0)
+-            || (entity.activationType == 2 && world.animalEntityActivationRange == 0)
+-            || (entity.activationType == 1 && world.monsterEntityActivationRange == 0)
+-            || entity instanceof EntityHuman
+-            || entity instanceof EntityItemFrame
+-            || entity instanceof EntityProjectile
+-            || entity instanceof EntityEnderDragon
+-            || entity instanceof EntityComplexPart
+-            || entity instanceof EntityWither
+-            || entity instanceof EntityFireball
+-            || entity instanceof EntityWeather
+-            || entity instanceof EntityTNTPrimed
+-            || entity instanceof EntityEnderCrystal
+-            || entity instanceof EntityFireworks
+-            ) {
++        if ((entity.activationType == 3 && world.miscEntityActivationRange == 0)
++                || (entity.activationType == 2 && world.animalEntityActivationRange == 0)
++                || (entity.activationType == 1 && world.monsterEntityActivationRange == 0)
++                || entity instanceof EntityHuman
++                || entity instanceof EntityItemFrame
++                || entity instanceof EntityProjectile
++                || entity instanceof EntityEnderDragon
++                || entity instanceof EntityComplexPart
++                || entity instanceof EntityWither
++                || entity instanceof EntityFireball
++                || entity instanceof EntityWeather
++                || entity instanceof EntityTNTPrimed
++                || entity instanceof EntityEnderCrystal
++                || entity instanceof EntityFireworks) {
+             return true;
+         }
+ 
+@@ -104,6 +119,7 @@ public class Spigot {
+     /**
+      * Utility method to grow an AABB without creating a new AABB or touching
+      * the pool, so we can re-use ones we have.
++     *
+      * @param target
+      * @param source
+      * @param x
+@@ -122,6 +138,7 @@ public class Spigot {
+     /**
+      * Find what entities are in range of the players in the world and set
+      * active if in range.
++     *
+      * @param world
+      */
+     public static void activateEntities(World world) {
+@@ -160,6 +177,7 @@ public class Spigot {
+ 
+     /**
+      * Checks for the activation state of all entities in this chunk.
++     *
+      * @param chunk
+      */
+     private static void activateChunkEntities(Chunk chunk) {
+@@ -195,6 +213,7 @@ public class Spigot {
+     /**
+      * If an entity is not in range, do some more checks to see if we should
+      * give it a shot.
++     *
+      * @param entity
+      * @return
+      */
+@@ -205,7 +224,7 @@ public class Spigot {
+         }
+         if (!(entity instanceof EntityArrow)) {
+             if (!entity.onGround || entity.passenger != null
+-                || entity.vehicle != null) {
++                    || entity.vehicle != null) {
+                 return true;
+             }
+         } else if (!((EntityArrow) entity).inGround) {
+@@ -235,6 +254,7 @@ public class Spigot {
+ 
+     /**
+      * Checks if the entity is active for this tick.
++     *
+      * @param entity
+      * @return
+      */
+@@ -265,4 +285,64 @@ public class Spigot {
+         SpigotTimings.checkIfActiveTimer.stopTiming();
+         return isActive;
+     }
++
++    public static void restart() {
++        try {
++            String startupScript = MinecraftServer.getServer().server.configuration.getString("settings.restart-script-location", "");
++            final File file = new File(startupScript);
++            if (file.isFile()) {
++                System.out.println("Attempting to restart with " + startupScript);
++
++                // Kick all players
++                for (EntityPlayer p : (List< EntityPlayer>) MinecraftServer.getServer().getPlayerList().players) {
++                    p.playerConnection.networkManager.queue(new Packet255KickDisconnect("Server is restarting"));
++                    p.playerConnection.networkManager.d();
++                }
++                // Give the socket a chance to send the packets
++                try {
++                    Thread.sleep(100);
++                } catch (InterruptedException ex) {
++                }
++                // Close the socket so we can rebind with the new process
++                MinecraftServer.getServer().ae().a();
++
++                // Give time for it to kick in
++                try {
++                    Thread.sleep(100);
++                } catch (InterruptedException ex) {
++                }
++
++                // Actually shutdown
++                try {
++                    MinecraftServer.getServer().stop();
++                } catch (Throwable t) {
++                }
++
++                // This will be done AFTER the server has completely halted
++                Thread shutdownHook = new Thread() {
++                    @Override
++                    public void run() {
++                        try {
++                            String os = System.getProperty("os.name").toLowerCase();
++                            if (os.contains("win")) {
++                                Runtime.getRuntime().exec("cmd /c start " + file.getPath());
++                            } else {
++                                Runtime.getRuntime().exec(new String[]{"sh", file.getPath()});
++                            }
++                        } catch (Exception e) {
++                            e.printStackTrace();
++                        }
++                    }
++                };
++
++                shutdownHook.setDaemon(true);
++                Runtime.getRuntime().addShutdownHook(shutdownHook);
++            } else {
++                System.out.println("Startup script '" + startupScript + "' does not exist! Stopping server.");
++            }
++            System.exit(0);
++        } catch (Exception ex) {
++            ex.printStackTrace();
++        }
++    }
+ }
+diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
+new file mode 100644
+index 0000000..2d5c89f
+--- /dev/null
++++ b/src/main/java/org/spigotmc/RestartCommand.java
+@@ -0,0 +1,23 @@
++package org.spigotmc;
++
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.Spigot;
++
++public class RestartCommand extends Command {
++
++    public RestartCommand(String name) {
++        super(name);
++        this.description = "Restarts the server";
++        this.usageMessage = "/restart";
++        this.setPermission("bukkit.command.restart");
++    }
++
++    @Override
++    public boolean execute(CommandSender sender, String currentAlias, String[] args) {
++        if (testPermission(sender)) {
++            Spigot.restart();
++        }
++        return true;
++    }
++}
+diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
+new file mode 100644
+index 0000000..10390b8
+--- /dev/null
++++ b/src/main/java/org/spigotmc/WatchdogThread.java
+@@ -0,0 +1,93 @@
++package org.spigotmc;
++
++import java.lang.management.ManagementFactory;
++import java.lang.management.MonitorInfo;
++import java.lang.management.ThreadInfo;
++import java.util.logging.Level;
++import java.util.logging.Logger;
++import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.Spigot;
++
++public class WatchdogThread extends Thread {
++
++    private static WatchdogThread instance;
++    private final long timeoutTime;
++    private final boolean restart;
++    private volatile long lastTick;
++    private volatile boolean stopping;
++
++    private WatchdogThread(long timeoutTime, boolean restart) {
++        super("Spigot Watchdog Thread");
++        this.timeoutTime = timeoutTime;
++        this.restart = restart;
++    }
++
++    public static void doStart(int timeoutTime, boolean restart) {
++        if (instance == null) {
++            instance = new WatchdogThread(timeoutTime * 1000L, restart);
++            instance.start();
++        }
++    }
++
++    public static void tick() {
++        instance.lastTick = System.currentTimeMillis();
++    }
++
++    public static void doStop() {
++        if (instance != null) {
++            instance.stopping = true;
++        }
++    }
++
++    @Override
++    public void run() {
++        while (!stopping) {
++            //
++            if (lastTick != 0 && System.currentTimeMillis() > lastTick + timeoutTime) {
++                Logger log = Bukkit.getServer().getLogger();
++                log.log(Level.SEVERE, "The server has stopped responding!");
++                log.log(Level.SEVERE, "Please report this to http://www.spigotmc.org/");
++                log.log(Level.SEVERE, "Be sure to include ALL relevant console errors and Minecraft crash reports");
++                log.log(Level.SEVERE, "Spigot version: " + Bukkit.getServer().getVersion());
++                //
++                log.log(Level.SEVERE, "Current Thread State:");
++                ThreadInfo[] threads = ManagementFactory.getThreadMXBean().dumpAllThreads(true, true);
++                for (ThreadInfo thread : threads) {
++                    if (thread.getThreadState() != State.WAITING) {
++                        log.log(Level.SEVERE, "------------------------------");
++                        //
++                        log.log(Level.SEVERE, "Current Thread: " + thread.getThreadName());
++                        log.log(Level.SEVERE, "\tPID: " + thread.getThreadId()
++                                + " | Suspended: " + thread.isSuspended()
++                                + " | Native: " + thread.isInNative()
++                                + " | State: " + thread.getThreadState());
++                        if (thread.getLockedMonitors().length != 0) {
++                            log.log(Level.SEVERE, "\tThread is waiting on monitor(s):");
++                            for (MonitorInfo monitor : thread.getLockedMonitors()) {
++                                log.log(Level.SEVERE, "\t\tLocked on:" + monitor.getLockedStackFrame());
++                            }
++                        }
++                        log.log(Level.SEVERE, "\tStack:");
++                        //
++                        StackTraceElement[] stack = thread.getStackTrace();
++                        for (int line = 0; line < stack.length; line++) {
++                            log.log(Level.SEVERE, "\t\t" + stack[line].toString());
++                        }
++                    }
++                }
++                log.log(Level.SEVERE, "------------------------------");
++
++                if (restart) {
++                    Spigot.restart();
++                }
++                break;
++            }
++
++            try {
++                sleep(10000);
++            } catch (InterruptedException ex) {
++                interrupt();
++            }
++        }
++    }
++}
+diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
+index 5822e41..a62ba24 100644
+--- a/src/main/resources/configurations/bukkit.yml
++++ b/src/main/resources/configurations/bukkit.yml
+@@ -31,6 +31,9 @@ settings:
+     command-complete: true
+     spam-exclusions:
+        - /skill
++    timeout-time: 30
++    restart-on-crash: false
++    restart-script-location: /path/to/server/start.sh
+ world-settings:
+     default:
+         growth-chunks-per-tick: 650
+-- 
+1.8.2.1
+
