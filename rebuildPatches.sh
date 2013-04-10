@@ -24,7 +24,7 @@ function savePatches {
     what=$1
     target=$2
     cd $basedir/$target/
-    git format-patch -N -o $basedir/${what}-Patches/ upstream/upstream
+    git format-patch --no-stat -N -o $basedir/${what}-Patches/ upstream/upstream
     cd $basedir
     git add $basedir/${what}-Patches
     cleanupPatches $basedir/${what}-Patches
