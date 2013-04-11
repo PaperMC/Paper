@@ -7,6 +7,7 @@ public class MobEffect {
     private int amplification;
     private boolean splash;
     private boolean ambient;
+    private int lastTick = MinecraftServer.currentTick; // CraftBukkit
 
     public MobEffect(int i, int j) {
         this(i, j, 0);
@@ -81,7 +82,13 @@ public class MobEffect {
     }
 
     private int h() {
-        return --this.duration;
+        // CraftBukkit start - Use wall time instead of ticks for potion effects
+        int elapsedTicks = Math.max(1, MinecraftServer.currentTick - this.lastTick);
+        this.lastTick = MinecraftServer.currentTick;
+        this.duration -= elapsedTicks;
+
+        return this.duration;
+        // CraftBukkit end
     }
 
     public void b(EntityLiving entityliving) {

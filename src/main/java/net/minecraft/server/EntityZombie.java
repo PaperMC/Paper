@@ -10,6 +10,7 @@ import org.bukkit.event.entity.EntityCombustEvent;
 public class EntityZombie extends EntityMonster {
 
     private int d = 0;
+    private int lastTick = MinecraftServer.currentTick; // CraftBukkit
 
     public EntityZombie(World world) {
         super(world);
@@ -118,6 +119,12 @@ public class EntityZombie extends EntityMonster {
     public void l_() {
         if (!this.world.isStatic && this.o()) {
             int i = this.q();
+
+            // CraftBukkit start - Use wall time instead of ticks for villager conversion
+            int elapsedTicks = Math.max(1, MinecraftServer.currentTick - this.lastTick);
+            this.lastTick = MinecraftServer.currentTick;
+            i *= elapsedTicks;
+            // CraftBukkit end
 
             this.d -= i;
             if (this.d <= 0) {

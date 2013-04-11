@@ -22,7 +22,7 @@ public class TileEntityFurnace extends TileEntity implements IWorldInventory {
     private String h;
 
     // CraftBukkit start
-    private int lastTick = (int) (System.currentTimeMillis() / 50);
+    private int lastTick = MinecraftServer.currentTick;
     private int maxStack = MAX_STACK;
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
 
@@ -165,10 +165,9 @@ public class TileEntityFurnace extends TileEntity implements IWorldInventory {
         boolean flag = this.burnTime > 0;
         boolean flag1 = false;
 
-        // CraftBukkit start
-        int currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
-        int elapsedTicks = currentTick - this.lastTick;
-        this.lastTick = currentTick;
+        // CraftBukkit start - Use wall time instead of ticks for cooking
+        int elapsedTicks = Math.max(1, MinecraftServer.currentTick - this.lastTick);
+        this.lastTick = MinecraftServer.currentTick;
 
         // CraftBukkit - moved from below
         if (this.isBurning() && this.canBurn()) {

@@ -55,7 +55,7 @@ public class PlayerInteractManager {
     }
 
     public void a() {
-        this.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
+        this.currentTick = MinecraftServer.currentTick; // CraftBukkit
         int i;
         float f;
         int j;
@@ -189,7 +189,7 @@ public class PlayerInteractManager {
 
     public void a(int i, int j, int k) {
         if (i == this.f && j == this.g && k == this.h) {
-            this.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
+            this.currentTick = MinecraftServer.currentTick; // CraftBukkit
             int l = this.currentTick - this.lastDigTick;
             int i1 = this.world.getTypeId(i, j, k);
 
