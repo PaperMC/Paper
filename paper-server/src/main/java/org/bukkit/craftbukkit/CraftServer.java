@@ -1506,6 +1506,10 @@ public final class CraftServer implements Server {
         return new CraftInventoryCustom(owner, type);
     }
 
+    public Inventory createInventory(InventoryHolder owner, InventoryType type, String title) {
+        return new CraftInventoryCustom(owner, type, title);
+    }
+
     public Inventory createInventory(InventoryHolder owner, int size) throws IllegalArgumentException {
         Validate.isTrue(size % 9 == 0, "Chests must have a size that is a multiple of 9!");
         return new CraftInventoryCustom(owner, size);
