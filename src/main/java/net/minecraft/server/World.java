@@ -30,7 +30,7 @@ public abstract class World implements IBlockAccess {
     public boolean d = false;
     public List entityList = new ArrayList();
     protected List f = new ArrayList();
-    public List tileEntityList = new ArrayList();
+    public Set tileEntityList = new HashSet(); // CraftBukkit - ArrayList -> HashSet
     private List a = new ArrayList();
     private List b = new ArrayList();
     public List players = new ArrayList();
@@ -44,7 +44,6 @@ public abstract class World implements IBlockAccess {
     protected float o;
     protected float p;
     public int q = 0;
-    // public boolean suppressPhysics = false; // CraftBukkit (removed in vanilla)
     public boolean callingPlaceEvent = false; // CraftBukkit
     public int difficulty;
     public Random random = new Random();

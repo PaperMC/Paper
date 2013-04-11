@@ -1411,6 +1411,12 @@ public abstract class EntityLiving extends Entity {
             for (int i = 0; i < list.size(); ++i) {
                 Entity entity = (Entity) list.get(i);
 
+                // CraftBukkit start - Only handle mob (non-player) collisions every other tick
+                if (entity instanceof EntityLiving && !(this instanceof EntityPlayer) && this.ticksLived % 2 == 0) {
+                    continue;
+                }
+                // CraftBukkit end
+
                 if (entity.L()) {
                     this.o(entity);
                 }

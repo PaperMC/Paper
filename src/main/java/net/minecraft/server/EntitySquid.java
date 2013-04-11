@@ -63,9 +63,11 @@ public class EntitySquid extends EntityWaterAnimal {
         // CraftBukkit end
     }
 
+    /* CraftBukkit start - Delegate to Entity to use existing inWater value
     public boolean G() {
         return this.world.a(this.boundingBox.grow(0.0D, -0.6000000238418579D, 0.0D), Material.WATER, (Entity) this);
     }
+    // CraftBukkit end */
 
     public void c() {
         super.c();

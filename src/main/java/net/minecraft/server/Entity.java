@@ -417,6 +417,12 @@ public abstract class Entity {
     }
 
     public void move(double d0, double d1, double d2) {
+        // CraftBukkit start - Don't do anything if we aren't moving
+        if (d0 == 0 && d1 == 0 && d2 == 0) {
+            return;
+        }
+        // CraftBukkit end
+
         if (this.Z) {
             this.boundingBox.d(d0, d1, d2);
             this.locX = (this.boundingBox.a + this.boundingBox.d) / 2.0D;
