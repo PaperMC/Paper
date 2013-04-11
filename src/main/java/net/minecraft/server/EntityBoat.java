@@ -294,7 +294,7 @@ public class EntityBoat extends Entity {
 
             this.move(this.motX, this.motY, this.motZ);
             if (this.positionChanged && d3 > 0.2D) {
-                if (!this.world.isStatic) {
+                if (!this.world.isStatic && !this.dead) { // CraftBukkit - That which is dead cannot die
                     // CraftBukkit start
                     Vehicle vehicle = (Vehicle) this.getBukkitEntity();
                     VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, null);
