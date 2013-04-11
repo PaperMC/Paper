@@ -68,7 +68,7 @@ public class EntityTrackerEntry {
             this.scanPlayers(list);
         }
 
-        if (this.v != this.tracker.vehicle || this.tracker.vehicle != null && this.m % 60 == 0) {
+        if (this.v != this.tracker.vehicle /* || this.tracker.vehicle != null && this.m % 60 == 0 */) { // CraftBukkit - Revert to 1.4 logic, this packet is a toggle
             this.v = this.tracker.vehicle;
             this.broadcast(new Packet39AttachEntity(this.tracker, this.tracker.vehicle));
         }
@@ -318,9 +318,13 @@ public class EntityTrackerEntry {
                         entityplayer.playerConnection.sendPacket(new Packet28EntityVelocity(this.tracker.id, this.tracker.motX, this.tracker.motY, this.tracker.motZ));
                     }
 
-                    if (this.tracker.vehicle != null) {
+                    // CraftBukkit start
+                    if (this.tracker.vehicle != null && this.tracker.id > this.tracker.vehicle.id) {
                         entityplayer.playerConnection.sendPacket(new Packet39AttachEntity(this.tracker, this.tracker.vehicle));
+                    } else if (this.tracker.passenger != null && this.tracker.id > this.tracker.passenger.id) {
+                        entityplayer.playerConnection.sendPacket(new Packet39AttachEntity(this.tracker.passenger, this.tracker));
                     }
+                    // CraftBukkit end
 
                     if (this.tracker instanceof EntityLiving) {
                         for (int i = 0; i < 5; ++i) {
