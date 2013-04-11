@@ -592,6 +592,13 @@ public final class Bukkit {
     }
 
     /**
+     * @see Server#createInventory(InventoryHolder owner, InventoryType type, String title)
+     */
+    public static Inventory createInventory(InventoryHolder owner, InventoryType type, String title) {
+        return server.createInventory(owner, type, title);
+    }
+
+    /**
      * @see Server#createInventory(InventoryHolder owner, int size)
      */
     public static Inventory createInventory(InventoryHolder owner, int size) {
