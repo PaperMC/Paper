@@ -173,8 +173,11 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
                 iterator1.remove();
                 if (chunkcoordintpair != null && this.world.isLoaded(chunkcoordintpair.x << 4, 0, chunkcoordintpair.z << 4)) {
-                    arraylist.add(this.world.getChunkAt(chunkcoordintpair.x, chunkcoordintpair.z));
-                    arraylist1.addAll(((WorldServer) this.world).getTileEntities(chunkcoordintpair.x * 16, 0, chunkcoordintpair.z * 16, chunkcoordintpair.x * 16 + 16, 256, chunkcoordintpair.z * 16 + 16));
+                    // CraftBukkit start - Get tile entities directly from the chunk instead of the world
+                    Chunk chunk = this.world.getChunkAt(chunkcoordintpair.x, chunkcoordintpair.z);
+                    arraylist.add(chunk);
+                    arraylist1.addAll(chunk.tileEntities.values());
+                    // CraftBukkit end
                 }
             }
 

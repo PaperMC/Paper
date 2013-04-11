@@ -643,17 +643,24 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
 
     public List getTileEntities(int i, int j, int k, int l, int i1, int j1) {
         ArrayList arraylist = new ArrayList();
-        // CraftBukkit start - Use iterator
-        Iterator iterator = this.tileEntityList.iterator();
 
-        while (iterator.hasNext()) {
-            TileEntity tileentity = (TileEntity) iterator.next();
-            // CraftBukkit end
+        // CraftBukkit start - Get tile entities from chunks instead of world
+        for (int chunkX = (i >> 4); chunkX <= ((l - 1) >> 4); chunkX++) {
+            for (int chunkZ = (k >> 4); chunkZ <= ((j1 - 1) >> 4); chunkZ++) {
+                Chunk chunk = getChunkAt(chunkX, chunkZ);
+                if (chunk == null) {
+                    continue;
+                }
 
-            if (tileentity.x >= i && tileentity.y >= j && tileentity.z >= k && tileentity.x < l && tileentity.y < i1 && tileentity.z < j1) {
-                arraylist.add(tileentity);
+                for (Object te : chunk.tileEntities.values()) {
+                    TileEntity tileentity = (TileEntity) te;
+                    if ((tileentity.x >= i) && (tileentity.y >= j) && (tileentity.z >= k) && (tileentity.x < l) && (tileentity.y < i1) && (tileentity.z < j1)) {
+                        arraylist.add(tileentity);
+                    }
+                }
             }
         }
+        // CraftBukkit end
 
         return arraylist;
     }
