@@ -688,27 +688,28 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
     }
 
     public boolean a(EntityHuman entityhuman) {
-        // CraftBukkit start - Change to check player's scoreboard team according to API reference to this (or main) scoreboard
+        // CraftBukkit start - Change to check OTHER player's scoreboard team according to API
+        // To summarize this method's logic, it's "Can parameter hurt this"
         org.bukkit.scoreboard.Team team;
-        if (this instanceof EntityPlayer) {
-            EntityPlayer thisPlayer = (EntityPlayer) this;
-            team = thisPlayer.getBukkitEntity().getScoreboard().getPlayerTeam(thisPlayer.getBukkitEntity());
+        if (entityhuman instanceof EntityPlayer) {
+            EntityPlayer thatPlayer = (EntityPlayer) entityhuman;
+            team = thatPlayer.getBukkitEntity().getScoreboard().getPlayerTeam(thatPlayer.getBukkitEntity());
             if (team == null || team.allowFriendlyFire()) {
                 return true;
             }
         } else {
             // This should never be called, but is implemented anyway
-            org.bukkit.OfflinePlayer thisPlayer = this.world.getServer().getOfflinePlayer(this.name);
-            team = this.world.getServer().getScoreboardManager().getMainScoreboard().getPlayerTeam(thisPlayer);
+            org.bukkit.OfflinePlayer thisPlayer = entityhuman.world.getServer().getOfflinePlayer(entityhuman.name);
+            team = entityhuman.world.getServer().getScoreboardManager().getMainScoreboard().getPlayerTeam(thisPlayer);
             if (team == null || team.allowFriendlyFire()) {
                 return true;
             }
         }
 
-        if (entityhuman instanceof EntityPlayer) {
-            return team.hasPlayer(((EntityPlayer) entityhuman).getBukkitEntity());
+        if (this instanceof EntityPlayer) {
+            return !team.hasPlayer(((EntityPlayer) this).getBukkitEntity());
         }
-        return team.hasPlayer(this.world.getServer().getOfflinePlayer(entityhuman.name));
+        return !team.hasPlayer(this.world.getServer().getOfflinePlayer(this.name));
         // CraftBukkit end
     }
 
