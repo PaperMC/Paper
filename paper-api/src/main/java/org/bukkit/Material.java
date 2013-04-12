@@ -220,8 +220,8 @@ public enum Material {
     HOPPER(154),
     QUARTZ_BLOCK(155),
     QUARTZ_STAIRS(156, Stairs.class),
-    ACTIVATOR_RAIL(157),
-    DROPPER(158, DirectionalContainer.class),
+    ACTIVATOR_RAIL(157, PoweredRail.class),
+    DROPPER(158, Dispenser.class),
     // ----- Item Separator -----
     IRON_SPADE(256, 1, 250),
     IRON_PICKAXE(257, 1, 250),
