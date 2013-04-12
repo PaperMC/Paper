@@ -93,7 +93,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     public Team getPlayerTeam(OfflinePlayer player) throws IllegalArgumentException {
         Validate.notNull(player, "OfflinePlayer cannot be null");
 
-        ScoreboardTeam team = board.getTeam(player.getName());
+        ScoreboardTeam team = board.getPlayerTeam(player.getName());
         return team == null ? null : teams.get(team.getName());
     }
 
