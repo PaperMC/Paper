@@ -337,7 +337,7 @@ public abstract class Container {
                 }
             } else if (k == 4 && playerinventory.getCarried() == null && i >= 0) {
                 slot2 = (Slot) this.c.get(i);
-                if (slot2 != null && slot2.d()) {
+                if (slot2 != null && slot2.d() && slot2.a(entityhuman)) { // CraftBukkit - Validate before dropping
                     itemstack1 = slot2.a(j == 0 ? 1 : slot2.getItem().count);
                     slot2.a(entityhuman, itemstack1);
                     entityhuman.drop(itemstack1);
