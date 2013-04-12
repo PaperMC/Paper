@@ -400,7 +400,7 @@ public class ScoreboardCommand extends VanillaCommand {
                         noTeam.add(sender.getName());
                     }
                 } else {
-                    for (int i = 3; i < args.length; i++) {
+                    for (int i = 2; i < args.length; i++) {
                         String playerName = args[i];
                         OfflinePlayer offlinePlayer;
                         Player player = Bukkit.getPlayerExact(playerName);
