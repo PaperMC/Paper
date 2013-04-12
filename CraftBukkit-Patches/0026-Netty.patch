@@ -1,4 +1,4 @@
-From 4c6632fc189e01d8cf3ab5d519c78ae31c08c398 Mon Sep 17 00:00:00 2001
+From 5a8a674d460ed4ff7502a58cef09557f78532eb6 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 14 Feb 2013 17:32:20 +1100
 Subject: [PATCH] Netty
@@ -32,7 +32,7 @@ Subject: [PATCH] Netty
  Commons Attribution-ShareAlike 3.0 Unported license.
 
 diff --git a/pom.xml b/pom.xml
-index fce45f8..55e6dc0 100644
+index fce45f8..95514d8 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -132,6 +132,11 @@
@@ -42,7 +42,7 @@ index fce45f8..55e6dc0 100644
 +    <dependency>
 +      <groupId>io.netty</groupId>
 +      <artifactId>netty-all</artifactId>
-+      <version>4.0.0.Beta3</version>
++      <version>4.0.0.CR1</version>
 +    </dependency>
    </dependencies>
  
@@ -229,10 +229,10 @@ index 84dcfcc..a30f217 100644
      private static final int RECENT_TICKS;
 diff --git a/src/main/java/org/spigotmc/netty/CipherCodec.java b/src/main/java/org/spigotmc/netty/CipherCodec.java
 new file mode 100644
-index 0000000..54928b4
+index 0000000..5e3a5f9
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/CipherCodec.java
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,59 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -250,8 +250,16 @@ index 0000000..54928b4
 +
 +    private Cipher encrypt;
 +    private Cipher decrypt;
-+    private byte[] heapIn = new byte[0];
-+    private byte[] heapOut = new byte[0];
++    private ThreadLocal<byte[]> heapInLocal = new EmptyByteThreadLocal();
++    private ThreadLocal<byte[]> heapOutLocal = new EmptyByteThreadLocal();
++
++    private static class EmptyByteThreadLocal extends ThreadLocal<byte[]> {
++
++        @Override
++        protected byte[] initialValue() {
++            return new byte[0];
++        }
++    }
 +
 +    public CipherCodec(Cipher encrypt, Cipher decrypt) {
 +        this.encrypt = encrypt;
@@ -269,12 +277,14 @@ index 0000000..54928b4
 +    }
 +
 +    private void cipher(ByteBuf in, ByteBuf out, Cipher cipher) throws ShortBufferException {
++        byte[] heapIn = heapInLocal.get();
 +        int readableBytes = in.readableBytes();
 +        if (heapIn.length < readableBytes) {
 +            heapIn = new byte[readableBytes];
 +        }
 +        in.readBytes(heapIn, 0, readableBytes);
 +
++        byte[] heapOut = heapOutLocal.get();
 +        int outputSize = cipher.getOutputSize(readableBytes);
 +        if (heapOut.length < outputSize) {
 +            heapOut = new byte[outputSize];
