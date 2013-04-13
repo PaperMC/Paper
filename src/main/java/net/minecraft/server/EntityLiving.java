@@ -957,11 +957,13 @@ public abstract class EntityLiving extends Entity {
         // CraftBukkit start
         if (i > 0) {
             EntityDamageEvent event = CraftEventFactory.callEntityDamageEvent(null, this, EntityDamageEvent.DamageCause.FALL, i);
-            if (!event.isCancelled()) {
-                i = event.getDamage();
-                if (i > 0) {
-                    this.getBukkitEntity().setLastDamageCause(event);
-                }
+            if (event.isCancelled()) {
+                return;
+            }
+
+            i = event.getDamage();
+            if (i > 0) {
+                this.getBukkitEntity().setLastDamageCause(event);
             }
         }
         // CraftBukkit end
