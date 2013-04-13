@@ -177,7 +177,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         MAGIC,
         /**
-         *
+         * Damage caused by Wither potion effect
          */
         WITHER,
         /**

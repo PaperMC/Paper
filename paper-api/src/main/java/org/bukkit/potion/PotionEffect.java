@@ -44,11 +44,11 @@ public class PotionEffect implements ConfigurationSerializable {
     }
 
     /**
-     * Creates a potion affect. Assumes ambient is true.
+     * Creates a potion effect. Assumes ambient is true.
      *
      * @param type Effect type
      * @param duration measured in ticks
-     * @param amplifier the amplifier for the affect
+     * @param amplifier the amplifier for the effect
      * @see PotionEffect#PotionEffect(PotionEffectType, int, int, boolean)
      */
     public PotionEffect(PotionEffectType type, int duration, int amplifier) {

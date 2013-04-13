@@ -21,7 +21,7 @@ public class PlayerPickupItemEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * Gets the ItemDrop created by the player
+     * Gets the Item picked up by the player.
      *
      * @return Item
      */

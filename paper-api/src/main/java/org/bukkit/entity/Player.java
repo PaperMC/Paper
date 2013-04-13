@@ -636,10 +636,14 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public Scoreboard getScoreboard();
 
     /**
-     * Sets the player's visible Scoreboard
-     * Scoreboard must be currently registered or an IllegalArgumentException is thrown
+     * Sets the player's visible Scoreboard.
      *
      * @param scoreboard New Scoreboard for the player
+     * @throws IllegalArgumentException if scoreboard is null
+     * @throws IllegalArgumentException if scoreboard was not created by the
+     *     {@link org.bukkit.scoreboard.ScoreboardManager scoreboard manager}
+     * @throws IllegalStateException if this is a player that is not logged
+     *     yet or has logged out
      */
-    public void setScoreboard(Scoreboard scoreboard);
+    public void setScoreboard(Scoreboard scoreboard) throws IllegalArgumentException, IllegalStateException;
 }
