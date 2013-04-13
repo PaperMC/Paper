@@ -983,6 +983,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void setScoreboard(Scoreboard scoreboard) {
         Validate.notNull(scoreboard, "Scoreboard cannot be null");
+        PlayerConnection playerConnection = getHandle().playerConnection;
+        if (playerConnection == null) {
+            throw new IllegalStateException("Cannot set scoreboard yet");
+        }
+        if (playerConnection.disconnected) {
+            throw new IllegalStateException("Cannot set scoreboard for invalid CraftPlayer");
+        }
+
         this.server.getScoreboardManager().setPlayerBoard(this, scoreboard);
     }
 }
