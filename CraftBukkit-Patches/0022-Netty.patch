@@ -1,4 +1,4 @@
-From 9d989add21f07a6fe53fa6660c3fec6253bf7fe5 Mon Sep 17 00:00:00 2001
+From da10d4e0be041953bba74bb60e7bc425a8efafd7 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 14 Feb 2013 17:32:20 +1100
 Subject: [PATCH] Netty
@@ -32,7 +32,7 @@ Subject: [PATCH] Netty
  Commons Attribution-ShareAlike 3.0 Unported license.
 
 diff --git a/pom.xml b/pom.xml
-index 39ee598..9404837 100644
+index da1a0eb..b8c24af 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -132,6 +132,11 @@
@@ -229,10 +229,10 @@ index 84dcfcc..a30f217 100644
      private static final int RECENT_TICKS;
 diff --git a/src/main/java/org/spigotmc/netty/CipherCodec.java b/src/main/java/org/spigotmc/netty/CipherCodec.java
 new file mode 100644
-index 0000000..5e3a5f9
+index 0000000..2dbbf6c
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/CipherCodec.java
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,67 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -240,6 +240,7 @@ index 0000000..5e3a5f9
 +import io.netty.handler.codec.ByteToByteCodec;
 +import javax.crypto.Cipher;
 +import javax.crypto.ShortBufferException;
++import net.minecraft.server.Packet252KeyResponse;
 +
 +/**
 + * This class is a complete solution for encrypting and decoding bytes in a
@@ -250,6 +251,7 @@ index 0000000..5e3a5f9
 +
 +    private Cipher encrypt;
 +    private Cipher decrypt;
++    private Packet252KeyResponse responsePacket;
 +    private ThreadLocal<byte[]> heapInLocal = new EmptyByteThreadLocal();
 +    private ThreadLocal<byte[]> heapOutLocal = new EmptyByteThreadLocal();
 +
@@ -261,9 +263,15 @@ index 0000000..5e3a5f9
 +        }
 +    }
 +
-+    public CipherCodec(Cipher encrypt, Cipher decrypt) {
++    public CipherCodec(Cipher encrypt, Cipher decrypt, Packet252KeyResponse responsePacket) {
 +        this.encrypt = encrypt;
 +        this.decrypt = decrypt;
++        this.responsePacket = responsePacket;
++    }
++
++    @Override
++    public void beforeAdd(ChannelHandlerContext ctx) throws Exception {
++        ctx.channel().write(responsePacket);
 +    }
 +
 +    @Override
@@ -294,10 +302,10 @@ index 0000000..5e3a5f9
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..340d65a
+index 0000000..94d126d
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,244 @@
+@@ -0,0 +1,247 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -441,14 +449,17 @@ index 0000000..340d65a
 +            // If handler indicates packet send
 +            if (packet != null) {
 +                highPriorityQueue.add(packet);
-+                channel.write(packet);
 +
 +                // If needed, check and prepare encryption phase
++                // We don't send the packet here as it is sent just before the cipher handler has been added to ensure we can safeguard from any race conditions
++                // Which are caused by the slow first initialization of the cipher SPI
 +                if (packet instanceof Packet252KeyResponse) {
 +                    Cipher encrypt = NettyServerConnection.getCipher(Cipher.ENCRYPT_MODE, secret);
 +                    Cipher decrypt = NettyServerConnection.getCipher(Cipher.DECRYPT_MODE, secret);
-+                    CipherCodec codec = new CipherCodec(encrypt, decrypt);
++                    CipherCodec codec = new CipherCodec(encrypt, decrypt, (Packet252KeyResponse) packet);
 +                    channel.pipeline().addBefore("decoder", "cipher", codec);
++                } else {
++                    channel.write(packet);
 +                }
 +            }
 +        }
