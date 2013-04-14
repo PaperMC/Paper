@@ -1,21 +1,50 @@
-From f22c9b13df956663f41d000bea443a737624b91c Mon Sep 17 00:00:00 2001
+From d8a60325ae53f811ad456e3b0738de3ccd02360e Mon Sep 17 00:00:00 2001
 From: Benjamin James Harrison-Sims <tehrainbowguy@gmail.com>
 Date: Sun, 14 Apr 2013 03:08:51 +0100
 Subject: [PATCH] Prevent handshake spam from invalid names.
 
 
 diff --git a/src/main/java/net/minecraft/server/Packet2Handshake.java b/src/main/java/net/minecraft/server/Packet2Handshake.java
-index 343af93..920e045 100644
+index 343af93..aa6609b 100644
 --- a/src/main/java/net/minecraft/server/Packet2Handshake.java
 +++ b/src/main/java/net/minecraft/server/Packet2Handshake.java
-@@ -19,6 +19,7 @@ public class Packet2Handshake extends Packet {
+@@ -1,5 +1,7 @@
+ package net.minecraft.server;
+ 
++import org.bukkit.craftbukkit.Spigot;
++
+ import java.io.DataInputStream;
+ import java.io.DataOutputStream;
+ 
+@@ -19,6 +21,7 @@ public class Packet2Handshake extends Packet {
          this.b = a(datainputstream, 16);
          this.c = a(datainputstream, 255);
          this.d = datainputstream.readInt();
-+        if(!this.b.matches("^[a-zA-Z0-9_]{3,16}$")){throw new IOException("Invalid name!");}// Spigot
++        if(!Spigot.validName.matcher(this.b).matches()) throw new IOException("Invalid name!"); // Spigot
      }
  
      public void a(DataOutputStream dataoutputstream) throws IOException { // CraftBukkit - throws IOException
+diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+index 504bd8b..5bf5c10 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
++++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+@@ -9,6 +9,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
+ 
+ import java.util.List;
+ import java.util.logging.Level;
++import java.util.regex.Pattern;
++
+ import net.minecraft.server.EntityPlayer;
+ import org.bukkit.Bukkit;
+ import org.spigotmc.Metrics;
+@@ -25,6 +27,7 @@ public class Spigot {
+     private static Metrics metrics;
+     public static List<String> bungeeIPs;
+     public static int textureResolution = 16;
++    public static final Pattern validName = Pattern.compile("^[a-zA-Z0-9_]{3,16}$");
+ 
+     public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
+         commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
 -- 
 1.8.2.1
 
