@@ -21,12 +21,18 @@ import org.bukkit.craftbukkit.util.Waitable;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.SignChangeEvent;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.CraftItemEvent;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCreativeEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryType.SlotType;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerAnimationEvent;
@@ -1153,53 +1159,259 @@ public class PlayerConnection extends Connection {
 
         if (this.player.activeContainer.windowId == packet102windowclick.a && this.player.activeContainer.c(this.player)) {
             // CraftBukkit start - Call InventoryClickEvent
-            if (packet102windowclick.slot == -1) {
-                // Vanilla doesn't do anything with this, neither should we
+            if (packet102windowclick.slot < -1 && packet102windowclick.slot != -999) {
                 return;
             }
 
             InventoryView inventory = this.player.activeContainer.getBukkitView();
             SlotType type = CraftInventoryView.getSlotType(inventory, packet102windowclick.slot);
 
-            InventoryClickEvent event = new InventoryClickEvent(inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift == 1);
-            org.bukkit.inventory.Inventory top = inventory.getTopInventory();
-            if (packet102windowclick.slot == 0 && top instanceof CraftingInventory) {
-                org.bukkit.inventory.Recipe recipe = ((CraftingInventory) top).getRecipe();
-                if (recipe != null) {
-                    event = new org.bukkit.event.inventory.CraftItemEvent(recipe, inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift == 1);
-                }
-            }
-            server.getPluginManager().callEvent(event);
+            InventoryClickEvent event = null;
+            ClickType click = ClickType.UNKNOWN;
+            InventoryAction action = InventoryAction.UNKNOWN;
 
             ItemStack itemstack = null;
-            boolean defaultBehaviour = false;
 
-            switch(event.getResult()) {
-            case DEFAULT:
-                itemstack = this.player.activeContainer.clickItem(packet102windowclick.slot, packet102windowclick.button, packet102windowclick.shift, this.player);
-                defaultBehaviour = true;
-                break;
-            case DENY: // Deny any change, including changes from the event
-                break;
-            case ALLOW: // Allow changes unconditionally
-                org.bukkit.inventory.ItemStack cursor = event.getCursor();
-                if (cursor == null) {
-                    this.player.inventory.setCarried((ItemStack) null);
-                } else {
-                    this.player.inventory.setCarried(CraftItemStack.asNMSCopy(cursor));
+            if (packet102windowclick.slot == -1) {
+                type = SlotType.OUTSIDE; // override
+                click = packet102windowclick.button == 0 ? ClickType.WINDOW_BORDER_LEFT : ClickType.WINDOW_BORDER_RIGHT;
+                action = InventoryAction.NOTHING;
+            } else if (packet102windowclick.shift == 0) {
+                if (packet102windowclick.button == 0) {
+                    click = ClickType.LEFT;
+                } else if (packet102windowclick.button == 1) {
+                    click = ClickType.RIGHT;
                 }
-                org.bukkit.inventory.ItemStack item = event.getCurrentItem();
-                if (item != null) {
-                    itemstack = CraftItemStack.asNMSCopy(item);
+                if (packet102windowclick.button == 0 || packet102windowclick.button == 1) {
+                    action = InventoryAction.NOTHING; // Don't want to repeat ourselves
                     if (packet102windowclick.slot == -999) {
-                        this.player.drop(itemstack);
+                        if (player.inventory.getCarried() != null) {
+                            action = packet102windowclick.button == 0 ? InventoryAction.DROP_ALL_CURSOR : InventoryAction.DROP_ONE_CURSOR;
+                        }
                     } else {
-                        this.player.activeContainer.getSlot(packet102windowclick.slot).set(itemstack);
+                        Slot slot = this.player.activeContainer.getSlot(packet102windowclick.slot);
+                        if (slot != null) {
+                            ItemStack clickedItem = slot.getItem();
+                            ItemStack cursor = player.inventory.getCarried();
+                            if (clickedItem == null) {
+                                if (cursor != null) {
+                                    action = packet102windowclick.button == 0 ? InventoryAction.PLACE_ALL : InventoryAction.PLACE_ONE;
+                                }
+                            } else if (slot.a(player)) { // Should be Slot.isPlayerAllowed
+                                if (cursor == null) {
+                                    action = packet102windowclick.button == 0 ? InventoryAction.PICKUP_ALL : InventoryAction.PICKUP_HALF;
+                                } else if (slot.isAllowed(cursor)) { // Should be Slot.isItemAllowed
+                                    if (clickedItem.doMaterialsMatch(cursor) && ItemStack.equals(clickedItem, cursor)) {
+                                        int toPlace = packet102windowclick.button == 0 ? cursor.count : 1;
+                                        toPlace = Math.min(toPlace, clickedItem.getMaxStackSize() - clickedItem.count);
+                                        toPlace = Math.min(toPlace, slot.inventory.getMaxStackSize() - clickedItem.count);
+                                        if (toPlace == 1) {
+                                            action = InventoryAction.PLACE_ONE;
+                                        } else if (toPlace == cursor.count) {
+                                            action = InventoryAction.PLACE_ALL;
+                                        } else if (toPlace < 0) {
+                                            action = toPlace != -1 ? InventoryAction.PICKUP_SOME : InventoryAction.PICKUP_ONE; // this happens with oversized stacks
+                                        } else if (toPlace != 0) {
+                                            action = InventoryAction.PLACE_SOME;
+                                        }
+                                    } else if (cursor.count <= slot.a()) { // Should be Slot.getMaxStackSize()
+                                        action = InventoryAction.SWAP_WITH_CURSOR;
+                                    }
+                                } else if (cursor.id == clickedItem.id && (!cursor.usesData() || cursor.getData() == clickedItem.getData()) && ItemStack.equals(cursor, clickedItem)) {
+                                    if (clickedItem.count >= 0) {
+                                        if (clickedItem.count + cursor.count <= cursor.getMaxStackSize()) {
+                                            // As of 1.5, this is result slots only
+                                            action = InventoryAction.PICKUP_ALL;
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
-                } else if (packet102windowclick.slot != -999) {
-                    this.player.activeContainer.getSlot(packet102windowclick.slot).set((ItemStack) null);
                 }
-                break;
+            } else if (packet102windowclick.shift == 1) {
+                if (packet102windowclick.button == 0) {
+                    click = ClickType.SHIFT_LEFT;
+                } else if (packet102windowclick.button == 1) {
+                    click = ClickType.SHIFT_RIGHT;
+                }
+                if (packet102windowclick.button == 0 || packet102windowclick.button == 1) {
+                    if (packet102windowclick.slot < 0) {
+                        action = InventoryAction.NOTHING;
+                    } else {
+                        Slot slot = this.player.activeContainer.getSlot(packet102windowclick.slot);
+                        if (slot != null && slot.a(this.player) && slot.d()) { // Should be Slot.hasItem()
+                            action = InventoryAction.MOVE_TO_OTHER_INVENTORY;
+                        } else {
+                            action = InventoryAction.NOTHING;
+                        }
+                    }
+                }
+            } else if (packet102windowclick.shift == 2) {
+                if (packet102windowclick.button >= 0 && packet102windowclick.button < 9) {
+                    click = ClickType.NUMBER_KEY;
+                    Slot clickedSlot = this.player.activeContainer.getSlot(packet102windowclick.slot);
+                    if (clickedSlot.a(player)) {
+                        ItemStack hotbar = this.player.inventory.getItem(packet102windowclick.button);
+                        boolean canCleanSwap = hotbar == null || (clickedSlot.inventory == player.inventory && clickedSlot.isAllowed(hotbar)); // the slot will accept the hotbar item
+                        if (clickedSlot.d()) {
+                            if (canCleanSwap) {
+                                action = InventoryAction.HOTBAR_SWAP;
+                            } else {
+                                int firstEmptySlot = player.inventory.j(); // Should be Inventory.firstEmpty()
+                                if (firstEmptySlot > -1) {
+                                    action = InventoryAction.HOTBAR_MOVE_AND_READD;
+                                } else {
+                                    action = InventoryAction.NOTHING; // This is not sane! Mojang: You should test for other slots of same type
+                                }
+                            }
+                        } else if (!clickedSlot.d() && hotbar != null && clickedSlot.isAllowed(hotbar)) {
+                            action = InventoryAction.HOTBAR_SWAP;
+                        } else {
+                            action = InventoryAction.NOTHING;
+                        }
+                    } else {
+                        action = InventoryAction.NOTHING;
+                    }
+                    // Special constructor for number key
+                    event = new InventoryClickEvent(inventory, type, packet102windowclick.slot, click, action, packet102windowclick.button);
+                }
+            } else if (packet102windowclick.shift == 3) {
+                if (packet102windowclick.button == 2) {
+                    click = ClickType.MIDDLE;
+                    if (packet102windowclick.slot == -999) {
+                        action = InventoryAction.NOTHING;
+                    } else {
+                        Slot slot = this.player.activeContainer.getSlot(packet102windowclick.slot);
+                        if (slot != null && slot.d() && player.abilities.canInstantlyBuild && player.inventory.getCarried() == null) {
+                            action = InventoryAction.CLONE_STACK;
+                        } else {
+                            action = InventoryAction.NOTHING;
+                        } 
+                    }
+                } else {
+                    click = ClickType.UNKNOWN;
+                    action = InventoryAction.UNKNOWN;
+                }
+            } else if (packet102windowclick.shift == 4) {
+                if (packet102windowclick.slot >= 0) {
+                    if (packet102windowclick.button == 0) {
+                        click = ClickType.DROP;
+                        Slot slot = this.player.activeContainer.getSlot(packet102windowclick.slot);
+                        if (slot != null && slot.d() && slot.a(player) && slot.getItem() != null && slot.getItem().id != 0) {
+                            action = InventoryAction.DROP_ONE_SLOT;
+                        } else {
+                            action = InventoryAction.NOTHING;
+                        }
+                    } else if (packet102windowclick.button == 1) {
+                        click = ClickType.CONTROL_DROP;
+                        Slot slot = this.player.activeContainer.getSlot(packet102windowclick.slot);
+                        if (slot != null && slot.d() && slot.a(player) && slot.getItem() != null && slot.getItem().id != 0) {
+                            action = InventoryAction.DROP_ALL_SLOT;
+                        } else {
+                            action = InventoryAction.NOTHING;
+                        }
+                    }
+                } else {
+                    // Sane default (because this happens when they are holding nothing. Don't ask why.)
+                    click = ClickType.LEFT;
+                    if (packet102windowclick.button == 1) {
+                        click = ClickType.RIGHT;
+                    }
+                    action = InventoryAction.NOTHING;
+                }
+            } else if (packet102windowclick.shift == 5) {
+                itemstack = this.player.activeContainer.clickItem(packet102windowclick.slot, packet102windowclick.button, 5, this.player);
+            } else if (packet102windowclick.shift == 6) {
+                click = ClickType.DOUBLE_CLICK;
+                action = InventoryAction.NOTHING;
+                if (packet102windowclick.slot >= 0 && this.player.inventory.getCarried() != null) {
+                    ItemStack cursor = this.player.inventory.getCarried();
+                    action = InventoryAction.NOTHING;
+                    // Quick check for if we have any of the item
+                    if (inventory.getTopInventory().contains(cursor.id) || inventory.getBottomInventory().contains(cursor.id)) {
+                        action = InventoryAction.COLLECT_TO_CURSOR;
+                    }
+                }
+            }
+            // TODO check on updates
+
+            if (packet102windowclick.shift != 5) {
+                if (click == ClickType.NUMBER_KEY) {
+                    event = new InventoryClickEvent(inventory, type, packet102windowclick.slot, click, action, packet102windowclick.button);
+                } else {
+                    event = new InventoryClickEvent(inventory, type, packet102windowclick.slot, click, action);
+                }
+
+                org.bukkit.inventory.Inventory top = inventory.getTopInventory();
+                if (packet102windowclick.slot == 0 && top instanceof CraftingInventory) {
+                    org.bukkit.inventory.Recipe recipe = ((CraftingInventory) top).getRecipe();
+                    if (recipe != null) {
+                        if (click == ClickType.NUMBER_KEY) {
+                            event = new CraftItemEvent(recipe, inventory, type, packet102windowclick.slot, click, action, packet102windowclick.button);
+                        } else {
+                            event = new CraftItemEvent(recipe, inventory, type, packet102windowclick.slot, click, action);
+                        }
+                    }
+                }
+
+                server.getPluginManager().callEvent(event);
+
+                switch (event.getResult()) {
+                    case ALLOW:
+                    case DEFAULT:
+                        itemstack = this.player.activeContainer.clickItem(packet102windowclick.slot, packet102windowclick.button, packet102windowclick.shift, this.player);
+                        break;
+                    case DENY:
+                        /* Needs enum constructor in InventoryAction
+                        if (action.modifiesOtherSlots()) {
+
+                        } else {
+                            if (action.modifiesCursor()) {
+                                this.player.playerConnection.sendPacket(new Packet103SetSlot(-1, -1, this.player.inventory.getCarried()));
+                            }
+                            if (action.modifiesClicked()) {
+                                this.player.playerConnection.sendPacket(new Packet103SetSlot(this.player.activeContainer.windowId, packet102windowclick.slot, this.player.activeContainer.getSlot(packet102windowclick.slot).getItem()));
+                            }
+                        }*/
+                        switch (action) {
+                            // Modified other slots
+                            case MOVE_TO_OTHER_INVENTORY:
+                            case HOTBAR_MOVE_AND_READD:
+                            case HOTBAR_SWAP:
+                            case COLLECT_TO_CURSOR:
+                            case UNKNOWN:
+                                this.player.updateInventory(this.player.activeContainer);
+                                break;
+                            // Modified cursor and clicked
+                            case PICKUP_ALL:
+                            case PICKUP_SOME:
+                            case PICKUP_HALF:
+                            case PICKUP_ONE:
+                            case PLACE_ALL:
+                            case PLACE_SOME:
+                            case PLACE_ONE:
+                            case SWAP_WITH_CURSOR:
+                                this.player.playerConnection.sendPacket(new Packet103SetSlot(-1, -1, this.player.inventory.getCarried()));
+                                this.player.playerConnection.sendPacket(new Packet103SetSlot(this.player.activeContainer.windowId, packet102windowclick.slot, this.player.activeContainer.getSlot(packet102windowclick.slot).getItem()));
+                                break;
+                            // Modified clicked only
+                            case DROP_ALL_SLOT:
+                            case DROP_ONE_SLOT:
+                                this.player.playerConnection.sendPacket(new Packet103SetSlot(this.player.activeContainer.windowId, packet102windowclick.slot, this.player.activeContainer.getSlot(packet102windowclick.slot).getItem()));
+                                break;
+                            // Modified cursor only
+                            case DROP_ALL_CURSOR:
+                            case DROP_ONE_CURSOR:
+                            case CLONE_STACK:
+                                this.player.playerConnection.sendPacket(new Packet103SetSlot(-1, -1, this.player.inventory.getCarried()));
+                                break;
+                            // Nothing
+                            case NOTHING:
+                                break;
+                        }
+                        return;
+                }
             }
             // CraftBukkit end
 
@@ -1247,40 +1459,46 @@ public class PlayerConnection extends Connection {
             boolean flag3 = itemstack == null || itemstack.getData() >= 0 && itemstack.getData() >= 0 && itemstack.count <= 64 && itemstack.count > 0;
 
             // CraftBukkit start - Call click event
-            org.bukkit.entity.HumanEntity player = this.player.getBukkitEntity();
-            InventoryView inventory = new CraftInventoryView(player, player.getInventory(), this.player.defaultContainer);
-            SlotType slot = SlotType.QUICKBAR;
-            if (packet107setcreativeslot.slot == -1) {
-                slot = SlotType.OUTSIDE;
-            }
+            if (flag1 || flag) { // Insist on valid slot
+                ItemStack existingItem = this.player.defaultContainer.getSlot(packet107setcreativeslot.slot).getItem();
+                // Client assumes that the server forgets the contents of the inventory.  It doesn't.
+                if (!ItemStack.matches(existingItem, packet107setcreativeslot.b)) {
 
-            InventoryClickEvent event = new InventoryClickEvent(inventory, slot, slot == SlotType.OUTSIDE ? -999 : packet107setcreativeslot.slot, false, false);
-            server.getPluginManager().callEvent(event);
-            org.bukkit.inventory.ItemStack item = event.getCurrentItem();
+                    org.bukkit.entity.HumanEntity player = this.player.getBukkitEntity();
+                    InventoryView inventory = new CraftInventoryView(player, player.getInventory(), this.player.defaultContainer);
+                    org.bukkit.inventory.ItemStack item = CraftItemStack.asBukkitCopy(packet107setcreativeslot.b); // Should be packet107setcreativeslot.newitem
 
-            switch (event.getResult()) {
-            case ALLOW:
-                if (slot == SlotType.QUICKBAR) {
-                    if (item == null) {
-                        this.player.defaultContainer.setItem(packet107setcreativeslot.slot, (ItemStack) null);
-                    } else {
-                        this.player.defaultContainer.setItem(packet107setcreativeslot.slot, CraftItemStack.asNMSCopy(item));
+                    SlotType type = SlotType.QUICKBAR;
+                    if (flag) {
+                        type = SlotType.OUTSIDE;
+                    } else if (packet107setcreativeslot.slot < 36) {
+                        if (packet107setcreativeslot.slot >= 5 && packet107setcreativeslot.slot < 9) {
+                            type = SlotType.ARMOR;
+                        } else {
+                            type = SlotType.CONTAINER;
+                        }
                     }
-                } else if (item != null) {
-                    this.player.drop(CraftItemStack.asNMSCopy(item));
+                    InventoryCreativeEvent event = new InventoryCreativeEvent(inventory, type, flag ? -999 : packet107setcreativeslot.slot, item);
+                    server.getPluginManager().callEvent(event);
+
+                    itemstack = CraftItemStack.asNMSCopy(event.getCursor());
+
+                    switch (event.getResult()) {
+                    case ALLOW:
+                        // Plugin cleared the id / stacksize checks
+                        flag2 = flag3 = true;
+                        break;
+                    case DEFAULT:
+                        break;
+                    case DENY:
+                        // Reset the slot
+                        if (packet107setcreativeslot.slot >= 0) {
+                            this.player.playerConnection.sendPacket(new Packet103SetSlot(this.player.defaultContainer.windowId, packet107setcreativeslot.slot, this.player.defaultContainer.getSlot(packet107setcreativeslot.slot).getItem()));
+                            this.player.playerConnection.sendPacket(new Packet103SetSlot(-1, -1, null));
+                        }
+                        return;
+                    }
                 }
-                return;
-            case DENY:
-                // TODO: Will this actually work?
-                if (packet107setcreativeslot.slot > -1) {
-                    this.player.playerConnection.sendPacket(new Packet103SetSlot(this.player.defaultContainer.windowId, packet107setcreativeslot.slot, CraftItemStack.asNMSCopy(item)));
-                }
-                return;
-            case DEFAULT:
-                // We do the stuff below
-                break;
-            default:
-                return;
             }
             // CraftBukkit end
 
