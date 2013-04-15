@@ -219,7 +219,7 @@ public class ChunkSection {
     }
 
     public void a(byte[] abyte) {
-        this.blockIds = abyte;
+        this.blockIds = this.validateByteArray(abyte); // CraftBukkit - Validate data
     }
 
     public void a(NibbleArray nibblearray) {
@@ -237,18 +237,40 @@ public class ChunkSection {
         }
         // CraftBukkit end
 
-        this.extBlockIds = nibblearray;
+        this.extBlockIds = this.validateNibbleArray(nibblearray); // CraftBukkit - Validate data
     }
 
     public void b(NibbleArray nibblearray) {
-        this.blockData = nibblearray;
+        this.blockData = this.validateNibbleArray(nibblearray); // CraftBukkit - Validate data
     }
 
     public void c(NibbleArray nibblearray) {
-        this.blockLight = nibblearray;
+        this.blockLight = this.validateNibbleArray(nibblearray); // CraftBukkit - Validate data
     }
 
     public void d(NibbleArray nibblearray) {
-        this.skyLight = nibblearray;
+        this.skyLight = this.validateNibbleArray(nibblearray); // CraftBukkit - Validate data
     }
+
+    // CraftBukkit start - Validate array lengths
+    private NibbleArray validateNibbleArray(NibbleArray nibbleArray) {
+        if (nibbleArray != null && nibbleArray.a.length < 2048) {
+            byte[] newArray = new byte[2048];
+            System.arraycopy(nibbleArray.a, 0, newArray, 0, ((nibbleArray.a.length > 2048) ? 2048 : nibbleArray.a.length));
+            nibbleArray = new NibbleArray(newArray, 4);
+        }
+
+        return nibbleArray;
+    }
+
+    private byte[] validateByteArray(byte[] byteArray) {
+        if (byteArray != null && byteArray.length < 4096) {
+            byte[] newArray = new byte[4096];
+            System.arraycopy(byteArray, 0, newArray, 0, byteArray.length);
+            byteArray = newArray;
+        }
+
+        return byteArray;
+    }
+    // CraftBukkit end
 }
