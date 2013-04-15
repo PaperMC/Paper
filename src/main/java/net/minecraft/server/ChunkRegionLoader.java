@@ -97,6 +97,20 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
                 world.getLogger().severe("Chunk file at " + i + "," + j + " is in the wrong location; relocating. (Expected " + i + ", " + j + ", got " + chunk.x + ", " + chunk.z + ")");
                 nbttagcompound.getCompound("Level").setInt("xPos", i); // CraftBukkit - .getCompound("Level")
                 nbttagcompound.getCompound("Level").setInt("zPos", j); // CraftBukkit - .getCompound("Level")
+
+                // CraftBukkit start - Have to move tile entities since we don't load them at this stage
+                NBTTagList tileEntities = nbttagcompound.getCompound("Level").getList("TileEntities");
+                if (tileEntities != null) {
+                    for (int te = 0; te < tileEntities.size(); te++) {
+                        NBTTagCompound tileEntity = (NBTTagCompound) tileEntities.get(te);
+                        int x = tileEntity.getInt("x") - chunk.x * 16;
+                        int z = tileEntity.getInt("z") - chunk.z * 16;
+                        tileEntity.setInt("x", i * 16 + x);
+                        tileEntity.setInt("z", j * 16 + z);
+                    }
+                }
+                // CraftBukkit end
+
                 chunk = this.a(world, nbttagcompound.getCompound("Level"));
             }
 
