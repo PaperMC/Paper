@@ -152,7 +152,7 @@ index 9f8afe3..b1d3a17 100644
      };
      // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
-index eb474f5..fcfc3d2 100644
+index eb474f5..bbf1abd 100644
 --- a/src/main/java/net/minecraft/server/PendingConnection.java
 +++ b/src/main/java/net/minecraft/server/PendingConnection.java
 @@ -17,7 +17,7 @@ public class PendingConnection extends Connection {
@@ -190,6 +190,80 @@ index eb474f5..fcfc3d2 100644
                  // CraftBukkit start - Fix decompile issues, don't create a list from an array
                  Object[] list = new Object[] { 1, 60, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
  
+@@ -173,8 +178,8 @@ public class PendingConnection extends Connection {
+ 
+             this.networkManager.queue(new Packet255KickDisconnect(s));
+             this.networkManager.d();
+-            if (inetaddress != null && this.server.ae() instanceof DedicatedServerConnection) {
+-                ((DedicatedServerConnection) this.server.ae()).a(inetaddress);
++            if (inetaddress != null) { // Spigot - removed DedicatedServerConnection instance check
++                this.server.ae().a(inetaddress);
+             }
+ 
+             this.b = true;
+diff --git a/src/main/java/net/minecraft/server/ServerConnection.java b/src/main/java/net/minecraft/server/ServerConnection.java
+new file mode 100644
+index 0000000..0113ed3
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/ServerConnection.java
+@@ -0,0 +1,57 @@
++package net.minecraft.server;
++
++import java.net.InetAddress;
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.List;
++
++public abstract class ServerConnection {
++
++    private final MinecraftServer b;
++    private final List c = Collections.synchronizedList(new ArrayList());
++    public volatile boolean a = false;
++
++    public ServerConnection(MinecraftServer minecraftserver) {
++        this.b = minecraftserver;
++        this.a = true;
++    }
++
++    public void a(PlayerConnection playerconnection) {
++        this.c.add(playerconnection);
++    }
++    
++    public abstract void a(InetAddress address); // Spigot - make a(InetAddress) a abstract void
++
++    public void a() {
++        this.a = false;
++    }
++
++    public void b() {
++        for (int i = 0; i < this.c.size(); ++i) {
++            PlayerConnection playerconnection = (PlayerConnection) this.c.get(i);
++
++            try {
++                playerconnection.d();
++            } catch (Exception exception) {
++                if (playerconnection.networkManager instanceof MemoryNetworkManager) {
++                    CrashReport crashreport = CrashReport.a((Throwable) exception, "Ticking memory connection");
++
++                    throw new ReportedException(crashreport);
++                }
++
++                this.b.getLogger().warning("Failed to handle packet for " + playerconnection.player.getLocalizedName() + "/" + playerconnection.player.p() + ": " + exception, (Throwable) exception);
++                playerconnection.disconnect("Internal server error");
++            }
++
++            if (playerconnection.disconnected) {
++                this.c.remove(i--);
++            }
++
++            playerconnection.networkManager.a();
++        }
++    }
++
++    public MinecraftServer d() {
++        return this.b;
++    }
++}
 diff --git a/src/main/java/net/minecraft/server/ThreadCommandReader.java b/src/main/java/net/minecraft/server/ThreadCommandReader.java
 index 489e184..9533b6f 100644
 --- a/src/main/java/net/minecraft/server/ThreadCommandReader.java
@@ -302,10 +376,10 @@ index 0000000..2dbbf6c
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..94d126d
+index 0000000..85a6c05
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,247 @@
+@@ -0,0 +1,271 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -313,10 +387,13 @@ index 0000000..94d126d
 +import io.netty.channel.ChannelHandlerContext;
 +import io.netty.channel.ChannelInboundMessageHandlerAdapter;
 +import io.netty.channel.socket.SocketChannel;
++import java.net.InetAddress;
++import java.net.InetSocketAddress;
 +import java.net.Socket;
 +import java.net.SocketAddress;
 +import java.security.PrivateKey;
 +import java.util.AbstractList;
++import java.util.HashMap;
 +import java.util.List;
 +import java.util.Queue;
 +import java.util.concurrent.ConcurrentLinkedQueue;
@@ -370,12 +447,33 @@ index 0000000..94d126d
 +    private Object[] dcArgs;
 +    private Socket socketAdaptor;
 +    private long writtenBytes;
++    private long connectionThrottle;
 +
 +    @Override
 +    public void channelActive(ChannelHandlerContext ctx) throws Exception {
 +        // Channel and address groundwork first
 +        channel = ctx.channel();
 +        address = channel.remoteAddress();
++        // Connection throttler (ported from CraftBukkit)
++        long currentTime = System.currentTimeMillis();
++        InetAddress iaddress = ((InetSocketAddress) channel.remoteAddress()).getAddress();
++
++        if (server == null || server.server == null) {
++            channel.close();
++            return;
++        }
++
++        connectionThrottle = server.server.getConnectionThrottle();
++
++        synchronized (serverConnection.throttledConnections) {
++            if (serverConnection.throttledConnections.containsKey(iaddress) && !"127.0.0.1".equals(iaddress.getHostAddress()) && currentTime - (serverConnection.throttledConnections.get(iaddress)).longValue() < connectionThrottle) {
++                serverConnection.throttledConnections.put(iaddress, Long.valueOf(currentTime));
++                channel.close();
++                return;
++            }
++
++            serverConnection.throttledConnections.put(iaddress, Long.valueOf(currentTime));
++        }
 +        // Then the socket adaptor
 +        socketAdaptor = NettySocketAdaptor.adapt((SocketChannel) channel);
 +        // Followed by their first handler
@@ -555,10 +653,10 @@ index 0000000..94d126d
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyServerConnection.java b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
 new file mode 100644
-index 0000000..790f325
+index 0000000..7809aa9
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
-@@ -0,0 +1,110 @@
+@@ -0,0 +1,126 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -576,6 +674,7 @@ index 0000000..790f325
 +import java.security.Key;
 +import java.util.ArrayList;
 +import java.util.Collections;
++import java.util.HashMap;
 +import java.util.List;
 +import java.util.logging.Level;
 +import javax.crypto.Cipher;
@@ -594,6 +693,7 @@ index 0000000..790f325
 +public class NettyServerConnection extends ServerConnection {
 +
 +    private final ChannelFuture socket;
++    final HashMap<InetAddress, Long> throttledConnections = new HashMap<InetAddress, Long>();
 +    final List<PendingConnection> pendingConnections = Collections.synchronizedList(new ArrayList<PendingConnection>());
 +
 +    public NettyServerConnection(MinecraftServer ms, InetAddress host, int port) {
@@ -638,6 +738,20 @@ index 0000000..790f325
 +
 +            if (connection.b) {
 +                pendingConnections.remove(i--);
++            }
++        }
++    }
++    
++    /**
++     * Remove the user from connection throttle.  This should fix the server ping bugs.
++     * 
++     * @param address the address to remove
++     */
++    @Override
++    public void a(InetAddress address) {
++        if (address != null) {
++            synchronized (throttledConnections) {
++                throttledConnections.remove(address);
 +            }
 +        }
 +    }
