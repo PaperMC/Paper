@@ -468,4 +468,14 @@ public class CraftInventory implements Inventory {
     public void setMaxStackSize(int size) {
         inventory.setMaxStackSize(size);
     }
+
+    @Override
+    public int hashCode() {
+        return inventory.hashCode();
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        return obj instanceof CraftInventory && ((CraftInventory) obj).inventory.equals(this.inventory);
+    }
 }
