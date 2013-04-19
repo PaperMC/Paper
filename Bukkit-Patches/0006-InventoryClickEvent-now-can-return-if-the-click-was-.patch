@@ -1,4 +1,4 @@
-From 7190ad3069d55a8a4c94d2b86f5d28f8614d0074 Mon Sep 17 00:00:00 2001
+From 2fe038efb157d93ea3e3a60eb360694ea4e57f0e Mon Sep 17 00:00:00 2001
 From: Tyler Blair <hidendra@griefcraft.com>
 Date: Tue, 9 Apr 2013 17:53:31 -0300
 Subject: [PATCH] InventoryClickEvent now can return if the click was a double
@@ -9,15 +9,17 @@ Subject: [PATCH] InventoryClickEvent now can return if the click was a double
 diff --git a/src/main/java/org/bukkit/event/inventory/CraftItemEvent.java b/src/main/java/org/bukkit/event/inventory/CraftItemEvent.java
 old mode 100644
 new mode 100755
-index 264ab0a..4ad1d5a
+index 264ab0a..6ed1a89
 --- a/src/main/java/org/bukkit/event/inventory/CraftItemEvent.java
 +++ b/src/main/java/org/bukkit/event/inventory/CraftItemEvent.java
-@@ -8,8 +8,8 @@ import org.bukkit.inventory.Recipe;
- public class CraftItemEvent extends InventoryClickEvent {
+@@ -9,7 +9,11 @@ public class CraftItemEvent extends InventoryClickEvent {
      private Recipe recipe;
  
--    public CraftItemEvent(Recipe recipe, InventoryView what, SlotType type, int slot, boolean right, boolean shift) {
+     public CraftItemEvent(Recipe recipe, InventoryView what, SlotType type, int slot, boolean right, boolean shift) {
 -        super(what, type, slot, right, shift);
++        this(recipe, what, type, slot, right, shift, false);
++    }
++
 +    public CraftItemEvent(Recipe recipe, InventoryView what, SlotType type, int slot, boolean right, boolean shift, boolean doubleClick) {
 +        super(what, type, slot, right, shift, doubleClick);
          this.recipe = recipe;
@@ -26,10 +28,10 @@ index 264ab0a..4ad1d5a
 diff --git a/src/main/java/org/bukkit/event/inventory/InventoryClickEvent.java b/src/main/java/org/bukkit/event/inventory/InventoryClickEvent.java
 old mode 100644
 new mode 100755
-index 26e1d38..7662b5c
+index 26e1d38..1c07a13
 --- a/src/main/java/org/bukkit/event/inventory/InventoryClickEvent.java
 +++ b/src/main/java/org/bukkit/event/inventory/InventoryClickEvent.java
-@@ -11,17 +11,18 @@ import org.bukkit.inventory.ItemStack;
+@@ -11,17 +11,22 @@ import org.bukkit.inventory.ItemStack;
  public class InventoryClickEvent extends InventoryEvent implements Cancellable {
      private static final HandlerList handlers = new HandlerList();
      private SlotType slot_type;
@@ -40,7 +42,10 @@ index 26e1d38..7662b5c
      private int rawSlot;
      private ItemStack current = null;
  
--    public InventoryClickEvent(InventoryView what, SlotType type, int slot, boolean right, boolean shift) {
+     public InventoryClickEvent(InventoryView what, SlotType type, int slot, boolean right, boolean shift) {
++        this(what, type, slot, right, shift, false);
++    }
++
 +    public InventoryClickEvent(InventoryView what, SlotType type, int slot, boolean right, boolean shift, boolean doubleClick) {
          super(what);
          this.slot_type = type;
@@ -50,7 +55,7 @@ index 26e1d38..7662b5c
          this.result = Result.DEFAULT;
          this.rawSlot = slot;
          this.whichSlot = what.convertSlot(slot);
-@@ -67,6 +68,13 @@ public class InventoryClickEvent extends InventoryEvent implements Cancellable {
+@@ -67,6 +72,13 @@ public class InventoryClickEvent extends InventoryEvent implements Cancellable {
      }
  
      /**
