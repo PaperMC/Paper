@@ -1014,9 +1014,13 @@ public final class CraftServer implements Server {
                     } else if (!plugin.isEnabled()) {
                         getLogger().severe("Could not set generator for default world '" + world + "': Plugin '" + plugin.getDescription().getFullName() + "' is not enabled yet (is it load:STARTUP?)");
                     } else {
-                        result = plugin.getDefaultWorldGenerator(world, id);
-                        if (result == null) {
-                            getLogger().severe("Could not set generator for default world '" + world + "': Plugin '" + plugin.getDescription().getFullName() + "' lacks a default world generator");
+                        try {
+                            result = plugin.getDefaultWorldGenerator(world, id);
+                            if (result == null) {
+                                getLogger().severe("Could not set generator for default world '" + world + "': Plugin '" + plugin.getDescription().getFullName() + "' lacks a default world generator");
+                            }
+                        } catch (Throwable t) {
+                            plugin.getLogger().log(Level.SEVERE, "Could not set generator for default world '" + world + "': Plugin '" + plugin.getDescription().getFullName(), t);
                         }
                     }
                 }
