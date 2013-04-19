@@ -1,8 +1,35 @@
-From d2c3009e1ee527e5d6b990264190370ff50444b2 Mon Sep 17 00:00:00 2001
+From e2f25a41e80e4c9ece6059b2808f003a49556769 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Fri, 19 Apr 2013 17:44:39 +1000
 Subject: [PATCH] Netty
 
+ Implement an uber efficient network engine based on the
+ Java NIO framework Netty. This is basically a complete rewrite of the
+ Minecraft network engine with many distinct advantages. First and foremost,
+ there will no longer be the horrid, and redundant case of 2, or even at
+ times, 3 threads per a connection. Instead low level select/epoll based NIO
+ is used. The number of threads used for network reading and writing will
+ scale automatically to the number of cores for use on your server. In most
+ cases this will be around 8 threads for a 4 core server, much better than the
+ up to 1000 threads that could be in use at one time with the old engine. To
+ facilitate asynchronous packet sending or receiving (currently only chat), a
+ thread pool of 16 threads is kept handy. == Plugin incompatibilities As a
+ side effect of this change, plugins which rely on very specific
+ implementation level details within Minecraft are broken. At this point in
+ time, TagAPI and ProtocolLib are affected. If you are a user of ProtocolLib
+ you are advised to update to the latest build, where full support is enabled.
+ If you are a user of TagAPI, support has not yet been added, so you will need
+ to install the updated ProtocolLib so that TagAPI may use its functions. ==
+ Stability The code within this commit has been very lightly tested in
+ production (300 players for approximately 24 hours), however it is not
+ guaranteed to be free from all bugs. If you experence weird connection
+ behaviour, reporting the bug and steps to reproduce are advised. You are also
+ free to downgrade to the latest recommend build, which is guaranteed to be
+ stable. == Summary This commit provides a reduction in threads, which gives
+ the CPU / operating system more time to allocate to the main server threads,
+ as well as various other side benefits such as chat thread pooling and a
+ slight reduction in latency. This commit is licensed under the Creative
+ Commons Attribution-ShareAlike 3.0 Unported license.
 
 diff --git a/pom.xml b/pom.xml
 index da1a0eb..b8c24af 100644
@@ -134,7 +161,7 @@ index 9f8afe3..b1d3a17 100644
      };
      // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
-index eb474f5..71e4739 100644
+index eb474f5..836ad94 100644
 --- a/src/main/java/net/minecraft/server/PendingConnection.java
 +++ b/src/main/java/net/minecraft/server/PendingConnection.java
 @@ -17,7 +17,7 @@ public class PendingConnection extends Connection {
@@ -180,7 +207,7 @@ index eb474f5..71e4739 100644
 -                ((DedicatedServerConnection) this.server.ae()).a(inetaddress);
 +            // Spigot start
 +            if (inetaddress != null) {
-+                ((org.spigotmc.MultiplexingServerConnection) this.server.ae()).throttle(inetaddress);
++                ((org.spigotmc.MultiplexingServerConnection) this.server.ae()).unThrottle(inetaddress);
              }
 +            // Spigot end
  
@@ -258,7 +285,7 @@ index 84dcfcc..a30f217 100644
      private static final int RECENT_TICKS;
 diff --git a/src/main/java/org/spigotmc/MultiplexingServerConnection.java b/src/main/java/org/spigotmc/MultiplexingServerConnection.java
 new file mode 100644
-index 0000000..7dc2533
+index 0000000..6e5de56
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/MultiplexingServerConnection.java
 @@ -0,0 +1,126 @@
@@ -356,7 +383,7 @@ index 0000000..7dc2533
 +     *
 +     * @param address the address to remove
 +     */
-+    public void a(InetAddress address) {
++    public void unThrottle(InetAddress address) {
 +        if (address != null) {
 +            synchronized (throttle) {
 +                throttle.remove(address);
