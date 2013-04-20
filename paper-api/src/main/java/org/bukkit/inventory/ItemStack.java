@@ -411,7 +411,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     public void addEnchantment(Enchantment ench, int level) {
         Validate.notNull(ench, "Enchantment cannot be null");
         if ((level < ench.getStartLevel()) || (level > ench.getMaxLevel())) {
-            throw new IllegalArgumentException("Enchantment level is either too low or too high (given " + level + ", bounds are " + ench.getStartLevel() + " to " + ench.getMaxLevel());
+            throw new IllegalArgumentException("Enchantment level is either too low or too high (given " + level + ", bounds are " + ench.getStartLevel() + " to " + ench.getMaxLevel() + ")");
         } else if (!ench.canEnchantItem(this)) {
             throw new IllegalArgumentException("Specified enchantment cannot be applied to this itemstack");
         }
