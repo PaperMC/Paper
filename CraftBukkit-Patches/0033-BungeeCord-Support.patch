@@ -1,0 +1,65 @@
+From 64db4568e3569988cd08a4e671a05f98b59763a9 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Sat, 23 Mar 2013 11:15:11 +1100
+Subject: [PATCH] BungeeCord Support
+
+- Allows BungeeCord to set the players real IP address very early in the login process, so that the BungeeCord proxy IP is never even seen by a plugin.
+
+diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
+index 836ad94..72fb172 100644
+--- a/src/main/java/net/minecraft/server/PendingConnection.java
++++ b/src/main/java/net/minecraft/server/PendingConnection.java
+@@ -221,4 +221,17 @@ public class PendingConnection extends Connection {
+     static boolean a(PendingConnection pendingconnection, boolean flag) {
+         return pendingconnection.h = flag;
+     }
++
++    // Spigot start
++    @Override
++    public void a(Packet250CustomPayload pcp) {
++        if (pcp.tag.equals("BungeeCord") && org.bukkit.craftbukkit.Spigot.bungeeIPs.contains(getSocket().getInetAddress().getHostAddress())) {
++            com.google.common.io.ByteArrayDataInput in = com.google.common.io.ByteStreams.newDataInput(pcp.data);
++            String subTag = in.readUTF();
++            if (subTag.equals("Login")) {
++                networkManager.setSocketAddress(new java.net.InetSocketAddress(in.readUTF(), in.readInt()));
++            }
++        }
++    }
++    // Spigot end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+index 435358f..e7917a3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
++++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+@@ -48,6 +48,7 @@ public class Spigot {
+     private static boolean filterIps;
+     public static boolean tabPing = false;
+     private static Metrics metrics;
++    public static List<String> bungeeIPs;
+ 
+     public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
+         commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
+@@ -85,6 +86,7 @@ public class Spigot {
+         }
+ 
+         tabPing = configuration.getBoolean("settings.tab-ping", tabPing);
++        bungeeIPs = configuration.getStringList("settings.bungee-proxies");
+ 
+         if (metrics == null) {
+             try {
+diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
+index 746b8d9..bc8f4e2 100644
+--- a/src/main/resources/configurations/bukkit.yml
++++ b/src/main/resources/configurations/bukkit.yml
+@@ -36,6 +36,8 @@ settings:
+     timeout-time: 30
+     restart-on-crash: false
+     restart-script-location: /path/to/server/start.sh
++    bungee-proxies:
++      - 127.0.0.1
+ world-settings:
+     default:
+         growth-chunks-per-tick: 650
+-- 
+1.8.2.1
+

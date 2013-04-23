@@ -1,9 +1,8 @@
-From a11f742a5953cb082dea3d72f7b324aefdd7b3f7 Mon Sep 17 00:00:00 2001
+From 7218beba91a88a416da41d317a18909ab8a5cefd Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Sat, 23 Mar 2013 17:57:27 +1100
+Date: Tue, 23 Apr 2013 11:17:36 +1000
 Subject: [PATCH] Spigot Changes
 
-The set of changes which provide core Spigot functionality, which would otherwise be a mess to try and apply individually.
 
 diff --git a/.gitignore b/.gitignore
 index c3faf57..346b232 100644
@@ -333,38 +332,6 @@ index ed670d9..da7ad33 100644
          }
      }
  
-diff --git a/src/main/java/net/minecraft/server/ThreadLoginVerifier.java b/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
-index 0686ba0..c185f64 100644
---- a/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
-+++ b/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
-@@ -28,6 +28,27 @@ class ThreadLoginVerifier extends Thread {
- 
-     public void run() {
-         try {
-+            // Spigot start
-+            if (((CraftServer) org.bukkit.Bukkit.getServer()).ipFilter) {
-+                try {
-+                    String ip = this.pendingConnection.getSocket().getInetAddress().getHostAddress();
-+                    String[] split = ip.split("\\.");
-+                    StringBuilder lookup = new StringBuilder();
-+                    for (int i = split.length - 1; i >= 0; i--) {
-+                        lookup.append(split[i]);
-+                        lookup.append(".");
-+                    }
-+                    if (!ip.contains("127.0.0.1")) {
-+                        lookup.append("xbl.spamhaus.org.");
-+                        if (java.net.InetAddress.getByName(lookup.toString()) != null) {
-+                            pendingConnection.disconnect("Your IP address (" + ip + ") is flagged as unsafe by spamhaus.org/xbl");
-+                            return;
-+                        }
-+                    }
-+                } catch (Exception ex) {
-+                }
-+            }
-+            // Spigot end
-             String s = (new BigInteger(MinecraftEncryption.a(PendingConnection.a(this.pendingConnection), PendingConnection.b(this.pendingConnection).F().getPublic(), PendingConnection.c(this.pendingConnection)))).toString(16);
-             URL url = new URL("http://session.minecraft.net/game/checkserver.jsp?user=" + URLEncoder.encode(PendingConnection.d(this.pendingConnection), "UTF-8") + "&serverId=" + URLEncoder.encode(s, "UTF-8"));
-             BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(url.openStream()));
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index d896f69..a77f48d 100644
 --- a/src/main/java/net/minecraft/server/World.java
@@ -634,7 +601,7 @@ index 6d8495f..0b7ac47 100644
                      }
                  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 8a079d3..e7c3a0c 100644
+index 8a079d3..e5ceed1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -145,7 +145,7 @@ public final class CraftServer implements Server {
@@ -646,7 +613,7 @@ index 8a079d3..e7c3a0c 100644
      private final Yaml yaml = new Yaml(new SafeConstructor());
      private final Map<String, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
      private final AutoUpdater updater;
-@@ -166,6 +166,14 @@ public final class CraftServer implements Server {
+@@ -166,6 +166,13 @@ public final class CraftServer implements Server {
      private final class BooleanWrapper {
          private boolean value = true;
      }
@@ -654,14 +621,13 @@ index 8a079d3..e7c3a0c 100644
 +    public String whitelistMessage = "You are not white-listed on this server!";
 +    public String stopMessage = "Server restarting. Brb";
 +    public boolean logCommands = true;
-+    public boolean ipFilter = false;
 +    public boolean commandComplete = true;
 +    public List<String> spamGuardExclusions;
 +    // Spigot end
  
      static {
          ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
-@@ -208,12 +216,20 @@ public final class CraftServer implements Server {
+@@ -208,12 +215,20 @@ public final class CraftServer implements Server {
          chunkGCLoadThresh = configuration.getInt("chunk-gc.load-threshold");
  
          updater = new AutoUpdater(new BukkitDLUpdaterService(configuration.getString("auto-updater.host")), getLogger(), configuration.getString("auto-updater.preferred-channel"));
@@ -683,7 +649,7 @@ index 8a079d3..e7c3a0c 100644
          loadPlugins();
          enablePlugins(PluginLoadOrder.STARTUP);
      }
-@@ -222,7 +238,7 @@ public final class CraftServer implements Server {
+@@ -222,7 +237,7 @@ public final class CraftServer implements Server {
          return (File) console.options.valueOf("bukkit-settings");
      }
  
@@ -692,7 +658,7 @@ index 8a079d3..e7c3a0c 100644
          try {
              configuration.save(getConfigFile());
          } catch (IOException ex) {
-@@ -535,6 +551,7 @@ public final class CraftServer implements Server {
+@@ -535,6 +550,7 @@ public final class CraftServer implements Server {
  
          ((DedicatedServer) console).propertyManager = config;
  
@@ -700,7 +666,7 @@ index 8a079d3..e7c3a0c 100644
          boolean animals = config.getBoolean("spawn-animals", console.getSpawnAnimals());
          boolean monsters = config.getBoolean("spawn-monsters", console.worlds.get(0).difficulty > 0);
          int difficulty = config.getInt("difficulty", console.worlds.get(0).difficulty);
-@@ -600,6 +617,7 @@ public final class CraftServer implements Server {
+@@ -600,6 +616,7 @@ public final class CraftServer implements Server {
                  "This plugin is not properly shutting down its async tasks when it is being reloaded.  This may cause conflicts with the newly loaded version of the plugin"
              ));
          }
@@ -708,7 +674,7 @@ index 8a079d3..e7c3a0c 100644
          loadPlugins();
          enablePlugins(PluginLoadOrder.STARTUP);
          enablePlugins(PluginLoadOrder.POSTWORLD);
-@@ -1055,13 +1073,8 @@ public final class CraftServer implements Server {
+@@ -1055,13 +1072,8 @@ public final class CraftServer implements Server {
          return count;
      }
  
@@ -723,7 +689,7 @@ index 8a079d3..e7c3a0c 100644
          OfflinePlayer result = getPlayerExact(name);
          String lname = name.toLowerCase();
  
-@@ -1069,17 +1082,7 @@ public final class CraftServer implements Server {
+@@ -1069,17 +1081,7 @@ public final class CraftServer implements Server {
              result = offlinePlayers.get(lname);
  
              if (result == null) {
@@ -742,7 +708,7 @@ index 8a079d3..e7c3a0c 100644
                  result = new CraftOfflinePlayer(this, name);
                  offlinePlayers.put(lname, result);
              }
-@@ -1217,7 +1220,7 @@ public final class CraftServer implements Server {
+@@ -1217,7 +1219,7 @@ public final class CraftServer implements Server {
          Set<OfflinePlayer> players = new HashSet<OfflinePlayer>();
  
          for (String file : files) {
@@ -751,7 +717,7 @@ index 8a079d3..e7c3a0c 100644
          }
          players.addAll(Arrays.asList(getOnlinePlayers()));
  
-@@ -1323,7 +1326,7 @@ public final class CraftServer implements Server {
+@@ -1323,7 +1325,7 @@ public final class CraftServer implements Server {
      public List<String> tabCompleteCommand(Player player, String message) {
          List<String> completions = null;
          try {
@@ -844,10 +810,10 @@ index b5a68af..9da842e 100644
          return getChunkAt(x >> 4, z >> 4).getBlock(x & 0xF, y & 0xFF, z & 0xF);
 diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
 new file mode 100644
-index 0000000..4a4f949
+index 0000000..2cd806e
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,19 @@
 +package org.bukkit.craftbukkit;
 +
 +import org.bukkit.command.SimpleCommandMap;
@@ -859,7 +825,6 @@ index 0000000..4a4f949
 +        server.whitelistMessage = configuration.getString("settings.whitelist-message", server.whitelistMessage);
 +        server.stopMessage = configuration.getString("settings.stop-message", server.stopMessage);
 +        server.logCommands = configuration.getBoolean("settings.log-commands", true);
-+        server.ipFilter = configuration.getBoolean("settings.filter-unsafe-ips", false);
 +        server.commandComplete = configuration.getBoolean("settings.command-complete", true);
 +        server.spamGuardExclusions = configuration.getStringList("settings.spam-exclusions");
 +
@@ -882,14 +847,13 @@ index c896ba2..e99cb22 100644
          }
  
 diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
-index 61a95e3..bc00ad4 100644
+index 61a95e3..f2ce75e 100644
 --- a/src/main/resources/configurations/bukkit.yml
 +++ b/src/main/resources/configurations/bukkit.yml
-@@ -25,6 +25,32 @@ settings:
+@@ -25,6 +25,31 @@ settings:
      query-plugins: true
      deprecated-verbose: default
      shutdown-message: Server closed
-+    filter-unsafe-ips: false
 +    whitelist-message: You are not white-listed on this server!
 +    log-commands: true
 +    command-complete: true

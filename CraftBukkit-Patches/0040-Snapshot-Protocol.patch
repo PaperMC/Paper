@@ -1,0 +1,382 @@
+From d504f3069c822a67043c68e27a56a1bdff559266 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Fri, 19 Apr 2013 19:13:42 +1000
+Subject: [PATCH] Snapshot Protocol
+
+
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index cd032ae..14da2b9 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -41,6 +41,7 @@ public final class ItemStack {
+         this.id = i;
+         this.count = j;
+         // CraftBukkit start - Pass to setData to do filtering
++        if (org.bukkit.craftbukkit.Spigot.snapshotSupport && this.id >= 170 && this.id <= 171) this.id = 0; // Spigot
+         this.setData(k);
+         //if (this.damage < 0) {
+         //    this.damage = 0;
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index a1d77ad..ad6cc57 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -753,7 +753,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+     }
+ 
+     public String getVersion() {
+-        return "1.5.1";
++      return (org.bukkit.craftbukkit.Spigot.snapshotSupport) ? org.bukkit.craftbukkit.Spigot.snapshotVersion : "1.5.1";
+     }
+ 
+     public int y() {
+diff --git a/src/main/java/net/minecraft/server/Packet19EntityAction.java b/src/main/java/net/minecraft/server/Packet19EntityAction.java
+new file mode 100644
+index 0000000..259dcbb
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/Packet19EntityAction.java
+@@ -0,0 +1,32 @@
++package net.minecraft.server;
++
++import java.io.DataInputStream;
++import java.io.DataOutputStream;
++import java.io.IOException;
++
++public class Packet19EntityAction extends Packet {
++
++    public int a;
++    public int animation;
++
++    public Packet19EntityAction() {}
++
++    public void a(DataInputStream datainputstream) throws IOException {
++        this.a = datainputstream.readInt();
++        this.animation = datainputstream.readByte();
++        if (org.bukkit.craftbukkit.Spigot.snapshotSupport) datainputstream.readInt(); // Spigot
++    }
++
++    public void a(DataOutputStream dataoutputstream) throws IOException {
++        dataoutputstream.writeInt(this.a);
++        dataoutputstream.writeByte(this.animation);
++    }
++
++    public void handle(Connection connection) {
++        connection.a(this);
++    }
++
++    public int a() {
++        return 5;
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/Packet202Abilities.java b/src/main/java/net/minecraft/server/Packet202Abilities.java
+new file mode 100644
+index 0000000..2a2dad5
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/Packet202Abilities.java
+@@ -0,0 +1,131 @@
++package net.minecraft.server;
++
++import java.io.DataInputStream;
++import java.io.DataOutputStream;
++import java.io.IOException;
++
++public class Packet202Abilities extends Packet {
++
++    private boolean a = false;
++    private boolean b = false;
++    private boolean c = false;
++    private boolean d = false;
++    private float e;
++    private float f;
++
++    public Packet202Abilities() {}
++
++    public Packet202Abilities(PlayerAbilities playerabilities) {
++        this.a(playerabilities.isInvulnerable);
++        this.b(playerabilities.isFlying);
++        this.c(playerabilities.canFly);
++        this.d(playerabilities.canInstantlyBuild);
++        this.a(playerabilities.a());
++        this.b(playerabilities.b());
++    }
++
++    public void a(DataInputStream datainputstream) throws IOException {
++        byte b0 = datainputstream.readByte();
++
++        this.a((b0 & 1) > 0);
++        this.b((b0 & 2) > 0);
++        this.c((b0 & 4) > 0);
++        this.d((b0 & 8) > 0);
++        // Spigot start
++        if (org.bukkit.craftbukkit.Spigot.snapshotSupport) {
++            this.a(datainputstream.readFloat());
++            this.b(datainputstream.readFloat());
++        } else {
++            this.a((float) datainputstream.readByte() / 255.0F);
++            this.b((float) datainputstream.readByte() / 255.0F);
++        }
++        // Spigot end
++    }
++
++    public void a(DataOutputStream dataoutputstream) throws IOException {
++        byte b0 = 0;
++
++        if (this.d()) {
++            b0 = (byte) (b0 | 1);
++        }
++
++        if (this.f()) {
++            b0 = (byte) (b0 | 2);
++        }
++
++        if (this.g()) {
++            b0 = (byte) (b0 | 4);
++        }
++
++        if (this.h()) {
++            b0 = (byte) (b0 | 8);
++        }
++
++        dataoutputstream.writeByte(b0);
++        // Spigot start
++        if (org.bukkit.craftbukkit.Spigot.snapshotSupport) {
++            dataoutputstream.writeFloat(this.e);
++            dataoutputstream.writeFloat(this.f);
++        } else {
++            dataoutputstream.writeByte((int) (this.e * 255.0F));
++            dataoutputstream.writeByte((int) (this.f * 255.0F));
++        }
++        // Spigot end
++    }
++
++    public void handle(Connection connection) {
++        connection.a(this);
++    }
++
++    public int a() {
++        return 2;
++    }
++
++    public boolean d() {
++        return this.a;
++    }
++
++    public void a(boolean flag) {
++        this.a = flag;
++    }
++
++    public boolean f() {
++        return this.b;
++    }
++
++    public void b(boolean flag) {
++        this.b = flag;
++    }
++
++    public boolean g() {
++        return this.c;
++    }
++
++    public void c(boolean flag) {
++        this.c = flag;
++    }
++
++    public boolean h() {
++        return this.d;
++    }
++
++    public void d(boolean flag) {
++        this.d = flag;
++    }
++
++    public void a(float f) {
++        this.e = f;
++    }
++
++    public void b(float f) {
++        this.f = f;
++    }
++
++    public boolean e() {
++        return true;
++    }
++
++    public boolean a(Packet packet) {
++        return true;
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/Packet39AttachEntity.java b/src/main/java/net/minecraft/server/Packet39AttachEntity.java
+new file mode 100644
+index 0000000..a728ace
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/Packet39AttachEntity.java
+@@ -0,0 +1,47 @@
++package net.minecraft.server;
++
++import java.io.DataInputStream;
++import java.io.DataOutputStream;
++import java.io.IOException;
++
++public class Packet39AttachEntity extends Packet {
++
++    public int a;
++    public int b;
++
++    public Packet39AttachEntity() {}
++
++    public Packet39AttachEntity(Entity entity, Entity entity1) {
++        this.a = entity.id;
++        this.b = entity1 != null ? entity1.id : -1;
++    }
++
++    public int a() {
++        return 8;
++    }
++
++    public void a(DataInputStream datainputstream) throws IOException {
++        this.a = datainputstream.readInt();
++        this.b = datainputstream.readInt();
++    }
++
++    public void a(DataOutputStream dataoutputstream) throws IOException {
++        dataoutputstream.writeInt(this.a);
++        dataoutputstream.writeInt(this.b);
++        if (org.bukkit.craftbukkit.Spigot.snapshotSupport) dataoutputstream.writeBoolean(false); // Spigot
++    }
++
++    public void handle(Connection connection) {
++        connection.a(this);
++    }
++
++    public boolean e() {
++        return true;
++    }
++
++    public boolean a(Packet packet) {
++        Packet39AttachEntity packet39attachentity = (Packet39AttachEntity) packet;
++
++        return packet39attachentity.a == this.a;
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/Packet8UpdateHealth.java b/src/main/java/net/minecraft/server/Packet8UpdateHealth.java
+new file mode 100644
+index 0000000..bbfbb88
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/Packet8UpdateHealth.java
+@@ -0,0 +1,52 @@
++package net.minecraft.server;
++
++import java.io.DataInputStream;
++import java.io.DataOutputStream;
++import java.io.IOException;
++
++public class Packet8UpdateHealth extends Packet {
++
++    public float a;
++    public int b;
++    public float c;
++
++    public Packet8UpdateHealth() {}
++
++    public Packet8UpdateHealth(int i, int j, float f) {
++        this.a = i;
++        this.b = j;
++        this.c = f;
++    }
++
++    public void a(DataInputStream datainputstream) throws IOException {
++        this.a = datainputstream.readShort();
++        this.b = datainputstream.readShort();
++        this.c = datainputstream.readFloat();
++    }
++
++    public void a(DataOutputStream dataoutputstream) throws IOException {
++        if (org.bukkit.craftbukkit.Spigot.snapshotSupport) {
++            dataoutputstream.writeFloat(this.a);
++        } else {
++            dataoutputstream.writeShort((short) this.a);
++        }
++        dataoutputstream.writeShort(this.b);
++        dataoutputstream.writeFloat(this.c);
++    }
++
++    public void handle(Connection connection) {
++        connection.a(this);
++    }
++
++    public int a() {
++        return 8;
++    }
++
++    public boolean e() {
++        return true;
++    }
++
++    public boolean a(Packet packet) {
++        return true;
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
+index 72fb172..9e5035a 100644
+--- a/src/main/java/net/minecraft/server/PendingConnection.java
++++ b/src/main/java/net/minecraft/server/PendingConnection.java
+@@ -77,8 +77,8 @@ public class PendingConnection extends Connection {
+         } else {
+             PublicKey publickey = this.server.F().getPublic();
+ 
+-            if (packet2handshake.d() != 60) {
+-                if (packet2handshake.d() > 60) {
++            if (packet2handshake.d() != ((org.bukkit.craftbukkit.Spigot.snapshotSupport) ? org.bukkit.craftbukkit.Spigot.snapshotProtocolVersion : 60)) {
++                if (packet2handshake.d() > ((org.bukkit.craftbukkit.Spigot.snapshotSupport) ? org.bukkit.craftbukkit.Spigot.snapshotProtocolVersion : 60)) {
+                     this.disconnect("Outdated server!");
+                 } else {
+                     this.disconnect("Outdated client!");
+@@ -153,7 +153,7 @@ public class PendingConnection extends Connection {
+ 
+             if (true) {
+                 // CraftBukkit start - Fix decompile issues, don't create a list from an array
+-                Object[] list = new Object[] { 1, 60, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
++                Object[] list = new Object[]{1, ((org.bukkit.craftbukkit.Spigot.snapshotSupport) ? org.bukkit.craftbukkit.Spigot.snapshotProtocolVersion : 60), this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers()};
+ 
+                 for (Object object : list) {
+                     if (s == null) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+index 1f61d23..fcdad66 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
++++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+@@ -58,6 +58,9 @@ public class Spigot {
+     public static List<String> bungeeIPs;
+     public static int textureResolution = 16;
+     public static final Pattern validName = Pattern.compile("^[a-zA-Z0-9_-]{2,16}$");
++    public static boolean snapshotSupport;
++    public static int snapshotProtocolVersion = 62;
++    public static String snapshotVersion = "13w16a";
+ 
+     public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
+         commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
+@@ -97,6 +100,10 @@ public class Spigot {
+         tabPing = configuration.getBoolean("settings.tab-ping", tabPing);
+         bungeeIPs = configuration.getStringList("settings.bungee-proxies");
+         textureResolution = configuration.getInt("settings.texture-resolution", textureResolution);
++        snapshotSupport = configuration.getBoolean("settings.snapshot-protocol", snapshotSupport);
++        if (snapshotSupport) {
++            server.getLogger().log(Level.INFO, "Enabled support for pre release / snapshot version {0}", snapshotVersion);
++        }
+ 
+         if (metrics == null) {
+             try {
+diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
+index 9b59af9..d4546ef 100644
+--- a/src/main/resources/configurations/bukkit.yml
++++ b/src/main/resources/configurations/bukkit.yml
+@@ -40,6 +40,8 @@ settings:
+     bungee-proxies:
+       - 127.0.0.1
+     texture-resolution: 16
++    # fakes the latest pre release / snapshot
++    snapshot-protocol: false
+ world-settings:
+     default:
+         growth-chunks-per-tick: 650
+-- 
+1.8.2.1
+
