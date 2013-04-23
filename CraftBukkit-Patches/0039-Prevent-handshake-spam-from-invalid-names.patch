@@ -1,0 +1,86 @@
+From c3e72db478ea4e2b69bee03318be189cb7bc257b Mon Sep 17 00:00:00 2001
+From: Benjamin James Harrison-Sims <tehrainbowguy@gmail.com>
+Date: Sun, 14 Apr 2013 21:19:57 +0500
+Subject: [PATCH] Prevent handshake spam from invalid names.
+
+
+diff --git a/src/main/java/net/minecraft/server/Packet2Handshake.java b/src/main/java/net/minecraft/server/Packet2Handshake.java
+index 343af93..aa6609b 100644
+--- a/src/main/java/net/minecraft/server/Packet2Handshake.java
++++ b/src/main/java/net/minecraft/server/Packet2Handshake.java
+@@ -1,5 +1,7 @@
+ package net.minecraft.server;
+ 
++import org.bukkit.craftbukkit.Spigot;
++
+ import java.io.DataInputStream;
+ import java.io.DataOutputStream;
+ 
+@@ -19,6 +21,7 @@ public class Packet2Handshake extends Packet {
+         this.b = a(datainputstream, 16);
+         this.c = a(datainputstream, 255);
+         this.d = datainputstream.readInt();
++        if(!Spigot.validName.matcher(this.b).matches()) throw new IOException("Invalid name!"); // Spigot
+     }
+ 
+     public void a(DataOutputStream dataoutputstream) throws IOException { // CraftBukkit - throws IOException
+diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+index 490553b..1f61d23 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
++++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+@@ -6,6 +6,7 @@ import java.net.InetAddress;
+ import java.util.ArrayList;
+ import java.util.List;
+ import java.util.logging.Level;
++import java.util.regex.Pattern;
+ import net.minecraft.server.AxisAlignedBB;
+ import net.minecraft.server.Chunk;
+ import net.minecraft.server.Entity;
+@@ -16,12 +17,17 @@ import net.minecraft.server.EntityComplexPart;
+ import net.minecraft.server.EntityCreature;
+ import net.minecraft.server.EntityEnderCrystal;
+ import net.minecraft.server.EntityEnderDragon;
++import net.minecraft.server.EntityExperienceOrb;
+ import net.minecraft.server.EntityFireball;
+ import net.minecraft.server.EntityFireworks;
++import net.minecraft.server.EntityGhast;
+ import net.minecraft.server.EntityHuman;
++import net.minecraft.server.EntityItem;
+ import net.minecraft.server.EntityItemFrame;
+ import net.minecraft.server.EntityLiving;
+ import net.minecraft.server.EntityMonster;
++import net.minecraft.server.EntityPainting;
++import net.minecraft.server.EntityPlayer;
+ import net.minecraft.server.EntityProjectile;
+ import net.minecraft.server.EntitySheep;
+ import net.minecraft.server.EntitySlime;
+@@ -30,6 +36,7 @@ import net.minecraft.server.EntityWeather;
+ import net.minecraft.server.EntityWither;
+ import net.minecraft.server.MathHelper;
+ import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.Packet255KickDisconnect;
+ import net.minecraft.server.PendingConnection;
+ import net.minecraft.server.World;
+ import org.bukkit.Bukkit;
+@@ -50,6 +57,7 @@ public class Spigot {
+     private static Metrics metrics;
+     public static List<String> bungeeIPs;
+     public static int textureResolution = 16;
++    public static final Pattern validName = Pattern.compile("^[a-zA-Z0-9_-]{2,16}$");
+ 
+     public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
+         commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
+@@ -376,7 +384,9 @@ public class Spigot {
+     }
+ 
+     /**
+-     * Gets the range an entity should be 'tracked' by players and visible in the client.
++     * Gets the range an entity should be 'tracked' by players and visible in
++     * the client.
++     *
+      * @param entity
+      * @param defaultRange Default range defined by Mojang
+      * @return
+-- 
+1.8.2.1
+
