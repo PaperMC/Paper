@@ -1,4 +1,4 @@
-From 2c3e391038bd13cd441a762e2800cec8b4aefea9 Mon Sep 17 00:00:00 2001
+From d2b8cad032a404f71688ca5e3b3da784c4238aeb Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 23 Apr 2013 11:47:32 +1000
 Subject: [PATCH] Netty
@@ -708,10 +708,10 @@ index 0000000..0e1b1fd
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyServerConnection.java b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
 new file mode 100644
-index 0000000..2a9aa0a
+index 0000000..cb58bd2
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
-@@ -0,0 +1,80 @@
+@@ -0,0 +1,81 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -756,6 +756,7 @@ index 0000000..2a9aa0a
 +
 +                NettyNetworkManager networkManager = new NettyNetworkManager();
 +                ch.pipeline()
++                        .addLast("flusher", new OutboundManager())
 +                        .addLast("timer", new ReadTimeoutHandler(30))
 +                        .addLast("decoder", new PacketDecoder())
 +                        .addLast("encoder", new PacketEncoder(networkManager))
@@ -1044,6 +1045,30 @@ index 0000000..a3b86b8
 +    @Override
 +    public String toString() {
 +        return ch.toString();
++    }
++}
+diff --git a/src/main/java/org/spigotmc/netty/OutboundManager.java b/src/main/java/org/spigotmc/netty/OutboundManager.java
+new file mode 100644
+index 0000000..a7cef7c
+--- /dev/null
++++ b/src/main/java/org/spigotmc/netty/OutboundManager.java
+@@ -0,0 +1,18 @@
++package org.spigotmc.netty;
++
++import io.netty.channel.ChannelHandlerContext;
++import io.netty.channel.ChannelOperationHandlerAdapter;
++import io.netty.channel.ChannelPromise;
++
++public class OutboundManager extends ChannelOperationHandlerAdapter {
++
++    private static final int FLUSH_TIME = 20;
++    private long lastFlush;
++
++    public void flush(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
++        if (System.currentTimeMillis() - lastFlush > FLUSH_TIME) {
++            ctx.flush(promise);
++            lastFlush = System.currentTimeMillis();
++        }
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketDecoder.java b/src/main/java/org/spigotmc/netty/PacketDecoder.java
