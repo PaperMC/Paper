@@ -1,4 +1,4 @@
-From 8a0aa7988493790f42d53a0e6f6fea2574e9007f Mon Sep 17 00:00:00 2001
+From f5c60523ba201c375800710ab1af7a02d47297c8 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sat, 23 Mar 2013 11:15:11 +1100
 Subject: [PATCH] BungeeCord Support
@@ -27,6 +27,37 @@ index 836ad94..72fb172 100644
 +    }
 +    // Spigot end
  }
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index eaeb0bf..6a09a9a 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -291,7 +291,7 @@ public abstract class PlayerList {
+         // depending on the outcome.
+         EntityPlayer entity = new EntityPlayer(this.server, this.server.getWorldServer(0), s, this.server.M() ? new DemoPlayerInteractManager(this.server.getWorldServer(0)) : new PlayerInteractManager(this.server.getWorldServer(0)));
+         Player player = entity.getBukkitEntity();
+-        PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, pendingconnection.getSocket().getInetAddress());
++        PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, ((java.net.InetSocketAddress) pendingconnection.networkManager.getSocketAddress()).getAddress()); // Spigot
+ 
+         SocketAddress socketaddress = pendingconnection.networkManager.getSocketAddress();
+ 
+diff --git a/src/main/java/net/minecraft/server/ThreadLoginVerifier.java b/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
+index 9ed3db5..c6d1253 100644
+--- a/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
++++ b/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
+@@ -45,11 +45,11 @@ class ThreadLoginVerifier extends Thread {
+                 return;
+             }
+ 
+-            AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(PendingConnection.d(this.pendingConnection), this.pendingConnection.getSocket().getInetAddress());
++            AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(PendingConnection.d(this.pendingConnection), ((java.net.InetSocketAddress) this.pendingConnection.networkManager.getSocketAddress()).getAddress()); // Spigot
+             this.server.getPluginManager().callEvent(asyncEvent);
+ 
+             if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
+-                final PlayerPreLoginEvent event = new PlayerPreLoginEvent(PendingConnection.d(this.pendingConnection), this.pendingConnection.getSocket().getInetAddress());
++                final PlayerPreLoginEvent event = new PlayerPreLoginEvent(PendingConnection.d(this.pendingConnection), ((java.net.InetSocketAddress) this.pendingConnection.networkManager.getSocketAddress()).getAddress()); // Spigot
+                 if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
+                     event.disallow(asyncEvent.getResult(), asyncEvent.getKickMessage());
+                 }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
 index 1117309..015976b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
