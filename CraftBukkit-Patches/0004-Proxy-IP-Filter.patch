@@ -1,26 +1,26 @@
-From 5877b5f20080c1630241b6ab62c94bc6dfa7a44a Mon Sep 17 00:00:00 2001
+From dc11955b66495dc0dc88e9e1775ef3de1ed3c06e Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 23 Apr 2013 11:22:07 +1000
 Subject: [PATCH] Proxy IP Filter
 
 
 diff --git a/src/main/java/net/minecraft/server/ThreadLoginVerifier.java b/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
-index 0686ba0..9ed3db5 100644
+index 0686ba0..fcd4136 100644
 --- a/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
 +++ b/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
 @@ -28,6 +28,7 @@ class ThreadLoginVerifier extends Thread {
  
      public void run() {
          try {
-+            org.bukkit.craftbukkit.Spigot.filterIp(pendingConnection); // Spigot
++            if (org.bukkit.craftbukkit.Spigot.filterIp(pendingConnection)) return; // Spigot
              String s = (new BigInteger(MinecraftEncryption.a(PendingConnection.a(this.pendingConnection), PendingConnection.b(this.pendingConnection).F().getPublic(), PendingConnection.c(this.pendingConnection)))).toString(16);
              URL url = new URL("http://session.minecraft.net/game/checkserver.jsp?user=" + URLEncoder.encode(PendingConnection.d(this.pendingConnection), "UTF-8") + "&serverId=" + URLEncoder.encode(s, "UTF-8"));
              BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(url.openStream()));
 diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-index 2cd806e..82dc5c8 100644
+index 2cd806e..fd90979 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-@@ -1,19 +1,47 @@
+@@ -1,19 +1,49 @@
  package org.bukkit.craftbukkit;
  
 +import java.net.InetAddress;
@@ -45,7 +45,7 @@ index 2cd806e..82dc5c8 100644
          }
      }
 +
-+    public static void filterIp(PendingConnection con) {
++    public static boolean filterIp(PendingConnection con) {
 +        if (filterIps) {
 +            try {
 +                InetAddress address = con.getSocket().getInetAddress();
@@ -61,11 +61,13 @@ index 2cd806e..82dc5c8 100644
 +                    lookup.append("xbl.spamhaus.org.");
 +                    if (InetAddress.getByName(lookup.toString()) != null) {
 +                        con.disconnect("Your IP address (" + ip + ") is flagged as unsafe by spamhaus.org/xbl");
++                        return true;
 +                    }
 +                }
 +            } catch (Exception ex) {
 +            }
 +        }
++        return false;
 +    }
  }
 diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
