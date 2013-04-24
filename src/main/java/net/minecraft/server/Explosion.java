@@ -262,13 +262,11 @@ public class Explosion {
                     this.world.addParticle("smoke", d0, d1, d2, d3, d4, d5);
                 }
 
-
-                // CraftBukkit - stop explosions from putting out fire
-                if (l > 0 && l != Block.FIRE.id) {
+                if (l > 0) {
                     Block block = Block.byId[l];
 
                     if (block.a(this)) {
-                        // CraftBukkit
+                        // CraftBukkit - add yield
                         block.dropNaturally(this.world, i, j, k, this.world.getData(i, j, k), event.getYield(), 0);
                     }
 

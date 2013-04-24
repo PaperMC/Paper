@@ -34,6 +34,7 @@ public class EntityEnderDragon extends EntityLiving implements IComplex {
     private Entity bT;
     public int bR = 0;
     public EntityEnderCrystal bS = null;
+    private Explosion explosionSource = new Explosion(null, this, Double.NaN, Double.NaN, Double.NaN, Float.NaN); // CraftBukkit - reusable source for CraftTNTPrimed.getSource()
 
     public EntityEnderDragon(World world) {
         super(world);
@@ -439,9 +440,29 @@ public class EntityEnderDragon extends EntityLiving implements IComplex {
                 // This flag literally means 'Dragon hit something hard' (Obsidian, White Stone or Bedrock) and will cause the dragon to slow down.
                 // We should consider adding an event extension for it, or perhaps returning true if the event is cancelled.
                 return flag;
+            } else if (event.getYield() == 0F) {
+                // Yield zero ==> no drops
+                for (org.bukkit.block.Block block : event.blockList()) {
+                    this.world.setAir(block.getX(), block.getY(), block.getZ());
+                }
             } else {
                 for (org.bukkit.block.Block block : event.blockList()) {
-                    craftWorld.explodeBlock(block, event.getYield());
+                    int blockId = block.getTypeId();
+
+                    if (blockId == 0) {
+                        continue;
+                    }
+
+                    int blockX = block.getX();
+                    int blockY = block.getY();
+                    int blockZ = block.getZ();
+
+                    if (Block.byId[blockId].a(explosionSource)) {
+                        Block.byId[blockId].dropNaturally(this.world, blockX, blockY, blockZ, block.getData(), event.getYield(), 0);
+                    }
+                    Block.byId[blockId].wasExploded(world, blockX, blockY, blockZ, explosionSource);
+
+                    this.world.setAir(blockX, blockY, blockZ);
                 }
             }
             // CraftBukkit end
