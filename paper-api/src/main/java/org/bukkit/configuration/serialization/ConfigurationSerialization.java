@@ -68,7 +68,7 @@ public class ConfigurationSerialization {
         }
     }
 
-    protected ConfigurationSerializable deserializeViaMethod(Method method, Map<String, Object> args) {
+    protected ConfigurationSerializable deserializeViaMethod(Method method, Map<String, ?> args) {
         try {
             ConfigurationSerializable result = (ConfigurationSerializable) method.invoke(null, args);
 
@@ -87,7 +87,7 @@ public class ConfigurationSerialization {
         return null;
     }
 
-    protected ConfigurationSerializable deserializeViaCtor(Constructor<? extends ConfigurationSerializable> ctor, Map<String, Object> args) {
+    protected ConfigurationSerializable deserializeViaCtor(Constructor<? extends ConfigurationSerializable> ctor, Map<String, ?> args) {
         try {
             return ctor.newInstance(args);
         } catch (Throwable ex) {
@@ -100,7 +100,7 @@ public class ConfigurationSerialization {
         return null;
     }
 
-    public ConfigurationSerializable deserialize(Map<String, Object> args) {
+    public ConfigurationSerializable deserialize(Map<String, ?> args) {
         Validate.notNull(args, "Args must not be null");
 
         ConfigurationSerializable result = null;
@@ -146,7 +146,7 @@ public class ConfigurationSerialization {
      * @param clazz Class to deserialize into
      * @return New instance of the specified class
      */
-    public static ConfigurationSerializable deserializeObject(Map<String, Object> args, Class<? extends ConfigurationSerializable> clazz) {
+    public static ConfigurationSerializable deserializeObject(Map<String, ?> args, Class<? extends ConfigurationSerializable> clazz) {
         return new ConfigurationSerialization(clazz).deserialize(args);
     }
 
@@ -162,7 +162,7 @@ public class ConfigurationSerialization {
      * @param args Arguments for deserialization
      * @return New instance of the specified class
      */
-    public static ConfigurationSerializable deserializeObject(Map<String, Object> args) {
+    public static ConfigurationSerializable deserializeObject(Map<String, ?> args) {
         Class<? extends ConfigurationSerializable> clazz = null;
 
         if (args.containsKey(SERIALIZED_TYPE_KEY)) {
