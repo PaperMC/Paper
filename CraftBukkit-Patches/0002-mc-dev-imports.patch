@@ -1,9 +1,8 @@
-From 9a4bd51255887005eeb7fa78bf013ba9ed166394 Mon Sep 17 00:00:00 2001
+From d96080a04cb3f9a56af7f4666c8e88d9437b6184 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Wed, 10 Apr 2013 13:52:52 +1000
 Subject: [PATCH] mc-dev imports
 
- 2 files changed, 160 insertions(+)
 
 diff --git a/src/main/java/net/minecraft/server/NibbleArray.java b/src/main/java/net/minecraft/server/NibbleArray.java
 new file mode 100644
@@ -175,6 +174,79 @@ index 0000000..53c1cb5
 +        if (oldchunk.j != null) {
 +            nbttagcompound.set("TileTicks", oldchunk.j);
 +        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
+new file mode 100644
+index 0000000..900ed68
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/RegionFileCache.java
+@@ -0,0 +1,67 @@
++package net.minecraft.server;
++
++import java.io.DataInputStream;
++import java.io.DataOutputStream;
++import java.io.File;
++import java.io.IOException;
++import java.util.HashMap;
++import java.util.Iterator;
++import java.util.Map;
++
++public class RegionFileCache {
++
++    private static final Map a = new HashMap();
++
++    public static synchronized RegionFile a(File file1, int i, int j) {
++        File file2 = new File(file1, "region");
++        File file3 = new File(file2, "r." + (i >> 5) + "." + (j >> 5) + ".mca");
++        RegionFile regionfile = (RegionFile) a.get(file3);
++
++        if (regionfile != null) {
++            return regionfile;
++        } else {
++            if (!file2.exists()) {
++                file2.mkdirs();
++            }
++
++            if (a.size() >= 256) {
++                a();
++            }
++
++            RegionFile regionfile1 = new RegionFile(file3);
++
++            a.put(file3, regionfile1);
++            return regionfile1;
++        }
++    }
++
++    public static synchronized void a() {
++        Iterator iterator = a.values().iterator();
++
++        while (iterator.hasNext()) {
++            RegionFile regionfile = (RegionFile) iterator.next();
++
++            try {
++                if (regionfile != null) {
++                    regionfile.c();
++                }
++            } catch (IOException ioexception) {
++                ioexception.printStackTrace();
++            }
++        }
++
++        a.clear();
++    }
++
++    public static DataInputStream c(File file1, int i, int j) {
++        RegionFile regionfile = a(file1, i, j);
++
++        return regionfile.a(i & 31, j & 31);
++    }
++
++    public static DataOutputStream d(File file1, int i, int j) {
++        RegionFile regionfile = a(file1, i, j);
++
++        return regionfile.b(i & 31, j & 31);
 +    }
 +}
 -- 
