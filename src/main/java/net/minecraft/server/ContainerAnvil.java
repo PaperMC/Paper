@@ -202,7 +202,7 @@ public class ContainerAnvil extends Container {
                 }
             }
 
-            if (this.m != null && !this.m.equalsIgnoreCase(itemstack.getName()) && this.m.length() > 0) {
+            if (this.m != null && this.m.length() > 0 && !this.m.equalsIgnoreCase(this.n.getLocale().c(itemstack.a())) && !this.m.equals(itemstack.getName())) {
                 j = itemstack.g() ? 7 : itemstack.count * 5;
                 i += j;
                 if (itemstack.hasName()) {

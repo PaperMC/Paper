@@ -70,6 +70,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
     private long Q;
     private String R;
     private boolean S;
+    private boolean T = false;
 
     // CraftBukkit start
     public List<WorldServer> worlds = new ArrayList<WorldServer>();
@@ -89,7 +90,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
         // this.universe = file1; // CraftBukkit
         this.p = new CommandDispatcher();
         // this.convertable = new WorldLoaderServer(server.getWorldContainer()); // CraftBukkit - moved to DedicatedServer.init
-        this.am();
+        this.an();
 
         // CraftBukkit start
         this.options = options;
@@ -116,7 +117,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
     public abstract PropertyManager getPropertyManager();
     // CraftBukkit end
 
-    private void am() {
+    private void an() {
         DispenserRegistry.a();
     }
 
@@ -689,7 +690,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
             }
 
             if (flag) {
-                dedicatedserver.ao();
+                dedicatedserver.ap();
             }
             */
 
@@ -746,7 +747,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
     }
 
     public String getVersion() {
-        return "1.5.1";
+        return "1.5.2";
     }
 
     public int y() {
@@ -1048,7 +1049,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
                 mojangstatisticsgenerator.a("world[" + i + "][generator_name]", worlddata.getType().name());
                 mojangstatisticsgenerator.a("world[" + i + "][generator_version]", Integer.valueOf(worlddata.getType().getVersion()));
                 mojangstatisticsgenerator.a("world[" + i + "][height]", Integer.valueOf(this.C));
-                mojangstatisticsgenerator.a("world[" + i + "][chunks_loaded]", Integer.valueOf(worldserver.J().getLoadedChunks()));
+                mojangstatisticsgenerator.a("world[" + i + "][chunks_loaded]", Integer.valueOf(worldserver.K().getLoadedChunks()));
                 ++i;
             // } // CraftBukkit
         }
@@ -1180,6 +1181,14 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
     }
 
     public abstract IConsoleLogManager getLogger();
+
+    public void setForceGamemode(boolean flag) {
+        this.T = flag;
+    }
+
+    public boolean getForceGamemode() {
+        return this.T;
+    }
 
     public static PlayerList a(MinecraftServer minecraftserver) {
         return minecraftserver.s;

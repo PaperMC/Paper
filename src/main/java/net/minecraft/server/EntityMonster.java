@@ -129,7 +129,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         } else {
             int l = this.world.getLightLevel(i, j, k);
 
-            if (this.world.N()) {
+            if (this.world.O()) {
                 int i1 = this.world.j;
 
                 this.world.j = 10;

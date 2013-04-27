@@ -270,15 +270,13 @@ public class ChunkProviderServer implements IChunkProvider {
             }
         }
 
-        if (flag) {
-            if (this.e == null) {
-                return true;
-            }
+        return true;
+    }
 
+    public void b() {
+        if (this.e != null) {
             this.e.b();
         }
-
-        return true;
     }
 
     public boolean unloadChunks() {

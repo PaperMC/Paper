@@ -126,7 +126,7 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
     public void a(World world, Chunk chunk) {
         // CraftBukkit start - "handle" exception
         try {
-            world.E();
+            world.F();
         } catch (ExceptionWorldConflict ex) {
             ex.printStackTrace();
         }
@@ -198,7 +198,11 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
 
     public void a() {}
 
-    public void b() {}
+    public void b() {
+        while (this.c()) {
+            ;
+        }
+    }
 
     private void a(Chunk chunk, World world, NBTTagCompound nbttagcompound) {
         nbttagcompound.setInt("xPos", chunk.x);
@@ -219,18 +223,18 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
 
             if (chunksection != null) {
                 nbttagcompound1 = new NBTTagCompound();
-                nbttagcompound1.setByte("Y", (byte) (chunksection.d() >> 4 & 255));
-                nbttagcompound1.setByteArray("Blocks", chunksection.g());
-                if (chunksection.i() != null) {
-                    nbttagcompound1.setByteArray("Add", chunksection.i().a);
+                nbttagcompound1.setByte("Y", (byte) (chunksection.getYPosition() >> 4 & 255));
+                nbttagcompound1.setByteArray("Blocks", chunksection.getIdArray());
+                if (chunksection.getExtendedIdArray() != null) {
+                    nbttagcompound1.setByteArray("Add", chunksection.getExtendedIdArray().a);
                 }
 
-                nbttagcompound1.setByteArray("Data", chunksection.j().a);
-                nbttagcompound1.setByteArray("BlockLight", chunksection.k().a);
+                nbttagcompound1.setByteArray("Data", chunksection.getDataArray().a);
+                nbttagcompound1.setByteArray("BlockLight", chunksection.getEmittedLightArray().a);
                 if (flag) {
-                    nbttagcompound1.setByteArray("SkyLight", chunksection.l().a);
+                    nbttagcompound1.setByteArray("SkyLight", chunksection.getSkyLightArray().a);
                 } else {
-                    nbttagcompound1.setByteArray("SkyLight", new byte[chunksection.k().a.length]);
+                    nbttagcompound1.setByteArray("SkyLight", new byte[chunksection.getEmittedLightArray().a.length]);
                 }
 
                 nbttaglist.add(nbttagcompound1);
@@ -313,15 +317,15 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
             byte b1 = nbttagcompound1.getByte("Y");
             ChunkSection chunksection = new ChunkSection(b1 << 4, flag);
 
-            chunksection.a(nbttagcompound1.getByteArray("Blocks"));
+            chunksection.setIdArray(nbttagcompound1.getByteArray("Blocks"));
             if (nbttagcompound1.hasKey("Add")) {
-                chunksection.a(new NibbleArray(nbttagcompound1.getByteArray("Add"), 4));
+                chunksection.setExtendedIdArray(new NibbleArray(nbttagcompound1.getByteArray("Add"), 4));
             }
 
-            chunksection.b(new NibbleArray(nbttagcompound1.getByteArray("Data"), 4));
-            chunksection.c(new NibbleArray(nbttagcompound1.getByteArray("BlockLight"), 4));
+            chunksection.setDataArray(new NibbleArray(nbttagcompound1.getByteArray("Data"), 4));
+            chunksection.setEmittedLightArray(new NibbleArray(nbttagcompound1.getByteArray("BlockLight"), 4));
             if (flag) {
-                chunksection.d(new NibbleArray(nbttagcompound1.getByteArray("SkyLight"), 4));
+                chunksection.setSkyLightArray(new NibbleArray(nbttagcompound1.getByteArray("SkyLight"), 4));
             }
 
             chunksection.recalcBlockCounts();

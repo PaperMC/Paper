@@ -504,7 +504,7 @@ public abstract class PlayerList {
             }
         }
 
-        TravelAgent agent = exit != null ? (TravelAgent) ((CraftWorld) exit.getWorld()).getHandle().s() : org.bukkit.craftbukkit.CraftTravelAgent.DEFAULT; // return arbitrary TA to compensate for implementation dependent plugins
+        TravelAgent agent = exit != null ? (TravelAgent) ((CraftWorld) exit.getWorld()).getHandle().t() : org.bukkit.craftbukkit.CraftTravelAgent.DEFAULT; // return arbitrary TA to compensate for implementation dependent plugins
         PlayerPortalEvent event = new PlayerPortalEvent(entityplayer.getBukkitEntity(), enter, exit, agent, cause);
         event.useTravelAgent(useTravelAgent);
         Bukkit.getServer().getPluginManager().callEvent(event);
@@ -521,7 +521,7 @@ public abstract class PlayerList {
         Vector velocity = entityplayer.getBukkitEntity().getVelocity();
         boolean before = exitWorld.chunkProviderServer.forceChunkLoad;
         exitWorld.chunkProviderServer.forceChunkLoad = true;
-        exitWorld.s().adjustExit(entityplayer, exit, velocity);
+        exitWorld.t().adjustExit(entityplayer, exit, velocity); // Should be getTravelAgent
         exitWorld.chunkProviderServer.forceChunkLoad = before;
 
         this.moveToWorld(entityplayer, exitWorld.dimension, true, exit, false); // Vanilla doesn't check for suffocation when handling portals, so neither should we
@@ -609,7 +609,7 @@ public abstract class PlayerList {
                 worldserver1.addEntity(entity);
                 entity.setPositionRotation(d0, entity.locY, d1, entity.yaw, entity.pitch);
                 worldserver1.entityJoinedWorld(entity, false);
-                worldserver1.s().a(entity, d3, d4, d5, f);
+                worldserver1.t().a(entity, d3, d4, d5, f);
             }
 
             worldserver.methodProfiler.b();
@@ -688,7 +688,7 @@ public abstract class PlayerList {
                 // worldserver1.s().a(entity, d3, d4, d5, f);
                 if (portal) {
                     Vector velocity = entity.getBukkitEntity().getVelocity();
-                    worldserver1.s().adjustExit(entity, exit, velocity);
+                    worldserver1.t().adjustExit(entity, exit, velocity); // Should be getTravelAgent
                     entity.setPositionRotation(exit.getX(), exit.getY(), exit.getZ(), exit.getYaw(), exit.getPitch());
                     if (entity.motX != velocity.getX() || entity.motY != velocity.getY() || entity.motZ != velocity.getZ()) {
                         entity.getBukkitEntity().setVelocity(velocity);
@@ -797,7 +797,7 @@ public abstract class PlayerList {
         return this.operators.contains(s.trim().toLowerCase()) || this.server.I() && this.server.worlds.get(0).getWorldData().allowCommands() && this.server.H().equalsIgnoreCase(s) || this.m;
     }
 
-    public EntityPlayer f(String s) {
+    public EntityPlayer getPlayer(String s) {
         Iterator iterator = this.players.iterator();
 
         EntityPlayer entityplayer;
@@ -976,7 +976,7 @@ public abstract class PlayerList {
 
     public void b(EntityPlayer entityplayer, WorldServer worldserver) {
         entityplayer.playerConnection.sendPacket(new Packet4UpdateTime(worldserver.getTime(), worldserver.getDayTime()));
-        if (worldserver.O()) {
+        if (worldserver.P()) {
             entityplayer.setPlayerWeather(org.bukkit.WeatherType.DOWNFALL, false); // CraftBukkit - handle player specific weather
         }
     }

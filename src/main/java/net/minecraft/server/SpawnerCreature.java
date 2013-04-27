@@ -21,7 +21,7 @@ public final class SpawnerCreature {
         Chunk chunk = world.getChunkAt(i, j);
         int k = i * 16 + world.random.nextInt(16);
         int l = j * 16 + world.random.nextInt(16);
-        int i1 = world.random.nextInt(chunk == null ? world.Q() : chunk.h() + 16 - 1);
+        int i1 = world.random.nextInt(chunk == null ? world.R() : chunk.h() + 16 - 1);
 
         return new ChunkPosition(k, i1, l);
     }

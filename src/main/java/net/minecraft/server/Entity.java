@@ -1354,7 +1354,7 @@ public abstract class Entity {
 
     public void U() {
         if (this.passenger != null) {
-            if (!(this.passenger instanceof EntityHuman) || !((EntityHuman) this.passenger).ce()) {
+            if (!(this.passenger instanceof EntityHuman) || !((EntityHuman) this.passenger).cg()) {
                 this.passenger.U = this.U;
                 this.passenger.V = this.V + this.W() + this.passenger.V();
                 this.passenger.W = this.W;
@@ -1694,7 +1694,7 @@ public abstract class Entity {
         return this == entity;
     }
 
-    public float ao() {
+    public float getHeadRotation() {
         return 0.0F;
     }
 
@@ -1747,7 +1747,7 @@ public abstract class Entity {
             Location exit = exitWorld != null ? minecraftserver.getPlayerList().calculateTarget(enter, minecraftserver.getWorldServer(i)) : null;
             boolean useTravelAgent = exitWorld != null && !(this.dimension == 1 && exitWorld.dimension == 1); // don't use agent for custom worlds or return from THE_END
 
-            TravelAgent agent = exit != null ? (TravelAgent) ((CraftWorld) exit.getWorld()).getHandle().s() : org.bukkit.craftbukkit.CraftTravelAgent.DEFAULT; // return arbitrary TA to compensate for implementation dependent plugins
+            TravelAgent agent = exit != null ? (TravelAgent) ((CraftWorld) exit.getWorld()).getHandle().t() : org.bukkit.craftbukkit.CraftTravelAgent.DEFAULT; // return arbitrary TA to compensate for implementation dependent plugins
             EntityPortalEvent event = new EntityPortalEvent(this.getBukkitEntity(), enter, exit, agent);
             event.useTravelAgent(useTravelAgent);
             event.getEntity().getServer().getPluginManager().callEvent(event);

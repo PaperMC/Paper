@@ -40,7 +40,7 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
             return false;
         } else {
             if (this.f) {
-                if (this.d.aD().canSee(entityliving)) {
+                if (this.d.getEntitySenses().canSee(entityliving)) {
                     this.g = 0;
                 } else if (++this.g > 60) {
                     return false;
@@ -85,7 +85,7 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
 
             if (!this.d.d(MathHelper.floor(entityliving.locX), MathHelper.floor(entityliving.locY), MathHelper.floor(entityliving.locZ))) {
                 return false;
-            } else if (this.f && !this.d.aD().canSee(entityliving)) {
+            } else if (this.f && !this.d.getEntitySenses().canSee(entityliving)) {
                 return false;
             } else {
                 if (this.a) {

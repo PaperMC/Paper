@@ -18,7 +18,7 @@ public abstract class EntityLiving extends Entity {
 
     private static final float[] b = new float[] { 0.0F, 0.0F, 0.1F, 0.2F};
     private static final float[] c = new float[] { 0.0F, 0.0F, 0.25F, 0.5F};
-    private static final float[] d = new float[] { 0.0F, 0.0F, 0.05F, 0.02F};
+    private static final float[] d = new float[] { 0.0F, 0.0F, 0.05F, 0.07F};
     public static final float[] au = new float[] { 0.0F, 0.1F, 0.15F, 0.45F};
     public int maxNoDamageTicks = 20;
     public float aw;
@@ -89,7 +89,7 @@ public abstract class EntityLiving extends Entity {
     public int bs = 0;
     public boolean canPickUpLoot = false; // CraftBukkit - protected -> public
     public boolean persistent = !this.isTypeNotPersistent(); // CraftBukkit - private -> public, change value
-    protected final CombatTracker bt = new CombatTracker(this);
+    protected CombatTracker bt = new CombatTracker(this); // CraftBukkit - remove final
     protected int bu;
     protected double bv;
     protected double bw;
@@ -158,7 +158,7 @@ public abstract class EntityLiving extends Entity {
         return this.navigation;
     }
 
-    public EntitySenses aD() {
+    public EntitySenses getEntitySenses() {
         return this.bP;
     }
 
@@ -184,7 +184,7 @@ public abstract class EntityLiving extends Entity {
         return this.bC;
     }
 
-    public float ao() {
+    public float getHeadRotation() {
         return this.aA;
     }
 
@@ -1131,7 +1131,7 @@ public abstract class EntityLiving extends Entity {
         nbttagcompound.setShort("HurtTime", (short) this.hurtTicks);
         nbttagcompound.setShort("DeathTime", (short) this.deathTicks);
         nbttagcompound.setShort("AttackTime", (short) this.attackTicks);
-        nbttagcompound.setBoolean("CanPickUpLoot", this.bS());
+        nbttagcompound.setBoolean("CanPickUpLoot", this.bT());
         nbttagcompound.setBoolean("PersistenceRequired", this.persistent);
         NBTTagList nbttaglist = new NBTTagList();
 
@@ -1340,7 +1340,7 @@ public abstract class EntityLiving extends Entity {
         this.world.methodProfiler.b();
         this.world.methodProfiler.a("looting");
         // CraftBukkit - Don't run mob pickup code on players
-        if (!this.world.isStatic && !(this instanceof EntityPlayer) && this.bS() && !this.bd && this.world.getGameRules().getBoolean("mobGriefing")) {
+        if (!this.world.isStatic && !(this instanceof EntityPlayer) && this.bT() && !this.bd && this.world.getGameRules().getBoolean("mobGriefing")) {
             List list = this.world.a(EntityItem.class, this.boundingBox.grow(1.0D, 0.0D, 1.0D));
             Iterator iterator = list.iterator();
 
@@ -1442,7 +1442,7 @@ public abstract class EntityLiving extends Entity {
         return this.health <= 0;
     }
 
-    public boolean bk() {
+    public boolean isBlocking() {
         return false;
     }
 
@@ -1759,11 +1759,13 @@ public abstract class EntityLiving extends Entity {
     }
 
     public boolean hasEffect(int i) {
-        return this.effects.containsKey(Integer.valueOf(i));
+        // CraftBukkit - Add size check for efficiency
+        return this.effects.size() != 0 && this.effects.containsKey(Integer.valueOf(i));
     }
 
     public boolean hasEffect(MobEffectList mobeffectlist) {
-        return this.effects.containsKey(Integer.valueOf(mobeffectlist.id));
+        // CraftBukkit - Add size check for efficiency
+        return this.effects.size() != 0 && this.effects.containsKey(Integer.valueOf(mobeffectlist.id));
     }
 
     public MobEffect getEffect(MobEffectList mobeffectlist) {
@@ -2136,11 +2138,15 @@ public abstract class EntityLiving extends Entity {
         this.dropChances[i] = f;
     }
 
-    public boolean bS() {
+    public boolean bT() {
         return this.canPickUpLoot;
     }
 
     public void h(boolean flag) {
         this.canPickUpLoot = flag;
+    }
+
+    public boolean bU() {
+        return this.persistent;
     }
 }

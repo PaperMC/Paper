@@ -260,7 +260,7 @@ public class CraftingManager {
             }
         }
 
-        if (i == 2 && itemstack.id == itemstack1.id && itemstack.count == 1 && itemstack1.count == 1 && Item.byId[itemstack.id].o()) {
+        if (i == 2 && itemstack.id == itemstack1.id && itemstack.count == 1 && itemstack1.count == 1 && Item.byId[itemstack.id].usesDurability()) {
             Item item = Item.byId[itemstack.id];
             int k = item.getMaxDurability() - itemstack.j();
             int l = item.getMaxDurability() - itemstack1.j();

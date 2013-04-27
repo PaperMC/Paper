@@ -166,15 +166,15 @@ public class CraftChunk implements Chunk {
                 sectionEmpty[i] = true;
             } else { /* Not empty */
                 short[] blockids = new short[4096];
-                byte[] baseids = cs[i].g();
+                byte[] baseids = cs[i].getIdArray();
 
                 /* Copy base IDs */
                 for (int j = 0; j < 4096; j++) {
                     blockids[j] = (short) (baseids[j] & 0xFF);
                 }
 
-                if (cs[i].i() != null) { /* If we've got extended IDs */
-                    byte[] extids = cs[i].i().a;
+                if (cs[i].getExtendedIdArray() != null) { /* If we've got extended IDs */
+                    byte[] extids = cs[i].getExtendedIdArray().a;
 
                     for (int j = 0; j < 2048; j++) {
                         short b = (short) (extids[j] & 0xFF);
@@ -192,15 +192,15 @@ public class CraftChunk implements Chunk {
 
                 /* Get block data nibbles */
                 sectionBlockData[i] = new byte[2048];
-                System.arraycopy(cs[i].j().a, 0, sectionBlockData[i], 0, 2048); // Should be getData
-                if (cs[i].l() == null) {
+                System.arraycopy(cs[i].getDataArray().a, 0, sectionBlockData[i], 0, 2048);
+                if (cs[i].getSkyLightArray() == null) {
                     sectionSkyLights[i] = emptyData;
                 } else {
                     sectionSkyLights[i] = new byte[2048];
-                    System.arraycopy(cs[i].l().a, 0, sectionSkyLights[i], 0, 2048); // Should be getSkyLight
+                    System.arraycopy(cs[i].getSkyLightArray().a, 0, sectionSkyLights[i], 0, 2048);
                 }
                 sectionEmitLights[i] = new byte[2048];
-                System.arraycopy(cs[i].k().a, 0, sectionEmitLights[i], 0, 2048); // Should be getBlockLight
+                System.arraycopy(cs[i].getEmittedLightArray().a, 0, sectionEmitLights[i], 0, 2048);
             }
         }
 

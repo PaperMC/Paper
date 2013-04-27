@@ -87,7 +87,7 @@ public class EntitySkeleton extends EntityMonster implements IRangedEntity {
     }
 
     public void c() {
-        if (this.world.u() && !this.world.isStatic) {
+        if (this.world.v() && !this.world.isStatic) {
             float f = this.c(1.0F);
 
             if (f > 0.5F && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && this.world.l(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ))) {
@@ -207,7 +207,7 @@ public class EntitySkeleton extends EntityMonster implements IRangedEntity {
 
         this.h(this.random.nextFloat() < au[this.world.difficulty]);
         if (this.getEquipment(4) == null) {
-            Calendar calendar = this.world.U();
+            Calendar calendar = this.world.V();
 
             if (calendar.get(2) + 1 == 10 && calendar.get(5) == 31 && this.random.nextFloat() < 0.25F) {
                 this.setEquipment(4, new ItemStack(this.random.nextFloat() < 0.1F ? Block.JACK_O_LANTERN : Block.PUMPKIN));

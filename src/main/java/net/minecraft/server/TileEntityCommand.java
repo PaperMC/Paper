@@ -68,7 +68,7 @@ public class TileEntityCommand extends TileEntity implements ICommandListener {
                     if (players != null && players.length > 0) {
                         return players.length;
                     } else {
-                        EntityPlayer player = MinecraftServer.getServer().getPlayerList().f(args[1]); // Should be getPlayer
+                        EntityPlayer player = MinecraftServer.getServer().getPlayerList().getPlayer(args[1]);
                         if (player == null) {
                             return 0;
                         } else {

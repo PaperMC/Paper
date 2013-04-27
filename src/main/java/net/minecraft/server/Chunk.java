@@ -88,7 +88,7 @@ public class Chunk {
                             this.sections[k1] = new ChunkSection(k1 << 4, !world.worldProvider.f);
                         }
 
-                        this.sections[k1].a(l, j1 & 15, i1, b0);
+                        this.sections[k1].setTypeId(l, j1 & 15, i1, b0);
                     }
                 }
             }
@@ -106,7 +106,7 @@ public class Chunk {
     public int h() {
         for (int i = this.sections.length - 1; i >= 0; --i) {
             if (this.sections[i] != null) {
-                return this.sections[i].d();
+                return this.sections[i].getYPosition();
             }
         }
 
@@ -155,7 +155,7 @@ public class Chunk {
                                 ChunkSection chunksection = this.sections[i1 >> 4];
 
                                 if (chunksection != null) {
-                                    chunksection.c(j, i1 & 15, k, l);
+                                    chunksection.setSkyLight(j, i1 & 15, k, l);
                                     this.world.p((this.x << 4) + j, i1, (this.z << 4) + k);
                                 }
                             }
@@ -273,7 +273,7 @@ public class Chunk {
                     for (l1 = i1; l1 < l; ++l1) {
                         chunksection = this.sections[l1 >> 4];
                         if (chunksection != null) {
-                            chunksection.c(i, l1 & 15, k, 15);
+                            chunksection.setSkyLight(i, l1 & 15, k, 15);
                             this.world.p((this.x << 4) + i, l1, (this.z << 4) + k);
                         }
                     }
@@ -281,7 +281,7 @@ public class Chunk {
                     for (l1 = l; l1 < i1; ++l1) {
                         chunksection = this.sections[l1 >> 4];
                         if (chunksection != null) {
-                            chunksection.c(i, l1 & 15, k, 0);
+                            chunksection.setSkyLight(i, l1 & 15, k, 0);
                             this.world.p((this.x << 4) + i, l1, (this.z << 4) + k);
                         }
                     }
@@ -304,7 +304,7 @@ public class Chunk {
                     ChunkSection chunksection1 = this.sections[i1 >> 4];
 
                     if (chunksection1 != null) {
-                        chunksection1.c(i, i1 & 15, k, l1);
+                        chunksection1.setSkyLight(i, i1 & 15, k, l1);
                     }
                 }
             }
@@ -344,7 +344,7 @@ public class Chunk {
         } else {
             ChunkSection chunksection = this.sections[j >> 4];
 
-            return chunksection != null ? chunksection.a(i, j & 15, k) : 0;
+            return chunksection != null ? chunksection.getTypeId(i, j & 15, k) : 0;
         }
     }
 
@@ -354,7 +354,7 @@ public class Chunk {
         } else {
             ChunkSection chunksection = this.sections[j >> 4];
 
-            return chunksection != null ? chunksection.b(i, j & 15, k) : 0;
+            return chunksection != null ? chunksection.getData(i, j & 15, k) : 0;
         }
     }
 
@@ -391,7 +391,7 @@ public class Chunk {
                 Block.byId[l1].l(this.world, j2, j, k2, i2);
             }
 
-            chunksection.a(i, j & 15, k, l);
+            chunksection.setTypeId(i, j & 15, k, l);
             if (l1 != 0) {
                 if (!this.world.isStatic) {
                     Block.byId[l1].remove(this.world, j2, j, k2, l1, i2);
@@ -400,10 +400,10 @@ public class Chunk {
                 }
             }
 
-            if (chunksection.a(i, j & 15, k) != l) {
+            if (chunksection.getTypeId(i, j & 15, k) != l) {
                 return false;
             } else {
-                chunksection.b(i, j & 15, k, i1);
+                chunksection.setData(i, j & 15, k, i1);
                 if (flag) {
                     this.initLighting();
                 } else {
@@ -462,14 +462,14 @@ public class Chunk {
         if (chunksection == null) {
             return false;
         } else {
-            int i1 = chunksection.b(i, j & 15, k);
+            int i1 = chunksection.getData(i, j & 15, k);
 
             if (i1 == l) {
                 return false;
             } else {
                 this.l = true;
-                chunksection.b(i, j & 15, k, l);
-                int j1 = chunksection.a(i, j & 15, k);
+                chunksection.setData(i, j & 15, k, l);
+                int j1 = chunksection.getTypeId(i, j & 15, k);
 
                 if (j1 > 0 && Block.byId[j1] instanceof IContainer) {
                     TileEntity tileentity = this.e(i, j, k);
@@ -488,7 +488,7 @@ public class Chunk {
     public int getBrightness(EnumSkyBlock enumskyblock, int i, int j, int k) {
         ChunkSection chunksection = this.sections[j >> 4];
 
-        return chunksection == null ? (this.d(i, j, k) ? enumskyblock.c : 0) : (enumskyblock == EnumSkyBlock.SKY ? (this.world.worldProvider.f ? 0 : chunksection.c(i, j & 15, k)) : (enumskyblock == EnumSkyBlock.BLOCK ? chunksection.d(i, j & 15, k) : enumskyblock.c));
+        return chunksection == null ? (this.d(i, j, k) ? enumskyblock.c : 0) : (enumskyblock == EnumSkyBlock.SKY ? (this.world.worldProvider.f ? 0 : chunksection.getSkyLight(i, j & 15, k)) : (enumskyblock == EnumSkyBlock.BLOCK ? chunksection.getEmittedLight(i, j & 15, k) : enumskyblock.c));
     }
 
     public void a(EnumSkyBlock enumskyblock, int i, int j, int k, int l) {
@@ -502,10 +502,10 @@ public class Chunk {
         this.l = true;
         if (enumskyblock == EnumSkyBlock.SKY) {
             if (!this.world.worldProvider.f) {
-                chunksection.c(i, j & 15, k, l);
+                chunksection.setSkyLight(i, j & 15, k, l);
             }
         } else if (enumskyblock == EnumSkyBlock.BLOCK) {
-            chunksection.d(i, j & 15, k, l);
+            chunksection.setEmittedLight(i, j & 15, k, l);
         }
     }
 
@@ -515,14 +515,14 @@ public class Chunk {
         if (chunksection == null) {
             return !this.world.worldProvider.f && l < EnumSkyBlock.SKY.c ? EnumSkyBlock.SKY.c - l : 0;
         } else {
-            int i1 = this.world.worldProvider.f ? 0 : chunksection.c(i, j & 15, k);
+            int i1 = this.world.worldProvider.f ? 0 : chunksection.getSkyLight(i, j & 15, k);
 
             if (i1 > 0) {
                 a = true;
             }
 
             i1 -= l;
-            int j1 = chunksection.d(i, j & 15, k);
+            int j1 = chunksection.getEmittedLight(i, j & 15, k);
 
             if (j1 > i1) {
                 i1 = j1;
@@ -849,7 +849,7 @@ public class Chunk {
         for (int k = i; k <= j; k += 16) {
             ChunkSection chunksection = this.sections[k >> 4];
 
-            if (chunksection != null && !chunksection.a()) {
+            if (chunksection != null && !chunksection.isEmpty()) {
                 return false;
             }
         }
@@ -903,7 +903,7 @@ public class Chunk {
             for (int k1 = 0; k1 < 16; ++k1) {
                 int l1 = (j << 4) + k1;
 
-                if (this.sections[j] == null && (k1 == 0 || k1 == 15 || k == 0 || k == 15 || l == 0 || l == 15) || this.sections[j] != null && this.sections[j].a(k, k1, l) == 0) {
+                if (this.sections[j] == null && (k1 == 0 || k1 == 15 || k == 0 || k == 15 || l == 0 || l == 15) || this.sections[j] != null && this.sections[j].getTypeId(k, k1, l) == 0) {
                     if (Block.lightEmission[this.world.getTypeId(i1, l1 - 1, j1)] > 0) {
                         this.world.A(i1, l1 - 1, j1);
                     }

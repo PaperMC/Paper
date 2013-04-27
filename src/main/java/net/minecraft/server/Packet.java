@@ -219,7 +219,7 @@ public abstract class Packet {
             dataoutputstream.writeShort(itemstack.getData());
             NBTTagCompound nbttagcompound = null;
 
-            if (itemstack.getItem().o() || itemstack.getItem().r()) {
+            if (itemstack.getItem().usesDurability() || itemstack.getItem().r()) {
                 nbttagcompound = itemstack.tag;
             }
 

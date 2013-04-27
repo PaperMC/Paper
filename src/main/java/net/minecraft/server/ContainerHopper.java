@@ -7,7 +7,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 
 public class ContainerHopper extends Container {
 
-    private final IInventory a;
+    private final IInventory hopper;
 
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
@@ -18,14 +18,14 @@ public class ContainerHopper extends Container {
             return bukkitEntity;
         }
 
-        CraftInventory inventory = new CraftInventory(this.a); // Should be this.hopper
+        CraftInventory inventory = new CraftInventory(this.hopper);
         bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
         return bukkitEntity;
     }
     // CraftBukkit end
 
     public ContainerHopper(PlayerInventory playerinventory, IInventory iinventory) {
-        this.a = iinventory;
+        this.hopper = iinventory;
         this.player = playerinventory; // CraftBukkit - save player
         iinventory.startOpen();
         byte b0 = 51;
@@ -49,7 +49,7 @@ public class ContainerHopper extends Container {
 
     public boolean a(EntityHuman entityhuman) {
         if (!this.checkReachable) return true; // CraftBukkit
-        return this.a.a(entityhuman);
+        return this.hopper.a(entityhuman);
     }
 
     public ItemStack b(EntityHuman entityhuman, int i) {
@@ -60,11 +60,11 @@ public class ContainerHopper extends Container {
             ItemStack itemstack1 = slot.getItem();
 
             itemstack = itemstack1.cloneItemStack();
-            if (i < this.a.getSize()) {
-                if (!this.a(itemstack1, this.a.getSize(), this.c.size(), true)) {
+            if (i < this.hopper.getSize()) {
+                if (!this.a(itemstack1, this.hopper.getSize(), this.c.size(), true)) {
                     return null;
                 }
-            } else if (!this.a(itemstack1, 0, this.a.getSize(), false)) {
+            } else if (!this.a(itemstack1, 0, this.hopper.getSize(), false)) {
                 return null;
             }
 
@@ -80,6 +80,6 @@ public class ContainerHopper extends Container {
 
     public void b(EntityHuman entityhuman) {
         super.b(entityhuman);
-        this.a.g();
+        this.hopper.g();
     }
 }

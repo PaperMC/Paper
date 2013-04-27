@@ -501,7 +501,7 @@ public class PlayerConnection extends Connection {
         } else if (packet14blockdig.e == 3) {
             this.player.a(true);
         } else if (packet14blockdig.e == 5) {
-            this.player.bX();
+            this.player.bZ();
         } else {
             boolean flag = false;
 

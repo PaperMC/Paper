@@ -81,7 +81,7 @@ public class EntityZombie extends EntityMonster {
     }
 
     public void c() {
-        if (this.world.u() && !this.world.isStatic && !this.isBaby()) {
+        if (this.world.v() && !this.world.isStatic && !this.isBaby()) {
             float f = this.c(1.0F);
 
             if (f > 0.5F && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && this.world.l(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ))) {
@@ -275,7 +275,7 @@ public class EntityZombie extends EntityMonster {
         this.bH();
         this.bI();
         if (this.getEquipment(4) == null) {
-            Calendar calendar = this.world.U();
+            Calendar calendar = this.world.V();
 
             if (calendar.get(2) + 1 == 10 && calendar.get(5) == 31 && this.random.nextFloat() < 0.25F) {
                 this.setEquipment(4, new ItemStack(this.random.nextFloat() < 0.1F ? Block.JACK_O_LANTERN : Block.PUMPKIN));
@@ -285,7 +285,7 @@ public class EntityZombie extends EntityMonster {
     }
 
     public boolean a_(EntityHuman entityhuman) {
-        ItemStack itemstack = entityhuman.cb();
+        ItemStack itemstack = entityhuman.cd();
 
         if (itemstack != null && itemstack.getItem() == Item.GOLDEN_APPLE && itemstack.getData() == 0 && this.isVillager() && this.hasEffect(MobEffectList.WEAKNESS)) {
             if (!entityhuman.abilities.canInstantlyBuild) {

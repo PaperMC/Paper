@@ -15,14 +15,14 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
     private int e = -1;
     private int f;
     private int g;
-    private ItemStack h;
+    private ItemStack inventorySlot;
     private String i;
     // CraftBukkit start
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     private int maxStack = MAX_STACK;
 
     public ItemStack[] getContents() {
-        return new ItemStack[] { this.h }; // Should be inventorySlot
+        return new ItemStack[] { this.inventorySlot };
     }
 
     public void onOpen(CraftHumanEntity who) {
@@ -198,19 +198,19 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
     }
 
     public ItemStack getItem(int i) {
-        return i == 0 ? this.h : null;
+        return i == 0 ? this.inventorySlot : null;
     }
 
     public ItemStack splitStack(int i, int j) {
-        if (i == 0 && this.h != null) {
-            if (j >= this.h.count) {
-                ItemStack itemstack = this.h;
+        if (i == 0 && this.inventorySlot != null) {
+            if (j >= this.inventorySlot.count) {
+                ItemStack itemstack = this.inventorySlot;
 
-                this.h = null;
+                this.inventorySlot = null;
                 return itemstack;
             } else {
-                this.h.count -= j;
-                return new ItemStack(this.h.id, j, this.h.getData());
+                this.inventorySlot.count -= j;
+                return new ItemStack(this.inventorySlot.id, j, this.inventorySlot.getData());
             }
         } else {
             return null;
@@ -218,10 +218,10 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
     }
 
     public ItemStack splitWithoutUpdate(int i) {
-        if (i == 0 && this.h != null) {
-            ItemStack itemstack = this.h;
+        if (i == 0 && this.inventorySlot != null) {
+            ItemStack itemstack = this.inventorySlot;
 
-            this.h = null;
+            this.inventorySlot = null;
             return itemstack;
         } else {
             return null;
@@ -230,7 +230,7 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
 
     public void setItem(int i, ItemStack itemstack) {
         if (i == 0) {
-            this.h = itemstack;
+            this.inventorySlot = itemstack;
         }
     }
 

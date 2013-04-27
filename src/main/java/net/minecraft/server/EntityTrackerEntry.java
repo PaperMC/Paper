@@ -46,7 +46,7 @@ public class EntityTrackerEntry {
         this.zLoc = MathHelper.floor(entity.locZ * 32.0D);
         this.yRot = MathHelper.d(entity.yaw * 256.0F / 360.0F);
         this.xRot = MathHelper.d(entity.pitch * 256.0F / 360.0F);
-        this.i = MathHelper.d(entity.ao() * 256.0F / 360.0F);
+        this.i = MathHelper.d(entity.getHeadRotation() * 256.0F / 360.0F);
     }
 
     public boolean equals(Object object) {
@@ -132,7 +132,7 @@ public class EntityTrackerEntry {
                 }
                 // CraftBukkit end
 
-                if (this.m > 0) {
+                if (this.m > 0 || this.tracker instanceof EntityArrow) {
                     if (j1 >= -128 && j1 < 128 && k1 >= -128 && k1 < 128 && l1 >= -128 && l1 < 128 && this.u <= 400 && !this.w) {
                         if (flag && flag1) {
                             object = new Packet33RelEntityMoveLook(this.tracker.id, (byte) j1, (byte) k1, (byte) l1, (byte) l, (byte) i1);
@@ -214,7 +214,7 @@ public class EntityTrackerEntry {
                 this.w = true;
             }
 
-            i = MathHelper.d(this.tracker.ao() * 256.0F / 360.0F);
+            i = MathHelper.d(this.tracker.getHeadRotation() * 256.0F / 360.0F);
             if (Math.abs(i - this.i) >= 4) {
                 this.broadcast(new Packet35EntityHeadRotation(this.tracker.id, (byte) i));
                 this.i = i;
@@ -345,7 +345,7 @@ public class EntityTrackerEntry {
                     }
 
                     // CraftBukkit start - Fix for nonsensical head yaw
-                    this.i = MathHelper.d(this.tracker.ao() * 256.0F / 360.0F); // tracker.ao() should be getHeadRotation
+                    this.i = MathHelper.d(this.tracker.getHeadRotation() * 256.0F / 360.0F); // tracker.ao() should be getHeadRotation
                     this.broadcast(new Packet35EntityHeadRotation(this.tracker.id, (byte) i));
                     // CraftBukkit end
 
@@ -468,7 +468,7 @@ public class EntityTrackerEntry {
                 }
             }
         } else {
-            this.i = MathHelper.d(this.tracker.ao() * 256.0F / 360.0F);
+            this.i = MathHelper.d(this.tracker.getHeadRotation() * 256.0F / 360.0F);
             return new Packet24MobSpawn((EntityLiving) this.tracker);
         }
     }

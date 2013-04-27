@@ -93,7 +93,7 @@ public class EntityFishingHook extends Entity {
             this.b(this.yaw, this.pitch);
         } else {
             if (!this.world.isStatic) {
-                ItemStack itemstack = this.owner.cb();
+                ItemStack itemstack = this.owner.cd();
 
                 if (this.owner.dead || !this.owner.isAlive() || itemstack == null || itemstack.getItem() != Item.FISHING_ROD || this.e(this.owner) > 1024.0D) {
                     this.die();

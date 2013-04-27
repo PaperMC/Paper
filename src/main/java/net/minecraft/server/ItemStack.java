@@ -158,7 +158,7 @@ public final class ItemStack {
             return;
         }
 
-        if (!(this.usesData() || Item.byId[this.id].o() || this.id > 255)) { // Should be usesDurability
+        if (!(this.usesData() || Item.byId[this.id].usesDurability() || this.id > 255)) {
             i = 0;
         }
 

@@ -8,14 +8,14 @@ public class ChunkSection {
     private byte[] blockIds;
     private NibbleArray extBlockIds;
     private NibbleArray blockData;
-    private NibbleArray blockLight;
+    private NibbleArray emittedLight;
     private NibbleArray skyLight;
 
     public ChunkSection(int i, boolean flag) {
         this.yPos = i;
         this.blockIds = new byte[4096];
         this.blockData = new NibbleArray(this.blockIds.length, 4);
-        this.blockLight = new NibbleArray(this.blockIds.length, 4);
+        this.emittedLight = new NibbleArray(this.blockIds.length, 4);
         if (flag) {
             this.skyLight = new NibbleArray(this.blockIds.length, 4);
         }
@@ -29,7 +29,7 @@ public class ChunkSection {
             this.extBlockIds = new NibbleArray(extBlkIds, 4);
         }
         this.blockData = new NibbleArray(this.blockIds.length, 4);
-        this.blockLight = new NibbleArray(this.blockIds.length, 4);
+        this.emittedLight = new NibbleArray(this.blockIds.length, 4);
         if (flag) {
             this.skyLight = new NibbleArray(this.blockIds.length, 4);
         }
@@ -37,13 +37,13 @@ public class ChunkSection {
     }
     // CraftBukkit end
 
-    public int a(int i, int j, int k) {
+    public int getTypeId(int i, int j, int k) {
         int l = this.blockIds[j << 8 | k << 4 | i] & 255;
 
         return this.extBlockIds != null ? this.extBlockIds.a(i, j, k) << 8 | l : l;
     }
 
-    public void a(int i, int j, int k, int l) {
+    public void setTypeId(int i, int j, int k, int l) {
         int i1 = this.blockIds[j << 8 | k << 4 | i] & 255;
 
         if (this.extBlockIds != null) {
@@ -78,40 +78,40 @@ public class ChunkSection {
         }
     }
 
-    public int b(int i, int j, int k) {
+    public int getData(int i, int j, int k) {
         return this.blockData.a(i, j, k);
     }
 
-    public void b(int i, int j, int k, int l) {
+    public void setData(int i, int j, int k, int l) {
         this.blockData.a(i, j, k, l);
     }
 
-    public boolean a() {
+    public boolean isEmpty() {
         return this.nonEmptyBlockCount == 0;
     }
 
-    public boolean b() {
+    public boolean shouldTick() {
         return this.tickingBlockCount > 0;
     }
 
-    public int d() {
+    public int getYPosition() {
         return this.yPos;
     }
 
-    public void c(int i, int j, int k, int l) {
+    public void setSkyLight(int i, int j, int k, int l) {
         this.skyLight.a(i, j, k, l);
     }
 
-    public int c(int i, int j, int k) {
+    public int getSkyLight(int i, int j, int k) {
         return this.skyLight.a(i, j, k);
     }
 
-    public void d(int i, int j, int k, int l) {
-        this.blockLight.a(i, j, k, l);
+    public void setEmittedLight(int i, int j, int k, int l) {
+        this.emittedLight.a(i, j, k, l);
     }
 
-    public int d(int i, int j, int k) {
-        return this.blockLight.a(i, j, k);
+    public int getEmittedLight(int i, int j, int k) {
+        return this.emittedLight.a(i, j, k);
     }
 
     public void recalcBlockCounts() {
@@ -178,7 +178,7 @@ public class ChunkSection {
         for (int i = 0; i < 16; ++i) {
             for (int j = 0; j < 16; ++j) {
                 for (int k = 0; k < 16; ++k) {
-                    int l = this.a(i, j, k);
+                    int l = this.getTypeId(i, j, k);
 
                     if (l > 0) {
                         if (Block.byId[l] == null) {
@@ -198,31 +198,31 @@ public class ChunkSection {
         }
     }
 
-    public byte[] g() {
+    public byte[] getIdArray() {
         return this.blockIds;
     }
 
-    public NibbleArray i() {
+    public NibbleArray getExtendedIdArray() {
         return this.extBlockIds;
     }
 
-    public NibbleArray j() {
+    public NibbleArray getDataArray() {
         return this.blockData;
     }
 
-    public NibbleArray k() {
-        return this.blockLight;
+    public NibbleArray getEmittedLightArray() {
+        return this.emittedLight;
     }
 
-    public NibbleArray l() {
+    public NibbleArray getSkyLightArray() {
         return this.skyLight;
     }
 
-    public void a(byte[] abyte) {
+    public void setIdArray(byte[] abyte) {
         this.blockIds = this.validateByteArray(abyte); // CraftBukkit - Validate data
     }
 
-    public void a(NibbleArray nibblearray) {
+    public void setExtendedIdArray(NibbleArray nibblearray) {
         // CraftBukkit start - Don't hang on to an empty nibble array
         boolean empty = true;
         for (int i = 0; i < nibblearray.a.length; i++) {
@@ -240,15 +240,15 @@ public class ChunkSection {
         this.extBlockIds = this.validateNibbleArray(nibblearray); // CraftBukkit - Validate data
     }
 
-    public void b(NibbleArray nibblearray) {
+    public void setDataArray(NibbleArray nibblearray) {
         this.blockData = this.validateNibbleArray(nibblearray); // CraftBukkit - Validate data
     }
 
-    public void c(NibbleArray nibblearray) {
-        this.blockLight = this.validateNibbleArray(nibblearray); // CraftBukkit - Validate data
+    public void setEmittedLightArray(NibbleArray nibblearray) {
+        this.emittedLight = this.validateNibbleArray(nibblearray); // CraftBukkit - Validate data
     }
 
-    public void d(NibbleArray nibblearray) {
+    public void setSkyLightArray(NibbleArray nibblearray) {
         this.skyLight = this.validateNibbleArray(nibblearray); // CraftBukkit - Validate data
     }
 

@@ -91,7 +91,11 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
         if (nbttagcompound.hasKey("playerGameType")) {
-            this.playerInteractManager.setGameMode(EnumGamemode.a(nbttagcompound.getInt("playerGameType")));
+            if (MinecraftServer.getServer().getForceGamemode()) {
+                this.playerInteractManager.setGameMode(MinecraftServer.getServer().getGamemode());
+            } else {
+                this.playerInteractManager.setGameMode(EnumGamemode.a(nbttagcompound.getInt("playerGameType")));
+            }
         }
         this.getBukkitEntity().readExtraData(nbttagcompound); // CraftBukkit
     }
@@ -873,8 +877,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.expTotal = this.newTotalExp;
         this.exp = 0;
         this.deathTicks = 0;
-        effects.clear();
+        this.effects.clear();
+        this.updateEffects = true;
         this.activeContainer = this.defaultContainer;
+        this.killer = null;
+        this.lastDamager = null;
+        this.bt = new CombatTracker(this); // Should be combatTracker
         this.lastSentExp = -1;
         if (this.keepLevel || keepInventory) {
             this.exp = exp;

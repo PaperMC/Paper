@@ -65,7 +65,7 @@ public class PathfinderGoalMeleeAttack extends PathfinderGoal {
 
     public void e() {
         this.b.getControllerLook().a(this.c, 30.0F, 30.0F);
-        if ((this.f || this.b.aD().canSee(this.c)) && --this.i <= 0) {
+        if ((this.f || this.b.getEntitySenses().canSee(this.c)) && --this.i <= 0) {
             this.i = 4 + this.b.aE().nextInt(7);
             this.b.getNavigation().a(this.c, this.e);
         }

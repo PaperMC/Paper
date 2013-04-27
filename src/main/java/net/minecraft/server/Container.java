@@ -310,7 +310,7 @@ public abstract class Container {
 
                     if (slot2.d() && flag) {
                         itemstack3 = slot2.getItem();
-                        playerinventory.setItem(j, itemstack3);
+                        playerinventory.setItem(j, itemstack3.cloneItemStack());
                         if ((slot2.inventory != playerinventory || !slot2.isAllowed(itemstack1)) && itemstack1 != null) {
                             if (k1 > -1) {
                                 playerinventory.pickup(itemstack1);
@@ -337,7 +337,7 @@ public abstract class Container {
                 }
             } else if (k == 4 && playerinventory.getCarried() == null && i >= 0) {
                 slot2 = (Slot) this.c.get(i);
-                if (slot2 != null && slot2.d() && slot2.a(entityhuman)) { // CraftBukkit - Validate before dropping
+                if (slot2 != null && slot2.d() && slot2.a(entityhuman)) {
                     itemstack1 = slot2.a(j == 0 ? 1 : slot2.getItem().count);
                     slot2.a(entityhuman, itemstack1);
                     entityhuman.drop(itemstack1);
