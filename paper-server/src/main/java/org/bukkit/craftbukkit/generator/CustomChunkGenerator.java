@@ -138,7 +138,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                                 if (blk != 0) { // If non-empty
                                     if (cs == null) { // If no section yet, get one
                                         cs = csect[sec] = new ChunkSection(sec << 4, true);
-                                        csbytes = cs.g();
+                                        csbytes = cs.getIdArray();
                                     }
                                     csbytes[(cy << 8) | (cz << 4) | cx] = blk;
                                 }
@@ -147,7 +147,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                     }
                     // If section built, finish prepping its state
                     if (cs != null) {
-                        cs.d();
+                        cs.recalcBlockCounts();
                     }
                 }
             }
@@ -225,4 +225,6 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     public String getName() {
         return "CustomChunkGenerator";
     }
+
+    public void b() {}
 }

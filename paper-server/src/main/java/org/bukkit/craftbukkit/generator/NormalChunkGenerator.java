@@ -81,4 +81,6 @@ public class NormalChunkGenerator extends InternalChunkGenerator {
     public String getName() {
         return "NormalWorldGenerator";
     }
+
+    public void b() {}
 }
