@@ -166,7 +166,7 @@ public class TileEntityFurnace extends TileEntity implements IWorldInventory {
         boolean flag1 = false;
 
         // CraftBukkit start - Use wall time instead of ticks for cooking
-        int elapsedTicks = Math.max(1, MinecraftServer.currentTick - this.lastTick);
+        int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
         this.lastTick = MinecraftServer.currentTick;
 
         // CraftBukkit - moved from below

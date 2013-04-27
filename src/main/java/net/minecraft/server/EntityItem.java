@@ -56,7 +56,7 @@ public class EntityItem extends Entity {
     public void l_() {
         super.l_();
         // CraftBukkit start - Use wall time for pickup and despawn timers
-        int elapsedTicks = Math.max(1, MinecraftServer.currentTick - this.lastTick);
+        int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
         this.pickupDelay -= elapsedTicks;
         this.age += elapsedTicks;
         this.lastTick = MinecraftServer.currentTick;
