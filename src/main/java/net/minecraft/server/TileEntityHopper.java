@@ -180,11 +180,8 @@ public class TileEntityHopper extends TileEntity implements IHopper {
             if (!this.l() && BlockHopper.d(this.p())) {
                 boolean flag = this.u() | suckInItems(this);
 
-                // CraftBukkit start - Move delay out of if block
-                this.c(8);
-
                 if (flag) {
-                    // CraftBukkit end
+                    this.c(8);
                     this.update();
                     return true;
                 }
