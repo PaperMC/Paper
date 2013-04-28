@@ -1,4 +1,4 @@
-From 6d03a8b1c00c39c32edbaa447e41a8f1b7e5b2be Mon Sep 17 00:00:00 2001
+From 73f2cb6cf3b18d0cca0ee1057d4563ebc46fbded Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 23 Apr 2013 11:47:32 +1000
 Subject: [PATCH] Netty
@@ -449,29 +449,22 @@ index 0000000..2dbbf6c
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..319e22a
+index 0000000..0e1b1fd
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,290 @@
+@@ -0,0 +1,253 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
-+import io.netty.buffer.ByteBuf;
-+import io.netty.buffer.ByteBufOutputStream;
 +import io.netty.channel.Channel;
-+import io.netty.channel.ChannelFuture;
-+import io.netty.channel.ChannelFutureListener;
 +import io.netty.channel.ChannelHandlerContext;
 +import io.netty.channel.ChannelInboundMessageHandlerAdapter;
 +import io.netty.channel.socket.SocketChannel;
-+import java.io.DataOutputStream;
-+import java.io.IOException;
 +import java.net.InetSocketAddress;
 +import java.net.Socket;
 +import java.net.SocketAddress;
 +import java.security.PrivateKey;
 +import java.util.AbstractList;
-+import java.util.ArrayList;
 +import java.util.List;
 +import java.util.Queue;
 +import java.util.concurrent.ConcurrentLinkedQueue;
@@ -517,7 +510,6 @@ index 0000000..319e22a
 +            return 0;
 +        }
 +    };
-+    private final Queue<Packet> realQueue = new ConcurrentLinkedQueue<Packet>();
 +    private volatile boolean connected;
 +    private Channel channel;
 +    private SocketAddress address;
@@ -527,7 +519,6 @@ index 0000000..319e22a
 +    private Object[] dcArgs;
 +    private Socket socketAdaptor;
 +    private long writtenBytes;
-+    private long lastFlush;
 +
 +    @Override
 +    public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -603,7 +594,7 @@ index 0000000..319e22a
 +     *
 +     * @param packet the packet to queue
 +     */
-+    public synchronized void queue(Packet packet) {
++    public void queue(Packet packet) {
 +        // Only send if channel is still connected
 +        if (connected) {
 +            // Process packet via handler
@@ -611,7 +602,6 @@ index 0000000..319e22a
 +            // If handler indicates packet send
 +            if (packet != null) {
 +                highPriorityQueue.add(packet);
-+                realQueue.add(packet);
 +
 +                // If needed, check and prepare encryption phase
 +                // We don't send the packet here as it is sent just before the cipher handler has been added to ensure we can safeguard from any race conditions
@@ -622,38 +612,7 @@ index 0000000..319e22a
 +                    CipherCodec codec = new CipherCodec(encrypt, decrypt, (Packet252KeyResponse) packet);
 +                    channel.pipeline().addBefore("decoder", "cipher", codec);
 +                } else {
-+                    if (System.currentTimeMillis() - lastFlush > 10) {
-+                        lastFlush = System.currentTimeMillis();
-+
-+                        int estimatedCapacity = 0;
-+                        for (Packet p : realQueue) {
-+                            estimatedCapacity += p.a();
-+                        }
-+                        final ByteBuf buf = channel.alloc().buffer(estimatedCapacity);
-+                        DataOutputStream out = new DataOutputStream(new ByteBufOutputStream(buf));
-+                        for (Packet p : realQueue) {
-+                            buf.writeByte(p.n());
-+                            try {
-+                                p.a(out);
-+                            } catch (IOException ex) {
-+                                throw new RuntimeException("Writing packet", ex);
-+                            }
-+                        }
-+                        writtenBytes += buf.readableBytes();
-+
-+                        channel.write(buf).addListener(new ChannelFutureListener() {
-+                            public void operationComplete(ChannelFuture future) throws Exception {
-+                                // TODO: Check on new netty release, can't take chances!
-+                                if (buf.refCnt() != 0) {
-+                                    buf.release();
-+                                }
-+                                if (buf.refCnt() != 0) {
-+                                    throw new AssertionError("refCnt");
-+                                }
-+                            }
-+                        });
-+                        realQueue.clear();
-+                    }
++                    channel.write(packet);
 +                }
 +            }
 +        }
@@ -742,13 +701,17 @@ index 0000000..319e22a
 +    public long getWrittenBytes() {
 +        return writtenBytes;
 +    }
++
++    public void addWrittenBytes(int written) {
++        writtenBytes += written;
++    }
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyServerConnection.java b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
 new file mode 100644
-index 0000000..2a9aa0a
+index 0000000..cb58bd2
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
-@@ -0,0 +1,80 @@
+@@ -0,0 +1,81 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -793,6 +756,7 @@ index 0000000..2a9aa0a
 +
 +                NettyNetworkManager networkManager = new NettyNetworkManager();
 +                ch.pipeline()
++                        .addLast("flusher", new OutboundManager())
 +                        .addLast("timer", new ReadTimeoutHandler(30))
 +                        .addLast("decoder", new PacketDecoder())
 +                        .addLast("encoder", new PacketEncoder(networkManager))
@@ -1083,6 +1047,30 @@ index 0000000..a3b86b8
 +        return ch.toString();
 +    }
 +}
+diff --git a/src/main/java/org/spigotmc/netty/OutboundManager.java b/src/main/java/org/spigotmc/netty/OutboundManager.java
+new file mode 100644
+index 0000000..80205ed
+--- /dev/null
++++ b/src/main/java/org/spigotmc/netty/OutboundManager.java
+@@ -0,0 +1,18 @@
++package org.spigotmc.netty;
++
++import io.netty.channel.ChannelHandlerContext;
++import io.netty.channel.ChannelOperationHandlerAdapter;
++import io.netty.channel.ChannelPromise;
++
++public class OutboundManager extends ChannelOperationHandlerAdapter {
++
++    private static final int FLUSH_TIME = 10;
++    private long lastFlush;
++
++    public void flush(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
++        if (System.currentTimeMillis() - lastFlush > FLUSH_TIME) {
++            lastFlush = System.currentTimeMillis();
++            ctx.flush(promise);
++        }
++    }
++}
 diff --git a/src/main/java/org/spigotmc/netty/PacketDecoder.java b/src/main/java/org/spigotmc/netty/PacketDecoder.java
 new file mode 100644
 index 0000000..65074d2
@@ -1155,7 +1143,7 @@ index 0000000..65074d2
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketEncoder.java b/src/main/java/org/spigotmc/netty/PacketEncoder.java
 new file mode 100644
-index 0000000..69dff43
+index 0000000..c8832d6
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketEncoder.java
 @@ -0,0 +1,50 @@
@@ -1172,7 +1160,6 @@ index 0000000..69dff43
 + * Netty encoder which takes a packet and encodes it, and adds a byte packet id
 + * header.
 + */
-+// TODO: Remove this
 +public class PacketEncoder extends MessageToByteEncoder<Packet> {
 +
 +    private ByteBuf outBuf;
@@ -1195,6 +1182,7 @@ index 0000000..69dff43
 +        out.writeByte(msg.n());
 +        msg.a(dataOut);
 +
++        networkManager.addWrittenBytes(outBuf.readableBytes());
 +        out.writeBytes(outBuf);
 +        out.discardSomeReadBytes();
 +    }
