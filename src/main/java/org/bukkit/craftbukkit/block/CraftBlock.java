@@ -92,7 +92,7 @@ public class CraftBlock implements Block {
         if (applyPhysics) {
             chunk.getHandle().world.setData(x, y, z, data, 3);
         } else {
-            chunk.getHandle().world.setData(x, y, z, data, 4);
+            chunk.getHandle().world.setData(x, y, z, data, 2);
         }
     }
 
@@ -112,7 +112,7 @@ public class CraftBlock implements Block {
         if (applyPhysics) {
             return setTypeId(type);
         } else {
-            return chunk.getHandle().world.setTypeIdAndData(x, y, z, type, getData(), 4);
+            return chunk.getHandle().world.setTypeIdAndData(x, y, z, type, getData(), 2);
         }
     }
 
@@ -120,7 +120,7 @@ public class CraftBlock implements Block {
         if (applyPhysics) {
             return chunk.getHandle().world.setTypeIdAndData(x, y, z, type, data, 3);
         } else {
-            boolean success = chunk.getHandle().world.setTypeIdAndData(x, y, z, type, data, 4);
+            boolean success = chunk.getHandle().world.setTypeIdAndData(x, y, z, type, data, 2);
             if (success) {
                 chunk.getHandle().world.notify(x, y, z);
             }
