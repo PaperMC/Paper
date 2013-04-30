@@ -1,4 +1,4 @@
-From c049344dec44e8f266b1f692fd9384936911c826 Mon Sep 17 00:00:00 2001
+From 7040b62affceb63b6dd01382023f17fd136450aa Mon Sep 17 00:00:00 2001
 From: Mike Primm <mike@primmhome.com>
 Date: Sun, 13 Jan 2013 03:49:07 -0800
 Subject: [PATCH] Implement 'lightening' of NibbleArrays - only allocate
@@ -10,32 +10,32 @@ Finish up NibbleArray lightening work - use for Snapshots, reduce copies
 Fix nibble handling with NBT - arrays aren't copied by NBTByteArray
 
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 57f39c1..1e97aff 100644
+index 9643480..364776f 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -239,15 +239,15 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
-                 nbttagcompound1.setByte("Y", (byte) (chunksection.d() >> 4 & 255));
-                 nbttagcompound1.setByteArray("Blocks", chunksection.g());
-                 if (chunksection.i() != null) {
--                    nbttagcompound1.setByteArray("Add", chunksection.i().a);
-+                    nbttagcompound1.setByteArray("Add", chunksection.i().getValueArray()); // Spigot
+@@ -243,15 +243,15 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
+                 nbttagcompound1.setByte("Y", (byte) (chunksection.getYPosition() >> 4 & 255));
+                 nbttagcompound1.setByteArray("Blocks", chunksection.getIdArray());
+                 if (chunksection.getExtendedIdArray() != null) {
+-                    nbttagcompound1.setByteArray("Add", chunksection.getExtendedIdArray().a);
++                    nbttagcompound1.setByteArray("Add", chunksection.getExtendedIdArray().getValueArray()); // Spigot
                  }
  
--                nbttagcompound1.setByteArray("Data", chunksection.j().a);
--                nbttagcompound1.setByteArray("BlockLight", chunksection.k().a);
-+                nbttagcompound1.setByteArray("Data", chunksection.j().getValueArray()); // Spigot
-+                nbttagcompound1.setByteArray("BlockLight", chunksection.k().getValueArray()); // Spigot
+-                nbttagcompound1.setByteArray("Data", chunksection.getDataArray().a);
+-                nbttagcompound1.setByteArray("BlockLight", chunksection.getEmittedLightArray().a);
++                nbttagcompound1.setByteArray("Data", chunksection.getDataArray().getValueArray()); // Spigot
++                nbttagcompound1.setByteArray("BlockLight", chunksection.getEmittedLightArray().getValueArray()); // Spigot
                  if (flag) {
--                    nbttagcompound1.setByteArray("SkyLight", chunksection.l().a);
-+                    nbttagcompound1.setByteArray("SkyLight", chunksection.l().getValueArray()); // Spigot
+-                    nbttagcompound1.setByteArray("SkyLight", chunksection.getSkyLightArray().a);
++                    nbttagcompound1.setByteArray("SkyLight", chunksection.getSkyLightArray().getValueArray()); // Spigot
                  } else {
--                    nbttagcompound1.setByteArray("SkyLight", new byte[chunksection.k().a.length]);
-+                    nbttagcompound1.setByteArray("SkyLight", new byte[chunksection.k().getValueArray().length]); // Spigot
+-                    nbttagcompound1.setByteArray("SkyLight", new byte[chunksection.getEmittedLightArray().a.length]);
++                    nbttagcompound1.setByteArray("SkyLight", new byte[chunksection.getEmittedLightArray().getValueArray().length]); // Spigot
                  }
  
                  nbttaglist.add(nbttagcompound1);
 diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
-index bac819f..da57d90 100644
+index 3f67a19..e69afba 100644
 --- a/src/main/java/net/minecraft/server/ChunkSection.java
 +++ b/src/main/java/net/minecraft/server/ChunkSection.java
 @@ -134,7 +134,8 @@ public class ChunkSection {
@@ -62,7 +62,7 @@ index bac819f..da57d90 100644
          this.nonEmptyBlockCount = cntNonEmpty;
          this.tickingBlockCount = cntTicking;
 @@ -225,12 +232,11 @@ public class ChunkSection {
-     public void a(NibbleArray nibblearray) {
+     public void setExtendedIdArray(NibbleArray nibblearray) {
          // CraftBukkit start - Don't hang on to an empty nibble array
          boolean empty = true;
 -        for (int i = 0; i < nibblearray.a.length; i++) {
@@ -269,13 +269,13 @@ index 53c1cb5..9a9e20f 100644
              }
          }
 diff --git a/src/main/java/net/minecraft/server/Packet51MapChunk.java b/src/main/java/net/minecraft/server/Packet51MapChunk.java
-index 14a6245..ee179be 100644
+index 97c953b..3c3bdbf 100644
 --- a/src/main/java/net/minecraft/server/Packet51MapChunk.java
 +++ b/src/main/java/net/minecraft/server/Packet51MapChunk.java
 @@ -139,16 +139,22 @@ public class Packet51MapChunk extends Packet {
          for (l = 0; l < achunksection.length; ++l) {
-             if (achunksection[l] != null && (!flag || !achunksection[l].a()) && (i & 1 << l) != 0) {
-                 nibblearray = achunksection[l].j();
+             if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && (i & 1 << l) != 0) {
+                 nibblearray = achunksection[l].getDataArray();
 -                System.arraycopy(nibblearray.a, 0, abyte, j, nibblearray.a.length);
 -                j += nibblearray.a.length;
 +                // Spigot start
@@ -287,8 +287,8 @@ index 14a6245..ee179be 100644
          }
  
          for (l = 0; l < achunksection.length; ++l) {
-             if (achunksection[l] != null && (!flag || !achunksection[l].a()) && (i & 1 << l) != 0) {
-                 nibblearray = achunksection[l].k();
+             if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && (i & 1 << l) != 0) {
+                 nibblearray = achunksection[l].getEmittedLightArray();
 -                System.arraycopy(nibblearray.a, 0, abyte, j, nibblearray.a.length);
 -                j += nibblearray.a.length;
 +                // Spigot start
@@ -301,8 +301,8 @@ index 14a6245..ee179be 100644
  
 @@ -156,8 +162,11 @@ public class Packet51MapChunk extends Packet {
              for (l = 0; l < achunksection.length; ++l) {
-                 if (achunksection[l] != null && (!flag || !achunksection[l].a()) && (i & 1 << l) != 0) {
-                     nibblearray = achunksection[l].l();
+                 if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && (i & 1 << l) != 0) {
+                     nibblearray = achunksection[l].getSkyLightArray();
 -                    System.arraycopy(nibblearray.a, 0, abyte, j, nibblearray.a.length);
 -                    j += nibblearray.a.length;
 +                    // Spigot start
@@ -315,8 +315,8 @@ index 14a6245..ee179be 100644
          }
 @@ -166,8 +175,11 @@ public class Packet51MapChunk extends Packet {
              for (l = 0; l < achunksection.length; ++l) {
-                 if (achunksection[l] != null && (!flag || !achunksection[l].a()) && achunksection[l].i() != null && (i & 1 << l) != 0) {
-                     nibblearray = achunksection[l].i();
+                 if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && achunksection[l].getExtendedIdArray() != null && (i & 1 << l) != 0) {
+                     nibblearray = achunksection[l].getExtendedIdArray();
 -                    System.arraycopy(nibblearray.a, 0, abyte, j, nibblearray.a.length);
 -                    j += nibblearray.a.length;
 +                    // Spigot start
@@ -328,17 +328,17 @@ index 14a6245..ee179be 100644
              }
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-index 79c3893..ad58bef 100644
+index 1a21516..6921206 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 @@ -174,7 +174,18 @@ public class CraftChunk implements Chunk {
                  }
  
-                 if (cs[i].i() != null) { /* If we've got extended IDs */
--                    byte[] extids = cs[i].i().a;
+                 if (cs[i].getExtendedIdArray() != null) { /* If we've got extended IDs */
+-                    byte[] extids = cs[i].getExtendedIdArray().a;
 +                    // Spigot start
-+                    if (cs[i].i().isTrivialArray()) {
-+                        int tval = cs[i].i().getTrivialArrayValue();
++                    if (cs[i].getExtendedIdArray().isTrivialArray()) {
++                        int tval = cs[i].getExtendedIdArray().getTrivialArrayValue();
 +                        if (tval != 0) {
 +                            tval = tval << 8;
 +                            for (int j = 0; j < 4096; j++) {
@@ -346,7 +346,7 @@ index 79c3893..ad58bef 100644
 +                            }
 +                        }
 +                  } else {
-+                    byte[] extids = cs[i].i().getValueArray();
++                    byte[] extids = cs[i].getExtendedIdArray().getValueArray();
 +                    // Spigot end
  
                      for (int j = 0; j < 2048; j++) {
@@ -362,39 +362,39 @@ index 79c3893..ad58bef 100644
  
                  /* Get block data nibbles */
 -                sectionBlockData[i] = new byte[2048];
--                System.arraycopy(cs[i].j().a, 0, sectionBlockData[i], 0, 2048); // Should be getData
+-                System.arraycopy(cs[i].getDataArray().a, 0, sectionBlockData[i], 0, 2048);
 +                // Spigot start
-+                if (cs[i].j().isTrivialArray() && (cs[i].j().getTrivialArrayValue() == 0)) {
++                if (cs[i].getDataArray().isTrivialArray() && (cs[i].getDataArray().getTrivialArrayValue() == 0)) {
 +                    sectionBlockData[i] = emptyData;
 +                } else {
 +                    sectionBlockData[i] = new byte[2048];
-+                    cs[i].j().copyToByteArray(sectionBlockData[i], 0);
++                    cs[i].getDataArray().copyToByteArray(sectionBlockData[i], 0);
 +                }
-                 if (cs[i].l() == null) {
+                 if (cs[i].getSkyLightArray() == null) {
                      sectionSkyLights[i] = emptyData;
 +                }
-+                else if (cs[i].l().isTrivialArray()) {
-+                    if (cs[i].l().getTrivialArrayValue() == 0) {
++                else if (cs[i].getSkyLightArray().isTrivialArray()) {
++                    if (cs[i].getSkyLightArray().getTrivialArrayValue() == 0) {
 +                        sectionSkyLights[i] = emptyData;
-+                    } else if (cs[i].l().getTrivialArrayValue() == 15) {
++                    } else if (cs[i].getSkyLightArray().getTrivialArrayValue() == 15) {
 +                        sectionSkyLights[i] = emptySkyLight;
 +                    } else {
 +                        sectionSkyLights[i] = new byte[2048];
-+                        cs[i].l().copyToByteArray(sectionSkyLights[i], 0);
++                        cs[i].getSkyLightArray().copyToByteArray(sectionSkyLights[i], 0);
 +                    }
                  } else {
                      sectionSkyLights[i] = new byte[2048];
--                    System.arraycopy(cs[i].l().a, 0, sectionSkyLights[i], 0, 2048); // Should be getSkyLight
-+                    cs[i].l().copyToByteArray(sectionSkyLights[i], 0);
+-                    System.arraycopy(cs[i].getSkyLightArray().a, 0, sectionSkyLights[i], 0, 2048);
++                    cs[i].getSkyLightArray().copyToByteArray(sectionSkyLights[i], 0);
 +                }
-+                if (cs[i].k().isTrivialArray() && (cs[i].k().getTrivialArrayValue() == 0)) {
++                if (cs[i].getEmittedLightArray().isTrivialArray() && (cs[i].getEmittedLightArray().getTrivialArrayValue() == 0)) {
 +                    sectionEmitLights[i] = emptyData;
 +                } else {
 +                    sectionEmitLights[i] = new byte[2048];
-+                    cs[i].k().copyToByteArray(sectionEmitLights[i], 0);
++                    cs[i].getEmittedLightArray().copyToByteArray(sectionEmitLights[i], 0);
                  }
 -                sectionEmitLights[i] = new byte[2048];
--                System.arraycopy(cs[i].k().a, 0, sectionEmitLights[i], 0, 2048); // Should be getBlockLight
+-                System.arraycopy(cs[i].getEmittedLightArray().a, 0, sectionEmitLights[i], 0, 2048);
 +                // Spigot end
              }
          }
