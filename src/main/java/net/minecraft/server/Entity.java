@@ -418,7 +418,7 @@ public abstract class Entity {
 
     public void move(double d0, double d1, double d2) {
         // CraftBukkit start - Don't do anything if we aren't moving
-        if (d0 == 0 && d1 == 0 && d2 == 0) {
+        if (d0 == 0 && d1 == 0 && d2 == 0 && this.vehicle == null && this.passenger == null) {
             return;
         }
         // CraftBukkit end
