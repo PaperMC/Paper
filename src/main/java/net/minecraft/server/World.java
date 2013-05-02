@@ -2337,9 +2337,18 @@ public abstract class World implements IBlockAccess {
         for (int j = 0; j < this.entityList.size(); ++j) {
             Entity entity = (Entity) this.entityList.get(j);
 
-            if ((!(entity instanceof EntityLiving) || !((EntityLiving) entity).bU()) && oclass.isAssignableFrom(entity.getClass())) {
+            // CraftBukkit start - Split out persistent check, don't apply it to special persistent mobs
+            if (entity instanceof EntityLiving) {
+                EntityLiving entityliving = (EntityLiving) entity;
+                if (!entityliving.isTypeNotPersistent() && entityliving.bU()) { // Should be isPersistent
+                    continue;
+                }
+            }
+
+            if (oclass.isAssignableFrom(entity.getClass())) {
                 ++i;
             }
+            // CraftBukkit end
         }
 
         return i;
