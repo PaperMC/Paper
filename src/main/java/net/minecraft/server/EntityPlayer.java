@@ -153,6 +153,13 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         --this.invulnerableTicks;
         this.activeContainer.b();
 
+        // CraftBukkit start - Check inventory status every tick
+        if (!this.activeContainer.a(this)) { // Should be stillValid
+            this.closeInventory();
+            this.activeContainer = this.defaultContainer;
+        }
+        // CraftBukkit end
+
         while (!this.removeQueue.isEmpty()) {
             int i = Math.min(this.removeQueue.size(), 127);
             int[] aint = new int[i];
@@ -651,6 +658,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public void closeInventory() {
+        CraftEventFactory.handleInventoryCloseEvent(this); // CraftBukkit
         this.playerConnection.sendPacket(new Packet101CloseWindow(this.activeContainer.windowId));
         this.j();
     }

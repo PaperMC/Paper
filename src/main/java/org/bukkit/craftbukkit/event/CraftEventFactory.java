@@ -58,6 +58,7 @@ import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.*;
@@ -664,5 +665,11 @@ public class CraftEventFactory {
         BlockIgniteEvent event = new BlockIgniteEvent(world.getWorld().getBlockAt(x, y, z), cause, igniter.getBukkitEntity());
         world.getServer().getPluginManager().callEvent(event);
         return event;
+    }
+
+    public static void handleInventoryCloseEvent(EntityHuman human) {
+        InventoryCloseEvent event = new InventoryCloseEvent(human.activeContainer.getBukkitView());
+        human.world.getServer().getPluginManager().callEvent(event);
+        human.activeContainer.transferTo(human.defaultContainer, human.getBukkitEntity());
     }
 }

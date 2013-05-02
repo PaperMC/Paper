@@ -27,7 +27,6 @@ import org.bukkit.event.Event;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryType.SlotType;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerAnimationEvent;
@@ -1144,11 +1143,7 @@ public class PlayerConnection extends Connection {
     public void handleContainerClose(Packet101CloseWindow packet101closewindow) {
         if (this.player.dead) return; // CraftBukkit
 
-        // CraftBukkit start
-        InventoryCloseEvent event = new InventoryCloseEvent(this.player.activeContainer.getBukkitView());
-        server.getPluginManager().callEvent(event);
-        this.player.activeContainer.transferTo(this.player.defaultContainer, getPlayer());
-        // CraftBukkit end
+        CraftEventFactory.handleInventoryCloseEvent(this.player); // CraftBukkit
 
         this.player.j();
     }

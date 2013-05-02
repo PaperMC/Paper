@@ -250,6 +250,8 @@ public abstract class PlayerList {
         if (entityplayer.playerConnection.disconnected) return null; // CraftBukkit - exploitsies fix
 
         // CraftBukkit start - Quitting must be before we do final save of data, in case plugins need to modify it
+        org.bukkit.craftbukkit.event.CraftEventFactory.handleInventoryCloseEvent(entityplayer);
+
         PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(this.cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.name + " left the game.");
         this.cserver.getPluginManager().callEvent(playerQuitEvent);
         entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());

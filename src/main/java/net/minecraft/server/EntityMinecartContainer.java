@@ -149,12 +149,6 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
     }
 
     public void c(int i) {
-        // CraftBukkit start
-        for (HumanEntity human : transaction) {
-            ((org.bukkit.craftbukkit.entity.CraftHumanEntity) human).getHandle().closeInventory();
-        }
-        // CraftBukkit end
-
         this.b = false;
         super.c(i);
     }
