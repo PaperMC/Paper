@@ -2340,7 +2340,7 @@ public abstract class World implements IBlockAccess {
             // CraftBukkit start - Split out persistent check, don't apply it to special persistent mobs
             if (entity instanceof EntityLiving) {
                 EntityLiving entityliving = (EntityLiving) entity;
-                if (!entityliving.isTypeNotPersistent() && entityliving.bU()) { // Should be isPersistent
+                if (entityliving.isTypeNotPersistent() && entityliving.bU()) { // Should be isPersistent
                     continue;
                 }
             }
