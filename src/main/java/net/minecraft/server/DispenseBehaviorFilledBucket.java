@@ -23,7 +23,7 @@ final class DispenseBehaviorFilledBucket extends DispenseBehaviorItem {
         int x = i + enumfacing.c();
         int y = j + enumfacing.d();
         int z = k + enumfacing.e();
-        if (world.isEmpty(x, y, z) || world.getMaterial(x, y, z).isBuildable()) {
+        if (world.isEmpty(x, y, z) || !world.getMaterial(x, y, z).isBuildable()) {
             org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
             CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack);
 
