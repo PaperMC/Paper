@@ -3,6 +3,7 @@ package net.minecraft.server;
 import java.util.Calendar;
 
 //CraftBukkit start
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.event.entity.EntityCombustByEntityEvent;
 import org.bukkit.event.entity.EntityCombustEvent;
 //CraftBukkit end
@@ -154,7 +155,8 @@ public class EntityZombie extends EntityMonster {
 
     public int c(Entity entity) {
         ItemStack itemstack = this.bG();
-        float f = (float) (this.getMaxHealth() - this.getHealth()) / (float) this.getMaxHealth();
+        // CraftBukkit - getMaxHealth() -> ((CraftLivingEntity) this.bukkitEntity).getMaxHealth()
+        float f = (float) (((CraftLivingEntity) this.bukkitEntity).getMaxHealth() - this.getHealth()) / (float) ((CraftLivingEntity) this.bukkitEntity).getMaxHealth();
         int i = 3 + MathHelper.d(f * 4.0F);
 
         if (itemstack != null) {
