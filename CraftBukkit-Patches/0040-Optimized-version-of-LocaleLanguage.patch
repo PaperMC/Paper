@@ -1,0 +1,173 @@
+From 8afd877d7c450801ee8bd0f63c87341e6c41a9cf Mon Sep 17 00:00:00 2001
+From: snowleo <schneeleo@gmail.com>
+Date: Wed, 8 May 2013 12:09:45 +1000
+Subject: [PATCH] Optimized version of LocaleLanguage
+
+This patch reduces the memory footprint of each EntityPlayer by about 300 KB. The original class looks very unfinished and future versions might use the commented code.
+
+diff --git a/src/main/java/net/minecraft/server/LocaleLanguage.java b/src/main/java/net/minecraft/server/LocaleLanguage.java
+index d88f864..cd165b9 100644
+--- a/src/main/java/net/minecraft/server/LocaleLanguage.java
++++ b/src/main/java/net/minecraft/server/LocaleLanguage.java
+@@ -1,5 +1,10 @@
+ package net.minecraft.server;
+ 
++// Spigot start
++import com.google.common.cache.Cache;
++import com.google.common.cache.CacheBuilder;
++import com.google.common.cache.CacheLoader;
++// Spigot end
+ import java.io.BufferedReader;
+ import java.io.File;
+ import java.io.FileReader;
+@@ -12,15 +17,22 @@ import java.util.TreeMap;
+ 
+ public class LocaleLanguage {
+ 
++    // Spigot - cache languages to prevent reloading on each player creation
++    private static Cache<String,Properties> languages = CacheBuilder.newBuilder().weakValues().build(
++        new CacheLoader<String, Properties>() {
++            public Properties load(String key) {
++                return loadLanguage(key);
++            }
++        });
+     private static LocaleLanguage a = new LocaleLanguage("en_US");
+-    private Properties b = new Properties();
+-    private TreeMap c;
+-    private TreeMap d = new TreeMap();
++    private volatile Properties b = new Properties(); // Spigot - volatile
++    private static TreeMap c; // Spigot - static
++    // private TreeMap d = new TreeMap(); // Spigot - Unused map
+     private String e;
+-    private boolean f;
++    // private boolean f; // Spigot - removed
+ 
+     public LocaleLanguage(String s) {
+-        this.e();
++        //this.e(); // Spigot: moved up
+         this.a(s, false);
+     }
+ 
+@@ -28,7 +40,7 @@ public class LocaleLanguage {
+         return a;
+     }
+ 
+-    private void e() {
++    private static void e() { // Spigot - static
+         TreeMap treemap = new TreeMap();
+ 
+         try {
+@@ -46,23 +58,25 @@ public class LocaleLanguage {
+             return;
+         }
+ 
+-        this.c = treemap;
+-        this.c.put("en_US", "English (US)");
++        c = treemap; // Spigot - this => static
++        c.put("en_US", "English (US)"); // Spigot - this => static
+     }
+ 
+     public TreeMap b() {
+         return this.c;
+     }
+ 
+-    private void a(Properties properties, String s) throws IOException {
++    private static void a(Properties properties, String s) throws IOException { // Spigot - static
+         BufferedReader bufferedreader = null;
+ 
++        /* Spigot - unused map
+         if (this.d.containsKey(s)) {
+             bufferedreader = new BufferedReader(new FileReader((File) this.d.get(s)));
+         } else {
++        */
+             bufferedreader = new BufferedReader(new InputStreamReader(LocaleLanguage.class.getResourceAsStream("/lang/" + s + ".lang"), "UTF-8"));
+-        }
+-
++        //} // Spigot: unused map
++        try { // Spigot: close reader
+         for (String s1 = bufferedreader.readLine(); s1 != null; s1 = bufferedreader.readLine()) {
+             s1 = s1.trim();
+             if (!s1.startsWith("#")) {
+@@ -73,22 +87,32 @@ public class LocaleLanguage {
+                 }
+             }
+         }
++        } finally { bufferedreader.close(); } // Spigot - close reader
+     }
+ 
+     public synchronized void a(String s, boolean flag) {
+         if (flag || !s.equals(this.e)) {
++            // Spigot start - Move loading code to new static method
++            this.e = s;
++            this.b = languages.getUnchecked(s);
++        }
++    }
++    
++    private static Properties loadLanguage(String s) {
++            // Spigot end
+             Properties properties = new Properties();
+ 
+             try {
+-                this.a(properties, "en_US");
++                a(properties, "en_US"); // Spigot - this => static
+             } catch (IOException ioexception) {
+                 ;
+             }
+ 
+-            this.f = false;
++            // this.f = false; // Spigot - removed variable
+             if (!"en_US".equals(s)) {
+                 try {
+-                    this.a(properties, s);
++                    a(properties, s); // Spigot - this => static
++                    /* Spigot - f is unused, so unneeded code
+                     Enumeration enumeration = properties.propertyNames();
+ 
+                     while (enumeration.hasMoreElements() && !this.f) {
+@@ -106,22 +130,25 @@ public class LocaleLanguage {
+                             }
+                         }
+                     }
++                    */
+                 } catch (IOException ioexception1) {
+                     ioexception1.printStackTrace();
+-                    return;
++                    //return; // Spigot - moved down
+                 }
+             }
+-
++            return properties; // Spigot - return properties
++            /* Spigot - moved up
+             this.e = s;
+             this.b = properties;
+         }
++        */
+     }
+ 
+-    public synchronized String a(String s) {
++    public String a(String s) { // Spigot - removed synchronized, b is volatile
+         return this.b.getProperty(s, s);
+     }
+ 
+-    public synchronized String a(String s, Object... aobject) {
++    public String a(String s, Object... aobject) { // Spigot - removed synchronized, b is volatile
+         String s1 = this.b.getProperty(s, s);
+ 
+         try {
+@@ -131,11 +158,11 @@ public class LocaleLanguage {
+         }
+     }
+ 
+-    public synchronized boolean b(String s) {
++    public boolean b(String s) { // Spigot - removed synchronized, b is volatile
+         return this.b.containsKey(s);
+     }
+ 
+-    public synchronized String c(String s) {
++    public String c(String s) { //S pigot - removed synchronized, b is volatile
+         return this.b.getProperty(s + ".name", "");
+     }
+ }
+-- 
+1.8.2.1
+
