@@ -1,4 +1,4 @@
-From 1f308c0c10df4f1a1533de497d1ef098bb64b348 Mon Sep 17 00:00:00 2001
+From 08b0653201cd272203727057469a8bf0f842c0f2 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 23 Apr 2013 11:47:32 +1000
 Subject: [PATCH] Netty
@@ -449,10 +449,10 @@ index 0000000..2dbbf6c
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..0e1b1fd
+index 0000000..5a0d041
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,253 @@
+@@ -0,0 +1,258 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -477,6 +477,7 @@ index 0000000..0e1b1fd
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.Packet;
 +import net.minecraft.server.Packet252KeyResponse;
++import net.minecraft.server.Packet255KickDisconnect;
 +import net.minecraft.server.PendingConnection;
 +import net.minecraft.server.PlayerConnection;
 +import org.spigotmc.MultiplexingServerConnection;
@@ -602,6 +603,10 @@ index 0000000..0e1b1fd
 +            // If handler indicates packet send
 +            if (packet != null) {
 +                highPriorityQueue.add(packet);
++                
++                if (packet instanceof Packet255KickDisconnect) {
++                    channel.pipeline().get(OutboundManager.class).flushNow = true;
++                }
 +
 +                // If needed, check and prepare encryption phase
 +                // We don't send the packet here as it is sent just before the cipher handler has been added to ensure we can safeguard from any race conditions
@@ -1049,10 +1054,10 @@ index 0000000..a3b86b8
 +}
 diff --git a/src/main/java/org/spigotmc/netty/OutboundManager.java b/src/main/java/org/spigotmc/netty/OutboundManager.java
 new file mode 100644
-index 0000000..1961e89
+index 0000000..7476074
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/OutboundManager.java
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,19 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.channel.ChannelHandlerContext;
@@ -1063,9 +1068,10 @@ index 0000000..1961e89
 +
 +    private static final int FLUSH_TIME = 5;
 +    private long lastFlush;
++    public boolean flushNow = false;
 +
 +    public void flush(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-+        if (System.currentTimeMillis() - lastFlush > FLUSH_TIME) {
++        if (flushNow || System.currentTimeMillis() - lastFlush > FLUSH_TIME) {
 +            lastFlush = System.currentTimeMillis();
 +            ctx.flush(promise);
 +        }
