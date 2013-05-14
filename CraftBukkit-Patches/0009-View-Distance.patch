@@ -1,0 +1,78 @@
+From 2b94f7c77f07a6de7a567a234e562dd76198ec3b Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Sat, 23 Mar 2013 09:52:41 +1100
+Subject: [PATCH] View Distance
+
+This commit allows the user to select per world view distances, and view distances below 3. Be wary of the issues selecting a view distance of 1 or 2 may cause!
+
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index 0dfd190..c543bed 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -22,7 +22,7 @@ public class PlayerChunkMap {
+     public PlayerChunkMap(WorldServer worldserver, int i) {
+         if (i > 15) {
+             throw new IllegalArgumentException("Too big view radius!");
+-        } else if (i < 3) {
++        } else if (i < 1) {
+             throw new IllegalArgumentException("Too small view radius!");
+         } else {
+             this.e = i;
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 8114910..3a321da 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -51,7 +51,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+         // CraftBukkit end
+         this.server = minecraftserver;
+         this.tracker = new EntityTracker(this);
+-        this.manager = new PlayerChunkMap(this, minecraftserver.getPlayerList().o());
++        this.manager = new PlayerChunkMap(this, getWorld().viewDistance); // Spigot
+         if (this.entitiesById == null) {
+             this.entitiesById = new IntHashMap();
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 9e7d8ab..44d1842 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -120,6 +120,9 @@ public class CraftWorld implements World {
+         treeGrowthModifier = configuration.getInt("world-settings." + name + ".tree-growth-modifier", treeGrowthModifier);
+         mushroomGrowthModifier = configuration.getInt("world-settings." + name + ".mushroom-growth-modifier", mushroomGrowthModifier);
+ 
++        viewDistance = Bukkit.getServer().getViewDistance();
++        viewDistance = configuration.getInt("world-settings." + name + ".view-distance", viewDistance);
++
+         if (!info) return;
+         server.getLogger().info("-------------- Spigot ----------------");
+         server.getLogger().info("-------- World Settings For [" + name + "] --------");
+@@ -134,6 +137,7 @@ public class CraftWorld implements World {
+         server.getLogger().info("Sugar Growth Modifier: " + sugarGrowthModifier);
+         server.getLogger().info("Tree Growth Modifier: " + treeGrowthModifier);
+         server.getLogger().info("Mushroom Growth Modifier: " + mushroomGrowthModifier);
++        server.getLogger().info("View distance: " + viewDistance);
+         server.getLogger().info("-------------------------------------------------");
+         // Spigot end
+     }
+@@ -144,6 +148,7 @@ public class CraftWorld implements World {
+     public int aggregateTicks = 4;
+     public double itemMergeRadius = 3.5;
+     public double expMergeRadius = 3.5;
++    public int viewDistance;
+     //Crop growth rates:
+     public int wheatGrowthModifier = 100;
+     public int cactusGrowthModifier = 100;
+diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
+index 92241d9..10ef7f2 100644
+--- a/src/main/resources/configurations/bukkit.yml
++++ b/src/main/resources/configurations/bukkit.yml
+@@ -50,6 +50,7 @@ world-settings:
+     world:
+         growth-chunks-per-tick: 1000
+     world_nether:
++        view-distance: 5
+         growth-chunks-per-tick: 0
+         random-light-updates: true
+         water-creatures-per-chunk: 0
+-- 
+1.8.2.1
+
