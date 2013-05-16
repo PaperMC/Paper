@@ -1,82 +1,83 @@
-From ce7c0ac39044dfe8ad145cb765c21ef9a855bb44 Mon Sep 17 00:00:00 2001
+From a2ab3c1fe4df52ead3920ec9d29bfd4e93b1344d Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Thu, 16 May 2013 18:09:28 +1000
+Date: Thu, 16 May 2013 18:16:02 +1000
 Subject: [PATCH] Orebfuscator
 
 Implement lightweight orebfuscator to Spigot
 
 diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
-index 17d837d..ecc52b9 100644
+index 17d837d..d38eb4d 100644
 --- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
 +++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
 @@ -94,6 +94,7 @@ public class EntityFallingBlock extends Entity {
                      }
  
                      this.world.setAir(i, j, k);
-+                    org.spigotmc.OrebfuscatorManager.updateNearbyBlocks(world, i, j, k); // Spigot (Orebfuscator)
++                    org.spigotmc.OrebfuscatorManager.updateNearbyBlocks(world, i, j, k); // Spigot
                  }
  
                  if (this.onGround) {
 diff --git a/src/main/java/net/minecraft/server/Explosion.java b/src/main/java/net/minecraft/server/Explosion.java
-index ef220c1..63f43b8 100644
+index ef220c1..ae1cee9 100644
 --- a/src/main/java/net/minecraft/server/Explosion.java
 +++ b/src/main/java/net/minecraft/server/Explosion.java
 @@ -240,6 +240,7 @@ public class Explosion {
                  j = chunkposition.y;
                  k = chunkposition.z;
                  l = this.world.getTypeId(i, j, k);
-+                org.spigotmc.OrebfuscatorManager.updateNearbyBlocks(world, i, j, k); // Spigot (Orebfuscator)
++                org.spigotmc.OrebfuscatorManager.updateNearbyBlocks(world, i, j, k); // Spigot
                  if (flag) {
                      double d0 = (double) ((float) i + this.world.random.nextFloat());
                      double d1 = (double) ((float) j + this.world.random.nextFloat());
 diff --git a/src/main/java/net/minecraft/server/Packet51MapChunk.java b/src/main/java/net/minecraft/server/Packet51MapChunk.java
-index d11c0ea..6967b74 100644
+index d11c0ea..7711629 100644
 --- a/src/main/java/net/minecraft/server/Packet51MapChunk.java
 +++ b/src/main/java/net/minecraft/server/Packet51MapChunk.java
 @@ -46,6 +46,7 @@ public class Packet51MapChunk extends Packet {
  
          this.d = chunkmap.c;
          this.c = chunkmap.b;
-+        org.spigotmc.OrebfuscatorManager.obfuscateSync(chunk.x, chunk.z, i, chunkmap.a, chunk.world); // Spigot (Orebfuscator)
++        org.spigotmc.OrebfuscatorManager.obfuscateSync(chunk.x, chunk.z, i, chunkmap.a, chunk.world); // Spigot
  
          try {
              this.inflatedBuffer = chunkmap.a;
 diff --git a/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java b/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
-index 129dc4f..b7ffab5 100644
+index 129dc4f..7312e36 100644
 --- a/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
 +++ b/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
 @@ -28,6 +28,7 @@ public class Packet56MapChunkBulk extends Packet {
          }
      };
      // CraftBukkit end
-+    private World world; // Spigot (Orebfuscator) Keep track of world
++    private World world; // Spigot
  
      public Packet56MapChunkBulk() {}
  
-@@ -46,6 +47,8 @@ public class Packet56MapChunkBulk extends Packet {
+@@ -46,12 +47,17 @@ public class Packet56MapChunkBulk extends Packet {
              Chunk chunk = (Chunk) list.get(k);
              ChunkMap chunkmap = Packet51MapChunk.a(chunk, true, '\uffff');
  
-+            world = chunk.world; // Spigot (Orebfuscator)
-+            /* Spigot (Orebfuscator) - Don't use the build buffer yet. Copy to it more efficiently once the chunk is obfuscated
++            // Spigot start
++            world = chunk.world;
++            /*
              if (buildBuffer.length < j + chunkmap.a.length) {
                  byte[] abyte = new byte[j + chunkmap.a.length];
  
-@@ -53,7 +56,7 @@ public class Packet56MapChunkBulk extends Packet {
+                 System.arraycopy(buildBuffer, 0, abyte, 0, buildBuffer.length);
                  buildBuffer = abyte;
              }
++            */
++            // Spigot end
  
--            System.arraycopy(chunkmap.a, 0, buildBuffer, j, chunkmap.a.length);
-+            System.arraycopy(chunkmap.a, 0, buildBuffer, j, chunkmap.a.length); */
+             System.arraycopy(chunkmap.a, 0, buildBuffer, j, chunkmap.a.length);
              j += chunkmap.a.length;
-             this.c[k] = chunk.x;
-             this.d[k] = chunk.z;
-@@ -82,6 +85,21 @@ public class Packet56MapChunkBulk extends Packet {
+@@ -81,6 +87,22 @@ public class Packet56MapChunkBulk extends Packet {
+         if (this.buffer != null) {
              return;
          }
- 
-+        // Spigot (Orebfuscator) start - Obfuscate chunks
++        // Spigot start
 +        int finalBufferSize = 0;
++        // Obfuscate all sections
 +        for (int i = 0; i < a.length; i++) {
 +            org.spigotmc.OrebfuscatorManager.obfuscate(c[i], d[i], a[i], inflatedBuffers[i], world);
 +            finalBufferSize += inflatedBuffers[i].length;
@@ -89,10 +90,10 @@ index 129dc4f..b7ffab5 100644
 +            System.arraycopy(inflatedBuffers[i], 0, buildBuffer, bufferLocation, inflatedBuffers[i].length);
 +            bufferLocation += inflatedBuffers[i].length;
 +        }
-+        // Spigot (Orebfuscator) end
++        // Spigot end
+ 
          Deflater deflater = localDeflater.get();
          deflater.reset();
-         deflater.setInput(this.buildBuffer);
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
 index 1243d1d..e45bcd2 100644
 --- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
