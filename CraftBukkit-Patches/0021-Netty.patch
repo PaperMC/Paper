@@ -1,4 +1,4 @@
-From 674cdb53ac5d08828c63aad1abd6b1a2f37fb9e6 Mon Sep 17 00:00:00 2001
+From 9894e4291db62707a35af91c43bd5016ad127786 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 23 Apr 2013 11:47:32 +1000
 Subject: [PATCH] Netty
@@ -32,7 +32,7 @@ Subject: [PATCH] Netty
  Commons Attribution-ShareAlike 3.0 Unported license.
 
 diff --git a/pom.xml b/pom.xml
-index 274fd43..b0891ff 100644
+index 274fd43..8d26718 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -132,6 +132,11 @@
@@ -42,7 +42,7 @@ index 274fd43..b0891ff 100644
 +    <dependency>
 +      <groupId>io.netty</groupId>
 +      <artifactId>netty-all</artifactId>
-+      <version>4.0.0.CR1</version>
++      <version>4.0.0.CR2</version>
 +    </dependency>
    </dependencies>
  
@@ -361,31 +361,26 @@ index 0000000..c8ea80a
 +        pending.add(conn);
 +    }
 +}
-diff --git a/src/main/java/org/spigotmc/netty/CipherCodec.java b/src/main/java/org/spigotmc/netty/CipherCodec.java
+diff --git a/src/main/java/org/spigotmc/netty/CipherBase.java b/src/main/java/org/spigotmc/netty/CipherBase.java
 new file mode 100644
-index 0000000..2dbbf6c
+index 0000000..1f915df
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/netty/CipherCodec.java
-@@ -0,0 +1,67 @@
++++ b/src/main/java/org/spigotmc/netty/CipherBase.java
+@@ -0,0 +1,45 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
-+import io.netty.channel.ChannelHandlerContext;
-+import io.netty.handler.codec.ByteToByteCodec;
 +import javax.crypto.Cipher;
 +import javax.crypto.ShortBufferException;
-+import net.minecraft.server.Packet252KeyResponse;
 +
 +/**
-+ * This class is a complete solution for encrypting and decoding bytes in a
-+ * Netty stream. It takes two {@link Cipher} instances, used for encryption and
-+ * decryption respectively.
++ * Class to expose an
++ * {@link #cipher(io.netty.buffer.ByteBuf, io.netty.buffer.ByteBuf)} method to
++ * aid in the efficient passing of ByteBuffers through a cipher.
 + */
-+public class CipherCodec extends ByteToByteCodec {
++class CipherBase {
 +
-+    private Cipher encrypt;
-+    private Cipher decrypt;
-+    private Packet252KeyResponse responsePacket;
++    private final Cipher cipher;
 +    private ThreadLocal<byte[]> heapInLocal = new EmptyByteThreadLocal();
 +    private ThreadLocal<byte[]> heapOutLocal = new EmptyByteThreadLocal();
 +
@@ -397,28 +392,11 @@ index 0000000..2dbbf6c
 +        }
 +    }
 +
-+    public CipherCodec(Cipher encrypt, Cipher decrypt, Packet252KeyResponse responsePacket) {
-+        this.encrypt = encrypt;
-+        this.decrypt = decrypt;
-+        this.responsePacket = responsePacket;
++    protected CipherBase(Cipher cipher) {
++        this.cipher = cipher;
 +    }
 +
-+    @Override
-+    public void beforeAdd(ChannelHandlerContext ctx) throws Exception {
-+        ctx.channel().write(responsePacket);
-+    }
-+
-+    @Override
-+    public void encode(ChannelHandlerContext ctx, ByteBuf in, ByteBuf out) throws Exception {
-+        cipher(in, out, encrypt);
-+    }
-+
-+    @Override
-+    public void decode(ChannelHandlerContext ctx, ByteBuf in, ByteBuf out) throws Exception {
-+        cipher(in, out, decrypt);
-+    }
-+
-+    private void cipher(ByteBuf in, ByteBuf out, Cipher cipher) throws ShortBufferException {
++    protected void cipher(ByteBuf in, ByteBuf out) throws ShortBufferException {
 +        byte[] heapIn = heapInLocal.get();
 +        int readableBytes = in.readableBytes();
 +        if (heapIn.length < readableBytes) {
@@ -434,12 +412,64 @@ index 0000000..2dbbf6c
 +        out.writeBytes(heapOut, 0, cipher.update(heapIn, 0, readableBytes, heapOut));
 +    }
 +}
+diff --git a/src/main/java/org/spigotmc/netty/CipherDecoder.java b/src/main/java/org/spigotmc/netty/CipherDecoder.java
+new file mode 100644
+index 0000000..30b1d5f
+--- /dev/null
++++ b/src/main/java/org/spigotmc/netty/CipherDecoder.java
+@@ -0,0 +1,20 @@
++package org.spigotmc.netty;
++
++import io.netty.buffer.ByteBuf;
++import io.netty.channel.ChannelHandlerContext;
++import io.netty.handler.codec.ByteToByteDecoder;
++import javax.crypto.Cipher;
++
++class CipherDecoder extends ByteToByteDecoder {
++
++    private final CipherBase cipher;
++
++    public CipherDecoder(Cipher cipher) {
++        this.cipher = new CipherBase(cipher);
++    }
++
++    @Override
++    protected void decode(ChannelHandlerContext ctx, ByteBuf in, ByteBuf out) throws Exception {
++        cipher.cipher(in, out);
++    }
++}
+diff --git a/src/main/java/org/spigotmc/netty/CipherEncoder.java b/src/main/java/org/spigotmc/netty/CipherEncoder.java
+new file mode 100644
+index 0000000..aa8192e
+--- /dev/null
++++ b/src/main/java/org/spigotmc/netty/CipherEncoder.java
+@@ -0,0 +1,20 @@
++package org.spigotmc.netty;
++
++import io.netty.buffer.ByteBuf;
++import io.netty.channel.ChannelHandlerContext;
++import io.netty.handler.codec.ByteToByteEncoder;
++import javax.crypto.Cipher;
++
++class CipherEncoder extends ByteToByteEncoder {
++
++    private final CipherBase cipher;
++
++    public CipherEncoder(Cipher cipher) {
++        this.cipher = new CipherBase(cipher);
++    }
++
++    @Override
++    protected void encode(ChannelHandlerContext ctx, ByteBuf in, ByteBuf out) throws Exception {
++        cipher.cipher(in, out);
++    }
++}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..5a0d041
+index 0000000..97bf65e
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,258 @@
+@@ -0,0 +1,254 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -546,6 +576,8 @@ index 0000000..5a0d041
 +        if (connected) {
 +            if (msg instanceof Packet252KeyResponse) {
 +                secret = ((Packet252KeyResponse) msg).a(key);
++                Cipher decrypt = NettyServerConnection.getCipher(Cipher.DECRYPT_MODE, secret);
++                channel.pipeline().addBefore("decoder", "decrypt", new CipherDecoder(decrypt));
 +            }
 +
 +            if (msg.a_()) {
@@ -590,21 +622,15 @@ index 0000000..5a0d041
 +            // If handler indicates packet send
 +            if (packet != null) {
 +                highPriorityQueue.add(packet);
-+                
++
 +                if (packet instanceof Packet255KickDisconnect) {
 +                    channel.pipeline().get(OutboundManager.class).flushNow = true;
 +                }
 +
-+                // If needed, check and prepare encryption phase
-+                // We don't send the packet here as it is sent just before the cipher handler has been added to ensure we can safeguard from any race conditions
-+                // Which are caused by the slow first initialization of the cipher SPI
++                channel.write(packet);
 +                if (packet instanceof Packet252KeyResponse) {
 +                    Cipher encrypt = NettyServerConnection.getCipher(Cipher.ENCRYPT_MODE, secret);
-+                    Cipher decrypt = NettyServerConnection.getCipher(Cipher.DECRYPT_MODE, secret);
-+                    CipherCodec codec = new CipherCodec(encrypt, decrypt, (Packet252KeyResponse) packet);
-+                    channel.pipeline().addBefore("decoder", "cipher", codec);
-+                } else {
-+                    channel.write(packet);
++                    channel.pipeline().addBefore("decoder", "encrypt", new CipherEncoder(encrypt));
 +                }
 +            }
 +        }
@@ -1066,14 +1092,15 @@ index 0000000..7476074
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketDecoder.java b/src/main/java/org/spigotmc/netty/PacketDecoder.java
 new file mode 100644
-index 0000000..65074d2
+index 0000000..bc4fc98
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketDecoder.java
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,67 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
 +import io.netty.buffer.ByteBufInputStream;
++import io.netty.buffer.MessageBuf;
 +import io.netty.channel.ChannelHandlerContext;
 +import io.netty.handler.codec.ReplayingDecoder;
 +import java.io.DataInputStream;
@@ -1097,49 +1124,51 @@ index 0000000..65074d2
 +    }
 +
 +    @Override
-+    public Packet decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
++    protected void decode(ChannelHandlerContext ctx, ByteBuf in, MessageBuf<Object> out) throws Exception {
 +        if (input == null) {
 +            input = new DataInputStream(new ByteBufInputStream(in));
 +        }
 +
-+        switch (state()) {
-+            case HEADER:
-+                short packetId = in.readUnsignedByte();
-+                packet = Packet.a(MinecraftServer.getServer().getLogger(), packetId);
-+                if (packet == null) {
-+                    throw new IOException("Bad packet id " + packetId);
-+                }
-+                checkpoint(ReadState.DATA);
-+            case DATA:
-+                try {
-+                    packet.a(input);
-+                } catch (EOFException ex) {
-+                    return null;
-+                }
++        while (true) {
++            switch (state()) {
++                case HEADER:
++                    short packetId = in.readUnsignedByte();
++                    packet = Packet.a(MinecraftServer.getServer().getLogger(), packetId);
++                    if (packet == null) {
++                        throw new IOException("Bad packet id " + packetId);
++                    }
++                    checkpoint(ReadState.DATA);
++                case DATA:
++                    try {
++                        packet.a(input);
++                    } catch (EOFException ex) {
++                        return;
++                    }
 +
-+                checkpoint(ReadState.HEADER);
-+                Packet ret = packet;
-+                packet = null;
++                    checkpoint(ReadState.HEADER);
++                    Packet ret = packet;
++                    packet = null;
 +
-+                return ret;
-+            default:
-+                throw new IllegalStateException();
++                    out.add(ret);
++                    break;
++                default:
++                    throw new IllegalStateException();
++            }
 +        }
 +    }
 +
 +    @Override
-+    public void freeInboundBuffer(ChannelHandlerContext ctx) throws Exception {
-+        super.freeInboundBuffer(ctx);
++    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
 +        input = null;
 +        packet = null;
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketEncoder.java b/src/main/java/org/spigotmc/netty/PacketEncoder.java
 new file mode 100644
-index 0000000..c8832d6
+index 0000000..b9a73b8
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketEncoder.java
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,49 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -1181,8 +1210,7 @@ index 0000000..c8832d6
 +    }
 +
 +    @Override
-+    public void freeOutboundBuffer(ChannelHandlerContext ctx) throws Exception {
-+        super.freeOutboundBuffer(ctx);
++    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
 +        if (outBuf != null) {
 +            outBuf.release();
 +            outBuf = null;
