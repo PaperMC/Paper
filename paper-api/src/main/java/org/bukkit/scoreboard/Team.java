@@ -158,7 +158,6 @@ public interface Team {
     /**
      * Unregisters this team from the Scoreboard
      *
-     * @param team Team to unregister
      * @throws IllegalStateException if this team has been unregistered
      */
     void unregister() throws IllegalStateException;

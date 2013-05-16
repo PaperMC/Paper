@@ -307,10 +307,12 @@ public abstract class JavaPlugin extends PluginBase {
     }
 
     /**
-     * Gets the command with the given name, specific to this plugin
+     * Gets the command with the given name, specific to this plugin. Commands
+     * need to be registered in the {@link PluginDescriptionFile#getCommands()
+     * PluginDescriptionFile} to exist at runtime.
      *
-     * @param name Name or alias of the command
-     * @return PluginCommand if found, otherwise null
+     * @param name name or alias of the command
+     * @return the plugin command if found, otherwise null
      */
     public PluginCommand getCommand(String name) {
         String alias = name.toLowerCase();

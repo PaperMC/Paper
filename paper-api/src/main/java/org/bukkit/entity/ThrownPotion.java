@@ -9,8 +9,10 @@ import org.bukkit.potion.PotionEffect;
  * Represents a thrown potion bottle
  */
 public interface ThrownPotion extends Projectile {
+
     /**
      * Returns the effects that are applied by this potion.
+     *
      * @return The potion effects
      */
     public Collection<PotionEffect> getEffects();
@@ -18,9 +20,9 @@ public interface ThrownPotion extends Projectile {
     /**
      * Returns a copy of the ItemStack for this thrown potion.
      * <p>
-     * Altering this copy will not alter the thrown potion directly.
-     * If you want to alter the thrown potion, you must use the
-     * {@link #setItemStack(ItemStack) setItemStack} method.
+     * Altering this copy will not alter the thrown potion directly. If you
+     * want to alter the thrown potion, you must use the {@link
+     * #setItem(ItemStack) setItemStack} method.
      *
      * @return A copy of the ItemStack for this thrown potion.
      */

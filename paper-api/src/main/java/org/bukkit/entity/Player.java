@@ -560,7 +560,7 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * not be reliable, as it is a state provided by the client, and may therefore not be accurate.
      *
      * @return True if the player standing on a solid block, else false.
-     * @deprecated Inconsistent with {@link org.bukkit.craftbukkit.entity.Entity#isOnGround()}
+     * @deprecated Inconsistent with {@link org.bukkit.entity.Entity#isOnGround()}
      */
     @Deprecated
     public boolean isOnGround();

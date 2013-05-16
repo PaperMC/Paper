@@ -88,7 +88,6 @@ public interface Objective {
     /**
      * Gets a player's Score for an Objective on this Scoreboard
      *
-     * @param objective Objective for the Score
      * @param player Player for the Score
      * @return Score tracking the Objective and player specified
      * @throws IllegalArgumentException if player is null

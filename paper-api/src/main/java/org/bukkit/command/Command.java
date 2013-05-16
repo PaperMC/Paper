@@ -11,6 +11,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permissible;
+import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.util.StringUtil;
 
 import com.google.common.collect.ImmutableList;
@@ -279,10 +280,13 @@ public abstract class Command {
     }
 
     /**
-     * Sets the list of aliases to request on registration for this command
+     * Sets the list of aliases to request on registration for this command.
+     * This is not effective outside of defining aliases in the {@link
+     * PluginDescriptionFile#getCommands()} (under the
+     * `<code>aliases</code>' node) is equivalent to this method.
      *
-     * @param aliases Aliases to register to this command
-     * @return This command object, for linking
+     * @param aliases aliases to register to this command
+     * @return this command object, for chaining
      */
     public Command setAliases(List<String> aliases) {
         this.aliases = aliases;
@@ -293,10 +297,12 @@ public abstract class Command {
     }
 
     /**
-     * Sets a brief description of this command
+     * Sets a brief description of this command. Defining a description in the
+     * {@link PluginDescriptionFile#getCommands()} (under the
+     * `<code>description</code>' node) is equivalent to this method.
      *
-     * @param description New command description
-     * @return This command object, for linking
+     * @param description new command description
+     * @return this command object, for chaining
      */
     public Command setDescription(String description) {
         this.description = description;
@@ -306,8 +312,9 @@ public abstract class Command {
     /**
      * Sets the message sent when a permission check fails
      *
-     * @param permissionMessage New permission message, null to indicate default message, or an empty string to indicate no message
-     * @return This command object, for linking
+     * @param permissionMessage new permission message, null to indicate
+     *     default message, or an empty string to indicate no message
+     * @return this command object, for chaining
      */
     public Command setPermissionMessage(String permissionMessage) {
         this.permissionMessage = permissionMessage;
@@ -317,8 +324,8 @@ public abstract class Command {
     /**
      * Sets the example usage of this command
      *
-     * @param usage New example usage
-     * @return This command object, for linking
+     * @param usage new example usage
+     * @return this command object, for chaining
      */
     public Command setUsage(String usage) {
         this.usageMessage = usage;
