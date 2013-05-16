@@ -1,6 +1,6 @@
-From a2ab3c1fe4df52ead3920ec9d29bfd4e93b1344d Mon Sep 17 00:00:00 2001
+From 77b92872f2fc584029598f8d601251169a57d209 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Thu, 16 May 2013 18:16:02 +1000
+Date: Thu, 16 May 2013 18:51:05 +1000
 Subject: [PATCH] Orebfuscator
 
 Implement lightweight orebfuscator to Spigot
@@ -42,7 +42,7 @@ index d11c0ea..7711629 100644
          try {
              this.inflatedBuffer = chunkmap.a;
 diff --git a/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java b/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
-index 129dc4f..7312e36 100644
+index 129dc4f..ce28495 100644
 --- a/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
 +++ b/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
 @@ -28,6 +28,7 @@ public class Packet56MapChunkBulk extends Packet {
@@ -53,7 +53,7 @@ index 129dc4f..7312e36 100644
  
      public Packet56MapChunkBulk() {}
  
-@@ -46,12 +47,17 @@ public class Packet56MapChunkBulk extends Packet {
+@@ -46,6 +47,9 @@ public class Packet56MapChunkBulk extends Packet {
              Chunk chunk = (Chunk) list.get(k);
              ChunkMap chunkmap = Packet51MapChunk.a(chunk, true, '\uffff');
  
@@ -63,14 +63,15 @@ index 129dc4f..7312e36 100644
              if (buildBuffer.length < j + chunkmap.a.length) {
                  byte[] abyte = new byte[j + chunkmap.a.length];
  
-                 System.arraycopy(buildBuffer, 0, abyte, 0, buildBuffer.length);
-                 buildBuffer = abyte;
+@@ -54,6 +58,8 @@ public class Packet56MapChunkBulk extends Packet {
              }
-+            */
-+            // Spigot end
  
              System.arraycopy(chunkmap.a, 0, buildBuffer, j, chunkmap.a.length);
++            */
++            // Spigot end
              j += chunkmap.a.length;
+             this.c[k] = chunk.x;
+             this.d[k] = chunk.z;
 @@ -81,6 +87,22 @@ public class Packet56MapChunkBulk extends Packet {
          if (this.buffer != null) {
              return;
@@ -173,14 +174,14 @@ index 67477f4..e5004b3 100644
          }
 diff --git a/src/main/java/org/spigotmc/OrebfuscatorManager.java b/src/main/java/org/spigotmc/OrebfuscatorManager.java
 new file mode 100644
-index 0000000..b1075f1
+index 0000000..9de208b
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/OrebfuscatorManager.java
-@@ -0,0 +1,143 @@
+@@ -0,0 +1,179 @@
 +package org.spigotmc;
 +
-+import java.util.ArrayList;
-+import java.util.List;
++import gnu.trove.set.TByteSet;
++import gnu.trove.set.hash.TByteHashSet;
 +import net.minecraft.server.Block;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.World;
@@ -188,79 +189,114 @@ index 0000000..b1075f1
 +
 +public class OrebfuscatorManager {
 +
++    private static final CustomTimingsHandler update = new CustomTimingsHandler("xray - update");
++    private static final CustomTimingsHandler obfuscate = new CustomTimingsHandler("xray - obfuscate");
++    /*========================================================================*/
 +    // Used to keep track of which blocks to obfuscate
 +    private static final boolean[] obfuscateBlocks = new boolean[Short.MAX_VALUE];
-+    private static byte[] ores;
-+    private static final CustomTimingsHandler obfuscate = new CustomTimingsHandler("xray - obfuscate");
-+    private static final CustomTimingsHandler update = new CustomTimingsHandler("xray - update");
++    // Used to select a random replacement ore
++    private static byte[] replacementOres;
 +
-+    // Default blocks
 +    static {
++        // Set all listed blocks as true to be obfuscated
 +        for (short id : MinecraftServer.getServer().server.orebfuscatorBlocks) {
 +            obfuscateBlocks[id] = true;
 +        }
 +
-+        List<Byte> blocks = new ArrayList<Byte>();
++        // For every block
++        TByteSet blocks = new TByteHashSet();
 +        for (int i = 0; i < obfuscateBlocks.length; i++) {
++            // If we are obfuscating it
 +            if (obfuscateBlocks[i]) {
 +                Block block = Block.byId[i];
-+                if (i != Block.STONE.id && block != null && !block.t() /* isTileEntity */) {
++                // Check it exists and is not a tile entity
++                if (block != null && !block.t() /* isTileEntity */) {
++                    // Add it to the set of replacement blocks
 +                    blocks.add((byte) i);
 +                }
 +            }
 +        }
-+        ores = new byte[blocks.size()];
-+        for (int i = 0; i < ores.length; i++) {
-+            ores[i] = blocks.get(i);
++        // Bake it to a flat array of replacements
++        replacementOres = blocks.toArray();
++    }
++
++    /**
++     * Starts the timings handler, then updates all blocks within the set radius
++     * of the given coordinate, revealing them if they are hidden ores.
++     */
++    public static void updateNearbyBlocks(World world, int x, int y, int z) {
++        if (world.getWorld().obfuscated) {
++            update.startTiming();
++            updateNearbyBlocks(world, x, y, z, 2); // 2 is the radius, we shouldn't change it as that would make it exponentially slower
++            update.stopTiming();
 +        }
 +    }
 +
-+    public static void updateNearbyBlocks(World world, int x, int y, int z) {
-+        update.startTiming();
-+        updateNearbyBlocks(world, x, y, z, 2);
-+        update.stopTiming();
-+    }
-+
++    /**
++     * Starts the timings handler, and then removes all non exposed ores from
++     * the chunk buffer.
++     */
 +    public static void obfuscateSync(int chunkX, int chunkY, int bitmask, byte[] buffer, World world) {
-+        obfuscate.startTiming();
-+        obfuscate(chunkX, chunkY, bitmask, buffer, world);
-+        obfuscate.stopTiming();
++        if (world.getWorld().obfuscated) {
++            obfuscate.startTiming();
++            obfuscate(chunkX, chunkY, bitmask, buffer, world);
++            obfuscate.stopTiming();
++        }
 +    }
 +
++    /**
++     * Removes all non exposed ores from the chunk buffer.
++     */
 +    public static void obfuscate(int chunkX, int chunkY, int bitmask, byte[] buffer, World world) {
++        // If the world is marked as obfuscated
 +        if (world.getWorld().obfuscated) {
++            // Initial radius to search around for air
 +            int initialRadius = 1;
++            // Which block in the buffer we are looking at, anywhere from 0 to 16^4
 +            int index = 0;
++            // The iterator marking which random ore we should use next
++            int randomOre = 0;
++
++            // Chunk corner X and Z blocks
 +            int startX = chunkX << 4;
 +            int startZ = chunkY << 4;
-+            int iterator = 0;
++
++            // Chunks can have up to 16 sections
 +            for (int i = 0; i < 16; i++) {
 +                // If the bitmask indicates this chunk is sent...
 +                if ((bitmask & 1 << i) != 0) {
++                    // Work through all blocks in the chunk, y,z,x
 +                    for (int y = 0; y < 16; y++) {
 +                        for (int z = 0; z < 16; z++) {
 +                            for (int x = 0; x < 16; x++) {
-+                                byte data = buffer[index];
-+                                // Check if the block should be obfuscated for the default engine modes
-+                                if (obfuscateBlocks[data & 0xFF]) {
++                                // Grab the block ID in the buffer.
++                                // TODO: extended IDs are not yet supported
++                                int blockId = buffer[index] & 0xFF;
++                                // Check if the block should be obfuscated
++                                if (obfuscateBlocks[blockId]) {
++                                    // TODO: Don't really understand this, but if radius is not 0 and the world isn't loaded, bail out
 +                                    if (initialRadius != 0 && !isWorldLoaded(world, startX + x, (i << 4) + y, startZ + z, initialRadius)) {
 +                                        continue;
 +                                    }
++                                    // On the otherhand, if radius is 0, or the nearby blocks are all non air, we can obfuscate
 +                                    if (initialRadius == 0 || !areAjacentBlocksTransparent(world, startX + x, (i << 4) + y, startZ + z, initialRadius)) {
-+                                        if (world.getServer().orebfuscatorEngineMode == 2) {
-+                                            // Replace with random ore.
-+                                            if (iterator >= ores.length) {
-+                                                iterator = 0;
-+                                            }
-+                                            buffer[index] = (byte) (int) ores[iterator++];
-+                                        } else {
-+                                            if (world.getServer().orebfuscatorEngineMode == 1) {
++                                        switch (world.getServer().orebfuscatorEngineMode) {
++                                            case 1:
 +                                                // Replace with stone
 +                                                buffer[index] = (byte) Block.STONE.id;
-+                                            }
++                                                break;
++                                            case 2:
++                                                // Replace with random ore.
++                                                if (randomOre >= replacementOres.length) {
++                                                    randomOre = 0;
++                                                }
++                                                buffer[index] = (byte) (int) replacementOres[randomOre++];
++                                                break;
 +                                        }
 +                                    }
 +                                }
++
++                                // For some reason we can get too far ahead of ourselves (concurrent modification on bulk chunks?) so if we do, just abort and move on
 +                                if (++index >= buffer.length) {
 +                                    return;
 +                                }
@@ -273,7 +309,8 @@ index 0000000..b1075f1
 +    }
 +
 +    private static void updateNearbyBlocks(World world, int x, int y, int z, int radius) {
-+        if (world.getWorld().obfuscated && world.isLoaded(x, y, z)) {
++        // If the block in question is loaded
++        if (world.isLoaded(x, y, z)) {
 +            // Get block id
 +            int id = world.getTypeId(x, y, z);
 +
