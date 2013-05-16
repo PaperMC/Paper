@@ -1,4 +1,4 @@
-From 9894e4291db62707a35af91c43bd5016ad127786 Mon Sep 17 00:00:00 2001
+From a611df970f7c6f5ef3f2777f66ec528a3c1f2eaa Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 23 Apr 2013 11:47:32 +1000
 Subject: [PATCH] Netty
@@ -466,10 +466,10 @@ index 0000000..aa8192e
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..97bf65e
+index 0000000..af3ac6d
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,254 @@
+@@ -0,0 +1,259 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -559,6 +559,11 @@ index 0000000..97bf65e
 +    @Override
 +    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 +        a("disconnect.endOfStream", new Object[0]);
++    }
++
++    @Override
++    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
++        ctx.pipeline().get(PacketEncoder.class).dealloc();
 +    }
 +
 +    @Override
@@ -1092,10 +1097,10 @@ index 0000000..7476074
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketDecoder.java b/src/main/java/org/spigotmc/netty/PacketDecoder.java
 new file mode 100644
-index 0000000..bc4fc98
+index 0000000..ba435da
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketDecoder.java
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,61 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -1156,19 +1161,13 @@ index 0000000..bc4fc98
 +            }
 +        }
 +    }
-+
-+    @Override
-+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-+        input = null;
-+        packet = null;
-+    }
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketEncoder.java b/src/main/java/org/spigotmc/netty/PacketEncoder.java
 new file mode 100644
-index 0000000..b9a73b8
+index 0000000..9798acd
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketEncoder.java
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,52 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -1209,13 +1208,16 @@ index 0000000..b9a73b8
 +        out.discardSomeReadBytes();
 +    }
 +
-+    @Override
-+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
++    public void dealloc() {
 +        if (outBuf != null) {
 +            outBuf.release();
 +            outBuf = null;
 +        }
-+        dataOut = null;
++    }
++
++    @Override
++    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
++        dealloc();
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketListener.java b/src/main/java/org/spigotmc/netty/PacketListener.java
