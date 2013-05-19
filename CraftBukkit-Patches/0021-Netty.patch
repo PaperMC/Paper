@@ -1,4 +1,4 @@
-From 8fcf11f2ac4d110f2ce3cf28a8d1880f45fa7d82 Mon Sep 17 00:00:00 2001
+From e601bddd1e85d063071799a2c78e0ad54ba5fe1c Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 23 Apr 2013 11:47:32 +1000
 Subject: [PATCH] Netty
@@ -32,7 +32,7 @@ Subject: [PATCH] Netty
  Commons Attribution-ShareAlike 3.0 Unported license.
 
 diff --git a/pom.xml b/pom.xml
-index 274fd43..54a8b59 100644
+index 274fd43..428f9ce 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -132,6 +132,16 @@
@@ -42,7 +42,7 @@ index 274fd43..54a8b59 100644
 +    <dependency>
 +      <groupId>io.netty</groupId>
 +      <artifactId>netty-all</artifactId>
-+      <version>4.0.0.CR2</version>
++      <version>4.0.0.CR1</version>
 +    </dependency>
 +    <dependency>
 +        <groupId>org.javassist</groupId>
@@ -131,7 +131,7 @@ index 1862863..5a24f2a 100644
 +    public void setSocketAddress(SocketAddress address) { k = address; } // Spigot
  }
 diff --git a/src/main/java/net/minecraft/server/Packet51MapChunk.java b/src/main/java/net/minecraft/server/Packet51MapChunk.java
-index 6967b74..65bb826 100644
+index 7711629..9cf625d 100644
 --- a/src/main/java/net/minecraft/server/Packet51MapChunk.java
 +++ b/src/main/java/net/minecraft/server/Packet51MapChunk.java
 @@ -42,7 +42,7 @@ public class Packet51MapChunk extends Packet {
@@ -144,7 +144,7 @@ index 6967b74..65bb826 100644
          this.d = chunkmap.c;
          this.c = chunkmap.b;
 diff --git a/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java b/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
-index b7ffab5..3af3eed 100644
+index ce28495..fb34d4a 100644
 --- a/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
 +++ b/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
 @@ -24,7 +24,7 @@ public class Packet56MapChunkBulk extends Packet {
@@ -471,10 +471,10 @@ index 0000000..aa8192e
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..af3ac6d
+index 0000000..97bf65e
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,259 @@
+@@ -0,0 +1,254 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -564,11 +564,6 @@ index 0000000..af3ac6d
 +    @Override
 +    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 +        a("disconnect.endOfStream", new Object[0]);
-+    }
-+
-+    @Override
-+    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-+        ctx.pipeline().get(PacketEncoder.class).dealloc();
 +    }
 +
 +    @Override
@@ -1102,15 +1097,14 @@ index 0000000..7476074
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketDecoder.java b/src/main/java/org/spigotmc/netty/PacketDecoder.java
 new file mode 100644
-index 0000000..ba435da
+index 0000000..2587a27
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketDecoder.java
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,59 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
 +import io.netty.buffer.ByteBufInputStream;
-+import io.netty.buffer.MessageBuf;
 +import io.netty.channel.ChannelHandlerContext;
 +import io.netty.handler.codec.ReplayingDecoder;
 +import java.io.DataInputStream;
@@ -1134,7 +1128,7 @@ index 0000000..ba435da
 +    }
 +
 +    @Override
-+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, MessageBuf<Object> out) throws Exception {
++    protected Packet decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
 +        if (input == null) {
 +            input = new DataInputStream(new ByteBufInputStream(in));
 +        }
@@ -1152,15 +1146,14 @@ index 0000000..ba435da
 +                    try {
 +                        packet.a(input);
 +                    } catch (EOFException ex) {
-+                        return;
++                        return null;
 +                    }
 +
 +                    checkpoint(ReadState.HEADER);
 +                    Packet ret = packet;
 +                    packet = null;
 +
-+                    out.add(ret);
-+                    break;
++                    return ret;
 +                default:
 +                    throw new IllegalStateException();
 +            }
@@ -1169,10 +1162,10 @@ index 0000000..ba435da
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketEncoder.java b/src/main/java/org/spigotmc/netty/PacketEncoder.java
 new file mode 100644
-index 0000000..9798acd
+index 0000000..4683021
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketEncoder.java
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,48 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -1213,16 +1206,12 @@ index 0000000..9798acd
 +        out.discardSomeReadBytes();
 +    }
 +
-+    public void dealloc() {
++    @Override
++    public void freeOutboundBuffer(ChannelHandlerContext ctx) throws Exception {
 +        if (outBuf != null) {
 +            outBuf.release();
 +            outBuf = null;
 +        }
-+    }
-+
-+    @Override
-+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-+        dealloc();
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketListener.java b/src/main/java/org/spigotmc/netty/PacketListener.java
