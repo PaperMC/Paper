@@ -4,6 +4,11 @@ import static org.bukkit.support.Matchers.sameHash;
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -17,11 +22,14 @@ import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.util.io.BukkitObjectInputStream;
+import org.bukkit.util.io.BukkitObjectOutputStream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -395,16 +403,71 @@ public class ItemStackTest extends AbstractTestingBase {
     }
 
     @Test
-    public void testBukkitDeserialize() {
-        testDeserialize(new BukkitWrapper(provider), new BukkitWrapper(unequalProvider));
+    public void testBukkitYamlDeserialize() throws Throwable {
+        testYamlDeserialize(new BukkitWrapper(provider), new BukkitWrapper(unequalProvider));
     }
 
     @Test
-    public void testCraftDeserialize() {
-        testDeserialize(new CraftWrapper(provider), new CraftWrapper(unequalProvider));
+    public void testCraftYamlDeserialize() throws Throwable {
+        testYamlDeserialize(new CraftWrapper(provider), new CraftWrapper(unequalProvider));
     }
 
-    static void testDeserialize(StackWrapper provider, StackWrapper unequalProvider) {
+    @Test
+    public void testBukkitStreamDeserialize() throws Throwable {
+        testStreamDeserialize(new BukkitWrapper(provider), new BukkitWrapper(unequalProvider));
+    }
+
+    @Test
+    public void testCraftStreamDeserialize() throws Throwable {
+        testStreamDeserialize(new CraftWrapper(provider), new CraftWrapper(unequalProvider));
+    }
+
+    static void testStreamDeserialize(StackWrapper provider, StackWrapper unequalProvider) throws Throwable {
+        final ItemStack stack = provider.stack();
+        final ItemStack unequalStack = unequalProvider.stack();
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ObjectOutputStream oos = null;
+        try {
+            oos = new BukkitObjectOutputStream(out);
+
+            oos.writeObject(stack);
+            oos.writeObject(unequalStack);
+        } finally {
+            if (oos != null) {
+                try {
+                    oos.close();
+                } catch (IOException ex) {
+                }
+            }
+        }
+
+        final String data = new String(Base64Coder.encode(out.toByteArray()));
+
+        ObjectInputStream ois = null;
+
+        final ItemStack readFirst;
+        final ItemStack readSecond;
+
+        try {
+            ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
+            ois = new BukkitObjectInputStream(in);
+
+            readFirst = (ItemStack) ois.readObject();
+            readSecond = (ItemStack) ois.readObject();
+        } finally {
+            if (ois != null) {
+                try {
+                    ois.close();
+                } catch (IOException ex) {
+                }
+            }
+        }
+
+        testEqualities(data, readFirst, readSecond, stack, unequalStack);
+    }
+
+    static void testYamlDeserialize(StackWrapper provider, StackWrapper unequalProvider) {
         final ItemStack stack = provider.stack();
         final ItemStack unequalStack = unequalProvider.stack();
         final YamlConfiguration configOut = new YamlConfiguration();
@@ -421,9 +484,13 @@ public class ItemStackTest extends AbstractTestingBase {
             throw new RuntimeException(out, ex);
         }
 
-        assertThat(out, configIn.getItemStack("provider"), allOf(equalTo(stack), sameHash(stack)));
-        assertThat(out, configIn.getItemStack("unequal"), allOf(equalTo(unequalStack), sameHash(unequalStack)));
-        assertThat(out, configIn.getItemStack("provider"), is(not(unequalStack)));
-        assertThat(out, configIn.getItemStack("provider"), is(not(configIn.getItemStack("unequal"))));
+        testEqualities(out, configIn.getItemStack("provider"), configIn.getItemStack("unequal"), stack, unequalStack);
+    }
+
+    static void testEqualities(String information, ItemStack primaryRead, ItemStack unequalRead, ItemStack primaryOriginal, ItemStack unequalOriginal) {
+        assertThat(information, primaryRead, allOf(equalTo(primaryOriginal), sameHash(primaryOriginal)));
+        assertThat(information, unequalRead, allOf(equalTo(unequalOriginal), sameHash(unequalOriginal)));
+        assertThat(information, primaryRead, is(not(unequalOriginal)));
+        assertThat(information, primaryRead, is(not(unequalRead)));
     }
 }
