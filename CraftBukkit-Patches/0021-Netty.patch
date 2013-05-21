@@ -1,4 +1,4 @@
-From e601bddd1e85d063071799a2c78e0ad54ba5fe1c Mon Sep 17 00:00:00 2001
+From 5581db959aa1fd81c518c0ff898c2bac0a82931d Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 23 Apr 2013 11:47:32 +1000
 Subject: [PATCH] Netty
@@ -32,7 +32,7 @@ Subject: [PATCH] Netty
  Commons Attribution-ShareAlike 3.0 Unported license.
 
 diff --git a/pom.xml b/pom.xml
-index 274fd43..428f9ce 100644
+index 274fd43..4022004 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -132,6 +132,16 @@
@@ -42,7 +42,7 @@ index 274fd43..428f9ce 100644
 +    <dependency>
 +      <groupId>io.netty</groupId>
 +      <artifactId>netty-all</artifactId>
-+      <version>4.0.0.CR1</version>
++      <version>4.0.0.CR3</version>
 +    </dependency>
 +    <dependency>
 +        <groupId>org.javassist</groupId>
@@ -471,7 +471,7 @@ index 0000000..aa8192e
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..97bf65e
+index 0000000..638a70e
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 @@ -0,0 +1,254 @@
@@ -632,7 +632,7 @@ index 0000000..97bf65e
 +                    channel.pipeline().get(OutboundManager.class).flushNow = true;
 +                }
 +
-+                channel.write(packet);
++                channel.write(packet, channel.voidPromise());
 +                if (packet instanceof Packet252KeyResponse) {
 +                    Cipher encrypt = NettyServerConnection.getCipher(Cipher.ENCRYPT_MODE, secret);
 +                    channel.pipeline().addBefore("decoder", "encrypt", new CipherEncoder(encrypt));
@@ -1097,14 +1097,15 @@ index 0000000..7476074
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketDecoder.java b/src/main/java/org/spigotmc/netty/PacketDecoder.java
 new file mode 100644
-index 0000000..2587a27
+index 0000000..f7c4c65
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketDecoder.java
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,69 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
 +import io.netty.buffer.ByteBufInputStream;
++import io.netty.buffer.MessageBuf;
 +import io.netty.channel.ChannelHandlerContext;
 +import io.netty.handler.codec.ReplayingDecoder;
 +import java.io.DataInputStream;
@@ -1118,42 +1119,51 @@ index 0000000..2587a27
 + * backs the input {@link ByteBuf}. Reads an unsigned byte packet header and
 + * then decodes the packet accordingly.
 + */
-+public class PacketDecoder extends ReplayingDecoder<ReadState> {
++public class PacketDecoder extends ReplayingDecoder<ReadState>
++{
 +
 +    private DataInputStream input;
 +    private Packet packet;
 +
-+    public PacketDecoder() {
-+        super(ReadState.HEADER);
++    public PacketDecoder()
++    {
++        super( ReadState.HEADER );
 +    }
 +
 +    @Override
-+    protected Packet decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
-+        if (input == null) {
-+            input = new DataInputStream(new ByteBufInputStream(in));
++    protected void decode(ChannelHandlerContext ctx, ByteBuf in, MessageBuf<Object> out) throws Exception
++    {
++        if ( input == null )
++        {
++            input = new DataInputStream( new ByteBufInputStream( in ) );
 +        }
 +
-+        while (true) {
-+            switch (state()) {
++        while ( true )
++        {
++            switch ( state() )
++            {
 +                case HEADER:
 +                    short packetId = in.readUnsignedByte();
-+                    packet = Packet.a(MinecraftServer.getServer().getLogger(), packetId);
-+                    if (packet == null) {
-+                        throw new IOException("Bad packet id " + packetId);
++                    packet = Packet.a( MinecraftServer.getServer().getLogger(), packetId );
++                    if ( packet == null )
++                    {
++                        throw new IOException( "Bad packet id " + packetId );
 +                    }
-+                    checkpoint(ReadState.DATA);
++                    checkpoint( ReadState.DATA );
 +                case DATA:
-+                    try {
-+                        packet.a(input);
-+                    } catch (EOFException ex) {
-+                        return null;
++                    try
++                    {
++                        packet.a( input );
++                    } catch ( EOFException ex )
++                    {
++                        return;
 +                    }
 +
-+                    checkpoint(ReadState.HEADER);
++                    checkpoint( ReadState.HEADER );
 +                    Packet ret = packet;
 +                    packet = null;
-+
-+                    return ret;
++                    out.add( ret );
++                    break;
 +                default:
 +                    throw new IllegalStateException();
 +            }
@@ -1162,10 +1172,10 @@ index 0000000..2587a27
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketEncoder.java b/src/main/java/org/spigotmc/netty/PacketEncoder.java
 new file mode 100644
-index 0000000..4683021
+index 0000000..c21be9f
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketEncoder.java
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,55 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -1179,36 +1189,43 @@ index 0000000..4683021
 + * Netty encoder which takes a packet and encodes it, and adds a byte packet id
 + * header.
 + */
-+public class PacketEncoder extends MessageToByteEncoder<Packet> {
++public class PacketEncoder extends MessageToByteEncoder<Packet>
++{
 +
 +    private ByteBuf outBuf;
 +    private DataOutputStream dataOut;
 +    private final NettyNetworkManager networkManager;
 +
-+    public PacketEncoder(NettyNetworkManager networkManager) {
++    public PacketEncoder(NettyNetworkManager networkManager)
++    {
 +        this.networkManager = networkManager;
 +    }
 +
 +    @Override
-+    public void encode(ChannelHandlerContext ctx, Packet msg, ByteBuf out) throws Exception {
-+        if (outBuf == null) {
++    public void encode(ChannelHandlerContext ctx, Packet msg, ByteBuf out) throws Exception
++    {
++        if ( outBuf == null )
++        {
 +            outBuf = ctx.alloc().directBuffer();
 +        }
-+        if (dataOut == null) {
-+            dataOut = new DataOutputStream(new ByteBufOutputStream(outBuf));
++        if ( dataOut == null )
++        {
++            dataOut = new DataOutputStream( new ByteBufOutputStream( outBuf ) );
 +        }
 +
-+        out.writeByte(msg.n());
-+        msg.a(dataOut);
++        out.writeByte( msg.n() );
++        msg.a( dataOut );
 +
-+        networkManager.addWrittenBytes(outBuf.readableBytes());
-+        out.writeBytes(outBuf);
++        networkManager.addWrittenBytes( outBuf.readableBytes() );
++        out.writeBytes( outBuf );
 +        out.discardSomeReadBytes();
 +    }
 +
 +    @Override
-+    public void freeOutboundBuffer(ChannelHandlerContext ctx) throws Exception {
-+        if (outBuf != null) {
++    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception
++    {
++        if ( outBuf != null )
++        {
 +            outBuf.release();
 +            outBuf = null;
 +        }
