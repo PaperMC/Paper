@@ -75,7 +75,7 @@ public class CraftSound {
         sounds[BAT_IDLE.ordinal()] = "mob.bat.idle";
         sounds[BAT_LOOP.ordinal()] = "mob.bat.loop";
         sounds[BAT_TAKEOFF.ordinal()] = "mob.bat.takeoff";
-        sounds[BLAZE_BREATH.ordinal()] = "mob.blaze.breath";
+        sounds[BLAZE_BREATH.ordinal()] = "mob.blaze.breathe";
         sounds[BLAZE_DEATH.ordinal()] = "mob.blaze.death";
         sounds[BLAZE_HIT.ordinal()] = "mob.blaze.hit";
         sounds[CAT_HISS.ordinal()] = "mob.cat.hiss";
