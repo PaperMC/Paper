@@ -1,4 +1,4 @@
-From 5c9533473e7a221d24d6aa9a36e43804aae72298 Mon Sep 17 00:00:00 2001
+From c423a31e3705316ac33d4ebee8557320250cd3a6 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 23 Apr 2013 11:47:32 +1000
 Subject: [PATCH] Netty
@@ -484,16 +484,17 @@ index 0000000..4ff943b
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..93193fc
+index 0000000..d6581a0
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,296 @@
+@@ -0,0 +1,301 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
 +import io.netty.channel.Channel;
 +import io.netty.channel.ChannelHandlerContext;
 +import io.netty.channel.ChannelInboundMessageHandlerAdapter;
++import io.netty.channel.ChannelPromise;
 +import io.netty.channel.socket.SocketChannel;
 +import java.net.InetSocketAddress;
 +import java.net.Socket;
@@ -666,12 +667,16 @@ index 0000000..93193fc
 +            {
 +                highPriorityQueue.add( packet );
 +
++                ChannelPromise promise;
 +                if ( packet instanceof Packet255KickDisconnect )
 +                {
-+                    channel.pipeline().get( OutboundManager.class ).flushNow = true;
++                    promise = channel.voidPromise();
++                } else
++                {
++                    promise = channel.newPromise();
 +                }
 +
-+                channel.write( packet, channel.voidPromise() );
++                channel.write( packet, promise );
 +                if ( packet instanceof Packet252KeyResponse )
 +                {
 +                    Cipher encrypt = NettyServerConnection.getCipher( Cipher.ENCRYPT_MODE, secret );
@@ -786,10 +791,10 @@ index 0000000..93193fc
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyServerConnection.java b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
 new file mode 100644
-index 0000000..3822a3f
+index 0000000..575db8b
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,100 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -803,12 +808,14 @@ index 0000000..3822a3f
 +import io.netty.channel.socket.nio.NioServerSocketChannel;
 +import io.netty.handler.timeout.ReadTimeoutHandler;
 +import java.net.InetAddress;
++import java.net.InetSocketAddress;
 +import java.security.GeneralSecurityException;
 +import java.security.Key;
 +import javax.crypto.Cipher;
 +import javax.crypto.spec.IvParameterSpec;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.ServerConnection;
++import org.spigotmc.MultiplexingServerConnection;
 +
 +/**
 + * This is the NettyServerConnection class. It implements
@@ -821,7 +828,7 @@ index 0000000..3822a3f
 +
 +    private final ChannelFuture socket;
 +
-+    public NettyServerConnection(MinecraftServer ms, InetAddress host, int port)
++    public NettyServerConnection(final MinecraftServer ms, InetAddress host, int port)
 +    {
 +        super( ms );
 +        int threads = Integer.getInteger( "org.spigotmc.netty.threads", 3 );
@@ -830,6 +837,13 @@ index 0000000..3822a3f
 +            @Override
 +            public void initChannel(Channel ch) throws Exception
 +            {
++                // Check the throttle
++                if ( ( (MultiplexingServerConnection) ms.ae() ).throttle( ( (InetSocketAddress) ch.remoteAddress() ).getAddress() ) )
++                {
++                    ch.close();
++                    return;
++                }
++                // Set IP_TOS
 +                try
 +                {
 +                    ch.config().setOption( ChannelOption.IP_TOS, 0x18 );
@@ -1183,10 +1197,10 @@ index 0000000..5da8a59
 +}
 diff --git a/src/main/java/org/spigotmc/netty/OutboundManager.java b/src/main/java/org/spigotmc/netty/OutboundManager.java
 new file mode 100644
-index 0000000..5e7e950
+index 0000000..44def62
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/OutboundManager.java
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,30 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.channel.ChannelHandlerContext;
@@ -1194,10 +1208,11 @@ index 0000000..5e7e950
 +import io.netty.channel.ChannelPromise;
 +import net.minecraft.server.PendingConnection;
 +
-+public class OutboundManager extends ChannelOperationHandlerAdapter
++class OutboundManager extends ChannelOperationHandlerAdapter
 +{
 +
-+    private static final int FLUSH_TIME = 3;
++    private static final int FLUSH_TIME = 2;
++    /*========================================================================*/
 +    private long lastFlush;
 +    private final NettyNetworkManager manager;
 +    public boolean flushNow = false;
@@ -1209,7 +1224,7 @@ index 0000000..5e7e950
 +
 +    public void flush(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception
 +    {
-+        if ( flushNow || manager.connection instanceof PendingConnection || System.currentTimeMillis() - lastFlush > FLUSH_TIME )
++        if ( promise == ctx.channel().voidPromise() || manager.connection instanceof PendingConnection || System.currentTimeMillis() - lastFlush > FLUSH_TIME )
 +        {
 +            lastFlush = System.currentTimeMillis();
 +            ctx.flush( promise );
@@ -1218,10 +1233,10 @@ index 0000000..5e7e950
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketDecoder.java b/src/main/java/org/spigotmc/netty/PacketDecoder.java
 new file mode 100644
-index 0000000..f7c4c65
+index 0000000..60b75d0
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketDecoder.java
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,68 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -1281,9 +1296,8 @@ index 0000000..f7c4c65
 +                    }
 +
 +                    checkpoint( ReadState.HEADER );
-+                    Packet ret = packet;
++                    out.add( packet );
 +                    packet = null;
-+                    out.add( ret );
 +                    break;
 +                default:
 +                    throw new IllegalStateException();
