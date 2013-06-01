@@ -1,4 +1,4 @@
-From cf9f87164540e86ffc374ea90f0c1e7e9674a29d Mon Sep 17 00:00:00 2001
+From 5c9533473e7a221d24d6aa9a36e43804aae72298 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 23 Apr 2013 11:47:32 +1000
 Subject: [PATCH] Netty
@@ -368,10 +368,10 @@ index 0000000..c8ea80a
 +}
 diff --git a/src/main/java/org/spigotmc/netty/CipherBase.java b/src/main/java/org/spigotmc/netty/CipherBase.java
 new file mode 100644
-index 0000000..1f915df
+index 0000000..e9068e7
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/CipherBase.java
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,52 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -383,46 +383,53 @@ index 0000000..1f915df
 + * {@link #cipher(io.netty.buffer.ByteBuf, io.netty.buffer.ByteBuf)} method to
 + * aid in the efficient passing of ByteBuffers through a cipher.
 + */
-+class CipherBase {
++class CipherBase
++{
 +
 +    private final Cipher cipher;
 +    private ThreadLocal<byte[]> heapInLocal = new EmptyByteThreadLocal();
 +    private ThreadLocal<byte[]> heapOutLocal = new EmptyByteThreadLocal();
 +
-+    private static class EmptyByteThreadLocal extends ThreadLocal<byte[]> {
++    private static class EmptyByteThreadLocal extends ThreadLocal<byte[]>
++    {
 +
 +        @Override
-+        protected byte[] initialValue() {
-+            return new byte[0];
++        protected byte[] initialValue()
++        {
++            return new byte[ 0 ];
 +        }
 +    }
 +
-+    protected CipherBase(Cipher cipher) {
++    protected CipherBase(Cipher cipher)
++    {
 +        this.cipher = cipher;
 +    }
 +
-+    protected void cipher(ByteBuf in, ByteBuf out) throws ShortBufferException {
++    protected void cipher(ByteBuf in, ByteBuf out) throws ShortBufferException
++    {
 +        byte[] heapIn = heapInLocal.get();
 +        int readableBytes = in.readableBytes();
-+        if (heapIn.length < readableBytes) {
-+            heapIn = new byte[readableBytes];
++        if ( heapIn.length < readableBytes )
++        {
++            heapIn = new byte[ readableBytes ];
 +        }
-+        in.readBytes(heapIn, 0, readableBytes);
++        in.readBytes( heapIn, 0, readableBytes );
 +
 +        byte[] heapOut = heapOutLocal.get();
-+        int outputSize = cipher.getOutputSize(readableBytes);
-+        if (heapOut.length < outputSize) {
-+            heapOut = new byte[outputSize];
++        int outputSize = cipher.getOutputSize( readableBytes );
++        if ( heapOut.length < outputSize )
++        {
++            heapOut = new byte[ outputSize ];
 +        }
-+        out.writeBytes(heapOut, 0, cipher.update(heapIn, 0, readableBytes, heapOut));
++        out.writeBytes( heapOut, 0, cipher.update( heapIn, 0, readableBytes, heapOut ) );
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/netty/CipherDecoder.java b/src/main/java/org/spigotmc/netty/CipherDecoder.java
 new file mode 100644
-index 0000000..30b1d5f
+index 0000000..98dc3a0
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/CipherDecoder.java
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,23 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -430,25 +437,28 @@ index 0000000..30b1d5f
 +import io.netty.handler.codec.ByteToByteDecoder;
 +import javax.crypto.Cipher;
 +
-+class CipherDecoder extends ByteToByteDecoder {
++class CipherDecoder extends ByteToByteDecoder
++{
 +
 +    private final CipherBase cipher;
 +
-+    public CipherDecoder(Cipher cipher) {
-+        this.cipher = new CipherBase(cipher);
++    public CipherDecoder(Cipher cipher)
++    {
++        this.cipher = new CipherBase( cipher );
 +    }
 +
 +    @Override
-+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, ByteBuf out) throws Exception {
-+        cipher.cipher(in, out);
++    protected void decode(ChannelHandlerContext ctx, ByteBuf in, ByteBuf out) throws Exception
++    {
++        cipher.cipher( in, out );
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/netty/CipherEncoder.java b/src/main/java/org/spigotmc/netty/CipherEncoder.java
 new file mode 100644
-index 0000000..aa8192e
+index 0000000..4ff943b
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/CipherEncoder.java
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,23 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -456,25 +466,28 @@ index 0000000..aa8192e
 +import io.netty.handler.codec.ByteToByteEncoder;
 +import javax.crypto.Cipher;
 +
-+class CipherEncoder extends ByteToByteEncoder {
++class CipherEncoder extends ByteToByteEncoder
++{
 +
 +    private final CipherBase cipher;
 +
-+    public CipherEncoder(Cipher cipher) {
-+        this.cipher = new CipherBase(cipher);
++    public CipherEncoder(Cipher cipher)
++    {
++        this.cipher = new CipherBase( cipher );
 +    }
 +
 +    @Override
-+    protected void encode(ChannelHandlerContext ctx, ByteBuf in, ByteBuf out) throws Exception {
-+        cipher.cipher(in, out);
++    protected void encode(ChannelHandlerContext ctx, ByteBuf in, ByteBuf out) throws Exception
++    {
++        cipher.cipher( in, out );
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..a9224d9
+index 0000000..93193fc
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,254 @@
+@@ -0,0 +1,296 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -509,27 +522,32 @@ index 0000000..a9224d9
 + * {@link INetworkManager} and handles all events and inbound messages provided
 + * by the upstream Netty process.
 + */
-+public class NettyNetworkManager extends ChannelInboundMessageHandlerAdapter<Packet> implements INetworkManager {
++public class NettyNetworkManager extends ChannelInboundMessageHandlerAdapter<Packet> implements INetworkManager
++{
 +
-+    private static final ExecutorService threadPool = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Async Packet Handler - %1$d").build());
++    private static final ExecutorService threadPool = Executors.newCachedThreadPool( new ThreadFactoryBuilder().setNameFormat( "Async Packet Handler - %1$d" ).build() );
 +    private static final MinecraftServer server = MinecraftServer.getServer();
 +    private static final PrivateKey key = server.F().getPrivate();
 +    private static final MultiplexingServerConnection serverConnection = (MultiplexingServerConnection) server.ae();
 +    /*========================================================================*/
 +    private final Queue<Packet> syncPackets = new ConcurrentLinkedQueue<Packet>();
-+    private final List<Packet> highPriorityQueue = new AbstractList<Packet>() {
++    private final List<Packet> highPriorityQueue = new AbstractList<Packet>()
++    {
 +        @Override
-+        public void add(int index, Packet element) {
++        public void add(int index, Packet element)
++        {
 +            // NOP
 +        }
 +
 +        @Override
-+        public Packet get(int index) {
++        public Packet get(int index)
++        {
 +            throw new UnsupportedOperationException();
 +        }
 +
 +        @Override
-+        public int size() {
++        public int size()
++        {
 +            return 0;
 +        }
 +    };
@@ -544,63 +562,79 @@ index 0000000..a9224d9
 +    private long writtenBytes;
 +
 +    @Override
-+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
++    public void channelActive(ChannelHandlerContext ctx) throws Exception
++    {
 +        // Channel and address groundwork first
 +        channel = ctx.channel();
 +        address = channel.remoteAddress();
 +        // Check the throttle
-+        if (serverConnection.throttle(((InetSocketAddress) channel.remoteAddress()).getAddress())) {
++        if ( serverConnection.throttle( ( (InetSocketAddress) channel.remoteAddress() ).getAddress() ) )
++        {
 +            channel.close();
 +        }
 +        // Then the socket adaptor
-+        socketAdaptor = NettySocketAdaptor.adapt((SocketChannel) channel);
++        socketAdaptor = NettySocketAdaptor.adapt( (SocketChannel) channel );
 +        // Followed by their first handler
-+        connection = new PendingConnection(server, this);
++        connection = new PendingConnection( server, this );
 +        // Finally register the connection
 +        connected = true;
-+        serverConnection.register((PendingConnection) connection);
++        serverConnection.register( (PendingConnection) connection );
 +    }
 +
 +    @Override
-+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-+        a("disconnect.endOfStream", new Object[0]);
++    public void channelInactive(ChannelHandlerContext ctx) throws Exception
++    {
++        a( "disconnect.endOfStream", new Object[ 0 ] );
 +    }
 +
 +    @Override
-+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
++    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
++    {
 +        // TODO: Remove this once we are more stable
 +        // Bukkit.getServer().getLogger().severe("======================= Start Netty Debug Log =======================");
 +        // Bukkit.getServer().getLogger().log(Level.SEVERE, "Error caught whilst handling " + channel, cause);
 +        // Bukkit.getServer().getLogger().severe("======================= End Netty Debug Log =======================");
 +        // Disconnect with generic reason + exception
-+        a("disconnect.genericReason", new Object[]{"Internal exception: " + cause});
++        a( "disconnect.genericReason", new Object[]
++        {
++            "Internal exception: " + cause
++        } );
 +    }
 +
 +    @Override
-+    public void messageReceived(ChannelHandlerContext ctx, final Packet msg) throws Exception {
-+        if (connected) {
-+            if (msg instanceof Packet252KeyResponse) {
-+                secret = ((Packet252KeyResponse) msg).a(key);
-+                Cipher decrypt = NettyServerConnection.getCipher(Cipher.DECRYPT_MODE, secret);
-+                channel.pipeline().addBefore("decoder", "decrypt", new CipherDecoder(decrypt));
++    public void messageReceived(ChannelHandlerContext ctx, final Packet msg) throws Exception
++    {
++        if ( connected )
++        {
++            if ( msg instanceof Packet252KeyResponse )
++            {
++                secret = ( (Packet252KeyResponse) msg ).a( key );
++                Cipher decrypt = NettyServerConnection.getCipher( Cipher.DECRYPT_MODE, secret );
++                channel.pipeline().addBefore( "decoder", "decrypt", new CipherDecoder( decrypt ) );
 +            }
 +
-+            if (msg.a_()) {
-+                threadPool.submit(new Runnable() {
-+                    public void run() {
-+                        Packet packet = PacketListener.callReceived(NettyNetworkManager.this, connection, msg);
-+                        if (packet != null) {
-+                            packet.handle(connection);
++            if ( msg.a_() )
++            {
++                threadPool.submit( new Runnable()
++                {
++                    public void run()
++                    {
++                        Packet packet = PacketListener.callReceived( NettyNetworkManager.this, connection, msg );
++                        if ( packet != null )
++                        {
++                            packet.handle( connection );
 +                        }
 +                    }
-+                });
-+            } else {
-+                syncPackets.add(msg);
++                } );
++            } else
++            {
++                syncPackets.add( msg );
 +            }
 +        }
 +    }
 +
-+    public Socket getSocket() {
++    public Socket getSocket()
++    {
 +        return socketAdaptor;
 +    }
 +
@@ -609,7 +643,8 @@ index 0000000..a9224d9
 +     *
 +     * @param nh the new {@link NetHandler} instance
 +     */
-+    public void a(Connection nh) {
++    public void a(Connection nh)
++    {
 +        connection = nh;
 +    }
 +
@@ -619,23 +654,28 @@ index 0000000..a9224d9
 +     *
 +     * @param packet the packet to queue
 +     */
-+    public void queue(Packet packet) {
++    public void queue(Packet packet)
++    {
 +        // Only send if channel is still connected
-+        if (connected) {
++        if ( connected )
++        {
 +            // Process packet via handler
-+            packet = PacketListener.callQueued(this, connection, packet);
++            packet = PacketListener.callQueued( this, connection, packet );
 +            // If handler indicates packet send
-+            if (packet != null) {
-+                highPriorityQueue.add(packet);
++            if ( packet != null )
++            {
++                highPriorityQueue.add( packet );
 +
-+                if (packet instanceof Packet255KickDisconnect) {
-+                    channel.pipeline().get(OutboundManager.class).flushNow = true;
++                if ( packet instanceof Packet255KickDisconnect )
++                {
++                    channel.pipeline().get( OutboundManager.class ).flushNow = true;
 +                }
 +
-+                channel.write(packet, channel.voidPromise());
-+                if (packet instanceof Packet252KeyResponse) {
-+                    Cipher encrypt = NettyServerConnection.getCipher(Cipher.ENCRYPT_MODE, secret);
-+                    channel.pipeline().addBefore("decoder", "encrypt", new CipherEncoder(encrypt));
++                channel.write( packet, channel.voidPromise() );
++                if ( packet instanceof Packet252KeyResponse )
++                {
++                    Cipher encrypt = NettyServerConnection.getCipher( Cipher.ENCRYPT_MODE, secret );
++                    channel.pipeline().addBefore( "decoder", "encrypt", new CipherEncoder( encrypt ) );
 +                }
 +            }
 +        }
@@ -645,29 +685,35 @@ index 0000000..a9224d9
 +     * wakeThreads. In Vanilla this method will interrupt the network read and
 +     * write threads, thus waking them.
 +     */
-+    public void a() {
++    public void a()
++    {
 +    }
 +
 +    /**
 +     * processPackets. Remove up to 1000 packets from the queue and process
 +     * them. This method should only be called from the main server thread.
 +     */
-+    public void b() {
-+        for (int i = 1000; !syncPackets.isEmpty() && i >= 0; i--) {
-+            if (connection instanceof PendingConnection ? ((PendingConnection) connection).b : ((PlayerConnection) connection).disconnected) {
++    public void b()
++    {
++        for ( int i = 1000; !syncPackets.isEmpty() && i >= 0; i-- )
++        {
++            if ( connection instanceof PendingConnection ? ( (PendingConnection) connection ).b : ( (PlayerConnection) connection ).disconnected )
++            {
 +                syncPackets.clear();
 +                break;
 +            }
 +
-+            Packet packet = PacketListener.callReceived(this, connection, syncPackets.poll());
-+            if (packet != null) {
-+                packet.handle(connection);
++            Packet packet = PacketListener.callReceived( this, connection, syncPackets.poll() );
++            if ( packet != null )
++            {
++                packet.handle( connection );
 +            }
 +        }
 +
 +        // Disconnect via the handler - this performs all plugin related cleanup + logging
-+        if (!connected && (dcReason != null || dcArgs != null)) {
-+            connection.a(dcReason, dcArgs);
++        if ( !connected && ( dcReason != null || dcArgs != null ) )
++        {
++            connection.a( dcReason, dcArgs );
 +        }
 +    }
 +
@@ -677,19 +723,23 @@ index 0000000..a9224d9
 +     *
 +     * @return the remote address of this connection
 +     */
-+    public SocketAddress getSocketAddress() {
++    public SocketAddress getSocketAddress()
++    {
 +        return address;
 +    }
 +
-+    public void setSocketAddress(SocketAddress address) {
++    public void setSocketAddress(SocketAddress address)
++    {
 +        this.address = address;
 +    }
 +
 +    /**
 +     * close. Close and release all resources associated with this connection.
 +     */
-+    public void d() {
-+        if (connected) {
++    public void d()
++    {
++        if ( connected )
++        {
 +            connected = false;
 +            channel.close();
 +        }
@@ -701,7 +751,8 @@ index 0000000..a9224d9
 +     *
 +     * @return the size of the packet send queue
 +     */
-+    public int e() {
++    public int e()
++    {
 +        return 0;
 +    }
 +
@@ -713,28 +764,32 @@ index 0000000..a9224d9
 +     * @param arguments additional disconnect arguments, for example, the
 +     * exception which triggered the disconnect.
 +     */
-+    public void a(String reason, Object... arguments) {
-+        if (connected) {
++    public void a(String reason, Object... arguments)
++    {
++        if ( connected )
++        {
 +            dcReason = reason;
 +            dcArgs = arguments;
 +            d();
 +        }
 +    }
 +
-+    public long getWrittenBytes() {
++    public long getWrittenBytes()
++    {
 +        return writtenBytes;
 +    }
 +
-+    public void addWrittenBytes(int written) {
++    public void addWrittenBytes(int written)
++    {
 +        writtenBytes += written;
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyServerConnection.java b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
 new file mode 100644
-index 0000000..7a621aa
+index 0000000..3822a3f
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
-@@ -0,0 +1,81 @@
+@@ -0,0 +1,91 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -761,32 +816,38 @@ index 0000000..7a621aa
 + * server and this NIO implementation. It handles starting, stopping and
 + * processing the Netty backend.
 + */
-+public class NettyServerConnection extends ServerConnection {
++public class NettyServerConnection extends ServerConnection
++{
 +
 +    private final ChannelFuture socket;
 +
-+    public NettyServerConnection(MinecraftServer ms, InetAddress host, int port) {
-+        super(ms);
-+        int threads = Integer.getInteger("org.spigotmc.netty.threads", 3);
-+        socket = new ServerBootstrap().channel(NioServerSocketChannel.class).childHandler(new ChannelInitializer() {
++    public NettyServerConnection(MinecraftServer ms, InetAddress host, int port)
++    {
++        super( ms );
++        int threads = Integer.getInteger( "org.spigotmc.netty.threads", 3 );
++        socket = new ServerBootstrap().channel( NioServerSocketChannel.class ).childHandler( new ChannelInitializer()
++        {
 +            @Override
-+            public void initChannel(Channel ch) throws Exception {
-+                try {
-+                    ch.config().setOption(ChannelOption.IP_TOS, 0x18);
-+                } catch (ChannelException ex) {
++            public void initChannel(Channel ch) throws Exception
++            {
++                try
++                {
++                    ch.config().setOption( ChannelOption.IP_TOS, 0x18 );
++                } catch ( ChannelException ex )
++                {
 +                    // IP_TOS is not supported (Windows XP / Windows Server 2003)
 +                }
 +
 +                NettyNetworkManager networkManager = new NettyNetworkManager();
 +                ch.pipeline()
-+                        .addLast("flusher", new OutboundManager(networkManager))
-+                        .addLast("timer", new ReadTimeoutHandler(30))
-+                        .addLast("decoder", new PacketDecoder())
-+                        .addLast("encoder", new PacketEncoder(networkManager))
-+                        .addLast("manager", networkManager);
++                        .addLast( "flusher", new OutboundManager( networkManager ) )
++                        .addLast( "timer", new ReadTimeoutHandler( 30 ) )
++                        .addLast( "decoder", new PacketDecoder() )
++                        .addLast( "encoder", new PacketEncoder( networkManager ) )
++                        .addLast( "manager", networkManager );
 +            }
-+        }).childOption(ChannelOption.TCP_NODELAY, false).group(new NioEventLoopGroup(threads, new ThreadFactoryBuilder().setNameFormat("Netty IO Thread - %1$d").build())).localAddress(host, port).bind();
-+        MinecraftServer.getServer().getLogger().info("Using Netty NIO with " + threads + " threads for network connections.");
++        } ).childOption( ChannelOption.TCP_NODELAY, false ).group( new NioEventLoopGroup( threads, new ThreadFactoryBuilder().setNameFormat( "Netty IO Thread - %1$d" ).build() ) ).localAddress( host, port ).bind();
++        MinecraftServer.getServer().getLogger().info( "Using Netty NIO with " + threads + " threads for network connections." );
 +    }
 +
 +    /**
@@ -795,7 +856,8 @@ index 0000000..7a621aa
 +     * action.
 +     */
 +    @Override
-+    public void a() {
++    public void a()
++    {
 +        socket.channel().close().syncUninterruptibly();
 +    }
 +
@@ -806,22 +868,25 @@ index 0000000..7a621aa
 +     * @param key to use as the initial vector
 +     * @return the initialized cipher
 +     */
-+    public static Cipher getCipher(int opMode, Key key) {
-+        try {
-+            Cipher cip = Cipher.getInstance("AES/CFB8/NoPadding");
-+            cip.init(opMode, key, new IvParameterSpec(key.getEncoded()));
++    public static Cipher getCipher(int opMode, Key key)
++    {
++        try
++        {
++            Cipher cip = Cipher.getInstance( "AES/CFB8/NoPadding" );
++            cip.init( opMode, key, new IvParameterSpec( key.getEncoded() ) );
 +            return cip;
-+        } catch (GeneralSecurityException ex) {
-+            throw new RuntimeException(ex);
++        } catch ( GeneralSecurityException ex )
++        {
++            throw new RuntimeException( ex );
 +        }
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettySocketAdaptor.java b/src/main/java/org/spigotmc/netty/NettySocketAdaptor.java
 new file mode 100644
-index 0000000..a3b86b8
+index 0000000..5da8a59
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettySocketAdaptor.java
-@@ -0,0 +1,248 @@
+@@ -0,0 +1,294 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.channel.Channel;
@@ -842,231 +907,277 @@ index 0000000..a3b86b8
 + * a {@link Channel} are implemented here. Those which cannot will throw an
 + * {@link UnsupportedOperationException}.
 + */
-+public class NettySocketAdaptor extends Socket {
++public class NettySocketAdaptor extends Socket
++{
 +
 +    private final io.netty.channel.socket.SocketChannel ch;
 +
-+    private NettySocketAdaptor(io.netty.channel.socket.SocketChannel ch) {
++    private NettySocketAdaptor(io.netty.channel.socket.SocketChannel ch)
++    {
 +        this.ch = ch;
 +    }
 +
-+    public static NettySocketAdaptor adapt(io.netty.channel.socket.SocketChannel ch) {
-+        return new NettySocketAdaptor(ch);
++    public static NettySocketAdaptor adapt(io.netty.channel.socket.SocketChannel ch)
++    {
++        return new NettySocketAdaptor( ch );
 +    }
 +
 +    @Override
-+    public void bind(SocketAddress bindpoint) throws IOException {
-+        ch.bind(bindpoint).syncUninterruptibly();
++    public void bind(SocketAddress bindpoint) throws IOException
++    {
++        ch.bind( bindpoint ).syncUninterruptibly();
 +    }
 +
 +    @Override
-+    public synchronized void close() throws IOException {
++    public synchronized void close() throws IOException
++    {
 +        ch.close().syncUninterruptibly();
 +    }
 +
 +    @Override
-+    public void connect(SocketAddress endpoint) throws IOException {
-+        ch.connect(endpoint).syncUninterruptibly();
++    public void connect(SocketAddress endpoint) throws IOException
++    {
++        ch.connect( endpoint ).syncUninterruptibly();
 +    }
 +
 +    @Override
-+    public void connect(SocketAddress endpoint, int timeout) throws IOException {
-+        ch.config().setConnectTimeoutMillis(timeout);
-+        ch.connect(endpoint).syncUninterruptibly();
++    public void connect(SocketAddress endpoint, int timeout) throws IOException
++    {
++        ch.config().setConnectTimeoutMillis( timeout );
++        ch.connect( endpoint ).syncUninterruptibly();
 +    }
 +
 +    @Override
-+    public boolean equals(Object obj) {
-+        return obj instanceof NettySocketAdaptor && ch.equals(((NettySocketAdaptor) obj).ch);
++    public boolean equals(Object obj)
++    {
++        return obj instanceof NettySocketAdaptor && ch.equals( ( (NettySocketAdaptor) obj ).ch );
 +    }
 +
 +    @Override
-+    public SocketChannel getChannel() {
-+        throw new UnsupportedOperationException("Operation not supported on Channel wrapper.");
++    public SocketChannel getChannel()
++    {
++        throw new UnsupportedOperationException( "Operation not supported on Channel wrapper." );
 +    }
 +
 +    @Override
-+    public InetAddress getInetAddress() {
++    public InetAddress getInetAddress()
++    {
 +        return ch.remoteAddress().getAddress();
 +    }
 +
 +    @Override
-+    public InputStream getInputStream() throws IOException {
-+        throw new UnsupportedOperationException("Operation not supported on Channel wrapper.");
++    public InputStream getInputStream() throws IOException
++    {
++        throw new UnsupportedOperationException( "Operation not supported on Channel wrapper." );
 +    }
 +
 +    @Override
-+    public boolean getKeepAlive() throws SocketException {
-+        return ch.config().getOption(ChannelOption.SO_KEEPALIVE);
++    public boolean getKeepAlive() throws SocketException
++    {
++        return ch.config().getOption( ChannelOption.SO_KEEPALIVE );
 +    }
 +
 +    @Override
-+    public InetAddress getLocalAddress() {
++    public InetAddress getLocalAddress()
++    {
 +        return ch.localAddress().getAddress();
 +    }
 +
 +    @Override
-+    public int getLocalPort() {
++    public int getLocalPort()
++    {
 +        return ch.localAddress().getPort();
 +    }
 +
 +    @Override
-+    public SocketAddress getLocalSocketAddress() {
++    public SocketAddress getLocalSocketAddress()
++    {
 +        return ch.localAddress();
 +    }
 +
 +    @Override
-+    public boolean getOOBInline() throws SocketException {
-+        throw new UnsupportedOperationException("Operation not supported on Channel wrapper.");
++    public boolean getOOBInline() throws SocketException
++    {
++        throw new UnsupportedOperationException( "Operation not supported on Channel wrapper." );
 +    }
 +
 +    @Override
-+    public OutputStream getOutputStream() throws IOException {
-+        throw new UnsupportedOperationException("Operation not supported on Channel wrapper.");
++    public OutputStream getOutputStream() throws IOException
++    {
++        throw new UnsupportedOperationException( "Operation not supported on Channel wrapper." );
 +    }
 +
 +    @Override
-+    public int getPort() {
++    public int getPort()
++    {
 +        return ch.remoteAddress().getPort();
 +    }
 +
 +    @Override
-+    public synchronized int getReceiveBufferSize() throws SocketException {
-+        return ch.config().getOption(ChannelOption.SO_RCVBUF);
++    public synchronized int getReceiveBufferSize() throws SocketException
++    {
++        return ch.config().getOption( ChannelOption.SO_RCVBUF );
 +    }
 +
 +    @Override
-+    public SocketAddress getRemoteSocketAddress() {
++    public SocketAddress getRemoteSocketAddress()
++    {
 +        return ch.remoteAddress();
 +    }
 +
 +    @Override
-+    public boolean getReuseAddress() throws SocketException {
-+        return ch.config().getOption(ChannelOption.SO_REUSEADDR);
++    public boolean getReuseAddress() throws SocketException
++    {
++        return ch.config().getOption( ChannelOption.SO_REUSEADDR );
 +    }
 +
 +    @Override
-+    public synchronized int getSendBufferSize() throws SocketException {
-+        return ch.config().getOption(ChannelOption.SO_SNDBUF);
++    public synchronized int getSendBufferSize() throws SocketException
++    {
++        return ch.config().getOption( ChannelOption.SO_SNDBUF );
 +    }
 +
 +    @Override
-+    public int getSoLinger() throws SocketException {
-+        return ch.config().getOption(ChannelOption.SO_LINGER);
++    public int getSoLinger() throws SocketException
++    {
++        return ch.config().getOption( ChannelOption.SO_LINGER );
 +    }
 +
 +    @Override
-+    public synchronized int getSoTimeout() throws SocketException {
-+        throw new UnsupportedOperationException("Operation not supported on Channel wrapper.");
++    public synchronized int getSoTimeout() throws SocketException
++    {
++        throw new UnsupportedOperationException( "Operation not supported on Channel wrapper." );
 +    }
 +
 +    @Override
-+    public boolean getTcpNoDelay() throws SocketException {
-+        return ch.config().getOption(ChannelOption.TCP_NODELAY);
++    public boolean getTcpNoDelay() throws SocketException
++    {
++        return ch.config().getOption( ChannelOption.TCP_NODELAY );
 +    }
 +
 +    @Override
-+    public int getTrafficClass() throws SocketException {
-+        return ch.config().getOption(ChannelOption.IP_TOS);
++    public int getTrafficClass() throws SocketException
++    {
++        return ch.config().getOption( ChannelOption.IP_TOS );
 +    }
 +
 +    @Override
-+    public int hashCode() {
++    public int hashCode()
++    {
 +        return ch.hashCode();
 +    }
 +
 +    @Override
-+    public boolean isBound() {
++    public boolean isBound()
++    {
 +        return ch.localAddress() != null;
 +    }
 +
 +    @Override
-+    public boolean isClosed() {
++    public boolean isClosed()
++    {
 +        return !ch.isOpen();
 +    }
 +
 +    @Override
-+    public boolean isConnected() {
++    public boolean isConnected()
++    {
 +        return ch.isActive();
 +    }
 +
 +    @Override
-+    public boolean isInputShutdown() {
++    public boolean isInputShutdown()
++    {
 +        return ch.isInputShutdown();
 +    }
 +
 +    @Override
-+    public boolean isOutputShutdown() {
++    public boolean isOutputShutdown()
++    {
 +        return ch.isOutputShutdown();
 +    }
 +
 +    @Override
-+    public void sendUrgentData(int data) throws IOException {
-+        throw new UnsupportedOperationException("Operation not supported on Channel wrapper.");
++    public void sendUrgentData(int data) throws IOException
++    {
++        throw new UnsupportedOperationException( "Operation not supported on Channel wrapper." );
 +    }
 +
 +    @Override
-+    public void setKeepAlive(boolean on) throws SocketException {
-+        ch.config().setOption(ChannelOption.SO_KEEPALIVE, on);
++    public void setKeepAlive(boolean on) throws SocketException
++    {
++        ch.config().setOption( ChannelOption.SO_KEEPALIVE, on );
 +    }
 +
 +    @Override
-+    public void setOOBInline(boolean on) throws SocketException {
-+        throw new UnsupportedOperationException("Operation not supported on Channel wrapper.");
++    public void setOOBInline(boolean on) throws SocketException
++    {
++        throw new UnsupportedOperationException( "Operation not supported on Channel wrapper." );
 +    }
 +
 +    @Override
-+    public void setPerformancePreferences(int connectionTime, int latency, int bandwidth) {
-+        throw new UnsupportedOperationException("Operation not supported on Channel wrapper.");
++    public void setPerformancePreferences(int connectionTime, int latency, int bandwidth)
++    {
++        throw new UnsupportedOperationException( "Operation not supported on Channel wrapper." );
 +    }
 +
 +    @Override
-+    public synchronized void setReceiveBufferSize(int size) throws SocketException {
-+        ch.config().setOption(ChannelOption.SO_RCVBUF, size);
++    public synchronized void setReceiveBufferSize(int size) throws SocketException
++    {
++        ch.config().setOption( ChannelOption.SO_RCVBUF, size );
 +    }
 +
 +    @Override
-+    public void setReuseAddress(boolean on) throws SocketException {
-+        ch.config().setOption(ChannelOption.SO_REUSEADDR, on);
++    public void setReuseAddress(boolean on) throws SocketException
++    {
++        ch.config().setOption( ChannelOption.SO_REUSEADDR, on );
 +    }
 +
 +    @Override
-+    public synchronized void setSendBufferSize(int size) throws SocketException {
-+        ch.config().setOption(ChannelOption.SO_SNDBUF, size);
++    public synchronized void setSendBufferSize(int size) throws SocketException
++    {
++        ch.config().setOption( ChannelOption.SO_SNDBUF, size );
 +    }
 +
 +    @Override
-+    public void setSoLinger(boolean on, int linger) throws SocketException {
-+        ch.config().setOption(ChannelOption.SO_LINGER, linger);
++    public void setSoLinger(boolean on, int linger) throws SocketException
++    {
++        ch.config().setOption( ChannelOption.SO_LINGER, linger );
 +    }
 +
 +    @Override
-+    public synchronized void setSoTimeout(int timeout) throws SocketException {
-+        throw new UnsupportedOperationException("Operation not supported on Channel wrapper.");
++    public synchronized void setSoTimeout(int timeout) throws SocketException
++    {
++        throw new UnsupportedOperationException( "Operation not supported on Channel wrapper." );
 +    }
 +
 +    @Override
-+    public void setTcpNoDelay(boolean on) throws SocketException {
-+        ch.config().setOption(ChannelOption.TCP_NODELAY, on);
++    public void setTcpNoDelay(boolean on) throws SocketException
++    {
++        ch.config().setOption( ChannelOption.TCP_NODELAY, on );
 +    }
 +
 +    @Override
-+    public void setTrafficClass(int tc) throws SocketException {
-+        ch.config().setOption(ChannelOption.IP_TOS, tc);
++    public void setTrafficClass(int tc) throws SocketException
++    {
++        ch.config().setOption( ChannelOption.IP_TOS, tc );
 +    }
 +
 +    @Override
-+    public void shutdownInput() throws IOException {
-+        throw new UnsupportedOperationException("Operation not supported on Channel wrapper.");
++    public void shutdownInput() throws IOException
++    {
++        throw new UnsupportedOperationException( "Operation not supported on Channel wrapper." );
 +    }
 +
 +    @Override
-+    public void shutdownOutput() throws IOException {
++    public void shutdownOutput() throws IOException
++    {
 +        ch.shutdownOutput().syncUninterruptibly();
 +    }
 +
 +    @Override
-+    public String toString() {
++    public String toString()
++    {
 +        return ch.toString();
 +    }
 +}
@@ -1243,10 +1354,10 @@ index 0000000..c21be9f
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketListener.java b/src/main/java/org/spigotmc/netty/PacketListener.java
 new file mode 100644
-index 0000000..8e3b932
+index 0000000..965ba12
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketListener.java
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,112 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.base.Preconditions;
@@ -1266,7 +1377,8 @@ index 0000000..8e3b932
 + * override the methods you wish to use, and call
 + * {@link #register(org.spigotmc.netty.PacketListener, org.bukkit.plugin.Plugin)}.
 + */
-+public class PacketListener {
++public class PacketListener
++{
 +
 +    /**
 +     * A mapping of all registered listeners and their owning plugins.
@@ -1275,7 +1387,7 @@ index 0000000..8e3b932
 +    /**
 +     * A baked list of all listeners, for efficiency sake.
 +     */
-+    private static PacketListener[] baked = new PacketListener[0];
++    private static PacketListener[] baked = new PacketListener[ 0 ];
 +
 +    /**
 +     * Used to register a handler for receiving notifications of packet
@@ -1284,35 +1396,44 @@ index 0000000..8e3b932
 +     * @param listener the listener to register
 +     * @param plugin the plugin owning this listener
 +     */
-+    public static synchronized void register(PacketListener listener, Plugin plugin) {
-+        Preconditions.checkNotNull(listener, "listener");
-+        Preconditions.checkNotNull(plugin, "plugin");
-+        Preconditions.checkState(!listeners.containsKey(listener), "listener already registered");
++    public static synchronized void register(PacketListener listener, Plugin plugin)
++    {
++        Preconditions.checkNotNull( listener, "listener" );
++        Preconditions.checkNotNull( plugin, "plugin" );
++        Preconditions.checkState( !listeners.containsKey( listener ), "listener already registered" );
 +
 +        int size = listeners.size();
-+        Preconditions.checkState(baked.length == size);
-+        listeners.put(listener, plugin);
-+        baked = Arrays.copyOf(baked, size + 1);
++        Preconditions.checkState( baked.length == size );
++        listeners.put( listener, plugin );
++        baked = Arrays.copyOf( baked, size + 1 );
 +        baked[size] = listener;
 +    }
 +
-+    static Packet callReceived(INetworkManager networkManager, Connection connection, Packet packet) {
-+        for (PacketListener listener : baked) {
-+            try {
-+                packet = listener.packetReceived(networkManager, connection, packet);
-+            } catch (Throwable t) {
-+                Bukkit.getServer().getLogger().log(Level.SEVERE, "Error whilst firing receive hook for packet", t);
++    static Packet callReceived(INetworkManager networkManager, Connection connection, Packet packet)
++    {
++        for ( PacketListener listener : baked )
++        {
++            try
++            {
++                packet = listener.packetReceived( networkManager, connection, packet );
++            } catch ( Throwable t )
++            {
++                Bukkit.getServer().getLogger().log( Level.SEVERE, "Error whilst firing receive hook for packet", t );
 +            }
 +        }
 +        return packet;
 +    }
 +
-+    static Packet callQueued(INetworkManager networkManager, Connection connection, Packet packet) {
-+        for (PacketListener listener : baked) {
-+            try {
-+                packet = listener.packetQueued(networkManager, connection, packet);
-+            } catch (Throwable t) {
-+                Bukkit.getServer().getLogger().log(Level.SEVERE, "Error whilst firing queued hook for packet", t);
++    static Packet callQueued(INetworkManager networkManager, Connection connection, Packet packet)
++    {
++        for ( PacketListener listener : baked )
++        {
++            try
++            {
++                packet = listener.packetQueued( networkManager, connection, packet );
++            } catch ( Throwable t )
++            {
++                Bukkit.getServer().getLogger().log( Level.SEVERE, "Error whilst firing queued hook for packet", t );
 +            }
 +        }
 +        return packet;
@@ -1329,7 +1450,8 @@ index 0000000..8e3b932
 +     * @param packet the received packet
 +     * @return the packet to be handled, or null to cancel
 +     */
-+    public Packet packetReceived(INetworkManager networkManager, Connection connection, Packet packet) {
++    public Packet packetReceived(INetworkManager networkManager, Connection connection, Packet packet)
++    {
 +        return packet;
 +    }
 +
@@ -1343,22 +1465,24 @@ index 0000000..8e3b932
 +     * @param packet the queue packet
 +     * @return the packet to be sent, or null if the packet will not be sent.
 +     */
-+    public Packet packetQueued(INetworkManager networkManager, Connection connection, Packet packet) {
++    public Packet packetQueued(INetworkManager networkManager, Connection connection, Packet packet)
++    {
 +        return packet;
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/netty/ReadState.java b/src/main/java/org/spigotmc/netty/ReadState.java
 new file mode 100644
-index 0000000..5dc3754
+index 0000000..d3a9cab
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/ReadState.java
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,17 @@
 +package org.spigotmc.netty;
 +
 +/**
 + * Stores the state of the packet currently being read.
 + */
-+public enum ReadState {
++public enum ReadState
++{
 +
 +    /**
 +     * Indicates the byte representing the ID has been read.
@@ -1384,5 +1508,5 @@ index 67b4fa9..d26e644 100644
      allow-end: true
      warn-on-overload: true
 -- 
-1.8.2.1
+1.8.1.2
 
