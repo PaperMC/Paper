@@ -1,0 +1,39 @@
+From 6c184f6e64f5c8c223f37366747dca8e1565c0ab Mon Sep 17 00:00:00 2001
+From: Tyler Blair <hidendra@griefcraft.com>
+Date: Tue, 9 Apr 2013 17:55:15 -0300
+Subject: [PATCH] InventoryClickEvent now can return if the click was a double
+ click. Fixes Bukkit-4035.
+
+ Added in MC 1.5 you can now double click an item which brings all items of that type onto your cursor from the container. There is currently no way to distinguish this from a normal click.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 2e1246e..0621625 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -1178,12 +1178,12 @@ public class PlayerConnection extends Connection {
+             InventoryView inventory = this.player.activeContainer.getBukkitView();
+             SlotType type = CraftInventoryView.getSlotType(inventory, packet102windowclick.slot);
+ 
+-            InventoryClickEvent event = new InventoryClickEvent(inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift == 1);
++            InventoryClickEvent event = new InventoryClickEvent(inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift == 1, packet102windowclick.shift == 6);
+             org.bukkit.inventory.Inventory top = inventory.getTopInventory();
+             if (packet102windowclick.slot == 0 && top instanceof CraftingInventory) {
+                 org.bukkit.inventory.Recipe recipe = ((CraftingInventory) top).getRecipe();
+                 if (recipe != null) {
+-                    event = new org.bukkit.event.inventory.CraftItemEvent(recipe, inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift == 1);
++                    event = new org.bukkit.event.inventory.CraftItemEvent(recipe, inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift == 1, packet102windowclick.shift == 6);
+                 }
+             }
+             server.getPluginManager().callEvent(event);
+@@ -1271,7 +1271,7 @@ public class PlayerConnection extends Connection {
+                 slot = SlotType.OUTSIDE;
+             }
+ 
+-            InventoryClickEvent event = new InventoryClickEvent(inventory, slot, slot == SlotType.OUTSIDE ? -999 : packet107setcreativeslot.slot, false, false);
++            InventoryClickEvent event = new InventoryClickEvent(inventory, slot, slot == SlotType.OUTSIDE ? -999 : packet107setcreativeslot.slot, false, false, false);
+             server.getPluginManager().callEvent(event);
+             org.bukkit.inventory.ItemStack item = event.getCurrentItem();
+ 
+-- 
+1.8.1.2
+
