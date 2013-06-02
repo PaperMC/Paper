@@ -1,4 +1,4 @@
-From 01fdb14b4a1ff1b21f4ec0979c48473a1319e044 Mon Sep 17 00:00:00 2001
+From b34087956ae223943a5d29c766f16b0e888dc702 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 23 Apr 2013 11:47:32 +1000
 Subject: [PATCH] Netty
@@ -32,7 +32,7 @@ Subject: [PATCH] Netty
  Commons Attribution-ShareAlike 3.0 Unported license.
 
 diff --git a/pom.xml b/pom.xml
-index 274fd43..665dc9f 100644
+index 274fd43..4022004 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -132,6 +132,16 @@
@@ -42,7 +42,7 @@ index 274fd43..665dc9f 100644
 +    <dependency>
 +      <groupId>io.netty</groupId>
 +      <artifactId>netty-all</artifactId>
-+      <version>4.0.0.Final-SNAPSHOT</version>
++      <version>4.0.0.CR3</version>
 +    </dependency>
 +    <dependency>
 +        <groupId>org.javassist</groupId>
@@ -368,10 +368,10 @@ index 0000000..c8ea80a
 +}
 diff --git a/src/main/java/org/spigotmc/netty/CipherBase.java b/src/main/java/org/spigotmc/netty/CipherBase.java
 new file mode 100644
-index 0000000..e9068e7
+index 0000000..c75a60f
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/CipherBase.java
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,54 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -412,6 +412,7 @@ index 0000000..e9068e7
 +        if ( heapIn.length < readableBytes )
 +        {
 +            heapIn = new byte[ readableBytes ];
++            heapInLocal.set( heapIn );
 +        }
 +        in.readBytes( heapIn, 0, readableBytes );
 +
@@ -420,6 +421,7 @@ index 0000000..e9068e7
 +        if ( heapOut.length < outputSize )
 +        {
 +            heapOut = new byte[ outputSize ];
++            heapOutLocal.set( heapOut );
 +        }
 +        out.writeBytes( heapOut, 0, cipher.update( heapIn, 0, readableBytes, heapOut ) );
 +    }
@@ -484,10 +486,10 @@ index 0000000..4ff943b
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..e63754a
+index 0000000..9a70a3a
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,296 @@
+@@ -0,0 +1,295 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -496,7 +498,6 @@ index 0000000..e63754a
 +import io.netty.channel.ChannelInboundMessageHandlerAdapter;
 +import io.netty.channel.ChannelPromise;
 +import io.netty.channel.socket.SocketChannel;
-+import java.net.InetSocketAddress;
 +import java.net.Socket;
 +import java.net.SocketAddress;
 +import java.security.PrivateKey;
@@ -1192,10 +1193,10 @@ index 0000000..5da8a59
 +}
 diff --git a/src/main/java/org/spigotmc/netty/OutboundManager.java b/src/main/java/org/spigotmc/netty/OutboundManager.java
 new file mode 100644
-index 0000000..44def62
+index 0000000..3f4c02f
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/OutboundManager.java
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,29 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.channel.ChannelHandlerContext;
@@ -1210,7 +1211,6 @@ index 0000000..44def62
 +    /*========================================================================*/
 +    private long lastFlush;
 +    private final NettyNetworkManager manager;
-+    public boolean flushNow = false;
 +
 +    OutboundManager(NettyNetworkManager manager)
 +    {
@@ -1302,7 +1302,7 @@ index 0000000..60b75d0
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketEncoder.java b/src/main/java/org/spigotmc/netty/PacketEncoder.java
 new file mode 100644
-index 0000000..c21be9f
+index 0000000..e6a45d3
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketEncoder.java
 @@ -0,0 +1,55 @@
@@ -1336,7 +1336,7 @@ index 0000000..c21be9f
 +    {
 +        if ( outBuf == null )
 +        {
-+            outBuf = ctx.alloc().directBuffer();
++            outBuf = ctx.alloc().buffer();
 +        }
 +        if ( dataOut == null )
 +        {
@@ -1348,7 +1348,7 @@ index 0000000..c21be9f
 +
 +        networkManager.addWrittenBytes( outBuf.readableBytes() );
 +        out.writeBytes( outBuf );
-+        out.discardSomeReadBytes();
++        outBuf.discardSomeReadBytes();
 +    }
 +
 +    @Override
