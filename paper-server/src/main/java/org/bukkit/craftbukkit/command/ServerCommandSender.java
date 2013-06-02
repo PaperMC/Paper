@@ -95,4 +95,16 @@ public abstract class ServerCommandSender implements CommandSender {
     public void sendMessage(UUID uuid, String... messages) {
         this.sendMessage(messages); // ServerCommandSenders have no use for senders
     }
+
+    // Spigot start
+    private final org.bukkit.command.CommandSender.Spigot spigot = new org.bukkit.command.CommandSender.Spigot()
+    {
+    };
+
+    @Override
+    public org.bukkit.command.CommandSender.Spigot spigot()
+    {
+        return this.spigot;
+    }
+    // Spigot end
 }

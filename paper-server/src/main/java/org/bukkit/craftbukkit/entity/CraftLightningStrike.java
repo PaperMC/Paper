@@ -50,4 +50,15 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
     public String toString() {
         return "CraftLightningStrike";
     }
+
+    // Spigot start
+    private final LightningStrike.Spigot spigot = new LightningStrike.Spigot() {
+
+    };
+
+    @Override
+    public LightningStrike.Spigot spigot() {
+        return this.spigot;
+    }
+    // Spigot end
 }

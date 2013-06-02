@@ -2559,4 +2559,16 @@ public final class CraftServer implements Server {
     public UnsafeValues getUnsafe() {
         return CraftMagicNumbers.INSTANCE;
     }
+
+    // Spigot start
+    private final org.bukkit.Server.Spigot spigot = new org.bukkit.Server.Spigot()
+    {
+
+    };
+
+    public org.bukkit.Server.Spigot spigot()
+    {
+        return this.spigot;
+    }
+    // Spigot end
 }
