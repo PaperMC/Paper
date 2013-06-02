@@ -79,4 +79,16 @@ public abstract class ServerCommandSender implements CommandSender {
     public Server getServer() {
         return Bukkit.getServer();
     }
+
+    // Spigot start
+    private final Spigot spigot = new Spigot()
+    {
+    };
+
+    @Override
+    public Spigot spigot()
+    {
+        return spigot;
+    }
+    // Spigot end
 }

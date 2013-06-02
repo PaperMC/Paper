@@ -2311,4 +2311,15 @@ public class CraftWorld implements World {
     public DragonBattle getEnderDragonBattle() {
         return (getHandle().getDragonBattle() == null) ? null : new CraftDragonBattle(getHandle().getDragonBattle());
     }
+
+    // Spigot start
+    private final Spigot spigot = new Spigot()
+    {
+    };
+
+    public Spigot spigot()
+    {
+        return spigot;
+    }
+    // Spigot end
 }
