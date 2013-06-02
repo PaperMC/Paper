@@ -1,0 +1,30 @@
+From c041fb6421ee248dcd5153a2af8bf89bc7b25a54 Mon Sep 17 00:00:00 2001
+From: EdGruberman <ed@rjump.com>
+Date: Tue, 12 Feb 2013 16:17:31 -0700
+Subject: [PATCH] Remove dependency on CraftPlayer.getBedSpawnLocation; Fixes
+ BUKKIT-3604
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 169fa90..5ccc7f0 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -495,7 +495,14 @@ public abstract class PlayerList {
+         if (exitWorld != null) {
+             if ((cause == TeleportCause.END_PORTAL) && (i == 0)) {
+                 // THE_END -> NORMAL; use bed if available, otherwise default spawn
+-                exit = ((org.bukkit.craftbukkit.entity.CraftPlayer) entityplayer.getBukkitEntity()).getBedSpawnLocation();
++                ChunkCoordinates chunkcoordinates = entityplayer.getBed();
++                CraftWorld spawnWorld = (CraftWorld) this.server.server.getWorld(entityplayer.spawnWorld);
++                if (spawnWorld != null && chunkcoordinates != null) {
++                    ChunkCoordinates chunkcoordinates1 = EntityHuman.getBed(spawnWorld.getHandle(), chunkcoordinates, entityplayer.isRespawnForced());
++                    if (chunkcoordinates1 != null) {
++                        exit = new Location(spawnWorld, chunkcoordinates1.x + 0.5, chunkcoordinates1.y, chunkcoordinates1.z + 0.5);
++                    }
++                }
+                 if (exit == null || ((CraftWorld) exit.getWorld()).getHandle().dimension != 0) {
+                     exit = exitWorld.getWorld().getSpawnLocation();
+                 }
+-- 
+1.8.1.2
+

@@ -1,0 +1,150 @@
+From d82d7f2c415d2d222e1aa88a75318d6a047799a0 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 20 Feb 2013 11:58:47 -0500
+Subject: [PATCH] Entity Tracking Ranges
+
+This will let you configure how far to track entities in range from players, so that the entity does not render on the client if out of this range.
+This has multiple benefits:
+
+1) Less bandwidth. Not sending update packets for entities that are not even close to a player, or even close enough to clearly see.
+2) Less lag by maps in item frames - Default range is 160 blocks... Many players can track that item frame and cause lag and not even see it.
+3) Less lag in general - Less work for the server to do
+4) Less client lag - Not trying to render distant item frames and paintings and entities will reduce entity count on the client, which is major for shop/town worlds which may use tons of item frames.
+
+diff --git a/src/main/java/net/minecraft/server/EntityTracker.java b/src/main/java/net/minecraft/server/EntityTracker.java
+index d7efe3e..f6f1ab0 100644
+--- a/src/main/java/net/minecraft/server/EntityTracker.java
++++ b/src/main/java/net/minecraft/server/EntityTracker.java
+@@ -90,6 +90,7 @@ public class EntityTracker {
+ 
+     public void addEntity(Entity entity, int i, int j, boolean flag) {
+         if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous entity track!"); // Spigot
++        i = org.bukkit.craftbukkit.Spigot.getEntityTrackingRange(entity, i); // Spigot
+         if (i > this.d) {
+             i = this.d;
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 94cb855..fe7b8b0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -107,6 +107,12 @@ public class CraftWorld implements World {
+         animalEntityActivationRange = configuration.getInt("world-settings.default.entity-activation-range-animals");
+         monsterEntityActivationRange = configuration.getInt("world-settings.default.entity-activation-range-monsters");
+ 
++        playerTrackingRange = configuration.getInt("world-settings.default.entity-tracking-range-players");
++        miscTrackingRange = configuration.getInt("world-settings.default.entity-tracking-range-misc");
++        animalTrackingRange = configuration.getInt("world-settings.default.entity-tracking-range-animals");
++        monsterTrackingRange = configuration.getInt("world-settings.default.entity-tracking-range-monsters");
++        maxTrackingRange = configuration.getInt("world-settings.default.entity-tracking-range-max");
++        
+         //override defaults with world specific, if they exist
+         info = configuration.getBoolean("world-settings." + name + ".info", info);
+         growthPerTick = configuration.getInt("world-settings." + name + ".growth-chunks-per-tick", growthPerTick);
+@@ -135,6 +141,15 @@ public class CraftWorld implements World {
+         animalEntityActivationRange = configuration.getInt("world-settings." + name + ".entity-activation-range-animals", animalEntityActivationRange);
+         monsterEntityActivationRange = configuration.getInt("world-settings." + name + ".entity-activation-range-monsters", monsterEntityActivationRange);
+ 
++        maxTrackingRange = configuration.getInt("world-settings." + name + ".entity-tracking-range-max", maxTrackingRange);
++        playerTrackingRange = Math.min(maxTrackingRange, configuration.getInt("world-settings." + name + ".entity-tracking-range-players", playerTrackingRange));
++        miscTrackingRange = Math.min(maxTrackingRange, configuration.getInt("world-settings." + name + ".entity-tracking-range-misc", miscTrackingRange));
++        animalTrackingRange = Math.min(maxTrackingRange, configuration.getInt("world-settings." + name + ".entity-tracking-range-animals", animalTrackingRange));
++        monsterTrackingRange = Math.min(maxTrackingRange, configuration.getInt("world-settings." + name + ".entity-tracking-range-monsters", monsterTrackingRange));
++        if (maxTrackingRange == 0) {
++            System.err.println("Error! Should not have 0 maxRange");
++        }
++
+         if (!info) return;
+         server.getLogger().info("-------------- Spigot ----------------");
+         server.getLogger().info("-------- World Settings For [" + name + "] --------");
+@@ -152,6 +167,7 @@ public class CraftWorld implements World {
+         server.getLogger().info("View distance: " + viewDistance);
+         server.getLogger().info("Oreobfuscator: " + obfuscated);
+         server.getLogger().info("Entity Activation Range: An " + animalEntityActivationRange + " / Mo " + monsterEntityActivationRange + " / Mi " + miscEntityActivationRange);
++        server.getLogger().info("Entity Tracking Range: Pl " + playerTrackingRange + " / An " + animalTrackingRange + " / Mo " + monsterTrackingRange + " / Mi " + miscTrackingRange + " / Max " + maxTrackingRange);
+         server.getLogger().info("-------------------------------------------------");
+         // Spigot end
+     }
+@@ -176,6 +192,12 @@ public class CraftWorld implements World {
+     public int miscEntityActivationRange = 16;
+     public int animalEntityActivationRange = 32;
+     public int monsterEntityActivationRange = 32;
++
++    public int playerTrackingRange = 64;
++    public int miscTrackingRange = 32;
++    public int animalTrackingRange = 48;
++    public int monsterTrackingRange = 48;
++    public int maxTrackingRange = 64;
+     // Spigot end
+ 
+     public Block getBlockAt(int x, int y, int z) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+index 4cbc796..2422d29 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
++++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+@@ -16,12 +16,16 @@ import net.minecraft.server.EntityComplexPart;
+ import net.minecraft.server.EntityCreature;
+ import net.minecraft.server.EntityEnderCrystal;
+ import net.minecraft.server.EntityEnderDragon;
++import net.minecraft.server.EntityExperienceOrb;
+ import net.minecraft.server.EntityFireball;
+ import net.minecraft.server.EntityFireworks;
++import net.minecraft.server.EntityGhast;
+ import net.minecraft.server.EntityHuman;
++import net.minecraft.server.EntityItem;
+ import net.minecraft.server.EntityItemFrame;
+ import net.minecraft.server.EntityLiving;
+ import net.minecraft.server.EntityMonster;
++import net.minecraft.server.EntityPainting;
+ import net.minecraft.server.EntityPlayer;
+ import net.minecraft.server.EntityProjectile;
+ import net.minecraft.server.EntitySheep;
+@@ -371,6 +375,30 @@ public class Spigot {
+         }
+     }
+ 
++    /**
++     * Gets the range an entity should be 'tracked' by players and visible in the client.
++     * @param entity
++     * @param defaultRange Default range defined by Mojang
++     * @return
++     */
++    public static int getEntityTrackingRange(Entity entity, int defaultRange) {
++        CraftWorld world = entity.world.getWorld();
++        int range = defaultRange;
++        if (entity instanceof EntityPlayer) {
++            range = world.playerTrackingRange;
++        } else if (entity.defaultActivationState || entity instanceof EntityGhast) {
++            range = defaultRange;
++        } else if (entity.activationType == 1) {
++            range = world.monsterTrackingRange;
++        } else if (entity.activationType == 2) {
++            range = world.animalTrackingRange;
++        } else if (entity instanceof EntityItemFrame || entity instanceof EntityPainting || entity instanceof EntityItem || entity instanceof EntityExperienceOrb) {
++            range = world.miscTrackingRange;
++        }
++
++        return Math.min(world.maxTrackingRange, range);
++    }
++
+     public static boolean filterIp(PendingConnection con) {
+         if (filterIps) {
+             try {
+diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
+index d26e644..71374d7 100644
+--- a/src/main/resources/configurations/bukkit.yml
++++ b/src/main/resources/configurations/bukkit.yml
+@@ -55,6 +55,11 @@ world-settings:
+         entity-activation-range-animals: 32
+         entity-activation-range-monsters: 32
+         entity-activation-range-misc: 16
++        entity-tracking-range-players: 48
++        entity-tracking-range-animals: 48
++        entity-tracking-range-monsters: 48
++        entity-tracking-range-misc: 32
++        entity-tracking-range-max: 64
+         info: true
+     world:
+         growth-chunks-per-tick: 1000
+-- 
+1.8.1.2
+
