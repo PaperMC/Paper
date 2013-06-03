@@ -1,4 +1,4 @@
-From 4f558e426349bce8fc1deb34576d6ad00331a546 Mon Sep 17 00:00:00 2001
+From 0221a4bbfc6445819be3a2acf26d8e4027d7f5e0 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 16 May 2013 18:51:05 +1000
 Subject: [PATCH] Orebfuscator
@@ -124,7 +124,7 @@ index 12c5f81..010e9c3 100644
          private boolean value = true;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 44d1842..7d05a77 100644
+index 0c7ff1a..0a2d8b1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -123,6 +123,8 @@ public class CraftWorld implements World {
@@ -173,10 +173,10 @@ index 67477f4..e5004b3 100644
          }
 diff --git a/src/main/java/org/spigotmc/OrebfuscatorManager.java b/src/main/java/org/spigotmc/OrebfuscatorManager.java
 new file mode 100644
-index 0000000..8e1ed81
+index 0000000..2adfb86
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/OrebfuscatorManager.java
-@@ -0,0 +1,185 @@
+@@ -0,0 +1,205 @@
 +package org.spigotmc;
 +
 +import gnu.trove.set.TByteSet;
@@ -184,6 +184,7 @@ index 0000000..8e1ed81
 +import net.minecraft.server.Block;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.World;
++import org.bukkit.CustomTimingsHandler;
 +
 +public class OrebfuscatorManager
 +{
@@ -260,6 +261,8 @@ index 0000000..8e1ed81
 +        // If the world is marked as obfuscated
 +        if ( world.getWorld().obfuscated )
 +        {
++            // Initial radius to search around for air
++            int initialRadius = 1;
 +            // Which block in the buffer we are looking at, anywhere from 0 to 16^4
 +            int index = 0;
 +            // The iterator marking which random ore we should use next
@@ -288,8 +291,13 @@ index 0000000..8e1ed81
 +                                // Check if the block should be obfuscated
 +                                if ( obfuscateBlocks[blockId] )
 +                                {
-+                                    // If the nearby blocks are all non air / transparent, we can obfuscate
-+                                    if ( !hasTransparentBlockAdjacent( world, startX + x, ( i << 4 ) + y, startZ + z, 1 ) )
++                                    // TODO: Don't really understand this, but if radius is not 0 and the world isn't loaded, bail out
++                                    if ( initialRadius != 0 && !isLoaded( world, startX + x, ( i << 4 ) + y, startZ + z, initialRadius ) )
++                                    {
++                                        continue;
++                                    }
++                                    // On the otherhand, if radius is 0, or the nearby blocks are all non air, we can obfuscate
++                                    if ( initialRadius == 0 || !hasTransparentBlockAdjacent( world, startX + x, ( i << 4 ) + y, startZ + z, initialRadius ) )
 +                                    {
 +                                        switch ( world.getServer().orebfuscatorEngineMode )
 +                                        {
@@ -350,9 +358,21 @@ index 0000000..8e1ed81
 +        }
 +    }
 +
++    private static boolean isLoaded(World world, int x, int y, int z, int radius)
++    {
++        return world.isLoaded( x, y, z )
++                || ( radius > 0
++                && ( isLoaded( world, x + 1, y, z, radius - 1 )
++                || isLoaded( world, x - 1, y, z, radius - 1 )
++                || isLoaded( world, x, y + 1, z, radius - 1 )
++                || isLoaded( world, x, y - 1, z, radius - 1 )
++                || isLoaded( world, x, y, z + 1, radius - 1 )
++                || isLoaded( world, x, y, z - 1, radius - 1 ) ) );
++    }
++
 +    private static boolean hasTransparentBlockAdjacent(World world, int x, int y, int z, int radius)
 +    {
-+        return world.isLoaded( x, y, z ) && !Block.l( world.getTypeId( x, y, z ) ) /* isSolidBlock */
++        return !Block.l( world.getTypeId( x, y, z ) ) /* isSolidBlock */
 +                || ( radius > 0
 +                && ( hasTransparentBlockAdjacent( world, x + 1, y, z, radius - 1 )
 +                || hasTransparentBlockAdjacent( world, x - 1, y, z, radius - 1 )
