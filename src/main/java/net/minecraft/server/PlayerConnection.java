@@ -1459,45 +1459,41 @@ public class PlayerConnection extends Connection {
             boolean flag3 = itemstack == null || itemstack.getData() >= 0 && itemstack.getData() >= 0 && itemstack.count <= 64 && itemstack.count > 0;
 
             // CraftBukkit start - Call click event
-            if (flag1 || flag) { // Insist on valid slot
-                ItemStack existingItem = this.player.defaultContainer.getSlot(packet107setcreativeslot.slot).getItem();
-                // Client assumes that the server forgets the contents of the inventory.  It doesn't.
-                if (!ItemStack.matches(existingItem, packet107setcreativeslot.b)) {
+            if (flag || (flag1 && !ItemStack.matches(this.player.defaultContainer.getSlot(packet107setcreativeslot.slot).getItem(), packet107setcreativeslot.b))) { // Insist on valid slot
 
-                    org.bukkit.entity.HumanEntity player = this.player.getBukkitEntity();
-                    InventoryView inventory = new CraftInventoryView(player, player.getInventory(), this.player.defaultContainer);
-                    org.bukkit.inventory.ItemStack item = CraftItemStack.asBukkitCopy(packet107setcreativeslot.b); // Should be packet107setcreativeslot.newitem
+                org.bukkit.entity.HumanEntity player = this.player.getBukkitEntity();
+                InventoryView inventory = new CraftInventoryView(player, player.getInventory(), this.player.defaultContainer);
+                org.bukkit.inventory.ItemStack item = CraftItemStack.asBukkitCopy(packet107setcreativeslot.b); // Should be packet107setcreativeslot.newitem
 
-                    SlotType type = SlotType.QUICKBAR;
-                    if (flag) {
-                        type = SlotType.OUTSIDE;
-                    } else if (packet107setcreativeslot.slot < 36) {
-                        if (packet107setcreativeslot.slot >= 5 && packet107setcreativeslot.slot < 9) {
-                            type = SlotType.ARMOR;
-                        } else {
-                            type = SlotType.CONTAINER;
-                        }
+                SlotType type = SlotType.QUICKBAR;
+                if (flag) {
+                    type = SlotType.OUTSIDE;
+                } else if (packet107setcreativeslot.slot < 36) {
+                    if (packet107setcreativeslot.slot >= 5 && packet107setcreativeslot.slot < 9) {
+                        type = SlotType.ARMOR;
+                    } else {
+                        type = SlotType.CONTAINER;
                     }
-                    InventoryCreativeEvent event = new InventoryCreativeEvent(inventory, type, flag ? -999 : packet107setcreativeslot.slot, item);
-                    server.getPluginManager().callEvent(event);
+                }
+                InventoryCreativeEvent event = new InventoryCreativeEvent(inventory, type, flag ? -999 : packet107setcreativeslot.slot, item);
+                server.getPluginManager().callEvent(event);
 
-                    itemstack = CraftItemStack.asNMSCopy(event.getCursor());
+                itemstack = CraftItemStack.asNMSCopy(event.getCursor());
 
-                    switch (event.getResult()) {
-                    case ALLOW:
-                        // Plugin cleared the id / stacksize checks
-                        flag2 = flag3 = true;
-                        break;
-                    case DEFAULT:
-                        break;
-                    case DENY:
-                        // Reset the slot
-                        if (packet107setcreativeslot.slot >= 0) {
-                            this.player.playerConnection.sendPacket(new Packet103SetSlot(this.player.defaultContainer.windowId, packet107setcreativeslot.slot, this.player.defaultContainer.getSlot(packet107setcreativeslot.slot).getItem()));
-                            this.player.playerConnection.sendPacket(new Packet103SetSlot(-1, -1, null));
-                        }
-                        return;
+                switch (event.getResult()) {
+                case ALLOW:
+                    // Plugin cleared the id / stacksize checks
+                    flag2 = flag3 = true;
+                    break;
+                case DEFAULT:
+                    break;
+                case DENY:
+                    // Reset the slot
+                    if (packet107setcreativeslot.slot >= 0) {
+                        this.player.playerConnection.sendPacket(new Packet103SetSlot(this.player.defaultContainer.windowId, packet107setcreativeslot.slot, this.player.defaultContainer.getSlot(packet107setcreativeslot.slot).getItem()));
+                        this.player.playerConnection.sendPacket(new Packet103SetSlot(-1, -1, null));
                     }
+                    return;
                 }
             }
             // CraftBukkit end
