@@ -1,4 +1,4 @@
-From 57f7eba1d84ac95d596f8f87379fce40f9839398 Mon Sep 17 00:00:00 2001
+From bd13994293a8c2208638965e6072a486e2c0188e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 10 Jan 2013 00:18:11 -0500
 Subject: [PATCH] Improved Timings System
@@ -368,7 +368,7 @@ index 6d59bc3..feb657b 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 3a321da..a2f7fee 100644
+index 3a321da..5bbf775 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -186,9 +186,12 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
@@ -380,24 +380,54 @@ index 3a321da..a2f7fee 100644
 +            timings.mobSpawn.stopTiming(); // Spigot
          }
          // CraftBukkit end
-+        timings.doTickRest.startTiming(); // Spigot
++        timings.doChunkUnload.startTiming(); // Spigot
          this.methodProfiler.c("chunkSource");
          this.chunkProvider.unloadChunks();
          int j = this.a(1.0F);
-@@ -214,6 +217,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
-         this.Z();
+@@ -199,21 +202,36 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
  
+         this.worldData.setTime(this.worldData.getTime() + 1L);
+         this.worldData.setDayTime(this.worldData.getDayTime() + 1L);
++        timings.doChunkUnload.stopTiming(); // Spigot
+         this.methodProfiler.c("tickPending");
++        timings.doTickPending.startTiming(); // Spigot
+         this.a(false);
++        timings.doTickPending.stopTiming(); // Spigot
+         this.methodProfiler.c("tickTiles");
++        timings.doTickTiles.startTiming(); // Spigot
+         this.g();
++        timings.doTickTiles.stopTiming(); // Spigot
+         this.methodProfiler.c("chunkMap");
++        timings.doChunkMap.startTiming(); // Spigot
+         this.manager.flush();
++        timings.doChunkMap.stopTiming(); // Spigot
+         this.methodProfiler.c("village");
++        timings.doVillages.startTiming(); // Spigot
+         this.villages.tick();
+         this.siegeManager.a();
++        timings.doVillages.stopTiming(); // Spigot
+         this.methodProfiler.c("portalForcer");
++        timings.doPortalForcer.startTiming(); // Spigot
+         this.P.a(this.getTime());
++        timings.doPortalForcer.stopTiming(); // Spigot
+         this.methodProfiler.b();
++        timings.doSounds.startTiming(); // Spigot
+         this.Z();
+-
++        timings.doSounds.stopTiming(); // Spigot
++        timings.doChunkGC.startTiming(); // Spigot
          this.getWorld().processChunkGC(); // CraftBukkit
-+        timings.doTickRest.stopTiming(); // Spigot
++        timings.doChunkGC.stopTiming(); // Spigot
++
      }
  
      public BiomeMeta a(EnumCreatureType enumcreaturetype, int i, int j, int k) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java b/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java
 new file mode 100644
-index 0000000..f5befbf
+index 0000000..f6e507e
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java
-@@ -0,0 +1,110 @@
+@@ -0,0 +1,124 @@
 +package org.bukkit.craftbukkit;
 +
 +import net.minecraft.server.*;
@@ -490,7 +520,14 @@ index 0000000..f5befbf
 +     */
 +    public static class WorldTimingsHandler {
 +        public final CustomTimingsHandler mobSpawn;
-+        public final CustomTimingsHandler doTickRest;
++        public final CustomTimingsHandler doChunkUnload;
++        public final CustomTimingsHandler doPortalForcer;
++        public final CustomTimingsHandler doTickPending;
++        public final CustomTimingsHandler doTickTiles;
++        public final CustomTimingsHandler doVillages;
++        public final CustomTimingsHandler doChunkMap;
++        public final CustomTimingsHandler doChunkGC;
++        public final CustomTimingsHandler doSounds;
 +        public final CustomTimingsHandler entityTick;
 +        public final CustomTimingsHandler tileEntityTick;
 +        public final CustomTimingsHandler tileEntityPending;
@@ -500,7 +537,14 @@ index 0000000..f5befbf
 +            String name = server.worldData.getName() +" - ";
 +
 +            mobSpawn = new CustomTimingsHandler(name + "mobSpawn");
-+            doTickRest = new CustomTimingsHandler(name + "doTickRest");
++            doChunkUnload = new CustomTimingsHandler(name + "doChunkUnload");
++            doTickPending = new CustomTimingsHandler(name + "doTickPending");
++            doTickTiles = new CustomTimingsHandler(name + "doTickTiles");
++            doVillages = new CustomTimingsHandler(name + "doVillages");
++            doChunkMap = new CustomTimingsHandler(name + "doChunkMap");
++            doSounds = new CustomTimingsHandler(name + "doSounds");
++            doChunkGC = new CustomTimingsHandler(name + "doChunkGC");
++            doPortalForcer = new CustomTimingsHandler(name + "doPortalForcer");
 +            entityTick = new CustomTimingsHandler(name + "entityTick");
 +            tileEntityTick = new CustomTimingsHandler(name + "tileEntityTick");
 +            tileEntityPending = new CustomTimingsHandler(name + "tileEntityPending");
