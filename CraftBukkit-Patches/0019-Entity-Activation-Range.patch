@@ -1,4 +1,4 @@
-From 82cc9466f8c48a7f33711f681e070faf45dfcc8b Mon Sep 17 00:00:00 2001
+From 5d78668da09b68fc181c05bfc3873d6c52d096a7 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 3 Feb 2013 05:10:21 -0500
 Subject: [PATCH] Entity Activation Range
@@ -9,7 +9,7 @@ This will drastically cut down on tick timings for entities that are not in rang
 This change can have dramatic impact on gameplay if configured too low. Balance according to your servers desired gameplay.
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 978b6ef..861c8e1 100644
+index 978b6ef..401edcc 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -88,7 +88,7 @@ public abstract class Entity {
@@ -21,7 +21,7 @@ index 978b6ef..861c8e1 100644
      public int noDamageTicks;
      private boolean justCreated;
      protected boolean fireProof;
-@@ -111,8 +111,14 @@ public abstract class Entity {
+@@ -111,8 +111,15 @@ public abstract class Entity {
      public EnumEntitySize at;
      public boolean valid = false; // CraftBukkit
  
@@ -31,12 +31,13 @@ index 978b6ef..861c8e1 100644
 +    public final byte activationType = org.bukkit.craftbukkit.Spigot.initializeEntityActivationType(this);
 +    public final boolean defaultActivationState;
 +    public long activatedTick = 0;
++    public void inactiveTick() { }
 +    // Spigot end
 +
      public Entity(World world) {
          this.id = entityCount++;
          this.l = 1.0D;
-@@ -153,7 +159,12 @@ public abstract class Entity {
+@@ -153,7 +160,12 @@ public abstract class Entity {
          this.setPosition(0.0D, 0.0D, 0.0D);
          if (world != null) {
              this.dimension = world.worldProvider.dimension;
@@ -49,6 +50,42 @@ index 978b6ef..861c8e1 100644
  
          this.datawatcher.a(0, Byte.valueOf((byte) 0));
          this.datawatcher.a(1, Short.valueOf((short) 300));
+diff --git a/src/main/java/net/minecraft/server/EntityAgeable.java b/src/main/java/net/minecraft/server/EntityAgeable.java
+index fdc9167..16b7261 100644
+--- a/src/main/java/net/minecraft/server/EntityAgeable.java
++++ b/src/main/java/net/minecraft/server/EntityAgeable.java
+@@ -6,6 +6,31 @@ public abstract class EntityAgeable extends EntityCreature {
+     private float e;
+     public boolean ageLocked = false; // CraftBukkit
+ 
++    // Spigot start
++    @Override
++    public void inactiveTick()
++    {
++        super.inactiveTick();
++        if ( this.world.isStatic || this.ageLocked )
++        { // CraftBukkit
++            this.a( this.isBaby() );
++        } else
++        {
++            int i = this.getAge();
++
++            if ( i < 0 )
++            {
++                ++i;
++                this.setAge( i );
++            } else if ( i > 0 )
++            {
++                --i;
++                this.setAge( i );
++            }
++        }
++    }
++    // Spigot end
++
+     public EntityAgeable(World world) {
+         super(world);
+     }
 diff --git a/src/main/java/net/minecraft/server/EntityArrow.java b/src/main/java/net/minecraft/server/EntityArrow.java
 index f46c920..1699059 100644
 --- a/src/main/java/net/minecraft/server/EntityArrow.java
@@ -62,8 +99,26 @@ index f46c920..1699059 100644
      public int fromPlayer = 0;
      public int shake = 0;
      public Entity shooter;
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 58a4acb..35f3fea 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -113,6 +113,13 @@ public abstract class EntityLiving extends Entity {
+     public int maxAirTicks = 300;
+     public int maxHealth = this.getMaxHealth();
+     // CraftBukkit end
++    // Spigot start
++    public void inactiveTick()
++    {
++        super.inactiveTick();
++        ++this.bC;
++    }
++    // Spigot end
+ 
+     public EntityLiving(World world) {
+         super(world);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index c547ecc..3fa7e40 100644
+index c547ecc..64c7c85 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -13,6 +13,7 @@ import java.util.concurrent.Callable;
@@ -82,7 +137,7 @@ index c547ecc..3fa7e40 100644
          timings.entityTick.startTiming(); // Spigot
          for (i = 0; i < this.entityList.size(); ++i) {
              entity = (Entity) this.entityList.get(i);
-@@ -1435,8 +1437,12 @@ public abstract class World implements IBlockAccess {
+@@ -1435,8 +1437,13 @@ public abstract class World implements IBlockAccess {
          int j = MathHelper.floor(entity.locZ);
          byte b0 = 32;
  
@@ -91,6 +146,7 @@ index c547ecc..3fa7e40 100644
 +        // Spigot start
 +        if (!Spigot.checkIfActive(entity)) {
 +            entity.ticksLived++;
++            entity.inactiveTick();
 +        } else {
 +            entity.tickTimer.startTiming();
 +            // Spigot end
@@ -98,7 +154,7 @@ index c547ecc..3fa7e40 100644
              entity.V = entity.locY;
              entity.W = entity.locZ;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 7d05a77..94cb855 100644
+index 0a2d8b1..8d916ae 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -103,9 +103,15 @@ public class CraftWorld implements World {
@@ -148,7 +204,7 @@ index 7d05a77..94cb855 100644
  
      public Block getBlockAt(int x, int y, int z) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-index e5004b3..e89c3a5 100644
+index e5004b3..2fc33f8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
 @@ -1,12 +1,43 @@
@@ -170,13 +226,13 @@ index e5004b3..e89c3a5 100644
 +import net.minecraft.server.EntityFireball;
 +import net.minecraft.server.EntityFireworks;
 +import net.minecraft.server.EntityHuman;
-+import net.minecraft.server.EntityItemFrame;
 +import net.minecraft.server.EntityLiving;
 +import net.minecraft.server.EntityMonster;
 +import net.minecraft.server.EntityProjectile;
 +import net.minecraft.server.EntitySheep;
 +import net.minecraft.server.EntitySlime;
 +import net.minecraft.server.EntityTNTPrimed;
++import net.minecraft.server.EntityVillager;
 +import net.minecraft.server.EntityWeather;
 +import net.minecraft.server.EntityWither;
 +import net.minecraft.server.MathHelper;
@@ -195,7 +251,7 @@ index e5004b3..e89c3a5 100644
      private static boolean filterIps;
  
      public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
-@@ -24,12 +55,227 @@ public class Spigot {
+@@ -24,12 +55,230 @@ public class Spigot {
          server.orebfuscatorDisabledWorlds = configuration.getStringList("orebfuscator.disabled-worlds");
          server.orebfuscatorBlocks = configuration.getShortList("orebfuscator.blocks");
          if (server.orebfuscatorEngineMode != 1 && server.orebfuscatorEngineMode != 2) {
@@ -376,6 +432,9 @@ index e5004b3..e89c3a5 100644
 +            if (entity instanceof EntityCreature && ((EntityCreature) entity).target != null) {
 +                return true;
 +            }
++            if (entity instanceof EntityVillager && ((EntityVillager) entity).n()) { 
++                return true;
++            }
 +            if (entity instanceof EntityAnimal) {
 +                EntityAnimal animal = (EntityAnimal) entity;
 +                if (animal.isBaby() || animal.r() /*love*/) {
@@ -425,7 +484,7 @@ index e5004b3..e89c3a5 100644
  
      public static boolean filterIp(PendingConnection con) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java b/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java
-index f5befbf..51714c8 100644
+index f6e507e..4328ecf 100644
 --- a/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java
 +++ b/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java
 @@ -29,6 +29,9 @@ public class SpigotTimings {
