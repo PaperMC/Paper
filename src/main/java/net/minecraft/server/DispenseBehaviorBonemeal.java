@@ -20,9 +20,8 @@ final class DispenseBehaviorBonemeal extends DispenseBehaviorItem {
             int k = isourceblock.getBlockZ() + enumfacing.e();
 
             // CraftBukkit start
-            ItemStack itemstack1 = itemstack.a(1);
             org.bukkit.block.Block block = world.getWorld().getBlockAt(isourceblock.getBlockX(), isourceblock.getBlockY(), isourceblock.getBlockZ());
-            CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
+            CraftItemStack craftItem = CraftItemStack.asNewCraftStack(itemstack.getItem());
 
             BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
             if (!BlockDispenser.eventFired) {
@@ -30,12 +29,10 @@ final class DispenseBehaviorBonemeal extends DispenseBehaviorItem {
             }
 
             if (event.isCancelled()) {
-                itemstack.count++;
                 return itemstack;
             }
 
             if (!event.getItem().equals(craftItem)) {
-                itemstack.count++;
                 // Chain to handler for new item
                 ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
                 IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.a(eventStack.getItem());
@@ -46,7 +43,7 @@ final class DispenseBehaviorBonemeal extends DispenseBehaviorItem {
             }
             // CraftBukkit end
 
-            if (ItemDye.a(itemstack1, world, i, j, k)) { // CraftBukkit - itemstack -> itemstack1
+            if (ItemDye.a(itemstack, world, i, j, k)) {
                 if (!world.isStatic) {
                     world.triggerEffect(2005, i, j, k, 0);
                 }
