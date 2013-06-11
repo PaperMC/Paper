@@ -1,0 +1,103 @@
+From 028837b3b8f3dfb6d2f290de6cea6cd645b07455 Mon Sep 17 00:00:00 2001
+From: DerFlash <bte@freenet.de>
+Date: Sun, 2 Jun 2013 16:23:46 +1000
+Subject: [PATCH] Hopper Cooldowns
+
+
+diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
+index f6d269d..88b2cb0 100644
+--- a/src/main/java/net/minecraft/server/TileEntityHopper.java
++++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
+@@ -181,16 +181,19 @@ public class TileEntityHopper extends TileEntity implements IHopper {
+                 boolean flag = this.u() | suckInItems(this);
+ 
+                 if (flag) {
+-                    this.c(8);
++                    this.c(org.bukkit.craftbukkit.Spigot.hopperTransferCooldown); // Spigot
+                     this.update();
+                     return true;
+                 }
+             }
+-
+-            return false;
+-        } else {
+-            return false;
+         }
++        // Spigot start
++        if ( this.c == 0 )
++        {
++            this.c( org.bukkit.craftbukkit.Spigot.hopperCheckCooldown );
++        }
++        // Spigot end
++        return false;
+     }
+ 
+     private boolean u() {
+@@ -217,7 +220,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
+                     this.getWorld().getServer().getPluginManager().callEvent(event);
+                     if (event.isCancelled()) {
+                         this.setItem(i, itemstack);
+-                        this.c(8); // Delay hopper checks
++                        this.c(org.bukkit.craftbukkit.Spigot.hopperTransferCooldown); // Spigot
+                         return false;
+                     }
+                     ItemStack itemstack1 = addItem(iinventory, CraftItemStack.asNMSCopy(event.getItem()), Facing.OPPOSITE_FACING[BlockHopper.c(this.p())]);
+@@ -298,9 +301,9 @@ public class TileEntityHopper extends TileEntity implements IHopper {
+                 iinventory.setItem(i, itemstack1);
+ 
+                 if (ihopper instanceof TileEntityHopper) {
+-                    ((TileEntityHopper) ihopper).c(8); // Delay hopper checks
++                    ((TileEntityHopper) ihopper).c(org.bukkit.craftbukkit.Spigot.hopperTransferCooldown); // Spigot
+                 } else if (ihopper instanceof EntityMinecartHopper) {
+-                    ((EntityMinecartHopper) ihopper).n(4); // Delay hopper minecart checks
++                    ((EntityMinecartHopper) ihopper).n(org.bukkit.craftbukkit.Spigot.hopperTransferCooldown / 2); // Spigot
+                 }
+ 
+                 return false;
+@@ -404,7 +407,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
+ 
+             if (flag) {
+                 if (iinventory instanceof TileEntityHopper) {
+-                    ((TileEntityHopper) iinventory).c(8);
++                    ((TileEntityHopper) iinventory).c(org.bukkit.craftbukkit.Spigot.hopperTransferCooldown); // Spigot
+                 }
+ 
+                 iinventory.update();
+diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+index c7ef0e1..bbfcd97 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
++++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+@@ -59,6 +59,8 @@ public class Spigot {
+     public static List<String> bungeeIPs;
+     public static int textureResolution = 16;
+     public static final Pattern validName = Pattern.compile("^[a-zA-Z0-9_-]{2,16}$");
++    public static int hopperTransferCooldown = 8;
++    public static int hopperCheckCooldown = 8;
+ 
+     public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
+         commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
+@@ -97,6 +99,8 @@ public class Spigot {
+         tabPing = configuration.getBoolean("settings.tab-ping", tabPing);
+         bungeeIPs = configuration.getStringList("settings.bungee-proxies");
+         textureResolution = configuration.getInt("settings.texture-resolution", textureResolution);
++        hopperTransferCooldown = configuration.getInt("ticks-per.hopper-transfer", hopperTransferCooldown);
++        hopperCheckCooldown = configuration.getInt("ticks-per.hopper-check", hopperCheckCooldown);
+ 
+         if (metrics == null) {
+             try {
+diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
+index 5d2ef1f..c056762 100644
+--- a/src/main/resources/configurations/bukkit.yml
++++ b/src/main/resources/configurations/bukkit.yml
+@@ -83,6 +83,8 @@ ticks-per:
+     animal-spawns: 400
+     monster-spawns: 1
+     autosave: 0
++    hopper-transfer: 8
++    hopper-check: 8
+ auto-updater:
+     enabled: true
+     on-broken: [warn-console, warn-ops]
+-- 
+1.8.1.2
+

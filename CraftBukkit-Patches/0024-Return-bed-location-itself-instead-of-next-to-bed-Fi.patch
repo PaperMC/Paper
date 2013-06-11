@@ -1,0 +1,45 @@
+From 8d19c5f1c4232cd0857ec9277e601b41000c9915 Mon Sep 17 00:00:00 2001
+From: EdGruberman <ed@rjump.com>
+Date: Fri, 22 Feb 2013 09:23:51 -0700
+Subject: [PATCH] Return bed location itself instead of next to bed; Fixes
+ BUKKIT-3604
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 7cae665..8ec84e1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -628,10 +628,28 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         ChunkCoordinates bed = getHandle().getBed();
+ 
+         if (world != null && bed != null) {
+-            bed = EntityHuman.getBed(((CraftWorld) world).getHandle(), bed, getHandle().isRespawnForced());
+-            if (bed != null) {
++            if (getHandle().isRespawnForced()) {
+                 return new Location(world, bed.x, bed.y, bed.z);
+             }
++
++            int cx = bed.x >> 4;
++            int cz = bed.z >> 4;
++            boolean before = world.isChunkLoaded(cx, cz);
++
++            if (!before) {
++                world.loadChunk(cx, cz);
++            }
++
++            Location location = null;
++            if (world.getBlockTypeIdAt(bed.x, bed.y, bed.z) == Block.BED.id) {
++                location = new Location(world, bed.x, bed.y, bed.z);
++            }
++
++            if (!before) {
++                world.unloadChunk(cx, cz);
++            }
++
++            return location;
+         }
+         return null;
+     }
+-- 
+1.8.1.2
+
