@@ -1,4 +1,4 @@
-From 1dd9dbc277e2a8afd185b7acab193b6913da26e7 Mon Sep 17 00:00:00 2001
+From 23604895a4c7e1eeb6ae4dc364ba42630403f2d9 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 14 May 2013 12:06:27 +1000
 Subject: [PATCH] Spigot Configuration
@@ -25,6 +25,54 @@ index 7261dc9..10ce69d 100644
  
          if (!this.getOnlineMode()) {
              this.getLogger().warning("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 6cb50b7..2956e75 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -145,7 +145,7 @@ public final class CraftServer implements Server {
+     protected final MinecraftServer console;
+     protected final DedicatedPlayerList playerList;
+     private final Map<String, World> worlds = new LinkedHashMap<String, World>();
+-    private YamlConfiguration configuration;
++    public YamlConfiguration configuration; // Spigot
+     private final Yaml yaml = new Yaml(new SafeConstructor());
+     private final Map<String, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
+     private final AutoUpdater updater;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index c0fb528..430a9c0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -77,6 +77,30 @@ public class CraftWorld implements World {
+         if (server.chunkGCPeriod > 0) {
+             chunkGCTickCount = rand.nextInt(server.chunkGCPeriod);
+         }
++        // Spigot start
++        org.bukkit.configuration.file.YamlConfiguration configuration = server.configuration;
++        String name;
++        if ( world.worldData == null || world.worldData.getName() == null )
++        {
++            name = "default";
++        } else
++        {
++            name = world.worldData.getName().replaceAll( " ", "_" );
++        }
++
++        // Load defaults first
++        boolean info = configuration.getBoolean( "world-settings.default.info", true );
++
++        // Override defaults with world specific, if they exist
++        info = configuration.getBoolean( "world-settings." + name + ".info", info );
++
++        if ( info )
++        {
++            server.getLogger().info( "-------------- Spigot ----------------" );
++            server.getLogger().info( "-------- World Settings For [" + name + "] --------" );
++            server.getLogger().info( "-------------------------------------------------" );
++        }
++        // Spigot end
+     }
+ 
+     public Block getBlockAt(int x, int y, int z) {
 -- 
 1.8.1.2
 
