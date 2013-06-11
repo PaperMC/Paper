@@ -1,6 +1,6 @@
-From 82614bb009f47f71c81667af3e86f460d60cf5f7 Mon Sep 17 00:00:00 2001
+From 9689ef70b5f735de03b42766e0d8bef5cb5817a6 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Tue, 11 Jun 2013 11:53:13 +1000
+Date: Tue, 11 Jun 2013 12:02:53 +1000
 Subject: [PATCH] Spigot Changes
 
 
@@ -142,102 +142,6 @@ index 8339a35..c17ce36 100644
                  int l = world.getData(i, j, k);
  
                  if (l < 7) {
-diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index bee715b..9643480 100644
---- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-+++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -13,8 +13,7 @@ import java.util.Set;
- 
- public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
- 
--    private List a = new ArrayList();
--    private Set b = new HashSet();
-+    private java.util.LinkedHashMap<ChunkCoordIntPair, PendingChunkToSave> pendingSaves = new java.util.LinkedHashMap<ChunkCoordIntPair, PendingChunkToSave>(); // Spigot
-     private Object c = new Object();
-     private final File d;
- 
-@@ -27,15 +26,12 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
-         ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
- 
-         synchronized (this.c) {
--            if (this.b.contains(chunkcoordintpair)) {
--                for (int k = 0; k < this.a.size(); ++k) {
--                    if (((PendingChunkToSave) this.a.get(k)).a.equals(chunkcoordintpair)) {
--                        return true;
--                    }
--                }
-+            // Spigot start
-+            if (pendingSaves.containsKey(chunkcoordintpair)) {
-+                return true;
-             }
-         }
--
-+        // Spigot end
-         return RegionFileCache.a(this.d, i, j).chunkExists(i & 31, j & 31);
-     }
-     // CraftBukkit end
-@@ -60,6 +56,12 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
-         Object object = this.c;
- 
-         synchronized (this.c) {
-+            // Spigot start
-+            PendingChunkToSave pendingchunktosave = pendingSaves.get(chunkcoordintpair);
-+            if (pendingchunktosave != null) {
-+                nbttagcompound = pendingchunktosave.b;
-+            }
-+            /*
-             if (this.b.contains(chunkcoordintpair)) {
-                 for (int k = 0; k < this.a.size(); ++k) {
-                     if (((PendingChunkToSave) this.a.get(k)).a.equals(chunkcoordintpair)) {
-@@ -68,6 +70,7 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
-                     }
-                 }
-             }
-+            */// Spigot end
-         }
- 
-         if (nbttagcompound == null) {
-@@ -148,6 +151,11 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
-         Object object = this.c;
- 
-         synchronized (this.c) {
-+            // Spigot start
-+            if (this.pendingSaves.put(chunkcoordintpair, new PendingChunkToSave(chunkcoordintpair, nbttagcompound)) != null) {
-+                return;
-+            }
-+            /*
-             if (this.b.contains(chunkcoordintpair)) {
-                 for (int i = 0; i < this.a.size(); ++i) {
-                     if (((PendingChunkToSave) this.a.get(i)).a.equals(chunkcoordintpair)) {
-@@ -159,6 +167,7 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
- 
-             this.a.add(new PendingChunkToSave(chunkcoordintpair, nbttagcompound));
-             this.b.add(chunkcoordintpair);
-+            */// Spigot end
-             FileIOThread.a.a(this);
-         }
-     }
-@@ -168,12 +177,20 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
-         Object object = this.c;
- 
-         synchronized (this.c) {
-+            // Spigot start
-+            if (this.pendingSaves.isEmpty()) {
-+                return false;
-+            }
-+            pendingchunktosave = this.pendingSaves.values().iterator().next();
-+            this.pendingSaves.remove(pendingchunktosave.a);
-+            /*
-             if (this.a.isEmpty()) {
-                 return false;
-             }
- 
-             pendingchunktosave = (PendingChunkToSave) this.a.remove(0);
-             this.b.remove(pendingchunktosave.a);
-+            */// Spigot end
-         }
- 
-         if (pendingchunktosave != null) {
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
 index f1c2d48..e1872cc 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
@@ -812,10 +716,10 @@ index c896ba2..e99cb22 100644
          }
  
 diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
-index 61a95e3..f2ce75e 100644
+index 61a95e3..67c6c5e 100644
 --- a/src/main/resources/configurations/bukkit.yml
 +++ b/src/main/resources/configurations/bukkit.yml
-@@ -25,6 +25,31 @@ settings:
+@@ -25,6 +25,30 @@ settings:
      query-plugins: true
      deprecated-verbose: default
      shutdown-message: Server closed
@@ -843,7 +747,6 @@ index 61a95e3..f2ce75e 100644
 +    world_nether:
 +        growth-chunks-per-tick: 0
 +        random-light-updates: true
-+        water-creatures-per-chunk: 0
  spawn-limits:
      monsters: 70
      animals: 15

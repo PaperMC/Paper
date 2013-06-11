@@ -1,0 +1,106 @@
+From 7adf7bd860703f2cbe8967b945524ac3cba19791 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 29 Jan 2013 13:25:53 -0500
+Subject: [PATCH] Only count entities in chunks being processed for the spawn
+ wave. Fixes mob spawn issues.
+
+
+diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
+index 056100f..3529074 100644
+--- a/src/main/java/net/minecraft/server/SpawnerCreature.java
++++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
+@@ -16,6 +16,7 @@ public final class SpawnerCreature {
+ 
+     private static LongObjectHashMap<Boolean> b = new LongObjectHashMap<Boolean>(); // CraftBukkit - HashMap -> LongObjectHashMap
+     protected static final Class[] a = new Class[] { EntitySpider.class, EntityZombie.class, EntitySkeleton.class};
++    private static byte spawnRadius = 0; // Spigot
+ 
+     protected static ChunkPosition getRandomPosition(World world, int i, int j) {
+         Chunk chunk = world.getChunkAt(i, j);
+@@ -26,6 +27,26 @@ public final class SpawnerCreature {
+         return new ChunkPosition(k, i1, l);
+     }
+ 
++    // Spigot start - get entity count only from chunks being processed in b
++    public static final int getEntityCount(WorldServer server, Class oClass) {
++        int i = 0;
++        for (Long coord : b.keySet()) {
++            int x = LongHash.msw(coord);
++            int z = LongHash.lsw(coord);
++            if (!server.chunkProviderServer.unloadQueue.contains(x,z) && server.isChunkLoaded(x, z)) {
++                for (List<Entity> entitySlice : server.getChunkAt(x, z).entitySlices) {
++                    for (Entity entity : entitySlice) {
++                        if (oClass.isAssignableFrom(entity.getClass())) {
++                            ++i;
++                        }
++                    }
++                }
++            }
++        }
++        return i;
++    }
++    // Spigot end
++
+     public static final int spawnEntities(WorldServer worldserver, boolean flag, boolean flag1, boolean flag2) {
+         if (!flag && !flag1) {
+             return 0;
+@@ -34,13 +55,24 @@ public final class SpawnerCreature {
+ 
+             int i;
+             int j;
++            // Spigot start - limit radius to spawn distance (chunks aren't loaded)
++            if (spawnRadius == 0) {
++                spawnRadius = (byte) worldserver.getWorld().mobSpawnRange;
++                if (spawnRadius > (byte) worldserver.getServer().getViewDistance()) {
++                    spawnRadius = (byte) worldserver.getServer().getViewDistance();
++                }
++                if (spawnRadius > 8) {
++                    spawnRadius = 8;
++                }
++            }
++            // Spigot end
+ 
+             for (i = 0; i < worldserver.players.size(); ++i) {
+                 EntityHuman entityhuman = (EntityHuman) worldserver.players.get(i);
+                 int k = MathHelper.floor(entityhuman.locX / 16.0D);
+ 
+                 j = MathHelper.floor(entityhuman.locZ / 16.0D);
+-                byte b0 = 8;
++                byte b0 = spawnRadius; // Spigot - replace 8 with view distance constrained value
+ 
+                 for (int l = -b0; l <= b0; ++l) {
+                     for (int i1 = -b0; i1 <= b0; ++i1) {
+@@ -88,13 +120,15 @@ public final class SpawnerCreature {
+                 if (limit == 0) {
+                     continue;
+                 }
++                int mobcnt = 0;
+                 // CraftBukkit end
+ 
+-                if ((!enumcreaturetype.d() || flag1) && (enumcreaturetype.d() || flag) && (!enumcreaturetype.e() || flag2) && worldserver.a(enumcreaturetype.a()) <= limit * b.size() / 256) { // CraftBukkit - use per-world limits
++                if ((!enumcreaturetype.d() || flag1) && (enumcreaturetype.d() || flag) && (!enumcreaturetype.e() || flag2) && (mobcnt = getEntityCount(worldserver, enumcreaturetype.a())) <= limit * b.size() / 256) { // CraftBukkit - use per-world limits and use all loaded chunks
+                     Iterator iterator = b.keySet().iterator();
+ 
++                    int moblimit = (limit * b.size() / 256) - mobcnt + 1; // CraftBukkit - up to 1 more than limit
+                     label110:
+-                    while (iterator.hasNext()) {
++                    while (iterator.hasNext() && (moblimit > 0)) { // Spigot - while more allowed
+                         // CraftBukkit start
+                         long key = ((Long) iterator.next()).longValue();
+ 
+@@ -158,6 +192,12 @@ public final class SpawnerCreature {
+                                                                 a(entityliving, worldserver, f, f1, f2);
+                                                                 worldserver.addEntity(entityliving, SpawnReason.NATURAL);
+                                                                 // CraftBukkit end
++                                                                // Spigot start
++                                                                moblimit--;
++                                                                if (moblimit <= 0) { // If we're past limit, stop spawn
++                                                                    continue label110;
++                                                                }
++                                                                // Spigot end
+                                                                 if (j2 >= entityliving.by()) {
+                                                                     continue label110;
+                                                                 }
+-- 
+1.8.1.2
+
