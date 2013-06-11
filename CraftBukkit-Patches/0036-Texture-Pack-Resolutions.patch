@@ -1,0 +1,68 @@
+From 29e1876216e161284bde8964a33d2064410b0889 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Sat, 23 Mar 2013 13:04:45 +1100
+Subject: [PATCH] Texture Pack Resolutions
+
+Fix issues when specifiying a server texture pack URL with resolution != 16.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index d197f06..e348ac5 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1076,7 +1076,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+     }
+ 
+     public int S() {
+-        return 16;
++        return org.bukkit.craftbukkit.Spigot.textureResolution; // Spigot
+     }
+ 
+     public abstract boolean T();
+diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+index dd92087..99020e7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
++++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+@@ -56,6 +56,7 @@ public class Spigot {
+     public static boolean tabPing = false;
+     private static Metrics metrics;
+     public static List<String> bungeeIPs;
++    public static int textureResolution = 16;
+ 
+     public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
+         commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
+@@ -93,6 +94,7 @@ public class Spigot {
+ 
+         tabPing = configuration.getBoolean("settings.tab-ping", tabPing);
+         bungeeIPs = configuration.getStringList("settings.bungee-proxies");
++        textureResolution = configuration.getInt("settings.texture-resolution", textureResolution);
+ 
+         if (metrics == null) {
+             try {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index d70c110..3d39d07 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -830,7 +830,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     public void setTexturePack(String url) {
+         Validate.notNull(url, "Texture pack URL cannot be null");
+ 
+-        byte[] message = (url + "\0" + "16").getBytes();
++        byte[] message = (url + "\0" + org.bukkit.craftbukkit.Spigot.textureResolution).getBytes(); // Spigot
+         Validate.isTrue(message.length <= Messenger.MAX_MESSAGE_SIZE, "Texture pack URL is too long");
+ 
+         getHandle().playerConnection.sendPacket(new Packet250CustomPayload("MC|TPack", message));
+diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
+index 2e3b242..4334b20 100644
+--- a/src/main/resources/configurations/bukkit.yml
++++ b/src/main/resources/configurations/bukkit.yml
+@@ -39,6 +39,7 @@ settings:
+     restart-script-location: /path/to/server/start.sh
+     bungee-proxies:
+       - 127.0.0.1
++    texture-resolution: 16
+ world-settings:
+     default:
+         growth-chunks-per-tick: 650
+-- 
+1.8.1.2
+

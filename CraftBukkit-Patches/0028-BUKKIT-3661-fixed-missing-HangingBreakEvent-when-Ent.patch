@@ -1,0 +1,36 @@
+From dff970f3daf91957789d01ea782b3c078dea1308 Mon Sep 17 00:00:00 2001
+From: Yariv Livay <yarivlivay@gmail.com>
+Date: Sat, 2 Mar 2013 09:36:52 +1100
+Subject: [PATCH] BUKKIT-3661, fixed missing HangingBreakEvent when
+ EntityHanging moves
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityHanging.java b/src/main/java/net/minecraft/server/EntityHanging.java
+index f697d85..1dfb02f 100644
+--- a/src/main/java/net/minecraft/server/EntityHanging.java
++++ b/src/main/java/net/minecraft/server/EntityHanging.java
+@@ -260,6 +260,21 @@ public abstract class EntityHanging extends Entity {
+         if (!this.world.isStatic && !this.dead && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
+             if (dead) return; // CraftBukkit
+ 
++            // CraftBukkit start
++            HangingBreakEvent event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), HangingBreakEvent.RemoveCause.PHYSICS);
++            this.world.getServer().getPluginManager().callEvent(event);
++
++            PaintingBreakEvent paintingEvent = null;
++            if (this instanceof EntityPainting) {
++                // Fire old painting event until it can be removed
++                paintingEvent = new PaintingBreakEvent((Painting) this.getBukkitEntity(), PaintingBreakEvent.RemoveCause.valueOf(event.getCause().name()));
++                paintingEvent.setCancelled(event.isCancelled());
++                this.world.getServer().getPluginManager().callEvent(paintingEvent);
++            }
++            if (event.isCancelled() || (paintingEvent != null && paintingEvent.isCancelled())) {
++                return;
++            }
++            // CraftBukkit end
+             this.die();
+             this.h();
+         }
+-- 
+1.8.1.2
+
