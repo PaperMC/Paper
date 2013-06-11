@@ -1,0 +1,112 @@
+From 1904d309995de486bde6ba0da4b8a2567c259aa3 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Sat, 23 Mar 2013 11:15:11 +1100
+Subject: [PATCH] BungeeCord Support
+
+- Allows BungeeCord to set the players real IP address very early in the login process, so that the BungeeCord proxy IP is never even seen by a plugin.
+
+diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
+index a945892..7ef9a6f 100644
+--- a/src/main/java/net/minecraft/server/PendingConnection.java
++++ b/src/main/java/net/minecraft/server/PendingConnection.java
+@@ -221,4 +221,17 @@ public class PendingConnection extends Connection {
+     static boolean a(PendingConnection pendingconnection, boolean flag) {
+         return pendingconnection.h = flag;
+     }
++
++    // Spigot start
++    @Override
++    public void a(Packet250CustomPayload pcp) {
++        if (pcp.tag.equals("BungeeCord") && org.bukkit.craftbukkit.Spigot.bungeeIPs.contains(getSocket().getInetAddress().getHostAddress())) {
++            com.google.common.io.ByteArrayDataInput in = com.google.common.io.ByteStreams.newDataInput(pcp.data);
++            String subTag = in.readUTF();
++            if (subTag.equals("Login")) {
++                networkManager.setSocketAddress(new java.net.InetSocketAddress(in.readUTF(), in.readInt()));
++            }
++        }
++    }
++    // Spigot end
+ }
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 305855b..e6e9295 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -293,7 +293,7 @@ public abstract class PlayerList {
+         // depending on the outcome.
+         EntityPlayer entity = new EntityPlayer(this.server, this.server.getWorldServer(0), s, this.server.M() ? new DemoPlayerInteractManager(this.server.getWorldServer(0)) : new PlayerInteractManager(this.server.getWorldServer(0)));
+         Player player = entity.getBukkitEntity();
+-        PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, pendingconnection.getSocket().getInetAddress());
++        PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, ((java.net.InetSocketAddress) pendingconnection.networkManager.getSocketAddress()).getAddress(), pendingconnection.getSocket().getInetAddress()); // Spigot
+ 
+         SocketAddress socketaddress = pendingconnection.networkManager.getSocketAddress();
+ 
+diff --git a/src/main/java/net/minecraft/server/ThreadLoginVerifier.java b/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
+index fcd4136..fb4ec7b 100644
+--- a/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
++++ b/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
+@@ -45,11 +45,11 @@ class ThreadLoginVerifier extends Thread {
+                 return;
+             }
+ 
+-            AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(PendingConnection.d(this.pendingConnection), this.pendingConnection.getSocket().getInetAddress());
++            AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(PendingConnection.d(this.pendingConnection), ((java.net.InetSocketAddress) this.pendingConnection.networkManager.getSocketAddress()).getAddress()); // Spigot
+             this.server.getPluginManager().callEvent(asyncEvent);
+ 
+             if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
+-                final PlayerPreLoginEvent event = new PlayerPreLoginEvent(PendingConnection.d(this.pendingConnection), this.pendingConnection.getSocket().getInetAddress());
++                final PlayerPreLoginEvent event = new PlayerPreLoginEvent(PendingConnection.d(this.pendingConnection), ((java.net.InetSocketAddress) this.pendingConnection.networkManager.getSocketAddress()).getAddress()); // Spigot
+                 if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
+                     event.disallow(asyncEvent.getResult(), asyncEvent.getKickMessage());
+                 }
+diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+index c434f14..dd92087 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
++++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
+@@ -55,6 +55,7 @@ public class Spigot {
+     private static boolean filterIps;
+     public static boolean tabPing = false;
+     private static Metrics metrics;
++    public static List<String> bungeeIPs;
+ 
+     public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
+         commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
+@@ -91,6 +92,7 @@ public class Spigot {
+         }
+ 
+         tabPing = configuration.getBoolean("settings.tab-ping", tabPing);
++        bungeeIPs = configuration.getStringList("settings.bungee-proxies");
+ 
+         if (metrics == null) {
+             try {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 8ec84e1..d70c110 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1016,6 +1016,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     // Spigot start
+     private final Spigot spigot = new Spigot()
+     {
++        @Override
++        public InetSocketAddress getRawAddress()
++        {
++            return ( getHandle().playerConnection == null ) ? null : (InetSocketAddress) getHandle().playerConnection.networkManager.getSocket().getRemoteSocketAddress();
++        }
+     };
+ 
+     public Spigot spigot()
+diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
+index 28d13fb..2e3b242 100644
+--- a/src/main/resources/configurations/bukkit.yml
++++ b/src/main/resources/configurations/bukkit.yml
+@@ -37,6 +37,8 @@ settings:
+     timeout-time: 30
+     restart-on-crash: false
+     restart-script-location: /path/to/server/start.sh
++    bungee-proxies:
++      - 127.0.0.1
+ world-settings:
+     default:
+         growth-chunks-per-tick: 650
+-- 
+1.8.1.2
+
