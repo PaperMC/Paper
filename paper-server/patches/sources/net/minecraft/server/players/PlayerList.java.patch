@@ -460,11 +460,10 @@
              }
  
 -            return ichatmutablecomponent;
--        } else {
--            return this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(profile) ? Component.translatable("multiplayer.disconnect.server_full") : null;
 +            // return chatmessage;
 +            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(ichatmutablecomponent));
-+        } else {
+         } else {
+-            return this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(profile) ? Component.translatable("multiplayer.disconnect.server_full") : null;
 +            // return this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(gameprofile) ? IChatBaseComponent.translatable("multiplayer.disconnect.server_full") : null;
 +            if (this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(gameprofile)) {
 +                event.disallow(PlayerLoginEvent.Result.KICK_FULL, org.spigotmc.SpigotConfig.serverFullMessage); // Spigot
@@ -574,7 +573,7 @@
  
          while (iterator.hasNext()) {
              String s = (String) iterator.next();
-@@ -462,41 +662,81 @@
+@@ -462,41 +662,86 @@
              entityplayer1.addTag(s);
          }
  
@@ -587,6 +586,11 @@
 +        } else {
 +            teleporttransition = new TeleportTransition(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toVec3D(location), Vec3.ZERO, location.getYaw(), location.getPitch(), TeleportTransition.DO_NOTHING);
 +        }
++        // Spigot Start
++        if (teleporttransition == null) {
++            return entityplayer;
++        }
++        // Spigot End
 +        ServerLevel worldserver = teleporttransition.newLevel();
 +        entityplayer1.spawnIn(worldserver);
 +        entityplayer1.unsetRemoved();
@@ -664,7 +668,7 @@
          return entityplayer1;
      }
  
-@@ -524,7 +764,18 @@
+@@ -524,7 +769,18 @@
  
      public void tick() {
          if (++this.sendAllPlayerInfoIn > 600) {
@@ -684,7 +688,7 @@
              this.sendAllPlayerInfoIn = 0;
          }
  
-@@ -541,6 +792,25 @@
+@@ -541,6 +797,25 @@
  
      }
  
@@ -710,7 +714,7 @@
      public void broadcastAll(Packet<?> packet, ResourceKey<Level> dimension) {
          Iterator iterator = this.players.iterator();
  
-@@ -554,7 +824,7 @@
+@@ -554,7 +829,7 @@
  
      }
  
@@ -719,7 +723,7 @@
          PlayerTeam scoreboardteam = source.getTeam();
  
          if (scoreboardteam != null) {
-@@ -573,7 +843,7 @@
+@@ -573,7 +848,7 @@
          }
      }
  
@@ -728,7 +732,7 @@
          PlayerTeam scoreboardteam = source.getTeam();
  
          if (scoreboardteam == null) {
-@@ -619,7 +889,7 @@
+@@ -619,7 +894,7 @@
      }
  
      public void deop(GameProfile profile) {
@@ -737,7 +741,7 @@
          ServerPlayer entityplayer = this.getPlayer(profile.getId());
  
          if (entityplayer != null) {
-@@ -643,6 +913,7 @@
+@@ -643,6 +918,7 @@
              player.connection.send(new ClientboundEntityEventPacket(player, b0));
          }
  
@@ -745,7 +749,7 @@
          this.server.getCommands().sendCommands(player);
      }
  
-@@ -669,10 +940,16 @@
+@@ -669,10 +945,16 @@
          return null;
      }
  
@@ -763,7 +767,7 @@
              if (entityplayer != player && entityplayer.level().dimension() == worldKey) {
                  double d4 = x - entityplayer.getX();
                  double d5 = y - entityplayer.getY();
-@@ -712,15 +989,19 @@
+@@ -712,15 +994,19 @@
      public void reloadWhiteList() {}
  
      public void sendLevelInfo(ServerPlayer player, ServerLevel world) {
@@ -787,7 +791,7 @@
          }
  
          player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.LEVEL_CHUNKS_LOAD_START, 0.0F));
-@@ -729,8 +1010,16 @@
+@@ -729,8 +1015,16 @@
  
      public void sendAllPlayerInfo(ServerPlayer player) {
          player.inventoryMenu.sendAllDataToRemote();
@@ -805,7 +809,7 @@
      }
  
      public int getPlayerCount() {
-@@ -786,12 +1075,22 @@
+@@ -786,12 +1080,22 @@
      }
  
      public void removeAll() {
@@ -830,7 +834,7 @@
      public void broadcastSystemMessage(Component message, boolean overlay) {
          this.broadcastSystemMessage(message, (entityplayer) -> {
              return message;
-@@ -849,16 +1148,23 @@
+@@ -849,16 +1153,23 @@
          return message.hasSignature() && !message.hasExpiredServer(Instant.now());
      }
  
@@ -858,7 +862,7 @@
                  Path path = file2.toPath();
  
                  if (FileUtil.isPathNormalized(path) && FileUtil.isPathPortable(path) && path.startsWith(file.getPath()) && file2.isFile()) {
-@@ -867,7 +1173,7 @@
+@@ -867,7 +1178,7 @@
              }
  
              serverstatisticmanager = new ServerStatsCounter(this.server, file1);
@@ -867,7 +871,7 @@
          }
  
          return serverstatisticmanager;
-@@ -875,13 +1181,13 @@
+@@ -875,13 +1186,13 @@
  
      public PlayerAdvancements getPlayerAdvancements(ServerPlayer player) {
          UUID uuid = player.getUUID();
@@ -883,7 +887,7 @@
          }
  
          advancementdataplayer.setPlayer(player);
-@@ -932,15 +1238,28 @@
+@@ -932,15 +1243,28 @@
      }
  
      public void reloadResources() {
