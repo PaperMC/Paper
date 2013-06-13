@@ -197,6 +197,8 @@ public abstract class Container {
                             needsUpdate = true;
 
                         }
+                    } else {
+                        playerinventory.setCarried(oldCursor);
                     }
 
                     if (needsUpdate && entityhuman instanceof EntityPlayer) {
