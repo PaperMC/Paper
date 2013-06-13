@@ -1287,7 +1287,7 @@ public class PlayerConnection extends Connection {
                             action = InventoryAction.CLONE_STACK;
                         } else {
                             action = InventoryAction.NOTHING;
-                        } 
+                        }
                     }
                 } else {
                     click = ClickType.UNKNOWN;
@@ -1376,6 +1376,7 @@ public class PlayerConnection extends Connection {
                         }*/
                         switch (action) {
                             // Modified other slots
+                            case PICKUP_ALL:
                             case MOVE_TO_OTHER_INVENTORY:
                             case HOTBAR_MOVE_AND_READD:
                             case HOTBAR_SWAP:
@@ -1384,7 +1385,6 @@ public class PlayerConnection extends Connection {
                                 this.player.updateInventory(this.player.activeContainer);
                                 break;
                             // Modified cursor and clicked
-                            case PICKUP_ALL:
                             case PICKUP_SOME:
                             case PICKUP_HALF:
                             case PICKUP_ONE:
