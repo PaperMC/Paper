@@ -1,4 +1,4 @@
-From 23604895a4c7e1eeb6ae4dc364ba42630403f2d9 Mon Sep 17 00:00:00 2001
+From 5e6688239dff8fcd5dc6187df2d622baa32cf284 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 14 May 2013 12:06:27 +1000
 Subject: [PATCH] Spigot Configuration
@@ -25,6 +25,28 @@ index 7261dc9..10ce69d 100644
  
          if (!this.getOnlineMode()) {
              this.getLogger().warning("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 3a4ddea..18dc536 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -111,7 +111,7 @@ public abstract class World implements IBlockAccess {
+     // Changed signature
+     public World(IDataManager idatamanager, String s, WorldSettings worldsettings, WorldProvider worldprovider, MethodProfiler methodprofiler, IConsoleLogManager iconsolelogmanager, ChunkGenerator gen, org.bukkit.World.Environment env) {
+         this.generator = gen;
+-        this.world = new CraftWorld((WorldServer) this, gen, env);
++        this.world = new CraftWorld((WorldServer) this, gen, env, s); // Spigot
+         this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
+         this.ticksPerMonsterSpawns = this.getServer().getTicksPerMonsterSpawns(); // CraftBukkit
+         // CraftBukkit end
+@@ -123,7 +123,7 @@ public abstract class World implements IBlockAccess {
+         this.methodProfiler = methodprofiler;
+         this.worldMaps = new WorldMapCollection(idatamanager);
+         this.logAgent = iconsolelogmanager;
+-        this.worldData = idatamanager.getWorldData();
++        // this.worldData = idatamanager.getWorldData();
+         if (worldprovider != null) {
+             this.worldProvider = worldprovider;
+         } else if (this.worldData != null && this.worldData.j() != 0) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 6cb50b7..2956e75 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
@@ -39,23 +61,32 @@ index 6cb50b7..2956e75 100644
      private final Map<String, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
      private final AutoUpdater updater;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index c0fb528..430a9c0 100644
+index c0fb528..e6fdbe5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -77,6 +77,30 @@ public class CraftWorld implements World {
+@@ -67,8 +67,14 @@ public class CraftWorld implements World {
+     private int chunkGCTickCount;
+ 
+     private static final Random rand = new Random();
+-
++    
++    // Spigot start
+     public CraftWorld(WorldServer world, ChunkGenerator gen, Environment env) {
++        this( world, gen, env, "default" );
++    }
++
++    public CraftWorld(WorldServer world, ChunkGenerator gen, Environment env, String name) {
++        // Spigot end
+         this.world = world;
+         this.generator = gen;
+ 
+@@ -77,6 +83,23 @@ public class CraftWorld implements World {
          if (server.chunkGCPeriod > 0) {
              chunkGCTickCount = rand.nextInt(server.chunkGCPeriod);
          }
 +        // Spigot start
 +        org.bukkit.configuration.file.YamlConfiguration configuration = server.configuration;
-+        String name;
-+        if ( world.worldData == null || world.worldData.getName() == null )
-+        {
-+            name = "default";
-+        } else
-+        {
-+            name = world.worldData.getName().replaceAll( " ", "_" );
-+        }
++        name = name.replaceAll( " ", "_" );
 +
 +        // Load defaults first
 +        boolean info = configuration.getBoolean( "world-settings.default.info", true );
