@@ -155,7 +155,7 @@ public abstract class EntitySkeletonAbstract extends EntityMonster implements IR
 
         entityarrow.shoot(d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, (float) (14 - this.world.getDifficulty().a() * 4));
         // CraftBukkit start
-        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getItemInMainHand(), null, entityarrow, EnumHand.MAIN_HAND, 0.8F, true);
+        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getItemInMainHand(), entityarrow.getOriginalItemStack(), entityarrow, EnumHand.MAIN_HAND, 0.8F, true); // Paper
         if (event.isCancelled()) {
             event.getProjectile().remove();
             return;

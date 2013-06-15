@@ -134,8 +134,18 @@ public class EntityIllagerIllusioner extends EntityIllagerWizard implements IRan
         double d3 = (double) MathHelper.sqrt(d0 * d0 + d2 * d2);
 
         entityarrow.shoot(d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, (float) (14 - this.world.getDifficulty().a() * 4));
+        // Paper start
+        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getItemInMainHand(), entityarrow.getOriginalItemStack(), entityarrow, entityliving.getRaisedHand(), 0.8F, true);
+        if (event.isCancelled()) {
+            event.getProjectile().remove();
+            return;
+        }
+
+        if (event.getProjectile() == entityarrow.getBukkitEntity()) {
+            this.world.addEntity(entityarrow);
+        }
         this.playSound(SoundEffects.ENTITY_SKELETON_SHOOT, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
-        this.world.addEntity(entityarrow);
+        // Paper end
     }
 
     class a extends EntityIllagerWizard.PathfinderGoalCastSpell {
