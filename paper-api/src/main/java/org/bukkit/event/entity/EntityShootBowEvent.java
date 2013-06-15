@@ -22,7 +22,32 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
     private final float force;
     private boolean consumeItem;
     private boolean cancelled;
+    // Paper start
+    @Deprecated
+    public void setConsumeArrow(boolean consumeArrow) {
+        this.setConsumeItem(consumeArrow);
+    }
 
+    @Deprecated
+    public boolean getConsumeArrow() {
+        return this.shouldConsumeItem();
+    }
+
+    @Nullable @Deprecated
+    public ItemStack getArrowItem() {
+        return this.getConsumable();
+    }
+
+    @Deprecated
+    public EntityShootBowEvent(@NotNull final LivingEntity shooter, @Nullable final ItemStack bow, @NotNull final Entity projectile, final float force) {
+        this(shooter, bow, new ItemStack(org.bukkit.Material.AIR), projectile, force);
+    }
+
+    @Deprecated
+    public EntityShootBowEvent(@NotNull final LivingEntity shooter, @Nullable final ItemStack bow, @NotNull ItemStack arrowItem, @NotNull final Entity projectile, final float force) {
+        this(shooter, bow, arrowItem, projectile, EquipmentSlot.HAND, force, true);
+    }
+    // Paper end
     public EntityShootBowEvent(@NotNull final LivingEntity shooter, @Nullable final ItemStack bow, @Nullable final ItemStack consumable, @NotNull final Entity projectile, @NotNull final EquipmentSlot hand, final float force, final boolean consumeItem) {
         super(shooter);
         this.bow = bow;
