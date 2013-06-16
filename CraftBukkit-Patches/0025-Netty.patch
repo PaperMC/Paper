@@ -1,4 +1,4 @@
-From 019f628f604d5ff5d36b64c0ad46e40d94c0aa31 Mon Sep 17 00:00:00 2001
+From c2889e1b26e359f4441ea899d1c12ac3004d3a6d Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 23 Apr 2013 11:47:32 +1000
 Subject: [PATCH] Netty
@@ -32,7 +32,7 @@ Subject: [PATCH] Netty
  Commons Attribution-ShareAlike 3.0 Unported license.
 
 diff --git a/pom.xml b/pom.xml
-index 8c9f66b..d73da5f 100644
+index 8c9f66b..a33020e 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -132,6 +132,16 @@
@@ -42,7 +42,7 @@ index 8c9f66b..d73da5f 100644
 +    <dependency>
 +      <groupId>io.netty</groupId>
 +      <artifactId>netty-all</artifactId>
-+      <version>4.0.0.CR3</version>
++      <version>4.0.0.CR1</version>
 +    </dependency>
 +    <dependency>
 +        <groupId>org.javassist</groupId>
@@ -486,10 +486,10 @@ index 0000000..4ff943b
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..9a70a3a
+index 0000000..fdef0c8
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,295 @@
+@@ -0,0 +1,292 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -663,13 +663,10 @@ index 0000000..9a70a3a
 +            {
 +                highPriorityQueue.add( packet );
 +
-+                ChannelPromise promise;
++                ChannelPromise promise = channel.newPromise();
 +                if ( packet instanceof Packet255KickDisconnect )
 +                {
-+                    promise = channel.voidPromise();
-+                } else
-+                {
-+                    promise = channel.newPromise();
++                    channel.pipeline().get( OutboundManager.class ).lastFlush = 0;
 +                }
 +
 +                channel.write( packet, promise );
@@ -1193,7 +1190,7 @@ index 0000000..5da8a59
 +}
 diff --git a/src/main/java/org/spigotmc/netty/OutboundManager.java b/src/main/java/org/spigotmc/netty/OutboundManager.java
 new file mode 100644
-index 0000000..3f4c02f
+index 0000000..99899d2
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/OutboundManager.java
 @@ -0,0 +1,29 @@
@@ -1209,7 +1206,7 @@ index 0000000..3f4c02f
 +
 +    private static final int FLUSH_TIME = 2;
 +    /*========================================================================*/
-+    private long lastFlush;
++    public long lastFlush;
 +    private final NettyNetworkManager manager;
 +
 +    OutboundManager(NettyNetworkManager manager)
@@ -1219,7 +1216,7 @@ index 0000000..3f4c02f
 +
 +    public void flush(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception
 +    {
-+        if ( promise == ctx.channel().voidPromise() || manager.connection instanceof PendingConnection || System.currentTimeMillis() - lastFlush > FLUSH_TIME )
++        if ( manager.connection instanceof PendingConnection || System.currentTimeMillis() - lastFlush > FLUSH_TIME )
 +        {
 +            lastFlush = System.currentTimeMillis();
 +            ctx.flush( promise );
@@ -1228,7 +1225,7 @@ index 0000000..3f4c02f
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketDecoder.java b/src/main/java/org/spigotmc/netty/PacketDecoder.java
 new file mode 100644
-index 0000000..60b75d0
+index 0000000..29e344a
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketDecoder.java
 @@ -0,0 +1,68 @@
@@ -1262,7 +1259,7 @@ index 0000000..60b75d0
 +    }
 +
 +    @Override
-+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, MessageBuf<Object> out) throws Exception
++    protected Packet decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception
 +    {
 +        if ( input == null )
 +        {
@@ -1287,13 +1284,13 @@ index 0000000..60b75d0
 +                        packet.a( input );
 +                    } catch ( EOFException ex )
 +                    {
-+                        return;
++                        return null;
 +                    }
 +
 +                    checkpoint( ReadState.HEADER );
-+                    out.add( packet );
++                    Packet readPacket = packet;
 +                    packet = null;
-+                    break;
++                    return readPacket;
 +                default:
 +                    throw new IllegalStateException();
 +            }
@@ -1302,7 +1299,7 @@ index 0000000..60b75d0
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketEncoder.java b/src/main/java/org/spigotmc/netty/PacketEncoder.java
 new file mode 100644
-index 0000000..e6a45d3
+index 0000000..f0880c2
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketEncoder.java
 @@ -0,0 +1,55 @@
@@ -1352,7 +1349,7 @@ index 0000000..e6a45d3
 +    }
 +
 +    @Override
-+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception
++    public void freeOutboundBuffer(ChannelHandlerContext ctx) throws Exception
 +    {
 +        if ( outBuf != null )
 +        {
