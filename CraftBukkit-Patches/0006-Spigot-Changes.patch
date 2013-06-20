@@ -1,4 +1,4 @@
-From 6e1048caeaaa323e667d8bf92aa28f5ffed810e3 Mon Sep 17 00:00:00 2001
+From 41fa2773f2174d13e06dc8696b97c5c95e9fa69c Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 11 Jun 2013 13:55:57 +1000
 Subject: [PATCH] Spigot Changes
@@ -234,7 +234,7 @@ index 6c3fcf1..4a8d3f4 100644
                      }
                  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 2956e75..c234cac 100644
+index 6cb50b7..c78bc0f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -166,6 +166,13 @@ public final class CraftServer implements Server {
@@ -298,75 +298,6 @@ index 2956e75..c234cac 100644
          } catch (CommandException ex) {
              player.sendMessage(ChatColor.RED + "An internal error occurred while attempting to tab-complete this command");
              getLogger().log(Level.SEVERE, "Exception when " + player.getName() + " attempted to tab complete " + message, ex);
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index a9b4e71..9789ba4 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -69,6 +69,17 @@ public class CraftWorld implements World {
-     private static final Random rand = new Random();
-     // Spigot start
-     public int growthPerTick = 650;
-+    public boolean randomLightingUpdates = false;
-+    public int mobSpawnRange = 4;
-+    public int aggregateTicks = 4;
-+    // Crop growth rates:
-+    public int wheatGrowthModifier = 100;
-+    public int cactusGrowthModifier = 100;
-+    public int melonGrowthModifier = 100;
-+    public int pumpkinGrowthModifier = 100;
-+    public int sugarGrowthModifier = 100;
-+    public int treeGrowthModifier = 100;
-+    public int mushroomGrowthModifier = 100;
-     // Spigot end
- 
-     // Spigot start
-@@ -93,16 +104,46 @@ public class CraftWorld implements World {
-         // Load defaults first
-         boolean info = configuration.getBoolean( "world-settings.default.info", true );
-         growthPerTick = configuration.getInt( "world-settings.default.growth-chunks-per-tick", growthPerTick );
-+        randomLightingUpdates = configuration.getBoolean( "world-settings.default.random-light-updates", randomLightingUpdates );
-+        mobSpawnRange = configuration.getInt( "world-settings.default.mob-spawn-range", mobSpawnRange );
-+        aggregateTicks = Math.max( 1, configuration.getInt( "world-settings.default.aggregate-chunkticks", aggregateTicks ) );
-+        wheatGrowthModifier = configuration.getInt( "world-settings.default.wheat-growth-modifier", wheatGrowthModifier );
-+        cactusGrowthModifier = configuration.getInt( "world-settings.default.cactus-growth-modifier", cactusGrowthModifier );
-+        melonGrowthModifier = configuration.getInt( "world-settings.default.melon-growth-modifier", melonGrowthModifier );
-+        pumpkinGrowthModifier = configuration.getInt( "world-settings.default.pumpkin-growth-modifier", pumpkinGrowthModifier );
-+        sugarGrowthModifier = configuration.getInt( "world-settings.default.sugar-growth-modifier", sugarGrowthModifier );
-+        treeGrowthModifier = configuration.getInt( "world-settings.default.tree-growth-modifier", treeGrowthModifier );
-+        mushroomGrowthModifier = configuration.getInt( "world-settings.default.mushroom-growth-modifier", mushroomGrowthModifier );
- 
-         // Override defaults with world specific, if they exist
-         info = configuration.getBoolean( "world-settings." + name + ".info", info );
-         growthPerTick = configuration.getInt( "world-settings." + name + ".growth-chunks-per-tick", growthPerTick );
-+        randomLightingUpdates = configuration.getBoolean( "world-settings." + name + ".random-light-updates", randomLightingUpdates );
-+        mobSpawnRange = configuration.getInt( "world-settings." + name + ".mob-spawn-range", mobSpawnRange );
-+        aggregateTicks = Math.max( 1, configuration.getInt( "world-settings." + name + ".aggregate-chunkticks", aggregateTicks ) );
-+        wheatGrowthModifier = configuration.getInt( "world-settings." + name + ".wheat-growth-modifier", wheatGrowthModifier );
-+        cactusGrowthModifier = configuration.getInt( "world-settings." + name + ".cactus-growth-modifier", cactusGrowthModifier );
-+        melonGrowthModifier = configuration.getInt( "world-settings." + name + ".melon-growth-modifier", melonGrowthModifier );
-+        pumpkinGrowthModifier = configuration.getInt( "world-settings." + name + ".pumpkin-growth-modifier", pumpkinGrowthModifier );
-+        sugarGrowthModifier = configuration.getInt( "world-settings." + name + ".sugar-growth-modifier", sugarGrowthModifier );
-+        treeGrowthModifier = configuration.getInt( "world-settings." + name + ".tree-growth-modifier", treeGrowthModifier );
-+        mushroomGrowthModifier = configuration.getInt( "world-settings." + name + ".mushroom-growth-modifier", mushroomGrowthModifier );
- 
-         if ( info )
-         {
-             server.getLogger().info( "-------------- Spigot ----------------" );
-             server.getLogger().info( "-------- World Settings For [" + name + "] --------" );
-             server.getLogger().info( "Growth Per Tick: " + growthPerTick );
-+            server.getLogger().info( "Random Lighting Updates: " + randomLightingUpdates );
-+            server.getLogger().info( "Mob Spawn Range: " + mobSpawnRange );
-+            server.getLogger().info( "Aggregate Ticks: " + aggregateTicks );
-+            server.getLogger().info( "Wheat Growth Modifier: " + wheatGrowthModifier );
-+            server.getLogger().info( "Cactus Growth Modifier: " + cactusGrowthModifier );
-+            server.getLogger().info( "Melon Growth Modifier: " + melonGrowthModifier );
-+            server.getLogger().info( "Pumpkin Growth Modifier: " + pumpkinGrowthModifier );
-+            server.getLogger().info( "Sugar Growth Modifier: " + sugarGrowthModifier );
-+            server.getLogger().info( "Tree Growth Modifier: " + treeGrowthModifier );
-+            server.getLogger().info( "Mushroom Growth Modifier: " + mushroomGrowthModifier );
-             server.getLogger().info( "-------------------------------------------------" );
-         }
-         // Spigot end
 diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
 new file mode 100644
 index 0000000..2cd806e
