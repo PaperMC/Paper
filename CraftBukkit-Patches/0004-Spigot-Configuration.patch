@@ -1,4 +1,4 @@
-From f6b9d470ca4aa3abddd5eaa0c3d50ca1db0802b5 Mon Sep 17 00:00:00 2001
+From f1b9716fd4c673cd0074121a4084fcf1cdc3137b Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 20 Jun 2013 17:35:57 +1000
 Subject: [PATCH] Spigot Configuration
@@ -38,10 +38,10 @@ index 3a4ddea..de052bd 100644
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
 new file mode 100644
-index 0000000..80a76c1
+index 0000000..bf297bc
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,98 @@
 +package org.spigotmc;
 +
 +import com.google.common.base.Throwables;
@@ -50,6 +50,7 @@ index 0000000..80a76c1
 +import java.lang.reflect.InvocationTargetException;
 +import java.lang.reflect.Method;
 +import java.lang.reflect.Modifier;
++import java.util.List;
 +import java.util.logging.Level;
 +import org.bukkit.Bukkit;
 +import org.bukkit.configuration.file.YamlConfiguration;
@@ -81,20 +82,20 @@ index 0000000..80a76c1
 +        config.options().copyDefaults( true );
 +
 +        version = getInt( "config-version", 1 );
-+        readConfig( SpigotConfig.class );
++        readConfig( SpigotConfig.class, null );
 +    }
 +
-+    static void readConfig(Class<?> clazz)
++    static void readConfig(Class<?> clazz, Object instance)
 +    {
 +        for ( Method method : SpigotConfig.class.getDeclaredMethods() )
 +        {
-+            if ( Modifier.isPrivate( method.getModifiers() ) && Modifier.isStatic( method.getModifiers() ) )
++            if ( Modifier.isPrivate( method.getModifiers() ) )
 +            {
 +                if ( method.getParameterTypes().length == 0 )
 +                {
 +                    try
 +                    {
-+                        method.invoke( null );
++                        method.invoke( instance );
 +                    } catch ( InvocationTargetException ex )
 +                    {
 +                        Throwables.propagate( ex.getCause() );
@@ -127,6 +128,12 @@ index 0000000..80a76c1
 +        return config.getInt( path, config.getInt( path ) );
 +    }
 +
++    private <T> List<T> getList(String path, T def)
++    {
++        config.addDefault( path, def );
++        return (List<T>) config.getList( path, config.getList( path ) );
++    }
++
 +    private static String getString(String path, String def)
 +    {
 +        config.addDefault( path, def );
@@ -135,12 +142,13 @@ index 0000000..80a76c1
 +}
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 new file mode 100644
-index 0000000..b954278
+index 0000000..7d3ec55
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,57 @@
 +package org.spigotmc;
 +
++import java.util.List;
 +import org.bukkit.Bukkit;
 +import org.bukkit.configuration.file.YamlConfiguration;
 +
@@ -160,7 +168,7 @@ index 0000000..b954278
 +        log( "-------------- Spigot ----------------" );
 +        log( "-------- World Settings For [" + worldName + "] --------" );
 +        log( "-------------------------------------------------" );
-+        SpigotConfig.readConfig( SpigotWorldConfig.class );
++        SpigotConfig.readConfig( SpigotWorldConfig.class, this );
 +    }
 +
 +    private void log(String s)
@@ -181,6 +189,12 @@ index 0000000..b954278
 +    {
 +        config.addDefault( "world-settings.default." + path, def );
 +        return config.getInt( "world-settings." + worldName + "." + path, config.getInt( "world-settings.default." + path ) );
++    }
++
++    private <T> List<T> getList(String path, T def)
++    {
++        config.addDefault( "world-settings.default." + path, def );
++        return (List<T>) config.getList( "world-settings." + worldName + "." + path, config.getList( "world-settings.default." + path ) );
 +    }
 +
 +    private String getString(String path, String def)
