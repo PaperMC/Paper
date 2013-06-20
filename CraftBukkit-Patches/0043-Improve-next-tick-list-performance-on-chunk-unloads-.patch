@@ -1,4 +1,4 @@
-From 6ea72294e723e6676db69b32f206f029b2833210 Mon Sep 17 00:00:00 2001
+From 9531eb712fffefc655e0e254b93d671019da2bdd Mon Sep 17 00:00:00 2001
 From: Mike Primm <mike@primmhome.com>
 Date: Wed, 24 Apr 2013 01:43:33 -0500
 Subject: [PATCH] Improve next-tick-list performance on chunk unloads, large
@@ -19,7 +19,7 @@ index 52a70a1..08a4240 100644
  
      public NextTickListEntry a(long i) {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 7b8e70c..93e7b9b 100644
+index 69d955f..7cdb549 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -25,8 +25,8 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
@@ -41,9 +41,9 @@ index 7b8e70c..93e7b9b 100644
 +    private ArrayList<NextTickListEntry> pendingTickEntries = new ArrayList<NextTickListEntry>(); // Spigot
 +    private int nextPendingTickEntry; // Spigot
      private IntHashMap entitiesById;
-     private int aggregateTicks = 1; // Spigot
  
-@@ -54,13 +55,15 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+     // CraftBukkit start
+@@ -53,13 +54,15 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
              this.entitiesById = new IntHashMap();
          }
  
@@ -63,7 +63,7 @@ index 7b8e70c..93e7b9b 100644
  
          this.P = new org.bukkit.craftbukkit.CraftTravelAgent(this); // CraftBukkit
          this.scoreboard = new ScoreboardServer(minecraftserver);
-@@ -446,9 +449,16 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -441,9 +444,16 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
      }
  
      public boolean a(int i, int j, int k, int l) {
@@ -83,7 +83,7 @@ index 7b8e70c..93e7b9b 100644
      }
  
      public void a(int i, int j, int k, int l, int i1) {
-@@ -481,10 +491,9 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -476,10 +486,9 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
                  nextticklistentry.a(j1);
              }
  
@@ -97,7 +97,7 @@ index 7b8e70c..93e7b9b 100644
          }
      }
  
-@@ -496,10 +505,9 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -491,10 +500,9 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
              nextticklistentry.a((long) i1 + this.worldData.getTime());
          }
  
@@ -111,7 +111,7 @@ index 7b8e70c..93e7b9b 100644
      }
  
      public void tickEntities() {
-@@ -519,11 +527,12 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -514,11 +522,12 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
      }
  
      public boolean a(boolean flag) {
@@ -128,7 +128,7 @@ index 7b8e70c..93e7b9b 100644
              if (i > 1000) {
                  // CraftBukkit start - If the server has too much to process over time, try to alleviate that
                  if (i > 20 * 1000) {
-@@ -539,23 +548,24 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -534,23 +543,24 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
              NextTickListEntry nextticklistentry;
  
              for (int j = 0; j < i; ++j) {
@@ -162,7 +162,7 @@ index 7b8e70c..93e7b9b 100644
                  byte b0 = 0;
  
                  if (this.e(nextticklistentry.a - b0, nextticklistentry.b - b0, nextticklistentry.c - b0, nextticklistentry.a + b0, nextticklistentry.b + b0, nextticklistentry.c + b0)) {
-@@ -586,52 +596,18 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -581,52 +591,18 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
              }
  
              this.methodProfiler.b();
@@ -224,7 +224,7 @@ index 7b8e70c..93e7b9b 100644
      }
  
      public void entityJoinedWorld(Entity entity, boolean flag) {
-@@ -708,13 +684,15 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -703,13 +679,15 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
              this.entitiesById = new IntHashMap();
          }
  
@@ -244,7 +244,7 @@ index 7b8e70c..93e7b9b 100644
  
          this.b(worldsettings);
          super.a(worldsettings);
-@@ -1001,4 +979,62 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -996,4 +974,62 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
          return this.setTypeIdAndData(x, y, z, typeId, data, 3);
      }
      // CraftBukkit end
