@@ -1,61 +1,9 @@
-From 2ba22ed3cb7fcfbf52fd7bade08af98b4152e9cb Mon Sep 17 00:00:00 2001
+From 6d588b92bf8282f25ed30e7660a338f160a500bc Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sat, 23 Feb 2013 08:58:35 +1100
 Subject: [PATCH] Metrics
 
 
-diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-index 2fc33f8..2532aa2 100644
---- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
-+++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-@@ -1,8 +1,10 @@
- package org.bukkit.craftbukkit;
- 
-+import java.io.IOException;
- import java.net.InetAddress;
- import java.util.ArrayList;
- import java.util.List;
-+import java.util.logging.Level;
- import net.minecraft.server.AxisAlignedBB;
- import net.minecraft.server.Chunk;
- import net.minecraft.server.Entity;
-@@ -29,8 +31,10 @@ import net.minecraft.server.MathHelper;
- import net.minecraft.server.MinecraftServer;
- import net.minecraft.server.PendingConnection;
- import net.minecraft.server.World;
-+import org.bukkit.Bukkit;
- import org.bukkit.command.SimpleCommandMap;
- import org.bukkit.configuration.file.YamlConfiguration;
-+import org.spigotmc.Metrics;
- 
- public class Spigot {
- 
-@@ -39,6 +43,8 @@ public class Spigot {
-     static AxisAlignedBB animalBB = AxisAlignedBB.a(0, 0, 0, 0, 0, 0);
-     static AxisAlignedBB monsterBB = AxisAlignedBB.a(0, 0, 0, 0, 0, 0);
-     private static boolean filterIps;
-+    public static boolean tabPing = false;
-+    private static Metrics metrics;
- 
-     public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
-         commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
-@@ -62,6 +68,16 @@ public class Spigot {
-             server.getLogger().severe("[Spigot] You should not disable chunk-gc, unexpected behaviour may occur!");
-         }
- 
-+        tabPing = configuration.getBoolean("settings.tab-ping", tabPing);
-+
-+        if (metrics == null) {
-+            try {
-+                metrics = new Metrics();
-+                metrics.start();
-+            } catch (IOException ex) {
-+                Bukkit.getServer().getLogger().log(Level.SEVERE, "Could not start metrics service", ex);
-+            }
-+        }
-     }
- 
-     /**
 diff --git a/src/main/java/org/spigotmc/Metrics.java b/src/main/java/org/spigotmc/Metrics.java
 new file mode 100644
 index 0000000..f1690a2
@@ -708,6 +656,37 @@ index 0000000..f1690a2
 +    }
 +}
 \ No newline at end of file
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index d647943..fde9250 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -29,6 +29,7 @@ public class SpigotConfig
+     static YamlConfiguration config;
+     static int version;
+     /*========================================================================*/
++    private static Metrics metrics;
+ 
+     public static void init()
+     {
+@@ -38,6 +39,18 @@ public class SpigotConfig
+ 
+         version = getInt( "config-version", 1 );
+         readConfig( SpigotConfig.class, null );
++
++        if ( metrics == null )
++        {
++            try
++            {
++                metrics = new Metrics();
++                metrics.start();
++            } catch ( IOException ex )
++            {
++                Bukkit.getServer().getLogger().log( Level.SEVERE, "Could not start metrics service", ex );
++            }
++        }
+     }
+ 
+     static void readConfig(Class<?> clazz, Object instance)
 -- 
 1.8.1.2
 
