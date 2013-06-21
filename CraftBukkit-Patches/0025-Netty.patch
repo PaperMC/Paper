@@ -1,35 +1,8 @@
-From 3a9c5ddf9b383449f2de17e827cccf88fe430f7d Mon Sep 17 00:00:00 2001
+From 1de426d2cd4da44ab5a22aca56f2eceac874d2eb Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Tue, 23 Apr 2013 11:47:32 +1000
+Date: Fri, 21 Jun 2013 18:23:00 +1000
 Subject: [PATCH] Netty
 
- Implement an uber efficient network engine based on the
- Java NIO framework Netty. This is basically a complete rewrite of the
- Minecraft network engine with many distinct advantages. First and foremost,
- there will no longer be the horrid, and redundant case of 2, or even at
- times, 3 threads per a connection. Instead low level select/epoll based NIO
- is used. The number of threads used for network reading and writing will
- scale automatically to the number of cores for use on your server. In most
- cases this will be around 8 threads for a 4 core server, much better than the
- up to 1000 threads that could be in use at one time with the old engine. To
- facilitate asynchronous packet sending or receiving (currently only chat), a
- thread pool of 16 threads is kept handy. == Plugin incompatibilities As a
- side effect of this change, plugins which rely on very specific
- implementation level details within Minecraft are broken. At this point in
- time, TagAPI and ProtocolLib are affected. If you are a user of ProtocolLib
- you are advised to update to the latest build, where full support is enabled.
- If you are a user of TagAPI, support has not yet been added, so you will need
- to install the updated ProtocolLib so that TagAPI may use its functions. ==
- Stability The code within this commit has been very lightly tested in
- production (300 players for approximately 24 hours), however it is not
- guaranteed to be free from all bugs. If you experence weird connection
- behaviour, reporting the bug and steps to reproduce are advised. You are also
- free to downgrade to the latest recommend build, which is guaranteed to be
- stable. == Summary This commit provides a reduction in threads, which gives
- the CPU / operating system more time to allocate to the main server threads,
- as well as various other side benefits such as chat thread pooling and a
- slight reduction in latency. This commit is licensed under the Creative
- Commons Attribution-ShareAlike 3.0 Unported license.
 
 diff --git a/pom.xml b/pom.xml
 index 8c9f66b..a33020e 100644
@@ -210,10 +183,10 @@ index 17cfacc..a945892 100644
              this.b = true;
          } catch (Exception exception) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 00326c1..c18e5e3 100644
+index 92c6c88..796085d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1366,4 +1366,20 @@ public final class CraftServer implements Server {
+@@ -1369,4 +1369,20 @@ public final class CraftServer implements Server {
      public CraftScoreboardManager getScoreboardManager() {
          return scoreboardManager;
      }
@@ -377,23 +350,20 @@ index 0000000..386c2f8
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index 6e8bae8..5686c41 100644
+index af567ac..8d59e39 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
-@@ -6,7 +6,11 @@ import java.io.IOException;
+@@ -6,6 +6,8 @@ import java.io.IOException;
  import java.lang.reflect.InvocationTargetException;
  import java.lang.reflect.Method;
  import java.lang.reflect.Modifier;
 +import java.util.ArrayList;
 +import java.util.Collections;
-+import java.util.HashMap;
+ import java.util.HashMap;
  import java.util.List;
-+import java.util.Map;
- import java.util.logging.Level;
- import org.bukkit.Bukkit;
- import org.bukkit.configuration.file.YamlConfiguration;
-@@ -125,4 +129,44 @@ public class SpigotConfig
-         restartScript = getString( "settings.restart-script", restartScript );
+ import java.util.Map;
+@@ -147,4 +149,44 @@ public class SpigotConfig
+         commands.put( "restart", new RestartCommand( "restart" ) );
          WatchdogThread.doStart( timeoutTime, restartOnCrash );
      }
 +
@@ -1570,20 +1540,6 @@ index 0000000..d3a9cab
 +     */
 +    DATA;
 +}
-diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
-index 61a95e3..e65758d 100644
---- a/src/main/resources/configurations/bukkit.yml
-+++ b/src/main/resources/configurations/bukkit.yml
-@@ -13,6 +13,9 @@
- # Bug tracker: http://leaky.bukkit.org/
- 
- 
-+#listeners:
-+#  - address: 127.0.0.1
-+#    port: 25577
- settings:
-     allow-end: true
-     warn-on-overload: true
 -- 
 1.8.1.2
 
