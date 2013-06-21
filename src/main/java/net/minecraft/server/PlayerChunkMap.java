@@ -853,10 +853,21 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
     }
 
     boolean isOutsideOfRange(ChunkCoordIntPair chunkcoordintpair) {
+        // Spigot start
+        return isOutsideOfRange(chunkcoordintpair, false);
+    }
+
+    boolean isOutsideOfRange(ChunkCoordIntPair chunkcoordintpair, boolean reducedRange) {
+        int chunkRange = world.spigotConfig.mobSpawnRange;
+        chunkRange = (chunkRange > world.spigotConfig.viewDistance) ? (byte) world.spigotConfig.viewDistance : chunkRange;
+        chunkRange = (chunkRange > 8) ? 8 : chunkRange;
+
+        double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D;
+        // Spigot end
         long i = chunkcoordintpair.pair();
 
         return !this.chunkDistanceManager.d(i) ? true : this.playerMap.a(i).noneMatch((entityplayer) -> {
-            return !entityplayer.isSpectator() && a(chunkcoordintpair, (Entity) entityplayer) < 16384.0D;
+            return !entityplayer.isSpectator() && a(chunkcoordintpair, (Entity) entityplayer) < blockRange; // Spigot
         });
     }
 

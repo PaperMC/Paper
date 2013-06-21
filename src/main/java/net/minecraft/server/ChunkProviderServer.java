@@ -390,7 +390,7 @@ public class ChunkProviderServer extends IChunkProvider {
 
                         if (!this.playerChunkMap.isOutsideOfRange(chunkcoordintpair)) {
                             chunk.setInhabitedTime(chunk.getInhabitedTime() + j);
-                            if (flag1 && (this.allowMonsters || this.allowAnimals) && this.world.getWorldBorder().isInBounds(chunk.getPos())) {
+                            if (flag1 && (this.allowMonsters || this.allowAnimals) && this.world.getWorldBorder().isInBounds(chunk.getPos()) && !this.playerChunkMap.isOutsideOfRange(chunkcoordintpair, true)) { // Spigot
                                 SpawnerCreature.a(this.world, chunk, spawnercreature_d, this.allowAnimals, this.allowMonsters, flag2);
                             }
 
