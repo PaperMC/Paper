@@ -180,4 +180,11 @@ public class SpigotWorldConfig
 
         this.log( "Simulation Distance: " + this.simulationDistance );
     }
+
+    public byte mobSpawnRange;
+    private void mobSpawnRange()
+    {
+        this.mobSpawnRange = (byte) this.getInt( "mob-spawn-range", 6 );
+        this.log( "Mob Spawn Range: " + this.mobSpawnRange );
+    }
 }

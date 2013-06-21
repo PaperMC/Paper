@@ -100,7 +100,72 @@
      }
  
      void forEachSpawnCandidateChunk(Consumer<ChunkHolder> callback) {
-@@ -1215,6 +1249,7 @@
+@@ -1025,10 +1059,27 @@
+     }
+ 
+     public boolean anyPlayerCloseEnoughForSpawning(ChunkPos pos) {
+-        return !this.distanceManager.hasPlayersNearby(pos.toLong()) ? false : this.anyPlayerCloseEnoughForSpawningInternal(pos);
++        // Spigot start
++        return this.anyPlayerCloseEnoughForSpawning(pos, false);
+     }
+ 
++    boolean anyPlayerCloseEnoughForSpawning(ChunkPos chunkcoordintpair, boolean reducedRange) {
++        return !this.distanceManager.hasPlayersNearby(chunkcoordintpair.toLong()) ? false : this.anyPlayerCloseEnoughForSpawningInternal(chunkcoordintpair, reducedRange);
++        // Spigot end
++    }
++
+     private boolean anyPlayerCloseEnoughForSpawningInternal(ChunkPos pos) {
++        // Spigot start
++        return this.anyPlayerCloseEnoughForSpawningInternal(pos, false);
++    }
++
++    private boolean anyPlayerCloseEnoughForSpawningInternal(ChunkPos chunkcoordintpair, boolean reducedRange) {
++        int chunkRange = this.level.spigotConfig.mobSpawnRange;
++        chunkRange = (chunkRange > this.level.spigotConfig.viewDistance) ? (byte) this.level.spigotConfig.viewDistance : chunkRange;
++        chunkRange = (chunkRange > 8) ? 8 : chunkRange;
++
++        double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D;
++        // Spigot end
+         Iterator iterator = this.playerMap.getAllPlayers().iterator();
+ 
+         ServerPlayer entityplayer;
+@@ -1039,7 +1090,7 @@
+             }
+ 
+             entityplayer = (ServerPlayer) iterator.next();
+-        } while (!this.playerIsCloseEnoughForSpawning(entityplayer, pos));
++        } while (!this.playerIsCloseEnoughForSpawning(entityplayer, chunkcoordintpair, blockRange)); // Spigot
+ 
+         return true;
+     }
+@@ -1056,7 +1107,7 @@
+             while (iterator.hasNext()) {
+                 ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+ 
+-                if (this.playerIsCloseEnoughForSpawning(entityplayer, pos)) {
++                if (this.playerIsCloseEnoughForSpawning(entityplayer, pos, 16384.0D)) { // Spigot
+                     builder.add(entityplayer);
+                 }
+             }
+@@ -1065,13 +1116,13 @@
+         }
+     }
+ 
+-    private boolean playerIsCloseEnoughForSpawning(ServerPlayer player, ChunkPos pos) {
+-        if (player.isSpectator()) {
++    private boolean playerIsCloseEnoughForSpawning(ServerPlayer entityplayer, ChunkPos chunkcoordintpair, double range) { // Spigot
++        if (entityplayer.isSpectator()) {
+             return false;
+         } else {
+-            double d0 = ChunkMap.euclideanDistanceSquared(pos, player);
++            double d0 = ChunkMap.euclideanDistanceSquared(chunkcoordintpair, entityplayer);
+ 
+-            return d0 < 16384.0D;
++            return d0 < range; // Spigot
+         }
+     }
+ 
+@@ -1215,6 +1266,7 @@
      }
  
      public void addEntity(Entity entity) {
@@ -108,7 +173,7 @@
          if (!(entity instanceof EnderDragonPart)) {
              EntityType<?> entitytypes = entity.getType();
              int i = entitytypes.clientTrackingRange() * 16;
-@@ -1250,6 +1285,7 @@
+@@ -1250,6 +1302,7 @@
      }
  
      protected void removeEntity(Entity entity) {
@@ -116,7 +181,7 @@
          if (entity instanceof ServerPlayer entityplayer) {
              this.updatePlayerStatus(entityplayer, false);
              ObjectIterator objectiterator = this.entityMap.values().iterator();
-@@ -1424,7 +1460,7 @@
+@@ -1424,7 +1477,7 @@
          public final Set<ServerPlayerConnection> seenBy = Sets.newIdentityHashSet();
  
          public TrackedEntity(final Entity entity, final int i, final int j, final boolean flag) {
@@ -125,7 +190,7 @@
              this.entity = entity;
              this.range = i;
              this.lastSectionPos = SectionPos.of((EntityAccess) entity);
-@@ -1469,6 +1505,7 @@
+@@ -1469,6 +1522,7 @@
          }
  
          public void removePlayer(ServerPlayer player) {
@@ -133,7 +198,7 @@
              if (this.seenBy.remove(player.connection)) {
                  this.serverEntity.removePairing(player);
              }
-@@ -1476,6 +1513,7 @@
+@@ -1476,6 +1530,7 @@
          }
  
          public void updatePlayer(ServerPlayer player) {
@@ -141,7 +206,7 @@
              if (player != this.entity) {
                  Vec3 vec3d = player.position().subtract(this.entity.position());
                  int i = ChunkMap.this.getPlayerViewDistance(player);
-@@ -1484,6 +1522,11 @@
+@@ -1484,6 +1539,11 @@
                  double d2 = d0 * d0;
                  boolean flag = d1 <= d2 && this.entity.broadcastToPlayer(player) && ChunkMap.this.isChunkTracked(player, this.entity.chunkPosition().x, this.entity.chunkPosition().z);
  
