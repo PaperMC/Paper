@@ -1635,6 +1635,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
     private void handleCommand(String s) {
         org.bukkit.craftbukkit.SpigotTimings.playerCommandTimer.startTiming(); // Spigot
         // CraftBukkit start - whole method
+        if ( org.spigotmc.SpigotConfig.logCommands ) // Spigot
         this.LOGGER.info(this.player.getName() + " issued server command: " + s);
 
         CraftPlayer player = this.getPlayer();
