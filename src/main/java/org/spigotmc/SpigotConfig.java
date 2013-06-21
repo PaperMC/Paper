@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -174,5 +175,29 @@ public class SpigotConfig
         }
         tabComplete = getInt( "commands.tab-complete", 0 );
         sendNamespaced = getBoolean( "commands.send-namespaced", true );
+    }
+
+    public static String whitelistMessage;
+    public static String unknownCommandMessage;
+    public static String serverFullMessage;
+    public static String outdatedClientMessage = "Outdated client! Please use {0}";
+    public static String outdatedServerMessage = "Outdated server! I\'m still on {0}";
+    private static String transform(String s)
+    {
+        return ChatColor.translateAlternateColorCodes( '&', s ).replaceAll( "\\\\n", "\n" );
+    }
+    private static void messages()
+    {
+        if (version < 8)
+        {
+            set( "messages.outdated-client", outdatedClientMessage );
+            set( "messages.outdated-server", outdatedServerMessage );
+        }
+
+        whitelistMessage = transform( getString( "messages.whitelist", "You are not whitelisted on this server!" ) );
+        unknownCommandMessage = transform( getString( "messages.unknown-command", "Unknown command. Type \"/help\" for help." ) );
+        serverFullMessage = transform( getString( "messages.server-full", "The server is full!" ) );
+        outdatedClientMessage = transform( getString( "messages.outdated-client", outdatedClientMessage ) );
+        outdatedServerMessage = transform( getString( "messages.outdated-server", outdatedServerMessage ) );
     }
 }
