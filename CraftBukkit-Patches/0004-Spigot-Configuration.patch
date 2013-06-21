@@ -1,4 +1,4 @@
-From ba981dd9b929cf59480d214ed9de8cd79c3bdbbc Mon Sep 17 00:00:00 2001
+From c1770b3e3510e19c075d5e21902fe348b73508fb Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 20 Jun 2013 17:35:57 +1000
 Subject: [PATCH] Spigot Configuration
@@ -36,6 +36,26 @@ index 3a4ddea..de052bd 100644
          this.generator = gen;
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 00326c1..814baa1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -556,6 +556,7 @@ public final class CraftServer implements Server {
+         playerList.getIPBans().load();
+         playerList.getNameBans().load();
+ 
++        org.spigotmc.SpigotConfig.init(); // Spigot
+         for (WorldServer world : console.worlds) {
+             world.difficulty = difficulty;
+             world.setSpawnFlags(monsters, animals);
+@@ -570,6 +571,7 @@ public final class CraftServer implements Server {
+             } else {
+                 world.ticksPerMonsterSpawns = this.getTicksPerMonsterSpawns();
+             }
++            world.spigotConfig.init(); // Spigot
+         }
+ 
+         pluginManager.clearPlugins();
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
 new file mode 100644
 index 0000000..43d94fe
@@ -142,10 +162,10 @@ index 0000000..43d94fe
 +}
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 new file mode 100644
-index 0000000..facea4f
+index 0000000..78a7573
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,68 @@
 +package org.spigotmc;
 +
 +import java.util.List;
@@ -157,18 +177,23 @@ index 0000000..facea4f
 +
 +    private final String worldName;
 +    private final YamlConfiguration config;
-+    private final boolean verbose;
++    private boolean verbose;
 +
 +    public SpigotWorldConfig(String worldName)
 +    {
 +        this.worldName = worldName;
 +        this.config = SpigotConfig.config;
++        init();
++    }
++
++    public void init()
++    {
 +        this.verbose = getBoolean( "verbose", true );
 +
 +        log( "-------------- Spigot ----------------" );
 +        log( "-------- World Settings For [" + worldName + "] --------" );
-+        log( "-------------------------------------------------" );
 +        SpigotConfig.readConfig( SpigotWorldConfig.class, this );
++        log( "-------------------------------------------------" );
 +    }
 +
 +    private void log(String s)
@@ -188,7 +213,7 @@ index 0000000..facea4f
 +    private double getDouble(String path, double def)
 +    {
 +        config.addDefault( "world-settings.default." + path, def );
-+        return config.getDouble("world-settings." + worldName + "." + path, config.getDouble("world-settings.default." + path ) );
++        return config.getDouble( "world-settings." + worldName + "." + path, config.getDouble( "world-settings.default." + path ) );
 +    }
 +
 +    private int getInt(String path, int def)
