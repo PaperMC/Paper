@@ -1,11 +1,8 @@
-From 9b8d56fab138108ef3d328c5fe52cade92b13ce3 Mon Sep 17 00:00:00 2001
+From de9ad985c0772ebe1ab6eb22283e76100119adf0 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 24 Feb 2013 20:45:20 +1100
-Subject: [PATCH] Enable Improved ping sending
+Subject: [PATCH] Enable Improved Ping Sending
 
- 3 files changed, 18 insertions(+)
-
- 3 files changed, 18 insertions(+)
 
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
 index 7de5b48..35a579c 100644
@@ -20,33 +17,35 @@ index 7de5b48..35a579c 100644
  
      public EntityPlayer(MinecraftServer minecraftserver, World world, String s, PlayerInteractManager playerinteractmanager) {
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 30c6503..a236c5f 100644
+index 30c6503..1891308 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -717,7 +717,23 @@ public abstract class PlayerList {
+@@ -717,6 +717,25 @@ public abstract class PlayerList {
              this.sendAll(new Packet201PlayerInfo(entityplayer.name, true, entityplayer.ping));
          }
          // CraftBukkit end */
 +        // Spigot start
-+        if (this.players.size() == 0 || !org.bukkit.craftbukkit.Spigot.tabPing) {
-+            return;
-+        }
-+        int index = MinecraftServer.currentTick % this.players.size();
-+        EntityPlayer player = (EntityPlayer) this.players.get(index);
-+        if (player.lastPing == -1 || Math.abs(player.ping - player.lastPing) > 20) {
-+            Packet packet = new Packet201PlayerInfo(player.listName, true, player.ping);
-+            for (EntityPlayer splayer : (List<EntityPlayer>) this.players) {
-+                if (splayer.getBukkitEntity().canSee(player.getBukkitEntity())) {
-+                    splayer.playerConnection.sendPacket(packet);
++        if ( !players.isEmpty() )
++        {
++            int index = MinecraftServer.currentTick % this.players.size();
++            EntityPlayer player = (EntityPlayer) this.players.get( index );
++            if ( player.lastPing == -1 || Math.abs( player.ping - player.lastPing ) > 20 )
++            {
++                Packet packet = new Packet201PlayerInfo( player.listName, true, player.ping );
++                for ( EntityPlayer splayer : (List<EntityPlayer>) this.players )
++                {
++                    if ( splayer.getBukkitEntity().canSee( player.getBukkitEntity() ) )
++                    {
++                        splayer.playerConnection.sendPacket( packet );
++                    }
 +                }
++                player.lastPing = player.ping;
 +            }
-+            player.lastPing = player.ping;
 +        }
++        // Spigot end
      }
-+    // Spigot end
  
      public void sendAll(Packet packet) {
-         for (int i = 0; i < this.players.size(); ++i) {
 -- 
 1.8.1.2
 
