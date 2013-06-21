@@ -150,4 +150,10 @@ public class SpigotConfig
         SpigotConfig.config.addDefault( path, def );
         return SpigotConfig.config.getDouble( path, SpigotConfig.config.getDouble( path ) );
     }
+
+    public static boolean logCommands;
+    private static void logCommands()
+    {
+        SpigotConfig.logCommands = SpigotConfig.getBoolean( "commands.log", true );
+    }
 }
