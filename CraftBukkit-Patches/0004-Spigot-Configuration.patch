@@ -1,21 +1,33 @@
-From 2a46e61b8c7c63a3940bc25f28203b159bbb7c1c Mon Sep 17 00:00:00 2001
+From dc35d23de6e9199f9e1636f0c9e4e44e510513fa Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Thu, 20 Jun 2013 17:35:57 +1000
+Date: Fri, 21 Jun 2013 19:06:58 +1000
 Subject: [PATCH] Spigot Configuration
 
 
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 7261dc9..6668b7e 100644
+index 7261dc9..2d638c0 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
-@@ -47,6 +47,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-         System.setOut(new PrintStream(new LoggerOutputStream(this.getLogger().getLogger(), Level.INFO), true));
-         System.setErr(new PrintStream(new LoggerOutputStream(this.getLogger().getLogger(), Level.SEVERE), true));
-         // CraftBukkit end
-+        org.spigotmc.SpigotConfig.init(); // Spigot
+@@ -89,6 +89,10 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+         if (this.G() < 0) {
+             this.setPort(this.propertyManager.getInt("server-port", 25565));
+         }
++        // Spigot start
++        this.a((PlayerList) (new DedicatedPlayerList(this)));
++        org.spigotmc.SpigotConfig.init();
++        // Spigot end
  
-         this.getLogger().info("Starting minecraft server version 1.5.2");
-         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
+         this.getLogger().info("Generating keypair");
+         this.a(MinecraftEncryption.b());
+@@ -103,7 +107,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+             return false;
+         }
+ 
+-        this.a((PlayerList) (new DedicatedPlayerList(this))); // CraftBukkit
++        // this.a((PlayerList) (new DedicatedPlayerList(this))); // Spigot - Moved up
+ 
+         if (!this.getOnlineMode()) {
+             this.getLogger().warning("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 3a4ddea..de052bd 100644
 --- a/src/main/java/net/minecraft/server/World.java
@@ -37,19 +49,18 @@ index 3a4ddea..de052bd 100644
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 00326c1..92c6c88 100644
+index 00326c1..24f1f39 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -213,7 +213,7 @@ public final class CraftServer implements Server {
+@@ -213,7 +213,6 @@ public final class CraftServer implements Server {
          updater.getOnBroken().addAll(configuration.getStringList("auto-updater.on-broken"));
          updater.getOnUpdate().addAll(configuration.getStringList("auto-updater.on-update"));
          updater.check(serverVersion);
 -
-+        org.spigotmc.SpigotConfig.registerCommands( commandMap ); // Spigot
          loadPlugins();
          enablePlugins(PluginLoadOrder.STARTUP);
      }
-@@ -556,6 +556,7 @@ public final class CraftServer implements Server {
+@@ -556,6 +555,7 @@ public final class CraftServer implements Server {
          playerList.getIPBans().load();
          playerList.getNameBans().load();
  
@@ -57,7 +68,7 @@ index 00326c1..92c6c88 100644
          for (WorldServer world : console.worlds) {
              world.difficulty = difficulty;
              world.setSpawnFlags(monsters, animals);
-@@ -570,12 +571,14 @@ public final class CraftServer implements Server {
+@@ -570,6 +570,7 @@ public final class CraftServer implements Server {
              } else {
                  world.ticksPerMonsterSpawns = this.getTicksPerMonsterSpawns();
              }
@@ -65,19 +76,12 @@ index 00326c1..92c6c88 100644
          }
  
          pluginManager.clearPlugins();
-         commandMap.clearCommands();
-         resetRecipes();
- 
-+        org.spigotmc.SpigotConfig.registerCommands( commandMap ); // Spigot
-         int pollCount = 0;
- 
-         // Wait for at most 2.5 seconds for plugins to close their threads
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
 new file mode 100644
-index 0000000..629224d
+index 0000000..c532dc7
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,111 @@
 +package org.spigotmc;
 +
 +import com.google.common.base.Throwables;
@@ -90,6 +94,7 @@ index 0000000..629224d
 +import java.util.List;
 +import java.util.Map;
 +import java.util.logging.Level;
++import net.minecraft.server.MinecraftServer;
 +import org.bukkit.Bukkit;
 +import org.bukkit.command.Command;
 +import org.bukkit.command.SimpleCommandMap;
@@ -126,13 +131,10 @@ index 0000000..629224d
 +
 +        version = getInt( "config-version", 1 );
 +        readConfig( SpigotConfig.class, null );
-+    }
 +
-+    public static void registerCommands(SimpleCommandMap commandMap)
-+    {
 +        for ( Map.Entry<String, Command> entry : commands.entrySet() )
 +        {
-+            commandMap.register( entry.getKey(), "Spigot", entry.getValue() );
++            MinecraftServer.getServer().server.getCommandMap().register( entry.getKey(), "Spigot", entry.getValue() );
 +        }
 +    }
 +
