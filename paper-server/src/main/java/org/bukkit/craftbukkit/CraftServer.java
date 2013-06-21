@@ -2182,6 +2182,13 @@ public final class CraftServer implements Server {
     }
 
     public List<String> tabCompleteCommand(Player player, String message, ServerLevel world, Vec3 pos) {
+        // Spigot Start
+        if ( (org.spigotmc.SpigotConfig.tabComplete < 0 || message.length() <= org.spigotmc.SpigotConfig.tabComplete) && !message.contains( " " ) )
+        {
+            return ImmutableList.of();
+        }
+        // Spigot End
+
         List<String> completions = null;
         try {
             if (message.startsWith("/")) {
