@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -174,5 +175,29 @@ public class SpigotConfig
         }
         SpigotConfig.tabComplete = SpigotConfig.getInt( "commands.tab-complete", 0 );
         SpigotConfig.sendNamespaced = SpigotConfig.getBoolean( "commands.send-namespaced", true );
+    }
+
+    public static String whitelistMessage;
+    public static String unknownCommandMessage;
+    public static String serverFullMessage;
+    public static String outdatedClientMessage = "Outdated client! Please use {0}";
+    public static String outdatedServerMessage = "Outdated server! I\'m still on {0}";
+    private static String transform(String s)
+    {
+        return ChatColor.translateAlternateColorCodes( '&', s ).replaceAll( "\\\\n", "\n" );
+    }
+    private static void messages()
+    {
+        if (SpigotConfig.version < 8)
+        {
+            SpigotConfig.set( "messages.outdated-client", SpigotConfig.outdatedClientMessage );
+            SpigotConfig.set( "messages.outdated-server", SpigotConfig.outdatedServerMessage );
+        }
+
+        SpigotConfig.whitelistMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.whitelist", "You are not whitelisted on this server!" ) );
+        SpigotConfig.unknownCommandMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.unknown-command", "Unknown command. Type \"/help\" for help." ) );
+        SpigotConfig.serverFullMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.server-full", "The server is full!" ) );
+        SpigotConfig.outdatedClientMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.outdated-client", SpigotConfig.outdatedClientMessage ) );
+        SpigotConfig.outdatedServerMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.outdated-server", SpigotConfig.outdatedServerMessage ) );
     }
 }
