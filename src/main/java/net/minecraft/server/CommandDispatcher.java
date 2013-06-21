@@ -241,6 +241,7 @@ public class CommandDispatcher {
     }
 
     public void a(EntityPlayer entityplayer) {
+        if ( org.spigotmc.SpigotConfig.tabComplete < 0 ) return; // Spigot
         // CraftBukkit start
         // Register Vanilla commands into builtRoot as before
         Map<CommandNode<CommandListenerWrapper>, CommandNode<ICompletionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
@@ -279,6 +280,7 @@ public class CommandDispatcher {
 
         while (iterator.hasNext()) {
             CommandNode<CommandListenerWrapper> commandnode2 = (CommandNode) iterator.next();
+            if ( !org.spigotmc.SpigotConfig.sendNamespaced && commandnode2.getName().contains( ":" ) ) continue; // Spigot
 
             if (commandnode2.canUse(commandlistenerwrapper)) {
                 ArgumentBuilder argumentbuilder = commandnode2.createBuilder(); // CraftBukkit - decompile error

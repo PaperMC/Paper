@@ -156,4 +156,23 @@ public class SpigotConfig
     {
         logCommands = getBoolean( "commands.log", true );
     }
+
+    public static int tabComplete;
+    public static boolean sendNamespaced;
+    private static void tabComplete()
+    {
+        if ( version < 6 )
+        {
+            boolean oldValue = getBoolean( "commands.tab-complete", true );
+            if ( oldValue )
+            {
+                set( "commands.tab-complete", 0 );
+            } else
+            {
+                set( "commands.tab-complete", -1 );
+            }
+        }
+        tabComplete = getInt( "commands.tab-complete", 0 );
+        sendNamespaced = getBoolean( "commands.send-namespaced", true );
+    }
 }
