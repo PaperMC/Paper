@@ -1,4 +1,4 @@
-From 33f4ba2034fd8cd22a8b9da2115c25000154c038 Mon Sep 17 00:00:00 2001
+From 7186970386ca7b9887fc79e00510154f2b248d86 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Fri, 21 Jun 2013 18:23:00 +1000
 Subject: [PATCH] Netty
@@ -350,7 +350,7 @@ index 0000000..386c2f8
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index b7f3896..606b01e 100644
+index b7f3896..910d0de 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -6,6 +6,8 @@ import java.io.IOException;
@@ -362,7 +362,7 @@ index b7f3896..606b01e 100644
  import java.util.HashMap;
  import java.util.List;
  import java.util.Map;
-@@ -148,4 +150,44 @@ public class SpigotConfig
+@@ -148,4 +150,47 @@ public class SpigotConfig
          commands.put( "restart", new RestartCommand( "restart" ) );
          WatchdogThread.doStart( timeoutTime, restartOnCrash );
      }
@@ -384,6 +384,7 @@ index b7f3896..606b01e 100644
 +        }
 +    }
 +    public static List<Listener> listeners = new ArrayList<Listener>();
++    public static int nettyThreads;
 +    private static void listeners()
 +    {
 +        Map<String, Object> def = new HashMap<String, Object>();
@@ -405,6 +406,8 @@ index b7f3896..606b01e 100644
 +            long connectionThrottle = ( info.get( "throttle" ) instanceof Number ) ? ( (Number) info.get( "throttle" ) ).longValue() : Bukkit.getConnectionThrottle();
 +            listeners.add( new Listener( host, port, netty, connectionThrottle ) );
 +        }
++
++        nettyThreads = getInt( "settings.netty-threads", 3 );
 +    }
  }
 diff --git a/src/main/java/org/spigotmc/netty/CipherBase.java b/src/main/java/org/spigotmc/netty/CipherBase.java
@@ -825,10 +828,10 @@ index 0000000..fdef0c8
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyServerConnection.java b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
 new file mode 100644
-index 0000000..575db8b
+index 0000000..f232efd
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,104 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -838,6 +841,7 @@ index 0000000..575db8b
 +import io.netty.channel.ChannelFuture;
 +import io.netty.channel.ChannelInitializer;
 +import io.netty.channel.ChannelOption;
++import io.netty.channel.EventLoopGroup;
 +import io.netty.channel.nio.NioEventLoopGroup;
 +import io.netty.channel.socket.nio.NioServerSocketChannel;
 +import io.netty.handler.timeout.ReadTimeoutHandler;
@@ -861,11 +865,15 @@ index 0000000..575db8b
 +{
 +
 +    private final ChannelFuture socket;
++    private static EventLoopGroup group;
 +
 +    public NettyServerConnection(final MinecraftServer ms, InetAddress host, int port)
 +    {
 +        super( ms );
-+        int threads = Integer.getInteger( "org.spigotmc.netty.threads", 3 );
++        if ( group == null )
++        {
++            group = new NioEventLoopGroup( org.spigotmc.SpigotConfig.nettyThreads, new ThreadFactoryBuilder().setNameFormat( "Netty IO Thread - %1$d" ).build() );
++        }
 +        socket = new ServerBootstrap().channel( NioServerSocketChannel.class ).childHandler( new ChannelInitializer()
 +        {
 +            @Override
@@ -894,8 +902,7 @@ index 0000000..575db8b
 +                        .addLast( "encoder", new PacketEncoder( networkManager ) )
 +                        .addLast( "manager", networkManager );
 +            }
-+        } ).childOption( ChannelOption.TCP_NODELAY, false ).group( new NioEventLoopGroup( threads, new ThreadFactoryBuilder().setNameFormat( "Netty IO Thread - %1$d" ).build() ) ).localAddress( host, port ).bind();
-+        MinecraftServer.getServer().getLogger().info( "Using Netty NIO with " + threads + " threads for network connections." );
++        } ).childOption( ChannelOption.TCP_NODELAY, false ).group( group ).localAddress( host, port ).bind();
 +    }
 +
 +    /**
