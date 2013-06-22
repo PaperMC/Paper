@@ -1,25 +1,26 @@
-From 6d02dec6b5b43138083f33d639e9769a6b4c54d0 Mon Sep 17 00:00:00 2001
+From 30196d52fe8630bfa0dd6ccf218e2a0461310fc8 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Fri, 21 Jun 2013 19:06:58 +1000
+Date: Sat, 22 Jun 2013 14:06:41 +1000
 Subject: [PATCH] Spigot Configuration
 
 
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 7261dc9..2d638c0 100644
+index 7261dc9..59444cb 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
-@@ -89,6 +89,10 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -89,6 +89,11 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
          if (this.G() < 0) {
              this.setPort(this.propertyManager.getInt("server-port", 25565));
          }
 +        // Spigot start
 +        this.a((PlayerList) (new DedicatedPlayerList(this)));
 +        org.spigotmc.SpigotConfig.init();
++        org.spigotmc.SpigotConfig.registerCommands();
 +        // Spigot end
  
          this.getLogger().info("Generating keypair");
          this.a(MinecraftEncryption.b());
-@@ -103,7 +107,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -103,7 +108,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
              return false;
          }
  
@@ -49,18 +50,10 @@ index 3a4ddea..de052bd 100644
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 00326c1..24f1f39 100644
+index 00326c1..6e6fe1c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -213,7 +213,6 @@ public final class CraftServer implements Server {
-         updater.getOnBroken().addAll(configuration.getStringList("auto-updater.on-broken"));
-         updater.getOnUpdate().addAll(configuration.getStringList("auto-updater.on-update"));
-         updater.check(serverVersion);
--
-         loadPlugins();
-         enablePlugins(PluginLoadOrder.STARTUP);
-     }
-@@ -556,6 +555,7 @@ public final class CraftServer implements Server {
+@@ -556,6 +556,7 @@ public final class CraftServer implements Server {
          playerList.getIPBans().load();
          playerList.getNameBans().load();
  
@@ -68,7 +61,7 @@ index 00326c1..24f1f39 100644
          for (WorldServer world : console.worlds) {
              world.difficulty = difficulty;
              world.setSpawnFlags(monsters, animals);
-@@ -570,6 +570,7 @@ public final class CraftServer implements Server {
+@@ -570,11 +571,13 @@ public final class CraftServer implements Server {
              } else {
                  world.ticksPerMonsterSpawns = this.getTicksPerMonsterSpawns();
              }
@@ -76,12 +69,18 @@ index 00326c1..24f1f39 100644
          }
  
          pluginManager.clearPlugins();
+         commandMap.clearCommands();
+         resetRecipes();
++        org.spigotmc.SpigotConfig.registerCommands(); // Spigot
+ 
+         int pollCount = 0;
+ 
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
 new file mode 100644
-index 0000000..c6cf18e
+index 0000000..1d915fb
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
-@@ -0,0 +1,112 @@
+@@ -0,0 +1,114 @@
 +package org.spigotmc;
 +
 +import com.google.common.base.Throwables;
@@ -97,7 +96,6 @@ index 0000000..c6cf18e
 +import net.minecraft.server.MinecraftServer;
 +import org.bukkit.Bukkit;
 +import org.bukkit.command.Command;
-+import org.bukkit.command.SimpleCommandMap;
 +import org.bukkit.configuration.file.YamlConfiguration;
 +
 +public class SpigotConfig
@@ -131,7 +129,10 @@ index 0000000..c6cf18e
 +
 +        version = getInt( "config-version", 1 );
 +        readConfig( SpigotConfig.class, null );
++    }
 +
++    public static void registerCommands()
++    {
 +        for ( Map.Entry<String, Command> entry : commands.entrySet() )
 +        {
 +            MinecraftServer.getServer().server.getCommandMap().register( entry.getKey(), "Spigot", entry.getValue() );
@@ -196,10 +197,10 @@ index 0000000..c6cf18e
 +}
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 new file mode 100644
-index 0000000..78a7573
+index 0000000..3f8562f
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,66 @@
 +package org.spigotmc;
 +
 +import java.util.List;
@@ -224,10 +225,8 @@ index 0000000..78a7573
 +    {
 +        this.verbose = getBoolean( "verbose", true );
 +
-+        log( "-------------- Spigot ----------------" );
 +        log( "-------- World Settings For [" + worldName + "] --------" );
 +        SpigotConfig.readConfig( SpigotWorldConfig.class, this );
-+        log( "-------------------------------------------------" );
 +    }
 +
 +    private void log(String s)
