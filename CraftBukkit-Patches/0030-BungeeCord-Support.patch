@@ -1,4 +1,4 @@
-From c3be564e248a414047f94a896f9ee545f47805df Mon Sep 17 00:00:00 2001
+From 150ae92bc058a84187b9c27bd4f65ff27728638d Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sat, 23 Mar 2013 11:15:11 +1100
 Subject: [PATCH] BungeeCord Support
@@ -6,7 +6,7 @@ Subject: [PATCH] BungeeCord Support
 - Allows BungeeCord to set the players real IP address very early in the login process, so that the BungeeCord proxy IP is never even seen by a plugin.
 
 diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
-index a945892..7ef9a6f 100644
+index a945892..e78781e 100644
 --- a/src/main/java/net/minecraft/server/PendingConnection.java
 +++ b/src/main/java/net/minecraft/server/PendingConnection.java
 @@ -221,4 +221,17 @@ public class PendingConnection extends Connection {
@@ -17,7 +17,7 @@ index a945892..7ef9a6f 100644
 +    // Spigot start
 +    @Override
 +    public void a(Packet250CustomPayload pcp) {
-+        if (pcp.tag.equals("BungeeCord") && org.bukkit.craftbukkit.Spigot.bungeeIPs.contains(getSocket().getInetAddress().getHostAddress())) {
++        if (pcp.tag.equals("BungeeCord") && org.spigotmc.SpigotConfig.bungee && org.spigotmc.SpigotConfig.bungeeAddresses.contains(getSocket().getInetAddress().getHostAddress())) {
 +            com.google.common.io.ByteArrayDataInput in = com.google.common.io.ByteStreams.newDataInput(pcp.data);
 +            String subTag = in.readUTF();
 +            if (subTag.equals("Login")) {
@@ -28,7 +28,7 @@ index a945892..7ef9a6f 100644
 +    // Spigot end
  }
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 305855b..e6e9295 100644
+index b7e327b..30c6503 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -293,7 +293,7 @@ public abstract class PlayerList {
@@ -41,7 +41,7 @@ index 305855b..e6e9295 100644
          SocketAddress socketaddress = pendingconnection.networkManager.getSocketAddress();
  
 diff --git a/src/main/java/net/minecraft/server/ThreadLoginVerifier.java b/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
-index fcd4136..fb4ec7b 100644
+index 1254e63..a4eae65 100644
 --- a/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
 +++ b/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
 @@ -45,11 +45,11 @@ class ThreadLoginVerifier extends Thread {
@@ -58,31 +58,11 @@ index fcd4136..fb4ec7b 100644
                  if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
                      event.disallow(asyncEvent.getResult(), asyncEvent.getKickMessage());
                  }
-diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-index c434f14..dd92087 100644
---- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
-+++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-@@ -55,6 +55,7 @@ public class Spigot {
-     private static boolean filterIps;
-     public static boolean tabPing = false;
-     private static Metrics metrics;
-+    public static List<String> bungeeIPs;
- 
-     public static void initialize(CraftServer server, SimpleCommandMap commandMap, YamlConfiguration configuration) {
-         commandMap.register("bukkit", new org.bukkit.craftbukkit.command.TicksPerSecondCommand("tps"));
-@@ -91,6 +92,7 @@ public class Spigot {
-         }
- 
-         tabPing = configuration.getBoolean("settings.tab-ping", tabPing);
-+        bungeeIPs = configuration.getStringList("settings.bungee-proxies");
- 
-         if (metrics == null) {
-             try {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 8ec84e1..d70c110 100644
+index 7cae665..21141f2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1016,6 +1016,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -998,6 +998,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      // Spigot start
      private final Spigot spigot = new Spigot()
      {
@@ -94,19 +74,33 @@ index 8ec84e1..d70c110 100644
      };
  
      public Spigot spigot()
-diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
-index 28d13fb..2e3b242 100644
---- a/src/main/resources/configurations/bukkit.yml
-+++ b/src/main/resources/configurations/bukkit.yml
-@@ -37,6 +37,8 @@ settings:
-     timeout-time: 30
-     restart-on-crash: false
-     restart-script-location: /path/to/server/start.sh
-+    bungee-proxies:
-+      - 127.0.0.1
- world-settings:
-     default:
-         growth-chunks-per-tick: 650
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index 910d0de..b71d425 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException;
+ import java.lang.reflect.Method;
+ import java.lang.reflect.Modifier;
+ import java.util.ArrayList;
++import java.util.Arrays;
+ import java.util.Collections;
+ import java.util.HashMap;
+ import java.util.List;
+@@ -193,4 +194,14 @@ public class SpigotConfig
+ 
+         nettyThreads = getInt( "settings.netty-threads", 3 );
+     }
++    public static List<String> bungeeAddresses = Arrays.asList( new String[]
++    {
++        "127.0.0.1"
++    } );
++    public static boolean bungee = true;
++    private static void bungee()
++    {
++        bungeeAddresses = getList( "settings.bungeecord-addresses", bungee );
++        bungee = getBoolean( "settings.bungeecord", true );
++    }
+ }
 -- 
 1.8.1.2
 

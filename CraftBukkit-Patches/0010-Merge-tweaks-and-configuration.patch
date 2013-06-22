@@ -1,4 +1,4 @@
-From 7822f8ff9ad9fc4ef9b4a9a3e3e105107de2f4a0 Mon Sep 17 00:00:00 2001
+From 7ec8ae26036858173a7c318944efa17ad2100cea Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sat, 23 Mar 2013 09:46:33 +1100
 Subject: [PATCH] Merge tweaks and configuration
@@ -6,7 +6,7 @@ Subject: [PATCH] Merge tweaks and configuration
 This allows the merging of Experience orbs, as well as the configuration of the merge radius of items. Additionally it refactors the merge algorithm to be a better experience for players.
 
 diff --git a/src/main/java/net/minecraft/server/EntityItem.java b/src/main/java/net/minecraft/server/EntityItem.java
-index 0225f53..294ab8f 100644
+index 0225f53..048e8fa 100644
 --- a/src/main/java/net/minecraft/server/EntityItem.java
 +++ b/src/main/java/net/minecraft/server/EntityItem.java
 @@ -114,7 +114,10 @@ public class EntityItem extends Entity {
@@ -15,7 +15,7 @@ index 0225f53..294ab8f 100644
      private void g() {
 -        Iterator iterator = this.world.a(EntityItem.class, this.boundingBox.grow(0.5D, 0.0D, 0.5D)).iterator();
 +        // Spigot start
-+        double radius = world.getWorld().itemMergeRadius;
++        double radius = world.spigotConfig.itemMerge;
 +        Iterator iterator = this.world.a(EntityItem.class, this.boundingBox.grow(radius, radius, radius)).iterator();
 +        // Spigot end
  
@@ -41,17 +41,17 @@ index 0225f53..294ab8f 100644
              }
          } else {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index dcad74f..a0c61a1 100644
+index afe3e4d..97da2cd 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -955,6 +955,23 @@ public abstract class World implements IBlockAccess {
+@@ -957,6 +957,23 @@ public abstract class World implements IBlockAccess {
              // Not all projectiles extend EntityProjectile, so check for Bukkit interface instead
              event = CraftEventFactory.callProjectileLaunchEvent(entity);
          }
 +        // Spigot start
 +        else if (entity instanceof EntityExperienceOrb) {
 +            EntityExperienceOrb xp = (EntityExperienceOrb) entity;
-+            double radius = this.getWorld().expMergeRadius;
++            double radius = spigotConfig.expMerge;
 +            if (radius > 0) {
 +                List<Entity> entities = this.getEntities(entity, entity.boundingBox.grow(radius, radius, radius));
 +                for (Entity e : entities) {
@@ -68,60 +68,29 @@ index dcad74f..a0c61a1 100644
  
          if (event != null && (event.isCancelled() || entity.dead)) {
              entity.dead = true;
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 9789ba4..d0e6d6f 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -80,6 +80,9 @@ public class CraftWorld implements World {
-     public int sugarGrowthModifier = 100;
-     public int treeGrowthModifier = 100;
-     public int mushroomGrowthModifier = 100;
-+    // Merge radius:
-+    public double itemMergeRadius = 3.5;
-+    public double expMergeRadius = 3.5;
-     // Spigot end
- 
-     // Spigot start
-@@ -114,6 +117,8 @@ public class CraftWorld implements World {
-         sugarGrowthModifier = configuration.getInt( "world-settings.default.sugar-growth-modifier", sugarGrowthModifier );
-         treeGrowthModifier = configuration.getInt( "world-settings.default.tree-growth-modifier", treeGrowthModifier );
-         mushroomGrowthModifier = configuration.getInt( "world-settings.default.mushroom-growth-modifier", mushroomGrowthModifier );
-+        itemMergeRadius = configuration.getDouble("world-settings.default.item-merge-radius", itemMergeRadius);
-+        expMergeRadius = configuration.getDouble("world-settings.default.exp-merge-radius", expMergeRadius);
- 
-         // Override defaults with world specific, if they exist
-         info = configuration.getBoolean( "world-settings." + name + ".info", info );
-@@ -128,6 +133,8 @@ public class CraftWorld implements World {
-         sugarGrowthModifier = configuration.getInt( "world-settings." + name + ".sugar-growth-modifier", sugarGrowthModifier );
-         treeGrowthModifier = configuration.getInt( "world-settings." + name + ".tree-growth-modifier", treeGrowthModifier );
-         mushroomGrowthModifier = configuration.getInt( "world-settings." + name + ".mushroom-growth-modifier", mushroomGrowthModifier );
-+        itemMergeRadius = configuration.getDouble("world-settings." + name + ".item-merge-radius", itemMergeRadius);
-+        expMergeRadius = configuration.getDouble("world-settings." + name + ".exp-merge-radius", expMergeRadius);
- 
-         if ( info )
-         {
-@@ -144,6 +151,8 @@ public class CraftWorld implements World {
-             server.getLogger().info( "Sugar Growth Modifier: " + sugarGrowthModifier );
-             server.getLogger().info( "Tree Growth Modifier: " + treeGrowthModifier );
-             server.getLogger().info( "Mushroom Growth Modifier: " + mushroomGrowthModifier );
-+            server.getLogger().info( "Item Merge Radius: " + itemMergeRadius );
-+            server.getLogger().info( "Exp Merge Radius: " + expMergeRadius );
-             server.getLogger().info( "-------------------------------------------------" );
-         }
-         // Spigot end
-diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
-index b445808..56873b6 100644
---- a/src/main/resources/configurations/bukkit.yml
-+++ b/src/main/resources/configurations/bukkit.yml
-@@ -37,6 +37,8 @@ world-settings:
-         mob-spawn-range: 4
-         random-light-updates: false
-         aggregate-chunkticks: 4
-+        item-merge-radius: 3.5
-+        exp-merge-radius: 3.5
-         wheat-growth-modifier: 100
-         cactus-growth-modifier: 100
-         melon-growth-modifier: 100
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index 3ec38a1..8a6d656 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -102,4 +102,18 @@ public class SpigotWorldConfig
+         wheatModifier = getInt( "growth.wheat-modifier", 100 );
+         log( "Wheat Growth Modifier: " + wheatModifier + "%" );
+     }
++
++    public double itemMerge;
++    private void itemMerge()
++    {
++        itemMerge = getDouble("merge-radius.item", 2.5 );
++        log( "Item Merge Radius: " + itemMerge );
++    }
++
++    public double expMerge;
++    private void expMerge()
++    {
++        expMerge = getDouble("merge-radius.exp", 3.0 );
++        log( "Experience Merge Radius: " + expMerge );
++    }
+ }
 -- 
 1.8.1.2
 

@@ -1,0 +1,86 @@
+From 2a158ef53f85cf5004c22e680bfe80dcd1f4f573 Mon Sep 17 00:00:00 2001
+From: DerFlash <bte@freenet.de>
+Date: Sun, 2 Jun 2013 16:23:46 +1000
+Subject: [PATCH] Hopper Cooldowns
+
+
+diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
+index f6d269d..1f69c7b 100644
+--- a/src/main/java/net/minecraft/server/TileEntityHopper.java
++++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
+@@ -181,16 +181,19 @@ public class TileEntityHopper extends TileEntity implements IHopper {
+                 boolean flag = this.u() | suckInItems(this);
+ 
+                 if (flag) {
+-                    this.c(8);
++                    this.c(world.spigotConfig.hopperTransfer); // Spigot
+                     this.update();
+                     return true;
+                 }
+             }
+-
+-            return false;
+-        } else {
+-            return false;
+         }
++        // Spigot start
++        if ( this.c == 0 )
++        {
++            this.c( world.spigotConfig.hopperCheck );
++        }
++        // Spigot end
++        return false;
+     }
+ 
+     private boolean u() {
+@@ -217,7 +220,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
+                     this.getWorld().getServer().getPluginManager().callEvent(event);
+                     if (event.isCancelled()) {
+                         this.setItem(i, itemstack);
+-                        this.c(8); // Delay hopper checks
++                        this.c(world.spigotConfig.hopperTransfer); // Spigot
+                         return false;
+                     }
+                     ItemStack itemstack1 = addItem(iinventory, CraftItemStack.asNMSCopy(event.getItem()), Facing.OPPOSITE_FACING[BlockHopper.c(this.p())]);
+@@ -298,9 +301,9 @@ public class TileEntityHopper extends TileEntity implements IHopper {
+                 iinventory.setItem(i, itemstack1);
+ 
+                 if (ihopper instanceof TileEntityHopper) {
+-                    ((TileEntityHopper) ihopper).c(8); // Delay hopper checks
++                    ((TileEntityHopper) ihopper).c(ihopper.getWorld().spigotConfig.hopperTransfer); // Spigot
+                 } else if (ihopper instanceof EntityMinecartHopper) {
+-                    ((EntityMinecartHopper) ihopper).n(4); // Delay hopper minecart checks
++                    ((EntityMinecartHopper) ihopper).n(ihopper.getWorld().spigotConfig.hopperTransfer / 2); // Spigot
+                 }
+ 
+                 return false;
+@@ -404,7 +407,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
+ 
+             if (flag) {
+                 if (iinventory instanceof TileEntityHopper) {
+-                    ((TileEntityHopper) iinventory).c(8);
++                    ((TileEntityHopper) iinventory).c(((TileEntityHopper) iinventory).world.spigotConfig.hopperTransfer); // Spigot
+                 }
+ 
+                 iinventory.update();
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index 89d716c..8f13fa9 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -178,4 +178,13 @@ public class SpigotWorldConfig
+         maxTrackingRange = getInt( "entity-tracking-range.other", maxTrackingRange );
+         log( "Entity Tracking Range: Pl " + playerTrackingRange + " / An " + animalTrackingRange + " / Mo " + monsterTrackingRange + " / Mi " + miscTrackingRange + " / Other " + maxTrackingRange );
+     }
++
++    public int hopperTransfer = 8;
++    public int hopperCheck = 8;
++    private void hoppers()
++    {
++        hopperCheck = getInt( "ticks-per.hopper-check", hopperCheck );
++        hopperTransfer = getInt( "ticks-per.hopper-transfer", hopperTransfer );
++        log( "Hopper Transfer: " + hopperTransfer + " Hopper Check: " + hopperCheck );
++    }
+ }
+-- 
+1.8.1.2
+

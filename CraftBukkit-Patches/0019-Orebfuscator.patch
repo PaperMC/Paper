@@ -1,47 +1,47 @@
-From d270363d40175512df3af1f7dbbb4722d6ab684a Mon Sep 17 00:00:00 2001
+From 90de56da643bde4b842cc958a4b449634bb9ba8c Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 16 May 2013 18:51:05 +1000
 Subject: [PATCH] Orebfuscator
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
-index 17d837d..d38eb4d 100644
+index 17d837d..c7cd0ca 100644
 --- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
 +++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
 @@ -94,6 +94,7 @@ public class EntityFallingBlock extends Entity {
                      }
  
                      this.world.setAir(i, j, k);
-+                    org.spigotmc.OrebfuscatorManager.updateNearbyBlocks(world, i, j, k); // Spigot
++                    world.spigotConfig.antiXrayInstance.updateNearbyBlocks(world, i, j, k); // Spigot
                  }
  
                  if (this.onGround) {
 diff --git a/src/main/java/net/minecraft/server/Explosion.java b/src/main/java/net/minecraft/server/Explosion.java
-index ef220c1..ae1cee9 100644
+index ef220c1..2063769 100644
 --- a/src/main/java/net/minecraft/server/Explosion.java
 +++ b/src/main/java/net/minecraft/server/Explosion.java
 @@ -240,6 +240,7 @@ public class Explosion {
                  j = chunkposition.y;
                  k = chunkposition.z;
                  l = this.world.getTypeId(i, j, k);
-+                org.spigotmc.OrebfuscatorManager.updateNearbyBlocks(world, i, j, k); // Spigot
++                world.spigotConfig.antiXrayInstance.updateNearbyBlocks(world, i, j, k); // Spigot
                  if (flag) {
                      double d0 = (double) ((float) i + this.world.random.nextFloat());
                      double d1 = (double) ((float) j + this.world.random.nextFloat());
 diff --git a/src/main/java/net/minecraft/server/Packet51MapChunk.java b/src/main/java/net/minecraft/server/Packet51MapChunk.java
-index d11c0ea..7711629 100644
+index d11c0ea..efe102e 100644
 --- a/src/main/java/net/minecraft/server/Packet51MapChunk.java
 +++ b/src/main/java/net/minecraft/server/Packet51MapChunk.java
 @@ -46,6 +46,7 @@ public class Packet51MapChunk extends Packet {
  
          this.d = chunkmap.c;
          this.c = chunkmap.b;
-+        org.spigotmc.OrebfuscatorManager.obfuscateSync(chunk.x, chunk.z, i, chunkmap.a, chunk.world); // Spigot
++        chunk.world.spigotConfig.antiXrayInstance.obfuscateSync(chunk.x, chunk.z, i, chunkmap.a, chunk.world); // Spigot
  
          try {
              this.inflatedBuffer = chunkmap.a;
 diff --git a/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java b/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
-index 129dc4f..ce28495 100644
+index 129dc4f..a2cd9b0 100644
 --- a/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
 +++ b/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
 @@ -28,6 +28,7 @@ public class Packet56MapChunkBulk extends Packet {
@@ -79,7 +79,7 @@ index 129dc4f..ce28495 100644
 +        int finalBufferSize = 0;
 +        // Obfuscate all sections
 +        for (int i = 0; i < a.length; i++) {
-+            org.spigotmc.OrebfuscatorManager.obfuscate(c[i], d[i], a[i], inflatedBuffers[i], world);
++            world.spigotConfig.antiXrayInstance.obfuscate(c[i], d[i], a[i], inflatedBuffers[i], world);
 +            finalBufferSize += inflatedBuffers[i].length;
 +        }
 +
@@ -95,110 +95,45 @@ index 129dc4f..ce28495 100644
          Deflater deflater = localDeflater.get();
          deflater.reset();
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-index 1243d1d..e45bcd2 100644
+index 1243d1d..9ec8997 100644
 --- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
 +++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
 @@ -184,6 +184,7 @@ public class PlayerInteractManager {
                      this.o = j1;
                  }
              }
-+            org.spigotmc.OrebfuscatorManager.updateNearbyBlocks(world, i, j, k); // Spigot
++            world.spigotConfig.antiXrayInstance.updateNearbyBlocks(world, i, j, k); // Spigot
          }
      }
  
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index c234cac..82dfef1 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -163,6 +163,12 @@ public final class CraftServer implements Server {
-     private final BooleanWrapper online = new BooleanWrapper();
-     public CraftScoreboardManager scoreboardManager;
- 
-+    // Orebfuscator use
-+    public boolean orebfuscatorEnabled = false;
-+    public int orebfuscatorEngineMode = 1;
-+    public List<String> orebfuscatorDisabledWorlds;
-+    public List<Short> orebfuscatorBlocks;
-+
-     private final class BooleanWrapper {
-         private boolean value = true;
-     }
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 4d022bd..0a39ed3 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -84,6 +84,7 @@ public class CraftWorld implements World {
-     public double itemMergeRadius = 3.5;
-     public double expMergeRadius = 3.5;
-     public int viewDistance;
-+    public boolean obfuscated = false;
-     // Spigot end
- 
-     // Spigot start
-@@ -139,6 +140,7 @@ public class CraftWorld implements World {
- 
-         viewDistance = Bukkit.getServer().getViewDistance();
-         viewDistance = configuration.getInt( "world-settings." + name + ".view-distance", viewDistance );
-+        obfuscated = world.getServer().orebfuscatorEnabled && !world.getServer().orebfuscatorDisabledWorlds.contains( name );
- 
-         if ( info )
-         {
-@@ -158,6 +160,7 @@ public class CraftWorld implements World {
-             server.getLogger().info( "Item Merge Radius: " + itemMergeRadius );
-             server.getLogger().info( "Exp Merge Radius: " + expMergeRadius );
-             server.getLogger().info( "View distance: " + viewDistance );
-+            server.getLogger().info( "Orebfuscator: " + obfuscated );
-             server.getLogger().info( "-------------------------------------------------" );
-         }
-         // Spigot end
-diff --git a/src/main/java/org/bukkit/craftbukkit/Spigot.java b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-index 67477f4..e5004b3 100644
---- a/src/main/java/org/bukkit/craftbukkit/Spigot.java
-+++ b/src/main/java/org/bukkit/craftbukkit/Spigot.java
-@@ -19,6 +19,14 @@ public class Spigot {
-         server.spamGuardExclusions = configuration.getStringList("settings.spam-exclusions");
-         filterIps = configuration.getBoolean("settings.filter-unsafe-ips", false);
- 
-+        server.orebfuscatorEnabled = configuration.getBoolean("orebfuscator.enable", false);
-+        server.orebfuscatorEngineMode = configuration.getInt("orebfuscator.engine-mode", 1);
-+        server.orebfuscatorDisabledWorlds = configuration.getStringList("orebfuscator.disabled-worlds");
-+        server.orebfuscatorBlocks = configuration.getShortList("orebfuscator.blocks");
-+        if (server.orebfuscatorEngineMode != 1 && server.orebfuscatorEngineMode != 2) {
-+        	server.orebfuscatorEngineMode = 1;
-+        }
-+
-         if (server.chunkGCPeriod == 0) {
-             server.getLogger().severe("[Spigot] You should not disable chunk-gc, unexpected behaviour may occur!");
-         }
-diff --git a/src/main/java/org/spigotmc/OrebfuscatorManager.java b/src/main/java/org/spigotmc/OrebfuscatorManager.java
+diff --git a/src/main/java/org/spigotmc/AntiXray.java b/src/main/java/org/spigotmc/AntiXray.java
 new file mode 100644
-index 0000000..aa1ddfc
+index 0000000..c29b789
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/OrebfuscatorManager.java
-@@ -0,0 +1,204 @@
++++ b/src/main/java/org/spigotmc/AntiXray.java
+@@ -0,0 +1,203 @@
 +package org.spigotmc;
 +
 +import gnu.trove.set.TByteSet;
 +import gnu.trove.set.hash.TByteHashSet;
 +import net.minecraft.server.Block;
-+import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.World;
 +
-+public class OrebfuscatorManager
++public class AntiXray
 +{
 +
 +    private static final CustomTimingsHandler update = new CustomTimingsHandler( "xray - update" );
 +    private static final CustomTimingsHandler obfuscate = new CustomTimingsHandler( "xray - obfuscate" );
 +    /*========================================================================*/
 +    // Used to keep track of which blocks to obfuscate
-+    private static final boolean[] obfuscateBlocks = new boolean[ Short.MAX_VALUE ];
++    private final boolean[] obfuscateBlocks = new boolean[ Short.MAX_VALUE ];
 +    // Used to select a random replacement ore
-+    private static byte[] replacementOres;
++    private byte[] replacementOres;
 +
-+    static
++    public AntiXray(SpigotWorldConfig config)
 +    {
 +        // Set all listed blocks as true to be obfuscated
-+        for ( short id : MinecraftServer.getServer().server.orebfuscatorBlocks )
++        for ( int id : config.blocks )
 +        {
 +            obfuscateBlocks[id] = true;
 +        }
@@ -227,9 +162,9 @@ index 0000000..aa1ddfc
 +     * Starts the timings handler, then updates all blocks within the set radius
 +     * of the given coordinate, revealing them if they are hidden ores.
 +     */
-+    public static void updateNearbyBlocks(World world, int x, int y, int z)
++    public void updateNearbyBlocks(World world, int x, int y, int z)
 +    {
-+        if ( world.getWorld().obfuscated )
++        if ( world.spigotConfig.antiXray )
 +        {
 +            update.startTiming();
 +            updateNearbyBlocks( world, x, y, z, 2 ); // 2 is the radius, we shouldn't change it as that would make it exponentially slower
@@ -241,9 +176,9 @@ index 0000000..aa1ddfc
 +     * Starts the timings handler, and then removes all non exposed ores from
 +     * the chunk buffer.
 +     */
-+    public static void obfuscateSync(int chunkX, int chunkY, int bitmask, byte[] buffer, World world)
++    public void obfuscateSync(int chunkX, int chunkY, int bitmask, byte[] buffer, World world)
 +    {
-+        if ( world.getWorld().obfuscated )
++        if ( world.spigotConfig.antiXray )
 +        {
 +            obfuscate.startTiming();
 +            obfuscate( chunkX, chunkY, bitmask, buffer, world );
@@ -254,10 +189,10 @@ index 0000000..aa1ddfc
 +    /**
 +     * Removes all non exposed ores from the chunk buffer.
 +     */
-+    public static void obfuscate(int chunkX, int chunkY, int bitmask, byte[] buffer, World world)
++    public void obfuscate(int chunkX, int chunkY, int bitmask, byte[] buffer, World world)
 +    {
 +        // If the world is marked as obfuscated
-+        if ( world.getWorld().obfuscated )
++        if ( world.spigotConfig.antiXray )
 +        {
 +            // Initial radius to search around for air
 +            int initialRadius = 1;
@@ -297,7 +232,7 @@ index 0000000..aa1ddfc
 +                                    // On the otherhand, if radius is 0, or the nearby blocks are all non air, we can obfuscate
 +                                    if ( initialRadius == 0 || !hasTransparentBlockAdjacent( world, startX + x, ( i << 4 ) + y, startZ + z, initialRadius ) )
 +                                    {
-+                                        switch ( world.getServer().orebfuscatorEngineMode )
++                                        switch ( world.spigotConfig.engineMode )
 +                                        {
 +                                            case 1:
 +                                                // Replace with stone
@@ -328,7 +263,7 @@ index 0000000..aa1ddfc
 +        }
 +    }
 +
-+    private static void updateNearbyBlocks(World world, int x, int y, int z, int radius)
++    private void updateNearbyBlocks(World world, int x, int y, int z, int radius)
 +    {
 +        // If the block in question is loaded
 +        if ( world.isLoaded( x, y, z ) )
@@ -380,20 +315,43 @@ index 0000000..aa1ddfc
 +                || hasTransparentBlockAdjacent( world, x, y, z - 1, radius - 1 ) ) );
 +    }
 +}
-diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
-index fe257e2..7860ccc 100644
---- a/src/main/resources/configurations/bukkit.yml
-+++ b/src/main/resources/configurations/bukkit.yml
-@@ -81,3 +81,9 @@ database:
-     driver: org.sqlite.JDBC
-     password: walrus
-     url: jdbc:sqlite:{DIR}{NAME}.db
-+orebfuscator:
-+    enable: false
-+    engine-mode: 1
-+    disabled-worlds:
-+       - world_the_end
-+    blocks: [1, 5, 14, 15, 16, 21, 48, 49, 54, 56, 73, 74, 82, 129, 130]
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index 81879e6..0a304e8 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -1,5 +1,6 @@
+ package org.spigotmc;
+ 
++import java.util.Arrays;
+ import java.util.List;
+ import org.bukkit.Bukkit;
+ import org.bukkit.configuration.file.YamlConfiguration;
+@@ -123,4 +124,25 @@ public class SpigotWorldConfig
+         viewDistance = getInt( "view-distance", Bukkit.getViewDistance() );
+         log( "View Distance: " + viewDistance );
+     }
++
++    public boolean antiXray = true;
++    public int engineMode = 1;
++    public List<Integer> blocks = Arrays.asList( new Integer[]
++    {
++        1, 5, 14, 15, 16, 21, 48, 49, 54, 56, 73, 74, 82, 129, 130
++    } );
++    public AntiXray antiXrayInstance;
++    private void antiXray()
++    {
++        antiXray = getBoolean( "anti-xray.enabled", antiXray );
++        log( "Anti X-Ray: " + antiXray );
++
++        engineMode = getInt( "anti-xray.engine-mode", engineMode );
++        log( "\tEngine Mode: " + engineMode );
++
++        blocks = getList( "anti-xray.blocks", blocks );
++        log( "\tBlocks: " + blocks );
++        
++        antiXrayInstance = new AntiXray( this );
++    }
+ }
 -- 
 1.8.1.2
 

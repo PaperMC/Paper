@@ -1,11 +1,11 @@
-From 11e91bebc30bae349454231d0c0e120918de03aa Mon Sep 17 00:00:00 2001
+From a4f3a529237119d805302947bd76ddb384bd9379 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 11 Jun 2013 12:56:02 +1000
 Subject: [PATCH] Better Chunk Tick Selection
 
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index e67f520..96190de 100644
+index de052bd..bc692dd 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -66,13 +66,35 @@ public abstract class World implements IBlockAccess {
@@ -45,24 +45,24 @@ index e67f520..96190de 100644
  
      public BiomeBase getBiome(int i, int j) {
          if (this.isLoaded(i, 0, j)) {
-@@ -115,6 +137,11 @@ public abstract class World implements IBlockAccess {
+@@ -117,6 +139,11 @@ public abstract class World implements IBlockAccess {
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
          this.ticksPerMonsterSpawns = this.getServer().getTicksPerMonsterSpawns(); // CraftBukkit
          // CraftBukkit end
 +        // Spigot start
 +        this.chunkTickRadius = (byte) ( ( this.getServer().getViewDistance() < 7 ) ? this.getServer().getViewDistance() : 7 );
-+        this.chunkTickList = new gnu.trove.map.hash.TLongShortHashMap( world.growthPerTick * 5, 0.7f, Long.MIN_VALUE, Short.MIN_VALUE );
++        this.chunkTickList = new gnu.trove.map.hash.TLongShortHashMap( spigotConfig.chunksPerTick * 5, 0.7f, Long.MIN_VALUE, Short.MIN_VALUE );
 +        this.chunkTickList.setAutoCompactionFactor( 0 );
 +        // Spigot end
  
          this.O = this.random.nextInt(12000);
          this.H = new int['\u8000'];
-@@ -1954,24 +1981,44 @@ public abstract class World implements IBlockAccess {
+@@ -1956,24 +1983,44 @@ public abstract class World implements IBlockAccess {
          int j;
          int k;
  
 +        // Spigot start
-+        int optimalChunks = this.getWorld().growthPerTick;
++        int optimalChunks = spigotConfig.chunksPerTick;
 +        // Quick conditions to allow us to exist early
 +        if ( optimalChunks <= 0 || players.isEmpty() )
 +        {
@@ -147,40 +147,22 @@ index 49360c1..6c3fcf1 100644
                              block.a(this, k2 + k, i3 + chunksection.getYPosition(), l2 + l, this.random);
                          }
                      }
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index e6fdbe5..a9b4e71 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -67,7 +67,10 @@ public class CraftWorld implements World {
-     private int chunkGCTickCount;
- 
-     private static final Random rand = new Random();
--    
-+    // Spigot start
-+    public int growthPerTick = 650;
-+    // Spigot end
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index 3f8562f..123fb7a 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -63,4 +63,11 @@ public class SpigotWorldConfig
+         config.addDefault( "world-settings.default." + path, def );
+         return config.getString( "world-settings." + worldName + "." + path, config.getString( "world-settings.default." + path ) );
+     }
 +
-     // Spigot start
-     public CraftWorld(WorldServer world, ChunkGenerator gen, Environment env) {
-         this( world, gen, env, "default" );
-@@ -89,14 +92,17 @@ public class CraftWorld implements World {
- 
-         // Load defaults first
-         boolean info = configuration.getBoolean( "world-settings.default.info", true );
-+        growthPerTick = configuration.getInt( "world-settings.default.growth-chunks-per-tick", growthPerTick );
- 
-         // Override defaults with world specific, if they exist
-         info = configuration.getBoolean( "world-settings." + name + ".info", info );
-+        growthPerTick = configuration.getInt( "world-settings." + name + ".growth-chunks-per-tick", growthPerTick );
- 
-         if ( info )
-         {
-             server.getLogger().info( "-------------- Spigot ----------------" );
-             server.getLogger().info( "-------- World Settings For [" + name + "] --------" );
-+            server.getLogger().info( "Growth Per Tick: " + growthPerTick );
-             server.getLogger().info( "-------------------------------------------------" );
-         }
-         // Spigot end
++    public int chunksPerTick;
++    private void chunksPerTick()
++    {
++        chunksPerTick = getInt( "chunks-per-tick", 650 );
++        log( "Chunks to Grow per Tick: " + chunksPerTick );
++    }
+ }
 -- 
 1.8.1.2
 
