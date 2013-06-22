@@ -1,100 +1,272 @@
-From 21486d9d244f3c22b6e8643c9495592493bcc1f9 Mon Sep 17 00:00:00 2001
+From 30196d52fe8630bfa0dd6ccf218e2a0461310fc8 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Tue, 14 May 2013 12:06:27 +1000
+Date: Sat, 22 Jun 2013 14:06:41 +1000
 Subject: [PATCH] Spigot Configuration
 
 
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 7261dc9..10ce69d 100644
+index 7261dc9..59444cb 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
-@@ -55,6 +55,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -89,6 +89,11 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+         if (this.G() < 0) {
+             this.setPort(this.propertyManager.getInt("server-port", 25565));
+         }
++        // Spigot start
++        this.a((PlayerList) (new DedicatedPlayerList(this)));
++        org.spigotmc.SpigotConfig.init();
++        org.spigotmc.SpigotConfig.registerCommands();
++        // Spigot end
  
-         this.getLogger().info("Loading properties");
-         this.propertyManager = new PropertyManager(this.options, this.getLogger()); // CraftBukkit - CLI argument support
-+        this.a((PlayerList) (new DedicatedPlayerList(this))); // Spigot - moved up from below
-         if (this.I()) {
-             this.d("127.0.0.1");
-         } else {
-@@ -103,7 +104,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+         this.getLogger().info("Generating keypair");
+         this.a(MinecraftEncryption.b());
+@@ -103,7 +108,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
              return false;
          }
  
 -        this.a((PlayerList) (new DedicatedPlayerList(this))); // CraftBukkit
-+        // this.a((PlayerList) (new DedicatedPlayerList(this))); // CraftBukkit // Spigot - moved to top of method
++        // this.a((PlayerList) (new DedicatedPlayerList(this))); // Spigot - Moved up
  
          if (!this.getOnlineMode()) {
              this.getLogger().warning("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 3a4ddea..e67f520 100644
+index 3a4ddea..de052bd 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -111,7 +111,7 @@ public abstract class World implements IBlockAccess {
+@@ -99,6 +99,7 @@ public abstract class World implements IBlockAccess {
+     int lastXAccessed = Integer.MIN_VALUE;
+     int lastZAccessed = Integer.MIN_VALUE;
+     final Object chunkLock = new Object();
++    public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
+ 
+     public CraftWorld getWorld() {
+         return this.world;
+@@ -110,6 +111,7 @@ public abstract class World implements IBlockAccess {
+ 
      // Changed signature
      public World(IDataManager idatamanager, String s, WorldSettings worldsettings, WorldProvider worldprovider, MethodProfiler methodprofiler, IConsoleLogManager iconsolelogmanager, ChunkGenerator gen, org.bukkit.World.Environment env) {
++        this.spigotConfig = new org.spigotmc.SpigotWorldConfig( s ); // Spigot
          this.generator = gen;
--        this.world = new CraftWorld((WorldServer) this, gen, env);
-+        this.world = new CraftWorld((WorldServer) this, gen, env, s); // Spigot
+         this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
-         this.ticksPerMonsterSpawns = this.getServer().getTicksPerMonsterSpawns(); // CraftBukkit
-         // CraftBukkit end
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 6cb50b7..2956e75 100644
+index 00326c1..6e6fe1c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -145,7 +145,7 @@ public final class CraftServer implements Server {
-     protected final MinecraftServer console;
-     protected final DedicatedPlayerList playerList;
-     private final Map<String, World> worlds = new LinkedHashMap<String, World>();
--    private YamlConfiguration configuration;
-+    public YamlConfiguration configuration; // Spigot
-     private final Yaml yaml = new Yaml(new SafeConstructor());
-     private final Map<String, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
-     private final AutoUpdater updater;
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index c0fb528..e6fdbe5 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -67,8 +67,14 @@ public class CraftWorld implements World {
-     private int chunkGCTickCount;
+@@ -556,6 +556,7 @@ public final class CraftServer implements Server {
+         playerList.getIPBans().load();
+         playerList.getNameBans().load();
  
-     private static final Random rand = new Random();
--
-+    
-+    // Spigot start
-     public CraftWorld(WorldServer world, ChunkGenerator gen, Environment env) {
-+        this( world, gen, env, "default" );
++        org.spigotmc.SpigotConfig.init(); // Spigot
+         for (WorldServer world : console.worlds) {
+             world.difficulty = difficulty;
+             world.setSpawnFlags(monsters, animals);
+@@ -570,11 +571,13 @@ public final class CraftServer implements Server {
+             } else {
+                 world.ticksPerMonsterSpawns = this.getTicksPerMonsterSpawns();
+             }
++            world.spigotConfig.init(); // Spigot
+         }
+ 
+         pluginManager.clearPlugins();
+         commandMap.clearCommands();
+         resetRecipes();
++        org.spigotmc.SpigotConfig.registerCommands(); // Spigot
+ 
+         int pollCount = 0;
+ 
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+new file mode 100644
+index 0000000..1d915fb
+--- /dev/null
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -0,0 +1,114 @@
++package org.spigotmc;
++
++import com.google.common.base.Throwables;
++import java.io.File;
++import java.io.IOException;
++import java.lang.reflect.InvocationTargetException;
++import java.lang.reflect.Method;
++import java.lang.reflect.Modifier;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.logging.Level;
++import net.minecraft.server.MinecraftServer;
++import org.bukkit.Bukkit;
++import org.bukkit.command.Command;
++import org.bukkit.configuration.file.YamlConfiguration;
++
++public class SpigotConfig
++{
++
++    private static final File CONFIG_FILE = new File( "spigot.yml" );
++    private static final String HEADER = "This is the main configuration file for Spigot.\n"
++            + "As you can see, there's tons to configure. Some options may impact gameplay, so use\n"
++            + "with caution, and make sure you know what each option does before configuring.\n"
++            + "For a reference for any variable inside this file, check out the Spigot wiki at\n"
++            + "http://www.spigotmc.org/wiki/spigot-configuration/\n"
++            + "\n"
++            + "If you need help with the configuration or have any questions related to Spigot,\n"
++            + "join us at the IRC or drop by our forums and leave a post.\n"
++            + "\n"
++            + "IRC: #spigot @ irc.esper.net ( http://webchat.esper.net/?channel=spigot )\n"
++            + "Forums: http://www.spigotmc.org/forum/\n";
++    /*========================================================================*/
++    static YamlConfiguration config;
++    static int version;
++    static Map<String, Command> commands;
++    /*========================================================================*/
++
++    public static void init()
++    {
++        config = YamlConfiguration.loadConfiguration( CONFIG_FILE );
++        config.options().header( HEADER );
++        config.options().copyDefaults( true );
++
++        commands = new HashMap<String, Command>();
++
++        version = getInt( "config-version", 1 );
++        readConfig( SpigotConfig.class, null );
 +    }
 +
-+    public CraftWorld(WorldServer world, ChunkGenerator gen, Environment env, String name) {
-+        // Spigot end
-         this.world = world;
-         this.generator = gen;
- 
-@@ -77,6 +83,23 @@ public class CraftWorld implements World {
-         if (server.chunkGCPeriod > 0) {
-             chunkGCTickCount = rand.nextInt(server.chunkGCPeriod);
-         }
-+        // Spigot start
-+        org.bukkit.configuration.file.YamlConfiguration configuration = server.configuration;
-+        name = name.replaceAll( " ", "_" );
-+
-+        // Load defaults first
-+        boolean info = configuration.getBoolean( "world-settings.default.info", true );
-+
-+        // Override defaults with world specific, if they exist
-+        info = configuration.getBoolean( "world-settings." + name + ".info", info );
-+
-+        if ( info )
++    public static void registerCommands()
++    {
++        for ( Map.Entry<String, Command> entry : commands.entrySet() )
 +        {
-+            server.getLogger().info( "-------------- Spigot ----------------" );
-+            server.getLogger().info( "-------- World Settings For [" + name + "] --------" );
-+            server.getLogger().info( "-------------------------------------------------" );
++            MinecraftServer.getServer().server.getCommandMap().register( entry.getKey(), "Spigot", entry.getValue() );
 +        }
-+        // Spigot end
-     }
- 
-     public Block getBlockAt(int x, int y, int z) {
++    }
++
++    static void readConfig(Class<?> clazz, Object instance)
++    {
++        for ( Method method : clazz.getDeclaredMethods() )
++        {
++            if ( Modifier.isPrivate( method.getModifiers() ) )
++            {
++                if ( method.getParameterTypes().length == 0 && method.getReturnType() == Void.TYPE )
++                {
++                    try
++                    {
++                        method.setAccessible( true );
++                        method.invoke( instance );
++                    } catch ( InvocationTargetException ex )
++                    {
++                        Throwables.propagate( ex.getCause() );
++                    } catch ( ReflectiveOperationException ex )
++                    {
++                        Bukkit.getLogger().log( Level.SEVERE, "Error invoking " + method, ex );
++                    }
++                }
++            }
++        }
++
++        try
++        {
++            config.save( CONFIG_FILE );
++        } catch ( IOException ex )
++        {
++            Bukkit.getLogger().log( Level.SEVERE, "Could not save " + CONFIG_FILE, ex );
++        }
++    }
++
++    private static boolean getBoolean(String path, boolean def)
++    {
++        config.addDefault( path, def );
++        return config.getBoolean( path, config.getBoolean( path ) );
++    }
++
++    private static int getInt(String path, int def)
++    {
++        config.addDefault( path, def );
++        return config.getInt( path, config.getInt( path ) );
++    }
++
++    private static <T> List getList(String path, T def)
++    {
++        config.addDefault( path, def );
++        return (List<T>) config.getList( path, config.getList( path ) );
++    }
++
++    private static String getString(String path, String def)
++    {
++        config.addDefault( path, def );
++        return config.getString( path, config.getString( path ) );
++    }
++}
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+new file mode 100644
+index 0000000..3f8562f
+--- /dev/null
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -0,0 +1,66 @@
++package org.spigotmc;
++
++import java.util.List;
++import org.bukkit.Bukkit;
++import org.bukkit.configuration.file.YamlConfiguration;
++
++public class SpigotWorldConfig
++{
++
++    private final String worldName;
++    private final YamlConfiguration config;
++    private boolean verbose;
++
++    public SpigotWorldConfig(String worldName)
++    {
++        this.worldName = worldName;
++        this.config = SpigotConfig.config;
++        init();
++    }
++
++    public void init()
++    {
++        this.verbose = getBoolean( "verbose", true );
++
++        log( "-------- World Settings For [" + worldName + "] --------" );
++        SpigotConfig.readConfig( SpigotWorldConfig.class, this );
++    }
++
++    private void log(String s)
++    {
++        if ( verbose )
++        {
++            Bukkit.getLogger().info( s );
++        }
++    }
++
++    private boolean getBoolean(String path, boolean def)
++    {
++        config.addDefault( "world-settings.default." + path, def );
++        return config.getBoolean( "world-settings." + worldName + "." + path, config.getBoolean( "world-settings.default." + path ) );
++    }
++
++    private double getDouble(String path, double def)
++    {
++        config.addDefault( "world-settings.default." + path, def );
++        return config.getDouble( "world-settings." + worldName + "." + path, config.getDouble( "world-settings.default." + path ) );
++    }
++
++    private int getInt(String path, int def)
++    {
++        config.addDefault( "world-settings.default." + path, def );
++        return config.getInt( "world-settings." + worldName + "." + path, config.getInt( "world-settings.default." + path ) );
++    }
++
++    private <T> List getList(String path, T def)
++    {
++        config.addDefault( "world-settings.default." + path, def );
++        return (List<T>) config.getList( "world-settings." + worldName + "." + path, config.getList( "world-settings.default." + path ) );
++    }
++
++    private String getString(String path, String def)
++    {
++        config.addDefault( "world-settings.default." + path, def );
++        return config.getString( "world-settings." + worldName + "." + path, config.getString( "world-settings.default." + path ) );
++    }
++}
 -- 
 1.8.1.2
 

@@ -1,35 +1,8 @@
-From 5146e6a561c2858de9a0d2a44dadde9db0b7a8a6 Mon Sep 17 00:00:00 2001
+From 7186970386ca7b9887fc79e00510154f2b248d86 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Tue, 23 Apr 2013 11:47:32 +1000
+Date: Fri, 21 Jun 2013 18:23:00 +1000
 Subject: [PATCH] Netty
 
- Implement an uber efficient network engine based on the
- Java NIO framework Netty. This is basically a complete rewrite of the
- Minecraft network engine with many distinct advantages. First and foremost,
- there will no longer be the horrid, and redundant case of 2, or even at
- times, 3 threads per a connection. Instead low level select/epoll based NIO
- is used. The number of threads used for network reading and writing will
- scale automatically to the number of cores for use on your server. In most
- cases this will be around 8 threads for a 4 core server, much better than the
- up to 1000 threads that could be in use at one time with the old engine. To
- facilitate asynchronous packet sending or receiving (currently only chat), a
- thread pool of 16 threads is kept handy. == Plugin incompatibilities As a
- side effect of this change, plugins which rely on very specific
- implementation level details within Minecraft are broken. At this point in
- time, TagAPI and ProtocolLib are affected. If you are a user of ProtocolLib
- you are advised to update to the latest build, where full support is enabled.
- If you are a user of TagAPI, support has not yet been added, so you will need
- to install the updated ProtocolLib so that TagAPI may use its functions. ==
- Stability The code within this commit has been very lightly tested in
- production (300 players for approximately 24 hours), however it is not
- guaranteed to be free from all bugs. If you experence weird connection
- behaviour, reporting the bug and steps to reproduce are advised. You are also
- free to downgrade to the latest recommend build, which is guaranteed to be
- stable. == Summary This commit provides a reduction in threads, which gives
- the CPU / operating system more time to allocate to the main server threads,
- as well as various other side benefits such as chat thread pooling and a
- slight reduction in latency. This commit is licensed under the Creative
- Commons Attribution-ShareAlike 3.0 Unported license.
 
 diff --git a/pom.xml b/pom.xml
 index 8c9f66b..a33020e 100644
@@ -53,10 +26,10 @@ index 8c9f66b..a33020e 100644
  
    <!-- This builds a completely 'ready to start' jar with all dependencies inside -->
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 10ce69d..e4f1cbe 100644
+index 59444cb..e101f95 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
-@@ -96,7 +96,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -100,7 +100,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
          this.getLogger().info("Starting Minecraft server on " + (this.getServerIp().length() == 0 ? "*" : this.getServerIp()) + ":" + this.G());
  
          try {
@@ -131,7 +104,7 @@ index 1862863..5a24f2a 100644
 +    public void setSocketAddress(SocketAddress address) { k = address; } // Spigot
  }
 diff --git a/src/main/java/net/minecraft/server/Packet51MapChunk.java b/src/main/java/net/minecraft/server/Packet51MapChunk.java
-index 7711629..9cf625d 100644
+index efe102e..e488fa8 100644
 --- a/src/main/java/net/minecraft/server/Packet51MapChunk.java
 +++ b/src/main/java/net/minecraft/server/Packet51MapChunk.java
 @@ -42,7 +42,7 @@ public class Packet51MapChunk extends Packet {
@@ -144,7 +117,7 @@ index 7711629..9cf625d 100644
          this.d = chunkmap.c;
          this.c = chunkmap.b;
 diff --git a/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java b/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
-index ce28495..fb34d4a 100644
+index a2cd9b0..f586415 100644
 --- a/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
 +++ b/src/main/java/net/minecraft/server/Packet56MapChunkBulk.java
 @@ -24,7 +24,7 @@ public class Packet56MapChunkBulk extends Packet {
@@ -210,10 +183,10 @@ index 17cfacc..a945892 100644
              this.b = true;
          } catch (Exception exception) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 82dfef1..2485ef9 100644
+index 6e6fe1c..68694de 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1389,4 +1389,20 @@ public final class CraftServer implements Server {
+@@ -1369,4 +1369,20 @@ public final class CraftServer implements Server {
      public CraftScoreboardManager getScoreboardManager() {
          return scoreboardManager;
      }
@@ -236,14 +209,13 @@ index 82dfef1..2485ef9 100644
  }
 diff --git a/src/main/java/org/spigotmc/MultiplexingServerConnection.java b/src/main/java/org/spigotmc/MultiplexingServerConnection.java
 new file mode 100644
-index 0000000..c8ea80a
+index 0000000..386c2f8
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/MultiplexingServerConnection.java
-@@ -0,0 +1,126 @@
+@@ -0,0 +1,136 @@
 +package org.spigotmc;
 +
 +import java.net.InetAddress;
-+import java.net.InetSocketAddress;
 +import java.util.ArrayList;
 +import java.util.Collection;
 +import java.util.Collections;
@@ -257,41 +229,38 @@ index 0000000..c8ea80a
 +import net.minecraft.server.ServerConnection;
 +import org.bukkit.Bukkit;
 +
-+public class MultiplexingServerConnection extends ServerConnection {
++public class MultiplexingServerConnection extends ServerConnection
++{
 +
-+    private static final boolean NETTY_DISABLED = Boolean.getBoolean("org.spigotmc.netty.disabled");
 +    private final Collection<ServerConnection> children = new HashSet<ServerConnection>();
-+    private final List<PendingConnection> pending = Collections.synchronizedList(new ArrayList<PendingConnection>());
++    private final List<PendingConnection> pending = Collections.synchronizedList( new ArrayList<PendingConnection>() );
 +    private final HashMap<InetAddress, Long> throttle = new HashMap<InetAddress, Long>();
 +
-+    public MultiplexingServerConnection(MinecraftServer ms) {
-+        super(ms);
++    public MultiplexingServerConnection(MinecraftServer ms)
++    {
++        super( ms );
 +
-+        // Add primary connection
-+        start(ms.server.getIp(), ms.server.getPort());
-+        // Add all other connections
-+        for (InetSocketAddress address : ms.server.getSecondaryHosts()) {
-+            start(address.getAddress().getHostAddress(), address.getPort());
-+        }
-+    }
-+
-+    private void start(String ipAddress, int port) {
-+        try {
-+            // Calculate address, can't use isEmpty due to Java 5
-+            InetAddress socketAddress = (ipAddress.length() == 0) ? null : InetAddress.getByName(ipAddress);
-+            // Say hello to the log
-+            d().getLogger().info("Starting listener #" + children.size() + " on " + (socketAddress == null ? "*" : ipAddress) + ":" + port);
-+            // Start connection: Netty / non Netty
-+            ServerConnection listener = (NETTY_DISABLED) ? new DedicatedServerConnection(d(), socketAddress, port) : new org.spigotmc.netty.NettyServerConnection(d(), socketAddress, port);
-+            // Register with other connections
-+            children.add(listener);
-+            // Gotta catch em all
-+        } catch (Throwable t) {
-+            // Just print some info to the log
-+            t.printStackTrace();
-+            d().getLogger().warning("**** FAILED TO BIND TO PORT!");
-+            d().getLogger().warning("The exception was: {0}", t);
-+            d().getLogger().warning("Perhaps a server is already running on that port?");
++        for ( SpigotConfig.Listener listener : SpigotConfig.listeners )
++        {
++            try
++            {
++                // Calculate address, can't use isEmpty due to Java 5
++                InetAddress socketAddress = ( listener.host.length() == 0 ) ? null : InetAddress.getByName( listener.host );
++                // Say hello to the log
++                d().getLogger().info( "Starting listener #" + children.size() + " on " + ( socketAddress == null ? "*" : listener.host ) + ":" + listener.port );
++                // Start connection: Netty / non Netty
++                ServerConnection l = ( listener.netty ) ? new DedicatedServerConnection( d(), socketAddress, listener.port ) : new org.spigotmc.netty.NettyServerConnection( d(), socketAddress, listener.port );
++                // Register with other connections
++                children.add( l );
++                // Gotta catch em all
++            } catch ( Throwable t )
++            {
++                // Just print some info to the log
++                t.printStackTrace();
++                d().getLogger().warning( "**** FAILED TO BIND TO PORT!" );
++                d().getLogger().warning( "The exception was: {0}", t );
++                d().getLogger().warning( "Perhaps a server is already running on that port?" );
++            }
 +        }
 +    }
 +
@@ -299,8 +268,10 @@ index 0000000..c8ea80a
 +     * close.
 +     */
 +    @Override
-+    public void a() {
-+        for (ServerConnection child : children) {
++    public void a()
++    {
++        for ( ServerConnection child : children )
++        {
 +            child.a();
 +        }
 +    }
@@ -310,20 +281,25 @@ index 0000000..c8ea80a
 +     * called from the main server thread a few times a tick.
 +     */
 +    @Override
-+    public void b() {
++    public void b()
++    {
 +        super.b(); // pulse PlayerConnections
-+        for (int i = 0; i < pending.size(); ++i) {
-+            PendingConnection connection = pending.get(i);
++        for ( int i = 0; i < pending.size(); ++i )
++        {
++            PendingConnection connection = pending.get( i );
 +
-+            try {
++            try
++            {
 +                connection.c();
-+            } catch (Exception ex) {
-+                connection.disconnect("Internal server error");
-+                Bukkit.getServer().getLogger().log(Level.WARNING, "Failed to handle packet: " + ex, ex);
++            } catch ( Exception ex )
++            {
++                connection.disconnect( "Internal server error" );
++                Bukkit.getServer().getLogger().log( Level.WARNING, "Failed to handle packet: " + ex, ex );
 +            }
 +
-+            if (connection.b) {
-+                pending.remove(i--);
++            if ( connection.b )
++            {
++                pending.remove( i-- );
 +            }
 +        }
 +    }
@@ -334,10 +310,13 @@ index 0000000..c8ea80a
 +     *
 +     * @param address the address to remove
 +     */
-+    public void unThrottle(InetAddress address) {
-+        if (address != null) {
-+            synchronized (throttle) {
-+                throttle.remove(address);
++    public void unThrottle(InetAddress address)
++    {
++        if ( address != null )
++        {
++            synchronized ( throttle )
++            {
++                throttle.remove( address );
 +            }
 +        }
 +    }
@@ -348,24 +327,89 @@ index 0000000..c8ea80a
 +     * @param address
 +     * @return Whether they must be disconnected
 +     */
-+    public boolean throttle(InetAddress address) {
++    public boolean throttle(InetAddress address)
++    {
 +        long currentTime = System.currentTimeMillis();
-+        synchronized (throttle) {
-+            Long value = throttle.get(address);
-+            if (value != null && !address.isLoopbackAddress() && currentTime - value < d().server.getConnectionThrottle()) {
-+                throttle.put(address, currentTime);
++        synchronized ( throttle )
++        {
++            Long value = throttle.get( address );
++            if ( value != null && !address.isLoopbackAddress() && currentTime - value < d().server.getConnectionThrottle() )
++            {
++                throttle.put( address, currentTime );
 +                return true;
 +            }
 +
-+            throttle.put(address, currentTime);
++            throttle.put( address, currentTime );
 +        }
 +        return false;
 +    }
 +
-+    public void register(PendingConnection conn) {
-+        pending.add(conn);
++    public void register(PendingConnection conn)
++    {
++        pending.add( conn );
 +    }
 +}
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index b7f3896..910d0de 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -6,6 +6,8 @@ import java.io.IOException;
+ import java.lang.reflect.InvocationTargetException;
+ import java.lang.reflect.Method;
+ import java.lang.reflect.Modifier;
++import java.util.ArrayList;
++import java.util.Collections;
+ import java.util.HashMap;
+ import java.util.List;
+ import java.util.Map;
+@@ -148,4 +150,47 @@ public class SpigotConfig
+         commands.put( "restart", new RestartCommand( "restart" ) );
+         WatchdogThread.doStart( timeoutTime, restartOnCrash );
+     }
++
++    public static class Listener
++    {
++
++        public String host;
++        public int port;
++        public boolean netty;
++        public long connectionThrottle;
++
++        public Listener(String host, int port, boolean netty, long connectionThrottle)
++        {
++            this.host = host;
++            this.port = port;
++            this.netty = netty;
++            this.connectionThrottle = connectionThrottle;
++        }
++    }
++    public static List<Listener> listeners = new ArrayList<Listener>();
++    public static int nettyThreads;
++    private static void listeners()
++    {
++        Map<String, Object> def = new HashMap<String, Object>();
++        def.put( "host", "default" );
++        def.put( "port", "default" );
++        def.put( "netty", true );
++        def.put( "throttle", "default" );
++
++        config.addDefault( "listeners", Collections.singletonList( def ) );
++        for ( Map<String, Object> info : (List<Map<String, Object>>) config.getList( "listeners" ) )
++        {
++            String host = (String) info.get( "host" );
++            if ( "default".equals( host ) )
++            {
++                host = Bukkit.getIp();
++            }
++            int port = ( info.get( "port" ) instanceof Integer ) ? (Integer) info.get( "port" ) : Bukkit.getPort();
++            boolean netty = (Boolean) info.get( "netty" );
++            long connectionThrottle = ( info.get( "throttle" ) instanceof Number ) ? ( (Number) info.get( "throttle" ) ).longValue() : Bukkit.getConnectionThrottle();
++            listeners.add( new Listener( host, port, netty, connectionThrottle ) );
++        }
++
++        nettyThreads = getInt( "settings.netty-threads", 3 );
++    }
+ }
 diff --git a/src/main/java/org/spigotmc/netty/CipherBase.java b/src/main/java/org/spigotmc/netty/CipherBase.java
 new file mode 100644
 index 0000000..c75a60f
@@ -784,10 +828,10 @@ index 0000000..fdef0c8
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyServerConnection.java b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
 new file mode 100644
-index 0000000..575db8b
+index 0000000..f232efd
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,104 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -797,6 +841,7 @@ index 0000000..575db8b
 +import io.netty.channel.ChannelFuture;
 +import io.netty.channel.ChannelInitializer;
 +import io.netty.channel.ChannelOption;
++import io.netty.channel.EventLoopGroup;
 +import io.netty.channel.nio.NioEventLoopGroup;
 +import io.netty.channel.socket.nio.NioServerSocketChannel;
 +import io.netty.handler.timeout.ReadTimeoutHandler;
@@ -820,11 +865,15 @@ index 0000000..575db8b
 +{
 +
 +    private final ChannelFuture socket;
++    private static EventLoopGroup group;
 +
 +    public NettyServerConnection(final MinecraftServer ms, InetAddress host, int port)
 +    {
 +        super( ms );
-+        int threads = Integer.getInteger( "org.spigotmc.netty.threads", 3 );
++        if ( group == null )
++        {
++            group = new NioEventLoopGroup( org.spigotmc.SpigotConfig.nettyThreads, new ThreadFactoryBuilder().setNameFormat( "Netty IO Thread - %1$d" ).build() );
++        }
 +        socket = new ServerBootstrap().channel( NioServerSocketChannel.class ).childHandler( new ChannelInitializer()
 +        {
 +            @Override
@@ -853,8 +902,7 @@ index 0000000..575db8b
 +                        .addLast( "encoder", new PacketEncoder( networkManager ) )
 +                        .addLast( "manager", networkManager );
 +            }
-+        } ).childOption( ChannelOption.TCP_NODELAY, false ).group( new NioEventLoopGroup( threads, new ThreadFactoryBuilder().setNameFormat( "Netty IO Thread - %1$d" ).build() ) ).localAddress( host, port ).bind();
-+        MinecraftServer.getServer().getLogger().info( "Using Netty NIO with " + threads + " threads for network connections." );
++        } ).childOption( ChannelOption.TCP_NODELAY, false ).group( group ).localAddress( host, port ).bind();
 +    }
 +
 +    /**
@@ -1499,20 +1547,6 @@ index 0000000..d3a9cab
 +     */
 +    DATA;
 +}
-diff --git a/src/main/resources/configurations/bukkit.yml b/src/main/resources/configurations/bukkit.yml
-index 3d4272b..53db120 100644
---- a/src/main/resources/configurations/bukkit.yml
-+++ b/src/main/resources/configurations/bukkit.yml
-@@ -13,6 +13,9 @@
- # Bug tracker: http://leaky.bukkit.org/
- 
- 
-+#listeners:
-+#  - address: 127.0.0.1
-+#    port: 25577
- settings:
-     allow-end: true
-     warn-on-overload: true
 -- 
 1.8.1.2
 
