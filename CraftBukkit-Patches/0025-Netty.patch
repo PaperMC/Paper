@@ -1,6 +1,6 @@
-From 7186970386ca7b9887fc79e00510154f2b248d86 Mon Sep 17 00:00:00 2001
+From 3df1d5381bb92c7c9897dad4bd92282d898791ba Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Fri, 21 Jun 2013 18:23:00 +1000
+Date: Sun, 23 Jun 2013 16:32:51 +1000
 Subject: [PATCH] Netty
 
 
@@ -26,15 +26,21 @@ index 8c9f66b..a33020e 100644
  
    <!-- This builds a completely 'ready to start' jar with all dependencies inside -->
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 59444cb..e101f95 100644
+index 59444cb..9e6e318 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
-@@ -100,7 +100,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-         this.getLogger().info("Starting Minecraft server on " + (this.getServerIp().length() == 0 ? "*" : this.getServerIp()) + ":" + this.G());
+@@ -97,10 +97,12 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+ 
+         this.getLogger().info("Generating keypair");
+         this.a(MinecraftEncryption.b());
+-        this.getLogger().info("Starting Minecraft server on " + (this.getServerIp().length() == 0 ? "*" : this.getServerIp()) + ":" + this.G());
++        // Spigot start
++        // this.getLogger().info("Starting Minecraft server on " + (this.getServerIp().length() == 0 ? "*" : this.getServerIp()) + ":" + this.G());
  
          try {
 -            this.r = new DedicatedServerConnection(this, inetaddress, this.G());
-+            this.r = new org.spigotmc.MultiplexingServerConnection(this); // Spigot
++            this.r = new org.spigotmc.MultiplexingServerConnection(this);
++            // Spigot end
          } catch (Throwable ioexception) { // CraftBukkit - IOException -> Throwable
              this.getLogger().warning("**** FAILED TO BIND TO PORT!");
              this.getLogger().warning("The exception was: {0}", new Object[] { ioexception.toString()});
@@ -209,10 +215,10 @@ index 6e6fe1c..68694de 100644
  }
 diff --git a/src/main/java/org/spigotmc/MultiplexingServerConnection.java b/src/main/java/org/spigotmc/MultiplexingServerConnection.java
 new file mode 100644
-index 0000000..386c2f8
+index 0000000..5de1c62
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/MultiplexingServerConnection.java
-@@ -0,0 +1,136 @@
+@@ -0,0 +1,137 @@
 +package org.spigotmc;
 +
 +import java.net.InetAddress;
@@ -228,6 +234,7 @@ index 0000000..386c2f8
 +import net.minecraft.server.PendingConnection;
 +import net.minecraft.server.ServerConnection;
 +import org.bukkit.Bukkit;
++import org.spigotmc.netty.NettyServerConnection;
 +
 +public class MultiplexingServerConnection extends ServerConnection
 +{
@@ -249,7 +256,7 @@ index 0000000..386c2f8
 +                // Say hello to the log
 +                d().getLogger().info( "Starting listener #" + children.size() + " on " + ( socketAddress == null ? "*" : listener.host ) + ":" + listener.port );
 +                // Start connection: Netty / non Netty
-+                ServerConnection l = ( listener.netty ) ? new DedicatedServerConnection( d(), socketAddress, listener.port ) : new org.spigotmc.netty.NettyServerConnection( d(), socketAddress, listener.port );
++                ServerConnection l = ( listener.netty ) ? new DedicatedServerConnection( d(), socketAddress, listener.port ) : new NettyServerConnection( d(), socketAddress, listener.port );
 +                // Register with other connections
 +                children.add( l );
 +                // Gotta catch em all
@@ -828,10 +835,10 @@ index 0000000..fdef0c8
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyServerConnection.java b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
 new file mode 100644
-index 0000000..f232efd
+index 0000000..9eecd59
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyServerConnection.java
-@@ -0,0 +1,104 @@
+@@ -0,0 +1,106 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -854,6 +861,7 @@ index 0000000..f232efd
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.ServerConnection;
 +import org.spigotmc.MultiplexingServerConnection;
++import org.spigotmc.SpigotConfig;
 +
 +/**
 + * This is the NettyServerConnection class. It implements
@@ -872,8 +880,9 @@ index 0000000..f232efd
 +        super( ms );
 +        if ( group == null )
 +        {
-+            group = new NioEventLoopGroup( org.spigotmc.SpigotConfig.nettyThreads, new ThreadFactoryBuilder().setNameFormat( "Netty IO Thread - %1$d" ).build() );
++            group = new NioEventLoopGroup( SpigotConfig.nettyThreads, new ThreadFactoryBuilder().setNameFormat( "Netty IO Thread - %1$d" ).build() );
 +        }
++
 +        socket = new ServerBootstrap().channel( NioServerSocketChannel.class ).childHandler( new ChannelInitializer()
 +        {
 +            @Override
@@ -902,7 +911,7 @@ index 0000000..f232efd
 +                        .addLast( "encoder", new PacketEncoder( networkManager ) )
 +                        .addLast( "manager", networkManager );
 +            }
-+        } ).childOption( ChannelOption.TCP_NODELAY, false ).group( group ).localAddress( host, port ).bind();
++        } ).childOption( ChannelOption.TCP_NODELAY, false ).group( group ).localAddress( host, port ).bind().syncUninterruptibly();
 +    }
 +
 +    /**
