@@ -1,0 +1,71 @@
+From 73fe7ed8c117bbdb3ee02a5a0f336fc5adeea12e Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Tue, 25 Jun 2013 18:09:26 +1000
+Subject: [PATCH] Always Fire PreLoginEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
+index e78781e..3f4c311 100644
+--- a/src/main/java/net/minecraft/server/PendingConnection.java
++++ b/src/main/java/net/minecraft/server/PendingConnection.java
+@@ -105,7 +105,7 @@ public class PendingConnection extends Connection {
+ 
+     public void a(Packet205ClientCommand packet205clientcommand) {
+         if (packet205clientcommand.a == 0) {
+-            if (this.server.getOnlineMode()) {
++            if (true) { // Spigot - Always fire
+                 if (this.j) {
+                     this.disconnect("Duplicate login");
+                     return;
+diff --git a/src/main/java/net/minecraft/server/ThreadLoginVerifier.java b/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
+index 496cfe4..44ea39e 100644
+--- a/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
++++ b/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
+@@ -27,24 +27,29 @@ class ThreadLoginVerifier extends Thread {
+         this.pendingConnection = pendingconnection;
+     }
+ 
++    private boolean auth() throws java.io.IOException {
++        String s = (new BigInteger(MinecraftEncryption.a(PendingConnection.a(this.pendingConnection), PendingConnection.b(this.pendingConnection).F().getPublic(), PendingConnection.c(this.pendingConnection)))).toString(16);
++        URL url = new URL("http://session.minecraft.net/game/checkserver.jsp?user=" + URLEncoder.encode(PendingConnection.d(this.pendingConnection), "UTF-8") + "&serverId=" + URLEncoder.encode(s, "UTF-8"));
++        BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(url.openStream()));
++        String s1 = bufferedreader.readLine();
++
++        bufferedreader.close();
++        if (!"YES".equals(s1)) {
++            this.pendingConnection.disconnect("Failed to verify username!");
++            return false;
++        }
++
++        // CraftBukkit start
++        if (this.pendingConnection.getSocket() == null) {
++            return false;
++        }
++        return true;
++    }
++
+     public void run() {
+         try {
+             if (org.spigotmc.SpamHaus.filterIp(pendingConnection)) return; // Spigot
+-            String s = (new BigInteger(MinecraftEncryption.a(PendingConnection.a(this.pendingConnection), PendingConnection.b(this.pendingConnection).F().getPublic(), PendingConnection.c(this.pendingConnection)))).toString(16);
+-            URL url = new URL("http://session.minecraft.net/game/checkserver.jsp?user=" + URLEncoder.encode(PendingConnection.d(this.pendingConnection), "UTF-8") + "&serverId=" + URLEncoder.encode(s, "UTF-8"));
+-            BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(url.openStream()));
+-            String s1 = bufferedreader.readLine();
+-
+-            bufferedreader.close();
+-            if (!"YES".equals(s1)) {
+-                this.pendingConnection.disconnect("Failed to verify username!");
+-                return;
+-            }
+-
+-            // CraftBukkit start
+-            if (this.pendingConnection.getSocket() == null) {
+-                return;
+-            }
++            if (server.getOnlineMode() && !auth()) return; // Spigot
+ 
+             AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(PendingConnection.d(this.pendingConnection), ((java.net.InetSocketAddress) this.pendingConnection.networkManager.getSocketAddress()).getAddress()); // Spigot
+             this.server.getPluginManager().callEvent(asyncEvent);
+-- 
+1.8.1.2
+
