@@ -983,6 +983,15 @@ public class WorldServer extends World implements GeneratorAccessSeed {
     }
 
     public void unloadChunk(Chunk chunk) {
+        // Spigot Start
+        for (TileEntity tileentity : chunk.getTileEntities().values()) {
+            if (tileentity instanceof IInventory) {
+                for (org.bukkit.entity.HumanEntity h : Lists.newArrayList(((IInventory) tileentity).getViewers())) {
+                    h.closeInventory();
+                }
+            }
+        }
+        // Spigot End
         this.tileEntityListUnload.addAll(chunk.getTileEntities().values());
         EntitySlice[] aentityslice = chunk.getEntitySlices();
         int i = aentityslice.length;
@@ -1009,6 +1018,13 @@ public class WorldServer extends World implements GeneratorAccessSeed {
 
     public void unregisterEntity(Entity entity) {
         org.spigotmc.AsyncCatcher.catchOp("entity unregister"); // Spigot
+        // Spigot Start
+        if (entity.getBukkitEntity() instanceof org.bukkit.inventory.InventoryHolder) {
+            for (org.bukkit.entity.HumanEntity h : Lists.newArrayList(((org.bukkit.inventory.InventoryHolder) entity.getBukkitEntity()).getInventory().getViewers())) {
+                h.closeInventory();
+            }
+        }
+        // Spigot End
         if (entity instanceof EntityEnderDragon) {
             EntityComplexPart[] aentitycomplexpart = ((EntityEnderDragon) entity).eJ();
             int i = aentitycomplexpart.length;
