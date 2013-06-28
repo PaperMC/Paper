@@ -1785,6 +1785,13 @@ public class PlayerConnection implements PacketListenerPlayIn {
         if (this.player.isFrozen()) return; // CraftBukkit
         WorldServer worldserver = this.player.getWorldServer();
         Entity entity = packetplayinuseentity.a((World) worldserver);
+        // Spigot Start
+        if ( entity == player && !player.isSpectator() )
+        {
+            disconnect( "Cannot interact with self!" );
+            return;
+        }
+        // Spigot End
 
         this.player.resetIdleTimer();
         this.player.setSneaking(packetplayinuseentity.e());
