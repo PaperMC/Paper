@@ -1,4 +1,4 @@
-From bb2577d18f5b7fd2e0582de1acd29825c3005276 Mon Sep 17 00:00:00 2001
+From a05a6c78a40c45b5b882ccd9877b7fea231c83eb Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 23 Jun 2013 16:32:51 +1000
 Subject: [PATCH] Netty
@@ -1417,16 +1417,18 @@ index 0000000..3adc8d6
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketEncoder.java b/src/main/java/org/spigotmc/netty/PacketEncoder.java
 new file mode 100644
-index 0000000..e6a45d3
+index 0000000..5b35ab0
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketEncoder.java
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,71 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
 +import io.netty.buffer.ByteBufOutputStream;
 +import io.netty.channel.ChannelHandlerContext;
-+import io.netty.handler.codec.MessageToByteEncoder;
++import io.netty.channel.ChannelOutboundHandlerAdapter;
++import io.netty.channel.ChannelPromise;
++import io.netty.channel.MessageList;
 +import java.io.DataOutputStream;
 +import net.minecraft.server.Packet;
 +
@@ -1434,11 +1436,9 @@ index 0000000..e6a45d3
 + * Netty encoder which takes a packet and encodes it, and adds a byte packet id
 + * header.
 + */
-+public class PacketEncoder extends MessageToByteEncoder<Packet>
++public class PacketEncoder extends ChannelOutboundHandlerAdapter
 +{
 +
-+    private ByteBuf outBuf;
-+    private DataOutputStream dataOut;
 +    private final NettyNetworkManager networkManager;
 +
 +    public PacketEncoder(NettyNetworkManager networkManager)
@@ -1447,32 +1447,48 @@ index 0000000..e6a45d3
 +    }
 +
 +    @Override
-+    public void encode(ChannelHandlerContext ctx, Packet msg, ByteBuf out) throws Exception
++    public void write(ChannelHandlerContext ctx, MessageList<Object> msgs, ChannelPromise promise) throws Exception
 +    {
-+        if ( outBuf == null )
++        // Since we are writing in batches it can be useful to guess the size of our output to limit memcpy
++        int estimatedSize = 0;
++        for ( Object msg : msgs )
 +        {
-+            outBuf = ctx.alloc().buffer();
++            if ( msg instanceof Packet )
++            {
++                estimatedSize += ( (Packet) msg ).a();
++            } else
++            {
++                throw new IllegalStateException( "Cannot send message of class " + msg.getClass() );
++            }
 +        }
-+        if ( dataOut == null )
++        // Allocate an output buffer of estimated size
++        ByteBuf outBuf = ctx.alloc().buffer( estimatedSize );
++        // And a stream to which we can write this buffer to
++        DataOutputStream dataOut = new DataOutputStream( new ByteBufOutputStream( outBuf ) );
++
++        try
 +        {
-+            dataOut = new DataOutputStream( new ByteBufOutputStream( outBuf ) );
-+        }
-+
-+        out.writeByte( msg.n() );
-+        msg.a( dataOut );
-+
-+        networkManager.addWrittenBytes( outBuf.readableBytes() );
-+        out.writeBytes( outBuf );
-+        outBuf.discardSomeReadBytes();
-+    }
-+
-+    @Override
-+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception
-+    {
-+        if ( outBuf != null )
++            // Iterate through all packets, this is safe as we know we will only ever get packets in the pipeline
++            for ( Packet packet : (MessageList<Packet>) (MessageList) msgs )
++            {
++                // Write packet ID
++                outBuf.writeByte( packet.n() );
++                // Write packet data
++                packet.a( dataOut );
++            }
++            // Add to the courtesy API providing number of written bytes
++            networkManager.addWrittenBytes( outBuf.readableBytes() );
++            // Write down our single ByteBuf
++            ctx.write( outBuf, promise );
++        } finally
 +        {
-+            outBuf.release();
-+            outBuf = null;
++            // Very important that we do this for fast memory reclamation
++            msgs.recycle();
++            // Since we are now in the event loop, the bytes have been written, we can free them if this was not the case
++            if ( outBuf.refCnt() != 0 )
++            {
++                outBuf.release();
++            }
 +        }
 +    }
 +}
