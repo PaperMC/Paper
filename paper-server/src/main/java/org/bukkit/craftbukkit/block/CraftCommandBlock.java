@@ -39,8 +39,8 @@ public class CraftCommandBlock extends CraftBlockState implements CommandBlock {
         boolean result = super.update(force, applyPhysics);
 
         if (result) {
-            commandBlock.b(command);
-            commandBlock.c(name);
+            commandBlock.a(command);
+            commandBlock.b(name);
         }
 
         return result;

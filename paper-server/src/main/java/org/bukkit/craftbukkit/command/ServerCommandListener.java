@@ -2,9 +2,11 @@ package org.bukkit.craftbukkit.command;
 
 import java.lang.reflect.Method;
 
+import net.minecraft.server.ChatMessage;
 import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.ICommandListener;
 import net.minecraft.server.LocaleLanguage;
+import net.minecraft.server.World;
 
 import org.bukkit.command.CommandSender;
 
@@ -18,8 +20,8 @@ public class ServerCommandListener implements ICommandListener {
         this.prefix = parts[parts.length - 1];
     }
 
-    public void sendMessage(String msg) {
-        this.commandSender.sendMessage(msg);
+    public void sendMessage(ChatMessage chatmessage) {
+        this.commandSender.sendMessage(chatmessage.toString());
     }
 
     public CommandSender getSender() {
@@ -36,15 +38,15 @@ public class ServerCommandListener implements ICommandListener {
         return this.prefix;
     }
 
-    public String a(String s, Object... aobject) {
-        return LocaleLanguage.a().a(s, aobject);
-    }
-
     public boolean a(int i, String s) {
         return true;
     }
 
     public ChunkCoordinates b() {
         return new ChunkCoordinates(0, 0, 0);
+    }
+
+    public World f_() {
+        return null;
     }
 }

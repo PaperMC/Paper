@@ -13,6 +13,7 @@ import net.minecraft.server.EntityArrow;
 import net.minecraft.server.EntityDamageSource;
 import net.minecraft.server.EntityDamageSourceIndirect;
 import net.minecraft.server.EntityHuman;
+import net.minecraft.server.EntityInsentient;
 import net.minecraft.server.EntityItem;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityPlayer;
@@ -243,7 +244,7 @@ public class CraftEventFactory {
     /**
      * EntityTameEvent
      */
-    public static EntityTameEvent callEntityTameEvent(EntityLiving entity, EntityHuman tamer) {
+    public static EntityTameEvent callEntityTameEvent(EntityInsentient entity, EntityHuman tamer) {
         org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity();
         org.bukkit.entity.AnimalTamer bukkitTamer = (tamer != null ? tamer.getBukkitEntity() : null);
         CraftServer craftServer = (CraftServer) bukkitEntity.getServer();
@@ -370,7 +371,7 @@ public class CraftEventFactory {
     /**
      * EntityDamage(ByEntityEvent)
      */
-    public static EntityDamageEvent callEntityDamageEvent(Entity damager, Entity damagee, DamageCause cause, int damage) {
+    public static EntityDamageEvent callEntityDamageEvent(Entity damager, Entity damagee, DamageCause cause, double damage) {
         EntityDamageEvent event;
         if (damager != null) {
             event = new EntityDamageByEntityEvent(damager.getBukkitEntity(), damagee.getBukkitEntity(), cause, damage);
@@ -387,7 +388,7 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, int damage) {
+    public static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, float damage) {
         if (source instanceof EntityDamageSource) {
             Entity damager = source.getEntity();
             DamageCause cause = DamageCause.ENTITY_ATTACK;
@@ -443,7 +444,7 @@ public class CraftEventFactory {
     }
 
     // Non-Living Entities such as EntityEnderCrystal need to call this
-    public static boolean handleNonLivingEntityDamageEvent(Entity entity, DamageSource source, int damage) {
+    public static boolean handleNonLivingEntityDamageEvent(Entity entity, DamageSource source, float damage) {
         if (!(source instanceof EntityDamageSource)) {
             return false;
         }

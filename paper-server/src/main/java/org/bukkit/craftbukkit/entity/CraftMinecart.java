@@ -4,6 +4,7 @@ import net.minecraft.server.EntityMinecartAbstract;
 
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Minecart;
+import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
 
 public abstract class CraftMinecart extends CraftVehicle implements Minecart {
@@ -11,11 +12,11 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
         super(server, entity);
     }
 
-    public void setDamage(int damage) {
-        getHandle().setDamage(damage);
+    public void setDamage(double damage) {
+        getHandle().setDamage((float) damage);
     }
 
-    public int getDamage() {
+    public double getDamage() {
         return getHandle().getDamage();
     }
 
@@ -56,5 +57,15 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
     @Override
     public EntityMinecartAbstract getHandle() {
         return (EntityMinecartAbstract) entity;
+    }
+
+    @Deprecated
+    public void _INVALID_setDamage(int damage) {
+        setDamage(damage);
+    }
+
+    @Deprecated
+    public int _INVALID_getDamage() {
+        return NumberConversions.ceil(getDamage());
     }
 }
