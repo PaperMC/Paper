@@ -81,7 +81,7 @@ public class RecipeArmorDye extends ShapelessRecipes implements IRecipe { // Cra
                         return null;
                     }
 
-                    float[] afloat = EntitySheep.d[BlockCloth.g_(itemstack1.getData())];
+                    float[] afloat = EntitySheep.bp[BlockCloth.j_(itemstack1.getData())];
                     int j1 = (int) (afloat[0] * 255.0F);
                     int k1 = (int) (afloat[1] * 255.0F);
 

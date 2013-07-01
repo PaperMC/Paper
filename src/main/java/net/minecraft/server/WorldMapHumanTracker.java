@@ -19,9 +19,6 @@ public class WorldMapHumanTracker {
         this.worldMap = worldmap;
         this.b = new int[128];
         this.c = new int[128];
-        this.f = 0;
-        this.g = 0;
-        this.i = false;
         this.trackee = entityhuman;
 
         for (int i = 0; i < this.b.length; ++i) {
@@ -60,7 +57,7 @@ public class WorldMapHumanTracker {
                 }
                 // CraftBukkit end
 
-                boolean flag = !itemstack.z();
+                boolean flag = !itemstack.A();
 
                 if (this.h != null && this.h.length == abyte.length) {
                     for (j = 0; j < abyte.length; ++j) {

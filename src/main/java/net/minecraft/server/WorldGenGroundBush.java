@@ -43,7 +43,7 @@ public class WorldGenGroundBush extends WorldGenerator implements BlockSapling.T
                     for (int k2 = k - l1; k2 <= k + l1; ++k2) {
                         int l2 = k2 - k;
 
-                        if ((Math.abs(j2) != l1 || Math.abs(l2) != l1 || random.nextInt(2) != 0) && !Block.s[world.getTypeId(i2, j1, k2)]) {
+                        if ((Math.abs(j2) != l1 || Math.abs(l2) != l1 || random.nextInt(2) != 0) && !Block.t[world.getTypeId(i2, j1, k2)]) {
                             this.setTypeAndData(world, i2, j1, k2, Block.LEAVES.id, this.a);
                         }
                     }

@@ -29,12 +29,12 @@ public class TileEntity {
         }
     }
 
-    public void b(World world) {
-        this.world = world;
-    }
-
     public World getWorld() {
         return this.world;
+    }
+
+    public void b(World world) {
+        this.world = world;
     }
 
     public boolean o() {

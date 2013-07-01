@@ -43,13 +43,13 @@ public class EntityEnderPearl extends EntityProjectile {
                         entityplayer.playerConnection.teleport(teleEvent.getTo());
                         this.getShooter().fallDistance = 0.0F;
 
-                        EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(this.getBukkitEntity(), player, EntityDamageByEntityEvent.DamageCause.FALL, 5);
+                        EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(this.getBukkitEntity(), player, EntityDamageByEntityEvent.DamageCause.FALL, 5.0D);
                         Bukkit.getPluginManager().callEvent(damageEvent);
 
                         if (!damageEvent.isCancelled() && !entityplayer.playerConnection.disconnected) {
                             entityplayer.invulnerableTicks = -1; // Remove spawning invulnerability
                             player.setLastDamageCause(damageEvent);
-                            entityplayer.damageEntity(DamageSource.FALL, damageEvent.getDamage());
+                            entityplayer.damageEntity(DamageSource.FALL, (float) damageEvent.getDamage());
                         }
                     }
                     // CraftBukkit end

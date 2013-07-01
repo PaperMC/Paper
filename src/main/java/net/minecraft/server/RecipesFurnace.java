@@ -24,6 +24,7 @@ public class RecipesFurnace {
         this.registerRecipe(Item.RAW_FISH.id, new ItemStack(Item.COOKED_FISH), 0.35F);
         this.registerRecipe(Block.COBBLESTONE.id, new ItemStack(Block.STONE), 0.1F);
         this.registerRecipe(Item.CLAY_BALL.id, new ItemStack(Item.CLAY_BRICK), 0.3F);
+        this.registerRecipe(Block.CLAY.id, new ItemStack(Block.HARDENED_CLAY), 0.35F);
         this.registerRecipe(Block.CACTUS.id, new ItemStack(Item.INK_SACK, 1, 2), 0.2F);
         this.registerRecipe(Block.LOG.id, new ItemStack(Item.COAL, 1, 1), 0.15F);
         this.registerRecipe(Block.EMERALD_ORE.id, new ItemStack(Item.EMERALD), 1.0F);

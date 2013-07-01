@@ -10,7 +10,7 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
     Random b = new Random();
     BlockChangeDelegate world; // CraftBukkit
     int[] d = new int[] { 0, 0, 0};
-    int e = 0;
+    int e;
     int f;
     double g = 0.618D;
     double h = 1.0D;

@@ -71,8 +71,8 @@ public abstract class Enchantment {
         return 0;
     }
 
-    public int a(int i, EntityLiving entityliving) {
-        return 0;
+    public float a(int i, EntityLiving entityliving) {
+        return 0.0F;
     }
 
     public boolean a(Enchantment enchantment) {
@@ -105,7 +105,6 @@ public abstract class Enchantment {
 
         for (int j = 0; j < i; ++j) {
             Enchantment enchantment = aenchantment[j];
-
 
             if (enchantment != null) {
                 arraylist.add(enchantment);

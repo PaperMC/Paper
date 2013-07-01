@@ -32,7 +32,7 @@ public class EntityPotion extends EntityProjectile {
         this.c = itemstack;
     }
 
-    protected float g() {
+    protected float e() {
         return 0.05F;
     }
 

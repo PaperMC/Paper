@@ -4,34 +4,33 @@ import org.bukkit.event.entity.EntityTargetEvent; // CraftBukkit
 
 public class PathfinderGoalArrowAttack extends PathfinderGoal {
 
-    private final EntityLiving a;
+    private final EntityInsentient a;
     private final IRangedEntity b;
     private EntityLiving c;
     private int d;
-    private float e;
+    private double e;
     private int f;
     private int g;
     private int h;
     private float i;
     private float j;
 
-    public PathfinderGoalArrowAttack(IRangedEntity irangedentity, float f, int i, float f1) {
-        this(irangedentity, f, i, i, f1);
+    public PathfinderGoalArrowAttack(IRangedEntity irangedentity, double d0, int i, float f) {
+        this(irangedentity, d0, i, i, f);
     }
 
-    public PathfinderGoalArrowAttack(IRangedEntity irangedentity, float f, int i, int j, float f1) {
+    public PathfinderGoalArrowAttack(IRangedEntity irangedentity, double d0, int i, int j, float f) {
         this.d = -1;
-        this.f = 0;
         if (!(irangedentity instanceof EntityLiving)) {
             throw new IllegalArgumentException("ArrowAttackGoal requires Mob implements RangedAttackMob");
         } else {
             this.b = irangedentity;
-            this.a = (EntityLiving) irangedentity;
-            this.e = f;
+            this.a = (EntityInsentient) irangedentity;
+            this.e = d0;
             this.g = i;
             this.h = j;
-            this.i = f1;
-            this.j = f1 * f1;
+            this.i = f;
+            this.j = f * f;
             this.a(3);
         }
     }
@@ -48,7 +47,7 @@ public class PathfinderGoalArrowAttack extends PathfinderGoal {
     }
 
     public boolean b() {
-        return this.a() || !this.a.getNavigation().f();
+        return this.a() || !this.a.getNavigation().g();
     }
 
     public void d() {
@@ -72,9 +71,9 @@ public class PathfinderGoalArrowAttack extends PathfinderGoal {
         }
 
         if (d0 <= (double) this.j && this.f >= 20) {
-            this.a.getNavigation().g();
+            this.a.getNavigation().h();
         } else {
-            this.a.getNavigation().a(this.c, this.e);
+            this.a.getNavigation().a((Entity) this.c, this.e);
         }
 
         this.a.getControllerLook().a(this.c, 30.0F, 30.0F);

@@ -9,7 +9,7 @@ public class ContainerPlayer extends Container {
 
     public InventoryCrafting craftInventory = new InventoryCrafting(this, 2, 2);
     public IInventory resultInventory = new InventoryCraftResult();
-    public boolean g = false;
+    public boolean g;
     private final EntityHuman h;
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
@@ -87,7 +87,7 @@ public class ContainerPlayer extends Container {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.c.get(i);
 
-        if (slot != null && slot.d()) {
+        if (slot != null && slot.e()) {
             ItemStack itemstack1 = slot.getItem();
 
             itemstack = itemstack1.cloneItemStack();
@@ -105,7 +105,7 @@ public class ContainerPlayer extends Container {
                 if (!this.a(itemstack1, 9, 45, false)) {
                     return null;
                 }
-            } else if (itemstack.getItem() instanceof ItemArmor && !((Slot) this.c.get(5 + ((ItemArmor) itemstack.getItem()).b)).d()) {
+            } else if (itemstack.getItem() instanceof ItemArmor && !((Slot) this.c.get(5 + ((ItemArmor) itemstack.getItem()).b)).e()) {
                 int j = 5 + ((ItemArmor) itemstack.getItem()).b;
 
                 if (!this.a(itemstack1, j, j + 1, false)) {
@@ -126,7 +126,7 @@ public class ContainerPlayer extends Container {
             if (itemstack1.count == 0) {
                 slot.set((ItemStack) null);
             } else {
-                slot.e();
+                slot.f();
             }
 
             if (itemstack1.count == itemstack.count) {

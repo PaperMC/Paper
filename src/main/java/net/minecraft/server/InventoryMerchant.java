@@ -177,6 +177,8 @@ public class InventoryMerchant implements IInventory {
                 }
             }
         }
+
+        this.merchant.a_(this.getItem(2));
     }
 
     public MerchantRecipe getRecipe() {

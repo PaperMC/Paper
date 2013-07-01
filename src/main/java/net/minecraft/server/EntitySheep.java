@@ -9,51 +9,50 @@ import org.bukkit.event.player.PlayerShearEntityEvent;
 
 public class EntitySheep extends EntityAnimal {
 
-    private final InventoryCrafting e = new InventoryCrafting(new ContainerSheepBreed(this), 2, 1);
-    public static final float[][] d = new float[][] { { 1.0F, 1.0F, 1.0F}, { 0.85F, 0.5F, 0.2F}, { 0.7F, 0.3F, 0.85F}, { 0.4F, 0.6F, 0.85F}, { 0.9F, 0.9F, 0.2F}, { 0.5F, 0.8F, 0.1F}, { 0.95F, 0.5F, 0.65F}, { 0.3F, 0.3F, 0.3F}, { 0.6F, 0.6F, 0.6F}, { 0.3F, 0.5F, 0.6F}, { 0.5F, 0.25F, 0.7F}, { 0.2F, 0.3F, 0.7F}, { 0.4F, 0.3F, 0.2F}, { 0.4F, 0.5F, 0.2F}, { 0.6F, 0.2F, 0.2F}, { 0.1F, 0.1F, 0.1F}};
-    private int f;
-    private PathfinderGoalEatTile g = new PathfinderGoalEatTile(this);
+    private final InventoryCrafting bq = new InventoryCrafting(new ContainerSheepBreed(this), 2, 1);
+    public static final float[][] bp = new float[][] { { 1.0F, 1.0F, 1.0F}, { 0.85F, 0.5F, 0.2F}, { 0.7F, 0.3F, 0.85F}, { 0.4F, 0.6F, 0.85F}, { 0.9F, 0.9F, 0.2F}, { 0.5F, 0.8F, 0.1F}, { 0.95F, 0.5F, 0.65F}, { 0.3F, 0.3F, 0.3F}, { 0.6F, 0.6F, 0.6F}, { 0.3F, 0.5F, 0.6F}, { 0.5F, 0.25F, 0.7F}, { 0.2F, 0.3F, 0.7F}, { 0.4F, 0.3F, 0.2F}, { 0.4F, 0.5F, 0.2F}, { 0.6F, 0.2F, 0.2F}, { 0.1F, 0.1F, 0.1F}};
+    private int br;
+    private PathfinderGoalEatTile bs = new PathfinderGoalEatTile(this);
 
     public EntitySheep(World world) {
         super(world);
-        this.texture = "/mob/sheep.png";
         this.a(0.9F, 1.3F);
-        float f = 0.23F;
-
         this.getNavigation().a(true);
         this.goalSelector.a(0, new PathfinderGoalFloat(this));
-        this.goalSelector.a(1, new PathfinderGoalPanic(this, 0.38F));
-        this.goalSelector.a(2, new PathfinderGoalBreed(this, f));
-        this.goalSelector.a(3, new PathfinderGoalTempt(this, 0.25F, Item.WHEAT.id, false));
-        this.goalSelector.a(4, new PathfinderGoalFollowParent(this, 0.25F));
-        this.goalSelector.a(5, this.g);
-        this.goalSelector.a(6, new PathfinderGoalRandomStroll(this, f));
+        this.goalSelector.a(1, new PathfinderGoalPanic(this, 1.25D));
+        this.goalSelector.a(2, new PathfinderGoalBreed(this, 1.0D));
+        this.goalSelector.a(3, new PathfinderGoalTempt(this, 1.1D, Item.WHEAT.id, false));
+        this.goalSelector.a(4, new PathfinderGoalFollowParent(this, 1.1D));
+        this.goalSelector.a(5, this.bs);
+        this.goalSelector.a(6, new PathfinderGoalRandomStroll(this, 1.0D));
         this.goalSelector.a(7, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F));
         this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
-        this.e.setItem(0, new ItemStack(Item.INK_SACK, 1, 0));
-        this.e.setItem(1, new ItemStack(Item.INK_SACK, 1, 0));
-        this.e.resultInventory = new InventoryCraftResult(); // CraftBukkit - add result slot for event
+        this.bq.setItem(0, new ItemStack(Item.INK_SACK, 1, 0));
+        this.bq.setItem(1, new ItemStack(Item.INK_SACK, 1, 0));
+        this.bq.resultInventory = new InventoryCraftResult(); // CraftBukkit - add result slot for event
     }
 
-    protected boolean bh() {
+    protected boolean bb() {
         return true;
     }
 
-    protected void bo() {
-        this.f = this.g.f();
-        super.bo();
+    protected void be() {
+        this.br = this.bs.f();
+        super.be();
     }
 
     public void c() {
         if (this.world.isStatic) {
-            this.f = Math.max(0, this.f - 1);
+            this.br = Math.max(0, this.br - 1);
         }
 
         super.c();
     }
 
-    public int getMaxHealth() {
-        return 8;
+    protected void ax() {
+        super.ax();
+        this.a(GenericAttributes.a).a(8.0D);
+        this.a(GenericAttributes.d).a(0.23000000417232513D);
     }
 
     protected void a() {
@@ -77,7 +76,7 @@ public class EntitySheep extends EntityAnimal {
         return Block.WOOL.id;
     }
 
-    public boolean a_(EntityHuman entityhuman) {
+    public boolean a(EntityHuman entityhuman) {
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
         if (itemstack != null && itemstack.id == Item.SHEARS.id && !this.isSheared() && !this.isBaby()) {
@@ -107,7 +106,7 @@ public class EntitySheep extends EntityAnimal {
             this.makeSound("mob.sheep.shear", 1.0F, 1.0F);
         }
 
-        return super.a_(entityhuman);
+        return super.a(entityhuman);
     }
 
     public void b(NBTTagCompound nbttagcompound) {
@@ -122,15 +121,15 @@ public class EntitySheep extends EntityAnimal {
         this.setColor(nbttagcompound.getByte("Color"));
     }
 
-    protected String bb() {
+    protected String r() {
         return "mob.sheep.say";
     }
 
-    protected String bc() {
+    protected String aK() {
         return "mob.sheep.say";
     }
 
-    protected String bd() {
+    protected String aL() {
         return "mob.sheep.say";
     }
 
@@ -177,7 +176,7 @@ public class EntitySheep extends EntityAnimal {
         return entitysheep1;
     }
 
-    public void aK() {
+    public void n() {
         // CraftBukkit start
         SheepRegrowWoolEvent event = new SheepRegrowWoolEvent((org.bukkit.entity.Sheep) this.getBukkitEntity());
         this.world.getServer().getPluginManager().callEvent(event);
@@ -188,27 +187,23 @@ public class EntitySheep extends EntityAnimal {
         // CraftBukkit end
 
         if (this.isBaby()) {
-            int i = this.getAge() + 1200;
-
-            if (i > 0) {
-                i = 0;
-            }
-
-            this.setAge(i);
+            this.a(60);
         }
     }
 
-    public void bJ() {
+    public GroupDataEntity a(GroupDataEntity groupdataentity) {
+        groupdataentity = super.a(groupdataentity);
         this.setColor(a(this.world.random));
+        return groupdataentity;
     }
 
     private int a(EntityAnimal entityanimal, EntityAnimal entityanimal1) {
         int i = this.b(entityanimal);
         int j = this.b(entityanimal1);
 
-        this.e.getItem(0).setData(i);
-        this.e.getItem(1).setData(j);
-        ItemStack itemstack = CraftingManager.getInstance().craft(this.e, ((EntitySheep) entityanimal).world);
+        this.bq.getItem(0).setData(i);
+        this.bq.getItem(1).setData(j);
+        ItemStack itemstack = CraftingManager.getInstance().craft(this.bq, ((EntitySheep) entityanimal).world);
         int k;
 
         if (itemstack != null && itemstack.getItem().id == Item.INK_SACK.id) {

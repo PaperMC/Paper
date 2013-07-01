@@ -154,8 +154,8 @@ public class BlockSkull extends BlockContainer {
                     if (!world.isStatic) {
                         entitywither = new EntityWither(world);
                         entitywither.setPositionRotation((double) i + 0.5D, (double) j - 1.45D, (double) (k + i1) + 1.5D, 90.0F, 0.0F);
-                        entitywither.ay = 90.0F;
-                        entitywither.m();
+                        entitywither.aN = 90.0F;
+                        entitywither.bP();
 
                         if (world.addEntity(entitywither, SpawnReason.BUILD_WITHER)) {
                             blockList.updateList();
@@ -191,7 +191,7 @@ public class BlockSkull extends BlockContainer {
                     if (!world.isStatic) {
                         entitywither = new EntityWither(world);
                         entitywither.setPositionRotation((double) (i + i1) + 1.5D, (double) j - 1.45D, (double) k + 0.5D, 0.0F, 0.0F);
-                        entitywither.m();
+                        entitywither.bP();
 
                         if (world.addEntity(entitywither, SpawnReason.BUILD_WITHER)) {
                             blockList.updateList();

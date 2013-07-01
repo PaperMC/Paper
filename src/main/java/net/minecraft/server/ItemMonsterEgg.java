@@ -8,7 +8,7 @@ public class ItemMonsterEgg extends Item {
         this.a(CreativeModeTab.f);
     }
 
-    public String i(ItemStack itemstack) {
+    public String l(ItemStack itemstack) {
         String s = ("" + LocaleI18n.get(this.getName() + ".name")).trim();
         String s1 = EntityTypes.b(itemstack.getData());
 
@@ -38,7 +38,7 @@ public class ItemMonsterEgg extends Item {
 
             if (entity != null) {
                 if (entity instanceof EntityLiving && itemstack.hasName()) {
-                    ((EntityLiving) entity).setCustomName(itemstack.getName());
+                    ((EntityInsentient) entity).setCustomName(itemstack.getName());
                 }
 
                 if (!entityhuman.abilities.canInstantlyBuild) {
@@ -47,6 +47,48 @@ public class ItemMonsterEgg extends Item {
             }
 
             return true;
+        }
+    }
+
+    public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
+        if (world.isStatic) {
+            return itemstack;
+        } else {
+            MovingObjectPosition movingobjectposition = this.a(world, entityhuman, true);
+
+            if (movingobjectposition == null) {
+                return itemstack;
+            } else {
+                if (movingobjectposition.type == EnumMovingObjectType.TILE) {
+                    int i = movingobjectposition.b;
+                    int j = movingobjectposition.c;
+                    int k = movingobjectposition.d;
+
+                    if (!world.a(entityhuman, i, j, k)) {
+                        return itemstack;
+                    }
+
+                    if (!entityhuman.a(i, j, k, movingobjectposition.face, itemstack)) {
+                        return itemstack;
+                    }
+
+                    if (world.getMaterial(i, j, k) == Material.WATER) {
+                        Entity entity = a(world, itemstack.getData(), (double) i, (double) j, (double) k);
+
+                        if (entity != null) {
+                            if (entity instanceof EntityLiving && itemstack.hasName()) {
+                                ((EntityInsentient) entity).setCustomName(itemstack.getName());
+                            }
+
+                            if (!entityhuman.abilities.canInstantlyBuild) {
+                                --itemstack.count;
+                            }
+                        }
+                    }
+                }
+
+                return itemstack;
+            }
         }
     }
 
@@ -59,14 +101,14 @@ public class ItemMonsterEgg extends Item {
             for (int j = 0; j < 1; ++j) {
                 entity = EntityTypes.a(i, world);
                 if (entity != null && entity instanceof EntityLiving) {
-                    EntityLiving entityliving = (EntityLiving) entity;
+                    EntityInsentient entityinsentient = (EntityInsentient) entity;
 
                     entity.setPositionRotation(d0, d1, d2, MathHelper.g(world.random.nextFloat() * 360.0F), 0.0F);
-                    entityliving.aA = entityliving.yaw;
-                    entityliving.ay = entityliving.yaw;
-                    entityliving.bJ();
+                    entityinsentient.aP = entityinsentient.yaw;
+                    entityinsentient.aN = entityinsentient.yaw;
+                    entityinsentient.a((GroupDataEntity) null);
                     world.addEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // CraftBukkit
-                    entityliving.aR();
+                    entityinsentient.p();
                 }
             }
 

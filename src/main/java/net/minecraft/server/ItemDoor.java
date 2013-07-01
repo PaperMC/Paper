@@ -86,7 +86,7 @@ public class ItemDoor extends Item {
 
         // CraftBukkit start
         if (entityhuman != null) {
-            if(!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, block.id, l, clickedX, clickedY, clickedZ)) {
+            if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, block.id, l, clickedX, clickedY, clickedZ)) {
                 ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet53BlockChange(i, j + 1, k, world));
                 return false;
             }

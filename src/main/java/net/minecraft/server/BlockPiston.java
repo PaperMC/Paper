@@ -15,7 +15,7 @@ public class BlockPiston extends Block {
     public BlockPiston(int i, boolean flag) {
         super(i, Material.PISTON);
         this.a = flag;
-        this.a(j);
+        this.a(k);
         this.c(0.5F);
         this.a(CreativeModeTab.d);
     }
@@ -173,6 +173,8 @@ public class BlockPiston extends Block {
         int l = iblockaccess.getData(i, j, k);
 
         if (e(l)) {
+            float f = 0.25F;
+
             switch (d(l)) {
             case 0:
                 this.a(0.0F, 0.25F, 0.0F, 1.0F, 1.0F, 1.0F);

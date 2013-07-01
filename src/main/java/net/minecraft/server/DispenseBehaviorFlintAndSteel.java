@@ -12,7 +12,7 @@ final class DispenseBehaviorFlintAndSteel extends DispenseBehaviorItem {
     DispenseBehaviorFlintAndSteel() {}
 
     protected ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
-        EnumFacing enumfacing = BlockDispenser.j_(isourceblock.h());
+        EnumFacing enumfacing = BlockDispenser.l_(isourceblock.h());
         World world = isourceblock.k();
         int i = isourceblock.getBlockX() + enumfacing.c();
         int j = isourceblock.getBlockY() + enumfacing.d();

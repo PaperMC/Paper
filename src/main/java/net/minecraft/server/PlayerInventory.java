@@ -13,10 +13,10 @@ public class PlayerInventory implements IInventory {
 
     public ItemStack[] items = new ItemStack[36];
     public ItemStack[] armor = new ItemStack[4];
-    public int itemInHandIndex = 0;
+    public int itemInHandIndex;
     public EntityHuman player;
     private ItemStack g;
-    public boolean e = false;
+    public boolean e;
 
     // CraftBukkit start
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
@@ -63,7 +63,7 @@ public class PlayerInventory implements IInventory {
         return 9;
     }
 
-    private int h(int i) {
+    private int g(int i) {
         for (int j = 0; j < this.items.length; ++j) {
             if (this.items[j] != null && this.items[j].id == i) {
                 return j;
@@ -131,6 +131,19 @@ public class PlayerInventory implements IInventory {
             }
         }
 
+        if (this.g != null) {
+            if (i > -1 && this.g.id != i) {
+                return k;
+            }
+
+            if (j > -1 && this.g.getData() != j) {
+                return k;
+            }
+
+            k += this.g.count;
+            this.setCarried((ItemStack) null);
+        }
+
         return k;
     }
 
@@ -181,7 +194,7 @@ public class PlayerInventory implements IInventory {
                 } else {
                     j -= l;
                     this.items[k].count += l;
-                    this.items[k].b = 5;
+                    this.items[k].c = 5;
                     return j;
                 }
             }
@@ -197,7 +210,7 @@ public class PlayerInventory implements IInventory {
     }
 
     public boolean d(int i) {
-        int j = this.h(i);
+        int j = this.g(i);
 
         if (j < 0) {
             return false;
@@ -211,13 +224,15 @@ public class PlayerInventory implements IInventory {
     }
 
     public boolean e(int i) {
-        int j = this.h(i);
+        int j = this.g(i);
 
         return j >= 0;
     }
 
     public boolean pickup(ItemStack itemstack) {
         if (itemstack == null) {
+            return false;
+        } else if (itemstack.count == 0) {
             return false;
         } else {
             try {
@@ -227,7 +242,7 @@ public class PlayerInventory implements IInventory {
                     i = this.j();
                     if (i >= 0) {
                         this.items[i] = ItemStack.b(itemstack);
-                        this.items[i].b = 5;
+                        this.items[i].c = 5;
                         itemstack.count = 0;
                         return true;
                     } else if (this.player.abilities.canInstantlyBuild) {
@@ -401,12 +416,6 @@ public class PlayerInventory implements IInventory {
         return maxStack;
     }
 
-    public int a(Entity entity) {
-        ItemStack itemstack = this.getItem(this.itemInHandIndex);
-
-        return itemstack != null ? itemstack.a(entity) : 1;
-    }
-
     public boolean b(Block block) {
         if (block.material.isAlwaysDestroyable()) {
             return true;
@@ -435,17 +444,17 @@ public class PlayerInventory implements IInventory {
         return i;
     }
 
-    public void g(int i) {
-        i /= 4;
-        if (i < 1) {
-            i = 1;
+    public void a(float f) {
+        f /= 4.0F;
+        if (f < 1.0F) {
+            f = 1.0F;
         }
 
-        for (int j = 0; j < this.armor.length; ++j) {
-            if (this.armor[j] != null && this.armor[j].getItem() instanceof ItemArmor) {
-                this.armor[j].damage(i, this.player);
-                if (this.armor[j].count == 0) {
-                    this.armor[j] = null;
+        for (int i = 0; i < this.armor.length; ++i) {
+            if (this.armor[i] != null && this.armor[i].getItem() instanceof ItemArmor) {
+                this.armor[i].damage((int) f, this.player);
+                if (this.armor[i].count == 0) {
+                    this.armor[i] = null;
                 }
             }
         }

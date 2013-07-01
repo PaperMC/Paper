@@ -109,7 +109,7 @@ public abstract class BlockDiodeAbstract extends BlockDirectional {
                     b0 = -2;
                 }
 
-                world.a(i, j, k, this.id, this.i_(i1), b0);
+                world.a(i, j, k, this.id, this.k_(i1), b0);
             }
         }
     }
@@ -246,10 +246,10 @@ public abstract class BlockDiodeAbstract extends BlockDirectional {
     }
 
     protected int h(int i) {
-        return this.i_(i);
+        return this.k_(i);
     }
 
-    protected abstract int i_(int i);
+    protected abstract int k_(int i);
 
     protected abstract BlockDiodeAbstract i();
 

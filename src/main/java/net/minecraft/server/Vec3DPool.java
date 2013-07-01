@@ -15,9 +15,9 @@ public class Vec3DPool {
     private Vec3D alloclisthead = null;
     private int total_size = 0;
     // CraftBukkit end
-    private int position = 0;
-    private int largestSize = 0;
-    private int resizeTime = 0;
+    private int position;
+    private int largestSize;
+    private int resizeTime;
 
     public Vec3DPool(int i, int j) {
         this.a = i;
@@ -93,9 +93,9 @@ public class Vec3DPool {
             this.largestSize = 0;
             // this.f = 0; // We do not reset to zero; it doubles for a flag
         }
-        // CraftBukkit end
 
         this.position = 0;
+        // CraftBukkit end
     }
 
     public int c() {

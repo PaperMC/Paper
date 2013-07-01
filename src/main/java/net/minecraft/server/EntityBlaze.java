@@ -2,19 +2,19 @@ package net.minecraft.server;
 
 public class EntityBlaze extends EntityMonster {
 
-    private float d = 0.5F;
-    private int e;
-    private int f;
+    private float bp = 0.5F;
+    private int bq;
+    private int br;
 
     public EntityBlaze(World world) {
         super(world);
-        this.texture = "/mob/fire.png";
         this.fireProof = true;
-        this.be = 10;
+        this.b = 10;
     }
 
-    public int getMaxHealth() {
-        return 20;
+    protected void ax() {
+        super.ax();
+        this.a(GenericAttributes.e).a(6.0D);
     }
 
     protected void a() {
@@ -22,35 +22,35 @@ public class EntityBlaze extends EntityMonster {
         this.datawatcher.a(16, new Byte((byte) 0));
     }
 
-    protected String bb() {
+    protected String r() {
         return "mob.blaze.breathe";
     }
 
-    protected String bc() {
+    protected String aK() {
         return "mob.blaze.hit";
     }
 
-    protected String bd() {
+    protected String aL() {
         return "mob.blaze.death";
     }
 
-    public float c(float f) {
+    public float d(float f) {
         return 1.0F;
     }
 
     public void c() {
         if (!this.world.isStatic) {
             if (this.F()) {
-                this.damageEntity(DamageSource.DROWN, 1);
+                this.damageEntity(DamageSource.DROWN, 1.0F);
             }
 
-            --this.e;
-            if (this.e <= 0) {
-                this.e = 100;
-                this.d = 0.5F + (float) this.random.nextGaussian() * 3.0F;
+            --this.bq;
+            if (this.bq <= 0) {
+                this.bq = 100;
+                this.bp = 0.5F + (float) this.random.nextGaussian() * 3.0F;
             }
 
-            if (this.l() != null && this.l().locY + (double) this.l().getHeadHeight() > this.locY + (double) this.getHeadHeight() + (double) this.d) {
+            if (this.bJ() != null && this.bJ().locY + (double) this.bJ().getHeadHeight() > this.locY + (double) this.getHeadHeight() + (double) this.bp) {
                 this.motY += (0.30000001192092896D - this.motY) * 0.30000001192092896D;
             }
         }
@@ -80,19 +80,19 @@ public class EntityBlaze extends EntityMonster {
             double d2 = entity.locZ - this.locZ;
 
             if (this.attackTicks == 0) {
-                ++this.f;
-                if (this.f == 1) {
+                ++this.br;
+                if (this.br == 1) {
                     this.attackTicks = 60;
                     this.a(true);
-                } else if (this.f <= 4) {
+                } else if (this.br <= 4) {
                     this.attackTicks = 6;
                 } else {
                     this.attackTicks = 100;
-                    this.f = 0;
+                    this.br = 0;
                     this.a(false);
                 }
 
-                if (this.f > 1) {
+                if (this.br > 1) {
                     float f1 = MathHelper.c(f) * 0.5F;
 
                     this.world.a((EntityHuman) null, 1009, (int) this.locX, (int) this.locY, (int) this.locZ, 0);
@@ -107,18 +107,18 @@ public class EntityBlaze extends EntityMonster {
             }
 
             this.yaw = (float) (Math.atan2(d2, d0) * 180.0D / 3.1415927410125732D) - 90.0F;
-            this.b = true;
+            this.bn = true;
         }
     }
 
-    protected void a(float f) {}
+    protected void b(float f) {}
 
     protected int getLootId() {
         return Item.BLAZE_ROD.id;
     }
 
     public boolean isBurning() {
-        return this.m();
+        return this.bP();
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
@@ -136,7 +136,7 @@ public class EntityBlaze extends EntityMonster {
         }
     }
 
-    public boolean m() {
+    public boolean bP() {
         return (this.datawatcher.getByte(16) & 1) != 0;
     }
 
@@ -154,9 +154,5 @@ public class EntityBlaze extends EntityMonster {
 
     protected boolean i_() {
         return true;
-    }
-
-    public int c(Entity entity) {
-        return 6;
     }
 }

@@ -12,7 +12,7 @@ final class DispenseBehaviorMinecart extends DispenseBehaviorItem {
     DispenseBehaviorMinecart() {}
 
     public ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
-        EnumFacing enumfacing = BlockDispenser.j_(isourceblock.h());
+        EnumFacing enumfacing = BlockDispenser.l_(isourceblock.h());
         World world = isourceblock.k();
         double d0 = isourceblock.getX() + (double) ((float) enumfacing.c() * 1.125F);
         double d1 = isourceblock.getY() + (double) ((float) enumfacing.d() * 1.125F);
@@ -23,10 +23,10 @@ final class DispenseBehaviorMinecart extends DispenseBehaviorItem {
         int l = world.getTypeId(i, j, k);
         double d3;
 
-        if (BlockMinecartTrackAbstract.d_(l)) {
+        if (BlockMinecartTrackAbstract.e_(l)) {
             d3 = 0.0D;
         } else {
-            if (l != 0 || !BlockMinecartTrackAbstract.d_(world.getTypeId(i, j - 1, k))) {
+            if (l != 0 || !BlockMinecartTrackAbstract.e_(world.getTypeId(i, j - 1, k))) {
                 return this.b.a(isourceblock, itemstack);
             }
 
@@ -62,6 +62,10 @@ final class DispenseBehaviorMinecart extends DispenseBehaviorItem {
         itemstack1 = CraftItemStack.asNMSCopy(event.getItem());
         EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.a(world, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), ((ItemMinecart) itemstack1.getItem()).a);
         // CraftBukkit end
+
+        if (itemstack.hasName()) {
+            entityminecartabstract.a(itemstack.getName());
+        }
 
         world.addEntity(entityminecartabstract);
         // itemstack.a(1); // CraftBukkit - handled during event processing

@@ -84,17 +84,17 @@ public class BlockCactus extends Block {
             org.bukkit.block.Block damager = world.getWorld().getBlockAt(i, j, k);
             org.bukkit.entity.Entity damagee = (entity == null) ? null : entity.getBukkitEntity();
 
-            EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(damager, damagee, org.bukkit.event.entity.EntityDamageEvent.DamageCause.CONTACT, 1);
+            EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(damager, damagee, org.bukkit.event.entity.EntityDamageEvent.DamageCause.CONTACT, 1D);
             world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
                 damagee.setLastDamageCause(event);
-                entity.damageEntity(DamageSource.CACTUS, event.getDamage());
+                entity.damageEntity(DamageSource.CACTUS, (float) event.getDamage());
             }
             return;
         }
         // CraftBukkit end
 
-        entity.damageEntity(DamageSource.CACTUS, 1);
+        entity.damageEntity(DamageSource.CACTUS, 1.0F);
     }
 }

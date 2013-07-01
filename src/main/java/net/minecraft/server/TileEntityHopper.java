@@ -178,8 +178,9 @@ public class TileEntityHopper extends TileEntity implements IHopper {
     public boolean j() {
         if (this.world != null && !this.world.isStatic) {
             if (!this.l() && BlockHopper.d(this.p())) {
-                boolean flag = this.u() | suckInItems(this);
+                boolean flag = this.u();
 
+                flag = suckInItems(this) || flag;
                 if (flag) {
                     this.c(8);
                     this.update();
@@ -265,7 +266,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
                 }
             }
         } else {
-            EntityItem entityitem = getEntityItemAt(ihopper.getWorld(), ihopper.aA(), ihopper.aB() + 1.0D, ihopper.aC());
+            EntityItem entityitem = getEntityItemAt(ihopper.getWorld(), ihopper.az(), ihopper.aA() + 1.0D, ihopper.aB());
 
             if (entityitem != null) {
                 return addEntityItem(ihopper, entityitem);
@@ -300,7 +301,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
                 if (ihopper instanceof TileEntityHopper) {
                     ((TileEntityHopper) ihopper).c(8); // Delay hopper checks
                 } else if (ihopper instanceof EntityMinecartHopper) {
-                    ((EntityMinecartHopper) ihopper).n(4); // Delay hopper minecart checks
+                    ((EntityMinecartHopper) ihopper).l(4); // Delay hopper minecart checks
                 }
 
                 return false;
@@ -405,6 +406,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
             if (flag) {
                 if (iinventory instanceof TileEntityHopper) {
                     ((TileEntityHopper) iinventory).c(8);
+                    iinventory.update();
                 }
 
                 iinventory.update();
@@ -421,7 +423,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
     }
 
     public static IInventory getSourceInventory(IHopper ihopper) {
-        return getInventoryAt(ihopper.getWorld(), ihopper.aA(), ihopper.aB() + 1.0D, ihopper.aC());
+        return getInventoryAt(ihopper.getWorld(), ihopper.az(), ihopper.aA() + 1.0D, ihopper.aB());
     }
 
     public static EntityItem getEntityItemAt(World world, double d0, double d1, double d2) {
@@ -464,15 +466,15 @@ public class TileEntityHopper extends TileEntity implements IHopper {
         return itemstack.id != itemstack1.id ? false : (itemstack.getData() != itemstack1.getData() ? false : (itemstack.count > itemstack.getMaxStackSize() ? false : ItemStack.equals(itemstack, itemstack1)));
     }
 
-    public double aA() {
+    public double az() {
         return (double) this.x;
     }
 
-    public double aB() {
+    public double aA() {
         return (double) this.y;
     }
 
-    public double aC() {
+    public double aB() {
         return (double) this.z;
     }
 

@@ -1,7 +1,7 @@
 package net.minecraft.server;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.util.List;
 import java.util.zip.DataFormatException;
@@ -39,7 +39,7 @@ public class Packet56MapChunkBulk extends Packet {
         this.a = new int[i];
         this.b = new int[i];
         this.inflatedBuffers = new byte[i][];
-        this.h = !list.isEmpty() && !((Chunk) list.get(0)).world.worldProvider.f;
+        this.h = !list.isEmpty() && !((Chunk) list.get(0)).world.worldProvider.g;
         int j = 0;
 
         for (int k = 0; k < i; ++k) {
@@ -92,11 +92,11 @@ public class Packet56MapChunkBulk extends Packet {
     }
     // CraftBukkit end
 
-    public void a(DataInputStream datainputstream) throws IOException { // CraftBukkit - throws IOException
-        short short1 = datainputstream.readShort();
+    public void a(DataInput datainput) throws IOException { // CraftBukkit - throws IOException
+        short short1 = datainput.readShort();
 
-        this.size = datainputstream.readInt();
-        this.h = datainputstream.readBoolean();
+        this.size = datainput.readInt();
+        this.h = datainput.readBoolean();
         this.c = new int[short1];
         this.d = new int[short1];
         this.a = new int[short1];
@@ -106,7 +106,7 @@ public class Packet56MapChunkBulk extends Packet {
             buildBuffer = new byte[this.size];
         }
 
-        datainputstream.readFully(buildBuffer, 0, this.size);
+        datainput.readFully(buildBuffer, 0, this.size);
         byte[] abyte = new byte[196864 * short1];
         Inflater inflater = new Inflater();
 
@@ -123,10 +123,10 @@ public class Packet56MapChunkBulk extends Packet {
         int i = 0;
 
         for (int j = 0; j < short1; ++j) {
-            this.c[j] = datainputstream.readInt();
-            this.d[j] = datainputstream.readInt();
-            this.a[j] = datainputstream.readShort();
-            this.b[j] = datainputstream.readShort();
+            this.c[j] = datainput.readInt();
+            this.d[j] = datainput.readInt();
+            this.a[j] = datainput.readShort();
+            this.b[j] = datainput.readShort();
             int k = 0;
             int l = 0;
 
@@ -149,18 +149,18 @@ public class Packet56MapChunkBulk extends Packet {
         }
     }
 
-    public void a(DataOutputStream dataoutputstream) throws IOException { // CraftBukkit - throws IOException
+    public void a(DataOutput dataoutput) throws IOException { // CraftBukkit - throws IOException
         compress(); // CraftBukkit
-        dataoutputstream.writeShort(this.c.length);
-        dataoutputstream.writeInt(this.size);
-        dataoutputstream.writeBoolean(this.h);
-        dataoutputstream.write(this.buffer, 0, this.size);
+        dataoutput.writeShort(this.c.length);
+        dataoutput.writeInt(this.size);
+        dataoutput.writeBoolean(this.h);
+        dataoutput.write(this.buffer, 0, this.size);
 
         for (int i = 0; i < this.c.length; ++i) {
-            dataoutputstream.writeInt(this.c[i]);
-            dataoutputstream.writeInt(this.d[i]);
-            dataoutputstream.writeShort((short) (this.a[i] & '\uffff'));
-            dataoutputstream.writeShort((short) (this.b[i] & '\uffff'));
+            dataoutput.writeInt(this.c[i]);
+            dataoutput.writeInt(this.d[i]);
+            dataoutput.writeShort((short) (this.a[i] & '\uffff'));
+            dataoutput.writeShort((short) (this.b[i] & '\uffff'));
         }
     }
 

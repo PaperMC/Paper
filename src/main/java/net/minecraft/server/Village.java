@@ -11,14 +11,14 @@ public class Village {
     private final List doors = new ArrayList();
     private final ChunkCoordinates c = new ChunkCoordinates(0, 0, 0);
     private final ChunkCoordinates center = new ChunkCoordinates(0, 0, 0);
-    private int size = 0;
-    private int f = 0;
-    private int time = 0;
-    private int population = 0;
+    private int size;
+    private int f;
+    private int time;
+    private int population;
     private int noBreedTicks;
     private TreeMap playerStandings = new TreeMap();
     private List aggressors = new ArrayList();
-    private int ironGolemCount = 0;
+    private int ironGolemCount;
 
     public Village() {}
 

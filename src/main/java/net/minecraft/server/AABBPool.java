@@ -8,9 +8,9 @@ public class AABBPool {
     private final int a;
     private final int b;
     private final List pool = new ArrayList();
-    private int d = 0;
-    private int largestSize = 0;
-    private int resizeTime = 0;
+    private int d;
+    private int largestSize;
+    private int resizeTime;
 
     public AABBPool(int i, int j) {
         this.a = i;

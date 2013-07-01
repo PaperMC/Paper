@@ -63,11 +63,19 @@ public class EntityPainting extends EntityHanging {
         return this.art.C;
     }
 
-    public int g() {
+    public int e() {
         return this.art.D;
     }
 
-    public void h() {
+    public void b(Entity entity) {
+        if (entity instanceof EntityHuman) {
+            EntityHuman entityhuman = (EntityHuman) entity;
+
+            if (entityhuman.abilities.canInstantlyBuild) {
+                return;
+            }
+        }
+
         this.a(new ItemStack(Item.PAINTING), 0.0F);
     }
 }

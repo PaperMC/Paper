@@ -4,7 +4,7 @@ import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 
 public class EntityEnderCrystal extends Entity {
 
-    public int a = 0;
+    public int a;
     public int b;
 
     public EntityEnderCrystal(World world) {
@@ -16,7 +16,7 @@ public class EntityEnderCrystal extends Entity {
         this.a = this.random.nextInt(100000);
     }
 
-    protected boolean f_() {
+    protected boolean e_() {
         return false;
     }
 
@@ -51,13 +51,13 @@ public class EntityEnderCrystal extends Entity {
         return true;
     }
 
-    public boolean damageEntity(DamageSource damagesource, int i) {
+    public boolean damageEntity(DamageSource damagesource, float f) {
         if (this.isInvulnerable()) {
             return false;
         } else {
             if (!this.dead && !this.world.isStatic) {
                 // CraftBukkit start - All non-living entities need this
-                if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, i)) {
+                if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f)) {
                     return false;
                 }
                 // CraftBukkit end

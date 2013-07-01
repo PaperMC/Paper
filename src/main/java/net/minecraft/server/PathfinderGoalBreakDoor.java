@@ -5,8 +5,8 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
     private int i;
     private int j = -1;
 
-    public PathfinderGoalBreakDoor(EntityLiving entityliving) {
-        super(entityliving);
+    public PathfinderGoalBreakDoor(EntityInsentient entityinsentient) {
+        super(entityinsentient);
     }
 
     public boolean a() {
@@ -31,7 +31,7 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
 
     public void e() {
         super.e();
-        if (this.a.aE().nextInt(20) == 0) {
+        if (this.a.aB().nextInt(20) == 0) {
             this.a.world.triggerEffect(1010, this.b, this.c, this.d, 0);
         }
 

@@ -3,7 +3,7 @@ package net.minecraft.server;
 public class ItemSkull extends Item {
 
     private static final String[] b = new String[] { "skeleton", "wither", "zombie", "char", "creeper"};
-    public static final String[] a = new String[] { "skull_skeleton", "skull_wither", "skull_zombie", "skull_char", "skull_creeper"};
+    public static final String[] a = new String[] { "skeleton", "wither", "zombie", "steve", "creeper"};
 
     public ItemSkull(int i) {
         super(i);

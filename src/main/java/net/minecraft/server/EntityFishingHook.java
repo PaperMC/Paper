@@ -13,14 +13,14 @@ public class EntityFishingHook extends Entity {
     private int d = -1;
     private int e = -1;
     private int f = -1;
-    private int g = 0;
-    private boolean h = false;
-    public int a = 0;
+    private int g;
+    private boolean h;
+    public int a;
     public EntityHuman owner;
     private int i;
-    private int j = 0;
-    private int au = 0;
-    public Entity hooked = null;
+    private int j;
+    private int au;
+    public Entity hooked;
     private int av;
     private double aw;
     private double ax;
@@ -93,7 +93,7 @@ public class EntityFishingHook extends Entity {
             this.b(this.yaw, this.pitch);
         } else {
             if (!this.world.isStatic) {
-                ItemStack itemstack = this.owner.cd();
+                ItemStack itemstack = this.owner.bt();
 
                 if (this.owner.dead || !this.owner.isAlive() || itemstack == null || itemstack.getItem() != Item.FISHING_ROD || this.e(this.owner) > 1024.0D) {
                     this.die();
@@ -180,7 +180,7 @@ public class EntityFishingHook extends Entity {
             if (movingobjectposition != null) {
                 org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this); // Craftbukkit - Call event
                 if (movingobjectposition.entity != null) {
-                    if (movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.owner), 0)) {
+                    if (movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.owner), 0.0F)) {
                         this.hooked = movingobjectposition.entity;
                     }
                 } else {

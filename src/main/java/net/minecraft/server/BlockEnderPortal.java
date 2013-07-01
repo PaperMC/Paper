@@ -7,7 +7,7 @@ import org.bukkit.event.entity.EntityPortalEnterEvent; // CraftBukkit
 
 public class BlockEnderPortal extends BlockContainer {
 
-    public static boolean a = false;
+    public static boolean a;
 
     protected BlockEnderPortal(int i, Material material) {
         super(i, material);
@@ -44,7 +44,7 @@ public class BlockEnderPortal extends BlockContainer {
             EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), i, j, k));
             world.getServer().getPluginManager().callEvent(event);
             // CraftBukkit end
-            entity.c(1);
+            entity.b(1);
         }
     }
 

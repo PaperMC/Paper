@@ -1,15 +1,19 @@
 package net.minecraft.server;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import java.text.DecimalFormat;
 import java.util.Random;
 
 public final class ItemStack {
 
+    public static final DecimalFormat a = new DecimalFormat("#.###");
     public int count;
-    public int b;
+    public int c;
     public int id;
     public NBTTagCompound tag;
     private int damage;
-    private EntityItemFrame f;
+    private EntityItemFrame g;
 
     public ItemStack(Block block) {
         this(block, 1);
@@ -36,12 +40,11 @@ public final class ItemStack {
     }
 
     public ItemStack(int i, int j, int k) {
-        this.count = 0;
-        this.f = null;
         this.id = i;
         this.count = j;
         // CraftBukkit start - Pass to setData to do filtering
         this.setData(k);
+        //this.damage = k;
         //if (this.damage < 0) {
         //    this.damage = 0;
         //}
@@ -55,10 +58,7 @@ public final class ItemStack {
         return itemstack.getItem() != null ? itemstack : null;
     }
 
-    private ItemStack() {
-        this.count = 0;
-        this.f = null;
-    }
+    private ItemStack() {}
 
     public ItemStack a(int i) {
         ItemStack itemstack = new ItemStack(this.id, i, this.damage);
@@ -135,7 +135,7 @@ public final class ItemStack {
     }
 
     public boolean usesData() {
-        return Item.byId[this.id].m();
+        return Item.byId[this.id].n();
     }
 
     public boolean i() {
@@ -206,13 +206,18 @@ public final class ItemStack {
     public void damage(int i, EntityLiving entityliving) {
         if (!(entityliving instanceof EntityHuman) || !((EntityHuman) entityliving).abilities.canInstantlyBuild) {
             if (this.g()) {
-                if (this.isDamaged(i, entityliving.aE())) {
+                if (this.isDamaged(i, entityliving.aB())) {
                     entityliving.a(this);
+                    --this.count;
                     if (entityliving instanceof EntityHuman) {
-                        ((EntityHuman) entityliving).a(StatisticList.F[this.id], 1);
+                        EntityHuman entityhuman = (EntityHuman) entityliving;
+
+                        entityhuman.a(StatisticList.F[this.id], 1);
+                        if (this.count == 0 && this.getItem() instanceof ItemBow) {
+                            entityhuman.bu();
+                        }
                     }
 
-                    --this.count;
                     if (this.count < 0) {
                         this.count = 0;
                     }
@@ -245,16 +250,12 @@ public final class ItemStack {
         }
     }
 
-    public int a(Entity entity) {
-        return Item.byId[this.id].a(entity);
-    }
-
     public boolean b(Block block) {
         return Item.byId[this.id].canDestroySpecialBlock(block);
     }
 
-    public boolean a(EntityLiving entityliving) {
-        return Item.byId[this.id].a(this, entityliving);
+    public boolean a(EntityHuman entityhuman, EntityLiving entityliving) {
+        return Item.byId[this.id].a(this, entityhuman, entityliving);
     }
 
     public ItemStack cloneItemStack() {
@@ -296,8 +297,8 @@ public final class ItemStack {
     }
 
     public void a(World world, Entity entity, int i, boolean flag) {
-        if (this.b > 0) {
-            --this.b;
+        if (this.c > 0) {
+            --this.c;
         }
 
         Item.byId[this.id].a(this, world, entity, i, flag);
@@ -309,11 +310,11 @@ public final class ItemStack {
     }
 
     public int n() {
-        return this.getItem().c_(this);
+        return this.getItem().d_(this);
     }
 
     public EnumAnimation o() {
-        return this.getItem().b_(this);
+        return this.getItem().c_(this);
     }
 
     public void b(World world, EntityHuman entityhuman, int i) {
@@ -362,12 +363,28 @@ public final class ItemStack {
         this.tag.getCompound("display").setString("Name", s);
     }
 
+    public void t() {
+        if (this.tag != null) {
+            if (this.tag.hasKey("display")) {
+                NBTTagCompound nbttagcompound = this.tag.getCompound("display");
+
+                nbttagcompound.remove("Name");
+                if (nbttagcompound.isEmpty()) {
+                    this.tag.remove("display");
+                    if (this.tag.isEmpty()) {
+                        this.setTag((NBTTagCompound) null);
+                    }
+                }
+            }
+        }
+    }
+
     public boolean hasName() {
         return this.tag == null ? false : (!this.tag.hasKey("display") ? false : this.tag.getCompound("display").hasKey("Name"));
     }
 
-    public boolean w() {
-        return !this.getItem().d_(this) ? false : !this.hasEnchantments();
+    public boolean x() {
+        return !this.getItem().e_(this) ? false : !this.hasEnchantments();
     }
 
     public void addEnchantment(Enchantment enchantment, int i) {
@@ -399,20 +416,20 @@ public final class ItemStack {
         this.tag.set(s, nbtbase);
     }
 
-    public boolean y() {
-        return this.getItem().y();
+    public boolean z() {
+        return this.getItem().z();
     }
 
-    public boolean z() {
-        return this.f != null;
+    public boolean A() {
+        return this.g != null;
     }
 
     public void a(EntityItemFrame entityitemframe) {
-        this.f = entityitemframe;
+        this.g = entityitemframe;
     }
 
-    public EntityItemFrame A() {
-        return this.f;
+    public EntityItemFrame B() {
+        return this.g;
     }
 
     public int getRepairCost() {
@@ -425,5 +442,27 @@ public final class ItemStack {
         }
 
         this.tag.setInt("RepairCost", i);
+    }
+
+    public Multimap D() {
+        Object object;
+
+        if (this.hasTag() && this.tag.hasKey("AttributeModifiers")) {
+            object = HashMultimap.create();
+            NBTTagList nbttaglist = this.tag.getList("AttributeModifiers");
+
+            for (int i = 0; i < nbttaglist.size(); ++i) {
+                NBTTagCompound nbttagcompound = (NBTTagCompound) nbttaglist.get(i);
+                AttributeModifier attributemodifier = GenericAttributes.a(nbttagcompound);
+
+                if (attributemodifier.a().getLeastSignificantBits() != 0L && attributemodifier.a().getMostSignificantBits() != 0L) {
+                    ((Multimap) object).put(nbttagcompound.getString("AttributeName"), attributemodifier);
+                }
+            }
+        } else {
+            object = this.getItem().h();
+        }
+
+        return (Multimap) object;
     }
 }

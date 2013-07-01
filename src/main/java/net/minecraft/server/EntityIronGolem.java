@@ -4,27 +4,26 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack; // CraftBukkit
 
 public class EntityIronGolem extends EntityGolem {
 
-    private int e = 0;
-    Village d = null;
-    private int f;
-    private int g;
+    private int bq;
+    Village bp;
+    private int br;
+    private int bs;
 
     public EntityIronGolem(World world) {
         super(world);
-        this.texture = "/mob/villager_golem.png";
         this.a(1.4F, 2.9F);
         this.getNavigation().a(true);
-        this.goalSelector.a(1, new PathfinderGoalMeleeAttack(this, 0.25F, true));
-        this.goalSelector.a(2, new PathfinderGoalMoveTowardsTarget(this, 0.22F, 32.0F));
-        this.goalSelector.a(3, new PathfinderGoalMoveThroughVillage(this, 0.16F, true));
-        this.goalSelector.a(4, new PathfinderGoalMoveTowardsRestriction(this, 0.16F));
+        this.goalSelector.a(1, new PathfinderGoalMeleeAttack(this, 1.0D, true));
+        this.goalSelector.a(2, new PathfinderGoalMoveTowardsTarget(this, 0.9D, 32.0F));
+        this.goalSelector.a(3, new PathfinderGoalMoveThroughVillage(this, 0.6D, true));
+        this.goalSelector.a(4, new PathfinderGoalMoveTowardsRestriction(this, 1.0D));
         this.goalSelector.a(5, new PathfinderGoalOfferFlower(this));
-        this.goalSelector.a(6, new PathfinderGoalRandomStroll(this, 0.16F));
+        this.goalSelector.a(6, new PathfinderGoalRandomStroll(this, 0.6D));
         this.goalSelector.a(7, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F));
         this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
         this.targetSelector.a(1, new PathfinderGoalDefendVillage(this));
         this.targetSelector.a(2, new PathfinderGoalHurtByTarget(this, false));
-        this.targetSelector.a(3, new PathfinderGoalNearestAttackableTarget(this, EntityLiving.class, 16.0F, 0, false, true, IMonster.a));
+        this.targetSelector.a(3, new PathfinderGoalNearestAttackableTarget(this, EntityInsentient.class, 0, false, true, IMonster.a));
     }
 
     protected void a() {
@@ -32,50 +31,52 @@ public class EntityIronGolem extends EntityGolem {
         this.datawatcher.a(16, Byte.valueOf((byte) 0));
     }
 
-    public boolean bh() {
+    public boolean bb() {
         return true;
     }
 
-    protected void bp() {
-        if (--this.e <= 0) {
-            this.e = 70 + this.random.nextInt(50);
-            this.d = this.world.villages.getClosestVillage(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ), 32);
-            if (this.d == null) {
-                this.aO();
+    protected void bg() {
+        if (--this.bq <= 0) {
+            this.bq = 70 + this.random.nextInt(50);
+            this.bp = this.world.villages.getClosestVillage(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ), 32);
+            if (this.bp == null) {
+                this.bN();
             } else {
-                ChunkCoordinates chunkcoordinates = this.d.getCenter();
+                ChunkCoordinates chunkcoordinates = this.bp.getCenter();
 
-                this.b(chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z, (int) ((float) this.d.getSize() * 0.6F));
+                this.b(chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z, (int) ((float) this.bp.getSize() * 0.6F));
             }
         }
 
-        super.bp();
+        super.bg();
     }
 
-    public int getMaxHealth() {
-        return 100;
+    protected void ax() {
+        super.ax();
+        this.a(GenericAttributes.a).a(100.0D);
+        this.a(GenericAttributes.d).a(0.25D);
     }
 
     protected int h(int i) {
         return i;
     }
 
-    protected void o(Entity entity) {
-        if (entity instanceof IMonster && this.aE().nextInt(20) == 0) {
+    protected void n(Entity entity) {
+        if (entity instanceof IMonster && this.aB().nextInt(20) == 0) {
             this.setGoalTarget((EntityLiving) entity);
         }
 
-        super.o(entity);
+        super.n(entity);
     }
 
     public void c() {
         super.c();
-        if (this.f > 0) {
-            --this.f;
+        if (this.br > 0) {
+            --this.br;
         }
 
-        if (this.g > 0) {
-            --this.g;
+        if (this.bs > 0) {
+            --this.bs;
         }
 
         if (this.motX * this.motX + this.motZ * this.motZ > 2.500000277905201E-7D && this.random.nextInt(5) == 0) {
@@ -91,12 +92,12 @@ public class EntityIronGolem extends EntityGolem {
     }
 
     public boolean a(Class oclass) {
-        return this.p() && EntityHuman.class.isAssignableFrom(oclass) ? false : super.a(oclass);
+        return this.bS() && EntityHuman.class.isAssignableFrom(oclass) ? false : super.a(oclass);
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.setBoolean("PlayerCreated", this.p());
+        nbttagcompound.setBoolean("PlayerCreated", this.bS());
     }
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -105,9 +106,9 @@ public class EntityIronGolem extends EntityGolem {
     }
 
     public boolean m(Entity entity) {
-        this.f = 10;
+        this.br = 10;
         this.world.broadcastEntityEffect(this, (byte) 4);
-        boolean flag = entity.damageEntity(DamageSource.mobAttack(this), 7 + this.random.nextInt(15));
+        boolean flag = entity.damageEntity(DamageSource.mobAttack(this), (float) (7 + this.random.nextInt(15)));
 
         if (flag) {
             entity.motY += 0.4000000059604645D;
@@ -117,24 +118,24 @@ public class EntityIronGolem extends EntityGolem {
         return flag;
     }
 
-    public Village m() {
-        return this.d;
+    public Village bP() {
+        return this.bp;
     }
 
     public void a(boolean flag) {
-        this.g = flag ? 400 : 0;
+        this.bs = flag ? 400 : 0;
         this.world.broadcastEntityEffect(this, (byte) 11);
     }
 
-    protected String bb() {
+    protected String r() {
         return "none";
     }
 
-    protected String bc() {
+    protected String aK() {
         return "mob.irongolem.hit";
     }
 
-    protected String bd() {
+    protected String aL() {
         return "mob.irongolem.death";
     }
 
@@ -163,11 +164,11 @@ public class EntityIronGolem extends EntityGolem {
         // CraftBukkit end
     }
 
-    public int o() {
-        return this.g;
+    public int bR() {
+        return this.bs;
     }
 
-    public boolean p() {
+    public boolean bS() {
         return (this.datawatcher.getByte(16) & 1) != 0;
     }
 
@@ -182,8 +183,8 @@ public class EntityIronGolem extends EntityGolem {
     }
 
     public void die(DamageSource damagesource) {
-        if (!this.p() && this.killer != null && this.d != null) {
-            this.d.a(this.killer.getName(), -5);
+        if (!this.bS() && this.killer != null && this.bp != null) {
+            this.bp.a(this.killer.getName(), -5);
         }
 
         super.die(damagesource);

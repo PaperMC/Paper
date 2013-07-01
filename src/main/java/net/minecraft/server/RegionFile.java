@@ -21,7 +21,7 @@ public class RegionFile {
     private final int[] e = new int[1024];
     private ArrayList f;
     private int g;
-    private long h = 0L;
+    private long h;
 
     public RegionFile(File file1) {
         this.b = file1;
@@ -244,7 +244,7 @@ public class RegionFile {
                 }
             }
 
-            this.b(i, j, (int) (System.currentTimeMillis() / 1000L));
+            this.b(i, j, (int) (MinecraftServer.aq() / 1000L));
         } catch (IOException ioexception) {
             ioexception.printStackTrace();
         }

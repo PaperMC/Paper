@@ -56,7 +56,7 @@ public class ContainerHopper extends Container {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.c.get(i);
 
-        if (slot != null && slot.d()) {
+        if (slot != null && slot.e()) {
             ItemStack itemstack1 = slot.getItem();
 
             itemstack = itemstack1.cloneItemStack();
@@ -71,7 +71,7 @@ public class ContainerHopper extends Container {
             if (itemstack1.count == 0) {
                 slot.set((ItemStack) null);
             } else {
-                slot.e();
+                slot.f();
             }
         }
 

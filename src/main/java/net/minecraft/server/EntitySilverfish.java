@@ -4,20 +4,21 @@ import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 
 public class EntitySilverfish extends EntityMonster {
 
-    private int d;
+    private int bp;
 
     public EntitySilverfish(World world) {
         super(world);
-        this.texture = "/mob/silverfish.png";
         this.a(0.3F, 0.7F);
-        this.bI = 0.6F;
     }
 
-    public int getMaxHealth() {
-        return 8;
+    protected void ax() {
+        super.ax();
+        this.a(GenericAttributes.a).a(8.0D);
+        this.a(GenericAttributes.d).a(0.6000000238418579D);
+        this.a(GenericAttributes.e).a(1.0D);
     }
 
-    protected boolean f_() {
+    protected boolean e_() {
         return false;
     }
 
@@ -27,27 +28,27 @@ public class EntitySilverfish extends EntityMonster {
         return this.world.findNearbyVulnerablePlayer(this, d0);
     }
 
-    protected String bb() {
+    protected String r() {
         return "mob.silverfish.say";
     }
 
-    protected String bc() {
+    protected String aK() {
         return "mob.silverfish.hit";
     }
 
-    protected String bd() {
+    protected String aL() {
         return "mob.silverfish.kill";
     }
 
-    public boolean damageEntity(DamageSource damagesource, int i) {
+    public boolean damageEntity(DamageSource damagesource, float f) {
         if (this.isInvulnerable()) {
             return false;
         } else {
-            if (this.d <= 0 && (damagesource instanceof EntityDamageSource || damagesource == DamageSource.MAGIC)) {
-                this.d = 20;
+            if (this.bp <= 0 && (damagesource instanceof EntityDamageSource || damagesource == DamageSource.MAGIC)) {
+                this.bp = 20;
             }
 
-            return super.damageEntity(damagesource, i);
+            return super.damageEntity(damagesource, f);
         }
     }
 
@@ -67,21 +68,21 @@ public class EntitySilverfish extends EntityMonster {
     }
 
     public void l_() {
-        this.ay = this.yaw;
+        this.aN = this.yaw;
         super.l_();
     }
 
-    protected void bq() {
-        super.bq();
+    protected void bh() {
+        super.bh();
         if (!this.world.isStatic) {
             int i;
             int j;
             int k;
             int l;
 
-            if (this.d > 0) {
-                --this.d;
-                if (this.d == 0) {
+            if (this.bp > 0) {
+                --this.bp;
+                if (this.bp == 0) {
                     i = MathHelper.floor(this.locX);
                     j = MathHelper.floor(this.locY);
                     k = MathHelper.floor(this.locZ);
@@ -99,7 +100,23 @@ public class EntitySilverfish extends EntityMonster {
                                     }
                                     // CraftBukkit end
 
-                                    this.world.setAir(i + i1, j + l, k + j1, false);
+                                    if (!this.world.getGameRules().getBoolean("mobGriefing")) {
+                                        int l1 = this.world.getData(i + i1, j + l, k + j1);
+                                        Block block = Block.STONE;
+
+                                        if (l1 == 1) {
+                                            block = Block.COBBLESTONE;
+                                        }
+
+                                        if (l1 == 2) {
+                                            block = Block.SMOOTH_BRICK;
+                                        }
+
+                                        this.world.setTypeIdAndData(i + i1, j + l, k + j1, block.id, 0, 3);
+                                    } else {
+                                        this.world.setAir(i + i1, j + l, k + j1, false);
+                                    }
+
                                     Block.MONSTER_EGGS.postBreak(this.world, i + i1, j + l, k + j1, 0);
                                     if (this.random.nextBoolean()) {
                                         flag = true;
@@ -112,27 +129,27 @@ public class EntitySilverfish extends EntityMonster {
                 }
             }
 
-            if (this.target == null && !this.k()) {
+            if (this.target == null && !this.bI()) {
                 i = MathHelper.floor(this.locX);
                 j = MathHelper.floor(this.locY + 0.5D);
                 k = MathHelper.floor(this.locZ);
-                int l1 = this.random.nextInt(6);
+                int i2 = this.random.nextInt(6);
 
-                l = this.world.getTypeId(i + Facing.b[l1], j + Facing.c[l1], k + Facing.d[l1]);
+                l = this.world.getTypeId(i + Facing.b[i2], j + Facing.c[i2], k + Facing.d[i2]);
                 if (BlockMonsterEggs.d(l)) {
                     // CraftBukkit start
-                    if (CraftEventFactory.callEntityChangeBlockEvent(this, i + Facing.b[l1], j + Facing.c[l1], k + Facing.d[l1], Block.MONSTER_EGGS.id, BlockMonsterEggs.e(l)).isCancelled()) {
+                    if (CraftEventFactory.callEntityChangeBlockEvent(this, i + Facing.b[i2], j + Facing.c[i2], k + Facing.d[i2], Block.MONSTER_EGGS.id, BlockMonsterEggs.e(l)).isCancelled()) {
                         return;
                     }
                     // CraftBukkit end
 
-                    this.world.setTypeIdAndData(i + Facing.b[l1], j + Facing.c[l1], k + Facing.d[l1], Block.MONSTER_EGGS.id, BlockMonsterEggs.e(l), 3);
-                    this.aU();
+                    this.world.setTypeIdAndData(i + Facing.b[i2], j + Facing.c[i2], k + Facing.d[i2], Block.MONSTER_EGGS.id, BlockMonsterEggs.e(l), 3);
+                    this.q();
                     this.die();
                 } else {
-                    this.i();
+                    this.bG();
                 }
-            } else if (this.target != null && !this.k()) {
+            } else if (this.target != null && !this.bI()) {
                 this.target = null;
             }
         }
@@ -154,10 +171,6 @@ public class EntitySilverfish extends EntityMonster {
         } else {
             return false;
         }
-    }
-
-    public int c(Entity entity) {
-        return 1;
     }
 
     public EnumMonsterType getMonsterType() {

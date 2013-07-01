@@ -95,7 +95,7 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
             for (int i = 1; i <= 4; this.e = i++) {
                 int j = this.y - i;
 
-                if (j < 1) {
+                if (j < 0) {
                     break;
                 }
 

@@ -12,11 +12,11 @@ public class BlockCrops extends BlockFlower {
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.25F, 0.5F + f);
         this.a((CreativeModeTab) null);
         this.c(0.0F);
-        this.a(Block.i); // CraftBukkit - i -> Block.i, decompile error
-        this.D();
+        this.a(j);
+        this.C();
     }
 
-    protected boolean f_(int i) {
+    protected boolean g_(int i) {
         return i == Block.SOIL.id;
     }
 

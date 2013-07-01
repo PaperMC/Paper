@@ -13,7 +13,7 @@ public class DedicatedServerConnectionThread extends Thread {
 
     private final List a = Collections.synchronizedList(new ArrayList());
     private final HashMap b = new HashMap();
-    private int c = 0;
+    private int c;
     private final ServerSocket d;
     private ServerConnection e;
     private final InetAddress f;

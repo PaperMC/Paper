@@ -147,8 +147,8 @@ public class WorldMap extends WorldMapBase {
         for (int i = 0; i < this.f.size(); ++i) {
             WorldMapHumanTracker worldmaphumantracker1 = (WorldMapHumanTracker) this.f.get(i);
 
-            if (!worldmaphumantracker1.trackee.dead && (worldmaphumantracker1.trackee.inventory.c(itemstack) || itemstack.z())) {
-                if (!itemstack.z() && worldmaphumantracker1.trackee.dimension == this.map) {
+            if (!worldmaphumantracker1.trackee.dead && (worldmaphumantracker1.trackee.inventory.c(itemstack) || itemstack.A())) {
+                if (!itemstack.A() && worldmaphumantracker1.trackee.dimension == this.map) {
                     this.a(0, worldmaphumantracker1.trackee.world, worldmaphumantracker1.trackee.getName(), worldmaphumantracker1.trackee.locX, worldmaphumantracker1.trackee.locZ, (double) worldmaphumantracker1.trackee.yaw);
                 }
             } else {
@@ -157,8 +157,8 @@ public class WorldMap extends WorldMapBase {
             }
         }
 
-        if (itemstack.z()) {
-            this.a(1, entityhuman.world, "frame-" + itemstack.A().id, (double) itemstack.A().x, (double) itemstack.A().z, (double) (itemstack.A().direction * 90));
+        if (itemstack.A()) {
+            this.a(1, entityhuman.world, "frame-" + itemstack.B().id, (double) itemstack.B().x, (double) itemstack.B().z, (double) (itemstack.B().direction * 90));
         }
     }
 

@@ -32,7 +32,7 @@ public class Slot {
     protected void b(ItemStack itemstack) {}
 
     public void a(EntityHuman entityhuman, ItemStack itemstack) {
-        this.e();
+        this.f();
     }
 
     public boolean isAllowed(ItemStack itemstack) {
@@ -43,16 +43,16 @@ public class Slot {
         return this.inventory.getItem(this.index);
     }
 
-    public boolean d() {
+    public boolean e() {
         return this.getItem() != null;
     }
 
     public void set(ItemStack itemstack) {
         this.inventory.setItem(this.index, itemstack);
-        this.e();
+        this.f();
     }
 
-    public void e() {
+    public void f() {
         this.inventory.update();
     }
 

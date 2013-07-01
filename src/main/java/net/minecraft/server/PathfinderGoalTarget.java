@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import org.apache.commons.lang3.StringUtils;
+
 // CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.entity.EntityTargetEvent;
@@ -7,89 +9,94 @@ import org.bukkit.event.entity.EntityTargetEvent;
 
 public abstract class PathfinderGoalTarget extends PathfinderGoal {
 
-    protected EntityLiving d;
-    protected float e;
-    protected boolean f;
+    protected EntityCreature c;
+    protected boolean d;
     private boolean a;
     private int b;
-    private int c;
-    private int g;
+    private int e;
+    private int f;
 
-    public PathfinderGoalTarget(EntityLiving entityliving, float f, boolean flag) {
-        this(entityliving, f, flag, false);
+    public PathfinderGoalTarget(EntityCreature entitycreature, boolean flag) {
+        this(entitycreature, flag, false);
     }
 
-    public PathfinderGoalTarget(EntityLiving entityliving, float f, boolean flag, boolean flag1) {
-        this.b = 0;
-        this.c = 0;
-        this.g = 0;
-        this.d = entityliving;
-        this.e = f;
-        this.f = flag;
+    public PathfinderGoalTarget(EntityCreature entitycreature, boolean flag, boolean flag1) {
+        this.c = entitycreature;
+        this.d = flag;
         this.a = flag1;
     }
 
     public boolean b() {
-        EntityLiving entityliving = this.d.getGoalTarget();
+        EntityLiving entityliving = this.c.getGoalTarget();
 
         if (entityliving == null) {
             return false;
         } else if (!entityliving.isAlive()) {
             return false;
-        } else if (this.d.e(entityliving) > (double) (this.e * this.e)) {
-            return false;
         } else {
-            if (this.f) {
-                if (this.d.getEntitySenses().canSee(entityliving)) {
-                    this.g = 0;
-                } else if (++this.g > 60) {
-                    return false;
-                }
-            }
+            double d0 = this.f();
 
-            return true;
+            if (this.c.e(entityliving) > d0 * d0) {
+                return false;
+            } else {
+                if (this.d) {
+                    if (this.c.getEntitySenses().canSee(entityliving)) {
+                        this.f = 0;
+                    } else if (++this.f > 60) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
         }
+    }
+
+    protected double f() {
+        AttributeInstance attributeinstance = this.c.a(GenericAttributes.b);
+
+        return attributeinstance == null ? 16.0D : attributeinstance.e();
     }
 
     public void c() {
         this.b = 0;
-        this.c = 0;
-        this.g = 0;
+        this.e = 0;
+        this.f = 0;
     }
 
     public void d() {
-        this.d.setGoalTarget((EntityLiving) null);
+        this.c.setGoalTarget((EntityLiving) null);
     }
 
     protected boolean a(EntityLiving entityliving, boolean flag) {
         if (entityliving == null) {
             return false;
-        } else if (entityliving == this.d) {
+        } else if (entityliving == this.c) {
             return false;
         } else if (!entityliving.isAlive()) {
             return false;
-        } else if (!this.d.a(entityliving.getClass())) {
+        } else if (!this.c.a(entityliving.getClass())) {
             return false;
         } else {
-            if (this.d instanceof EntityTameableAnimal && ((EntityTameableAnimal) this.d).isTamed()) {
-                if (entityliving instanceof EntityTameableAnimal && ((EntityTameableAnimal) entityliving).isTamed()) {
+            if (this.c instanceof EntityOwnable && StringUtils.isNotEmpty(((EntityOwnable) this.c).getOwnerName())) {
+                if (entityliving instanceof EntityOwnable && ((EntityOwnable) this.c).getOwnerName().equals(((EntityOwnable) entityliving).getOwnerName())) {
                     return false;
                 }
 
-                if (entityliving == ((EntityTameableAnimal) this.d).getOwner()) {
+                if (entityliving == ((EntityOwnable) this.c).getOwner()) {
                     return false;
                 }
             } else if (entityliving instanceof EntityHuman && !flag && ((EntityHuman) entityliving).abilities.isInvulnerable) {
                 return false;
             }
 
-            if (!this.d.d(MathHelper.floor(entityliving.locX), MathHelper.floor(entityliving.locY), MathHelper.floor(entityliving.locZ))) {
+            if (!this.c.b(MathHelper.floor(entityliving.locX), MathHelper.floor(entityliving.locY), MathHelper.floor(entityliving.locZ))) {
                 return false;
-            } else if (this.f && !this.d.getEntitySenses().canSee(entityliving)) {
+            } else if (this.d && !this.c.getEntitySenses().canSee(entityliving)) {
                 return false;
             } else {
                 if (this.a) {
-                    if (--this.c <= 0) {
+                    if (--this.e <= 0) {
                         this.b = 0;
                     }
 
@@ -119,15 +126,15 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
                     reason = EntityTargetEvent.TargetReason.OWNER_ATTACKED_TARGET;
                 }
 
-                org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(this.d, entityliving, reason);
+                org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(this.c, entityliving, reason);
                 if (event.isCancelled() || event.getTarget() == null) {
-                    this.d.setGoalTarget(null);
+                    this.c.setGoalTarget(null);
                     return false;
                 } else if (entityliving.getBukkitEntity() != event.getTarget()) {
-                    this.d.setGoalTarget((EntityLiving) ((CraftEntity) event.getTarget()).getHandle());
+                    this.c.setGoalTarget((EntityLiving) ((CraftEntity) event.getTarget()).getHandle());
                 }
-                if (this.d instanceof EntityCreature) {
-                    ((EntityCreature) this.d).target = ((CraftEntity) event.getTarget()).getHandle();
+                if (this.c instanceof EntityCreature) {
+                    ((EntityCreature) this.c).target = ((CraftEntity) event.getTarget()).getHandle();
                 }
                 // CraftBukkit end
 
@@ -137,8 +144,8 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
     }
 
     private boolean a(EntityLiving entityliving) {
-        this.c = 10 + this.d.aE().nextInt(5);
-        PathEntity pathentity = this.d.getNavigation().a(entityliving);
+        this.e = 10 + this.c.aB().nextInt(5);
+        PathEntity pathentity = this.c.getNavigation().a(entityliving);
 
         if (pathentity == null) {
             return false;

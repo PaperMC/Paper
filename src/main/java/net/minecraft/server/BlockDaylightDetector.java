@@ -27,7 +27,7 @@ public class BlockDaylightDetector extends BlockContainer {
     public void onPlace(World world, int i, int j, int k) {}
 
     public void i_(World world, int i, int j, int k) {
-        if (!world.worldProvider.f) {
+        if (!world.worldProvider.g) {
             int l = world.getData(i, j, k);
             int i1 = world.b(EnumSkyBlock.SKY, i, j, k) - world.j;
             float f = world.d(1.0F);

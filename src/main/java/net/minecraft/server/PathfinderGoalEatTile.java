@@ -7,18 +7,18 @@ import org.bukkit.Material;
 
 public class PathfinderGoalEatTile extends PathfinderGoal {
 
-    private EntityLiving b;
+    private EntityInsentient b;
     private World c;
-    int a = 0;
+    int a;
 
-    public PathfinderGoalEatTile(EntityLiving entityliving) {
-        this.b = entityliving;
-        this.c = entityliving.world;
+    public PathfinderGoalEatTile(EntityInsentient entityinsentient) {
+        this.b = entityinsentient;
+        this.c = entityinsentient.world;
         this.a(7);
     }
 
     public boolean a() {
-        if (this.b.aE().nextInt(this.b.isBaby() ? 50 : 1000) != 0) {
+        if (this.b.aB().nextInt(this.b.isBaby() ? 50 : 1000) != 0) {
             return false;
         } else {
             int i = MathHelper.floor(this.b.locX);
@@ -32,7 +32,7 @@ public class PathfinderGoalEatTile extends PathfinderGoal {
     public void c() {
         this.a = 40;
         this.c.broadcastEntityEffect(this.b, (byte) 10);
-        this.b.getNavigation().g();
+        this.b.getNavigation().h();
     }
 
     public void d() {

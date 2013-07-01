@@ -20,9 +20,7 @@ public class ItemHoe extends Item {
             int i1 = world.getTypeId(i, j, k);
             int j1 = world.getTypeId(i, j + 1, k);
 
-            if ((l == 0 || j1 != 0 || i1 != Block.GRASS.id) && i1 != Block.DIRT.id) {
-                return false;
-            } else {
+            if (l != 0 && j1 == 0 && (i1 == Block.GRASS.id || i1 == Block.DIRT.id)) {
                 Block block = Block.SOIL;
 
                 world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), block.stepSound.getStepSound(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
@@ -39,6 +37,8 @@ public class ItemHoe extends Item {
                     itemstack.damage(1, entityhuman);
                     return true;
                 }
+            } else {
+                return false;
             }
         }
     }

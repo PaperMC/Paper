@@ -46,7 +46,7 @@ public abstract class PlayerList {
     protected int c;
     private EnumGamemode l;
     private boolean m;
-    private int n = 0;
+    private int n;
 
     // CraftBukkit start
     private CraftServer cserver;
@@ -75,7 +75,7 @@ public abstract class PlayerList {
         }
 
         // CraftBukkit - add world and location to 'logged in' message.
-        this.server.getLogger().info(entityplayer.name + "[" + s + "] logged in with entity id " + entityplayer.id + " at ([" + entityplayer.world.worldData.getName() + "] " + entityplayer.locX + ", " + entityplayer.locY + ", " + entityplayer.locZ + ")");
+        this.server.getLogger().info(entityplayer.getName() + "[" + s + "] logged in with entity id " + entityplayer.id + " at ([" + entityplayer.world.worldData.getName() + "] " + entityplayer.locX + ", " + entityplayer.locY + ", " + entityplayer.locZ + ")");
         WorldServer worldserver = this.server.getWorldServer(entityplayer.dimension);
         ChunkCoordinates chunkcoordinates = worldserver.getSpawn();
 
@@ -96,13 +96,13 @@ public abstract class PlayerList {
         playerconnection.sendPacket(new Packet16BlockItemSwitch(entityplayer.inventory.itemInHandIndex));
         this.a((ScoreboardServer) worldserver.getScoreboard(), entityplayer);
         this.b(entityplayer, worldserver);
-        // this.sendAll(new Packet3Chat(EnumChatFormat.YELLOW + entityplayer.getScoreboardDisplayName() + EnumChatFormat.YELLOW + " joined the game.")); // CraftBukkit - handled in event
+        // this.sendMessage(ChatMessage.b("multiplayer.player.joined", new Object[] { entityplayer.getScoreboardDisplayName()}).a(EnumChatFormat.YELLOW)); // CraftBukkit - handled in event
         this.c(entityplayer);
         playerconnection.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
-        this.server.ae().a(playerconnection);
-        playerconnection.sendPacket(new Packet4UpdateTime(worldserver.getTime(), worldserver.getDayTime()));
+        this.server.ag().a(playerconnection);
+        playerconnection.sendPacket(new Packet4UpdateTime(worldserver.getTime(), worldserver.getDayTime(), worldserver.getGameRules().getBoolean("doDaylightCycle")));
         if (this.server.getTexturePack().length() > 0) {
-            entityplayer.a(this.server.getTexturePack(), this.server.S());
+            entityplayer.a(this.server.getTexturePack(), this.server.U());
         }
 
         Iterator iterator = entityplayer.getEffects().iterator();
@@ -160,7 +160,7 @@ public abstract class PlayerList {
     }
 
     public void a(EntityPlayer entityplayer, WorldServer worldserver) {
-        WorldServer worldserver1 = entityplayer.o();
+        WorldServer worldserver1 = entityplayer.p();
 
         if (worldserver != null) {
             worldserver.getPlayerChunkMap().removePlayer(entityplayer);
@@ -178,7 +178,7 @@ public abstract class PlayerList {
         NBTTagCompound nbttagcompound = this.server.worlds.get(0).getWorldData().i(); // CraftBukkit
         NBTTagCompound nbttagcompound1;
 
-        if (entityplayer.getName().equals(this.server.H()) && nbttagcompound != null) {
+        if (entityplayer.getName().equals(this.server.J()) && nbttagcompound != null) {
             entityplayer.f(nbttagcompound);
             nbttagcompound1 = nbttagcompound;
             System.out.println("loading single player");
@@ -195,7 +195,7 @@ public abstract class PlayerList {
 
     public void c(EntityPlayer entityplayer) {
         cserver.detectListNameConflict(entityplayer); // CraftBukkit
-        // this.sendAll(new Packet201PlayerInfo(entityplayer.name, true, 1000)); // CraftBukkit - replaced with loop below
+        // this.sendAll(new Packet201PlayerInfo(entityplayer.getName(), true, 1000)); // CraftBukkit - replaced with loop below
         this.players.add(entityplayer);
         WorldServer worldserver = this.server.getWorldServer(entityplayer.dimension);
 
@@ -206,7 +206,7 @@ public abstract class PlayerList {
         String joinMessage = playerJoinEvent.getJoinMessage();
 
         if ((joinMessage != null) && (joinMessage.length() > 0)) {
-            this.server.getPlayerList().sendAll(new Packet3Chat(joinMessage));
+            this.server.getPlayerList().sendAll(new Packet3Chat(ChatMessage.d(joinMessage)));
         }
         this.cserver.onPlayerJoin(playerJoinEvent.getPlayer());
 
@@ -243,7 +243,7 @@ public abstract class PlayerList {
     }
 
     public void d(EntityPlayer entityplayer) {
-        entityplayer.o().getPlayerChunkMap().movePlayer(entityplayer);
+        entityplayer.p().getPlayerChunkMap().movePlayer(entityplayer);
     }
 
     public String disconnect(EntityPlayer entityplayer) { // CraftBukkit - return string
@@ -258,10 +258,10 @@ public abstract class PlayerList {
         // CraftBukkit end
 
         this.b(entityplayer);
-        WorldServer worldserver = entityplayer.o();
+        WorldServer worldserver = entityplayer.p();
 
         if (entityplayer.vehicle != null) {
-            worldserver.kill(entityplayer.vehicle);
+            worldserver.removeEntity(entityplayer.vehicle);
             System.out.println("removing player mount");
         }
 
@@ -291,7 +291,7 @@ public abstract class PlayerList {
         // Instead of kicking then returning, we need to store the kick reason
         // in the event, check with plugins to see if it's ok, and THEN kick
         // depending on the outcome.
-        EntityPlayer entity = new EntityPlayer(this.server, this.server.getWorldServer(0), s, this.server.M() ? new DemoPlayerInteractManager(this.server.getWorldServer(0)) : new PlayerInteractManager(this.server.getWorldServer(0)));
+        EntityPlayer entity = new EntityPlayer(this.server, this.server.getWorldServer(0), s, this.server.O() ? new DemoPlayerInteractManager(this.server.getWorldServer(0)) : new PlayerInteractManager(this.server.getWorldServer(0)));
         Player player = entity.getBukkitEntity();
         PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, pendingconnection.getSocket().getInetAddress());
 
@@ -347,7 +347,7 @@ public abstract class PlayerList {
 
         for (int i = 0; i < this.players.size(); ++i) {
             entityplayer = (EntityPlayer) this.players.get(i);
-            if (entityplayer.name.equalsIgnoreCase(s)) {
+            if (entityplayer.getName().equalsIgnoreCase(s)) {
                 arraylist.add(entityplayer);
             }
         }
@@ -362,7 +362,7 @@ public abstract class PlayerList {
         /* CraftBukkit start
         Object object;
 
-        if (this.server.M()) {
+        if (this.server.O()) {
             object = new DemoPlayerInteractManager(this.server.getWorldServer(0));
         } else {
             object = new PlayerInteractManager(this.server.getWorldServer(0));
@@ -381,9 +381,9 @@ public abstract class PlayerList {
 
     public EntityPlayer moveToWorld(EntityPlayer entityplayer, int i, boolean flag, Location location, boolean avoidSuffocation) {
         // CraftBukkit end
-        entityplayer.o().getTracker().untrackPlayer(entityplayer);
-        // entityplayer.o().getTracker().untrackEntity(entityplayer); // CraftBukkit
-        entityplayer.o().getPlayerChunkMap().removePlayer(entityplayer);
+        entityplayer.p().getTracker().untrackPlayer(entityplayer);
+        // entityplayer.p().getTracker().untrackEntity(entityplayer); // CraftBukkit
+        entityplayer.p().getPlayerChunkMap().removePlayer(entityplayer);
         this.players.remove(entityplayer);
         this.server.getWorldServer(entityplayer.dimension).removeEntity(entityplayer);
         ChunkCoordinates chunkcoordinates = entityplayer.getBed();
@@ -714,7 +714,7 @@ public abstract class PlayerList {
         if (this.n < this.players.size()) {
             EntityPlayer entityplayer = (EntityPlayer) this.players.get(this.n);
 
-            this.sendAll(new Packet201PlayerInfo(entityplayer.name, true, entityplayer.ping));
+            this.sendAll(new Packet201PlayerInfo(entityplayer.getName(), true, entityplayer.ping));
         }
         // CraftBukkit end */
     }
@@ -743,7 +743,7 @@ public abstract class PlayerList {
                 s = s + ", ";
             }
 
-            s = s + ((EntityPlayer) this.players.get(i)).name;
+            s = s + ((EntityPlayer) this.players.get(i)).getName();
         }
 
         return s;
@@ -753,7 +753,7 @@ public abstract class PlayerList {
         String[] astring = new String[this.players.size()];
 
         for (int i = 0; i < this.players.size(); ++i) {
-            astring[i] = ((EntityPlayer) this.players.get(i)).name;
+            astring[i] = ((EntityPlayer) this.players.get(i)).getName();
         }
 
         return astring;
@@ -796,7 +796,7 @@ public abstract class PlayerList {
 
     public boolean isOp(String s) {
         // CraftBukkit
-        return this.operators.contains(s.trim().toLowerCase()) || this.server.I() && this.server.worlds.get(0).getWorldData().allowCommands() && this.server.H().equalsIgnoreCase(s) || this.m;
+        return this.operators.contains(s.trim().toLowerCase()) || this.server.K() && this.server.worlds.get(0).getWorldData().allowCommands() && this.server.J().equalsIgnoreCase(s) || this.m;
     }
 
     public EntityPlayer getPlayer(String s) {
@@ -810,61 +810,55 @@ public abstract class PlayerList {
             }
 
             entityplayer = (EntityPlayer) iterator.next();
-        } while (!entityplayer.name.equalsIgnoreCase(s));
+        } while (!entityplayer.getName().equalsIgnoreCase(s));
 
         return entityplayer;
     }
 
-    public List a(ChunkCoordinates chunkcoordinates, int i, int j, int k, int l, int i1, int j1, Map map, String s, String s1) {
+    public List a(ChunkCoordinates chunkcoordinates, int i, int j, int k, int l, int i1, int j1, Map map, String s, String s1, World world) {
         if (this.players.isEmpty()) {
             return null;
         } else {
             Object object = new ArrayList();
             boolean flag = k < 0;
+            boolean flag1 = s != null && s.startsWith("!");
+            boolean flag2 = s1 != null && s1.startsWith("!");
             int k1 = i * i;
             int l1 = j * j;
 
             k = MathHelper.a(k);
+            if (flag1) {
+                s = s.substring(1);
+            }
+
+            if (flag2) {
+                s1 = s1.substring(1);
+            }
 
             for (int i2 = 0; i2 < this.players.size(); ++i2) {
                 EntityPlayer entityplayer = (EntityPlayer) this.players.get(i2);
-                boolean flag1;
 
-                if (s != null) {
-                    flag1 = s.startsWith("!");
-                    if (flag1) {
-                        s = s.substring(1);
+                if ((world == null || entityplayer.world == world) && (s == null || flag1 != s.equalsIgnoreCase(entityplayer.getLocalizedName()))) {
+                    if (s1 != null) {
+                        ScoreboardTeam scoreboardteam = entityplayer.getScoreboardTeam();
+                        String s2 = scoreboardteam == null ? "" : scoreboardteam.getName();
+
+                        if (flag2 == s1.equalsIgnoreCase(s2)) {
+                            continue;
+                        }
                     }
 
-                    if (flag1 == s.equalsIgnoreCase(entityplayer.getLocalizedName())) {
-                        continue;
-                    }
-                }
+                    if (chunkcoordinates != null && (i > 0 || j > 0)) {
+                        float f = chunkcoordinates.e(entityplayer.b());
 
-                if (s1 != null) {
-                    flag1 = s1.startsWith("!");
-                    if (flag1) {
-                        s1 = s1.substring(1);
+                        if (i > 0 && f < (float) k1 || j > 0 && f > (float) l1) {
+                            continue;
+                        }
                     }
 
-                    ScoreboardTeam scoreboardteam = entityplayer.getScoreboardTeam();
-                    String s2 = scoreboardteam == null ? "" : scoreboardteam.getName();
-
-                    if (flag1 == s1.equalsIgnoreCase(s2)) {
-                        continue;
+                    if (this.a((EntityHuman) entityplayer, map) && (l == EnumGamemode.NONE.a() || l == entityplayer.playerInteractManager.getGameMode().a()) && (i1 <= 0 || entityplayer.expLevel >= i1) && entityplayer.expLevel <= j1) {
+                        ((List) object).add(entityplayer);
                     }
-                }
-
-                if (chunkcoordinates != null && (i > 0 || j > 0)) {
-                    float f = chunkcoordinates.e(entityplayer.b());
-
-                    if (i > 0 && f < (float) k1 || j > 0 && f > (float) l1) {
-                        continue;
-                    }
-                }
-
-                if (this.a((EntityHuman) entityplayer, map) && (l == EnumGamemode.NONE.a() || l == entityplayer.playerInteractManager.getGameMode().a()) && (i1 <= 0 || entityplayer.expLevel >= i1) && entityplayer.expLevel <= j1) {
-                    ((List) object).add(entityplayer);
                 }
             }
 
@@ -977,8 +971,8 @@ public abstract class PlayerList {
     public void reloadWhitelist() {}
 
     public void b(EntityPlayer entityplayer, WorldServer worldserver) {
-        entityplayer.playerConnection.sendPacket(new Packet4UpdateTime(worldserver.getTime(), worldserver.getDayTime()));
-        if (worldserver.P()) {
+        entityplayer.playerConnection.sendPacket(new Packet4UpdateTime(worldserver.getTime(), worldserver.getDayTime(), worldserver.getGameRules().getBoolean("doDaylightCycle")));
+        if (worldserver.Q()) {
             entityplayer.setPlayerWeather(org.bukkit.WeatherType.DOWNFALL, false); // CraftBukkit - handle player specific weather
         }
     }
@@ -1009,14 +1003,14 @@ public abstract class PlayerList {
         this.hasWhitelist = flag;
     }
 
-    public List j(String s) {
+    public List i(String s) {
         ArrayList arraylist = new ArrayList();
         Iterator iterator = this.players.iterator();
 
         while (iterator.hasNext()) {
             EntityPlayer entityplayer = (EntityPlayer) iterator.next();
 
-            if (entityplayer.p().equals(s)) {
+            if (entityplayer.q().equals(s)) {
                 arraylist.add(entityplayer);
             }
         }
@@ -1052,8 +1046,12 @@ public abstract class PlayerList {
         }
     }
 
-    public void k(String s) {
-        this.server.info(s);
-        this.sendAll(new Packet3Chat(s));
+    public void sendMessage(ChatMessage chatmessage, boolean flag) {
+        this.server.sendMessage(chatmessage);
+        this.sendAll(new Packet3Chat(chatmessage, flag));
+    }
+
+    public void sendMessage(ChatMessage chatmessage) {
+        this.sendMessage(chatmessage, true);
     }
 }

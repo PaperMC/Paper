@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.InputStream;
 import java.net.Socket;
@@ -28,25 +29,25 @@ public class NetworkManager implements INetworkManager {
     private volatile DataInputStream input;
     private volatile DataOutputStream output;
     private volatile boolean n = true;
-    private volatile boolean o = false;
+    private volatile boolean o;
     private java.util.Queue inboundQueue = new java.util.concurrent.ConcurrentLinkedQueue(); // CraftBukkit - Concurrent linked queue
     private List highPriorityQueue = Collections.synchronizedList(new ArrayList());
     private List lowPriorityQueue = Collections.synchronizedList(new ArrayList());
     private Connection connection;
-    private boolean t = false;
+    private boolean t;
     private Thread u;
     private Thread v;
     private String w = "";
     private Object[] x;
-    private int y = 0;
-    private int z = 0;
+    private int y;
+    private int z;
     public static int[] c = new int[256];
     public static int[] d = new int[256];
-    public int e = 0;
-    boolean f = false;
-    boolean g = false;
-    private SecretKey A = null;
-    private PrivateKey B = null;
+    public int e;
+    boolean f;
+    boolean g;
+    private SecretKey A;
+    private PrivateKey B;
     private int lowPriorityQueueDelay = 50;
 
     public NetworkManager(IConsoleLogManager iconsolelogmanager, Socket socket, String s, Connection connection, PrivateKey privatekey) throws IOException { // CraftBukkit - throws IOException
@@ -94,10 +95,10 @@ public class NetworkManager implements INetworkManager {
             int i;
             int[] aint;
 
-            if (this.e == 0 || !this.highPriorityQueue.isEmpty() && System.currentTimeMillis() - ((Packet) this.highPriorityQueue.get(0)).timestamp >= (long) this.e) {
+            if (this.e == 0 || !this.highPriorityQueue.isEmpty() && MinecraftServer.aq() - ((Packet) this.highPriorityQueue.get(0)).timestamp >= (long) this.e) {
                 packet = this.a(false);
                 if (packet != null) {
-                    Packet.a(packet, this.output);
+                    Packet.a(packet, (DataOutput) this.output);
                     if (packet instanceof Packet252KeyResponse && !this.g) {
                         if (!this.connection.a()) {
                             this.A = ((Packet252KeyResponse) packet).d();
@@ -117,7 +118,7 @@ public class NetworkManager implements INetworkManager {
             if ((flag || this.lowPriorityQueueDelay-- <= 0) && !this.lowPriorityQueue.isEmpty() && (this.highPriorityQueue.isEmpty() || ((Packet) this.highPriorityQueue.get(0)).timestamp > ((Packet) this.lowPriorityQueue.get(0)).timestamp)) {
                 packet = this.a(true);
                 if (packet != null) {
-                    Packet.a(packet, this.output);
+                    Packet.a(packet, (DataOutput) this.output);
                     aint = d;
                     i = packet.n();
                     aint[i] += packet.a() + 1;

@@ -111,11 +111,11 @@ public class EntityFireworks extends Entity {
         }
     }
 
-    public float c(float f) {
-        return super.c(f);
+    public float d(float f) {
+        return super.d(f);
     }
 
-    public boolean ap() {
+    public boolean ao() {
         return false;
     }
 }

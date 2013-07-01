@@ -37,7 +37,7 @@ public class BlockPressurePlateBinary extends BlockPressurePlateAbstract {
             list = world.a(EntityHuman.class, this.a(i, j, k));
         }
 
-        if (!list.isEmpty()) {
+        if (list != null && !list.isEmpty()) {
             Iterator iterator = list.iterator();
 
             while (iterator.hasNext()) {
@@ -63,7 +63,7 @@ public class BlockPressurePlateBinary extends BlockPressurePlateAbstract {
                 }
                 // CraftBukkit end
 
-                if (!entity.at()) {
+                if (!entity.as()) {
                     return 15;
                 }
             }

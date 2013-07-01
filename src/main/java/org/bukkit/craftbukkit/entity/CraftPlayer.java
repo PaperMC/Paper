@@ -89,7 +89,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public boolean isOnline() {
         for (Object obj : server.getHandle().players) {
             EntityPlayer player = (EntityPlayer) obj;
-            if (player.name.equalsIgnoreCase(getName())) {
+            if (player.getName().equalsIgnoreCase(getName())) {
                 return true;
             }
         }
@@ -128,7 +128,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void sendRawMessage(String message) {
         if (getHandle().playerConnection == null) return;
 
-        getHandle().playerConnection.sendPacket(new Packet3Chat(message));
+        getHandle().playerConnection.sendPacket(new Packet3Chat(ChatMessage.d(message)));
     }
 
     public void sendMessage(String message) {
@@ -859,10 +859,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.PLAYER;
     }
 
+    @Override
     public void setMetadata(String metadataKey, MetadataValue newMetadataValue) {
         server.getPlayerMetadata().setMetadata(this, metadataKey, newMetadataValue);
     }
@@ -967,11 +969,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
     }
 
-    public void setMaxHealth(int amount) {
+    @Override
+    public void setMaxHealth(double amount) {
         super.setMaxHealth(amount);
         getHandle().triggerHealthUpdate();
     }
 
+    @Override
     public void resetMaxHealth() {
         super.resetMaxHealth();
         getHandle().triggerHealthUpdate();

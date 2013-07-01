@@ -90,6 +90,7 @@ public class ItemStep extends ItemBlock {
                 // CraftBukkit end
                 --itemstack.count;
             }
+
             return true;
         } else {
             return false;

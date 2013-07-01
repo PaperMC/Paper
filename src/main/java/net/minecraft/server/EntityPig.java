@@ -4,41 +4,40 @@ import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 
 public class EntityPig extends EntityAnimal {
 
-    private final PathfinderGoalPassengerCarrotStick d;
+    private final PathfinderGoalPassengerCarrotStick bp;
 
     public EntityPig(World world) {
         super(world);
-        this.texture = "/mob/pig.png";
         this.a(0.9F, 0.9F);
         this.getNavigation().a(true);
-        float f = 0.25F;
-
         this.goalSelector.a(0, new PathfinderGoalFloat(this));
-        this.goalSelector.a(1, new PathfinderGoalPanic(this, 0.38F));
-        this.goalSelector.a(2, this.d = new PathfinderGoalPassengerCarrotStick(this, 0.34F));
-        this.goalSelector.a(3, new PathfinderGoalBreed(this, f));
-        this.goalSelector.a(4, new PathfinderGoalTempt(this, 0.3F, Item.CARROT_STICK.id, false));
-        this.goalSelector.a(4, new PathfinderGoalTempt(this, 0.3F, Item.CARROT.id, false));
-        this.goalSelector.a(5, new PathfinderGoalFollowParent(this, 0.28F));
-        this.goalSelector.a(6, new PathfinderGoalRandomStroll(this, f));
+        this.goalSelector.a(1, new PathfinderGoalPanic(this, 1.25D));
+        this.goalSelector.a(2, this.bp = new PathfinderGoalPassengerCarrotStick(this, 0.3F));
+        this.goalSelector.a(3, new PathfinderGoalBreed(this, 1.0D));
+        this.goalSelector.a(4, new PathfinderGoalTempt(this, 1.2D, Item.CARROT_STICK.id, false));
+        this.goalSelector.a(4, new PathfinderGoalTempt(this, 1.2D, Item.CARROT.id, false));
+        this.goalSelector.a(5, new PathfinderGoalFollowParent(this, 1.1D));
+        this.goalSelector.a(6, new PathfinderGoalRandomStroll(this, 1.0D));
         this.goalSelector.a(7, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F));
         this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean bh() {
+    public boolean bb() {
         return true;
     }
 
-    public int getMaxHealth() {
-        return 10;
+    protected void ax() {
+        super.ax();
+        this.a(GenericAttributes.a).a(10.0D);
+        this.a(GenericAttributes.d).a(0.25D);
     }
 
-    protected void bo() {
-        super.bo();
+    protected void be() {
+        super.be();
     }
 
-    public boolean bL() {
-        ItemStack itemstack = ((EntityHuman) this.passenger).bG();
+    public boolean bu() {
+        ItemStack itemstack = ((EntityHuman) this.passenger).aV();
 
         return itemstack != null && itemstack.id == Item.CARROT_STICK.id;
     }
@@ -58,15 +57,15 @@ public class EntityPig extends EntityAnimal {
         this.setSaddle(nbttagcompound.getBoolean("Saddle"));
     }
 
-    protected String bb() {
+    protected String r() {
         return "mob.pig.say";
     }
 
-    protected String bc() {
+    protected String aK() {
         return "mob.pig.say";
     }
 
-    protected String bd() {
+    protected String aL() {
         return "mob.pig.death";
     }
 
@@ -74,8 +73,8 @@ public class EntityPig extends EntityAnimal {
         this.makeSound("mob.pig.step", 0.15F, 1.0F);
     }
 
-    public boolean a_(EntityHuman entityhuman) {
-        if (super.a_(entityhuman)) {
+    public boolean a(EntityHuman entityhuman) {
+        if (super.a(entityhuman)) {
             return true;
         } else if (this.hasSaddle() && !this.world.isStatic && (this.passenger == null || this.passenger == entityhuman)) {
             entityhuman.mount(this);
@@ -139,8 +138,8 @@ public class EntityPig extends EntityAnimal {
         }
     }
 
-    protected void a(float f) {
-        super.a(f);
+    protected void b(float f) {
+        super.b(f);
         if (f > 5.0F && this.passenger instanceof EntityHuman) {
             ((EntityHuman) this.passenger).a((Statistic) AchievementList.u);
         }
@@ -154,8 +153,8 @@ public class EntityPig extends EntityAnimal {
         return itemstack != null && itemstack.id == Item.CARROT.id;
     }
 
-    public PathfinderGoalPassengerCarrotStick n() {
-        return this.d;
+    public PathfinderGoalPassengerCarrotStick bQ() {
+        return this.bp;
     }
 
     public EntityAgeable createChild(EntityAgeable entityageable) {

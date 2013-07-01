@@ -13,7 +13,7 @@ public class PathfinderGoalSelector {
     private List b = new UnsafeList();
     // CraftBukkit end
     private final MethodProfiler c;
-    private int d = 0;
+    private int d;
     private int e = 3;
 
     public PathfinderGoalSelector(MethodProfiler methodprofiler) {
@@ -130,7 +130,7 @@ public class PathfinderGoalSelector {
                         ((UnsafeList.Itr) iterator).valid = false; // CraftBukkit - mark iterator for reuse
                         return false;
                     }
-                // CraftBukkit - switch order
+                    // CraftBukkit - switch order
                 } else if (!pathfindergoalselectoritem1.a.i() && this.b.contains(pathfindergoalselectoritem1)) {
                     this.c.b();
                     ((UnsafeList.Itr) iterator).valid = false; // CraftBukkit - mark iterator for reuse

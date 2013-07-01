@@ -1,7 +1,7 @@
 package net.minecraft.server;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.util.List;
 
 import java.io.IOException; // CraftBukkit
@@ -32,6 +32,7 @@ public class Packet20NamedEntitySpawn extends Packet {
         }
         // CraftBukkit end
 
+        this.b = entityhuman.getName();
         this.c = MathHelper.floor(entityhuman.locX * 32.0D);
         this.d = MathHelper.floor(entityhuman.locY * 32.0D);
         this.e = MathHelper.floor(entityhuman.locZ * 32.0D);
@@ -43,28 +44,28 @@ public class Packet20NamedEntitySpawn extends Packet {
         this.i = entityhuman.getDataWatcher();
     }
 
-    public void a(DataInputStream datainputstream) throws IOException { // CraftBukkit
-        this.a = datainputstream.readInt();
-        this.b = a(datainputstream, 16);
-        this.c = datainputstream.readInt();
-        this.d = datainputstream.readInt();
-        this.e = datainputstream.readInt();
-        this.f = datainputstream.readByte();
-        this.g = datainputstream.readByte();
-        this.h = datainputstream.readShort();
-        this.j = DataWatcher.a(datainputstream);
+    public void a(DataInput datainput) throws IOException { // CraftBukkit
+        this.a = datainput.readInt();
+        this.b = a(datainput, 16);
+        this.c = datainput.readInt();
+        this.d = datainput.readInt();
+        this.e = datainput.readInt();
+        this.f = datainput.readByte();
+        this.g = datainput.readByte();
+        this.h = datainput.readShort();
+        this.j = DataWatcher.a(datainput);
     }
 
-    public void a(DataOutputStream dataoutputstream) throws IOException { // CraftBukkit
-        dataoutputstream.writeInt(this.a);
-        a(this.b, dataoutputstream);
-        dataoutputstream.writeInt(this.c);
-        dataoutputstream.writeInt(this.d);
-        dataoutputstream.writeInt(this.e);
-        dataoutputstream.writeByte(this.f);
-        dataoutputstream.writeByte(this.g);
-        dataoutputstream.writeShort(this.h);
-        this.i.a(dataoutputstream);
+    public void a(DataOutput dataoutput) throws IOException { // CraftBukkit
+        dataoutput.writeInt(this.a);
+        a(this.b, dataoutput);
+        dataoutput.writeInt(this.c);
+        dataoutput.writeInt(this.d);
+        dataoutput.writeInt(this.e);
+        dataoutput.writeByte(this.f);
+        dataoutput.writeByte(this.g);
+        dataoutput.writeShort(this.h);
+        this.i.a(dataoutput);
     }
 
     public void handle(Connection connection) {

@@ -12,7 +12,7 @@ public class ShapedRecipes implements IRecipe {
     private ItemStack[] items;
     private ItemStack result;
     public final int a;
-    private boolean f = false;
+    private boolean f;
 
     public ShapedRecipes(int i, int j, ItemStack[] aitemstack, ItemStack itemstack) {
         this.a = itemstack.id;

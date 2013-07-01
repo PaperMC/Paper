@@ -70,14 +70,18 @@ public class BlockCommand extends BlockContainer {
     public int b_(World world, int i, int j, int k, int l) {
         TileEntity tileentity = world.getTileEntity(i, j, k);
 
-        return tileentity != null && tileentity instanceof TileEntityCommand ? ((TileEntityCommand) tileentity).d() : 0;
+        return tileentity != null && tileentity instanceof TileEntityCommand ? ((TileEntityCommand) tileentity).f() : 0;
     }
 
     public void postPlace(World world, int i, int j, int k, EntityLiving entityliving, ItemStack itemstack) {
         TileEntityCommand tileentitycommand = (TileEntityCommand) world.getTileEntity(i, j, k);
 
         if (itemstack.hasName()) {
-            tileentitycommand.c(itemstack.getName());
+            tileentitycommand.b(itemstack.getName());
         }
+    }
+
+    public int a(Random random) {
+        return 0;
     }
 }

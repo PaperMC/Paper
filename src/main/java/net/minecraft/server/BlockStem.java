@@ -18,7 +18,7 @@ public class BlockStem extends BlockFlower {
         this.a((CreativeModeTab) null);
     }
 
-    protected boolean f_(int i) {
+    protected boolean g_(int i) {
         return i == Block.SOIL.id;
     }
 

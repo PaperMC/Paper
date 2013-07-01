@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import java.util.UUID;
+
 // CraftBukkit start
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -8,21 +10,25 @@ import org.bukkit.event.entity.EntityTeleportEvent;
 
 public class EntityEnderman extends EntityMonster {
 
-    private static boolean[] d = new boolean[256];
-    private int e = 0;
-    private int f = 0;
-    private boolean g;
+    private static final UUID bp = UUID.fromString("020E0DFB-87AE-4653-9556-831010E291A0");
+    private static final AttributeModifier bq = (new AttributeModifier(bp, "Attacking speed boost", 6.199999809265137D, 0)).a(false);
+    private static boolean[] br = new boolean[256];
+    private int bs;
+    private int bt;
+    private Entity bu;
+    private boolean bv;
 
     public EntityEnderman(World world) {
         super(world);
-        this.texture = "/mob/enderman.png";
-        this.bI = 0.2F;
         this.a(0.6F, 2.9F);
         this.Y = 1.0F;
     }
 
-    public int getMaxHealth() {
-        return 40;
+    protected void ax() {
+        super.ax();
+        this.a(GenericAttributes.a).a(40.0D);
+        this.a(GenericAttributes.d).a(0.30000001192092896D);
+        this.a(GenericAttributes.e).a(7.0D);
     }
 
     protected void a() {
@@ -48,48 +54,57 @@ public class EntityEnderman extends EntityMonster {
         EntityHuman entityhuman = this.world.findNearbyVulnerablePlayer(this, 64.0D);
 
         if (entityhuman != null) {
-            if (this.e(entityhuman)) {
-                this.g = true;
-                if (this.f == 0) {
+            if (this.f(entityhuman)) {
+                this.bv = true;
+                if (this.bt == 0) {
                     this.world.makeSound(entityhuman, "mob.endermen.stare", 1.0F, 1.0F);
                 }
 
-                if (this.f++ == 5) {
-                    this.f = 0;
+                if (this.bt++ == 5) {
+                    this.bt = 0;
                     this.a(true);
                     return entityhuman;
                 }
             } else {
-                this.f = 0;
+                this.bt = 0;
             }
         }
 
         return null;
     }
 
-    private boolean e(EntityHuman entityhuman) {
+    private boolean f(EntityHuman entityhuman) {
         ItemStack itemstack = entityhuman.inventory.armor[3];
 
         if (itemstack != null && itemstack.id == Block.PUMPKIN.id) {
             return false;
         } else {
-            Vec3D vec3d = entityhuman.i(1.0F).a();
+            Vec3D vec3d = entityhuman.j(1.0F).a();
             Vec3D vec3d1 = this.world.getVec3DPool().create(this.locX - entityhuman.locX, this.boundingBox.b + (double) (this.length / 2.0F) - (entityhuman.locY + (double) entityhuman.getHeadHeight()), this.locZ - entityhuman.locZ);
             double d0 = vec3d1.b();
 
             vec3d1 = vec3d1.a();
             double d1 = vec3d.b(vec3d1);
 
-            return d1 > 1.0D - 0.025D / d0 ? entityhuman.n(this) : false;
+            return d1 > 1.0D - 0.025D / d0 ? entityhuman.o(this) : false;
         }
     }
 
     public void c() {
         if (this.F()) {
-            this.damageEntity(DamageSource.DROWN, 1);
+            this.damageEntity(DamageSource.DROWN, 1.0F);
         }
 
-        this.bI = this.target != null ? 6.5F : 0.3F;
+        if (this.bu != this.target) {
+            AttributeInstance attributeinstance = this.a(GenericAttributes.d);
+
+            attributeinstance.b(bq);
+            if (this.target != null) {
+                attributeinstance.a(bq);
+            }
+        }
+
+        this.bu = this.target;
         int i;
 
         if (!this.world.isStatic && this.world.getGameRules().getBoolean("mobGriefing")) {
@@ -103,7 +118,7 @@ public class EntityEnderman extends EntityMonster {
                     j = MathHelper.floor(this.locY + this.random.nextDouble() * 3.0D);
                     k = MathHelper.floor(this.locZ - 2.0D + this.random.nextDouble() * 4.0D);
                     l = this.world.getTypeId(i, j, k);
-                    if (d[l]) {
+                    if (br[l]) {
                         // CraftBukkit start - Pickup event
                         if (!CraftEventFactory.callEntityChangeBlockEvent(this, this.world.getWorld().getBlockAt(i, j, k), org.bukkit.Material.AIR).isCancelled()) {
                             this.setCarriedId(this.world.getTypeId(i, j, k));
@@ -136,55 +151,53 @@ public class EntityEnderman extends EntityMonster {
         }
 
         if (this.world.v() && !this.world.isStatic) {
-            float f = this.c(1.0F);
+            float f = this.d(1.0F);
 
             if (f > 0.5F && this.world.l(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
                 this.target = null;
                 this.a(false);
-                this.g = false;
-                this.m();
+                this.bv = false;
+                this.bP();
             }
         }
 
         if (this.F() || this.isBurning()) {
             this.target = null;
             this.a(false);
-            this.g = false;
-            this.m();
+            this.bv = false;
+            this.bP();
         }
 
-        if (this.q() && !this.g && this.random.nextInt(100) == 0) {
+        if (this.bT() && !this.bv && this.random.nextInt(100) == 0) {
             this.a(false);
         }
 
-        this.bG = false;
+        this.bd = false;
         if (this.target != null) {
             this.a(this.target, 100.0F, 100.0F);
         }
 
         if (!this.world.isStatic && this.isAlive()) {
             if (this.target != null) {
-                if (this.target instanceof EntityHuman && this.e((EntityHuman) this.target)) {
-                    this.bD = this.bE = 0.0F;
-                    this.bI = 0.0F;
+                if (this.target instanceof EntityHuman && this.f((EntityHuman) this.target)) {
                     if (this.target.e((Entity) this) < 16.0D) {
-                        this.m();
+                        this.bP();
                     }
 
-                    this.e = 0;
-                } else if (this.target.e((Entity) this) > 256.0D && this.e++ >= 30 && this.p(this.target)) {
-                    this.e = 0;
+                    this.bs = 0;
+                } else if (this.target.e((Entity) this) > 256.0D && this.bs++ >= 30 && this.c(this.target)) {
+                    this.bs = 0;
                 }
             } else {
                 this.a(false);
-                this.e = 0;
+                this.bs = 0;
             }
         }
 
         super.c();
     }
 
-    protected boolean m() {
+    protected boolean bP() {
         double d0 = this.locX + (this.random.nextDouble() - 0.5D) * 64.0D;
         double d1 = this.locY + (double) (this.random.nextInt(64) - 32);
         double d2 = this.locZ + (this.random.nextDouble() - 0.5D) * 64.0D;
@@ -192,7 +205,7 @@ public class EntityEnderman extends EntityMonster {
         return this.j(d0, d1, d2);
     }
 
-    protected boolean p(Entity entity) {
+    protected boolean c(Entity entity) {
         Vec3D vec3d = this.world.getVec3DPool().create(this.locX - entity.locX, this.boundingBox.b + (double) (this.length / 2.0F) - entity.locY + (double) entity.getHeadHeight(), this.locZ - entity.locZ);
 
         vec3d = vec3d.a();
@@ -273,15 +286,15 @@ public class EntityEnderman extends EntityMonster {
         }
     }
 
-    protected String bb() {
-        return this.q() ? "mob.endermen.scream" : "mob.endermen.idle";
+    protected String r() {
+        return this.bT() ? "mob.endermen.scream" : "mob.endermen.idle";
     }
 
-    protected String bc() {
+    protected String aK() {
         return "mob.endermen.hit";
     }
 
-    protected String bd() {
+    protected String aL() {
         return "mob.endermen.death";
     }
 
@@ -322,32 +335,32 @@ public class EntityEnderman extends EntityMonster {
         return this.datawatcher.getByte(17);
     }
 
-    public boolean damageEntity(DamageSource damagesource, int i) {
+    public boolean damageEntity(DamageSource damagesource, float f) {
         if (this.isInvulnerable()) {
             return false;
         } else {
             this.a(true);
             if (damagesource instanceof EntityDamageSource && damagesource.getEntity() instanceof EntityHuman) {
-                this.g = true;
+                this.bv = true;
             }
 
             if (damagesource instanceof EntityDamageSourceIndirect) {
-                this.g = false;
+                this.bv = false;
 
-                for (int j = 0; j < 64; ++j) {
-                    if (this.m()) {
+                for (int i = 0; i < 64; ++i) {
+                    if (this.bP()) {
                         return true;
                     }
                 }
 
                 return false;
             } else {
-                return super.damageEntity(damagesource, i);
+                return super.damageEntity(damagesource, f);
             }
         }
     }
 
-    public boolean q() {
+    public boolean bT() {
         return this.datawatcher.getByte(18) > 0;
     }
 
@@ -355,24 +368,20 @@ public class EntityEnderman extends EntityMonster {
         this.datawatcher.watch(18, Byte.valueOf((byte) (flag ? 1 : 0)));
     }
 
-    public int c(Entity entity) {
-        return 7;
-    }
-
     static {
-        d[Block.GRASS.id] = true;
-        d[Block.DIRT.id] = true;
-        d[Block.SAND.id] = true;
-        d[Block.GRAVEL.id] = true;
-        d[Block.YELLOW_FLOWER.id] = true;
-        d[Block.RED_ROSE.id] = true;
-        d[Block.BROWN_MUSHROOM.id] = true;
-        d[Block.RED_MUSHROOM.id] = true;
-        d[Block.TNT.id] = true;
-        d[Block.CACTUS.id] = true;
-        d[Block.CLAY.id] = true;
-        d[Block.PUMPKIN.id] = true;
-        d[Block.MELON.id] = true;
-        d[Block.MYCEL.id] = true;
+        br[Block.GRASS.id] = true;
+        br[Block.DIRT.id] = true;
+        br[Block.SAND.id] = true;
+        br[Block.GRAVEL.id] = true;
+        br[Block.YELLOW_FLOWER.id] = true;
+        br[Block.RED_ROSE.id] = true;
+        br[Block.BROWN_MUSHROOM.id] = true;
+        br[Block.RED_MUSHROOM.id] = true;
+        br[Block.TNT.id] = true;
+        br[Block.CACTUS.id] = true;
+        br[Block.CLAY.id] = true;
+        br[Block.PUMPKIN.id] = true;
+        br[Block.MELON.id] = true;
+        br[Block.MYCEL.id] = true;
     }
 }

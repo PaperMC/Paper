@@ -1,7 +1,7 @@
 package net.minecraft.server;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 
 import java.io.IOException; // CraftBukkit
 
@@ -14,18 +14,18 @@ public class Packet2Handshake extends Packet {
 
     public Packet2Handshake() {}
 
-    public void a(DataInputStream datainputstream) throws IOException { // CraftBukkit - throws IOException
-        this.a = datainputstream.readByte();
-        this.b = a(datainputstream, 16);
-        this.c = a(datainputstream, 255);
-        this.d = datainputstream.readInt();
+    public void a(DataInput datainput) throws IOException { // CraftBukkit - throws IOException
+        this.a = datainput.readByte();
+        this.b = a(datainput, 16);
+        this.c = a(datainput, 255);
+        this.d = datainput.readInt();
     }
 
-    public void a(DataOutputStream dataoutputstream) throws IOException { // CraftBukkit - throws IOException
-        dataoutputstream.writeByte(this.a);
-        a(this.b, dataoutputstream);
-        a(this.c, dataoutputstream);
-        dataoutputstream.writeInt(this.d);
+    public void a(DataOutput dataoutput) throws IOException { // CraftBukkit - throws IOException
+        dataoutput.writeByte(this.a);
+        a(this.b, dataoutput);
+        a(this.c, dataoutput);
+        dataoutput.writeInt(this.d);
     }
 
     public void handle(Connection connection) {

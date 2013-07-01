@@ -20,7 +20,7 @@ public class SlotFurnaceResult extends Slot {
     }
 
     public ItemStack a(int i) {
-        if (this.d()) {
+        if (this.e()) {
             this.b += Math.min(i, this.getItem().count);
         }
 

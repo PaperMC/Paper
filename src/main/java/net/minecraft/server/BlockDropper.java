@@ -7,14 +7,14 @@ import org.bukkit.event.inventory.InventoryMoveItemEvent;
 
 public class BlockDropper extends BlockDispenser {
 
-    private final IDispenseBehavior cR = new DispenseBehaviorItem();
+    private final IDispenseBehavior cX = new DispenseBehaviorItem();
 
     protected BlockDropper(int i) {
         super(i);
     }
 
     protected IDispenseBehavior a(ItemStack itemstack) {
-        return this.cR;
+        return this.cX;
     }
 
     public TileEntity b(World world) {
@@ -64,7 +64,7 @@ public class BlockDropper extends BlockDispenser {
                         itemstack1 = itemstack.cloneItemStack();
                     }
                 } else {
-                    itemstack1 = this.cR.a(sourceblock, itemstack);
+                    itemstack1 = this.cX.a(sourceblock, itemstack);
                     if (itemstack1 != null && itemstack1.count == 0) {
                         itemstack1 = null;
                     }

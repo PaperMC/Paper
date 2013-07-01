@@ -2,8 +2,8 @@ package net.minecraft.server;
 
 public abstract class EntityAgeable extends EntityCreature {
 
-    private float d = -1.0F;
-    private float e;
+    private float bp = -1.0F;
+    private float bq;
     public boolean ageLocked = false; // CraftBukkit
 
     public EntityAgeable(World world) {
@@ -12,34 +12,38 @@ public abstract class EntityAgeable extends EntityCreature {
 
     public abstract EntityAgeable createChild(EntityAgeable entityageable);
 
-    public boolean a_(EntityHuman entityhuman) {
+    public boolean a(EntityHuman entityhuman) {
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
-        if (itemstack != null && itemstack.id == Item.MONSTER_EGG.id && !this.world.isStatic) {
-            Class oclass = EntityTypes.a(itemstack.getData());
+        if (itemstack != null && itemstack.id == Item.MONSTER_EGG.id) {
+            if (!this.world.isStatic) {
+                Class oclass = EntityTypes.a(itemstack.getData());
 
-            if (oclass != null && oclass.isAssignableFrom(this.getClass())) {
-                EntityAgeable entityageable = this.createChild(this);
+                if (oclass != null && oclass.isAssignableFrom(this.getClass())) {
+                    EntityAgeable entityageable = this.createChild(this);
 
-                if (entityageable != null) {
-                    entityageable.setAge(-24000);
-                    entityageable.setPositionRotation(this.locX, this.locY, this.locZ, 0.0F, 0.0F);
-                    this.world.addEntity(entityageable, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // CraftBukkit
-                    if (itemstack.hasName()) {
-                        entityageable.setCustomName(itemstack.getName());
-                    }
+                    if (entityageable != null) {
+                        entityageable.setAge(-24000);
+                        entityageable.setPositionRotation(this.locX, this.locY, this.locZ, 0.0F, 0.0F);
+                        this.world.addEntity(entityageable, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // CraftBukkit
+                        if (itemstack.hasName()) {
+                            entityageable.setCustomName(itemstack.getName());
+                        }
 
-                    if (!entityhuman.abilities.canInstantlyBuild) {
-                        --itemstack.count;
-                        if (itemstack.count == 0) { // CraftBukkit - allow less than 0 stacks as "infinite"
-                            entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, (ItemStack) null);
+                        if (!entityhuman.abilities.canInstantlyBuild) {
+                            --itemstack.count;
+                            if (itemstack.count == 0) {  // CraftBukkit - allow less than 0 stacks as "infinite"
+                                entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, (ItemStack) null);
+                            }
                         }
                     }
                 }
             }
-        }
 
-        return super.a_(entityhuman);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     protected void a() {
@@ -49,6 +53,17 @@ public abstract class EntityAgeable extends EntityCreature {
 
     public int getAge() {
         return this.datawatcher.getInt(12);
+    }
+
+    public void a(int i) {
+        int j = this.getAge();
+
+        j += i * 20;
+        if (j > 0) {
+            j = 0;
+        }
+
+        this.setAge(j);
     }
 
     public void setAge(int i) {
@@ -90,20 +105,20 @@ public abstract class EntityAgeable extends EntityCreature {
     }
 
     public void a(boolean flag) {
-        this.j(flag ? 0.5F : 1.0F);
+        this.a(flag ? 0.5F : 1.0F);
     }
 
     protected final void a(float f, float f1) {
-        boolean flag = this.d > 0.0F;
+        boolean flag = this.bp > 0.0F;
 
-        this.d = f;
-        this.e = f1;
+        this.bp = f;
+        this.bq = f1;
         if (!flag) {
-            this.j(1.0F);
+            this.a(1.0F);
         }
     }
 
-    private void j(float f) {
-        super.a(this.d * f, this.e * f);
+    protected final void a(float f) {
+        super.a(this.bp * f, this.bq * f);
     }
 }

@@ -14,7 +14,7 @@ public class BlockCocoa extends BlockDirectional {
     public void a(World world, int i, int j, int k, Random random) {
         if (!this.f(world, i, j, k)) {
             this.c(world, i, j, k, world.getData(i, j, k), 0);
-            world.setAir(i, j, k);
+            world.setTypeIdAndData(i, j, k, 0, 0, 2);
         } else if (world.random.nextInt(5) == 0) {
             int l = world.getData(i, j, k);
             int i1 = c(l);
@@ -33,7 +33,7 @@ public class BlockCocoa extends BlockDirectional {
         k += Direction.b[l];
         int i1 = world.getTypeId(i, j, k);
 
-        return i1 == Block.LOG.id && BlockLog.d(world.getData(i, j, k)) == 3;
+        return i1 == Block.LOG.id && BlockLog.f(world.getData(i, j, k)) == 3;
     }
 
     public int d() {
@@ -96,7 +96,7 @@ public class BlockCocoa extends BlockDirectional {
     public void doPhysics(World world, int i, int j, int k, int l) {
         if (!this.f(world, i, j, k)) {
             this.c(world, i, j, k, world.getData(i, j, k), 0);
-            world.setAir(i, j, k);
+            world.setTypeIdAndData(i, j, k, 0, 0, 2);
         }
     }
 

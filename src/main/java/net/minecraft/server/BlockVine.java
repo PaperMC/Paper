@@ -29,65 +29,66 @@ public class BlockVine extends Block {
     }
 
     public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
+        float f = 0.0625F;
         int l = iblockaccess.getData(i, j, k);
-        float f = 1.0F;
         float f1 = 1.0F;
         float f2 = 1.0F;
-        float f3 = 0.0F;
+        float f3 = 1.0F;
         float f4 = 0.0F;
         float f5 = 0.0F;
+        float f6 = 0.0F;
         boolean flag = l > 0;
 
         if ((l & 2) != 0) {
-            f3 = Math.max(f3, 0.0625F);
-            f = 0.0F;
+            f4 = Math.max(f4, 0.0625F);
             f1 = 0.0F;
-            f4 = 1.0F;
             f2 = 0.0F;
             f5 = 1.0F;
+            f3 = 0.0F;
+            f6 = 1.0F;
             flag = true;
         }
 
         if ((l & 8) != 0) {
-            f = Math.min(f, 0.9375F);
-            f3 = 1.0F;
-            f1 = 0.0F;
+            f1 = Math.min(f1, 0.9375F);
             f4 = 1.0F;
             f2 = 0.0F;
             f5 = 1.0F;
+            f3 = 0.0F;
+            f6 = 1.0F;
             flag = true;
         }
 
         if ((l & 4) != 0) {
-            f5 = Math.max(f5, 0.0625F);
-            f2 = 0.0F;
-            f = 0.0F;
-            f3 = 1.0F;
+            f6 = Math.max(f6, 0.0625F);
+            f3 = 0.0F;
             f1 = 0.0F;
             f4 = 1.0F;
+            f2 = 0.0F;
+            f5 = 1.0F;
             flag = true;
         }
 
         if ((l & 1) != 0) {
-            f2 = Math.min(f2, 0.9375F);
-            f5 = 1.0F;
-            f = 0.0F;
-            f3 = 1.0F;
+            f3 = Math.min(f3, 0.9375F);
+            f6 = 1.0F;
             f1 = 0.0F;
             f4 = 1.0F;
+            f2 = 0.0F;
+            f5 = 1.0F;
             flag = true;
         }
 
         if (!flag && this.d(iblockaccess.getTypeId(i, j + 1, k))) {
-            f1 = Math.min(f1, 0.9375F);
-            f4 = 1.0F;
-            f = 0.0F;
-            f3 = 1.0F;
-            f2 = 0.0F;
+            f2 = Math.min(f2, 0.9375F);
             f5 = 1.0F;
+            f1 = 0.0F;
+            f4 = 1.0F;
+            f3 = 0.0F;
+            f6 = 1.0F;
         }
 
-        this.a(f, f1, f2, f3, f4, f5);
+        this.a(f1, f2, f3, f4, f5, f6);
     }
 
     public AxisAlignedBB b(World world, int i, int j, int k) {
@@ -300,7 +301,7 @@ public class BlockVine extends Block {
     }
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        if (!world.isStatic && entityhuman.cd() != null && entityhuman.cd().id == Item.SHEARS.id) {
+        if (!world.isStatic && entityhuman.bt() != null && entityhuman.bt().id == Item.SHEARS.id) {
             entityhuman.a(StatisticList.C[this.id], 1);
             this.b(world, i, j, k, new ItemStack(Block.VINE, 1, 0));
         } else {

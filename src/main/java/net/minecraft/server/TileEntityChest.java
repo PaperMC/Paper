@@ -11,7 +11,7 @@ import org.bukkit.entity.HumanEntity;
 public class TileEntityChest extends TileEntity implements IInventory {
 
     private ItemStack[] items = new ItemStack[27]; // CraftBukkit - 36 -> 27
-    public boolean a = false;
+    public boolean a;
     public TileEntityChest b;
     public TileEntityChest c;
     public TileEntityChest d;

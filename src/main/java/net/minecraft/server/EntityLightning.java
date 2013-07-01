@@ -7,7 +7,7 @@ import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 public class EntityLightning extends EntityWeather {
 
     private int lifeTicks;
-    public long a = 0L;
+    public long a;
     private int c;
 
     // CraftBukkit start
@@ -32,7 +32,7 @@ public class EntityLightning extends EntityWeather {
         this.c = this.random.nextInt(3) + 1;
 
         // CraftBukkit
-        if (!isEffect && !world.isStatic && world.difficulty >= 2 && world.areChunksLoaded(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2), 10)) {
+        if (!isEffect && !world.isStatic && world.getGameRules().getBoolean("doFireTick") && world.difficulty >= 2 && world.areChunksLoaded(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2), 10)) {
             int i = MathHelper.floor(d0);
             int j = MathHelper.floor(d1);
             int k = MathHelper.floor(d2);
@@ -77,7 +77,7 @@ public class EntityLightning extends EntityWeather {
                 this.lifeTicks = 1;
                 this.a = this.random.nextLong();
                 // CraftBukkit
-                if (!this.isEffect && !this.world.isStatic && this.world.areChunksLoaded(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ), 10)) {
+                if (!isEffect && !this.world.isStatic && this.world.getGameRules().getBoolean("doFireTick") && this.world.areChunksLoaded(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ), 10)) {
                     int i = MathHelper.floor(this.locX);
                     int j = MathHelper.floor(this.locY);
                     int k = MathHelper.floor(this.locZ);

@@ -7,7 +7,7 @@ import org.bukkit.event.entity.ExplosionPrimeEvent;
 
 public class EntityCreeper extends EntityMonster {
 
-    private int d;
+    private int bp;
     private int fuseTicks;
     private int maxFuseTicks = 30;
     private int explosionRadius = 3;
@@ -15,36 +15,36 @@ public class EntityCreeper extends EntityMonster {
 
     public EntityCreeper(World world) {
         super(world);
-        this.texture = "/mob/creeper.png";
         this.goalSelector.a(1, new PathfinderGoalFloat(this));
         this.goalSelector.a(2, new PathfinderGoalSwell(this));
-        this.goalSelector.a(3, new PathfinderGoalAvoidPlayer(this, EntityOcelot.class, 6.0F, 0.25F, 0.3F));
-        this.goalSelector.a(4, new PathfinderGoalMeleeAttack(this, 0.25F, false));
-        this.goalSelector.a(5, new PathfinderGoalRandomStroll(this, 0.2F));
+        this.goalSelector.a(3, new PathfinderGoalAvoidPlayer(this, EntityOcelot.class, 6.0F, 1.0D, 1.2D));
+        this.goalSelector.a(4, new PathfinderGoalMeleeAttack(this, 1.0D, false));
+        this.goalSelector.a(5, new PathfinderGoalRandomStroll(this, 0.8D));
         this.goalSelector.a(6, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 8.0F));
         this.goalSelector.a(6, new PathfinderGoalRandomLookaround(this));
-        this.targetSelector.a(1, new PathfinderGoalNearestAttackableTarget(this, EntityHuman.class, 16.0F, 0, true));
+        this.targetSelector.a(1, new PathfinderGoalNearestAttackableTarget(this, EntityHuman.class, 0, true));
         this.targetSelector.a(2, new PathfinderGoalHurtByTarget(this, false));
     }
 
-    public boolean bh() {
+    protected void ax() {
+        super.ax();
+        this.a(GenericAttributes.d).a(0.25D);
+    }
+
+    public boolean bb() {
         return true;
     }
 
-    public int ar() {
-        return this.getGoalTarget() == null ? 3 : 3 + (this.health - 1);
+    public int aq() {
+        return this.getGoalTarget() == null ? 3 : 3 + (int) (this.getHealth() - 1.0F);
     }
 
-    protected void a(float f) {
-        super.a(f);
+    protected void b(float f) {
+        super.b(f);
         this.fuseTicks = (int) ((float) this.fuseTicks + f * 1.5F);
         if (this.fuseTicks > this.maxFuseTicks - 5) {
             this.fuseTicks = this.maxFuseTicks - 5;
         }
-    }
-
-    public int getMaxHealth() {
-        return 20;
     }
 
     protected void a() {
@@ -77,8 +77,8 @@ public class EntityCreeper extends EntityMonster {
 
     public void l_() {
         if (this.isAlive()) {
-            this.d = this.fuseTicks;
-            int i = this.o();
+            this.bp = this.fuseTicks;
+            int i = this.bR();
 
             if (i > 0 && this.fuseTicks == 0) {
                 this.makeSound("random.fuse", 1.0F, 0.5F);
@@ -112,11 +112,11 @@ public class EntityCreeper extends EntityMonster {
         super.l_();
     }
 
-    protected String bc() {
+    protected String aK() {
         return "mob.creeper.say";
     }
 
-    protected String bd() {
+    protected String aL() {
         return "mob.creeper.death";
     }
 
@@ -173,7 +173,7 @@ public class EntityCreeper extends EntityMonster {
         return Item.SULPHUR.id;
     }
 
-    public int o() {
+    public int bR() {
         return this.datawatcher.getByte(16);
     }
 

@@ -4,8 +4,6 @@ import java.util.Random;
 
 public class BlockNetherWart extends BlockFlower {
 
-    private static final String[] a = new String[] { "netherStalk_0", "netherStalk_1", "netherStalk_2"};
-
     protected BlockNetherWart(int i) {
         super(i);
         this.b(true);
@@ -15,12 +13,12 @@ public class BlockNetherWart extends BlockFlower {
         this.a((CreativeModeTab) null);
     }
 
-    protected boolean f_(int i) {
+    protected boolean g_(int i) {
         return i == Block.SOUL_SAND.id;
     }
 
     public boolean f(World world, int i, int j, int k) {
-        return this.f_(world.getTypeId(i, j - 1, k));
+        return this.g_(world.getTypeId(i, j - 1, k));
     }
 
     public void a(World world, int i, int j, int k, Random random) {

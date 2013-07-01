@@ -17,7 +17,7 @@ public class EntityLargeFireball extends EntityFireball {
     protected void a(MovingObjectPosition movingobjectposition) {
         if (!this.world.isStatic) {
             if (movingobjectposition.entity != null) {
-                movingobjectposition.entity.damageEntity(DamageSource.fireball(this, this.shooter), 6);
+                movingobjectposition.entity.damageEntity(DamageSource.fireball(this, this.shooter), 6.0F);
             }
 
             // CraftBukkit start

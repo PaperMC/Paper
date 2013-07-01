@@ -103,7 +103,7 @@ public class TileEntityBrewingStand extends TileEntity implements IWorldInventor
         if (this.items[3] != null && this.items[3].count > 0) {
             ItemStack itemstack = this.items[3];
 
-            if (!Item.byId[itemstack.id].w()) {
+            if (!Item.byId[itemstack.id].x()) {
                 return false;
             } else {
                 boolean flag = false;
@@ -121,7 +121,8 @@ public class TileEntityBrewingStand extends TileEntity implements IWorldInventor
                         List list = Item.POTION.c(j);
                         List list1 = Item.POTION.c(k);
 
-                        if ((j <= 0 || list != list1) && (list == null || !list.equals(list1) && list1 != null) && j != k) {
+                        // CraftBukkit - list != -> !list.equals
+                        if ((j <= 0 || !list.equals(list1)) && (list == null || !list.equals(list1) && list1 != null) && j != k) {
                             flag = true;
                             break;
                         }
@@ -166,8 +167,8 @@ public class TileEntityBrewingStand extends TileEntity implements IWorldInventor
                 }
             }
 
-            if (Item.byId[itemstack.id].t()) {
-                this.items[3] = new ItemStack(Item.byId[itemstack.id].s());
+            if (Item.byId[itemstack.id].u()) {
+                this.items[3] = new ItemStack(Item.byId[itemstack.id].t());
             } else {
                 --this.items[3].count;
                 if (this.items[3].count <= 0) {
@@ -178,7 +179,7 @@ public class TileEntityBrewingStand extends TileEntity implements IWorldInventor
     }
 
     private int c(int i, ItemStack itemstack) {
-        return itemstack == null ? i : (Item.byId[itemstack.id].w() ? PotionBrewer.a(i, Item.byId[itemstack.id].v()) : i);
+        return itemstack == null ? i : (Item.byId[itemstack.id].x() ? PotionBrewer.a(i, Item.byId[itemstack.id].w()) : i);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -268,7 +269,7 @@ public class TileEntityBrewingStand extends TileEntity implements IWorldInventor
     public void g() {}
 
     public boolean b(int i, ItemStack itemstack) {
-        return i == 3 ? Item.byId[itemstack.id].w() : itemstack.id == Item.POTION.id || itemstack.id == Item.GLASS_BOTTLE.id;
+        return i == 3 ? Item.byId[itemstack.id].x() : itemstack.id == Item.POTION.id || itemstack.id == Item.GLASS_BOTTLE.id;
     }
 
     public int j() {

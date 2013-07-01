@@ -8,7 +8,7 @@ import org.bukkit.event.entity.EntityTargetEvent;
 public class EntityExperienceOrb extends Entity {
 
     public int a;
-    public int b = 0;
+    public int b;
     public int c;
     private int d = 5;
     public int value; // CraftBukkit - private -> public
@@ -27,7 +27,7 @@ public class EntityExperienceOrb extends Entity {
         this.value = i;
     }
 
-    protected boolean f_() {
+    protected boolean e_() {
         return false;
     }
 
@@ -119,15 +119,15 @@ public class EntityExperienceOrb extends Entity {
     }
 
     protected void burn(int i) {
-        this.damageEntity(DamageSource.FIRE, i);
+        this.damageEntity(DamageSource.FIRE, (float) i);
     }
 
-    public boolean damageEntity(DamageSource damagesource, int i) {
+    public boolean damageEntity(DamageSource damagesource, float f) {
         if (this.isInvulnerable()) {
             return false;
         } else {
             this.J();
-            this.d -= i;
+            this.d = (int) ((float) this.d - f);
             if (this.d <= 0) {
                 this.die();
             }
@@ -150,8 +150,8 @@ public class EntityExperienceOrb extends Entity {
 
     public void b_(EntityHuman entityhuman) {
         if (!this.world.isStatic) {
-            if (this.c == 0 && entityhuman.bT == 0) {
-                entityhuman.bT = 2;
+            if (this.c == 0 && entityhuman.bv == 0) {
+                entityhuman.bv = 2;
                 this.makeSound("random.orb", 0.1F, 0.5F * ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.8F));
                 entityhuman.receive(this, 1);
                 entityhuman.giveExp(CraftEventFactory.callPlayerExpChangeEvent(entityhuman, this.value).getAmount()); // CraftBukkit - this.value to event.getAmount()
@@ -187,7 +187,7 @@ public class EntityExperienceOrb extends Entity {
         return i >= 2477 ? 2477 : (i >= 1237 ? 1237 : (i >= 617 ? 617 : (i >= 307 ? 307 : (i >= 149 ? 149 : (i >= 73 ? 73 : (i >= 37 ? 37 : (i >= 17 ? 17 : (i >= 7 ? 7 : (i >= 3 ? 3 : 1)))))))));
     }
 
-    public boolean ap() {
+    public boolean ao() {
         return false;
     }
 }

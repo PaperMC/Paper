@@ -28,6 +28,7 @@ public abstract class WorldGenerator {
     // CraftBukkit - change signature
     protected void setTypeAndData(BlockChangeDelegate world, int i, int j, int k, int l, int i1) {
         if (this.a) {
+            // CraftBukkit - BlockChangeDelegate doesn't have the 6th parameter
             world.setTypeIdAndData(i, j, k, l, i1);
         } else {
             // CraftBukkit start - Layering violation :(

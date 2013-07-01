@@ -2,7 +2,7 @@ package net.minecraft.server;
 
 public class ItemBow extends Item {
 
-    public static final String[] a = new String[] { "bow_pull_0", "bow_pull_1", "bow_pull_2"};
+    public static final String[] a = new String[] { "pulling_0", "pulling_1", "pulling_2"};
 
     public ItemBow(int i) {
         super(i);
@@ -15,7 +15,7 @@ public class ItemBow extends Item {
         boolean flag = entityhuman.abilities.canInstantlyBuild || EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_INFINITE.id, itemstack) > 0;
 
         if (flag || entityhuman.inventory.e(Item.ARROW.id)) {
-            int j = this.c_(itemstack) - i;
+            int j = this.d_(itemstack) - i;
             float f = (float) j / 20.0F;
 
             f = (f * f + f * 2.0F) / 3.0F;
@@ -62,7 +62,7 @@ public class ItemBow extends Item {
             // CraftBukkit end
 
             itemstack.damage(1, entityhuman);
-            world.makeSound(entityhuman, "random.bow", 1.0F, 1.0F / (e.nextFloat() * 0.4F + 1.2F) + f * 0.5F);
+            world.makeSound(entityhuman, "random.bow", 1.0F, 1.0F / (Item.f.nextFloat() * 0.4F + 1.2F) + f * 0.5F); // CraftBukkit - Fix compilation
             if (flag) {
                 entityarrow.fromPlayer = 2;
             } else {
@@ -76,17 +76,17 @@ public class ItemBow extends Item {
         return itemstack;
     }
 
-    public int c_(ItemStack itemstack) {
+    public int d_(ItemStack itemstack) {
         return 72000;
     }
 
-    public EnumAnimation b_(ItemStack itemstack) {
+    public EnumAnimation c_(ItemStack itemstack) {
         return EnumAnimation.BOW;
     }
 
     public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
         if (entityhuman.abilities.canInstantlyBuild || entityhuman.inventory.e(Item.ARROW.id)) {
-            entityhuman.a(itemstack, this.c_(itemstack));
+            entityhuman.a(itemstack, this.d_(itemstack));
         }
 
         return itemstack;

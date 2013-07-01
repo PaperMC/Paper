@@ -7,7 +7,7 @@ public class ItemSnow extends ItemBlockWithAuxData {
     }
 
     public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
-        final int clickedX = i, clickedY = j, clickedZ = k;
+        final int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
         if (itemstack.count == 0) {
             return false;
         } else if (!entityhuman.a(i, j, k, l, itemstack)) {

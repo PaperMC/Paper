@@ -13,14 +13,14 @@ public abstract class BlockPressurePlateAbstract extends Block {
         this.a = s;
         this.a(CreativeModeTab.d);
         this.b(true);
-        this.b_(this.d(15));
+        this.c_(this.d(15));
     }
 
     public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
-        this.b_(iblockaccess.getData(i, j, k));
+        this.c_(iblockaccess.getData(i, j, k));
     }
 
-    protected void b_(int i) {
+    protected void c_(int i) {
         boolean flag = this.c(i) > 0;
         float f = 0.0625F;
 
@@ -52,13 +52,13 @@ public abstract class BlockPressurePlateAbstract extends Block {
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return world.w(i, j - 1, k) || BlockFence.l_(world.getTypeId(i, j - 1, k));
+        return world.w(i, j - 1, k) || BlockFence.n_(world.getTypeId(i, j - 1, k));
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
         boolean flag = false;
 
-        if (!world.w(i, j - 1, k) && !BlockFence.l_(world.getTypeId(i, j - 1, k))) {
+        if (!world.w(i, j - 1, k) && !BlockFence.n_(world.getTypeId(i, j - 1, k))) {
             flag = true;
         }
 

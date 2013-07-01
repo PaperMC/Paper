@@ -60,7 +60,7 @@ public class BlockPortal extends BlockHalfTransparant {
         return false;
     }
 
-    public boolean n_(World world, int i, int j, int k) {
+    public boolean o_(World world, int i, int j, int k) {
         byte b0 = 0;
         byte b1 = 0;
 

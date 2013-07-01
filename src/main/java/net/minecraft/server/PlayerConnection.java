@@ -1,12 +1,15 @@
 package net.minecraft.server;
 
 import java.io.ByteArrayInputStream;
+import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.Callable;
+
+import org.apache.commons.lang3.StringUtils;
 
 // CraftBukkit start
 import java.io.UnsupportedEncodingException;
@@ -54,7 +57,7 @@ public class PlayerConnection extends Connection {
 
     public final INetworkManager networkManager;
     private final MinecraftServer minecraftServer;
-    public boolean disconnected = false;
+    public boolean disconnected;
     public EntityPlayer player;
     private int e;
     private int f;
@@ -63,7 +66,7 @@ public class PlayerConnection extends Connection {
     private long i;
     private static Random j = new Random();
     private long k;
-    private volatile int chatThrottle = 0; private static final AtomicIntegerFieldUpdater chatSpamField = AtomicIntegerFieldUpdater.newUpdater(PlayerConnection.class, "chatThrottle"); // CraftBukkit - multithreaded field
+    private volatile int chatThrottle; private static final AtomicIntegerFieldUpdater chatSpamField = AtomicIntegerFieldUpdater.newUpdater(PlayerConnection.class, "chatThrottle"); // CraftBukkit - multithreaded field
     private int x = 0;
     private double y;
     private double z;
@@ -141,7 +144,7 @@ public class PlayerConnection extends Connection {
     public void disconnect(String s) {
         if (!this.disconnected) {
             // CraftBukkit start
-            String leaveMessage = EnumChatFormat.YELLOW + this.player.name + " left the game.";
+            String leaveMessage = EnumChatFormat.YELLOW + this.player.getName() + " left the game.";
 
             PlayerKickEvent event = new PlayerKickEvent(this.server.getPlayer(this.player), s, leaveMessage);
 
@@ -157,20 +160,24 @@ public class PlayerConnection extends Connection {
             s = event.getReason();
             // CraftBukkit end
 
-            this.player.k();
+            this.player.l();
             this.sendPacket(new Packet255KickDisconnect(s));
             this.networkManager.d();
 
             // CraftBukkit start
             leaveMessage = event.getLeaveMessage();
             if (leaveMessage != null && leaveMessage.length() > 0) {
-                this.minecraftServer.getPlayerList().sendAll(new Packet3Chat(leaveMessage));
+                this.minecraftServer.getPlayerList().sendMessage(ChatMessage.d(leaveMessage));
             }
             // CraftBukkit end
 
             this.minecraftServer.getPlayerList().disconnect(this.player);
             this.disconnected = true;
         }
+    }
+
+    public void a(Packet27PlayerInput packet27playerinput) {
+        this.player.a(packet27playerinput.d(), packet27playerinput.f(), packet27playerinput.g(), packet27playerinput.h());
     }
 
     public void a(Packet10Flying packet10flying) {
@@ -276,7 +283,7 @@ public class PlayerConnection extends Connection {
 
                     if (packet10flying.hasPos && packet10flying.y == -999.0D && packet10flying.stance == -999.0D) {
                         if (Math.abs(packet10flying.x) > 1.0D || Math.abs(packet10flying.z) > 1.0D) {
-                            System.err.println(this.player.name + " was caught trying to crash the server with an invalid position.");
+                            System.err.println(this.player.getName() + " was caught trying to crash the server with an invalid position.");
                             this.disconnect("Nope!");
                             return;
                         }
@@ -286,13 +293,13 @@ public class PlayerConnection extends Connection {
                     }
 
                     this.player.onGround = packet10flying.g;
-                    this.player.g();
+                    this.player.h();
                     this.player.move(d5, 0.0D, d4);
                     this.player.setLocation(d1, d2, d3, f, f1);
                     this.player.motX = d5;
                     this.player.motZ = d4;
                     if (this.player.vehicle != null) {
-                        worldserver.vehicleEnteredWorld(this.player.vehicle, true);
+                        // worldserver.vehicleEnteredWorld(this.player.vehicle, true); // CraftBukkit - removed
                     }
 
                     if (this.player.vehicle != null) {
@@ -300,15 +307,18 @@ public class PlayerConnection extends Connection {
                     }
 
                     this.minecraftServer.getPlayerList().d(this.player);
-                    this.y = this.player.locX;
-                    this.z = this.player.locY;
-                    this.p = this.player.locZ;
+                    if (this.checkMovement) {
+                        this.y = this.player.locX;
+                        this.z = this.player.locY;
+                        this.p = this.player.locZ;
+                    }
+
                     worldserver.playerJoinedWorld(this.player);
                     return;
                 }
 
                 if (this.player.isSleeping()) {
-                    this.player.g();
+                    this.player.h();
                     this.player.setLocation(this.y, this.z, this.p, this.player.yaw, this.player.pitch);
                     worldserver.playerJoinedWorld(this.player);
                     return;
@@ -335,7 +345,7 @@ public class PlayerConnection extends Connection {
                     d4 = packet10flying.stance - packet10flying.y;
                     if (!this.player.isSleeping() && (d4 > 1.65D || d4 < 0.1D)) {
                         this.disconnect("Illegal stance");
-                        this.minecraftServer.getLogger().warning(this.player.name + " had an illegal stance: " + d4);
+                        this.minecraftServer.getLogger().warning(this.player.getName() + " had an illegal stance: " + d4);
                         return;
                     }
 
@@ -351,7 +361,7 @@ public class PlayerConnection extends Connection {
                     f3 = packet10flying.pitch;
                 }
 
-                this.player.g();
+                this.player.h();
                 this.player.X = 0.0F;
                 this.player.setLocation(this.y, this.z, this.p, f2, f3);
                 if (!this.checkMovement) {
@@ -368,8 +378,8 @@ public class PlayerConnection extends Connection {
                 // CraftBukkit end
                 double d11 = d8 * d8 + d9 * d9 + d10 * d10;
 
-                if (d11 > 100.0D && this.checkMovement && (!this.minecraftServer.I() || !this.minecraftServer.H().equals(this.player.name))) { // CraftBukkit - Added this.checkMovement condition to solve this check being triggered by teleports
-                    this.minecraftServer.getLogger().warning(this.player.name + " moved too quickly! " + d4 + "," + d6 + "," + d7 + " (" + d8 + ", " + d9 + ", " + d10 + ")");
+                if (d11 > 100.0D && this.checkMovement && (!this.minecraftServer.K() || !this.minecraftServer.H().equals(this.player.getName()))) { // CraftBukkit - Added this.checkMovement condition to solve this check being triggered by teleports
+                    this.minecraftServer.getLogger().warning(this.player.getName() + " moved too quickly! " + d4 + "," + d6 + "," + d7 + " (" + d8 + ", " + d9 + ", " + d10 + ")");
                     this.a(this.y, this.z, this.p, this.player.yaw, this.player.pitch);
                     return;
                 }
@@ -378,7 +388,7 @@ public class PlayerConnection extends Connection {
                 boolean flag = worldserver.getCubes(this.player, this.player.boundingBox.clone().shrink((double) f4, (double) f4, (double) f4)).isEmpty();
 
                 if (this.player.onGround && !packet10flying.g && d6 > 0.0D) {
-                    this.player.j(0.2F);
+                    this.player.a(0.2F);
                 }
 
                 this.player.move(d4, d6, d7);
@@ -398,7 +408,7 @@ public class PlayerConnection extends Connection {
 
                 if (d11 > 0.0625D && !this.player.isSleeping() && !this.player.playerInteractManager.isCreative()) {
                     flag1 = true;
-                    this.minecraftServer.getLogger().warning(this.player.name + " moved wrongly!");
+                    this.minecraftServer.getLogger().warning(this.player.getName() + " moved wrongly!");
                 }
 
                 this.player.setLocation(d1, d2, d3, f2, f3);
@@ -415,7 +425,7 @@ public class PlayerConnection extends Connection {
                     if (d12 >= -0.03125D) {
                         ++this.f;
                         if (this.f > 80) {
-                            this.minecraftServer.getLogger().warning(this.player.name + " was kicked for floating too long!");
+                            this.minecraftServer.getLogger().warning(this.player.getName() + " was kicked for floating too long!");
                             this.disconnect("Flying is not enabled on this server");
                             return;
                         }
@@ -428,6 +438,8 @@ public class PlayerConnection extends Connection {
                 this.minecraftServer.getPlayerList().d(this.player);
                 if (this.player.playerInteractManager.isCreative()) return; // CraftBukkit - fixed fall distance accumulating while being in Creative mode.
                 this.player.b(this.player.locY - d0, packet10flying.g);
+            } else if (this.e % 20 == 0) {
+                this.a(this.y, this.z, this.p, this.player.yaw, this.player.pitch);
             }
         }
     }
@@ -496,7 +508,7 @@ public class PlayerConnection extends Connection {
                 // Else we increment the drop count and check the amount.
                 this.dropCount++;
                 if (this.dropCount >= 20) {
-                    this.minecraftServer.getLogger().warning(this.player.name + " dropped their items too quickly!");
+                    this.minecraftServer.getLogger().warning(this.player.getName() + " dropped their items too quickly!");
                     this.disconnect("You dropped your items too quickly (Hacking?)");
                     return;
                 }
@@ -506,7 +518,7 @@ public class PlayerConnection extends Connection {
         } else if (packet14blockdig.e == 3) {
             this.player.a(true);
         } else if (packet14blockdig.e == 5) {
-            this.player.bZ();
+            this.player.bo();
         } else {
             boolean flag = false;
 
@@ -625,7 +637,7 @@ public class PlayerConnection extends Connection {
             always = (itemstack.count != itemstackAmount);
             // CraftBukkit end
         } else if (packet15place.f() >= this.minecraftServer.getMaxBuildHeight() - 1 && (packet15place.getFace() == 1 || packet15place.f() >= this.minecraftServer.getMaxBuildHeight())) {
-            this.player.playerConnection.sendPacket(new Packet3Chat("" + EnumChatFormat.GRAY + "Height limit for building is " + this.minecraftServer.getMaxBuildHeight()));
+            this.player.playerConnection.sendPacket(new Packet3Chat(ChatMessage.b("build.tooHigh", new Object[] { Integer.valueOf(this.minecraftServer.getMaxBuildHeight())}).a(EnumChatFormat.RED)));
             flag = true;
         } else {
             // CraftBukkit start - Check if we can actually do something over this large a distance
@@ -692,15 +704,15 @@ public class PlayerConnection extends Connection {
     public void a(String s, Object[] aobject) {
         if (this.disconnected) return; // CraftBukkit - Rarely it would send a disconnect line twice
 
-        this.minecraftServer.getLogger().info(this.player.name + " lost connection: " + s);
+        this.minecraftServer.getLogger().info(this.player.getName() + " lost connection: " + s);
         // CraftBukkit start - We need to handle custom quit messages
         String quitMessage = this.minecraftServer.getPlayerList().disconnect(this.player);
         if ((quitMessage != null) && (quitMessage.length() > 0)) {
-            this.minecraftServer.getPlayerList().sendAll(new Packet3Chat(quitMessage));
+            this.minecraftServer.getPlayerList().sendMessage(ChatMessage.d(quitMessage));
         }
         // CraftBukkit end
         this.disconnected = true;
-        if (this.minecraftServer.I() && this.player.name.equals(this.minecraftServer.H())) {
+        if (this.minecraftServer.K() && this.player.getName().equals(this.minecraftServer.J())) {
             this.minecraftServer.getLogger().info("Stopping singleplayer server as player logged out");
             this.minecraftServer.safeShutdown();
         }
@@ -770,14 +782,14 @@ public class PlayerConnection extends Connection {
 
             this.player.inventory.itemInHandIndex = packet16blockitemswitch.itemInHandIndex;
         } else {
-            this.minecraftServer.getLogger().warning(this.player.name + " tried to set an invalid carried item");
+            this.minecraftServer.getLogger().warning(this.player.getName() + " tried to set an invalid carried item");
             this.disconnect("Nope!"); // CraftBukkit
         }
     }
 
     public void a(Packet3Chat packet3chat) {
         if (this.player.getChatFlags() == 2) {
-            this.sendPacket(new Packet3Chat("Cannot send chat message."));
+            this.sendPacket(new Packet3Chat(ChatMessage.e("chat.cannotSend").a(EnumChatFormat.RED)));
         } else {
             String s = packet3chat.message;
 
@@ -806,7 +818,7 @@ public class PlayerConnection extends Connection {
                 }
                 // CraftBukkit end
             } else {
-                s = s.trim();
+                s = StringUtils.normalizeSpace(s);
 
                 for (int i = 0; i < s.length(); ++i) {
                     if (!SharedConstants.isAllowedChatCharacter(s.charAt(i))) {
@@ -846,7 +858,7 @@ public class PlayerConnection extends Connection {
                 this.chat(s, packet3chat.a_());
 
                 // This section stays because it is only applicable to packets
-                if (chatSpamField.addAndGet(this, 20) > 200 && !this.minecraftServer.getPlayerList().isOp(this.player.name)) { // CraftBukkit use thread-safe spam
+                if (chatSpamField.addAndGet(this, 20) > 200 && !this.minecraftServer.getPlayerList().isOp(this.player.getName())) { // CraftBukkit use thread-safe spam
                     if (packet3chat.a_()) {
                         Waitable waitable = new Waitable() {
                             @Override
@@ -876,7 +888,7 @@ public class PlayerConnection extends Connection {
     public void chat(String s, boolean async) {
         if (!this.player.dead) {
             if (s.length() == 0) {
-                this.minecraftServer.getLogger().warning(this.player.name + " tried to send an empty message");
+                this.minecraftServer.getLogger().warning(this.player.getName() + " tried to send an empty message");
                 return;
             }
 
@@ -910,7 +922,7 @@ public class PlayerConnection extends Connection {
                             PlayerConnection.this.minecraftServer.console.sendMessage(message);
                             if (((LazyPlayerSet) queueEvent.getRecipients()).isLazy()) {
                                 for (Object player : PlayerConnection.this.minecraftServer.getPlayerList().players) {
-                                    ((EntityPlayer) player).sendMessage(message);
+                                    ((EntityPlayer) player).sendMessage(ChatMessage.d(message));
                                 }
                             } else {
                                 for (Player player : queueEvent.getRecipients()) {
@@ -940,7 +952,7 @@ public class PlayerConnection extends Connection {
                     minecraftServer.console.sendMessage(s);
                     if (((LazyPlayerSet) event.getRecipients()).isLazy()) {
                         for (Object recipient : minecraftServer.getPlayerList().players) {
-                            ((EntityPlayer) recipient).sendMessage(s);
+                            ((EntityPlayer) recipient).sendMessage(ChatMessage.d(s));
                         }
                     } else {
                         for (Player recipient : event.getRecipients()) {
@@ -1017,7 +1029,7 @@ public class PlayerConnection extends Connection {
             if (event.isCancelled()) return;
             // CraftBukkit end
 
-            this.player.bK();
+            this.player.aR();
         }
     }
 
@@ -1055,6 +1067,12 @@ public class PlayerConnection extends Connection {
         } else if (packet19entityaction.animation == 3) {
             this.player.a(false, true, true);
             // this.checkMovement = false; // CraftBukkit - this is handled in teleport
+        } else if (packet19entityaction.animation == 6) {
+            if (this.player.vehicle != null && this.player.vehicle instanceof EntityHorse) {
+                ((EntityHorse) this.player.vehicle).u(packet19entityaction.c);
+            }
+        } else if (packet19entityaction.animation == 7 && this.player.vehicle != null && this.player.vehicle instanceof EntityHorse) {
+            ((EntityHorse) this.player.vehicle).f(this.player);
         }
     }
 
@@ -1073,7 +1091,7 @@ public class PlayerConnection extends Connection {
         Entity entity = worldserver.getEntity(packet7useentity.target);
 
         if (entity != null) {
-            boolean flag = this.player.n(entity);
+            boolean flag = this.player.o(entity);
             double d0 = 36.0D;
 
             if (!flag) {
@@ -1097,10 +1115,11 @@ public class PlayerConnection extends Connection {
                         this.player.updateInventory(this.player.activeContainer);
                     }
                 } else if (packet7useentity.action == 1) {
-                    if ((entity instanceof EntityItem) || (entity instanceof EntityExperienceOrb) || (entity instanceof EntityArrow)) {
+                    // CraftBukkit - Check for player
+                    if ((entity instanceof EntityItem) || (entity instanceof EntityExperienceOrb) || (entity instanceof EntityArrow) || (entity == this.player)) {
                         String type = entity.getClass().getSimpleName();
                         disconnect("Attacking an " + type + " is not permitted");
-                        System.out.println("Player " + player.name + " tried to attack an " + type + ", so I have disconnected them for exploiting.");
+                        System.out.println("Player " + player.getName() + " tried to attack an " + type + ", so I have disconnected them for exploiting.");
                         return;
                     }
 
@@ -1119,19 +1138,19 @@ public class PlayerConnection extends Connection {
         if (packet205clientcommand.a == 1) {
             if (this.player.viewingCredits) {
                 this.minecraftServer.getPlayerList().changeDimension(this.player, 0, PlayerTeleportEvent.TeleportCause.END_PORTAL); // CraftBukkit - reroute logic through custom portal management
-            } else if (this.player.o().getWorldData().isHardcore()) {
-                if (this.minecraftServer.I() && this.player.name.equals(this.minecraftServer.H())) {
+            } else if (this.player.p().getWorldData().isHardcore()) {
+                if (this.minecraftServer.K() && this.player.getName().equals(this.minecraftServer.J())) {
                     this.player.playerConnection.disconnect("You have died. Game over, man, it\'s game over!");
-                    this.minecraftServer.P();
+                    this.minecraftServer.R();
                 } else {
-                    BanEntry banentry = new BanEntry(this.player.name);
+                    BanEntry banentry = new BanEntry(this.player.getName());
 
                     banentry.setReason("Death in Hardcore");
                     this.minecraftServer.getPlayerList().getNameBans().add(banentry);
                     this.player.playerConnection.disconnect("You have died. Game over, man, it\'s game over!");
                 }
             } else {
-                if (this.player.getHealth() > 0) {
+                if (this.player.getHealth() > 0.0F) {
                     return;
                 }
 
@@ -1151,7 +1170,7 @@ public class PlayerConnection extends Connection {
 
         CraftEventFactory.handleInventoryCloseEvent(this.player); // CraftBukkit
 
-        this.player.j();
+        this.player.k();
     }
 
     public void a(Packet102WindowClick packet102windowclick) {
@@ -1240,7 +1259,7 @@ public class PlayerConnection extends Connection {
                         action = InventoryAction.NOTHING;
                     } else {
                         Slot slot = this.player.activeContainer.getSlot(packet102windowclick.slot);
-                        if (slot != null && slot.a(this.player) && slot.d()) { // Should be Slot.hasItem()
+                        if (slot != null && slot.a(this.player) && slot.e()) { // Should be Slot.hasItem()
                             action = InventoryAction.MOVE_TO_OTHER_INVENTORY;
                         } else {
                             action = InventoryAction.NOTHING;
@@ -1254,7 +1273,7 @@ public class PlayerConnection extends Connection {
                     if (clickedSlot.a(player)) {
                         ItemStack hotbar = this.player.inventory.getItem(packet102windowclick.button);
                         boolean canCleanSwap = hotbar == null || (clickedSlot.inventory == player.inventory && clickedSlot.isAllowed(hotbar)); // the slot will accept the hotbar item
-                        if (clickedSlot.d()) {
+                        if (clickedSlot.e()) {
                             if (canCleanSwap) {
                                 action = InventoryAction.HOTBAR_SWAP;
                             } else {
@@ -1265,7 +1284,7 @@ public class PlayerConnection extends Connection {
                                     action = InventoryAction.NOTHING; // This is not sane! Mojang: You should test for other slots of same type
                                 }
                             }
-                        } else if (!clickedSlot.d() && hotbar != null && clickedSlot.isAllowed(hotbar)) {
+                        } else if (!clickedSlot.e() && hotbar != null && clickedSlot.isAllowed(hotbar)) {
                             action = InventoryAction.HOTBAR_SWAP;
                         } else {
                             action = InventoryAction.NOTHING;
@@ -1283,7 +1302,7 @@ public class PlayerConnection extends Connection {
                         action = InventoryAction.NOTHING;
                     } else {
                         Slot slot = this.player.activeContainer.getSlot(packet102windowclick.slot);
-                        if (slot != null && slot.d() && player.abilities.canInstantlyBuild && player.inventory.getCarried() == null) {
+                        if (slot != null && slot.e() && player.abilities.canInstantlyBuild && player.inventory.getCarried() == null) {
                             action = InventoryAction.CLONE_STACK;
                         } else {
                             action = InventoryAction.NOTHING;
@@ -1298,7 +1317,7 @@ public class PlayerConnection extends Connection {
                     if (packet102windowclick.button == 0) {
                         click = ClickType.DROP;
                         Slot slot = this.player.activeContainer.getSlot(packet102windowclick.slot);
-                        if (slot != null && slot.d() && slot.a(player) && slot.getItem() != null && slot.getItem().id != 0) {
+                        if (slot != null && slot.e() && slot.a(player) && slot.getItem() != null && slot.getItem().id != 0) {
                             action = InventoryAction.DROP_ONE_SLOT;
                         } else {
                             action = InventoryAction.NOTHING;
@@ -1306,7 +1325,7 @@ public class PlayerConnection extends Connection {
                     } else if (packet102windowclick.button == 1) {
                         click = ClickType.CONTROL_DROP;
                         Slot slot = this.player.activeContainer.getSlot(packet102windowclick.slot);
-                        if (slot != null && slot.d() && slot.a(player) && slot.getItem() != null && slot.getItem().id != 0) {
+                        if (slot != null && slot.e() && slot.a(player) && slot.getItem() != null && slot.getItem().id != 0) {
                             action = InventoryAction.DROP_ALL_SLOT;
                         } else {
                             action = InventoryAction.NOTHING;
@@ -1538,7 +1557,7 @@ public class PlayerConnection extends Connection {
                 TileEntitySign tileentitysign = (TileEntitySign) tileentity;
 
                 if (!tileentitysign.a()) {
-                    this.minecraftServer.warning("Player " + this.player.name + " just tried to change non-editable sign");
+                    this.minecraftServer.warning("Player " + this.player.getName() + " just tried to change non-editable sign");
                     this.sendPacket(new Packet130UpdateSign(packet130updatesign.x, packet130updatesign.y, packet130updatesign.z, tileentitysign.lines)); // CraftBukkit
                     return;
                 }
@@ -1626,7 +1645,7 @@ public class PlayerConnection extends Connection {
 
         String s;
 
-        for (Iterator iterator = this.minecraftServer.a((ICommandListener) this.player, packet203tabcomplete.d()).iterator(); iterator.hasNext(); stringbuilder.append(s)) {
+        for (Iterator iterator = this.minecraftServer.a(this.player, packet203tabcomplete.d()).iterator(); iterator.hasNext(); stringbuilder.append(s)) {
             s = (String) iterator.next();
             if (stringbuilder.length() > 0) {
                 stringbuilder.append('\0'); // CraftBukkit - fix decompile issue
@@ -1665,7 +1684,7 @@ public class PlayerConnection extends Connection {
                 }
                 // CraftBukkit start
             } catch (Throwable exception) {
-                this.minecraftServer.getLogger().warning(this.player.name + " sent invalid MC|BEdit data", exception);
+                this.minecraftServer.getLogger().warning(this.player.getName() + " sent invalid MC|BEdit data", exception);
                 this.disconnect("Invalid book data!");
                 // CraftBukkit end
             }
@@ -1683,7 +1702,7 @@ public class PlayerConnection extends Connection {
                 }
                 // CraftBukkit start
             } catch (Throwable exception1) {
-                this.minecraftServer.getLogger().warning(this.player.name + " sent invalid MC|BSign data", exception1);
+                this.minecraftServer.getLogger().warning(this.player.getName() + " sent invalid MC|BSign data", exception1);
                 this.disconnect("Invalid book data!");
                 // CraftBukkit end
             }
@@ -1701,7 +1720,7 @@ public class PlayerConnection extends Connection {
                     }
                 } catch (Exception exception2) {
                     // CraftBukkit start
-                    this.minecraftServer.getLogger().warning(this.player.name + " sent invalid MC|TrSel data", exception2);
+                    this.minecraftServer.getLogger().warning(this.player.getName() + " sent invalid MC|TrSel data", exception2);
                     this.disconnect("Invalid trade data!");
                     // CraftBukkit end
                 }
@@ -1710,29 +1729,29 @@ public class PlayerConnection extends Connection {
 
                 if ("MC|AdvCdm".equals(packet250custompayload.tag)) {
                     if (!this.minecraftServer.getEnableCommandBlock()) {
-                        this.player.sendMessage(this.player.a("advMode.notEnabled", new Object[0]));
+                        this.player.sendMessage(ChatMessage.e("advMode.notEnabled"));
                     } else if (this.player.a(2, "") && this.player.abilities.canInstantlyBuild) {
                         try {
                             datainputstream = new DataInputStream(new ByteArrayInputStream(packet250custompayload.data));
                             i = datainputstream.readInt();
                             j = datainputstream.readInt();
                             int k = datainputstream.readInt();
-                            String s = Packet.a(datainputstream, 256);
+                            String s = Packet.a((DataInput) datainputstream, 256);
                             TileEntity tileentity = this.player.world.getTileEntity(i, j, k);
 
                             if (tileentity != null && tileentity instanceof TileEntityCommand) {
-                                ((TileEntityCommand) tileentity).b(s);
+                                ((TileEntityCommand) tileentity).a(s);
                                 this.player.world.notify(i, j, k);
-                                this.player.sendMessage("Command set: " + s);
+                                this.player.sendMessage(ChatMessage.b("advMode.setCommand.success", new Object[] { s}));
                             }
                         } catch (Exception exception3) {
                             // CraftBukkit start
-                            this.minecraftServer.getLogger().warning(this.player.name + " sent invalid MC|AdvCdm data", exception3);
+                            this.minecraftServer.getLogger().warning(this.player.getName() + " sent invalid MC|AdvCdm data", exception3);
                             this.disconnect("Invalid CommandBlock data!");
                             // CraftBukkit end
                         }
                     } else {
-                        this.player.sendMessage(this.player.a("advMode.notAllowed", new Object[0]));
+                        this.player.sendMessage(ChatMessage.e("advMode.notAllowed"));
                     }
                 } else if ("MC|Beacon".equals(packet250custompayload.tag)) {
                     if (this.player.activeContainer instanceof ContainerBeacon) {
@@ -1743,7 +1762,7 @@ public class PlayerConnection extends Connection {
                             ContainerBeacon containerbeacon = (ContainerBeacon) this.player.activeContainer;
                             Slot slot = containerbeacon.getSlot(0);
 
-                            if (slot.d()) {
+                            if (slot.e()) {
                                 slot.a(1);
                                 TileEntityBeacon tileentitybeacon = containerbeacon.e();
 
@@ -1753,7 +1772,7 @@ public class PlayerConnection extends Connection {
                             }
                         } catch (Exception exception4) {
                             // CraftBukkit start
-                            this.minecraftServer.getLogger().warning(this.player.name + " sent invalid MC|Beacon data", exception4);
+                            this.minecraftServer.getLogger().warning(this.player.getName() + " sent invalid MC|Beacon data", exception4);
                             this.disconnect("Invalid beacon data!");
                             // CraftBukkit end
                         }

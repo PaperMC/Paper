@@ -14,7 +14,7 @@ public class EntityThrownExpBottle extends EntityProjectile {
         super(world, d0, d1, d2);
     }
 
-    protected float g() {
+    protected float e() {
         return 0.07F;
     }
 

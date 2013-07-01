@@ -6,7 +6,7 @@ import java.util.List;
 public class VillageSiege {
 
     private World world;
-    private boolean b = false;
+    private boolean b;
     private int c = -1;
     private int d;
     private int e;
@@ -139,7 +139,7 @@ public class VillageSiege {
 
             try {
                 entityzombie = new EntityZombie(this.world);
-                entityzombie.bJ();
+                entityzombie.a((GroupDataEntity) null);
                 entityzombie.setVillager(false);
             } catch (Exception exception) {
                 exception.printStackTrace();
@@ -162,6 +162,7 @@ public class VillageSiege {
             int k1 = k + this.world.random.nextInt(16) - 8;
 
             if (this.f.a(i1, j1, k1) && SpawnerCreature.a(EnumCreatureType.MONSTER, this.world, i1, j1, k1)) {
+                // CraftBukkit - add Return
                 return this.world.getVec3DPool().create((double) i1, (double) j1, (double) k1);
             }
         }

@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Logger;
 import javax.crypto.SecretKey;
 
 public class PendingConnection extends Connection {
@@ -18,18 +17,18 @@ public class PendingConnection extends Connection {
     private byte[] d;
     private final MinecraftServer server;
     public final NetworkManager networkManager;
-    public boolean b = false;
-    private int f = 0;
-    private String g = null;
-    private volatile boolean h = false;
+    public boolean b;
+    private int f;
+    private String g;
+    private volatile boolean h;
     private String loginKey = Long.toString(random.nextLong(), 16); // CraftBukkit - Security fix
-    private boolean j = false;
-    private SecretKey k = null;
+    private boolean j;
+    private SecretKey k;
     public String hostname = ""; // CraftBukkit - add field
 
     public PendingConnection(MinecraftServer minecraftserver, Socket socket, String s) throws java.io.IOException { // CraftBukkit - throws IOException
         this.server = minecraftserver;
-        this.networkManager = new NetworkManager(minecraftserver.getLogger(), socket, s, this, minecraftserver.F().getPrivate());
+        this.networkManager = new NetworkManager(minecraftserver.getLogger(), socket, s, this, minecraftserver.H().getPrivate());
         this.networkManager.e = 0;
     }
 
@@ -70,10 +69,10 @@ public class PendingConnection extends Connection {
         if (!this.g.equals(StripColor.a(this.g))) {
             this.disconnect("Invalid username!");
         } else {
-            PublicKey publickey = this.server.F().getPublic();
+            PublicKey publickey = this.server.H().getPublic();
 
-            if (packet2handshake.d() != 61) {
-                if (packet2handshake.d() > 61) {
+            if (packet2handshake.d() != 73) {
+                if (packet2handshake.d() > 73) {
                     this.disconnect("Outdated server!");
                 } else {
                     this.disconnect("Outdated client!");
@@ -88,7 +87,7 @@ public class PendingConnection extends Connection {
     }
 
     public void a(Packet252KeyResponse packet252keyresponse) {
-        PrivateKey privatekey = this.server.F().getPrivate();
+        PrivateKey privatekey = this.server.H().getPrivate();
 
         this.k = packet252keyresponse.a(privatekey);
         if (!Arrays.equals(this.d, packet252keyresponse.b(privatekey))) {
@@ -100,12 +99,13 @@ public class PendingConnection extends Connection {
 
     public void a(Packet205ClientCommand packet205clientcommand) {
         if (packet205clientcommand.a == 0) {
+            if (this.j) {
+                this.disconnect("Duplicate login");
+                return;
+            }
+
+            this.j = true;
             if (this.server.getOnlineMode()) {
-                if (this.j) {
-                    this.disconnect("Duplicate login");
-                    return;
-                }
-                this.j = true;
                 (new ThreadLoginVerifier(this, server.server)).start(); // CraftBukkit - add CraftServer
             } else {
                 this.h = true;
@@ -120,10 +120,11 @@ public class PendingConnection extends Connection {
         EntityPlayer s = this.server.getPlayerList().attemptLogin(this, this.g, this.hostname);
 
         if (s == null) {
+            // this.disconnect(s);
             return;
             // CraftBukkit end
         } else {
-            EntityPlayer entityplayer = this.server.getPlayerList().processLogin(s); // CraftBukkit - this.h -> s
+            EntityPlayer entityplayer = this.server.getPlayerList().processLogin(s); // CraftBukkit - this.g -> s
 
             if (entityplayer != null) {
                 this.server.getPlayerList().a((INetworkManager) this.networkManager, entityplayer);
@@ -145,24 +146,22 @@ public class PendingConnection extends Connection {
             String s = null;
             // CraftBukkit
             org.bukkit.event.server.ServerListPingEvent pingEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callServerListPingEvent(this.server.server, getSocket().getInetAddress(), this.server.getMotd(), playerlist.getPlayerCount(), playerlist.getMaxPlayers());
+            if (packet254getinfo.d()) {
+                // CraftBukkit
+                s = pingEvent.getMotd() + "\u00A7" + playerlist.getPlayerCount() + "\u00A7" + pingEvent.getMaxPlayers();
+            } else {
+                List list = Arrays.asList(new Serializable[] { Integer.valueOf(1), Integer.valueOf(73), this.server.getVersion(), this.server.getMotd(), Integer.valueOf(playerlist.getPlayerCount()), Integer.valueOf(playerlist.getMaxPlayers())});
 
-            if (packet254getinfo.a == 1) {
-                // CraftBukkit start - Fix decompile issues, don't create a list from an array
-                Object[] list = new Object[] { 1, 61, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
+                Object object;
 
-                for (Object object : list) {
+                for (Iterator iterator = list.iterator(); iterator.hasNext(); s = s + object.toString().replaceAll("\0", "")) {
+                    object = iterator.next();
                     if (s == null) {
                         s = "\u00A7";
                     } else {
-                        s = s + "\0";
+                        s = s + '\0';
                     }
-
-                    s += org.apache.commons.lang.StringUtils.replace(object.toString(), "\0", "");
                 }
-                // CraftBukkit end
-            } else {
-                // CraftBukkit
-                s = pingEvent.getMotd() + "\u00A7" + playerlist.getPlayerCount() + "\u00A7" + pingEvent.getMaxPlayers();
             }
 
             InetAddress inetaddress = null;
@@ -173,8 +172,8 @@ public class PendingConnection extends Connection {
 
             this.networkManager.queue(new Packet255KickDisconnect(s));
             this.networkManager.d();
-            if (inetaddress != null && this.server.ae() instanceof DedicatedServerConnection) {
-                ((DedicatedServerConnection) this.server.ae()).a(inetaddress);
+            if (inetaddress != null && this.server.ag() instanceof DedicatedServerConnection) {
+                ((DedicatedServerConnection) this.server.ag()).a(inetaddress);
             }
 
             this.b = true;

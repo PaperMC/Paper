@@ -5,11 +5,9 @@ import java.util.Random;
 
 public class BlockPistonExtension extends Block {
 
-    private IIcon a = null;
-
     public BlockPistonExtension(int i) {
         super(i, Material.PISTON);
-        this.a(j);
+        this.a(k);
         this.c(0.5F);
     }
 
@@ -58,6 +56,11 @@ public class BlockPistonExtension extends Block {
 
     public void a(World world, int i, int j, int k, AxisAlignedBB axisalignedbb, List list, Entity entity) {
         int l = world.getData(i, j, k);
+        float f = 0.25F;
+        float f1 = 0.375F;
+        float f2 = 0.625F;
+        float f3 = 0.25F;
+        float f4 = 0.75F;
 
         switch (d(l)) {
         case 0:
@@ -107,6 +110,7 @@ public class BlockPistonExtension extends Block {
 
     public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
         int l = iblockaccess.getData(i, j, k);
+        float f = 0.25F;
 
         switch (d(l)) {
         case 0:

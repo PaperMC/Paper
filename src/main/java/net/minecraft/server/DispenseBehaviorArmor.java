@@ -12,7 +12,7 @@ final class DispenseBehaviorArmor extends DispenseBehaviorItem {
     DispenseBehaviorArmor() {}
 
     protected ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
-        EnumFacing enumfacing = BlockDispenser.j_(isourceblock.h());
+        EnumFacing enumfacing = BlockDispenser.l_(isourceblock.h());
         int i = isourceblock.getBlockX() + enumfacing.c();
         int j = isourceblock.getBlockY() + enumfacing.d();
         int k = isourceblock.getBlockZ() + enumfacing.e();
@@ -22,7 +22,7 @@ final class DispenseBehaviorArmor extends DispenseBehaviorItem {
         if (list.size() > 0) {
             EntityLiving entityliving = (EntityLiving) list.get(0);
             int l = entityliving instanceof EntityHuman ? 1 : 0;
-            int i1 = EntityLiving.b(itemstack);
+            int i1 = EntityInsentient.b(itemstack);
 
             // CraftBukkit start
             ItemStack itemstack1 = itemstack.a(1);
@@ -54,7 +54,10 @@ final class DispenseBehaviorArmor extends DispenseBehaviorItem {
 
             itemstack1.count = 1;
             entityliving.setEquipment(i1 - l, itemstack1);
-            entityliving.a(i1, 2.0F);
+            if (entityliving instanceof EntityInsentient) {
+                ((EntityInsentient) entityliving).a(i1, 2.0F);
+            }
+
             // --itemstack.count; // CraftBukkit - handled above
             return itemstack;
         } else {

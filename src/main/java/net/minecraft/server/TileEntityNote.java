@@ -2,8 +2,8 @@ package net.minecraft.server;
 
 public class TileEntityNote extends TileEntity {
 
-    public byte note = 0;
-    public boolean b = false;
+    public byte note;
+    public boolean b;
 
     public TileEntityNote() {}
 

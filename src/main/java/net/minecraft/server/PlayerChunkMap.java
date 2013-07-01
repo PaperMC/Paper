@@ -15,8 +15,10 @@ public class PlayerChunkMap {
     private final List managedPlayers = new ArrayList();
     private final LongHashMap c = new LongHashMap();
     private final Queue d = new java.util.concurrent.ConcurrentLinkedQueue(); // CraftBukkit ArrayList -> ConcurrentLinkedQueue
-    private final int e;
-    private final int[][] f = new int[][] { { 1, 0}, { 0, 1}, { -1, 0}, { 0, -1}};
+    private final Queue e = new java.util.concurrent.ConcurrentLinkedQueue(); // CraftBukkit ArrayList -> ConcurrentLinkedQueue
+    private final int f;
+    private long g;
+    private final int[][] h = new int[][] { { 1, 0}, { 0, 1}, { -1, 0}, { 0, -1}};
     private boolean wasNotEmpty; // CraftBukkit
 
     public PlayerChunkMap(WorldServer worldserver, int i) {
@@ -25,7 +27,7 @@ public class PlayerChunkMap {
         } else if (i < 3) {
             throw new IllegalArgumentException("Too small view radius!");
         } else {
-            this.e = i;
+            this.f = i;
             this.world = worldserver;
         }
     }
@@ -35,15 +37,30 @@ public class PlayerChunkMap {
     }
 
     public void flush() {
-        // CraftBukkit start - Use iterator
-        java.util.Iterator iterator = this.d.iterator();
+        long i = this.world.getTime();
+        int j;
+        PlayerChunk playerchunk;
 
-        while (iterator.hasNext()) {
-            PlayerChunk playerinstance = (PlayerChunk) iterator.next();
-            playerinstance.a();
-            iterator.remove();
+        if (i - this.g > 8000L) {
+            this.g = i;
+
+            // CraftBukkit start - Use iterator
+            java.util.Iterator iterator = this.e.iterator();
+            while (iterator.hasNext()) {
+                playerchunk = (PlayerChunk) iterator.next();
+                playerchunk.b();
+                playerchunk.a();
+            }
+        } else {
+            java.util.Iterator iterator = this.d.iterator();
+
+            while (iterator.hasNext()) {
+                playerchunk = (PlayerChunk) iterator.next();
+                playerchunk.b();
+                iterator.remove();
+                // CraftBukkit end
+            }
         }
-        // CraftBukkit end
 
         // this.d.clear(); // CraftBukkit - Removals are already covered
         if (this.managedPlayers.isEmpty()) {
@@ -68,6 +85,7 @@ public class PlayerChunkMap {
         if (playerchunk == null && flag) {
             playerchunk = new PlayerChunk(this, i, j);
             this.c.put(k, playerchunk);
+            this.e.add(playerchunk);
         }
 
         return playerchunk;
@@ -101,8 +119,8 @@ public class PlayerChunkMap {
 
         // CraftBukkit start - Load nearby chunks first
         List<ChunkCoordIntPair> chunkList = new LinkedList<ChunkCoordIntPair>();
-        for (int k = i - this.e; k <= i + this.e; ++k) {
-            for (int l = j - this.e; l <= j + this.e; ++l) {
+        for (int k = i - this.f; k <= i + this.f; ++k) {
+            for (int l = j - this.f; l <= j + this.f; ++l) {
                 chunkList.add(new ChunkCoordIntPair(k, l));
             }
         }
@@ -120,7 +138,7 @@ public class PlayerChunkMap {
     public void b(EntityPlayer entityplayer) {
         ArrayList arraylist = new ArrayList(entityplayer.chunkCoordIntPairQueue);
         int i = 0;
-        int j = this.e;
+        int j = this.f;
         int k = (int) entityplayer.locX >> 4;
         int l = (int) entityplayer.locZ >> 4;
         int i1 = 0;
@@ -136,7 +154,7 @@ public class PlayerChunkMap {
 
         for (k1 = 1; k1 <= j * 2; ++k1) {
             for (int l1 = 0; l1 < 2; ++l1) {
-                int[] aint = this.f[i++ % 4];
+                int[] aint = this.h[i++ % 4];
 
                 for (int i2 = 0; i2 < k1; ++i2) {
                     i1 += aint[0];
@@ -152,8 +170,8 @@ public class PlayerChunkMap {
         i %= 4;
 
         for (k1 = 0; k1 < j * 2; ++k1) {
-            i1 += this.f[i][0];
-            j1 += this.f[i][1];
+            i1 += this.h[i][0];
+            j1 += this.h[i][1];
             chunkcoordintpair = PlayerChunk.a(this.a(k + i1, l + j1, true));
             if (arraylist.contains(chunkcoordintpair)) {
                 entityplayer.chunkCoordIntPairQueue.add(chunkcoordintpair);
@@ -165,8 +183,8 @@ public class PlayerChunkMap {
         int i = (int) entityplayer.d >> 4;
         int j = (int) entityplayer.e >> 4;
 
-        for (int k = i - this.e; k <= i + this.e; ++k) {
-            for (int l = j - this.e; l <= j + this.e; ++l) {
+        for (int k = i - this.f; k <= i + this.f; ++k) {
+            for (int l = j - this.f; l <= j + this.f; ++l) {
                 PlayerChunk playerchunk = this.a(k, l, false);
 
                 if (playerchunk != null) {
@@ -195,7 +213,7 @@ public class PlayerChunkMap {
         if (d2 >= 64.0D) {
             int k = (int) entityplayer.d >> 4;
             int l = (int) entityplayer.e >> 4;
-            int i1 = this.e;
+            int i1 = this.f;
             int j1 = i - k;
             int k1 = j - l;
             List<ChunkCoordIntPair> chunksToLoad = new LinkedList<ChunkCoordIntPair>(); // CraftBukkit
@@ -254,6 +272,10 @@ public class PlayerChunkMap {
     }
 
     static Queue c(PlayerChunkMap playermanager) { // CraftBukkit List -> Queue
+        return playermanager.e;
+    }
+
+    static Queue d(PlayerChunkMap playermanager) { // CraftBukkit List -> Queue
         return playermanager.d;
     }
 

@@ -14,7 +14,7 @@ public class ItemBlock extends Item {
     }
 
     public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
-        final int clickedX = i, clickedY = j, clickedZ = k;
+        final int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
         int i1 = world.getTypeId(i, j, k);
 
         if (i1 == Block.SNOW.id && (world.getData(i, j, k) & 7) < 1) {
@@ -67,6 +67,8 @@ public class ItemBlock extends Item {
                 world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), block.stepSound.getPlaceSound(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
                 --itemstack.count;
             }
+
+            return true;
             */
             return processBlockPlace(world, entityhuman, itemstack, i, j, k, this.id, k1, clickedX, clickedY, clickedZ);
             // CraftBukkit end

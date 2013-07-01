@@ -9,35 +9,36 @@ public class EntitySnowman extends EntityGolem implements IRangedEntity {
 
     public EntitySnowman(World world) {
         super(world);
-        this.texture = "/mob/snowman.png";
         this.a(0.4F, 1.8F);
         this.getNavigation().a(true);
-        this.goalSelector.a(1, new PathfinderGoalArrowAttack(this, 0.25F, 20, 10.0F));
-        this.goalSelector.a(2, new PathfinderGoalRandomStroll(this, 0.2F));
+        this.goalSelector.a(1, new PathfinderGoalArrowAttack(this, 1.25D, 20, 10.0F));
+        this.goalSelector.a(2, new PathfinderGoalRandomStroll(this, 1.0D));
         this.goalSelector.a(3, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F));
         this.goalSelector.a(4, new PathfinderGoalRandomLookaround(this));
-        this.targetSelector.a(1, new PathfinderGoalNearestAttackableTarget(this, EntityLiving.class, 16.0F, 0, true, false, IMonster.a));
+        this.targetSelector.a(1, new PathfinderGoalNearestAttackableTarget(this, EntityInsentient.class, 0, true, false, IMonster.a));
     }
 
-    public boolean bh() {
+    public boolean bb() {
         return true;
     }
 
-    public int getMaxHealth() {
-        return 4;
+    protected void ax() {
+        super.ax();
+        this.a(GenericAttributes.a).a(4.0D);
+        this.a(GenericAttributes.d).a(0.20000000298023224D);
     }
 
     public void c() {
         super.c();
         if (this.F()) {
-            this.damageEntity(DamageSource.DROWN, 1);
+            this.damageEntity(DamageSource.DROWN, 1.0F);
         }
 
         int i = MathHelper.floor(this.locX);
         int j = MathHelper.floor(this.locZ);
 
         if (this.world.getBiome(i, j).j() > 1.0F) {
-            this.damageEntity(CraftEventFactory.MELTING, 1); // CraftBukkit - DamageSource.BURN -> CraftEventFactory.MELTING
+            this.damageEntity(CraftEventFactory.MELTING, 1.0F); // CraftBukkit - DamageSource.BURN -> CraftEventFactory.MELTING
         }
 
         for (i = 0; i < 4; ++i) {
@@ -86,7 +87,7 @@ public class EntitySnowman extends EntityGolem implements IRangedEntity {
         float f1 = MathHelper.sqrt(d0 * d0 + d2 * d2) * 0.2F;
 
         entitysnowball.shoot(d0, d1 + (double) f1, d2, 1.6F, 12.0F);
-        this.makeSound("random.bow", 1.0F, 1.0F / (this.aE().nextFloat() * 0.4F + 0.8F));
+        this.makeSound("random.bow", 1.0F, 1.0F / (this.aB().nextFloat() * 0.4F + 0.8F));
         this.world.addEntity(entitysnowball);
     }
 }

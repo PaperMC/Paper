@@ -19,10 +19,6 @@ public class ItemBucket extends Item {
     }
 
     public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
-        float f = 1.0F;
-        double d0 = entityhuman.lastX + (entityhuman.locX - entityhuman.lastX) * (double) f;
-        double d1 = entityhuman.lastY + (entityhuman.locY - entityhuman.lastY) * (double) f + 1.62D - (double) entityhuman.height;
-        double d2 = entityhuman.lastZ + (entityhuman.locZ - entityhuman.lastZ) * (double) f;
         boolean flag = this.a == 0;
         MovingObjectPosition movingobjectposition = this.a(world, entityhuman, flag);
 
@@ -143,44 +139,41 @@ public class ItemBucket extends Item {
                     }
                     // CraftBukkit end
 
-                    if (this.a(world, d0, d1, d2, i, j, k) && !entityhuman.abilities.canInstantlyBuild) {
+                    if (this.a(world, i, j, k) && !entityhuman.abilities.canInstantlyBuild) {
                         return CraftItemStack.asNMSCopy(event.getItemStack()); // CraftBukkit
                     }
                 }
-            } else if (this.a == 0 && movingobjectposition.entity instanceof EntityCow) {
-                // CraftBukkit start - This codepath seems to be *NEVER* called
-                org.bukkit.Location loc = movingobjectposition.entity.getBukkitEntity().getLocation();
-                PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), -1, itemstack, Item.MILK_BUCKET);
-
-                if (event.isCancelled()) {
-                    return itemstack;
-                }
-
-                return CraftItemStack.asNMSCopy(event.getItemStack());
-                // CraftBukkit end
             }
 
             return itemstack;
         }
     }
 
-    public boolean a(World world, double d0, double d1, double d2, int i, int j, int k) {
+    public boolean a(World world, int i, int j, int k) {
         if (this.a <= 0) {
             return false;
-        } else if (!world.isEmpty(i, j, k) && world.getMaterial(i, j, k).isBuildable()) {
-            return false;
         } else {
-            if (world.worldProvider.e && this.a == Block.WATER.id) {
-                world.makeSound(d0 + 0.5D, d1 + 0.5D, d2 + 0.5D, "random.fizz", 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
+            boolean flag = !world.getMaterial(i, j, k).isBuildable();
 
-                for (int l = 0; l < 8; ++l) {
-                    world.addParticle("largesmoke", (double) i + Math.random(), (double) j + Math.random(), (double) k + Math.random(), 0.0D, 0.0D, 0.0D);
-                }
+            if (!world.isEmpty(i, j, k) && !flag) {
+                return false;
             } else {
-                world.setTypeIdAndData(i, j, k, this.a, 0, 3);
-            }
+                if (!world.isStatic && flag) {
+                    world.setAir(i, j, k, true);
+                }
 
-            return true;
+                if (world.worldProvider.f && this.a == Block.WATER.id) {
+                    world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), "random.fizz", 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
+
+                    for (int l = 0; l < 8; ++l) {
+                        world.addParticle("largesmoke", (double) i + Math.random(), (double) j + Math.random(), (double) k + Math.random(), 0.0D, 0.0D, 0.0D);
+                    }
+                } else {
+                    world.setTypeIdAndData(i, j, k, this.a, 0, 3);
+                }
+
+                return true;
+            }
         }
     }
 }

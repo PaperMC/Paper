@@ -37,7 +37,6 @@ public abstract class EntityMinecartAbstract extends Entity {
 
     public EntityMinecartAbstract(World world) {
         super(world);
-        this.a = false;
         this.m = true;
         this.a(0.98F, 0.7F);
         this.height = this.length / 2.0F;
@@ -66,14 +65,14 @@ public abstract class EntityMinecartAbstract extends Entity {
         }
     }
 
-    protected boolean f_() {
+    protected boolean e_() {
         return false;
     }
 
     protected void a() {
         this.datawatcher.a(17, new Integer(0));
         this.datawatcher.a(18, new Integer(1));
-        this.datawatcher.a(19, new Integer(0));
+        this.datawatcher.a(19, new Float(0.0F));
         this.datawatcher.a(20, new Integer(0));
         this.datawatcher.a(21, new Integer(6));
         this.datawatcher.a(22, Byte.valueOf((byte) 0));
@@ -93,7 +92,7 @@ public abstract class EntityMinecartAbstract extends Entity {
 
     public EntityMinecartAbstract(World world, double d0, double d1, double d2) {
         this(world);
-        this.setPosition(d0, d1 + (double) this.height, d2);
+        this.setPosition(d0, d1, d2);
         this.motX = 0.0D;
         this.motY = 0.0D;
         this.motZ = 0.0D;
@@ -108,7 +107,7 @@ public abstract class EntityMinecartAbstract extends Entity {
         return (double) this.length * 0.0D - 0.30000001192092896D;
     }
 
-    public boolean damageEntity(DamageSource damagesource, int i) {
+    public boolean damageEntity(DamageSource damagesource, float f) {
         if (!this.world.isStatic && !this.dead) {
             if (this.isInvulnerable()) {
                 return false;
@@ -117,23 +116,23 @@ public abstract class EntityMinecartAbstract extends Entity {
                 Vehicle vehicle = (Vehicle) this.getBukkitEntity();
                 org.bukkit.entity.Entity passenger = (damagesource.getEntity() == null) ? null : damagesource.getEntity().getBukkitEntity();
 
-                VehicleDamageEvent event = new VehicleDamageEvent(vehicle, passenger, i);
+                VehicleDamageEvent event = new VehicleDamageEvent(vehicle, passenger, f);
                 this.world.getServer().getPluginManager().callEvent(event);
 
                 if (event.isCancelled()) {
                     return true;
                 }
 
-                i = event.getDamage();
+                f = (float) event.getDamage();
                 // CraftBukkit end
 
-                this.j(-this.k());
-                this.i(10);
+                this.h(-this.k());
+                this.c(10);
                 this.J();
-                this.setDamage(this.getDamage() + i * 10);
+                this.setDamage(this.getDamage() + f * 10.0F);
                 boolean flag = damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).abilities.canInstantlyBuild;
 
-                if (flag || this.getDamage() > 40) {
+                if (flag || this.getDamage() > 40.0F) {
                     if (this.passenger != null) {
                         this.passenger.mount(this);
                     }
@@ -198,11 +197,11 @@ public abstract class EntityMinecartAbstract extends Entity {
         }
 
         if (this.j() > 0) {
-            this.i(this.j() - 1);
+            this.c(this.j() - 1);
         }
 
-        if (this.getDamage() > 0) {
-            this.setDamage(this.getDamage() - 1);
+        if (this.getDamage() > 0.0F) {
+            this.setDamage(this.getDamage() - 1.0F);
         }
 
         if (this.locY < -64.0D) {
@@ -229,7 +228,7 @@ public abstract class EntityMinecartAbstract extends Entity {
                             b0 = -1;
                         }
 
-                        this.c(b0);
+                        this.b(b0);
                     }
 
                     this.ap = false;
@@ -285,7 +284,7 @@ public abstract class EntityMinecartAbstract extends Entity {
             double d5 = 0.0078125D;
             int l = this.world.getTypeId(j, i, k);
 
-            if (BlockMinecartTrackAbstract.d_(l)) {
+            if (BlockMinecartTrackAbstract.e_(l)) {
                 int i1 = this.world.getData(j, i, k);
 
                 this.a(j, i, k, d4, d5, l, i1);
@@ -447,14 +446,20 @@ public abstract class EntityMinecartAbstract extends Entity {
         this.motZ = d6 * d3 / d4;
         double d7;
         double d8;
+        double d9;
+        double d10;
 
-        if (this.passenger != null) {
-            d7 = this.passenger.motX * this.passenger.motX + this.passenger.motZ * this.passenger.motZ;
-            d8 = this.motX * this.motX + this.motZ * this.motZ;
-            if (d7 > 1.0E-4D && d8 < 0.01D) {
-                this.motX += this.passenger.motX * 0.1D;
-                this.motZ += this.passenger.motZ * 0.1D;
-                flag1 = false;
+        if (this.passenger != null && this.passenger instanceof EntityLiving) {
+            d7 = (double) ((EntityLiving) this.passenger).bf;
+            if (d7 > 0.0D) {
+                d8 = -Math.sin((double) (this.passenger.yaw * 3.1415927F / 180.0F));
+                d9 = Math.cos((double) (this.passenger.yaw * 3.1415927F / 180.0F));
+                d10 = this.motX * this.motX + this.motZ * this.motZ;
+                if (d10 < 0.01D) {
+                    this.motX += d8 * 0.1D;
+                    this.motZ += d9 * 0.1D;
+                    flag1 = false;
+                }
             }
         }
 
@@ -473,8 +478,8 @@ public abstract class EntityMinecartAbstract extends Entity {
 
         d7 = 0.0D;
         d8 = (double) i + 0.5D + (double) aint[0][0] * 0.5D;
-        double d9 = (double) k + 0.5D + (double) aint[0][2] * 0.5D;
-        double d10 = (double) i + 0.5D + (double) aint[1][0] * 0.5D;
+        d9 = (double) k + 0.5D + (double) aint[0][2] * 0.5D;
+        d10 = (double) i + 0.5D + (double) aint[1][0] * 0.5D;
         double d11 = (double) k + 0.5D + (double) aint[1][2] * 0.5D;
 
         d2 = d10 - d8;
@@ -598,7 +603,7 @@ public abstract class EntityMinecartAbstract extends Entity {
 
         int l = this.world.getTypeId(i, j, k);
 
-        if (BlockMinecartTrackAbstract.d_(l)) {
+        if (BlockMinecartTrackAbstract.e_(l)) {
             int i1 = this.world.getData(i, j, k);
 
             d1 = (double) j;
@@ -654,9 +659,9 @@ public abstract class EntityMinecartAbstract extends Entity {
 
     protected void a(NBTTagCompound nbttagcompound) {
         if (nbttagcompound.getBoolean("CustomDisplayTile")) {
-            this.k(nbttagcompound.getInt("DisplayTile"));
-            this.l(nbttagcompound.getInt("DisplayData"));
-            this.m(nbttagcompound.getInt("DisplayOffset"));
+            this.i(nbttagcompound.getInt("DisplayTile"));
+            this.j(nbttagcompound.getInt("DisplayData"));
+            this.k(nbttagcompound.getInt("DisplayOffset"));
         }
 
         if (nbttagcompound.hasKey("CustomName") && nbttagcompound.getString("CustomName").length() > 0) {
@@ -764,15 +769,15 @@ public abstract class EntityMinecartAbstract extends Entity {
         }
     }
 
-    public void setDamage(int i) {
-        this.datawatcher.watch(19, Integer.valueOf(i));
+    public void setDamage(float f) {
+        this.datawatcher.watch(19, Float.valueOf(f));
     }
 
-    public int getDamage() {
-        return this.datawatcher.getInt(19);
+    public float getDamage() {
+        return this.datawatcher.getFloat(19);
     }
 
-    public void i(int i) {
+    public void c(int i) {
         this.datawatcher.watch(17, Integer.valueOf(i));
     }
 
@@ -780,7 +785,7 @@ public abstract class EntityMinecartAbstract extends Entity {
         return this.datawatcher.getInt(17);
     }
 
-    public void j(int i) {
+    public void h(int i) {
         this.datawatcher.watch(18, Integer.valueOf(i));
     }
 
@@ -820,12 +825,12 @@ public abstract class EntityMinecartAbstract extends Entity {
         return 6;
     }
 
-    public void k(int i) {
+    public void i(int i) {
         this.getDataWatcher().watch(20, Integer.valueOf(i & '\uffff' | this.o() << 16));
         this.a(true);
     }
 
-    public void l(int i) {
+    public void j(int i) {
         Block block = this.m();
         int j = block == null ? 0 : block.id;
 
@@ -833,7 +838,7 @@ public abstract class EntityMinecartAbstract extends Entity {
         this.a(true);
     }
 
-    public void m(int i) {
+    public void k(int i) {
         this.getDataWatcher().watch(21, Integer.valueOf(i));
         this.a(true);
     }

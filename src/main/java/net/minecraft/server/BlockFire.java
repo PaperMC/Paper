@@ -34,6 +34,8 @@ public class BlockFire extends Block {
         this.a(Block.LONG_GRASS.id, 60, 100);
         this.a(Block.WOOL.id, 30, 60);
         this.a(Block.VINE.id, 15, 100);
+        this.a(Block.COAL_BLOCK.id, 5, 5);
+        this.a(Block.HAY_BLOCK.id, 60, 20);
     }
 
     private void a(int i, int j, int k) {
@@ -77,7 +79,7 @@ public class BlockFire extends Block {
                 fireExtinguished(world, i, j, k); // CraftBukkit - invalid place location
             }
 
-            if (!flag && world.P() && (world.F(i, j, k) || world.F(i - 1, j, k) || world.F(i + 1, j, k) || world.F(i, j, k - 1) || world.F(i, j, k + 1))) {
+            if (!flag && world.Q() && (world.F(i, j, k) || world.F(i - 1, j, k) || world.F(i + 1, j, k) || world.F(i, j, k - 1) || world.F(i, j, k + 1))) {
                 fireExtinguished(world, i, j, k); // CraftBukkit - extinguished by rain
             } else {
                 int l = world.getData(i, j, k);
@@ -127,7 +129,7 @@ public class BlockFire extends Block {
                                             j2 /= 2;
                                         }
 
-                                        if (j2 > 0 && random.nextInt(l1) <= j2 && (!world.P() || !world.F(i1, k1, j1)) && !world.F(i1 - 1, k1, k) && !world.F(i1 + 1, k1, j1) && !world.F(i1, k1, j1 - 1) && !world.F(i1, k1, j1 + 1)) {
+                                        if (j2 > 0 && random.nextInt(l1) <= j2 && (!world.Q() || !world.F(i1, k1, j1)) && !world.F(i1 - 1, k1, k) && !world.F(i1 + 1, k1, j1) && !world.F(i1, k1, j1 - 1) && !world.F(i1, k1, j1 + 1)) {
                                             int k2 = l + random.nextInt(5) / 4;
 
                                             if (k2 > 15) {
@@ -250,7 +252,7 @@ public class BlockFire extends Block {
     }
 
     public void onPlace(World world, int i, int j, int k) {
-        if (world.worldProvider.dimension > 0 || world.getTypeId(i, j - 1, k) != Block.OBSIDIAN.id || !Block.PORTAL.n_(world, i, j, k)) {
+        if (world.worldProvider.dimension > 0 || world.getTypeId(i, j - 1, k) != Block.OBSIDIAN.id || !Block.PORTAL.o_(world, i, j, k)) {
             if (!world.w(i, j - 1, k) && !this.k(world, i, j, k)) {
                 fireExtinguished(world, i, j, k); // CraftBukkit - fuel block broke
             } else {

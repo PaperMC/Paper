@@ -7,8 +7,8 @@ import org.bukkit.event.block.LeavesDecayEvent; // CraftBukkit
 public class BlockLeaves extends BlockTransparant {
 
     public static final String[] a = new String[] { "oak", "spruce", "birch", "jungle"};
-    public static final String[][] b = new String[][] { { "leaves", "leaves_spruce", "leaves", "leaves_jungle"}, { "leaves_opaque", "leaves_spruce_opaque", "leaves_opaque", "leaves_jungle_opaque"}};
-    private IIcon[][] cR = new IIcon[2][];
+    public static final String[][] b = new String[][] { { "leaves_oak", "leaves_spruce", "leaves_birch", "leaves_jungle"}, { "leaves_oak_opaque", "leaves_spruce_opaque", "leaves_birch_opaque", "leaves_jungle_opaque"}};
+    private IIcon[][] cX = new IIcon[2][];
     int[] c;
 
     protected BlockLeaves(int i) {
@@ -178,7 +178,7 @@ public class BlockLeaves extends BlockTransparant {
     }
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        if (!world.isStatic && entityhuman.cd() != null && entityhuman.cd().id == Item.SHEARS.id) {
+        if (!world.isStatic && entityhuman.bt() != null && entityhuman.bt().id == Item.SHEARS.id) {
             entityhuman.a(StatisticList.C[this.id], 1);
             this.b(world, i, j, k, new ItemStack(Block.LEAVES.id, 1, l & 3));
         } else {
@@ -194,7 +194,7 @@ public class BlockLeaves extends BlockTransparant {
         return !this.d;
     }
 
-    protected ItemStack c_(int i) {
+    protected ItemStack d_(int i) {
         return new ItemStack(this.id, 1, i & 3);
     }
 }

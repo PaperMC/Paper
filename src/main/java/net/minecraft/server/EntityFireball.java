@@ -7,11 +7,11 @@ public abstract class EntityFireball extends Entity {
     private int e = -1;
     private int f = -1;
     private int g = -1;
-    private int h = 0;
-    private boolean i = false;
+    private int h;
+    private boolean i;
     public EntityLiving shooter;
     private int j;
-    private int au = 0;
+    private int au;
     public double dirX;
     public double dirY;
     public double dirZ;
@@ -106,7 +106,7 @@ public abstract class EntityFireball extends Entity {
             for (int j = 0; j < list.size(); ++j) {
                 Entity entity1 = (Entity) list.get(j);
 
-                if (entity1.K() && (!entity1.i(this.shooter) || this.au >= 25)) {
+                if (entity1.K() && (!entity1.h(this.shooter) || this.au >= 25)) {
                     float f = 0.3F;
                     AxisAlignedBB axisalignedbb = entity1.boundingBox.grow((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
@@ -227,7 +227,7 @@ public abstract class EntityFireball extends Entity {
         return 1.0F;
     }
 
-    public boolean damageEntity(DamageSource damagesource, int i) {
+    public boolean damageEntity(DamageSource damagesource, float f) {
         if (this.isInvulnerable()) {
             return false;
         } else {
@@ -255,7 +255,7 @@ public abstract class EntityFireball extends Entity {
         }
     }
 
-    public float c(float f) {
+    public float d(float f) {
         return 1.0F;
     }
 }

@@ -16,9 +16,9 @@ public class TileEntityFurnace extends TileEntity implements IWorldInventory {
     private static final int[] e = new int[] { 2, 1};
     private static final int[] f = new int[] { 1};
     private ItemStack[] items = new ItemStack[3];
-    public int burnTime = 0;
-    public int ticksForCurrentFuel = 0;
-    public int cookTime = 0;
+    public int burnTime;
+    public int ticksForCurrentFuel;
+    public int cookTime;
     private String h;
 
     // CraftBukkit start
@@ -206,7 +206,7 @@ public class TileEntityFurnace extends TileEntity implements IWorldInventory {
                     if (this.items[1] != null) {
                         --this.items[1].count;
                         if (this.items[1].count == 0) {
-                            Item item = this.items[1].getItem().s();
+                            Item item = this.items[1].getItem().t();
 
                             this.items[1] = item != null ? new ItemStack(item) : null;
                         }
@@ -300,9 +300,14 @@ public class TileEntityFurnace extends TileEntity implements IWorldInventory {
                 if (block.material == Material.WOOD) {
                     return 300;
                 }
+
+                if (block == Block.COAL_BLOCK) {
+                    return 16000;
+                }
             }
 
-            return item instanceof ItemTool && ((ItemTool) item).g().equals("WOOD") ? 200 : (item instanceof ItemSword && ((ItemSword) item).h().equals("WOOD") ? 200 : (item instanceof ItemHoe && ((ItemHoe) item).g().equals("WOOD") ? 200 : (i == Item.STICK.id ? 100 : (i == Item.COAL.id ? 1600 : (i == Item.LAVA_BUCKET.id ? 20000 : (i == Block.SAPLING.id ? 100 : (i == Item.BLAZE_ROD.id ? 2400 : 0)))))));        }
+            return item instanceof ItemTool && ((ItemTool) item).g().equals("WOOD") ? 200 : (item instanceof ItemSword && ((ItemSword) item).i().equals("WOOD") ? 200 : (item instanceof ItemHoe && ((ItemHoe) item).g().equals("WOOD") ? 200 : (i == Item.STICK.id ? 100 : (i == Item.COAL.id ? 1600 : (i == Item.LAVA_BUCKET.id ? 20000 : (i == Block.SAPLING.id ? 100 : (i == Item.BLAZE_ROD.id ? 2400 : 0)))))));
+        }
     }
 
     public static boolean isFuel(ItemStack itemstack) {

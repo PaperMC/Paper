@@ -6,11 +6,11 @@ public class ItemFood extends Item {
     private final int b;
     private final float c;
     private final boolean d;
-    private boolean cu;
-    private int cv;
-    private int cw;
-    private int cx;
-    private float cy;
+    private boolean cB;
+    private int cC;
+    private int cD;
+    private int cE;
+    private float cF;
 
     public ItemFood(int i, int j, float f, boolean flag) {
         super(i);
@@ -39,28 +39,29 @@ public class ItemFood extends Item {
         ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet8UpdateHealth(entityhuman.getHealth(), entityhuman.getFoodData().foodLevel, entityhuman.getFoodData().saturationLevel));
         // CraftBukkit end
 
+        entityhuman.getFoodData().a(this);
         world.makeSound(entityhuman, "random.burp", 0.5F, world.random.nextFloat() * 0.1F + 0.9F);
         this.c(itemstack, world, entityhuman);
         return itemstack;
     }
 
     protected void c(ItemStack itemstack, World world, EntityHuman entityhuman) {
-        if (!world.isStatic && this.cv > 0 && world.random.nextFloat() < this.cy) {
-            entityhuman.addEffect(new MobEffect(this.cv, this.cw * 20, this.cx));
+        if (!world.isStatic && this.cC > 0 && world.random.nextFloat() < this.cF) {
+            entityhuman.addEffect(new MobEffect(this.cC, this.cD * 20, this.cE));
         }
     }
 
-    public int c_(ItemStack itemstack) {
+    public int d_(ItemStack itemstack) {
         return 32;
     }
 
-    public EnumAnimation b_(ItemStack itemstack) {
+    public EnumAnimation c_(ItemStack itemstack) {
         return EnumAnimation.EAT;
     }
 
     public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
-        if (entityhuman.i(this.cu)) {
-            entityhuman.a(itemstack, this.c_(itemstack));
+        if (entityhuman.g(this.cB)) {
+            entityhuman.a(itemstack, this.d_(itemstack));
         }
 
         return itemstack;
@@ -74,20 +75,20 @@ public class ItemFood extends Item {
         return this.c;
     }
 
-    public boolean i() {
+    public boolean j() {
         return this.d;
     }
 
     public ItemFood a(int i, int j, int k, float f) {
-        this.cv = i;
-        this.cw = j;
-        this.cx = k;
-        this.cy = f;
+        this.cC = i;
+        this.cD = j;
+        this.cE = k;
+        this.cF = f;
         return this;
     }
 
-    public ItemFood j() {
-        this.cu = true;
+    public ItemFood k() {
+        this.cB = true;
         return this;
     }
 }

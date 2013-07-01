@@ -9,7 +9,7 @@ import org.bukkit.event.block.BlockFromToEvent;
 
 public class BlockFlowing extends BlockFluids {
 
-    int a = 0;
+    int a;
     boolean[] b = new boolean[4];
     int[] c = new int[4];
 
@@ -34,64 +34,64 @@ public class BlockFlowing extends BlockFluids {
         org.bukkit.block.Block source = bworld == null ? null : bworld.getBlockAt(i, j, k);
         // CraftBukkit end
 
-        int l = this.k_(world, i, j, k);
+        int l = this.l_(world, i, j, k);
         byte b0 = 1;
 
-        if (this.material == Material.LAVA && !world.worldProvider.e) {
+        if (this.material == Material.LAVA && !world.worldProvider.f) {
             b0 = 2;
         }
 
         boolean flag = true;
-        int i1;
+        int i1 = this.a(world);
+        int j1;
 
         if (l > 0) {
             byte b1 = -100;
 
             this.a = 0;
-            int j1 = this.d(world, i - 1, j, k, b1);
+            int k1 = this.d(world, i - 1, j, k, b1);
 
-            j1 = this.d(world, i + 1, j, k, j1);
-            j1 = this.d(world, i, j, k - 1, j1);
-            j1 = this.d(world, i, j, k + 1, j1);
-            i1 = j1 + b0;
-            if (i1 >= 8 || j1 < 0) {
-                i1 = -1;
+            k1 = this.d(world, i + 1, j, k, k1);
+            k1 = this.d(world, i, j, k - 1, k1);
+            k1 = this.d(world, i, j, k + 1, k1);
+            j1 = k1 + b0;
+            if (j1 >= 8 || k1 < 0) {
+                j1 = -1;
             }
 
-            if (this.k_(world, i, j + 1, k) >= 0) {
-                int k1 = this.k_(world, i, j + 1, k);
+            if (this.l_(world, i, j + 1, k) >= 0) {
+                int l1 = this.l_(world, i, j + 1, k);
 
-                if (k1 >= 8) {
-                    i1 = k1;
+                if (l1 >= 8) {
+                    j1 = l1;
                 } else {
-                    i1 = k1 + 8;
+                    j1 = l1 + 8;
                 }
             }
 
             if (this.a >= 2 && this.material == Material.WATER) {
                 if (world.getMaterial(i, j - 1, k).isBuildable()) {
-                    i1 = 0;
+                    j1 = 0;
                 } else if (world.getMaterial(i, j - 1, k) == this.material && world.getData(i, j - 1, k) == 0) {
-                    i1 = 0;
+                    j1 = 0;
                 }
             }
 
-            if (this.material == Material.LAVA && l < 8 && i1 < 8 && i1 > l && random.nextInt(4) != 0) {
-                i1 = l;
-                flag = false;
+            if (this.material == Material.LAVA && l < 8 && j1 < 8 && j1 > l && random.nextInt(4) != 0) {
+                i1 *= 4;
             }
 
-            if (i1 == l) {
+            if (j1 == l) {
                 if (flag) {
                     this.k(world, i, j, k);
                 }
             } else {
-                l = i1;
-                if (i1 < 0) {
+                l = j1;
+                if (j1 < 0) {
                     world.setAir(i, j, k);
                 } else {
-                    world.setData(i, j, k, i1, 2);
-                    world.a(i, j, k, this.id, this.a(world));
+                    world.setData(i, j, k, j1, 2);
+                    world.a(i, j, k, this.id, i1);
                     world.applyPhysics(i, j, k, this.id);
                 }
             }
@@ -123,12 +123,12 @@ public class BlockFlowing extends BlockFluids {
         } else if (l >= 0 && (l == 0 || this.n(world, i, j - 1, k))) {
             boolean[] aboolean = this.m(world, i, j, k);
 
-            i1 = l + b0;
+            j1 = l + b0;
             if (l >= 8) {
-                i1 = 1;
+                j1 = 1;
             }
 
-            if (i1 >= 8) {
+            if (j1 >= 8) {
                 return;
             }
 
@@ -145,7 +145,7 @@ public class BlockFlowing extends BlockFluids {
                     }
 
                     if (!event.isCancelled()) {
-                        this.flow(world, i + currentFace.getModX(), j, k + currentFace.getModZ(), i1);
+                        this.flow(world, i + currentFace.getModX(), j, k + currentFace.getModZ(), j1);
                     }
                 }
                 index++;
@@ -279,7 +279,7 @@ public class BlockFlowing extends BlockFluids {
     }
 
     protected int d(World world, int i, int j, int k, int l) {
-        int i1 = this.k_(world, i, j, k);
+        int i1 = this.l_(world, i, j, k);
 
         if (i1 < 0) {
             return l;
@@ -310,6 +310,6 @@ public class BlockFlowing extends BlockFluids {
     }
 
     public boolean l() {
-        return false;
+        return true;
     }
 }

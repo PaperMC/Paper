@@ -2,80 +2,78 @@ package net.minecraft.server;
 
 public class EntityChicken extends EntityAnimal {
 
-    public boolean d = false;
-    public float e = 0.0F;
-    public float f = 0.0F;
-    public float g;
-    public float h;
-    public float i = 1.0F;
-    public int j;
+    public float bp;
+    public float bq;
+    public float br;
+    public float bs;
+    public float bt = 1.0F;
+    public int bu;
 
     public EntityChicken(World world) {
         super(world);
-        this.texture = "/mob/chicken.png";
         this.a(0.3F, 0.7F);
-        this.j = this.random.nextInt(6000) + 6000;
-        float f = 0.25F;
-
+        this.bu = this.random.nextInt(6000) + 6000;
         this.goalSelector.a(0, new PathfinderGoalFloat(this));
-        this.goalSelector.a(1, new PathfinderGoalPanic(this, 0.38F));
-        this.goalSelector.a(2, new PathfinderGoalBreed(this, f));
-        this.goalSelector.a(3, new PathfinderGoalTempt(this, 0.25F, Item.SEEDS.id, false));
-        this.goalSelector.a(4, new PathfinderGoalFollowParent(this, 0.28F));
-        this.goalSelector.a(5, new PathfinderGoalRandomStroll(this, f));
+        this.goalSelector.a(1, new PathfinderGoalPanic(this, 1.4D));
+        this.goalSelector.a(2, new PathfinderGoalBreed(this, 1.0D));
+        this.goalSelector.a(3, new PathfinderGoalTempt(this, 1.0D, Item.SEEDS.id, false));
+        this.goalSelector.a(4, new PathfinderGoalFollowParent(this, 1.1D));
+        this.goalSelector.a(5, new PathfinderGoalRandomStroll(this, 1.0D));
         this.goalSelector.a(6, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F));
         this.goalSelector.a(7, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean bh() {
+    public boolean bb() {
         return true;
     }
 
-    public int getMaxHealth() {
-        return 4;
+    protected void ax() {
+        super.ax();
+        this.a(GenericAttributes.a).a(4.0D);
+        this.a(GenericAttributes.d).a(0.25D);
     }
 
     public void c() {
         super.c();
-        this.h = this.e;
-        this.g = this.f;
-        this.f = (float) ((double) this.f + (double) (this.onGround ? -1 : 4) * 0.3D);
-        if (this.f < 0.0F) {
-            this.f = 0.0F;
+        this.bs = this.bp;
+        this.br = this.bq;
+        this.bq = (float) ((double) this.bq + (double) (this.onGround ? -1 : 4) * 0.3D);
+        if (this.bq < 0.0F) {
+            this.bq = 0.0F;
         }
 
-        if (this.f > 1.0F) {
-            this.f = 1.0F;
+        if (this.bq > 1.0F) {
+            this.bq = 1.0F;
         }
 
-        if (!this.onGround && this.i < 1.0F) {
-            this.i = 1.0F;
+        if (!this.onGround && this.bt < 1.0F) {
+            this.bt = 1.0F;
         }
 
-        this.i = (float) ((double) this.i * 0.9D);
+        this.bt = (float) ((double) this.bt * 0.9D);
         if (!this.onGround && this.motY < 0.0D) {
             this.motY *= 0.6D;
         }
 
-        this.e += this.i * 2.0F;
-        if (!this.isBaby() && !this.world.isStatic && --this.j <= 0) {
+        this.bp += this.bt * 2.0F;
+        if (!this.isBaby() && !this.world.isStatic && --this.bu <= 0) {
             this.makeSound("mob.chicken.plop", 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
             this.b(Item.EGG.id, 1);
-            this.j = this.random.nextInt(6000) + 6000;
+            this.bu = this.random.nextInt(6000) + 6000;
         }
     }
 
-    protected void a(float f) {}
+    protected void b(float f) {}
 
-    protected String bb() {
+    protected String r() {
         return "mob.chicken.say";
     }
 
-    protected String bc() {
+    protected String aK() {
         return "mob.chicken.hurt";
     }
 
-    protected String bd() {
+    protected String aL() {
         return "mob.chicken.hurt";
     }
 

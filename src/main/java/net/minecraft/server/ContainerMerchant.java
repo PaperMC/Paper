@@ -72,7 +72,7 @@ public class ContainerMerchant extends Container {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.c.get(i);
 
-        if (slot != null && slot.d()) {
+        if (slot != null && slot.e()) {
             ItemStack itemstack1 = slot.getItem();
 
             itemstack = itemstack1.cloneItemStack();
@@ -97,7 +97,7 @@ public class ContainerMerchant extends Container {
             if (itemstack1.count == 0) {
                 slot.set((ItemStack) null);
             } else {
-                slot.e();
+                slot.f();
             }
 
             if (itemstack1.count == itemstack.count) {
@@ -112,7 +112,7 @@ public class ContainerMerchant extends Container {
 
     public void b(EntityHuman entityhuman) {
         super.b(entityhuman);
-        this.merchant.a((EntityHuman) null);
+        this.merchant.a_((EntityHuman) null);
         super.b(entityhuman);
         if (!this.g.isStatic) {
             ItemStack itemstack = this.f.splitWithoutUpdate(0);

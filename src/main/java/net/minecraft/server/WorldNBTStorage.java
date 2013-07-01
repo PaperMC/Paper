@@ -21,7 +21,7 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
     private final File baseDir;
     private final File playerDir;
     private final File dataDir;
-    private final long sessionId = System.currentTimeMillis();
+    private final long sessionId = MinecraftServer.aq();
     private final String e;
     private UUID uuid = null; // CraftBukkit
 
@@ -174,8 +174,8 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
             NBTTagCompound nbttagcompound = new NBTTagCompound();
 
             entityhuman.e(nbttagcompound);
-            File file1 = new File(this.playerDir, entityhuman.name + ".dat.tmp");
-            File file2 = new File(this.playerDir, entityhuman.name + ".dat");
+            File file1 = new File(this.playerDir, entityhuman.getName() + ".dat.tmp");
+            File file2 = new File(this.playerDir, entityhuman.getName() + ".dat");
 
             NBTCompressedStreamTools.a(nbttagcompound, (OutputStream) (new FileOutputStream(file1)));
             if (file2.exists()) {
@@ -184,12 +184,12 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
 
             file1.renameTo(file2);
         } catch (Exception exception) {
-            MinecraftServer.getServer().getLogger().warning("Failed to save player data for " + entityhuman.name);
+            MinecraftServer.getServer().getLogger().warning("Failed to save player data for " + entityhuman.getName());
         }
     }
 
     public NBTTagCompound load(EntityHuman entityhuman) {
-        NBTTagCompound nbttagcompound = this.getPlayerData(entityhuman.name);
+        NBTTagCompound nbttagcompound = this.getPlayerData(entityhuman.getName());
 
         if (nbttagcompound != null) {
             // CraftBukkit start

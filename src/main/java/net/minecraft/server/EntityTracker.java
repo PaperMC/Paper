@@ -73,14 +73,12 @@ public class EntityTracker {
             this.addEntity(entity, 160, 10, true);
         } else if (entity instanceof EntityFallingBlock) {
             this.addEntity(entity, 160, 20, true);
-        } else if (entity instanceof EntityPainting) {
+        } else if (entity instanceof EntityHanging) {
             this.addEntity(entity, 160, Integer.MAX_VALUE, false);
         } else if (entity instanceof EntityExperienceOrb) {
             this.addEntity(entity, 160, 20, true);
         } else if (entity instanceof EntityEnderCrystal) {
             this.addEntity(entity, 256, Integer.MAX_VALUE, false);
-        } else if (entity instanceof EntityItemFrame) {
-            this.addEntity(entity, 160, Integer.MAX_VALUE, false);
         }
     }
 

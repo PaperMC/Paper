@@ -14,7 +14,6 @@ public class EntityItem extends Entity {
 
     public EntityItem(World world, double d0, double d1, double d2) {
         super(world);
-        this.age = 0;
         this.d = 5;
         this.c = (float) (Math.random() * 3.141592653589793D * 2.0D);
         this.a(0.25F, 0.25F);
@@ -36,13 +35,12 @@ public class EntityItem extends Entity {
         this.setItemStack(itemstack);
     }
 
-    protected boolean f_() {
+    protected boolean e_() {
         return false;
     }
 
     public EntityItem(World world) {
         super(world);
-        this.age = 0;
         this.d = 5;
         this.c = (float) (Math.random() * 3.141592653589793D * 2.0D);
         this.a(0.25F, 0.25F);
@@ -79,7 +77,7 @@ public class EntityItem extends Entity {
             }
 
             if (!this.world.isStatic) {
-                this.g();
+                this.e();
             }
         }
 
@@ -113,7 +111,7 @@ public class EntityItem extends Entity {
         }
     }
 
-    private void g() {
+    private void e() {
         Iterator iterator = this.world.a(EntityItem.class, this.boundingBox.grow(0.5D, 0.0D, 0.5D)).iterator();
 
         while (iterator.hasNext()) {
@@ -136,7 +134,7 @@ public class EntityItem extends Entity {
                 return false;
             } else if (itemstack1.hasTag() && !itemstack1.getTag().equals(itemstack.getTag())) {
                 return false;
-            } else if (itemstack1.getItem().m() && itemstack1.getData() != itemstack.getData()) {
+            } else if (itemstack1.getItem().n() && itemstack1.getData() != itemstack.getData()) {
                 return false;
             } else if (itemstack1.count < itemstack.count) {
                 return entityitem.a(this);
@@ -164,17 +162,17 @@ public class EntityItem extends Entity {
     }
 
     protected void burn(int i) {
-        this.damageEntity(DamageSource.FIRE, i);
+        this.damageEntity(DamageSource.FIRE, (float) i);
     }
 
-    public boolean damageEntity(DamageSource damagesource, int i) {
+    public boolean damageEntity(DamageSource damagesource, float f) {
         if (this.isInvulnerable()) {
             return false;
         } else if (this.getItemStack() != null && this.getItemStack().id == Item.NETHER_STAR.id && damagesource.c()) {
             return false;
         } else {
             this.J();
-            this.d -= i;
+            this.d = (int) ((float) this.d - f);
             if (this.d <= 0) {
                 this.die();
             }
@@ -225,7 +223,7 @@ public class EntityItem extends Entity {
             if (this.pickupDelay <= 0 && canHold > 0) {
                 itemstack.count = canHold;
                 PlayerPickupItemEvent event = new PlayerPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
-                event.setCancelled(!entityhuman.canPickUpLoot);
+                // event.setCancelled(!entityhuman.canPickUpLoot); TODO
                 this.world.getServer().getPluginManager().callEvent(event);
                 itemstack.count = canHold + remaining;
 
@@ -268,14 +266,14 @@ public class EntityItem extends Entity {
         return LocaleI18n.get("item." + this.getItemStack().a());
     }
 
-    public boolean ap() {
+    public boolean ao() {
         return false;
     }
 
-    public void c(int i) {
-        super.c(i);
+    public void b(int i) {
+        super.b(i);
         if (!this.world.isStatic) {
-            this.g();
+            this.e();
         }
     }
 

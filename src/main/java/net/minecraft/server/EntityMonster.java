@@ -6,15 +6,15 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
 
     public EntityMonster(World world) {
         super(world);
-        this.be = 5;
+        this.b = 5;
     }
 
     public void c() {
-        this.br();
-        float f = this.c(1.0F);
+        this.aS();
+        float f = this.d(1.0F);
 
         if (f > 0.5F) {
-            this.bC += 2;
+            this.aV += 2;
         }
 
         super.c();
@@ -30,13 +30,13 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     protected Entity findTarget() {
         EntityHuman entityhuman = this.world.findNearbyVulnerablePlayer(this, 16.0D);
 
-        return entityhuman != null && this.n(entityhuman) ? entityhuman : null;
+        return entityhuman != null && this.o(entityhuman) ? entityhuman : null;
     }
 
-    public boolean damageEntity(DamageSource damagesource, int i) {
+    public boolean damageEntity(DamageSource damagesource, float f) {
         if (this.isInvulnerable()) {
             return false;
-        } else if (super.damageEntity(damagesource, i)) {
+        } else if (super.damageEntity(damagesource, f)) {
             Entity entity = damagesource.getEntity();
 
             if (this.passenger != entity && this.vehicle != entity) {
@@ -68,36 +68,27 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     }
 
     public boolean m(Entity entity) {
-        int i = this.c(entity);
-
-        if (this.hasEffect(MobEffectList.INCREASE_DAMAGE)) {
-            i += 3 << this.getEffect(MobEffectList.INCREASE_DAMAGE).getAmplifier();
-        }
-
-        if (this.hasEffect(MobEffectList.WEAKNESS)) {
-            i -= 2 << this.getEffect(MobEffectList.WEAKNESS).getAmplifier();
-        }
-
-        int j = 0;
+        float f = (float) this.a(GenericAttributes.e).e();
+        int i = 0;
 
         if (entity instanceof EntityLiving) {
-            i += EnchantmentManager.a((EntityLiving) this, (EntityLiving) entity);
-            j += EnchantmentManager.getKnockbackEnchantmentLevel(this, (EntityLiving) entity);
+            f += EnchantmentManager.a((EntityLiving) this, (EntityLiving) entity);
+            i += EnchantmentManager.getKnockbackEnchantmentLevel(this, (EntityLiving) entity);
         }
 
-        boolean flag = entity.damageEntity(DamageSource.mobAttack(this), i);
+        boolean flag = entity.damageEntity(DamageSource.mobAttack(this), f);
 
         if (flag) {
-            if (j > 0) {
-                entity.g((double) (-MathHelper.sin(this.yaw * 3.1415927F / 180.0F) * (float) j * 0.5F), 0.1D, (double) (MathHelper.cos(this.yaw * 3.1415927F / 180.0F) * (float) j * 0.5F));
+            if (i > 0) {
+                entity.g((double) (-MathHelper.sin(this.yaw * 3.1415927F / 180.0F) * (float) i * 0.5F), 0.1D, (double) (MathHelper.cos(this.yaw * 3.1415927F / 180.0F) * (float) i * 0.5F));
                 this.motX *= 0.6D;
                 this.motZ *= 0.6D;
             }
 
-            int k = EnchantmentManager.getFireAspectEnchantmentLevel(this);
+            int j = EnchantmentManager.getFireAspectEnchantmentLevel(this);
 
-            if (k > 0) {
-                entity.setOnFire(k * 4);
+            if (j > 0) {
+                entity.setOnFire(j * 4);
             }
 
             if (entity instanceof EntityLiving) {
@@ -129,7 +120,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         } else {
             int l = this.world.getLightLevel(i, j, k);
 
-            if (this.world.O()) {
+            if (this.world.P()) {
                 int i1 = this.world.j;
 
                 this.world.j = 10;
@@ -142,10 +133,11 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     }
 
     public boolean canSpawn() {
-        return this.i_() && super.canSpawn();
+        return this.world.difficulty > 0 && this.i_() && super.canSpawn();
     }
 
-    public int c(Entity entity) {
-        return 2;
+    protected void ax() {
+        super.ax();
+        this.aT().b(GenericAttributes.e);
     }
 }

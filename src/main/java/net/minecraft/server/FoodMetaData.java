@@ -8,7 +8,7 @@ public class FoodMetaData {
     public int foodLevel = 20;
     public float saturationLevel = 5.0F;
     public float exhaustionLevel;
-    public int foodTickTimer = 0;
+    public int foodTickTimer;
     // CraftBukkit end
     private int e = 20;
 
@@ -44,18 +44,18 @@ public class FoodMetaData {
             }
         }
 
-        if (this.foodLevel >= 18 && entityhuman.co()) {
+        if (entityhuman.world.getGameRules().getBoolean("naturalRegeneration") && this.foodLevel >= 18 && entityhuman.bE()) {
             ++this.foodTickTimer;
             if (this.foodTickTimer >= 80) {
                 // CraftBukkit - added RegainReason
-                entityhuman.heal(1, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED);
+                entityhuman.heal(1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED);
                 this.foodTickTimer = 0;
             }
         } else if (this.foodLevel <= 0) {
             ++this.foodTickTimer;
             if (this.foodTickTimer >= 80) {
-                if (entityhuman.getHealth() > 10 || i >= 3 || entityhuman.getHealth() > 1 && i >= 2) {
-                    entityhuman.damageEntity(DamageSource.STARVE, 1);
+                if (entityhuman.getHealth() > 10.0F || i >= 3 || entityhuman.getHealth() > 1.0F && i >= 2) {
+                    entityhuman.damageEntity(DamageSource.STARVE, 1.0F);
                 }
 
                 this.foodTickTimer = 0;

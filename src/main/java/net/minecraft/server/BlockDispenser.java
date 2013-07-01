@@ -30,19 +30,19 @@ public class BlockDispenser extends BlockContainer {
             int k1 = world.getTypeId(i + 1, j, k);
             byte b0 = 3;
 
-            if (Block.s[l] && !Block.s[i1]) {
+            if (Block.t[l] && !Block.t[i1]) {
                 b0 = 3;
             }
 
-            if (Block.s[i1] && !Block.s[l]) {
+            if (Block.t[i1] && !Block.t[l]) {
                 b0 = 2;
             }
 
-            if (Block.s[j1] && !Block.s[k1]) {
+            if (Block.t[j1] && !Block.t[k1]) {
                 b0 = 5;
             }
 
-            if (Block.s[k1] && !Block.s[j1]) {
+            if (Block.t[k1] && !Block.t[j1]) {
                 b0 = 4;
             }
 
@@ -167,7 +167,7 @@ public class BlockDispenser extends BlockContainer {
     }
 
     public static IPosition a(ISourceBlock isourceblock) {
-        EnumFacing enumfacing = j_(isourceblock.h());
+        EnumFacing enumfacing = l_(isourceblock.h());
         double d0 = isourceblock.getX() + 0.7D * (double) enumfacing.c();
         double d1 = isourceblock.getY() + 0.7D * (double) enumfacing.d();
         double d2 = isourceblock.getZ() + 0.7D * (double) enumfacing.e();
@@ -175,7 +175,7 @@ public class BlockDispenser extends BlockContainer {
         return new Position(d0, d1, d2);
     }
 
-    public static EnumFacing j_(int i) {
+    public static EnumFacing l_(int i) {
         return EnumFacing.a(i & 7);
     }
 

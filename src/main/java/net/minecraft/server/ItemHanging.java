@@ -39,7 +39,7 @@ public class ItemHanging extends Item {
                         world.getServer().getPluginManager().callEvent(event);
 
                         PaintingPlaceEvent paintingEvent = null;
-                        if(entityhanging instanceof EntityPainting) {
+                        if (entityhanging instanceof EntityPainting) {
                             // Fire old painting event until it can be removed
                             paintingEvent = new PaintingPlaceEvent((org.bukkit.entity.Painting) entityhanging.getBukkitEntity(), who, blockClicked, blockFace);
                             paintingEvent.setCancelled(event.isCancelled());

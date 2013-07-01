@@ -31,7 +31,7 @@ public class ItemBoat extends Item {
         if (movingobjectposition == null) {
             return itemstack;
         } else {
-            Vec3D vec3d2 = entityhuman.i(f);
+            Vec3D vec3d2 = entityhuman.j(f);
             boolean flag = false;
             float f9 = 1.0F;
             List list = world.getEntities(entityhuman, entityhuman.boundingBox.a(vec3d2.c * d3, vec3d2.d * d3, vec3d2.e * d3).grow((double) f9, (double) f9, (double) f9));
