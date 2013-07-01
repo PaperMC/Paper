@@ -3,17 +3,23 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.util.NumberConversions;
 
 /**
  * Stores data for damage events
  */
 public class EntityDamageEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-    private int damage;
+    private double damage;
     private boolean cancelled;
     private final DamageCause cause;
 
+    @Deprecated
     public EntityDamageEvent(final Entity damagee, final DamageCause cause, final int damage) {
+        this(damagee, cause, (double) damage);
+    }
+
+    public EntityDamageEvent(final Entity damagee, final DamageCause cause, final double damage) {
         super(damagee);
         this.cause = cause;
         this.damage = damage;
@@ -32,8 +38,18 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      *
      * @return The amount of damage caused by the event
      */
-    public int getDamage() {
+    public double getDamage() {
         return damage;
+    }
+
+    /**
+     * This method exists for legacy reasons to provide backwards
+     * compatibility. It will not exist at runtime and should not be used
+     * under any circumstances.
+     */
+    @Deprecated
+    public int _INVALID_getDamage() {
+        return NumberConversions.ceil(getDamage());
     }
 
     /**
@@ -41,8 +57,18 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      *
      * @param damage The amount of damage caused by the event
      */
-    public void setDamage(int damage) {
+    public void setDamage(double damage) {
         this.damage = damage;
+    }
+
+    /**
+     * This method exists for legacy reasons to provide backwards
+     * compatibility. It will not exist at runtime and should not be used
+     * under any circumstances.
+     */
+    @Deprecated
+    public void _INVALID_setDamage(int damage) {
+        setDamage(damage);
     }
 
     /**

@@ -14,6 +14,7 @@ import org.bukkit.potion.PotionEffectType;
  * Represents a living entity, such as a monster or player
  */
 public interface LivingEntity extends Entity, Damageable {
+
     /**
      * Gets the height of the living entity's eyes above its Location.
      *
@@ -170,14 +171,30 @@ public interface LivingEntity extends Entity, Damageable {
      *
      * @return damage taken since the last no damage ticks time period
      */
-    public int getLastDamage();
+    public double getLastDamage();
+
+    /**
+     * This method exists for legacy reasons to provide backwards
+     * compatibility. It will not exist at runtime and should not be used
+     * under any circumstances.
+     */
+    @Deprecated
+    public int _INVALID_getLastDamage();
 
     /**
      * Sets the damage dealt within the current no damage ticks time period.
      *
      * @param damage amount of damage
      */
-    public void setLastDamage(int damage);
+    public void setLastDamage(double damage);
+
+    /**
+     * This method exists for legacy reasons to provide backwards
+     * compatibility. It will not exist at runtime and should not be used
+     * under any circumstances.
+     */
+    @Deprecated
+    public void _INVALID_setLastDamage(int damage);
 
     /**
      * Returns the living entity's current no damage ticks.
@@ -316,7 +333,7 @@ public interface LivingEntity extends Entity, Damageable {
      * <p>
      * This value has no effect on players, they will always use their real
      * name.
-     * 
+     *
      * @param name the name to set
      */
     public void setCustomName(String name);
@@ -327,7 +344,7 @@ public interface LivingEntity extends Entity, Damageable {
      * <p>
      * This value has no effect on players, they will always use their real
      * name.
-     * 
+     *
      * @return name of the mob or null
      */
     public String getCustomName();
@@ -338,7 +355,7 @@ public interface LivingEntity extends Entity, Damageable {
      * <p>
      * This value has no effect on players, they will always display their
      * name.
-     * 
+     *
      * @param flag custom name or not
      */
     public void setCustomNameVisible(boolean flag);
@@ -348,7 +365,7 @@ public interface LivingEntity extends Entity, Damageable {
      * <p>
      * This value has no effect on players, they will always display their
      * name.
-     * 
+     *
      * @return if the custom name is displayed
      */
     public boolean isCustomNameVisible();

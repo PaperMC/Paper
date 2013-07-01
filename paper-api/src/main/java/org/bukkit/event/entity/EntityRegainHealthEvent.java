@@ -3,6 +3,7 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.util.NumberConversions;
 
 /**
  * Stores data for health-regain events
@@ -10,10 +11,15 @@ import org.bukkit.event.HandlerList;
 public class EntityRegainHealthEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;
-    private int amount;
+    private double amount;
     private final RegainReason regainReason;
 
+    @Deprecated
     public EntityRegainHealthEvent(final Entity entity, final int amount, final RegainReason regainReason) {
+        this(entity, (double) amount, regainReason);
+    }
+
+    public EntityRegainHealthEvent(final Entity entity, final double amount, final RegainReason regainReason) {
         super(entity);
         this.amount = amount;
         this.regainReason = regainReason;
@@ -24,8 +30,18 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
      *
      * @return The amount of health regained
      */
-    public int getAmount() {
+    public double getAmount() {
         return amount;
+    }
+
+    /**
+     * This method exists for legacy reasons to provide backwards
+     * compatibility. It will not exist at runtime and should not be used
+     * under any circumstances.
+     */
+    @Deprecated
+    public int _INVALID_getAmount() {
+        return NumberConversions.ceil(getAmount());
     }
 
     /**
@@ -33,8 +49,18 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
      *
      * @param amount the amount of health the entity will regain
      */
-    public void setAmount(int amount) {
+    public void setAmount(double amount) {
         this.amount = amount;
+    }
+
+    /**
+     * This method exists for legacy reasons to provide backwards
+     * compatibility. It will not exist at runtime and should not be used
+     * under any circumstances.
+     */
+    @Deprecated
+    public void _INVALID_setAmount(int amount) {
+        setAmount(amount);
     }
 
     public boolean isCancelled() {
