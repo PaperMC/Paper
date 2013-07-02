@@ -1,4 +1,4 @@
-From b33c1c06c7b5397e35bf3eba3aeb61c29fa8549e Mon Sep 17 00:00:00 2001
+From eabbbdf2f175c602d04575c0d90062bba6e316b2 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 2 Jul 2013 09:06:29 +1000
 Subject: [PATCH] Netty
@@ -369,10 +369,10 @@ index 0000000..2eb1dcb
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..7340f5a
+index 0000000..f77b10c
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,314 @@
+@@ -0,0 +1,315 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -481,6 +481,7 @@ index 0000000..7340f5a
 +        {
 +            "Internal exception: " + cause
 +        } );
++        cause.printStackTrace();
 +    }
 +
 +    @Override
@@ -1165,10 +1166,10 @@ index 0000000..5da8a59
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketDecoder.java b/src/main/java/org/spigotmc/netty/PacketDecoder.java
 new file mode 100644
-index 0000000..3adc8d6
+index 0000000..b955914
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketDecoder.java
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,69 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -1176,6 +1177,7 @@ index 0000000..3adc8d6
 +import io.netty.channel.ChannelHandlerContext;
 +import io.netty.channel.MessageList;
 +import io.netty.handler.codec.ReplayingDecoder;
++import java.io.DataInput;
 +import java.io.DataInputStream;
 +import java.io.EOFException;
 +import java.io.IOException;
@@ -1190,7 +1192,7 @@ index 0000000..3adc8d6
 +public class PacketDecoder extends ReplayingDecoder<ReadState>
 +{
 +
-+    private DataInputStream input;
++    private DataInput input;
 +    private Packet packet;
 +
 +    public PacketDecoder()
@@ -1203,7 +1205,7 @@ index 0000000..3adc8d6
 +    {
 +        if ( input == null )
 +        {
-+            input = new DataInputStream( new ByteBufInputStream( in ) );
++            input = new ByteBufInputStream( in );
 +        }
 +
 +        while ( true )
@@ -1211,7 +1213,7 @@ index 0000000..3adc8d6
 +            switch ( state() )
 +            {
 +                case HEADER:
-+                    short packetId = in.readUnsignedByte();
++                    int packetId = input.readUnsignedByte();
 +                    packet = Packet.a( MinecraftServer.getServer().getLogger(), packetId );
 +                    if ( packet == null )
 +                    {
@@ -1357,21 +1359,18 @@ index 0000000..965ba12
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketWriter.java b/src/main/java/org/spigotmc/netty/PacketWriter.java
 new file mode 100644
-index 0000000..f6fb958
+index 0000000..ca8d16b
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketWriter.java
-@@ -0,0 +1,88 @@
+@@ -0,0 +1,85 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
 +import io.netty.buffer.ByteBufOutputStream;
 +import io.netty.channel.Channel;
-+import io.netty.channel.ChannelHandlerContext;
-+import io.netty.channel.ChannelOutboundHandlerAdapter;
-+import io.netty.channel.ChannelPromise;
 +import io.netty.channel.MessageList;
 +import io.netty.handler.codec.EncoderException;
-+import java.io.DataOutputStream;
++import java.io.DataOutput;
 +import java.io.IOException;
 +import net.minecraft.server.Packet;
 +import net.minecraft.server.PendingConnection;
@@ -1415,7 +1414,7 @@ index 0000000..f6fb958
 +        // Allocate an output buffer of estimated size
 +        ByteBuf outBuf = channel.alloc().buffer( estimatedSize );
 +        // And a stream to which we can write this buffer to
-+        DataOutputStream dataOut = new DataOutputStream( new ByteBufOutputStream( outBuf ) );
++        DataOutput dataOut = new ByteBufOutputStream( outBuf );
 +
 +        try
 +        {
