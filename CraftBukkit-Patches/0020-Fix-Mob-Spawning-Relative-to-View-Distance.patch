@@ -1,22 +1,22 @@
-From d1a43b7d46685cdaa095ef806f9300db709c5d84 Mon Sep 17 00:00:00 2001
+From 33a9339848ae800087b9b00f0d3bd09eae007ff2 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Fri, 21 Jun 2013 17:29:54 +1000
 Subject: [PATCH] Fix Mob Spawning Relative to View Distance
 
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 7416edc..e8d30c5 100644
+index 61e56ab..04cb6fb 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -33,6 +33,7 @@ public class Chunk {
      public int p;
+     public long q;
      private int u;
-     boolean q;
 +    protected gnu.trove.map.hash.TObjectIntHashMap<Class> entityCount = new gnu.trove.map.hash.TObjectIntHashMap<Class>(); // Spigot
  
      public Chunk(World world, int i, int j) {
          this.sections = new ChunkSection[16];
-@@ -560,6 +561,15 @@ public class Chunk {
+@@ -552,6 +553,15 @@ public class Chunk {
          entity.ak = k;
          entity.al = this.z;
          this.entitySlices[k].add(entity);
@@ -32,7 +32,7 @@ index 7416edc..e8d30c5 100644
      }
  
      public void b(Entity entity) {
-@@ -576,6 +586,15 @@ public class Chunk {
+@@ -568,6 +578,15 @@ public class Chunk {
          }
  
          this.entitySlices[i].remove(entity);
@@ -49,10 +49,10 @@ index 7416edc..e8d30c5 100644
  
      public boolean d(int i, int j, int k) {
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
-index 056100f..bec0d91 100644
+index aa7698b..3a0d2ef 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
-@@ -26,6 +26,23 @@ public final class SpawnerCreature {
+@@ -27,6 +27,23 @@ public final class SpawnerCreature {
          return new ChunkPosition(k, i1, l);
      }
  
@@ -73,10 +73,10 @@ index 056100f..bec0d91 100644
 +    }
 +    // Spigot end
 +
-     public static final int spawnEntities(WorldServer worldserver, boolean flag, boolean flag1, boolean flag2) {
+     public int spawnEntities(WorldServer worldserver, boolean flag, boolean flag1, boolean flag2) {
          if (!flag && !flag1) {
              return 0;
-@@ -41,6 +58,11 @@ public final class SpawnerCreature {
+@@ -42,6 +59,11 @@ public final class SpawnerCreature {
  
                  j = MathHelper.floor(entityhuman.locZ / 16.0D);
                  byte b0 = 8;
@@ -88,16 +88,16 @@ index 056100f..bec0d91 100644
  
                  for (int l = -b0; l <= b0; ++l) {
                      for (int i1 = -b0; i1 <= b0; ++i1) {
-@@ -88,13 +110,15 @@ public final class SpawnerCreature {
+@@ -89,13 +111,15 @@ public final class SpawnerCreature {
                  if (limit == 0) {
                      continue;
                  }
 +                int mobcnt = 0;
                  // CraftBukkit end
  
--                if ((!enumcreaturetype.d() || flag1) && (enumcreaturetype.d() || flag) && (!enumcreaturetype.e() || flag2) && worldserver.a(enumcreaturetype.a()) <= limit * b.size() / 256) { // CraftBukkit - use per-world limits
-+                if ((!enumcreaturetype.d() || flag1) && (enumcreaturetype.d() || flag) && (!enumcreaturetype.e() || flag2) && (mobcnt = getEntityCount(worldserver, enumcreaturetype.a())) <= limit * b.size() / 256) { // Spigot - use per-world limits and use all loaded chunks
-                     Iterator iterator = b.keySet().iterator();
+-                if ((!enumcreaturetype.d() || flag1) && (enumcreaturetype.d() || flag) && (!enumcreaturetype.e() || flag2) && worldserver.a(enumcreaturetype.a()) <= limit * this.a.size() / 256) { // CraftBukkit - use per-world limits
++                if ((!enumcreaturetype.d() || flag1) && (enumcreaturetype.d() || flag) && (!enumcreaturetype.e() || flag2) && (mobcnt = getEntityCount(worldserver, enumcreaturetype.a())) <= limit * this.a.size() / 256) { // Spigot - use per-world limits and use all loaded chunks
+                     Iterator iterator = this.a.keySet().iterator();
  
 +                    int moblimit = (limit * b.size() / 256) - mobcnt + 1; // Spigot - up to 1 more than limit
                      label110:
@@ -106,9 +106,9 @@ index 056100f..bec0d91 100644
                          // CraftBukkit start
                          long key = ((Long) iterator.next()).longValue();
  
-@@ -158,6 +182,13 @@ public final class SpawnerCreature {
-                                                                 a(entityliving, worldserver, f, f1, f2);
-                                                                 worldserver.addEntity(entityliving, SpawnReason.NATURAL);
+@@ -160,6 +184,13 @@ public final class SpawnerCreature {
+                                                                 groupdataentity = entityinsentient.a(groupdataentity);
+                                                                 worldserver.addEntity(entityinsentient, SpawnReason.NATURAL);
                                                                  // CraftBukkit end
 +                                                                // Spigot start
 +                                                                if ( --moblimit <= 0 )
@@ -117,11 +117,11 @@ index 056100f..bec0d91 100644
 +                                                                    continue label110;
 +                                                                }
 +                                                                // Spigot end
-                                                                 if (j2 >= entityliving.by()) {
+                                                                 if (j2 >= entityinsentient.br()) {
                                                                      continue label110;
                                                                  }
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 0a304e8..6c2a430 100644
+index a788d8d..8bb0483 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -145,4 +145,11 @@ public class SpigotWorldConfig

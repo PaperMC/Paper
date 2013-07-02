@@ -1,16 +1,16 @@
-From f3179d3cf334bf4a99db417230cc37b8997da4a6 Mon Sep 17 00:00:00 2001
+From a909284799fb1461906c4cc9fa866b391e16972e Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 2 Jul 2013 09:06:29 +1000
 Subject: [PATCH] Netty
 
 
 diff --git a/pom.xml b/pom.xml
-index 8c9f66b..f1a4d4c 100644
+index 88b41b1..cb5e36d 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -132,6 +132,16 @@
        <artifactId>trove4j</artifactId>
-       <version>3.0.2</version>
+       <version>3.0.3</version>
      </dependency>
 +    <dependency>
 +      <groupId>io.netty</groupId>
@@ -26,18 +26,18 @@ index 8c9f66b..f1a4d4c 100644
  
    <!-- This builds a completely 'ready to start' jar with all dependencies inside -->
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 59444cb..121ed89 100644
+index ddb32ac..ec3d104 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -100,7 +100,11 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-         this.getLogger().info("Starting Minecraft server on " + (this.getServerIp().length() == 0 ? "*" : this.getServerIp()) + ":" + this.G());
+         this.getLogger().info("Starting Minecraft server on " + (this.getServerIp().length() == 0 ? "*" : this.getServerIp()) + ":" + this.I());
  
          try {
--            this.r = new DedicatedServerConnection(this, inetaddress, this.G());
+-            this.s = new DedicatedServerConnection(this, inetaddress, this.I());
 +            // Spigot start
-+            this.r = ( org.spigotmc.SpigotConfig.listeners.get( 0 ).netty )
-+                    ? new org.spigotmc.netty.NettyServerConnection( this, inetaddress, this.G() )
-+                    : new DedicatedServerConnection( this, inetaddress, this.G() );
++            this.s = ( org.spigotmc.SpigotConfig.listeners.get( 0 ).netty )
++                    ? new org.spigotmc.netty.NettyServerConnection( this, inetaddress, this.I() )
++                    : new DedicatedServerConnection( this, inetaddress, this.I() );
 +            // Spigot end
          } catch (Throwable ioexception) { // CraftBukkit - IOException -> Throwable
              this.getLogger().warning("**** FAILED TO BIND TO PORT!");
@@ -75,10 +75,10 @@ index 0000000..6fcc5d7
 +    void setSocketAddress(java.net.SocketAddress address); // Spigot
 +}
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index 1862863..5a24f2a 100644
+index c60abf1..e1b259b 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
-@@ -24,7 +24,7 @@ public class NetworkManager implements INetworkManager {
+@@ -25,7 +25,7 @@ public class NetworkManager implements INetworkManager {
      private final Object h = new Object();
      private final IConsoleLogManager i;
      public Socket socket; // CraftBukkit - private -> public
@@ -87,7 +87,7 @@ index 1862863..5a24f2a 100644
      private volatile DataInputStream input;
      private volatile DataOutputStream output;
      private volatile boolean n = true;
-@@ -369,4 +369,6 @@ public class NetworkManager implements INetworkManager {
+@@ -370,4 +370,6 @@ public class NetworkManager implements INetworkManager {
      static Thread h(NetworkManager networkmanager) {
          return networkmanager.u;
      }
@@ -95,20 +95,20 @@ index 1862863..5a24f2a 100644
 +    public void setSocketAddress(SocketAddress address) { k = address; } // Spigot
  }
 diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
-index 17cfacc..292fa49 100644
+index 252cea7..d0ccbff 100644
 --- a/src/main/java/net/minecraft/server/PendingConnection.java
 +++ b/src/main/java/net/minecraft/server/PendingConnection.java
-@@ -17,7 +17,7 @@ public class PendingConnection extends Connection {
+@@ -16,7 +16,7 @@ public class PendingConnection extends Connection {
      private static Random random = new Random();
      private byte[] d;
      private final MinecraftServer server;
 -    public final NetworkManager networkManager;
 +    public final INetworkManager networkManager;
-     public boolean b = false;
-     private int f = 0;
-     private String g = null;
-@@ -27,10 +27,15 @@ public class PendingConnection extends Connection {
-     private SecretKey k = null;
+     public boolean b;
+     private int f;
+     private String g;
+@@ -26,10 +26,15 @@ public class PendingConnection extends Connection {
+     private SecretKey k;
      public String hostname = ""; // CraftBukkit - add field
  
 +    public PendingConnection(MinecraftServer minecraftserver, org.spigotmc.netty.NettyNetworkManager networkManager) {
@@ -118,33 +118,33 @@ index 17cfacc..292fa49 100644
 +
      public PendingConnection(MinecraftServer minecraftserver, Socket socket, String s) throws java.io.IOException { // CraftBukkit - throws IOException
          this.server = minecraftserver;
-         this.networkManager = new NetworkManager(minecraftserver.getLogger(), socket, s, this, minecraftserver.F().getPrivate());
+         this.networkManager = new NetworkManager(minecraftserver.getLogger(), socket, s, this, minecraftserver.H().getPrivate());
 -        this.networkManager.e = 0;
 +        // this.networkManager.e = 0;
      }
  
      // CraftBukkit start
 @@ -146,7 +151,7 @@ public class PendingConnection extends Connection {
+             String s = null;
              // CraftBukkit
              org.bukkit.event.server.ServerListPingEvent pingEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callServerListPingEvent(this.server.server, getSocket().getInetAddress(), this.server.getMotd(), playerlist.getPlayerCount(), playerlist.getMaxPlayers());
- 
--            if (packet254getinfo.a == 1) {
-+            if (true) {
-                 // CraftBukkit start - Fix decompile issues, don't create a list from an array
-                 Object[] list = new Object[] { 1, 61, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
- 
-@@ -173,9 +178,18 @@ public class PendingConnection extends Connection {
+-            if (packet254getinfo.d()) {
++            if (galse) { // Spigot: TODO: Use trick from Bungee maybe?
+                 // CraftBukkit
+                 s = pingEvent.getMotd() + "\u00A7" + playerlist.getPlayerCount() + "\u00A7" + pingEvent.getMaxPlayers();
+             } else {
+@@ -172,9 +177,18 @@ public class PendingConnection extends Connection {
  
              this.networkManager.queue(new Packet255KickDisconnect(s));
              this.networkManager.d();
--            if (inetaddress != null && this.server.ae() instanceof DedicatedServerConnection) {
--                ((DedicatedServerConnection) this.server.ae()).a(inetaddress);
+-            if (inetaddress != null && this.server.ag() instanceof DedicatedServerConnection) {
+-                ((DedicatedServerConnection) this.server.ag()).a(inetaddress);
 +            // Spigot start
 +            if ( inetaddress != null )
 +            {
-+                if ( this.server.ae() instanceof DedicatedServerConnection )
++                if ( this.server.ag() instanceof DedicatedServerConnection )
 +                {
-+                    ((DedicatedServerConnection) this.server.ae()).a(inetaddress);
++                    ((DedicatedServerConnection) this.server.ag()).a(inetaddress);
 +                } else
 +                {
 +                    ((org.spigotmc.netty.NettyServerConnection)this.server.ae()).unThrottle( inetaddress );
