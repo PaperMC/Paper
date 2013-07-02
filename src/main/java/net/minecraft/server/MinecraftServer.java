@@ -225,8 +225,6 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
                     }
                 }
 
-                this.c(name);
-
                 // CraftBukkit
                 world = new SecondaryWorldServer(this, new ServerNBTManager(server.getWorldContainer(), name, true), name, dimension, worldsettings, this.worlds.get(0), this.methodProfiler, this.getLogger(), Environment.getEnvironment(dimension), gen);
             }
@@ -265,13 +263,14 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
         // CraftBukkit start
         for (int m = 0; m < this.worlds.size(); ++m) {
             WorldServer worldserver = this.worlds.get(m);
-            this.getLogger().info("Preparing start region for level " + b0 + " (Seed: " + worldserver.getSeed() + ")");
+            this.getLogger().info("Preparing start region for level " + m + " (Seed: " + worldserver.getSeed() + ")");
             if (!worldserver.getWorld().getKeepSpawnInMemory()) {
                 continue;
             }
 
             ChunkCoordinates chunkcoordinates = worldserver.getSpawn();
             long j = aq();
+            i = 0;
 
             for (int k = -192; k <= 192 && this.isRunning(); k += 16) {
                 for (int l = -192; l <= 192 && this.isRunning(); l += 16) {
