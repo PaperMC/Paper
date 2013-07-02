@@ -9,7 +9,6 @@ import java.util.UUID;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 // CraftBukkit end
@@ -77,7 +76,6 @@ public abstract class EntityLiving extends Entity {
     // CraftBukkit start
     public int expToDrop;
     public int maxAirTicks = 300;
-    public float maxHealth;
     // CraftBukkit end
 
     public EntityLiving(World world) {
@@ -91,7 +89,6 @@ public abstract class EntityLiving extends Entity {
         this.yaw = (float) (Math.random() * 3.1415927410125732D * 2.0D);
         this.aP = this.yaw;
         this.Y = 0.5F;
-        maxHealth = this.getMaxHealth(); // CraftBukkit - We can't initialize maxHealth until this.ax() has been invoked.
     }
 
     protected void a() {
@@ -241,14 +238,6 @@ public abstract class EntityLiving extends Entity {
             return 0;
         }
     }
-
-    public float getScaledHealth() {
-        if (this.maxHealth != this.getMaxHealth() && this.getHealth() > 0) {
-            return this.getHealth() * this.getMaxHealth() / this.maxHealth + 1;
-        } else {
-            return this.getHealth();
-        }
-    }
     // CraftBukkit end
 
     public boolean isBaby() {
@@ -327,7 +316,6 @@ public abstract class EntityLiving extends Entity {
     public void b(NBTTagCompound nbttagcompound) {
         nbttagcompound.setFloat("HealF", this.getHealth());
         nbttagcompound.setShort("Health", (short) ((int) Math.ceil((double) this.getHealth())));
-        nbttagcompound.setFloat("Bukkit.MaxHealth", this.maxHealth); // CraftBukkit
         nbttagcompound.setShort("HurtTime", (short) this.hurtTicks);
         nbttagcompound.setShort("DeathTime", (short) this.deathTicks);
         nbttagcompound.setShort("AttackTime", (short) this.attackTicks);
@@ -391,9 +379,9 @@ public abstract class EntityLiving extends Entity {
         if (nbttagcompound.hasKey("Bukkit.MaxHealth")) {
             NBTBase nbtbase = nbttagcompound.get("Bukkit.MaxHealth");
             if (nbtbase.getTypeId() == 5) {
-                this.maxHealth = ((NBTTagFloat) nbtbase).data;
+                this.a(GenericAttributes.a).a((double) ((NBTTagFloat) nbtbase).data);
             } else if (nbtbase.getTypeId() == 3) {
-                this.maxHealth = (float) ((NBTTagInt) nbtbase).data;
+                this.a(GenericAttributes.a).a((double) ((NBTTagInt) nbtbase).data);
             }
         }
         // CraftBukkit end
@@ -404,7 +392,7 @@ public abstract class EntityLiving extends Entity {
             NBTBase nbtbase = nbttagcompound.get("Health");
 
             if (nbtbase == null) {
-                this.setHealth(this.maxHealth); // CraftBukkit - this.getMaxHealth() -> this.maxHealth
+                this.setHealth(this.getMaxHealth());
             } else if (nbtbase.getTypeId() == 5) {
                 this.setHealth(((NBTTagFloat) nbtbase).data);
             } else if (nbtbase.getTypeId() == 2) {
@@ -587,12 +575,6 @@ public abstract class EntityLiving extends Entity {
             if (!event.isCancelled()) {
                 this.setHealth((float) (this.getHealth() + event.getAmount()));
             }
-
-            // TODO should we be doing this anymore
-            if (this.getHealth() > this.maxHealth) {
-                this.setHealth(this.maxHealth);
-            }
-            // CraftBukkit end
         }
     }
 

@@ -81,7 +81,7 @@ public class MobEffectList {
 
     public void tick(EntityLiving entityliving, int i) {
         if (this.id == REGENERATION.id) {
-            if (entityliving.getHealth() < entityliving.maxHealth) { // CraftBukkit - .getMaxHealth() -> .maxHealth
+            if (entityliving.getHealth() < entityliving.getMaxHealth()) {
                 entityliving.heal(1.0F, RegainReason.MAGIC_REGEN); // CraftBukkit
             }
         } else if (this.id == POISON.id) {

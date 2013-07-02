@@ -1149,10 +1149,6 @@ public abstract class Entity {
             // CraftBukkit start
             if (this instanceof EntityLiving) {
                 EntityLiving entity = (EntityLiving) this;
-                // If the entity does not have a max health set yet, update it (it may have changed after loading the entity)
-                if (!nbttagcompound.hasKey("Bukkit.MaxHealth")) {
-                    entity.maxHealth = entity.getMaxHealth();
-                }
 
                 // Reset the persistence for tamed animals
                 if (entity instanceof EntityTameableAnimal && !isLevelAtLeast(nbttagcompound, 2) && !nbttagcompound.getBoolean("PersistenceRequired")) {

@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -234,8 +233,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             }
 
             if (this.getHealth() != this.bP || this.bQ != this.foodData.a() || this.foodData.e() == 0.0F != this.bR) {
-                // CraftBukkit - this.getHealth() -> this.getScaledHealth()
-                this.playerConnection.sendPacket(new Packet8UpdateHealth(this.getScaledHealth(), this.foodData.a(), this.foodData.e()));
+                // CraftBukkit - this.getHealth() -> this.getScaledHealth() - Magic number 20 -> original max health
+                this.playerConnection.sendPacket(new Packet8UpdateHealth((float) (this.getHealth() * this.getMaxHealth() / 20.0D), this.foodData.a(), this.foodData.e()));
                 this.bP = this.getHealth();
                 this.bQ = this.foodData.a();
                 this.bR = this.foodData.e() == 0.0F;
@@ -907,7 +906,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             this.newLevel = this.expLevel;
         }
 
-        this.setHealth(this.maxHealth);
+        this.setHealth(this.getMaxHealth());
         this.fireTicks = 0;
         this.fallDistance = 0;
         this.foodData = new FoodMetaData();

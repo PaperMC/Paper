@@ -31,17 +31,11 @@ public class EntitySlime extends EntityInsentient implements IMonster {
 
     // CraftBukkit - protected -> public
     public void setSize(int i) {
-        boolean updateMaxHealth = this.getMaxHealth() == this.maxHealth; // CraftBukkit
         this.datawatcher.watch(16, new Byte((byte) i));
         this.a(0.6F * (float) i, 0.6F * (float) i);
         this.setPosition(this.locX, this.locY, this.locZ);
         this.a(GenericAttributes.a).a((double) (i * i));
-        // CraftBukkit start
-        if (updateMaxHealth) {
-            this.maxHealth = this.getMaxHealth();
-        }
-        this.setHealth(this.maxHealth);
-        // CraftBukkit end
+        this.setHealth(this.getMaxHealth());
         this.b = i;
     }
 

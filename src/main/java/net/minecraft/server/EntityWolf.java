@@ -71,7 +71,7 @@ public class EntityWolf extends EntityTameableAnimal {
     }
 
     protected void bg() {
-        this.datawatcher.watch(18, Float.valueOf(this.getScaledHealth())); // CraftBukkit - this.getHealth() -> this.getScaledHealth()
+        this.datawatcher.watch(18, Float.valueOf(this.getHealth()));
     }
 
     protected void a() {
@@ -100,8 +100,8 @@ public class EntityWolf extends EntityTameableAnimal {
     }
 
     protected String r() {
-        // CraftBukkit - getInt(18) < 10 -> < this.maxHealth / 2
-        return this.isAngry() ? "mob.wolf.growl" : (this.random.nextInt(3) == 0 ? (this.isTamed() && this.datawatcher.getFloat(18) < this.maxHealth / 2 ? "mob.wolf.whine" : "mob.wolf.panting") : "mob.wolf.bark");
+        // CraftBukkit - (getInt(18) < 10) -> (getInt(18) < this.getMaxHealth() / 2)
+        return this.isAngry() ? "mob.wolf.growl" : (this.random.nextInt(3) == 0 ? (this.isTamed() && this.datawatcher.getFloat(18) < (this.getMaxHealth() / 2) ? "mob.wolf.whine" : "mob.wolf.panting") : "mob.wolf.bark");
     }
 
     protected String aK() {
@@ -265,17 +265,11 @@ public class EntityWolf extends EntityTameableAnimal {
             if (!this.world.isStatic) {
                 // CraftBukkit - added event call and isCancelled check.
                 if (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) {
-                    boolean updateMaxHealth = this.getMaxHealth() == this.maxHealth; // CraftBukkit
                     this.setTamed(true);
                     this.setPathEntity((PathEntity) null);
                     this.setGoalTarget((EntityLiving) null);
                     this.bp.setSitting(true);
-                    // CraftBukkit start
-                    if (updateMaxHealth) {
-                        this.maxHealth = this.getMaxHealth();
-                    }
-                    this.setHealth(this.maxHealth);
-                    // CraftBukkit end
+                    this.setHealth(this.getMaxHealth()); // CraftBukkit - 20.0 -> getMaxHealth()
                     this.setOwnerName(entityhuman.getName());
                     this.j(true);
                     this.world.broadcastEntityEffect(this, (byte) 7);

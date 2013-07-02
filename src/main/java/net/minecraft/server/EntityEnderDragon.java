@@ -304,7 +304,7 @@ public class EntityEnderDragon extends EntityInsentient implements IComplex, IMo
                 }
 
                 this.bC = null;
-            } else if (this.ticksLived % 10 == 0 && this.getHealth() < this.maxHealth) { // CraftBukkit - this.getMaxHealth() -> this.maxHealth
+            } else if (this.ticksLived % 10 == 0 && this.getHealth() < this.getMaxHealth()) { // CraftBukkit - this.getMaxHealth() -> this.maxHealth
                 // CraftBukkit start
                 EntityRegainHealthEvent event = new EntityRegainHealthEvent(this.getBukkitEntity(), 1.0D, EntityRegainHealthEvent.RegainReason.ENDER_CRYSTAL);
                 this.world.getServer().getPluginManager().callEvent(event);

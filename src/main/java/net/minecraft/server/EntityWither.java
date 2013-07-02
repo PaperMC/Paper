@@ -446,7 +446,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
     }
 
     public boolean bR() {
-        return this.getHealth() <= this.maxHealth / 2.0F; // CraftBukkit - this.getMaxHealth() -> this.maxHealth
+        return this.getHealth() <= this.getMaxHealth() / 2.0F;
     }
 
     public EnumMonsterType getMonsterType() {

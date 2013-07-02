@@ -351,8 +351,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
             --this.br;
         }
 
-        // CraftBukkit - this.getMaxHealth() -> this.maxHealth
-        if (this.world.difficulty == 0 && this.getHealth() < this.maxHealth && this.world.getGameRules().getBoolean("naturalRegeneration") && this.ticksLived % 20 * 12 == 0) {
+        if (this.world.difficulty == 0 && this.getHealth() < this.getMaxHealth() && this.world.getGameRules().getBoolean("naturalRegeneration") && this.ticksLived % 20 * 12 == 0) {
             // CraftBukkit - added regain reason of "REGEN" for filtering purposes.
             this.heal(1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.REGEN);
         }
@@ -1402,7 +1401,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
     }
 
     public boolean bE() {
-        return this.getHealth() > 0.0F && this.getHealth() < this.maxHealth; // CraftBukkit - this.getMaxHealth() -> this.maxHealth
+        return this.getHealth() > 0.0F && this.getHealth() < this.getMaxHealth();
     }
 
     public void a(ItemStack itemstack, int i) {
