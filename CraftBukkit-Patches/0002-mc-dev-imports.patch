@@ -1,140 +1,70 @@
-From 2f645c30fe0f5d24496ff2b921509a7ed6d12061 Mon Sep 17 00:00:00 2001
+From e3f0ba44ba4ca8cc3efb38676f6da12252f1833a Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Wed, 10 Apr 2013 13:52:52 +1000
+Date: Tue, 2 Jul 2013 13:13:29 +1000
 Subject: [PATCH] mc-dev imports
 
 
 diff --git a/src/main/java/net/minecraft/server/LocaleLanguage.java b/src/main/java/net/minecraft/server/LocaleLanguage.java
 new file mode 100644
-index 0000000..d88f864
+index 0000000..aa937fb
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/LocaleLanguage.java
-@@ -0,0 +1,141 @@
+@@ -0,0 +1,73 @@
 +package net.minecraft.server;
 +
-+import java.io.BufferedReader;
-+import java.io.File;
-+import java.io.FileReader;
++import com.google.common.base.Splitter;
++import com.google.common.collect.Iterables;
++import com.google.common.collect.Maps;
 +import java.io.IOException;
-+import java.io.InputStreamReader;
-+import java.util.Enumeration;
++import java.io.InputStream;
 +import java.util.IllegalFormatException;
-+import java.util.Properties;
-+import java.util.TreeMap;
++import java.util.Iterator;
++import java.util.Map;
++import java.util.regex.Pattern;
++import org.apache.commons.io.Charsets;
++import org.apache.commons.io.IOUtils;
 +
 +public class LocaleLanguage {
 +
-+    private static LocaleLanguage a = new LocaleLanguage("en_US");
-+    private Properties b = new Properties();
-+    private TreeMap c;
-+    private TreeMap d = new TreeMap();
-+    private String e;
-+    private boolean f;
++    private static final Pattern a = Pattern.compile("%(\\d+\\$)?[\\d\\.]*[df]");
++    private static final Splitter b = Splitter.on('=').limit(2);
++    private static LocaleLanguage c = new LocaleLanguage();
++    private Map d = Maps.newHashMap();
 +
-+    public LocaleLanguage(String s) {
-+        this.e();
-+        this.a(s, false);
-+    }
-+
-+    public static LocaleLanguage a() {
-+        return a;
-+    }
-+
-+    private void e() {
-+        TreeMap treemap = new TreeMap();
-+
++    public LocaleLanguage() {
 +        try {
-+            BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(LocaleLanguage.class.getResourceAsStream("/lang/languages.txt"), "UTF-8"));
++            InputStream inputstream = LocaleLanguage.class.getResourceAsStream("/assets/minecraft/lang/en_US.lang");
++            Iterator iterator = IOUtils.readLines(inputstream, Charsets.UTF_8).iterator();
 +
-+            for (String s = bufferedreader.readLine(); s != null; s = bufferedreader.readLine()) {
-+                String[] astring = s.trim().split("=");
++            while (iterator.hasNext()) {
++                String s = (String) iterator.next();
 +
-+                if (astring != null && astring.length == 2) {
-+                    treemap.put(astring[0], astring[1]);
++                if (!s.isEmpty() && s.charAt(0) != 35) {
++                    String[] astring = (String[]) Iterables.toArray(b.split(s), String.class);
++
++                    if (astring != null && astring.length == 2) {
++                        String s1 = astring[0];
++                        String s2 = a.matcher(astring[1]).replaceAll("%$1s");
++
++                        this.d.put(s1, s2);
++                    }
 +                }
 +            }
 +        } catch (IOException ioexception) {
-+            ioexception.printStackTrace();
-+            return;
-+        }
-+
-+        this.c = treemap;
-+        this.c.put("en_US", "English (US)");
-+    }
-+
-+    public TreeMap b() {
-+        return this.c;
-+    }
-+
-+    private void a(Properties properties, String s) throws IOException {
-+        BufferedReader bufferedreader = null;
-+
-+        if (this.d.containsKey(s)) {
-+            bufferedreader = new BufferedReader(new FileReader((File) this.d.get(s)));
-+        } else {
-+            bufferedreader = new BufferedReader(new InputStreamReader(LocaleLanguage.class.getResourceAsStream("/lang/" + s + ".lang"), "UTF-8"));
-+        }
-+
-+        for (String s1 = bufferedreader.readLine(); s1 != null; s1 = bufferedreader.readLine()) {
-+            s1 = s1.trim();
-+            if (!s1.startsWith("#")) {
-+                String[] astring = s1.split("=");
-+
-+                if (astring != null && astring.length == 2) {
-+                    properties.setProperty(astring[0], astring[1]);
-+                }
-+            }
++            ;
 +        }
 +    }
 +
-+    public synchronized void a(String s, boolean flag) {
-+        if (flag || !s.equals(this.e)) {
-+            Properties properties = new Properties();
-+
-+            try {
-+                this.a(properties, "en_US");
-+            } catch (IOException ioexception) {
-+                ;
-+            }
-+
-+            this.f = false;
-+            if (!"en_US".equals(s)) {
-+                try {
-+                    this.a(properties, s);
-+                    Enumeration enumeration = properties.propertyNames();
-+
-+                    while (enumeration.hasMoreElements() && !this.f) {
-+                        Object object = enumeration.nextElement();
-+                        Object object1 = properties.get(object);
-+
-+                        if (object1 != null) {
-+                            String s1 = object1.toString();
-+
-+                            for (int i = 0; i < s1.length(); ++i) {
-+                                if (s1.charAt(i) >= 256) {
-+                                    this.f = true;
-+                                    break;
-+                                }
-+                            }
-+                        }
-+                    }
-+                } catch (IOException ioexception1) {
-+                    ioexception1.printStackTrace();
-+                    return;
-+                }
-+            }
-+
-+            this.e = s;
-+            this.b = properties;
-+        }
++    static LocaleLanguage a() {
++        return c;
 +    }
 +
 +    public synchronized String a(String s) {
-+        return this.b.getProperty(s, s);
++        return this.c(s);
 +    }
 +
 +    public synchronized String a(String s, Object... aobject) {
-+        String s1 = this.b.getProperty(s, s);
++        String s1 = this.c(s);
 +
 +        try {
 +            return String.format(s1, aobject);
@@ -143,17 +73,19 @@ index 0000000..d88f864
 +        }
 +    }
 +
-+    public synchronized boolean b(String s) {
-+        return this.b.containsKey(s);
++    private String c(String s) {
++        String s1 = (String) this.d.get(s);
++
++        return s1 == null ? s : s1;
 +    }
 +
-+    public synchronized String c(String s) {
-+        return this.b.getProperty(s + ".name", "");
++    public synchronized boolean b(String s) {
++        return this.d.containsKey(s);
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/NextTickListEntry.java b/src/main/java/net/minecraft/server/NextTickListEntry.java
 new file mode 100644
-index 0000000..52a70a1
+index 0000000..acf8838
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/NextTickListEntry.java
 @@ -0,0 +1,56 @@
@@ -161,7 +93,7 @@ index 0000000..52a70a1
 +
 +public class NextTickListEntry implements Comparable {
 +
-+    private static long g = 0L;
++    private static long g;
 +    public int a;
 +    public int b;
 +    public int c;
@@ -387,14 +319,14 @@ index 0000000..53c1cb5
 +}
 diff --git a/src/main/java/net/minecraft/server/Packet63WorldParticles.java b/src/main/java/net/minecraft/server/Packet63WorldParticles.java
 new file mode 100644
-index 0000000..3ef5af3
+index 0000000..d7f4d2a
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/Packet63WorldParticles.java
 @@ -0,0 +1,51 @@
 +package net.minecraft.server;
 +
-+import java.io.DataInputStream;
-+import java.io.DataOutputStream;
++import java.io.DataInput;
++import java.io.DataOutput;
 +
 +public class Packet63WorldParticles extends Packet {
 +
@@ -410,28 +342,28 @@ index 0000000..3ef5af3
 +
 +    public Packet63WorldParticles() {}
 +
-+    public void a(DataInputStream datainputstream) throws java.io.IOException {
-+        this.a = a(datainputstream, 64);
-+        this.b = datainputstream.readFloat();
-+        this.c = datainputstream.readFloat();
-+        this.d = datainputstream.readFloat();
-+        this.e = datainputstream.readFloat();
-+        this.f = datainputstream.readFloat();
-+        this.g = datainputstream.readFloat();
-+        this.h = datainputstream.readFloat();
-+        this.i = datainputstream.readInt();
++    public void a(DataInput datainput) {
++        this.a = a(datainput, 64);
++        this.b = datainput.readFloat();
++        this.c = datainput.readFloat();
++        this.d = datainput.readFloat();
++        this.e = datainput.readFloat();
++        this.f = datainput.readFloat();
++        this.g = datainput.readFloat();
++        this.h = datainput.readFloat();
++        this.i = datainput.readInt();
 +    }
 +
-+    public void a(DataOutputStream dataoutputstream) throws java.io.IOException {
-+        a(this.a, dataoutputstream);
-+        dataoutputstream.writeFloat(this.b);
-+        dataoutputstream.writeFloat(this.c);
-+        dataoutputstream.writeFloat(this.d);
-+        dataoutputstream.writeFloat(this.e);
-+        dataoutputstream.writeFloat(this.f);
-+        dataoutputstream.writeFloat(this.g);
-+        dataoutputstream.writeFloat(this.h);
-+        dataoutputstream.writeInt(this.i);
++    public void a(DataOutput dataoutput) {
++        a(this.a, dataoutput);
++        dataoutput.writeFloat(this.b);
++        dataoutput.writeFloat(this.c);
++        dataoutput.writeFloat(this.d);
++        dataoutput.writeFloat(this.e);
++        dataoutput.writeFloat(this.f);
++        dataoutput.writeFloat(this.g);
++        dataoutput.writeFloat(this.h);
++        dataoutput.writeInt(this.i);
 +    }
 +
 +    public void handle(Connection connection) {
