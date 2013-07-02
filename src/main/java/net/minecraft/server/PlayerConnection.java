@@ -1106,6 +1106,10 @@ public class PlayerConnection extends Connection {
                     this.server.getPluginManager().callEvent(event);
 
                     if (event.isCancelled()) {
+                        if (itemInHand != null && itemInHand.id == Item.LEASH.id && entity instanceof EntityInsentient) {
+                            // Refresh the current leash state
+                            this.sendPacket(new Packet39AttachEntity(1, entity, ((EntityInsentient) entity).bE()));
+                        }
                         return;
                     }
                     // CraftBukkit end
