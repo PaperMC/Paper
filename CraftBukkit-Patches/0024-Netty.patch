@@ -1,4 +1,4 @@
-From 7cf5e640eaa798e72feb0b4ab7eaa6348f592588 Mon Sep 17 00:00:00 2001
+From c7dcfe3292e4fc14382023f592b5f7876df76062 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 2 Jul 2013 09:06:29 +1000
 Subject: [PATCH] Netty
@@ -1370,10 +1370,10 @@ index 0000000..965ba12
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketWriter.java b/src/main/java/org/spigotmc/netty/PacketWriter.java
 new file mode 100644
-index 0000000..ca8d16b
+index 0000000..ad8d202
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketWriter.java
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,89 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -1426,6 +1426,8 @@ index 0000000..ca8d16b
 +        ByteBuf outBuf = channel.alloc().buffer( estimatedSize );
 +        // And a stream to which we can write this buffer to
 +        DataOutput dataOut = new ByteBufOutputStream( outBuf );
++        // If we aren't a success, we free the buf in the finally
++        boolean success = false;
 +
 +        try
 +        {
@@ -1445,14 +1447,16 @@ index 0000000..ca8d16b
 +            }
 +            // Add to the courtesy API providing number of written bytes
 +            networkManager.addWrittenBytes( outBuf.readableBytes() );
++            // Let Netty handle any errors from here on
++            success = true;
 +            // Write down our single ByteBuf
 +            channel.write( outBuf );
 +        } finally
 +        {
 +            // Reset packet queue
 +            pending.clear();
-+            // Since we are now in the event loop, the bytes have been written, we can free them if this was not the case
-+            if ( outBuf.refCnt() != 0 )
++            // If Netty didn't handle the freeing because we didn't get there, we must
++            if ( !success)
 +            {
 +                outBuf.release();
 +            }
