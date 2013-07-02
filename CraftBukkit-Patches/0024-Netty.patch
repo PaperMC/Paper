@@ -1,4 +1,4 @@
-From fa195fe18b0b0c58a7c161ebebafed2f75d91da7 Mon Sep 17 00:00:00 2001
+From b370acacf0692d6557c1445231b1ffb407bff44f Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 2 Jul 2013 09:06:29 +1000
 Subject: [PATCH] Netty
@@ -94,19 +94,6 @@ index c60abf1..e1b259b 100644
 +
 +    public void setSocketAddress(SocketAddress address) { k = address; } // Spigot
  }
-diff --git a/src/main/java/net/minecraft/server/Packet254GetInfo.java b/src/main/java/net/minecraft/server/Packet254GetInfo.java
-index 9afa795..32704e8 100644
---- a/src/main/java/net/minecraft/server/Packet254GetInfo.java
-+++ b/src/main/java/net/minecraft/server/Packet254GetInfo.java
-@@ -23,7 +23,7 @@ public class Packet254GetInfo extends Packet {
-                 this.b = a(datainput, 255);
-                 this.c = datainput.readInt();
-             }
--        } catch (Throwable throwable) {
-+        } catch (java.io.IOException throwable) { // Spigot Throwable -> IOException
-             this.a = 0;
-             this.b = "";
-         }
 diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
 index 252cea7..d07973d 100644
 --- a/src/main/java/net/minecraft/server/PendingConnection.java
@@ -1180,10 +1167,10 @@ index 0000000..5da8a59
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketDecoder.java b/src/main/java/org/spigotmc/netty/PacketDecoder.java
 new file mode 100644
-index 0000000..0860655
+index 0000000..f459ed1
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketDecoder.java
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,80 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -1197,6 +1184,7 @@ index 0000000..0860655
 +import java.io.IOException;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.Packet;
++import net.minecraft.server.Packet254GetInfo;
 +
 +/**
 + * Packet decoding class backed by a reusable {@link DataInputStream} which
@@ -1208,6 +1196,7 @@ index 0000000..0860655
 +
 +    private DataInput input;
 +    private Packet packet;
++    private boolean shutdown;
 +
 +    public PacketDecoder()
 +    {
@@ -1217,6 +1206,12 @@ index 0000000..0860655
 +    @Override
 +    protected void decode(ChannelHandlerContext ctx, ByteBuf in, MessageList<Object> out) throws Exception
 +    {
++        if ( shutdown )
++        {
++            in.readByte(); // Discard
++            return;
++        }
++
 +        if ( input == null )
 +        {
 +            input = new ByteBufInputStream( in );
@@ -1240,6 +1235,11 @@ index 0000000..0860655
 +                        packet.a( input );
 +                        checkpoint( ReadState.HEADER );
 +                        out.add( packet );
++                        if ( packet instanceof Packet254GetInfo )
++                        {
++                            shutdown = true;
++                            return;
++                        }
 +                        packet = null;
 +                        break;
 +                    default:
