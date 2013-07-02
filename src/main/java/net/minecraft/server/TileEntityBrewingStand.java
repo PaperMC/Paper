@@ -121,8 +121,7 @@ public class TileEntityBrewingStand extends TileEntity implements IWorldInventor
                         List list = Item.POTION.c(j);
                         List list1 = Item.POTION.c(k);
 
-                        // CraftBukkit - list != -> !list.equals
-                        if ((j <= 0 || !list.equals(list1)) && (list == null || !list.equals(list1) && list1 != null) && j != k) {
+                        if ((j <= 0 || list != list1) && (list == null || !list.equals(list1) && list1 != null) && j != k) {
                             flag = true;
                             break;
                         }
