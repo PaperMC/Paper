@@ -1,4 +1,4 @@
-From df64c572448edbe8dcefa1eeaaccc7a389f626f7 Mon Sep 17 00:00:00 2001
+From c7558b9d826023a2080737a9231026645a9f6e6a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 3 Feb 2013 05:10:21 -0500
 Subject: [PATCH] Entity Activation Range
@@ -9,7 +9,7 @@ This will drastically cut down on tick timings for entities that are not in rang
 This change can have dramatic impact on gameplay if configured too low. Balance according to your servers desired gameplay.
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 978b6ef..438a26a 100644
+index 72c6e66..e438df5 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -88,7 +88,7 @@ public abstract class Entity {
@@ -23,7 +23,7 @@ index 978b6ef..438a26a 100644
      protected boolean fireProof;
 @@ -111,8 +111,15 @@ public abstract class Entity {
      public EnumEntitySize at;
-     public boolean valid = false; // CraftBukkit
+     public boolean valid; // CraftBukkit
  
 +    // Spigot start
      public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getEntityTimings(this); // Spigot
@@ -37,7 +37,7 @@ index 978b6ef..438a26a 100644
      public Entity(World world) {
          this.id = entityCount++;
          this.l = 1.0D;
-@@ -153,7 +160,12 @@ public abstract class Entity {
+@@ -131,7 +138,12 @@ public abstract class Entity {
          this.setPosition(0.0D, 0.0D, 0.0D);
          if (world != null) {
              this.dimension = world.worldProvider.dimension;
@@ -51,11 +51,11 @@ index 978b6ef..438a26a 100644
          this.datawatcher.a(0, Byte.valueOf((byte) 0));
          this.datawatcher.a(1, Short.valueOf((short) 300));
 diff --git a/src/main/java/net/minecraft/server/EntityAgeable.java b/src/main/java/net/minecraft/server/EntityAgeable.java
-index fdc9167..16b7261 100644
+index 5ba19f3..4c73a5f 100644
 --- a/src/main/java/net/minecraft/server/EntityAgeable.java
 +++ b/src/main/java/net/minecraft/server/EntityAgeable.java
 @@ -6,6 +6,31 @@ public abstract class EntityAgeable extends EntityCreature {
-     private float e;
+     private float bq;
      public boolean ageLocked = false; // CraftBukkit
  
 +    // Spigot start
@@ -87,25 +87,25 @@ index fdc9167..16b7261 100644
          super(world);
      }
 diff --git a/src/main/java/net/minecraft/server/EntityArrow.java b/src/main/java/net/minecraft/server/EntityArrow.java
-index f46c920..1699059 100644
+index affeca6..f44f5e2 100644
 --- a/src/main/java/net/minecraft/server/EntityArrow.java
 +++ b/src/main/java/net/minecraft/server/EntityArrow.java
 @@ -14,7 +14,7 @@ public class EntityArrow extends Entity implements IProjectile {
      private int f = -1;
-     private int g = 0;
-     private int h = 0;
--    private boolean inGround = false;
+     private int g;
+     private int h;
+-    private boolean inGround;
 +    public boolean inGround = false; // Spigot - private -> public
-     public int fromPlayer = 0;
-     public int shake = 0;
+     public int fromPlayer;
+     public int shake;
      public Entity shooter;
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 58a4acb..35f3fea 100644
+index 0d9ba82..f043040 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
-@@ -113,6 +113,13 @@ public abstract class EntityLiving extends Entity {
+@@ -79,6 +79,13 @@ public abstract class EntityLiving extends Entity {
      public int maxAirTicks = 300;
-     public int maxHealth = this.getMaxHealth();
+     public float maxHealth;
      // CraftBukkit end
 +    // Spigot start
 +    public void inactiveTick()
@@ -118,10 +118,10 @@ index 58a4acb..35f3fea 100644
      public EntityLiving(World world) {
          super(world);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 3a6a63d..5866abb 100644
+index fd76af0..039ba6e 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1277,6 +1277,7 @@ public abstract class World implements IBlockAccess {
+@@ -1276,6 +1276,7 @@ public abstract class World implements IBlockAccess {
          this.f.clear();
          this.methodProfiler.c("regular");
  
@@ -129,7 +129,7 @@ index 3a6a63d..5866abb 100644
          timings.entityTick.startTiming(); // Spigot
          for (i = 0; i < this.entityList.size(); ++i) {
              entity = (Entity) this.entityList.get(i);
-@@ -1437,8 +1438,13 @@ public abstract class World implements IBlockAccess {
+@@ -1436,8 +1437,13 @@ public abstract class World implements IBlockAccess {
          int j = MathHelper.floor(entity.locZ);
          byte b0 = 32;
  
@@ -462,7 +462,7 @@ index 0000000..93ce20e
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 6c2a430..8b2c1d7 100644
+index 8bb0483..eb721f5 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -152,4 +152,15 @@ public class SpigotWorldConfig

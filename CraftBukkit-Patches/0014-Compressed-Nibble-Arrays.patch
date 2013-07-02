@@ -1,4 +1,4 @@
-From c34bbcf522c081442110baf7b9499eff7939b4a1 Mon Sep 17 00:00:00 2001
+From 92a6ffad3c78692c77614e848c7b42c76b273889 Mon Sep 17 00:00:00 2001
 From: Mike Primm <mike@primmhome.com>
 Date: Sun, 13 Jan 2013 03:49:07 -0800
 Subject: [PATCH] Compressed Nibble Arrays
@@ -12,10 +12,10 @@ Finish up NibbleArray lightening work - use for Snapshots, reduce copies
 Fix nibble handling with NBT - arrays aren't copied by NBTByteArray
 
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 5c67fe4..3f3c07e 100644
+index ba6d32f..0b086a2 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -217,15 +217,15 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
+@@ -218,15 +218,15 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
                  nbttagcompound1.setByte("Y", (byte) (chunksection.getYPosition() >> 4 & 255));
                  nbttagcompound1.setByteArray("Blocks", chunksection.getIdArray());
                  if (chunksection.getExtendedIdArray() != null) {
@@ -271,64 +271,209 @@ index 53c1cb5..9a9e20f 100644
              }
          }
 diff --git a/src/main/java/net/minecraft/server/Packet51MapChunk.java b/src/main/java/net/minecraft/server/Packet51MapChunk.java
-index 97c953b..3c3bdbf 100644
---- a/src/main/java/net/minecraft/server/Packet51MapChunk.java
+new file mode 100644
+index 0000000..3c3bdbf
+--- /dev/null
 +++ b/src/main/java/net/minecraft/server/Packet51MapChunk.java
-@@ -139,16 +139,22 @@ public class Packet51MapChunk extends Packet {
-         for (l = 0; l < achunksection.length; ++l) {
-             if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && (i & 1 << l) != 0) {
-                 nibblearray = achunksection[l].getDataArray();
--                System.arraycopy(nibblearray.a, 0, abyte, j, nibblearray.a.length);
--                j += nibblearray.a.length;
+@@ -0,0 +1,198 @@
++package net.minecraft.server;
++
++import java.io.DataInputStream;
++import java.io.DataOutputStream;
++import java.io.IOException;
++import java.util.zip.DataFormatException;
++import java.util.zip.Deflater;
++import java.util.zip.Inflater;
++
++public class Packet51MapChunk extends Packet {
++
++    public int a;
++    public int b;
++    public int c;
++    public int d;
++    private byte[] buffer;
++    private byte[] inflatedBuffer;
++    public boolean e;
++    private int size;
++    private static byte[] buildBuffer = new byte[196864];
++
++    public Packet51MapChunk() {
++        this.lowPriority = true;
++    }
++
++    public Packet51MapChunk(Chunk chunk, boolean flag, int i) {
++        this.lowPriority = true;
++        this.a = chunk.x;
++        this.b = chunk.z;
++        this.e = flag;
++        ChunkMap chunkmap = a(chunk, flag, i);
++        Deflater deflater = new Deflater(-1);
++
++        this.d = chunkmap.c;
++        this.c = chunkmap.b;
++
++        try {
++            this.inflatedBuffer = chunkmap.a;
++            deflater.setInput(chunkmap.a, 0, chunkmap.a.length);
++            deflater.finish();
++            this.buffer = new byte[chunkmap.a.length];
++            this.size = deflater.deflate(this.buffer);
++        } finally {
++            deflater.end();
++        }
++    }
++
++    public void a(DataInputStream datainputstream) throws IOException { // CraftBukkit - throws IOException
++        this.a = datainputstream.readInt();
++        this.b = datainputstream.readInt();
++        this.e = datainputstream.readBoolean();
++        this.c = datainputstream.readShort();
++        this.d = datainputstream.readShort();
++        this.size = datainputstream.readInt();
++        if (buildBuffer.length < this.size) {
++            buildBuffer = new byte[this.size];
++        }
++
++        datainputstream.readFully(buildBuffer, 0, this.size);
++        int i = 0;
++
++        int j;
++
++        for (j = 0; j < 16; ++j) {
++            i += this.c >> j & 1;
++        }
++
++        j = 12288 * i;
++        if (this.e) {
++            j += 256;
++        }
++
++        this.inflatedBuffer = new byte[j];
++        Inflater inflater = new Inflater();
++
++        inflater.setInput(buildBuffer, 0, this.size);
++
++        try {
++            inflater.inflate(this.inflatedBuffer);
++        } catch (DataFormatException dataformatexception) {
++            throw new IOException("Bad compressed data format");
++        } finally {
++            inflater.end();
++        }
++    }
++
++    public void a(DataOutputStream dataoutputstream) throws IOException { // CraftBukkit - throws IOException
++        dataoutputstream.writeInt(this.a);
++        dataoutputstream.writeInt(this.b);
++        dataoutputstream.writeBoolean(this.e);
++        dataoutputstream.writeShort((short) (this.c & '\uffff'));
++        dataoutputstream.writeShort((short) (this.d & '\uffff'));
++        dataoutputstream.writeInt(this.size);
++        dataoutputstream.write(this.buffer, 0, this.size);
++    }
++
++    public void handle(Connection connection) {
++        connection.a(this);
++    }
++
++    public int a() {
++        return 17 + this.size;
++    }
++
++    public static ChunkMap a(Chunk chunk, boolean flag, int i) {
++        int j = 0;
++        ChunkSection[] achunksection = chunk.i();
++        int k = 0;
++        ChunkMap chunkmap = new ChunkMap();
++        byte[] abyte = buildBuffer;
++
++        if (flag) {
++            chunk.seenByPlayer = true;
++        }
++
++        int l;
++
++        for (l = 0; l < achunksection.length; ++l) {
++            if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && (i & 1 << l) != 0) {
++                chunkmap.b |= 1 << l;
++                if (achunksection[l].getExtendedIdArray() != null) {
++                    chunkmap.c |= 1 << l;
++                    ++k;
++                }
++            }
++        }
++
++        for (l = 0; l < achunksection.length; ++l) {
++            if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && (i & 1 << l) != 0) {
++                byte[] abyte1 = achunksection[l].getIdArray();
++
++                System.arraycopy(abyte1, 0, abyte, j, abyte1.length);
++                j += abyte1.length;
++            }
++        }
++
++        NibbleArray nibblearray;
++
++        for (l = 0; l < achunksection.length; ++l) {
++            if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && (i & 1 << l) != 0) {
++                nibblearray = achunksection[l].getDataArray();
 +                // Spigot start
 +                // System.arraycopy(nibblearray.a, 0, abyte, j, nibblearray.a.length);
 +                // j += nibblearray.a.length;
 +                j = nibblearray.copyToByteArray(abyte, j);
 +                // Spigot end
-             }
-         }
- 
-         for (l = 0; l < achunksection.length; ++l) {
-             if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && (i & 1 << l) != 0) {
-                 nibblearray = achunksection[l].getEmittedLightArray();
--                System.arraycopy(nibblearray.a, 0, abyte, j, nibblearray.a.length);
--                j += nibblearray.a.length;
++            }
++        }
++
++        for (l = 0; l < achunksection.length; ++l) {
++            if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && (i & 1 << l) != 0) {
++                nibblearray = achunksection[l].getEmittedLightArray();
 +                // Spigot start
 +                // System.arraycopy(nibblearray.a, 0, abyte, j, nibblearray.a.length);
 +                // j += nibblearray.a.length;
 +                j = nibblearray.copyToByteArray(abyte, j);
 +                // Spigot end
-             }
-         }
- 
-@@ -156,8 +162,11 @@ public class Packet51MapChunk extends Packet {
-             for (l = 0; l < achunksection.length; ++l) {
-                 if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && (i & 1 << l) != 0) {
-                     nibblearray = achunksection[l].getSkyLightArray();
--                    System.arraycopy(nibblearray.a, 0, abyte, j, nibblearray.a.length);
--                    j += nibblearray.a.length;
++            }
++        }
++
++        if (!chunk.world.worldProvider.f) {
++            for (l = 0; l < achunksection.length; ++l) {
++                if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && (i & 1 << l) != 0) {
++                    nibblearray = achunksection[l].getSkyLightArray();
 +                    // Spigot start
 +                    // System.arraycopy(nibblearray.a, 0, abyte, j, nibblearray.a.length);
 +                    // j += nibblearray.a.length;
 +                    j = nibblearray.copyToByteArray(abyte, j);
 +                    // Spigot end
-                 }
-             }
-         }
-@@ -166,8 +175,11 @@ public class Packet51MapChunk extends Packet {
-             for (l = 0; l < achunksection.length; ++l) {
-                 if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && achunksection[l].getExtendedIdArray() != null && (i & 1 << l) != 0) {
-                     nibblearray = achunksection[l].getExtendedIdArray();
--                    System.arraycopy(nibblearray.a, 0, abyte, j, nibblearray.a.length);
--                    j += nibblearray.a.length;
++                }
++            }
++        }
++
++        if (k > 0) {
++            for (l = 0; l < achunksection.length; ++l) {
++                if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && achunksection[l].getExtendedIdArray() != null && (i & 1 << l) != 0) {
++                    nibblearray = achunksection[l].getExtendedIdArray();
 +                    // Spigot start
 +                    //System.arraycopy(nibblearray.a, 0, abyte, j, nibblearray.a.length);
 +                    //j += nibblearray.a.length;
 +                    j = nibblearray.copyToByteArray(abyte, j);
 +                    // Spigot end
-                 }
-             }
-         }
++                }
++            }
++        }
++
++        if (flag) {
++            byte[] abyte2 = chunk.m();
++
++            System.arraycopy(abyte2, 0, abyte, j, abyte2.length);
++            j += abyte2.length;
++        }
++
++        chunkmap.a = new byte[j];
++        System.arraycopy(abyte, 0, chunkmap.a, 0, j);
++        return chunkmap;
++    }
++}
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 index 1a21516..6921206 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java

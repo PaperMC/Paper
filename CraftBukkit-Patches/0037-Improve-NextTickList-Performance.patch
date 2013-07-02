@@ -1,4 +1,4 @@
-From 79812d32f7cfef51de310b72ed9eb59410395573 Mon Sep 17 00:00:00 2001
+From ee7f3f6e22ddeacbad8b9ec13b96870fe585dbe2 Mon Sep 17 00:00:00 2001
 From: Mike Primm <mike@primmhome.com>
 Date: Wed, 24 Apr 2013 01:43:33 -0500
 Subject: [PATCH] Improve NextTickList Performance
@@ -20,7 +20,7 @@ index 52a70a1..08a4240 100644
  
      public NextTickListEntry a(long i) {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 69d955f..7cdb549 100644
+index b7e0551..1b69737 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -25,8 +25,8 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
@@ -34,17 +34,17 @@ index 69d955f..7cdb549 100644
      public ChunkProviderServer chunkProviderServer;
      public boolean savingDisabled;
      private boolean N;
-@@ -35,7 +35,8 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
-     private NoteDataList[] Q = new NoteDataList[] { new NoteDataList((EmptyClass2) null), new NoteDataList((EmptyClass2) null)};
-     private int R = 0;
-     private static final StructurePieceTreasure[] S = new StructurePieceTreasure[] { new StructurePieceTreasure(Item.STICK.id, 0, 1, 3, 10), new StructurePieceTreasure(Block.WOOD.id, 0, 1, 3, 10), new StructurePieceTreasure(Block.LOG.id, 0, 1, 3, 10), new StructurePieceTreasure(Item.STONE_AXE.id, 0, 1, 1, 3), new StructurePieceTreasure(Item.WOOD_AXE.id, 0, 1, 1, 5), new StructurePieceTreasure(Item.STONE_PICKAXE.id, 0, 1, 1, 3), new StructurePieceTreasure(Item.WOOD_PICKAXE.id, 0, 1, 1, 5), new StructurePieceTreasure(Item.APPLE.id, 0, 2, 3, 5), new StructurePieceTreasure(Item.BREAD.id, 0, 2, 3, 3)};
--    private ArrayList T = new ArrayList();
+@@ -36,7 +36,8 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+     private NoteDataList[] R = new NoteDataList[] { new NoteDataList((EmptyClass2) null), new NoteDataList((EmptyClass2) null)};
+     private int S;
+     private static final StructurePieceTreasure[] T = new StructurePieceTreasure[] { new StructurePieceTreasure(Item.STICK.id, 0, 1, 3, 10), new StructurePieceTreasure(Block.WOOD.id, 0, 1, 3, 10), new StructurePieceTreasure(Block.LOG.id, 0, 1, 3, 10), new StructurePieceTreasure(Item.STONE_AXE.id, 0, 1, 1, 3), new StructurePieceTreasure(Item.WOOD_AXE.id, 0, 1, 1, 5), new StructurePieceTreasure(Item.STONE_PICKAXE.id, 0, 1, 1, 3), new StructurePieceTreasure(Item.WOOD_PICKAXE.id, 0, 1, 1, 5), new StructurePieceTreasure(Item.APPLE.id, 0, 2, 3, 5), new StructurePieceTreasure(Item.BREAD.id, 0, 2, 3, 3)};
+-    private List U = new ArrayList();
 +    private ArrayList<NextTickListEntry> pendingTickEntries = new ArrayList<NextTickListEntry>(); // Spigot
 +    private int nextPendingTickEntry; // Spigot
      private IntHashMap entitiesById;
  
      // CraftBukkit start
-@@ -53,13 +54,15 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -54,13 +55,15 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
              this.entitiesById = new IntHashMap();
          }
  
@@ -64,13 +64,13 @@ index 69d955f..7cdb549 100644
  
          this.P = new org.bukkit.craftbukkit.CraftTravelAgent(this); // CraftBukkit
          this.scoreboard = new ScoreboardServer(minecraftserver);
-@@ -441,9 +444,16 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -440,9 +443,16 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
      }
  
      public boolean a(int i, int j, int k, int l) {
 -        NextTickListEntry nextticklistentry = new NextTickListEntry(i, j, k, l);
 -
--        return this.T.contains(nextticklistentry);
+-        return this.U.contains(nextticklistentry);
 +        // Spigot start
 +        int te_cnt = this.pendingTickEntries.size();
 +        for (int idx = this.nextPendingTickEntry; idx < te_cnt; idx++) {
@@ -141,7 +141,7 @@ index 69d955f..7cdb549 100644
  
 -                this.M.remove(nextticklistentry);
 -                this.L.remove(nextticklistentry);
--                this.T.add(nextticklistentry);
+-                this.U.add(nextticklistentry);
 +                // Spigot start
 +                this.removeNextTickIfNeeded(nextticklistentry);
 +                this.pendingTickEntries.add(nextticklistentry);
@@ -150,7 +150,7 @@ index 69d955f..7cdb549 100644
  
              this.methodProfiler.b();
              this.methodProfiler.a("ticking");
--            Iterator iterator = this.T.iterator();
+-            Iterator iterator = this.U.iterator();
 -
 -            while (iterator.hasNext()) {
 -                nextticklistentry = (NextTickListEntry) iterator.next();
@@ -167,7 +167,7 @@ index 69d955f..7cdb549 100644
              }
  
              this.methodProfiler.b();
--            this.T.clear();
+-            this.U.clear();
 -            return !this.M.isEmpty();
 -        }
 +            // Spigot start
@@ -192,10 +192,10 @@ index 69d955f..7cdb549 100644
 -            if (i1 == 0) {
 -                iterator = this.M.iterator();
 -            } else {
--                iterator = this.T.iterator();
+-                iterator = this.U.iterator();
 -                /* CraftBukkit start - Comment out debug spam
--                if (!this.T.isEmpty()) {
--                    System.out.println(this.T.size());
+-                if (!this.U.isEmpty()) {
+-                    System.out.println(this.U.size());
 -                }
 -                // CraftBukkit end */
 -            }
@@ -224,8 +224,8 @@ index 69d955f..7cdb549 100644
 +        // Spigot end
      }
  
-     public void entityJoinedWorld(Entity entity, boolean flag) {
-@@ -703,13 +679,15 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+     /* CraftBukkit start - We prevent spawning in general, so this butchering is not needed
+@@ -712,13 +688,15 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
              this.entitiesById = new IntHashMap();
          }
  
@@ -245,7 +245,7 @@ index 69d955f..7cdb549 100644
  
          this.b(worldsettings);
          super.a(worldsettings);
-@@ -996,4 +974,62 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -1005,4 +983,62 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
          return this.setTypeIdAndData(x, y, z, typeId, data, 3);
      }
      // CraftBukkit end

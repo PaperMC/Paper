@@ -1,14 +1,14 @@
-From ac8a1f6656ae9cd13e08c9e25b379769c9a6c7ae Mon Sep 17 00:00:00 2001
+From 9eb7c67eb82703dcffc537f751b364062345f23d Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 3 Feb 2013 12:28:17 +1100
 Subject: [PATCH] Highly Optimized Tick Loop
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 3e134fb..3c80340 100644
+index 96d291d..4c845ca 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -84,6 +84,12 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -86,6 +86,12 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
      // CraftBukkit end
@@ -20,22 +20,22 @@ index 3e134fb..3c80340 100644
 +    // Spigot end
  
      public MinecraftServer(OptionSet options) { // CraftBukkit - signature file -> OptionSet
-         k = this;
-@@ -380,39 +386,23 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+         this.c = Proxy.NO_PROXY;
+@@ -390,39 +396,23 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
      public void run() {
          try {
              if (this.init()) {
--                long i = System.currentTimeMillis();
+-                long i = aq();
 -
--                for (long j = 0L; this.isRunning; this.P = true) {
--                    long k = System.currentTimeMillis();
+-                for (long j = 0L; this.isRunning; this.Q = true) {
+-                    long k = aq();
 -                    long l = k - i;
 -
--                    if (l > 2000L && i - this.Q >= 15000L) {
+-                    if (l > 2000L && i - this.R >= 15000L) {
 -                        if (this.server.getWarnOnOverload()) // CraftBukkit - Added option to suppress warning messages
 -                        this.getLogger().warning("Can\'t keep up! Did the system time change, or is the server overloaded?");
 -                        l = 2000L;
--                        this.Q = i;
+-                        this.R = i;
 -                    }
 -
 -                    if (l < 0L) {
@@ -46,10 +46,10 @@ index 3e134fb..3c80340 100644
 -                    j += l;
 -                    i = k;
 -                    if (this.worlds.get(0).everyoneDeeplySleeping()) { // CraftBukkit
--                        this.q();
+-                        this.s();
 -                        j = 0L;
 +                // Spigot start
-+                for (long lastTick = 0L; this.isRunning; this.P = true) {
++                for (long lastTick = 0L; this.isRunning; this.Q = true) {
 +                    long curTime = System.nanoTime();
 +                    long wait = TICK_TIME - (curTime - lastTick) - catchupTime;
 +                    if (wait > 0) {
@@ -60,7 +60,7 @@ index 3e134fb..3c80340 100644
 -                        while (j > 50L) {
 -                            MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
 -                            j -= 50L;
--                            this.q();
+-                            this.s();
 -                        }
 +                        catchupTime = Math.min(TICK_TIME * TPS, Math.abs(wait));
                      }
@@ -69,7 +69,7 @@ index 3e134fb..3c80340 100644
 +                    currentTPS = (currentTPS * 0.95) + (1E9 / (curTime - lastTick) * 0.05);
 +                    lastTick = curTime;
 +                    MinecraftServer.currentTick++;
-+                    this.q();
++                    this.s();
                  }
 +                // Spigot end
              } else {
@@ -117,7 +117,7 @@ index 0000000..f114a31
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index 56ac067..d22e8e5 100644
+index e4eaecd..7880a31 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -14,6 +14,7 @@ import net.minecraft.server.MinecraftServer;
