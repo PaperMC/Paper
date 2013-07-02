@@ -1,4 +1,4 @@
-From eabbbdf2f175c602d04575c0d90062bba6e316b2 Mon Sep 17 00:00:00 2001
+From dec4a7481c02848ccfee73ae5800132d7480268f Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 2 Jul 2013 09:06:29 +1000
 Subject: [PATCH] Netty
@@ -94,6 +94,19 @@ index c60abf1..e1b259b 100644
 +
 +    public void setSocketAddress(SocketAddress address) { k = address; } // Spigot
  }
+diff --git a/src/main/java/net/minecraft/server/Packet254GetInfo.java b/src/main/java/net/minecraft/server/Packet254GetInfo.java
+index 9afa795..32704e8 100644
+--- a/src/main/java/net/minecraft/server/Packet254GetInfo.java
++++ b/src/main/java/net/minecraft/server/Packet254GetInfo.java
+@@ -23,7 +23,7 @@ public class Packet254GetInfo extends Packet {
+                 this.b = a(datainput, 255);
+                 this.c = datainput.readInt();
+             }
+-        } catch (Throwable throwable) {
++        } catch (java.io.IOException throwable) { // Spigot Throwable -> IOException
+             this.a = 0;
+             this.b = "";
+         }
 diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
 index 252cea7..d07973d 100644
 --- a/src/main/java/net/minecraft/server/PendingConnection.java
@@ -1166,10 +1179,10 @@ index 0000000..5da8a59
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketDecoder.java b/src/main/java/org/spigotmc/netty/PacketDecoder.java
 new file mode 100644
-index 0000000..b955914
+index 0000000..0860655
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketDecoder.java
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,67 @@
 +package org.spigotmc.netty;
 +
 +import io.netty.buffer.ByteBuf;
@@ -1208,34 +1221,32 @@ index 0000000..b955914
 +            input = new ByteBufInputStream( in );
 +        }
 +
-+        while ( true )
++        try
 +        {
-+            switch ( state() )
++            while ( true )
 +            {
-+                case HEADER:
-+                    int packetId = input.readUnsignedByte();
-+                    packet = Packet.a( MinecraftServer.getServer().getLogger(), packetId );
-+                    if ( packet == null )
-+                    {
-+                        throw new IOException( "Bad packet id " + packetId );
-+                    }
-+                    checkpoint( ReadState.DATA );
-+                case DATA:
-+                    try
-+                    {
++                switch ( state() )
++                {
++                    case HEADER:
++                        int packetId = input.readUnsignedByte();
++                        packet = Packet.a( MinecraftServer.getServer().getLogger(), packetId );
++                        if ( packet == null )
++                        {
++                            throw new IOException( "Bad packet id " + packetId );
++                        }
++                        checkpoint( ReadState.DATA );
++                    case DATA:
 +                        packet.a( input );
-+                    } catch ( EOFException ex )
-+                    {
-+                        return;
-+                    }
-+
-+                    checkpoint( ReadState.HEADER );
-+                    out.add( packet );
-+                    packet = null;
-+                    break;
-+                default:
-+                    throw new IllegalStateException();
++                        checkpoint( ReadState.HEADER );
++                        out.add( packet );
++                        packet = null;
++                        break;
++                    default:
++                        throw new IllegalStateException();
++                }
 +            }
++        } catch ( EOFException ex )
++        {
 +        }
 +    }
 +}
