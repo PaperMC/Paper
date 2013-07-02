@@ -1,0 +1,36 @@
+From e2247184da1caa4861674ebd73abb97685df2b77 Mon Sep 17 00:00:00 2001
+From: Nick Minkler <sleaker@gmail.com>
+Date: Sun, 2 Jun 2013 15:04:37 +1000
+Subject: [PATCH] Fix EntityShootBowEvent with Skeletons
+
+
+diff --git a/src/main/java/net/minecraft/server/EntitySkeleton.java b/src/main/java/net/minecraft/server/EntitySkeleton.java
+index e5db8a1..e175344 100644
+--- a/src/main/java/net/minecraft/server/EntitySkeleton.java
++++ b/src/main/java/net/minecraft/server/EntitySkeleton.java
+@@ -242,9 +242,21 @@ public class EntitySkeleton extends EntityMonster implements IRangedEntity {
+         if (EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_FIRE.id, this.aV()) > 0 || this.getSkeletonType() == 1) {
+             entityarrow.setOnFire(100);
+         }
++        // Spigot -  Skeletons should throw EntityShootBowEvents
++        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent( this, this.bG(), entityarrow, 1.6F );
++        if ( event.isCancelled() )
++        {
++            event.getProjectile().remove();
++            return;
++        }
++        if ( event.getProjectile() == entityarrow.getBukkitEntity() )
++        {
++            this.world.addEntity( entityarrow );
++        }
++        // Spigot end
+ 
+         this.makeSound("random.bow", 1.0F, 1.0F / (this.aB().nextFloat() * 0.4F + 0.8F));
+-        this.world.addEntity(entityarrow);
++        // this.world.addEntity(entityarrow); // Spigot - moved up
+     }
+ 
+     public int getSkeletonType() {
+-- 
+1.8.1.2
+
