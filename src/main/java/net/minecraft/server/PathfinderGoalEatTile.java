@@ -58,7 +58,7 @@ public class PathfinderGoalEatTile extends PathfinderGoal {
                 // CraftBukkit start
                 if (!CraftEventFactory.callEntityChangeBlockEvent(this.b.getBukkitEntity(), this.b.world.getWorld().getBlockAt(i, j, k), Material.AIR).isCancelled()) {
                     this.c.setAir(i, j, k, false);
-                    this.b.aK();
+                    this.b.n();
                 }
                 // CraftBukkit end
             } else if (this.c.getTypeId(i, j - 1, k) == Block.GRASS.id) {
@@ -66,7 +66,7 @@ public class PathfinderGoalEatTile extends PathfinderGoal {
                 if (!CraftEventFactory.callEntityChangeBlockEvent(this.b.getBukkitEntity(), this.b.world.getWorld().getBlockAt(i, j - 1, k), Material.DIRT).isCancelled()) {
                     this.c.triggerEffect(2001, i, j - 1, k, Block.GRASS.id);
                     this.c.setTypeIdAndData(i, j - 1, k, Block.DIRT.id, 0, 2);
-                    this.b.aK();
+                    this.b.n();
                 }
                 // CraftBukkit end
             }
