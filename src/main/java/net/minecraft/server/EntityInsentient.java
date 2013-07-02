@@ -23,7 +23,7 @@ public abstract class EntityInsentient extends EntityLiving {
     private ItemStack[] equipment = new ItemStack[5];
     public float[] dropChances = new float[5]; // CraftBukkit - protected -> public
     public boolean canPickUpLoot; // CraftBukkit - private -> public
-    public boolean persistent; // CraftBukkit - private -> public
+    public boolean persistent = !isTypeNotPersistent(); // CraftBukkit - private -> public
     protected float f;
     private Entity bu;
     protected int g;
