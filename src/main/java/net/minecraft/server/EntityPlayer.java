@@ -233,8 +233,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             }
 
             if (this.getHealth() != this.bP || this.bQ != this.foodData.a() || this.foodData.e() == 0.0F != this.bR) {
-                // CraftBukkit - this.getHealth() -> this.getScaledHealth() - Magic number 20 -> original max health
-                this.playerConnection.sendPacket(new Packet8UpdateHealth((float) (this.getHealth() * this.getMaxHealth() / 20.0D), this.foodData.a(), this.foodData.e()));
+                // CraftBukkit - Optionally scale health
+                this.playerConnection.sendPacket(new Packet8UpdateHealth(getBukkitEntity().getScaledHealth(), this.foodData.a(), this.foodData.e()));
                 this.bP = this.getHealth();
                 this.bQ = this.foodData.a();
                 this.bR = this.foodData.e() == 0.0F;
