@@ -476,7 +476,7 @@ Making sure you follow the above conventions is important, but just the beginnin
 
 * Your change should [fit with Bukkit's goals](#does-the-change-fit-bukkits-goals).
 * Make sure you follow all of our conventions to the letter.
-* Make sure your code compiles under Java 5.
+* Make sure your code compiles under Java 6.
 * Check for misplaced whitespaces. It may be invisible, but [we notice](https://github.com/Bukkit/CraftBukkit/pull/1070).
 * Provide proper JavaDocs where appropriate.
     * JavaDocs should detail every limitation, caveat and gotcha the code has.
