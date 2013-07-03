@@ -791,11 +791,13 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         return this.passenger == null && this.vehicle == null && this.bS() && this.bR() && !this.cv() && this.getHealth() >= this.getMaxHealth();
     }
 
+    /* CraftBukkit start - don't treat horses differently
     public void die() {
         if (this.world.isStatic || !this.bS() && !this.ce() || this.getHealth() <= 0.0F) {
             super.die();
         }
     }
+    // CraftBukkit end */
 
     public void e(boolean flag) {
         this.b(32, flag);
