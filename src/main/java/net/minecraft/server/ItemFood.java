@@ -39,7 +39,6 @@ public class ItemFood extends Item {
         ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet8UpdateHealth(entityhuman.getHealth(), entityhuman.getFoodData().foodLevel, entityhuman.getFoodData().saturationLevel));
         // CraftBukkit end
 
-        entityhuman.getFoodData().a(this);
         world.makeSound(entityhuman, "random.burp", 0.5F, world.random.nextFloat() * 0.1F + 0.9F);
         this.c(itemstack, world, entityhuman);
         return itemstack;
