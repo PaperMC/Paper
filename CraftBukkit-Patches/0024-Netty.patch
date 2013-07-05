@@ -1,4 +1,4 @@
-From ac11956bf50d51b0d28f079ba9ccabe1bf0e2d05 Mon Sep 17 00:00:00 2001
+From ee8dd3943261014e8444bbfb06a3aeeb3bd587e9 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 2 Jul 2013 09:06:29 +1000
 Subject: [PATCH] Netty
@@ -1375,12 +1375,13 @@ index 0000000..965ba12
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketWriter.java b/src/main/java/org/spigotmc/netty/PacketWriter.java
 new file mode 100644
-index 0000000..ad8d202
+index 0000000..21bb85e
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketWriter.java
-@@ -0,0 +1,89 @@
+@@ -0,0 +1,92 @@
 +package org.spigotmc.netty;
 +
++import com.google.common.base.Preconditions;
 +import io.netty.buffer.ByteBuf;
 +import io.netty.buffer.ByteBufOutputStream;
 +import io.netty.channel.Channel;
@@ -1411,7 +1412,9 @@ index 0000000..ad8d202
 +    void write(Channel channel, NettyNetworkManager networkManager, Packet msg)
 +    {
 +        // Append messages to queue
++        Preconditions.checkArgument( msg instanceof Packet, "Expected net.minecraft.server.Packet, not %s", msg.getClass() );
 +        pending.add( msg );
++        Preconditions.checkState( pending.containsOnly( Packet.class ), "Can only have pending packets" );
 +
 +        // If we are not in the pending connect phase, and we have not reached our timer
 +        if ( !( networkManager.connection instanceof PendingConnection ) && System.currentTimeMillis() - lastFlush < FLUSH_TIME )
@@ -1461,7 +1464,7 @@ index 0000000..ad8d202
 +            // Reset packet queue
 +            pending.clear();
 +            // If Netty didn't handle the freeing because we didn't get there, we must
-+            if ( !success)
++            if ( !success )
 +            {
 +                outBuf.release();
 +            }
