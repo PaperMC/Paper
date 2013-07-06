@@ -945,6 +945,7 @@ public final class CraftServer implements Server {
             this.logger.log(Level.WARNING, "Failed to load banned-players.json, " + ex.getMessage());
         }
 
+        org.spigotmc.SpigotConfig.init((File) this.console.options.valueOf("spigot-settings")); // Spigot
         for (ServerLevel world : this.console.getAllLevels()) {
             world.serverLevelData.setDifficulty(config.difficulty);
             world.setSpawnSettings(config.spawnMonsters);
@@ -959,11 +960,13 @@ public final class CraftServer implements Server {
                     }
                 }
             }
+            world.spigotConfig.init(); // Spigot
         }
 
         this.pluginManager.clearPlugins();
         this.commandMap.clearCommands();
         this.reloadData();
+        org.spigotmc.SpigotConfig.registerCommands(); // Spigot
         this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
         this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
 
