@@ -121,6 +121,14 @@ public class Main {
                 acceptsAll(asList("v", "version"), "Show the CraftBukkit Version");
 
                 acceptsAll(asList("demo"), "Demo mode");
+
+                // Spigot Start
+                acceptsAll(asList("S", "spigot-settings"), "File for spigot settings")
+                        .withRequiredArg()
+                        .ofType(File.class)
+                        .defaultsTo(new File("spigot.yml"))
+                        .describedAs("Yml file");
+                // Spigot End
             }
         };
 
