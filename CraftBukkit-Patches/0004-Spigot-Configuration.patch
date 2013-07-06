@@ -1,11 +1,11 @@
-From dfa59327db305e9cb30180e752e30d29962f979b Mon Sep 17 00:00:00 2001
+From ac7ad239ca0a822289a8263e803be7d48eb5c307 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Sat, 22 Jun 2013 14:06:41 +1000
+Date: Sun, 7 Jul 2013 09:32:53 +1000
 Subject: [PATCH] Spigot Configuration
 
 
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 0ce6c49..ddb32ac 100644
+index 0ce6c49..160d749 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -89,6 +89,11 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
@@ -20,12 +20,16 @@ index 0ce6c49..ddb32ac 100644
  
          this.getLogger().info("Generating keypair");
          this.a(MinecraftEncryption.b());
-@@ -103,7 +108,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -103,7 +108,11 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
              return false;
          }
  
 -        this.a((PlayerList) (new DedicatedPlayerList(this))); // CraftBukkit
-+        // this.a((PlayerList) (new DedicatedPlayerList(this))); // Spigot - Moved up
++        // Spigot Start - Move DedicatedPlayerList up and bring plugin loading from CraftServer to here
++        // this.a((PlayerList) (new DedicatedPlayerList(this)));
++        server.loadPlugins();
++        server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.STARTUP);
++        // Spigot End
  
          if (!this.getOnlineMode()) {
              this.getLogger().warning("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
@@ -50,10 +54,23 @@ index f134856..0dc673d 100644
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 00326c1..6e6fe1c 100644
+index 00326c1..8148f9b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -556,6 +556,7 @@ public final class CraftServer implements Server {
+@@ -214,8 +214,10 @@ public final class CraftServer implements Server {
+         updater.getOnUpdate().addAll(configuration.getStringList("auto-updater.on-update"));
+         updater.check(serverVersion);
+ 
+-        loadPlugins();
+-        enablePlugins(PluginLoadOrder.STARTUP);
++        // Spigot Start - Moved to old location of new DedicatedPlayerList in DedicatedServer
++        // loadPlugins();
++        // enablePlugins(PluginLoadOrder.STARTUP);
++        // Spigot End
+     }
+ 
+     private File getConfigFile() {
+@@ -556,6 +558,7 @@ public final class CraftServer implements Server {
          playerList.getIPBans().load();
          playerList.getNameBans().load();
  
@@ -61,7 +78,7 @@ index 00326c1..6e6fe1c 100644
          for (WorldServer world : console.worlds) {
              world.difficulty = difficulty;
              world.setSpawnFlags(monsters, animals);
-@@ -570,11 +571,13 @@ public final class CraftServer implements Server {
+@@ -570,11 +573,13 @@ public final class CraftServer implements Server {
              } else {
                  world.ticksPerMonsterSpawns = this.getTicksPerMonsterSpawns();
              }
