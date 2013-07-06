@@ -1,4 +1,4 @@
-From ee8dd3943261014e8444bbfb06a3aeeb3bd587e9 Mon Sep 17 00:00:00 2001
+From ebb81f5f718e2f23a77bae13b3cae39330f65e22 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 2 Jul 2013 09:06:29 +1000
 Subject: [PATCH] Netty
@@ -375,10 +375,10 @@ index 0000000..2eb1dcb
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..7340f5a
+index 0000000..c73d70c
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,314 @@
+@@ -0,0 +1,313 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -551,42 +551,41 @@ index 0000000..7340f5a
 +        // Only send if channel is still connected
 +        if ( connected )
 +        {
-+            if ( channel.eventLoop().inEventLoop() )
++            // Process packet via handler
++            final Packet packet0 = PacketListener.callQueued( this, connection, packet );
++            highPriorityQueue.add( packet0 );
++            // If handler indicates packet send
++            if ( packet0 != null )
 +            {
-+                queue0( packet );
-+            } else
-+            {
-+                channel.eventLoop().execute( new Runnable()
++                if ( channel.eventLoop().inEventLoop() )
 +                {
-+                    public void run()
++                    queue0( packet0 );
++                } else
++                {
++                    channel.eventLoop().execute( new Runnable()
 +                    {
-+                        queue0( packet );
-+                    }
-+                } );
++                        public void run()
++                        {
++                            queue0( packet0 );
++                        }
++                    } );
++                }
 +            }
 +        }
 +    }
 +
 +    private void queue0(Packet packet)
 +    {
-+        // Process packet via handler
-+        packet = PacketListener.callQueued( this, connection, packet );
-+        // If handler indicates packet send
-+        if ( packet != null )
++        if ( packet instanceof Packet255KickDisconnect )
 +        {
-+            highPriorityQueue.add( packet );
++            writer.lastFlush = 0;
++        }
 +
-+            if ( packet instanceof Packet255KickDisconnect )
-+            {
-+                writer.lastFlush = 0;
-+            }
-+
-+            writer.write( channel, this, packet );
-+            if ( packet instanceof Packet252KeyResponse )
-+            {
-+                Cipher encrypt = NettyServerConnection.getCipher( Cipher.ENCRYPT_MODE, secret );
-+                channel.pipeline().addBefore( "decoder", "encrypt", new CipherEncoder( encrypt ) );
-+            }
++        writer.write( channel, this, packet );
++        if ( packet instanceof Packet252KeyResponse )
++        {
++            Cipher encrypt = NettyServerConnection.getCipher( Cipher.ENCRYPT_MODE, secret );
++            channel.pipeline().addBefore( "decoder", "encrypt", new CipherEncoder( encrypt ) );
 +        }
 +    }
 +
