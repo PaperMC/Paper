@@ -1,4 +1,4 @@
-From ebb81f5f718e2f23a77bae13b3cae39330f65e22 Mon Sep 17 00:00:00 2001
+From 4debe5689ac410f15a6f4757a3a32854a86c9732 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 2 Jul 2013 09:06:29 +1000
 Subject: [PATCH] Netty
@@ -375,10 +375,10 @@ index 0000000..2eb1dcb
 +}
 diff --git a/src/main/java/org/spigotmc/netty/NettyNetworkManager.java b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
 new file mode 100644
-index 0000000..c73d70c
+index 0000000..d501d8c
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/NettyNetworkManager.java
-@@ -0,0 +1,313 @@
+@@ -0,0 +1,312 @@
 +package org.spigotmc.netty;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -471,7 +471,6 @@ index 0000000..c73d70c
 +    @Override
 +    public void channelInactive(ChannelHandlerContext ctx) throws Exception
 +    {
-+        writer.release();
 +        a( "disconnect.endOfStream", new Object[ 0 ] );
 +    }
 +
@@ -1374,20 +1373,20 @@ index 0000000..965ba12
 +}
 diff --git a/src/main/java/org/spigotmc/netty/PacketWriter.java b/src/main/java/org/spigotmc/netty/PacketWriter.java
 new file mode 100644
-index 0000000..21bb85e
+index 0000000..52c7d7b
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/netty/PacketWriter.java
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,85 @@
 +package org.spigotmc.netty;
 +
-+import com.google.common.base.Preconditions;
 +import io.netty.buffer.ByteBuf;
 +import io.netty.buffer.ByteBufOutputStream;
 +import io.netty.channel.Channel;
-+import io.netty.channel.MessageList;
 +import io.netty.handler.codec.EncoderException;
 +import java.io.DataOutput;
 +import java.io.IOException;
++import java.util.ArrayList;
++import java.util.List;
 +import net.minecraft.server.Packet;
 +import net.minecraft.server.PendingConnection;
 +
@@ -1401,19 +1400,12 @@ index 0000000..21bb85e
 +    private static final int FLUSH_TIME = 1;
 +    /*========================================================================*/
 +    long lastFlush;
-+    private final MessageList<Packet> pending = MessageList.newInstance();
-+
-+    void release()
-+    {
-+        pending.recycle();
-+    }
++    private final List<Packet> queue = new ArrayList<Packet>();
 +
 +    void write(Channel channel, NettyNetworkManager networkManager, Packet msg)
 +    {
 +        // Append messages to queue
-+        Preconditions.checkArgument( msg instanceof Packet, "Expected net.minecraft.server.Packet, not %s", msg.getClass() );
-+        pending.add( msg );
-+        Preconditions.checkState( pending.containsOnly( Packet.class ), "Can only have pending packets" );
++        queue.add( msg );
 +
 +        // If we are not in the pending connect phase, and we have not reached our timer
 +        if ( !( networkManager.connection instanceof PendingConnection ) && System.currentTimeMillis() - lastFlush < FLUSH_TIME )
@@ -1425,7 +1417,7 @@ index 0000000..21bb85e
 +
 +        // Since we are writing in batches it can be useful to guess the size of our output to limit memcpy
 +        int estimatedSize = 0;
-+        for ( Packet packet : pending )
++        for ( Packet packet : queue )
 +        {
 +            estimatedSize += packet.a();
 +        }
@@ -1439,7 +1431,7 @@ index 0000000..21bb85e
 +        try
 +        {
 +            // Iterate through all packets, this is safe as we know we will only ever get packets in the pipeline
-+            for ( Packet packet : pending )
++            for ( Packet packet : queue )
 +            {
 +                // Write packet ID
 +                outBuf.writeByte( packet.n() );
@@ -1461,7 +1453,7 @@ index 0000000..21bb85e
 +        } finally
 +        {
 +            // Reset packet queue
-+            pending.clear();
++            queue.clear();
 +            // If Netty didn't handle the freeing because we didn't get there, we must
 +            if ( !success )
 +            {
