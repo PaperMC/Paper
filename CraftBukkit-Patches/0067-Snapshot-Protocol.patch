@@ -1,0 +1,220 @@
+From 99a6f22d72eb616c79d37eecbe4319e932edb942 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Mon, 8 Jul 2013 21:16:22 +1000
+Subject: [PATCH] Snapshot Protocol
+
+
+diff --git a/src/main/java/net/minecraft/server/ItemBlock.java b/src/main/java/net/minecraft/server/ItemBlock.java
+index b2c3ed8..aa0c146 100644
+--- a/src/main/java/net/minecraft/server/ItemBlock.java
++++ b/src/main/java/net/minecraft/server/ItemBlock.java
+@@ -110,6 +110,12 @@ public class ItemBlock extends Item {
+ 
+             world.makeSound((double) ((float) x + 0.5F), (double) ((float) y + 0.5F), (double) ((float) z + 0.5F), block.stepSound.getPlaceSound(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
+         }
++        // Spigot Start
++        if ( block instanceof BlockSign )
++        {
++            ( (EntityPlayer) entityhuman ).playerConnection.sendPacket( new Packet133SignPlace( x, y, z ) );
++        }
++        // Spigot End
+ 
+         if (itemstack != null) {
+             --itemstack.count;
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 415087a..5e4d278 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -762,7 +762,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+     }
+ 
+     public String getVersion() {
+-        return "1.6.1";
++        return ( org.spigotmc.SpigotConfig.snapshotProtocol ) ? org.spigotmc.SpigotConfig.SNAPSHOT_VERSION : "1.6.1"; // Spigot
+     }
+ 
+     public int A() {
+diff --git a/src/main/java/net/minecraft/server/Packet.java b/src/main/java/net/minecraft/server/Packet.java
+index 9389a7d..4a75e71 100644
+--- a/src/main/java/net/minecraft/server/Packet.java
++++ b/src/main/java/net/minecraft/server/Packet.java
+@@ -321,6 +321,7 @@ public abstract class Packet {
+         a(130, true, true, Packet130UpdateSign.class);
+         a(131, true, false, Packet131ItemData.class);
+         a(132, true, false, Packet132TileEntityData.class);
++        a(133, true, false, Packet133SignPlace.class); // Spigot
+         a(200, true, false, Packet200Statistic.class);
+         a(201, true, false, Packet201PlayerInfo.class);
+         a(202, true, true, Packet202Abilities.class);
+diff --git a/src/main/java/net/minecraft/server/Packet133SignPlace.java b/src/main/java/net/minecraft/server/Packet133SignPlace.java
+new file mode 100644
+index 0000000..a1b2bbb
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/Packet133SignPlace.java
+@@ -0,0 +1,49 @@
++package net.minecraft.server;
++
++import java.io.DataInput;
++import java.io.DataOutput;
++import java.io.IOException;
++
++public class Packet133SignPlace extends Packet
++{
++
++    private int x, y, z;
++
++    public Packet133SignPlace()
++    {
++    }
++
++    public Packet133SignPlace(int x, int y, int z)
++    {
++        this.x = x;
++        this.y = y;
++        this.z = z;
++    }
++
++    @Override
++    public void a(DataInput datainput) throws IOException
++    {
++        throw new UnsupportedOperationException( "Not supported yet." ); //To change body of generated methods, choose Tools | Templates.
++    }
++
++    @Override
++    public void a(DataOutput dataoutput) throws IOException
++    {
++        dataoutput.writeByte( 0 );
++        dataoutput.writeInt( x );
++        dataoutput.writeInt( y );
++        dataoutput.writeInt( z );
++    }
++
++    @Override
++    public void handle(Connection connection)
++    {
++        throw new UnsupportedOperationException( "Not supported yet." ); //To change body of generated methods, choose Tools | Templates.
++    }
++
++    @Override
++    public int a()
++    {
++        return 13;
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/Packet44UpdateAttributes.java b/src/main/java/net/minecraft/server/Packet44UpdateAttributes.java
+index 710f8c3..2d60528 100644
+--- a/src/main/java/net/minecraft/server/Packet44UpdateAttributes.java
++++ b/src/main/java/net/minecraft/server/Packet44UpdateAttributes.java
+@@ -11,7 +11,7 @@ import java.util.Map.Entry;
+ public class Packet44UpdateAttributes extends Packet {
+ 
+     private int a;
+-    private final Map b = new HashMap();
++    private final java.util.List<AttributeModifiable> b = new java.util.ArrayList<AttributeModifiable>();
+ 
+     public Packet44UpdateAttributes() {}
+ 
+@@ -20,31 +20,33 @@ public class Packet44UpdateAttributes extends Packet {
+         Iterator iterator = collection.iterator();
+ 
+         while (iterator.hasNext()) {
+-            AttributeInstance attributeinstance = (AttributeInstance) iterator.next();
++            AttributeModifiable attributeinstance = (AttributeModifiable) iterator.next();
+ 
+-            this.b.put(attributeinstance.a().a(), Double.valueOf(attributeinstance.e()));
++            this.b.add( attributeinstance );
+         }
+     }
+ 
+     public void a(DataInput datainput) throws java.io.IOException { // Spigot - throws
+-        this.a = datainput.readInt();
+-        int i = datainput.readInt();
+-
+-        for (int j = 0; j < i; ++j) {
+-            this.b.put(a(datainput, 64), Double.valueOf(datainput.readDouble()));
+-        }
++        throw new UnsupportedOperationException();
+     }
+ 
+     public void a(DataOutput dataoutput) throws java.io.IOException { // Spigot - throws
+-        dataoutput.writeInt(this.a);
+-        dataoutput.writeInt(this.b.size());
+-        Iterator iterator = this.b.entrySet().iterator();
+-
+-        while (iterator.hasNext()) {
+-            Entry entry = (Entry) iterator.next();
+-
+-            a((String) entry.getKey(), dataoutput);
+-            dataoutput.writeDouble(((Double) entry.getValue()).doubleValue());
++        dataoutput.writeInt( this.a );
++        dataoutput.writeInt( this.b.size() );
++        for ( AttributeModifiable attribute : this.b )
++        {
++            a( attribute.a().a(), dataoutput );
++            dataoutput.writeDouble( attribute.b() );
++            dataoutput.writeShort( attribute.c().size() );
++
++            for ( Object o : attribute.c() )
++            {
++                AttributeModifier modifier = (AttributeModifier) o;
++                dataoutput.writeLong( modifier.a().getMostSignificantBits() );
++                dataoutput.writeLong( modifier.a().getLeastSignificantBits() );
++                dataoutput.writeDouble( modifier.d() );
++                dataoutput.writeByte( modifier.c() );
++            }
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
+index 9b8ddd2..587e648 100644
+--- a/src/main/java/net/minecraft/server/PendingConnection.java
++++ b/src/main/java/net/minecraft/server/PendingConnection.java
+@@ -76,8 +76,8 @@ public class PendingConnection extends Connection {
+         } else {
+             PublicKey publickey = this.server.H().getPublic();
+ 
+-            if (packet2handshake.d() != 73) {
+-                if (packet2handshake.d() > 73) {
++            if (packet2handshake.d() != org.spigotmc.SpigotConfig.protocolVersion) { // Spigot
++                if (packet2handshake.d() > org.spigotmc.SpigotConfig.protocolVersion) {
+                     this.disconnect("Outdated server!");
+                 } else {
+                     this.disconnect("Outdated client!");
+@@ -156,7 +156,7 @@ public class PendingConnection extends Connection {
+                 s = pingEvent.getMotd() + "\u00A7" + playerlist.getPlayerCount() + "\u00A7" + pingEvent.getMaxPlayers();
+             } else {
+                 // CraftBukkit start - Don't create a list from an array
+-                Object[] list = new Object[] { 1, 73, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
++                Object[] list = new Object[] { 1, org.spigotmc.SpigotConfig.protocolVersion, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() }; // Spigot
+ 
+                 StringBuilder builder = new StringBuilder();
+                 for (Object object : list) {
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index e8039d7..5ab19e0 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -280,4 +280,21 @@ public class SpigotConfig
+ 
+         Bukkit.getLogger().setFilter( new LogFilter() );
+     }
++
++    public static boolean snapshotProtocol;
++    public static String SNAPSHOT_VERSION = "1.6.2";
++    public static byte protocolVersion;
++    private static void snapshotProtocol()
++    {
++        snapshotProtocol = getBoolean( "settings.snapshot-protocol", false );
++        snapshotProtocol = true;
++        if ( snapshotProtocol )
++        {
++            Bukkit.getLogger().severe( "================ [Snapshot Protocol] ================" );
++            Bukkit.getLogger().severe( "Initialised Snapshot Protocol for " + SNAPSHOT_VERSION + " (" + protocolVersion + ")" );
++            Bukkit.getLogger().severe( "Features may NOT be implemented! Use at your own risk!" );
++            Bukkit.getLogger().severe( "================ ====================================" );
++        }
++        protocolVersion = (byte) ( ( snapshotProtocol ) ? 74 : 73 );
++    }
+ }
+-- 
+1.8.1.2
+
