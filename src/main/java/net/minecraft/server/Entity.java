@@ -1477,6 +1477,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
             if (this.persistentInvisibility) {
                 nbttagcompound.setBoolean("Bukkit.invisible", this.persistentInvisibility);
             }
+            nbttagcompound.setInt("Spigot.ticksLived", this.ticksLived);
             // CraftBukkit end
             IChatBaseComponent ichatbasecomponent = this.getCustomName();
 
@@ -1621,6 +1622,8 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
             // CraftBukkit start
             if (this instanceof EntityLiving) {
                 EntityLiving entity = (EntityLiving) this;
+
+                this.ticksLived = nbttagcompound.getInt("Spigot.ticksLived");
 
                 // Reset the persistence for tamed animals
                 if (entity instanceof EntityTameableAnimal && !isLevelAtLeast(nbttagcompound, 2) && !nbttagcompound.getBoolean("PersistenceRequired")) {
