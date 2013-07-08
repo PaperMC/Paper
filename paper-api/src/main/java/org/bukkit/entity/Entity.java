@@ -65,7 +65,8 @@ public interface Entity extends Metadatable {
     public World getWorld();
 
     /**
-     * Teleports this entity to the given location
+     * Teleports this entity to the given location. If this entity is riding a
+     * vehicle, it will be dismounted prior to teleportation.
      *
      * @param location New location to teleport this entity to
      * @return <code>true</code> if the teleport was successful
@@ -73,7 +74,8 @@ public interface Entity extends Metadatable {
     public boolean teleport(Location location);
 
     /**
-     * Teleports this entity to the given location
+     * Teleports this entity to the given location. If this entity is riding a
+     * vehicle, it will be dismounted prior to teleportation.
      *
      * @param location New location to teleport this entity to
      * @param cause The cause of this teleportation
@@ -82,7 +84,8 @@ public interface Entity extends Metadatable {
     public boolean teleport(Location location, TeleportCause cause);
 
     /**
-     * Teleports this entity to the target Entity
+     * Teleports this entity to the target Entity. If this entity is riding a
+     * vehicle, it will be dismounted prior to teleportation.
      *
      * @param destination Entity to teleport this entity to
      * @return <code>true</code> if the teleport was successful
@@ -90,7 +93,8 @@ public interface Entity extends Metadatable {
     public boolean teleport(Entity destination);
 
     /**
-     * Teleports this entity to the target Entity
+     * Teleports this entity to the target Entity. If this entity is riding a
+     * vehicle, it will be dismounted prior to teleportation.
      *
      * @param destination Entity to teleport this entity to
      * @param cause The cause of this teleportation
