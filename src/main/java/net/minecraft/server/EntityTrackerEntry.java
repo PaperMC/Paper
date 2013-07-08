@@ -246,7 +246,7 @@ public class EntityTrackerEntry {
         }
 
         if (this.tracker instanceof EntityLiving) {
-            AttributeMapServer attributemapserver = (AttributeMapServer) ((EntityLiving) this.tracker).aT();
+            AttributeMapServer attributemapserver = (AttributeMapServer) ((EntityLiving) this.tracker).aW();
             Set set = attributemapserver.b();
 
             if (!set.isEmpty()) {
@@ -318,7 +318,7 @@ public class EntityTrackerEntry {
                     }
 
                     if (this.tracker instanceof EntityLiving) {
-                        AttributeMapServer attributemapserver = (AttributeMapServer) ((EntityLiving) this.tracker).aT();
+                        AttributeMapServer attributemapserver = (AttributeMapServer) ((EntityLiving) this.tracker).aW();
                         Collection collection = attributemapserver.c();
 
                         if (!collection.isEmpty()) {
@@ -340,8 +340,8 @@ public class EntityTrackerEntry {
                         entityplayer.playerConnection.sendPacket(new Packet39AttachEntity(0, this.tracker.passenger, this.tracker));
                     }
 
-                    if (this.tracker instanceof EntityInsentient && ((EntityInsentient) this.tracker).bE() != null) {
-                        entityplayer.playerConnection.sendPacket(new Packet39AttachEntity(1, this.tracker, ((EntityInsentient) this.tracker).bE()));
+                    if (this.tracker instanceof EntityInsentient && ((EntityInsentient) this.tracker).bI() != null) {
+                        entityplayer.playerConnection.sendPacket(new Packet39AttachEntity(1, this.tracker, ((EntityInsentient) this.tracker).bI()));
                     }
                     // CraftBukkit end
 

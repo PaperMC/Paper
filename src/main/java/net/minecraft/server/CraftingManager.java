@@ -43,7 +43,6 @@ public class CraftingManager {
         this.registerShapedRecipe(new ItemStack(Block.FENCE_GATE, 1), new Object[] { "#W#", "#W#", Character.valueOf('#'), Item.STICK, Character.valueOf('W'), Block.WOOD});
         this.registerShapedRecipe(new ItemStack(Block.JUKEBOX, 1), new Object[] { "###", "#X#", "###", Character.valueOf('#'), Block.WOOD, Character.valueOf('X'), Item.DIAMOND});
         this.registerShapedRecipe(new ItemStack(Item.LEASH, 2), new Object[] { "~~ ", "~O ", "  ~", Character.valueOf('~'), Item.STRING, Character.valueOf('O'), Item.SLIME_BALL});
-        this.registerShapedRecipe(new ItemStack(Block.HAY_BLOCK, 1), new Object[] { "###", "###", "###", Character.valueOf('#'), Item.WHEAT});
         this.registerShapedRecipe(new ItemStack(Block.NOTE_BLOCK, 1), new Object[] { "###", "#X#", "###", Character.valueOf('#'), Block.WOOD, Character.valueOf('X'), Item.REDSTONE});
         this.registerShapedRecipe(new ItemStack(Block.BOOKSHELF, 1), new Object[] { "###", "XXX", "###", Character.valueOf('#'), Block.WOOD, Character.valueOf('X'), Item.BOOK});
         this.registerShapedRecipe(new ItemStack(Block.SNOW_BLOCK, 1), new Object[] { "##", "##", Character.valueOf('#'), Item.SNOW_BALL});

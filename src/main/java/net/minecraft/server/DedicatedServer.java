@@ -48,7 +48,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
         System.setErr(new PrintStream(new LoggerOutputStream(this.getLogger().getLogger(), Level.SEVERE), true));
         // CraftBukkit end
 
-        this.getLogger().info("Starting minecraft server version 1.6.1");
+        this.getLogger().info("Starting minecraft server version 1.6.2");
         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
             this.getLogger().warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
         }

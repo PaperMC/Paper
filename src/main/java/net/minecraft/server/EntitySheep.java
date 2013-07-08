@@ -32,13 +32,13 @@ public class EntitySheep extends EntityAnimal {
         this.bq.resultInventory = new InventoryCraftResult(); // CraftBukkit - add result slot for event
     }
 
-    protected boolean bb() {
+    protected boolean be() {
         return true;
     }
 
-    protected void be() {
+    protected void bh() {
         this.br = this.bs.f();
-        super.be();
+        super.bh();
     }
 
     public void c() {
@@ -49,10 +49,10 @@ public class EntitySheep extends EntityAnimal {
         super.c();
     }
 
-    protected void ax() {
-        super.ax();
-        this.a(GenericAttributes.a).a(8.0D);
-        this.a(GenericAttributes.d).a(0.23000000417232513D);
+    protected void ay() {
+        super.ay();
+        this.getAttributeInstance(GenericAttributes.a).setValue(8.0D);
+        this.getAttributeInstance(GenericAttributes.d).setValue(0.23000000417232513D);
     }
 
     protected void a() {
@@ -125,11 +125,11 @@ public class EntitySheep extends EntityAnimal {
         return "mob.sheep.say";
     }
 
-    protected String aK() {
+    protected String aN() {
         return "mob.sheep.say";
     }
 
-    protected String aL() {
+    protected String aO() {
         return "mob.sheep.say";
     }
 

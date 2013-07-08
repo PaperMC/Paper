@@ -124,7 +124,7 @@ class PlayerChunk {
                 i = this.location.x * 16 + (this.dirtyBlocks[0] >> 12 & 15);
                 j = this.dirtyBlocks[0] & 255;
                 k = this.location.z * 16 + (this.dirtyBlocks[0] >> 8 & 15);
-                this.sendAll(new Packet51MapChunk(PlayerChunkMap.a(this.playerChunkMap).getChunkAt(this.location.x, this.location.z), (this.f == 0xFFFF), this.f)); // CraftBukkit - send everything (including biome) if all sections flagged
+                this.sendAll(new Packet53BlockChange(i, j, k, PlayerChunkMap.a(this.playerChunkMap)));
                 if (PlayerChunkMap.a(this.playerChunkMap).isTileEntity(i, j, k)) {
                     this.sendTileEntity(PlayerChunkMap.a(this.playerChunkMap).getTileEntity(i, j, k));
                 }
@@ -134,7 +134,7 @@ class PlayerChunk {
                 if (this.dirtyCount == 64) {
                     i = this.location.x * 16;
                     j = this.location.z * 16;
-                    this.sendAll(new Packet51MapChunk(PlayerChunkMap.a(this.playerChunkMap).getChunkAt(this.location.x, this.location.z), false, this.f));
+                    this.sendAll(new Packet51MapChunk(PlayerChunkMap.a(this.playerChunkMap).getChunkAt(this.location.x, this.location.z), (this.f == 0xFFFF), this.f)); // CraftBukkit - send everything (including biome) if all sections flagged
 
                     for (k = 0; k < 16; ++k) {
                         if ((this.f & 1 << k) != 0) {

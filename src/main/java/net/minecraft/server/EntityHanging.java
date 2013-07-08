@@ -318,5 +318,9 @@ public abstract class EntityHanging extends Entity {
 
     public abstract int e();
 
+    protected boolean O() {
+        return false;
+    }
+
     public abstract void b(Entity entity);
 }

@@ -26,16 +26,16 @@ public class EntityCreeper extends EntityMonster {
         this.targetSelector.a(2, new PathfinderGoalHurtByTarget(this, false));
     }
 
-    protected void ax() {
-        super.ax();
-        this.a(GenericAttributes.d).a(0.25D);
+    protected void ay() {
+        super.ay();
+        this.getAttributeInstance(GenericAttributes.d).setValue(0.25D);
     }
 
-    public boolean bb() {
+    public boolean be() {
         return true;
     }
 
-    public int aq() {
+    public int ar() {
         return this.getGoalTarget() == null ? 3 : 3 + (int) (this.getHealth() - 1.0F);
     }
 
@@ -78,7 +78,7 @@ public class EntityCreeper extends EntityMonster {
     public void l_() {
         if (this.isAlive()) {
             this.bp = this.fuseTicks;
-            int i = this.bR();
+            int i = this.bV();
 
             if (i > 0 && this.fuseTicks == 0) {
                 this.makeSound("random.fuse", 1.0F, 0.5F);
@@ -112,11 +112,11 @@ public class EntityCreeper extends EntityMonster {
         super.l_();
     }
 
-    protected String aK() {
+    protected String aN() {
         return "mob.creeper.say";
     }
 
-    protected String aL() {
+    protected String aO() {
         return "mob.creeper.death";
     }
 
@@ -173,7 +173,7 @@ public class EntityCreeper extends EntityMonster {
         return Item.SULPHUR.id;
     }
 
-    public int bR() {
+    public int bV() {
         return this.datawatcher.getByte(16);
     }
 

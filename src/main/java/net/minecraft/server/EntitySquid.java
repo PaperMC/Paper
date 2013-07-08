@@ -25,24 +25,24 @@ public class EntitySquid extends EntityWaterAnimal {
         this.by = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
     }
 
-    protected void ax() {
-        super.ax();
-        this.a(GenericAttributes.a).a(10.0D);
+    protected void ay() {
+        super.ay();
+        this.getAttributeInstance(GenericAttributes.a).setValue(10.0D);
     }
 
     protected String r() {
         return null;
     }
 
-    protected String aK() {
+    protected String aN() {
         return null;
     }
 
-    protected String aL() {
+    protected String aO() {
         return null;
     }
 
-    protected float aW() {
+    protected float aZ() {
         return 0.4F;
     }
 
@@ -135,7 +135,7 @@ public class EntitySquid extends EntityWaterAnimal {
         this.move(this.motX, this.motY, this.motZ);
     }
 
-    protected void bh() {
+    protected void bk() {
         ++this.aV;
         if (this.aV > 100) {
             this.bA = this.bB = this.bC = 0.0F;
@@ -147,7 +147,7 @@ public class EntitySquid extends EntityWaterAnimal {
             this.bC = MathHelper.sin(f) * 0.2F;
         }
 
-        this.bk();
+        this.bo();
     }
 
     public boolean canSpawn() {

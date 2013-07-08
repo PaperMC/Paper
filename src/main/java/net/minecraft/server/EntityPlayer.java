@@ -240,8 +240,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
                 this.bR = this.foodData.e() == 0.0F;
             }
 
-            if (this.getHealth() + this.bj() != this.bO) {
-                this.bO = this.getHealth() + this.bj();
+            if (this.getHealth() + this.bm() != this.bO) {
+                this.bO = this.getHealth() + this.bm();
                 // CraftBukkit - Update ALL the scores!
                 this.world.getServer().getScoreboardManager().updateAllScoresForList(IScoreboardCriteria.f, this.getLocalizedName(), com.google.common.collect.ImmutableList.of(this));
             }
@@ -293,7 +293,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             }
         }
 
-        ChatMessage chatmessage = this.aN().b();
+        ChatMessage chatmessage = this.aQ().b();
 
         String deathmessage = chatmessage.toString();
         org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, deathmessage);
@@ -332,7 +332,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             scoreboardscore.incrementScore();
         }
 
-        EntityLiving entityliving = this.aO();
+        EntityLiving entityliving = this.aR();
 
         if (entityliving != null) {
             entityliving.b(this, this.bb);
@@ -473,6 +473,13 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public void b(double d0, boolean flag) {
         super.a(d0, flag);
+    }
+
+    public void a(TileEntity tileentity) {
+        if (tileentity instanceof TileEntitySign) {
+            ((TileEntitySign) tileentity).a((EntityHuman) this);
+            this.playerConnection.sendPacket(new Packet133OpenTileEntity(0, tileentity.x, tileentity.y, tileentity.z));
+        }
     }
 
     public int nextContainerCounter() { // CraftBukkit - private void -> public int
@@ -770,13 +777,13 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.playerConnection.sendPacket(new Packet41MobEffect(this.id, mobeffect));
     }
 
-    protected void b(MobEffect mobeffect) {
-        super.b(mobeffect);
+    protected void a(MobEffect mobeffect, boolean flag) {
+        super.a(mobeffect, flag);
         this.playerConnection.sendPacket(new Packet41MobEffect(this.id, mobeffect));
     }
 
-    protected void c(MobEffect mobeffect) {
-        super.c(mobeffect);
+    protected void b(MobEffect mobeffect) {
+        super.b(mobeffect);
         this.playerConnection.sendPacket(new Packet42RemoveMobEffect(this.id, mobeffect));
     }
 

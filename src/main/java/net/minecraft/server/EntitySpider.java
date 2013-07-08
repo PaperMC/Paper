@@ -21,10 +21,10 @@ public class EntitySpider extends EntityMonster {
         }
     }
 
-    protected void ax() {
-        super.ax();
-        this.a(GenericAttributes.a).a(16.0D);
-        this.a(GenericAttributes.d).a(0.800000011920929D);
+    protected void ay() {
+        super.ay();
+        this.getAttributeInstance(GenericAttributes.a).setValue(16.0D);
+        this.getAttributeInstance(GenericAttributes.d).setValue(0.800000011920929D);
     }
 
     protected Entity findTarget() {
@@ -43,11 +43,11 @@ public class EntitySpider extends EntityMonster {
         return "mob.spider.say";
     }
 
-    protected String aK() {
+    protected String aN() {
         return "mob.spider.say";
     }
 
-    protected String aL() {
+    protected String aO() {
         return "mob.spider.death";
     }
 
@@ -116,20 +116,20 @@ public class EntitySpider extends EntityMonster {
     }
 
     public boolean e() {
-        return this.bP();
+        return this.bT();
     }
 
-    public void ak() {}
+    public void al() {}
 
     public EnumMonsterType getMonsterType() {
         return EnumMonsterType.ARTHROPOD;
     }
 
-    public boolean e(MobEffect mobeffect) {
-        return mobeffect.getEffectId() == MobEffectList.POISON.id ? false : super.e(mobeffect);
+    public boolean d(MobEffect mobeffect) {
+        return mobeffect.getEffectId() == MobEffectList.POISON.id ? false : super.d(mobeffect);
     }
 
-    public boolean bP() {
+    public boolean bT() {
         return (this.datawatcher.getByte(16) & 1) != 0;
     }
 

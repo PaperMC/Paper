@@ -24,11 +24,11 @@ public class EntityEnderman extends EntityMonster {
         this.Y = 1.0F;
     }
 
-    protected void ax() {
-        super.ax();
-        this.a(GenericAttributes.a).a(40.0D);
-        this.a(GenericAttributes.d).a(0.30000001192092896D);
-        this.a(GenericAttributes.e).a(7.0D);
+    protected void ay() {
+        super.ay();
+        this.getAttributeInstance(GenericAttributes.a).setValue(40.0D);
+        this.getAttributeInstance(GenericAttributes.d).setValue(0.30000001192092896D);
+        this.getAttributeInstance(GenericAttributes.e).setValue(7.0D);
     }
 
     protected void a() {
@@ -96,7 +96,7 @@ public class EntityEnderman extends EntityMonster {
         }
 
         if (this.bu != this.target) {
-            AttributeInstance attributeinstance = this.a(GenericAttributes.d);
+            AttributeInstance attributeinstance = this.getAttributeInstance(GenericAttributes.d);
 
             attributeinstance.b(bq);
             if (this.target != null) {
@@ -157,7 +157,7 @@ public class EntityEnderman extends EntityMonster {
                 this.target = null;
                 this.a(false);
                 this.bv = false;
-                this.bP();
+                this.bT();
             }
         }
 
@@ -165,10 +165,10 @@ public class EntityEnderman extends EntityMonster {
             this.target = null;
             this.a(false);
             this.bv = false;
-            this.bP();
+            this.bT();
         }
 
-        if (this.bT() && !this.bv && this.random.nextInt(100) == 0) {
+        if (this.bX() && !this.bv && this.random.nextInt(100) == 0) {
             this.a(false);
         }
 
@@ -181,7 +181,7 @@ public class EntityEnderman extends EntityMonster {
             if (this.target != null) {
                 if (this.target instanceof EntityHuman && this.f((EntityHuman) this.target)) {
                     if (this.target.e((Entity) this) < 16.0D) {
-                        this.bP();
+                        this.bT();
                     }
 
                     this.bs = 0;
@@ -197,7 +197,7 @@ public class EntityEnderman extends EntityMonster {
         super.c();
     }
 
-    protected boolean bP() {
+    protected boolean bT() {
         double d0 = this.locX + (this.random.nextDouble() - 0.5D) * 64.0D;
         double d1 = this.locY + (double) (this.random.nextInt(64) - 32);
         double d2 = this.locZ + (this.random.nextDouble() - 0.5D) * 64.0D;
@@ -287,14 +287,14 @@ public class EntityEnderman extends EntityMonster {
     }
 
     protected String r() {
-        return this.bT() ? "mob.endermen.scream" : "mob.endermen.idle";
+        return this.bX() ? "mob.endermen.scream" : "mob.endermen.idle";
     }
 
-    protected String aK() {
+    protected String aN() {
         return "mob.endermen.hit";
     }
 
-    protected String aL() {
+    protected String aO() {
         return "mob.endermen.death";
     }
 
@@ -348,7 +348,7 @@ public class EntityEnderman extends EntityMonster {
                 this.bv = false;
 
                 for (int i = 0; i < 64; ++i) {
-                    if (this.bP()) {
+                    if (this.bT()) {
                         return true;
                     }
                 }
@@ -360,7 +360,7 @@ public class EntityEnderman extends EntityMonster {
         }
     }
 
-    public boolean bT() {
+    public boolean bX() {
         return this.datawatcher.getByte(18) > 0;
     }
 

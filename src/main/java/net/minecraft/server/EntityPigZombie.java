@@ -21,20 +21,20 @@ public class EntityPigZombie extends EntityZombie {
         this.fireProof = true;
     }
 
-    protected void ax() {
-        super.ax();
-        this.a(bp).a(0.0D);
-        this.a(GenericAttributes.d).a(0.5D);
-        this.a(GenericAttributes.e).a(5.0D);
+    protected void ay() {
+        super.ay();
+        this.getAttributeInstance(bp).setValue(0.0D);
+        this.getAttributeInstance(GenericAttributes.d).setValue(0.5D);
+        this.getAttributeInstance(GenericAttributes.e).setValue(5.0D);
     }
 
-    protected boolean bb() {
+    protected boolean be() {
         return false;
     }
 
     public void l_() {
         if (this.bu != this.target && !this.world.isStatic) {
-            AttributeInstance attributeinstance = this.a(GenericAttributes.d);
+            AttributeInstance attributeinstance = this.getAttributeInstance(GenericAttributes.d);
 
             attributeinstance.b(br);
             if (this.target != null) {
@@ -44,7 +44,7 @@ public class EntityPigZombie extends EntityZombie {
 
         this.bu = this.target;
         if (this.soundDelay > 0 && --this.soundDelay == 0) {
-            this.makeSound("mob.zombiepig.zpigangry", this.aW() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
+            this.makeSound("mob.zombiepig.zpigangry", this.aZ() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
         }
 
         super.l_();
@@ -121,11 +121,11 @@ public class EntityPigZombie extends EntityZombie {
         return "mob.zombiepig.zpig";
     }
 
-    protected String aK() {
+    protected String aN() {
         return "mob.zombiepig.zpighurt";
     }
 
-    protected String aL() {
+    protected String aO() {
         return "mob.zombiepig.zpigdeath";
     }
 
@@ -174,7 +174,7 @@ public class EntityPigZombie extends EntityZombie {
         return Item.ROTTEN_FLESH.id;
     }
 
-    protected void bs() {
+    protected void bw() {
         this.setEquipment(0, new ItemStack(Item.GOLD_SWORD));
     }
 

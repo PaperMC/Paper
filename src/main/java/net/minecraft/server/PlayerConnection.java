@@ -111,7 +111,7 @@ public class PlayerConnection extends Connection {
     private final static HashSet<Integer> invalidItems = new HashSet<Integer>(java.util.Arrays.asList(8, 9, 10, 11, 26, 34, 36, 43, 51, 52, 55, 59, 60, 62, 63, 64, 68, 71, 74, 75, 83, 90, 92, 93, 94, 95, 104, 105, 115, 117, 118, 119, 125, 127, 132, 137, 140, 141, 142, 144)); // TODO: Check after every update.
     // CraftBukkit end
 
-    public void d() {
+    public void e() {
         this.g = false;
         ++this.e;
         this.minecraftServer.methodProfiler.a("packetflow");
@@ -263,47 +263,26 @@ public class PlayerConnection extends Connection {
                 double d1;
                 double d2;
                 double d3;
-                double d4;
 
                 if (this.player.vehicle != null) {
                     float f = this.player.yaw;
                     float f1 = this.player.pitch;
 
-                    this.player.vehicle.U();
+                    this.player.vehicle.V();
                     d1 = this.player.locX;
                     d2 = this.player.locY;
                     d3 = this.player.locZ;
-                    double d5 = 0.0D;
-
-                    d4 = 0.0D;
                     if (packet10flying.hasLook) {
                         f = packet10flying.yaw;
                         f1 = packet10flying.pitch;
                     }
 
-                    if (packet10flying.hasPos && packet10flying.y == -999.0D && packet10flying.stance == -999.0D) {
-                        if (Math.abs(packet10flying.x) > 1.0D || Math.abs(packet10flying.z) > 1.0D) {
-                            System.err.println(this.player.getName() + " was caught trying to crash the server with an invalid position.");
-                            this.disconnect("Nope!");
-                            return;
-                        }
-
-                        d5 = packet10flying.x;
-                        d4 = packet10flying.z;
-                    }
-
                     this.player.onGround = packet10flying.g;
                     this.player.h();
-                    this.player.move(d5, 0.0D, d4);
+                    this.player.X = 0.0F;
                     this.player.setLocation(d1, d2, d3, f, f1);
-                    this.player.motX = d5;
-                    this.player.motZ = d4;
                     if (this.player.vehicle != null) {
-                        // worldserver.vehicleEnteredWorld(this.player.vehicle, true); // CraftBukkit - removed
-                    }
-
-                    if (this.player.vehicle != null) {
-                        this.player.vehicle.U();
+                        this.player.vehicle.V();
                     }
 
                     this.minecraftServer.getPlayerList().d(this.player);
@@ -338,6 +317,8 @@ public class PlayerConnection extends Connection {
                     packet10flying.hasPos = false;
                 }
 
+                double d4;
+
                 if (packet10flying.hasPos) {
                     d1 = packet10flying.x;
                     d2 = packet10flying.y;
@@ -369,17 +350,17 @@ public class PlayerConnection extends Connection {
                 }
 
                 d4 = d1 - this.player.locX;
-                double d6 = d2 - this.player.locY;
-                double d7 = d3 - this.player.locZ;
+                double d5 = d2 - this.player.locY;
+                double d6 = d3 - this.player.locZ;
                 // CraftBukkit start - min to max
-                double d8 = Math.max(Math.abs(d4), Math.abs(this.player.motX));
-                double d9 = Math.max(Math.abs(d6), Math.abs(this.player.motY));
-                double d10 = Math.max(Math.abs(d7), Math.abs(this.player.motZ));
+                double d7 = Math.max(Math.abs(d4), Math.abs(this.player.motX));
+                double d8 = Math.max(Math.abs(d5), Math.abs(this.player.motY));
+                double d9 = Math.max(Math.abs(d6), Math.abs(this.player.motZ));
                 // CraftBukkit end
-                double d11 = d8 * d8 + d9 * d9 + d10 * d10;
+                double d10 = d7 * d7 + d8 * d8 + d9 * d9;
 
-                if (d11 > 100.0D && this.checkMovement && (!this.minecraftServer.K() || !this.minecraftServer.H().equals(this.player.getName()))) { // CraftBukkit - Added this.checkMovement condition to solve this check being triggered by teleports
-                    this.minecraftServer.getLogger().warning(this.player.getName() + " moved too quickly! " + d4 + "," + d6 + "," + d7 + " (" + d8 + ", " + d9 + ", " + d10 + ")");
+                if (d10 > 100.0D && this.checkMovement && (!this.minecraftServer.K() || !this.minecraftServer.J().equals(this.player.getName()))) { // CraftBukkit - Added this.checkMovement condition to solve this check being triggered by teleports
+                    this.minecraftServer.getLogger().warning(this.player.getName() + " moved too quickly! " + d4 + "," + d5 + "," + d6 + " (" + d7 + ", " + d8 + ", " + d9 + ")");
                     this.a(this.y, this.z, this.p, this.player.yaw, this.player.pitch);
                     return;
                 }
@@ -387,26 +368,26 @@ public class PlayerConnection extends Connection {
                 float f4 = 0.0625F;
                 boolean flag = worldserver.getCubes(this.player, this.player.boundingBox.clone().shrink((double) f4, (double) f4, (double) f4)).isEmpty();
 
-                if (this.player.onGround && !packet10flying.g && d6 > 0.0D) {
+                if (this.player.onGround && !packet10flying.g && d5 > 0.0D) {
                     this.player.a(0.2F);
                 }
 
-                this.player.move(d4, d6, d7);
+                this.player.move(d4, d5, d6);
                 this.player.onGround = packet10flying.g;
-                this.player.checkMovement(d4, d6, d7);
-                double d12 = d6;
+                this.player.checkMovement(d4, d5, d6);
+                double d11 = d5;
 
                 d4 = d1 - this.player.locX;
-                d6 = d2 - this.player.locY;
-                if (d6 > -0.5D || d6 < 0.5D) {
-                    d6 = 0.0D;
+                d5 = d2 - this.player.locY;
+                if (d5 > -0.5D || d5 < 0.5D) {
+                    d5 = 0.0D;
                 }
 
-                d7 = d3 - this.player.locZ;
-                d11 = d4 * d4 + d6 * d6 + d7 * d7;
+                d6 = d3 - this.player.locZ;
+                d10 = d4 * d4 + d5 * d5 + d6 * d6;
                 boolean flag1 = false;
 
-                if (d11 > 0.0625D && !this.player.isSleeping() && !this.player.playerInteractManager.isCreative()) {
+                if (d10 > 0.0625D && !this.player.isSleeping() && !this.player.playerInteractManager.isCreative()) {
                     flag1 = true;
                     this.minecraftServer.getLogger().warning(this.player.getName() + " moved wrongly!");
                 }
@@ -422,7 +403,7 @@ public class PlayerConnection extends Connection {
                 AxisAlignedBB axisalignedbb = this.player.boundingBox.clone().grow((double) f4, (double) f4, (double) f4).a(0.0D, -0.55D, 0.0D);
 
                 if (!this.minecraftServer.getAllowFlight() && !this.player.abilities.canFly && !worldserver.c(axisalignedbb)) { // CraftBukkit - check abilities instead of creative mode
-                    if (d12 >= -0.03125D) {
+                    if (d11 >= -0.03125D) {
                         ++this.f;
                         if (this.f > 80) {
                             this.minecraftServer.getLogger().warning(this.player.getName() + " was kicked for floating too long!");
@@ -518,7 +499,7 @@ public class PlayerConnection extends Connection {
         } else if (packet14blockdig.e == 3) {
             this.player.a(true);
         } else if (packet14blockdig.e == 5) {
-            this.player.bo();
+            this.player.bs();
         } else {
             boolean flag = false;
 
@@ -1029,7 +1010,7 @@ public class PlayerConnection extends Connection {
             if (event.isCancelled()) return;
             // CraftBukkit end
 
-            this.player.aR();
+            this.player.aU();
         }
     }
 
@@ -1108,7 +1089,7 @@ public class PlayerConnection extends Connection {
                     if (event.isCancelled()) {
                         if (itemInHand != null && itemInHand.id == Item.LEASH.id && entity instanceof EntityInsentient) {
                             // Refresh the current leash state
-                            this.sendPacket(new Packet39AttachEntity(1, entity, ((EntityInsentient) entity).bE()));
+                            this.sendPacket(new Packet39AttachEntity(1, entity, ((EntityInsentient) entity).bI()));
                         }
                         if (itemInHand != null && itemInHand.id == Item.NAME_TAG.id && entity instanceof EntityInsentient) {
                             // Refresh the current entity metadata
@@ -1564,7 +1545,7 @@ public class PlayerConnection extends Connection {
             if (tileentity instanceof TileEntitySign) {
                 TileEntitySign tileentitysign = (TileEntitySign) tileentity;
 
-                if (!tileentitysign.a()) {
+                if (!tileentitysign.a() || tileentitysign.b() != this.player) {
                     this.minecraftServer.warning("Player " + this.player.getName() + " just tried to change non-editable sign");
                     this.sendPacket(new Packet130UpdateSign(packet130updatesign.x, packet130updatesign.y, packet130updatesign.z, tileentitysign.lines)); // CraftBukkit
                     return;
@@ -1823,5 +1804,9 @@ public class PlayerConnection extends Connection {
                 // CraftBukkit end
             }
         }
+    }
+
+    public boolean c() {
+        return this.disconnected;
     }
 }

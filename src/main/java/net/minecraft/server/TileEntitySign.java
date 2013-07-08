@@ -5,6 +5,7 @@ public class TileEntitySign extends TileEntity {
     public String[] lines = new String[] { "", "", "", ""};
     public int b = -1;
     public boolean isEditable = true; // CraftBukkit - private -> public
+    private EntityHuman d;
 
     public TileEntitySign() {}
 
@@ -46,5 +47,13 @@ public class TileEntitySign extends TileEntity {
 
     public boolean a() {
         return this.isEditable;
+    }
+
+    public void a(EntityHuman entityhuman) {
+        this.d = entityhuman;
+    }
+
+    public EntityHuman b() {
+        return this.d;
     }
 }

@@ -261,7 +261,7 @@ public class PlayerInteractManager {
             event.setCancelled(this.gamemode.isAdventure() && !this.player.d(i, j, k));
 
             // Sword + Creative mode pre-cancel
-            event.setCancelled(event.isCancelled() || (this.gamemode.d() && this.player.aV() != null && this.player.aV().getItem() instanceof ItemSword));
+            event.setCancelled(event.isCancelled() || (this.gamemode.d() && this.player.aY() != null && this.player.aY().getItem() instanceof ItemSword));
 
             // Calculate default block experience
             Block nmsBlock = Block.byId[block.getTypeId()];
@@ -311,13 +311,13 @@ public class PlayerInteractManager {
             if (this.isCreative()) {
                 this.player.playerConnection.sendPacket(new Packet53BlockChange(i, j, k, this.world));
             } else {
-                ItemStack itemstack = this.player.bt();
+                ItemStack itemstack = this.player.bx();
                 boolean flag1 = this.player.a(Block.byId[l]);
 
                 if (itemstack != null) {
                     itemstack.a(this.world, l, i, j, k, this.player);
                     if (itemstack.count == 0) {
-                        this.player.bu();
+                        this.player.by();
                     }
                 }
 
@@ -356,7 +356,7 @@ public class PlayerInteractManager {
                 entityhuman.inventory.items[entityhuman.inventory.itemInHandIndex] = null;
             }
 
-            if (!entityhuman.bm()) {
+            if (!entityhuman.bq()) {
                 ((EntityPlayer) entityhuman).updateInventory(entityhuman.defaultContainer);
             }
 

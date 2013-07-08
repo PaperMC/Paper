@@ -64,6 +64,12 @@ public class CraftPotionEffectType extends PotionEffectType {
             return "POISON";
         case 20:
             return "WITHER";
+        case 21:
+            return "HEALTH_BOOST";
+        case 22:
+            return "ABSORPTION";
+        case 23:
+            return "SATURATION";
         default:
             return "UNKNOWN_EFFECT_TYPE_" + handle.id;
         }

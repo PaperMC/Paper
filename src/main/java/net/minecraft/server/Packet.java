@@ -321,6 +321,7 @@ public abstract class Packet {
         a(130, true, true, Packet130UpdateSign.class);
         a(131, true, false, Packet131ItemData.class);
         a(132, true, false, Packet132TileEntityData.class);
+        a(133, true, false, Packet133OpenTileEntity.class);
         a(200, true, false, Packet200Statistic.class);
         a(201, true, false, Packet201PlayerInfo.class);
         a(202, true, true, Packet202Abilities.class);

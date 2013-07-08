@@ -22,22 +22,22 @@ public class EntityPig extends EntityAnimal {
         this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean bb() {
+    public boolean be() {
         return true;
     }
 
-    protected void ax() {
-        super.ax();
-        this.a(GenericAttributes.a).a(10.0D);
-        this.a(GenericAttributes.d).a(0.25D);
+    protected void ay() {
+        super.ay();
+        this.getAttributeInstance(GenericAttributes.a).setValue(10.0D);
+        this.getAttributeInstance(GenericAttributes.d).setValue(0.25D);
     }
 
-    protected void be() {
-        super.be();
+    protected void bh() {
+        super.bh();
     }
 
-    public boolean bu() {
-        ItemStack itemstack = ((EntityHuman) this.passenger).aV();
+    public boolean by() {
+        ItemStack itemstack = ((EntityHuman) this.passenger).aY();
 
         return itemstack != null && itemstack.id == Item.CARROT_STICK.id;
     }
@@ -61,11 +61,11 @@ public class EntityPig extends EntityAnimal {
         return "mob.pig.say";
     }
 
-    protected String aK() {
+    protected String aN() {
         return "mob.pig.say";
     }
 
-    protected String aL() {
+    protected String aO() {
         return "mob.pig.death";
     }
 
@@ -153,7 +153,7 @@ public class EntityPig extends EntityAnimal {
         return itemstack != null && itemstack.id == Item.CARROT.id;
     }
 
-    public PathfinderGoalPassengerCarrotStick bQ() {
+    public PathfinderGoalPassengerCarrotStick bU() {
         return this.bp;
     }
 

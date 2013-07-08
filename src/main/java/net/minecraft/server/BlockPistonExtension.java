@@ -11,6 +11,19 @@ public class BlockPistonExtension extends Block {
         this.c(0.5F);
     }
 
+    public void a(World world, int i, int j, int k, int l, EntityHuman entityhuman) {
+        if (entityhuman.abilities.canInstantlyBuild) {
+            int i1 = d(l);
+            int j1 = world.getTypeId(i - Facing.b[i1], j - Facing.c[i1], k - Facing.d[i1]);
+
+            if (j1 == Block.PISTON.id || j1 == Block.PISTON_STICKY.id) {
+                world.setAir(i - Facing.b[i1], j - Facing.c[i1], k - Facing.d[i1]);
+            }
+        }
+
+        super.a(world, i, j, k, l, entityhuman);
+    }
+
     public void remove(World world, int i, int j, int k, int l, int i1) {
         super.remove(world, i, j, k, l, i1);
         if ((i1 & 7) >= Facing.OPPOSITE_FACING.length) return; // CraftBukkit - fix a piston AIOOBE issue

@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.crypto.SecretKey;
 
@@ -30,7 +32,7 @@ public class NetworkManager implements INetworkManager {
     private volatile DataOutputStream output;
     private volatile boolean n = true;
     private volatile boolean o;
-    private java.util.Queue inboundQueue = new java.util.concurrent.ConcurrentLinkedQueue(); // CraftBukkit - Concurrent linked queue
+    private Queue inboundQueue = new ConcurrentLinkedQueue();
     private List highPriorityQueue = Collections.synchronizedList(new ArrayList());
     private List lowPriorityQueue = Collections.synchronizedList(new ArrayList());
     private Connection connection;
@@ -282,7 +284,7 @@ public class NetworkManager implements INetworkManager {
         int i = 1000;
 
         while (!this.inboundQueue.isEmpty() && i-- >= 0) {
-            Packet packet = (Packet) this.inboundQueue.poll(); // CraftBukkit - remove -> poll
+            Packet packet = (Packet) this.inboundQueue.poll();
 
             // CraftBukkit start
             if (this.connection instanceof PendingConnection ? ((PendingConnection) this.connection).b : ((PlayerConnection) this.connection).disconnected) {
@@ -290,7 +292,9 @@ public class NetworkManager implements INetworkManager {
             }
             // CraftBukkit end
 
-            packet.handle(this.connection);
+            if (packet != null && !this.connection.c()) {
+                packet.handle(this.connection);
+            }
         }
 
         this.a();

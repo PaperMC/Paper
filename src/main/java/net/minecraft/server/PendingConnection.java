@@ -38,9 +38,9 @@ public class PendingConnection extends Connection {
     }
     // CraftBukkit end
 
-    public void c() {
+    public void d() {
         if (this.h) {
-            this.d();
+            this.e();
         }
 
         if (this.f++ == 600) {
@@ -71,8 +71,8 @@ public class PendingConnection extends Connection {
         } else {
             PublicKey publickey = this.server.H().getPublic();
 
-            if (packet2handshake.d() != 73) {
-                if (packet2handshake.d() > 73) {
+            if (packet2handshake.d() != 74) {
+                if (packet2handshake.d() > 74) {
                     this.disconnect("Outdated server!");
                 } else {
                     this.disconnect("Outdated client!");
@@ -115,7 +115,7 @@ public class PendingConnection extends Connection {
 
     public void a(Packet1Login packet1login) {}
 
-    public void d() {
+    public void e() {
         // CraftBukkit start
         EntityPlayer s = this.server.getPlayerList().attemptLogin(this, this.g, this.hostname);
 
@@ -151,7 +151,7 @@ public class PendingConnection extends Connection {
                 s = pingEvent.getMotd() + "\u00A7" + playerlist.getPlayerCount() + "\u00A7" + pingEvent.getMaxPlayers();
             } else {
                 // CraftBukkit start - Don't create a list from an array
-                Object[] list = new Object[] { 1, 73, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
+                Object[] list = new Object[] { 1, 74, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
 
                 StringBuilder builder = new StringBuilder();
                 for (Object object : list) {
@@ -195,6 +195,10 @@ public class PendingConnection extends Connection {
 
     public boolean a() {
         return true;
+    }
+
+    public boolean c() {
+        return this.b;
     }
 
     static String a(PendingConnection pendingconnection) {

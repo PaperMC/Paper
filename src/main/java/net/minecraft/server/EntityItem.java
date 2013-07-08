@@ -266,7 +266,7 @@ public class EntityItem extends Entity {
         return LocaleI18n.get("item." + this.getItemStack().a());
     }
 
-    public boolean ao() {
+    public boolean ap() {
         return false;
     }
 

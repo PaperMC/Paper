@@ -115,7 +115,7 @@ public class EntityFireworks extends Entity {
         return super.d(f);
     }
 
-    public boolean ao() {
+    public boolean ap() {
         return false;
     }
 }

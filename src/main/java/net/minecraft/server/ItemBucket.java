@@ -153,15 +153,12 @@ public class ItemBucket extends Item {
         if (this.a <= 0) {
             return false;
         } else {
-            boolean flag = !world.getMaterial(i, j, k).isBuildable();
+            Material material = world.getMaterial(i, j, k);
+            boolean flag = !material.isBuildable();
 
             if (!world.isEmpty(i, j, k) && !flag) {
                 return false;
             } else {
-                if (!world.isStatic && flag) {
-                    world.setAir(i, j, k, true);
-                }
-
                 if (world.worldProvider.f && this.a == Block.WATER.id) {
                     world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), "random.fizz", 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
 
@@ -169,6 +166,10 @@ public class ItemBucket extends Item {
                         world.addParticle("largesmoke", (double) i + Math.random(), (double) j + Math.random(), (double) k + Math.random(), 0.0D, 0.0D, 0.0D);
                     }
                 } else {
+                    if (!world.isStatic && flag && !material.isLiquid()) {
+                        world.setAir(i, j, k, true);
+                    }
+
                     world.setTypeIdAndData(i, j, k, this.a, 0, 3);
                 }
 

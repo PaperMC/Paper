@@ -12,9 +12,9 @@ public class EntityBlaze extends EntityMonster {
         this.b = 10;
     }
 
-    protected void ax() {
-        super.ax();
-        this.a(GenericAttributes.e).a(6.0D);
+    protected void ay() {
+        super.ay();
+        this.getAttributeInstance(GenericAttributes.e).setValue(6.0D);
     }
 
     protected void a() {
@@ -26,11 +26,11 @@ public class EntityBlaze extends EntityMonster {
         return "mob.blaze.breathe";
     }
 
-    protected String aK() {
+    protected String aN() {
         return "mob.blaze.hit";
     }
 
-    protected String aL() {
+    protected String aO() {
         return "mob.blaze.death";
     }
 
@@ -50,7 +50,7 @@ public class EntityBlaze extends EntityMonster {
                 this.bp = 0.5F + (float) this.random.nextGaussian() * 3.0F;
             }
 
-            if (this.bJ() != null && this.bJ().locY + (double) this.bJ().getHeadHeight() > this.locY + (double) this.getHeadHeight() + (double) this.bp) {
+            if (this.bN() != null && this.bN().locY + (double) this.bN().getHeadHeight() > this.locY + (double) this.getHeadHeight() + (double) this.bp) {
                 this.motY += (0.30000001192092896D - this.motY) * 0.30000001192092896D;
             }
         }
@@ -118,7 +118,7 @@ public class EntityBlaze extends EntityMonster {
     }
 
     public boolean isBurning() {
-        return this.bP();
+        return this.bT();
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
@@ -136,7 +136,7 @@ public class EntityBlaze extends EntityMonster {
         }
     }
 
-    public boolean bP() {
+    public boolean bT() {
         return (this.datawatcher.getByte(16) & 1) != 0;
     }
 

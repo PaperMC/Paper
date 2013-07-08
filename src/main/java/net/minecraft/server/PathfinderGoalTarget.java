@@ -53,9 +53,9 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
     }
 
     protected double f() {
-        AttributeInstance attributeinstance = this.c.a(GenericAttributes.b);
+        AttributeInstance attributeinstance = this.c.getAttributeInstance(GenericAttributes.b);
 
-        return attributeinstance == null ? 16.0D : attributeinstance.e();
+        return attributeinstance == null ? 16.0D : attributeinstance.getValue();
     }
 
     public void c() {
@@ -144,7 +144,7 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
     }
 
     private boolean a(EntityLiving entityliving) {
-        this.e = 10 + this.c.aB().nextInt(5);
+        this.e = 10 + this.c.aC().nextInt(5);
         PathEntity pathentity = this.c.getNavigation().a(entityliving);
 
         if (pathentity == null) {

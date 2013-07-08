@@ -38,7 +38,7 @@ public class DedicatedServerConnectionThread extends Thread {
                 PendingConnection pendingconnection = (PendingConnection) this.a.get(i);
 
                 try {
-                    pendingconnection.c();
+                    pendingconnection.d();
                 } catch (Exception exception) {
                     pendingconnection.disconnect("Internal server error");
                     this.e.d().getLogger().warning("Failed to handle packet for " + pendingconnection.getName() + ": " + exception, (Throwable) exception);

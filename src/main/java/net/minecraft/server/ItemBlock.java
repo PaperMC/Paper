@@ -82,7 +82,9 @@ public class ItemBlock extends Item {
         org.bukkit.block.BlockState blockstate = org.bukkit.craftbukkit.block.CraftBlockState.getBlockState(world, x, y, z);
 
         world.callingPlaceEvent = true;
-        world.setTypeIdAndData(x, y, z, id, data, 2);
+        // Sign is now 3 not 2.
+        int flag = (id == Block.SIGN_POST.id || id == Block.WALL_SIGN.id) ? 3 : 2;
+        world.setTypeIdAndData(x, y, z, id, data, flag);
 
         org.bukkit.event.block.BlockPlaceEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockstate, clickedX, clickedY, clickedZ);
         if (event.isCancelled() || !event.canBuild()) {

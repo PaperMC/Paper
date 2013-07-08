@@ -160,7 +160,7 @@ public final class SpawnerCreature {
                                                                 groupdataentity = entityinsentient.a(groupdataentity);
                                                                 worldserver.addEntity(entityinsentient, SpawnReason.NATURAL);
                                                                 // CraftBukkit end
-                                                                if (j2 >= entityinsentient.br()) {
+                                                                if (j2 >= entityinsentient.bv()) {
                                                                     continue label110;
                                                                 }
                                                             }

@@ -610,23 +610,9 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
             entity.die();
         }
 
-        if (!(entity.passenger instanceof EntityHuman)) {
-            super.entityJoinedWorld(entity, flag);
-        }
+        super.entityJoinedWorld(entity, flag);
     }
     // CraftBukkit end */
-
-    public void vehicleEnteredWorld(Entity entity, boolean flag) {
-        try {
-            super.entityJoinedWorld(entity, flag);
-        } catch (Throwable throwable) {
-            CrashReport crashreport = CrashReport.a(throwable, "Forcefully ticking entity");
-            CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being force ticked");
-
-            entity.a(crashreportsystemdetails);
-            throw new ReportedException(crashreport);
-        }
-    }
 
     protected IChunkProvider j() {
         IChunkLoader ichunkloader = this.dataManager.createChunkLoader(this.worldProvider);
@@ -799,7 +785,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
     protected void a(Entity entity) {
         super.a(entity);
         this.entitiesById.a(entity.id, entity);
-        Entity[] aentity = entity.am();
+        Entity[] aentity = entity.an();
 
         if (aentity != null) {
             for (int i = 0; i < aentity.length; ++i) {
@@ -811,7 +797,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
     protected void b(Entity entity) {
         super.b(entity);
         this.entitiesById.d(entity.id);
-        Entity[] aentity = entity.am();
+        Entity[] aentity = entity.an();
 
         if (aentity != null) {
             for (int i = 0; i < aentity.length; ++i) {

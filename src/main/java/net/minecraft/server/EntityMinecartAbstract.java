@@ -103,7 +103,7 @@ public abstract class EntityMinecartAbstract extends Entity {
         this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit
     }
 
-    public double W() {
+    public double X() {
         return (double) this.length * 0.0D - 0.30000001192092896D;
     }
 
@@ -219,7 +219,7 @@ public abstract class EntityMinecartAbstract extends Entity {
                 if (true || minecraftserver.getAllowNether()) { // CraftBukkit - multi-world should still allow teleport even if default vanilla nether disabled
                     if (this.vehicle == null && this.aq++ >= i) {
                         this.aq = i;
-                        this.portalCooldown = this.aa();
+                        this.portalCooldown = this.ab();
                         byte b0;
 
                         if (this.world.worldProvider.dimension == -1) {

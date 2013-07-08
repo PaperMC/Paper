@@ -27,7 +27,7 @@ public class EntityOcelot extends EntityTameableAnimal {
         this.datawatcher.a(18, Byte.valueOf((byte) 0));
     }
 
-    public void bg() {
+    public void bj() {
         if (this.getControllerMove().a()) {
             double d0 = this.getControllerMove().b();
 
@@ -51,14 +51,14 @@ public class EntityOcelot extends EntityTameableAnimal {
         return !this.isTamed() && this.ticksLived > 2400;
     }
 
-    public boolean bb() {
+    public boolean be() {
         return true;
     }
 
-    protected void ax() {
-        super.ax();
-        this.a(GenericAttributes.a).a(10.0D);
-        this.a(GenericAttributes.d).a(0.30000001192092896D);
+    protected void ay() {
+        super.ay();
+        this.getAttributeInstance(GenericAttributes.a).setValue(10.0D);
+        this.getAttributeInstance(GenericAttributes.d).setValue(0.30000001192092896D);
     }
 
     protected void b(float f) {}
@@ -74,18 +74,18 @@ public class EntityOcelot extends EntityTameableAnimal {
     }
 
     protected String r() {
-        return this.isTamed() ? (this.bU() ? "mob.cat.purr" : (this.random.nextInt(4) == 0 ? "mob.cat.purreow" : "mob.cat.meow")) : "";
+        return this.isTamed() ? (this.bY() ? "mob.cat.purr" : (this.random.nextInt(4) == 0 ? "mob.cat.purreow" : "mob.cat.meow")) : "";
     }
 
-    protected String aK() {
+    protected String aN() {
         return "mob.cat.hitt";
     }
 
-    protected String aL() {
+    protected String aO() {
         return "mob.cat.hitt";
     }
 
-    protected float aW() {
+    protected float aZ() {
         return 0.4F;
     }
 
@@ -132,11 +132,11 @@ public class EntityOcelot extends EntityTameableAnimal {
                     this.setTamed(true);
                     this.setCatType(1 + this.world.random.nextInt(3));
                     this.setOwnerName(entityhuman.getName());
-                    this.j(true);
+                    this.i(true);
                     this.bp.setSitting(true);
                     this.world.broadcastEntityEffect(this, (byte) 7);
                 } else {
-                    this.j(false);
+                    this.i(false);
                     this.world.broadcastEntityEffect(this, (byte) 6);
                 }
             }
@@ -173,7 +173,7 @@ public class EntityOcelot extends EntityTameableAnimal {
         } else {
             EntityOcelot entityocelot = (EntityOcelot) entityanimal;
 
-            return !entityocelot.isTamed() ? false : this.bU() && entityocelot.bU();
+            return !entityocelot.isTamed() ? false : this.bY() && entityocelot.bY();
         }
     }
 

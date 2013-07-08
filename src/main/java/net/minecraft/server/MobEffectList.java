@@ -96,8 +96,8 @@ public class MobEffectList {
             if (!entityliving.world.isStatic) {
                 ((EntityHuman) entityliving).getFoodData().eat(i + 1, 1.0F);
             }
-        } else if ((this.id != HEAL.id || entityliving.aI()) && (this.id != HARM.id || !entityliving.aI())) {
-            if (this.id == HARM.id && !entityliving.aI() || this.id == HEAL.id && entityliving.aI()) {
+        } else if ((this.id != HEAL.id || entityliving.aL()) && (this.id != HARM.id || !entityliving.aL())) {
+            if (this.id == HARM.id && !entityliving.aL() || this.id == HEAL.id && entityliving.aL()) {
                 entityliving.damageEntity(DamageSource.MAGIC, (float) (6 << i));
             }
         } else {
@@ -114,8 +114,8 @@ public class MobEffectList {
         // CraftBukkit end
         int j;
 
-        if ((this.id != HEAL.id || entityliving1.aI()) && (this.id != HARM.id || !entityliving1.aI())) {
-            if (this.id == HARM.id && !entityliving1.aI() || this.id == HEAL.id && entityliving1.aI()) {
+        if ((this.id != HEAL.id || entityliving1.aL()) && (this.id != HARM.id || !entityliving1.aL())) {
+            if (this.id == HARM.id && !entityliving1.aL() || this.id == HEAL.id && entityliving1.aL()) {
                 j = (int) (d0 * (double) (6 << i) + 0.5D);
                 if (entityliving == null) {
                     entityliving1.damageEntity(DamageSource.MAGIC, (float) j);

@@ -31,11 +31,11 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
         return "mob.witch.idle";
     }
 
-    protected String aK() {
+    protected String aN() {
         return "mob.witch.hurt";
     }
 
-    protected String aL() {
+    protected String aO() {
         return "mob.witch.death";
     }
 
@@ -43,26 +43,26 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
         this.getDataWatcher().watch(21, Byte.valueOf((byte) (flag ? 1 : 0)));
     }
 
-    public boolean bP() {
+    public boolean bT() {
         return this.getDataWatcher().getByte(21) == 1;
     }
 
-    protected void ax() {
-        super.ax();
-        this.a(GenericAttributes.a).a(26.0D);
-        this.a(GenericAttributes.d).a(0.25D);
+    protected void ay() {
+        super.ay();
+        this.getAttributeInstance(GenericAttributes.a).setValue(26.0D);
+        this.getAttributeInstance(GenericAttributes.d).setValue(0.25D);
     }
 
-    public boolean bb() {
+    public boolean be() {
         return true;
     }
 
     public void c() {
         if (!this.world.isStatic) {
-            if (this.bP()) {
+            if (this.bT()) {
                 if (this.bs-- <= 0) {
                     this.a(false);
-                    ItemStack itemstack = this.aV();
+                    ItemStack itemstack = this.aY();
 
                     this.setEquipment(0, (ItemStack) null);
                     if (itemstack != null && itemstack.id == Item.POTION.id) {
@@ -79,7 +79,7 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
                         }
                     }
 
-                    this.a(GenericAttributes.d).b(bq);
+                    this.getAttributeInstance(GenericAttributes.d).b(bq);
                 }
             } else {
                 short short1 = -1;
@@ -96,9 +96,9 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
 
                 if (short1 > -1) {
                     this.setEquipment(0, new ItemStack(Item.POTION, 1, short1));
-                    this.bs = this.aV().n();
+                    this.bs = this.aY().n();
                     this.a(true);
-                    AttributeInstance attributeinstance = this.a(GenericAttributes.d);
+                    AttributeInstance attributeinstance = this.getAttributeInstance(GenericAttributes.d);
 
                     attributeinstance.b(bq);
                     attributeinstance.a(bq);
@@ -148,7 +148,7 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
     }
 
     public void a(EntityLiving entityliving, float f) {
-        if (!this.bP()) {
+        if (!this.bT()) {
             EntityPotion entitypotion = new EntityPotion(this.world, this, 32732);
 
             entitypotion.pitch -= -20.0F;
