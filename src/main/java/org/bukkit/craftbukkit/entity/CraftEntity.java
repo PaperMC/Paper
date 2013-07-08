@@ -201,9 +201,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public boolean teleport(Location location, TeleportCause cause) {
-        if (entity.vehicle != null || entity.passenger != null || entity.dead) {
+        if (entity.passenger != null || entity.dead) {
             return false;
         }
+
+        // If this entity is riding another entity, we must dismount before teleporting.
+        entity.mount(null);
 
         entity.world = ((CraftWorld) location.getWorld()).getHandle();
         entity.setLocation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());

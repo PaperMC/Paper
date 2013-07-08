@@ -458,7 +458,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return false;
         }
 
-        if (entity.vehicle != null || entity.passenger != null) {
+        if (entity.passenger != null) {
             return false;
         }
 
@@ -474,6 +474,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (event.isCancelled()) {
             return false;
         }
+
+        // If this player is riding another entity, we must dismount before teleporting.
+        entity.mount(null);
 
         // Update the From Location
         from = event.getFrom();
