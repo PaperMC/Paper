@@ -1,11 +1,11 @@
-From df97f53c8598e5e67712596ba712451b883ec701 Mon Sep 17 00:00:00 2001
+From 61e0aee2035b9a445c63cf49463132e27f399e72 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
-Date: Mon, 8 Jul 2013 21:16:22 +1000
+Date: Mon, 8 Jul 2013 21:27:40 +1000
 Subject: [PATCH] Snapshot Protocol
 
 
 diff --git a/src/main/java/net/minecraft/server/ItemBlock.java b/src/main/java/net/minecraft/server/ItemBlock.java
-index b2c3ed8..aa0c146 100644
+index b2c3ed8..e46cb2a 100644
 --- a/src/main/java/net/minecraft/server/ItemBlock.java
 +++ b/src/main/java/net/minecraft/server/ItemBlock.java
 @@ -110,6 +110,12 @@ public class ItemBlock extends Item {
@@ -13,7 +13,7 @@ index b2c3ed8..aa0c146 100644
              world.makeSound((double) ((float) x + 0.5F), (double) ((float) y + 0.5F), (double) ((float) z + 0.5F), block.stepSound.getPlaceSound(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
          }
 +        // Spigot Start
-+        if ( block instanceof BlockSign )
++        if ( org.spigotmc.SpigotConfig.snapshotProtocol && block instanceof BlockSign )
 +        {
 +            ( (EntityPlayer) entityhuman ).playerConnection.sendPacket( new Packet133SignPlace( x, y, z ) );
 +        }
@@ -22,7 +22,7 @@ index b2c3ed8..aa0c146 100644
          if (itemstack != null) {
              --itemstack.count;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 415087a..5e4d278 100644
+index 415087a..de730fa 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -762,7 +762,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
@@ -30,7 +30,7 @@ index 415087a..5e4d278 100644
  
      public String getVersion() {
 -        return "1.6.1";
-+        return ( org.spigotmc.SpigotConfig.snapshotProtocol ) ? org.spigotmc.SpigotConfig.SNAPSHOT_VERSION : "1.6.1"; // Spigot
++        return org.spigotmc.SpigotConfig.gameVersion; // Spigot
      }
  
      public int A() {
@@ -168,7 +168,7 @@ index 0000000..2d60528
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
-index 9b8ddd2..587e648 100644
+index 9b8ddd2..3664a1c 100644
 --- a/src/main/java/net/minecraft/server/PendingConnection.java
 +++ b/src/main/java/net/minecraft/server/PendingConnection.java
 @@ -76,8 +76,8 @@ public class PendingConnection extends Connection {
@@ -178,7 +178,7 @@ index 9b8ddd2..587e648 100644
 -            if (packet2handshake.d() != 73) {
 -                if (packet2handshake.d() > 73) {
 +            if (packet2handshake.d() != org.spigotmc.SpigotConfig.protocolVersion) { // Spigot
-+                if (packet2handshake.d() > org.spigotmc.SpigotConfig.protocolVersion) {
++                if (packet2handshake.d() > org.spigotmc.SpigotConfig.protocolVersion) { // Spigot
                      this.disconnect("Outdated server!");
                  } else {
                      this.disconnect("Outdated client!");
@@ -192,29 +192,31 @@ index 9b8ddd2..587e648 100644
                  StringBuilder builder = new StringBuilder();
                  for (Object object : list) {
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index e8039d7..5ab19e0 100644
+index e8039d7..982f503 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
-@@ -280,4 +280,21 @@ public class SpigotConfig
+@@ -280,4 +280,23 @@ public class SpigotConfig
  
          Bukkit.getLogger().setFilter( new LogFilter() );
      }
 +
 +    public static boolean snapshotProtocol;
-+    public static String SNAPSHOT_VERSION = "1.6.2";
++    public static String gameVersion;
 +    public static byte protocolVersion;
 +    private static void snapshotProtocol()
 +    {
 +        snapshotProtocol = getBoolean( "settings.snapshot-protocol", false );
 +        snapshotProtocol = true;
++
++        gameVersion = ( snapshotProtocol ) ? "1.6.2" : "1.6.1";
++        protocolVersion = (byte) ( ( snapshotProtocol ) ? 74 : 73 );
 +        if ( snapshotProtocol )
 +        {
 +            Bukkit.getLogger().severe( "================ [Snapshot Protocol] ================" );
-+            Bukkit.getLogger().severe( "Initialised Snapshot Protocol for " + SNAPSHOT_VERSION + " (" + protocolVersion + ")" );
++            Bukkit.getLogger().severe( "Initialised Snapshot Protocol for " + gameVersion + " (" + protocolVersion + ")" );
 +            Bukkit.getLogger().severe( "Features may NOT be implemented! Use at your own risk!" );
 +            Bukkit.getLogger().severe( "================ ====================================" );
 +        }
-+        protocolVersion = (byte) ( ( snapshotProtocol ) ? 74 : 73 );
 +    }
  }
 -- 
