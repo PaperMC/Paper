@@ -1,4 +1,4 @@
-From 99a6f22d72eb616c79d37eecbe4319e932edb942 Mon Sep 17 00:00:00 2001
+From df97f53c8598e5e67712596ba712451b883ec701 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Mon, 8 Jul 2013 21:16:22 +1000
 Subject: [PATCH] Snapshot Protocol
@@ -102,50 +102,44 @@ index 0000000..a1b2bbb
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Packet44UpdateAttributes.java b/src/main/java/net/minecraft/server/Packet44UpdateAttributes.java
-index 710f8c3..2d60528 100644
---- a/src/main/java/net/minecraft/server/Packet44UpdateAttributes.java
+new file mode 100644
+index 0000000..2d60528
+--- /dev/null
 +++ b/src/main/java/net/minecraft/server/Packet44UpdateAttributes.java
-@@ -11,7 +11,7 @@ import java.util.Map.Entry;
- public class Packet44UpdateAttributes extends Packet {
- 
-     private int a;
--    private final Map b = new HashMap();
+@@ -0,0 +1,60 @@
++package net.minecraft.server;
++
++import java.io.DataInput;
++import java.io.DataOutput;
++import java.util.Collection;
++import java.util.HashMap;
++import java.util.Iterator;
++import java.util.Map;
++import java.util.Map.Entry;
++
++public class Packet44UpdateAttributes extends Packet {
++
++    private int a;
 +    private final java.util.List<AttributeModifiable> b = new java.util.ArrayList<AttributeModifiable>();
- 
-     public Packet44UpdateAttributes() {}
- 
-@@ -20,31 +20,33 @@ public class Packet44UpdateAttributes extends Packet {
-         Iterator iterator = collection.iterator();
- 
-         while (iterator.hasNext()) {
--            AttributeInstance attributeinstance = (AttributeInstance) iterator.next();
++
++    public Packet44UpdateAttributes() {}
++
++    public Packet44UpdateAttributes(int i, Collection collection) {
++        this.a = i;
++        Iterator iterator = collection.iterator();
++
++        while (iterator.hasNext()) {
 +            AttributeModifiable attributeinstance = (AttributeModifiable) iterator.next();
- 
--            this.b.put(attributeinstance.a().a(), Double.valueOf(attributeinstance.e()));
++
 +            this.b.add( attributeinstance );
-         }
-     }
- 
-     public void a(DataInput datainput) throws java.io.IOException { // Spigot - throws
--        this.a = datainput.readInt();
--        int i = datainput.readInt();
--
--        for (int j = 0; j < i; ++j) {
--            this.b.put(a(datainput, 64), Double.valueOf(datainput.readDouble()));
--        }
++        }
++    }
++
++    public void a(DataInput datainput) throws java.io.IOException { // Spigot - throws
 +        throw new UnsupportedOperationException();
-     }
- 
-     public void a(DataOutput dataoutput) throws java.io.IOException { // Spigot - throws
--        dataoutput.writeInt(this.a);
--        dataoutput.writeInt(this.b.size());
--        Iterator iterator = this.b.entrySet().iterator();
--
--        while (iterator.hasNext()) {
--            Entry entry = (Entry) iterator.next();
--
--            a((String) entry.getKey(), dataoutput);
--            dataoutput.writeDouble(((Double) entry.getValue()).doubleValue());
++    }
++
++    public void a(DataOutput dataoutput) throws java.io.IOException { // Spigot - throws
 +        dataoutput.writeInt( this.a );
 +        dataoutput.writeInt( this.b.size() );
 +        for ( AttributeModifiable attribute : this.b )
@@ -162,9 +156,17 @@ index 710f8c3..2d60528 100644
 +                dataoutput.writeDouble( modifier.d() );
 +                dataoutput.writeByte( modifier.c() );
 +            }
-         }
-     }
- 
++        }
++    }
++
++    public void handle(Connection connection) {
++        connection.a(this);
++    }
++
++    public int a() {
++        return 8 + this.b.size() * 24;
++    }
++}
 diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
 index 9b8ddd2..587e648 100644
 --- a/src/main/java/net/minecraft/server/PendingConnection.java
