@@ -1,4 +1,4 @@
-From f56b55c5dcd17f2238647b1a32ad097274cf5650 Mon Sep 17 00:00:00 2001
+From 58f01e434d47d9543b1ef368c99503645fe6495e Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Mon, 8 Jul 2013 21:27:40 +1000
 Subject: [PATCH] Snapshot Protocol
@@ -125,24 +125,35 @@ index 0000000..a1b2bbb
 +}
 diff --git a/src/main/java/net/minecraft/server/Packet44UpdateAttributes.java b/src/main/java/net/minecraft/server/Packet44UpdateAttributes.java
 new file mode 100644
-index 0000000..2d60528
+index 0000000..f0a5d99
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/Packet44UpdateAttributes.java
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,75 @@
 +package net.minecraft.server;
 +
 +import java.io.DataInput;
 +import java.io.DataOutput;
 +import java.util.Collection;
-+import java.util.HashMap;
 +import java.util.Iterator;
-+import java.util.Map;
-+import java.util.Map.Entry;
 +
 +public class Packet44UpdateAttributes extends Packet {
 +
++    private class AttributeSnapshot
++    {
++
++        private final String a;
++        private final double b;
++        private final Collection c;
++
++        public AttributeSnapshot(String a, double b, Collection c)
++        {
++            this.a = a;
++            this.b = b;
++            this.c = c;
++        }
++    }
 +    private int a;
-+    private final java.util.List<AttributeModifiable> b = new java.util.ArrayList<AttributeModifiable>();
++    private final java.util.List<AttributeSnapshot> b = new java.util.ArrayList<AttributeSnapshot>();
 +
 +    public Packet44UpdateAttributes() {}
 +
@@ -151,9 +162,9 @@ index 0000000..2d60528
 +        Iterator iterator = collection.iterator();
 +
 +        while (iterator.hasNext()) {
-+            AttributeModifiable attributeinstance = (AttributeModifiable) iterator.next();
++            AttributeInstance attributeinstance = (AttributeInstance) iterator.next();
 +
-+            this.b.add( attributeinstance );
++            this.b.add( new AttributeSnapshot( attributeinstance.a().a(),attributeinstance.b(),attributeinstance.c() ) );
 +        }
 +    }
 +
@@ -164,15 +175,19 @@ index 0000000..2d60528
 +    public void a(DataOutput dataoutput) throws java.io.IOException { // Spigot - throws
 +        dataoutput.writeInt( this.a );
 +        dataoutput.writeInt( this.b.size() );
-+        for ( AttributeModifiable attribute : this.b )
++        Iterator<AttributeSnapshot> iter = this.b.iterator();
++        
++        while(iter.hasNext())
 +        {
-+            a( attribute.a().a(), dataoutput );
-+            dataoutput.writeDouble( attribute.b() );
-+            dataoutput.writeShort( attribute.c().size() );
++            AttributeSnapshot attribute = iter.next();
++            a( attribute.a, dataoutput );
++            dataoutput.writeDouble( attribute.b );
++            dataoutput.writeShort( attribute.c.size() );
 +
-+            for ( Object o : attribute.c() )
++            Iterator<AttributeModifier> inner = attribute.c.iterator();
++            while(inner.hasNext())
 +            {
-+                AttributeModifier modifier = (AttributeModifier) o;
++                AttributeModifier modifier = (AttributeModifier) inner.next();
 +                dataoutput.writeLong( modifier.a().getMostSignificantBits() );
 +                dataoutput.writeLong( modifier.a().getLeastSignificantBits() );
 +                dataoutput.writeDouble( modifier.d() );
