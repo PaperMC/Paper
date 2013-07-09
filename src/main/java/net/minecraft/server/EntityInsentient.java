@@ -377,9 +377,8 @@ public abstract class EntityInsentient extends EntityLiving {
     }
 
     protected void bo() {
-        if (this.persistent) {
-            this.aV = 0;
-        } else {
+        // CraftBukkit - temporary hack to handle Ocelot despawning
+        if ((this instanceof EntityOcelot && this.isTypeNotPersistent()) || (!this.persistent)) {
             EntityHuman entityhuman = this.world.findNearbyPlayer(this, -1.0D);
 
             if (entityhuman != null) {
@@ -398,7 +397,11 @@ public abstract class EntityInsentient extends EntityLiving {
                     this.aV = 0;
                 }
             }
+        // CraftBukkit start
+        } else {
+            this.aV = 0;
         }
+        // CraftBukkit end
     }
 
     protected void bh() {
