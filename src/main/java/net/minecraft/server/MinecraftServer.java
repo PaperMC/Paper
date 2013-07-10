@@ -674,7 +674,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
             }
 
             if (options.has("world")) {
-                dedicatedserver.j((String) options.valueOf("world"));
+                dedicatedserver.k((String) options.valueOf("world"));
             }
             /*
             if (s != null) {
