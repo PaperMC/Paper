@@ -45,7 +45,8 @@ public class PathfinderGoalTame extends PathfinderGoal {
                 int i = this.entity.getTemper();
                 int j = this.entity.cq();
 
-                if (j > 0 && this.entity.aC().nextInt(j) < i) {
+                // CraftBukkit
+                if (j > 0 && this.entity.aC().nextInt(j) < i && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this.entity, (EntityHuman) this.entity.passenger).isCancelled() && this.entity.passenger instanceof EntityHuman) {
                     this.entity.g((EntityHuman) this.entity.passenger);
                     this.entity.world.broadcastEntityEffect(this.entity, (byte) 7);
                     return;
@@ -54,7 +55,7 @@ public class PathfinderGoalTame extends PathfinderGoal {
                 this.entity.t(5);
             }
 
-            this.entity.passenger.mount((Entity) null);
+            if (this.entity.passenger != null) this.entity.passenger.mount((Entity) null); // CraftBukkit - Check for null
             this.entity.passenger = null;
             this.entity.cD();
             this.entity.world.broadcastEntityEffect(this.entity, (byte) 6);

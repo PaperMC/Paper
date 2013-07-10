@@ -906,6 +906,8 @@ public class CraftWorld implements World {
                 // need a net server handler for this one
             } else if (Sheep.class.isAssignableFrom(clazz)) {
                 entity = new EntitySheep(world);
+            } else if (Horse.class.isAssignableFrom(clazz)) {
+                entity = new EntityHorse(world);
             } else if (Skeleton.class.isAssignableFrom(clazz)) {
                 entity = new EntitySkeleton(world);
             } else if (Slime.class.isAssignableFrom(clazz)) {
