@@ -1,25 +1,28 @@
 package org.bukkit.craftbukkit.inventory;
 
 import net.minecraft.server.IInventory;
+import org.bukkit.inventory.HorseInventory;
+import org.bukkit.inventory.ItemStack;
 
-public class CraftInventoryHorse extends CraftInventory {
-    private final IInventory resultInventory = null;
+public class CraftInventoryHorse extends CraftInventory implements HorseInventory {
 
     public CraftInventoryHorse(IInventory inventory) {
         super(inventory);
     }
 
-    public IInventory getResultInventory() {
-        return resultInventory;
+    public ItemStack getSaddle() {
+        return getItem(0);
     }
 
-    public IInventory getIngredientsInventory() {
-        return inventory;
+    public ItemStack getArmor() {
+       return getItem(1);
     }
 
-    @Override
-    public int getSize() {
-        //return getResultInventory().getSize() + getIngredientsInventory().getSize();
-        return getIngredientsInventory().getSize();
+    public void setSaddle(ItemStack stack) {
+        setItem(0, stack);
+    }
+
+    public void setArmor(ItemStack stack) {
+        setItem(1, stack);
     }
 }
