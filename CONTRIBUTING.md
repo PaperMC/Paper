@@ -56,7 +56,7 @@ If you answered yes to any of these questions, chances are high your change does
 * If the work you want to do involves editing Minecraft classes, be sure to read over the [Using Minecraft Internals](#using-minecraft-internals) section.
 * Make sure your commit messages are in the [proper format](#commit-message-example).
 * Test your changes to make sure it actually addresses the issue it should.
-* Make sure your code compiles under Java 5, as that is what the project has to be built with.
+* Make sure your code compiles under Java 6, as that is what the project has to be built with.
 
 ### Code Requirements
 * We generally follow the [Sun/Oracle coding standards](http://www.oracle.com/technetwork/java/javase/documentation/codeconvtoc-136057.html).
