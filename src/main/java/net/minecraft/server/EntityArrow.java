@@ -444,4 +444,10 @@ public class EntityArrow extends Entity implements IProjectile {
 
         return (b0 & 1) != 0;
     }
+
+    // CraftBukkit start
+    public boolean isInGround() {
+        return inGround;
+    }
+    // CraftBukkit end
 }
