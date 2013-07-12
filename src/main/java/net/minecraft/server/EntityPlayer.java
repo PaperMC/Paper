@@ -461,12 +461,16 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void setPassengerOf(Entity entity) {
         // mount(null) doesn't really fly for overloaded methods,
         // so this method is needed
+        Entity currentVehicle = this.vehicle;
 
         super.setPassengerOf(entity);
-        // CraftBukkit end
 
-        this.playerConnection.sendPacket(new Packet39AttachEntity(0, this, this.vehicle));
-        this.playerConnection.a(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
+        // Check if the vehicle actually changed.
+        if (currentVehicle != this.vehicle) {
+            this.playerConnection.sendPacket(new Packet39AttachEntity(0, this, this.vehicle));
+            this.playerConnection.a(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
+        }
+        // CraftBukkit end
     }
 
     protected void a(double d0, boolean flag) {}
