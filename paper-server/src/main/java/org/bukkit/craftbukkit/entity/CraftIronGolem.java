@@ -21,7 +21,7 @@ public class CraftIronGolem extends CraftGolem implements IronGolem {
     }
 
     public boolean isPlayerCreated() {
-        return getHandle().bS();
+        return getHandle().bW();
     }
 
     public void setPlayerCreated(boolean playerCreated) {
