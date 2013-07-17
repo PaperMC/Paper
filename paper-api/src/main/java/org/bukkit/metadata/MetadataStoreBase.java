@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator; // Paper
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -126,6 +127,26 @@ public abstract class MetadataStoreBase<T> {
         for (Map<Plugin, MetadataValue> values : metadataMap.values()) {
             if (values.containsKey(owningPlugin)) {
                 values.get(owningPlugin).invalidate();
+            }
+        }
+    }
+
+    /**
+     * Removes all metadata in the metadata store that originates from the
+     * given plugin.
+     *
+     * @param owningPlugin the plugin requesting the invalidation.
+     * @throws IllegalArgumentException If plugin is null
+     */
+    public void removeAll(@NotNull Plugin owningPlugin) {
+        Preconditions.checkNotNull(owningPlugin, "Plugin cannot be null");
+        for (Iterator<Map<Plugin, MetadataValue>> iterator = metadataMap.values().iterator(); iterator.hasNext(); ) {
+            Map<Plugin, MetadataValue> values = iterator.next();
+            if (values.containsKey(owningPlugin)) {
+                values.remove(owningPlugin);
+            }
+            if (values.isEmpty()) {
+                iterator.remove();
             }
         }
     }
