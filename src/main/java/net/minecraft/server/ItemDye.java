@@ -29,7 +29,7 @@ public class ItemDye extends Item {
             return false;
         } else {
             if (itemstack.getData() == 15) {
-                if (a(itemstack, world, i, j, k)) {
+                if (a(itemstack, world, i, j, k, entityhuman)) { // CraftBukkit - pass entity for StructureGrowEvent
                     if (!world.isStatic) {
                         world.triggerEffect(2005, i, j, k, 0);
                     }
