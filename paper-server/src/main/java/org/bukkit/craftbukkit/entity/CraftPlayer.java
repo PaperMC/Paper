@@ -259,13 +259,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void playSound(Location loc, Sound sound, float volume, float pitch) {
+        playSound(loc, CraftSound.getSound(sound), volume, pitch);
+    }
+
+    public void playSound(Location loc, String sound, float volume, float pitch) {
         if (loc == null || sound == null || getHandle().playerConnection == null) return;
 
         double x = loc.getBlockX() + 0.5;
         double y = loc.getBlockY() + 0.5;
         double z = loc.getBlockZ() + 0.5;
 
-        Packet62NamedSoundEffect packet = new Packet62NamedSoundEffect(CraftSound.getSound(sound), x, y, z, volume, pitch);
+        Packet62NamedSoundEffect packet = new Packet62NamedSoundEffect(sound, x, y, z, volume, pitch);
         getHandle().playerConnection.sendPacket(packet);
     }
 
