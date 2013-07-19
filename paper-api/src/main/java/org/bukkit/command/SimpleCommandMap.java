@@ -58,6 +58,7 @@ public class SimpleCommandMap implements CommandMap {
         fallbackCommands.add(new TestForCommand());
         fallbackCommands.add(new EffectCommand());
         fallbackCommands.add(new ScoreboardCommand());
+        fallbackCommands.add(new PlaySoundCommand());
     }
 
     public SimpleCommandMap(final Server server) {

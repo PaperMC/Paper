@@ -215,6 +215,20 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public void playSound(Location location, Sound sound, float volume, float pitch);
 
     /**
+     * Play a sound for a player at the location.
+     * <p>
+     * This function will fail silently if Location or Sound are null. No
+     * sound will be heard by the player if their client does not have the
+     * respective sound for the value passed.
+     *
+     * @param location the location to play the sound
+     * @param sound the internal sound name to play
+     * @param volume the volume of the sound
+     * @param pitch the pitch of the sound
+     */
+    public void playSound(Location location, String sound, float volume, float pitch);
+
+    /**
      * Plays an effect to just this player.
      *
      * @param loc the location to play the effect at
