@@ -16,7 +16,7 @@ public class EffectCommand extends VanillaCommand {
     public EffectCommand() {
         super("effect");
         this.description = "Adds/Removes effects on players";
-        this.usageMessage = "/effect <player> <effect> [seconds] [amplifier]";
+        this.usageMessage = "/effect <player> <effect|clear> [seconds] [amplifier]";
         this.setPermission("bukkit.command.effect");
     }
 
@@ -47,6 +47,14 @@ public class EffectCommand extends VanillaCommand {
 
         if (player == null) {
             sender.sendMessage(ChatColor.RED + String.format("Player, %s, not found", args[0]));
+            return true;
+        }
+
+        if ("clear".equalsIgnoreCase(args[1])) {
+            for (PotionEffect effect : player.getActivePotionEffects()) {
+                player.removePotionEffect(effect.getType());
+            }
+            sender.sendMessage(String.format("Took all effects from %s", args[0]));
             return true;
         }
 
