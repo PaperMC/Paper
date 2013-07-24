@@ -82,7 +82,8 @@ public abstract class EntityLiving extends Entity {
     public EntityLiving(World world) {
         super(world);
         this.ay();
-        this.setHealth(this.getMaxHealth());
+        // CraftBukkit - setHealth(getMaxHealth()) -> current  - inlined to skip the instanceof check for EntityPlayers
+        this.datawatcher.watch(6, (float) this.getAttributeInstance(GenericAttributes.a).getValue());
         this.m = true;
         this.aM = (float) (Math.random() + 1.0D) * 0.01F;
         this.setPosition(this.locX, this.locY, this.locZ);
@@ -583,10 +584,31 @@ public abstract class EntityLiving extends Entity {
     }
 
     public final float getHealth() {
+        // CraftBukkit start - Scaled Health
+        if (this instanceof EntityPlayer) {
+            return (float) ((EntityPlayer) this).getBukkitEntity().getHealth();
+        }
+        // CraftBukkit end
         return this.datawatcher.getFloat(6);
     }
 
     public void setHealth(float f) {
+        // CraftBukkit start - Scaled Health
+        if (this instanceof EntityPlayer) {
+            org.bukkit.craftbukkit.entity.CraftPlayer player = ((EntityPlayer) this).getBukkitEntity();
+            // Squeeze
+            if (f < 0.0F) {
+                player.setRealHealth(0.0D);
+            } else if (f > player.getMaxHealth()) {
+                player.setRealHealth(player.getMaxHealth());
+            } else {
+                player.setRealHealth(f);
+            }
+
+            this.datawatcher.watch(6, Float.valueOf(player.getScaledHealth()));
+            return;
+        }
+        // CraftBukkit end
         this.datawatcher.watch(6, Float.valueOf(MathHelper.a(f, 0.0F, this.getMaxHealth())));
     }
 

@@ -250,6 +250,11 @@ public class EntityTrackerEntry {
             Set set = attributemapserver.b();
 
             if (!set.isEmpty()) {
+                // CraftBukkit start - Send scaled max health
+                if (this.tracker instanceof EntityPlayer) {
+                    ((EntityPlayer) this.tracker).getBukkitEntity().injectScaledMaxHealth(set, false);
+                }
+                // CraftBukkit end
                 this.broadcastIncludingSelf(new Packet44UpdateAttributes(this.tracker.id, set));
             }
 
@@ -321,6 +326,11 @@ public class EntityTrackerEntry {
                         AttributeMapServer attributemapserver = (AttributeMapServer) ((EntityLiving) this.tracker).aW();
                         Collection collection = attributemapserver.c();
 
+                        // CraftBukkit start - If sending own attributes send scaled health instead of current maximum health
+                        if (this.tracker.id == entityplayer.id) {
+                            ((EntityPlayer) this.tracker).getBukkitEntity().injectScaledMaxHealth(collection, false);
+                        }
+                        // CraftBukkit end
                         if (!collection.isEmpty()) {
                             entityplayer.playerConnection.sendPacket(new Packet44UpdateAttributes(this.tracker.id, collection));
                         }

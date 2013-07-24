@@ -51,6 +51,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public int newLevel = 0;
     public int newTotalExp = 0;
     public boolean keepLevel = false;
+    public double maxHealthCache;
     // CraftBukkit end
 
     public EntityPlayer(MinecraftServer minecraftserver, World world, String s, PlayerInteractManager playerinteractmanager) {
@@ -84,6 +85,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.displayName = this.name;
         this.listName = this.name;
         // this.canPickUpLoot = true; TODO
+        this.maxHealthCache = this.getMaxHealth();
         // CraftBukkit end
     }
 
@@ -234,7 +236,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
             if (this.getHealth() != this.bP || this.bQ != this.foodData.a() || this.foodData.e() == 0.0F != this.bR) {
                 // CraftBukkit - Optionally scale health
-                this.playerConnection.sendPacket(new Packet8UpdateHealth(getBukkitEntity().getScaledHealth(), this.foodData.a(), this.foodData.e()));
+                this.playerConnection.sendPacket(new Packet8UpdateHealth(this.getBukkitEntity().getScaledHealth(), this.foodData.a(), this.foodData.e()));
                 this.bP = this.getHealth();
                 this.bQ = this.foodData.a();
                 this.bR = this.foodData.e() == 0.0F;
@@ -245,6 +247,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
                 // CraftBukkit - Update ALL the scores!
                 this.world.getServer().getScoreboardManager().updateAllScoresForList(IScoreboardCriteria.f, this.getLocalizedName(), com.google.common.collect.ImmutableList.of(this));
             }
+
+            // CraftBukkit start - Force max health updates
+            if (this.maxHealthCache != this.getMaxHealth()) {
+                this.getBukkitEntity().updateScaledHealth();
+            }
+            // CraftBukkit end
 
             if (this.expTotal != this.lastSentExp) {
                 this.lastSentExp = this.expTotal;
