@@ -24,7 +24,6 @@ import org.bukkit.craftbukkit.util.Waitable;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
@@ -35,7 +34,6 @@ import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCreativeEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryType.SlotType;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerAnimationEvent;
@@ -1083,18 +1081,26 @@ public class PlayerConnection extends Connection {
                 ItemStack itemInHand = this.player.inventory.getItemInHand(); // CraftBukkit
                 if (packet7useentity.action == 0) {
                     // CraftBukkit start
+                    boolean triggerTagUpdate = itemInHand != null && itemInHand.id == Item.NAME_TAG.id && entity instanceof EntityInsentient;
+                    boolean triggerChestUpdate = itemInHand != null && itemInHand.id == Block.CHEST.id && entity instanceof EntityHorse;
+                    boolean triggerLeashUpdate = itemInHand != null && itemInHand.id == Item.LEASH.id && entity instanceof EntityInsentient;
                     PlayerInteractEntityEvent event = new PlayerInteractEntityEvent((Player) this.getPlayer(), entity.getBukkitEntity());
                     this.server.getPluginManager().callEvent(event);
 
+                    if (triggerLeashUpdate && (event.isCancelled() || this.player.inventory.getItemInHand() == null || this.player.inventory.getItemInHand().id != Item.LEASH.id)) {
+                        // Refresh the current leash state
+                        this.sendPacket(new Packet39AttachEntity(1, entity, ((EntityInsentient) entity).bI()));
+                    }
+
+                    if (triggerTagUpdate && (event.isCancelled() || this.player.inventory.getItemInHand() == null || this.player.inventory.getItemInHand().id != Item.NAME_TAG.id)) {
+                        // Refresh the current entity metadata
+                        this.sendPacket(new Packet40EntityMetadata(entity.id, entity.datawatcher, true));
+                    }
+                    if (triggerChestUpdate && (event.isCancelled() || this.player.inventory.getItemInHand() == null || this.player.inventory.getItemInHand().id != Block.CHEST.id)) {
+                        this.sendPacket(new Packet40EntityMetadata(entity.id, entity.datawatcher, true));
+                    }
+
                     if (event.isCancelled()) {
-                        if (itemInHand != null && itemInHand.id == Item.LEASH.id && entity instanceof EntityInsentient) {
-                            // Refresh the current leash state
-                            this.sendPacket(new Packet39AttachEntity(1, entity, ((EntityInsentient) entity).bI()));
-                        }
-                        if (itemInHand != null && itemInHand.id == Item.NAME_TAG.id && entity instanceof EntityInsentient) {
-                            // Refresh the current entity metadata
-                            this.sendPacket(new Packet40EntityMetadata(entity.id, entity.datawatcher, true));
-                        }
                         return;
                     }
                     // CraftBukkit end
