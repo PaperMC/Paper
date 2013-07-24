@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
+import java.util.Collection;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.Color;
@@ -9,13 +10,25 @@ import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import com.google.common.collect.ImmutableSet;
+
 public final class CraftItemFactory implements ItemFactory {
     static final Color DEFAULT_LEATHER_COLOR = Color.fromRGB(0xA06540);
+    static final Collection<String> KNOWN_NBT_ATTRIBUTE_NAMES;
     private static final CraftItemFactory instance;
 
     static {
         instance = new CraftItemFactory();
         ConfigurationSerialization.registerClass(CraftMetaItem.SerializableMeta.class);
+        KNOWN_NBT_ATTRIBUTE_NAMES = ImmutableSet.<String>builder()
+            .add("generic.attackDamage")
+            .add("generic.followRange")
+            .add("generic.knockbackResistance")
+            .add("generic.maxHealth")
+            .add("generic.movementSpeed")
+            .add("horse.jumpStrength")
+            .add("zombie.spawnReinforcements")
+            .build();
     }
 
     private CraftItemFactory() {
