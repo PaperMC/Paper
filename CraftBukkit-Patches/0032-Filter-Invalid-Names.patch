@@ -1,28 +1,28 @@
-From 814cb42764064d0a31a56ff09f9ac8e28d3a9f8d Mon Sep 17 00:00:00 2001
-From: Benjamin James Harrison-Sims <tehrainbowguy@gmail.com>
-Date: Sun, 14 Apr 2013 21:19:57 +0500
+From df75188d9a61b26b3da65f3458f2abcf18a39e26 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Thu, 25 Jul 2013 17:06:02 +1000
 Subject: [PATCH] Filter Invalid Names
 
 
-diff --git a/src/main/java/net/minecraft/server/Packet2Handshake.java b/src/main/java/net/minecraft/server/Packet2Handshake.java
-index 1e7bad0..f25afb6 100644
---- a/src/main/java/net/minecraft/server/Packet2Handshake.java
-+++ b/src/main/java/net/minecraft/server/Packet2Handshake.java
-@@ -14,11 +14,14 @@ public class Packet2Handshake extends Packet {
- 
-     public Packet2Handshake() {}
- 
-+    public static final java.util.regex.Pattern validName = java.util.regex.Pattern.compile("^[a-zA-Z0-9_-]{2,16}$");
-     public void a(DataInput datainput) throws IOException { // CraftBukkit - throws IOException
-         this.a = datainput.readByte();
-         this.b = a(datainput, 16);
-         this.c = a(datainput, 255);
-         this.d = datainput.readInt();
-+        // Spigot: TODO: md_5 hates this
-+        if(!validName.matcher(this.b).matches()) throw new IOException("Invalid name!"); // Spigot
+diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
+index 0eacd84..e634575 100644
+--- a/src/main/java/net/minecraft/server/PendingConnection.java
++++ b/src/main/java/net/minecraft/server/PendingConnection.java
+@@ -66,12 +66,13 @@ public class PendingConnection extends Connection {
+         }
      }
  
-     public void a(DataOutput dataoutput) throws IOException { // CraftBukkit - throws IOException
++    private static final java.util.regex.Pattern validName = java.util.regex.Pattern.compile("^[a-zA-Z0-9_-]{2,16}$"); // Spigot
+     public void a(Packet2Handshake packet2handshake) {
+         // CraftBukkit start
+         this.hostname = packet2handshake.c == null ? "" : packet2handshake.c + ':' + packet2handshake.d;
+         // CraftBukkit end
+         this.g = packet2handshake.f();
+-        if (!this.g.equals(StripColor.a(this.g))) {
++        if (!this.g.equals(StripColor.a(this.g)) || !validName.matcher( this.g ).matches() ) { // Spigot
+             this.disconnect("Invalid username!");
+         } else {
+             PublicKey publickey = this.server.H().getPublic();
 -- 
 1.8.1.2
 
