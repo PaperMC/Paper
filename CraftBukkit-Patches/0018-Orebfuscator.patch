@@ -1,4 +1,4 @@
-From c436351acab50d84569551262783648c617ad71e Mon Sep 17 00:00:00 2001
+From 14f85a79d6d556e58e85c59d5f2d9cf722ee5577 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 16 May 2013 18:51:05 +1000
 Subject: [PATCH] Orebfuscator
@@ -108,10 +108,10 @@ index a7afa55..1a60229 100644
  
 diff --git a/src/main/java/org/spigotmc/AntiXray.java b/src/main/java/org/spigotmc/AntiXray.java
 new file mode 100644
-index 0000000..c165304
+index 0000000..bcd946d
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/AntiXray.java
-@@ -0,0 +1,204 @@
+@@ -0,0 +1,183 @@
 +package org.spigotmc;
 +
 +import gnu.trove.set.TByteSet;
@@ -127,8 +127,6 @@ index 0000000..c165304
 +    /*========================================================================*/
 +    // Used to keep track of which blocks to obfuscate
 +    private final boolean[] obfuscateBlocks = new boolean[ Short.MAX_VALUE ];
-+    // Used to select a random replacement ore
-+    private byte[] replacementOres;
 +
 +    public AntiXray(SpigotWorldConfig config)
 +    {
@@ -137,25 +135,6 @@ index 0000000..c165304
 +        {
 +            obfuscateBlocks[id] = true;
 +        }
-+
-+        // For every block
-+        TByteSet blocks = new TByteHashSet();
-+        for ( int i = 0; i < obfuscateBlocks.length; i++ )
-+        {
-+            // If we are obfuscating it
-+            if ( obfuscateBlocks[i] )
-+            {
-+                Block block = Block.byId[i];
-+                // Check it exists and is not a tile entity
-+                if ( block != null && !block.t() /* isTileEntity */ )
-+                {
-+                    // Add it to the set of replacement blocks
-+                    blocks.add( (byte) i );
-+                }
-+            }
-+        }
-+        // Bake it to a flat array of replacements
-+        replacementOres = blocks.toArray();
 +    }
 +
 +    /**
@@ -245,11 +224,11 @@ index 0000000..c165304
 +                                                break;
 +                                            case 2:
 +                                                // Replace with random ore.
-+                                                if ( randomOre >= replacementOres.length )
++                                                if ( randomOre >= world.spigotConfig.xRayReplacements.length )
 +                                                {
 +                                                    randomOre = 0;
 +                                                }
-+                                                buffer[index] = replacementOres[randomOre++];
++                                                buffer[index] = world.spigotConfig.xRayReplacements[randomOre++];
 +                                                break;
 +                                        }
 +                                    }
@@ -317,17 +296,18 @@ index 0000000..c165304
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 3e66d79..f74fc9b 100644
+index 3e66d79..aea428c 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-@@ -1,5 +1,6 @@
+@@ -1,5 +1,7 @@
  package org.spigotmc;
  
++import gnu.trove.set.hash.TByteHashSet;
 +import java.util.Arrays;
  import java.util.List;
  import org.bukkit.Bukkit;
  import org.bukkit.configuration.file.YamlConfiguration;
-@@ -128,4 +129,29 @@ public class SpigotWorldConfig
+@@ -128,4 +130,35 @@ public class SpigotWorldConfig
          viewDistance = getInt( "view-distance", Bukkit.getViewDistance() );
          log( "View Distance: " + viewDistance );
      }
@@ -338,6 +318,7 @@ index 3e66d79..f74fc9b 100644
 +    {
 +        14, 15, 16, 21, 48, 49, 54, 56, 73, 74, 82, 129, 130
 +    } );
++    public byte[] xRayReplacements;
 +    public AntiXray antiXrayInstance;
 +    private void antiXray()
 +    {
@@ -353,6 +334,11 @@ index 3e66d79..f74fc9b 100644
 +        }
 +        blocks = getList( "anti-xray.blocks", blocks );
 +        log( "\tBlocks: " + blocks );
++
++        xRayReplacements = new TByteHashSet( getList( "anti-xray.replacements", Arrays.asList( new Byte[]
++        {
++            1, 3
++        } ) ) ).toArray();
 +
 +        antiXrayInstance = new AntiXray( this );
 +    }
