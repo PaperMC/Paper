@@ -1,4 +1,4 @@
-From f69a63cfb3198d6a100a017ae2f5225251382eab Mon Sep 17 00:00:00 2001
+From 6af084ea3eec9318cd30adcfe34626bc2f9ab083 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 16 May 2013 18:51:05 +1000
 Subject: [PATCH] Orebfuscator
@@ -108,14 +108,13 @@ index a7afa55..1a60229 100644
  
 diff --git a/src/main/java/org/spigotmc/AntiXray.java b/src/main/java/org/spigotmc/AntiXray.java
 new file mode 100644
-index 0000000..22fbcca
+index 0000000..f4b4794
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/AntiXray.java
 @@ -0,0 +1,183 @@
 +package org.spigotmc;
 +
-+import gnu.trove.set.TByteSet;
-+import gnu.trove.set.hash.TByteHashSet;
++import gnu.trove.iterator.TIntIterator;
 +import net.minecraft.server.Block;
 +import net.minecraft.server.World;
 +
@@ -127,6 +126,7 @@ index 0000000..22fbcca
 +    /*========================================================================*/
 +    // Used to keep track of which blocks to obfuscate
 +    private final boolean[] obfuscateBlocks = new boolean[ Short.MAX_VALUE ];
++    private TIntIterator replacer;
 +
 +    public AntiXray(SpigotWorldConfig config)
 +    {
@@ -223,12 +223,12 @@ index 0000000..22fbcca
 +                                                buffer[index] = (byte) Block.STONE.id;
 +                                                break;
 +                                            case 2:
-+                                                // Replace with random ore.
-+                                                if ( randomOre >= world.spigotConfig.xRayReplacements.length )
++                                                if ( replacer == null || !replacer.hasNext() )
 +                                                {
-+                                                    randomOre = 0;
++                                                    replacer = world.spigotConfig.xRayReplacements.iterator();
 +                                                }
-+                                                buffer[index] = (byte) world.spigotConfig.xRayReplacements[randomOre++];
++                                                // Replace with random ore.
++                                                buffer[index] = (byte) replacer.next();
 +                                                break;
 +                                        }
 +                                    }
@@ -252,7 +252,7 @@ index 0000000..22fbcca
 +            int id = world.getTypeId( x, y, z );
 +
 +            // See if it needs update
-+            if ( updateSelf && obfuscateBlocks[id] )
++            if ( updateSelf && ( obfuscateBlocks[id] || world.spigotConfig.xRayReplacements.contains( id ) ) )
 +            {
 +                // Send the update
 +                world.notify( x, y, z );
@@ -296,49 +296,50 @@ index 0000000..22fbcca
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 3e66d79..64f3c7f 100644
+index 3e66d79..84250dc 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-@@ -1,5 +1,7 @@
+@@ -1,5 +1,8 @@
  package org.spigotmc;
  
++import gnu.trove.set.TIntSet;
 +import gnu.trove.set.hash.TIntHashSet;
 +import java.util.Arrays;
  import java.util.List;
  import org.bukkit.Bukkit;
  import org.bukkit.configuration.file.YamlConfiguration;
-@@ -128,4 +130,35 @@ public class SpigotWorldConfig
+@@ -128,4 +131,35 @@ public class SpigotWorldConfig
          viewDistance = getInt( "view-distance", Bukkit.getViewDistance() );
          log( "View Distance: " + viewDistance );
      }
 +
-+    public boolean antiXray = true;
-+    public int engineMode = 1;
-+    public List<Integer> blocks = Arrays.asList( new Integer[]
-+    {
-+        14, 15, 16, 21, 48, 49, 54, 56, 73, 74, 82, 129, 130
-+    } );
-+    public int[] xRayReplacements;
++    public boolean antiXray;
++    public int engineMode;
++    public List<Integer> blocks;
++    public TIntSet xRayReplacements;
 +    public AntiXray antiXrayInstance;
 +    private void antiXray()
 +    {
-+        antiXray = getBoolean( "anti-xray.enabled", antiXray );
++        antiXray = getBoolean( "anti-xray.enabled", true );
 +        log( "Anti X-Ray: " + antiXray );
 +
-+        engineMode = getInt( "anti-xray.engine-mode", engineMode );
++        engineMode = getInt( "anti-xray.engine-mode", 1 );
 +        log( "\tEngine Mode: " + engineMode );
 +
 +        if ( SpigotConfig.version < 2 )
 +        {
 +            set( "anti-xray.blocks", blocks );
 +        }
-+        blocks = getList( "anti-xray.blocks", blocks );
++        blocks =  getList( "anti-xray.blocks", Arrays.asList( new Integer[]
++        {
++            14, 15, 16, 21, 48, 49, 54, 56, 73, 74, 82, 129, 130
++        } ) ) ;
 +        log( "\tBlocks: " + blocks );
 +
 +        xRayReplacements = new TIntHashSet( getList( "anti-xray.replacements", Arrays.asList( new Integer[]
 +        {
 +            1, 3
-+        } ) ) ).toArray();
++        } ) ) );
 +
 +        antiXrayInstance = new AntiXray( this );
 +    }
