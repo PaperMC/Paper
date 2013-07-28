@@ -184,6 +184,8 @@ class CraftMetaItem implements ItemMeta, Repairable {
     @Specific(Specific.To.NBT)
     static final ItemMetaKey ATTRIBUTES = new ItemMetaKey("AttributeModifiers");
     @Specific(Specific.To.NBT)
+    static final ItemMetaKey ATTRIBUTES_IDENTIFIER = new ItemMetaKey("AttributeName");
+    @Specific(Specific.To.NBT)
     static final ItemMetaKey ATTRIBUTES_NAME = new ItemMetaKey("Name");
     @Specific(Specific.To.NBT)
     static final ItemMetaKey ATTRIBUTES_VALUE = new ItemMetaKey("Amount");
@@ -262,7 +264,10 @@ class CraftMetaItem implements ItemMeta, Repairable {
                 if (!(nbttagcompound.get(ATTRIBUTES_UUID_LOW.NBT) instanceof NBTTagLong)) {
                     continue;
                 }
-                if (!(nbttagcompound.get(ATTRIBUTES_NAME.NBT) instanceof NBTTagString) || !CraftItemFactory.KNOWN_NBT_ATTRIBUTE_NAMES.contains(nbttagcompound.getString(ATTRIBUTES_NAME.NBT))) {
+                if (!(nbttagcompound.get(ATTRIBUTES_IDENTIFIER.NBT) instanceof NBTTagString) || !CraftItemFactory.KNOWN_NBT_ATTRIBUTE_NAMES.contains(nbttagcompound.getString(ATTRIBUTES_IDENTIFIER.NBT))) {
+                    continue;
+                }
+                if (!(nbttagcompound.get(ATTRIBUTES_NAME.NBT) instanceof NBTTagString) || nbttagcompound.getString(ATTRIBUTES_NAME.NBT).isEmpty()) {
                     continue;
                 }
                 if (!(nbttagcompound.get(ATTRIBUTES_VALUE.NBT) instanceof NBTTagDouble)) {
@@ -279,6 +284,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
                 NBTTagCompound entry = new NBTTagCompound();
                 entry.set(ATTRIBUTES_UUID_HIGH.NBT, nbttagcompound.get(ATTRIBUTES_UUID_HIGH.NBT));
                 entry.set(ATTRIBUTES_UUID_LOW.NBT, nbttagcompound.get(ATTRIBUTES_UUID_LOW.NBT));
+                entry.set(ATTRIBUTES_IDENTIFIER.NBT, nbttagcompound.get(ATTRIBUTES_IDENTIFIER.NBT));
                 entry.set(ATTRIBUTES_NAME.NBT, nbttagcompound.get(ATTRIBUTES_NAME.NBT));
                 entry.set(ATTRIBUTES_VALUE.NBT, nbttagcompound.get(ATTRIBUTES_VALUE.NBT));
                 entry.set(ATTRIBUTES_TYPE.NBT, nbttagcompound.get(ATTRIBUTES_TYPE.NBT));
