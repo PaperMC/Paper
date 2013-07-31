@@ -264,6 +264,7 @@ public abstract class EntityCreature extends EntityInsentient {
 
             if (this instanceof EntityTameableAnimal && ((EntityTameableAnimal) this).isSitting()) {
                 if (f > 10.0F) {
+                    this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.entity.EntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.DISTANCE)); // CraftBukkit
                     this.a(true, true);
                 }
 

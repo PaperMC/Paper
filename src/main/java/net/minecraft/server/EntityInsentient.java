@@ -4,8 +4,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.entity.EntityUnleashEvent;
+import org.bukkit.event.entity.EntityUnleashEvent.UnleashReason;
+// CraftBukkit end
 
 public abstract class EntityInsentient extends EntityLiving {
 
@@ -769,6 +772,12 @@ public abstract class EntityInsentient extends EntityLiving {
 
     public final boolean c(EntityHuman entityhuman) {
         if (this.bH() && this.bI() == entityhuman) {
+            // CraftBukkit start
+            if (CraftEventFactory.callPlayerUnleashEntityEvent(this, entityhuman).isCancelled()) {
+                ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet39AttachEntity(1, this, this.bI()));
+                return false;
+            }
+            // CraftBukkit end
             this.a(true, !entityhuman.abilities.canInstantlyBuild);
             return true;
         } else {
@@ -776,12 +785,24 @@ public abstract class EntityInsentient extends EntityLiving {
 
             if (itemstack != null && itemstack.id == Item.LEASH.id && this.bG()) {
                 if (!(this instanceof EntityTameableAnimal) || !((EntityTameableAnimal) this).isTamed()) {
+                    // CraftBukkit start
+                    if (CraftEventFactory.callPlayerLeashEntityEvent(this, entityhuman, entityhuman).isCancelled()) {
+                        ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet39AttachEntity(1, this, this.bI()));
+                        return false;
+                    }
+                    // CraftBukkit end
                     this.b(entityhuman, true);
                     --itemstack.count;
                     return true;
                 }
 
                 if (entityhuman.getName().equalsIgnoreCase(((EntityTameableAnimal) this).getOwnerName())) {
+                    // CraftBukkit start
+                    if (CraftEventFactory.callPlayerLeashEntityEvent(this, entityhuman, entityhuman).isCancelled()) {
+                        ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet39AttachEntity(1, this, this.bI()));
+                        return false;
+                    }
+                    // CraftBukkit end
                     this.b(entityhuman, true);
                     --itemstack.count;
                     return true;
@@ -803,6 +824,7 @@ public abstract class EntityInsentient extends EntityLiving {
 
         if (this.bv) {
             if (this.bw == null || this.bw.dead) {
+                this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.HOLDER_GONE)); // CraftBukkit
                 this.a(true, true);
             }
         }
@@ -869,6 +891,7 @@ public abstract class EntityInsentient extends EntityLiving {
 
                 this.bw = entityleash;
             } else {
+                this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN)); // CraftBukkit
                 this.a(false, true);
             }
         }

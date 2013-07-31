@@ -3,6 +3,8 @@ package net.minecraft.server;
 import java.util.Iterator;
 import java.util.List;
 
+import org.bukkit.event.hanging.HangingPlaceEvent; // CraftBukkit
+
 public class ItemLeash extends Item {
 
     public ItemLeash(int i) {
@@ -40,8 +42,23 @@ public class ItemLeash extends Item {
                 if (entityinsentient.bH() && entityinsentient.bI() == entityhuman) {
                     if (entityleash == null) {
                         entityleash = EntityLeash.a(world, i, j, k);
+
+                        // CraftBukkit start
+                        HangingPlaceEvent event = new HangingPlaceEvent((org.bukkit.entity.Hanging) entityleash.getBukkitEntity(), entityhuman != null ? (org.bukkit.entity.Player) entityhuman.getBukkitEntity() : null, world.getWorld().getBlockAt(i, j, k), org.bukkit.block.BlockFace.SELF);
+                        world.getServer().getPluginManager().callEvent(event);
+
+                        if (event.isCancelled()) {
+                            entityleash.die();
+                            return false;
+                        }
+                        // CraftBukkit end
                     }
 
+                    // CraftBukkit start
+                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerLeashEntityEvent(entityinsentient, entityleash, entityhuman).isCancelled()) {
+                        continue;
+                    }
+                    // CraftBukkit end
                     entityinsentient.b(entityleash, true);
                     flag = true;
                 }

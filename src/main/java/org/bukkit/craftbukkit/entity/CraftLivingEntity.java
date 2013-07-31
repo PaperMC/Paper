@@ -14,18 +14,17 @@ import net.minecraft.server.EntityEnderPearl;
 import net.minecraft.server.EntityInsentient;
 import net.minecraft.server.EntityLargeFireball;
 import net.minecraft.server.EntityLiving;
-import net.minecraft.server.EntitySmallFireball;
-import net.minecraft.server.EntitySnowball;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPotion;
+import net.minecraft.server.EntitySmallFireball;
+import net.minecraft.server.EntitySnowball;
+import net.minecraft.server.EntityWither;
 import net.minecraft.server.EntityWitherSkull;
 import net.minecraft.server.GenericAttributes;
 import net.minecraft.server.MobEffect;
 import net.minecraft.server.MobEffectList;
-import net.minecraft.server.Packet42RemoveMobEffect;
 
 import org.apache.commons.lang.Validate;
-
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -35,11 +34,11 @@ import org.bukkit.craftbukkit.inventory.CraftEntityEquipment;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Egg;
+import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.HumanEntity;
-import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.Fireball;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -405,6 +404,46 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     public boolean isCustomNameVisible() {
         return getHandle() instanceof EntityInsentient && ((EntityInsentient) getHandle()).getCustomNameVisible();
+    }
+
+    public boolean isLeashed() {
+        if (!(getHandle() instanceof EntityInsentient)) {
+            return false;
+        }
+        return ((EntityInsentient) getHandle()).bI() != null;
+    }
+
+    public Entity getLeashHolder() throws IllegalStateException {
+        if (!isLeashed()) {
+            throw new IllegalStateException("Entity not leashed");
+        }
+        return ((EntityInsentient) getHandle()).bI().getBukkitEntity();
+    }
+
+    private boolean unleash() {
+        if (!isLeashed()) {
+            return false;
+        }
+        ((EntityInsentient) getHandle()).a(true, false);
+        return true;
+    }
+
+    public boolean setLeashHolder(Entity holder) {
+        if ((getHandle() instanceof EntityWither) || !(getHandle() instanceof EntityInsentient)) {
+            return false;
+        }
+
+        if (holder == null) {
+            return unleash();
+        }
+
+        if (holder.isDead()) {
+            return false;
+        }
+
+        unleash();
+        ((EntityInsentient) getHandle()).b(((CraftEntity) holder).getHandle(), true);
+        return true;
     }
 
     @Deprecated
