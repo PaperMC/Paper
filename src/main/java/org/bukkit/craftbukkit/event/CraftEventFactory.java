@@ -86,7 +86,7 @@ public class CraftEventFactory {
         ChunkCoordinates chunkcoordinates = worldServer.getSpawn();
 
         int distanceFromSpawn = Math.max(Math.abs(x - chunkcoordinates.x), Math.abs(z - chunkcoordinates.z));
-        return distanceFromSpawn >= spawnSize;
+        return distanceFromSpawn > spawnSize;
     }
 
     public static <T extends Event> T callEvent(T event) {
