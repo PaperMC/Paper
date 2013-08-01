@@ -343,6 +343,10 @@ public class EntityTrackerEntry {
                         entityplayer.playerConnection.sendPacket(new Packet28EntityVelocity(this.tracker.id, this.tracker.motX, this.tracker.motY, this.tracker.motZ));
                     }
 
+                    if (this.tracker.vehicle != null) {
+                        entityplayer.playerConnection.sendPacket(new Packet39AttachEntity(0, this.tracker, this.tracker.vehicle));
+                    }
+
                     if (this.tracker instanceof EntityInsentient && ((EntityInsentient) this.tracker).bI() != null) {
                         entityplayer.playerConnection.sendPacket(new Packet39AttachEntity(1, this.tracker, ((EntityInsentient) this.tracker).bI()));
                     }
