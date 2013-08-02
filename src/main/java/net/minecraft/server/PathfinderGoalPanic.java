@@ -36,6 +36,12 @@ public class PathfinderGoalPanic extends PathfinderGoal {
     }
 
     public boolean b() {
+        // CraftBukkit start - introduce a temporary timeout hack until this is fixed properly
+        if ((this.a.ticksLived - this.a.aE()) > 100) {
+            this.a.b((EntityLiving) null);
+            return false;
+        }
+        // CraftBukkit end
         return !this.a.getNavigation().g();
     }
 }
