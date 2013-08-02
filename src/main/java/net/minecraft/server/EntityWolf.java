@@ -339,7 +339,7 @@ public class EntityWolf extends EntityTameableAnimal {
     }
 
     protected boolean isTypeNotPersistent() {
-        return !this.isTamed() && this.ticksLived > 2400;
+        return !this.isTamed(); // CraftBukkit
     }
 
     public boolean a(EntityLiving entityliving, EntityLiving entityliving1) {
