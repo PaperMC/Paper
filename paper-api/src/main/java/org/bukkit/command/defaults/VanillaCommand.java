@@ -58,6 +58,18 @@ public abstract class VanillaCommand extends Command {
         }
     }
 
+    public static double getRelativeDouble(double original, CommandSender sender, String input) {
+        if (input.startsWith("~")) {
+            double value = getDouble(sender, input.substring(1));
+            if (value == MIN_COORD_MINUS_ONE) {
+                return MIN_COORD_MINUS_ONE;
+            }
+            return original + value;
+        } else {
+            return getDouble(sender, input);
+        }
+    }
+
     public static double getDouble(CommandSender sender, String input) {
         try {
             return Double.parseDouble(input);
