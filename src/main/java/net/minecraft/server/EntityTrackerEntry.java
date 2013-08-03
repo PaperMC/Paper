@@ -347,6 +347,12 @@ public class EntityTrackerEntry {
                         entityplayer.playerConnection.sendPacket(new Packet39AttachEntity(0, this.tracker, this.tracker.vehicle));
                     }
 
+                    // CraftBukkit start
+                    if (this.tracker.passenger != null) {
+                        entityplayer.playerConnection.sendPacket(new Packet39AttachEntity(0, this.tracker.passenger, this.tracker));
+                    }
+                    // CraftBukkit end
+
                     if (this.tracker instanceof EntityInsentient && ((EntityInsentient) this.tracker).bI() != null) {
                         entityplayer.playerConnection.sendPacket(new Packet39AttachEntity(1, this.tracker, ((EntityInsentient) this.tracker).bI()));
                     }
