@@ -5,7 +5,7 @@ Subject: [PATCH] Fix Mob Spawning Relative to View Distance
 
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 5b13dea..51db2db 100644
+index 5b13dea..c353b29 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -33,6 +33,7 @@ public class Chunk {
@@ -16,11 +16,18 @@ index 5b13dea..51db2db 100644
  
      public Chunk(World world, int i, int j) {
          this.sections = new ChunkSection[16];
-@@ -552,6 +553,15 @@ public class Chunk {
+@@ -552,6 +553,22 @@ public class Chunk {
          entity.ak = k;
          entity.al = this.z;
          this.entitySlices[k].add(entity);
 +        // Spigot start - increment creature type count
++        // Keep this synced up with World.a(Class)
++        if (entity instanceof EntityInsentient) {
++            EntityInsentient entityinsentient = (EntityInsentient) entity;
++            if (entityinsentient.isTypeNotPersistent() && entityinsentient.isPersistent()) {
++                return;
++            }
++        }
 +        for ( EnumCreatureType creatureType : EnumCreatureType.values() )
 +        {
 +            if ( creatureType.a().isAssignableFrom( entity.getClass() ) )
@@ -32,11 +39,18 @@ index 5b13dea..51db2db 100644
      }
  
      public void b(Entity entity) {
-@@ -568,6 +578,15 @@ public class Chunk {
+@@ -568,6 +585,22 @@ public class Chunk {
          }
  
          this.entitySlices[i].remove(entity);
 +        // Spigot start - decrement creature type count
++        // Keep this synced up with World.a(Class)
++        if (entity instanceof EntityInsentient) {
++            EntityInsentient entityinsentient = (EntityInsentient) entity;
++            if (entityinsentient.isTypeNotPersistent() && entityinsentient.isPersistent()) {
++                return;
++            }
++        }
 +        for ( EnumCreatureType creatureType : EnumCreatureType.values() )
 +        {
 +            if ( creatureType.a().isAssignableFrom( entity.getClass() ) )
@@ -121,7 +135,7 @@ index 9812538..ecf13aa 100644
                                                                      continue label110;
                                                                  }
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index bab9d8f..9f95452 100644
+index f74fc9b..f0becc1 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -154,4 +154,11 @@ public class SpigotWorldConfig
@@ -137,5 +151,4 @@ index bab9d8f..9f95452 100644
 +    }
  }
 -- 
-1.8.1.2
-
+1.8.1.msysgit.1
