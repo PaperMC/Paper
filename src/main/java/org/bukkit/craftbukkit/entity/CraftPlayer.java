@@ -259,6 +259,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void playSound(Location loc, Sound sound, float volume, float pitch) {
+        if (sound == null) {
+            return;
+        }
         playSound(loc, CraftSound.getSound(sound), volume, pitch);
     }
 
