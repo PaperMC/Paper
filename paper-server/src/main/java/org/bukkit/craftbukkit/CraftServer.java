@@ -524,7 +524,11 @@ public final class CraftServer implements Server {
             return true;
         }
 
-        sender.sendMessage("Unknown command. Type \"help\" for help.");
+        if (sender instanceof Player) {
+            sender.sendMessage("Unknown command. Type \"/help\" for help.");
+        } else {
+            sender.sendMessage("Unknown command. Type \"help\" for help.");
+        }
 
         return false;
     }
