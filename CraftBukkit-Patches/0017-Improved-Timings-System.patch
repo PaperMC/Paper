@@ -1,4 +1,4 @@
-From 63b6bcfae16694dce46b4b077fcea833212b367b Mon Sep 17 00:00:00 2001
+From 81c56b7bec43a3500d86ecb6a76c29155e8b7a43 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 10 Jan 2013 00:18:11 -0500
 Subject: [PATCH] Improved Timings System
@@ -354,10 +354,10 @@ index 1a34feb..db0345d 100644
      public BiomeMeta a(EnumCreatureType enumcreaturetype, int i, int j, int k) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java b/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java
 new file mode 100644
-index 0000000..f6e507e
+index 0000000..8340c13
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java
-@@ -0,0 +1,124 @@
+@@ -0,0 +1,125 @@
 +package org.bukkit.craftbukkit;
 +
 +import net.minecraft.server.*;
@@ -365,6 +365,7 @@ index 0000000..f6e507e
 +import org.bukkit.scheduler.BukkitTask;
 +
 +import java.util.HashMap;
++import org.bukkit.craftbukkit.scheduler.CraftTask;
 +
 +public class SpigotTimings {
 +
@@ -401,7 +402,7 @@ index 0000000..f6e507e
 +     */
 +    public static CustomTimingsHandler getPluginTaskTimings(BukkitTask task, long period) {
 +        String plugin = task.getOwner().getDescription().getFullName();
-+        String name = "Task: " + plugin +" Id:";
++        String name = "Task: " + plugin + " Runnable: " + ( (CraftTask) task ).getTaskClass().getSimpleName();
 +        if (period > 0) {
 +            name += "(interval:" + period +")";
 +        } else {
@@ -483,10 +484,10 @@ index 0000000..f6e507e
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
-index 55db3ff..d644d08 100644
+index 55db3ff..7d294c0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
-@@ -1,6 +1,8 @@
+@@ -1,11 +1,13 @@
  package org.bukkit.craftbukkit.scheduler;
  
  import org.bukkit.Bukkit;
@@ -495,6 +496,12 @@ index 55db3ff..d644d08 100644
  import org.bukkit.plugin.Plugin;
  import org.bukkit.scheduler.BukkitTask;
  
+ 
+-class CraftTask implements BukkitTask, Runnable {
++public class CraftTask implements BukkitTask, Runnable { // Spigot
+ 
+     private volatile CraftTask next = null;
+     /**
 @@ -22,6 +24,7 @@ class CraftTask implements BukkitTask, Runnable {
      private final Plugin plugin;
      private final int id;
@@ -526,6 +533,15 @@ index 55db3ff..d644d08 100644
      }
  
      long getPeriod() {
+@@ -77,7 +95,7 @@ class CraftTask implements BukkitTask, Runnable {
+         this.next = next;
+     }
+ 
+-    Class<? extends Runnable> getTaskClass() {
++    public Class<? extends Runnable> getTaskClass() { // Spigot
+         return task.getClass();
+     }
+ 
 -- 
 1.8.1.2
 
