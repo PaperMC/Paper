@@ -989,11 +989,11 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         }
 
         this.methodProfiler.enter("snooper");
-        if (!this.snooper.d() && this.ticks > 100) {
+        if (((DedicatedServer) this).getDedicatedServerProperties().snooperEnabled && !this.snooper.d() && this.ticks > 100) { // Spigot
             this.snooper.a();
         }
 
-        if (this.ticks % 6000 == 0) {
+        if (((DedicatedServer) this).getDedicatedServerProperties().snooperEnabled && this.ticks % 6000 == 0) { // Spigot
             this.snooper.b();
         }
 
