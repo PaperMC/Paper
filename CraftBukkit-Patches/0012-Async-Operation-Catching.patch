@@ -1,10 +1,30 @@
-From 02576518418792080a11f4f648156fb819ae1c72 Mon Sep 17 00:00:00 2001
+From 11dc47b80c3d35e079fabff8953334708d3cf798 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 7 Mar 2013 20:12:46 +1100
 Subject: [PATCH] Async Operation Catching
 
 Catch and throw an exception when a potentially unsafe operation occurs on a thread other than the main server thread.
 
+diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
+index afe8735..8fc6c12 100644
+--- a/src/main/java/net/minecraft/server/Block.java
++++ b/src/main/java/net/minecraft/server/Block.java
+@@ -342,9 +342,13 @@ public class Block {
+         return 10;
+     }
+ 
+-    public void onPlace(World world, int i, int j, int k) {}
++    public void onPlace(World world, int i, int j, int k) {
++        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous block onPlace!"); // Spigot
++    }
+ 
+-    public void remove(World world, int i, int j, int k, int l, int i1) {}
++    public void remove(World world, int i, int j, int k, int l, int i1) {
++        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous block remove!"); // Spigot
++    }
+ 
+     public int a(Random random) {
+         return 1;
 diff --git a/src/main/java/net/minecraft/server/EntityTracker.java b/src/main/java/net/minecraft/server/EntityTracker.java
 index 1d9203b..ebbef6a 100644
 --- a/src/main/java/net/minecraft/server/EntityTracker.java
