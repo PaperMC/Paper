@@ -39,6 +39,7 @@ public class CocoaPlant extends MaterialData implements Directional, Attachable 
 
     /**
      * Get size of plant
+     *
      * @return size
      */
     public CocoaPlantSize getSize() {
@@ -54,6 +55,7 @@ public class CocoaPlant extends MaterialData implements Directional, Attachable 
 
     /**
      * Set size of plant
+     *
      * @param sz - size of plant
      */
     public void setSize(CocoaPlantSize sz) {

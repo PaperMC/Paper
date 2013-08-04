@@ -76,7 +76,7 @@ public class Permission {
 
     /**
      * Gets the children of this permission.
-     *
+     * <p>
      * If you change this map in any form, you must call {@link #recalculatePermissibles()} to recalculate all {@link Permissible}s
      *
      * @return Permission children

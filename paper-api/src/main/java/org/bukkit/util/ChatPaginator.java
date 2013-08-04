@@ -19,6 +19,7 @@ public class ChatPaginator {
 
     /**
      * Breaks a raw string up into pages using the default width and height.
+     *
      * @param unpaginatedString The raw string to break.
      * @param pageNumber The page number to fetch.
      * @return A single chat page.
@@ -29,6 +30,7 @@ public class ChatPaginator {
 
     /**
      * Breaks a raw string up into pages using a provided width and height.
+     *
      * @param unpaginatedString The raw string to break.
      * @param pageNumber The page number to fetch.
      * @param lineLength The desired width of a chat line.
@@ -51,6 +53,7 @@ public class ChatPaginator {
     /**
      * Breaks a raw string up into a series of lines. Words are wrapped using spaces as decimeters and the newline
      * character is respected.
+     *
      * @param rawString The raw string to break.
      * @param lineLength The length of a line of text.
      * @return An array of word-wrapped lines.

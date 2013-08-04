@@ -30,6 +30,7 @@ public class PluginNameConversationPrefix implements ConversationPrefix {
 
     /**
      * Prepends each conversation message with the plugin name.
+     *
      * @param context Context information about the conversation.
      * @return An empty string.
      */

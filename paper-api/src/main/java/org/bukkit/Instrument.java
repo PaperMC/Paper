@@ -43,6 +43,7 @@ public enum Instrument {
 
     /**
      * Get an instrument by its type ID.
+     *
      * @param type The type ID
      * @return The instrument
      */

@@ -6,6 +6,7 @@ import java.util.Map;
 
 /**
  * Represents a type of creature.
+ *
  * @deprecated Use EntityType instead.
  */
 @Deprecated

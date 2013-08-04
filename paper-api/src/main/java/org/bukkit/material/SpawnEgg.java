@@ -26,6 +26,7 @@ public class SpawnEgg extends MaterialData {
 
     /**
      * Get the type of entity this egg will spawn.
+     *
      * @return The entity type.
      */
     public EntityType getSpawnedType() {
@@ -34,6 +35,7 @@ public class SpawnEgg extends MaterialData {
 
     /**
      * Set the type of entity this egg will spawn.
+     *
      * @param type The entity type.
      */
     public void setSpawnedType(EntityType type) {

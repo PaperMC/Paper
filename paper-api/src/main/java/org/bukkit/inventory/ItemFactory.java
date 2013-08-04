@@ -15,6 +15,7 @@ public interface ItemFactory {
 
     /**
      * This creates a new item meta for the material.
+     *
      * @param material The material to consider as base for the meta
      * @return a new ItemMeta that could be applied to an item stack of the specified material
      */
@@ -23,6 +24,7 @@ public interface ItemFactory {
     /**
      * This method checks the item meta to confirm that it is applicable (no data lost if applied) to the specified ItemStack.
      * A {@link SkullMeta} would not be valid for a sword, but a normal {@link ItemMeta} from an enchanted dirt block would.
+     *
      * @param meta Meta to check
      * @param stack Item that meta will be applied to
      * @return true if the meta can be applied without losing data, false otherwise
@@ -33,6 +35,7 @@ public interface ItemFactory {
     /**
      * This method checks the item meta to confirm that it is applicable (no data lost if applied) to the specified Material.
      * A {@link SkullMeta} would not be valid for a sword, but a normal {@link ItemMeta} from an enchanted dirt block would.
+     *
      * @param meta Meta to check
      * @param material Material that meta will be applied to
      * @return true if the meta can be applied without losing data, false otherwise
@@ -42,6 +45,7 @@ public interface ItemFactory {
 
     /**
      * This method is used to compare two item meta data objects.
+     *
      * @param meta1 First meta to compare, and may be null to indicate no data
      * @param meta2 Second meta to compare, and may be null to indicate no data
      * @return false if one of the meta has data the other does not, otherwise true
@@ -51,6 +55,7 @@ public interface ItemFactory {
 
     /**
      * Returns an appropriate item meta for the specified stack.
+     *
      * The item meta returned will always be a valid meta for a given item stack of the specified material.
      * It may be a more or less specific meta, and could also be the same meta or meta type as the parameter.
      * The item meta returned will also always be the most appropriate meta. <br>

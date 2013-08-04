@@ -7,7 +7,7 @@ import java.util.concurrent.Callable;
 /**
  * A FixedMetadataValue is a special case metadata item that contains the same value forever after initialization.
  * Invalidating a FixedMetadataValue has no effect.
- *
+ * <p>
  * This class extends LazyMetadataValue for historical reasons, even though it overrides all the implementation
  * methods. it is possible that in the future that the inheritance hierarchy may change.
  */

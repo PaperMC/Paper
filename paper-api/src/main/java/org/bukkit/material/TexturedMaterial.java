@@ -62,6 +62,7 @@ public abstract class TexturedMaterial extends MaterialData {
 
     /**
      * Get material index from data
+     *
      * @return index of data in textures list
      */
     protected int getTextureIndex() {
@@ -70,6 +71,7 @@ public abstract class TexturedMaterial extends MaterialData {
 
     /**
      * Set material index
+     *
      * @param idx - index of data in textures list
      */
     protected void setTextureIndex(int idx) {

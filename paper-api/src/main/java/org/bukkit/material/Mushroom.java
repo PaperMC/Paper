@@ -52,6 +52,7 @@ public class Mushroom extends MaterialData {
 
     /**
      * Checks whether a face of the block is painted.
+     *
      * @param face The face to check.
      * @return True if it is painted.
      */
@@ -81,6 +82,7 @@ public class Mushroom extends MaterialData {
     /**
      * Set a face of the block to be painted or not. Note that due to the nature of how the data is stored,
      * setting a face painted or not is not guaranteed to leave the other faces unchanged.
+     *
      * @param face The face to paint or unpaint.
      * @param painted True if you want to paint it, false if you want the pores to show.
      */

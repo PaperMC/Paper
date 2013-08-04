@@ -6,6 +6,9 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.BrewerInventory;
 
+/**
+ * Called when the brewing of the contents inside the Brewing Stand is complete.
+ */
 public class BrewEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private BrewerInventory contents;
@@ -16,6 +19,11 @@ public class BrewEvent extends BlockEvent implements Cancellable {
         this.contents = contents;
     }
 
+    /**
+     * Gets the contents of the Brewing Stand.
+     *
+     * @return the contents
+     */
     public BrewerInventory getContents() {
         return contents;
     }

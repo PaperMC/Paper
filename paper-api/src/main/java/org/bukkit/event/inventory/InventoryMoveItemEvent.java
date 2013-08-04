@@ -10,14 +10,14 @@ import org.bukkit.inventory.ItemStack;
 /**
  * Called when some entity or block (e.g. hopper) tries to move items
  * directly from one inventory to another.
- *
+ * <p>
  * When this event is called, the initiator may already have removed the item
  * from the source inventory and is ready to move it into the destination
  * inventory.
- *
+ * <p>
  * If this event is cancelled, the items will be returned to the source
  * inventory, if needed.
- *
+ * <p>
  * If this event is not cancelled, the initiator will try to put the
  * ItemStack into the destination inventory. If this is not possible and the
  * ItemStack has not been modified, the source inventory slot will be

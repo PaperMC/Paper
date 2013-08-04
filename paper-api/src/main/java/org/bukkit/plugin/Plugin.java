@@ -166,7 +166,7 @@ public interface Plugin extends TabExecutor {
 
     /**
      * Returns the name of the plugin.
-     *
+     * <p>
      * This should return the bare name of the plugin and should be used for comparison.
      *
      * @return name of the plugin

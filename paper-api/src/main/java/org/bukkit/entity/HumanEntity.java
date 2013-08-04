@@ -38,6 +38,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
     /**
      * If the player currently has an inventory window open, this method will set a
      * property of that window, such as the state of a progress bar.
+     *
      * @param prop The property.
      * @param value The value to set the property to.
      * @return True if the property was successfully set.
@@ -47,6 +48,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
     /**
      * Gets the inventory view the player is currently viewing. If they do not have
      * an inventory window open, it returns their internal crafting view.
+     *
      * @return The inventory view.
      */
     public InventoryView getOpenInventory();
@@ -54,6 +56,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
     /**
      * Opens an inventory window with the specified inventory on the top and the player's inventory
      * on the bottom.
+     *
      * @param inventory The inventory to open
      * @return The newly opened inventory view
      */
@@ -61,6 +64,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
 
     /**
      * Opens an empty workbench inventory window with the player's inventory on the bottom.
+     *
      * @param location The location to attach it to. If null, the player's location is used.
      * @param force If false, and there is no workbench block at the location, no inventory will be
      * opened and null will be returned.
@@ -70,6 +74,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
 
     /**
      * Opens an empty enchanting inventory window with the player's inventory on the bottom.
+     *
      * @param location The location to attach it to. If null, the player's location is used.
      * @param force If false, and there is no enchanting table at the location, no inventory will be
      * opened and null will be returned.
@@ -78,7 +83,8 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
     public InventoryView openEnchanting(Location location, boolean force);
 
     /**
-     * Opens an inventory window to the specified inventory view
+     * Opens an inventory window to the specified inventory view.
+     *
      * @param inventory The view to open
      */
     public void openInventory(InventoryView inventory);

@@ -608,6 +608,7 @@ public interface Server extends PluginMessageRecipient {
      * Creates an empty inventory of the specified type. If the type is {@link InventoryType#CHEST},
      * the new inventory has a size of 27; otherwise the new inventory has the normal size for
      * its type.
+     *
      * @param owner The holder of the inventory; can be null if there's no holder.
      * @param type The type of inventory to create.
      * @return The new inventory.
@@ -616,6 +617,7 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * Creates an empty inventory of type {@link InventoryType#CHEST} with the specified size.
+     *
      * @param owner The holder of the inventory; can be null if there's no holder.
      * @param size The size of inventory to create; must be a multiple of 9.
      * @return The new inventory.
@@ -625,6 +627,7 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * Creates an empty inventory of type {@link InventoryType#CHEST} with the specified size and title.
+     *
      * @param owner The holder of the inventory; can be null if there's no holder.
      * @param size The size of inventory to create; must be a multiple of 9.
      * @param title The title of the inventory, to be displayed when it is viewed.
@@ -635,24 +638,28 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * Gets user-specified limit for number of monsters that can spawn in a chunk
+     *
      * @return The monster spawn limit
      */
     int getMonsterSpawnLimit();
 
     /**
      * Gets user-specified limit for number of animals that can spawn in a chunk
+     *
      * @return The animal spawn limit
      */
     int getAnimalSpawnLimit();
 
     /**
      * Gets user-specified limit for number of water animals that can spawn in a chunk
+     *
      * @return The water animal spawn limit
      */
     int getWaterAnimalSpawnLimit();
 
     /**
      * Gets user-specified limit for number of ambient mobs that can spawn in a chunk
+     *
      * @return The ambient spawn limit
      */
     int getAmbientSpawnLimit();

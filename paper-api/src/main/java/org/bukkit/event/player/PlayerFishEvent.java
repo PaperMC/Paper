@@ -47,6 +47,7 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
 
     /**
      * Gets the fishing hook.
+     *
      * @return Fish the entity representing the fishing hook/bobber.
      */
     public Fish getHook() {

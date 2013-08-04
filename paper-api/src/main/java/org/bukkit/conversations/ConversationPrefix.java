@@ -10,6 +10,7 @@ public interface ConversationPrefix {
 
     /**
      * Gets the prefix to use before each message to the player.
+     *
      * @param context Context information about the conversation.
      * @return The prefix text.
      */

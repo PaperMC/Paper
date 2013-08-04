@@ -15,6 +15,7 @@ public class PluginLogger extends Logger {
 
     /**
      * Creates a new PluginLogger that extracts the name from a plugin.
+     *
      * @param context A reference to the plugin
      */
     public PluginLogger(Plugin context) {

@@ -11,6 +11,7 @@ public abstract class MessagePrompt implements Prompt{
 
     /**
      * Message prompts never wait for user input before continuing.
+     *
      * @param context Context information about the conversation.
      * @return Always false.
      */
@@ -20,6 +21,7 @@ public abstract class MessagePrompt implements Prompt{
 
     /**
      * Accepts and ignores any user input, returning the next prompt in the prompt graph instead.
+     *
      * @param context Context information about the conversation.
      * @param input Ignored.
      * @return The next prompt in the prompt graph.
@@ -30,6 +32,7 @@ public abstract class MessagePrompt implements Prompt{
 
     /**
      * Override this method to return the next prompt in the prompt graph.
+     *
      * @param context Context information about the conversation.
      * @return The next prompt in the prompt graph.
      */

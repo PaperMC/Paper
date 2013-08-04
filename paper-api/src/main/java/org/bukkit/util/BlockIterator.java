@@ -14,7 +14,6 @@ import java.util.NoSuchElementException;
 /**
  * This class performs ray tracing and iterates along blocks on a line
  */
-
 public class BlockIterator implements Iterator<Block> {
 
     private final World world;
@@ -49,7 +48,6 @@ public class BlockIterator implements Iterator<Block> {
      * @param maxDistance This is the maximum distance in blocks for the trace. Setting this value above 140 may lead to problems with unloaded chunks. A value of 0 indicates no limit
      *
      */
-
     public BlockIterator(World world, Vector start, Vector direction, double yOffset, int maxDistance) {
         this.world = world;
         this.maxDistance = maxDistance;
@@ -224,9 +222,7 @@ public class BlockIterator implements Iterator<Block> {
      * @param loc The location for the start of the ray trace
      * @param yOffset The trace begins vertically offset from the start vector by this value
      * @param maxDistance This is the maximum distance in blocks for the trace. Setting this value above 140 may lead to problems with unloaded chunks. A value of 0 indicates no limit
-     *
      */
-
     public BlockIterator(Location loc, double yOffset, int maxDistance) {
         this(loc.getWorld(), loc.toVector(), loc.getDirection(), yOffset, maxDistance);
     }
@@ -257,7 +253,6 @@ public class BlockIterator implements Iterator<Block> {
      *
      * @param entity Information from the entity is used to set up the trace
      * @param maxDistance This is the maximum distance in blocks for the trace. Setting this value above 140 may lead to problems with unloaded chunks. A value of 0 indicates no limit
-     *
      */
 
     public BlockIterator(LivingEntity entity, int maxDistance) {

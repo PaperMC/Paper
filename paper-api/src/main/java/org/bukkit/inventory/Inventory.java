@@ -38,6 +38,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * <li>Stacks larger than the default max size for this type of inventory may not display
      * correctly in the client.
      * </ul>
+     *
      * @param size The new maximum stack size for items in this inventory.
      */
     public void setMaxStackSize(int size);

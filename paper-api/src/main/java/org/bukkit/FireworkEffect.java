@@ -54,6 +54,7 @@ public final class FireworkEffect implements ConfigurationSerializable {
 
     /**
      * This is a builder for FireworkEffects.
+     *
      * @see FireworkEffect#builder()
      */
     public static final class Builder {

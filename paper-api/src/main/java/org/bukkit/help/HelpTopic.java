@@ -5,11 +5,11 @@ import org.bukkit.entity.Player;
 
 /**
  * HelpTopic implementations are displayed to the user when the user uses the /help command.
- *
+ * <p>
  * Custom implementations of this class can work at two levels. A simple implementation only
  * needs to set the value of {@code name}, {@code shortText}, and {@code fullText} int the
  * constructor. This base class will take care of the rest.
- *
+ * <p>
  * Complex implementations can be created by overriding the behavior of all the methods in
  * this class.
  */
@@ -32,6 +32,7 @@ public abstract class HelpTopic {
      * Allows the server administrator to override the permission required to see a help topic. HelpTopic
      * implementations should take this into account when determining topic visibility on the
      * {@link HelpTopic#canSee(org.bukkit.command.CommandSender)} function.
+     *
      * @param amendedPermission The permission node the server administrator wishes to apply to this topic.
      */
     public void amendCanSee(String amendedPermission) {
@@ -40,6 +41,7 @@ public abstract class HelpTopic {
 
     /**
      * Returns the name of this help topic.
+     *
      * @return The topic name.
      */
     public String getName() {
@@ -48,6 +50,7 @@ public abstract class HelpTopic {
 
     /**
      * Returns a brief description that will be displayed in the topic index.
+     *
      * @return A brief topic description.
      */
     public String getShortText() {
@@ -88,7 +91,6 @@ public abstract class HelpTopic {
      *
      * @param baseText The existing text of the help topic.
      * @param amendment The amending text from the amendTopic() method.
-     *
      * @return The application of the amending text to the existing text, according to the expected rules of
      * amendTopic().
      */

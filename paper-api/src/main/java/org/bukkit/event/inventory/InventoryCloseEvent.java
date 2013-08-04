@@ -17,6 +17,7 @@ public class InventoryCloseEvent extends InventoryEvent {
 
     /**
      * Returns the player involved in this event
+     *
      * @return Player who is involved in this event
      */
     public final HumanEntity getPlayer() {

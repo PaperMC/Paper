@@ -15,6 +15,7 @@ public abstract class FixedSetPrompt extends ValidatingPrompt {
     /**
      * Creates a FixedSetPrompt from a set of strings.
      * foo = new FixedSetPrompt("bar", "cheese", "panda");
+     *
      * @param fixedSet A fixed set of strings, one of which the user must type.
      */
     public FixedSetPrompt(String... fixedSet) {
@@ -31,7 +32,7 @@ public abstract class FixedSetPrompt extends ValidatingPrompt {
 
     /**
      * Utility function to create a formatted string containing all the options declared in the constructor.
-     * 
+     *
      * @return the options formatted like "[bar, cheese, panda]" if bar, cheese, and panda were the options used
      */
     protected String formatFixedSet() {

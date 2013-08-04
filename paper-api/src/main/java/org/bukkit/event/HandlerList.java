@@ -193,7 +193,6 @@ public class HandlerList {
      * Get a specific plugin's registered listeners associated with this handler list
      *
      * @param plugin the plugin to get the listeners of
-     *
      * @return the list of registered listeners
      */
     public static ArrayList<RegisteredListener> getRegisteredListeners(Plugin plugin) {

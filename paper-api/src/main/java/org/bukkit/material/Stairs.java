@@ -90,6 +90,7 @@ public class Stairs extends MaterialData implements Directional {
 
     /**
      * Test if step is inverted
+     *
      * @return true if inverted (top half), false if normal (bottom half)
      */
     public boolean isInverted() {
@@ -98,6 +99,7 @@ public class Stairs extends MaterialData implements Directional {
 
     /**
      * Set step inverted state
+     *
      * @param inv - true if step is inverted (top half), false if step is normal (bottom half)
      */
     public void setInverted(boolean inv) {

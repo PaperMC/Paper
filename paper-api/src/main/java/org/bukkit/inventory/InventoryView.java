@@ -6,7 +6,7 @@ import org.bukkit.event.inventory.InventoryType;
 /**
  * Represents a view linking two inventories and a single player
  * (whose inventory may or may not be one of the two)
- *
+ * <p>
  * Note: If you implement this interface but fail to satisfy the expected
  * contracts of certain methods, there's no guarantee that the game
  * will work as it should.
@@ -62,18 +62,21 @@ public abstract class InventoryView {
     }
     /**
      * Get the upper inventory involved in this transaction.
+     *
      * @return the inventory
      */
     public abstract Inventory getTopInventory();
 
     /**
      * Get the lower inventory involved in this transaction.
+     *
      * @return the inventory
      */
     public abstract Inventory getBottomInventory();
 
     /**
      * Get the player viewing.
+     *
      * @return the player
      */
     public abstract HumanEntity getPlayer();
@@ -82,6 +85,7 @@ public abstract class InventoryView {
      * Determine the type of inventory involved in the transaction. This indicates
      * the window style being shown. It will never return PLAYER, since that is
      * common to all windows.
+     *
      * @return the inventory type
      */
     public abstract InventoryType getType();
@@ -91,6 +95,7 @@ public abstract class InventoryView {
      * <p>
      * Note: If slot ID -999 is chosen, it may be expected that the item is
      * dropped on the ground. This is not required behaviour, however.
+     *
      * @param slot The ID as returned by InventoryClickEvent.getRawSlot()
      * @param item The new item to put in the slot, or null to clear it.
      */
@@ -108,6 +113,7 @@ public abstract class InventoryView {
 
     /**
      * Gets one item in this inventory view by its raw slot ID.
+     *
      * @param slot The ID as returned by InventoryClickEvent.getRawSlot()
      * @return The item currently in the slot.
      */
@@ -124,6 +130,7 @@ public abstract class InventoryView {
 
     /**
      * Sets the item on the cursor of one of the viewing players.
+     *
      * @param item The item to put on the cursor, or null to remove the item on their cursor.
      */
     public final void setCursor(ItemStack item) {
@@ -132,6 +139,7 @@ public abstract class InventoryView {
 
     /**
      * Get the item on the cursor of one of the viewing players.
+     *
      * @return The item on the player's cursor, or null if they aren't holding one.
      */
     public final ItemStack getCursor() {
@@ -144,6 +152,7 @@ public abstract class InventoryView {
      * unchanged and thus be suitable for getTopInventory().getItem(); if it refers to the
      * lower inventory, the output will differ from the input and be suitable for
      * getBottomInventory().getItem().
+     *
      * @param rawSlot The raw slot ID.
      * @return The converted slot ID.
      */
@@ -173,18 +182,29 @@ public abstract class InventoryView {
      * Check the total number of slots in this view, combining the upper and lower inventories.
      * Note though that it's possible for this to be greater than the sum of the two inventories
      * if for example some slots are not being used.
+     *
      * @return The total size
      */
     public final int countSlots() {
         return getTopInventory().getSize() + getBottomInventory().getSize();
     }
 
+    /**
+     * Sets an extra property of this inventory if supported by that
+     * inventory, for example the state of a progress bar.
+     *
+     * @param prop the window property to update
+     * @param value the new value for the window property
+     * @return true if the property was updated successfully, false if the
+     *     property is not supported by that inventory
+     */
     public final boolean setProperty(Property prop, int value) {
         return getPlayer().setWindowProperty(prop, value);
     }
 
     /**
      * Get the title of this inventory window.
+     *
      * @return The title.
      */
     public final String getTitle() {

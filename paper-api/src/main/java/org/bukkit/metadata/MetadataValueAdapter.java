@@ -8,11 +8,10 @@ import org.bukkit.util.NumberConversions;
 
 /**
  * Optional base class for facilitating MetadataValue implementations.
- *
+ * <p>
  * This provides all the conversion functions for MetadataValue
  * so that writing an implementation of MetadataValue is as simple
  * as implementing value() and invalidate().
- *
  */
 public abstract class MetadataValueAdapter implements MetadataValue {
     protected final WeakReference<Plugin> owningPlugin;

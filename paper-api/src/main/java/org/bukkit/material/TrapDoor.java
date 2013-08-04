@@ -45,6 +45,7 @@ public class TrapDoor extends SimpleAttachableMaterialData implements Openable {
 
     /**
      * Test if trapdoor is inverted
+     *
      * @return true if inverted (top half), false if normal (bottom half)
      */
     public boolean isInverted() {
@@ -53,6 +54,7 @@ public class TrapDoor extends SimpleAttachableMaterialData implements Openable {
 
     /**
      * Set trapdoor inverted state
+     *
      * @param inv - true if inverted (top half), false if normal (bottom half)
      */
     public void setInverted(boolean inv) {

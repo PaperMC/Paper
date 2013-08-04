@@ -305,7 +305,7 @@ public interface LivingEntity extends Entity, Damageable {
     public void setRemoveWhenFarAway(boolean remove);
 
     /**
-     *  Gets the inventory with the equipment worn by the living entity.
+     * Gets the inventory with the equipment worn by the living entity.
      *
      * @return the living entity's inventory
      */

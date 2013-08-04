@@ -14,6 +14,7 @@ public interface Prompt extends Cloneable {
 
     /**
      * Gets the text to display to the user when this prompt is first presented.
+     *
      * @param context Context information about the conversation.
      * @return The text to display.
      */
@@ -21,6 +22,7 @@ public interface Prompt extends Cloneable {
 
     /**
      * Checks to see if this prompt implementation should wait for user input or immediately display the next prompt.
+     *
      * @param context Context information about the conversation.
      * @return If true, the {@link Conversation} will wait for input before continuing.
      */
@@ -28,6 +30,7 @@ public interface Prompt extends Cloneable {
 
     /**
      * Accepts and processes input from the user. Using the input, the next Prompt in the prompt graph is returned.
+     *
      * @param context Context information about the conversation.
      * @param input The input text from the user.
      * @return The next Prompt in the prompt graph.

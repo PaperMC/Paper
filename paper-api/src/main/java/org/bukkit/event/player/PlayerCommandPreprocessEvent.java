@@ -109,6 +109,7 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
      * The set returned is not guaranteed to be mutable and may auto-populate on access.
      * Any listener accessing the returned set should be aware that it may reduce performance for a lazy set implementation.
      * Listeners should be aware that modifying the list may throw {@link UnsupportedOperationException} if the event caller provides an unmodifiable set.
+     *
      * @deprecated This method is provided for backward compatibility with no guarantee to the effect of viewing or modifying the set.
      * @return All Players who will see this chat message
      */

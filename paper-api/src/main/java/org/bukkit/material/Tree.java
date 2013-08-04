@@ -77,6 +77,7 @@ public class Tree extends MaterialData {
     }
     /**
      * Set direction of the log
+     *
      * @param dir - direction of end of log (BlockFace.SELF for no direction)
      */
     public void setDirection(BlockFace dir) {

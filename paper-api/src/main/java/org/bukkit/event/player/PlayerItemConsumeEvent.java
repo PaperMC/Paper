@@ -22,7 +22,6 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
     private ItemStack item;
 
     /**
-     *
      * @param player the player consuming
      * @param item the ItemStack being consumed
      */

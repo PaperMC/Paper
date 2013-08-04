@@ -16,12 +16,13 @@ import org.bukkit.block.Block;
 public abstract class ChunkGenerator {
     /**
      * Interface to biome data for chunk to be generated: initialized with default values for world type and seed.
-     *
+     * <p>
      * Custom generator is free to access and tailor values during generateBlockSections() or generateExtBlockSections().
      */
     public interface BiomeGrid {
         /**
          * Get biome at x, z within chunk being generated
+         *
          * @param x - 0-15
          * @param z - 0-15
          * @return Biome value
