@@ -1,4 +1,4 @@
-From 4f18b70047255bbd18202656c6e95333ec9cac58 Mon Sep 17 00:00:00 2001
+From f0b905b9c4e67f0594a46c19bcab3f9d70984fcb Mon Sep 17 00:00:00 2001
 From: Phillip Schichtel <quick_wango@code-infection.de>
 Date: Fri, 5 Jul 2013 21:55:00 +1000
 Subject: [PATCH] Console Command Completion
@@ -13,7 +13,7 @@ This commit implements tab completion in the console by providing the
 ConsoleReader with a Completer implementation.
 
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 971cfa5..7cf2a94 100644
+index c4fc9d0..de4a430 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -17,6 +17,7 @@ import java.util.Map.Entry;
@@ -34,7 +34,7 @@ index 971cfa5..7cf2a94 100644
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java b/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
 new file mode 100644
-index 0000000..b108bd1
+index 0000000..a889ff3
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
 @@ -0,0 +1,46 @@
@@ -56,26 +56,26 @@ index 0000000..b108bd1
 +    }
 +
 +    public int complete(final String buffer, final int cursor, final List<CharSequence> candidates) {
-+        Waitable<Integer> waitable = new Waitable<Integer>() {
++        Waitable<List<String>> waitable = new Waitable<List<String>>() {
 +            @Override
-+            protected Integer evaluate() {
-+                List<String> offers = server.getCommandMap().tabComplete(server.getConsoleSender(), buffer);
-+                if (offers == null) {
-+                    return cursor;
-+                }
-+                candidates.addAll(offers);
-+
-+                final int lastSpace = buffer.lastIndexOf(' ');
-+                if (lastSpace == -1) {
-+                    return cursor - buffer.length();
-+                } else {
-+                    return cursor - (buffer.length() - lastSpace - 1);
-+                }
++            protected List<String> evaluate() {
++                return server.getCommandMap().tabComplete(server.getConsoleSender(), buffer);
 +            }
 +        };
 +        this.server.getServer().processQueue.add(waitable);
 +        try {
-+            return waitable.get();
++            List<String> offers = waitable.get();
++            if (offers == null) {
++                return cursor;
++            }
++            candidates.addAll(offers);
++
++            final int lastSpace = buffer.lastIndexOf(' ');
++            if (lastSpace == -1) {
++                return cursor - buffer.length();
++            } else {
++                return cursor - (buffer.length() - lastSpace - 1);
++            }
 +        } catch (ExecutionException e) {
 +            this.server.getLogger().log(Level.WARNING, "Unhandled exception when tab completing", e);
 +        } catch (InterruptedException e) {
