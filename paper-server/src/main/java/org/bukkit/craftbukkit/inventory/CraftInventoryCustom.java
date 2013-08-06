@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.inventory;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
@@ -43,6 +44,8 @@ public class CraftInventoryCustom extends CraftInventory {
         }
 
         public MinecraftInventory(InventoryHolder owner, int size, String title) {
+            Validate.notNull(title, "Title cannot be null");
+            Validate.isTrue(title.length() <= 32, "Title cannot be longer than 32 characters");
             this.items = new ItemStack[size];
             this.title = title;
             this.viewers = new ArrayList<HumanEntity>();
