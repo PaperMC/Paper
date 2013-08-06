@@ -5,6 +5,7 @@ import java.util.UUID;
 // CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.entity.EntityTargetEvent;
+import org.bukkit.event.entity.EntityUnleashEvent;
 // CraftBukkit end
 
 public abstract class EntityCreature extends EntityInsentient {
@@ -264,7 +265,7 @@ public abstract class EntityCreature extends EntityInsentient {
 
             if (this instanceof EntityTameableAnimal && ((EntityTameableAnimal) this).isSitting()) {
                 if (f > 10.0F) {
-                    this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.entity.EntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.DISTANCE)); // CraftBukkit
+                    this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE)); // CraftBukkit
                     this.a(true, true);
                 }
 
@@ -293,6 +294,7 @@ public abstract class EntityCreature extends EntityInsentient {
             }
 
             if (f > 10.0F) {
+                this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE)); // CraftBukkit
                 this.a(true, true);
             }
         } else if (!this.bH() && this.bt) {
