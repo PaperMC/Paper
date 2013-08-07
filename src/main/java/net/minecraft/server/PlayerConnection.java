@@ -715,14 +715,6 @@ public class PlayerConnection extends Connection {
             if (i == 1 && !packet3chat.isServer()) {
                 return;
             }
-
-            // CraftBukkit start
-            String message = packet3chat.message;
-            for (final String line : org.bukkit.craftbukkit.TextWrapper.wrapText(message)) {
-                this.networkManager.queue(new Packet3Chat(line));
-            }
-            return;
-            // CraftBukkit end
         }
 
         // CraftBukkit start
@@ -830,7 +822,7 @@ public class PlayerConnection extends Connection {
 
                 // CraftBukkit start
                 if (this.player.getChatFlags() == 1 && !s.startsWith("/")) {
-                    this.sendPacket(new Packet3Chat("Cannot send chat message."));
+                    this.sendPacket(new Packet3Chat(ChatMessage.e("chat.cannotSend").a(EnumChatFormat.RED)));
                     return;
                 }
 
