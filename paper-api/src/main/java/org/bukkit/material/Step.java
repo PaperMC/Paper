@@ -17,6 +17,8 @@ public class Step extends TexturedMaterial {
         textures.add(Material.COBBLESTONE);
         textures.add(Material.BRICK);
         textures.add(Material.SMOOTH_BRICK);
+        textures.add(Material.NETHER_BRICK);
+        textures.add(Material.QUARTZ_BLOCK);
     }
 
     public Step() {
