@@ -316,20 +316,17 @@ public class ItemStackTest extends AbstractTestingBase {
     static final Material[] COMPOUND_MATERIALS;
     static final int NAME_PARAMETER = 2;
     static {
-        COMPOUND_MATERIALS = new Object() { // Workaround for JDK5
-            Material[] value() {
-                final ItemFactory factory = CraftItemFactory.instance();
-                final Map<Class<? extends ItemMeta>, Material> possibleMaterials = new HashMap<Class<? extends ItemMeta>, Material>();
-                for (final Material material : Material.values()) {
-                    final ItemMeta meta = factory.getItemMeta(material);
-                    if (meta == null || possibleMaterials.containsKey(meta.getClass()))
-                        continue;
-                    possibleMaterials.put(meta.getClass(), material);
+        final ItemFactory factory = CraftItemFactory.instance();
+        final Map<Class<? extends ItemMeta>, Material> possibleMaterials = new HashMap<Class<? extends ItemMeta>, Material>();
+        ItemMeta meta;
+        for (final Material material : Material.values()) {
+            meta = factory.getItemMeta(material);
+            if (meta == null || possibleMaterials.containsKey(meta.getClass()))
+                continue;
+            possibleMaterials.put(meta.getClass(), material);
 
-                }
-                return possibleMaterials.values().toArray(new Material[possibleMaterials.size()]);
-            }
-        }.value();
+        }
+        COMPOUND_MATERIALS = possibleMaterials.values().toArray(new Material[possibleMaterials.size()]);
     }
 
     @Parameter(0) public StackProvider provider;
