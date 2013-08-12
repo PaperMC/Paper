@@ -295,6 +295,7 @@ public class CraftingManager {
                 }
             }
 
+            inventorycrafting.currentRecipe = null; // CraftBukkit - Clear recipe when no recipe is found
             return null;
         }
     }
