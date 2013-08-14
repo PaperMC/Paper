@@ -6,13 +6,13 @@ import static org.hamcrest.Matchers.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 import net.minecraft.server.CommandAbstract;
 import net.minecraft.server.IAttribute;
+
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;
 
@@ -20,9 +20,9 @@ public class ItemFactoryTest extends AbstractTestingBase {
 
     @Test
     public void testKnownAttributes() throws Throwable {
-        final ZipFile nmsZipFile = new ZipFile(CommandAbstract.class /* Magic class that isn't imported! */.getProtectionDomain().getCodeSource().getLocation().getFile());
+        final ZipInputStream nmsZipStream = new ZipInputStream(CommandAbstract.class/* Magic class that isn't imported! */.getProtectionDomain().getCodeSource().getLocation().openStream());
         final Collection<String> names = new HashSet<String>();
-        for (final ZipEntry clazzEntry : Collections.list(nmsZipFile.entries())) {
+        for (ZipEntry clazzEntry; (clazzEntry = nmsZipStream.getNextEntry()) != null; ) {
             final String entryName = clazzEntry.getName();
             if (!(entryName.endsWith(".class") && entryName.startsWith("net/minecraft/server/"))) {
                 continue;
@@ -39,6 +39,8 @@ public class ItemFactoryTest extends AbstractTestingBase {
                 }
             }
         }
+
+        nmsZipStream.close();
 
         assertThat("Extra values detected", CraftItemFactory.KNOWN_NBT_ATTRIBUTE_NAMES, is(names));
     }
