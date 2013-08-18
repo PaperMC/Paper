@@ -55,6 +55,7 @@ public abstract class PlayerList {
     public PlayerList(MinecraftServer minecraftserver) {
         minecraftserver.server = new CraftServer(minecraftserver, this);
         minecraftserver.console = org.bukkit.craftbukkit.command.ColouredConsoleSender.getInstance();
+        minecraftserver.reader.addCompleter(new org.bukkit.craftbukkit.command.ConsoleCommandCompleter(minecraftserver.server));
         this.cserver = minecraftserver.server;
         // CraftBukkit end
 
