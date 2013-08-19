@@ -53,7 +53,7 @@ public class EntityLightning extends EntityWeather {
                 if (world.getTypeId(j, k, l) == 0 && Block.FIRE.canPlace(world, j, k, l)) {
                     // CraftBukkit start
                     if (!CraftEventFactory.callBlockIgniteEvent(world, j, k, l, this).isCancelled()) {
-                        world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
+                        world.setTypeIdUpdate(j, k, l, Block.FIRE.id);
                     }
                     // CraftBukkit end
                 }
