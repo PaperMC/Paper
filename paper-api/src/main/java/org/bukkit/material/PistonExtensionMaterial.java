@@ -7,6 +7,11 @@ import org.bukkit.block.BlockFace;
  * Material data for the piston extension block
  */
 public class PistonExtensionMaterial extends MaterialData implements Attachable {
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public PistonExtensionMaterial(final int type) {
         super(type);
     }
@@ -15,10 +20,20 @@ public class PistonExtensionMaterial extends MaterialData implements Attachable 
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public PistonExtensionMaterial(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public PistonExtensionMaterial(final Material type, final byte data) {
         super(type, data);
     }

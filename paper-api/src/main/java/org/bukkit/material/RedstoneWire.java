@@ -10,6 +10,11 @@ public class RedstoneWire extends MaterialData implements Redstone {
         super(Material.REDSTONE_WIRE);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public RedstoneWire(final int type) {
         super(type);
     }
@@ -18,10 +23,20 @@ public class RedstoneWire extends MaterialData implements Redstone {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public RedstoneWire(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public RedstoneWire(final Material type, final byte data) {
         super(type, data);
     }

@@ -16,6 +16,11 @@ public class FlowerPot extends MaterialData {
         super(Material.FLOWER_POT);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public FlowerPot(final int type) {
         super(type);
     }
@@ -24,10 +29,20 @@ public class FlowerPot extends MaterialData {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public FlowerPot(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public FlowerPot(final Material type, final byte data) {
         super(type, data);
     }

@@ -39,7 +39,9 @@ public class Note {
          * Returns the not sharped id of this tone.
          *
          * @return the not sharped id of this tone.
+         * @deprecated Magic value
          */
+        @Deprecated
         public byte getId() {
             return getId(false);
         }
@@ -51,7 +53,9 @@ public class Note {
          *
          * @param sharped Set to true to return the sharped id.
          * @return the id of this tone.
+         * @deprecated Magic value
          */
+        @Deprecated
         public byte getId(boolean sharped) {
             byte id = (byte) (sharped && sharpable ? this.id + 1 : this.id);
 
@@ -73,7 +77,9 @@ public class Note {
          * @param id the id of the tone.
          * @return if the tone id is the sharped id of the tone.
          * @throws IllegalArgumentException if neither the tone nor the semitone have the id.
+         * @deprecated Magic value
          */
+        @Deprecated
         public boolean isSharped(byte id) {
             if (id == getId(false)) {
                 return false;
@@ -90,7 +96,9 @@ public class Note {
          *
          * @param id the id of the tone.
          * @return the tone to id.
+         * @deprecated Magic value
          */
+        @Deprecated
         public static Tone getById(byte id) {
             return BY_DATA.get(id);
         }
@@ -197,7 +205,9 @@ public class Note {
      * Returns the internal id of this note.
      *
      * @return the internal id of this note.
+     * @deprecated Magic value
      */
+    @Deprecated
     public byte getId() {
         return note;
     }

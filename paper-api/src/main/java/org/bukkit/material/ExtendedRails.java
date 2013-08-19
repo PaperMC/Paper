@@ -7,6 +7,11 @@ import org.bukkit.block.BlockFace;
  * This is the superclass for the {@link DetectorRail} and {@link PoweredRail} classes
  */
 public class ExtendedRails extends Rails {
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public ExtendedRails(final int type) {
         super(type);
     }
@@ -15,10 +20,20 @@ public class ExtendedRails extends Rails {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public ExtendedRails(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public ExtendedRails(final Material type, final byte data) {
         super(type, data);
     }
@@ -28,6 +43,11 @@ public class ExtendedRails extends Rails {
         return false;
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     @Override
     protected byte getConvertedData() {
         return (byte) (getData() & 0x7);

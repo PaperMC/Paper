@@ -36,7 +36,9 @@ public interface ChunkSnapshot {
      * @param y 0-127
      * @param z 0-15
      * @return 0-255
+     * @deprecated Magic value
      */
+    @Deprecated
     int getBlockTypeId(int x, int y, int z);
 
     /**
@@ -46,7 +48,9 @@ public interface ChunkSnapshot {
      * @param y 0-127
      * @param z 0-15
      * @return 0-15
+     * @deprecated Magic value
      */
+    @Deprecated
     int getBlockData(int x, int y, int z);
 
     /**

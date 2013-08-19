@@ -10,6 +10,11 @@ public class RedstoneTorch extends Torch implements Redstone {
         super(Material.REDSTONE_TORCH_ON);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public RedstoneTorch(final int type) {
         super(type);
     }
@@ -18,10 +23,20 @@ public class RedstoneTorch extends Torch implements Redstone {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public RedstoneTorch(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public RedstoneTorch(final Material type, final byte data) {
         super(type, data);
     }

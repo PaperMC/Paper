@@ -23,6 +23,8 @@ public interface PotionBrewer {
      *
      * @param damage The data value of the potion
      * @return The list of effects
+     * @deprecated Magic value
      */
+    @Deprecated
     public Collection<PotionEffect> getEffectsFromDamage(int damage);
 }

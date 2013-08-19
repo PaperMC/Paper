@@ -53,7 +53,9 @@ public enum Achievement {
      * Note that this is offset using {@link #STATISTIC_OFFSET}
      *
      * @return ID of this achievement
+     * @deprecated Magic value
      */
+    @Deprecated
     public int getId() {
         return id;
     }
@@ -65,7 +67,9 @@ public enum Achievement {
      *
      * @param id ID of the achievement to return
      * @return Achievement with the given ID
+     * @deprecated Magic value
      */
+    @Deprecated
     public static Achievement getById(int id) {
         return BY_ID.get(id);
     }

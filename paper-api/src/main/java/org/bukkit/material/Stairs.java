@@ -8,6 +8,11 @@ import org.bukkit.block.BlockFace;
  */
 public class Stairs extends MaterialData implements Directional {
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Stairs(final int type) {
         super(type);
     }
@@ -16,10 +21,20 @@ public class Stairs extends MaterialData implements Directional {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Stairs(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Stairs(final Material type, final byte data) {
         super(type, data);
     }

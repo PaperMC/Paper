@@ -42,7 +42,9 @@ public interface BlockState extends Metadatable {
      * Gets the type-id of this block
      *
      * @return block type-id
+     * @deprecated Magic value
      */
+    @Deprecated
     int getTypeId();
 
     /**
@@ -121,7 +123,9 @@ public interface BlockState extends Metadatable {
      *
      * @param type Type-Id to change this block to
      * @return Whether it worked?
+     * @deprecated Magic value
      */
+    @Deprecated
     boolean setTypeId(int type);
 
     /**
@@ -172,11 +176,15 @@ public interface BlockState extends Metadatable {
 
     /**
      * @return The data as a raw byte.
+     * @deprecated Magic value
      */
+    @Deprecated
     public byte getRawData();
 
     /**
      * @param data The new data value for the block.
+     * @deprecated Magic value
      */
+    @Deprecated
     public void setRawData(byte data);
 }

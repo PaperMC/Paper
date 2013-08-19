@@ -22,6 +22,11 @@ public class SmoothBrick extends TexturedMaterial {
         super(Material.SMOOTH_BRICK);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public SmoothBrick(final int type) {
         super(type);
     }
@@ -33,10 +38,20 @@ public class SmoothBrick extends TexturedMaterial {
         }
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public SmoothBrick(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public SmoothBrick(final Material type, final byte data) {
         super(type, data);
     }

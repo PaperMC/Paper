@@ -16,6 +16,11 @@ public class Crops extends MaterialData {
         setState(state);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Crops(final int type) {
         super(type);
     }
@@ -24,10 +29,20 @@ public class Crops extends MaterialData {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Crops(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Crops(final Material type, final byte data) {
         super(type, data);
     }

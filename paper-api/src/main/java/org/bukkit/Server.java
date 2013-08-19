@@ -36,6 +36,7 @@ import org.bukkit.inventory.meta.ItemMeta;
  * Represents a server implementation
  */
 public interface Server extends PluginMessageRecipient {
+
     /**
      * Used for all administrative messages, such as an operator using a command.
      * <p>
@@ -356,7 +357,9 @@ public interface Server extends PluginMessageRecipient {
      *
      * @param id ID of the map to get.
      * @return The MapView if it exists, or null otherwise.
+     * @deprecated Magic value
      */
+    @Deprecated
     public MapView getMap(short id);
 
     /**

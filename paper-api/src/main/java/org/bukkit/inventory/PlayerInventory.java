@@ -119,7 +119,9 @@ public interface PlayerInventory extends Inventory {
      * @param id the id of the item you want to clear from the inventory
      * @param data the data of the item you want to clear from the inventory
      * @return The number of items cleared
+     * @deprecated Magic value
      */
+    @Deprecated
     public int clear(int id, int data);
 
     public HumanEntity getHolder();

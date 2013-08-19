@@ -12,6 +12,11 @@ public class Rails extends MaterialData {
         super(Material.RAILS);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Rails(final int type) {
         super(type);
     }
@@ -20,10 +25,20 @@ public class Rails extends MaterialData {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Rails(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Rails(final Material type, final byte data) {
         super(type, data);
     }
@@ -99,7 +114,9 @@ public class Rails extends MaterialData {
      * Return the data without the extended properties used by {@link PoweredRail} and {@link DetectorRail}. Overridden in {@link ExtendedRails}
      *
      * @return the data without the extended part
+     * @deprecated Magic value
      */
+    @Deprecated
     protected byte getConvertedData() {
         return getData();
     }

@@ -11,6 +11,11 @@ public class Sign extends MaterialData implements Attachable {
         super(Material.SIGN_POST);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Sign(final int type) {
         super(type);
     }
@@ -19,10 +24,20 @@ public class Sign extends MaterialData implements Attachable {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Sign(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Sign(final Material type, final byte data) {
         super(type, data);
     }

@@ -133,7 +133,9 @@ public abstract class Enchantment {
      * Gets the unique ID of this enchantment
      *
      * @return Unique ID
+     * @deprecated Magic value
      */
+    @Deprecated
     public int getId() {
         return id;
     }
@@ -248,7 +250,9 @@ public abstract class Enchantment {
      *
      * @param id ID to fetch
      * @return Resulting Enchantment, or null if not found
+     * @deprecated Magic value
      */
+    @Deprecated
     public static Enchantment getById(int id) {
         return byId.get(id);
     }

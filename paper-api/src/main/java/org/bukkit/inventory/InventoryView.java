@@ -56,6 +56,11 @@ public abstract class InventoryView {
             return style;
         }
 
+        /**
+         *
+         * @deprecated Magic value
+         */
+        @Deprecated
         public int getId() {
             return id;
         }

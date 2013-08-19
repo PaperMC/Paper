@@ -16,6 +16,11 @@ public class Sandstone extends MaterialData {
         setType(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Sandstone(final int type) {
         super(type);
     }
@@ -24,10 +29,20 @@ public class Sandstone extends MaterialData {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Sandstone(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Sandstone(final Material type, final byte data) {
         super(type, data);
     }

@@ -16,8 +16,18 @@ import org.bukkit.event.HandlerList;
 public class BlockCanBuildEvent extends BlockEvent {
     private static final HandlerList handlers = new HandlerList();
     protected boolean buildable;
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     protected int material;
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public BlockCanBuildEvent(final Block block, final int id, final boolean canBuild) {
         super(block);
         buildable = canBuild;
@@ -56,7 +66,9 @@ public class BlockCanBuildEvent extends BlockEvent {
      * Gets the Material ID for the Material that we are trying to place.
      *
      * @return The Material ID for the Material that we are trying to place
+     * @deprecated Magic value
      */
+    @Deprecated
     public int getMaterialId() {
         return material;
     }

@@ -99,7 +99,9 @@ public enum Effect {
      * Gets the ID for this effect.
      *
      * @return ID of this effect
+     * @deprecated Magic value
      */
+    @Deprecated
     public int getId() {
         return this.id;
     }
@@ -123,7 +125,9 @@ public enum Effect {
      *
      * @param id ID of the Effect to return
      * @return Effect with the given ID
+     * @deprecated Magic value
      */
+    @Deprecated
     public static Effect getById(int id) {
         return BY_ID.get(id);
     }

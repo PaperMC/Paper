@@ -7,6 +7,11 @@ import org.bukkit.block.BlockFace;
  * Represents a furnace or a dispenser.
  */
 public class DirectionalContainer extends MaterialData implements Directional {
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public DirectionalContainer(final int type) {
         super(type);
     }
@@ -15,10 +20,20 @@ public class DirectionalContainer extends MaterialData implements Directional {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public DirectionalContainer(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public DirectionalContainer(final Material type, final byte data) {
         super(type, data);
     }

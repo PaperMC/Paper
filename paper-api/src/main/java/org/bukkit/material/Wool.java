@@ -16,6 +16,11 @@ public class Wool extends MaterialData implements Colorable {
         setColor(color);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Wool(final int type) {
         super(type);
     }
@@ -24,10 +29,20 @@ public class Wool extends MaterialData implements Colorable {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Wool(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Wool(final Material type, final byte data) {
         super(type, data);
     }

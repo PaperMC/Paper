@@ -256,7 +256,9 @@ public final class Bukkit {
 
     /**
      * @see Server#getMap(short id)
+     * @deprecated Magic value
      */
+    @Deprecated
     public static MapView getMap(short id) {
         return server.getMap(id);
     }

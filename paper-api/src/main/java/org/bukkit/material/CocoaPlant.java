@@ -18,10 +18,20 @@ public class CocoaPlant extends MaterialData implements Directional, Attachable 
         super(Material.COCOA);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public CocoaPlant(final int type) {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public CocoaPlant(final int type, final byte data) {
         super(type, data);
     }

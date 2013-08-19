@@ -11,6 +11,11 @@ public class TrapDoor extends SimpleAttachableMaterialData implements Openable {
         super(Material.TRAP_DOOR);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public TrapDoor(final int type) {
         super(type);
     }
@@ -19,10 +24,20 @@ public class TrapDoor extends SimpleAttachableMaterialData implements Openable {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public TrapDoor(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public TrapDoor(final Material type, final byte data) {
         super(type, data);
     }

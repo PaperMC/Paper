@@ -12,6 +12,11 @@ public class WoodenStep extends MaterialData {
         super(Material.WOOD_STEP);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public WoodenStep(final int type) {
         super(type);
     }
@@ -27,10 +32,20 @@ public class WoodenStep extends MaterialData {
         setInverted(inv);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public WoodenStep(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public WoodenStep(final Material type, final byte data) {
         super(type, data);
     }

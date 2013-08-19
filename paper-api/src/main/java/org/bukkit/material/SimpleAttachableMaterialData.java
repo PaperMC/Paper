@@ -8,6 +8,11 @@ import org.bukkit.block.BlockFace;
  */
 public abstract class SimpleAttachableMaterialData extends MaterialData implements Attachable {
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public SimpleAttachableMaterialData(int type) {
         super(type);
     }
@@ -26,10 +31,20 @@ public abstract class SimpleAttachableMaterialData extends MaterialData implemen
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public SimpleAttachableMaterialData(int type, byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public SimpleAttachableMaterialData(Material type, byte data) {
         super(type, data);
     }

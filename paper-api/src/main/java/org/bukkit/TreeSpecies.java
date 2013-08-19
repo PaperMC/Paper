@@ -37,7 +37,9 @@ public enum TreeSpecies {
      * Gets the associated data value representing this species
      *
      * @return A byte containing the data value of this tree species
+     * @deprecated Magic value
      */
+    @Deprecated
     public byte getData() {
         return data;
     }
@@ -48,7 +50,9 @@ public enum TreeSpecies {
      * @param data Data value to fetch
      * @return The {@link TreeSpecies} representing the given value, or null if
      *         it doesn't exist
+     * @deprecated Magic value
      */
+    @Deprecated
     public static TreeSpecies getByData(final byte data) {
         return BY_DATA.get(data);
     }

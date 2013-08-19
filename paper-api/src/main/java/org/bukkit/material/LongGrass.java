@@ -16,6 +16,11 @@ public class LongGrass extends MaterialData {
         setSpecies(species);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public LongGrass(final int type) {
         super(type);
     }
@@ -24,10 +29,20 @@ public class LongGrass extends MaterialData {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public LongGrass(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public LongGrass(final Material type, final byte data) {
         super(type, data);
     }

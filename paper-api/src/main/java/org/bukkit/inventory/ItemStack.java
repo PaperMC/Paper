@@ -30,7 +30,9 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * Defaults stack size to 1, with no extra data
      *
      * @param type item material id
+     * @deprecated Magic value
      */
+    @Deprecated
     public ItemStack(final int type) {
         this(type, 1);
     }
@@ -49,7 +51,9 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      *
      * @param type item material id
      * @param amount stack size
+     * @deprecated Magic value
      */
+    @Deprecated
     public ItemStack(final int type, final int amount) {
         this(type, amount, (short) 0);
     }
@@ -70,7 +74,9 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @param type item material id
      * @param amount stack size
      * @param damage durability / damage
+     * @deprecated Magic value
      */
+    @Deprecated
     public ItemStack(final int type, final int amount, final short damage) {
         this.type = type;
         this.amount = amount;
@@ -163,7 +169,9 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * Gets the type id of this item
      *
      * @return Type Id of the items in this stack
+     * @deprecated Magic value
      */
+    @Deprecated
     public int getTypeId() {
         return type;
     }
@@ -174,7 +182,9 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * Note that in doing so you will reset the MaterialData for this stack
      *
      * @param type New type id to set the items in this stack to
+     * @deprecated Magic value
      */
+    @Deprecated
     public void setTypeId(int type) {
         this.type = type;
         if (this.meta != null) {

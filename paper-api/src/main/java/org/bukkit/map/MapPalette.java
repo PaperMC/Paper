@@ -7,6 +7,9 @@ import java.awt.image.BufferedImage;
 
 /**
  * Represents the palette that map items use.
+ * <p>
+ * These fields are hee base color ranges. Each entry corresponds to four
+ * colors of varying shades with values entry to entry + 3.
  */
 public final class MapPalette {
 
@@ -48,22 +51,74 @@ public final class MapPalette {
 
     // Interface
     /**
-     * The base color ranges. Each entry corresponds to four colors of varying
-     * shades with values entry to entry + 3.
+     * @deprecated Magic value
      */
+    @Deprecated
     public static final byte TRANSPARENT = 0;
+    /**
+     * @deprecated Magic value
+     */
+    @Deprecated
     public static final byte LIGHT_GREEN = 4;
+    /**
+     * @deprecated Magic value
+     */
+    @Deprecated
     public static final byte LIGHT_BROWN = 8;
+    /**
+     * @deprecated Magic value
+     */
+    @Deprecated
     public static final byte GRAY_1 = 12;
+    /**
+     * @deprecated Magic value
+     */
+    @Deprecated
     public static final byte RED = 16;
+    /**
+     * @deprecated Magic value
+     */
+    @Deprecated
     public static final byte PALE_BLUE = 20;
+    /**
+     * @deprecated Magic value
+     */
+    @Deprecated
     public static final byte GRAY_2 = 24;
+    /**
+     * @deprecated Magic value
+     */
+    @Deprecated
     public static final byte DARK_GREEN = 28;
+    /**
+     * @deprecated Magic value
+     */
+    @Deprecated
     public static final byte WHITE = 32;
+    /**
+     * @deprecated Magic value
+     */
+    @Deprecated
     public static final byte LIGHT_GRAY = 36;
+    /**
+     * @deprecated Magic value
+     */
+    @Deprecated
     public static final byte BROWN = 40;
+    /**
+     * @deprecated Magic value
+     */
+    @Deprecated
     public static final byte DARK_GRAY = 44;
+    /**
+     * @deprecated Magic value
+     */
+    @Deprecated
     public static final byte BLUE = 48;
+    /**
+     * @deprecated Magic value
+     */
+    @Deprecated
     public static final byte DARK_BROWN = 52;
 
     /**
@@ -85,7 +140,9 @@ public final class MapPalette {
      *
      * @param image The image to convert.
      * @return A byte[] containing the pixels of the image.
+     * @deprecated Magic value
      */
+    @Deprecated
     public static byte[] imageToBytes(Image image) {
         BufferedImage temp = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = temp.createGraphics();
@@ -109,7 +166,9 @@ public final class MapPalette {
      * @param b The blue component of the color.
      * @param g The green component of the color.
      * @return The index in the palette.
+     * @deprecated Magic value
      */
+    @Deprecated
     public static byte matchColor(int r, int g, int b) {
         return matchColor(new Color(r, g, b));
     }
@@ -119,7 +178,9 @@ public final class MapPalette {
      *
      * @param color The Color to match.
      * @return The index in the palette.
+     * @deprecated Magic value
      */
+    @Deprecated
     public static byte matchColor(Color color) {
         if (color.getAlpha() < 128) return 0;
 
@@ -142,7 +203,9 @@ public final class MapPalette {
      *
      * @param index The index in the palette.
      * @return The Color of the palette entry.
+     * @deprecated Magic value
      */
+    @Deprecated
     public static Color getColor(byte index) {
         if (index < 0 || index >= colors.length) {
             throw new IndexOutOfBoundsException();

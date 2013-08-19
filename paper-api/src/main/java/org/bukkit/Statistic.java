@@ -41,7 +41,9 @@ public enum Statistic {
      * Gets the ID for this statistic.
      *
      * @return ID of this statistic
+     * @deprecated Magic value
      */
+    @Deprecated
     public int getId() {
         return id;
     }
@@ -71,7 +73,9 @@ public enum Statistic {
      *
      * @param id ID of the statistic to return
      * @return statistic with the given ID
+     * @deprecated Magic value
      */
+    @Deprecated
     public static Statistic getById(int id) {
         return BY_ID.get(id);
     }

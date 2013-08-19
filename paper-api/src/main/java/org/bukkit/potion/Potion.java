@@ -370,6 +370,11 @@ public class Potion {
     private static final int TIER_SHIFT = 5;
     private static final int NAME_BIT = 0x3F;
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public static Potion fromDamage(int damage) {
         PotionType type = PotionType.getByDamageValue(damage & POTION_BIT);
         Potion potion;
@@ -417,6 +422,11 @@ public class Potion {
         brewer = other;
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public int getNameId() {
         return name;
     }

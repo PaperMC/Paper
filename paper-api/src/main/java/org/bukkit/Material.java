@@ -16,7 +16,6 @@ import org.bukkit.material.Command;
 import org.bukkit.material.Crops;
 import org.bukkit.material.DetectorRail;
 import org.bukkit.material.Diode;
-import org.bukkit.material.DirectionalContainer;
 import org.bukkit.material.Dispenser;
 import org.bukkit.material.Door;
 import org.bukkit.material.Dye;
@@ -451,7 +450,9 @@ public enum Material {
      * Gets the item ID or block ID of this Material
      *
      * @return ID of this material
+     * @deprecated Magic value
      */
+    @Deprecated
     public int getId() {
         return id;
     }
@@ -489,7 +490,9 @@ public enum Material {
      *
      * @param raw Initial data to construct the MaterialData with
      * @return New MaterialData with the given data
+     * @deprecated Magic value
      */
+    @Deprecated
     public MaterialData getNewData(final byte raw) {
         try {
             return ctor.newInstance(id, raw);
@@ -556,7 +559,9 @@ public enum Material {
      *
      * @param id ID of the material to get
      * @return Material if found, or null
+     * @deprecated Magic value
      */
+    @Deprecated
     public static Material getMaterial(final int id) {
         if (byId.length > id && id >= 0) {
             return byId[id];
@@ -580,7 +585,9 @@ public enum Material {
     /**
      * Attempts to match the Material with the given name.
      * This is a match lookup; names will be converted to uppercase, then stripped
-     * of special characters in an attempt to format it like the enum
+     * of special characters in an attempt to format it like the enum.
+     * <p>
+     * Using this for match by ID is deprecated.
      *
      * @param name Name of the material to get
      * @return Material if found, or null

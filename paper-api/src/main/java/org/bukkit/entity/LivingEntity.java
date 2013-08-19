@@ -51,7 +51,9 @@ public interface LivingEntity extends Entity, Damageable {
      *     limited by server by at least 100 blocks, no less)
      * @return list containing all blocks along the living entity's line
      *     of sight
+     * @deprecated Magic value
      */
+    @Deprecated
     public List<Block> getLineOfSight(HashSet<Byte> transparent, int maxDistance);
 
     /**
@@ -62,7 +64,9 @@ public interface LivingEntity extends Entity, Damageable {
      * @param maxDistance this is the maximum distance to scan
      *     (may be limited by server by at least 100 blocks, no less)
      * @return block that the living entity has targeted
+     * @deprecated Magic value
      */
+    @Deprecated
     public Block getTargetBlock(HashSet<Byte> transparent, int maxDistance);
 
     /**
@@ -76,7 +80,9 @@ public interface LivingEntity extends Entity, Damageable {
      *     further limited by the server, but never to less than 100 blocks
      * @return list containing the last 2 blocks along the living entity's
      *     line of sight
+     * @deprecated Magic value
      */
+    @Deprecated
     public List<Block> getLastTwoTargetBlocks(HashSet<Byte> transparent, int maxDistance);
 
     /**

@@ -12,10 +12,20 @@ public class TripwireHook extends SimpleAttachableMaterialData implements Redsto
         super(Material.TRIPWIRE_HOOK);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public TripwireHook(final int type) {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public TripwireHook(final int type, final byte data) {
         super(type, data);
     }

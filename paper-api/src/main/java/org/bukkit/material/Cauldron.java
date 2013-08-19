@@ -13,10 +13,20 @@ public class Cauldron extends MaterialData {
         super(Material.CAULDRON);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Cauldron(int type, byte data){
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Cauldron(byte data) {
         super(Material.CAULDRON, data);
     }

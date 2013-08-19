@@ -8,6 +8,11 @@ public class Diode extends MaterialData implements Directional {
         super(Material.DIODE_BLOCK_ON);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Diode(int type) {
         super(type);
     }
@@ -16,10 +21,20 @@ public class Diode extends MaterialData implements Directional {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Diode(int type, byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Diode(Material type, byte data) {
         super(type, data);
     }

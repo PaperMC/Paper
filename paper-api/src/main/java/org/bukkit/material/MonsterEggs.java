@@ -21,6 +21,11 @@ public class MonsterEggs extends TexturedMaterial {
         super(Material.MONSTER_EGGS);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public MonsterEggs(final int type) {
         super(type);
     }
@@ -32,10 +37,20 @@ public class MonsterEggs extends TexturedMaterial {
         }
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public MonsterEggs(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public MonsterEggs(final Material type, final byte data) {
         super(type, data);
     }

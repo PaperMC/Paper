@@ -39,7 +39,9 @@ public enum Difficulty {
      * Gets the difficulty value associated with this Difficulty.
      *
      * @return An integer value of this difficulty
+     * @deprecated Magic value
      */
+    @Deprecated
     public int getValue() {
         return value;
     }
@@ -49,7 +51,9 @@ public enum Difficulty {
      *
      * @param value Value to check
      * @return Associative {@link Difficulty} with the given value, or null if it doesn't exist
+     * @deprecated Magic value
      */
+    @Deprecated
     public static Difficulty getByValue(final int value) {
         return BY_ID.get(value);
     }

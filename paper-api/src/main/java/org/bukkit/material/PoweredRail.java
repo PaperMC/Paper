@@ -10,6 +10,11 @@ public class PoweredRail extends ExtendedRails implements Redstone {
         super(Material.POWERED_RAIL);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public PoweredRail(final int type) {
         super(type);
     }
@@ -18,10 +23,20 @@ public class PoweredRail extends ExtendedRails implements Redstone {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public PoweredRail(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public PoweredRail(final Material type, final byte data) {
         super(type, data);
     }

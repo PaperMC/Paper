@@ -11,6 +11,11 @@ public class Ladder extends SimpleAttachableMaterialData {
         super(Material.LADDER);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Ladder(final int type) {
         super(type);
     }
@@ -19,10 +24,20 @@ public class Ladder extends SimpleAttachableMaterialData {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Ladder(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Ladder(final Material type, final byte data) {
         super(type, data);
     }

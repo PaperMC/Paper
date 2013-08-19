@@ -7,6 +7,11 @@ import org.bukkit.block.BlockFace;
  * Material data for the piston base block
  */
 public class PistonBaseMaterial extends MaterialData implements Directional, Redstone {
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public PistonBaseMaterial(final int type) {
         super(type);
     }
@@ -15,10 +20,20 @@ public class PistonBaseMaterial extends MaterialData implements Directional, Red
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public PistonBaseMaterial(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public PistonBaseMaterial(final Material type, final byte data) {
         super(type, data);
     }

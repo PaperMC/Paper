@@ -108,7 +108,9 @@ public enum DyeColor {
      *
      * @return A byte containing the wool data value of this color
      * @see #getDyeData()
+     * @deprecated Magic value
      */
+    @Deprecated
     public byte getWoolData() {
         return woolData;
     }
@@ -118,7 +120,9 @@ public enum DyeColor {
      *
      * @return A byte containing the dye data value of this color
      * @see #getWoolData()
+     * @deprecated Magic value
      */
+    @Deprecated
     public byte getDyeData() {
         return dyeData;
     }
@@ -161,7 +165,9 @@ public enum DyeColor {
      * @param data Wool data value to fetch
      * @return The {@link DyeColor} representing the given value, or null if it doesn't exist
      * @see #getByDyeData(byte)
+     * @deprecated Magic value
      */
+    @Deprecated
     public static DyeColor getByWoolData(final byte data) {
         int i = 0xff & data;
         if (i >= BY_WOOL_DATA.length) {
@@ -176,7 +182,9 @@ public enum DyeColor {
      * @param data Dye data value to fetch
      * @return The {@link DyeColor} representing the given value, or null if it doesn't exist
      * @see #getByWoolData(byte)
+     * @deprecated Magic value
      */
+    @Deprecated
     public static DyeColor getByDyeData(final byte data) {
         int i = 0xff & data;
         if (i >= BY_DYE_DATA.length) {

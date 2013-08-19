@@ -10,6 +10,11 @@ public class Command extends MaterialData implements Redstone {
         super(Material.COMMAND);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Command(final int type) {
         super(type);
     }
@@ -18,10 +23,20 @@ public class Command extends MaterialData implements Redstone {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Command(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Command(final Material type, final byte data) {
         super(type, data);
     }

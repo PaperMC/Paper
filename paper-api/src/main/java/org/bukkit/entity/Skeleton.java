@@ -42,7 +42,9 @@ public interface Skeleton extends Monster {
          * Gets the ID of this skeleton type.
          *
          * @return Skeleton type ID
+         * @deprecated Magic value
          */
+        @Deprecated
         public int getId() {
             return id;
         }
@@ -52,7 +54,9 @@ public interface Skeleton extends Monster {
          *
          * @param id ID of the skeleton type to get.
          * @return Resulting skeleton type, or null if not found.
+         * @deprecated Magic value
          */
+        @Deprecated
         public static SkeletonType getType(int id) {
             return (id >= types.length) ? null : types[id];
         }

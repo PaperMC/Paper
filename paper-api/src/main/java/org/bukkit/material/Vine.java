@@ -20,10 +20,20 @@ public class Vine extends MaterialData {
         super(Material.VINE);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Vine(int type, byte data){
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Vine(byte data) {
         super(Material.VINE, data);
     }

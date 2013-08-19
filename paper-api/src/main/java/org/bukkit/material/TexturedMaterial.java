@@ -13,14 +13,29 @@ public abstract class TexturedMaterial extends MaterialData {
         super(m);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public TexturedMaterial(int type) {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public TexturedMaterial(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public TexturedMaterial(final Material type, final byte data) {
         super(type, data);
     }
@@ -64,7 +79,9 @@ public abstract class TexturedMaterial extends MaterialData {
      * Get material index from data
      *
      * @return index of data in textures list
+     * @deprecated Magic value
      */
+    @Deprecated
     protected int getTextureIndex() {
         return getData(); // Default to using all bits - override for other mappings
     }
@@ -73,7 +90,9 @@ public abstract class TexturedMaterial extends MaterialData {
      * Set material index
      *
      * @param idx - index of data in textures list
+     * @deprecated Magic value
      */
+    @Deprecated
     protected void setTextureIndex(int idx) {
         setData((byte) idx); // Defult to using all bits - override for other mappings
     }

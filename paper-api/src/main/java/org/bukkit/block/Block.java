@@ -21,7 +21,9 @@ public interface Block extends Metadatable {
      * Gets the metadata for this block
      *
      * @return block specific metadata
+     * @deprecated Magic value
      */
+    @Deprecated
     byte getData();
 
     /**
@@ -74,7 +76,9 @@ public interface Block extends Metadatable {
      * Gets the type-id of this block
      *
      * @return block type-id
+     * @deprecated Magic value
      */
+    @Deprecated
     int getTypeId();
 
     /**
@@ -156,7 +160,9 @@ public interface Block extends Metadatable {
      * Sets the metadata for this block
      *
      * @param data New block specific metadata
+     * @deprecated Magic value
      */
+    @Deprecated
     void setData(byte data);
 
     /**
@@ -164,7 +170,9 @@ public interface Block extends Metadatable {
      *
      * @param data New block specific metadata
      * @param applyPhysics False to cancel physics from the changed block.
+     * @deprecated Magic value
      */
+    @Deprecated
     void setData(byte data, boolean applyPhysics);
 
     /**
@@ -179,7 +187,9 @@ public interface Block extends Metadatable {
      *
      * @param type Type-Id to change this block to
      * @return whether the block was changed
+     * @deprecated Magic value
      */
+    @Deprecated
     boolean setTypeId(int type);
 
     /**
@@ -188,7 +198,9 @@ public interface Block extends Metadatable {
      * @param type Type-Id to change this block to
      * @param applyPhysics False to cancel physics on the changed block.
      * @return whether the block was changed
+     * @deprecated Magic value
      */
+    @Deprecated
     boolean setTypeId(int type, boolean applyPhysics);
 
     /**
@@ -198,7 +210,9 @@ public interface Block extends Metadatable {
      * @param data The data value to change this block to
      * @param applyPhysics False to cancel physics on the changed block
      * @return whether the block was changed
+     * @deprecated Magic value
      */
+    @Deprecated
     boolean setTypeIdAndData(int type, byte data, boolean applyPhysics);
 
     /**

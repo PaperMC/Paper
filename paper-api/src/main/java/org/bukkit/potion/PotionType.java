@@ -28,6 +28,11 @@ public enum PotionType {
         return effect;
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public int getDamageValue() {
         return damageValue;
     }
@@ -40,6 +45,11 @@ public enum PotionType {
         return effect == null ? true : effect.isInstant();
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public static PotionType getByDamageValue(int damage) {
         for (PotionType type : PotionType.values()) {
             if (type.damageValue == damage)
@@ -48,6 +58,11 @@ public enum PotionType {
         return null;
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public static PotionType getByEffect(PotionEffectType effectType) {
         if (effectType == null)
             return WATER;

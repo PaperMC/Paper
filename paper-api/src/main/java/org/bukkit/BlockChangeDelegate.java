@@ -16,7 +16,9 @@ public interface BlockChangeDelegate {
      * @param z Z coordinate
      * @param typeId New block ID
      * @return true if the block was set successfully
+     * @deprecated Magic value
      */
+    @Deprecated
     public boolean setRawTypeId(int x, int y, int z, int typeId);
 
     /**
@@ -29,7 +31,9 @@ public interface BlockChangeDelegate {
      * @param typeId New block ID
      * @param data Block data
      * @return true if the block was set successfully
+     * @deprecated Magic value
      */
+    @Deprecated
     public boolean setRawTypeIdAndData(int x, int y, int z, int typeId, int data);
 
     /**
@@ -41,7 +45,9 @@ public interface BlockChangeDelegate {
      * @param z Z coordinate
      * @param typeId New block ID
      * @return true if the block was set successfully
+     * @deprecated Magic value
      */
+    @Deprecated
     public boolean setTypeId(int x, int y, int z, int typeId);
 
     /**
@@ -54,7 +60,9 @@ public interface BlockChangeDelegate {
      * @param typeId New block ID
      * @param data Block data
      * @return true if the block was set successfully
+     * @deprecated Magic value
      */
+    @Deprecated
     public boolean setTypeIdAndData(int x, int y, int z, int typeId, int data);
 
     /**
@@ -64,7 +72,9 @@ public interface BlockChangeDelegate {
      * @param y Y coordinate
      * @param z Z coordinate
      * @return The block ID
+     * @deprecated Magic value
      */
+    @Deprecated
     public int getTypeId(int x, int y, int z);
 
     /**

@@ -17,6 +17,11 @@ public class Dispenser extends FurnaceAndDispenser {
         setFacingDirection(direction);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Dispenser(final int type) {
         super(type);
     }
@@ -25,10 +30,20 @@ public class Dispenser extends FurnaceAndDispenser {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Dispenser(final int type, final byte data) {
         super(type, data);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Dispenser(final Material type, final byte data) {
         super(type, data);
     }

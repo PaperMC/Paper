@@ -11,10 +11,20 @@ public class Tripwire extends MaterialData {
         super(Material.TRIPWIRE);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Tripwire(final int type) {
         super(type);
     }
 
+    /**
+     *
+     * @deprecated Magic value
+     */
+    @Deprecated
     public Tripwire(final int type, final byte data) {
         super(type, data);
     }

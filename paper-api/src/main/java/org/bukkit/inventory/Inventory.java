@@ -126,7 +126,9 @@ public interface Inventory extends Iterable<ItemStack> {
      *
      * @param materialId The materialId to check for
      * @return true if an ItemStack in this inventory contains the materialId
+     * @deprecated Magic value
      */
+    @Deprecated
     public boolean contains(int materialId);
 
     /**
@@ -153,7 +155,9 @@ public interface Inventory extends Iterable<ItemStack> {
      * @param materialId The materialId to check for
      * @param amount The minimum amount to look for
      * @return true if this contains any matching ItemStack with the given materialId and amount
+     * @deprecated Magic value
      */
+    @Deprecated
     public boolean contains(int materialId, int amount);
 
     /**
@@ -195,7 +199,9 @@ public interface Inventory extends Iterable<ItemStack> {
      *
      * @param materialId The materialId to look for
      * @return A HashMap containing the slot index, ItemStack pairs
+     * @deprecated Magic value
      */
+    @Deprecated
     public HashMap<Integer, ? extends ItemStack> all(int materialId);
 
     /**
@@ -230,7 +236,9 @@ public interface Inventory extends Iterable<ItemStack> {
      *
      * @param materialId The materialId to look for
      * @return The slot index of the given materialId or -1 if not found
+     * @deprecated Magic value
      */
+    @Deprecated
     public int first(int materialId);
 
     /**
@@ -262,7 +270,9 @@ public interface Inventory extends Iterable<ItemStack> {
      * Removes all stacks in the inventory matching the given materialId.
      *
      * @param materialId The material to remove
+     * @deprecated Magic value
      */
+    @Deprecated
     public void remove(int materialId);
 
     /**
@@ -325,6 +335,7 @@ public interface Inventory extends Iterable<ItemStack> {
      */
     public InventoryHolder getHolder();
 
+    @Override
     public ListIterator<ItemStack> iterator();
 
     /**
