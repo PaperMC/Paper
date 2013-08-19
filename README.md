@@ -1,4 +1,4 @@
-Spigot [![Build Status](https://travis-ci.org/EcoCityCraft/Spigot.png)](https://travis-ci.org/EcoCityCraft/Spigot)
+Spigot [![Build Status](https://travis-ci.org/SpigotMC/Spigot.png)](https://travis-ci.org/SpigotMC/Spigot)
 ===========
 
 High performance Minecraft server implementation
