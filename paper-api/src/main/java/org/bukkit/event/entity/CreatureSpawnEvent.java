@@ -155,6 +155,14 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
          */
         REINFORCEMENTS,
         /**
+         * When a creature is spawned by nether portal
+         */
+        NETHER_PORTAL,
+        /**
+         * When a creature is spawned by a dispenser dispensing an egg
+         */
+        DISPENSE_EGG,
+        /**
          * When a creature is spawned by plugins
          */
         CUSTOM,
