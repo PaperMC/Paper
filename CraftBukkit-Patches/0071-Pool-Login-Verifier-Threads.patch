@@ -1,0 +1,53 @@
+From 924005d15aaaa45ab4a087f5d4b33eb115272414 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Fri, 23 Aug 2013 17:38:46 +1000
+Subject: [PATCH] Pool Login Verifier Threads
+
+dem threads are expensive to make
+
+diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
+index 3aeff44..7846212 100644
+--- a/src/main/java/net/minecraft/server/PendingConnection.java
++++ b/src/main/java/net/minecraft/server/PendingConnection.java
+@@ -112,7 +112,7 @@ public class PendingConnection extends Connection {
+ 
+             this.j = true;
+             if (true) { // Spigot - Always fire
+-                (new ThreadLoginVerifier(this, server.server)).start(); // CraftBukkit - add CraftServer
++                new ThreadLoginVerifier(this, server.server); // CraftBukkit - add CraftServer // Spigot - don't call .start()
+             } else {
+                 this.h = true;
+             }
+diff --git a/src/main/java/net/minecraft/server/ThreadLoginVerifier.java b/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
+index 70f9fea..53d4259 100644
+--- a/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
++++ b/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
+@@ -13,18 +13,23 @@ import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
+ import org.bukkit.event.player.PlayerPreLoginEvent;
+ // CraftBukkit end
+ 
+-class ThreadLoginVerifier extends Thread {
++class ThreadLoginVerifier implements Runnable { // Spigot
+ 
++    // Spigot Start
++    private static final java.util.concurrent.ExecutorService threadPool = java.util.concurrent.Executors.newCachedThreadPool(
++            new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat( "Login Verifier - %1$d" ).build() );
++    // Spigot End
+     final PendingConnection pendingConnection;
+ 
+     // CraftBukkit start
+     CraftServer server;
+ 
+     ThreadLoginVerifier(PendingConnection pendingconnection, CraftServer server) {
+-        super("Login Verifier - " + pendingconnection.getName());
++        // super("Login Verifier - " + pendingconnection.getName()); // Spigot
+         this.server = server;
+         // CraftBukkit end
+         this.pendingConnection = pendingconnection;
++        threadPool.submit( this ); // Spigot
+     }
+ 
+     private boolean auth() throws java.io.IOException {
+-- 
+1.8.1.2
+
