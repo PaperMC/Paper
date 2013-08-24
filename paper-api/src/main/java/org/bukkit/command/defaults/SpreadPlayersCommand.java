@@ -36,25 +36,28 @@ public class SpreadPlayersCommand extends VanillaCommand {
             sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
             return false;
         }
-        double x = getDouble(sender, args[0]);
-        double z = getDouble(sender, args[1]);
-        double distance = getDouble(sender, args[2]);
+
+        final double x = getDouble(sender, args[0], -30000000, 30000000);
+        final double z = getDouble(sender, args[1], -30000000, 30000000);
+        final double distance = getDouble(sender, args[2]);
+        final double range = getDouble(sender, args[3]);
 
         if (distance < 0.0D) {
             sender.sendMessage(ChatColor.RED + "Distance is too small.");
             return false;
         }
 
-        double range = getDouble(sender, args[3]);
         if (range < distance + 1.0D) {
             sender.sendMessage(ChatColor.RED + "Max range is too small.");
             return false;
         }
 
+        final String respectTeams = args[4];
         boolean teams = false;
-        if ("true".equalsIgnoreCase(args[4])) {
+
+        if (respectTeams.equalsIgnoreCase("true")) {
             teams = true;
-        } else if (!"false".equalsIgnoreCase(args[4])) {
+        } else if (!respectTeams.equalsIgnoreCase("false")) {
             sender.sendMessage(String.format(ChatColor.RED + "'%s' is not true or false", args[4]));
             return false;
         }
@@ -68,7 +71,7 @@ public class SpreadPlayersCommand extends VanillaCommand {
                 continue;
             }
 
-            if (world != null) {
+            if (world == null) {
                 world = player.getWorld();
             }
             players.add(player);
@@ -78,14 +81,22 @@ public class SpreadPlayersCommand extends VanillaCommand {
             return true;
         }
 
-        double xRangeMin = x - range;
-        double zRangeMin = z - range;
-        double xRangeMax = x + range;
-        double zRangeMax = z + range;
+        final double xRangeMin = x - range;
+        final double zRangeMin = z - range;
+        final double xRangeMax = x + range;
+        final double zRangeMax = z + range;
 
-        Location[] locations = getSpreadLocations(world, teams ? getTeams(players) : players.size(), xRangeMin, zRangeMin, xRangeMax, zRangeMax);
-        int rangeSpread = range(world, distance, xRangeMin, zRangeMin, xRangeMax, zRangeMax, locations);
-        double distanceSpread = spread(world, players, locations, teams);
+        final int spreadSize = teams ? getTeams(players) : players.size();
+
+        final Location[] locations = getSpreadLocations(world, spreadSize, xRangeMin, zRangeMin, xRangeMax, zRangeMax);
+        final int rangeSpread = range(world, distance, xRangeMin, zRangeMin, xRangeMax, zRangeMax, locations);
+
+        if (rangeSpread == -1) {
+            sender.sendMessage(String.format("Could not spread %d %s around %s,%s (too many players for space - try using spread of at most %s)", spreadSize, teams ? "teams" : "players", x, z));
+            return false;
+        }
+
+        final double distanceSpread = spread(world, players, locations, teams);
 
         sender.sendMessage(String.format("Succesfully spread %d %s around %s,%s", locations.length, teams ? "teams" : "players", x, z));
         if (locations.length > 1) {
@@ -96,7 +107,7 @@ public class SpreadPlayersCommand extends VanillaCommand {
 
     private int range(World world, double distance, double xRangeMin, double zRangeMin, double xRangeMax, double zRangeMax, Location[] locations) {
         boolean flag = true;
-        double max = Float.MAX_VALUE;
+        double max;
 
         int i;
 
