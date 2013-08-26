@@ -224,6 +224,8 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
                 getHandle().openHopper((TileEntityHopper) craftinv.getInventory());
             } else if (craftinv.getInventory() instanceof EntityMinecartHopper) {
                 getHandle().openMinecartHopper((EntityMinecartHopper) craftinv.getInventory());
+            } else {
+                openCustomInventory(inventory, player, 9);
             }
             break;
         case CREATIVE:
