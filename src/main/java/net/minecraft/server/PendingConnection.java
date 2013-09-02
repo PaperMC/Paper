@@ -63,6 +63,9 @@ public class PendingConnection extends Connection {
 
     public void a(Packet2Handshake packet2handshake) {
         // CraftBukkit start
+        if (this.g != null) {
+            this.disconnect("Invalid username " + this.g);
+        }
         this.hostname = packet2handshake.c == null ? "" : packet2handshake.c + ':' + packet2handshake.d;
         // CraftBukkit end
         this.g = packet2handshake.f();
