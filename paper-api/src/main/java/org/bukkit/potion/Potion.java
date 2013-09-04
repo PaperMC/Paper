@@ -310,7 +310,9 @@ public class Potion {
      * item stacks.
      *
      * @return The damage value of this potion
+     * @deprecated Magic value
      */
+    @Deprecated
     public short toDamageValue() {
         short damage;
         if (type == PotionType.WATER) {

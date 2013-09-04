@@ -58,11 +58,6 @@ public enum PotionType {
         return null;
     }
 
-    /**
-     *
-     * @deprecated Magic value
-     */
-    @Deprecated
     public static PotionType getByEffect(PotionEffectType effectType) {
         if (effectType == null)
             return WATER;
