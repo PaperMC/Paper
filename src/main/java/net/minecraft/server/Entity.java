@@ -1421,7 +1421,7 @@ public abstract class Entity {
             if ((this.bukkitEntity instanceof LivingEntity) && (entity.getBukkitEntity() instanceof Vehicle) && entity.world.isChunkLoaded((int) entity.locX >> 4, (int) entity.locZ >> 4)) {
                 // It's possible to move from one vehicle to another.  We need to check if they're already in a vehicle, and fire an exit event if they are.
                 VehicleExitEvent exitEvent = null;
-                if (this.vehicle != null) {
+                if (this.vehicle != null && this.vehicle.getBukkitEntity() instanceof Vehicle) {
                     exitEvent = new VehicleExitEvent((Vehicle) this.vehicle.getBukkitEntity(), (LivingEntity) this.bukkitEntity);
                     pluginManager.callEvent(exitEvent);
 
