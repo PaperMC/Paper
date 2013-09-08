@@ -205,4 +205,20 @@ public class SpigotWorldConfig
         otherTrackingRange = getInt( "entity-tracking-range.other", otherTrackingRange );
         log( "Entity Tracking Range: Pl " + playerTrackingRange + " / An " + animalTrackingRange + " / Mo " + monsterTrackingRange + " / Mi " + miscTrackingRange + " / Other " + otherTrackingRange );
     }
+
+    public int hopperTransfer;
+    public int hopperCheck;
+    public int hopperAmount;
+    private void hoppers()
+    {
+        // Set the tick delay between hopper item movements
+        hopperTransfer = getInt( "ticks-per.hopper-transfer", 8 );
+        if ( SpigotConfig.version < 11 )
+        {
+            set( "ticks-per.hopper-check", 1 );
+        }
+        hopperCheck = getInt( "ticks-per.hopper-check", 1 );
+        hopperAmount = getInt( "hopper-amount", 1 );
+        log( "Hopper Transfer: " + hopperTransfer + " Hopper Check: " + hopperCheck + " Hopper Amount: " + hopperAmount );
+    }
 }
