@@ -228,4 +228,22 @@ public class SpigotWorldConfig
         this.otherTrackingRange = this.getInt( "entity-tracking-range.other", this.otherTrackingRange );
         this.log( "Entity Tracking Range: Pl " + this.playerTrackingRange + " / An " + this.animalTrackingRange + " / Mo " + this.monsterTrackingRange + " / Mi " + this.miscTrackingRange + " / Di " + this.displayTrackingRange + " / Other " + this.otherTrackingRange );
     }
+
+    public int hopperTransfer;
+    public int hopperCheck;
+    public int hopperAmount;
+    public boolean hopperCanLoadChunks;
+    private void hoppers()
+    {
+        // Set the tick delay between hopper item movements
+        this.hopperTransfer = this.getInt( "ticks-per.hopper-transfer", 8 );
+        if ( SpigotConfig.version < 11 )
+        {
+            this.set( "ticks-per.hopper-check", 1 );
+        }
+        this.hopperCheck = this.getInt( "ticks-per.hopper-check", 1 );
+        this.hopperAmount = this.getInt( "hopper-amount", 1 );
+        this.hopperCanLoadChunks = this.getBoolean( "hopper-can-load-chunks", false );
+        this.log( "Hopper Transfer: " + this.hopperTransfer + " Hopper Check: " + this.hopperCheck + " Hopper Amount: " + this.hopperAmount + " Hopper Can Load Chunks: " + this.hopperCanLoadChunks );
+    }
 }
