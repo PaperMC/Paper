@@ -151,7 +151,7 @@ public class EntityZombie extends EntityMonster {
                     if (this.world.w(i1, j1 - 1, k1) && this.world.getLightLevel(i1, j1, k1) < 10) {
                         entityzombie.setPosition((double) i1, (double) j1, (double) k1);
                         if (this.world.b(entityzombie.boundingBox) && this.world.getCubes(entityzombie, entityzombie.boundingBox).isEmpty() && !this.world.containsLiquid(entityzombie.boundingBox)) {
-                            this.world.addEntity(entityzombie);
+                            this.world.addEntity(entityzombie, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.REINFORCEMENTS);
                             entityzombie.setGoalTarget(entityliving);
                             entityzombie.a((GroupDataEntity) null);
                             this.getAttributeInstance(bp).a(new AttributeModifier("Zombie reinforcement caller charge", -0.05000000074505806D, 0));
