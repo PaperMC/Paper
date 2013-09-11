@@ -132,7 +132,7 @@ public class CraftSound {
         set(SPIDER_IDLE, "mob.spider.say");
         set(SPIDER_DEATH, "mob.spider.death");
         set(SPIDER_WALK, "mob.spider.step");
-        set(VILLAGER_DEATH, "mob.villager.");
+        set(VILLAGER_DEATH, "mob.villager.death");
         set(VILLAGER_HAGGLE, "mob.villager.haggle");
         set(VILLAGER_HIT, "mob.villager.hit");
         set(VILLAGER_IDLE, "mob.villager.idle");
