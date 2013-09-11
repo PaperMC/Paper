@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 public interface AnimalTamer {
+
     /**
      * This is the name of the specified AnimalTamer.
      *

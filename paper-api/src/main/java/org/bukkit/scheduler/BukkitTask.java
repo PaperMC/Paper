@@ -5,7 +5,6 @@ import org.bukkit.plugin.Plugin;
 /**
  * Represents a task being executed by the scheduler
  */
-
 public interface BukkitTask {
 
     /**

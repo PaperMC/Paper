@@ -5,6 +5,7 @@ package org.bukkit.configuration;
  */
 @SuppressWarnings("serial")
 public class InvalidConfigurationException extends Exception {
+
     /**
      * Creates a new instance of InvalidConfigurationException without a message or cause.
      */

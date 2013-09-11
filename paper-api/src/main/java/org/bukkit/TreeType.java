@@ -4,6 +4,7 @@ package org.bukkit;
  * Tree and organic structure types.
  */
 public enum TreeType {
+
     /**
      * Regular tree, no branches
      */

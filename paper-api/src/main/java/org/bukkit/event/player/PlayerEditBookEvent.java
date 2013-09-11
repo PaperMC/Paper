@@ -77,7 +77,7 @@ public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
     /**
      * Sets the book meta that will actually be added to the book.
      *
-     * @param bookMeta new book meta
+     * @param newBookMeta new book meta
      * @throws IllegalArgumentException if the new book meta is null
      */
     public void setNewBookMeta(BookMeta newBookMeta) throws IllegalArgumentException {

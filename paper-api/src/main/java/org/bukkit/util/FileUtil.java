@@ -9,7 +9,6 @@ import java.io.IOException;
 /**
  * Class containing file utilities
  */
-
 public class FileUtil {
 
     /**
@@ -19,7 +18,6 @@ public class FileUtil {
      * @param outFile the target filename
      * @return true on success
      */
-
     public static boolean copy(File inFile, File outFile) {
         if (!inFile.exists()) {
             return false;

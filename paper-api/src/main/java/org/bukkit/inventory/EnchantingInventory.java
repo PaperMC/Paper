@@ -1,6 +1,7 @@
 package org.bukkit.inventory;
 
 public interface EnchantingInventory extends Inventory {
+
     /**
      * Set the item being enchanted.
      *

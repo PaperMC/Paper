@@ -15,6 +15,7 @@ import java.lang.annotation.Target;
  * <p>
  * Using this annotation on any other class than a {@link ConfigurationSerializable} will
  * have no effect.
+ *
  * @see ConfigurationSerialization#registerClass(Class, String)
  */
 @Retention(RetentionPolicy.RUNTIME)

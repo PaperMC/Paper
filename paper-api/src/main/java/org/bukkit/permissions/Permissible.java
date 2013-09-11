@@ -7,6 +7,7 @@ import org.bukkit.plugin.Plugin;
  * Represents an object that may be assigned permissions
  */
 public interface Permissible extends ServerOperator {
+
     /**
      * Checks if this object contains an override for the specified permission, by fully qualified name
      *

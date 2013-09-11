@@ -1,6 +1,7 @@
 package org.bukkit.event.inventory;
 
 public enum InventoryType {
+
     /**
      * A chest inventory, with 0, 9, 18, 27, 36, 45, or 54 slots of type CONTAINER.
      */

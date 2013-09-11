@@ -3,6 +3,9 @@ package org.bukkit.event.entity;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 
+/**
+ * Called when a block causes an entity to combust.
+ */
 public class EntityCombustByBlockEvent extends EntityCombustEvent {
     private final Block combuster;
 

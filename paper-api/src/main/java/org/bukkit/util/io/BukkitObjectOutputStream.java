@@ -23,7 +23,7 @@ public class BukkitObjectOutputStream extends ObjectOutputStream {
      *
      * @throws IOException
      * @throws SecurityException
-     * @see {@link ObjectOutputStream#ObjectOutputStream()}
+     * @see ObjectOutputStream#ObjectOutputStream()
      */
     protected BukkitObjectOutputStream() throws IOException, SecurityException {
         super();
@@ -35,7 +35,7 @@ public class BukkitObjectOutputStream extends ObjectOutputStream {
      *
      * @param out
      * @throws IOException
-     * @see {@link ObjectOutputStream#ObjectOutputStream(OutputStream)}
+     * @see ObjectOutputStream#ObjectOutputStream(OutputStream)
      */
     public BukkitObjectOutputStream(OutputStream out) throws IOException {
         super(out);

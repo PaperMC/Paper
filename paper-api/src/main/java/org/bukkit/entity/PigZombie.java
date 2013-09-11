@@ -4,6 +4,7 @@ package org.bukkit.entity;
  * Represents a Pig Zombie.
  */
 public interface PigZombie extends Zombie {
+
     /**
      * Get the pig zombie's current anger level.
      *

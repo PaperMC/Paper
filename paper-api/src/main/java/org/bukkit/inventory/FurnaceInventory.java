@@ -3,6 +3,7 @@ package org.bukkit.inventory;
 import org.bukkit.block.Furnace;
 
 public interface FurnaceInventory extends Inventory {
+
     /**
      * Get the current item in the result slot.
      *

@@ -14,6 +14,7 @@ import org.bukkit.block.Block;
  * For example, the nether chunk generator should shape netherrack and soulsand
  */
 public abstract class ChunkGenerator {
+
     /**
      * Interface to biome data for chunk to be generated: initialized with default values for world type and seed.
      * <p>

@@ -9,6 +9,7 @@ import org.bukkit.World;
  * For example, generating glowstone inside the nether or generating dungeons full of treasure
  */
 public abstract class BlockPopulator {
+
     /**
      * Populates an area of blocks at or around the given chunk.
      * <p>

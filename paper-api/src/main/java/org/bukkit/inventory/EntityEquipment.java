@@ -6,6 +6,7 @@ import org.bukkit.entity.Entity;
  * An interface to a creatures inventory
  */
 public interface EntityEquipment {
+
     /**
      * Gets a copy of the item the entity is currently holding
      *

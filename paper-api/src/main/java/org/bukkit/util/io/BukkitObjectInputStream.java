@@ -23,7 +23,7 @@ public class BukkitObjectInputStream extends ObjectInputStream {
      *
      * @throws IOException
      * @throws SecurityException
-     * @see {@link ObjectInputStream#ObjectInputStream()}
+     * @see ObjectInputStream#ObjectInputStream()
      */
     protected BukkitObjectInputStream() throws IOException, SecurityException {
         super();
@@ -35,7 +35,7 @@ public class BukkitObjectInputStream extends ObjectInputStream {
      *
      * @param in
      * @throws IOException
-     * @see {@link ObjectInputStream#ObjectInputStream(InputStream)}
+     * @see ObjectInputStream#ObjectInputStream(InputStream)
      */
     public BukkitObjectInputStream(InputStream in) throws IOException {
         super(in);

@@ -171,21 +171,28 @@ public interface Inventory extends Iterable<ItemStack> {
     public boolean contains(Material material, int amount) throws IllegalArgumentException;
 
     /**
-     * Checks if the inventory contains any ItemStacks matching the given ItemStack and at least the minimum amount specified
-     * This will only match if both the type and the amount of the stack match
+     * Checks if the inventory contains at least the minimum amount specified
+     * of exactly matching ItemStacks.
+     * <p>
+     * An ItemStack only counts if both the type and the amount of the stack
+     * match.
      *
-     * @param item The ItemStack to match against
-     * @param amount The amount of stacks to find
-     * @return false if item is null, true if amount less than 1, true if amount of exactly matching ItemStacks were found.
+     * @param item the ItemStack to match against
+     * @param amount how many identical stacks to check for
+     * @return false if item is null, true if amount less than 1, true if
+     *     amount of exactly matching ItemStacks were found
+     * @see #containsAtLeast(ItemStack, int)
      */
     public boolean contains(ItemStack item, int amount);
 
     /**
-     * Checks if the inventory contains any ItemStacks matching the given ItemStack and at least the minimum amount specified
+     * Checks if the inventory contains ItemStacks matching the given
+     * ItemStack whose amounts sum to at least the minimum amount specified.
      *
-     * @param item The ItemStack to match against
-     * @param amount The minimum amount
-     * @return false if item is null, true if amount less than 1, true if enough ItemStacks were found to add to the given amount
+     * @param item the ItemStack to match against
+     * @param amount the minimum amount
+     * @return false if item is null, true if amount less than 1, true if
+     *     enough ItemStacks were found to add to the given amount
      */
     public boolean containsAtLeast(ItemStack item, int amount);
 

@@ -75,6 +75,7 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
 
     /**
      * Sets the {@link TabCompleter} to run when tab-completing this command.
+     * <p>
      * If no TabCompleter is specified, and the command's executor implements
      * TabCompleter, then the executor will be used for tab completion.
      *
@@ -112,6 +113,7 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
      * {@link Command#tabComplete(CommandSender, String, String[])}.<br>
      * <br>
      * This method does not consider permissions.
+     *
      * @throws CommandException if the completer or executor throw an exception during the process of tab-completing.
      * @throws IllegalArgumentException if sender, alias, or args is null
      */

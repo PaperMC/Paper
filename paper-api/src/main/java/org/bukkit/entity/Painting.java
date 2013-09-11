@@ -7,6 +7,7 @@ import org.bukkit.event.painting.PaintingBreakEvent;
  * Represents a Painting.
  */
 public interface Painting extends Hanging {
+
     /**
      * Get the art on this painting
      *

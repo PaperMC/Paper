@@ -4,6 +4,7 @@ package org.bukkit.event;
  * Represents an event's priority in execution
  */
 public enum EventPriority {
+
     /**
      * Event call is of very low importance and should be ran first, to allow
      * other plugins to further customise the outcome

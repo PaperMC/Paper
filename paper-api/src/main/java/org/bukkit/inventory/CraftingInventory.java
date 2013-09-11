@@ -4,6 +4,7 @@ package org.bukkit.inventory;
  * Interface to the crafting inventories
  */
 public interface CraftingInventory extends Inventory {
+
     /**
      * Check what item is in the result slot of this crafting inventory.
      *

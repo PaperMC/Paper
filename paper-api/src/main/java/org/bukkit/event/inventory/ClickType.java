@@ -4,6 +4,7 @@ package org.bukkit.event.inventory;
  * What the client did to trigger this action (not the result).
  */
 public enum ClickType {
+
     /**
      * The left (or primary) mouse button.
      */

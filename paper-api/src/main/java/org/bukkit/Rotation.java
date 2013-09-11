@@ -5,6 +5,7 @@ package org.bukkit;
  * It represents how something is viewed, as opposed to cardinal directions.
  */
 public enum Rotation {
+
     /**
      * No rotation
      */

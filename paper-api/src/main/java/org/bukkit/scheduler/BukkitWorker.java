@@ -8,7 +8,6 @@ import org.bukkit.plugin.Plugin;
  * </p>
  * Workers are used to execute async tasks.
  */
-
 public interface BukkitWorker {
 
     /**

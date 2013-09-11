@@ -1,6 +1,7 @@
 package org.bukkit.inventory;
 
 public interface BeaconInventory extends Inventory {
+
     /**
      * Set the item powering the beacon.
      *

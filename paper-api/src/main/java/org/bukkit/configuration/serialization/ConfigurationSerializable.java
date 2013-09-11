@@ -16,10 +16,12 @@ import java.util.Map;
  * </ul>
  * In addition to implementing this interface, you must register the class with
  * {@link ConfigurationSerialization#registerClass(Class)}.
+ *
  * @see DelegateDeserialization
  * @see SerializableAs
  */
 public interface ConfigurationSerializable {
+
     /**
      * Creates a Map representation of this class.
      * <p>

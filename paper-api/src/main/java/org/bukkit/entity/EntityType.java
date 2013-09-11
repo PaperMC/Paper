@@ -14,10 +14,11 @@ import org.bukkit.Location;
 import org.bukkit.World;
 
 public enum EntityType {
+
     // These strings MUST match the strings in nms.EntityTypes and are case sensitive.
     /**
      * An item resting on the ground.
-     *
+     * <p>
      * Spawn with {@link World#dropItem(Location, ItemStack)}
      * or {@link World#dropItemNaturally(Location, ItemStack)}
      */

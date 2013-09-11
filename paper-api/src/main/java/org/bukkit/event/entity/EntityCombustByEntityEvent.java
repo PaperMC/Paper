@@ -2,6 +2,9 @@ package org.bukkit.event.entity;
 
 import org.bukkit.entity.Entity;
 
+/**
+ * Called when an entity causes another entity to combust.
+ */
 public class EntityCombustByEntityEvent extends EntityCombustEvent {
     private final Entity combuster;
 

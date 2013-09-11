@@ -11,6 +11,11 @@ public class MultipleCommandAlias extends Command {
         this.commands = commands;
     }
 
+    /**
+     * Gets the commands associated with the multi-command alias.
+     *
+     * @return commands associated with alias
+     */
     public Command[] getCommands() {
         return commands;
     }
