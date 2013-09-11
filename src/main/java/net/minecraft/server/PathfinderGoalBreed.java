@@ -69,6 +69,11 @@ public class PathfinderGoalBreed extends PathfinderGoal {
         EntityAgeable entityageable = this.d.createChild(this.e);
 
         if (entityageable != null) {
+            // CraftBukkit start - set persistence for tame animals
+            if (entityageable instanceof EntityTameableAnimal && ((EntityTameableAnimal) entityageable).isTamed()) {
+                entityageable.persistent = true;
+            }
+            // CraftBukkit end
             this.d.setAge(6000);
             this.e.setAge(6000);
             this.d.bZ();
