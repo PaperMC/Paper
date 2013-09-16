@@ -1,9 +1,95 @@
-From 9520c287eca34c28ed9a7a53e65755b89b22e7af Mon Sep 17 00:00:00 2001
+From e15463f906861778a9a2c9a62155c6f226330b10 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 2 Jul 2013 13:13:29 +1000
 Subject: [PATCH] mc-dev imports
 
 
+diff --git a/src/main/java/net/minecraft/server/BlockTNT.java b/src/main/java/net/minecraft/server/BlockTNT.java
+new file mode 100644
+index 0000000..d336901
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/BlockTNT.java
+@@ -0,0 +1,80 @@
++package net.minecraft.server;
++
++import java.util.Random;
++
++public class BlockTNT extends Block {
++
++    public BlockTNT(int i) {
++        super(i, Material.TNT);
++        this.a(CreativeModeTab.d);
++    }
++
++    public void onPlace(World world, int i, int j, int k) {
++        super.onPlace(world, i, j, k);
++        if (world.isBlockIndirectlyPowered(i, j, k)) {
++            this.postBreak(world, i, j, k, 1);
++            world.setAir(i, j, k);
++        }
++    }
++
++    public void doPhysics(World world, int i, int j, int k, int l) {
++        if (world.isBlockIndirectlyPowered(i, j, k)) {
++            this.postBreak(world, i, j, k, 1);
++            world.setAir(i, j, k);
++        }
++    }
++
++    public int a(Random random) {
++        return 1;
++    }
++
++    public void wasExploded(World world, int i, int j, int k, Explosion explosion) {
++        if (!world.isStatic) {
++            EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), explosion.c());
++
++            entitytntprimed.fuseTicks = world.random.nextInt(entitytntprimed.fuseTicks / 4) + entitytntprimed.fuseTicks / 8;
++            world.addEntity(entitytntprimed);
++        }
++    }
++
++    public void postBreak(World world, int i, int j, int k, int l) {
++        this.a(world, i, j, k, l, (EntityLiving) null);
++    }
++
++    public void a(World world, int i, int j, int k, int l, EntityLiving entityliving) {
++        if (!world.isStatic) {
++            if ((l & 1) == 1) {
++                EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), entityliving);
++
++                world.addEntity(entitytntprimed);
++                world.makeSound(entitytntprimed, "random.fuse", 1.0F, 1.0F);
++            }
++        }
++    }
++
++    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
++        if (entityhuman.bx() != null && entityhuman.bx().id == Item.FLINT_AND_STEEL.id) {
++            this.a(world, i, j, k, 1, entityhuman);
++            world.setAir(i, j, k);
++            entityhuman.bx().damage(1, entityhuman);
++            return true;
++        } else {
++            return super.interact(world, i, j, k, entityhuman, l, f, f1, f2);
++        }
++    }
++
++    public void a(World world, int i, int j, int k, Entity entity) {
++        if (entity instanceof EntityArrow && !world.isStatic) {
++            EntityArrow entityarrow = (EntityArrow) entity;
++
++            if (entityarrow.isBurning()) {
++                this.a(world, i, j, k, 1, entityarrow.shooter instanceof EntityLiving ? (EntityLiving) entityarrow.shooter : null);
++                world.setAir(i, j, k);
++            }
++        }
++    }
++
++    public boolean a(Explosion explosion) {
++        return false;
++    }
++}
 diff --git a/src/main/java/net/minecraft/server/LocaleLanguage.java b/src/main/java/net/minecraft/server/LocaleLanguage.java
 new file mode 100644
 index 0000000..aa937fb
