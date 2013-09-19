@@ -42,17 +42,17 @@ public class EntityGhast extends EntityFlying implements IMonster {
         this.datawatcher.a(16, Byte.valueOf((byte) 0));
     }
 
-    protected void ay() {
-        super.ay();
+    protected void az() {
+        super.az();
         this.getAttributeInstance(GenericAttributes.a).setValue(10.0D);
     }
 
-    protected void bk() {
+    protected void bl() {
         if (!this.world.isStatic && this.world.difficulty == 0) {
             this.die();
         }
 
-        this.bo();
+        this.u();
         this.bo = this.bp;
         double d0 = this.i - this.locX;
         double d1 = this.j - this.locY;
@@ -134,8 +134,8 @@ public class EntityGhast extends EntityFlying implements IMonster {
                     this.world.a((EntityHuman) null, 1008, (int) this.locX, (int) this.locY, (int) this.locZ, 0);
                     EntityLargeFireball entitylargefireball = new EntityLargeFireball(this.world, this, d5, d6, d7);
 
-                    // CraftBukkit - set yield when setting explosionpower
-                    entitylargefireball.yield = entitylargefireball.e = this.explosionPower;
+                    // CraftBukkit - set bukkitYield when setting explosionpower
+                    entitylargefireball.bukkitYield = entitylargefireball.yield  = this.explosionPower;
                     double d8 = 4.0D;
                     Vec3D vec3d = this.j(1.0F);
 
@@ -185,11 +185,11 @@ public class EntityGhast extends EntityFlying implements IMonster {
         return "mob.ghast.moan";
     }
 
-    protected String aN() {
+    protected String aO() {
         return "mob.ghast.scream";
     }
 
-    protected String aO() {
+    protected String aP() {
         return "mob.ghast.death";
     }
 
@@ -218,7 +218,7 @@ public class EntityGhast extends EntityFlying implements IMonster {
         // CraftBukkit end
     }
 
-    protected float aZ() {
+    protected float ba() {
         return 10.0F;
     }
 

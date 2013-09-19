@@ -16,7 +16,7 @@ public class ItemFishingRod extends Item {
             int i = entityhuman.hookedFish.c();
 
             itemstack.damage(i, entityhuman);
-            entityhuman.aU();
+            entityhuman.aV();
         } else {
             // CraftBukkit start
             EntityFishingHook hook = new EntityFishingHook(world, entityhuman);
@@ -32,7 +32,7 @@ public class ItemFishingRod extends Item {
                 world.addEntity(hook); // CraftBukkit - moved creation up
             }
 
-            entityhuman.aU();
+            entityhuman.aV();
         }
 
         return itemstack;

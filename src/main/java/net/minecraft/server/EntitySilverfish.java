@@ -11,8 +11,8 @@ public class EntitySilverfish extends EntityMonster {
         this.a(0.3F, 0.7F);
     }
 
-    protected void ay() {
-        super.ay();
+    protected void az() {
+        super.az();
         this.getAttributeInstance(GenericAttributes.a).setValue(8.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.6000000238418579D);
         this.getAttributeInstance(GenericAttributes.e).setValue(1.0D);
@@ -32,11 +32,11 @@ public class EntitySilverfish extends EntityMonster {
         return "mob.silverfish.say";
     }
 
-    protected String aN() {
+    protected String aO() {
         return "mob.silverfish.hit";
     }
 
-    protected String aO() {
+    protected String aP() {
         return "mob.silverfish.kill";
     }
 
@@ -72,8 +72,8 @@ public class EntitySilverfish extends EntityMonster {
         super.l_();
     }
 
-    protected void bk() {
-        super.bk();
+    protected void bl() {
+        super.bl();
         if (!this.world.isStatic) {
             int i;
             int j;

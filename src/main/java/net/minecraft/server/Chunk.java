@@ -658,7 +658,7 @@ public class Chunk {
             while (iterator.hasNext()) {
                 Entity entity = (Entity) iterator.next();
 
-                entity.Q();
+                entity.R();
             }
 
             this.world.a(this.entitySlices[i]);
@@ -719,7 +719,7 @@ public class Chunk {
 
                 if (entity1 != entity && entity1.boundingBox.b(axisalignedbb) && (ientityselector == null || ientityselector.a(entity1))) {
                     list.add(entity1);
-                    Entity[] aentity = entity1.an();
+                    Entity[] aentity = entity1.ao();
 
                     if (aentity != null) {
                         for (int i1 = 0; i1 < aentity.length; ++i1) {

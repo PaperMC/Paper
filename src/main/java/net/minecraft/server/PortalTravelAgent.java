@@ -215,7 +215,7 @@ public class PortalTravelAgent {
                 j2 = 1;
             }
 
-            int k2 = entity.as();
+            int k2 = entity.at();
 
             if (j2 > -1) {
                 int l2 = Direction.h[j2];

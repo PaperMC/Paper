@@ -128,7 +128,7 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
             for (int j = 0; j < list.size(); ++j) {
                 Entity entity1 = (Entity) list.get(j);
 
-                if (entity1.K() && (entity1 != entityliving || this.j >= 5)) {
+                if (entity1.L() && (entity1 != entityliving || this.j >= 5)) {
                     float f = 0.3F;
                     AxisAlignedBB axisalignedbb = entity1.boundingBox.grow((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
@@ -151,7 +151,7 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
 
         if (movingobjectposition != null) {
             if (movingobjectposition.type == EnumMovingObjectType.TILE && this.world.getTypeId(movingobjectposition.b, movingobjectposition.c, movingobjectposition.d) == Block.PORTAL.id) {
-                this.aa();
+                this.ab();
             } else {
                 this.a(movingobjectposition);
                 // CraftBukkit start
@@ -190,7 +190,7 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
         float f2 = 0.99F;
         float f3 = this.e();
 
-        if (this.G()) {
+        if (this.H()) {
             for (int k = 0; k < 4; ++k) {
                 float f4 = 0.25F;
 

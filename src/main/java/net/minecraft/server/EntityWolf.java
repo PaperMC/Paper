@@ -30,8 +30,8 @@ public class EntityWolf extends EntityTameableAnimal {
         this.setTamed(false);
     }
 
-    protected void ay() {
-        super.ay();
+    protected void az() {
+        super.az();
         this.getAttributeInstance(GenericAttributes.d).setValue(0.30000001192092896D);
         if (this.isTamed()) {
             this.getAttributeInstance(GenericAttributes.a).setValue(20.0D);
@@ -40,7 +40,7 @@ public class EntityWolf extends EntityTameableAnimal {
         }
     }
 
-    public boolean be() {
+    public boolean bf() {
         return true;
     }
 
@@ -53,7 +53,7 @@ public class EntityWolf extends EntityTameableAnimal {
         }
     }
 
-    protected void bj() {
+    protected void bk() {
         this.datawatcher.watch(18, Float.valueOf(this.getHealth()));
     }
 
@@ -87,15 +87,15 @@ public class EntityWolf extends EntityTameableAnimal {
         return this.isAngry() ? "mob.wolf.growl" : (this.random.nextInt(3) == 0 ? (this.isTamed() && this.datawatcher.getFloat(18) < (this.getMaxHealth() / 2) ? "mob.wolf.whine" : "mob.wolf.panting") : "mob.wolf.bark");
     }
 
-    protected String aN() {
+    protected String aO() {
         return "mob.wolf.hurt";
     }
 
-    protected String aO() {
+    protected String aP() {
         return "mob.wolf.death";
     }
 
-    protected float aZ() {
+    protected float ba() {
         return 0.4F;
     }
 
@@ -126,14 +126,14 @@ public class EntityWolf extends EntityTameableAnimal {
             this.g = 10;
         }
 
-        if (this.F()) {
+        if (this.G()) {
             this.bs = true;
             this.bt = false;
             this.bu = 0.0F;
             this.bv = 0.0F;
         } else if ((this.bs || this.bt) && this.bt) {
             if (this.bu == 0.0F) {
-                this.makeSound("mob.wolf.shake", this.aZ(), (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+                this.makeSound("mob.wolf.shake", this.ba(), (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
             }
 
             this.bv = this.bu;

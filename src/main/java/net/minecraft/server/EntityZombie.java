@@ -34,12 +34,12 @@ public class EntityZombie extends EntityMonster {
         this.targetSelector.a(2, new PathfinderGoalNearestAttackableTarget(this, EntityVillager.class, 0, false));
     }
 
-    protected void ay() {
-        super.ay();
+    protected void az() {
+        super.az();
         this.getAttributeInstance(GenericAttributes.b).setValue(40.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.23000000417232513D);
         this.getAttributeInstance(GenericAttributes.e).setValue(3.0D);
-        this.aW().b(bp).setValue(this.random.nextDouble() * 0.10000000149011612D);
+        this.aX().b(bp).setValue(this.random.nextDouble() * 0.10000000149011612D);
     }
 
     protected void a() {
@@ -49,8 +49,8 @@ public class EntityZombie extends EntityMonster {
         this.getDataWatcher().a(14, Byte.valueOf((byte) 0));
     }
 
-    public int aP() {
-        int i = super.aP() + 2;
+    public int aQ() {
+        int i = super.aQ() + 2;
 
         if (i > 20) {
             i = 20;
@@ -59,7 +59,7 @@ public class EntityZombie extends EntityMonster {
         return i;
     }
 
-    protected boolean be() {
+    protected boolean bf() {
         return true;
     }
 
@@ -188,7 +188,7 @@ public class EntityZombie extends EntityMonster {
     public boolean m(Entity entity) {
         boolean flag = super.m(entity);
 
-        if (flag && this.aY() == null && this.isBurning() && this.random.nextFloat() < (float) this.world.difficulty * 0.3F) {
+        if (flag && this.aZ() == null && this.isBurning() && this.random.nextFloat() < (float) this.world.difficulty * 0.3F) {
             // CraftBukkit start
             EntityCombustByEntityEvent event = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 2 * this.world.difficulty);
             this.world.getServer().getPluginManager().callEvent(event);
@@ -206,11 +206,11 @@ public class EntityZombie extends EntityMonster {
         return "mob.zombie.say";
     }
 
-    protected String aN() {
+    protected String aO() {
         return "mob.zombie.hurt";
     }
 
-    protected String aO() {
+    protected String aP() {
         return "mob.zombie.death";
     }
 
@@ -347,7 +347,7 @@ public class EntityZombie extends EntityMonster {
     }
 
     public boolean a(EntityHuman entityhuman) {
-        ItemStack itemstack = entityhuman.bx();
+        ItemStack itemstack = entityhuman.by();
 
         if (itemstack != null && itemstack.getItem() == Item.GOLDEN_APPLE && itemstack.getData() == 0 && this.isVillager() && this.hasEffect(MobEffectList.WEAKNESS)) {
             if (!entityhuman.abilities.canInstantlyBuild) {

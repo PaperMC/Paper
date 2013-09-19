@@ -29,7 +29,7 @@ public class CraftThrownPotion extends CraftProjectile implements ThrownPotion {
         // We run this method once since it will set the item stack if there is none.
         getHandle().getPotionValue();
 
-        return CraftItemStack.asBukkitCopy(getHandle().c);
+        return CraftItemStack.asBukkitCopy(getHandle().item);
     }
 
     public void setItem(ItemStack item) {
@@ -39,7 +39,7 @@ public class CraftThrownPotion extends CraftProjectile implements ThrownPotion {
         // The ItemStack must be a potion.
         Validate.isTrue(item.getType() == Material.POTION, "ItemStack must be a potion. This item stack was " + item.getType() + ".");
 
-        getHandle().c = CraftItemStack.asNMSCopy(item);
+        getHandle().item = CraftItemStack.asNMSCopy(item);
     }
 
     @Override

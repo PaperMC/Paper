@@ -4,7 +4,7 @@ import org.bukkit.event.entity.ExplosionPrimeEvent; // CraftBukkit
 
 public class EntityLargeFireball extends EntityFireball {
 
-    public int e = 1;
+    public int yield = 1;
 
     public EntityLargeFireball(World world) {
         super(world);
@@ -36,14 +36,14 @@ public class EntityLargeFireball extends EntityFireball {
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.setInt("ExplosionPower", this.e);
+        nbttagcompound.setInt("ExplosionPower", this.yield);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
         if (nbttagcompound.hasKey("ExplosionPower")) {
-            // CraftBukkit - set yield when setting explosionpower
-            this.yield = this.e = nbttagcompound.getInt("ExplosionPower");
+            // CraftBukkit - set bukkitYield when setting explosionpower
+            this.bukkitYield = this.yield = nbttagcompound.getInt("ExplosionPower");
         }
     }
 }

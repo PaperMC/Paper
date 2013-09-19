@@ -266,7 +266,7 @@ public class PlayerConnection extends Connection {
                     float f = this.player.yaw;
                     float f1 = this.player.pitch;
 
-                    this.player.vehicle.V();
+                    this.player.vehicle.W();
                     d1 = this.player.locX;
                     d2 = this.player.locY;
                     d3 = this.player.locZ;
@@ -280,7 +280,7 @@ public class PlayerConnection extends Connection {
                     this.player.X = 0.0F;
                     this.player.setLocation(d1, d2, d3, f, f1);
                     if (this.player.vehicle != null) {
-                        this.player.vehicle.V();
+                        this.player.vehicle.W();
                     }
 
                     this.minecraftServer.getPlayerList().d(this.player);
@@ -477,6 +477,7 @@ public class PlayerConnection extends Connection {
 
         WorldServer worldserver = this.minecraftServer.getWorldServer(this.player.dimension);
 
+        this.player.u();
         if (packet14blockdig.e == 4) {
             // CraftBukkit start
             // If the ticks aren't the same then the count starts from 0 and we update the lastDropTick.
@@ -497,7 +498,7 @@ public class PlayerConnection extends Connection {
         } else if (packet14blockdig.e == 3) {
             this.player.a(true);
         } else if (packet14blockdig.e == 5) {
-            this.player.bs();
+            this.player.bt();
         } else {
             boolean flag = false;
 
@@ -574,6 +575,7 @@ public class PlayerConnection extends Connection {
         // second one. This sadly has to remain until Mojang makes their packets saner. :(
         //  -- Grum
 
+        this.player.u();
         if (packet15place.getFace() == 255) {
             if (packet15place.getItemStack() != null && packet15place.getItemStack().id == this.lastMaterial && this.lastPacket != null && packet15place.timestamp - this.lastPacket < 100) {
                 this.lastPacket = null;
@@ -747,11 +749,13 @@ public class PlayerConnection extends Connection {
             this.server.getPluginManager().callEvent(event);
             if (event.isCancelled()) {
                 this.sendPacket(new Packet16BlockItemSwitch(this.player.inventory.itemInHandIndex));
+                this.player.u();
                 return;
             }
             // CraftBukkit end
 
             this.player.inventory.itemInHandIndex = packet16blockitemswitch.itemInHandIndex;
+            this.player.u();
         } else {
             this.minecraftServer.getLogger().warning(this.player.getName() + " tried to set an invalid carried item");
             this.disconnect("Nope!"); // CraftBukkit
@@ -762,6 +766,7 @@ public class PlayerConnection extends Connection {
         if (this.player.getChatFlags() == 2) {
             this.sendPacket(new Packet3Chat(ChatMessage.e("chat.cannotSend").a(EnumChatFormat.RED)));
         } else {
+            this.player.u();
             String s = packet3chat.message;
 
             if (s.length() > 100) {
@@ -969,6 +974,7 @@ public class PlayerConnection extends Connection {
     public void a(Packet18ArmAnimation packet18armanimation) {
         if (this.player.dead) return; // CraftBukkit
 
+        this.player.u();
         if (packet18armanimation.b == 1) {
             // CraftBukkit start - Raytrace to look for 'rogue armswings'
             float f = 1.0F;
@@ -1000,7 +1006,7 @@ public class PlayerConnection extends Connection {
             if (event.isCancelled()) return;
             // CraftBukkit end
 
-            this.player.aU();
+            this.player.aV();
         }
     }
 
@@ -1008,6 +1014,7 @@ public class PlayerConnection extends Connection {
         // CraftBukkit start
         if (this.player.dead) return;
 
+        this.player.u();
         if (packet19entityaction.animation == 1 || packet19entityaction.animation == 2) {
             PlayerToggleSneakEvent event = new PlayerToggleSneakEvent(this.getPlayer(), packet19entityaction.animation == 1);
             this.server.getPluginManager().callEvent(event);
@@ -1061,6 +1068,7 @@ public class PlayerConnection extends Connection {
         WorldServer worldserver = this.minecraftServer.getWorldServer(this.player.dimension);
         Entity entity = worldserver.getEntity(packet7useentity.target);
 
+        this.player.u();
         if (entity != null) {
             boolean flag = this.player.o(entity);
             double d0 = 36.0D;
@@ -1081,7 +1089,7 @@ public class PlayerConnection extends Connection {
 
                     if (triggerLeashUpdate && (event.isCancelled() || this.player.inventory.getItemInHand() == null || this.player.inventory.getItemInHand().id != Item.LEASH.id)) {
                         // Refresh the current leash state
-                        this.sendPacket(new Packet39AttachEntity(1, entity, ((EntityInsentient) entity).bI()));
+                        this.sendPacket(new Packet39AttachEntity(1, entity, ((EntityInsentient) entity).getLeashHolder()));
                     }
 
                     if (triggerTagUpdate && (event.isCancelled() || this.player.inventory.getItemInHand() == null || this.player.inventory.getItemInHand().id != Item.NAME_TAG.id)) {
@@ -1122,6 +1130,7 @@ public class PlayerConnection extends Connection {
     }
 
     public void a(Packet205ClientCommand packet205clientcommand) {
+        this.player.u();
         if (packet205clientcommand.a == 1) {
             if (this.player.viewingCredits) {
                 this.minecraftServer.getPlayerList().changeDimension(this.player, 0, PlayerTeleportEvent.TeleportCause.END_PORTAL); // CraftBukkit - reroute logic through custom portal management
@@ -1163,6 +1172,7 @@ public class PlayerConnection extends Connection {
     public void a(Packet102WindowClick packet102windowclick) {
         if (this.player.dead) return; // CraftBukkit
 
+        this.player.u();
         if (this.player.activeContainer.windowId == packet102windowclick.a && this.player.activeContainer.c(this.player)) {
             // CraftBukkit start - Call InventoryClickEvent
             if (packet102windowclick.slot < -1 && packet102windowclick.slot != -999) {
@@ -1449,6 +1459,7 @@ public class PlayerConnection extends Connection {
     }
 
     public void a(Packet108ButtonClick packet108buttonclick) {
+        this.player.u();
         if (this.player.activeContainer.windowId == packet108buttonclick.a && this.player.activeContainer.c(this.player)) {
             this.player.activeContainer.a((EntityHuman) this.player, packet108buttonclick.b);
             this.player.activeContainer.b();
@@ -1535,6 +1546,7 @@ public class PlayerConnection extends Connection {
     public void a(Packet130UpdateSign packet130updatesign) {
         if (this.player.dead) return; // CraftBukkit
 
+        this.player.u();
         WorldServer worldserver = this.minecraftServer.getWorldServer(this.player.dimension);
 
         if (worldserver.isLoaded(packet130updatesign.x, packet130updatesign.y, packet130updatesign.z)) {

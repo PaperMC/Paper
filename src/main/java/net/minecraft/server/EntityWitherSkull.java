@@ -40,7 +40,7 @@ public class EntityWitherSkull extends EntityFireball {
                         this.shooter.heal(5.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.WITHER); // CraftBukkit
                     }
                 } else {
-                    movingobjectposition.entity.damageEntity(DamageSource.MAGIC, 5);
+                    movingobjectposition.entity.damageEntity(DamageSource.MAGIC, 5.0F);
                 }
 
                 if (movingobjectposition.entity instanceof EntityLiving) {
@@ -73,7 +73,7 @@ public class EntityWitherSkull extends EntityFireball {
         }
     }
 
-    public boolean K() {
+    public boolean L() {
         return false;
     }
 

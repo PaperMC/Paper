@@ -62,29 +62,27 @@ public class PendingConnection extends Connection {
     }
 
     public void a(Packet2Handshake packet2handshake) {
-        // CraftBukkit start
         if (this.g != null) {
-            this.disconnect("Invalid username " + this.g);
-        }
-        this.hostname = packet2handshake.c == null ? "" : packet2handshake.c + ':' + packet2handshake.d;
-        // CraftBukkit end
-        this.g = packet2handshake.f();
-        if (!this.g.equals(StripColor.a(this.g))) {
-            this.disconnect("Invalid username!");
+            this.disconnect("Quit repeating yourself!");
         } else {
-            PublicKey publickey = this.server.H().getPublic();
-
-            if (packet2handshake.d() != 74) {
-                if (packet2handshake.d() > 74) {
-                    this.disconnect("Outdated server!");
-                } else {
-                    this.disconnect("Outdated client!");
-                }
+            this.g = packet2handshake.f();
+            if (!this.g.equals(StripColor.a(this.g))) {
+                this.disconnect("Invalid username!");
             } else {
-                this.loginKey = this.server.getOnlineMode() ? Long.toString(random.nextLong(), 16) : "-";
-                this.d = new byte[4];
-                random.nextBytes(this.d);
-                this.networkManager.queue(new Packet253KeyRequest(this.loginKey, publickey, this.d));
+                PublicKey publickey = this.server.H().getPublic();
+
+                if (packet2handshake.d() != 78) {
+                    if (packet2handshake.d() > 78) {
+                        this.disconnect("Outdated server!");
+                    } else {
+                        this.disconnect("Outdated client!");
+                    }
+                } else {
+                    this.loginKey = this.server.getOnlineMode() ? Long.toString(random.nextLong(), 16) : "-";
+                    this.d = new byte[4];
+                    random.nextBytes(this.d);
+                    this.networkManager.queue(new Packet253KeyRequest(this.loginKey, publickey, this.d));
+                }
             }
         }
     }
@@ -154,7 +152,7 @@ public class PendingConnection extends Connection {
                 s = pingEvent.getMotd() + "\u00A7" + playerlist.getPlayerCount() + "\u00A7" + pingEvent.getMaxPlayers();
             } else {
                 // CraftBukkit start - Don't create a list from an array
-                Object[] list = new Object[] { 1, 74, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
+                Object[] list = new Object[] { 1, 78, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
 
                 StringBuilder builder = new StringBuilder();
                 for (Object object : list) {

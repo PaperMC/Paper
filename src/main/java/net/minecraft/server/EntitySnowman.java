@@ -18,19 +18,19 @@ public class EntitySnowman extends EntityGolem implements IRangedEntity {
         this.targetSelector.a(1, new PathfinderGoalNearestAttackableTarget(this, EntityInsentient.class, 0, true, false, IMonster.a));
     }
 
-    public boolean be() {
+    public boolean bf() {
         return true;
     }
 
-    protected void ay() {
-        super.ay();
+    protected void az() {
+        super.az();
         this.getAttributeInstance(GenericAttributes.a).setValue(4.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.20000000298023224D);
     }
 
     public void c() {
         super.c();
-        if (this.F()) {
+        if (this.G()) {
             this.damageEntity(DamageSource.DROWN, 1.0F);
         }
 
@@ -87,7 +87,7 @@ public class EntitySnowman extends EntityGolem implements IRangedEntity {
         float f1 = MathHelper.sqrt(d0 * d0 + d2 * d2) * 0.2F;
 
         entitysnowball.shoot(d0, d1 + (double) f1, d2, 1.6F, 12.0F);
-        this.makeSound("random.bow", 1.0F, 1.0F / (this.aC().nextFloat() * 0.4F + 0.8F));
+        this.makeSound("random.bow", 1.0F, 1.0F / (this.aD().nextFloat() * 0.4F + 0.8F));
         this.world.addEntity(entitysnowball);
     }
 }

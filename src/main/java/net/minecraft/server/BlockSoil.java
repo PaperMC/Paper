@@ -29,7 +29,7 @@ public class BlockSoil extends Block {
     }
 
     public void a(World world, int i, int j, int k, Random random) {
-        if (!this.m(world, i, j, k) && !world.F(i, j + 1, k)) {
+        if (!this.m(world, i, j, k) && !world.isRainingAt(i, j + 1, k)) {
             int l = world.getData(i, j, k);
 
             if (l > 0) {

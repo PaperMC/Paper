@@ -29,7 +29,7 @@ public abstract class EntityCreature extends EntityInsentient {
         return false;
     }
 
-    protected void bk() {
+    protected void bl() {
         this.world.methodProfiler.a("ai");
         if (this.bo > 0 && --this.bo == 0) {
             AttributeInstance attributeinstance = this.getAttributeInstance(GenericAttributes.d);
@@ -89,8 +89,8 @@ public abstract class EntityCreature extends EntityInsentient {
         }
 
         int i = MathHelper.floor(this.boundingBox.b + 0.5D);
-        boolean flag = this.G();
-        boolean flag1 = this.I();
+        boolean flag = this.H();
+        boolean flag1 = this.J();
 
         this.pitch = 0.0F;
         if (this.pathEntity != null && this.random.nextInt(100) != 0) {
@@ -157,7 +157,7 @@ public abstract class EntityCreature extends EntityInsentient {
 
             this.world.methodProfiler.b();
         } else {
-            super.bk();
+            super.bl();
             this.pathEntity = null;
         }
     }
@@ -257,8 +257,8 @@ public abstract class EntityCreature extends EntityInsentient {
 
     protected void bF() {
         super.bF();
-        if (this.bH() && this.bI() != null && this.bI().world == this.world) {
-            Entity entity = this.bI();
+        if (this.bH() && this.getLeashHolder() != null && this.getLeashHolder().world == this.world) {
+            Entity entity = this.getLeashHolder();
 
             this.b((int) entity.locX, (int) entity.locY, (int) entity.locZ, 5);
             float f = this.d(entity);
@@ -266,7 +266,7 @@ public abstract class EntityCreature extends EntityInsentient {
             if (this instanceof EntityTameableAnimal && ((EntityTameableAnimal) this).isSitting()) {
                 if (f > 10.0F) {
                     this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE)); // CraftBukkit
-                    this.a(true, true);
+                    this.unleash(true, true);
                 }
 
                 return;
@@ -295,7 +295,7 @@ public abstract class EntityCreature extends EntityInsentient {
 
             if (f > 10.0F) {
                 this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE)); // CraftBukkit
-                this.a(true, true);
+                this.unleash(true, true);
             }
         } else if (!this.bH() && this.bt) {
             this.bt = false;

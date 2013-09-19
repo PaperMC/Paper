@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -39,6 +40,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     private int bU;
     private int bV;
     private boolean bW = true;
+    private long bX = 0L;
     private int containerCounter;
     public boolean h;
     public int ping;
@@ -158,10 +160,9 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             this.activeContainer = this.defaultContainer;
         }
 
-        // CraftBukkit start - Check inventory status every tick
-        if (!this.activeContainer.a(this)) { // Should be stillValid
-            this.closeInventory();
-            this.activeContainer = this.defaultContainer;
+        // CraftBukkit start
+        if (this.noDamageTicks > 0) {
+            --this.noDamageTicks;
         }
         // CraftBukkit end
 
@@ -216,6 +217,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
                 }
             }
         }
+
+        if (this.bX > 0L && this.server.ar() > 0 && MinecraftServer.aq() - this.bX > (long) (this.server.ar() * 1000 * 60)) {
+            this.playerConnection.disconnect("You have been idle for too long!");
+        }
     }
 
     public void h() {
@@ -242,8 +247,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
                 this.bR = this.foodData.e() == 0.0F;
             }
 
-            if (this.getHealth() + this.bm() != this.bO) {
-                this.bO = this.getHealth() + this.bm();
+            if (this.getHealth() + this.bn() != this.bO) {
+                this.bO = this.getHealth() + this.bn();
                 // CraftBukkit - Update ALL the scores!
                 this.world.getServer().getScoreboardManager().updateAllScoresForList(IScoreboardCriteria.f, this.getLocalizedName(), com.google.common.collect.ImmutableList.of(this));
             }
@@ -301,7 +306,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             }
         }
 
-        ChatMessage chatmessage = this.aQ().b();
+        ChatMessage chatmessage = this.aR().b();
 
         String deathmessage = chatmessage.toString();
         org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, deathmessage);
@@ -340,7 +345,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             scoreboardscore.incrementScore();
         }
 
-        EntityLiving entityliving = this.aR();
+        EntityLiving entityliving = this.aS();
 
         if (entityliving != null) {
             entityliving.b(this, this.bb);
@@ -871,6 +876,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public ChunkCoordinates b() {
         return new ChunkCoordinates(MathHelper.floor(this.locX), MathHelper.floor(this.locY + 0.5D), MathHelper.floor(this.locZ));
+    }
+
+    public void u() {
+        this.bX = MinecraftServer.aq();
     }
 
     // CraftBukkit start

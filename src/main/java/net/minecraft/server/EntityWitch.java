@@ -31,11 +31,11 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
         return "mob.witch.idle";
     }
 
-    protected String aN() {
+    protected String aO() {
         return "mob.witch.hurt";
     }
 
-    protected String aO() {
+    protected String aP() {
         return "mob.witch.death";
     }
 
@@ -47,13 +47,13 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
         return this.getDataWatcher().getByte(21) == 1;
     }
 
-    protected void ay() {
-        super.ay();
+    protected void az() {
+        super.az();
         this.getAttributeInstance(GenericAttributes.a).setValue(26.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.25D);
     }
 
-    public boolean be() {
+    public boolean bf() {
         return true;
     }
 
@@ -62,7 +62,7 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
             if (this.bT()) {
                 if (this.bs-- <= 0) {
                     this.a(false);
-                    ItemStack itemstack = this.aY();
+                    ItemStack itemstack = this.aZ();
 
                     this.setEquipment(0, (ItemStack) null);
                     if (itemstack != null && itemstack.id == Item.POTION.id) {
@@ -96,7 +96,7 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
 
                 if (short1 > -1) {
                     this.setEquipment(0, new ItemStack(Item.POTION, 1, short1));
-                    this.bs = this.aY().n();
+                    this.bs = this.aZ().n();
                     this.a(true);
                     AttributeInstance attributeinstance = this.getAttributeInstance(GenericAttributes.d);
 

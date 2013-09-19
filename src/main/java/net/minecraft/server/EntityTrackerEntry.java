@@ -76,7 +76,7 @@ public class EntityTrackerEntry {
 
         if (this.tracker instanceof EntityItemFrame /*&& this.m % 10 == 0*/) { // CraftBukkit - Moved below, should always enter this block
             EntityItemFrame i3 = (EntityItemFrame) this.tracker;
-            ItemStack i4 = i3.h();
+            ItemStack i4 = i3.getItem();
 
             if (this.m % 10 == 0 && i4 != null && i4.getItem() instanceof ItemWorldMap) { // CraftBukkit - Moved this.m % 10 logic here so item frames do not enter the other blocks
                 WorldMap i6 = Item.MAP.getSavedMap(i4, this.tracker.world);
@@ -246,7 +246,7 @@ public class EntityTrackerEntry {
         }
 
         if (this.tracker instanceof EntityLiving) {
-            AttributeMapServer attributemapserver = (AttributeMapServer) ((EntityLiving) this.tracker).aW();
+            AttributeMapServer attributemapserver = (AttributeMapServer) ((EntityLiving) this.tracker).aX();
             Set set = attributemapserver.b();
 
             if (!set.isEmpty()) {
@@ -323,7 +323,7 @@ public class EntityTrackerEntry {
                     }
 
                     if (this.tracker instanceof EntityLiving) {
-                        AttributeMapServer attributemapserver = (AttributeMapServer) ((EntityLiving) this.tracker).aW();
+                        AttributeMapServer attributemapserver = (AttributeMapServer) ((EntityLiving) this.tracker).aX();
                         Collection collection = attributemapserver.c();
 
                         // CraftBukkit start - If sending own attributes send scaled health instead of current maximum health
@@ -353,8 +353,8 @@ public class EntityTrackerEntry {
                     }
                     // CraftBukkit end
 
-                    if (this.tracker instanceof EntityInsentient && ((EntityInsentient) this.tracker).bI() != null) {
-                        entityplayer.playerConnection.sendPacket(new Packet39AttachEntity(1, this.tracker, ((EntityInsentient) this.tracker).bI()));
+                    if (this.tracker instanceof EntityInsentient && ((EntityInsentient) this.tracker).getLeashHolder() != null) {
+                        entityplayer.playerConnection.sendPacket(new Packet39AttachEntity(1, this.tracker, ((EntityInsentient) this.tracker).getLeashHolder()));
                     }
 
                     if (this.tracker instanceof EntityLiving) {

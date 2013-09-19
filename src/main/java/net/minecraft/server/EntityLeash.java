@@ -41,7 +41,7 @@ public class EntityLeash extends EntityHanging {
     public void a(NBTTagCompound nbttagcompound) {}
 
     public boolean c(EntityHuman entityhuman) {
-        ItemStack itemstack = entityhuman.aY();
+        ItemStack itemstack = entityhuman.aZ();
         boolean flag = false;
         double d0;
         List list;
@@ -56,14 +56,14 @@ public class EntityLeash extends EntityHanging {
 
                 while (iterator.hasNext()) {
                     entityinsentient = (EntityInsentient) iterator.next();
-                    if (entityinsentient.bH() && entityinsentient.bI() == entityhuman) {
+                    if (entityinsentient.bH() && entityinsentient.getLeashHolder() == entityhuman) {
                         // CraftBukkit start
                         if (CraftEventFactory.callPlayerLeashEntityEvent(entityinsentient, this, entityhuman).isCancelled()) {
-                            ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet39AttachEntity(1, entityinsentient, entityinsentient.bI()));
+                            ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet39AttachEntity(1, entityinsentient, entityinsentient.getLeashHolder()));
                             continue;
                         }
                         // CraftBukkit end
-                        entityinsentient.b(this, true);
+                        entityinsentient.setLeashHolder(this, true);
                         flag = true;
                     }
                 }
@@ -83,13 +83,13 @@ public class EntityLeash extends EntityHanging {
 
                     while (iterator.hasNext()) {
                         entityinsentient = (EntityInsentient) iterator.next();
-                        if (entityinsentient.bH() && entityinsentient.bI() == this) {
+                        if (entityinsentient.bH() && entityinsentient.getLeashHolder() == this) {
                             // CraftBukkit start
                             if (CraftEventFactory.callPlayerUnleashEntityEvent(entityinsentient, entityhuman).isCancelled()) {
                                 die = false;
                                 continue;
                             }
-                            entityinsentient.a(true, !entityhuman.abilities.canInstantlyBuild); // false -> survival mode boolean
+                            entityinsentient.unleash(true, !entityhuman.abilities.canInstantlyBuild); // false -> survival mode boolean
                             // CraftBukkit end
                         }
                     }

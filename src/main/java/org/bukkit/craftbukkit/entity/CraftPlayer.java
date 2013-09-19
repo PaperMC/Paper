@@ -1045,7 +1045,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void updateScaledHealth() {
-        AttributeMapServer attributemapserver = (AttributeMapServer) getHandle().aW();
+        AttributeMapServer attributemapserver = (AttributeMapServer) getHandle().aX();
         Set set = attributemapserver.b();
 
         injectScaledMaxHealth(set, true);
@@ -1070,6 +1070,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             }
             continue;
         }
-        collection.add(new AttributeModifiable(getHandle().aW(), (new AttributeRanged("generic.maxHealth", scaledHealth ? healthScale : getMaxHealth(), 0.0D, Float.MAX_VALUE)).a("Max Health").a(true)));
+        collection.add(new AttributeModifiable(getHandle().aX(), (new AttributeRanged("generic.maxHealth", scaledHealth ? healthScale : getMaxHealth(), 0.0D, Float.MAX_VALUE)).a("Max Health").a(true)));
     }
 }

@@ -10,7 +10,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     }
 
     public void c() {
-        this.aV();
+        this.aW();
         float f = this.d(1.0F);
 
         if (f > 0.5F) {
@@ -136,8 +136,8 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         return this.world.difficulty > 0 && this.i_() && super.canSpawn();
     }
 
-    protected void ay() {
-        super.ay();
-        this.aW().b(GenericAttributes.e);
+    protected void az() {
+        super.az();
+        this.aX().b(GenericAttributes.e);
     }
 }

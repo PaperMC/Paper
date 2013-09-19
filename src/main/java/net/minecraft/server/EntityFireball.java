@@ -15,7 +15,7 @@ public abstract class EntityFireball extends Entity {
     public double dirX;
     public double dirY;
     public double dirZ;
-    public float yield = 1; // CraftBukkit
+    public float bukkitYield = 1; // CraftBukkit
     public boolean isIncendiary = true; // CraftBukkit
 
     public EntityFireball(World world) {
@@ -106,7 +106,7 @@ public abstract class EntityFireball extends Entity {
             for (int j = 0; j < list.size(); ++j) {
                 Entity entity1 = (Entity) list.get(j);
 
-                if (entity1.K() && (!entity1.h(this.shooter) || this.au >= 25)) {
+                if (entity1.L() && (!entity1.h(this.shooter) || this.au >= 25)) {
                     float f = 0.3F;
                     AxisAlignedBB axisalignedbb = entity1.boundingBox.grow((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
@@ -163,7 +163,7 @@ public abstract class EntityFireball extends Entity {
             this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
             float f2 = this.c();
 
-            if (this.G()) {
+            if (this.H()) {
                 for (int k = 0; k < 4; ++k) {
                     float f3 = 0.25F;
 
@@ -219,11 +219,11 @@ public abstract class EntityFireball extends Entity {
         }
     }
 
-    public boolean K() {
+    public boolean L() {
         return true;
     }
 
-    public float Y() {
+    public float Z() {
         return 1.0F;
     }
 
@@ -231,9 +231,9 @@ public abstract class EntityFireball extends Entity {
         if (this.isInvulnerable()) {
             return false;
         } else {
-            this.J();
+            this.K();
             if (damagesource.getEntity() != null) {
-                Vec3D vec3d = damagesource.getEntity().Z();
+                Vec3D vec3d = damagesource.getEntity().aa();
 
                 if (vec3d != null) {
                     this.motX = vec3d.c;

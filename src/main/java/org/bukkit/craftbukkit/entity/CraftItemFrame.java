@@ -20,16 +20,16 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
             getHandle().getDataWatcher().a(2, 5);
             getHandle().getDataWatcher().h(2);
         } else {
-            getHandle().a(CraftItemStack.asNMSCopy(item));
+            getHandle().setItem(CraftItemStack.asNMSCopy(item));
         }
     }
 
     public org.bukkit.inventory.ItemStack getItem() {
-        return CraftItemStack.asBukkitCopy(getHandle().h());
+        return CraftItemStack.asBukkitCopy(getHandle().getItem());
     }
 
     public Rotation getRotation() {
-        return toBukkitRotation(getHandle().i());
+        return toBukkitRotation(getHandle().getRotation());
     }
 
     Rotation toBukkitRotation(int value) {
@@ -44,7 +44,7 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
         case 3:
             return Rotation.COUNTER_CLOCKWISE;
         default:
-            throw new AssertionError("Unknown rotation " + getHandle().i() + " for " + getHandle());
+            throw new AssertionError("Unknown rotation " + value + " for " + getHandle());
         }
     }
 

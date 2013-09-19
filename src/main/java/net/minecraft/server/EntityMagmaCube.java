@@ -7,8 +7,8 @@ public class EntityMagmaCube extends EntitySlime {
         this.fireProof = true;
     }
 
-    protected void ay() {
-        super.ay();
+    protected void az() {
+        super.az();
         this.getAttributeInstance(GenericAttributes.d).setValue(0.20000000298023224D);
     }
 
@@ -16,7 +16,7 @@ public class EntityMagmaCube extends EntitySlime {
         return this.world.difficulty > 0 && this.world.b(this.boundingBox) && this.world.getCubes(this, this.boundingBox).isEmpty() && !this.world.containsLiquid(this.boundingBox);
     }
 
-    public int aP() {
+    public int aQ() {
         return this.getSize() * 3;
     }
 
@@ -69,7 +69,7 @@ public class EntityMagmaCube extends EntitySlime {
         this.h *= 0.9F;
     }
 
-    protected void bd() {
+    protected void be() {
         this.motY = (double) (0.42F + (float) this.getSize() * 0.1F);
         this.an = true;
     }
@@ -84,11 +84,11 @@ public class EntityMagmaCube extends EntitySlime {
         return super.bO() + 2;
     }
 
-    protected String aN() {
+    protected String aO() {
         return "mob.slime." + (this.getSize() > 1 ? "big" : "small");
     }
 
-    protected String aO() {
+    protected String aP() {
         return "mob.slime." + (this.getSize() > 1 ? "big" : "small");
     }
 
@@ -96,7 +96,7 @@ public class EntityMagmaCube extends EntitySlime {
         return this.getSize() > 1 ? "mob.magmacube.big" : "mob.magmacube.small";
     }
 
-    public boolean I() {
+    public boolean J() {
         return false;
     }
 

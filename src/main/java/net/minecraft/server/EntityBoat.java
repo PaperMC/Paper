@@ -67,11 +67,11 @@ public class EntityBoat extends Entity {
         return entity.boundingBox;
     }
 
-    public AxisAlignedBB D() {
+    public AxisAlignedBB E() {
         return this.boundingBox;
     }
 
-    public boolean L() {
+    public boolean M() {
         return true;
     }
 
@@ -88,7 +88,7 @@ public class EntityBoat extends Entity {
         this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit
     }
 
-    public double X() {
+    public double Y() {
         return (double) this.length * 0.0D - 0.30000001192092896D;
     }
 
@@ -112,7 +112,7 @@ public class EntityBoat extends Entity {
             this.c(-this.h());
             this.a(10);
             this.setDamage(this.getDamage() + f * 10.0F);
-            this.J();
+            this.K();
             boolean flag = damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).abilities.canInstantlyBuild;
 
             if (flag || this.getDamage() > 40.0F) {
@@ -143,7 +143,7 @@ public class EntityBoat extends Entity {
         }
     }
 
-    public boolean K() {
+    public boolean L() {
         return !this.dead;
     }
 
@@ -370,7 +370,7 @@ public class EntityBoat extends Entity {
                     for (l = 0; l < list.size(); ++l) {
                         Entity entity = (Entity) list.get(l);
 
-                        if (entity != this.passenger && entity.L() && entity instanceof EntityBoat) {
+                        if (entity != this.passenger && entity.M() && entity instanceof EntityBoat) {
                             entity.collide(this);
                         }
                     }
@@ -412,12 +412,12 @@ public class EntityBoat extends Entity {
         }
     }
 
-    public void V() {
+    public void W() {
         if (this.passenger != null) {
             double d0 = Math.cos((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
             double d1 = Math.sin((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
 
-            this.passenger.setPosition(this.locX + d0, this.locY + this.X() + this.passenger.W(), this.locZ + d1);
+            this.passenger.setPosition(this.locX + d0, this.locY + this.Y() + this.passenger.X(), this.locZ + d1);
         }
     }
 

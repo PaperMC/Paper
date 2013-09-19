@@ -199,7 +199,7 @@ public abstract class EntityHanging extends Entity {
         }
     }
 
-    public boolean K() {
+    public boolean L() {
         return true;
     }
 
@@ -239,7 +239,7 @@ public abstract class EntityHanging extends Entity {
                 // CraftBukkit end
 
                 this.die();
-                this.J();
+                this.K();
                 this.b(damagesource.getEntity());
             }
 
@@ -318,7 +318,7 @@ public abstract class EntityHanging extends Entity {
 
     public abstract int e();
 
-    protected boolean O() {
+    protected boolean P() {
         return false;
     }
 

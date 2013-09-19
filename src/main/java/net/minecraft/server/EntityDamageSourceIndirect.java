@@ -19,7 +19,7 @@ public class EntityDamageSourceIndirect extends EntityDamageSource {
 
     public ChatMessage getLocalizedDeathMessage(EntityLiving entityliving) {
         String s = this.owner == null ? this.p.getScoreboardDisplayName() : this.owner.getScoreboardDisplayName();
-        ItemStack itemstack = this.owner instanceof EntityLiving ? ((EntityLiving) this.owner).aY() : null;
+        ItemStack itemstack = this.owner instanceof EntityLiving ? ((EntityLiving) this.owner).aZ() : null;
         String s1 = "death.attack." + this.translationIndex;
         String s2 = s1 + ".item";
 

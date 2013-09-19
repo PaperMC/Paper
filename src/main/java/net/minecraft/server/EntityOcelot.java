@@ -27,7 +27,7 @@ public class EntityOcelot extends EntityTameableAnimal {
         this.datawatcher.a(18, Byte.valueOf((byte) 0));
     }
 
-    public void bj() {
+    public void bk() {
         if (this.getControllerMove().a()) {
             double d0 = this.getControllerMove().b();
 
@@ -51,12 +51,12 @@ public class EntityOcelot extends EntityTameableAnimal {
         return !this.isTamed(); // CraftBukkit
     }
 
-    public boolean be() {
+    public boolean bf() {
         return true;
     }
 
-    protected void ay() {
-        super.ay();
+    protected void az() {
+        super.az();
         this.getAttributeInstance(GenericAttributes.a).setValue(10.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.30000001192092896D);
     }
@@ -77,15 +77,15 @@ public class EntityOcelot extends EntityTameableAnimal {
         return this.isTamed() ? (this.bY() ? "mob.cat.purr" : (this.random.nextInt(4) == 0 ? "mob.cat.purreow" : "mob.cat.meow")) : "";
     }
 
-    protected String aN() {
-        return "mob.cat.hitt";
-    }
-
     protected String aO() {
         return "mob.cat.hitt";
     }
 
-    protected float aZ() {
+    protected String aP() {
+        return "mob.cat.hitt";
+    }
+
+    protected float ba() {
         return 0.4F;
     }
 

@@ -37,7 +37,7 @@ public class EntityTNTPrimed extends Entity {
         return false;
     }
 
-    public boolean K() {
+    public boolean L() {
         return !this.dead;
     }
 

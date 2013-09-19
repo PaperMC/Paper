@@ -50,9 +50,9 @@ public abstract class EntityInsentient extends EntityLiving {
         }
     }
 
-    protected void ay() {
-        super.ay();
-        this.aW().b(GenericAttributes.b).setValue(16.0D);
+    protected void az() {
+        super.az();
+        this.aX().b(GenericAttributes.b).setValue(16.0D);
     }
 
     public ControllerLook getControllerLook() {
@@ -103,12 +103,12 @@ public abstract class EntityInsentient extends EntityLiving {
         String s = this.r();
 
         if (s != null) {
-            this.makeSound(s, this.aZ(), this.ba());
+            this.makeSound(s, this.ba(), this.bb());
         }
     }
 
-    public void x() {
-        super.x();
+    public void y() {
+        super.y();
         this.world.methodProfiler.a("mobBaseTick");
         if (this.isAlive() && this.random.nextInt(1000) < this.a_++) {
             this.a_ = -this.o();
@@ -154,7 +154,7 @@ public abstract class EntityInsentient extends EntityLiving {
     }
 
     protected float f(float f, float f1) {
-        if (this.be()) {
+        if (this.bf()) {
             this.bn.a();
             return f1;
         } else {
@@ -371,7 +371,7 @@ public abstract class EntityInsentient extends EntityLiving {
         this.world.methodProfiler.b();
     }
 
-    protected boolean be() {
+    protected boolean bf() {
         return false;
     }
 
@@ -379,7 +379,7 @@ public abstract class EntityInsentient extends EntityLiving {
         return true;
     }
 
-    protected void bo() {
+    protected void u() {
         if (this.persistent) {
             this.aV = 0;
         } else {
@@ -404,10 +404,10 @@ public abstract class EntityInsentient extends EntityLiving {
         }
     }
 
-    protected void bh() {
+    protected void bi() {
         ++this.aV;
         this.world.methodProfiler.a("checkDespawn");
-        this.bo();
+        this.u();
         this.world.methodProfiler.b();
         this.world.methodProfiler.a("sensing");
         this.bq.a();
@@ -422,7 +422,7 @@ public abstract class EntityInsentient extends EntityLiving {
         this.navigation.f();
         this.world.methodProfiler.b();
         this.world.methodProfiler.a("mob tick");
-        this.bj();
+        this.bk();
         this.world.methodProfiler.b();
         this.world.methodProfiler.a("controls");
         this.world.methodProfiler.a("move");
@@ -435,11 +435,11 @@ public abstract class EntityInsentient extends EntityLiving {
         this.world.methodProfiler.b();
     }
 
-    protected void bk() {
-        super.bk();
+    protected void bl() {
+        super.bl();
         this.be = 0.0F;
         this.bf = 0.0F;
-        this.bo();
+        this.u();
         float f = 8.0F;
 
         if (this.random.nextFloat() < 0.02F) {
@@ -467,8 +467,8 @@ public abstract class EntityInsentient extends EntityLiving {
             this.pitch = this.f;
         }
 
-        boolean flag = this.G();
-        boolean flag1 = this.I();
+        boolean flag = this.H();
+        boolean flag1 = this.J();
 
         if (flag || flag1) {
             this.bd = this.random.nextFloat() < 0.8F;
@@ -522,7 +522,7 @@ public abstract class EntityInsentient extends EntityLiving {
         return 4;
     }
 
-    public int ar() {
+    public int as() {
         if (this.getGoalTarget() == null) {
             return 3;
         } else {
@@ -537,7 +537,7 @@ public abstract class EntityInsentient extends EntityLiving {
         }
     }
 
-    public ItemStack aY() {
+    public ItemStack aZ() {
         return this.equipment[0];
     }
 
@@ -704,8 +704,8 @@ public abstract class EntityInsentient extends EntityLiving {
     protected void bx() {
         float f = this.world.b(this.locX, this.locY, this.locZ);
 
-        if (this.aY() != null && this.random.nextFloat() < 0.25F * f) {
-            EnchantmentManager.a(this.random, this.aY(), (int) (5.0F + f * (float) this.random.nextInt(18)));
+        if (this.aZ() != null && this.random.nextFloat() < 0.25F * f) {
+            EnchantmentManager.a(this.random, this.aZ(), (int) (5.0F + f * (float) this.random.nextInt(18)));
         }
 
         for (int i = 0; i < 4; ++i) {
@@ -771,14 +771,14 @@ public abstract class EntityInsentient extends EntityLiving {
     }
 
     public final boolean c(EntityHuman entityhuman) {
-        if (this.bH() && this.bI() == entityhuman) {
+        if (this.bH() && this.getLeashHolder() == entityhuman) {
             // CraftBukkit start
             if (CraftEventFactory.callPlayerUnleashEntityEvent(this, entityhuman).isCancelled()) {
-                ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet39AttachEntity(1, this, this.bI()));
+                ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet39AttachEntity(1, this, this.getLeashHolder()));
                 return false;
             }
             // CraftBukkit end
-            this.a(true, !entityhuman.abilities.canInstantlyBuild);
+            this.unleash(true, !entityhuman.abilities.canInstantlyBuild);
             return true;
         } else {
             ItemStack itemstack = entityhuman.inventory.getItemInHand();
@@ -787,11 +787,11 @@ public abstract class EntityInsentient extends EntityLiving {
                 if (!(this instanceof EntityTameableAnimal) || !((EntityTameableAnimal) this).isTamed()) {
                     // CraftBukkit start
                     if (CraftEventFactory.callPlayerLeashEntityEvent(this, entityhuman, entityhuman).isCancelled()) {
-                        ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet39AttachEntity(1, this, this.bI()));
+                        ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet39AttachEntity(1, this, this.getLeashHolder()));
                         return false;
                     }
                     // CraftBukkit end
-                    this.b(entityhuman, true);
+                    this.setLeashHolder(entityhuman, true);
                     --itemstack.count;
                     return true;
                 }
@@ -799,11 +799,11 @@ public abstract class EntityInsentient extends EntityLiving {
                 if (entityhuman.getName().equalsIgnoreCase(((EntityTameableAnimal) this).getOwnerName())) {
                     // CraftBukkit start
                     if (CraftEventFactory.callPlayerLeashEntityEvent(this, entityhuman, entityhuman).isCancelled()) {
-                        ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet39AttachEntity(1, this, this.bI()));
+                        ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet39AttachEntity(1, this, this.getLeashHolder()));
                         return false;
                     }
                     // CraftBukkit end
-                    this.b(entityhuman, true);
+                    this.setLeashHolder(entityhuman, true);
                     --itemstack.count;
                     return true;
                 }
@@ -825,12 +825,12 @@ public abstract class EntityInsentient extends EntityLiving {
         if (this.bv) {
             if (this.bw == null || this.bw.dead) {
                 this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.HOLDER_GONE)); // CraftBukkit
-                this.a(true, true);
+                this.unleash(true, true);
             }
         }
     }
 
-    public void a(boolean flag, boolean flag1) {
+    public void unleash(boolean flag, boolean flag1) {
         if (this.bv) {
             this.bv = false;
             this.bw = null;
@@ -852,11 +852,11 @@ public abstract class EntityInsentient extends EntityLiving {
         return this.bv;
     }
 
-    public Entity bI() {
+    public Entity getLeashHolder() {
         return this.bw;
     }
 
-    public void b(Entity entity, boolean flag) {
+    public void setLeashHolder(Entity entity, boolean flag) {
         this.bv = true;
         this.bw = entity;
         if (!this.world.isStatic && flag && this.world instanceof WorldServer) {
@@ -892,7 +892,7 @@ public abstract class EntityInsentient extends EntityLiving {
                 this.bw = entityleash;
             } else {
                 this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN)); // CraftBukkit
-                this.a(false, true);
+                this.unleash(false, true);
             }
         }
 

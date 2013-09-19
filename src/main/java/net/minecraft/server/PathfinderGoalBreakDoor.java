@@ -31,7 +31,7 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
 
     public void e() {
         super.e();
-        if (this.a.aC().nextInt(20) == 0) {
+        if (this.a.aD().nextInt(20) == 0) {
             this.a.world.triggerEffect(1010, this.b, this.c, this.d, 0);
         }
 

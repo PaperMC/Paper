@@ -27,7 +27,7 @@ public class BlockPortal extends BlockHalfTransparant {
                 Entity entity = ItemMonsterEgg.a(world, 57, (double) i + 0.5D, (double) l + 1.1D, (double) k + 0.5D);
 
                 if (entity != null) {
-                    entity.portalCooldown = entity.ab();
+                    entity.portalCooldown = entity.ac();
                 }
             }
         }
@@ -185,7 +185,7 @@ public class BlockPortal extends BlockHalfTransparant {
             world.getServer().getPluginManager().callEvent(event);
             // CraftBukkit end
 
-            entity.aa();
+            entity.ab();
         }
     }
 }

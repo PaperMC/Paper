@@ -47,7 +47,7 @@ public class EntityEnderCrystal extends Entity {
 
     protected void a(NBTTagCompound nbttagcompound) {}
 
-    public boolean K() {
+    public boolean L() {
         return true;
     }
 

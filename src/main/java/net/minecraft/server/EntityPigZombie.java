@@ -21,14 +21,14 @@ public class EntityPigZombie extends EntityZombie {
         this.fireProof = true;
     }
 
-    protected void ay() {
-        super.ay();
+    protected void az() {
+        super.az();
         this.getAttributeInstance(bp).setValue(0.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.5D);
         this.getAttributeInstance(GenericAttributes.e).setValue(5.0D);
     }
 
-    protected boolean be() {
+    protected boolean bf() {
         return false;
     }
 
@@ -44,7 +44,7 @@ public class EntityPigZombie extends EntityZombie {
 
         this.bu = this.target;
         if (this.soundDelay > 0 && --this.soundDelay == 0) {
-            this.makeSound("mob.zombiepig.zpigangry", this.aZ() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
+            this.makeSound("mob.zombiepig.zpigangry", this.ba() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
         }
 
         super.l_();
@@ -121,11 +121,11 @@ public class EntityPigZombie extends EntityZombie {
         return "mob.zombiepig.zpig";
     }
 
-    protected String aN() {
+    protected String aO() {
         return "mob.zombiepig.zpighurt";
     }
 
-    protected String aO() {
+    protected String aP() {
         return "mob.zombiepig.zpigdeath";
     }
 

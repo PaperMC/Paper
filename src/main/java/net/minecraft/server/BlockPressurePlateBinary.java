@@ -63,7 +63,7 @@ public class BlockPressurePlateBinary extends BlockPressurePlateAbstract {
                 }
                 // CraftBukkit end
 
-                if (!entity.at()) {
+                if (!entity.au()) {
                     return 15;
                 }
             }

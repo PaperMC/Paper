@@ -23,12 +23,12 @@ public class EntityChicken extends EntityAnimal {
         this.goalSelector.a(7, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean be() {
+    public boolean bf() {
         return true;
     }
 
-    protected void ay() {
-        super.ay();
+    protected void az() {
+        super.az();
         this.getAttributeInstance(GenericAttributes.a).setValue(4.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.25D);
     }
@@ -69,11 +69,11 @@ public class EntityChicken extends EntityAnimal {
         return "mob.chicken.say";
     }
 
-    protected String aN() {
+    protected String aO() {
         return "mob.chicken.hurt";
     }
 
-    protected String aO() {
+    protected String aP() {
         return "mob.chicken.hurt";
     }
 

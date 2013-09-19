@@ -56,7 +56,7 @@ public class EntityFallingBlock extends Entity {
 
     protected void a() {}
 
-    public boolean K() {
+    public boolean L() {
         return !this.dead;
     }
 
