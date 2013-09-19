@@ -1,0 +1,272 @@
+From 48fc42352b8ce2879c92b4ac46d9461e7004de2c Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Thu, 19 Sep 2013 17:13:43 +1000
+Subject: [PATCH] CraftBukkit 1.6.3
+
+
+diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+index a534bbd..2e3901c 100644
+--- a/src/main/java/net/minecraft/server/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -48,7 +48,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+         System.setErr(new PrintStream(new LoggerOutputStream(this.getLogger().getLogger(), Level.SEVERE), true));
+         // CraftBukkit end
+ 
+-        this.getLogger().info("Starting minecraft server version 1.6.2");
++        this.getLogger().info("Starting minecraft server version 1.6.3");
+         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
+             this.getLogger().warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
+         }
+@@ -69,6 +69,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+         this.setTexturePack(this.propertyManager.getString("texture-pack", ""));
+         this.setMotd(this.propertyManager.getString("motd", "A Minecraft Server"));
+         this.setForceGamemode(this.propertyManager.getBoolean("force-gamemode", false));
++        this.func_143006_e(this.propertyManager.getInt("player-idle-timeout", 0));
+         if (this.propertyManager.getInt("difficulty", 1) < 0) {
+             this.propertyManager.a("difficulty", Integer.valueOf(0));
+         } else if (this.propertyManager.getInt("difficulty", 1) > 3) {
+@@ -363,6 +364,12 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+         return this.propertyManager.getInt("op-permission-level", 4);
+     }
+ 
++    public void func_143006_e(int i) {
++        super.func_143006_e(i);
++        this.propertyManager.a("player-idle-timeout", Integer.valueOf(i));
++        this.a();
++    }
++
+     public PlayerList getPlayerList() {
+         return this.as();
+     }
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 9ff8c86..885c1a4 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -39,6 +39,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     private int bU;
+     private int bV;
+     private boolean bW = true;
++    private long field_143005_bX = 0L;
+     private int containerCounter;
+     public boolean h;
+     public int ping;
+@@ -232,6 +233,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+                 }
+             }
+         }
++
++        if (this.field_143005_bX > 0L && this.server.func_143007_ar() > 0 && MinecraftServer.aq() - this.field_143005_bX > (long) (this.server.func_143007_ar() * 1000 * 60)) {
++            this.playerConnection.disconnect("You have been idle for too long!");
++        }
+     }
+ 
+     public void h() {
+@@ -889,6 +894,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         return new ChunkCoordinates(MathHelper.floor(this.locX), MathHelper.floor(this.locY + 0.5D), MathHelper.floor(this.locZ));
+     }
+ 
++    public void func_143004_u() {
++        this.field_143005_bX = MinecraftServer.aq();
++    }
++
+     // CraftBukkit start
+     public long timeOffset = 0;
+     public boolean relativeTime = true;
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index d186e47..964a168 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -51,6 +51,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+     private boolean allowFlight;
+     private String motd;
+     private int D;
++    private int field_143008_E;
+     private long E;
+     private long F;
+     private long G;
+@@ -95,6 +96,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+ 
+     public MinecraftServer(OptionSet options) { // CraftBukkit - signature file -> OptionSet
+         this.c = Proxy.NO_PROXY;
++        this.field_143008_E = 0;
+         this.f = new long[100];
+         this.g = new long[100];
+         this.h = new long[100];
+@@ -762,7 +764,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+     }
+ 
+     public String getVersion() {
+-        return "1.6.2";
++        return "1.6.3";
+     }
+ 
+     public int A() {
+@@ -1214,6 +1216,14 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+         return System.currentTimeMillis();
+     }
+ 
++    public int func_143007_ar() {
++        return this.field_143008_E;
++    }
++
++    public void func_143006_e(int i) {
++        this.field_143008_E = i;
++    }
++
+     public static PlayerList a(MinecraftServer minecraftserver) {
+         return minecraftserver.t;
+     }
+diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
+index a5c3104..e670481 100644
+--- a/src/main/java/net/minecraft/server/PendingConnection.java
++++ b/src/main/java/net/minecraft/server/PendingConnection.java
+@@ -68,29 +68,27 @@ public class PendingConnection extends Connection {
+ 
+     private static final java.util.regex.Pattern validName = java.util.regex.Pattern.compile("^[a-zA-Z0-9_-]{2,16}$"); // Spigot
+     public void a(Packet2Handshake packet2handshake) {
+-        // CraftBukkit start
+         if (this.g != null) {
+-            this.disconnect("Invalid username " + this.g);
+-        }
+-        this.hostname = packet2handshake.c == null ? "" : packet2handshake.c + ':' + packet2handshake.d;
+-        // CraftBukkit end
+-        this.g = packet2handshake.f();
+-        if (!this.g.equals(StripColor.a(this.g)) || !validName.matcher( this.g ).matches() ) { // Spigot
+-            this.disconnect("Invalid username!");
++            this.disconnect("Quit repeating yourself!");
+         } else {
+-            PublicKey publickey = this.server.H().getPublic();
++            this.g = packet2handshake.f();
++            if (!this.g.equals(StripColor.a(this.g))) {
++                this.disconnect("Invalid username!");
++            } else {
++                PublicKey publickey = this.server.H().getPublic();
+ 
+-            if (packet2handshake.d() != 74) {
+-                if (packet2handshake.d() > 74) {
+-                    this.disconnect(org.spigotmc.SpigotConfig.outdatedServerMessage); // Spigot
++                if (packet2handshake.d() != 77) {
++                    if (packet2handshake.d() > 77) {
++                        this.disconnect("Outdated server!");
++                    } else {
++                        this.disconnect("Outdated client!");
++                    }
+                 } else {
+-                    this.disconnect(org.spigotmc.SpigotConfig.outdatedClientMessage); // Spigot
++                    this.loginKey = this.server.getOnlineMode() ? Long.toString(random.nextLong(), 16) : "-";
++                    this.d = new byte[4];
++                    random.nextBytes(this.d);
++                    this.networkManager.queue(new Packet253KeyRequest(this.loginKey, publickey, this.d));
+                 }
+-            } else {
+-                this.loginKey = this.server.getOnlineMode() ? Long.toString(random.nextLong(), 16) : "-";
+-                this.d = new byte[4];
+-                random.nextBytes(this.d);
+-                this.networkManager.queue(new Packet253KeyRequest(this.loginKey, publickey, this.d));
+             }
+         }
+     }
+@@ -160,7 +158,7 @@ public class PendingConnection extends Connection {
+                 s = pingEvent.getMotd() + "\u00A7" + playerlist.getPlayerCount() + "\u00A7" + pingEvent.getMaxPlayers();
+             } else {
+                 // CraftBukkit start - Don't create a list from an array
+-                Object[] list = new Object[] { 1, 74, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
++                Object[] list = new Object[] { 1, 77, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
+ 
+                 StringBuilder builder = new StringBuilder();
+                 for (Object object : list) {
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 1673f2f..4a9b197 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -477,6 +477,7 @@ public class PlayerConnection extends Connection {
+ 
+         WorldServer worldserver = this.minecraftServer.getWorldServer(this.player.dimension);
+ 
++        this.player.func_143004_u();
+         if (packet14blockdig.e == 4) {
+             // CraftBukkit start
+             // If the ticks aren't the same then the count starts from 0 and we update the lastDropTick.
+@@ -598,6 +599,7 @@ public class PlayerConnection extends Connection {
+         int k = packet15place.g();
+         int l = packet15place.getFace();
+ 
++        this.player.func_143004_u();
+         if (packet15place.getFace() == 255) {
+             if (itemstack == null) {
+                 return;
+@@ -752,6 +754,7 @@ public class PlayerConnection extends Connection {
+             // CraftBukkit end
+ 
+             this.player.inventory.itemInHandIndex = packet16blockitemswitch.itemInHandIndex;
++            this.player.func_143004_u();
+         } else {
+             this.minecraftServer.getLogger().warning(this.player.getName() + " tried to set an invalid carried item");
+             this.disconnect("Nope!"); // CraftBukkit
+@@ -762,6 +765,7 @@ public class PlayerConnection extends Connection {
+         if (this.player.getChatFlags() == 2) {
+             this.sendPacket(new Packet3Chat(ChatMessage.e("chat.cannotSend").a(EnumChatFormat.RED)));
+         } else {
++            this.player.func_143004_u();
+             String s = packet3chat.message;
+ 
+             if (s.length() > 100) {
+@@ -988,6 +992,7 @@ public class PlayerConnection extends Connection {
+ 
+     public void a(Packet18ArmAnimation packet18armanimation) {
+         if (this.player.dead) return; // CraftBukkit
++        this.player.func_143004_u();
+ 
+         if (packet18armanimation.b == 1) {
+             // CraftBukkit start - Raytrace to look for 'rogue armswings'
+@@ -1025,6 +1030,7 @@ public class PlayerConnection extends Connection {
+     }
+ 
+     public void a(Packet19EntityAction packet19entityaction) {
++        this.player.func_143004_u();
+         // CraftBukkit start
+         if (this.player.dead) return;
+ 
+@@ -1088,6 +1094,7 @@ public class PlayerConnection extends Connection {
+         }
+         // Spigot End
+ 
++        this.player.func_143004_u();
+         if (entity != null) {
+             boolean flag = this.player.o(entity);
+             double d0 = 36.0D;
+@@ -1149,6 +1156,7 @@ public class PlayerConnection extends Connection {
+     }
+ 
+     public void a(Packet205ClientCommand packet205clientcommand) {
++        this.player.func_143004_u();
+         if (packet205clientcommand.a == 1) {
+             if (this.player.viewingCredits) {
+                 this.minecraftServer.getPlayerList().changeDimension(this.player, 0, PlayerTeleportEvent.TeleportCause.END_PORTAL); // CraftBukkit - reroute logic through custom portal management
+@@ -1189,6 +1197,7 @@ public class PlayerConnection extends Connection {
+ 
+     public void a(Packet102WindowClick packet102windowclick) {
+         if (this.player.dead) return; // CraftBukkit
++        this.player.func_143004_u();
+ 
+         if (this.player.activeContainer.windowId == packet102windowclick.a && this.player.activeContainer.c(this.player)) {
+             // CraftBukkit start - Call InventoryClickEvent
+@@ -1476,6 +1485,7 @@ public class PlayerConnection extends Connection {
+     }
+ 
+     public void a(Packet108ButtonClick packet108buttonclick) {
++        this.player.func_143004_u();
+         if (this.player.activeContainer.windowId == packet108buttonclick.a && this.player.activeContainer.c(this.player)) {
+             this.player.activeContainer.a((EntityHuman) this.player, packet108buttonclick.b);
+             this.player.activeContainer.b();
+@@ -1561,6 +1571,7 @@ public class PlayerConnection extends Connection {
+ 
+     public void a(Packet130UpdateSign packet130updatesign) {
+         if (this.player.dead) return; // CraftBukkit
++        this.player.func_143004_u();
+ 
+         WorldServer worldserver = this.minecraftServer.getWorldServer(this.player.dimension);
+ 
+-- 
+1.8.1.2
+
