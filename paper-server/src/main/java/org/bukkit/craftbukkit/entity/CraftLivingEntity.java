@@ -410,21 +410,21 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         if (!(getHandle() instanceof EntityInsentient)) {
             return false;
         }
-        return ((EntityInsentient) getHandle()).bI() != null;
+        return ((EntityInsentient) getHandle()).getLeashHolder() != null;
     }
 
     public Entity getLeashHolder() throws IllegalStateException {
         if (!isLeashed()) {
             throw new IllegalStateException("Entity not leashed");
         }
-        return ((EntityInsentient) getHandle()).bI().getBukkitEntity();
+        return ((EntityInsentient) getHandle()).getLeashHolder().getBukkitEntity();
     }
 
     private boolean unleash() {
         if (!isLeashed()) {
             return false;
         }
-        ((EntityInsentient) getHandle()).a(true, false);
+        ((EntityInsentient) getHandle()).unleash(true, false);
         return true;
     }
 
@@ -442,7 +442,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         }
 
         unleash();
-        ((EntityInsentient) getHandle()).b(((CraftEntity) holder).getHandle(), true);
+        ((EntityInsentient) getHandle()).setLeashHolder(((CraftEntity) holder).getHandle(), true);
         return true;
     }
 
