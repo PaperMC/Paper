@@ -65,6 +65,7 @@ public class PendingConnection extends Connection {
         if (this.g != null) {
             this.disconnect("Quit repeating yourself!");
         } else {
+            this.hostname = packet2handshake.c + ':' + packet2handshake.d; // CraftBukkit - initialize field
             this.g = packet2handshake.f();
             if (!this.g.equals(StripColor.a(this.g))) {
                 this.disconnect("Invalid username!");
