@@ -168,4 +168,11 @@ public class SpigotWorldConfig
         mobSpawnRange = (byte) getInt( "mob-spawn-range", 6 );
         log( "Mob Spawn Range: " + mobSpawnRange );
     }
+
+    public int itemDespawnRate;
+    private void itemDespawnRate()
+    {
+        itemDespawnRate = getInt( "item-despawn-rate", 6000 );
+        log( "Item Despawn Rate: " + itemDespawnRate );
+    }
 }
