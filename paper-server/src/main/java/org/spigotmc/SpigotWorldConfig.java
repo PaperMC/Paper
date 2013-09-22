@@ -187,4 +187,11 @@ public class SpigotWorldConfig
         this.mobSpawnRange = (byte) this.getInt( "mob-spawn-range", 6 );
         this.log( "Mob Spawn Range: " + this.mobSpawnRange );
     }
+
+    public int itemDespawnRate;
+    private void itemDespawnRate()
+    {
+        this.itemDespawnRate = this.getInt( "item-despawn-rate", 6000 );
+        this.log( "Item Despawn Rate: " + this.itemDespawnRate );
+    }
 }
