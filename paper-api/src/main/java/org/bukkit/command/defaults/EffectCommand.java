@@ -100,7 +100,7 @@ public class EffectCommand extends VanillaCommand {
             final PotionEffect applyEffect = new PotionEffect(effect, duration, amplification);
 
             player.addPotionEffect(applyEffect, true);
-            broadcastCommandMessage(sender, String.format("Given %s (ID %d) * %d to %s for %d seconds", effect.getName(), effect.getId(), amplification, args[0], duration / 20D));
+            broadcastCommandMessage(sender, String.format("Given %s (ID %d) * %d to %s for %d seconds", effect.getName(), effect.getId(), amplification, args[0], duration_temp));
         }
 
         return true;
