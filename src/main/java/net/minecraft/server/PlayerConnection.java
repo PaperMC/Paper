@@ -831,7 +831,16 @@ public class PlayerConnection extends Connection {
                     return;
                 }
 
-                this.chat(s, packet3chat.a_());
+                if (!packet3chat.a_()) {
+                    try {
+                        this.minecraftServer.server.playerCommandState = true;
+                        this.chat(s, packet3chat.a_());
+                    } finally {
+                        this.minecraftServer.server.playerCommandState = false;
+                    }
+                } else {
+                    this.chat(s, packet3chat.a_());
+                }
 
                 // This section stays because it is only applicable to packets
                 if (chatSpamField.addAndGet(this, 20) > 200 && !this.minecraftServer.getPlayerList().isOp(this.player.getName())) { // CraftBukkit use thread-safe spam
