@@ -999,7 +999,7 @@ public class CraftWorld implements World {
             }
 
             if (entity != null && !((EntityHanging) entity).survives()) {
-                entity = null;
+                throw new IllegalArgumentException("Cannot spawn hanging entity for " + clazz.getName() + " at " + location);
             }
         } else if (TNTPrimed.class.isAssignableFrom(clazz)) {
             entity = new EntityTNTPrimed(world, x, y, z, null);
