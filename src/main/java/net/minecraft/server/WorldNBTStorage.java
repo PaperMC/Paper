@@ -8,7 +8,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.logging.Logger;
 
 // CraftBukkit start
 import java.util.UUID;
@@ -247,25 +246,42 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
     // CraftBukkit start
     public UUID getUUID() {
         if (uuid != null) return uuid;
+        File file1 = new File(this.baseDir, "uid.dat");
+        if (file1.exists()) {
+            DataInputStream dis = null;
+            try {
+                dis = new DataInputStream(new FileInputStream(file1));
+                return uuid = new UUID(dis.readLong(), dis.readLong());
+            } catch (IOException ex) {
+                MinecraftServer.getServer().getLogger().severe("Failed to read " + file1 + ", generating new random UUID", ex);
+            } finally {
+                if (dis != null) {
+                    try {
+                        dis.close();
+                    } catch (IOException ex) {
+                        // NOOP
+                    }
+                }
+            }
+        }
+        uuid = UUID.randomUUID();
+        DataOutputStream dos = null;
         try {
-            File file1 = new File(this.baseDir, "uid.dat");
-            if (!file1.exists()) {
-                DataOutputStream dos = new DataOutputStream(new FileOutputStream(file1));
-                uuid = UUID.randomUUID();
-                dos.writeLong(uuid.getMostSignificantBits());
-                dos.writeLong(uuid.getLeastSignificantBits());
-                dos.close();
+            dos = new DataOutputStream(new FileOutputStream(file1));
+            dos.writeLong(uuid.getMostSignificantBits());
+            dos.writeLong(uuid.getLeastSignificantBits());
+        } catch (IOException ex) {
+            MinecraftServer.getServer().getLogger().severe("Failed to write " + file1, ex);
+        } finally {
+            if (dos != null) {
+                try {
+                    dos.close();
+                } catch (IOException ex) {
+                    // NOOP
+                }
             }
-            else {
-                DataInputStream dis = new DataInputStream(new FileInputStream(file1));
-                uuid = new UUID(dis.readLong(), dis.readLong());
-                dis.close();
-            }
-            return uuid;
         }
-        catch (IOException ex) {
-            return null;
-        }
+        return uuid;
     }
 
     public File getPlayerDir() {
