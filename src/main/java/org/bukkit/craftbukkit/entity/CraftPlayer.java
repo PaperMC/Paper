@@ -1709,6 +1709,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         public void setCollidesWithEntities(boolean collides) {
             CraftPlayer.this.setCollidable(collides);
         }
+
+        @Override
+        public void respawn()
+        {
+            if ( getHealth() <= 0 && isOnline() )
+            {
+                server.getServer().getPlayerList().moveToWorld( getHandle(), false );
+            }
+        }
     };
 
     public Player.Spigot spigot()
