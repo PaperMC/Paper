@@ -91,7 +91,7 @@ public class BlockFire extends Block {
                 world.a(i, j, k, this.id, this.a(world) + random.nextInt(10));
                 if (!flag && !this.k(world, i, j, k)) {
                     if (!world.w(i, j - 1, k) || l > 3) {
-                        world.setAir(i, j, k);
+                        fireExtinguished(world, i, j, k); // CraftBukkit - burn out of inflammable block
                     }
                 } else if (!flag && !this.d((IBlockAccess) world, i, j - 1, k) && l == 15 && random.nextInt(4) == 0) {
                     fireExtinguished(world, i, j, k); // CraftBukkit - burn out
