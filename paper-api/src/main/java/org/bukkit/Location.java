@@ -334,7 +334,7 @@ public class Location implements Cloneable {
      * @return the magnitude
      */
     public double length() {
-        return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
+        return Math.sqrt(NumberConversions.square(x) + NumberConversions.square(y) + NumberConversions.square(z));
     }
 
     /**
@@ -345,7 +345,7 @@ public class Location implements Cloneable {
      * @return the magnitude
      */
     public double lengthSquared() {
-        return Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2);
+        return NumberConversions.square(x) + NumberConversions.square(y) + NumberConversions.square(z);
     }
 
     /**
@@ -381,7 +381,7 @@ public class Location implements Cloneable {
             throw new IllegalArgumentException("Cannot measure distance between " + getWorld().getName() + " and " + o.getWorld().getName());
         }
 
-        return Math.pow(x - o.x, 2) + Math.pow(y - o.y, 2) + Math.pow(z - o.z, 2);
+        return NumberConversions.square(x - o.x) + NumberConversions.square(y - o.y) + NumberConversions.square(z - o.z);
     }
 
     /**

@@ -20,6 +20,10 @@ public final class NumberConversions {
         return floor(num + 0.5d);
     }
 
+    public static double square(double num) {
+        return num * num;
+    }
+
     public static int toInt(Object object) {
         if (object instanceof Number) {
             return ((Number) object).intValue();

@@ -152,7 +152,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return the magnitude
      */
     public double length() {
-        return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
+        return Math.sqrt(NumberConversions.square(x) + NumberConversions.square(y) + NumberConversions.square(z));
     }
 
     /**
@@ -161,7 +161,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return the magnitude
      */
     public double lengthSquared() {
-        return Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2);
+        return NumberConversions.square(x) + NumberConversions.square(y) + NumberConversions.square(z);
     }
 
     /**
@@ -175,7 +175,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return the distance
      */
     public double distance(Vector o) {
-        return Math.sqrt(Math.pow(x - o.x, 2) + Math.pow(y - o.y, 2) + Math.pow(z - o.z, 2));
+        return Math.sqrt(NumberConversions.square(x - o.x) + NumberConversions.square(y - o.y) + NumberConversions.square(z - o.z));
     }
 
     /**
@@ -185,7 +185,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return the distance
      */
     public double distanceSquared(Vector o) {
-        return Math.pow(x - o.x, 2) + Math.pow(y - o.y, 2) + Math.pow(z - o.z, 2);
+        return NumberConversions.square(x - o.x) + NumberConversions.square(y - o.y) + NumberConversions.square(z - o.z);
     }
 
     /**
@@ -346,7 +346,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return whether this vector is in the sphere
      */
     public boolean isInSphere(Vector origin, double radius) {
-        return (Math.pow(origin.x - x, 2) + Math.pow(origin.y - y, 2) + Math.pow(origin.z - z, 2)) <= Math.pow(radius, 2);
+        return (NumberConversions.square(origin.x - x) + NumberConversions.square(origin.y - y) + NumberConversions.square(origin.z - z)) <= NumberConversions.square(radius);
     }
 
     /**
