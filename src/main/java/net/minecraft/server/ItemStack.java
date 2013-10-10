@@ -117,8 +117,8 @@ public final class ItemStack {
         }
 
         if (nbttagcompound.hasKey("tag")) {
-            // CraftBukkit - clear name from compound and make defensive copy as this data may be coming from the save thread
-            this.tag = (NBTTagCompound) nbttagcompound.getCompound("tag").clone().setName("");
+            // CraftBukkit - make defensive copy as this data may be coming from the save thread
+            this.tag = (NBTTagCompound) nbttagcompound.getCompound("tag").clone();
         }
     }
 
@@ -334,6 +334,11 @@ public final class ItemStack {
     }
 
     public void setTag(NBTTagCompound nbttagcompound) {
+        // CraftBukkit start - Set compound name to "tag," remove discrepancy
+        if (nbttagcompound != null) {
+            nbttagcompound.setName("tag");
+        }
+        // CraftBukkit end
         this.tag = nbttagcompound;
     }
 
