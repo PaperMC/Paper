@@ -191,10 +191,11 @@ public final class CraftItemStack extends ItemStack {
         if (item == null) {
             return false;
         }
-        if (item.tag != null) {
-            return true;
+
+        if (item.tag == null) {
+            item.setTag(new NBTTagCompound("tag"));
         }
-        item.tag = new NBTTagCompound();
+
         return true;
     }
 
@@ -350,7 +351,7 @@ public final class CraftItemStack extends ItemStack {
             return false;
         }
 
-        NBTTagCompound tag = new NBTTagCompound();
+        NBTTagCompound tag = new NBTTagCompound("tag");
         item.setTag(tag);
 
         ((CraftMetaItem) itemMeta).applyToItem(tag);
