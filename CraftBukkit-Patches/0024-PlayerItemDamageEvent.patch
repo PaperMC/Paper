@@ -1,0 +1,54 @@
+From 70e523db2b07a95427820829af2c9b025585dbd6 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Mon, 4 Mar 2013 18:45:52 +1100
+Subject: [PATCH] PlayerItemDamageEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index 69f81ca..f3a6027 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -178,7 +178,13 @@ public final class ItemStack {
+         return Item.byId[this.id].getMaxDurability();
+     }
+ 
++    // Spigot start
+     public boolean isDamaged(int i, Random random) {
++        return isDamaged(i, random, null);
++    }
++
++    public boolean isDamaged(int i, Random random, EntityLiving entityliving) {
++        // Spigot end
+         if (!this.g()) {
+             return false;
+         } else {
+@@ -193,7 +199,16 @@ public final class ItemStack {
+                 }
+ 
+                 i -= k;
+-                if (i <= 0) {
++                // Spigot start
++                if (entityliving instanceof EntityPlayer) {
++                    org.bukkit.craftbukkit.inventory.CraftItemStack item = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this);
++                    org.bukkit.event.player.PlayerItemDamageEvent event = new org.bukkit.event.player.PlayerItemDamageEvent((org.bukkit.entity.Player) entityliving.getBukkitEntity(), item, i);
++                    org.bukkit.Bukkit.getServer().getPluginManager().callEvent(event);
++                    if (event.isCancelled()) return false;
++                    i = event.getDamage();
++                }
++                // Spigot end
++                if (i <= 0 ) {
+                     return false;
+                 }
+             }
+@@ -206,7 +221,7 @@ public final class ItemStack {
+     public void damage(int i, EntityLiving entityliving) {
+         if (!(entityliving instanceof EntityHuman) || !((EntityHuman) entityliving).abilities.canInstantlyBuild) {
+             if (this.g()) {
+-                if (this.isDamaged(i, entityliving.aD())) {
++                if (this.isDamaged(i, entityliving.aD(), entityliving)) {
+                     entityliving.a(this);
+                     --this.count;
+                     if (entityliving instanceof EntityHuman) {
+-- 
+1.8.1.2
+

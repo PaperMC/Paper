@@ -1,0 +1,72 @@
+From ab3165faa242ad961f1cd19308a9ef51c7cc8ac9 Mon Sep 17 00:00:00 2001
+From: Ammar Askar <ammar@ammaraskar.com>
+Date: Sat, 3 Aug 2013 21:42:00 +0500
+Subject: [PATCH] Guard entity list
+
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 06759cd..cb21133 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -29,7 +29,25 @@ import org.bukkit.event.weather.ThunderChangeEvent;
+ public abstract class World implements IBlockAccess {
+ 
+     public boolean d;
+-    public List entityList = new ArrayList();
++    public List entityList = new ArrayList() { // Spigot start - guard entity list from removals
++        @Override
++        public Object remove(int index) {
++            guard();
++            return super.remove(index);
++        }
++
++        @Override
++        public boolean remove(Object o) {
++            guard();
++            return super.remove(o);
++        }
++
++        private void guard() {
++            if (guardEntityList) {
++                throw new java.util.ConcurrentModificationException();
++            }
++        }
++    }; // Spigot end
+     protected List f = new ArrayList();
+     public Set tileEntityList = new HashSet(); // CraftBukkit - ArrayList -> HashSet
+     private List a = new ArrayList();
+@@ -74,6 +92,7 @@ public abstract class World implements IBlockAccess {
+     int[] H;
+     public boolean isStatic;
+     // Spigot start
++    private boolean guardEntityList = false;
+     protected final gnu.trove.map.hash.TLongShortHashMap chunkTickList;
+     protected float growthOdds = 100;
+     protected float modifiedOdds = 100;
+@@ -1285,6 +1304,7 @@ public abstract class World implements IBlockAccess {
+ 
+         org.spigotmc.ActivationRange.activateEntities(this); // Spigot
+         timings.entityTick.startTiming(); // Spigot
++        guardEntityList = true; // Spigot
+         for (i = 0; i < this.entityList.size(); ++i) {
+             entity = (Entity) this.entityList.get(i);
+ 
+@@ -1332,12 +1352,15 @@ public abstract class World implements IBlockAccess {
+                     this.getChunkAt(j, k).b(entity);
+                 }
+ 
++                guardEntityList = false; // Spigot
+                 this.entityList.remove(i--);
++                guardEntityList = true; // Spigot
+                 this.b(entity);
+             }
+ 
+             this.methodProfiler.b();
+         }
++        guardEntityList = false; // Spigot
+ 
+         timings.entityTick.stopTiming(); // Spigot
+         this.methodProfiler.c("tileEntities");
+-- 
+1.8.1.2
+

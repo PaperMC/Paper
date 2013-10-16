@@ -1,0 +1,106 @@
+From ab31e3b5708f623c6a83b08c12b8505fe40e6e02 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Sat, 23 Mar 2013 11:15:11 +1100
+Subject: [PATCH] BungeeCord Support
+
+- Allows BungeeCord to set the players real IP address very early in the login process, so that the BungeeCord proxy IP is never even seen by a plugin.
+
+diff --git a/src/main/java/net/minecraft/server/PendingConnection.java b/src/main/java/net/minecraft/server/PendingConnection.java
+index 6ffc927..8f1c214 100644
+--- a/src/main/java/net/minecraft/server/PendingConnection.java
++++ b/src/main/java/net/minecraft/server/PendingConnection.java
+@@ -236,4 +236,17 @@ public class PendingConnection extends Connection {
+     static boolean a(PendingConnection pendingconnection, boolean flag) {
+         return pendingconnection.h = flag;
+     }
++
++    // Spigot start
++    @Override
++    public void a(Packet250CustomPayload pcp) {
++        if (pcp.tag.equals("BungeeCord") && org.spigotmc.SpigotConfig.bungee && org.spigotmc.SpigotConfig.bungeeAddresses.contains(getSocket().getInetAddress().getHostAddress())) {
++            com.google.common.io.ByteArrayDataInput in = com.google.common.io.ByteStreams.newDataInput(pcp.data);
++            String subTag = in.readUTF();
++            if (subTag.equals("Login")) {
++                networkManager.setSocketAddress(new java.net.InetSocketAddress(in.readUTF(), in.readInt()));
++            }
++        }
++    }
++    // Spigot end
+ }
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 5dafeaf..a85fc5b 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -296,7 +296,7 @@ public abstract class PlayerList {
+         // depending on the outcome.
+         EntityPlayer entity = new EntityPlayer(this.server, this.server.getWorldServer(0), s, this.server.O() ? new DemoPlayerInteractManager(this.server.getWorldServer(0)) : new PlayerInteractManager(this.server.getWorldServer(0)));
+         Player player = entity.getBukkitEntity();
+-        PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, pendingconnection.getSocket().getInetAddress());
++        PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, ((java.net.InetSocketAddress) pendingconnection.networkManager.getSocketAddress()).getAddress(), pendingconnection.getSocket().getInetAddress()); // Spigot
+ 
+         SocketAddress socketaddress = pendingconnection.networkManager.getSocketAddress();
+ 
+diff --git a/src/main/java/net/minecraft/server/ThreadLoginVerifier.java b/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
+index f87ebf9..f5032be 100644
+--- a/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
++++ b/src/main/java/net/minecraft/server/ThreadLoginVerifier.java
+@@ -45,11 +45,11 @@ class ThreadLoginVerifier extends Thread {
+                 return;
+             }
+ 
+-            AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(PendingConnection.d(this.pendingConnection), this.pendingConnection.getSocket().getInetAddress());
++            AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(PendingConnection.d(this.pendingConnection), ((java.net.InetSocketAddress) this.pendingConnection.networkManager.getSocketAddress()).getAddress()); // Spigot
+             this.server.getPluginManager().callEvent(asyncEvent);
+ 
+             if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
+-                final PlayerPreLoginEvent event = new PlayerPreLoginEvent(PendingConnection.d(this.pendingConnection), this.pendingConnection.getSocket().getInetAddress());
++                final PlayerPreLoginEvent event = new PlayerPreLoginEvent(PendingConnection.d(this.pendingConnection), ((java.net.InetSocketAddress) this.pendingConnection.networkManager.getSocketAddress()).getAddress()); // Spigot
+                 if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
+                     event.disallow(asyncEvent.getResult(), asyncEvent.getKickMessage());
+                 }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 20be022..e242f7d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1077,6 +1077,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     // Spigot start
+     private final Player.Spigot spigot = new Player.Spigot()
+     {
++        @Override
++        public InetSocketAddress getRawAddress()
++        {
++            return ( getHandle().playerConnection == null ) ? null : (InetSocketAddress) getHandle().playerConnection.networkManager.getSocket().getRemoteSocketAddress();
++        }
+     };
+ 
+     public Player.Spigot spigot()
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index 637fcf2..92cfac6 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException;
+ import java.lang.reflect.Method;
+ import java.lang.reflect.Modifier;
+ import java.util.ArrayList;
++import java.util.Arrays;
+ import java.util.Collections;
+ import java.util.HashMap;
+ import java.util.List;
+@@ -202,4 +203,14 @@ public class SpigotConfig
+ 
+         nettyThreads = getInt( "settings.netty-threads", 3 );
+     }
++    public static List<String> bungeeAddresses = Arrays.asList( new String[]
++    {
++        "127.0.0.1"
++    } );
++    public static boolean bungee = true;
++    private static void bungee()
++    {
++        bungeeAddresses = getList( "settings.bungeecord-addresses", bungeeAddresses );
++        bungee = getBoolean( "settings.bungeecord", true );
++    }
+ }
+-- 
+1.8.1.2
+

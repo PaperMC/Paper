@@ -1,0 +1,85 @@
+From 43d0965a4e505944e32e156b6a0e39baeb82ebd5 Mon Sep 17 00:00:00 2001
+From: erocs <github@erocs.org>
+Date: Sun, 8 Sep 2013 12:06:15 -0700
+Subject: [PATCH] Hopper Cooldowns
+
+
+diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
+index e8cd525..5793b5c 100644
+--- a/src/main/java/net/minecraft/server/TileEntityHopper.java
++++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
+@@ -182,12 +182,17 @@ public class TileEntityHopper extends TileEntity implements IHopper {
+ 
+                 flag = suckInItems(this) || flag;
+                 if (flag) {
+-                    this.c(8);
++                    this.c(world.spigotConfig.hopperTransfer); // Spigot
+                     this.update();
+                     return true;
+                 }
+             }
+-
++            // Spigot start
++            if ( !this.l() )
++            {
++                this.c( world.spigotConfig.hopperCheck );
++            }
++            // Spigot end
+             return false;
+         } else {
+             return false;
+@@ -218,7 +223,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
+                     this.getWorld().getServer().getPluginManager().callEvent(event);
+                     if (event.isCancelled()) {
+                         this.setItem(i, itemstack);
+-                        this.c(8); // Delay hopper checks
++                        this.c(world.spigotConfig.hopperTransfer); // Spigot
+                         return false;
+                     }
+                     ItemStack itemstack1 = addItem(iinventory, CraftItemStack.asNMSCopy(event.getItem()), Facing.OPPOSITE_FACING[BlockHopper.c(this.p())]);
+@@ -299,9 +304,9 @@ public class TileEntityHopper extends TileEntity implements IHopper {
+                 iinventory.setItem(i, itemstack1);
+ 
+                 if (ihopper instanceof TileEntityHopper) {
+-                    ((TileEntityHopper) ihopper).c(8); // Delay hopper checks
++                    ((TileEntityHopper) ihopper).c(ihopper.getWorld().spigotConfig.hopperTransfer); // Spigot
+                 } else if (ihopper instanceof EntityMinecartHopper) {
+-                    ((EntityMinecartHopper) ihopper).l(4); // Delay hopper minecart checks
++                    ((EntityMinecartHopper) ihopper).l(ihopper.getWorld().spigotConfig.hopperTransfer / 2); // Spigot
+                 }
+ 
+                 return false;
+@@ -405,7 +410,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
+ 
+             if (flag) {
+                 if (iinventory instanceof TileEntityHopper) {
+-                    ((TileEntityHopper) iinventory).c(8);
++                    ((TileEntityHopper) iinventory).c(((TileEntityHopper) iinventory).world.spigotConfig.hopperTransfer); // Spigot
+                     iinventory.update();
+                 }
+ 
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index 8ef6c6a..b63d3ad 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -187,4 +187,17 @@ public class SpigotWorldConfig
+         maxTrackingRange = getInt( "entity-tracking-range.other", maxTrackingRange );
+         log( "Entity Tracking Range: Pl " + playerTrackingRange + " / An " + animalTrackingRange + " / Mo " + monsterTrackingRange + " / Mi " + miscTrackingRange + " / Other " + maxTrackingRange );
+     }
++
++    public int hopperTransfer = 8;
++    public int hopperCheck = 8;
++    private void hoppers()
++    {
++        // Set the tick delay between hopper item movements
++        hopperTransfer = getInt( "ticks-per.hopper-transfer", hopperTransfer );
++        // Set the tick delay between checking for items after the associated
++        // container is empty. Default to the hopperTransfer value to prevent
++        // hopper sorting machines from becoming out of sync.
++        hopperCheck = getInt( "ticks-per.hopper-check", hopperTransfer );
++        log( "Hopper Transfer: " + hopperTransfer + " Hopper Check: " + hopperCheck );
++    }
+ }
+-- 
+1.8.1.2
+

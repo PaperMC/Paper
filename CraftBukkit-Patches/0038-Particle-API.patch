@@ -1,0 +1,240 @@
+From 044ddcbc15cf82f9b460c57e0efb56cb02071b7d Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Sun, 2 Jun 2013 16:14:30 +1000
+Subject: [PATCH] Particle API
+
+
+diff --git a/src/main/java/net/minecraft/server/Packet63WorldParticles.java b/src/main/java/net/minecraft/server/Packet63WorldParticles.java
+index f036c53..60e1237 100644
+--- a/src/main/java/net/minecraft/server/Packet63WorldParticles.java
++++ b/src/main/java/net/minecraft/server/Packet63WorldParticles.java
+@@ -17,6 +17,20 @@ public class Packet63WorldParticles extends Packet {
+ 
+     public Packet63WorldParticles() {}
+ 
++    // Spigot start - Added constructor
++    public Packet63WorldParticles(String particleName, float x, float y, float z, float offsetX, float offsetY, float offsetZ, float speed, int count) {
++        a = particleName;
++        b = x;
++        c = y;
++        d = z;
++        e = offsetX;
++        f = offsetY;
++        g = offsetZ;
++        h = speed;
++        i = count;
++    }
++    // Spigot end
++
+     public void a(DataInput datainput) throws java.io.IOException { // Spigot - throws
+         this.a = a(datainput, 64);
+         this.b = datainput.readFloat();
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftEffect.java b/src/main/java/org/bukkit/craftbukkit/CraftEffect.java
+index 7de0de5..7eca388 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftEffect.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftEffect.java
+@@ -55,6 +55,8 @@ public class CraftEffect {
+             Validate.isTrue(((Material) data).isBlock(), "Material is not a block!");
+             datavalue = ((Material) data).getId();
+             break;
++        case ITEM_BREAK:
++            datavalue = ((Material) data).getId();
+         default:
+             datavalue = 0;
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 7601fb5..0faf5bf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -765,31 +765,21 @@ public class CraftWorld implements World {
+         } else {
+             Validate.isTrue(effect.getData() == null, "Wrong kind of data for this effect!");
+         }
+-
+-        int datavalue = data == null ? 0 : CraftEffect.getDataValue(effect, data);
+-        playEffect(loc, effect, datavalue, radius);
++        if (data != null && data.getClass().equals(org.bukkit.material.MaterialData.class)) {
++            org.bukkit.material.MaterialData materialData = (org.bukkit.material.MaterialData) data;
++            Validate.isTrue(materialData.getItemType().isBlock(), "Material must be block");
++            spigot().playEffect(loc, effect, materialData.getItemType().getId(), materialData.getData(), 0, 0, 0, 1, 1, radius);
++        } else {
++            int datavalue = data == null ? 0 : CraftEffect.getDataValue(effect, data);
++            playEffect(loc, effect, datavalue, radius);
++        }
+     }
+ 
+     public void playEffect(Location location, Effect effect, int data, int radius) {
+-        Validate.notNull(location, "Location cannot be null");
+-        Validate.notNull(effect, "Effect cannot be null");
+-        Validate.notNull(location.getWorld(), "World cannot be null");
+-        int packetData = effect.getId();
+-        Packet61WorldEvent packet = new Packet61WorldEvent(packetData, location.getBlockX(), location.getBlockY(), location.getBlockZ(), data, false);
+-        int distance;
+-        radius *= radius;
+-
+-        for (Player player : getPlayers()) {
+-            if (((CraftPlayer) player).getHandle().playerConnection == null) continue;
+-            if (!location.getWorld().equals(player.getWorld())) continue;
+-
+-            distance = (int) player.getLocation().distanceSquared(location);
+-            if (distance <= radius) {
+-                ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
+-            }
+-        }
++        spigot().playEffect(location,effect, data, 0, 0f, 0f, 0f, 1f, 1, radius);
+     }
+ 
++
+     public <T extends Entity> T spawn(Location location, Class<T> clazz) throws IllegalArgumentException {
+         return spawn(location, clazz, SpawnReason.CUSTOM);
+     }
+@@ -1273,6 +1263,62 @@ public class CraftWorld implements World {
+     // Spigot start
+     private final Spigot spigot = new Spigot()
+     {
++        @Override
++        public void playEffect(Location location, Effect effect, int id, int data, float offsetX, float offsetY, float offsetZ, float speed, int particleCount, int radius)
++        {
++            Validate.notNull( location, "Location cannot be null" );
++            Validate.notNull( effect, "Effect cannot be null" );
++            Validate.notNull( location.getWorld(), "World cannot be null" );
++
++            Packet packet;
++            if ( effect.getType() != Effect.Type.PARTICLE )
++            {
++                int packetData = effect.getId();
++                packet = new Packet61WorldEvent( packetData, location.getBlockX(), location.getBlockY(), location.getBlockZ(), id, false );
++            } else
++            {
++                StringBuilder particleFullName = new StringBuilder();
++                particleFullName.append( effect.getName() );
++
++                if ( effect.getData() != null && ( effect.getData().equals( Material.class ) || effect.getData().equals( org.bukkit.material.MaterialData.class ) ) )
++                {
++                    particleFullName.append( '_' ).append( id );
++                }
++
++                if ( effect.getData() != null && effect.getData().equals( org.bukkit.material.MaterialData.class ) )
++                {
++                    particleFullName.append( '_' ).append( data );
++                }
++                packet = new Packet63WorldParticles( particleFullName.toString(), (float) location.getX(), (float) location.getY(), (float) location.getZ(), offsetX, offsetY, offsetZ, speed, particleCount );
++            }
++
++            int distance;
++            radius *= radius;
++
++            for ( Player player : getPlayers() )
++            {
++                if ( ( (CraftPlayer) player ).getHandle().playerConnection == null )
++                {
++                    continue;
++                }
++                if ( !location.getWorld().equals( player.getWorld() ) )
++                {
++                    continue;
++                }
++
++                distance = (int) player.getLocation().distanceSquared( location );
++                if ( distance <= radius )
++                {
++                    ( (CraftPlayer) player ).getHandle().playerConnection.sendPacket( packet );
++                }
++            }
++        }
++
++        @Override
++        public void playEffect(Location location, Effect effect)
++        {
++            CraftWorld.this.playEffect( location, effect, 0 );
++        }
+     };
+ 
+     public Spigot spigot()
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index e242f7d..4bae056 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -277,13 +277,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         getHandle().playerConnection.sendPacket(packet);
+     }
+ 
+-    public void playEffect(Location loc, Effect effect, int data) {
+-        if (getHandle().playerConnection == null) return;
+-
+-        int packetData = effect.getId();
+-        Packet61WorldEvent packet = new Packet61WorldEvent(packetData, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), data, false);
+-        getHandle().playerConnection.sendPacket(packet);
++    // Spigot start
++    public void playEffect(Location location, Effect effect, int data) {
++        spigot().playEffect(location, effect, data, 0, 0f, 0f, 0f, 1f, 1, 64);
+     }
++    // Spigot end
+ 
+     public <T> void playEffect(Location loc, Effect effect, T data) {
+         if (data != null) {
+@@ -291,9 +289,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         } else {
+             Validate.isTrue(effect.getData() == null, "Wrong kind of data for this effect!");
+         }
+-
+-        int datavalue = data == null ? 0 : CraftEffect.getDataValue(effect, data);
+-        playEffect(loc, effect, datavalue);
++        if (data != null && data.getClass().equals(org.bukkit.material.MaterialData.class)) {
++            org.bukkit.material.MaterialData materialData = (org.bukkit.material.MaterialData) data;
++            Validate.isTrue(!materialData.getItemType().isBlock(), "Material must be block");
++            spigot().playEffect(loc, effect, materialData.getItemType().getId(), materialData.getData(), 0, 0, 0, 1, 1, 64);
++        } else {
++            int datavalue = data == null ? 0 : CraftEffect.getDataValue(effect, data);
++            playEffect(loc, effect, datavalue);
++        }
+     }
+ 
+     public void sendBlockChange(Location loc, Material material, byte data) {
+@@ -1082,6 +1085,43 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         {
+             return ( getHandle().playerConnection == null ) ? null : (InetSocketAddress) getHandle().playerConnection.networkManager.getSocket().getRemoteSocketAddress();
+         }
++
++        @Override
++        public void playEffect(Location location, Effect effect, int id, int data, float offsetX, float offsetY, float offsetZ, float speed, int particleCount, int radius)
++        {
++            Validate.notNull( location, "Location cannot be null" );
++            Validate.notNull( effect, "Effect cannot be null" );
++            Validate.notNull( location.getWorld(), "World cannot be null" );
++
++            Packet packet;
++            if ( effect.getType() != Effect.Type.PARTICLE )
++            {
++                int packetData = effect.getId();
++                packet = new Packet61WorldEvent( packetData, location.getBlockX(), location.getBlockY(), location.getBlockZ(), id, false );
++            } else
++            {
++                StringBuilder particleFullName = new StringBuilder();
++                particleFullName.append( effect.getName() );
++
++                if ( effect.getData() != null && ( effect.getData().equals( Material.class ) || effect.getData().equals( org.bukkit.material.MaterialData.class ) ) )
++                {
++                    particleFullName.append( '_' ).append( id );
++                }
++
++                if ( effect.getData() != null && effect.getData().equals( org.bukkit.material.MaterialData.class ) )
++                {
++                    particleFullName.append( '_' ).append( data );
++                }
++                packet = new Packet63WorldParticles( effect.getName(), (float) location.getX(), (float) location.getY(), (float) location.getZ(), offsetX, offsetY, offsetZ, particleCount, radius );
++            }
++
++            if ( !location.getWorld().equals( getWorld() ) )
++            {
++                return;
++            }
++
++            getHandle().playerConnection.sendPacket( packet );
++        }
+     };
+ 
+     public Player.Spigot spigot()
+-- 
+1.8.1.2
+

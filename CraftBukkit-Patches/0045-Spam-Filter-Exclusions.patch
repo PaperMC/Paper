@@ -1,0 +1,50 @@
+From 67f688671ac381a57dc702ea91878bf6f56473f1 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Fri, 21 Jun 2013 17:59:22 +1000
+Subject: [PATCH] Spam Filter Exclusions
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 3437f98..fd6995d 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -834,7 +834,17 @@ public class PlayerConnection extends Connection {
+                 this.chat(s, packet3chat.a_());
+ 
+                 // This section stays because it is only applicable to packets
+-                if (chatSpamField.addAndGet(this, 20) > 200 && !this.minecraftServer.getPlayerList().isOp(this.player.getName())) { // CraftBukkit use thread-safe spam
++                // Spigot - spam exclusions
++                boolean counted = true;
++                for ( String exclude : org.spigotmc.SpigotConfig.spamExclusions )
++                {
++                    if ( exclude != null && s.startsWith( exclude ) )
++                    {
++                        counted = false;
++                        break;
++                    }
++                }
++                if (counted && chatSpamField.addAndGet(this, 20) > 200 && !this.minecraftServer.getPlayerList().isOp(this.player.getName())) { // CraftBukkit use thread-safe spam
+                     if (packet3chat.a_()) {
+                         Waitable waitable = new Waitable() {
+                             @Override
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index 92cfac6..86e3680 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -213,4 +213,13 @@ public class SpigotConfig
+         bungeeAddresses = getList( "settings.bungeecord-addresses", bungeeAddresses );
+         bungee = getBoolean( "settings.bungeecord", true );
+     }
++
++    public static List<String> spamExclusions;
++    private static void spamExclusions()
++    {
++        spamExclusions = getList( "commands.spam-exclusions", Arrays.asList( new String[]
++        {
++            "/skill"
++        } ) );
++    }
+ }
+-- 
+1.8.1.2
+
