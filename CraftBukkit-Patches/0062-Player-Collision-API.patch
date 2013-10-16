@@ -1,0 +1,85 @@
+From 4800f114024eadb7b30fcb894ce1348f3bd42359 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Sat, 3 Aug 2013 19:27:07 +1000
+Subject: [PATCH] Player Collision API
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index 8c5a8ba..b180933 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -411,7 +411,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
+ 
+             List list = this.world.getEntities(this, axisalignedbb);
+ 
+-            if (list != null) {
++            if (list != null && this.L()) { // Spigot: Add this.L() condition
+                 for (int i = 0; i < list.size(); ++i) {
+                     Entity entity = (Entity) list.get(i);
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 76dfa81..de07560 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -1463,7 +1463,7 @@ public abstract class EntityLiving extends Entity {
+     protected void bj() {
+         List list = this.world.getEntities(this, this.boundingBox.grow(0.20000000298023224D, 0.0D, 0.20000000298023224D));
+ 
+-        if (list != null && !list.isEmpty()) {
++        if (this.L() && list != null && !list.isEmpty()) { // Spigot: Add this.L() condition
+             for (int i = 0; i < list.size(); ++i) {
+                 Entity entity = (Entity) list.get(i);
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index d054efe..6c55250 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -56,6 +56,21 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public double maxHealthCache;
+     public int lastPing = -1; // Spigot
+     // CraftBukkit end
++    // Spigot start
++    public boolean collidesWithEntities = true;
++
++    @Override
++    public boolean L()
++    {
++        return this.collidesWithEntities && super.L();
++    }
++
++    @Override
++    public boolean M()
++    {
++        return this.collidesWithEntities && super.M();
++    }
++    // Spigot end
+ 
+     public EntityPlayer(MinecraftServer minecraftserver, World world, String s, PlayerInteractManager playerinteractmanager) {
+         super(world, s);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 4bae056..e7ea9b4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1122,6 +1122,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+             getHandle().playerConnection.sendPacket( packet );
+         }
++
++        @Override
++        public boolean getCollidesWithEntities()
++        {
++            return getHandle().collidesWithEntities;
++        }
++
++        @Override
++        public void setCollidesWithEntities(boolean collides)
++        {
++            getHandle().collidesWithEntities = collides;
++            getHandle().m = collides; // First boolean of Entity
++        }
+     };
+ 
+     public Player.Spigot spigot()
+-- 
+1.8.1.2
+

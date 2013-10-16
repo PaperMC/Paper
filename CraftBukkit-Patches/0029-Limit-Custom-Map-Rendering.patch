@@ -1,0 +1,74 @@
+From 6d55041a2fa334f514a7bc01c7c41c160fecfe1b Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Sat, 23 Mar 2013 19:08:41 +1100
+Subject: [PATCH] Limit Custom Map Rendering
+
+The default CraftBukkit render sequence for maps is ridiculously slow. By only using it when a custom renderer has been added (rarely in most cases), we can fallback to the Vanilla renderer for general usage. This leads to a much higher effiency overall, especially if no plugins are rendering such maps.
+
+diff --git a/src/main/java/net/minecraft/server/WorldMapHumanTracker.java b/src/main/java/net/minecraft/server/WorldMapHumanTracker.java
+index 22d9c7e..bed8705 100644
+--- a/src/main/java/net/minecraft/server/WorldMapHumanTracker.java
++++ b/src/main/java/net/minecraft/server/WorldMapHumanTracker.java
+@@ -38,23 +38,29 @@ public class WorldMapHumanTracker {
+             int i;
+             int j;
+ 
+-            org.bukkit.craftbukkit.map.RenderData render = this.worldMap.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) trackee.getBukkitEntity()); // CraftBukkit
++            // Spigot start
++            boolean custom = this.worldMap.mapView.renderers.size() > 1 || !(this.worldMap.mapView.renderers.get(0) instanceof org.bukkit.craftbukkit.map.CraftMapRenderer);
++            org.bukkit.craftbukkit.map.RenderData render = (custom) ? this.worldMap.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) trackee.getBukkitEntity()) : null; // CraftBukkit
+ 
+             if (--this.g < 0) {
+                 this.g = 4;
+-                abyte = new byte[render.cursors.size() * 3 + 1]; // CraftBukkit
++                abyte = new byte[((custom) ? render.cursors.size() : this.worldMap.g.size()) * 3 + 1]; // CraftBukkit
+                 abyte[0] = 1;
+                 i = 0;
+ 
+                 // CraftBukkit start
+-                for (i = 0; i < render.cursors.size(); ++i) {
+-                    org.bukkit.map.MapCursor cursor = render.cursors.get(i);
+-                    if (!cursor.isVisible()) continue;
+ 
+-                    abyte[i * 3 + 1] = (byte) (cursor.getRawType() << 4 | cursor.getDirection() & 15);
+-                    abyte[i * 3 + 2] = (byte) cursor.getX();
+-                    abyte[i * 3 + 3] = (byte) cursor.getY();
++                // Spigot start
++                for (Iterator iterator = ((custom) ? render.cursors.iterator() : this.worldMap.g.values().iterator()); iterator.hasNext(); ++i) {
++                    org.bukkit.map.MapCursor cursor = (custom) ? (org.bukkit.map.MapCursor) iterator.next() : null;
++                    if (cursor != null && !cursor.isVisible()) continue;
++                    WorldMapDecoration deco = (custom) ? null : (WorldMapDecoration) iterator.next();
++
++                    abyte[i * 3 + 1] = (byte) (((custom) ? cursor.getRawType() : deco.type) << 4 | ((custom) ? cursor.getDirection() : deco.rotation) & 15);
++                    abyte[i * 3 + 2] = (byte) ((custom) ? cursor.getX() : deco.locX);
++                    abyte[i * 3 + 3] = (byte) ((custom) ? cursor.getY() : deco.locY);
+                 }
++                // Spigot end
+                 // CraftBukkit end
+ 
+                 boolean flag = !itemstack.A();
+@@ -89,7 +95,7 @@ public class WorldMapHumanTracker {
+                     abyte1[2] = (byte) j;
+ 
+                     for (int i1 = 0; i1 < abyte1.length - 3; ++i1) {
+-                        abyte1[i1 + 3] = render.buffer[(i1 + j) * 128 + i]; // CraftBukkit
++                        abyte1[i1 + 3] = ((custom) ? render.buffer : this.worldMap.colors)[(i1 + j) * 128 + i];
+                     }
+ 
+                     this.c[i] = -1;
+diff --git a/src/main/java/org/bukkit/craftbukkit/map/CraftMapView.java b/src/main/java/org/bukkit/craftbukkit/map/CraftMapView.java
+index b28d6a3..e70e4e4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/map/CraftMapView.java
++++ b/src/main/java/org/bukkit/craftbukkit/map/CraftMapView.java
+@@ -18,7 +18,7 @@ import org.bukkit.map.MapView;
+ public final class CraftMapView implements MapView {
+ 
+     private final Map<CraftPlayer, RenderData> renderCache = new HashMap<CraftPlayer, RenderData>();
+-    private final List<MapRenderer> renderers = new ArrayList<MapRenderer>();
++    public final List<MapRenderer> renderers = new ArrayList<MapRenderer>(); // Spigot
+     private final Map<MapRenderer, Map<CraftPlayer, CraftMapCanvas>> canvases = new HashMap<MapRenderer, Map<CraftPlayer, CraftMapCanvas>>();
+     protected final WorldMap worldMap;
+ 
+-- 
+1.8.1.2
+

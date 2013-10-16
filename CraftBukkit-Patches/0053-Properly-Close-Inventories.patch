@@ -1,0 +1,63 @@
+From 1139ef1777c64479f0664e4b3bbe5842a6dacb34 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Thu, 27 Jun 2013 17:26:09 +1000
+Subject: [PATCH] Properly Close Inventories
+
+Properly close inventories when unloading and switching worlds.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 8665ef2..8c98f3e 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -704,6 +704,15 @@ public class Chunk {
+ 
+         while (iterator.hasNext()) {
+             TileEntity tileentity = (TileEntity) iterator.next();
++            // Spigot Start
++            if ( tileentity instanceof IInventory )
++            {
++                for ( org.bukkit.craftbukkit.entity.CraftHumanEntity h : new ArrayList<org.bukkit.craftbukkit.entity.CraftHumanEntity>( (List) ( (IInventory) tileentity ).getViewers() ) )
++                {
++                    h.getHandle().closeInventory();
++                }
++            }
++            // Spigot End
+ 
+             this.world.a(tileentity);
+         }
+@@ -713,6 +722,15 @@ public class Chunk {
+             java.util.Iterator<Object> iter = this.entitySlices[i].iterator();
+             while (iter.hasNext()) {
+                 Entity entity = (Entity) iter.next();
++                // Spigot Start
++                if ( entity instanceof IInventory )
++                {
++                    for ( org.bukkit.craftbukkit.entity.CraftHumanEntity h : new ArrayList<org.bukkit.craftbukkit.entity.CraftHumanEntity>( (List) ( (IInventory) entity ).getViewers() ) )
++                    {
++                        h.getHandle().closeInventory();
++                    }
++                }
++                // Spigot End
+ 
+                 // Do not pass along players, as doing so can get them stuck outside of time.
+                 // (which for example disables inventory icon updates and prevents block breaking)
+diff --git a/src/main/java/net/minecraft/server/EntityMinecartContainer.java b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
+index e89b106..f58cd7e 100644
+--- a/src/main/java/net/minecraft/server/EntityMinecartContainer.java
++++ b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
+@@ -149,6 +149,12 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
+     }
+ 
+     public void b(int i) {
++        // Spigot Start
++        for ( HumanEntity human : new java.util.ArrayList<HumanEntity>( transaction ) )
++        {
++            human.closeInventory();
++        }
++        // Spigot End
+         this.b = false;
+         super.b(i);
+     }
+-- 
+1.8.1.2
+

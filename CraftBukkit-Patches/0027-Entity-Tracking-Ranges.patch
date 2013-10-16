@@ -1,0 +1,103 @@
+From 85d83e03d344fff2a6ef62a657ab250ed1375583 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 20 Feb 2013 11:58:47 -0500
+Subject: [PATCH] Entity Tracking Ranges
+
+This will let you configure how far to track entities in range from players, so that the entity does not render on the client if out of this range.
+This has multiple benefits:
+
+1) Less bandwidth. Not sending update packets for entities that are not even close to a player, or even close enough to clearly see.
+2) Less lag by maps in item frames - Default range is 160 blocks... Many players can track that item frame and cause lag and not even see it.
+3) Less lag in general - Less work for the server to do
+4) Less client lag - Not trying to render distant item frames and paintings and entities will reduce entity count on the client, which is major for shop/town worlds which may use tons of item frames.
+
+diff --git a/src/main/java/net/minecraft/server/EntityTracker.java b/src/main/java/net/minecraft/server/EntityTracker.java
+index ebbef6a..e833454 100644
+--- a/src/main/java/net/minecraft/server/EntityTracker.java
++++ b/src/main/java/net/minecraft/server/EntityTracker.java
+@@ -88,6 +88,7 @@ public class EntityTracker {
+ 
+     public void addEntity(Entity entity, int i, int j, boolean flag) {
+         if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous entity track!"); // Spigot
++        i = org.spigotmc.TrackingRange.getEntityTrackingRange(entity, i); // Spigot
+         if (i > this.d) {
+             i = this.d;
+         }
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index cca32b5..8ef6c6a 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -172,4 +172,19 @@ public class SpigotWorldConfig
+         miscActivationRange = getInt( "entity-activation-range.misc", miscActivationRange );
+         log( "Entity Activation Range: An " + animalActivationRange + " / Mo " + monsterActivationRange + " / Mi " + miscActivationRange );
+     }
++
++    public int playerTrackingRange = 48;
++    public int animalTrackingRange = 48;
++    public int monsterTrackingRange = 48;
++    public int miscTrackingRange = 32;
++    public int maxTrackingRange = 64;
++    private void trackingRange()
++    {
++        playerTrackingRange = getInt( "entity-tracking-range.players", playerTrackingRange );
++        animalTrackingRange = getInt( "entity-tracking-range.animals", animalTrackingRange );
++        monsterTrackingRange = getInt( "entity-tracking-range.monsters", monsterTrackingRange );
++        miscTrackingRange = getInt( "entity-tracking-range.misc", miscTrackingRange );
++        maxTrackingRange = getInt( "entity-tracking-range.other", maxTrackingRange );
++        log( "Entity Tracking Range: Pl " + playerTrackingRange + " / An " + animalTrackingRange + " / Mo " + monsterTrackingRange + " / Mi " + miscTrackingRange + " / Other " + maxTrackingRange );
++    }
+ }
+diff --git a/src/main/java/org/spigotmc/TrackingRange.java b/src/main/java/org/spigotmc/TrackingRange.java
+new file mode 100644
+index 0000000..bc6438d
+--- /dev/null
++++ b/src/main/java/org/spigotmc/TrackingRange.java
+@@ -0,0 +1,45 @@
++package org.spigotmc;
++
++import net.minecraft.server.Entity;
++import net.minecraft.server.EntityExperienceOrb;
++import net.minecraft.server.EntityGhast;
++import net.minecraft.server.EntityItem;
++import net.minecraft.server.EntityItemFrame;
++import net.minecraft.server.EntityPainting;
++import net.minecraft.server.EntityPlayer;
++
++public class TrackingRange
++{
++
++    /**
++     * Gets the range an entity should be 'tracked' by players and visible in
++     * the client.
++     *
++     * @param entity
++     * @param defaultRange Default range defined by Mojang
++     * @return
++     */
++    public static int getEntityTrackingRange(Entity entity, int defaultRange)
++    {
++        SpigotWorldConfig config = entity.world.spigotConfig;
++        int range = defaultRange;
++        if ( entity instanceof EntityPlayer )
++        {
++            range = config.playerTrackingRange;
++        } else if ( entity.defaultActivationState || entity instanceof EntityGhast )
++        {
++            range = defaultRange;
++        } else if ( entity.activationType == 1 )
++        {
++            range = config.monsterTrackingRange;
++        } else if ( entity.activationType == 2 )
++        {
++            range = config.animalTrackingRange;
++        } else if ( entity instanceof EntityItemFrame || entity instanceof EntityPainting || entity instanceof EntityItem || entity instanceof EntityExperienceOrb )
++        {
++            range = config.miscTrackingRange;
++        }
++
++        return Math.min( config.maxTrackingRange, range );
++    }
++}
+-- 
+1.8.1.2
+
