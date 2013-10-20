@@ -779,7 +779,11 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
     protected void a() throws ExceptionWorldConflict { // CraftBukkit - added throws
         this.G();
         this.dataManager.saveWorldData(this.worldData, this.server.getPlayerList().q());
-        this.worldMaps.a();
+        // CraftBukkit start - save worldMaps once, rather than once per shared world
+        if (!(this instanceof SecondaryWorldServer)) {
+            this.worldMaps.a();
+        }
+        // CraftBukkit end
     }
 
     protected void a(Entity entity) {
