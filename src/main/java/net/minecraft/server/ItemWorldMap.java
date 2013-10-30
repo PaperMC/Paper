@@ -13,11 +13,12 @@ public class ItemWorldMap extends ItemWorldMapBase {
     }
 
     public WorldMap getSavedMap(ItemStack itemstack, World world) {
+        World worldMain = world.getServer().getServer().worlds.get(0); // CraftBukkit - store reference to primary world
         String s = "map_" + itemstack.getData();
-        WorldMap worldmap = (WorldMap) world.getServer().getServer().worlds.get(0).a(WorldMap.class, s); // CraftBukkit - use primary world for maps
+        WorldMap worldmap = (WorldMap) worldMain.a(WorldMap.class, s); // CraftBukkit - use primary world for maps
 
         if (worldmap == null && !world.isStatic) {
-            itemstack.setData(world.b("map"));
+            itemstack.setData(worldMain.b("map")); // CraftBukkit - use primary world for maps
             s = "map_" + itemstack.getData();
             worldmap = new WorldMap(s);
             worldmap.scale = 3;
@@ -27,7 +28,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
             worldmap.centerZ = Math.round((float) (world.getWorldData().e() / i)) * i;
             worldmap.map = (byte) ((WorldServer) world).dimension; // CraftBukkit - fixes Bukkit multiworld maps
             worldmap.c();
-            world.a(s, (WorldMapBase) worldmap);
+            worldMain.a(s, (WorldMapBase) worldmap); // CraftBukkit - use primary world for maps
 
             // CraftBukkit start
             MapInitializeEvent event = new MapInitializeEvent(worldmap.mapView);
@@ -236,6 +237,8 @@ public class ItemWorldMap extends ItemWorldMapBase {
     public void d(ItemStack itemstack, World world, EntityHuman entityhuman) {
         if (itemstack.hasTag() && itemstack.getTag().getBoolean("map_is_scaling")) {
             WorldMap worldmap = Item.MAP.getSavedMap(itemstack, world);
+
+            world = world.getServer().getServer().worlds.get(0); // CraftBukkit - use primary world for maps
 
             itemstack.setData(world.b("map"));
             WorldMap worldmap1 = new WorldMap("map_" + itemstack.getData());

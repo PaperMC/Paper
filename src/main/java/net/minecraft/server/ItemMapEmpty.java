@@ -8,11 +8,12 @@ public class ItemMapEmpty extends ItemWorldMapBase {
     }
 
     public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
-        ItemStack itemstack1 = new ItemStack(Item.MAP, 1, world.b("map"));
+        World worldMain = world.getServer().getServer().worlds.get(0); // CraftBukkit - store reference to primary world
+        ItemStack itemstack1 = new ItemStack(Item.MAP, 1, worldMain.b("map")); // CraftBukkit - use primary world for maps
         String s = "map_" + itemstack1.getData();
         WorldMap worldmap = new WorldMap(s);
 
-        world.a(s, (WorldMapBase) worldmap);
+        worldMain.a(s, (WorldMapBase) worldmap); // CraftBukkit - use primary world for maps
         worldmap.scale = 0;
         int i = 128 * (1 << worldmap.scale);
 
