@@ -730,7 +730,6 @@ public final class CraftServer implements Server {
             return null;
         }
 
-        internal.worldMaps = console.worlds.get(0).worldMaps;
         internal.scoreboard = getScoreboardManager().getMainScoreboard().getHandle();
 
         internal.tracker = new EntityTracker(internal);

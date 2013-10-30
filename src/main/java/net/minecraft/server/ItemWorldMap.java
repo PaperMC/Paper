@@ -14,7 +14,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
 
     public WorldMap getSavedMap(ItemStack itemstack, World world) {
         String s = "map_" + itemstack.getData();
-        WorldMap worldmap = (WorldMap) world.a(WorldMap.class, s);
+        WorldMap worldmap = (WorldMap) world.getServer().getServer().worlds.get(0).a(WorldMap.class, s); // CraftBukkit - use primary world for maps
 
         if (worldmap == null && !world.isStatic) {
             itemstack.setData(world.b("map"));
