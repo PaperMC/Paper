@@ -13,6 +13,8 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.bukkit.Bukkit;
+
 public class BukkitDLUpdaterService {
     private static final String API_PREFIX_ARTIFACT = "/api/1.0/downloads/projects/craftbukkit/view/";
     private static final String API_PREFIX_CHANNEL = "/api/1.0/downloads/channels/";
@@ -27,9 +29,9 @@ public class BukkitDLUpdaterService {
         try {
             return fetchArtifact(slug);
         } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(BukkitDLUpdaterService.class.getName()).log(Level.WARNING, "Could not get " + name + ": " + ex.getClass().getSimpleName());
+            Bukkit.getLogger().log(Level.WARNING, "Could not get " + name + ": " + ex.getClass().getSimpleName());
         } catch (IOException ex) {
-            Logger.getLogger(BukkitDLUpdaterService.class.getName()).log(Level.WARNING, "Could not get " + name + ": " + ex.getClass().getSimpleName());
+            Bukkit.getLogger().log(Level.WARNING, "Could not get " + name + ": " + ex.getClass().getSimpleName());
         }
 
         return null;
@@ -60,9 +62,9 @@ public class BukkitDLUpdaterService {
         try {
             return fetchChannel(slug);
         } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(BukkitDLUpdaterService.class.getName()).log(Level.WARNING, "Could not get " + name + ": " + ex.getClass().getSimpleName());
+            Bukkit.getLogger().log(Level.WARNING, "Could not get " + name + ": " + ex.getClass().getSimpleName());
         } catch (IOException ex) {
-            Logger.getLogger(BukkitDLUpdaterService.class.getName()).log(Level.WARNING, "Could not get " + name + ": " + ex.getClass().getSimpleName());
+            Bukkit.getLogger().log(Level.WARNING, "Could not get " + name + ": " + ex.getClass().getSimpleName());
         }
 
         return null;

@@ -7,26 +7,26 @@ import java.util.Collections;
 import java.util.List;
 
 import net.minecraft.server.AchievementList;
-import net.minecraft.server.Statistic;
 
+import org.bukkit.craftbukkit.CraftAchievement;
+import org.bukkit.support.AbstractTestingBase;
 import org.bukkit.support.Util;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
 
-public class AchievementTest {
+public class AchievementTest extends AbstractTestingBase {
     @Test
     @SuppressWarnings("unchecked")
     public void verifyMapping() throws Throwable {
         List<Achievement> achievements = Lists.newArrayList(Achievement.values());
 
         for (net.minecraft.server.Achievement statistic : (List<net.minecraft.server.Achievement>) AchievementList.e) {
-            int id = statistic.e;
+            String name = statistic.e;
 
-            String name = Util.getInternalState(Statistic.class, statistic, "a");
-            String message = String.format("org.bukkit.Achievement is missing id: %d named: '%s'", id - Achievement.STATISTIC_OFFSET, name);
+            String message = String.format("org.bukkit.Achievement is missing: '%s'", name);
 
-            Achievement subject = Achievement.getById(id);
+            Achievement subject = CraftAchievement.getAchievement(name);
             assertNotNull(message, subject);
 
             assertTrue(name, achievements.remove(subject));

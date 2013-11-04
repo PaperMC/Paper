@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang.ArrayUtils;
 
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemFactory;
@@ -21,7 +22,20 @@ import org.junit.runners.Parameterized.Parameters;
 public class FactoryItemMaterialTest extends AbstractTestingBase {
     static final ItemFactory factory = CraftItemFactory.instance();
     static final StringBuilder buffer = new StringBuilder();
-    static final Material[] materials = Material.values();
+    static final Material[] materials;
+
+    static {
+        Material[] local_materials = Material.values();
+        List<Material> list = new ArrayList<Material>(local_materials.length);
+        for (Material material : local_materials) {
+            if (INVALIDATED_MATERIALS.contains(material)) {
+                continue;
+            }
+
+            list.add(material);
+        }
+        materials = list.toArray(new Material[list.size()]);
+    }
 
     static String name(Enum<?> from, Enum<?> to) {
         if (from.getClass() == to.getClass()) {

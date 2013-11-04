@@ -274,7 +274,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public void removePotionEffect(PotionEffectType type) {
-        getHandle().k(type.getId()); // Should be removeEffect.
+        getHandle().m(type.getId()); // Should be removeEffect.
     }
 
     public Collection<PotionEffect> getActivePotionEffects() {

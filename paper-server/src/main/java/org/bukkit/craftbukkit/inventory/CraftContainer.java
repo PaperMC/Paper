@@ -9,7 +9,7 @@ import org.bukkit.inventory.InventoryView;
 import net.minecraft.server.Container;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.IInventory;
-import net.minecraft.server.Packet100OpenWindow;
+import net.minecraft.server.PacketPlayOutOpenWindow;
 import net.minecraft.server.Slot;
 
 public class CraftContainer extends Container {
@@ -85,7 +85,7 @@ public class CraftContainer extends Container {
                 setupSlots(top, bottom);
             }
             int size = getSize();
-            player.getHandle().playerConnection.sendPacket(new Packet100OpenWindow(this.windowId, type, cachedTitle, size, true));
+            player.getHandle().playerConnection.sendPacket(new PacketPlayOutOpenWindow(this.windowId, type, cachedTitle, size, true));
             player.updateInventory();
         }
         return true;

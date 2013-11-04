@@ -4,6 +4,7 @@ import net.minecraft.server.EntityFallingBlock;
 
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.FallingSand;
 
@@ -32,7 +33,7 @@ public class CraftFallingSand extends CraftEntity implements FallingSand {
     }
 
     public int getBlockId() {
-        return getHandle().id;
+        return CraftMagicNumbers.getId(getHandle().id);
     }
 
     public byte getBlockData() {

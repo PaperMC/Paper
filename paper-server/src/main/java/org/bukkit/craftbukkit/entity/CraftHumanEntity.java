@@ -6,8 +6,8 @@ import net.minecraft.server.Container;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityMinecartHopper;
 import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.Packet100OpenWindow;
-import net.minecraft.server.Packet101CloseWindow;
+import net.minecraft.server.PacketPlayInCloseWindow;
+import net.minecraft.server.PacketPlayOutOpenWindow;
 import net.minecraft.server.TileEntityBrewingStand;
 import net.minecraft.server.TileEntityDispenser;
 import net.minecraft.server.TileEntityFurnace;
@@ -249,7 +249,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         String title = container.getBukkitView().getTitle();
         int size = container.getBukkitView().getTopInventory().getSize();
 
-        player.playerConnection.sendPacket(new Packet100OpenWindow(container.windowId, windowType, title, size, true));
+        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, title, size, true));
         getHandle().activeContainer = container;
         getHandle().activeContainer.addSlotListener(player);
     }
@@ -293,7 +293,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (((EntityPlayer) getHandle()).playerConnection == null) return;
         if (getHandle().activeContainer != getHandle().defaultContainer) {
             // fire INVENTORY_CLOSE if one already open
-            ((EntityPlayer)getHandle()).playerConnection.handleContainerClose(new Packet101CloseWindow(getHandle().activeContainer.windowId));
+            ((EntityPlayer)getHandle()).playerConnection.a(new PacketPlayInCloseWindow(getHandle().activeContainer.windowId));
         }
         EntityPlayer player = (EntityPlayer) getHandle();
         Container container;
@@ -314,7 +314,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         int windowType = CraftContainer.getNotchInventoryType(type);
         String title = inventory.getTitle();
         int size = inventory.getTopInventory().getSize();
-        player.playerConnection.sendPacket(new Packet100OpenWindow(container.windowId, windowType, title, size, false));
+        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, title, size, false));
         player.activeContainer = container;
         player.activeContainer.addSlotListener(player);
     }

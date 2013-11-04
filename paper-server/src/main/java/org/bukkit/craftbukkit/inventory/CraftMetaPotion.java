@@ -44,13 +44,13 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
         super(tag);
 
         if (tag.hasKey(POTION_EFFECTS.NBT)) {
-            NBTTagList list = tag.getList(POTION_EFFECTS.NBT);
+            NBTTagList list = tag.getList(POTION_EFFECTS.NBT, 10);
             int length = list.size();
             if (length > 0) {
                 customEffects = new ArrayList<PotionEffect>(length);
 
                 for (int i = 0; i < length; i++) {
-                    NBTTagCompound effect = (NBTTagCompound) list.get(i);
+                    NBTTagCompound effect = list.get(i);
                     PotionEffectType type = PotionEffectType.getById(effect.getByte(ID.NBT));
                     int amp = effect.getByte(AMPLIFIER.NBT);
                     int duration = effect.getInt(DURATION.NBT);

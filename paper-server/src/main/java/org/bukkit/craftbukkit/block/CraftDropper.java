@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.BlockDropper;
+import net.minecraft.server.Blocks;
 import net.minecraft.server.TileEntityDropper;
 
 import org.bukkit.Material;
@@ -29,7 +30,7 @@ public class CraftDropper extends CraftBlockState implements Dropper {
         Block block = getBlock();
 
         if (block.getType() == Material.DROPPER) {
-            BlockDropper drop = (BlockDropper) net.minecraft.server.Block.DROPPER;
+            BlockDropper drop = (BlockDropper) Blocks.DROPPER;
 
             drop.dispense(world.getHandle(), getX(), getY(), getZ());
         }

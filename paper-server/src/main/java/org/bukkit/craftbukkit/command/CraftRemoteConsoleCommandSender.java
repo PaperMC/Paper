@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.command;
 
-import net.minecraft.server.ChatMessage;
 import net.minecraft.server.RemoteControlCommandListener;
 import org.bukkit.command.RemoteConsoleCommandSender;
 
@@ -9,24 +8,29 @@ public class CraftRemoteConsoleCommandSender extends ServerCommandSender impleme
         super();
     }
 
+    @Override
     public void sendMessage(String message) {
-        RemoteControlCommandListener.instance.sendMessage(ChatMessage.d(message + "\n")); // Send a newline after each message, to preserve formatting.
+        RemoteControlCommandListener.instance.sendMessage(message + "\n"); // Send a newline after each message, to preserve formatting.
     }
 
+    @Override
     public void sendMessage(String[] messages) {
         for (String message : messages) {
             sendMessage(message);
         }
     }
 
+    @Override
     public String getName() {
         return "Rcon";
     }
 
+    @Override
     public boolean isOp() {
         return true;
     }
 
+    @Override
     public void setOp(boolean value) {
         throw new UnsupportedOperationException("Cannot change operator status of remote controller.");
     }
