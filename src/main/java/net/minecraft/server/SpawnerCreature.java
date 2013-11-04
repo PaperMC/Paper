@@ -22,7 +22,7 @@ public final class SpawnerCreature {
         Chunk chunk = world.getChunkAt(i, j);
         int k = i * 16 + world.random.nextInt(16);
         int l = j * 16 + world.random.nextInt(16);
-        int i1 = world.random.nextInt(chunk == null ? world.S() : chunk.h() + 16 - 1);
+        int i1 = world.random.nextInt(chunk == null ? world.R() : chunk.h() + 16 - 1);
 
         return new ChunkPosition(k, i1, l);
     }
@@ -106,7 +106,7 @@ public final class SpawnerCreature {
                             int l1 = chunkposition.y;
                             int i2 = chunkposition.z;
 
-                            if (!worldserver.u(k1, l1, i2) && worldserver.getMaterial(k1, l1, i2) == enumcreaturetype.c()) {
+                            if (!worldserver.getType(k1, l1, i2).r() && worldserver.getType(k1, l1, i2).getMaterial() == enumcreaturetype.c()) {
                                 int j2 = 0;
                                 int k2 = 0;
 
@@ -160,7 +160,7 @@ public final class SpawnerCreature {
                                                                 groupdataentity = entityinsentient.a(groupdataentity);
                                                                 worldserver.addEntity(entityinsentient, SpawnReason.NATURAL);
                                                                 // CraftBukkit end
-                                                                if (j2 >= entityinsentient.bv()) {
+                                                                if (j2 >= entityinsentient.bz()) {
                                                                     continue label110;
                                                                 }
                                                             }
@@ -191,13 +191,13 @@ public final class SpawnerCreature {
 
     public static boolean a(EnumCreatureType enumcreaturetype, World world, int i, int j, int k) {
         if (enumcreaturetype.c() == Material.WATER) {
-            return world.getMaterial(i, j, k).isLiquid() && world.getMaterial(i, j - 1, k).isLiquid() && !world.u(i, j + 1, k);
-        } else if (!world.w(i, j - 1, k)) {
+            return world.getType(i, j, k).getMaterial().isLiquid() && world.getType(i, j - 1, k).getMaterial().isLiquid() && !world.getType(i, j + 1, k).r();
+        } else if (!World.a((IBlockAccess) world, i, j - 1, k)) {
             return false;
         } else {
-            int l = world.getTypeId(i, j - 1, k);
+            Block block = world.getType(i, j - 1, k);
 
-            return l != Block.BEDROCK.id && !world.u(i, j, k) && !world.getMaterial(i, j, k).isLiquid() && !world.u(i, j + 1, k);
+            return block != Blocks.BEDROCK && !world.getType(i, j, k).r() && !world.getType(i, j, k).getMaterial().isLiquid() && !world.getType(i, j + 1, k).r();
         }
     }
 
@@ -205,7 +205,7 @@ public final class SpawnerCreature {
         List list = biomebase.getMobs(EnumCreatureType.CREATURE);
 
         if (!list.isEmpty()) {
-            while (random.nextFloat() < biomebase.f()) {
+            while (random.nextFloat() < biomebase.g()) {
                 BiomeMeta biomemeta = (BiomeMeta) WeightedRandom.a(world.random, (Collection) list);
                 GroupDataEntity groupdataentity = null;
                 int i1 = biomemeta.c + random.nextInt(1 + biomemeta.d - biomemeta.c);

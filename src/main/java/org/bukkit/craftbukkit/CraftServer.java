@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -18,6 +19,8 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.imageio.ImageIO;
+
 import net.minecraft.server.BanEntry;
 import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.Convertable;
@@ -28,11 +31,12 @@ import net.minecraft.server.DedicatedServer;
 import net.minecraft.server.Enchantment;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityTracker;
+import net.minecraft.server.EnumDifficulty;
 import net.minecraft.server.EnumGamemode;
 import net.minecraft.server.ExceptionWorldConflict;
+import net.minecraft.server.Items;
 import net.minecraft.server.PlayerList;
 import net.minecraft.server.RecipesFurnace;
-import net.minecraft.server.Item;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.MobEffectList;
 import net.minecraft.server.PropertyManager;
@@ -41,11 +45,16 @@ import net.minecraft.server.ServerNBTManager;
 import net.minecraft.server.WorldLoaderServer;
 import net.minecraft.server.WorldManager;
 import net.minecraft.server.WorldMap;
-import net.minecraft.server.WorldMapCollection;
+import net.minecraft.server.PersistentCollection;
 import net.minecraft.server.WorldNBTStorage;
 import net.minecraft.server.WorldServer;
 import net.minecraft.server.WorldSettings;
 import net.minecraft.server.WorldType;
+import net.minecraft.util.com.google.common.base.Charsets;
+import net.minecraft.util.io.netty.buffer.ByteBuf;
+import net.minecraft.util.io.netty.buffer.ByteBufOutputStream;
+import net.minecraft.util.io.netty.buffer.Unpooled;
+import net.minecraft.util.io.netty.handler.codec.base64.Base64;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -83,7 +92,9 @@ import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager;
 import org.bukkit.craftbukkit.updater.AutoUpdater;
 import org.bukkit.craftbukkit.updater.BukkitDLUpdaterService;
+import org.bukkit.craftbukkit.util.CraftIconCache;
 import org.bukkit.craftbukkit.util.DatFileFilter;
+import org.bukkit.craftbukkit.util.Log4jConverter;
 import org.bukkit.craftbukkit.util.Versioning;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
@@ -164,6 +175,8 @@ public final class CraftServer implements Server {
     public CraftScoreboardManager scoreboardManager;
     public boolean playerCommandState;
     private boolean printSaveWarning;
+    private Logger logger;
+    private CraftIconCache icon;
 
     private final class BooleanWrapper {
         private boolean value = true;
@@ -175,6 +188,7 @@ public final class CraftServer implements Server {
     }
 
     public CraftServer(MinecraftServer console, PlayerList playerList) {
+        this.logger = Log4jConverter.createLogger();
         this.console = console;
         this.playerList = (DedicatedPlayerList) playerList;
         this.serverVersion = CraftServer.class.getPackage().getImplementationVersion();
@@ -208,6 +222,7 @@ public final class CraftServer implements Server {
         warningState = WarningState.value(configuration.getString("settings.deprecated-verbose"));
         chunkGCPeriod = configuration.getInt("chunk-gc.period-in-ticks");
         chunkGCLoadThresh = configuration.getInt("chunk-gc.load-threshold");
+        loadIcon();
 
         updater = new AutoUpdater(new BukkitDLUpdaterService(configuration.getString("auto-updater.host")), getLogger(), configuration.getString("auto-updater.preferred-channel"));
         updater.setEnabled(configuration.getBoolean("auto-updater.enabled"));
@@ -540,13 +555,13 @@ public final class CraftServer implements Server {
 
     public void reload() {
         configuration = YamlConfiguration.loadConfiguration(getConfigFile());
-        PropertyManager config = new PropertyManager(console.options, console.getLogger());
+        PropertyManager config = new PropertyManager(console.options);
 
         ((DedicatedServer) console).propertyManager = config;
 
         boolean animals = config.getBoolean("spawn-animals", console.getSpawnAnimals());
-        boolean monsters = config.getBoolean("spawn-monsters", console.worlds.get(0).difficulty > 0);
-        int difficulty = config.getInt("difficulty", console.worlds.get(0).difficulty);
+        boolean monsters = config.getBoolean("spawn-monsters", console.worlds.get(0).difficulty != EnumDifficulty.PEACEFUL);
+        EnumDifficulty difficulty = EnumDifficulty.a(config.getInt("difficulty", console.worlds.get(0).difficulty.ordinal()));
 
         online.value = config.getBoolean("online-mode", console.getOnlineMode());
         console.setSpawnAnimals(config.getBoolean("spawn-animals", console.getSpawnAnimals()));
@@ -562,6 +577,7 @@ public final class CraftServer implements Server {
         console.autosavePeriod = configuration.getInt("ticks-per.autosave");
         chunkGCPeriod = configuration.getInt("chunk-gc.period-in-ticks");
         chunkGCLoadThresh = configuration.getInt("chunk-gc.load-threshold");
+        loadIcon();
 
         playerList.getIPBans().load();
         playerList.getNameBans().load();
@@ -613,6 +629,18 @@ public final class CraftServer implements Server {
         loadPlugins();
         enablePlugins(PluginLoadOrder.STARTUP);
         enablePlugins(PluginLoadOrder.POSTWORLD);
+    }
+
+    private void loadIcon() {
+        icon = new CraftIconCache(null);
+        try {
+            final File file = new File(new File("."), "server-icon.png");
+            if (file.isFile()) {
+                icon = loadServerIcon0(file);
+            }
+        } catch (Exception ex) {
+            getLogger().log(Level.WARNING, "Couldn't load server icon", ex);
+        }
     }
 
     @SuppressWarnings({ "unchecked", "finally" })
@@ -724,7 +752,7 @@ public final class CraftServer implements Server {
         } while(used);
         boolean hardcore = false;
 
-        WorldServer internal = new WorldServer(console, new ServerNBTManager(getWorldContainer(), name, true), name, dimension, new WorldSettings(creator.seed(), EnumGamemode.a(getDefaultGameMode().getValue()), generateStructures, hardcore, type), console.methodProfiler, console.getLogger(), creator.environment(), generator);
+        WorldServer internal = new WorldServer(console, new ServerNBTManager(getWorldContainer(), name, true), name, dimension, new WorldSettings(creator.seed(), EnumGamemode.a(getDefaultGameMode().getValue()), generateStructures, hardcore, type), console.methodProfiler, creator.environment(), generator);
 
         if (!(worlds.containsKey(name.toLowerCase()))) {
             return null;
@@ -734,7 +762,7 @@ public final class CraftServer implements Server {
 
         internal.tracker = new EntityTracker(internal);
         internal.addIWorldAccess(new WorldManager(console, internal));
-        internal.difficulty = 1;
+        internal.difficulty = EnumDifficulty.EASY;
         internal.setSpawnFlags(true, true);
         console.worlds.add(internal);
 
@@ -849,7 +877,7 @@ public final class CraftServer implements Server {
     }
 
     public Logger getLogger() {
-        return console.getLogger().getLogger();
+        return logger;
     }
 
     public ConsoleReader getReader() {
@@ -1037,7 +1065,7 @@ public final class CraftServer implements Server {
     }
 
     public CraftMapView getMap(short id) {
-        WorldMapCollection collection = console.worlds.get(0).worldMaps;
+        PersistentCollection collection = console.worlds.get(0).worldMaps;
         WorldMap worldmap = (WorldMap) collection.get(WorldMap.class, "map_" + id);
         if (worldmap == null) {
             return null;
@@ -1048,8 +1076,8 @@ public final class CraftServer implements Server {
     public CraftMapView createMap(World world) {
         Validate.notNull(world, "World cannot be null");
 
-        net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(Item.MAP, 1, -1);
-        WorldMap worldmap = Item.MAP.getSavedMap(stack, ((CraftWorld) world).getHandle());
+        net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(Items.MAP, 1, -1);
+        WorldMap worldmap = Items.MAP.getSavedMap(stack, ((CraftWorld) world).getHandle());
         return worldmap.mapView;
     }
 
@@ -1387,5 +1415,40 @@ public final class CraftServer implements Server {
         }
         this.printSaveWarning = true;
         getLogger().log(Level.WARNING, "A manual (plugin-induced) save has been detected while server is configured to auto-save. This may affect performance.", warningState == WarningState.ON ? new Throwable() : null);
+    }
+
+    @Override
+    public CraftIconCache getServerIcon() {
+        return icon;
+    }
+
+    @Override
+    public CraftIconCache loadServerIcon(File file) throws Exception {
+        Validate.notNull(file, "File cannot be null");
+        if (!file.isFile()) {
+            throw new IllegalArgumentException(file + " is not a file");
+        }
+        return loadServerIcon0(file);
+    }
+
+    static CraftIconCache loadServerIcon0(File file) throws Exception {
+        return loadServerIcon0(ImageIO.read(file));
+    }
+
+    @Override
+    public CraftIconCache loadServerIcon(BufferedImage image) throws Exception {
+        Validate.notNull(image, "Image cannot be null");
+        return loadServerIcon0(image);
+    }
+
+    static CraftIconCache loadServerIcon0(BufferedImage image) throws Exception {
+        ByteBuf bytebuf = Unpooled.buffer();
+
+        Validate.isTrue(image.getWidth() == 64, "Must be 64 pixels wide");
+        Validate.isTrue(image.getHeight() == 64, "Must be 64 pixels high");
+        ImageIO.write(image, "PNG", new ByteBufOutputStream(bytebuf));
+        ByteBuf bytebuf1 = Base64.encode(bytebuf);
+
+        return new CraftIconCache("data:image/png;base64," + bytebuf1.toString(Charsets.UTF_8));
     }
 }

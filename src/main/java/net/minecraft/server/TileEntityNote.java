@@ -3,7 +3,7 @@ package net.minecraft.server;
 public class TileEntityNote extends TileEntity {
 
     public byte note;
-    public boolean b;
+    public boolean i;
 
     public TileEntityNote() {}
 
@@ -30,8 +30,8 @@ public class TileEntityNote extends TileEntity {
     }
 
     public void play(World world, int i, int j, int k) {
-        if (world.getMaterial(i, j + 1, k) == Material.AIR) {
-            Material material = world.getMaterial(i, j - 1, k);
+        if (world.getType(i, j + 1, k).getMaterial() == Material.AIR) {
+            Material material = world.getType(i, j - 1, k).getMaterial();
             byte b0 = 0;
 
             if (material == Material.STONE) {
@@ -53,7 +53,7 @@ public class TileEntityNote extends TileEntity {
             // CraftBukkit start
             org.bukkit.event.block.NotePlayEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callNotePlayEvent(this.world, i, j, k, b0, this.note);
             if (!event.isCancelled()) {
-                this.world.playNote(i, j, k, Block.NOTE_BLOCK.id, event.getInstrument().getType(), event.getNote().getId());
+                this.world.playNote(i, j, k, Blocks.NOTE_BLOCK, event.getInstrument().getType(), event.getNote().getId());
             }
             // CraftBukkit end
         }

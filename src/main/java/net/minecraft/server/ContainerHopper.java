@@ -80,6 +80,6 @@ public class ContainerHopper extends Container {
 
     public void b(EntityHuman entityhuman) {
         super.b(entityhuman);
-        this.hopper.g();
+        this.hopper.l_();
     }
 }

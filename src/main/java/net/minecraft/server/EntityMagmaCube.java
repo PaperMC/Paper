@@ -7,16 +7,16 @@ public class EntityMagmaCube extends EntitySlime {
         this.fireProof = true;
     }
 
-    protected void az() {
-        super.az();
+    protected void aD() {
+        super.aD();
         this.getAttributeInstance(GenericAttributes.d).setValue(0.20000000298023224D);
     }
 
     public boolean canSpawn() {
-        return this.world.difficulty > 0 && this.world.b(this.boundingBox) && this.world.getCubes(this, this.boundingBox).isEmpty() && !this.world.containsLiquid(this.boundingBox);
+        return this.world.difficulty != EnumDifficulty.PEACEFUL && this.world.b(this.boundingBox) && this.world.getCubes(this, this.boundingBox).isEmpty() && !this.world.containsLiquid(this.boundingBox);
     }
 
-    public int aQ() {
+    public int aV() {
         return this.getSize() * 3;
     }
 
@@ -24,32 +24,32 @@ public class EntityMagmaCube extends EntitySlime {
         return 1.0F;
     }
 
-    protected String bJ() {
+    protected String bN() {
         return "flame";
     }
 
-    protected EntitySlime bK() {
+    protected EntitySlime bO() {
         return new EntityMagmaCube(this.world);
     }
 
-    protected int getLootId() {
-        return Item.MAGMA_CREAM.id;
+    protected Item getLoot() {
+        return Items.MAGMA_CREAM;
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
         // CraftBukkit start - Whole method
         java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
-        int j = this.getLootId();
+        Item item = this.getLoot();
 
-        if (j > 0 && this.getSize() > 1) {
-            int k = this.random.nextInt(4) - 2;
+        if (item != null && this.getSize() > 1) {
+            int j = this.random.nextInt(4) - 2;
 
             if (i > 0) {
-                k += this.random.nextInt(i + 1);
+                j += this.random.nextInt(i + 1);
             }
 
-            if (k > 0) {
-                loot.add(new org.bukkit.inventory.ItemStack(j, k));
+            if (j > 0) {
+                loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(item), j));
             }
         }
 
@@ -61,46 +61,38 @@ public class EntityMagmaCube extends EntitySlime {
         return false;
     }
 
-    protected int bL() {
-        return super.bL() * 4;
+    protected int bP() {
+        return super.bP() * 4;
     }
 
-    protected void bM() {
+    protected void bQ() {
         this.h *= 0.9F;
     }
 
-    protected void be() {
+    protected void bj() {
         this.motY = (double) (0.42F + (float) this.getSize() * 0.1F);
-        this.an = true;
+        this.am = true;
     }
 
     protected void b(float f) {}
 
-    protected boolean bN() {
+    protected boolean bR() {
         return true;
     }
 
-    protected int bO() {
-        return super.bO() + 2;
+    protected int bS() {
+        return super.bS() + 2;
     }
 
-    protected String aO() {
-        return "mob.slime." + (this.getSize() > 1 ? "big" : "small");
-    }
-
-    protected String aP() {
-        return "mob.slime." + (this.getSize() > 1 ? "big" : "small");
-    }
-
-    protected String bP() {
+    protected String bT() {
         return this.getSize() > 1 ? "mob.magmacube.big" : "mob.magmacube.small";
     }
 
-    public boolean J() {
+    public boolean P() {
         return false;
     }
 
-    protected boolean bQ() {
+    protected boolean bU() {
         return true;
     }
 }

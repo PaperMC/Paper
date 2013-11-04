@@ -54,7 +54,7 @@ public class PortalTravelAgent {
                         int i2 = k + i1 * b1 - l * b0;
                         boolean flag = j1 < 0;
 
-                        this.a.setTypeIdUpdate(k1, l1, i2, flag ? Block.OBSIDIAN.id : 0);
+                        this.a.setTypeUpdate(k1, l1, i2, flag ? Blocks.OBSIDIAN : Blocks.AIR);
                     }
                 }
             }
@@ -79,7 +79,7 @@ public class PortalTravelAgent {
                     int i2 = k + i1 * b1 - l * b0;
                     boolean flag = j1 < 0;
 
-                    if (this.a.getTypeId(k1, l1, i2) != (flag ? Block.OBSIDIAN.id : 0)) {
+                    if (this.a.getType(k1, l1, i2) != (flag ? Blocks.OBSIDIAN : Blocks.AIR)) {
                         return null;
                     }
                 }
@@ -140,9 +140,9 @@ public class PortalTravelAgent {
                 for (int l1 = i1 - short1; l1 <= i1 + short1; ++l1) {
                     double d6 = (double) l1 + 0.5D - z; // CraftBukkit
 
-                    for (int i2 = this.a.S() - 1; i2 >= 0; --i2) {
-                        if (this.a.getTypeId(k1, i2, l1) == Block.PORTAL.id) {
-                            while (this.a.getTypeId(k1, i2 - 1, l1) == Block.PORTAL.id) {
+                    for (int i2 = this.a.R() - 1; i2 >= 0; --i2) {
+                        if (this.a.getType(k1, i2, l1) == Blocks.PORTAL) {
+                            while (this.a.getType(k1, i2 - 1, l1) == Blocks.PORTAL) {
                                 --i2;
                             }
 
@@ -199,23 +199,23 @@ public class PortalTravelAgent {
             d4 = (double) k + 0.5D;
             int j2 = -1;
 
-            if (this.a.getTypeId(i - 1, j, k) == Block.PORTAL.id) {
+            if (this.a.getType(i - 1, j, k) == Blocks.PORTAL) {
                 j2 = 2;
             }
 
-            if (this.a.getTypeId(i + 1, j, k) == Block.PORTAL.id) {
+            if (this.a.getType(i + 1, j, k) == Blocks.PORTAL) {
                 j2 = 0;
             }
 
-            if (this.a.getTypeId(i, j, k - 1) == Block.PORTAL.id) {
+            if (this.a.getType(i, j, k - 1) == Blocks.PORTAL) {
                 j2 = 3;
             }
 
-            if (this.a.getTypeId(i, j, k + 1) == Block.PORTAL.id) {
+            if (this.a.getType(i, j, k + 1) == Blocks.PORTAL) {
                 j2 = 1;
             }
 
-            int k2 = entity.at();
+            int k2 = entity.ay();
 
             if (j2 > -1) {
                 int l2 = Direction.h[j2];
@@ -364,7 +364,7 @@ public class PortalTravelAgent {
                 d2 = (double) j2 + 0.5D - z; // CraftBukkit
 
                 label274:
-                for (k2 = this.a.S() - 1; k2 >= 0; --k2) {
+                for (k2 = this.a.R() - 1; k2 >= 0; --k2) {
                     if (this.a.isEmpty(i2, k2, j2)) {
                         while (k2 > 0 && this.a.isEmpty(i2, k2 - 1, j2)) {
                             --k2;
@@ -385,7 +385,7 @@ public class PortalTravelAgent {
                                         j4 = k2 + l3;
                                         int l4 = j2 + (i4 - 1) * k3 - j3 * l2;
 
-                                        if (l3 < 0 && !this.a.getMaterial(k4, j4, l4).isBuildable() || l3 >= 0 && !this.a.isEmpty(k4, j4, l4)) {
+                                        if (l3 < 0 && !this.a.getType(k4, j4, l4).getMaterial().isBuildable() || l3 >= 0 && !this.a.isEmpty(k4, j4, l4)) {
                                             continue label274;
                                         }
                                     }
@@ -415,7 +415,7 @@ public class PortalTravelAgent {
                     d2 = (double) j2 + 0.5D - z; // CraftBukkit
 
                     label222:
-                    for (k2 = this.a.S() - 1; k2 >= 0; --k2) {
+                    for (k2 = this.a.R() - 1; k2 >= 0; --k2) {
                         if (this.a.isEmpty(i2, k2, j2)) {
                             while (k2 > 0 && this.a.isEmpty(i2, k2 - 1, j2)) {
                                 --k2;
@@ -430,7 +430,7 @@ public class PortalTravelAgent {
                                         l3 = i2 + (j3 - 1) * l2;
                                         k4 = k2 + i4;
                                         j4 = j2 + (j3 - 1) * k3;
-                                        if (i4 < 0 && !this.a.getMaterial(l3, k4, j4).isBuildable() || i4 >= 0 && !this.a.isEmpty(l3, k4, j4)) {
+                                        if (i4 < 0 && !this.a.getType(l3, k4, j4).getMaterial().isBuildable() || i4 >= 0 && !this.a.isEmpty(l3, k4, j4)) {
                                             continue label222;
                                         }
                                     }
@@ -471,8 +471,8 @@ public class PortalTravelAgent {
                 i1 = 70;
             }
 
-            if (i1 > this.a.S() - 10) {
-                i1 = this.a.S() - 10;
+            if (i1 > this.a.R() - 10) {
+                i1 = this.a.R() - 10;
             }
 
             j5 = i1;
@@ -484,7 +484,7 @@ public class PortalTravelAgent {
                         j3 = j5 + l2;
                         i4 = j2 + (i3 - 1) * l5 - k2 * k5;
                         flag = l2 < 0;
-                        this.a.setTypeIdUpdate(k3, j3, i4, flag ? Block.OBSIDIAN.id : 0);
+                        this.a.setTypeUpdate(k3, j3, i4, flag ? Blocks.OBSIDIAN : Blocks.AIR);
                     }
                 }
             }
@@ -497,7 +497,7 @@ public class PortalTravelAgent {
                     j3 = j5 + l2;
                     i4 = j2 + (i3 - 1) * l5;
                     flag = i3 == 0 || i3 == 3 || l2 == -1 || l2 == 3;
-                    this.a.setTypeIdAndData(k3, j3, i4, flag ? Block.OBSIDIAN.id : Block.PORTAL.id, 0, 2);
+                    this.a.setTypeAndData(k3, j3, i4, flag ? Blocks.OBSIDIAN : Blocks.PORTAL, 0, 2);
                 }
             }
 
@@ -506,7 +506,7 @@ public class PortalTravelAgent {
                     k3 = i5 + (i3 - 1) * k5;
                     j3 = j5 + l2;
                     i4 = j2 + (i3 - 1) * l5;
-                    this.a.applyPhysics(k3, j3, i4, this.a.getTypeId(k3, j3, i4));
+                    this.a.applyPhysics(k3, j3, i4, this.a.getType(k3, j3, i4));
                 }
             }
         }

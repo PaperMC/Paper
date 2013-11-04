@@ -38,7 +38,7 @@ public class ContainerBrewingStand extends Container {
 
     public void addSlotListener(ICrafting icrafting) {
         super.addSlotListener(icrafting);
-        icrafting.setContainerData(this, 0, this.brewingStand.x_());
+        icrafting.setContainerData(this, 0, this.brewingStand.i());
     }
 
     public void b() {
@@ -47,12 +47,12 @@ public class ContainerBrewingStand extends Container {
         for (int i = 0; i < this.listeners.size(); ++i) {
             ICrafting icrafting = (ICrafting) this.listeners.get(i);
 
-            if (this.g != this.brewingStand.x_()) {
-                icrafting.setContainerData(this, 0, this.brewingStand.x_());
+            if (this.g != this.brewingStand.i()) {
+                icrafting.setContainerData(this, 0, this.brewingStand.i());
             }
         }
 
-        this.g = this.brewingStand.x_();
+        this.g = this.brewingStand.i();
     }
 
     public boolean a(EntityHuman entityhuman) {

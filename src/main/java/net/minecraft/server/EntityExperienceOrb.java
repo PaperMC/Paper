@@ -27,7 +27,7 @@ public class EntityExperienceOrb extends Entity {
         this.value = i;
     }
 
-    protected boolean e_() {
+    protected boolean g_() {
         return false;
     }
 
@@ -37,10 +37,10 @@ public class EntityExperienceOrb extends Entity {
         this.height = this.length / 2.0F;
     }
 
-    protected void a() {}
+    protected void c() {}
 
-    public void l_() {
-        super.l_();
+    public void h() {
+        super.h();
         if (this.c > 0) {
             --this.c;
         }
@@ -49,17 +49,17 @@ public class EntityExperienceOrb extends Entity {
         this.lastY = this.locY;
         this.lastZ = this.locZ;
         this.motY -= 0.029999999329447746D;
-        if (this.world.getMaterial(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) == Material.LAVA) {
+        if (this.world.getType(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)).getMaterial() == Material.LAVA) {
             this.motY = 0.20000000298023224D;
             this.motX = (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
             this.motZ = (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
             this.makeSound("random.fizz", 0.4F, 2.0F + this.random.nextFloat() * 0.4F);
         }
 
-        this.i(this.locX, (this.boundingBox.b + this.boundingBox.e) / 2.0D, this.locZ);
+        this.j(this.locX, (this.boundingBox.b + this.boundingBox.e) / 2.0D, this.locZ);
         double d0 = 8.0D;
 
-        if (this.targetTime < this.a - 20 + this.id % 100) {
+        if (this.targetTime < this.a - 20 + this.getId() % 100) {
             if (this.targetPlayer == null || this.targetPlayer.e(this) > d0 * d0) {
                 this.targetPlayer = this.world.findNearbyPlayer(this, d0);
             }
@@ -92,12 +92,7 @@ public class EntityExperienceOrb extends Entity {
         float f = 0.98F;
 
         if (this.onGround) {
-            f = 0.58800006F;
-            int i = this.world.getTypeId(MathHelper.floor(this.locX), MathHelper.floor(this.boundingBox.b) - 1, MathHelper.floor(this.locZ));
-
-            if (i > 0) {
-                f = Block.byId[i].frictionFactor * 0.98F;
-            }
+            f = this.world.getType(MathHelper.floor(this.locX), MathHelper.floor(this.boundingBox.b) - 1, MathHelper.floor(this.locZ)).frictionFactor * 0.98F;
         }
 
         this.motX *= (double) f;
@@ -114,7 +109,7 @@ public class EntityExperienceOrb extends Entity {
         }
     }
 
-    public boolean I() {
+    public boolean N() {
         return this.world.a(this.boundingBox, Material.WATER, (Entity) this);
     }
 
@@ -126,7 +121,7 @@ public class EntityExperienceOrb extends Entity {
         if (this.isInvulnerable()) {
             return false;
         } else {
-            this.K();
+            this.Q();
             this.d = (int) ((float) this.d - f);
             if (this.d <= 0) {
                 this.die();
@@ -150,9 +145,9 @@ public class EntityExperienceOrb extends Entity {
 
     public void b_(EntityHuman entityhuman) {
         if (!this.world.isStatic) {
-            if (this.c == 0 && entityhuman.bv == 0) {
-                entityhuman.bv = 2;
-                this.makeSound("random.orb", 0.1F, 0.5F * ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.8F));
+            if (this.c == 0 && entityhuman.bu == 0) {
+                entityhuman.bu = 2;
+                this.world.makeSound(entityhuman, "random.orb", 0.1F, 0.5F * ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.8F));
                 entityhuman.receive(this, 1);
                 entityhuman.giveExp(CraftEventFactory.callPlayerExpChangeEvent(entityhuman, this.value).getAmount()); // CraftBukkit - this.value to event.getAmount()
                 this.die();
@@ -160,7 +155,7 @@ public class EntityExperienceOrb extends Entity {
         }
     }
 
-    public int c() {
+    public int e() {
         return this.value;
     }
 
@@ -187,7 +182,7 @@ public class EntityExperienceOrb extends Entity {
         return i >= 2477 ? 2477 : (i >= 1237 ? 1237 : (i >= 617 ? 617 : (i >= 307 ? 307 : (i >= 149 ? 149 : (i >= 73 ? 73 : (i >= 37 ? 37 : (i >= 17 ? 17 : (i >= 7 ? 7 : (i >= 3 ? 3 : 1)))))))));
     }
 
-    public boolean aq() {
+    public boolean av() {
         return false;
     }
 }

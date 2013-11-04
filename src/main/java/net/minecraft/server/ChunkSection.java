@@ -37,42 +37,48 @@ public class ChunkSection {
     }
     // CraftBukkit end
 
-    public int getTypeId(int i, int j, int k) {
+    public Block getTypeId(int i, int j, int k) {
         int l = this.blockIds[j << 8 | k << 4 | i] & 255;
 
-        return this.extBlockIds != null ? this.extBlockIds.a(i, j, k) << 8 | l : l;
+        if (this.extBlockIds != null) {
+            l |= this.extBlockIds.a(i, j, k) << 8;
+        }
+
+        return Block.e(l);
     }
 
-    public void setTypeId(int i, int j, int k, int l) {
-        int i1 = this.blockIds[j << 8 | k << 4 | i] & 255;
+    public void setTypeId(int i, int j, int k, Block block) {
+        int l = this.blockIds[j << 8 | k << 4 | i] & 255;
 
         if (this.extBlockIds != null) {
-            i1 |= this.extBlockIds.a(i, j, k) << 8;
+            l |= this.extBlockIds.a(i, j, k) << 8;
         }
 
-        if (i1 == 0 && l != 0) {
-            ++this.nonEmptyBlockCount;
-            if (Block.byId[l] != null && Block.byId[l].isTicking()) {
-                ++this.tickingBlockCount;
-            }
-        } else if (i1 != 0 && l == 0) {
+        Block block1 = Block.e(l);
+
+        if (block1 != Blocks.AIR) {
             --this.nonEmptyBlockCount;
-            if (Block.byId[i1] != null && Block.byId[i1].isTicking()) {
+            if (block1.isTicking()) {
                 --this.tickingBlockCount;
             }
-        } else if (Block.byId[i1] != null && Block.byId[i1].isTicking() && (Block.byId[l] == null || !Block.byId[l].isTicking())) {
-            --this.tickingBlockCount;
-        } else if ((Block.byId[i1] == null || !Block.byId[i1].isTicking()) && Block.byId[l] != null && Block.byId[l].isTicking()) {
-            ++this.tickingBlockCount;
         }
 
-        this.blockIds[j << 8 | k << 4 | i] = (byte) (l & 255);
-        if (l > 255) {
+        if (block != Blocks.AIR) {
+            ++this.nonEmptyBlockCount;
+            if (block.isTicking()) {
+                ++this.tickingBlockCount;
+            }
+        }
+
+        int i1 = Block.b(block);
+
+        this.blockIds[j << 8 | k << 4 | i] = (byte) (i1 & 255);
+        if (i1 > 255) {
             if (this.extBlockIds == null) {
                 this.extBlockIds = new NibbleArray(this.blockIds.length, 4);
             }
 
-            this.extBlockIds.a(i, j, k, (l & 3840) >> 8);
+            this.extBlockIds.a(i, j, k, (i1 & 3840) >> 8);
         } else if (this.extBlockIds != null) {
             this.extBlockIds.a(i, j, k, 0);
         }
@@ -123,11 +129,11 @@ public class ChunkSection {
             for (int off = 0; off < blkIds.length; off++) {
                 int l = blkIds[off] & 0xFF;
                 if (l > 0) {
-                    if (Block.byId[l] == null) {
+                    if (Block.e(l) == null) {
                         blkIds[off] = 0;
                     } else {
                         ++cntNonEmpty;
-                        if (Block.byId[l].isTicking()) {
+                        if (Block.e(l).isTicking()) {
                             ++cntTicking;
                         }
                     }
@@ -139,12 +145,12 @@ public class ChunkSection {
                 byte extid = ext[off2];
                 int l = (blkIds[off] & 0xFF) | ((extid & 0xF) << 8); // Even data
                 if (l > 0) {
-                    if (Block.byId[l] == null) {
+                    if (Block.e(l) == null) {
                         blkIds[off] = 0;
                         ext[off2] &= 0xF0;
                     } else {
                         ++cntNonEmpty;
-                        if (Block.byId[l].isTicking()) {
+                        if (Block.e(l).isTicking()) {
                             ++cntTicking;
                         }
                     }
@@ -152,12 +158,12 @@ public class ChunkSection {
                 off++;
                 l = (blkIds[off] & 0xFF) | ((extid & 0xF0) << 4); // Odd data
                 if (l > 0) {
-                    if (Block.byId[l] == null) {
+                    if (Block.e(l) == null) {
                         blkIds[off] = 0;
                         ext[off2] &= 0x0F;
                     } else {
                         ++cntNonEmpty;
-                        if (Block.byId[l].isTicking()) {
+                        if (Block.e(l).isTicking()) {
                             ++cntTicking;
                         }
                     }
@@ -178,19 +184,12 @@ public class ChunkSection {
         for (int i = 0; i < 16; ++i) {
             for (int j = 0; j < 16; ++j) {
                 for (int k = 0; k < 16; ++k) {
-                    int l = this.getTypeId(i, j, k);
+                    Block block = this.getTypeId(i, j, k);
 
-                    if (l > 0) {
-                        if (Block.byId[l] == null) {
-                            this.blockIds[j << 8 | k << 4 | i] = 0;
-                            if (this.extBlockIds != null) {
-                                this.extBlockIds.a(i, j, k, 0);
-                            }
-                        } else {
-                            ++this.nonEmptyBlockCount;
-                            if (Block.byId[l].isTicking()) {
-                                ++this.tickingBlockCount;
-                            }
+                    if (block != Blocks.AIR) {
+                        ++this.nonEmptyBlockCount;
+                        if (block.isTicking()) {
+                            ++this.tickingBlockCount;
                         }
                     }
                 }

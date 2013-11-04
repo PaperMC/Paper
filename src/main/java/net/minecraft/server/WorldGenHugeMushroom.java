@@ -3,7 +3,7 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.BlockChangeDelegate;
+import org.bukkit.craftbukkit.CraftBlockChangeDelegate;
 import org.bukkit.block.BlockState;
 import org.bukkit.material.MaterialData;
 // CraftBukkit end
@@ -23,14 +23,14 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
 
     public boolean a(World world, Random random, int i, int j, int k) {
         // CraftBukkit start - Moved to generate
-        return grow((BlockChangeDelegate) world, random, i, j, k, null, null, null);
+        return grow(new CraftBlockChangeDelegate((org.bukkit.BlockChangeDelegate) world), random, i, j, k, null, null, null);
     }
 
-    public boolean generate(BlockChangeDelegate world, Random random, int i, int j, int k) {
+    public boolean generate(CraftBlockChangeDelegate world, Random random, int i, int j, int k) {
         return grow(world, random, i, j, k, null, null, null);
     }
 
-    public boolean grow(BlockChangeDelegate world, Random random, int i, int j, int k, org.bukkit.event.world.StructureGrowEvent event, ItemStack itemstack, org.bukkit.craftbukkit.CraftWorld bukkitWorld) {
+    public boolean grow(CraftBlockChangeDelegate world, Random random, int i, int j, int k, org.bukkit.event.world.StructureGrowEvent event, ItemStack itemstack, org.bukkit.craftbukkit.CraftWorld bukkitWorld) {
         // CraftBukkit end
         int l = random.nextInt(2);
 
@@ -44,21 +44,20 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
         if (j >= 1 && j + i1 + 1 < 256) {
             int j1;
             int k1;
-            int l1;
-            int i2;
 
-            for (j1 = j; j1 <= j + 1 + i1; ++j1) {
+            for (int l1 = j; l1 <= j + 1 + i1; ++l1) {
                 byte b0 = 3;
 
-                if (j1 <= j + 3) {
+                if (l1 <= j + 3) {
                     b0 = 0;
                 }
 
-                for (k1 = i - b0; k1 <= i + b0 && flag; ++k1) {
-                    for (l1 = k - b0; l1 <= k + b0 && flag; ++l1) {
-                        if (j1 >= 0 && j1 < 256) {
-                            i2 = world.getTypeId(k1, j1, l1);
-                            if (i2 != 0 && i2 != Block.LEAVES.id) {
+                for (j1 = i - b0; j1 <= i + b0 && flag; ++j1) {
+                    for (k1 = k - b0; k1 <= k + b0 && flag; ++k1) {
+                        if (l1 >= 0 && l1 < 256) {
+                            Block block = world.getType(j1, l1, k1);
+
+                            if (block.getMaterial() != Material.AIR && block.getMaterial() != Material.LEAVES) {
                                 flag = false;
                             }
                         } else {
@@ -71,105 +70,107 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
             if (!flag) {
                 return false;
             } else {
-                j1 = world.getTypeId(i, j - 1, k);
-                if (j1 != Block.DIRT.id && j1 != Block.GRASS.id && j1 != Block.MYCEL.id) {
+                Block block1 = world.getType(i, j - 1, k);
+
+                if (block1 != Blocks.DIRT && block1 != Blocks.GRASS && block1 != Blocks.MYCEL) {
                     return false;
                 } else {
                     // CraftBukkit start
                     if (event == null) {
-                        this.setTypeAndData(world, i, j - 1, k, Block.DIRT.id, 0);
+                        this.setTypeAndData(world, i, j - 1, k, Blocks.DIRT, 0);
                     } else {
                         BlockState dirtState = bukkitWorld.getBlockAt(i, j - 1, k).getState();
-                        dirtState.setTypeId(Block.DIRT.id);
+                        dirtState.setTypeId(Block.b(Blocks.DIRT));
                         event.getBlocks().add(dirtState);
                     }
                     // CraftBukkit end
-                    int j2 = j + i1;
+
+                    int i2 = j + i1;
 
                     if (l == 1) {
-                        j2 = j + i1 - 3;
+                        i2 = j + i1 - 3;
                     }
 
-                    for (k1 = j2; k1 <= j + i1; ++k1) {
-                        l1 = 1;
-                        if (k1 < j + i1) {
-                            ++l1;
+                    for (j1 = i2; j1 <= j + i1; ++j1) {
+                        k1 = 1;
+                        if (j1 < j + i1) {
+                            ++k1;
                         }
 
                         if (l == 0) {
-                            l1 = 3;
+                            k1 = 3;
                         }
 
-                        for (i2 = i - l1; i2 <= i + l1; ++i2) {
-                            for (int k2 = k - l1; k2 <= k + l1; ++k2) {
+                        for (int j2 = i - k1; j2 <= i + k1; ++j2) {
+                            for (int k2 = k - k1; k2 <= k + k1; ++k2) {
                                 int l2 = 5;
 
-                                if (i2 == i - l1) {
+                                if (j2 == i - k1) {
                                     --l2;
                                 }
 
-                                if (i2 == i + l1) {
+                                if (j2 == i + k1) {
                                     ++l2;
                                 }
 
-                                if (k2 == k - l1) {
+                                if (k2 == k - k1) {
                                     l2 -= 3;
                                 }
 
-                                if (k2 == k + l1) {
+                                if (k2 == k + k1) {
                                     l2 += 3;
                                 }
 
-                                if (l == 0 || k1 < j + i1) {
-                                    if ((i2 == i - l1 || i2 == i + l1) && (k2 == k - l1 || k2 == k + l1)) {
+                                if (l == 0 || j1 < j + i1) {
+                                    if ((j2 == i - k1 || j2 == i + k1) && (k2 == k - k1 || k2 == k + k1)) {
                                         continue;
                                     }
 
-                                    if (i2 == i - (l1 - 1) && k2 == k - l1) {
+                                    if (j2 == i - (k1 - 1) && k2 == k - k1) {
                                         l2 = 1;
                                     }
 
-                                    if (i2 == i - l1 && k2 == k - (l1 - 1)) {
+                                    if (j2 == i - k1 && k2 == k - (k1 - 1)) {
                                         l2 = 1;
                                     }
 
-                                    if (i2 == i + (l1 - 1) && k2 == k - l1) {
+                                    if (j2 == i + (k1 - 1) && k2 == k - k1) {
                                         l2 = 3;
                                     }
 
-                                    if (i2 == i + l1 && k2 == k - (l1 - 1)) {
+                                    if (j2 == i + k1 && k2 == k - (k1 - 1)) {
                                         l2 = 3;
                                     }
 
-                                    if (i2 == i - (l1 - 1) && k2 == k + l1) {
+                                    if (j2 == i - (k1 - 1) && k2 == k + k1) {
                                         l2 = 7;
                                     }
 
-                                    if (i2 == i - l1 && k2 == k + (l1 - 1)) {
+                                    if (j2 == i - k1 && k2 == k + (k1 - 1)) {
                                         l2 = 7;
                                     }
 
-                                    if (i2 == i + (l1 - 1) && k2 == k + l1) {
+                                    if (j2 == i + (k1 - 1) && k2 == k + k1) {
                                         l2 = 9;
                                     }
 
-                                    if (i2 == i + l1 && k2 == k + (l1 - 1)) {
+                                    if (j2 == i + k1 && k2 == k + (k1 - 1)) {
                                         l2 = 9;
                                     }
                                 }
 
-                                if (l2 == 5 && k1 < j + i1) {
+                                if (l2 == 5 && j1 < j + i1) {
                                     l2 = 0;
                                 }
 
-                                if ((l2 != 0 || j >= j + i1 - 1) && !Block.t[world.getTypeId(i2, k1, k2)]) {
+                                if ((l2 != 0 || j >= j + i1 - 1) && !world.getType(j2, j1, k2).j()) {
                                     // CraftBukkit start
                                     if (event == null) {
-                                       this.setTypeAndData(world, i2, k1, k2, Block.BIG_MUSHROOM_1.id + l, l2);
+                                        this.setTypeAndData(world, j2, j1, k2, Block.e(Block.b(Blocks.BIG_MUSHROOM_1) + l), l2);
                                     } else {
                                         BlockState state = bukkitWorld.getBlockAt(i2, k1, k2).getState();
-                                        state.setTypeId(Block.BIG_MUSHROOM_1.id + l);
-                                        state.setData(new MaterialData(Block.BIG_MUSHROOM_1.id + l, (byte) l2));
+                                        state.setTypeId(Block.b(Blocks.BIG_MUSHROOM_1) + l);
+                                        state.setData(new MaterialData(Block.b(Blocks.BIG_MUSHROOM_1) + l, (byte) l2));
                                         event.getBlocks().add(state);
                                     }
                                     // CraftBukkit end
@@ -178,16 +179,17 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
                         }
                     }
 
-                    for (k1 = 0; k1 < i1; ++k1) {
-                        l1 = world.getTypeId(i, j + k1, k);
-                        if (!Block.t[l1]) {
+                    for (j1 = 0; j1 < i1; ++j1) {
+                        Block block2 = world.getType(i, j + j1, k);
+
+                        if (!block2.j()) {
                             // CraftBukkit start
                             if (event == null) {
-                                this.setTypeAndData(world, i, j + k1, k, Block.BIG_MUSHROOM_1.id + l, 10);
+                                this.setTypeAndData(world, i, j + j1, k, Block.e(Block.b(Blocks.BIG_MUSHROOM_1) + l), 10);
                             } else {
-                                BlockState state = bukkitWorld.getBlockAt(i, j + k1, k).getState();
-                                state.setTypeId(Block.BIG_MUSHROOM_1.id + l);
-                                state.setData(new MaterialData(Block.BIG_MUSHROOM_1.id + l, (byte) 10));
+                                BlockState state = bukkitWorld.getBlockAt(i, j + j1, k).getState();
+                                state.setTypeId(Block.b(Blocks.BIG_MUSHROOM_1) + l);
+                                state.setData(new MaterialData(Block.b(Blocks.BIG_MUSHROOM_1) + l, (byte) 10));
                                 event.getBlocks().add(state);
                             }
                             // CraftBukkit end
@@ -203,7 +205,6 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
                         }
                     }
                     // CraftBukkit end
-
                     return true;
                 }
             }

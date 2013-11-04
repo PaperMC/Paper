@@ -2,8 +2,8 @@ package org.bukkit.craftbukkit;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
 
 public class LoggerOutputStream extends ByteArrayOutputStream {
     private final String separator = System.getProperty("line.separator");
@@ -24,7 +24,7 @@ public class LoggerOutputStream extends ByteArrayOutputStream {
             super.reset();
 
             if ((record.length() > 0) && (!record.equals(separator))) {
-                logger.logp(level, "", "", record);
+                logger.log(level, record);
             }
         }
     }

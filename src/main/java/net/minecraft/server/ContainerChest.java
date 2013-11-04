@@ -39,7 +39,7 @@ public class ContainerChest extends Container {
         int i = (this.f - 4) * 18;
         // CraftBukkit start - Save player
         // TODO: Should we check to make sure it really is an InventoryPlayer?
-        this.player = (PlayerInventory)iinventory;
+        this.player = (PlayerInventory) iinventory;
         // CraftBukkit end
 
         int j;
@@ -95,7 +95,7 @@ public class ContainerChest extends Container {
 
     public void b(EntityHuman entityhuman) {
         super.b(entityhuman);
-        this.container.g();
+        this.container.l_();
     }
 
     public IInventory e() {

@@ -1,10 +1,11 @@
 package net.minecraft.server;
 
-import com.google.common.collect.Maps;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.Map.Entry;
+
+import net.minecraft.util.com.google.common.collect.Maps;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -96,8 +97,8 @@ public class MobEffectList {
             if (!entityliving.world.isStatic) {
                 ((EntityHuman) entityliving).getFoodData().eat(i + 1, 1.0F);
             }
-        } else if ((this.id != HEAL.id || entityliving.aM()) && (this.id != HARM.id || !entityliving.aM())) {
-            if (this.id == HARM.id && !entityliving.aM() || this.id == HEAL.id && entityliving.aM()) {
+        } else if ((this.id != HEAL.id || entityliving.aR()) && (this.id != HARM.id || !entityliving.aR())) {
+            if (this.id == HARM.id && !entityliving.aR() || this.id == HEAL.id && entityliving.aR()) {
                 entityliving.damageEntity(DamageSource.MAGIC, (float) (6 << i));
             }
         } else {
@@ -114,8 +115,8 @@ public class MobEffectList {
         // CraftBukkit end
         int j;
 
-        if ((this.id != HEAL.id || entityliving1.aM()) && (this.id != HARM.id || !entityliving1.aM())) {
-            if (this.id == HARM.id && !entityliving1.aM() || this.id == HEAL.id && entityliving1.aM()) {
+        if ((this.id != HEAL.id || entityliving1.aR()) && (this.id != HARM.id || !entityliving1.aR())) {
+            if (this.id == HARM.id && !entityliving1.aR() || this.id == HEAL.id && entityliving1.aR()) {
                 j = (int) (d0 * (double) (6 << i) + 0.5D);
                 if (entityliving == null) {
                     entityliving1.damageEntity(DamageSource.MAGIC, (float) j);
@@ -126,7 +127,7 @@ public class MobEffectList {
             }
         } else {
             j = (int) (d0 * (double) (4 << i) + 0.5D);
-            entityliving1.heal((float) j, RegainReason.MAGIC);
+            entityliving1.heal((float) j, RegainReason.MAGIC); // CraftBukkit
         }
     }
 

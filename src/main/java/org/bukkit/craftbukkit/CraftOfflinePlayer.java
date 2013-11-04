@@ -144,7 +144,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
         if (result != null) {
             if (!result.hasKey("bukkit")) {
-                result.setCompound("bukkit", new NBTTagCompound());
+                result.set("bukkit", new NBTTagCompound());
             }
             result = result.getCompound("bukkit");
         }

@@ -58,8 +58,8 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         this.loadChest();
     }
 
-    protected void a() {
-        super.a();
+    protected void c() {
+        super.c();
         this.datawatcher.a(16, Integer.valueOf(0));
         this.datawatcher.a(19, Byte.valueOf((byte) 0));
         this.datawatcher.a(20, Integer.valueOf(0));
@@ -69,7 +69,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
 
     public void setType(int i) {
         this.datawatcher.watch(19, Byte.valueOf((byte) i));
-        this.cJ();
+        this.cN();
     }
 
     public int getType() {
@@ -78,14 +78,14 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
 
     public void setVariant(int i) {
         this.datawatcher.watch(20, Integer.valueOf(i));
-        this.cJ();
+        this.cN();
     }
 
     public int getVariant() {
         return this.datawatcher.getInt(20);
     }
 
-    public String getLocalizedName() {
+    public String getName() {
         if (this.hasCustomName()) {
             return this.getCustomName();
         } else {
@@ -111,7 +111,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         }
     }
 
-    private boolean w(int i) {
+    private boolean x(int i) {
         return (this.datawatcher.getInt(16) & i) != 0;
     }
 
@@ -125,16 +125,16 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         }
     }
 
-    public boolean bV() {
+    public boolean bZ() {
         return !this.isBaby();
     }
 
     public boolean isTame() {
-        return this.w(2);
+        return this.x(2);
     }
 
-    public boolean ca() {
-        return this.bV();
+    public boolean ce() {
+        return this.bZ();
     }
 
     public String getOwnerName() {
@@ -145,7 +145,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         this.datawatcher.watch(21, s);
     }
 
-    public float cc() {
+    public float cg() {
         int i = this.getAge();
 
         return i >= 0 ? 1.0F : 0.5F + (float) (-24000 - i) / -24000.0F * 0.5F;
@@ -153,13 +153,13 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
 
     public void a(boolean flag) {
         if (flag) {
-            this.a(this.cc());
+            this.a(this.cg());
         } else {
             this.a(1.0F);
         }
     }
 
-    public boolean cd() {
+    public boolean ch() {
         return this.br;
     }
 
@@ -171,47 +171,53 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         this.br = flag;
     }
 
-    public boolean bG() {
-        return !this.cy() && super.bG();
+    public boolean bK() {
+        return !this.cC() && super.bK();
     }
 
     protected void o(float f) {
-        if (f > 6.0F && this.cg()) {
+        if (f > 6.0F && this.ck()) {
             this.o(false);
         }
     }
 
     public boolean hasChest() {
-        return this.w(8);
+        return this.x(8);
     }
 
-    public int cf() {
+    public int cj() {
         return this.datawatcher.getInt(22);
     }
 
-    public int d(ItemStack itemstack) {
-        return itemstack == null ? 0 : (itemstack.id == Item.HORSE_ARMOR_IRON.id ? 1 : (itemstack.id == Item.HORSE_ARMOR_GOLD.id ? 2 : (itemstack.id == Item.HORSE_ARMOR_DIAMOND.id ? 3 : 0)));
+    private int e(ItemStack itemstack) {
+        if (itemstack == null) {
+            return 0;
+        } else {
+            Item item = itemstack.getItem();
+
+            return item == Items.HORSE_ARMOR_IRON ? 1 : (item == Items.HORSE_ARMOR_GOLD ? 2 : (item == Items.HORSE_ARMOR_DIAMOND ? 3 : 0));
+        }
     }
 
-    public boolean cg() {
-        return this.w(32);
+    public boolean ck() {
+        return this.x(32);
     }
 
-    public boolean ch() {
-        return this.w(64);
+    public boolean cl() {
+        return this.x(64);
     }
 
-    public boolean ci() {
-        return this.w(16);
+    public boolean cm() {
+        return this.x(16);
     }
 
-    public boolean cj() {
+    public boolean cn() {
         return this.bH;
     }
 
-    public void r(int i) {
-        this.datawatcher.watch(22, Integer.valueOf(i));
-        this.cJ();
+    public void d(ItemStack itemstack) {
+        this.datawatcher.watch(22, Integer.valueOf(this.e(itemstack)));
+        this.cN();
     }
 
     public void k(boolean flag) {
@@ -238,7 +244,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         this.bs = i;
     }
 
-    public int t(int i) {
+    public int v(int i) {
         int j = MathHelper.a(this.getTemper() + i, 0, this.getMaxDomestication());
 
         this.setTemper(j);
@@ -251,15 +257,15 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         return this.passenger != null && this.passenger.equals(entity) ? false : super.damageEntity(damagesource, f);
     }
 
-    public int aQ() {
-        return by[this.cf()];
+    public int aV() {
+        return by[this.cj()];
     }
 
-    public boolean M() {
+    public boolean S() {
         return this.passenger == null;
     }
 
-    public boolean cl() {
+    public boolean cp() {
         int i = MathHelper.floor(this.locX);
         int j = MathHelper.floor(this.locZ);
 
@@ -267,15 +273,15 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         return true;
     }
 
-    public void cm() {
+    public void cq() {
         if (!this.world.isStatic && this.hasChest()) {
-            this.b(Block.CHEST.id, 1);
+            this.a(Item.getItemOf(Blocks.CHEST), 1);
             this.setHasChest(false);
         }
     }
 
-    private void cF() {
-        this.cM();
+    private void cJ() {
+        this.cQ();
         this.world.makeSound(this, "eating", 1.0F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
     }
 
@@ -309,17 +315,17 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
                 // CraftBukkit end
             }
 
-            int j = this.world.getTypeId(MathHelper.floor(this.locX), MathHelper.floor(this.locY - 0.2D - (double) this.lastYaw), MathHelper.floor(this.locZ));
+            Block block = this.world.getType(MathHelper.floor(this.locX), MathHelper.floor(this.locY - 0.2D - (double) this.lastYaw), MathHelper.floor(this.locZ));
 
-            if (j > 0) {
-                StepSound stepsound = Block.byId[j].stepSound;
+            if (block.getMaterial() != Material.AIR) {
+                StepSound stepsound = block.stepSound;
 
                 this.world.makeSound(this, stepsound.getStepSound(), stepsound.getVolume1() * 0.5F, stepsound.getVolume2() * 0.75F);
             }
         }
     }
 
-    private int cG() {
+    private int cK() {
         int i = this.getType();
 
         return this.hasChest() /* && (i == 1 || i == 2) */ ? 17 : 2; // CraftBukkit - Remove type check
@@ -328,8 +334,8 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
     public void loadChest() { // CraftBukkit - private -> public
         InventoryHorseChest inventoryhorsechest = this.inventoryChest;
 
-        this.inventoryChest = new InventoryHorseChest("HorseChest", this.cG(), this); // CraftBukkit - add this horse
-        this.inventoryChest.a(this.getLocalizedName());
+        this.inventoryChest = new InventoryHorseChest("HorseChest", this.cK(), this); // CraftBukkit - add this horse
+        this.inventoryChest.a(this.getName());
         if (inventoryhorsechest != null) {
             inventoryhorsechest.b(this);
             int i = Math.min(inventoryhorsechest.getSize(), this.inventoryChest.getSize());
@@ -346,36 +352,38 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         }
 
         this.inventoryChest.a(this);
-        this.cI();
+        this.cM();
     }
 
-    private void cI() {
+    private void cM() {
         if (!this.world.isStatic) {
             this.n(this.inventoryChest.getItem(0) != null);
-            if (this.cv()) {
-                this.r(this.d(this.inventoryChest.getItem(1)));
+            if (this.cz()) {
+                this.d(this.inventoryChest.getItem(1));
             }
         }
     }
 
     public void a(InventorySubcontainer inventorysubcontainer) {
-        int i = this.cf();
-        boolean flag = this.co();
+        int i = this.cj();
+        boolean flag = this.cs();
 
-        this.cI();
+        this.cM();
         if (this.ticksLived > 20) {
-            if (i == 0 && i != this.cf()) {
+            if (i == 0 && i != this.cj()) {
+                this.makeSound("mob.horse.armor", 0.5F, 1.0F);
+            } else if (i != this.cj()) {
                 this.makeSound("mob.horse.armor", 0.5F, 1.0F);
             }
 
-            if (!flag && this.co()) {
+            if (!flag && this.cs()) {
                 this.makeSound("mob.horse.leather", 0.5F, 1.0F);
             }
         }
     }
 
     public boolean canSpawn() {
-        this.cl();
+        this.cp();
         return super.canSpawn();
     }
 
@@ -402,24 +410,24 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         return this.getAttributeInstance(attributeJumpStrength).getValue();
     }
 
-    protected String aP() {
-        this.cM();
+    protected String aU() {
+        this.cQ();
         int i = this.getType();
 
         return i == 3 ? "mob.horse.zombie.death" : (i == 4 ? "mob.horse.skeleton.death" : (i != 1 && i != 2 ? "mob.horse.death" : "mob.horse.donkey.death"));
     }
 
-    protected int getLootId() {
+    protected Item getLoot() {
         boolean flag = this.random.nextInt(4) == 0;
         int i = this.getType();
 
-        return i == 4 ? Item.BONE.id : (i == 3 ? (flag ? 0 : Item.ROTTEN_FLESH.id) : Item.LEATHER.id);
+        return i == 4 ? Items.BONE : (i == 3 ? (flag ? Item.d(0) : Items.ROTTEN_FLESH) : Items.LEATHER);
     }
 
-    protected String aO() {
-        this.cM();
+    protected String aT() {
+        this.cQ();
         if (this.random.nextInt(3) == 0) {
-            this.cO();
+            this.cS();
         }
 
         int i = this.getType();
@@ -427,14 +435,14 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         return i == 3 ? "mob.horse.zombie.hit" : (i == 4 ? "mob.horse.skeleton.hit" : (i != 1 && i != 2 ? "mob.horse.hit" : "mob.horse.donkey.hit"));
     }
 
-    public boolean co() {
-        return this.w(4);
+    public boolean cs() {
+        return this.x(4);
     }
 
-    protected String r() {
-        this.cM();
-        if (this.random.nextInt(10) == 0 && !this.bc()) {
-            this.cO();
+    protected String t() {
+        this.cQ();
+        if (this.random.nextInt(10) == 0 && !this.bh()) {
+            this.cS();
         }
 
         int i = this.getType();
@@ -442,50 +450,50 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         return i == 3 ? "mob.horse.zombie.idle" : (i == 4 ? "mob.horse.skeleton.idle" : (i != 1 && i != 2 ? "mob.horse.idle" : "mob.horse.donkey.idle"));
     }
 
-    protected String cp() {
-        this.cM();
-        this.cO();
+    protected String ct() {
+        this.cQ();
+        this.cS();
         int i = this.getType();
 
         return i != 3 && i != 4 ? (i != 1 && i != 2 ? "mob.horse.angry" : "mob.horse.donkey.angry") : null;
     }
 
-    protected void a(int i, int j, int k, int l) {
-        StepSound stepsound = Block.byId[l].stepSound;
+    protected void a(int i, int j, int k, Block block) {
+        StepSound stepsound = block.stepSound;
 
-        if (this.world.getTypeId(i, j + 1, k) == Block.SNOW.id) {
-            stepsound = Block.SNOW.stepSound;
+        if (this.world.getType(i, j + 1, k) == Blocks.SNOW) {
+            stepsound = Blocks.SNOW.stepSound;
         }
 
-        if (!Block.byId[l].material.isLiquid()) {
-            int i1 = this.getType();
+        if (!block.getMaterial().isLiquid()) {
+            int l = this.getType();
 
-            if (this.passenger != null && i1 != 1 && i1 != 2) {
+            if (this.passenger != null && l != 1 && l != 2) {
                 ++this.bP;
                 if (this.bP > 5 && this.bP % 3 == 0) {
                     this.makeSound("mob.horse.gallop", stepsound.getVolume1() * 0.15F, stepsound.getVolume2());
-                    if (i1 == 0 && this.random.nextInt(10) == 0) {
+                    if (l == 0 && this.random.nextInt(10) == 0) {
                         this.makeSound("mob.horse.breathe", stepsound.getVolume1() * 0.6F, stepsound.getVolume2());
                     }
                 } else if (this.bP <= 5) {
                     this.makeSound("mob.horse.wood", stepsound.getVolume1() * 0.15F, stepsound.getVolume2());
                 }
-            } else if (stepsound == Block.h) {
-                this.makeSound("mob.horse.soft", stepsound.getVolume1() * 0.15F, stepsound.getVolume2());
-            } else {
+            } else if (stepsound == Block.f) {
                 this.makeSound("mob.horse.wood", stepsound.getVolume1() * 0.15F, stepsound.getVolume2());
+            } else {
+                this.makeSound("mob.horse.soft", stepsound.getVolume1() * 0.15F, stepsound.getVolume2());
             }
         }
     }
 
-    protected void az() {
-        super.az();
-        this.aX().b(attributeJumpStrength);
+    protected void aD() {
+        super.aD();
+        this.bc().b(attributeJumpStrength);
         this.getAttributeInstance(GenericAttributes.a).setValue(53.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.22499999403953552D);
     }
 
-    public int bv() {
+    public int bz() {
         return 6;
     }
 
@@ -493,21 +501,21 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         return this.maxDomestication; // CraftBukkit - return stored max domestication instead of 100
     }
 
-    protected float ba() {
+    protected float bf() {
         return 0.8F;
     }
 
-    public int o() {
+    public int q() {
         return 400;
     }
 
-    private void cJ() {
+    private void cN() {
         this.bQ = null;
     }
 
-    public void f(EntityHuman entityhuman) {
+    public void g(EntityHuman entityhuman) {
         if (!this.world.isStatic && (this.passenger == null || this.passenger == entityhuman) && this.isTame()) {
-            this.inventoryChest.a(this.getLocalizedName());
+            this.inventoryChest.a(this.getName());
             entityhuman.openHorseInventory(this, this.inventoryChest);
         }
     }
@@ -515,80 +523,80 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
     public boolean a(EntityHuman entityhuman) {
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
-        if (itemstack != null && itemstack.id == Item.MONSTER_EGG.id) {
+        if (itemstack != null && itemstack.getItem() == Items.MONSTER_EGG) {
             return super.a(entityhuman);
-        } else if (!this.isTame() && this.cy()) {
+        } else if (!this.isTame() && this.cC()) {
             return false;
-        } else if (this.isTame() && this.bV() && entityhuman.isSneaking()) {
-            this.f(entityhuman);
+        } else if (this.isTame() && this.bZ() && entityhuman.isSneaking()) {
+            this.g(entityhuman);
             return true;
-        } else if (this.ca() && this.passenger != null) {
+        } else if (this.ce() && this.passenger != null) {
             return super.a(entityhuman);
         } else {
             if (itemstack != null) {
                 boolean flag = false;
 
-                if (this.cv()) {
+                if (this.cz()) {
                     byte b0 = -1;
 
-                    if (itemstack.id == Item.HORSE_ARMOR_IRON.id) {
+                    if (itemstack.getItem() == Items.HORSE_ARMOR_IRON) {
                         b0 = 1;
-                    } else if (itemstack.id == Item.HORSE_ARMOR_GOLD.id) {
+                    } else if (itemstack.getItem() == Items.HORSE_ARMOR_GOLD) {
                         b0 = 2;
-                    } else if (itemstack.id == Item.HORSE_ARMOR_DIAMOND.id) {
+                    } else if (itemstack.getItem() == Items.HORSE_ARMOR_DIAMOND) {
                         b0 = 3;
                     }
 
                     if (b0 >= 0) {
                         if (!this.isTame()) {
-                            this.cD();
+                            this.cH();
                             return true;
                         }
 
-                        this.f(entityhuman);
+                        this.g(entityhuman);
                         return true;
                     }
                 }
 
-                if (!flag && !this.cy()) {
+                if (!flag && !this.cC()) {
                     float f = 0.0F;
                     short short1 = 0;
                     byte b1 = 0;
 
-                    if (itemstack.id == Item.WHEAT.id) {
+                    if (itemstack.getItem() == Items.WHEAT) {
                         f = 2.0F;
                         short1 = 60;
                         b1 = 3;
-                    } else if (itemstack.id == Item.SUGAR.id) {
+                    } else if (itemstack.getItem() == Items.SUGAR) {
                         f = 1.0F;
                         short1 = 30;
                         b1 = 3;
-                    } else if (itemstack.id == Item.BREAD.id) {
+                    } else if (itemstack.getItem() == Items.BREAD) {
                         f = 7.0F;
                         short1 = 180;
                         b1 = 3;
-                    } else if (itemstack.id == Block.HAY_BLOCK.id) {
+                    } else if (Block.a(itemstack.getItem()) == Blocks.HAY_BLOCK) {
                         f = 20.0F;
                         short1 = 180;
-                    } else if (itemstack.id == Item.APPLE.id) {
+                    } else if (itemstack.getItem() == Items.APPLE) {
                         f = 3.0F;
                         short1 = 60;
                         b1 = 3;
-                    } else if (itemstack.id == Item.CARROT_GOLDEN.id) {
+                    } else if (itemstack.getItem() == Items.CARROT_GOLDEN) {
                         f = 4.0F;
                         short1 = 60;
                         b1 = 5;
                         if (this.isTame() && this.getAge() == 0) {
                             flag = true;
-                            this.bX();
+                            this.f(entityhuman);
                         }
-                    } else if (itemstack.id == Item.GOLDEN_APPLE.id) {
+                    } else if (itemstack.getItem() == Items.GOLDEN_APPLE) {
                         f = 10.0F;
                         short1 = 240;
                         b1 = 10;
                         if (this.isTame() && this.getAge() == 0) {
                             flag = true;
-                            this.bX();
+                            this.f(entityhuman);
                         }
                     }
 
@@ -597,18 +605,18 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
                         flag = true;
                     }
 
-                    if (!this.bV() && short1 > 0) {
+                    if (!this.bZ() && short1 > 0) {
                         this.a(short1);
                         flag = true;
                     }
 
                     if (b1 > 0 && (flag || !this.isTame()) && b1 < this.getMaxDomestication()) {
                         flag = true;
-                        this.t(b1);
+                        this.v(b1);
                     }
 
                     if (flag) {
-                        this.cF();
+                        this.cJ();
                     }
                 }
 
@@ -617,19 +625,19 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
                         return true;
                     }
 
-                    this.cD();
+                    this.cH();
                     return true;
                 }
 
-                if (!flag && this.cw() && !this.hasChest() && itemstack.id == Block.CHEST.id) {
+                if (!flag && this.cA() && !this.hasChest() && itemstack.getItem() == Item.getItemOf(Blocks.CHEST)) {
                     this.setHasChest(true);
                     this.makeSound("mob.chickenplop", 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
                     flag = true;
                     this.loadChest();
                 }
 
-                if (!flag && this.ca() && !this.co() && itemstack.id == Item.SADDLE.id) {
-                    this.f(entityhuman);
+                if (!flag && this.ce() && !this.cs() && itemstack.getItem() == Items.SADDLE) {
+                    this.g(entityhuman);
                     return true;
                 }
 
@@ -642,11 +650,11 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
                 }
             }
 
-            if (this.ca() && this.passenger == null) {
+            if (this.ce() && this.passenger == null) {
                 if (itemstack != null && itemstack.a(entityhuman, (EntityLiving) this)) {
                     return true;
                 } else {
-                    this.h(entityhuman);
+                    this.i(entityhuman);
                     return true;
                 }
             } else {
@@ -655,7 +663,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         }
     }
 
-    private void h(EntityHuman entityhuman) {
+    private void i(EntityHuman entityhuman) {
         entityhuman.yaw = this.yaw;
         entityhuman.pitch = this.pitch;
         this.o(false);
@@ -665,66 +673,66 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         }
     }
 
-    public boolean cv() {
+    public boolean cz() {
         return this.getType() == 0;
     }
 
-    public boolean cw() {
+    public boolean cA() {
         int i = this.getType();
 
         return i == 2 || i == 1;
     }
 
-    protected boolean bc() {
-        return this.passenger != null && this.co() ? true : this.cg() || this.ch();
+    protected boolean bh() {
+        return this.passenger != null && this.cs() ? true : this.ck() || this.cl();
     }
 
-    public boolean cy() {
+    public boolean cC() {
         int i = this.getType();
 
         return i == 3 || i == 4;
     }
 
-    public boolean cz() {
-        return this.cy() || this.getType() == 2;
+    public boolean cD() {
+        return this.cC() || this.getType() == 2;
     }
 
     public boolean c(ItemStack itemstack) {
         return false;
     }
 
-    private void cL() {
+    private void cP() {
         this.bp = 1;
     }
 
     public void die(DamageSource damagesource) {
         super.die(damagesource);
         if (!this.world.isStatic) {
-            this.cE();
+            this.cI();
         }
     }
 
-    public void c() {
+    public void e() {
         if (this.random.nextInt(200) == 0) {
-            this.cL();
+            this.cP();
         }
 
-        super.c();
+        super.e();
         if (!this.world.isStatic) {
             if (this.random.nextInt(900) == 0 && this.deathTicks == 0) {
                 this.heal(1.0F);
             }
 
-            if (!this.cg() && this.passenger == null && this.random.nextInt(300) == 0 && this.world.getTypeId(MathHelper.floor(this.locX), MathHelper.floor(this.locY) - 1, MathHelper.floor(this.locZ)) == Block.GRASS.id) {
+            if (!this.ck() && this.passenger == null && this.random.nextInt(300) == 0 && this.world.getType(MathHelper.floor(this.locX), MathHelper.floor(this.locY) - 1, MathHelper.floor(this.locZ)) == Blocks.GRASS) {
                 this.o(true);
             }
 
-            if (this.cg() && ++this.bD > 50) {
+            if (this.ck() && ++this.bD > 50) {
                 this.bD = 0;
                 this.o(false);
             }
 
-            if (this.ci() && !this.bV() && !this.cg()) {
+            if (this.cm() && !this.bZ() && !this.ck()) {
                 EntityHorse entityhorse = this.a(this, 16.0D);
 
                 if (entityhorse != null && this.e(entityhorse) > 4.0D) {
@@ -736,11 +744,11 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         }
     }
 
-    public void l_() {
-        super.l_();
+    public void h() {
+        super.h();
         if (this.world.isStatic && this.datawatcher.a()) {
             this.datawatcher.e();
-            this.cJ();
+            this.cN();
         }
 
         if (this.bE > 0 && ++this.bE > 30) {
@@ -765,7 +773,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         }
 
         this.bK = this.bJ;
-        if (this.cg()) {
+        if (this.ck()) {
             this.bJ += (1.0F - this.bJ) * 0.4F + 0.05F;
             if (this.bJ > 1.0F) {
                 this.bJ = 1.0F;
@@ -778,7 +786,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         }
 
         this.bM = this.bL;
-        if (this.ch()) {
+        if (this.cl()) {
             this.bK = this.bJ = 0.0F;
             this.bL += (1.0F - this.bL) * 0.4F + 0.05F;
             if (this.bL > 1.0F) {
@@ -793,7 +801,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         }
 
         this.bO = this.bN;
-        if (this.w(128)) {
+        if (this.x(128)) {
             this.bN += (1.0F - this.bN) * 0.7F + 0.05F;
             if (this.bN > 1.0F) {
                 this.bN = 1.0F;
@@ -806,15 +814,15 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         }
     }
 
-    private void cM() {
+    private void cQ() {
         if (!this.world.isStatic) {
             this.bE = 1;
             this.b(128, true);
         }
     }
 
-    private boolean cN() {
-        return this.passenger == null && this.vehicle == null && this.isTame() && this.bV() && !this.cz() && this.getHealth() >= this.getMaxHealth();
+    private boolean cR() {
+        return this.passenger == null && this.vehicle == null && this.isTame() && this.bZ() && !this.cD() && this.getHealth() >= this.getMaxHealth();
     }
 
     public void e(boolean flag) {
@@ -833,25 +841,25 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         this.b(64, flag);
     }
 
-    private void cO() {
+    private void cS() {
         if (!this.world.isStatic) {
             this.bF = 1;
             this.p(true);
         }
     }
 
-    public void cD() {
-        this.cO();
-        String s = this.cp();
+    public void cH() {
+        this.cS();
+        String s = this.ct();
 
         if (s != null) {
-            this.makeSound(s, this.ba(), this.bb());
+            this.makeSound(s, this.bf(), this.bg());
         }
     }
 
-    public void cE() {
+    public void cI() {
         this.a(this, this.inventoryChest);
-        this.cm();
+        this.cq();
     }
 
     private void a(Entity entity, InventoryHorseChest inventoryhorsechest) {
@@ -866,14 +874,14 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         }
     }
 
-    public boolean g(EntityHuman entityhuman) {
+    public boolean h(EntityHuman entityhuman) {
         this.setOwnerName(entityhuman.getName());
         this.setTame(true);
         return true;
     }
 
     public void e(float f, float f1) {
-        if (this.passenger != null && this.co()) {
+        if (this.passenger != null && this.cs()) {
             this.lastYaw = this.yaw = this.passenger.yaw;
             this.pitch = this.passenger.pitch * 0.5F;
             this.b(this.yaw, this.pitch);
@@ -885,19 +893,19 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
                 this.bP = 0;
             }
 
-            if (this.onGround && this.bt == 0.0F && this.ch() && !this.bI) {
+            if (this.onGround && this.bt == 0.0F && this.cl() && !this.bI) {
                 f = 0.0F;
                 f1 = 0.0F;
             }
 
-            if (this.bt > 0.0F && !this.cd() && this.onGround) {
+            if (this.bt > 0.0F && !this.ch() && this.onGround) {
                 this.motY = this.getJumpStrength() * (double) this.bt;
                 if (this.hasEffect(MobEffectList.JUMP)) {
                     this.motY += (double) ((float) (this.getEffect(MobEffectList.JUMP).getAmplifier() + 1) * 0.1F);
                 }
 
                 this.j(true);
-                this.an = true;
+                this.am = true;
                 if (f1 > 0.0F) {
                     float f2 = MathHelper.sin(this.yaw * 3.1415927F / 180.0F);
                     float f3 = MathHelper.cos(this.yaw * 3.1415927F / 180.0F);
@@ -910,8 +918,8 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
                 this.bt = 0.0F;
             }
 
-            this.Y = 1.0F;
-            this.aR = this.bg() * 0.1F;
+            this.X = 1.0F;
+            this.aR = this.bl() * 0.1F;
             if (!this.world.isStatic) {
                 this.i((float) this.getAttributeInstance(GenericAttributes.d).getValue());
                 super.e(f, f1);
@@ -934,7 +942,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
             this.aG += (f4 - this.aG) * 0.4F;
             this.aH += this.aG;
         } else {
-            this.Y = 0.5F;
+            this.X = 0.5F;
             this.aR = 0.02F;
             super.e(f, f1);
         }
@@ -942,10 +950,10 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.setBoolean("EatingHaystack", this.cg());
+        nbttagcompound.setBoolean("EatingHaystack", this.ck());
         nbttagcompound.setBoolean("ChestedHorse", this.hasChest());
-        nbttagcompound.setBoolean("HasReproduced", this.cj());
-        nbttagcompound.setBoolean("Bred", this.ci());
+        nbttagcompound.setBoolean("HasReproduced", this.cn());
+        nbttagcompound.setBoolean("Bred", this.cm());
         nbttagcompound.setInt("Type", this.getType());
         nbttagcompound.setInt("Variant", this.getVariant());
         nbttagcompound.setInt("Temper", this.getTemper());
@@ -971,11 +979,11 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         }
 
         if (this.inventoryChest.getItem(1) != null) {
-            nbttagcompound.set("ArmorItem", this.inventoryChest.getItem(1).save(new NBTTagCompound("ArmorItem")));
+            nbttagcompound.set("ArmorItem", this.inventoryChest.getItem(1).save(new NBTTagCompound()));
         }
 
         if (this.inventoryChest.getItem(0) != null) {
-            nbttagcompound.set("SaddleItem", this.inventoryChest.getItem(0).save(new NBTTagCompound("SaddleItem")));
+            nbttagcompound.set("SaddleItem", this.inventoryChest.getItem(0).save(new NBTTagCompound()));
         }
     }
 
@@ -989,7 +997,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         this.setVariant(nbttagcompound.getInt("Variant"));
         this.setTemper(nbttagcompound.getInt("Temper"));
         this.setTame(nbttagcompound.getBoolean("Tame"));
-        if (nbttagcompound.hasKey("OwnerName")) {
+        if (nbttagcompound.hasKeyOfType("OwnerName", 8)) {
             this.setOwnerName(nbttagcompound.getString("OwnerName"));
         }
         // CraftBukkit start
@@ -997,19 +1005,19 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
             this.maxDomestication = nbttagcompound.getInt("Bukkit.MaxDomestication");
         }
         // CraftBukkit end
-        AttributeInstance attributeinstance = this.aX().a("Speed");
+        AttributeInstance attributeinstance = this.bc().a("Speed");
 
         if (attributeinstance != null) {
             this.getAttributeInstance(GenericAttributes.d).setValue(attributeinstance.b() * 0.25D);
         }
 
         if (this.hasChest()) {
-            NBTTagList nbttaglist = nbttagcompound.getList("Items");
+            NBTTagList nbttaglist = nbttagcompound.getList("Items", 10);
 
             this.loadChest();
 
             for (int i = 0; i < nbttaglist.size(); ++i) {
-                NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.get(i);
+                NBTTagCompound nbttagcompound1 = nbttaglist.get(i);
                 int j = nbttagcompound1.getByte("Slot") & 255;
 
                 if (j >= 2 && j < this.inventoryChest.getSize()) {
@@ -1020,23 +1028,23 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
 
         ItemStack itemstack;
 
-        if (nbttagcompound.hasKey("ArmorItem")) {
+        if (nbttagcompound.hasKeyOfType("ArmorItem", 10)) {
             itemstack = ItemStack.createStack(nbttagcompound.getCompound("ArmorItem"));
-            if (itemstack != null && v(itemstack.id)) {
+            if (itemstack != null && a(itemstack.getItem())) {
                 this.inventoryChest.setItem(1, itemstack);
             }
         }
 
-        if (nbttagcompound.hasKey("SaddleItem")) {
+        if (nbttagcompound.hasKeyOfType("SaddleItem", 10)) {
             itemstack = ItemStack.createStack(nbttagcompound.getCompound("SaddleItem"));
-            if (itemstack != null && itemstack.id == Item.SADDLE.id) {
+            if (itemstack != null && itemstack.getItem() == Items.SADDLE) {
                 this.inventoryChest.setItem(0, itemstack);
             }
         } else if (nbttagcompound.getBoolean("Saddle")) {
-            this.inventoryChest.setItem(0, new ItemStack(Item.SADDLE));
+            this.inventoryChest.setItem(0, new ItemStack(Items.SADDLE));
         }
 
-        this.cI();
+        this.cM();
     }
 
     public boolean mate(EntityAnimal entityanimal) {
@@ -1047,7 +1055,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         } else {
             EntityHorse entityhorse = (EntityHorse) entityanimal;
 
-            if (this.cN() && entityhorse.cN()) {
+            if (this.cR() && entityhorse.cR()) {
                 int i = this.getType();
                 int j = entityhorse.getType();
 
@@ -1085,9 +1093,9 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
 
             int j1 = this.random.nextInt(5);
 
-            if (j1 < 4) {
+            if (j1 < 2) {
                 i1 |= this.getVariant() & '\uff00';
-            } else if (j1 < 8) {
+            } else if (j1 < 4) {
                 i1 |= entityhorse.getVariant() & '\uff00';
             } else {
                 i1 |= this.random.nextInt(5) << 8 & '\uff00';
@@ -1097,13 +1105,13 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         }
 
         entityhorse1.setType(k);
-        double d0 = this.getAttributeInstance(GenericAttributes.a).b() + entityageable.getAttributeInstance(GenericAttributes.a).b() + (double) this.cP();
+        double d0 = this.getAttributeInstance(GenericAttributes.a).b() + entityageable.getAttributeInstance(GenericAttributes.a).b() + (double) this.cT();
 
         entityhorse1.getAttributeInstance(GenericAttributes.a).setValue(d0 / 3.0D);
-        double d1 = this.getAttributeInstance(attributeJumpStrength).b() + entityageable.getAttributeInstance(attributeJumpStrength).b() + this.cQ();
+        double d1 = this.getAttributeInstance(attributeJumpStrength).b() + entityageable.getAttributeInstance(attributeJumpStrength).b() + this.cU();
 
         entityhorse1.getAttributeInstance(attributeJumpStrength).setValue(d1 / 3.0D);
-        double d2 = this.getAttributeInstance(GenericAttributes.d).b() + entityageable.getAttributeInstance(GenericAttributes.d).b() + this.cR();
+        double d2 = this.getAttributeInstance(GenericAttributes.d).b() + entityageable.getAttributeInstance(GenericAttributes.d).b() + this.cV();
 
         entityhorse1.getAttributeInstance(GenericAttributes.d).setValue(d2 / 3.0D);
         return entityhorse1;
@@ -1139,9 +1147,9 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         }
 
         if (j != 4 && j != 3) {
-            this.getAttributeInstance(GenericAttributes.a).setValue((double) this.cP());
+            this.getAttributeInstance(GenericAttributes.a).setValue((double) this.cT());
             if (j == 0) {
-                this.getAttributeInstance(GenericAttributes.d).setValue(this.cR());
+                this.getAttributeInstance(GenericAttributes.d).setValue(this.cV());
             } else {
                 this.getAttributeInstance(GenericAttributes.d).setValue(0.17499999701976776D);
             }
@@ -1151,7 +1159,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         }
 
         if (j != 2 && j != 1) {
-            this.getAttributeInstance(attributeJumpStrength).setValue(this.cQ());
+            this.getAttributeInstance(attributeJumpStrength).setValue(this.cU());
         } else {
             this.getAttributeInstance(attributeJumpStrength).setValue(0.5D);
         }
@@ -1160,12 +1168,12 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         return (GroupDataEntity) object;
     }
 
-    protected boolean bf() {
+    protected boolean bk() {
         return true;
     }
 
-    public void u(int i) {
-        if (this.co()) {
+    public void w(int i) {
+        if (this.cs()) {
             // CraftBukkit start - fire HorseJumpEvent, use event power
             if (i < 0) {
                 i = 0;
@@ -1181,45 +1189,45 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
             org.bukkit.event.entity.HorseJumpEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callHorseJumpEvent(this, power);
             if (!event.isCancelled()) {
                 this.bI = true;
-                this.cO();
+                this.cS();
                 this.bt = event.getPower();
             }
             // CraftBukkit end
         }
     }
 
-    public void W() {
-        super.W();
+    public void ac() {
+        super.ac();
         if (this.bM > 0.0F) {
             float f = MathHelper.sin(this.aN * 3.1415927F / 180.0F);
             float f1 = MathHelper.cos(this.aN * 3.1415927F / 180.0F);
             float f2 = 0.7F * this.bM;
             float f3 = 0.15F * this.bM;
 
-            this.passenger.setPosition(this.locX + (double) (f2 * f), this.locY + this.Y() + this.passenger.X() + (double) f3, this.locZ - (double) (f2 * f1));
+            this.passenger.setPosition(this.locX + (double) (f2 * f), this.locY + this.ae() + this.passenger.ad() + (double) f3, this.locZ - (double) (f2 * f1));
             if (this.passenger instanceof EntityLiving) {
                 ((EntityLiving) this.passenger).aN = this.aN;
             }
         }
     }
 
-    private float cP() {
+    private float cT() {
         return 15.0F + (float) this.random.nextInt(8) + (float) this.random.nextInt(9);
     }
 
-    private double cQ() {
+    private double cU() {
         return 0.4000000059604645D + this.random.nextDouble() * 0.2D + this.random.nextDouble() * 0.2D + this.random.nextDouble() * 0.2D;
     }
 
-    private double cR() {
+    private double cV() {
         return (0.44999998807907104D + this.random.nextDouble() * 0.3D + this.random.nextDouble() * 0.3D + this.random.nextDouble() * 0.3D) * 0.25D;
     }
 
-    public static boolean v(int i) {
-        return i == Item.HORSE_ARMOR_IRON.id || i == Item.HORSE_ARMOR_GOLD.id || i == Item.HORSE_ARMOR_DIAMOND.id;
+    public static boolean a(Item item) {
+        return item == Items.HORSE_ARMOR_IRON || item == Items.HORSE_ARMOR_GOLD || item == Items.HORSE_ARMOR_DIAMOND;
     }
 
-    public boolean e() {
+    public boolean h_() {
         return false;
     }
 }

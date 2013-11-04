@@ -112,7 +112,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         Validate.notNull(player, "OfflinePlayer cannot be null");
         CraftScoreboard scoreboard = checkState();
 
-        scoreboard.board.addPlayerToTeam(player.getName(), team);
+        scoreboard.board.addPlayerToTeam(player.getName(), team.getName());
     }
 
     public boolean removePlayer(OfflinePlayer player) throws IllegalStateException, IllegalArgumentException {

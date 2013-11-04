@@ -65,7 +65,7 @@ public class EntitySmallFireball extends EntityFireball {
                 if (this.world.isEmpty(i, j, k)) {
                     // CraftBukkit start
                     if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, i, j, k, this).isCancelled()) {
-                        this.world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
+                        this.world.setTypeUpdate(i, j, k, Blocks.FIRE);
                     }
                     // CraftBukkit end
                 }
@@ -75,7 +75,7 @@ public class EntitySmallFireball extends EntityFireball {
         }
     }
 
-    public boolean L() {
+    public boolean R() {
         return false;
     }
 

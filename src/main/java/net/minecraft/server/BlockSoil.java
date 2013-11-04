@@ -9,14 +9,14 @@ import org.bukkit.craftbukkit.event.CraftEventFactory;
 
 public class BlockSoil extends Block {
 
-    protected BlockSoil(int i) {
-        super(i, Material.EARTH);
-        this.b(true);
+    protected BlockSoil() {
+        super(Material.EARTH);
+        this.a(true);
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.9375F, 1.0F);
-        this.k(255);
+        this.g(255);
     }
 
-    public AxisAlignedBB b(World world, int i, int j, int k) {
+    public AxisAlignedBB a(World world, int i, int j, int k) {
         return AxisAlignedBB.a().a((double) (i + 0), (double) (j + 0), (double) (k + 0), (double) (i + 1), (double) (j + 1), (double) (k + 1));
     }
 
@@ -24,7 +24,7 @@ public class BlockSoil extends Block {
         return false;
     }
 
-    public boolean b() {
+    public boolean d() {
         return false;
     }
 
@@ -34,15 +34,15 @@ public class BlockSoil extends Block {
 
             if (l > 0) {
                 world.setData(i, j, k, l - 1, 2);
-            } else if (!this.k(world, i, j, k)) {
+            } else if (!this.e(world, i, j, k)) {
                 // CraftBukkit start
                 org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
-                if (CraftEventFactory.callBlockFadeEvent(block, Block.DIRT.id).isCancelled()) {
+                if (CraftEventFactory.callBlockFadeEvent(block, Blocks.DIRT).isCancelled()) {
                     return;
                 }
                 // CraftBukkit end
 
-                world.setTypeIdUpdate(i, j, k, Block.DIRT.id);
+                world.setTypeUpdate(i, j, k, Blocks.DIRT);
             }
         } else {
             world.setData(i, j, k, 7, 2);
@@ -69,18 +69,18 @@ public class BlockSoil extends Block {
             }
             // CraftBukkit end
 
-            world.setTypeIdUpdate(i, j, k, Block.DIRT.id);
+            world.setTypeUpdate(i, j, k, Blocks.DIRT);
         }
     }
 
-    private boolean k(World world, int i, int j, int k) {
+    private boolean e(World world, int i, int j, int k) {
         byte b0 = 0;
 
         for (int l = i - b0; l <= i + b0; ++l) {
             for (int i1 = k - b0; i1 <= k + b0; ++i1) {
-                int j1 = world.getTypeId(l, j + 1, i1);
+                Block block = world.getType(l, j + 1, i1);
 
-                if (j1 == Block.CROPS.id || j1 == Block.MELON_STEM.id || j1 == Block.PUMPKIN_STEM.id || j1 == Block.POTATOES.id || j1 == Block.CARROTS.id) {
+                if (block == Blocks.CROPS || block == Blocks.MELON_STEM || block == Blocks.PUMPKIN_STEM || block == Blocks.POTATOES || block == Blocks.CARROTS) {
                     return true;
                 }
             }
@@ -93,7 +93,7 @@ public class BlockSoil extends Block {
         for (int l = i - 4; l <= i + 4; ++l) {
             for (int i1 = j; i1 <= j + 1; ++i1) {
                 for (int j1 = k - 4; j1 <= k + 4; ++j1) {
-                    if (world.getMaterial(l, i1, j1) == Material.WATER) {
+                    if (world.getType(l, i1, j1).getMaterial() == Material.WATER) {
                         return true;
                     }
                 }
@@ -103,16 +103,16 @@ public class BlockSoil extends Block {
         return false;
     }
 
-    public void doPhysics(World world, int i, int j, int k, int l) {
-        super.doPhysics(world, i, j, k, l);
-        Material material = world.getMaterial(i, j + 1, k);
+    public void doPhysics(World world, int i, int j, int k, Block block) {
+        super.doPhysics(world, i, j, k, block);
+        Material material = world.getType(i, j + 1, k).getMaterial();
 
         if (material.isBuildable()) {
-            world.setTypeIdUpdate(i, j, k, Block.DIRT.id);
+            world.setTypeUpdate(i, j, k, Blocks.DIRT);
         }
     }
 
-    public int getDropType(int i, Random random, int j) {
-        return Block.DIRT.getDropType(0, random, j);
+    public Item getDropType(int i, Random random, int j) {
+        return Blocks.DIRT.getDropType(0, random, j);
     }
 }

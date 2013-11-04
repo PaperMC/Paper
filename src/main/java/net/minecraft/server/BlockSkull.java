@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import java.util.Iterator;
 import java.util.Random;
 
 // CraftBukkit start
@@ -9,12 +10,12 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 
 public class BlockSkull extends BlockContainer {
 
-    protected BlockSkull(int i) {
-        super(i, Material.ORIENTABLE);
+    protected BlockSkull() {
+        super(Material.ORIENTABLE);
         this.a(0.25F, 0.0F, 0.25F, 0.75F, 0.5F, 0.75F);
     }
 
-    public int d() {
+    public int b() {
         return -1;
     }
 
@@ -22,7 +23,7 @@ public class BlockSkull extends BlockContainer {
         return false;
     }
 
-    public boolean b() {
+    public boolean d() {
         return false;
     }
 
@@ -52,9 +53,9 @@ public class BlockSkull extends BlockContainer {
         }
     }
 
-    public AxisAlignedBB b(World world, int i, int j, int k) {
+    public AxisAlignedBB a(World world, int i, int j, int k) {
         this.updateShape(world, i, j, k);
-        return super.b(world, i, j, k);
+        return super.a(world, i, j, k);
     }
 
     public void postPlace(World world, int i, int j, int k, EntityLiving entityliving, ItemStack itemstack) {
@@ -63,7 +64,7 @@ public class BlockSkull extends BlockContainer {
         world.setData(i, j, k, l, 2);
     }
 
-    public TileEntity b(World world) {
+    public TileEntity a(World world, int i) {
         return new TileEntitySkull();
     }
 
@@ -80,7 +81,7 @@ public class BlockSkull extends BlockContainer {
     // CraftBukkit start - Special case dropping so we can get info from the tile entity
     public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
         if (world.random.nextFloat() < f) {
-            ItemStack itemstack = new ItemStack(Item.SKULL.id, 1, this.getDropData(world, i, j, k));
+            ItemStack itemstack = new ItemStack(Items.SKULL, 1, this.getDropData(world, i, j, k));
             TileEntitySkull tileentityskull = (TileEntitySkull) world.getTileEntity(i, j, k);
 
             if (tileentityskull.getSkullType() == 3 && tileentityskull.getExtraType() != null && tileentityskull.getExtraType().length() > 0) {
@@ -88,7 +89,7 @@ public class BlockSkull extends BlockContainer {
                 itemstack.getTag().setString("SkullOwner", tileentityskull.getExtraType());
             }
 
-            this.b(world, i, j, k, itemstack);
+            this.a(world, i, j, k, itemstack);
         }
     }
     // CraftBukkit end
@@ -102,11 +103,13 @@ public class BlockSkull extends BlockContainer {
         super.a(world, i, j, k, l, entityhuman);
     }
 
-    public void remove(World world, int i, int j, int k, int l, int i1) {
+    public void remove(World world, int i, int j, int k, Block block, int l) {
         if (!world.isStatic) {
-            /* CraftBukkit start - Drop item in code above, not here
-            if ((i1 & 8) == 0) {
-                ItemStack itemstack = new ItemStack(Item.SKULL.id, 1, this.getDropData(world, i, j, k));
+            // CraftBukkit start - Drop item in code above, not here
+            // if ((l & 8) == 0) {
+            if (false) {
+                // CraftBukkit end
+                ItemStack itemstack = new ItemStack(Items.SKULL, 1, this.getDropData(world, i, j, k));
                 TileEntitySkull tileentityskull = (TileEntitySkull) world.getTileEntity(i, j, k);
 
                 if (tileentityskull.getSkullType() == 3 && tileentityskull.getExtraType() != null && tileentityskull.getExtraType().length() > 0) {
@@ -114,92 +117,106 @@ public class BlockSkull extends BlockContainer {
                     itemstack.getTag().setString("SkullOwner", tileentityskull.getExtraType());
                 }
 
-                this.b(world, i, j, k, itemstack);
+                this.a(world, i, j, k, itemstack);
             }
-            // CraftBukkit end */
 
-            super.remove(world, i, j, k, l, i1);
+            super.remove(world, i, j, k, block, l);
         }
     }
 
-    public int getDropType(int i, Random random, int j) {
-        return Item.SKULL.id;
+    public Item getDropType(int i, Random random, int j) {
+        return Items.SKULL;
     }
 
     public void a(World world, int i, int j, int k, TileEntitySkull tileentityskull) {
-        if (tileentityskull.getSkullType() == 1 && j >= 2 && world.difficulty > 0 && !world.isStatic) {
-            int l = Block.SOUL_SAND.id;
-
-            int i1;
+        if (tileentityskull.getSkullType() == 1 && j >= 2 && world.difficulty != EnumDifficulty.PEACEFUL && !world.isStatic) {
+            int l;
             EntityWither entitywither;
-            int j1;
+            Iterator iterator;
+            EntityHuman entityhuman;
+            int i1;
 
-            for (i1 = -2; i1 <= 0; ++i1) {
-                if (world.getTypeId(i, j - 1, k + i1) == l && world.getTypeId(i, j - 1, k + i1 + 1) == l && world.getTypeId(i, j - 2, k + i1 + 1) == l && world.getTypeId(i, j - 1, k + i1 + 2) == l && this.d(world, i, j, k + i1, 1) && this.d(world, i, j, k + i1 + 1, 1) && this.d(world, i, j, k + i1 + 2, 1)) {
+            for (l = -2; l <= 0; ++l) {
+                if (world.getType(i, j - 1, k + l) == Blocks.SOUL_SAND && world.getType(i, j - 1, k + l + 1) == Blocks.SOUL_SAND && world.getType(i, j - 2, k + l + 1) == Blocks.SOUL_SAND && world.getType(i, j - 1, k + l + 2) == Blocks.SOUL_SAND && this.a(world, i, j, k + l, 1) && this.a(world, i, j, k + l + 1, 1) && this.a(world, i, j, k + l + 2, 1)) {
                     // CraftBukkit start - Use BlockStateListPopulator
                     BlockStateListPopulator blockList = new BlockStateListPopulator(world.getWorld());
 
-                    world.setData(i, j, k + i1, 8, 2);
-                    world.setData(i, j, k + i1 + 1, 8, 2);
-                    world.setData(i, j, k + i1 + 2, 8, 2);
+                    world.setData(i, j, k + l, 8, 2);
+                    world.setData(i, j, k + l + 1, 8, 2);
+                    world.setData(i, j, k + l + 2, 8, 2);
 
-                    blockList.setTypeId(i, j, k + i1, 0);
-                    blockList.setTypeId(i, j, k + i1 + 1, 0);
-                    blockList.setTypeId(i, j, k + i1 + 2, 0);
-                    blockList.setTypeId(i, j - 1, k + i1, 0);
-                    blockList.setTypeId(i, j - 1, k + i1 + 1, 0);
-                    blockList.setTypeId(i, j - 1, k + i1 + 2, 0);
-                    blockList.setTypeId(i, j - 2, k + i1 + 1, 0);
+                    blockList.setTypeAndData(i, j, k + l, e(0), 0, 2);
+                    blockList.setTypeAndData(i, j, k + l + 1, e(0), 0, 2);
+                    blockList.setTypeAndData(i, j, k + l + 2, e(0), 0, 2);
+                    blockList.setTypeAndData(i, j - 1, k + l, e(0), 0, 2);
+                    blockList.setTypeAndData(i, j - 1, k + l + 1, e(0), 0, 2);
+                    blockList.setTypeAndData(i, j - 1, k + l + 2, e(0), 0, 2);
+                    blockList.setTypeAndData(i, j - 2, k + l + 1, e(0), 0, 2);
 
                     if (!world.isStatic) {
                         entitywither = new EntityWither(world);
-                        entitywither.setPositionRotation((double) i + 0.5D, (double) j - 1.45D, (double) (k + i1) + 1.5D, 90.0F, 0.0F);
+                        entitywither.setPositionRotation((double) i + 0.5D, (double) j - 1.45D, (double) (k + l) + 1.5D, 90.0F, 0.0F);
                         entitywither.aN = 90.0F;
-                        entitywither.bT();
+                        entitywither.bX();
 
                         if (world.addEntity(entitywither, SpawnReason.BUILD_WITHER)) {
+                            if (!world.isStatic) {
+                                iterator = world.a(EntityHuman.class, entitywither.boundingBox.grow(50.0D, 50.0D, 50.0D)).iterator();
+
+                                while (iterator.hasNext()) {
+                                    entityhuman = (EntityHuman) iterator.next();
+                                    entityhuman.a((Statistic) AchievementList.I);
+                                }
+                            }
+
                             blockList.updateList();
                         }
                     }
 
-                    for (j1 = 0; j1 < 120; ++j1) {
-                        world.addParticle("snowballpoof", (double) i + world.random.nextDouble(), (double) (j - 2) + world.random.nextDouble() * 3.9D, (double) (k + i1 + 1) + world.random.nextDouble(), 0.0D, 0.0D, 0.0D);
+                    for (i1 = 0; i1 < 120; ++i1) {
+                        world.addParticle("snowballpoof", (double) i + world.random.nextDouble(), (double) (j - 2) + world.random.nextDouble() * 3.9D, (double) (k + l + 1) + world.random.nextDouble(), 0.0D, 0.0D, 0.0D);
                     }
                     // CraftBukkit end
-
                     return;
                 }
             }
 
-            for (i1 = -2; i1 <= 0; ++i1) {
-                if (world.getTypeId(i + i1, j - 1, k) == l && world.getTypeId(i + i1 + 1, j - 1, k) == l && world.getTypeId(i + i1 + 1, j - 2, k) == l && world.getTypeId(i + i1 + 2, j - 1, k) == l && this.d(world, i + i1, j, k, 1) && this.d(world, i + i1 + 1, j, k, 1) && this.d(world, i + i1 + 2, j, k, 1)) {
+            for (l = -2; l <= 0; ++l) {
+                if (world.getType(i + l, j - 1, k) == Blocks.SOUL_SAND && world.getType(i + l + 1, j - 1, k) == Blocks.SOUL_SAND && world.getType(i + l + 1, j - 2, k) == Blocks.SOUL_SAND && world.getType(i + l + 2, j - 1, k) == Blocks.SOUL_SAND && this.a(world, i + l, j, k, 1) && this.a(world, i + l + 1, j, k, 1) && this.a(world, i + l + 2, j, k, 1)) {
                     // CraftBukkit start - Use BlockStateListPopulator
                     BlockStateListPopulator blockList = new BlockStateListPopulator(world.getWorld());
 
-                    world.setData(i + i1, j, k, 8, 2);
-                    world.setData(i + i1 + 1, j, k, 8, 2);
-                    world.setData(i + i1 + 2, j, k, 8, 2);
+                    world.setData(i + l, j, k, 8, 2);
+                    world.setData(i + l + 1, j, k, 8, 2);
+                    world.setData(i + l + 2, j, k, 8, 2);
 
-                    blockList.setTypeId(i + i1, j, k, 0);
-                    blockList.setTypeId(i + i1 + 1, j, k, 0);
-                    blockList.setTypeId(i + i1 + 2, j, k, 0);
-                    blockList.setTypeId(i + i1, j - 1, k, 0);
-                    blockList.setTypeId(i + i1 + 1, j - 1, k, 0);
-                    blockList.setTypeId(i + i1 + 2, j - 1, k, 0);
-                    blockList.setTypeId(i + i1 + 1, j - 2, k, 0);
-
+                    blockList.setTypeAndData(i + l, j, k, e(0), 0, 2);
+                    blockList.setTypeAndData(i + l + 1, j, k, e(0), 0, 2);
+                    blockList.setTypeAndData(i + l + 2, j, k, e(0), 0, 2);
+                    blockList.setTypeAndData(i + l, j - 1, k, e(0), 0, 2);
+                    blockList.setTypeAndData(i + l + 1, j - 1, k, e(0), 0, 2);
+                    blockList.setTypeAndData(i + l + 2, j - 1, k, e(0), 0, 2);
+                    blockList.setTypeAndData(i + l + 1, j - 2, k, e(0), 0, 2);
                     if (!world.isStatic) {
                         entitywither = new EntityWither(world);
-                        entitywither.setPositionRotation((double) (i + i1) + 1.5D, (double) j - 1.45D, (double) k + 0.5D, 0.0F, 0.0F);
-                        entitywither.bT();
+                        entitywither.setPositionRotation((double) (i + l) + 1.5D, (double) j - 1.45D, (double) k + 0.5D, 0.0F, 0.0F);
+                        entitywither.bX();
 
                         if (world.addEntity(entitywither, SpawnReason.BUILD_WITHER)) {
+                            if (!world.isStatic) {
+                                iterator = world.a(EntityHuman.class, entitywither.boundingBox.grow(50.0D, 50.0D, 50.0D)).iterator();
+
+                                while (iterator.hasNext()) {
+                                    entityhuman = (EntityHuman) iterator.next();
+                                    entityhuman.a((Statistic) AchievementList.I);
+                                }
+                            }
                             blockList.updateList();
                         }
                     }
 
-                    for (j1 = 0; j1 < 120; ++j1) {
-                        world.addParticle("snowballpoof", (double) (i + i1 + 1) + world.random.nextDouble(), (double) (j - 2) + world.random.nextDouble() * 3.9D, (double) k + world.random.nextDouble(), 0.0D, 0.0D, 0.0D);
+                    for (i1 = 0; i1 < 120; ++i1) {
+                        world.addParticle("snowballpoof", (double) (i + l + 1) + world.random.nextDouble(), (double) (j - 2) + world.random.nextDouble() * 3.9D, (double) k + world.random.nextDouble(), 0.0D, 0.0D, 0.0D);
                     }
                     // CraftBukkit end
 
@@ -209,8 +226,8 @@ public class BlockSkull extends BlockContainer {
         }
     }
 
-    private boolean d(World world, int i, int j, int k, int l) {
-        if (world.getTypeId(i, j, k) != this.id) {
+    private boolean a(World world, int i, int j, int k, int l) {
+        if (world.getType(i, j, k) != this) {
             return false;
         } else {
             TileEntity tileentity = world.getTileEntity(i, j, k);

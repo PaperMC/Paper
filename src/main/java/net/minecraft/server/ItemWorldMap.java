@@ -1,5 +1,9 @@
 package net.minecraft.server;
 
+import net.minecraft.util.com.google.common.collect.HashMultiset;
+import net.minecraft.util.com.google.common.collect.Iterables;
+import net.minecraft.util.com.google.common.collect.Multisets;
+
 // CraftBukkit start
 import org.bukkit.Bukkit;
 import org.bukkit.event.server.MapInitializeEvent;
@@ -7,8 +11,7 @@ import org.bukkit.event.server.MapInitializeEvent;
 
 public class ItemWorldMap extends ItemWorldMapBase {
 
-    protected ItemWorldMap(int i) {
-        super(i);
+    protected ItemWorldMap() {
         this.a(true);
     }
 
@@ -28,7 +31,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
             worldmap.centerZ = Math.round((float) (world.getWorldData().e() / i)) * i;
             worldmap.map = (byte) ((WorldServer) world).dimension; // CraftBukkit - fixes Bukkit multiworld maps
             worldmap.c();
-            worldMain.a(s, (WorldMapBase) worldmap); // CraftBukkit - use primary world for maps
+            worldMain.a(s, (PersistentBase) worldmap); // CraftBukkit - use primary world for maps
 
             // CraftBukkit start
             MapInitializeEvent event = new MapInitializeEvent(worldmap.mapView);
@@ -42,13 +45,11 @@ public class ItemWorldMap extends ItemWorldMapBase {
     public void a(World world, Entity entity, WorldMap worldmap) {
         // CraftBukkit
         if (((WorldServer) world).dimension == worldmap.map && entity instanceof EntityHuman) {
-            short short1 = 128;
-            short short2 = 128;
             int i = 1 << worldmap.scale;
             int j = worldmap.centerX;
             int k = worldmap.centerZ;
-            int l = MathHelper.floor(entity.locX - (double) j) / i + short1 / 2;
-            int i1 = MathHelper.floor(entity.locZ - (double) k) / i + short2 / 2;
+            int l = MathHelper.floor(entity.locX - (double) j) / i + 64;
+            int i1 = MathHelper.floor(entity.locZ - (double) k) / i + 64;
             int j1 = 128 / i;
 
             if (world.worldProvider.g) {
@@ -66,13 +67,13 @@ public class ItemWorldMap extends ItemWorldMapBase {
                     double d0 = 0.0D;
 
                     for (int j2 = i1 - j1 - 1; j2 < i1 + j1; ++j2) {
-                        if (k1 >= 0 && j2 >= -1 && k1 < short1 && j2 < short2) {
+                        if (k1 >= 0 && j2 >= -1 && k1 < 128 && j2 < 128) {
                             int k2 = k1 - l;
                             int l2 = j2 - i1;
                             boolean flag = k2 * k2 + l2 * l2 > (j1 - 2) * (j1 - 2);
-                            int i3 = (j / i + k1 - short1 / 2) * i;
-                            int j3 = (k / i + j2 - short2 / 2) * i;
-                            int[] aint = new int[256];
+                            int i3 = (j / i + k1 - 64) * i;
+                            int j3 = (k / i + j2 - 64) * i;
+                            HashMultiset hashmultiset = HashMultiset.create();
                             Chunk chunk = world.getChunkAtWorldCoords(i3, j3);
 
                             if (!chunk.isEmpty()) {
@@ -81,78 +82,50 @@ public class ItemWorldMap extends ItemWorldMapBase {
                                 int i4 = 0;
                                 double d1 = 0.0D;
                                 int j4;
-                                int k4;
-                                int l4;
-                                int i5;
 
                                 if (world.worldProvider.g) {
                                     j4 = i3 + j3 * 231871;
                                     j4 = j4 * j4 * 31287121 + j4 * 11;
                                     if ((j4 >> 20 & 1) == 0) {
-                                        aint[Block.DIRT.id] += 10;
+                                        hashmultiset.add(Blocks.DIRT.f(0), 10);
                                     } else {
-                                        aint[Block.STONE.id] += 10;
+                                        hashmultiset.add(Blocks.STONE.f(0), 100);
                                     }
 
                                     d1 = 100.0D;
                                 } else {
                                     for (j4 = 0; j4 < i; ++j4) {
-                                        for (k4 = 0; k4 < i; ++k4) {
-                                            l4 = chunk.b(j4 + k3, k4 + l3) + 1;
-                                            int j5 = 0;
+                                        for (int k4 = 0; k4 < i; ++k4) {
+                                            int l4 = chunk.b(j4 + k3, k4 + l3) + 1;
+                                            Block block = Blocks.AIR;
+                                            int i5 = 0;
 
                                             if (l4 > 1) {
-                                                boolean flag1;
-
                                                 do {
-                                                    flag1 = true;
-                                                    j5 = chunk.getTypeId(j4 + k3, l4 - 1, k4 + l3);
-                                                    if (j5 == 0) {
-                                                        flag1 = false;
-                                                    } else if (l4 > 0 && j5 > 0 && Block.byId[j5].material.H == MaterialMapColor.b) {
-                                                        flag1 = false;
-                                                    }
+                                                    --l4;
+                                                    block = chunk.getType(j4 + k3, l4, k4 + l3);
+                                                    i5 = chunk.getData(j4 + k3, l4, k4 + l3);
+                                                } while (block.f(i5) == MaterialMapColor.b && l4 > 0);
 
-                                                    if (!flag1) {
-                                                        --l4;
-                                                        if (l4 <= 0) {
-                                                            break;
-                                                        }
+                                                if (l4 > 0 && block.getMaterial().isLiquid()) {
+                                                    int j5 = l4 - 1;
 
-                                                        j5 = chunk.getTypeId(j4 + k3, l4 - 1, k4 + l3);
-                                                    }
-                                                } while (l4 > 0 && !flag1);
-
-                                                if (l4 > 0 && j5 != 0 && Block.byId[j5].material.isLiquid()) {
-                                                    i5 = l4 - 1;
-                                                    boolean flag2 = false;
-
-                                                    int k5;
+                                                    Block block1;
 
                                                     do {
-                                                        k5 = chunk.getTypeId(j4 + k3, i5--, k4 + l3);
+                                                        block1 = chunk.getType(j4 + k3, j5--, k4 + l3);
                                                         ++i4;
-                                                    } while (i5 > 0 && k5 != 0 && Block.byId[k5].material.isLiquid());
+                                                    } while (j5 > 0 && block1.getMaterial().isLiquid());
                                                 }
                                             }
 
                                             d1 += (double) l4 / (double) (i * i);
-                                            ++aint[j5];
+                                            hashmultiset.add(block.f(i5));
                                         }
                                     }
                                 }
 
                                 i4 /= i * i;
-                                j4 = 0;
-                                k4 = 0;
-
-                                for (l4 = 0; l4 < 256; ++l4) {
-                                    if (aint[l4] > j4) {
-                                        k4 = l4;
-                                        j4 = aint[l4];
-                                    }
-                                }
-
                                 double d2 = (d1 - d0) * 4.0D / (double) (i + 4) + ((double) (k1 + j2 & 1) - 0.5D) * 0.4D;
                                 byte b0 = 1;
 
@@ -164,29 +137,24 @@ public class ItemWorldMap extends ItemWorldMapBase {
                                     b0 = 0;
                                 }
 
-                                i5 = 0;
-                                if (k4 > 0) {
-                                    MaterialMapColor materialmapcolor = Block.byId[k4].material.H;
+                                MaterialMapColor materialmapcolor = (MaterialMapColor) Iterables.getFirst(Multisets.copyHighestCountFirst(hashmultiset), MaterialMapColor.b);
 
-                                    if (materialmapcolor == MaterialMapColor.n) {
-                                        d2 = (double) i4 * 0.1D + (double) (k1 + j2 & 1) * 0.2D;
-                                        b0 = 1;
-                                        if (d2 < 0.5D) {
-                                            b0 = 2;
-                                        }
-
-                                        if (d2 > 0.9D) {
-                                            b0 = 0;
-                                        }
+                                if (materialmapcolor == MaterialMapColor.n) {
+                                    d2 = (double) i4 * 0.1D + (double) (k1 + j2 & 1) * 0.2D;
+                                    b0 = 1;
+                                    if (d2 < 0.5D) {
+                                        b0 = 2;
                                     }
 
-                                    i5 = materialmapcolor.q;
+                                    if (d2 > 0.9D) {
+                                        b0 = 0;
+                                    }
                                 }
 
                                 d0 = d1;
                                 if (j2 >= 0 && k2 * k2 + l2 * l2 < j1 * j1 && (!flag || (k1 + j2 & 1) != 0)) {
-                                    byte b1 = worldmap.colors[k1 + j2 * short1];
-                                    byte b2 = (byte) (i5 * 4 + b0);
+                                    byte b1 = worldmap.colors[k1 + j2 * 128];
+                                    byte b2 = (byte) (materialmapcolor.M * 4 + b0);
 
                                     if (b1 != b2) {
                                         if (l1 > j2) {
@@ -197,7 +165,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
                                             i2 = j2;
                                         }
 
-                                        worldmap.colors[k1 + j2 * short1] = b2;
+                                        worldmap.colors[k1 + j2 * 128] = b2;
                                     }
                                 }
                             }
@@ -231,12 +199,12 @@ public class ItemWorldMap extends ItemWorldMapBase {
     public Packet c(ItemStack itemstack, World world, EntityHuman entityhuman) {
         byte[] abyte = this.getSavedMap(itemstack, world).getUpdatePacket(itemstack, world, entityhuman);
 
-        return abyte == null ? null : new Packet131ItemData((short) Item.MAP.id, (short) itemstack.getData(), abyte);
+        return abyte == null ? null : new PacketPlayOutMap(itemstack.getData(), abyte);
     }
 
     public void d(ItemStack itemstack, World world, EntityHuman entityhuman) {
         if (itemstack.hasTag() && itemstack.getTag().getBoolean("map_is_scaling")) {
-            WorldMap worldmap = Item.MAP.getSavedMap(itemstack, world);
+            WorldMap worldmap = Items.MAP.getSavedMap(itemstack, world);
 
             world = world.getServer().getServer().worlds.get(0); // CraftBukkit - use primary world for maps
 
@@ -252,7 +220,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
             worldmap1.centerZ = worldmap.centerZ;
             worldmap1.map = worldmap.map;
             worldmap1.c();
-            world.a("map_" + itemstack.getData(), (WorldMapBase) worldmap1);
+            world.a("map_" + itemstack.getData(), (PersistentBase) worldmap1);
 
             // CraftBukkit start
             MapInitializeEvent event = new MapInitializeEvent(worldmap1.mapView);

@@ -6,8 +6,8 @@ public class BlockDaylightDetector extends BlockContainer {
 
     private IIcon[] a = new IIcon[2];
 
-    public BlockDaylightDetector(int i) {
-        super(i, Material.WOOD);
+    public BlockDaylightDetector() {
+        super(Material.WOOD);
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.375F, 1.0F);
         this.a(CreativeModeTab.d);
     }
@@ -22,11 +22,11 @@ public class BlockDaylightDetector extends BlockContainer {
 
     public void a(World world, int i, int j, int k, Random random) {}
 
-    public void doPhysics(World world, int i, int j, int k, int l) {}
+    public void doPhysics(World world, int i, int j, int k, Block block) {}
 
     public void onPlace(World world, int i, int j, int k) {}
 
-    public void i_(World world, int i, int j, int k) {
+    public void e(World world, int i, int j, int k) {
         if (!world.worldProvider.g) {
             int l = world.getData(i, j, k);
             int i1 = world.b(EnumSkyBlock.SKY, i, j, k) - world.j;
@@ -54,7 +54,7 @@ public class BlockDaylightDetector extends BlockContainer {
         }
     }
 
-    public boolean b() {
+    public boolean d() {
         return false;
     }
 
@@ -66,7 +66,7 @@ public class BlockDaylightDetector extends BlockContainer {
         return true;
     }
 
-    public TileEntity b(World world) {
+    public TileEntity a(World world, int i) {
         return new TileEntityLightDetector();
     }
 }

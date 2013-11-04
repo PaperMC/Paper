@@ -12,7 +12,7 @@ import org.bukkit.plugin.PluginDescriptionFile;
 
 import net.minecraft.server.MinecraftServer;
 
-public class CraftCrashReport implements Callable {
+public class CraftCrashReport implements Callable<Object> {
 
     public Object call() throws Exception {
         StringWriter value = new StringWriter();

@@ -26,7 +26,7 @@ public class ShapelessRecipes implements IRecipe {
         CraftShapelessRecipe recipe = new CraftShapelessRecipe(result, this);
         for (ItemStack stack : (List<ItemStack>) this.ingredients) {
             if (stack != null) {
-                recipe.addIngredient(org.bukkit.Material.getMaterial(stack.id), stack.getData());
+                recipe.addIngredient(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(stack.getItem()), stack.getData());
             }
         }
         return recipe;
@@ -51,7 +51,7 @@ public class ShapelessRecipes implements IRecipe {
                     while (iterator.hasNext()) {
                         ItemStack itemstack1 = (ItemStack) iterator.next();
 
-                        if (itemstack.id == itemstack1.id && (itemstack1.getData() == 32767 || itemstack.getData() == itemstack1.getData())) {
+                        if (itemstack.getItem() == itemstack1.getItem() && (itemstack1.getData() == 32767 || itemstack.getData() == itemstack1.getData())) {
                             flag = true;
                             arraylist.remove(itemstack1);
                             break;

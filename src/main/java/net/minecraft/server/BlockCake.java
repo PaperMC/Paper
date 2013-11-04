@@ -4,9 +4,9 @@ import java.util.Random;
 
 public class BlockCake extends Block {
 
-    protected BlockCake(int i) {
-        super(i, Material.CAKE);
-        this.b(true);
+    protected BlockCake() {
+        super(Material.CAKE);
+        this.a(true);
     }
 
     public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
@@ -25,7 +25,7 @@ public class BlockCake extends Block {
         this.a(f, 0.0F, f, 1.0F - f, f1, 1.0F - f);
     }
 
-    public AxisAlignedBB b(World world, int i, int j, int k) {
+    public AxisAlignedBB a(World world, int i, int j, int k) {
         int l = world.getData(i, j, k);
         float f = 0.0625F;
         float f1 = (float) (1 + l * 2) / 16.0F;
@@ -34,7 +34,7 @@ public class BlockCake extends Block {
         return AxisAlignedBB.a().a((double) ((float) i + f1), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) ((float) j + f2 - f), (double) ((float) (k + 1) - f));
     }
 
-    public boolean b() {
+    public boolean d() {
         return false;
     }
 
@@ -55,14 +55,14 @@ public class BlockCake extends Block {
         if (entityhuman.g(false)) {
             // CraftBukkit start
             int oldFoodLevel = entityhuman.getFoodData().foodLevel;
-            
+
             org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(entityhuman, 2 + oldFoodLevel);
-            
+
             if (!event.isCancelled()) {
                 entityhuman.getFoodData().eat(event.getFoodLevel() - oldFoodLevel, 0.1F);
             }
-            
-            ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet8UpdateHealth(((EntityPlayer) entityhuman).getBukkitEntity().getScaledHealth(), entityhuman.getFoodData().foodLevel, entityhuman.getFoodData().saturationLevel));
+
+            ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutUpdateHealth(((EntityPlayer) entityhuman).getBukkitEntity().getScaledHealth(), entityhuman.getFoodData().foodLevel, entityhuman.getFoodData().saturationLevel));
             // CraftBukkit end
             int l = world.getData(i, j, k) + 1;
 
@@ -75,24 +75,24 @@ public class BlockCake extends Block {
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return !super.canPlace(world, i, j, k) ? false : this.f(world, i, j, k);
+        return !super.canPlace(world, i, j, k) ? false : this.j(world, i, j, k);
     }
 
-    public void doPhysics(World world, int i, int j, int k, int l) {
-        if (!this.f(world, i, j, k)) {
+    public void doPhysics(World world, int i, int j, int k, Block block) {
+        if (!this.j(world, i, j, k)) {
             world.setAir(i, j, k);
         }
     }
 
-    public boolean f(World world, int i, int j, int k) {
-        return world.getMaterial(i, j - 1, k).isBuildable();
+    public boolean j(World world, int i, int j, int k) {
+        return world.getType(i, j - 1, k).getMaterial().isBuildable();
     }
 
     public int a(Random random) {
         return 0;
     }
 
-    public int getDropType(int i, Random random, int j) {
-        return 0;
+    public Item getDropType(int i, Random random, int j) {
+        return null;
     }
 }

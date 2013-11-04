@@ -9,17 +9,17 @@ public final class CraftDamageSource extends DamageSource {
 
         // Check ignoresArmor
         if (original.ignoresArmor()) {
-            newSource.j();
+            newSource.k();
         }
 
         // Check magic
-        if (original.q()) {
-            newSource.r();
+        if (original.s()) {
+            newSource.t();
         }
 
         // Check fire
         if (original.c()) {
-            newSource.l();
+            newSource.n();
         }
 
         return newSource;

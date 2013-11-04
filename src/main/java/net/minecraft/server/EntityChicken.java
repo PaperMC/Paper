@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import org.bukkit.craftbukkit.util.CraftMagicNumbers; // CraftBukkit
+
 public class EntityChicken extends EntityAnimal {
 
     public float bp;
@@ -16,25 +18,25 @@ public class EntityChicken extends EntityAnimal {
         this.goalSelector.a(0, new PathfinderGoalFloat(this));
         this.goalSelector.a(1, new PathfinderGoalPanic(this, 1.4D));
         this.goalSelector.a(2, new PathfinderGoalBreed(this, 1.0D));
-        this.goalSelector.a(3, new PathfinderGoalTempt(this, 1.0D, Item.SEEDS.id, false));
+        this.goalSelector.a(3, new PathfinderGoalTempt(this, 1.0D, Items.SEEDS, false));
         this.goalSelector.a(4, new PathfinderGoalFollowParent(this, 1.1D));
         this.goalSelector.a(5, new PathfinderGoalRandomStroll(this, 1.0D));
         this.goalSelector.a(6, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F));
         this.goalSelector.a(7, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean bf() {
+    public boolean bk() {
         return true;
     }
 
-    protected void az() {
-        super.az();
+    protected void aD() {
+        super.aD();
         this.getAttributeInstance(GenericAttributes.a).setValue(4.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.25D);
     }
 
-    public void c() {
-        super.c();
+    public void e() {
+        super.e();
         this.bs = this.bp;
         this.br = this.bq;
         this.bq = (float) ((double) this.bq + (double) (this.onGround ? -1 : 4) * 0.3D);
@@ -58,31 +60,31 @@ public class EntityChicken extends EntityAnimal {
         this.bp += this.bt * 2.0F;
         if (!this.isBaby() && !this.world.isStatic && --this.bu <= 0) {
             this.makeSound("mob.chicken.plop", 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
-            this.b(Item.EGG.id, 1);
+            this.a(Items.EGG, 1);
             this.bu = this.random.nextInt(6000) + 6000;
         }
     }
 
     protected void b(float f) {}
 
-    protected String r() {
+    protected String t() {
         return "mob.chicken.say";
     }
 
-    protected String aO() {
+    protected String aT() {
         return "mob.chicken.hurt";
     }
 
-    protected String aP() {
+    protected String aU() {
         return "mob.chicken.hurt";
     }
 
-    protected void a(int i, int j, int k, int l) {
+    protected void a(int i, int j, int k, Block block) {
         this.makeSound("mob.chicken.step", 0.15F, 1.0F);
     }
 
-    protected int getLootId() {
-        return Item.FEATHER.id;
+    protected Item getLoot() {
+        return Items.FEATHER;
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
@@ -91,13 +93,13 @@ public class EntityChicken extends EntityAnimal {
         int j = this.random.nextInt(3) + this.random.nextInt(1 + i);
 
         if (j > 0) {
-            loot.add(new org.bukkit.inventory.ItemStack(Item.FEATHER.id, j));
+            loot.add(new org.bukkit.inventory.ItemStack(CraftMagicNumbers.getMaterial(Items.FEATHER), j));
         }
 
         if (this.isBurning()) {
-            loot.add(new org.bukkit.inventory.ItemStack(Item.COOKED_CHICKEN.id, 1));
+            loot.add(new org.bukkit.inventory.ItemStack(CraftMagicNumbers.getMaterial(Items.COOKED_CHICKEN), 1));
         } else {
-            loot.add(new org.bukkit.inventory.ItemStack(Item.RAW_CHICKEN.id, 1));
+            loot.add(new org.bukkit.inventory.ItemStack(CraftMagicNumbers.getMaterial(Items.RAW_CHICKEN), 1));
         }
 
         org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);

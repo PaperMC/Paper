@@ -12,12 +12,12 @@ public class BlockRedstoneWire extends Block {
     private boolean a = true;
     private Set b = new HashSet();
 
-    public BlockRedstoneWire(int i) {
-        super(i, Material.ORIENTABLE);
+    public BlockRedstoneWire() {
+        super(Material.ORIENTABLE);
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.0625F, 1.0F);
     }
 
-    public AxisAlignedBB b(World world, int i, int j, int k) {
+    public AxisAlignedBB a(World world, int i, int j, int k) {
         return null;
     }
 
@@ -25,19 +25,19 @@ public class BlockRedstoneWire extends Block {
         return false;
     }
 
-    public boolean b() {
+    public boolean d() {
         return false;
     }
 
-    public int d() {
+    public int b() {
         return 5;
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return world.w(i, j - 1, k) || world.getTypeId(i, j - 1, k) == Block.GLOWSTONE.id;
+        return World.a((IBlockAccess) world, i, j - 1, k) || world.getType(i, j - 1, k) == Blocks.GLOWSTONE;
     }
 
-    private void k(World world, int i, int j, int k) {
+    private void e(World world, int i, int j, int k) {
         this.a(world, i, j, k, i, j, k);
         ArrayList arraylist = new ArrayList(this.b);
 
@@ -46,7 +46,7 @@ public class BlockRedstoneWire extends Block {
         for (int l = 0; l < arraylist.size(); ++l) {
             ChunkPosition chunkposition = (ChunkPosition) arraylist.get(l);
 
-            world.applyPhysics(chunkposition.x, chunkposition.y, chunkposition.z, this.id);
+            world.applyPhysics(chunkposition.x, chunkposition.y, chunkposition.z, this);
         }
     }
 
@@ -89,11 +89,11 @@ public class BlockRedstoneWire extends Block {
                 j2 = this.getPower(world, l2, j, i3, j2);
             }
 
-            if (world.u(l2, j, i3) && !world.u(i, j + 1, k)) {
+            if (world.getType(l2, j, i3).r() && !world.getType(i, j + 1, k).r()) {
                 if ((l2 != l || i3 != j1) && j >= i1) {
                     j2 = this.getPower(world, l2, j + 1, i3, j2);
                 }
-            } else if (!world.u(l2, j, i3) && (l2 != l || i3 != j1) && j <= i1) {
+            } else if (!world.getType(l2, j, i3).r() && (l2 != l || i3 != j1) && j <= i1) {
                 j2 = this.getPower(world, l2, j - 1, i3, j2);
             }
         }
@@ -118,7 +118,6 @@ public class BlockRedstoneWire extends Block {
             l1 = event.getNewCurrent();
         }
         // CraftBukkit end
-
         if (k1 != l1) {
             world.setData(i, j, k, l1, 2);
             this.b.add(new ChunkPosition(i, j, k));
@@ -132,46 +131,46 @@ public class BlockRedstoneWire extends Block {
     }
 
     private void m(World world, int i, int j, int k) {
-        if (world.getTypeId(i, j, k) == this.id) {
-            world.applyPhysics(i, j, k, this.id);
-            world.applyPhysics(i - 1, j, k, this.id);
-            world.applyPhysics(i + 1, j, k, this.id);
-            world.applyPhysics(i, j, k - 1, this.id);
-            world.applyPhysics(i, j, k + 1, this.id);
-            world.applyPhysics(i, j - 1, k, this.id);
-            world.applyPhysics(i, j + 1, k, this.id);
+        if (world.getType(i, j, k) == this) {
+            world.applyPhysics(i, j, k, this);
+            world.applyPhysics(i - 1, j, k, this);
+            world.applyPhysics(i + 1, j, k, this);
+            world.applyPhysics(i, j, k - 1, this);
+            world.applyPhysics(i, j, k + 1, this);
+            world.applyPhysics(i, j - 1, k, this);
+            world.applyPhysics(i, j + 1, k, this);
         }
     }
 
     public void onPlace(World world, int i, int j, int k) {
         super.onPlace(world, i, j, k);
         if (!world.isStatic) {
-            this.k(world, i, j, k);
-            world.applyPhysics(i, j + 1, k, this.id);
-            world.applyPhysics(i, j - 1, k, this.id);
+            this.e(world, i, j, k);
+            world.applyPhysics(i, j + 1, k, this);
+            world.applyPhysics(i, j - 1, k, this);
             this.m(world, i - 1, j, k);
             this.m(world, i + 1, j, k);
             this.m(world, i, j, k - 1);
             this.m(world, i, j, k + 1);
-            if (world.u(i - 1, j, k)) {
+            if (world.getType(i - 1, j, k).r()) {
                 this.m(world, i - 1, j + 1, k);
             } else {
                 this.m(world, i - 1, j - 1, k);
             }
 
-            if (world.u(i + 1, j, k)) {
+            if (world.getType(i + 1, j, k).r()) {
                 this.m(world, i + 1, j + 1, k);
             } else {
                 this.m(world, i + 1, j - 1, k);
             }
 
-            if (world.u(i, j, k - 1)) {
+            if (world.getType(i, j, k - 1).r()) {
                 this.m(world, i, j + 1, k - 1);
             } else {
                 this.m(world, i, j - 1, k - 1);
             }
 
-            if (world.u(i, j, k + 1)) {
+            if (world.getType(i, j, k + 1).r()) {
                 this.m(world, i, j + 1, k + 1);
             } else {
                 this.m(world, i, j - 1, k + 1);
@@ -179,39 +178,39 @@ public class BlockRedstoneWire extends Block {
         }
     }
 
-    public void remove(World world, int i, int j, int k, int l, int i1) {
-        super.remove(world, i, j, k, l, i1);
+    public void remove(World world, int i, int j, int k, Block block, int l) {
+        super.remove(world, i, j, k, block, l);
         if (!world.isStatic) {
-            world.applyPhysics(i, j + 1, k, this.id);
-            world.applyPhysics(i, j - 1, k, this.id);
-            world.applyPhysics(i + 1, j, k, this.id);
-            world.applyPhysics(i - 1, j, k, this.id);
-            world.applyPhysics(i, j, k + 1, this.id);
-            world.applyPhysics(i, j, k - 1, this.id);
-            this.k(world, i, j, k);
+            world.applyPhysics(i, j + 1, k, this);
+            world.applyPhysics(i, j - 1, k, this);
+            world.applyPhysics(i + 1, j, k, this);
+            world.applyPhysics(i - 1, j, k, this);
+            world.applyPhysics(i, j, k + 1, this);
+            world.applyPhysics(i, j, k - 1, this);
+            this.e(world, i, j, k);
             this.m(world, i - 1, j, k);
             this.m(world, i + 1, j, k);
             this.m(world, i, j, k - 1);
             this.m(world, i, j, k + 1);
-            if (world.u(i - 1, j, k)) {
+            if (world.getType(i - 1, j, k).r()) {
                 this.m(world, i - 1, j + 1, k);
             } else {
                 this.m(world, i - 1, j - 1, k);
             }
 
-            if (world.u(i + 1, j, k)) {
+            if (world.getType(i + 1, j, k).r()) {
                 this.m(world, i + 1, j + 1, k);
             } else {
                 this.m(world, i + 1, j - 1, k);
             }
 
-            if (world.u(i, j, k - 1)) {
+            if (world.getType(i, j, k - 1).r()) {
                 this.m(world, i, j + 1, k - 1);
             } else {
                 this.m(world, i, j - 1, k - 1);
             }
 
-            if (world.u(i, j, k + 1)) {
+            if (world.getType(i, j, k + 1).r()) {
                 this.m(world, i, j + 1, k + 1);
             } else {
                 this.m(world, i, j - 1, k + 1);
@@ -221,7 +220,7 @@ public class BlockRedstoneWire extends Block {
 
     // CraftBukkit - private -> public
     public int getPower(World world, int i, int j, int k, int l) {
-        if (world.getTypeId(i, j, k) != this.id) {
+        if (world.getType(i, j, k) != this) {
             return l;
         } else {
             int i1 = world.getData(i, j, k);
@@ -230,23 +229,23 @@ public class BlockRedstoneWire extends Block {
         }
     }
 
-    public void doPhysics(World world, int i, int j, int k, int l) {
+    public void doPhysics(World world, int i, int j, int k, Block block) {
         if (!world.isStatic) {
             boolean flag = this.canPlace(world, i, j, k);
 
             if (flag) {
-                this.k(world, i, j, k);
+                this.e(world, i, j, k);
             } else {
-                this.c(world, i, j, k, 0, 0);
+                this.b(world, i, j, k, 0, 0);
                 world.setAir(i, j, k);
             }
 
-            super.doPhysics(world, i, j, k, l);
+            super.doPhysics(world, i, j, k, block);
         }
     }
 
-    public int getDropType(int i, Random random, int j) {
-        return Item.REDSTONE.id;
+    public Item getDropType(int i, Random random, int j) {
+        return Items.REDSTONE;
     }
 
     public int c(IBlockAccess iblockaccess, int i, int j, int k, int l) {
@@ -264,25 +263,25 @@ public class BlockRedstoneWire extends Block {
             } else if (l == 1) {
                 return i1;
             } else {
-                boolean flag = g(iblockaccess, i - 1, j, k, 1) || !iblockaccess.u(i - 1, j, k) && g(iblockaccess, i - 1, j - 1, k, -1);
-                boolean flag1 = g(iblockaccess, i + 1, j, k, 3) || !iblockaccess.u(i + 1, j, k) && g(iblockaccess, i + 1, j - 1, k, -1);
-                boolean flag2 = g(iblockaccess, i, j, k - 1, 2) || !iblockaccess.u(i, j, k - 1) && g(iblockaccess, i, j - 1, k - 1, -1);
-                boolean flag3 = g(iblockaccess, i, j, k + 1, 0) || !iblockaccess.u(i, j, k + 1) && g(iblockaccess, i, j - 1, k + 1, -1);
+                boolean flag = g(iblockaccess, i - 1, j, k, 1) || !iblockaccess.getType(i - 1, j, k).r() && g(iblockaccess, i - 1, j - 1, k, -1);
+                boolean flag1 = g(iblockaccess, i + 1, j, k, 3) || !iblockaccess.getType(i + 1, j, k).r() && g(iblockaccess, i + 1, j - 1, k, -1);
+                boolean flag2 = g(iblockaccess, i, j, k - 1, 2) || !iblockaccess.getType(i, j, k - 1).r() && g(iblockaccess, i, j - 1, k - 1, -1);
+                boolean flag3 = g(iblockaccess, i, j, k + 1, 0) || !iblockaccess.getType(i, j, k + 1).r() && g(iblockaccess, i, j - 1, k + 1, -1);
 
-                if (!iblockaccess.u(i, j + 1, k)) {
-                    if (iblockaccess.u(i - 1, j, k) && g(iblockaccess, i - 1, j + 1, k, -1)) {
+                if (!iblockaccess.getType(i, j + 1, k).r()) {
+                    if (iblockaccess.getType(i - 1, j, k).r() && g(iblockaccess, i - 1, j + 1, k, -1)) {
                         flag = true;
                     }
 
-                    if (iblockaccess.u(i + 1, j, k) && g(iblockaccess, i + 1, j + 1, k, -1)) {
+                    if (iblockaccess.getType(i + 1, j, k).r() && g(iblockaccess, i + 1, j + 1, k, -1)) {
                         flag1 = true;
                     }
 
-                    if (iblockaccess.u(i, j, k - 1) && g(iblockaccess, i, j + 1, k - 1, -1)) {
+                    if (iblockaccess.getType(i, j, k - 1).r() && g(iblockaccess, i, j + 1, k - 1, -1)) {
                         flag2 = true;
                     }
 
-                    if (iblockaccess.u(i, j, k + 1) && g(iblockaccess, i, j + 1, k + 1, -1)) {
+                    if (iblockaccess.getType(i, j, k + 1).r() && g(iblockaccess, i, j + 1, k + 1, -1)) {
                         flag3 = true;
                     }
                 }
@@ -297,34 +296,28 @@ public class BlockRedstoneWire extends Block {
     }
 
     public static boolean f(IBlockAccess iblockaccess, int i, int j, int k, int l) {
-        int i1 = iblockaccess.getTypeId(i, j, k);
+        Block block = iblockaccess.getType(i, j, k);
 
-        if (i1 == Block.REDSTONE_WIRE.id) {
+        if (block == Blocks.REDSTONE_WIRE) {
             return true;
-        } else if (i1 == 0) {
-            return false;
-        } else if (!Block.DIODE_OFF.g(i1)) {
-            return Block.byId[i1].isPowerSource() && l != -1;
+        } else if (!Blocks.DIODE_OFF.e(block)) {
+            return block.isPowerSource() && l != -1;
         } else {
-            int j1 = iblockaccess.getData(i, j, k);
+            int i1 = iblockaccess.getData(i, j, k);
 
-            return l == (j1 & 3) || l == Direction.f[j1 & 3];
+            return l == (i1 & 3) || l == Direction.f[i1 & 3];
         }
     }
 
     public static boolean g(IBlockAccess iblockaccess, int i, int j, int k, int l) {
         if (f(iblockaccess, i, j, k, l)) {
             return true;
+        } else if (iblockaccess.getType(i, j, k) == Blocks.DIODE_ON) {
+            int i1 = iblockaccess.getData(i, j, k);
+
+            return l == (i1 & 3);
         } else {
-            int i1 = iblockaccess.getTypeId(i, j, k);
-
-            if (i1 == Block.DIODE_ON.id) {
-                int j1 = iblockaccess.getData(i, j, k);
-
-                return l == (j1 & 3);
-            } else {
-                return false;
-            }
+            return false;
         }
     }
 }

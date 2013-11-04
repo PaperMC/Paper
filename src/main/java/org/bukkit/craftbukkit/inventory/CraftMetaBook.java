@@ -6,7 +6,6 @@ import java.util.Map;
 
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.NBTTagList;
-import net.minecraft.server.NBTTagString;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
@@ -54,11 +53,11 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
         }
 
         if (tag.hasKey(BOOK_PAGES.NBT)) {
-            NBTTagList pages = tag.getList(BOOK_PAGES.NBT);
+            NBTTagList pages = tag.getList(BOOK_PAGES.NBT, 8);
             String[] pageArray = new String[pages.size()];
 
             for (int i = 0; i < pages.size(); i++) {
-                String page = ((NBTTagString) pages.get(i)).data;
+                String page = pages.f(i);
                 pageArray[i] = page;
             }
 
@@ -90,7 +89,7 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
         }
 
         if (hasPages()) {
-            itemData.set(BOOK_PAGES.NBT, createStringList(pages, BOOK_PAGES));
+            itemData.set(BOOK_PAGES.NBT, createStringList(pages));
         }
     }
 

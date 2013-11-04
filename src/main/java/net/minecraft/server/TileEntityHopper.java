@@ -14,8 +14,8 @@ import org.bukkit.inventory.Inventory;
 public class TileEntityHopper extends TileEntity implements IHopper {
 
     private ItemStack[] a = new ItemStack[5];
-    private String b;
-    private int c = -1;
+    private String i;
+    private int j = -1;
 
     // CraftBukkit start
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
@@ -46,17 +46,17 @@ public class TileEntityHopper extends TileEntity implements IHopper {
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        NBTTagList nbttaglist = nbttagcompound.getList("Items");
+        NBTTagList nbttaglist = nbttagcompound.getList("Items", 10);
 
         this.a = new ItemStack[this.getSize()];
-        if (nbttagcompound.hasKey("CustomName")) {
-            this.b = nbttagcompound.getString("CustomName");
+        if (nbttagcompound.hasKeyOfType("CustomName", 8)) {
+            this.i = nbttagcompound.getString("CustomName");
         }
 
-        this.c = nbttagcompound.getInt("TransferCooldown");
+        this.j = nbttagcompound.getInt("TransferCooldown");
 
         for (int i = 0; i < nbttaglist.size(); ++i) {
-            NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.get(i);
+            NBTTagCompound nbttagcompound1 = nbttaglist.get(i);
             byte b0 = nbttagcompound1.getByte("Slot");
 
             if (b0 >= 0 && b0 < this.a.length) {
@@ -80,9 +80,9 @@ public class TileEntityHopper extends TileEntity implements IHopper {
         }
 
         nbttagcompound.set("Items", nbttaglist);
-        nbttagcompound.setInt("TransferCooldown", this.c);
-        if (this.c()) {
-            nbttagcompound.setString("CustomName", this.b);
+        nbttagcompound.setInt("TransferCooldown", this.j);
+        if (this.k_()) {
+            nbttagcompound.setString("CustomName", this.i);
         }
     }
 
@@ -137,16 +137,16 @@ public class TileEntityHopper extends TileEntity implements IHopper {
         }
     }
 
-    public String getName() {
-        return this.c() ? this.b : "container.hopper";
+    public String getInventoryName() {
+        return this.k_() ? this.i : "container.hopper";
     }
 
-    public boolean c() {
-        return this.b != null && this.b.length() > 0;
+    public boolean k_() {
+        return this.i != null && this.i.length() > 0;
     }
 
     public void a(String s) {
-        this.b = s;
+        this.i = s;
     }
 
     public int getMaxStackSize() {
@@ -159,7 +159,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
 
     public void startOpen() {}
 
-    public void g() {}
+    public void l_() {}
 
     public boolean b(int i, ItemStack itemstack) {
         return true;
@@ -167,18 +167,18 @@ public class TileEntityHopper extends TileEntity implements IHopper {
 
     public void h() {
         if (this.world != null && !this.world.isStatic) {
-            --this.c;
-            if (!this.l()) {
+            --this.j;
+            if (!this.j()) {
                 this.c(0);
-                this.j();
+                this.i();
             }
         }
     }
 
-    public boolean j() {
+    public boolean i() {
         if (this.world != null && !this.world.isStatic) {
-            if (!this.l() && BlockHopper.d(this.p())) {
-                boolean flag = this.u();
+            if (!this.j() && BlockHopper.c(this.p())) {
+                boolean flag = this.k();
 
                 flag = suckInItems(this) || flag;
                 if (flag) {
@@ -194,8 +194,8 @@ public class TileEntityHopper extends TileEntity implements IHopper {
         }
     }
 
-    private boolean u() {
-        IInventory iinventory = this.v();
+    private boolean k() {
+        IInventory iinventory = this.l();
 
         if (iinventory == null) {
             return false;
@@ -221,7 +221,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
                         this.c(8); // Delay hopper checks
                         return false;
                     }
-                    ItemStack itemstack1 = addItem(iinventory, CraftItemStack.asNMSCopy(event.getItem()), Facing.OPPOSITE_FACING[BlockHopper.c(this.p())]);
+                    ItemStack itemstack1 = addItem(iinventory, CraftItemStack.asNMSCopy(event.getItem()), Facing.OPPOSITE_FACING[BlockHopper.b(this.p())]);
 
                     if (itemstack1 == null || itemstack1.count == 0) {
                         if (event.getItem().equals(oitemstack)) {
@@ -266,7 +266,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
                 }
             }
         } else {
-            EntityItem entityitem = getEntityItemAt(ihopper.getWorld(), ihopper.aA(), ihopper.aB() + 1.0D, ihopper.aC());
+            EntityItem entityitem = getEntityItemAt(ihopper.getWorld(), ihopper.x(), ihopper.aD() + 1.0D, ihopper.aE());
 
             if (entityitem != null) {
                 return addEntityItem(ihopper, entityitem);
@@ -416,14 +416,14 @@ public class TileEntityHopper extends TileEntity implements IHopper {
         return itemstack;
     }
 
-    private IInventory v() {
-        int i = BlockHopper.c(this.p());
+    private IInventory l() {
+        int i = BlockHopper.b(this.p());
 
         return getInventoryAt(this.getWorld(), (double) (this.x + Facing.b[i]), (double) (this.y + Facing.c[i]), (double) (this.z + Facing.d[i]));
     }
 
     public static IInventory getSourceInventory(IHopper ihopper) {
-        return getInventoryAt(ihopper.getWorld(), ihopper.aA(), ihopper.aB() + 1.0D, ihopper.aC());
+        return getInventoryAt(ihopper.getWorld(), ihopper.x(), ihopper.aD() + 1.0D, ihopper.aE());
     }
 
     public static EntityItem getEntityItemAt(World world, double d0, double d1, double d2) {
@@ -442,11 +442,10 @@ public class TileEntityHopper extends TileEntity implements IHopper {
         if (tileentity != null && tileentity instanceof IInventory) {
             iinventory = (IInventory) tileentity;
             if (iinventory instanceof TileEntityChest) {
-                int l = world.getTypeId(i, j, k);
-                Block block = Block.byId[l];
+                Block block = world.getType(i, j, k);
 
                 if (block instanceof BlockChest) {
-                    iinventory = ((BlockChest) block).g_(world, i, j, k);
+                    iinventory = ((BlockChest) block).m(world, i, j, k);
                 }
             }
         }
@@ -463,26 +462,26 @@ public class TileEntityHopper extends TileEntity implements IHopper {
     }
 
     private static boolean canMergeItems(ItemStack itemstack, ItemStack itemstack1) {
-        return itemstack.id != itemstack1.id ? false : (itemstack.getData() != itemstack1.getData() ? false : (itemstack.count > itemstack.getMaxStackSize() ? false : ItemStack.equals(itemstack, itemstack1)));
+        return itemstack.getItem() != itemstack1.getItem() ? false : (itemstack.getData() != itemstack1.getData() ? false : (itemstack.count > itemstack.getMaxStackSize() ? false : ItemStack.equals(itemstack, itemstack1)));
     }
 
-    public double aA() {
+    public double x() {
         return (double) this.x;
     }
 
-    public double aB() {
+    public double aD() {
         return (double) this.y;
     }
 
-    public double aC() {
+    public double aE() {
         return (double) this.z;
     }
 
     public void c(int i) {
-        this.c = i;
+        this.j = i;
     }
 
-    public boolean l() {
-        return this.c > 0;
+    public boolean j() {
+        return this.j > 0;
     }
 }

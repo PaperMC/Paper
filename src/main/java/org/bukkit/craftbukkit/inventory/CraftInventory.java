@@ -42,7 +42,7 @@ public class CraftInventory implements Inventory {
     }
 
     public String getName() {
-        return getInventory().getName();
+        return getInventory().getInventoryName();
     }
 
     public ItemStack getItem(int index) {
@@ -421,7 +421,7 @@ public class CraftInventory implements Inventory {
     }
 
     public String getTitle() {
-        return inventory.getName();
+        return inventory.getInventoryName();
     }
 
     public InventoryType getType() {

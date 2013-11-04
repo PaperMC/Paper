@@ -33,8 +33,8 @@ public class CraftChunk implements Chunk {
         }
 
         worldServer = (WorldServer) getHandle().world;
-        x = getHandle().x;
-        z = getHandle().z;
+        x = getHandle().locX;
+        z = getHandle().locZ;
     }
 
     public World getWorld() {
@@ -114,7 +114,7 @@ public class CraftChunk implements Chunk {
             }
 
             ChunkPosition position = (ChunkPosition) obj;
-            entities[index++] = worldServer.getWorld().getBlockAt(position.x + (chunk.x << 4), position.y, position.z + (chunk.z << 4)).getState();
+            entities[index++] = worldServer.getWorld().getBlockAt(position.x + (chunk.locX << 4), position.y, position.z + (chunk.locZ << 4)).getState();
         }
         return entities;
     }
@@ -228,7 +228,7 @@ public class CraftChunk implements Chunk {
             if (includeBiomeTempRain) {
                 biomeTemp = new double[256];
                 biomeRain = new double[256];
-                float[] dat = wcm.getTemperatures(null, getX() << 4, getZ() << 4, 16, 16);
+                float[] dat = getTemperatures(wcm, getX() << 4, getZ() << 4);
 
                 for (int i = 0; i < 256; i++) {
                     biomeTemp[i] = dat[i];
@@ -264,7 +264,7 @@ public class CraftChunk implements Chunk {
             if (includeBiomeTempRain) {
                 biomeTemp = new double[256];
                 biomeRain = new double[256];
-                float[] dat = wcm.getTemperatures(null, x << 4, z << 4, 16, 16);
+                float[] dat = getTemperatures(wcm, x << 4, z << 4);
 
                 for (int i = 0; i < 256; i++) {
                     biomeTemp[i] = dat[i];
@@ -295,6 +295,23 @@ public class CraftChunk implements Chunk {
         }
 
         return new CraftChunkSnapshot(x, z, world.getName(), world.getFullTime(), blockIDs, blockData, skyLight, emitLight, empty, new int[256], biome, biomeTemp, biomeRain);
+    }
+
+    private static float[] getTemperatures(WorldChunkManager chunkmanager, int chunkX, int chunkZ) {
+        BiomeBase[] biomes = chunkmanager.getBiomes(null, chunkX, chunkZ, 16, 16);
+        float[] temps = new float[biomes.length];
+
+        for (int i = 0; i < biomes.length; i++) {
+            float temp = biomes[i].temperature; // Vanilla of olde: ((int) biomes[i].temperature * 65536.0F) / 65536.0F
+
+            if (temp > 1F) {
+                temp = 1F;
+            }
+
+            temps[i] = temp;
+        }
+
+        return temps;
     }
 
     static {

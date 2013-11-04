@@ -4,48 +4,48 @@ import java.util.Random;
 
 import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 
-public class BlockStem extends BlockFlower {
+public class BlockStem extends BlockPlant implements IBlockFragilePlantElement {
 
     private final Block blockFruit;
 
-    protected BlockStem(int i, Block block) {
-        super(i);
+    protected BlockStem(Block block) {
         this.blockFruit = block;
-        this.b(true);
+        this.a(true);
         float f = 0.125F;
 
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.25F, 0.5F + f);
         this.a((CreativeModeTab) null);
     }
 
-    protected boolean g_(int i) {
-        return i == Block.SOIL.id;
+    protected boolean a(Block block) {
+        return block == Blocks.SOIL;
     }
 
     public void a(World world, int i, int j, int k, Random random) {
         super.a(world, i, j, k, random);
         if (world.getLightLevel(i, j + 1, k) >= 9) {
-            float f = this.m(world, i, j, k);
+            float f = this.n(world, i, j, k);
 
             if (random.nextInt((int) (25.0F / f) + 1) == 0) {
                 int l = world.getData(i, j, k);
 
                 if (l < 7) {
-                    CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this.id, ++l); // CraftBukkit
+                    ++l;
+                    CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this, l); // CraftBukkit
                 } else {
-                    if (world.getTypeId(i - 1, j, k) == this.blockFruit.id) {
+                    if (world.getType(i - 1, j, k) == this.blockFruit) {
                         return;
                     }
 
-                    if (world.getTypeId(i + 1, j, k) == this.blockFruit.id) {
+                    if (world.getType(i + 1, j, k) == this.blockFruit) {
                         return;
                     }
 
-                    if (world.getTypeId(i, j, k - 1) == this.blockFruit.id) {
+                    if (world.getType(i, j, k - 1) == this.blockFruit) {
                         return;
                     }
 
-                    if (world.getTypeId(i, j, k + 1) == this.blockFruit.id) {
+                    if (world.getType(i, j, k + 1) == this.blockFruit) {
                         return;
                     }
 
@@ -69,17 +69,17 @@ public class BlockStem extends BlockFlower {
                         ++k1;
                     }
 
-                    int l1 = world.getTypeId(j1, j - 1, k1);
+                    Block block = world.getType(j1, j - 1, k1);
 
-                    if (world.getTypeId(j1, j, k1) == 0 && (l1 == Block.SOIL.id || l1 == Block.DIRT.id || l1 == Block.GRASS.id)) {
-                        CraftEventFactory.handleBlockGrowEvent(world, j1, j, k1, this.blockFruit.id, 0); // CraftBukkit
+                    if (world.getType(j1, j, k1).material == Material.AIR && (block == Blocks.SOIL || block == Blocks.DIRT || block == Blocks.GRASS)) {
+                        CraftEventFactory.handleBlockGrowEvent(world, j1, j, k1, this.blockFruit, 0); // CraftBukkit
                     }
                 }
             }
         }
     }
 
-    public void k(World world, int i, int j, int k) {
+    public void m(World world, int i, int j, int k) {
         int l = world.getData(i, j, k) + MathHelper.nextInt(world.random, 2, 5);
 
         if (l > 7) {
@@ -89,33 +89,33 @@ public class BlockStem extends BlockFlower {
         world.setData(i, j, k, l, 2);
     }
 
-    private float m(World world, int i, int j, int k) {
+    private float n(World world, int i, int j, int k) {
         float f = 1.0F;
-        int l = world.getTypeId(i, j, k - 1);
-        int i1 = world.getTypeId(i, j, k + 1);
-        int j1 = world.getTypeId(i - 1, j, k);
-        int k1 = world.getTypeId(i + 1, j, k);
-        int l1 = world.getTypeId(i - 1, j, k - 1);
-        int i2 = world.getTypeId(i + 1, j, k - 1);
-        int j2 = world.getTypeId(i + 1, j, k + 1);
-        int k2 = world.getTypeId(i - 1, j, k + 1);
-        boolean flag = j1 == this.id || k1 == this.id;
-        boolean flag1 = l == this.id || i1 == this.id;
-        boolean flag2 = l1 == this.id || i2 == this.id || j2 == this.id || k2 == this.id;
+        Block block = world.getType(i, j, k - 1);
+        Block block1 = world.getType(i, j, k + 1);
+        Block block2 = world.getType(i - 1, j, k);
+        Block block3 = world.getType(i + 1, j, k);
+        Block block4 = world.getType(i - 1, j, k - 1);
+        Block block5 = world.getType(i + 1, j, k - 1);
+        Block block6 = world.getType(i + 1, j, k + 1);
+        Block block7 = world.getType(i - 1, j, k + 1);
+        boolean flag = block2 == this || block3 == this;
+        boolean flag1 = block == this || block1 == this;
+        boolean flag2 = block4 == this || block5 == this || block6 == this || block7 == this;
 
-        for (int l2 = i - 1; l2 <= i + 1; ++l2) {
-            for (int i3 = k - 1; i3 <= k + 1; ++i3) {
-                int j3 = world.getTypeId(l2, j - 1, i3);
+        for (int l = i - 1; l <= i + 1; ++l) {
+            for (int i1 = k - 1; i1 <= k + 1; ++i1) {
+                Block block8 = world.getType(l, j - 1, i1);
                 float f1 = 0.0F;
 
-                if (j3 == Block.SOIL.id) {
+                if (block8 == Blocks.SOIL) {
                     f1 = 1.0F;
-                    if (world.getData(l2, j - 1, i3) > 0) {
+                    if (world.getData(l, j - 1, i1) > 0) {
                         f1 = 3.0F;
                     }
                 }
 
-                if (l2 != i || i3 != k) {
+                if (l != i || i1 != k) {
                     f1 /= 4.0F;
                 }
 
@@ -143,7 +143,7 @@ public class BlockStem extends BlockFlower {
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, (float) this.maxY, 0.5F + f);
     }
 
-    public int d() {
+    public int b() {
         return 19;
     }
 
@@ -152,27 +152,39 @@ public class BlockStem extends BlockFlower {
         if (!world.isStatic) {
             Item item = null;
 
-            if (this.blockFruit == Block.PUMPKIN) {
-                item = Item.PUMPKIN_SEEDS;
+            if (this.blockFruit == Blocks.PUMPKIN) {
+                item = Items.PUMPKIN_SEEDS;
             }
 
-            if (this.blockFruit == Block.MELON) {
-                item = Item.MELON_SEEDS;
+            if (this.blockFruit == Blocks.MELON) {
+                item = Items.MELON_SEEDS;
             }
 
             for (int j1 = 0; j1 < 3; ++j1) {
                 if (world.random.nextInt(15) <= l) {
-                    this.b(world, i, j, k, new ItemStack(item));
+                    this.a(world, i, j, k, new ItemStack(item));
                 }
             }
         }
     }
 
-    public int getDropType(int i, Random random, int j) {
-        return -1;
+    public Item getDropType(int i, Random random, int j) {
+        return null;
     }
 
     public int a(Random random) {
         return 1;
+    }
+
+    public boolean a(World world, int i, int j, int k, boolean flag) {
+        return world.getData(i, j, k) != 7;
+    }
+
+    public boolean a(World world, Random random, int i, int j, int k) {
+        return true;
+    }
+
+    public void b(World world, Random random, int i, int j, int k) {
+        this.m(world, i, j, k);
     }
 }

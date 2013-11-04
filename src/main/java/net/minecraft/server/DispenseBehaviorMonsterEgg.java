@@ -10,7 +10,7 @@ final class DispenseBehaviorMonsterEgg extends DispenseBehaviorItem {
     DispenseBehaviorMonsterEgg() {}
 
     public ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
-        EnumFacing enumfacing = BlockDispenser.l_(isourceblock.h());
+        EnumFacing enumfacing = BlockDispenser.b(isourceblock.h());
         double d0 = isourceblock.getX() + (double) enumfacing.c();
         double d1 = (double) ((float) isourceblock.getBlockY() + 0.2F);
         double d2 = isourceblock.getZ() + (double) enumfacing.e();

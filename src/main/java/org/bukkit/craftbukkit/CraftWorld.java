@@ -361,7 +361,7 @@ public class CraftWorld implements World {
             gen = new WorldGenBigTree(true);
             break;
         case BIRCH:
-            gen = new WorldGenForest(true);
+            gen = new WorldGenForest(true, false);
             break;
         case REDWOOD:
             gen = new WorldGenTaiga2(true);
@@ -370,7 +370,7 @@ public class CraftWorld implements World {
             gen = new WorldGenTaiga1();
             break;
         case JUNGLE:
-            gen = new WorldGenMegaTree(true, 10 + rand.nextInt(20), 3, 3);
+            gen = new WorldGenMegaTree(true, rand.nextBoolean());
             break;
         case SMALL_JUNGLE:
             gen = new WorldGenTrees(true, 4 + rand.nextInt(7), 3, 3, false);
@@ -387,13 +387,19 @@ public class CraftWorld implements World {
         case SWAMP:
             gen = new WorldGenSwampTree();
             break;
+        case ACACIA:
+            gen = new WorldGenAcaciaTree(true);
+            break;
+        case DARK_OAK:
+            gen = new WorldGenForestTree(true);
+            break;
         case TREE:
         default:
             gen = new WorldGenTrees(true);
             break;
         }
 
-        return gen.generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        return gen.generate(new CraftBlockChangeDelegate(delegate), rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
 
     public TileEntity getTileEntityAt(final int x, final int y, final int z) {
@@ -442,7 +448,7 @@ public class CraftWorld implements World {
             CraftPlayer cp = (CraftPlayer) p;
             if (cp.getHandle().playerConnection == null) continue;
 
-            cp.getHandle().playerConnection.sendPacket(new Packet4UpdateTime(cp.getHandle().world.getTime(), cp.getHandle().getPlayerTime(), cp.getHandle().world.getGameRules().getBoolean("doDaylightCycle")));
+            cp.getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateTime(cp.getHandle().world.getTime(), cp.getHandle().getPlayerTime(), cp.getHandle().world.getGameRules().getBoolean("doDaylightCycle")));
         }
     }
 
@@ -663,11 +669,11 @@ public class CraftWorld implements World {
     }
 
     public void setDifficulty(Difficulty difficulty) {
-        this.getHandle().difficulty = difficulty.getValue();
+        this.getHandle().difficulty = EnumDifficulty.a(difficulty.getValue());
     }
 
     public Difficulty getDifficulty() {
-        return Difficulty.getByValue(this.getHandle().difficulty);
+        return Difficulty.getByValue(this.getHandle().difficulty.ordinal());
     }
 
     public BlockMetadataStore getBlockMetadata() {
@@ -773,7 +779,7 @@ public class CraftWorld implements World {
         Validate.notNull(effect, "Effect cannot be null");
         Validate.notNull(location.getWorld(), "World cannot be null");
         int packetData = effect.getId();
-        Packet61WorldEvent packet = new Packet61WorldEvent(packetData, location.getBlockX(), location.getBlockY(), location.getBlockZ(), data, false);
+        PacketPlayOutWorldEvent packet = new PacketPlayOutWorldEvent(packetData, location.getBlockX(), location.getBlockY(), location.getBlockZ(), data, false);
         int distance;
         radius *= radius;
 
@@ -801,8 +807,8 @@ public class CraftWorld implements World {
         double y = location.getBlockY() + 0.5;
         double z = location.getBlockZ() + 0.5;
 
-        EntityFallingBlock entity = new EntityFallingBlock(world, x, y, z, material.getId(), data);
-        entity.c = 1; // ticksLived
+        EntityFallingBlock entity = new EntityFallingBlock(world, x, y, z, net.minecraft.server.Block.e(material.getId()), data);
+        entity.b = 1; // ticksLived
 
         world.addEntity(entity, SpawnReason.CUSTOM);
         return (FallingBlock) entity.getBukkitEntity();
@@ -836,7 +842,7 @@ public class CraftWorld implements World {
             int type = world.getTypeId((int) x, (int) y, (int) z);
             int data = world.getData((int) x, (int) y, (int) z);
 
-            entity = new EntityFallingBlock(world, x + 0.5, y + 0.5, z + 0.5, type, data);
+            entity = new EntityFallingBlock(world, x + 0.5, y + 0.5, z + 0.5, net.minecraft.server.Block.e(type), data);
         } else if (Projectile.class.isAssignableFrom(clazz)) {
             if (Snowball.class.isAssignableFrom(clazz)) {
                 entity = new EntitySnowball(world, x, y, z);
@@ -996,7 +1002,7 @@ public class CraftWorld implements World {
                 entity = new EntityItemFrame(world, (int) x, (int) y, (int) z, dir);
             } else if (LeashHitch.class.isAssignableFrom(clazz)) {
                 entity = new EntityLeash(world, (int) x, (int) y, (int) z);
-                entity.p = true;
+                entity.o = true;
             }
 
             if (entity != null && !((EntityHanging) entity).survives()) {
@@ -1255,17 +1261,17 @@ public class CraftWorld implements World {
         ChunkProviderServer cps = world.chunkProviderServer;
         for (net.minecraft.server.Chunk chunk : cps.chunks.values()) {
             // If in use, skip it
-            if (isChunkInUse(chunk.x, chunk.z)) {
+            if (isChunkInUse(chunk.locX, chunk.locZ)) {
                 continue;
             }
 
             // Already unloading?
-            if (cps.unloadQueue.contains(chunk.x, chunk.z)) {
+            if (cps.unloadQueue.contains(chunk.locX, chunk.locZ)) {
                 continue;
             }
 
             // Add unload request
-            cps.queueUnload(chunk.x, chunk.z);
+            cps.queueUnload(chunk.locX, chunk.locZ);
         }
     }
 }

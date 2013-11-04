@@ -81,11 +81,11 @@ public abstract class InventorySubcontainer implements IInventory { // CraftBukk
         return this.b;
     }
 
-    public String getName() {
+    public String getInventoryName() {
         return this.a;
     }
 
-    public boolean c() {
+    public boolean k_() {
         return this.e;
     }
 
@@ -112,7 +112,7 @@ public abstract class InventorySubcontainer implements IInventory { // CraftBukk
 
     public void startOpen() {}
 
-    public void g() {}
+    public void l_() {}
 
     public boolean b(int i, ItemStack itemstack) {
         return true;

@@ -21,10 +21,10 @@ import net.minecraft.server.EntityPotion;
 import net.minecraft.server.Explosion;
 import net.minecraft.server.IInventory;
 import net.minecraft.server.InventoryCrafting;
-import net.minecraft.server.Item;
 import net.minecraft.server.ItemStack;
-import net.minecraft.server.Packet101CloseWindow;
-import net.minecraft.server.Packet103SetSlot;
+import net.minecraft.server.Items;
+import net.minecraft.server.PacketPlayInCloseWindow;
+import net.minecraft.server.PacketPlayOutSetSlot;
 import net.minecraft.server.Slot;
 import net.minecraft.server.World;
 import net.minecraft.server.WorldServer;
@@ -44,6 +44,7 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftDamageSource;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Horse;
@@ -118,7 +119,7 @@ public class CraftEventFactory {
      * Bucket methods
      */
     public static PlayerBucketEmptyEvent callPlayerBucketEmptyEvent(EntityHuman who, int clickedX, int clickedY, int clickedZ, int clickedFace, ItemStack itemInHand) {
-        return (PlayerBucketEmptyEvent) getPlayerBucketEvent(false, who, clickedX, clickedY, clickedZ, clickedFace, itemInHand, Item.BUCKET);
+        return (PlayerBucketEmptyEvent) getPlayerBucketEvent(false, who, clickedX, clickedY, clickedZ, clickedFace, itemInHand, Items.BUCKET);
     }
 
     public static PlayerBucketFillEvent callPlayerBucketFillEvent(EntityHuman who, int clickedX, int clickedY, int clickedZ, int clickedFace, ItemStack itemInHand, net.minecraft.server.Item bucket) {
@@ -128,7 +129,7 @@ public class CraftEventFactory {
     private static PlayerEvent getPlayerBucketEvent(boolean isFilling, EntityHuman who, int clickedX, int clickedY, int clickedZ, int clickedFace, ItemStack itemstack, net.minecraft.server.Item item) {
         Player player = (who == null) ? null : (Player) who.getBukkitEntity();
         CraftItemStack itemInHand = CraftItemStack.asNewCraftStack(item);
-        Material bucket = Material.getMaterial(itemstack.id);
+        Material bucket = CraftMagicNumbers.getMaterial(itemstack.getItem());
 
         CraftWorld craftWorld = (CraftWorld) player.getWorld();
         CraftServer craftServer = (CraftServer) player.getServer();
@@ -294,18 +295,18 @@ public class CraftEventFactory {
     /**
      * BlockFadeEvent
      */
-    public static BlockFadeEvent callBlockFadeEvent(Block block, int type) {
+    public static BlockFadeEvent callBlockFadeEvent(Block block, net.minecraft.server.Block type) {
         BlockState state = block.getState();
-        state.setTypeId(type);
+        state.setTypeId(net.minecraft.server.Block.b(type));
 
         BlockFadeEvent event = new BlockFadeEvent(block, state);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
 
-    public static void handleBlockSpreadEvent(Block block, Block source, int type, int data) {
+    public static void handleBlockSpreadEvent(Block block, Block source, net.minecraft.server.Block type, int data) {
         BlockState state = block.getState();
-        state.setTypeId(type);
+        state.setTypeId(net.minecraft.server.Block.b(type));
         state.setRawData((byte) data);
 
         BlockSpreadEvent event = new BlockSpreadEvent(block, source, state);
@@ -323,13 +324,13 @@ public class CraftEventFactory {
     public static EntityDeathEvent callEntityDeathEvent(EntityLiving victim, List<org.bukkit.inventory.ItemStack> drops) {
         CraftLivingEntity entity = (CraftLivingEntity) victim.getBukkitEntity();
         EntityDeathEvent event = new EntityDeathEvent(entity, drops, victim.getExpReward());
-        org.bukkit.World world = entity.getWorld();
+        CraftWorld world = (CraftWorld) entity.getWorld();
         Bukkit.getServer().getPluginManager().callEvent(event);
 
         victim.expToDrop = event.getDroppedExp();
 
         for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
-            if (stack == null || stack.getType() == Material.AIR) continue;
+            if (stack == null || stack.getType() == Material.AIR || stack.getAmount() == 0) continue;
 
             world.dropItemNaturally(entity.getLocation(), stack);
         }
@@ -465,10 +466,10 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static void handleBlockGrowEvent(World world, int x, int y, int z, int type, int data) {
+    public static void handleBlockGrowEvent(World world, int x, int y, int z, net.minecraft.server.Block type, int data) {
         Block block = world.getWorld().getBlockAt(x, y, z);
         CraftBlockState state = (CraftBlockState) block.getState();
-        state.setTypeId(type);
+        state.setTypeId(net.minecraft.server.Block.b(type));
         state.setRawData((byte) data);
 
         BlockGrowEvent event = new BlockGrowEvent(block, state);
@@ -505,15 +506,24 @@ public class CraftEventFactory {
         return callEntityChangeBlockEvent(entity.getBukkitEntity(), block, material, 0);
     }
 
-    public static EntityChangeBlockEvent callEntityChangeBlockEvent(Entity entity, int x, int y, int z, int type, int data) {
+    public static EntityChangeBlockEvent callEntityChangeBlockEvent(Entity entity, Block block, Material material, boolean cancelled) {
+        return callEntityChangeBlockEvent(entity.getBukkitEntity(), block, material, 0, cancelled);
+    }
+
+    public static EntityChangeBlockEvent callEntityChangeBlockEvent(Entity entity, int x, int y, int z, net.minecraft.server.Block type, int data) {
         Block block = entity.world.getWorld().getBlockAt(x, y, z);
-        Material material = Material.getMaterial(type);
+        Material material = CraftMagicNumbers.getMaterial(type);
 
         return callEntityChangeBlockEvent(entity.getBukkitEntity(), block, material, data);
     }
 
     public static EntityChangeBlockEvent callEntityChangeBlockEvent(org.bukkit.entity.Entity entity, Block block, Material material, int data) {
+        return callEntityChangeBlockEvent(entity, block, material, data, false);
+    }
+
+    public static EntityChangeBlockEvent callEntityChangeBlockEvent(org.bukkit.entity.Entity entity, Block block, Material material, int data, boolean cancelled) {
         EntityChangeBlockEvent event = new EntityChangeBlockEvent(entity, block, material, (byte) data);
+        event.setCancelled(cancelled);
         entity.getServer().getPluginManager().callEvent(event);
         return event;
     }
@@ -548,7 +558,7 @@ public class CraftEventFactory {
 
     public static Container callInventoryOpenEvent(EntityPlayer player, Container container) {
         if (player.activeContainer != player.defaultContainer) { // fire INVENTORY_CLOSE if one already open
-            player.playerConnection.handleContainerClose(new Packet101CloseWindow(player.activeContainer.windowId));
+            player.playerConnection.a(new PacketPlayInCloseWindow(player.activeContainer.windowId));
         }
 
         CraftServer server = player.world.getServer();
@@ -686,22 +696,22 @@ public class CraftEventFactory {
     public static void handleEditBookEvent(EntityPlayer player, ItemStack newBookItem) {
         int itemInHandIndex = player.inventory.itemInHandIndex;
 
-        PlayerEditBookEvent editBookEvent = new PlayerEditBookEvent(player.getBukkitEntity(), player.inventory.itemInHandIndex, (BookMeta) CraftItemStack.getItemMeta(player.inventory.getItemInHand()), (BookMeta) CraftItemStack.getItemMeta(newBookItem), newBookItem.id == Item.WRITTEN_BOOK.id);
+        PlayerEditBookEvent editBookEvent = new PlayerEditBookEvent(player.getBukkitEntity(), player.inventory.itemInHandIndex, (BookMeta) CraftItemStack.getItemMeta(player.inventory.getItemInHand()), (BookMeta) CraftItemStack.getItemMeta(newBookItem), newBookItem.getItem() == Items.WRITTEN_BOOK);
         player.world.getServer().getPluginManager().callEvent(editBookEvent);
         ItemStack itemInHand = player.inventory.getItem(itemInHandIndex);
 
         // If they've got the same item in their hand, it'll need to be updated.
-        if (itemInHand.id == Item.BOOK_AND_QUILL.id) {
+        if (itemInHand.getItem() == Items.BOOK_AND_QUILL) {
             if (!editBookEvent.isCancelled()) {
                 CraftItemStack.setItemMeta(itemInHand, editBookEvent.getNewBookMeta());
                 if (editBookEvent.isSigning()) {
-                    itemInHand.id = Item.WRITTEN_BOOK.id;
+                    itemInHand.setItem(Items.WRITTEN_BOOK);
                 }
             }
 
             // Client will have updated its idea of the book item; we need to overwrite that
             Slot slot = player.activeContainer.a((IInventory) player.inventory, itemInHandIndex);
-            player.playerConnection.sendPacket(new Packet103SetSlot(player.activeContainer.windowId, slot.g, itemInHand));
+            player.playerConnection.sendPacket(new PacketPlayOutSetSlot(player.activeContainer.windowId, slot.rawSlotIndex, itemInHand));
         }
     }
 

@@ -71,7 +71,7 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
                     }
 
                     itemstack.count -= j;
-                    EntityItem entityitem = new EntityItem(this.world, this.locX + (double) f, this.locY + (double) f1, this.locZ + (double) f2, new ItemStack(itemstack.id, j, itemstack.getData()));
+                    EntityItem entityitem = new EntityItem(this.world, this.locX + (double) f, this.locY + (double) f1, this.locZ + (double) f2, new ItemStack(itemstack.getItem(), j, itemstack.getData()));
                     float f3 = 0.05F;
 
                     entityitem.motX = (double) ((float) this.random.nextGaussian() * f3);
@@ -134,14 +134,14 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
 
     public void startOpen() {}
 
-    public void g() {}
+    public void l_() {}
 
     public boolean b(int i, ItemStack itemstack) {
         return true;
     }
 
-    public String getName() {
-        return this.c() ? this.t() : "container.minecart";
+    public String getInventoryName() {
+        return this.k_() ? this.u() : "container.minecart";
     }
 
     public int getMaxStackSize() {
@@ -171,7 +171,7 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
                         }
 
                         itemstack.count -= j;
-                        EntityItem entityitem = new EntityItem(this.world, this.locX + (double) f, this.locY + (double) f1, this.locZ + (double) f2, new ItemStack(itemstack.id, j, itemstack.getData()));
+                        EntityItem entityitem = new EntityItem(this.world, this.locX + (double) f, this.locY + (double) f1, this.locZ + (double) f2, new ItemStack(itemstack.getItem(), j, itemstack.getData()));
 
                         if (itemstack.hasTag()) {
                             entityitem.getItemStack().setTag((NBTTagCompound) itemstack.getTag().clone());
@@ -210,12 +210,12 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
 
     protected void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        NBTTagList nbttaglist = nbttagcompound.getList("Items");
+        NBTTagList nbttaglist = nbttagcompound.getList("Items", 10);
 
         this.items = new ItemStack[this.getSize()];
 
         for (int i = 0; i < nbttaglist.size(); ++i) {
-            NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.get(i);
+            NBTTagCompound nbttagcompound1 = nbttaglist.get(i);
             int j = nbttagcompound1.getByte("Slot") & 255;
 
             if (j >= 0 && j < this.items.length) {
@@ -232,7 +232,7 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
         return true;
     }
 
-    protected void h() {
+    protected void i() {
         int i = 15 - Container.b((IInventory) this);
         float f = 0.98F + (float) i * 0.001F;
 

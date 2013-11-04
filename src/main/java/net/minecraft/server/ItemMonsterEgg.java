@@ -2,13 +2,12 @@ package net.minecraft.server;
 
 public class ItemMonsterEgg extends Item {
 
-    public ItemMonsterEgg(int i) {
-        super(i);
+    public ItemMonsterEgg() {
         this.a(true);
         this.a(CreativeModeTab.f);
     }
 
-    public String l(ItemStack itemstack) {
+    public String n(ItemStack itemstack) {
         String s = ("" + LocaleI18n.get(this.getName() + ".name")).trim();
         String s1 = EntityTypes.b(itemstack.getData());
 
@@ -23,14 +22,14 @@ public class ItemMonsterEgg extends Item {
         if (world.isStatic || itemstack.getData() == 48 || itemstack.getData() == 49 || itemstack.getData() == 63 || itemstack.getData() == 64) { // CraftBukkit
             return true;
         } else {
-            int i1 = world.getTypeId(i, j, k);
+            Block block = world.getType(i, j, k);
 
             i += Facing.b[l];
             j += Facing.c[l];
             k += Facing.d[l];
             double d0 = 0.0D;
 
-            if (l == 1 && Block.byId[i1] != null && Block.byId[i1].d() == 11) {
+            if (l == 1 && block.b() == 11) {
                 d0 = 0.5D;
             }
 
@@ -59,7 +58,7 @@ public class ItemMonsterEgg extends Item {
             if (movingobjectposition == null) {
                 return itemstack;
             } else {
-                if (movingobjectposition.type == EnumMovingObjectType.TILE) {
+                if (movingobjectposition.type == EnumMovingObjectType.BLOCK) {
                     int i = movingobjectposition.b;
                     int j = movingobjectposition.c;
                     int k = movingobjectposition.d;
@@ -72,7 +71,7 @@ public class ItemMonsterEgg extends Item {
                         return itemstack;
                     }
 
-                    if (world.getMaterial(i, j, k) == Material.WATER) {
+                    if (world.getType(i, j, k) instanceof BlockFluids) {
                         Entity entity = a(world, itemstack.getData(), (double) i, (double) j, (double) k);
 
                         if (entity != null) {
@@ -108,7 +107,7 @@ public class ItemMonsterEgg extends Item {
                     entityinsentient.aN = entityinsentient.yaw;
                     entityinsentient.a((GroupDataEntity) null);
                     world.addEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // CraftBukkit
-                    entityinsentient.p();
+                    entityinsentient.r();
                 }
             }
 

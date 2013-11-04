@@ -4,8 +4,8 @@ import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 
 public class BlockTrapdoor extends Block {
 
-    protected BlockTrapdoor(int i, Material material) {
-        super(i, material);
+    protected BlockTrapdoor(Material material) {
+        super(material);
         float f = 0.5F;
         float f1 = 1.0F;
 
@@ -17,25 +17,25 @@ public class BlockTrapdoor extends Block {
         return false;
     }
 
-    public boolean b() {
+    public boolean d() {
         return false;
     }
 
     public boolean b(IBlockAccess iblockaccess, int i, int j, int k) {
-        return !f(iblockaccess.getData(i, j, k));
+        return !d(iblockaccess.getData(i, j, k));
     }
 
-    public int d() {
+    public int b() {
         return 0;
     }
 
-    public AxisAlignedBB b(World world, int i, int j, int k) {
+    public AxisAlignedBB a(World world, int i, int j, int k) {
         this.updateShape(world, i, j, k);
-        return super.b(world, i, j, k);
+        return super.a(world, i, j, k);
     }
 
     public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
-        this.d(iblockaccess.getData(i, j, k));
+        this.b(iblockaccess.getData(i, j, k));
     }
 
     public void g() {
@@ -44,7 +44,7 @@ public class BlockTrapdoor extends Block {
         this.a(0.0F, 0.5F - f / 2.0F, 0.0F, 1.0F, 0.5F + f / 2.0F, 1.0F);
     }
 
-    public void d(int i) {
+    public void b(int i) {
         float f = 0.1875F;
 
         if ((i & 8) != 0) {
@@ -53,7 +53,7 @@ public class BlockTrapdoor extends Block {
             this.a(0.0F, 0.0F, 0.0F, 1.0F, f, 1.0F);
         }
 
-        if (f(i)) {
+        if (d(i)) {
             if ((i & 3) == 0) {
                 this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
             }
@@ -96,48 +96,51 @@ public class BlockTrapdoor extends Block {
         }
     }
 
-    public void doPhysics(World world, int i, int j, int k, int l) {
+    public void doPhysics(World world, int i, int j, int k, Block block) {
         if (!world.isStatic) {
-            int i1 = world.getData(i, j, k);
-            int j1 = i;
-            int k1 = k;
+            int l = world.getData(i, j, k);
+            int i1 = i;
+            int j1 = k;
 
-            if ((i1 & 3) == 0) {
-                k1 = k + 1;
+            if ((l & 3) == 0) {
+                j1 = k + 1;
             }
 
-            if ((i1 & 3) == 1) {
-                --k1;
-            }
-
-            if ((i1 & 3) == 2) {
-                j1 = i + 1;
-            }
-
-            if ((i1 & 3) == 3) {
+            if ((l & 3) == 1) {
                 --j1;
             }
 
-            if (!g(world.getTypeId(j1, j, k1))) {
-                world.setAir(i, j, k);
-                this.c(world, i, j, k, i1, 0);
+            if ((l & 3) == 2) {
+                i1 = i + 1;
             }
 
-            // CraftBukkit start
-            if (l == 0 || l > 0 && Block.byId[l] != null && Block.byId[l].isPowerSource()) {
-                org.bukkit.World bworld = world.getWorld();
-                org.bukkit.block.Block block = bworld.getBlockAt(i, j, k);
+            if ((l & 3) == 3) {
+                --i1;
+            }
 
-                int power = block.getBlockPower();
+            if (!a(world.getType(i1, j, j1))) {
+                world.setAir(i, j, k);
+                this.b(world, i, j, k, l, 0);
+            }
+
+            boolean flag = world.isBlockIndirectlyPowered(i, j, k);
+
+            if (flag || block.isPowerSource()) {
+                // CraftBukkit start
+                org.bukkit.World bworld = world.getWorld();
+                org.bukkit.block.Block bblock = bworld.getBlockAt(i, j, k);
+
+                int power = bblock.getBlockPower();
                 int oldPower = (world.getData(i, j, k) & 4) > 0 ? 15 : 0;
 
-                if (oldPower == 0 ^ power == 0 || (Block.byId[l] != null && Block.byId[l].isPowerSource())) {
-                    BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, oldPower, power);
+                if (oldPower == 0 ^ power == 0 || block.isPowerSource()) {
+                    BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bblock, oldPower, power);
                     world.getServer().getPluginManager().callEvent(eventRedstone);
-
-                    this.setOpen(world, i, j, k, eventRedstone.getNewCurrent() > 0);
+                    flag = eventRedstone.getNewCurrent() > 0;
                 }
                 // CraftBukkit end
+
+                this.setOpen(world, i, j, k, flag);
             }
         }
     }
@@ -195,21 +198,15 @@ public class BlockTrapdoor extends Block {
                 --i;
             }
 
-            return g(world.getTypeId(i, j, k));
+            return a(world.getType(i, j, k));
         }
     }
 
-    public static boolean f(int i) {
+    public static boolean d(int i) {
         return (i & 4) != 0;
     }
 
-    private static boolean g(int i) {
-        if (i <= 0) {
-            return false;
-        } else {
-            Block block = Block.byId[i];
-
-            return block != null && block.material.k() && block.b() || block == Block.GLOWSTONE || block instanceof BlockStepAbstract || block instanceof BlockStairs;
-        }
+    private static boolean a(Block block) {
+        return block.material.k() && block.d() || block == Blocks.GLOWSTONE || block instanceof BlockStepAbstract || block instanceof BlockStairs;
     }
 }

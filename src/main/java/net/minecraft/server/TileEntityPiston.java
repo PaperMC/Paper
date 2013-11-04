@@ -6,39 +6,39 @@ import java.util.List;
 
 public class TileEntityPiston extends TileEntity {
 
-    private int a;
-    private int b;
-    private int c;
-    private boolean d;
-    private boolean e;
-    private float f;
-    private float g;
-    private List h = new ArrayList();
+    private Block a;
+    private int i;
+    private int j;
+    private boolean k;
+    private boolean l;
+    private float m;
+    private float n;
+    private List o = new ArrayList();
 
     public TileEntityPiston() {}
 
-    public TileEntityPiston(int i, int j, int k, boolean flag, boolean flag1) {
-        this.a = i;
-        this.b = j;
-        this.c = k;
-        this.d = flag;
-        this.e = flag1;
+    public TileEntityPiston(Block block, int i, int j, boolean flag, boolean flag1) {
+        this.a = block;
+        this.i = i;
+        this.j = j;
+        this.k = flag;
+        this.l = flag1;
     }
 
-    public int a() {
+    public Block a() {
         return this.a;
     }
 
     public int p() {
-        return this.b;
+        return this.i;
     }
 
     public boolean b() {
-        return this.d;
+        return this.k;
     }
 
     public int c() {
-        return this.c;
+        return this.j;
     }
 
     public float a(float f) {
@@ -46,44 +46,44 @@ public class TileEntityPiston extends TileEntity {
             f = 1.0F;
         }
 
-        return this.g + (this.f - this.g) * f;
+        return this.n + (this.m - this.n) * f;
     }
 
     private void a(float f, float f1) {
-        if (this.d) {
+        if (this.k) {
             f = 1.0F - f;
         } else {
             --f;
         }
 
-        AxisAlignedBB axisalignedbb = Block.PISTON_MOVING.b(this.world, this.x, this.y, this.z, this.a, f, this.c);
+        AxisAlignedBB axisalignedbb = Blocks.PISTON_MOVING.a(this.world, this.x, this.y, this.z, this.a, f, this.j);
 
         if (axisalignedbb != null) {
             List list = this.world.getEntities((Entity) null, axisalignedbb);
 
             if (!list.isEmpty()) {
-                this.h.addAll(list);
-                Iterator iterator = this.h.iterator();
+                this.o.addAll(list);
+                Iterator iterator = this.o.iterator();
 
                 while (iterator.hasNext()) {
                     Entity entity = (Entity) iterator.next();
 
-                    entity.move((double) (f1 * (float) Facing.b[this.c]), (double) (f1 * (float) Facing.c[this.c]), (double) (f1 * (float) Facing.d[this.c]));
+                    entity.move((double) (f1 * (float) Facing.b[this.j]), (double) (f1 * (float) Facing.c[this.j]), (double) (f1 * (float) Facing.d[this.j]));
                 }
 
-                this.h.clear();
+                this.o.clear();
             }
         }
     }
 
     public void f() {
-        if (this.g < 1.0F && this.world != null) {
-            this.g = this.f = 1.0F;
-            this.world.s(this.x, this.y, this.z);
-            this.w_();
-            if (this.world.getTypeId(this.x, this.y, this.z) == Block.PISTON_MOVING.id) {
-                this.world.setTypeIdAndData(this.x, this.y, this.z, this.a, this.b, 3);
-                this.world.g(this.x, this.y, this.z, this.a);
+        if (this.n < 1.0F && this.world != null) {
+            this.n = this.m = 1.0F;
+            this.world.p(this.x, this.y, this.z);
+            this.s();
+            if (this.world.getType(this.x, this.y, this.z) == Blocks.PISTON_MOVING) {
+                this.world.setTypeAndData(this.x, this.y, this.z, this.a, this.i, 3);
+                this.world.e(this.x, this.y, this.z, this.a);
             }
         }
     }
@@ -91,42 +91,42 @@ public class TileEntityPiston extends TileEntity {
     public void h() {
         if (this.world == null) return; // CraftBukkit
 
-        this.g = this.f;
-        if (this.g >= 1.0F) {
+        this.n = this.m;
+        if (this.n >= 1.0F) {
             this.a(1.0F, 0.25F);
-            this.world.s(this.x, this.y, this.z);
-            this.w_();
-            if (this.world.getTypeId(this.x, this.y, this.z) == Block.PISTON_MOVING.id) {
-                this.world.setTypeIdAndData(this.x, this.y, this.z, this.a, this.b, 3);
-                this.world.g(this.x, this.y, this.z, this.a);
+            this.world.p(this.x, this.y, this.z);
+            this.s();
+            if (this.world.getType(this.x, this.y, this.z) == Blocks.PISTON_MOVING) {
+                this.world.setTypeAndData(this.x, this.y, this.z, this.a, this.i, 3);
+                this.world.e(this.x, this.y, this.z, this.a);
             }
         } else {
-            this.f += 0.5F;
-            if (this.f >= 1.0F) {
-                this.f = 1.0F;
+            this.m += 0.5F;
+            if (this.m >= 1.0F) {
+                this.m = 1.0F;
             }
 
-            if (this.d) {
-                this.a(this.f, this.f - this.g + 0.0625F);
+            if (this.k) {
+                this.a(this.m, this.m - this.n + 0.0625F);
             }
         }
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.a = nbttagcompound.getInt("blockId");
-        this.b = nbttagcompound.getInt("blockData");
-        this.c = nbttagcompound.getInt("facing");
-        this.g = this.f = nbttagcompound.getFloat("progress");
-        this.d = nbttagcompound.getBoolean("extending");
+        this.a = Block.e(nbttagcompound.getInt("blockId"));
+        this.i = nbttagcompound.getInt("blockData");
+        this.j = nbttagcompound.getInt("facing");
+        this.n = this.m = nbttagcompound.getFloat("progress");
+        this.k = nbttagcompound.getBoolean("extending");
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.setInt("blockId", this.a);
-        nbttagcompound.setInt("blockData", this.b);
-        nbttagcompound.setInt("facing", this.c);
-        nbttagcompound.setFloat("progress", this.g);
-        nbttagcompound.setBoolean("extending", this.d);
+        nbttagcompound.setInt("blockId", Block.b(this.a));
+        nbttagcompound.setInt("blockData", this.i);
+        nbttagcompound.setInt("facing", this.j);
+        nbttagcompound.setFloat("progress", this.n);
+        nbttagcompound.setBoolean("extending", this.k);
     }
 }

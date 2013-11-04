@@ -2,8 +2,8 @@ package net.minecraft.server;
 
 public class ItemWaterLily extends ItemWithAuxData {
 
-    public ItemWaterLily(int i) {
-        super(i, false);
+    public ItemWaterLily(Block block) {
+        super(block, false);
     }
 
     public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
@@ -12,7 +12,7 @@ public class ItemWaterLily extends ItemWithAuxData {
         if (movingobjectposition == null) {
             return itemstack;
         } else {
-            if (movingobjectposition.type == EnumMovingObjectType.TILE) {
+            if (movingobjectposition.type == EnumMovingObjectType.BLOCK) {
                 int i = movingobjectposition.b;
                 int j = movingobjectposition.c;
                 int k = movingobjectposition.d;
@@ -26,10 +26,10 @@ public class ItemWaterLily extends ItemWithAuxData {
                     return itemstack;
                 }
 
-                if (world.getMaterial(i, j, k) == Material.WATER && world.getData(i, j, k) == 0 && world.isEmpty(i, j + 1, k)) {
+                if (world.getType(i, j, k).getMaterial() == Material.WATER && world.getData(i, j, k) == 0 && world.isEmpty(i, j + 1, k)) {
                     // CraftBukkit start
-                    // world.setTypeIdUpdate(i, j + 1, k, Block.WATER_LILY.id);
-                    if (!processBlockPlace(world, entityhuman, null, i, j + 1, k, Block.WATER_LILY.id, 0, clickedX, clickedY, clickedZ)) {
+                    // world.setTypeUpdate(i, j + 1, k, Blocks.WATER_LILY);
+                    if (!processBlockPlace(world, entityhuman, null, i, j + 1, k, Blocks.WATER_LILY, 0, clickedX, clickedY, clickedZ)) {
                         return itemstack;
                     }
                     // CraftBukkit end

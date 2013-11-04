@@ -2,8 +2,7 @@ package net.minecraft.server;
 
 public class ItemFireball extends Item {
 
-    public ItemFireball(int i) {
-        super(i);
+    public ItemFireball() {
         this.a(CreativeModeTab.f);
     }
 
@@ -38,9 +37,7 @@ public class ItemFireball extends Item {
             if (!entityhuman.a(i, j, k, l, itemstack)) {
                 return false;
             } else {
-                int i1 = world.getTypeId(i, j, k);
-
-                if (i1 == 0) {
+                if (world.getType(i, j, k).getMaterial() == Material.AIR) {
                     // CraftBukkit start
                     if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, i, j, k, org.bukkit.event.block.BlockIgniteEvent.IgniteCause.FIREBALL, entityhuman).isCancelled()) {
                         if (!entityhuman.abilities.canInstantlyBuild) {
@@ -50,8 +47,8 @@ public class ItemFireball extends Item {
                     }
                     // CraftBukkit end
 
-                    world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "fire.ignite", 1.0F, Item.f.nextFloat() * 0.4F + 0.8F); // CraftBukkit - Fix compilation 
-                    world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
+                    world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "fire.ignite", 1.0F, g.nextFloat() * 0.4F + 0.8F);
+                    world.setTypeUpdate(i, j, k, Blocks.FIRE);
                 }
 
                 if (!entityhuman.abilities.canInstantlyBuild) {

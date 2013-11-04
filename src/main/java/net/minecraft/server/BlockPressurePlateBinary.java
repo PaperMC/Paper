@@ -9,8 +9,8 @@ public class BlockPressurePlateBinary extends BlockPressurePlateAbstract {
 
     private EnumMobType a;
 
-    protected BlockPressurePlateBinary(int i, String s, Material material, EnumMobType enummobtype) {
-        super(i, s, material);
+    protected BlockPressurePlateBinary(String s, Material material, EnumMobType enummobtype) {
+        super(s, material);
         this.a = enummobtype;
     }
 
@@ -63,7 +63,7 @@ public class BlockPressurePlateBinary extends BlockPressurePlateAbstract {
                 }
                 // CraftBukkit end
 
-                if (!entity.au()) {
+                if (!entity.az()) {
                     return 15;
                 }
             }

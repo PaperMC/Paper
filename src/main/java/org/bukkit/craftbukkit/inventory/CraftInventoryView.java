@@ -53,7 +53,7 @@ public class CraftInventoryView extends InventoryView {
         if (slot != -999) {
             container.getSlot(slot).set(stack);
         } else {
-            player.getHandle().drop(stack);
+            player.getHandle().drop(stack, false);
         }
     }
 

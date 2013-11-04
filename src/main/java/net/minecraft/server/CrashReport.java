@@ -2,7 +2,6 @@ package net.minecraft.server;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
@@ -12,48 +11,57 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import net.minecraft.util.org.apache.commons.io.IOUtils;
+import net.minecraft.util.org.apache.commons.lang3.ArrayUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class CrashReport {
 
-    private final String a;
-    private final Throwable b;
-    private final CrashReportSystemDetails c = new CrashReportSystemDetails(this, "System Details");
-    private final List d = new ArrayList();
-    private File e;
-    private boolean f = true;
-    private StackTraceElement[] g = new StackTraceElement[0];
+    private static final Logger a = LogManager.getLogger();
+    private final String b;
+    private final Throwable c;
+    private final CrashReportSystemDetails d = new CrashReportSystemDetails(this, "System Details");
+    private final List e = new ArrayList();
+    private File f;
+    private boolean g = true;
+    private StackTraceElement[] h = new StackTraceElement[0];
 
     public CrashReport(String s, Throwable throwable) {
-        this.a = s;
-        this.b = throwable;
+        this.b = s;
+        this.c = throwable;
         this.h();
     }
 
     private void h() {
-        this.c.a("Minecraft Version", (Callable) (new CrashReportVersion(this)));
-        this.c.a("Operating System", (Callable) (new CrashReportOperatingSystem(this)));
-        this.c.a("Java Version", (Callable) (new CrashReportJavaVersion(this)));
-        this.c.a("Java VM Version", (Callable) (new CrashReportJavaVMVersion(this)));
-        this.c.a("Memory", (Callable) (new CrashReportMemory(this)));
-        this.c.a("JVM Flags", (Callable) (new CrashReportJVMFlags(this)));
-        this.c.a("AABB Pool Size", (Callable) (new CrashReportAABBPoolSize(this)));
-        this.c.a("Suspicious classes", (Callable) (new CrashReportSuspiciousClasses(this)));
-        this.c.a("IntCache", (Callable) (new CrashReportIntCacheSize(this)));
-        this.c.a("CraftBukkit Information", (Callable) (new org.bukkit.craftbukkit.CraftCrashReport())); // CraftBukkit
+        this.d.a("Minecraft Version", (Callable) (new CrashReportVersion(this)));
+        this.d.a("Operating System", (Callable) (new CrashReportOperatingSystem(this)));
+        this.d.a("Java Version", (Callable) (new CrashReportJavaVersion(this)));
+        this.d.a("Java VM Version", (Callable) (new CrashReportJavaVMVersion(this)));
+        this.d.a("Memory", (Callable) (new CrashReportMemory(this)));
+        this.d.a("JVM Flags", (Callable) (new CrashReportJVMFlags(this)));
+        this.d.a("AABB Pool Size", (Callable) (new CrashReportAABBPoolSize(this)));
+        this.d.a("IntCache", (Callable) (new CrashReportIntCacheSize(this)));
+        this.d.a("CraftBukkit Information", (Callable) (new org.bukkit.craftbukkit.CraftCrashReport())); // CraftBukkit
     }
 
     public String a() {
-        return this.a;
-    }
-
-    public Throwable b() {
         return this.b;
     }
 
+    public Throwable b() {
+        return this.c;
+    }
+
     public void a(StringBuilder stringbuilder) {
-        if (this.g != null && this.g.length > 0) {
+        if ((this.h == null || this.h.length <= 0) && this.e.size() > 0) {
+            this.h = (StackTraceElement[]) ArrayUtils.subarray(((CrashReportSystemDetails) this.e.get(0)).a(), 0, 1);
+        }
+
+        if (this.h != null && this.h.length > 0) {
             stringbuilder.append("-- Head --\n");
             stringbuilder.append("Stacktrace:\n");
-            StackTraceElement[] astacktraceelement = this.g;
+            StackTraceElement[] astacktraceelement = this.h;
             int i = astacktraceelement.length;
 
             for (int j = 0; j < i; ++j) {
@@ -66,7 +74,7 @@ public class CrashReport {
             stringbuilder.append("\n");
         }
 
-        Iterator iterator = this.d.iterator();
+        Iterator iterator = this.e.iterator();
 
         while (iterator.hasNext()) {
             CrashReportSystemDetails crashreportsystemdetails = (CrashReportSystemDetails) iterator.next();
@@ -75,31 +83,36 @@ public class CrashReport {
             stringbuilder.append("\n\n");
         }
 
-        this.c.a(stringbuilder);
+        this.d.a(stringbuilder);
     }
 
     public String d() {
         StringWriter stringwriter = null;
         PrintWriter printwriter = null;
-        String s = this.b.toString();
+        Object object = this.c;
+
+        if (((Throwable) object).getMessage() == null) {
+            if (object instanceof NullPointerException) {
+                object = new NullPointerException(this.b);
+            } else if (object instanceof StackOverflowError) {
+                object = new StackOverflowError(this.b);
+            } else if (object instanceof OutOfMemoryError) {
+                object = new OutOfMemoryError(this.b);
+            }
+
+            ((Throwable) object).setStackTrace(this.c.getStackTrace());
+        }
+
+        String s = ((Throwable) object).toString();
 
         try {
             stringwriter = new StringWriter();
             printwriter = new PrintWriter(stringwriter);
-            this.b.printStackTrace(printwriter);
+            ((Throwable) object).printStackTrace(printwriter);
             s = stringwriter.toString();
         } finally {
-            try {
-                if (stringwriter != null) {
-                    stringwriter.close();
-                }
-
-                if (printwriter != null) {
-                    printwriter.close();
-                }
-            } catch (IOException ioexception) {
-                ;
-            }
+            IOUtils.closeQuietly(stringwriter);
+            IOUtils.closeQuietly(printwriter);
         }
 
         return s;
@@ -116,7 +129,7 @@ public class CrashReport {
         stringbuilder.append((new SimpleDateFormat()).format(new Date()));
         stringbuilder.append("\n");
         stringbuilder.append("Description: ");
-        stringbuilder.append(this.a);
+        stringbuilder.append(this.b);
         stringbuilder.append("\n\n");
         stringbuilder.append(this.d());
         stringbuilder.append("\n\nA detailed walkthrough of the error, its code path and all known details is as follows:\n");
@@ -130,8 +143,8 @@ public class CrashReport {
         return stringbuilder.toString();
     }
 
-    public boolean a(File file1, IConsoleLogManager iconsolelogmanager) {
-        if (this.e != null) {
+    public boolean a(File file1) {
+        if (this.f != null) {
             return false;
         } else {
             if (file1.getParentFile() != null) {
@@ -143,17 +156,17 @@ public class CrashReport {
 
                 filewriter.write(this.e());
                 filewriter.close();
-                this.e = file1;
+                this.f = file1;
                 return true;
             } catch (Throwable throwable) {
-                iconsolelogmanager.severe("Could not save crash report to " + file1, throwable);
+                a.error("Could not save crash report to " + file1, throwable);
                 return false;
             }
         }
     }
 
     public CrashReportSystemDetails g() {
-        return this.c;
+        return this.d;
     }
 
     public CrashReportSystemDetails a(String s) {
@@ -163,9 +176,9 @@ public class CrashReport {
     public CrashReportSystemDetails a(String s, int i) {
         CrashReportSystemDetails crashreportsystemdetails = new CrashReportSystemDetails(this, s);
 
-        if (this.f) {
+        if (this.g) {
             int j = crashreportsystemdetails.a(i);
-            StackTraceElement[] astacktraceelement = this.b.getStackTrace();
+            StackTraceElement[] astacktraceelement = this.c.getStackTrace();
             StackTraceElement stacktraceelement = null;
             StackTraceElement stacktraceelement1 = null;
 
@@ -176,20 +189,20 @@ public class CrashReport {
                 }
             }
 
-            this.f = crashreportsystemdetails.a(stacktraceelement, stacktraceelement1);
-            if (j > 0 && !this.d.isEmpty()) {
-                CrashReportSystemDetails crashreportsystemdetails1 = (CrashReportSystemDetails) this.d.get(this.d.size() - 1);
+            this.g = crashreportsystemdetails.a(stacktraceelement, stacktraceelement1);
+            if (j > 0 && !this.e.isEmpty()) {
+                CrashReportSystemDetails crashreportsystemdetails1 = (CrashReportSystemDetails) this.e.get(this.e.size() - 1);
 
                 crashreportsystemdetails1.b(j);
             } else if (astacktraceelement != null && astacktraceelement.length >= j) {
-                this.g = new StackTraceElement[astacktraceelement.length - j];
-                System.arraycopy(astacktraceelement, 0, this.g, 0, this.g.length);
+                this.h = new StackTraceElement[astacktraceelement.length - j];
+                System.arraycopy(astacktraceelement, 0, this.h, 0, this.h.length);
             } else {
-                this.f = false;
+                this.g = false;
             }
         }
 
-        this.d.add(crashreportsystemdetails);
+        this.e.add(crashreportsystemdetails);
         return crashreportsystemdetails;
     }
 

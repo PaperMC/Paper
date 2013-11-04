@@ -4,15 +4,15 @@ import java.util.Random;
 
 public class BlockSnow extends Block {
 
-    protected BlockSnow(int i) {
-        super(i, Material.SNOW_LAYER);
+    protected BlockSnow() {
+        super(Material.PACKED_ICE);
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.125F, 1.0F);
-        this.b(true);
+        this.a(true);
         this.a(CreativeModeTab.c);
-        this.d(0);
+        this.b(0);
     }
 
-    public AxisAlignedBB b(World world, int i, int j, int k) {
+    public AxisAlignedBB a(World world, int i, int j, int k) {
         int l = world.getData(i, j, k) & 7;
         float f = 0.125F;
 
@@ -23,19 +23,19 @@ public class BlockSnow extends Block {
         return false;
     }
 
-    public boolean b() {
+    public boolean d() {
         return false;
     }
 
     public void g() {
-        this.d(0);
+        this.b(0);
     }
 
     public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
-        this.d(iblockaccess.getData(i, j, k));
+        this.b(iblockaccess.getData(i, j, k));
     }
 
-    protected void d(int i) {
+    protected void b(int i) {
         int j = i & 7;
         float f = (float) (2 * (1 + j)) / 16.0F;
 
@@ -43,18 +43,18 @@ public class BlockSnow extends Block {
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        int l = world.getTypeId(i, j - 1, k);
+        Block block = world.getType(i, j - 1, k);
 
-        return l == 0 ? false : (l == this.id && (world.getData(i, j - 1, k) & 7) == 7 ? true : (l != Block.LEAVES.id && !Block.byId[l].c() ? false : world.getMaterial(i, j - 1, k).isSolid()));
+        return block != Blocks.ICE && block != Blocks.PACKED_ICE ? (block.getMaterial() == Material.LEAVES ? true : (block == this && (world.getData(i, j - 1, k) & 7) == 7 ? true : block.c() && block.material.isSolid())) : false;
     }
 
-    public void doPhysics(World world, int i, int j, int k, int l) {
+    public void doPhysics(World world, int i, int j, int k, Block block) {
         this.m(world, i, j, k);
     }
 
     private boolean m(World world, int i, int j, int k) {
         if (!this.canPlace(world, i, j, k)) {
-            this.c(world, i, j, k, world.getData(i, j, k), 0);
+            this.b(world, i, j, k, world.getData(i, j, k), 0);
             world.setAir(i, j, k);
             return false;
         } else {
@@ -63,16 +63,15 @@ public class BlockSnow extends Block {
     }
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        int i1 = Item.SNOW_BALL.id;
-        int j1 = l & 7;
+        int i1 = l & 7;
 
-        this.b(world, i, j, k, new ItemStack(i1, j1 + 1, 0));
+        this.a(world, i, j, k, new ItemStack(Items.SNOW_BALL, i1 + 1, 0));
         world.setAir(i, j, k);
-        entityhuman.a(StatisticList.C[this.id], 1);
+        entityhuman.a(StatisticList.C[Block.b((Block) this)], 1);
     }
 
-    public int getDropType(int i, Random random, int j) {
-        return Item.SNOW_BALL.id;
+    public Item getDropType(int i, Random random, int j) {
+        return Items.SNOW_BALL;
     }
 
     public int a(Random random) {
@@ -82,12 +81,12 @@ public class BlockSnow extends Block {
     public void a(World world, int i, int j, int k, Random random) {
         if (world.b(EnumSkyBlock.BLOCK, i, j, k) > 11) {
             // CraftBukkit start
-            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(i, j, k), 0).isCancelled()) {
+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(i, j, k), Blocks.AIR).isCancelled()) {
                 return;
             }
             // CraftBukkit end
 
-            this.c(world, i, j, k, world.getData(i, j, k), 0);
+            this.b(world, i, j, k, world.getData(i, j, k), 0);
             world.setAir(i, j, k);
         }
     }

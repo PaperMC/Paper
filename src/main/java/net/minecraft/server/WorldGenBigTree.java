@@ -2,13 +2,13 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-import org.bukkit.BlockChangeDelegate; // CraftBukkit
+import org.bukkit.craftbukkit.CraftBlockChangeDelegate; // CraftBukkit
 
-public class WorldGenBigTree extends WorldGenerator implements BlockSapling.TreeGenerator { // CraftBukkit add interface
+public class WorldGenBigTree extends WorldGenTreeAbstract implements BlockSapling.TreeGenerator { // CraftBukkit - add interface
 
     static final byte[] a = new byte[] { (byte) 2, (byte) 0, (byte) 0, (byte) 1, (byte) 2, (byte) 1};
     Random b = new Random();
-    BlockChangeDelegate world; // CraftBukkit
+    CraftBlockChangeDelegate world; // CraftBukkit - Change type
     int[] d = new int[] { 0, 0, 0};
     int e;
     int f;
@@ -96,33 +96,33 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
         System.arraycopy(aint, 0, this.o, 0, k);
     }
 
-    void a(int i, int j, int k, float f, byte b0, int l) {
-        int i1 = (int) ((double) f + 0.618D);
+    void a(int i, int j, int k, float f, byte b0, Block block) {
+        int l = (int) ((double) f + 0.618D);
         byte b1 = a[b0];
         byte b2 = a[b0 + 3];
         int[] aint = new int[] { i, j, k};
         int[] aint1 = new int[] { 0, 0, 0};
-        int j1 = -i1;
-        int k1 = -i1;
+        int i1 = -l;
+        int j1 = -l;
 
-        for (aint1[b0] = aint[b0]; j1 <= i1; ++j1) {
-            aint1[b1] = aint[b1] + j1;
-            k1 = -i1;
+        for (aint1[b0] = aint[b0]; i1 <= l; ++i1) {
+            aint1[b1] = aint[b1] + i1;
+            j1 = -l;
 
-            while (k1 <= i1) {
-                double d0 = Math.pow((double) Math.abs(j1) + 0.5D, 2.0D) + Math.pow((double) Math.abs(k1) + 0.5D, 2.0D);
+            while (j1 <= l) {
+                double d0 = Math.pow((double) Math.abs(i1) + 0.5D, 2.0D) + Math.pow((double) Math.abs(j1) + 0.5D, 2.0D);
 
                 if (d0 > (double) (f * f)) {
-                    ++k1;
+                    ++j1;
                 } else {
-                    aint1[b2] = aint[b2] + k1;
-                    int l1 = this.world.getTypeId(aint1[0], aint1[1], aint1[2]);
+                    aint1[b2] = aint[b2] + j1;
+                    Block block1 = this.world.getType(aint1[0], aint1[1], aint1[2]);
 
-                    if (l1 != 0 && l1 != Block.LEAVES.id) {
-                        ++k1;
+                    if (block1.getMaterial() != Material.AIR && block1.getMaterial() != Material.LEAVES) {
+                        ++j1;
                     } else {
-                        this.setTypeAndData(this.world, aint1[0], aint1[1], aint1[2], l, 0);
-                        ++k1;
+                        this.setTypeAndData(this.world, aint1[0], aint1[1], aint1[2], block, 0);
+                        ++j1;
                     }
                 }
             }
@@ -160,11 +160,11 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
         for (int i1 = j + this.n; l < i1; ++l) {
             float f = this.b(l - j);
 
-            this.a(i, l, k, f, (byte) 1, Block.LEAVES.id);
+            this.a(i, l, k, f, (byte) 1, Blocks.LEAVES);
         }
     }
 
-    void a(int[] aint, int[] aint1, int i) {
+    void a(int[] aint, int[] aint1, Block block) {
         int[] aint2 = new int[] { 0, 0, 0};
         byte b0 = 0;
 
@@ -191,26 +191,26 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
             double d0 = (double) aint2[b2] / (double) aint2[b1];
             double d1 = (double) aint2[b3] / (double) aint2[b1];
             int[] aint3 = new int[] { 0, 0, 0};
-            int j = 0;
+            int i = 0;
 
-            for (int k = aint2[b1] + b4; j != k; j += b4) {
-                aint3[b1] = MathHelper.floor((double) (aint[b1] + j) + 0.5D);
-                aint3[b2] = MathHelper.floor((double) aint[b2] + (double) j * d0 + 0.5D);
-                aint3[b3] = MathHelper.floor((double) aint[b3] + (double) j * d1 + 0.5D);
+            for (int j = aint2[b1] + b4; i != j; i += b4) {
+                aint3[b1] = MathHelper.floor((double) (aint[b1] + i) + 0.5D);
+                aint3[b2] = MathHelper.floor((double) aint[b2] + (double) i * d0 + 0.5D);
+                aint3[b3] = MathHelper.floor((double) aint[b3] + (double) i * d1 + 0.5D);
                 byte b5 = 0;
-                int l = Math.abs(aint3[0] - aint[0]);
-                int i1 = Math.abs(aint3[2] - aint[2]);
-                int j1 = Math.max(l, i1);
+                int k = Math.abs(aint3[0] - aint[0]);
+                int l = Math.abs(aint3[2] - aint[2]);
+                int i1 = Math.max(k, l);
 
-                if (j1 > 0) {
-                    if (l == j1) {
+                if (i1 > 0) {
+                    if (k == i1) {
                         b5 = 4;
-                    } else if (i1 == j1) {
+                    } else if (l == i1) {
                         b5 = 8;
                     }
                 }
 
-                this.setTypeAndData(this.world, aint3[0], aint3[1], aint3[2], i, b5);
+                this.setTypeAndData(this.world, aint3[0], aint3[1], aint3[2], block, b5);
             }
         }
     }
@@ -239,17 +239,17 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
         int[] aint = new int[] { i, j, l};
         int[] aint1 = new int[] { i, k, l};
 
-        this.a(aint, aint1, Block.LOG.id);
+        this.a(aint, aint1, Blocks.LOG);
         if (this.l == 2) {
             ++aint[0];
             ++aint1[0];
-            this.a(aint, aint1, Block.LOG.id);
+            this.a(aint, aint1, Blocks.LOG);
             ++aint[2];
             ++aint1[2];
-            this.a(aint, aint1, Block.LOG.id);
+            this.a(aint, aint1, Blocks.LOG);
             aint[0] += -1;
             aint1[0] += -1;
-            this.a(aint, aint1, Block.LOG.id);
+            this.a(aint, aint1, Blocks.LOG);
         }
     }
 
@@ -265,7 +265,7 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
             int k = aint[1] - this.d[1];
 
             if (this.c(k)) {
-                this.a(aint, aint2, (byte) Block.LOG.id);
+                this.a(aint, aint2, Blocks.LOG);
             }
         }
     }
@@ -307,9 +307,9 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
                 aint3[b1] = aint[b1] + i;
                 aint3[b2] = MathHelper.floor((double) aint[b2] + (double) i * d0);
                 aint3[b3] = MathHelper.floor((double) aint[b3] + (double) i * d1);
-                int k = this.world.getTypeId(aint3[0], aint3[1], aint3[2]);
+                Block block = this.world.getType(aint3[0], aint3[1], aint3[2]);
 
-                if ((k != 0 && k != Block.LEAVES.id) || aint3[1] >= 256) { // CraftBukkit - fix trees wrapping around
+                if (!this.a(block) || aint[1] >= 256) { // CraftBukkit - fix trees wrapping around
                     break;
                 }
             }
@@ -321,19 +321,19 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
     boolean e() {
         int[] aint = new int[] { this.d[0], this.d[1], this.d[2]};
         int[] aint1 = new int[] { this.d[0], this.d[1] + this.e - 1, this.d[2]};
-        int i = this.world.getTypeId(this.d[0], this.d[1] - 1, this.d[2]);
+        Block block = this.world.getType(this.d[0], this.d[1] - 1, this.d[2]);
 
-        if (i != 2 && i != 3) {
+        if (block != Blocks.DIRT && block != Blocks.GRASS && block != Blocks.SOIL) {
             return false;
         } else {
-            int j = this.a(aint, aint1);
+            int i = this.a(aint, aint1);
 
-            if (j == -1) {
+            if (i == -1) {
                 return true;
-            } else if (j < 6) {
+            } else if (i < 6) {
                 return false;
             } else {
-                this.e = j;
+                this.e = i;
                 return true;
             }
         }
@@ -355,10 +355,10 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
         // BlockChangeDelegate and then we can implicitly cast World to
         // WorldServer (a safe cast, AFAIK) and no code will be broken. This
         // then allows plugins to catch manually-invoked generation events
-        return this.generate((BlockChangeDelegate) world, random, i, j, k);
+        return this.generate(new CraftBlockChangeDelegate((org.bukkit.BlockChangeDelegate) world), random, i, j, k);
     }
 
-    public boolean generate(BlockChangeDelegate world, Random random, int i, int j, int k) {
+    public boolean generate(CraftBlockChangeDelegate world, Random random, int i, int j, int k) {
         // CraftBukkit end
         this.world = world;
         long l = random.nextLong();

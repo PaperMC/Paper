@@ -7,6 +7,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 // CraftBukkit start - Strip down to empty methods, performance cost
 public class MethodProfiler {
     public boolean a = false;

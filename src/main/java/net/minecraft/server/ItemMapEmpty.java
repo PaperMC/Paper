@@ -2,18 +2,17 @@ package net.minecraft.server;
 
 public class ItemMapEmpty extends ItemWorldMapBase {
 
-    protected ItemMapEmpty(int i) {
-        super(i);
+    protected ItemMapEmpty() {
         this.a(CreativeModeTab.f);
     }
 
     public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
         World worldMain = world.getServer().getServer().worlds.get(0); // CraftBukkit - store reference to primary world
-        ItemStack itemstack1 = new ItemStack(Item.MAP, 1, worldMain.b("map")); // CraftBukkit - use primary world for maps
+        ItemStack itemstack1 = new ItemStack(Items.MAP, 1, worldMain.b("map")); // CraftBukkit - use primary world for maps
         String s = "map_" + itemstack1.getData();
         WorldMap worldmap = new WorldMap(s);
 
-        worldMain.a(s, (WorldMapBase) worldmap); // CraftBukkit - use primary world for maps
+        worldMain.a(s, (PersistentBase) worldmap); // CraftBukkit - use primary world for maps
         worldmap.scale = 0;
         int i = 128 * (1 << worldmap.scale);
 
@@ -29,7 +28,7 @@ public class ItemMapEmpty extends ItemWorldMapBase {
             return itemstack1;
         } else {
             if (!entityhuman.inventory.pickup(itemstack1.cloneItemStack())) {
-                entityhuman.drop(itemstack1);
+                entityhuman.drop(itemstack1, false);
             }
 
             return itemstack;

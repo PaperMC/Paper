@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityFireworks;
-import net.minecraft.server.Item;
 import net.minecraft.server.ItemStack;
+import net.minecraft.server.Items;
 
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
@@ -25,7 +25,7 @@ public class CraftFirework extends CraftEntity implements Firework {
         ItemStack item = getHandle().getDataWatcher().getItemStack(FIREWORK_ITEM_INDEX);
 
         if (item == null) {
-            item = new ItemStack(Item.FIREWORKS);
+            item = new ItemStack(Items.FIREWORKS);
             getHandle().getDataWatcher().watch(FIREWORK_ITEM_INDEX, item);
         }
 

@@ -16,14 +16,14 @@ final class DispenseBehaviorFilledBucket extends DispenseBehaviorItem {
         int i = isourceblock.getBlockX();
         int j = isourceblock.getBlockY();
         int k = isourceblock.getBlockZ();
-        EnumFacing enumfacing = BlockDispenser.l_(isourceblock.h());
+        EnumFacing enumfacing = BlockDispenser.b(isourceblock.h());
 
         // CraftBukkit start
         World world = isourceblock.k();
         int x = i + enumfacing.c();
         int y = j + enumfacing.d();
         int z = k + enumfacing.e();
-        if (world.isEmpty(x, y, z) || !world.getMaterial(x, y, z).isBuildable()) {
+        if (world.isEmpty(x, y, z) || !world.getType(x, y, z).getMaterial().isBuildable()) {
             org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
             CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack);
 
@@ -52,9 +52,9 @@ final class DispenseBehaviorFilledBucket extends DispenseBehaviorItem {
 
         if (itembucket.a(isourceblock.k(), i + enumfacing.c(), j + enumfacing.d(), k + enumfacing.e())) {
             // CraftBukkit start - Handle stacked buckets
-            Item item = Item.BUCKET;
+            Item item = Items.BUCKET;
             if (--itemstack.count == 0) {
-                itemstack.id = item.id;
+                itemstack.setItem(Items.BUCKET);
                 itemstack.count = 1;
             } else if (((TileEntityDispenser) isourceblock.getTileEntity()).addItem(new ItemStack(item)) < 0) {
                 this.b.a(isourceblock, new ItemStack(item));

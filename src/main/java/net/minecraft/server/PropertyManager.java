@@ -5,20 +5,19 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import joptsimple.OptionSet; // CraftBukkit
 
 public class PropertyManager {
 
+    private static final Logger loggingAgent = LogManager.getLogger();
     public final Properties properties = new Properties(); // CraftBukkit - private -> public
-    private final IConsoleLogManager loggingAgent;
     private final File c;
 
-    public PropertyManager(File file1, IConsoleLogManager iconsolelogmanager) {
+    public PropertyManager(File file1) {
         this.c = file1;
-        this.loggingAgent = iconsolelogmanager;
         if (file1.exists()) {
             FileInputStream fileinputstream = null;
 
@@ -26,7 +25,7 @@ public class PropertyManager {
                 fileinputstream = new FileInputStream(file1);
                 this.properties.load(fileinputstream);
             } catch (Exception exception) {
-                iconsolelogmanager.warning("Failed to load " + file1, exception);
+                loggingAgent.warn("Failed to load " + file1, exception);
                 this.a();
             } finally {
                 if (fileinputstream != null) {
@@ -38,7 +37,7 @@ public class PropertyManager {
                 }
             }
         } else {
-            iconsolelogmanager.warning(file1 + " does not exist");
+            loggingAgent.warn(file1 + " does not exist");
             this.a();
         }
     }
@@ -46,8 +45,8 @@ public class PropertyManager {
     // CraftBukkit start
     private OptionSet options = null;
 
-    public PropertyManager(final OptionSet options, IConsoleLogManager iconsolelogmanager) {
-        this((File) options.valueOf("config"), iconsolelogmanager);
+    public PropertyManager(final OptionSet options) {
+        this((File) options.valueOf("config"));
 
         this.options = options;
     }
@@ -62,7 +61,7 @@ public class PropertyManager {
     // CraftBukkit end
 
     public void a() {
-        this.loggingAgent.info("Generating new properties file");
+        loggingAgent.info("Generating new properties file");
         this.savePropertiesFile();
     }
 
@@ -78,7 +77,7 @@ public class PropertyManager {
             fileoutputstream = new FileOutputStream(this.c);
             this.properties.store(fileoutputstream, "Minecraft server properties");
         } catch (Exception exception) {
-            this.loggingAgent.warning("Failed to save " + this.c, exception);
+            loggingAgent.warn("Failed to save " + this.c, exception);
             this.a();
         } finally {
             if (fileoutputstream != null) {
@@ -99,6 +98,7 @@ public class PropertyManager {
         if (!this.properties.containsKey(s)) {
             this.properties.setProperty(s, s1);
             this.savePropertiesFile();
+            this.savePropertiesFile();
         }
 
         return this.getOverride(s, this.properties.getProperty(s, s1)); // CraftBukkit
@@ -109,6 +109,7 @@ public class PropertyManager {
             return this.getOverride(s, Integer.parseInt(this.getString(s, "" + i))); // CraftBukkit
         } catch (Exception exception) {
             this.properties.setProperty(s, "" + i);
+            this.savePropertiesFile();
             return this.getOverride(s, i); // CraftBukkit
         }
     }
@@ -118,6 +119,7 @@ public class PropertyManager {
             return this.getOverride(s, Boolean.parseBoolean(this.getString(s, "" + flag))); // CraftBukkit
         } catch (Exception exception) {
             this.properties.setProperty(s, "" + flag);
+            this.savePropertiesFile();
             return this.getOverride(s, flag); // CraftBukkit
         }
     }

@@ -6,23 +6,27 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class EntityTracker {
 
+    private static final Logger a = LogManager.getLogger();
     private final WorldServer world;
-    private Set b = new HashSet();
+    private Set c = new HashSet();
     public IntHashMap trackedEntities = new IntHashMap(); // CraftBukkit - private -> public
-    private int d;
+    private int e;
 
     public EntityTracker(WorldServer worldserver) {
         this.world = worldserver;
-        this.d = worldserver.getMinecraftServer().getPlayerList().a();
+        this.e = worldserver.getMinecraftServer().getPlayerList().a();
     }
 
     public void track(Entity entity) {
         if (entity instanceof EntityPlayer) {
             this.addEntity(entity, 512, 2);
             EntityPlayer entityplayer = (EntityPlayer) entity;
-            Iterator iterator = this.b.iterator();
+            Iterator iterator = this.c.iterator();
 
             while (iterator.hasNext()) {
                 EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) iterator.next();
@@ -87,19 +91,19 @@ public class EntityTracker {
     }
 
     public void addEntity(Entity entity, int i, int j, boolean flag) {
-        if (i > this.d) {
-            i = this.d;
+        if (i > this.e) {
+            i = this.e;
         }
 
         try {
-            if (this.trackedEntities.b(entity.id)) {
+            if (this.trackedEntities.b(entity.getId())) {
                 throw new IllegalStateException("Entity is already tracked!");
             }
 
             EntityTrackerEntry entitytrackerentry = new EntityTrackerEntry(entity, i, j, flag);
 
-            this.b.add(entitytrackerentry);
-            this.trackedEntities.a(entity.id, entitytrackerentry);
+            this.c.add(entitytrackerentry);
+            this.trackedEntities.a(entity.getId(), entitytrackerentry);
             entitytrackerentry.scanPlayers(this.world.players);
         } catch (Throwable throwable) {
             CrashReport crashreport = CrashReport.a(throwable, "Adding entity to track");
@@ -110,13 +114,12 @@ public class EntityTracker {
             entity.a(crashreportsystemdetails);
             CrashReportSystemDetails crashreportsystemdetails1 = crashreport.a("Entity That Is Already Tracked");
 
-            ((EntityTrackerEntry) this.trackedEntities.get(entity.id)).tracker.a(crashreportsystemdetails1);
+            ((EntityTrackerEntry) this.trackedEntities.get(entity.getId())).tracker.a(crashreportsystemdetails1);
 
             try {
                 throw new ReportedException(crashreport);
             } catch (ReportedException reportedexception) {
-                System.err.println("\"Silently\" catching entity tracking error.");
-                reportedexception.printStackTrace();
+                a.error("\"Silently\" catching entity tracking error.", reportedexception);
             }
         }
     }
@@ -124,7 +127,7 @@ public class EntityTracker {
     public void untrackEntity(Entity entity) {
         if (entity instanceof EntityPlayer) {
             EntityPlayer entityplayer = (EntityPlayer) entity;
-            Iterator iterator = this.b.iterator();
+            Iterator iterator = this.c.iterator();
 
             while (iterator.hasNext()) {
                 EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) iterator.next();
@@ -133,17 +136,17 @@ public class EntityTracker {
             }
         }
 
-        EntityTrackerEntry entitytrackerentry1 = (EntityTrackerEntry) this.trackedEntities.d(entity.id);
+        EntityTrackerEntry entitytrackerentry1 = (EntityTrackerEntry) this.trackedEntities.d(entity.getId());
 
         if (entitytrackerentry1 != null) {
-            this.b.remove(entitytrackerentry1);
+            this.c.remove(entitytrackerentry1);
             entitytrackerentry1.a();
         }
     }
 
     public void updatePlayers() {
         ArrayList arraylist = new ArrayList();
-        Iterator iterator = this.b.iterator();
+        Iterator iterator = this.c.iterator();
 
         while (iterator.hasNext()) {
             EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) iterator.next();
@@ -156,7 +159,7 @@ public class EntityTracker {
 
         for (int i = 0; i < arraylist.size(); ++i) {
             EntityPlayer entityplayer = (EntityPlayer) arraylist.get(i);
-            Iterator iterator1 = this.b.iterator();
+            Iterator iterator1 = this.c.iterator();
 
             while (iterator1.hasNext()) {
                 EntityTrackerEntry entitytrackerentry1 = (EntityTrackerEntry) iterator1.next();
@@ -169,7 +172,7 @@ public class EntityTracker {
     }
 
     public void a(Entity entity, Packet packet) {
-        EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) this.trackedEntities.get(entity.id);
+        EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) this.trackedEntities.get(entity.getId());
 
         if (entitytrackerentry != null) {
             entitytrackerentry.broadcast(packet);
@@ -177,7 +180,7 @@ public class EntityTracker {
     }
 
     public void sendPacketToEntity(Entity entity, Packet packet) {
-        EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) this.trackedEntities.get(entity.id);
+        EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) this.trackedEntities.get(entity.getId());
 
         if (entitytrackerentry != null) {
             entitytrackerentry.broadcastIncludingSelf(packet);
@@ -185,7 +188,7 @@ public class EntityTracker {
     }
 
     public void untrackPlayer(EntityPlayer entityplayer) {
-        Iterator iterator = this.b.iterator();
+        Iterator iterator = this.c.iterator();
 
         while (iterator.hasNext()) {
             EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) iterator.next();
@@ -195,12 +198,12 @@ public class EntityTracker {
     }
 
     public void a(EntityPlayer entityplayer, Chunk chunk) {
-        Iterator iterator = this.b.iterator();
+        Iterator iterator = this.c.iterator();
 
         while (iterator.hasNext()) {
             EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) iterator.next();
 
-            if (entitytrackerentry.tracker != entityplayer && entitytrackerentry.tracker.aj == chunk.x && entitytrackerentry.tracker.al == chunk.z) {
+            if (entitytrackerentry.tracker != entityplayer && entitytrackerentry.tracker.ai == chunk.locX && entitytrackerentry.tracker.ak == chunk.locZ) {
                 entitytrackerentry.updatePlayer(entityplayer);
             }
         }

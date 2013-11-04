@@ -9,22 +9,30 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         this.b = 5;
     }
 
-    public void c() {
-        this.aW();
+    public void e() {
+        this.bb();
         float f = this.d(1.0F);
 
         if (f > 0.5F) {
             this.aV += 2;
         }
 
-        super.c();
+        super.e();
     }
 
-    public void l_() {
-        super.l_();
-        if (!this.world.isStatic && this.world.difficulty == 0) {
+    public void h() {
+        super.h();
+        if (!this.world.isStatic && this.world.difficulty == EnumDifficulty.PEACEFUL) {
             this.die();
         }
+    }
+
+    protected String H() {
+        return "game.hostile.swim";
+    }
+
+    protected String O() {
+        return "game.hostile.swim.splash";
     }
 
     protected Entity findTarget() {
@@ -67,6 +75,18 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         }
     }
 
+    protected String aT() {
+        return "game.hostile.hurt";
+    }
+
+    protected String aU() {
+        return "game.hostile.die";
+    }
+
+    protected String o(int i) {
+        return i > 4 ? "game.hostile.hurt.fall.big" : "game.hostile.hurt.fall.small";
+    }
+
     public boolean m(Entity entity) {
         float f = (float) this.getAttributeInstance(GenericAttributes.e).getValue();
         int i = 0;
@@ -92,8 +112,10 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
             }
 
             if (entity instanceof EntityLiving) {
-                EnchantmentThorns.a(this, (EntityLiving) entity, this.random);
+                EnchantmentManager.a((EntityLiving) entity, (Entity) this);
             }
+
+            EnchantmentManager.b(this, entity);
         }
 
         return flag;
@@ -107,10 +129,10 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     }
 
     public float a(int i, int j, int k) {
-        return 0.5F - this.world.q(i, j, k);
+        return 0.5F - this.world.n(i, j, k);
     }
 
-    protected boolean i_() {
+    protected boolean j_() {
         int i = MathHelper.floor(this.locX);
         int j = MathHelper.floor(this.boundingBox.b);
         int k = MathHelper.floor(this.locZ);
@@ -120,7 +142,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         } else {
             int l = this.world.getLightLevel(i, j, k);
 
-            if (this.world.P()) {
+            if (this.world.O()) {
                 int i1 = this.world.j;
 
                 this.world.j = 10;
@@ -133,11 +155,15 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     }
 
     public boolean canSpawn() {
-        return this.world.difficulty > 0 && this.i_() && super.canSpawn();
+        return this.world.difficulty != EnumDifficulty.PEACEFUL && this.j_() && super.canSpawn();
     }
 
-    protected void az() {
-        super.az();
-        this.aX().b(GenericAttributes.e);
+    protected void aD() {
+        super.aD();
+        this.bc().b(GenericAttributes.e);
+    }
+
+    protected boolean aG() {
+        return true;
     }
 }

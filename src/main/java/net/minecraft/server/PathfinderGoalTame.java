@@ -40,19 +40,19 @@ public class PathfinderGoalTame extends PathfinderGoal {
     }
 
     public void e() {
-        if (this.entity.aD().nextInt(50) == 0) {
+        if (this.entity.aI().nextInt(50) == 0) {
             if (this.entity.passenger instanceof EntityHuman) {
                 int i = this.entity.getTemper();
                 int j = this.entity.getMaxDomestication();
 
                 // CraftBukkit
-                if (j > 0 && this.entity.aD().nextInt(j) < i && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this.entity, (EntityHuman) this.entity.passenger).isCancelled() && this.entity.passenger instanceof EntityHuman) {
-                    this.entity.g((EntityHuman) this.entity.passenger);
+                if (j > 0 && this.entity.aI().nextInt(j) < i && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this.entity, (EntityHuman) this.entity.passenger).isCancelled() && this.entity.passenger instanceof EntityHuman) {
+                    this.entity.h((EntityHuman) this.entity.passenger);
                     this.entity.world.broadcastEntityEffect(this.entity, (byte) 7);
                     return;
                 }
 
-                this.entity.t(5);
+                this.entity.v(5);
             }
 
             // CraftBukkit start - Handle dismounting to account for VehicleExitEvent being fired.
@@ -65,7 +65,7 @@ public class PathfinderGoalTame extends PathfinderGoal {
             }
             // this.entity.passenger = null;
             // CraftBukkit end
-            this.entity.cD();
+            this.entity.cH();
             this.entity.world.broadcastEntityEffect(this.entity, (byte) 6);
         }
     }

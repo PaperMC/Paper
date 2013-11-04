@@ -45,7 +45,7 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
         }
 
         queuedChunk.loader.loadEntities(chunk, queuedChunk.compound.getCompound("Level"), queuedChunk.world);
-        chunk.n = queuedChunk.provider.world.getTime();
+        chunk.p = queuedChunk.provider.world.getTime();
         queuedChunk.provider.chunks.put(queuedChunk.coords, chunk);
         chunk.addEntities();
 

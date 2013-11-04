@@ -10,7 +10,8 @@ class ThreadCommandReader extends Thread {
 
     final DedicatedServer server;
 
-    ThreadCommandReader(DedicatedServer dedicatedserver) {
+    ThreadCommandReader(DedicatedServer dedicatedserver, String s) {
+        super(s);
         this.server = dedicatedserver;
     }
 
@@ -38,8 +39,7 @@ class ThreadCommandReader extends Thread {
                 // CraftBukkit end
             }
         } catch (IOException ioexception) {
-            // CraftBukkit
-            java.util.logging.Logger.getLogger("").log(java.util.logging.Level.SEVERE, null, ioexception);
+            DedicatedServer.az().error("Exception handling console input", ioexception);
         }
     }
 }

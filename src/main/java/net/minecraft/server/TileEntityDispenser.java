@@ -12,7 +12,7 @@ import org.bukkit.entity.HumanEntity;
 public class TileEntityDispenser extends TileEntity implements IInventory {
 
     private ItemStack[] items = new ItemStack[9];
-    private Random c = new Random();
+    private Random j = new Random();
     protected String a;
 
     // CraftBukkit start
@@ -84,12 +84,12 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
         }
     }
 
-    public int j() {
+    public int i() {
         int i = -1;
         int j = 1;
 
         for (int k = 0; k < this.items.length; ++k) {
-            if (this.items[k] != null && this.c.nextInt(j++) == 0) {
+            if (this.items[k] != null && this.j.nextInt(j++) == 0) {
                 if (this.items[k].count == 0) continue; // CraftBukkit
                 i = k;
             }
@@ -109,7 +109,7 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
 
     public int addItem(ItemStack itemstack) {
         for (int i = 0; i < this.items.length; ++i) {
-            if (this.items[i] == null || this.items[i].id == 0) {
+            if (this.items[i] == null || this.items[i].getItem() == null) {
                 this.setItem(i, itemstack);
                 return i;
             }
@@ -118,26 +118,26 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
         return -1;
     }
 
-    public String getName() {
-        return this.c() ? this.a : "container.dispenser";
+    public String getInventoryName() {
+        return this.k_() ? this.a : "container.dispenser";
     }
 
     public void a(String s) {
         this.a = s;
     }
 
-    public boolean c() {
+    public boolean k_() {
         return this.a != null;
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        NBTTagList nbttaglist = nbttagcompound.getList("Items");
+        NBTTagList nbttaglist = nbttagcompound.getList("Items", 10);
 
         this.items = new ItemStack[this.getSize()];
 
         for (int i = 0; i < nbttaglist.size(); ++i) {
-            NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.get(i);
+            NBTTagCompound nbttagcompound1 = nbttaglist.get(i);
             int j = nbttagcompound1.getByte("Slot") & 255;
 
             if (j >= 0 && j < this.items.length) {
@@ -145,7 +145,7 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
             }
         }
 
-        if (nbttagcompound.hasKey("CustomName")) {
+        if (nbttagcompound.hasKeyOfType("CustomName", 8)) {
             this.a = nbttagcompound.getString("CustomName");
         }
     }
@@ -165,7 +165,7 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
         }
 
         nbttagcompound.set("Items", nbttaglist);
-        if (this.c()) {
+        if (this.k_()) {
             nbttagcompound.setString("CustomName", this.a);
         }
     }
@@ -180,7 +180,7 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
 
     public void startOpen() {}
 
-    public void g() {}
+    public void l_() {}
 
     public boolean b(int i, ItemStack itemstack) {
         return true;

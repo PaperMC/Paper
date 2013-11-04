@@ -4,8 +4,7 @@ public class ItemBow extends Item {
 
     public static final String[] a = new String[] { "pulling_0", "pulling_1", "pulling_2"};
 
-    public ItemBow(int i) {
-        super(i);
+    public ItemBow() {
         this.maxStackSize = 1;
         this.setMaxDurability(384);
         this.a(CreativeModeTab.j);
@@ -14,7 +13,7 @@ public class ItemBow extends Item {
     public void a(ItemStack itemstack, World world, EntityHuman entityhuman, int i) {
         boolean flag = entityhuman.abilities.canInstantlyBuild || EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_INFINITE.id, itemstack) > 0;
 
-        if (flag || entityhuman.inventory.e(Item.ARROW.id)) {
+        if (flag || entityhuman.inventory.b(Items.ARROW)) {
             int j = this.d_(itemstack) - i;
             float f = (float) j / 20.0F;
 
@@ -36,7 +35,7 @@ public class ItemBow extends Item {
             int k = EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_DAMAGE.id, itemstack);
 
             if (k > 0) {
-                entityarrow.b(entityarrow.c() + (double) k * 0.5D + 0.5D);
+                entityarrow.b(entityarrow.e() + (double) k * 0.5D + 0.5D);
             }
 
             int l = EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_KNOCKBACK.id, itemstack);
@@ -62,13 +61,16 @@ public class ItemBow extends Item {
             // CraftBukkit end
 
             itemstack.damage(1, entityhuman);
-            world.makeSound(entityhuman, "random.bow", 1.0F, 1.0F / (Item.f.nextFloat() * 0.4F + 1.2F) + f * 0.5F); // CraftBukkit - Fix compilation
+            world.makeSound(entityhuman, "random.bow", 1.0F, 1.0F / (g.nextFloat() * 0.4F + 1.2F) + f * 0.5F);
             if (flag) {
                 entityarrow.fromPlayer = 2;
             } else {
-                entityhuman.inventory.d(Item.ARROW.id);
+                entityhuman.inventory.a(Items.ARROW);
             }
-            // CraftBukkit - moved addEntity up
+
+            if (!world.isStatic) {
+                // world.addEntity(entityarrow); // CraftBukkit - moved up
+            }
         }
     }
 
@@ -80,12 +82,12 @@ public class ItemBow extends Item {
         return 72000;
     }
 
-    public EnumAnimation c_(ItemStack itemstack) {
+    public EnumAnimation d(ItemStack itemstack) {
         return EnumAnimation.BOW;
     }
 
     public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
-        if (entityhuman.abilities.canInstantlyBuild || entityhuman.inventory.e(Item.ARROW.id)) {
+        if (entityhuman.abilities.canInstantlyBuild || entityhuman.inventory.b(Items.ARROW)) {
             entityhuman.a(itemstack, this.d_(itemstack));
         }
 

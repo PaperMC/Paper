@@ -7,8 +7,8 @@ public class BlockHopper extends BlockContainer {
 
     private final Random a = new Random();
 
-    public BlockHopper(int i) {
-        super(i, Material.ORE);
+    public BlockHopper() {
+        super(Material.ORE);
         this.a(CreativeModeTab.d);
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
     }
@@ -43,14 +43,14 @@ public class BlockHopper extends BlockContainer {
         return j1;
     }
 
-    public TileEntity b(World world) {
+    public TileEntity a(World world, int i) {
         return new TileEntityHopper();
     }
 
     public void postPlace(World world, int i, int j, int k, EntityLiving entityliving, ItemStack itemstack) {
         super.postPlace(world, i, j, k, entityliving, itemstack);
         if (itemstack.hasName()) {
-            TileEntityHopper tileentityhopper = d(world, i, j, k);
+            TileEntityHopper tileentityhopper = e((IBlockAccess) world, i, j, k);
 
             tileentityhopper.a(itemstack.getName());
         }
@@ -58,14 +58,14 @@ public class BlockHopper extends BlockContainer {
 
     public void onPlace(World world, int i, int j, int k) {
         super.onPlace(world, i, j, k);
-        this.k(world, i, j, k);
+        this.e(world, i, j, k);
     }
 
     public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
         if (world.isStatic) {
             return true;
         } else {
-            TileEntityHopper tileentityhopper = d(world, i, j, k);
+            TileEntityHopper tileentityhopper = e((IBlockAccess) world, i, j, k);
 
             if (tileentityhopper != null) {
                 entityhuman.openHopper(tileentityhopper);
@@ -75,27 +75,27 @@ public class BlockHopper extends BlockContainer {
         }
     }
 
-    public void doPhysics(World world, int i, int j, int k, int l) {
-        this.k(world, i, j, k);
+    public void doPhysics(World world, int i, int j, int k, Block block) {
+        this.e(world, i, j, k);
     }
 
-    private void k(World world, int i, int j, int k) {
+    private void e(World world, int i, int j, int k) {
         int l = world.getData(i, j, k);
-        int i1 = c(l);
+        int i1 = b(l);
         boolean flag = !world.isBlockIndirectlyPowered(i, j, k);
-        boolean flag1 = d(l);
+        boolean flag1 = c(l);
 
         if (flag != flag1) {
             world.setData(i, j, k, i1 | (flag ? 0 : 8), 4);
         }
     }
 
-    public void remove(World world, int i, int j, int k, int l, int i1) {
+    public void remove(World world, int i, int j, int k, Block block, int l) {
         TileEntityHopper tileentityhopper = (TileEntityHopper) world.getTileEntity(i, j, k);
 
         if (tileentityhopper != null) {
-            for (int j1 = 0; j1 < tileentityhopper.getSize(); ++j1) {
-                ItemStack itemstack = tileentityhopper.getItem(j1);
+            for (int i1 = 0; i1 < tileentityhopper.getSize(); ++i1) {
+                ItemStack itemstack = tileentityhopper.getItem(i1);
 
                 if (itemstack != null) {
                     float f = this.a.nextFloat() * 0.8F + 0.1F;
@@ -103,14 +103,14 @@ public class BlockHopper extends BlockContainer {
                     float f2 = this.a.nextFloat() * 0.8F + 0.1F;
 
                     while (itemstack.count > 0) {
-                        int k1 = this.a.nextInt(21) + 10;
+                        int j1 = this.a.nextInt(21) + 10;
 
-                        if (k1 > itemstack.count) {
-                            k1 = itemstack.count;
+                        if (j1 > itemstack.count) {
+                            j1 = itemstack.count;
                         }
 
-                        itemstack.count -= k1;
-                        EntityItem entityitem = new EntityItem(world, (double) ((float) i + f), (double) ((float) j + f1), (double) ((float) k + f2), new ItemStack(itemstack.id, k1, itemstack.getData()));
+                        itemstack.count -= j1;
+                        EntityItem entityitem = new EntityItem(world, (double) ((float) i + f), (double) ((float) j + f1), (double) ((float) k + f2), new ItemStack(itemstack.getItem(), j1, itemstack.getData()));
 
                         if (itemstack.hasTag()) {
                             entityitem.getItemStack().setTag((NBTTagCompound) itemstack.getTag().clone());
@@ -126,17 +126,17 @@ public class BlockHopper extends BlockContainer {
                 }
             }
 
-            world.m(i, j, k, l);
+            world.f(i, j, k, block);
         }
 
-        super.remove(world, i, j, k, l, i1);
+        super.remove(world, i, j, k, block, l);
     }
 
-    public int d() {
+    public int b() {
         return 38;
     }
 
-    public boolean b() {
+    public boolean d() {
         return false;
     }
 
@@ -144,23 +144,23 @@ public class BlockHopper extends BlockContainer {
         return false;
     }
 
-    public static int c(int i) {
+    public static int b(int i) {
         return Math.min(i & 7, 5); // CraftBukkit - Fix AIOOBE in callers
     }
 
-    public static boolean d(int i) {
+    public static boolean c(int i) {
         return (i & 8) != 8;
     }
 
-    public boolean q_() {
+    public boolean M() {
         return true;
     }
 
-    public int b_(World world, int i, int j, int k, int l) {
-        return Container.b((IInventory) d(world, i, j, k));
+    public int g(World world, int i, int j, int k, int l) {
+        return Container.b((IInventory) e((IBlockAccess) world, i, j, k));
     }
 
-    public static TileEntityHopper d(IBlockAccess iblockaccess, int i, int j, int k) {
+    public static TileEntityHopper e(IBlockAccess iblockaccess, int i, int j, int k) {
         return (TileEntityHopper) iblockaccess.getTileEntity(i, j, k);
     }
 }

@@ -4,73 +4,78 @@ import java.util.Random;
 
 public class BlockReed extends Block {
 
-    protected BlockReed(int i) {
-        super(i, Material.PLANT);
+    protected BlockReed() {
+        super(Material.PLANT);
         float f = 0.375F;
 
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 1.0F, 0.5F + f);
-        this.b(true);
+        this.a(true);
     }
 
     public void a(World world, int i, int j, int k, Random random) {
-        if (world.isEmpty(i, j + 1, k)) {
-            int l;
+        if (world.getType(i, j - 1, k) == Blocks.SUGAR_CANE_BLOCK || this.e(world, i, j, k)) {
+            if (world.isEmpty(i, j + 1, k)) {
+                int l;
 
-            for (l = 1; world.getTypeId(i, j - l, k) == this.id; ++l) {
-                ;
-            }
+                for (l = 1; world.getType(i, j - l, k) == this; ++l) {
+                    ;
+                }
 
-            if (l < 3) {
-                int i1 = world.getData(i, j, k);
+                if (l < 3) {
+                    int i1 = world.getData(i, j, k);
 
-                if (i1 == 15) {
-                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j + 1, k, this.id, 0); // CraftBukkit
-                    world.setData(i, j, k, 0, 4);
-                } else {
-                    world.setData(i, j, k, i1 + 1, 4);
+                    if (i1 == 15) {
+                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j + 1, k, this, 0); // CraftBukkit
+                        world.setData(i, j, k, 0, 4);
+                    } else {
+                        world.setData(i, j, k, i1 + 1, 4);
+                    }
                 }
             }
         }
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        int l = world.getTypeId(i, j - 1, k);
+        Block block = world.getType(i, j - 1, k);
 
-        return l == this.id ? true : (l != Block.GRASS.id && l != Block.DIRT.id && l != Block.SAND.id ? false : (world.getMaterial(i - 1, j - 1, k) == Material.WATER ? true : (world.getMaterial(i + 1, j - 1, k) == Material.WATER ? true : (world.getMaterial(i, j - 1, k - 1) == Material.WATER ? true : world.getMaterial(i, j - 1, k + 1) == Material.WATER))));
+        return block == this ? true : (block != Blocks.GRASS && block != Blocks.DIRT && block != Blocks.SAND ? false : (world.getType(i - 1, j - 1, k).getMaterial() == Material.WATER ? true : (world.getType(i + 1, j - 1, k).getMaterial() == Material.WATER ? true : (world.getType(i, j - 1, k - 1).getMaterial() == Material.WATER ? true : world.getType(i, j - 1, k + 1).getMaterial() == Material.WATER))));
     }
 
-    public void doPhysics(World world, int i, int j, int k, int l) {
-        this.p_(world, i, j, k);
+    public void doPhysics(World world, int i, int j, int k, Block block) {
+        this.e(world, i, j, k);
     }
 
-    protected final void p_(World world, int i, int j, int k) {
-        if (!this.f(world, i, j, k)) {
-            this.c(world, i, j, k, world.getData(i, j, k), 0);
+    protected final boolean e(World world, int i, int j, int k) {
+        if (!this.j(world, i, j, k)) {
+            this.b(world, i, j, k, world.getData(i, j, k), 0);
             world.setAir(i, j, k);
+            return false;
+        } else {
+            return true;
         }
     }
 
-    public boolean f(World world, int i, int j, int k) {
+    public boolean j(World world, int i, int j, int k) {
         return this.canPlace(world, i, j, k);
     }
 
-    public AxisAlignedBB b(World world, int i, int j, int k) {
+    public AxisAlignedBB a(World world, int i, int j, int k) {
         return null;
     }
 
-    public int getDropType(int i, Random random, int j) {
-        return Item.SUGAR_CANE.id;
+    public Item getDropType(int i, Random random, int j) {
+        return Items.SUGAR_CANE;
     }
 
     public boolean c() {
         return false;
     }
 
-    public boolean b() {
+    public boolean d() {
         return false;
     }
 
-    public int d() {
+    public int b() {
         return 1;
     }
 }

@@ -4,8 +4,7 @@ import java.util.List;
 
 public class ItemBoat extends Item {
 
-    public ItemBoat(int i) {
-        super(i);
+    public ItemBoat() {
         this.maxStackSize = 1;
         this.a(CreativeModeTab.e);
     }
@@ -41,8 +40,8 @@ public class ItemBoat extends Item {
             for (i = 0; i < list.size(); ++i) {
                 Entity entity = (Entity) list.get(i);
 
-                if (entity.L()) {
-                    float f10 = entity.Z();
+                if (entity.R()) {
+                    float f10 = entity.af();
                     AxisAlignedBB axisalignedbb = entity.boundingBox.grow((double) f10, (double) f10, (double) f10);
 
                     if (axisalignedbb.a(vec3d)) {
@@ -54,7 +53,7 @@ public class ItemBoat extends Item {
             if (flag) {
                 return itemstack;
             } else {
-                if (movingobjectposition.type == EnumMovingObjectType.TILE) {
+                if (movingobjectposition.type == EnumMovingObjectType.BLOCK) {
                     i = movingobjectposition.b;
                     int j = movingobjectposition.c;
                     int k = movingobjectposition.d;
@@ -67,7 +66,7 @@ public class ItemBoat extends Item {
                     }
                     // CraftBukkit end
 
-                    if (world.getTypeId(i, j, k) == Block.SNOW.id) {
+                    if (world.getType(i, j, k) == Blocks.SNOW) {
                         --j;
                     }
 

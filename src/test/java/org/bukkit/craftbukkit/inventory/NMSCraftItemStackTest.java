@@ -13,7 +13,7 @@ public class NMSCraftItemStackTest extends AbstractTestingBase {
 
     @Test
     public void testCloneEnchantedItem() throws Exception {
-        net.minecraft.server.ItemStack nmsItemStack = new net.minecraft.server.ItemStack(net.minecraft.server.Item.POTION);
+        net.minecraft.server.ItemStack nmsItemStack = new net.minecraft.server.ItemStack(net.minecraft.server.Items.POTION);
         nmsItemStack.addEnchantment(Enchantment.DAMAGE_ALL, 1);
         ItemStack itemStack = CraftItemStack.asCraftMirror(nmsItemStack);
         ItemStack clone = itemStack.clone();

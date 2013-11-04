@@ -72,7 +72,7 @@ public class Village {
     }
 
     private boolean b(int i, int j, int k, int l, int i1, int j1) {
-        if (!this.world.w(i, j - 1, k)) {
+        if (!World.a((IBlockAccess) this.world, i, j - 1, k)) {
             return false;
         } else {
             int k1 = i - l / 2;
@@ -81,7 +81,7 @@ public class Village {
             for (int i2 = k1; i2 < k1 + l; ++i2) {
                 for (int j2 = j; j2 < j + i1; ++j2) {
                     for (int k2 = l1; k2 < l1 + j1; ++k2) {
-                        if (this.world.u(i2, j2, k2)) {
+                        if (this.world.getType(i2, j2, k2).r()) {
                             return false;
                         }
                     }
@@ -309,9 +309,7 @@ public class Village {
     }
 
     private boolean isDoor(int i, int j, int k) {
-        int l = this.world.getTypeId(i, j, k);
-
-        return l <= 0 ? false : l == Block.WOODEN_DOOR.id;
+        return this.world.getType(i, j, k) == Blocks.WOODEN_DOOR;
     }
 
     private void n() {
@@ -365,19 +363,19 @@ public class Village {
         this.c.x = nbttagcompound.getInt("ACX");
         this.c.y = nbttagcompound.getInt("ACY");
         this.c.z = nbttagcompound.getInt("ACZ");
-        NBTTagList nbttaglist = nbttagcompound.getList("Doors");
+        NBTTagList nbttaglist = nbttagcompound.getList("Doors", 10);
 
         for (int i = 0; i < nbttaglist.size(); ++i) {
-            NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.get(i);
+            NBTTagCompound nbttagcompound1 = nbttaglist.get(i);
             VillageDoor villagedoor = new VillageDoor(nbttagcompound1.getInt("X"), nbttagcompound1.getInt("Y"), nbttagcompound1.getInt("Z"), nbttagcompound1.getInt("IDX"), nbttagcompound1.getInt("IDZ"), nbttagcompound1.getInt("TS"));
 
             this.doors.add(villagedoor);
         }
 
-        NBTTagList nbttaglist1 = nbttagcompound.getList("Players");
+        NBTTagList nbttaglist1 = nbttagcompound.getList("Players", 10);
 
         for (int j = 0; j < nbttaglist1.size(); ++j) {
-            NBTTagCompound nbttagcompound2 = (NBTTagCompound) nbttaglist1.get(j);
+            NBTTagCompound nbttagcompound2 = nbttaglist1.get(j);
 
             this.playerStandings.put(nbttagcompound2.getString("Name"), Integer.valueOf(nbttagcompound2.getInt("S")));
         }
@@ -396,12 +394,12 @@ public class Village {
         nbttagcompound.setInt("ACX", this.c.x);
         nbttagcompound.setInt("ACY", this.c.y);
         nbttagcompound.setInt("ACZ", this.c.z);
-        NBTTagList nbttaglist = new NBTTagList("Doors");
+        NBTTagList nbttaglist = new NBTTagList();
         Iterator iterator = this.doors.iterator();
 
         while (iterator.hasNext()) {
             VillageDoor villagedoor = (VillageDoor) iterator.next();
-            NBTTagCompound nbttagcompound1 = new NBTTagCompound("Door");
+            NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
             nbttagcompound1.setInt("X", villagedoor.locX);
             nbttagcompound1.setInt("Y", villagedoor.locY);
@@ -413,12 +411,12 @@ public class Village {
         }
 
         nbttagcompound.set("Doors", nbttaglist);
-        NBTTagList nbttaglist1 = new NBTTagList("Players");
+        NBTTagList nbttaglist1 = new NBTTagList();
         Iterator iterator1 = this.playerStandings.keySet().iterator();
 
         while (iterator1.hasNext()) {
             String s = (String) iterator1.next();
-            NBTTagCompound nbttagcompound2 = new NBTTagCompound(s);
+            NBTTagCompound nbttagcompound2 = new NBTTagCompound();
 
             nbttagcompound2.setString("Name", s);
             nbttagcompound2.setInt("S", ((Integer) this.playerStandings.get(s)).intValue());

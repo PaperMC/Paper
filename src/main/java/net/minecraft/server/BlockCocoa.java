@@ -2,45 +2,44 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-public class BlockCocoa extends BlockDirectional {
+public class BlockCocoa extends BlockDirectional implements IBlockFragilePlantElement {
 
-    public static final String[] a = new String[] { "cocoa_0", "cocoa_1", "cocoa_2"};
-
-    public BlockCocoa(int i) {
-        super(i, Material.PLANT);
-        this.b(true);
+    public BlockCocoa() {
+        super(Material.PLANT);
+        this.a(true);
     }
 
     public void a(World world, int i, int j, int k, Random random) {
-        if (!this.f(world, i, j, k)) {
-            this.c(world, i, j, k, world.getData(i, j, k), 0);
-            world.setTypeIdAndData(i, j, k, 0, 0, 2);
+        if (!this.j(world, i, j, k)) {
+            this.b(world, i, j, k, world.getData(i, j, k), 0);
+            world.setTypeAndData(i, j, k, e(0), 0, 2);
         } else if (world.random.nextInt(5) == 0) {
             int l = world.getData(i, j, k);
             int i1 = c(l);
 
             if (i1 < 2) {
                 ++i1;
-                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this.id, i1 << 2 | j(l)); // CraftBukkit
+                // CraftBukkit
+                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this, i1 << 2 | l(l));
             }
         }
     }
 
-    public boolean f(World world, int i, int j, int k) {
-        int l = j(world.getData(i, j, k));
+    public boolean j(World world, int i, int j, int k) {
+        int l = l(world.getData(i, j, k));
 
         i += Direction.a[l];
         k += Direction.b[l];
-        int i1 = world.getTypeId(i, j, k);
+        Block block = world.getType(i, j, k);
 
-        return i1 == Block.LOG.id && BlockLog.f(world.getData(i, j, k)) == 3;
+        return block == Blocks.LOG && BlockLogAbstract.c(world.getData(i, j, k)) == 3;
     }
 
-    public int d() {
+    public int b() {
         return 28;
     }
 
-    public boolean b() {
+    public boolean d() {
         return false;
     }
 
@@ -48,14 +47,14 @@ public class BlockCocoa extends BlockDirectional {
         return false;
     }
 
-    public AxisAlignedBB b(World world, int i, int j, int k) {
+    public AxisAlignedBB a(World world, int i, int j, int k) {
         this.updateShape(world, i, j, k);
-        return super.b(world, i, j, k);
+        return super.a(world, i, j, k);
     }
 
     public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
         int l = iblockaccess.getData(i, j, k);
-        int i1 = j(l);
+        int i1 = l(l);
         int j1 = c(l);
         int k1 = 4 + j1 * 2;
         int l1 = 5 + j1 * 2;
@@ -93,10 +92,10 @@ public class BlockCocoa extends BlockDirectional {
         return Direction.f[Direction.e[l]];
     }
 
-    public void doPhysics(World world, int i, int j, int k, int l) {
-        if (!this.f(world, i, j, k)) {
-            this.c(world, i, j, k, world.getData(i, j, k), 0);
-            world.setTypeIdAndData(i, j, k, 0, 0, 2);
+    public void doPhysics(World world, int i, int j, int k, Block block) {
+        if (!this.j(world, i, j, k)) {
+            this.b(world, i, j, k, world.getData(i, j, k), 0);
+            world.setTypeAndData(i, j, k, e(0), 0, 2);
         }
     }
 
@@ -113,11 +112,31 @@ public class BlockCocoa extends BlockDirectional {
         }
 
         for (int k1 = 0; k1 < b0; ++k1) {
-            this.b(world, i, j, k, new ItemStack(Item.INK_SACK, 1, 3));
+            this.a(world, i, j, k, new ItemStack(Items.INK_SACK, 1, 3));
         }
     }
 
     public int getDropData(World world, int i, int j, int k) {
         return 3;
+    }
+
+    public boolean a(World world, int i, int j, int k, boolean flag) {
+        int l = world.getData(i, j, k);
+        int i1 = c(l);
+
+        return i1 < 2;
+    }
+
+    public boolean a(World world, Random random, int i, int j, int k) {
+        return true;
+    }
+
+    public void b(World world, Random random, int i, int j, int k) {
+        int l = world.getData(i, j, k);
+        int i1 = BlockDirectional.l(l);
+        int j1 = c(l);
+
+        ++j1;
+        world.setData(i, j, k, j1 << 2 | i1, 2);
     }
 }

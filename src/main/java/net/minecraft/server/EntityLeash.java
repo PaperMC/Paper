@@ -16,17 +16,17 @@ public class EntityLeash extends EntityHanging {
         this.setPosition((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D);
     }
 
-    protected void a() {
-        super.a();
+    protected void c() {
+        super.c();
     }
 
     public void setDirection(int i) {}
 
-    public int d() {
+    public int f() {
         return 9;
     }
 
-    public int e() {
+    public int i() {
         return 9;
     }
 
@@ -41,14 +41,14 @@ public class EntityLeash extends EntityHanging {
     public void a(NBTTagCompound nbttagcompound) {}
 
     public boolean c(EntityHuman entityhuman) {
-        ItemStack itemstack = entityhuman.aZ();
+        ItemStack itemstack = entityhuman.be();
         boolean flag = false;
         double d0;
         List list;
         Iterator iterator;
         EntityInsentient entityinsentient;
 
-        if (itemstack != null && itemstack.id == Item.LEASH.id && !this.world.isStatic) {
+        if (itemstack != null && itemstack.getItem() == Items.LEASH && !this.world.isStatic) {
             d0 = 7.0D;
             list = this.world.a(EntityInsentient.class, AxisAlignedBB.a().a(this.locX - d0, this.locY - d0, this.locZ - d0, this.locX + d0, this.locY + d0, this.locZ + d0));
             if (list != null) {
@@ -56,10 +56,10 @@ public class EntityLeash extends EntityHanging {
 
                 while (iterator.hasNext()) {
                     entityinsentient = (EntityInsentient) iterator.next();
-                    if (entityinsentient.bH() && entityinsentient.getLeashHolder() == entityhuman) {
+                    if (entityinsentient.bL() && entityinsentient.getLeashHolder() == entityhuman) {
                         // CraftBukkit start
                         if (CraftEventFactory.callPlayerLeashEntityEvent(entityinsentient, this, entityhuman).isCancelled()) {
-                            ((EntityPlayer) entityhuman).playerConnection.sendPacket(new Packet39AttachEntity(1, entityinsentient, entityinsentient.getLeashHolder()));
+                            ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutAttachEntity(1, entityinsentient, entityinsentient.getLeashHolder()));
                             continue;
                         }
                         // CraftBukkit end
@@ -83,7 +83,7 @@ public class EntityLeash extends EntityHanging {
 
                     while (iterator.hasNext()) {
                         entityinsentient = (EntityInsentient) iterator.next();
-                        if (entityinsentient.bH() && entityinsentient.getLeashHolder() == this) {
+                        if (entityinsentient.bL() && entityinsentient.getLeashHolder() == this) {
                             // CraftBukkit start
                             if (CraftEventFactory.callPlayerUnleashEntityEvent(entityinsentient, entityhuman).isCancelled()) {
                                 die = false;
@@ -106,22 +106,19 @@ public class EntityLeash extends EntityHanging {
     }
 
     public boolean survives() {
-        int i = this.world.getTypeId(this.x, this.y, this.z);
-
-        return Block.byId[i] != null && Block.byId[i].d() == 11;
+        return this.world.getType(this.x, this.y, this.z).b() == 11;
     }
 
     public static EntityLeash a(World world, int i, int j, int k) {
         EntityLeash entityleash = new EntityLeash(world, i, j, k);
 
-        entityleash.p = true;
+        entityleash.o = true;
         world.addEntity(entityleash);
         return entityleash;
     }
 
     public static EntityLeash b(World world, int i, int j, int k) {
         List list = world.a(EntityLeash.class, AxisAlignedBB.a().a((double) i - 1.0D, (double) j - 1.0D, (double) k - 1.0D, (double) i + 1.0D, (double) j + 1.0D, (double) k + 1.0D));
-        Object object = null;
 
         if (list != null) {
             Iterator iterator = list.iterator();

@@ -20,7 +20,7 @@ public class PathfinderGoalBreed extends PathfinderGoal {
     }
 
     public boolean a() {
-        if (!this.d.bY()) {
+        if (!this.d.cc()) {
             return false;
         } else {
             this.e = this.f();
@@ -29,7 +29,7 @@ public class PathfinderGoalBreed extends PathfinderGoal {
     }
 
     public boolean b() {
-        return this.e.isAlive() && this.e.bY() && this.b < 60;
+        return this.e.isAlive() && this.e.cc() && this.b < 60;
     }
 
     public void d() {
@@ -38,7 +38,7 @@ public class PathfinderGoalBreed extends PathfinderGoal {
     }
 
     public void e() {
-        this.d.getControllerLook().a(this.e, 10.0F, (float) this.d.bp());
+        this.d.getControllerLook().a(this.e, 10.0F, (float) this.d.x());
         this.d.getNavigation().a((Entity) this.e, this.c);
         ++this.b;
         if (this.b >= 60 && this.d.e(this.e) < 9.0D) {
@@ -74,14 +74,27 @@ public class PathfinderGoalBreed extends PathfinderGoal {
                 entityageable.persistent = true;
             }
             // CraftBukkit end
+            EntityHuman entityhuman = this.d.cb();
+
+            if (entityhuman == null && this.e.cb() != null) {
+                entityhuman = this.e.cb();
+            }
+
+            if (entityhuman != null) {
+                entityhuman.a(StatisticList.x);
+                if (this.d instanceof EntityCow) {
+                    entityhuman.a((Statistic) AchievementList.H);
+                }
+            }
+
             this.d.setAge(6000);
             this.e.setAge(6000);
-            this.d.bZ();
-            this.e.bZ();
+            this.d.cd();
+            this.e.cd();
             entityageable.setAge(-24000);
             entityageable.setPositionRotation(this.d.locX, this.d.locY, this.d.locZ, 0.0F, 0.0F);
             this.a.addEntity(entityageable, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - added SpawnReason
-            Random random = this.d.aD();
+            Random random = this.d.aI();
 
             for (int i = 0; i < 7; ++i) {
                 double d0 = random.nextGaussian() * 0.02D;
@@ -91,7 +104,9 @@ public class PathfinderGoalBreed extends PathfinderGoal {
                 this.a.addParticle("heart", this.d.locX + (double) (random.nextFloat() * this.d.width * 2.0F) - (double) this.d.width, this.d.locY + 0.5D + (double) (random.nextFloat() * this.d.length), this.d.locZ + (double) (random.nextFloat() * this.d.width * 2.0F) - (double) this.d.width, d0, d1, d2);
             }
 
-            this.a.addEntity(new EntityExperienceOrb(this.a, this.d.locX, this.d.locY, this.d.locZ, random.nextInt(7) + 1));
+            if (this.a.getGameRules().getBoolean("doMobLoot")) {
+                this.a.addEntity(new EntityExperienceOrb(this.a, this.d.locX, this.d.locY, this.d.locZ, random.nextInt(7) + 1));
+            }
         }
     }
 }

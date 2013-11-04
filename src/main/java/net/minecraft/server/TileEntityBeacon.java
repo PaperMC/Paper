@@ -11,12 +11,12 @@ import org.bukkit.entity.HumanEntity;
 public class TileEntityBeacon extends TileEntity implements IInventory {
 
     public static final MobEffectList[][] a = new MobEffectList[][] { { MobEffectList.FASTER_MOVEMENT, MobEffectList.FASTER_DIG}, { MobEffectList.RESISTANCE, MobEffectList.JUMP}, { MobEffectList.INCREASE_DAMAGE}, { MobEffectList.REGENERATION}};
-    private boolean d;
-    private int e = -1;
-    private int f;
-    private int g;
+    private boolean k;
+    private int l = -1;
+    private int m;
+    private int n;
     private ItemStack inventorySlot;
-    private String i;
+    private String p;
     // CraftBukkit start
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     private int maxStack = MAX_STACK;
@@ -46,17 +46,17 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
 
     public void h() {
         if (this.world.getTime() % 80L == 0L) {
-            this.v();
-            this.u();
+            this.y();
+            this.x();
         }
     }
 
-    private void u() {
-        if (this.d && this.e > 0 && !this.world.isStatic && this.f > 0) {
-            double d0 = (double) (this.e * 10 + 10);
+    private void x() {
+        if (this.k && this.l > 0 && !this.world.isStatic && this.m > 0) {
+            double d0 = (double) (this.l * 10 + 10);
             byte b0 = 0;
 
-            if (this.e >= 4 && this.f == this.g) {
+            if (this.l >= 4 && this.m == this.n) {
                 b0 = 1;
             }
 
@@ -70,42 +70,44 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
 
             while (iterator.hasNext()) {
                 entityhuman = (EntityHuman) iterator.next();
-                entityhuman.addEffect(new MobEffect(this.f, 180, b0, true));
+                entityhuman.addEffect(new MobEffect(this.m, 180, b0, true));
             }
 
-            if (this.e >= 4 && this.f != this.g && this.g > 0) {
+            if (this.l >= 4 && this.m != this.n && this.n > 0) {
                 iterator = list.iterator();
 
                 while (iterator.hasNext()) {
                     entityhuman = (EntityHuman) iterator.next();
-                    entityhuman.addEffect(new MobEffect(this.g, 180, 0, true));
+                    entityhuman.addEffect(new MobEffect(this.n, 180, 0, true));
                 }
             }
         }
     }
 
-    private void v() {
-        if (!this.world.l(this.x, this.y + 1, this.z)) {
-            this.d = false;
-            this.e = 0;
+    private void y() {
+        int i = this.l;
+
+        if (!this.world.i(this.x, this.y + 1, this.z)) {
+            this.k = false;
+            this.l = 0;
         } else {
-            this.d = true;
-            this.e = 0;
+            this.k = true;
+            this.l = 0;
 
-            for (int i = 1; i <= 4; this.e = i++) {
-                int j = this.y - i;
+            for (int j = 1; j <= 4; this.l = j++) {
+                int k = this.y - j;
 
-                if (j < 0) {
+                if (k < 0) {
                     break;
                 }
 
                 boolean flag = true;
 
-                for (int k = this.x - i; k <= this.x + i && flag; ++k) {
-                    for (int l = this.z - i; l <= this.z + i; ++l) {
-                        int i1 = this.world.getTypeId(k, j, l);
+                for (int l = this.x - j; l <= this.x + j && flag; ++l) {
+                    for (int i1 = this.z - j; i1 <= this.z + j; ++i1) {
+                        Block block = this.world.getType(l, k, i1);
 
-                        if (i1 != Block.EMERALD_BLOCK.id && i1 != Block.GOLD_BLOCK.id && i1 != Block.DIAMOND_BLOCK.id && i1 != Block.IRON_BLOCK.id) {
+                        if (block != Blocks.EMERALD_BLOCK && block != Blocks.GOLD_BLOCK && block != Blocks.DIAMOND_BLOCK && block != Blocks.IRON_BLOCK) {
                             flag = false;
                             break;
                         }
@@ -117,28 +119,38 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
                 }
             }
 
-            if (this.e == 0) {
-                this.d = false;
+            if (this.l == 0) {
+                this.k = false;
+            }
+        }
+
+        if (!this.world.isStatic && this.l == 4 && i < this.l) {
+            Iterator iterator = this.world.a(EntityHuman.class, AxisAlignedBB.a().a((double) this.x, (double) this.y, (double) this.z, (double) this.x, (double) (this.y - 4), (double) this.z).grow(10.0D, 5.0D, 10.0D)).iterator();
+
+            while (iterator.hasNext()) {
+                EntityHuman entityhuman = (EntityHuman) iterator.next();
+
+                entityhuman.a((Statistic) AchievementList.K);
             }
         }
     }
 
     public int j() {
-        return this.f;
+        return this.m;
     }
 
     public int k() {
-        return this.g;
+        return this.n;
     }
 
     public int l() {
-        return this.e;
+        return this.l;
     }
 
     public void d(int i) {
-        this.f = 0;
+        this.m = 0;
 
-        for (int j = 0; j < this.e && j < 3; ++j) {
+        for (int j = 0; j < this.l && j < 3; ++j) {
             MobEffectList[] amobeffectlist = a[j];
             int k = amobeffectlist.length;
 
@@ -146,7 +158,7 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
                 MobEffectList mobeffectlist = amobeffectlist[l];
 
                 if (mobeffectlist.id == i) {
-                    this.f = i;
+                    this.m = i;
                     return;
                 }
             }
@@ -154,8 +166,8 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
     }
 
     public void e(int i) {
-        this.g = 0;
-        if (this.e >= 4) {
+        this.n = 0;
+        if (this.l >= 4) {
             for (int j = 0; j < 4; ++j) {
                 MobEffectList[] amobeffectlist = a[j];
                 int k = amobeffectlist.length;
@@ -164,7 +176,7 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
                     MobEffectList mobeffectlist = amobeffectlist[l];
 
                     if (mobeffectlist.id == i) {
-                        this.g = i;
+                        this.n = i;
                         return;
                     }
                 }
@@ -176,21 +188,21 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
         NBTTagCompound nbttagcompound = new NBTTagCompound();
 
         this.b(nbttagcompound);
-        return new Packet132TileEntityData(this.x, this.y, this.z, 3, nbttagcompound);
+        return new PacketPlayOutTileEntityData(this.x, this.y, this.z, 3, nbttagcompound);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.f = nbttagcompound.getInt("Primary");
-        this.g = nbttagcompound.getInt("Secondary");
-        this.e = nbttagcompound.getInt("Levels");
+        this.m = nbttagcompound.getInt("Primary");
+        this.n = nbttagcompound.getInt("Secondary");
+        this.l = nbttagcompound.getInt("Levels");
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.setInt("Primary", this.f);
-        nbttagcompound.setInt("Secondary", this.g);
-        nbttagcompound.setInt("Levels", this.e);
+        nbttagcompound.setInt("Primary", this.m);
+        nbttagcompound.setInt("Secondary", this.n);
+        nbttagcompound.setInt("Levels", this.l);
     }
 
     public int getSize() {
@@ -210,7 +222,7 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
                 return itemstack;
             } else {
                 this.inventorySlot.count -= j;
-                return new ItemStack(this.inventorySlot.id, j, this.inventorySlot.getData());
+                return new ItemStack(this.inventorySlot.getItem(), j, this.inventorySlot.getData());
             }
         } else {
             return null;
@@ -234,16 +246,16 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
         }
     }
 
-    public String getName() {
-        return this.c() ? this.i : "container.beacon";
+    public String getInventoryName() {
+        return this.k_() ? this.p : "container.beacon";
     }
 
-    public boolean c() {
-        return this.i != null && this.i.length() > 0;
+    public boolean k_() {
+        return this.p != null && this.p.length() > 0;
     }
 
     public void a(String s) {
-        this.i = s;
+        this.p = s;
     }
 
     public int getMaxStackSize() {
@@ -256,9 +268,9 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
 
     public void startOpen() {}
 
-    public void g() {}
+    public void l_() {}
 
     public boolean b(int i, ItemStack itemstack) {
-        return itemstack.id == Item.EMERALD.id || itemstack.id == Item.DIAMOND.id || itemstack.id == Item.GOLD_INGOT.id || itemstack.id == Item.IRON_INGOT.id;
+        return itemstack.getItem() == Items.EMERALD || itemstack.getItem() == Items.DIAMOND || itemstack.getItem() == Items.GOLD_INGOT || itemstack.getItem() == Items.IRON_INGOT;
     }
 }

@@ -13,7 +13,7 @@ final class DispenseBehaviorBonemeal extends DispenseBehaviorItem {
 
     protected ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
         if (itemstack.getData() == 15) {
-            EnumFacing enumfacing = BlockDispenser.l_(isourceblock.h());
+            EnumFacing enumfacing = BlockDispenser.b(isourceblock.h());
             World world = isourceblock.k();
             int i = isourceblock.getBlockX() + enumfacing.c();
             int j = isourceblock.getBlockY() + enumfacing.d();

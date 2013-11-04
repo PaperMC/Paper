@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.inventory;
 
 import net.minecraft.server.RecipesFurnace;
 
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.FurnaceRecipe;
 import org.bukkit.inventory.ItemStack;
 
@@ -20,6 +21,6 @@ public class CraftFurnaceRecipe extends FurnaceRecipe implements CraftRecipe {
     public void addToCraftingManager() {
         ItemStack result = this.getResult();
         ItemStack input = this.getInput();
-        RecipesFurnace.getInstance().registerRecipe(input.getTypeId(), CraftItemStack.asNMSCopy(result), 0.1f);
+        RecipesFurnace.getInstance().registerRecipe(CraftMagicNumbers.getBlock(input.getTypeId()), CraftItemStack.asNMSCopy(result), 0.1f);
     }
 }

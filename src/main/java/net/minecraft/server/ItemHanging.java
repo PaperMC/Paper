@@ -10,8 +10,7 @@ public class ItemHanging extends Item {
 
     private final Class a;
 
-    public ItemHanging(int i, Class oclass) {
-        super(i);
+    public ItemHanging(Class oclass) {
         this.a = oclass;
         this.a(CreativeModeTab.c);
     }

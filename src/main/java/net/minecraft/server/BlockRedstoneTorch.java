@@ -40,10 +40,9 @@ public class BlockRedstoneTorch extends BlockTorch {
         return false;
     }
 
-    protected BlockRedstoneTorch(int i, boolean flag) {
-        super(i);
+    protected BlockRedstoneTorch(boolean flag) {
         this.isOn = flag;
-        this.b(true);
+        this.a(true);
         this.a((CreativeModeTab) null);
     }
 
@@ -57,23 +56,23 @@ public class BlockRedstoneTorch extends BlockTorch {
         }
 
         if (this.isOn) {
-            world.applyPhysics(i, j - 1, k, this.id);
-            world.applyPhysics(i, j + 1, k, this.id);
-            world.applyPhysics(i - 1, j, k, this.id);
-            world.applyPhysics(i + 1, j, k, this.id);
-            world.applyPhysics(i, j, k - 1, this.id);
-            world.applyPhysics(i, j, k + 1, this.id);
+            world.applyPhysics(i, j - 1, k, this);
+            world.applyPhysics(i, j + 1, k, this);
+            world.applyPhysics(i - 1, j, k, this);
+            world.applyPhysics(i + 1, j, k, this);
+            world.applyPhysics(i, j, k - 1, this);
+            world.applyPhysics(i, j, k + 1, this);
         }
     }
 
-    public void remove(World world, int i, int j, int k, int l, int i1) {
+    public void remove(World world, int i, int j, int k, Block block, int l) {
         if (this.isOn) {
-            world.applyPhysics(i, j - 1, k, this.id);
-            world.applyPhysics(i, j + 1, k, this.id);
-            world.applyPhysics(i - 1, j, k, this.id);
-            world.applyPhysics(i + 1, j, k, this.id);
-            world.applyPhysics(i, j, k - 1, this.id);
-            world.applyPhysics(i, j, k + 1, this.id);
+            world.applyPhysics(i, j - 1, k, this);
+            world.applyPhysics(i, j + 1, k, this);
+            world.applyPhysics(i - 1, j, k, this);
+            world.applyPhysics(i + 1, j, k, this);
+            world.applyPhysics(i, j, k - 1, this);
+            world.applyPhysics(i, j, k + 1, this);
         }
     }
 
@@ -121,7 +120,7 @@ public class BlockRedstoneTorch extends BlockTorch {
                 }
                 // CraftBukkit end
 
-                world.setTypeIdAndData(i, j, k, Block.REDSTONE_TORCH_OFF.id, world.getData(i, j, k), 3);
+                world.setTypeAndData(i, j, k, Blocks.REDSTONE_TORCH_OFF, world.getData(i, j, k), 3);
                 if (this.a(world, i, j, k, true)) {
                     world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), "random.fizz", 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
 
@@ -145,16 +144,16 @@ public class BlockRedstoneTorch extends BlockTorch {
             }
             // CraftBukkit end
 
-            world.setTypeIdAndData(i, j, k, Block.REDSTONE_TORCH_ON.id, world.getData(i, j, k), 3);
+            world.setTypeAndData(i, j, k, Blocks.REDSTONE_TORCH_ON, world.getData(i, j, k), 3);
         }
     }
 
-    public void doPhysics(World world, int i, int j, int k, int l) {
-        if (!this.d(world, i, j, k, l)) {
+    public void doPhysics(World world, int i, int j, int k, Block block) {
+        if (!this.b(world, i, j, k, block)) {
             boolean flag = this.m(world, i, j, k);
 
             if (this.isOn && flag || !this.isOn && !flag) {
-                world.a(i, j, k, this.id, this.a(world));
+                world.a(i, j, k, this, this.a(world));
             }
         }
     }
@@ -163,15 +162,15 @@ public class BlockRedstoneTorch extends BlockTorch {
         return l == 0 ? this.b(iblockaccess, i, j, k, l) : 0;
     }
 
-    public int getDropType(int i, Random random, int j) {
-        return Block.REDSTONE_TORCH_ON.id;
+    public Item getDropType(int i, Random random, int j) {
+        return Item.getItemOf(Blocks.REDSTONE_TORCH_ON);
     }
 
     public boolean isPowerSource() {
         return true;
     }
 
-    public boolean i(int i) {
-        return i == Block.REDSTONE_TORCH_OFF.id || i == Block.REDSTONE_TORCH_ON.id;
+    public boolean c(Block block) {
+        return block == Blocks.REDSTONE_TORCH_OFF || block == Blocks.REDSTONE_TORCH_ON;
     }
 }

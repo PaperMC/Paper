@@ -8,18 +8,18 @@ public class TileEntityRecordPlayer extends TileEntity {
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        if (nbttagcompound.hasKey("RecordItem")) {
+        if (nbttagcompound.hasKeyOfType("RecordItem", 10)) {
             this.setRecord(ItemStack.createStack(nbttagcompound.getCompound("RecordItem")));
         } else if (nbttagcompound.getInt("Record") > 0) {
-            this.setRecord(new ItemStack(nbttagcompound.getInt("Record"), 1, 0));
+            this.setRecord(new ItemStack(Item.d(nbttagcompound.getInt("Record")), 1, 0));
         }
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
         if (this.getRecord() != null) {
-            nbttagcompound.setCompound("RecordItem", this.getRecord().save(new NBTTagCompound()));
-            nbttagcompound.setInt("Record", this.getRecord().id);
+            nbttagcompound.set("RecordItem", this.getRecord().save(new NBTTagCompound()));
+            nbttagcompound.setInt("Record", Item.b(this.getRecord().getItem()));
         }
     }
 

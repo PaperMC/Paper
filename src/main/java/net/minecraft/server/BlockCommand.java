@@ -6,34 +6,34 @@ import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 
 public class BlockCommand extends BlockContainer {
 
-    public BlockCommand(int i) {
-        super(i, Material.ORE);
+    public BlockCommand() {
+        super(Material.ORE);
     }
 
-    public TileEntity b(World world) {
+    public TileEntity a(World world, int i) {
         return new TileEntityCommand();
     }
 
-    public void doPhysics(World world, int i, int j, int k, int l) {
+    public void doPhysics(World world, int i, int j, int k, Block block) {
         if (!world.isStatic) {
             boolean flag = world.isBlockIndirectlyPowered(i, j, k);
-            int i1 = world.getData(i, j, k);
-            boolean flag1 = (i1 & 1) != 0;
+            int l = world.getData(i, j, k);
+            boolean flag1 = (l & 1) != 0;
 
             // CraftBukkit start
-            org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
+            org.bukkit.block.Block bukkitBlock = world.getWorld().getBlockAt(i, j, k);
             int old = flag1 ? 15 : 0;
             int current = flag ? 15 : 0;
 
-            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, old, current);
+            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bukkitBlock, old, current);
             world.getServer().getPluginManager().callEvent(eventRedstone);
             // CraftBukkit end
 
             if (eventRedstone.getNewCurrent() > 0 && !(eventRedstone.getOldCurrent() > 0)) { // CraftBukkit
-                world.setData(i, j, k, i1 | 1, 4);
-                world.a(i, j, k, this.id, this.a(world));
+                world.setData(i, j, k, l | 1, 4);
+                world.a(i, j, k, this, this.a(world));
             } else if (!(eventRedstone.getNewCurrent() > 0) && eventRedstone.getOldCurrent() > 0) { // CraftBukkit
-                world.setData(i, j, k, i1 & -2, 4);
+                world.setData(i, j, k, l & -2, 4);
             }
         }
     }
@@ -42,10 +42,10 @@ public class BlockCommand extends BlockContainer {
         TileEntity tileentity = world.getTileEntity(i, j, k);
 
         if (tileentity != null && tileentity instanceof TileEntityCommand) {
-            TileEntityCommand tileentitycommand = (TileEntityCommand) tileentity;
+            CommandBlockListenerAbstract commandblocklistenerabstract = ((TileEntityCommand) tileentity).a();
 
-            tileentitycommand.a(tileentitycommand.a(world));
-            world.m(i, j, k, this.id);
+            commandblocklistenerabstract.a(world);
+            world.f(i, j, k, this);
         }
     }
 
@@ -63,21 +63,21 @@ public class BlockCommand extends BlockContainer {
         return true;
     }
 
-    public boolean q_() {
+    public boolean M() {
         return true;
     }
 
-    public int b_(World world, int i, int j, int k, int l) {
+    public int g(World world, int i, int j, int k, int l) {
         TileEntity tileentity = world.getTileEntity(i, j, k);
 
-        return tileentity != null && tileentity instanceof TileEntityCommand ? ((TileEntityCommand) tileentity).f() : 0;
+        return tileentity != null && tileentity instanceof TileEntityCommand ? ((TileEntityCommand) tileentity).a().g() : 0;
     }
 
     public void postPlace(World world, int i, int j, int k, EntityLiving entityliving, ItemStack itemstack) {
         TileEntityCommand tileentitycommand = (TileEntityCommand) world.getTileEntity(i, j, k);
 
         if (itemstack.hasName()) {
-            tileentitycommand.b(itemstack.getName());
+            tileentitycommand.a().b(itemstack.getName());
         }
     }
 

@@ -25,11 +25,11 @@ public abstract class EntityCreature extends EntityInsentient {
         super(world);
     }
 
-    protected boolean bJ() {
+    protected boolean bN() {
         return false;
     }
 
-    protected void bl() {
+    protected void bq() {
         this.world.methodProfiler.a("ai");
         if (this.bo > 0 && --this.bo == 0) {
             AttributeInstance attributeinstance = this.getAttributeInstance(GenericAttributes.d);
@@ -37,7 +37,7 @@ public abstract class EntityCreature extends EntityInsentient {
             attributeinstance.b(i);
         }
 
-        this.bn = this.bJ();
+        this.bn = this.bN();
         float f11 = 16.0F;
 
         if (this.target == null) {
@@ -81,16 +81,20 @@ public abstract class EntityCreature extends EntityInsentient {
             // CraftBukkit end
         }
 
+        if (this.target instanceof EntityPlayer && ((EntityPlayer) this.target).playerInteractManager.isCreative()) {
+            this.target = null;
+        }
+
         this.world.methodProfiler.b();
         if (!this.bn && this.target != null && (this.pathEntity == null || this.random.nextInt(20) == 0)) {
             this.pathEntity = this.world.findPath(this, this.target, f11, true, false, false, true);
         } else if (!this.bn && (this.pathEntity == null && this.random.nextInt(180) == 0 || this.random.nextInt(120) == 0 || this.bo > 0) && this.aV < 100) {
-            this.bK();
+            this.bO();
         }
 
         int i = MathHelper.floor(this.boundingBox.b + 0.5D);
-        boolean flag = this.H();
-        boolean flag1 = this.J();
+        boolean flag = this.M();
+        boolean flag1 = this.P();
 
         this.pitch = 0.0F;
         if (this.pathEntity != null && this.random.nextInt(100) != 0) {
@@ -147,7 +151,7 @@ public abstract class EntityCreature extends EntityInsentient {
                 this.a(this.target, 30.0F, 30.0F);
             }
 
-            if (this.positionChanged && !this.bM()) {
+            if (this.positionChanged && !this.bQ()) {
                 this.bd = true;
             }
 
@@ -157,12 +161,12 @@ public abstract class EntityCreature extends EntityInsentient {
 
             this.world.methodProfiler.b();
         } else {
-            super.bl();
+            super.bq();
             this.pathEntity = null;
         }
     }
 
-    protected void bK() {
+    protected void bO() {
         this.world.methodProfiler.a("stroll");
         boolean flag = false;
         int i = -1;
@@ -210,7 +214,7 @@ public abstract class EntityCreature extends EntityInsentient {
         return super.canSpawn() && this.a(i, j, k) >= 0.0F;
     }
 
-    public boolean bM() {
+    public boolean bQ() {
         return this.pathEntity != null;
     }
 
@@ -218,7 +222,7 @@ public abstract class EntityCreature extends EntityInsentient {
         this.pathEntity = pathentity;
     }
 
-    public Entity bN() {
+    public Entity bR() {
         return this.target;
     }
 
@@ -226,7 +230,7 @@ public abstract class EntityCreature extends EntityInsentient {
         this.target = entity;
     }
 
-    public boolean bO() {
+    public boolean bS() {
         return this.b(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ));
     }
 
@@ -234,33 +238,33 @@ public abstract class EntityCreature extends EntityInsentient {
         return this.br == -1.0F ? true : this.bq.e(i, j, k) < this.br * this.br;
     }
 
-    public void b(int i, int j, int k, int l) {
+    public void a(int i, int j, int k, int l) {
         this.bq.b(i, j, k);
         this.br = (float) l;
     }
 
-    public ChunkCoordinates bP() {
+    public ChunkCoordinates bT() {
         return this.bq;
     }
 
-    public float bQ() {
+    public float bU() {
         return this.br;
     }
 
-    public void bR() {
+    public void bV() {
         this.br = -1.0F;
     }
 
-    public boolean bS() {
+    public boolean bW() {
         return this.br != -1.0F;
     }
 
-    protected void bF() {
-        super.bF();
-        if (this.bH() && this.getLeashHolder() != null && this.getLeashHolder().world == this.world) {
+    protected void bJ() {
+        super.bJ();
+        if (this.bL() && this.getLeashHolder() != null && this.getLeashHolder().world == this.world) {
             Entity entity = this.getLeashHolder();
 
-            this.b((int) entity.locX, (int) entity.locY, (int) entity.locZ, 5);
+            this.a((int) entity.locX, (int) entity.locY, (int) entity.locZ, 5);
             float f = this.d(entity);
 
             if (this instanceof EntityTameableAnimal && ((EntityTameableAnimal) this).isSitting()) {
@@ -297,11 +301,11 @@ public abstract class EntityCreature extends EntityInsentient {
                 this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE)); // CraftBukkit
                 this.unleash(true, true);
             }
-        } else if (!this.bH() && this.bt) {
+        } else if (!this.bL() && this.bt) {
             this.bt = false;
             this.goalSelector.a(this.bs);
             this.getNavigation().a(true);
-            this.bR();
+            this.bV();
         }
     }
 

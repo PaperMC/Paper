@@ -13,12 +13,12 @@ public class DispenseBehaviorItem implements IDispenseBehavior {
         ItemStack itemstack1 = this.b(isourceblock, itemstack);
 
         this.a(isourceblock);
-        this.a(isourceblock, BlockDispenser.l_(isourceblock.h()));
+        this.a(isourceblock, BlockDispenser.b(isourceblock.h()));
         return itemstack1;
     }
 
     protected ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
-        EnumFacing enumfacing = BlockDispenser.l_(isourceblock.h());
+        EnumFacing enumfacing = BlockDispenser.b(isourceblock.h());
         IPosition iposition = BlockDispenser.a(isourceblock);
         ItemStack itemstack1 = itemstack.a(1);
 

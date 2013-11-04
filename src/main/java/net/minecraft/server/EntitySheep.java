@@ -21,42 +21,42 @@ public class EntitySheep extends EntityAnimal {
         this.goalSelector.a(0, new PathfinderGoalFloat(this));
         this.goalSelector.a(1, new PathfinderGoalPanic(this, 1.25D));
         this.goalSelector.a(2, new PathfinderGoalBreed(this, 1.0D));
-        this.goalSelector.a(3, new PathfinderGoalTempt(this, 1.1D, Item.WHEAT.id, false));
+        this.goalSelector.a(3, new PathfinderGoalTempt(this, 1.1D, Items.WHEAT, false));
         this.goalSelector.a(4, new PathfinderGoalFollowParent(this, 1.1D));
         this.goalSelector.a(5, this.bs);
         this.goalSelector.a(6, new PathfinderGoalRandomStroll(this, 1.0D));
         this.goalSelector.a(7, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F));
         this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
-        this.bq.setItem(0, new ItemStack(Item.INK_SACK, 1, 0));
-        this.bq.setItem(1, new ItemStack(Item.INK_SACK, 1, 0));
+        this.bq.setItem(0, new ItemStack(Items.INK_SACK, 1, 0));
+        this.bq.setItem(1, new ItemStack(Items.INK_SACK, 1, 0));
         this.bq.resultInventory = new InventoryCraftResult(); // CraftBukkit - add result slot for event
     }
 
-    protected boolean bf() {
+    protected boolean bk() {
         return true;
     }
 
-    protected void bi() {
+    protected void bn() {
         this.br = this.bs.f();
-        super.bi();
+        super.bn();
     }
 
-    public void c() {
+    public void e() {
         if (this.world.isStatic) {
             this.br = Math.max(0, this.br - 1);
         }
 
-        super.c();
+        super.e();
     }
 
-    protected void az() {
-        super.az();
+    protected void aD() {
+        super.aD();
         this.getAttributeInstance(GenericAttributes.a).setValue(8.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.23000000417232513D);
     }
 
-    protected void a() {
-        super.a();
+    protected void c() {
+        super.c();
         this.datawatcher.a(16, new Byte((byte) 0));
     }
 
@@ -72,14 +72,14 @@ public class EntitySheep extends EntityAnimal {
         // CraftBukkit end
     }
 
-    protected int getLootId() {
-        return Block.WOOL.id;
+    protected Item getLoot() {
+        return Item.getItemOf(Blocks.WOOL);
     }
 
     public boolean a(EntityHuman entityhuman) {
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
-        if (itemstack != null && itemstack.id == Item.SHEARS.id && !this.isSheared() && !this.isBaby()) {
+        if (itemstack != null && itemstack.getItem() == Items.SHEARS && !this.isSheared() && !this.isBaby()) {
             if (!this.world.isStatic) {
                 // CraftBukkit start
                 PlayerShearEntityEvent event = new PlayerShearEntityEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), this.getBukkitEntity());
@@ -94,7 +94,7 @@ public class EntitySheep extends EntityAnimal {
                 int i = 1 + this.random.nextInt(3);
 
                 for (int j = 0; j < i; ++j) {
-                    EntityItem entityitem = this.a(new ItemStack(Block.WOOL.id, 1, this.getColor()), 1.0F);
+                    EntityItem entityitem = this.a(new ItemStack(Item.getItemOf(Blocks.WOOL), 1, this.getColor()), 1.0F);
 
                     entityitem.motY += (double) (this.random.nextFloat() * 0.05F);
                     entityitem.motX += (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F);
@@ -121,19 +121,19 @@ public class EntitySheep extends EntityAnimal {
         this.setColor(nbttagcompound.getByte("Color"));
     }
 
-    protected String r() {
+    protected String t() {
         return "mob.sheep.say";
     }
 
-    protected String aO() {
+    protected String aT() {
         return "mob.sheep.say";
     }
 
-    protected String aP() {
+    protected String aU() {
         return "mob.sheep.say";
     }
 
-    protected void a(int i, int j, int k, int l) {
+    protected void a(int i, int j, int k, Block block) {
         this.makeSound("mob.sheep.step", 0.15F, 1.0F);
     }
 
@@ -176,7 +176,7 @@ public class EntitySheep extends EntityAnimal {
         return entitysheep1;
     }
 
-    public void n() {
+    public void p() {
         // CraftBukkit start
         SheepRegrowWoolEvent event = new SheepRegrowWoolEvent((org.bukkit.entity.Sheep) this.getBukkitEntity());
         this.world.getServer().getPluginManager().callEvent(event);
@@ -206,7 +206,7 @@ public class EntitySheep extends EntityAnimal {
         ItemStack itemstack = CraftingManager.getInstance().craft(this.bq, ((EntitySheep) entityanimal).world);
         int k;
 
-        if (itemstack != null && itemstack.getItem().id == Item.INK_SACK.id) {
+        if (itemstack != null && itemstack.getItem() == Items.INK_SACK) {
             k = itemstack.getData();
         } else {
             k = this.world.random.nextBoolean() ? i : j;

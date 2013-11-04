@@ -15,7 +15,7 @@ public abstract class EntityAgeable extends EntityCreature {
     public boolean a(EntityHuman entityhuman) {
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
-        if (itemstack != null && itemstack.id == Item.MONSTER_EGG.id) {
+        if (itemstack != null && itemstack.getItem() == Items.MONSTER_EGG) {
             if (!this.world.isStatic) {
                 Class oclass = EntityTypes.a(itemstack.getData());
 
@@ -46,8 +46,8 @@ public abstract class EntityAgeable extends EntityCreature {
         }
     }
 
-    protected void a() {
-        super.a();
+    protected void c() {
+        super.c();
         this.datawatcher.a(12, new Integer(0));
     }
 
@@ -83,8 +83,8 @@ public abstract class EntityAgeable extends EntityCreature {
         this.ageLocked = nbttagcompound.getBoolean("AgeLocked"); // CraftBukkit
     }
 
-    public void c() {
-        super.c();
+    public void e() {
+        super.e();
         if (this.world.isStatic || this.ageLocked) { // CraftBukkit
             this.a(this.isBaby());
         } else {

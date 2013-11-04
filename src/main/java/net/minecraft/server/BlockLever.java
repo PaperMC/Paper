@@ -4,12 +4,12 @@ import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 
 public class BlockLever extends Block {
 
-    protected BlockLever(int i) {
-        super(i, Material.ORIENTABLE);
+    protected BlockLever() {
+        super(Material.ORIENTABLE);
         this.a(CreativeModeTab.d);
     }
 
-    public AxisAlignedBB b(World world, int i, int j, int k) {
+    public AxisAlignedBB a(World world, int i, int j, int k) {
         return null;
     }
 
@@ -17,20 +17,20 @@ public class BlockLever extends Block {
         return false;
     }
 
-    public boolean b() {
+    public boolean d() {
         return false;
     }
 
-    public int d() {
+    public int b() {
         return 12;
     }
 
     public boolean canPlace(World world, int i, int j, int k, int l) {
-        return l == 0 && world.u(i, j + 1, k) ? true : (l == 1 && world.w(i, j - 1, k) ? true : (l == 2 && world.u(i, j, k + 1) ? true : (l == 3 && world.u(i, j, k - 1) ? true : (l == 4 && world.u(i + 1, j, k) ? true : l == 5 && world.u(i - 1, j, k)))));
+        return l == 0 && world.getType(i, j + 1, k).r() ? true : (l == 1 && World.a((IBlockAccess) world, i, j - 1, k) ? true : (l == 2 && world.getType(i, j, k + 1).r() ? true : (l == 3 && world.getType(i, j, k - 1).r() ? true : (l == 4 && world.getType(i + 1, j, k).r() ? true : l == 5 && world.getType(i - 1, j, k).r()))));
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return world.u(i - 1, j, k) ? true : (world.u(i + 1, j, k) ? true : (world.u(i, j, k - 1) ? true : (world.u(i, j, k + 1) ? true : (world.w(i, j - 1, k) ? true : world.u(i, j + 1, k)))));
+        return world.getType(i - 1, j, k).r() ? true : (world.getType(i + 1, j, k).r() ? true : (world.getType(i, j, k - 1).r() ? true : (world.getType(i, j, k + 1).r() ? true : (World.a((IBlockAccess) world, i, j - 1, k) ? true : world.getType(i, j + 1, k).r()))));
     }
 
     public int getPlacedData(World world, int i, int j, int k, int l, float f, float f1, float f2, int i1) {
@@ -38,27 +38,27 @@ public class BlockLever extends Block {
         int k1 = i1 & 7;
         byte b0 = -1;
 
-        if (l == 0 && world.u(i, j + 1, k)) {
+        if (l == 0 && world.getType(i, j + 1, k).r()) {
             b0 = 0;
         }
 
-        if (l == 1 && world.w(i, j - 1, k)) {
+        if (l == 1 && World.a((IBlockAccess) world, i, j - 1, k)) {
             b0 = 5;
         }
 
-        if (l == 2 && world.u(i, j, k + 1)) {
+        if (l == 2 && world.getType(i, j, k + 1).r()) {
             b0 = 4;
         }
 
-        if (l == 3 && world.u(i, j, k - 1)) {
+        if (l == 3 && world.getType(i, j, k - 1).r()) {
             b0 = 3;
         }
 
-        if (l == 4 && world.u(i + 1, j, k)) {
+        if (l == 4 && world.getType(i + 1, j, k).r()) {
             b0 = 2;
         }
 
-        if (l == 5 && world.u(i - 1, j, k)) {
+        if (l == 5 && world.getType(i - 1, j, k).r()) {
             b0 = 1;
         }
 
@@ -70,13 +70,13 @@ public class BlockLever extends Block {
         int i1 = l & 7;
         int j1 = l & 8;
 
-        if (i1 == d(1)) {
+        if (i1 == b(1)) {
             if ((MathHelper.floor((double) (entityliving.yaw * 4.0F / 360.0F) + 0.5D) & 1) == 0) {
                 world.setData(i, j, k, 5 | j1, 2);
             } else {
                 world.setData(i, j, k, 6 | j1, 2);
             }
-        } else if (i1 == d(0)) {
+        } else if (i1 == b(0)) {
             if ((MathHelper.floor((double) (entityliving.yaw * 4.0F / 360.0F) + 0.5D) & 1) == 0) {
                 world.setData(i, j, k, 7 | j1, 2);
             } else {
@@ -85,7 +85,7 @@ public class BlockLever extends Block {
         }
     }
 
-    public static int d(int i) {
+    public static int b(int i) {
         switch (i) {
         case 0:
             return 0;
@@ -110,53 +110,53 @@ public class BlockLever extends Block {
         }
     }
 
-    public void doPhysics(World world, int i, int j, int k, int l) {
-        if (this.k(world, i, j, k)) {
-            int i1 = world.getData(i, j, k) & 7;
+    public void doPhysics(World world, int i, int j, int k, Block block) {
+        if (this.e(world, i, j, k)) {
+            int l = world.getData(i, j, k) & 7;
             boolean flag = false;
 
-            if (!world.u(i - 1, j, k) && i1 == 1) {
+            if (!world.getType(i - 1, j, k).r() && l == 1) {
                 flag = true;
             }
 
-            if (!world.u(i + 1, j, k) && i1 == 2) {
+            if (!world.getType(i + 1, j, k).r() && l == 2) {
                 flag = true;
             }
 
-            if (!world.u(i, j, k - 1) && i1 == 3) {
+            if (!world.getType(i, j, k - 1).r() && l == 3) {
                 flag = true;
             }
 
-            if (!world.u(i, j, k + 1) && i1 == 4) {
+            if (!world.getType(i, j, k + 1).r() && l == 4) {
                 flag = true;
             }
 
-            if (!world.w(i, j - 1, k) && i1 == 5) {
+            if (!World.a((IBlockAccess) world, i, j - 1, k) && l == 5) {
                 flag = true;
             }
 
-            if (!world.w(i, j - 1, k) && i1 == 6) {
+            if (!World.a((IBlockAccess) world, i, j - 1, k) && l == 6) {
                 flag = true;
             }
 
-            if (!world.u(i, j + 1, k) && i1 == 0) {
+            if (!world.getType(i, j + 1, k).r() && l == 0) {
                 flag = true;
             }
 
-            if (!world.u(i, j + 1, k) && i1 == 7) {
+            if (!world.getType(i, j + 1, k).r() && l == 7) {
                 flag = true;
             }
 
             if (flag) {
-                this.c(world, i, j, k, world.getData(i, j, k), 0);
+                this.b(world, i, j, k, world.getData(i, j, k), 0);
                 world.setAir(i, j, k);
             }
         }
     }
 
-    private boolean k(World world, int i, int j, int k) {
+    private boolean e(World world, int i, int j, int k) {
         if (!this.canPlace(world, i, j, k)) {
-            this.c(world, i, j, k, world.getData(i, j, k), 0);
+            this.b(world, i, j, k, world.getData(i, j, k), 0);
             world.setAir(i, j, k);
             return false;
         } else {
@@ -210,50 +210,50 @@ public class BlockLever extends Block {
 
             world.setData(i, j, k, j1 + k1, 3);
             world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, k1 > 0 ? 0.6F : 0.5F);
-            world.applyPhysics(i, j, k, this.id);
+            world.applyPhysics(i, j, k, this);
             if (j1 == 1) {
-                world.applyPhysics(i - 1, j, k, this.id);
+                world.applyPhysics(i - 1, j, k, this);
             } else if (j1 == 2) {
-                world.applyPhysics(i + 1, j, k, this.id);
+                world.applyPhysics(i + 1, j, k, this);
             } else if (j1 == 3) {
-                world.applyPhysics(i, j, k - 1, this.id);
+                world.applyPhysics(i, j, k - 1, this);
             } else if (j1 == 4) {
-                world.applyPhysics(i, j, k + 1, this.id);
+                world.applyPhysics(i, j, k + 1, this);
             } else if (j1 != 5 && j1 != 6) {
                 if (j1 == 0 || j1 == 7) {
-                    world.applyPhysics(i, j + 1, k, this.id);
+                    world.applyPhysics(i, j + 1, k, this);
                 }
             } else {
-                world.applyPhysics(i, j - 1, k, this.id);
+                world.applyPhysics(i, j - 1, k, this);
             }
 
             return true;
         }
     }
 
-    public void remove(World world, int i, int j, int k, int l, int i1) {
-        if ((i1 & 8) > 0) {
-            world.applyPhysics(i, j, k, this.id);
-            int j1 = i1 & 7;
+    public void remove(World world, int i, int j, int k, Block block, int l) {
+        if ((l & 8) > 0) {
+            world.applyPhysics(i, j, k, this);
+            int i1 = l & 7;
 
-            if (j1 == 1) {
-                world.applyPhysics(i - 1, j, k, this.id);
-            } else if (j1 == 2) {
-                world.applyPhysics(i + 1, j, k, this.id);
-            } else if (j1 == 3) {
-                world.applyPhysics(i, j, k - 1, this.id);
-            } else if (j1 == 4) {
-                world.applyPhysics(i, j, k + 1, this.id);
-            } else if (j1 != 5 && j1 != 6) {
-                if (j1 == 0 || j1 == 7) {
-                    world.applyPhysics(i, j + 1, k, this.id);
+            if (i1 == 1) {
+                world.applyPhysics(i - 1, j, k, this);
+            } else if (i1 == 2) {
+                world.applyPhysics(i + 1, j, k, this);
+            } else if (i1 == 3) {
+                world.applyPhysics(i, j, k - 1, this);
+            } else if (i1 == 4) {
+                world.applyPhysics(i, j, k + 1, this);
+            } else if (i1 != 5 && i1 != 6) {
+                if (i1 == 0 || i1 == 7) {
+                    world.applyPhysics(i, j + 1, k, this);
                 }
             } else {
-                world.applyPhysics(i, j - 1, k, this.id);
+                world.applyPhysics(i, j - 1, k, this);
             }
         }
 
-        super.remove(world, i, j, k, l, i1);
+        super.remove(world, i, j, k, block, l);
     }
 
     public int b(IBlockAccess iblockaccess, int i, int j, int k, int l) {

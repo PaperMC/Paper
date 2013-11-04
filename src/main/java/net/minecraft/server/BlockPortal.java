@@ -2,175 +2,101 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-// CraftBukkit start
-import org.bukkit.event.entity.EntityPortalEnterEvent;
-import org.bukkit.event.world.PortalCreateEvent;
-// CraftBukkit end
+import org.bukkit.event.entity.EntityPortalEnterEvent; // CraftBukkit
 
-public class BlockPortal extends BlockHalfTransparant {
+public class BlockPortal extends BlockHalfTransparent {
 
-    public BlockPortal(int i) {
-        super(i, "portal", Material.PORTAL, false);
-        this.b(true);
+    public static final int[][] a = new int[][] { new int[0], { 3, 1}, { 2, 0}};
+
+    public BlockPortal() {
+        super("portal", Material.PORTAL, false);
+        this.a(true);
     }
 
     public void a(World world, int i, int j, int k, Random random) {
         super.a(world, i, j, k, random);
-        if (world.worldProvider.d() && random.nextInt(2000) < world.difficulty) {
+        if (world.worldProvider.d() && world.getGameRules().getBoolean("doMobSpawning") && random.nextInt(2000) < world.difficulty.a()) {
             int l;
 
-            for (l = j; !world.w(i, l, k) && l > 0; --l) {
+            for (l = j; !World.a((IBlockAccess) world, i, l, k) && l > 0; --l) {
                 ;
             }
 
-            if (l > 0 && !world.u(i, l + 1, k)) {
+            if (l > 0 && !world.getType(i, l + 1, k).r()) {
                 Entity entity = ItemMonsterEgg.a(world, 57, (double) i + 0.5D, (double) l + 1.1D, (double) k + 0.5D);
 
                 if (entity != null) {
-                    entity.portalCooldown = entity.ac();
+                    entity.portalCooldown = entity.ai();
                 }
             }
         }
     }
 
-    public AxisAlignedBB b(World world, int i, int j, int k) {
+    public AxisAlignedBB a(World world, int i, int j, int k) {
         return null;
     }
 
     public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
-        float f;
-        float f1;
+        int l = b(iblockaccess.getData(i, j, k));
 
-        if (iblockaccess.getTypeId(i - 1, j, k) != this.id && iblockaccess.getTypeId(i + 1, j, k) != this.id) {
-            f = 0.125F;
-            f1 = 0.5F;
-            this.a(0.5F - f, 0.0F, 0.5F - f1, 0.5F + f, 1.0F, 0.5F + f1);
-        } else {
-            f = 0.5F;
-            f1 = 0.125F;
-            this.a(0.5F - f, 0.0F, 0.5F - f1, 0.5F + f, 1.0F, 0.5F + f1);
-        }
-    }
-
-    public boolean c() {
-        return false;
-    }
-
-    public boolean b() {
-        return false;
-    }
-
-    public boolean o_(World world, int i, int j, int k) {
-        byte b0 = 0;
-        byte b1 = 0;
-
-        if (world.getTypeId(i - 1, j, k) == Block.OBSIDIAN.id || world.getTypeId(i + 1, j, k) == Block.OBSIDIAN.id) {
-            b0 = 1;
-        }
-
-        if (world.getTypeId(i, j, k - 1) == Block.OBSIDIAN.id || world.getTypeId(i, j, k + 1) == Block.OBSIDIAN.id) {
-            b1 = 1;
-        }
-
-        if (b0 == b1) {
-            return false;
-        } else {
-            // CraftBukkit start
-            java.util.Collection<org.bukkit.block.Block> blocks = new java.util.HashSet<org.bukkit.block.Block>();
-            org.bukkit.World bworld = world.getWorld();
-            // CraftBukkit end
-
-            if (world.getTypeId(i - b0, j, k - b1) == 0) {
-                i -= b0;
-                k -= b1;
-            }
-
-            int l;
-            int i1;
-
-            for (l = -1; l <= 2; ++l) {
-                for (i1 = -1; i1 <= 3; ++i1) {
-                    boolean flag = l == -1 || l == 2 || i1 == -1 || i1 == 3;
-
-                    if (l != -1 && l != 2 || i1 != -1 && i1 != 3) {
-                        int j1 = world.getTypeId(i + b0 * l, j + i1, k + b1 * l);
-
-                        if (flag) {
-                            if (j1 != Block.OBSIDIAN.id) {
-                                return false;
-                            } else { // CraftBukkit
-                                blocks.add(bworld.getBlockAt(i + b0 * l, j + i1, k + b1 * l)); // CraftBukkit
-                            }
-                        } else if (j1 != 0 && j1 != Block.FIRE.id) {
-                            return false;
-                        }
-                    }
-                }
-            }
-
-            // CraftBukkit start
-            for (l = 0; l < 2; ++l) {
-                for (i1 = 0; i1 < 3; ++i1) {
-                    blocks.add(bworld.getBlockAt(i + b0 * l, j + i1, k + b1 * l));
-                }
-            }
-
-            PortalCreateEvent event = new PortalCreateEvent(blocks, bworld, PortalCreateEvent.CreateReason.FIRE);
-            world.getServer().getPluginManager().callEvent(event);
-
-            if (event.isCancelled()) {
-                return false;
-            }
-            // CraftBukkit end
-
-            for (l = 0; l < 2; ++l) {
-                for (i1 = 0; i1 < 3; ++i1) {
-                    world.setTypeIdAndData(i + b0 * l, j + i1, k + b1 * l, Block.PORTAL.id, 0, 2);
-                }
-            }
-
-            return true;
-        }
-    }
-
-    public void doPhysics(World world, int i, int j, int k, int l) {
-        byte b0 = 0;
-        byte b1 = 1;
-
-        if (world.getTypeId(i - 1, j, k) == this.id || world.getTypeId(i + 1, j, k) == this.id) {
-            b0 = 1;
-            b1 = 0;
-        }
-
-        int i1;
-
-        for (i1 = j; world.getTypeId(i, i1 - 1, k) == this.id; --i1) {
-            ;
-        }
-
-        if (world.getTypeId(i, i1 - 1, k) != Block.OBSIDIAN.id) {
-            world.setAir(i, j, k);
-        } else {
-            int j1;
-
-            for (j1 = 1; j1 < 4 && world.getTypeId(i, i1 + j1, k) == this.id; ++j1) {
-                ;
-            }
-
-            if (j1 == 3 && world.getTypeId(i, i1 + j1, k) == Block.OBSIDIAN.id) {
-                boolean flag = world.getTypeId(i - 1, j, k) == this.id || world.getTypeId(i + 1, j, k) == this.id;
-                boolean flag1 = world.getTypeId(i, j, k - 1) == this.id || world.getTypeId(i, j, k + 1) == this.id;
-
-                if (flag && flag1) {
-                    world.setAir(i, j, k);
-                } else {
-                    if ((world.getTypeId(i + b0, j, k + b1) != Block.OBSIDIAN.id || world.getTypeId(i - b0, j, k - b1) != this.id) && (world.getTypeId(i - b0, j, k - b1) != Block.OBSIDIAN.id || world.getTypeId(i + b0, j, k + b1) != this.id)) {
-                        world.setAir(i, j, k);
-                    }
-                }
+        if (l == 0) {
+            if (iblockaccess.getType(i - 1, j, k) != this && iblockaccess.getType(i + 1, j, k) != this) {
+                l = 2;
             } else {
-                world.setAir(i, j, k);
+                l = 1;
             }
+
+            if (iblockaccess instanceof World && !((World) iblockaccess).isStatic) {
+                ((World) iblockaccess).setData(i, j, k, l, 2);
+            }
+        }
+
+        float f = 0.125F;
+        float f1 = 0.125F;
+
+        if (l == 1) {
+            f = 0.5F;
+        }
+
+        if (l == 2) {
+            f1 = 0.5F;
+        }
+
+        this.a(0.5F - f, 0.0F, 0.5F - f1, 0.5F + f, 1.0F, 0.5F + f1);
+    }
+
+    public boolean d() {
+        return false;
+    }
+
+    public boolean e(World world, int i, int j, int k) {
+        PortalCreator portalcreator = new PortalCreator(world, i, j, k, 1);
+        PortalCreator portalcreator1 = new PortalCreator(world, i, j, k, 2);
+
+        if (portalcreator.b() && PortalCreator.a(portalcreator) == 0) {
+            // CraftBukkit start - return portalcreator
+            return portalcreator.c();
+            // return true;
+        } else if (portalcreator1.b() && PortalCreator.a(portalcreator1) == 0) {
+            return portalcreator1.c();
+            // return true;
+            // CraftBukkit end
+        } else {
+            return false;
+        }
+    }
+
+    public void doPhysics(World world, int i, int j, int k, Block block) {
+        int l = b(world.getData(i, j, k));
+        PortalCreator portalcreator = new PortalCreator(world, i, j, k, 1);
+        PortalCreator portalcreator1 = new PortalCreator(world, i, j, k, 2);
+
+        if (l == 1 && (!portalcreator.b() || PortalCreator.a(portalcreator) < PortalCreator.b(portalcreator) * PortalCreator.c(portalcreator))) {
+            world.setTypeUpdate(i, j, k, Blocks.AIR);
+        } else if (l == 2 && (!portalcreator1.b() || PortalCreator.a(portalcreator1) < PortalCreator.b(portalcreator1) * PortalCreator.c(portalcreator1))) {
+            world.setTypeUpdate(i, j, k, Blocks.AIR);
+        } else if (l == 0 && !portalcreator.b() && !portalcreator1.b()) {
+            world.setTypeUpdate(i, j, k, Blocks.AIR);
         }
     }
 
@@ -185,7 +111,11 @@ public class BlockPortal extends BlockHalfTransparant {
             world.getServer().getPluginManager().callEvent(event);
             // CraftBukkit end
 
-            entity.ab();
+            entity.ah();
         }
+    }
+
+    public static int b(int i) {
+        return i & 3;
     }
 }

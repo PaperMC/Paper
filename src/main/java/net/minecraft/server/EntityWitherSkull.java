@@ -14,8 +14,8 @@ public class EntityWitherSkull extends EntityFireball {
         this.a(0.3125F, 0.3125F);
     }
 
-    protected float c() {
-        return this.d() ? 0.73F : super.c();
+    protected float e() {
+        return this.f() ? 0.73F : super.e();
     }
 
     public boolean isBurning() {
@@ -25,7 +25,7 @@ public class EntityWitherSkull extends EntityFireball {
     public float a(Explosion explosion, World world, int i, int j, int k, Block block) {
         float f = super.a(explosion, world, i, j, k, block);
 
-        if (this.d() && block != Block.BEDROCK && block != Block.ENDER_PORTAL && block != Block.ENDER_PORTAL_FRAME) {
+        if (this.f() && block != Blocks.BEDROCK && block != Blocks.ENDER_PORTAL && block != Blocks.ENDER_PORTAL_FRAME && block != Blocks.COMMAND) {
             f = Math.min(0.8F, f);
         }
 
@@ -46,12 +46,10 @@ public class EntityWitherSkull extends EntityFireball {
                 if (movingobjectposition.entity instanceof EntityLiving) {
                     byte b0 = 0;
 
-                    if (this.world.difficulty > 1) {
-                        if (this.world.difficulty == 2) {
-                            b0 = 10;
-                        } else if (this.world.difficulty == 3) {
-                            b0 = 40;
-                        }
+                    if (this.world.difficulty == EnumDifficulty.NORMAL) {
+                        b0 = 10;
+                    } else if (this.world.difficulty == EnumDifficulty.HARD) {
+                        b0 = 40;
                     }
 
                     if (b0 > 0) {
@@ -73,7 +71,7 @@ public class EntityWitherSkull extends EntityFireball {
         }
     }
 
-    public boolean L() {
+    public boolean R() {
         return false;
     }
 
@@ -81,11 +79,11 @@ public class EntityWitherSkull extends EntityFireball {
         return false;
     }
 
-    protected void a() {
+    protected void c() {
         this.datawatcher.a(10, Byte.valueOf((byte) 0));
     }
 
-    public boolean d() {
+    public boolean f() {
         return this.datawatcher.getByte(10) == 1;
     }
 

@@ -8,7 +8,7 @@ public class RecipeFireworks extends ShapelessRecipes implements IRecipe { // Cr
 
     // CraftBukkit start - Delegate to new parent class with bogus info
     public RecipeFireworks() {
-        super(new ItemStack(Item.FIREWORKS, 0, 0), java.util.Arrays.asList(new ItemStack(Item.SULPHUR, 0, 5)));
+        super(new ItemStack(Items.FIREWORKS, 0, 0), java.util.Arrays.asList(new ItemStack(Items.SULPHUR, 0, 5)));
     }
     // CraftBukkit end
 
@@ -25,26 +25,26 @@ public class RecipeFireworks extends ShapelessRecipes implements IRecipe { // Cr
             ItemStack itemstack = inventorycrafting.getItem(k1);
 
             if (itemstack != null) {
-                if (itemstack.id == Item.SULPHUR.id) {
+                if (itemstack.getItem() == Items.SULPHUR) {
                     ++j;
-                } else if (itemstack.id == Item.FIREWORKS_CHARGE.id) {
+                } else if (itemstack.getItem() == Items.FIREWORKS_CHARGE) {
                     ++l;
-                } else if (itemstack.id == Item.INK_SACK.id) {
+                } else if (itemstack.getItem() == Items.INK_SACK) {
                     ++k;
-                } else if (itemstack.id == Item.PAPER.id) {
+                } else if (itemstack.getItem() == Items.PAPER) {
                     ++i;
-                } else if (itemstack.id == Item.GLOWSTONE_DUST.id) {
+                } else if (itemstack.getItem() == Items.GLOWSTONE_DUST) {
                     ++i1;
-                } else if (itemstack.id == Item.DIAMOND.id) {
+                } else if (itemstack.getItem() == Items.DIAMOND) {
                     ++i1;
-                } else if (itemstack.id == Item.FIREBALL.id) {
+                } else if (itemstack.getItem() == Items.FIREBALL) {
                     ++j1;
-                } else if (itemstack.id == Item.FEATHER.id) {
+                } else if (itemstack.getItem() == Items.FEATHER) {
                     ++j1;
-                } else if (itemstack.id == Item.GOLD_NUGGET.id) {
+                } else if (itemstack.getItem() == Items.GOLD_NUGGET) {
                     ++j1;
                 } else {
-                    if (itemstack.id != Item.SKULL.id) {
+                    if (itemstack.getItem() != Items.SKULL) {
                         return false;
                     }
 
@@ -59,16 +59,16 @@ public class RecipeFireworks extends ShapelessRecipes implements IRecipe { // Cr
             NBTTagCompound nbttagcompound1;
 
             if (j >= 1 && i == 1 && i1 == 0) {
-                this.a = new ItemStack(Item.FIREWORKS);
+                this.a = new ItemStack(Items.FIREWORKS);
                 if (l > 0) {
                     nbttagcompound = new NBTTagCompound();
-                    nbttagcompound1 = new NBTTagCompound("Fireworks");
-                    NBTTagList nbttaglist = new NBTTagList("Explosions");
+                    nbttagcompound1 = new NBTTagCompound();
+                    NBTTagList nbttaglist = new NBTTagList();
 
                     for (int l1 = 0; l1 < inventorycrafting.getSize(); ++l1) {
                         ItemStack itemstack1 = inventorycrafting.getItem(l1);
 
-                        if (itemstack1 != null && itemstack1.id == Item.FIREWORKS_CHARGE.id && itemstack1.hasTag() && itemstack1.getTag().hasKey("Explosion")) {
+                        if (itemstack1 != null && itemstack1.getItem() == Items.FIREWORKS_CHARGE && itemstack1.hasTag() && itemstack1.getTag().hasKeyOfType("Explosion", 10)) {
                             nbttaglist.add(itemstack1.getTag().getCompound("Explosion"));
                         }
                     }
@@ -81,9 +81,9 @@ public class RecipeFireworks extends ShapelessRecipes implements IRecipe { // Cr
 
                 return true;
             } else if (j == 1 && i == 0 && l == 0 && k > 0 && j1 <= 1) {
-                this.a = new ItemStack(Item.FIREWORKS_CHARGE);
+                this.a = new ItemStack(Items.FIREWORKS_CHARGE);
                 nbttagcompound = new NBTTagCompound();
-                nbttagcompound1 = new NBTTagCompound("Explosion");
+                nbttagcompound1 = new NBTTagCompound();
                 byte b0 = 0;
                 ArrayList arraylist = new ArrayList();
 
@@ -91,19 +91,19 @@ public class RecipeFireworks extends ShapelessRecipes implements IRecipe { // Cr
                     ItemStack itemstack2 = inventorycrafting.getItem(i2);
 
                     if (itemstack2 != null) {
-                        if (itemstack2.id == Item.INK_SACK.id) {
+                        if (itemstack2.getItem() == Items.INK_SACK) {
                             arraylist.add(Integer.valueOf(ItemDye.c[itemstack2.getData()]));
-                        } else if (itemstack2.id == Item.GLOWSTONE_DUST.id) {
+                        } else if (itemstack2.getItem() == Items.GLOWSTONE_DUST) {
                             nbttagcompound1.setBoolean("Flicker", true);
-                        } else if (itemstack2.id == Item.DIAMOND.id) {
+                        } else if (itemstack2.getItem() == Items.DIAMOND) {
                             nbttagcompound1.setBoolean("Trail", true);
-                        } else if (itemstack2.id == Item.FIREBALL.id) {
+                        } else if (itemstack2.getItem() == Items.FIREBALL) {
                             b0 = 1;
-                        } else if (itemstack2.id == Item.FEATHER.id) {
+                        } else if (itemstack2.getItem() == Items.FEATHER) {
                             b0 = 4;
-                        } else if (itemstack2.id == Item.GOLD_NUGGET.id) {
+                        } else if (itemstack2.getItem() == Items.GOLD_NUGGET) {
                             b0 = 2;
-                        } else if (itemstack2.id == Item.SKULL.id) {
+                        } else if (itemstack2.getItem() == Items.SKULL) {
                             b0 = 3;
                         }
                     }
@@ -127,9 +127,9 @@ public class RecipeFireworks extends ShapelessRecipes implements IRecipe { // Cr
                     ItemStack itemstack3 = inventorycrafting.getItem(k2);
 
                     if (itemstack3 != null) {
-                        if (itemstack3.id == Item.INK_SACK.id) {
+                        if (itemstack3.getItem() == Items.INK_SACK) {
                             arraylist1.add(Integer.valueOf(ItemDye.c[itemstack3.getData()]));
-                        } else if (itemstack3.id == Item.FIREWORKS_CHARGE.id) {
+                        } else if (itemstack3.getItem() == Items.FIREWORKS_CHARGE) {
                             this.a = itemstack3.cloneItemStack();
                             this.a.count = 1;
                         }

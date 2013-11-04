@@ -10,16 +10,16 @@ public class BlockPumpkin extends BlockDirectional {
 
     private boolean a;
 
-    protected BlockPumpkin(int i, boolean flag) {
-        super(i, Material.PUMPKIN);
-        this.b(true);
+    protected BlockPumpkin(boolean flag) {
+        super(Material.PUMPKIN);
+        this.a(true);
         this.a = flag;
         this.a(CreativeModeTab.b);
     }
 
     public void onPlace(World world, int i, int j, int k) {
         super.onPlace(world, i, j, k);
-        if (world.getTypeId(i, j - 1, k) == Block.SNOW_BLOCK.id && world.getTypeId(i, j - 2, k) == Block.SNOW_BLOCK.id) {
+        if (world.getType(i, j - 1, k) == Blocks.SNOW_BLOCK && world.getType(i, j - 2, k) == Blocks.SNOW_BLOCK) {
             if (!world.isStatic) {
                 // CraftBukkit start - Use BlockStateListPopulator
                 BlockStateListPopulator blockList = new BlockStateListPopulator(world.getWorld());
@@ -27,22 +27,20 @@ public class BlockPumpkin extends BlockDirectional {
                 blockList.setTypeId(i, j, k, 0);
                 blockList.setTypeId(i, j - 1, k, 0);
                 blockList.setTypeId(i, j - 2, k, 0);
-
                 EntitySnowman entitysnowman = new EntitySnowman(world);
 
                 entitysnowman.setPositionRotation((double) i + 0.5D, (double) j - 1.95D, (double) k + 0.5D, 0.0F, 0.0F);
                 if (world.addEntity(entitysnowman, SpawnReason.BUILD_SNOWMAN)) {
                     blockList.updateList();
                 }
-                // CraftBukkit end
             }
 
             for (int l = 0; l < 120; ++l) {
                 world.addParticle("snowshovel", (double) i + world.random.nextDouble(), (double) (j - 2) + world.random.nextDouble() * 2.5D, (double) k + world.random.nextDouble(), 0.0D, 0.0D, 0.0D);
             }
-        } else if (world.getTypeId(i, j - 1, k) == Block.IRON_BLOCK.id && world.getTypeId(i, j - 2, k) == Block.IRON_BLOCK.id) {
-            boolean flag = world.getTypeId(i - 1, j - 1, k) == Block.IRON_BLOCK.id && world.getTypeId(i + 1, j - 1, k) == Block.IRON_BLOCK.id;
-            boolean flag1 = world.getTypeId(i, j - 1, k - 1) == Block.IRON_BLOCK.id && world.getTypeId(i, j - 1, k + 1) == Block.IRON_BLOCK.id;
+        } else if (world.getType(i, j - 1, k) == Blocks.IRON_BLOCK && world.getType(i, j - 2, k) == Blocks.IRON_BLOCK) {
+            boolean flag = world.getType(i - 1, j - 1, k) == Blocks.IRON_BLOCK && world.getType(i + 1, j - 1, k) == Blocks.IRON_BLOCK;
+            boolean flag1 = world.getType(i, j - 1, k - 1) == Blocks.IRON_BLOCK && world.getType(i, j - 1, k + 1) == Blocks.IRON_BLOCK;
 
             if (flag || flag1) {
                 // CraftBukkit start - Use BlockStateListPopulator
@@ -51,7 +49,6 @@ public class BlockPumpkin extends BlockDirectional {
                 blockList.setTypeId(i, j, k, 0);
                 blockList.setTypeId(i, j - 1, k, 0);
                 blockList.setTypeId(i, j - 2, k, 0);
-
                 if (flag) {
                     blockList.setTypeId(i - 1, j - 1, k, 0);
                     blockList.setTypeId(i + 1, j - 1, k, 0);
@@ -77,9 +74,7 @@ public class BlockPumpkin extends BlockDirectional {
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        int l = world.getTypeId(i, j, k);
-
-        return (l == 0 || Block.byId[l].material.isReplaceable()) && world.w(i, j - 1, k);
+        return world.getType(i, j, k).material.isReplaceable() && World.a((IBlockAccess) world, i, j - 1, k);
     }
 
     public void postPlace(World world, int i, int j, int k, EntityLiving entityliving, ItemStack itemstack) {
@@ -89,12 +84,12 @@ public class BlockPumpkin extends BlockDirectional {
     }
 
     // CraftBukkit start
-    public void doPhysics(World world, int i, int j, int k, int l) {
-        if (net.minecraft.server.Block.byId[l] != null && net.minecraft.server.Block.byId[l].isPowerSource()) {
-            org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
-            int power = block.getBlockPower();
+    public void doPhysics(World world, int i, int j, int k, Block block) {
+        if (block != null && block.isPowerSource()) {
+            org.bukkit.block.Block bukkitBlock = world.getWorld().getBlockAt(i, j, k);
+            int power = bukkitBlock.getBlockPower();
 
-            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, power, power);
+            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bukkitBlock, power, power);
             world.getServer().getPluginManager().callEvent(eventRedstone);
         }
     }

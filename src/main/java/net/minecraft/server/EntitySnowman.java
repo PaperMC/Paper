@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.event.block.EntityBlockFormEvent;
 // CraftBukkit end
 
@@ -18,38 +19,38 @@ public class EntitySnowman extends EntityGolem implements IRangedEntity {
         this.targetSelector.a(1, new PathfinderGoalNearestAttackableTarget(this, EntityInsentient.class, 0, true, false, IMonster.a));
     }
 
-    public boolean bf() {
+    public boolean bk() {
         return true;
     }
 
-    protected void az() {
-        super.az();
+    protected void aD() {
+        super.aD();
         this.getAttributeInstance(GenericAttributes.a).setValue(4.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.20000000298023224D);
     }
 
-    public void c() {
-        super.c();
-        if (this.G()) {
+    public void e() {
+        super.e();
+        int i = MathHelper.floor(this.locX);
+        int j = MathHelper.floor(this.locY);
+        int k = MathHelper.floor(this.locZ);
+
+        if (this.L()) {
             this.damageEntity(DamageSource.DROWN, 1.0F);
         }
 
-        int i = MathHelper.floor(this.locX);
-        int j = MathHelper.floor(this.locZ);
-
-        if (this.world.getBiome(i, j).j() > 1.0F) {
+        if (this.world.getBiome(i, k).a(i, j, k) > 1.0F) {
             this.damageEntity(CraftEventFactory.MELTING, 1.0F); // CraftBukkit - DamageSource.BURN -> CraftEventFactory.MELTING
         }
 
-        for (i = 0; i < 4; ++i) {
-            j = MathHelper.floor(this.locX + (double) ((float) (i % 2 * 2 - 1) * 0.25F));
-            int k = MathHelper.floor(this.locY);
-            int l = MathHelper.floor(this.locZ + (double) ((float) (i / 2 % 2 * 2 - 1) * 0.25F));
-
-            if (this.world.getTypeId(j, k, l) == 0 && this.world.getBiome(j, l).j() < 0.8F && Block.SNOW.canPlace(this.world, j, k, l)) {
+        for (int l = 0; l < 4; ++l) {
+            i = MathHelper.floor(this.locX + (double) ((float) (l % 2 * 2 - 1) * 0.25F));
+            j = MathHelper.floor(this.locY);
+            k = MathHelper.floor(this.locZ + (double) ((float) (l / 2 % 2 * 2 - 1) * 0.25F));
+            if (this.world.getType(i, j, k).getMaterial() == Material.AIR && this.world.getBiome(i, k).a(i, j, k) < 0.8F && Blocks.SNOW.canPlace(this.world, i, j, k)) {
                 // CraftBukkit start
                 org.bukkit.block.BlockState blockState = this.world.getWorld().getBlockAt(j, k, l).getState();
-                blockState.setTypeId(Block.SNOW.id);
+                blockState.setType(CraftMagicNumbers.getMaterial(Blocks.SNOW));
 
                 EntityBlockFormEvent event = new EntityBlockFormEvent(this.getBukkitEntity(), blockState.getBlock(), blockState);
                 this.world.getServer().getPluginManager().callEvent(event);
@@ -62,8 +63,8 @@ public class EntitySnowman extends EntityGolem implements IRangedEntity {
         }
     }
 
-    protected int getLootId() {
-        return Item.SNOW_BALL.id;
+    protected Item getLoot() {
+        return Items.SNOW_BALL;
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
@@ -72,7 +73,7 @@ public class EntitySnowman extends EntityGolem implements IRangedEntity {
         int j = this.random.nextInt(16);
 
         if (j > 0) {
-            loot.add(new org.bukkit.inventory.ItemStack(Item.SNOW_BALL.id, j));
+            loot.add(new org.bukkit.inventory.ItemStack(CraftMagicNumbers.getMaterial(Items.SNOW_BALL), j));
         }
 
         CraftEventFactory.callEntityDeathEvent(this, loot);
@@ -87,7 +88,7 @@ public class EntitySnowman extends EntityGolem implements IRangedEntity {
         float f1 = MathHelper.sqrt(d0 * d0 + d2 * d2) * 0.2F;
 
         entitysnowball.shoot(d0, d1 + (double) f1, d2, 1.6F, 12.0F);
-        this.makeSound("random.bow", 1.0F, 1.0F / (this.aD().nextFloat() * 0.4F + 0.8F));
+        this.makeSound("random.bow", 1.0F, 1.0F / (this.aI().nextFloat() * 0.4F + 0.8F));
         this.world.addEntity(entitysnowball);
     }
 }

@@ -2,22 +2,21 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-public class BlockCrops extends BlockFlower {
+public class BlockCrops extends BlockPlant implements IBlockFragilePlantElement {
 
-    protected BlockCrops(int i) {
-        super(i);
-        this.b(true);
+    protected BlockCrops() {
+        this.a(true);
         float f = 0.5F;
 
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.25F, 0.5F + f);
         this.a((CreativeModeTab) null);
         this.c(0.0F);
-        this.a(j);
-        this.C();
+        this.a(h);
+        this.H();
     }
 
-    protected boolean g_(int i) {
-        return i == Block.SOIL.id;
+    protected boolean a(Block block) {
+        return block == Blocks.SOIL;
     }
 
     public void a(World world, int i, int j, int k, Random random) {
@@ -26,16 +25,17 @@ public class BlockCrops extends BlockFlower {
             int l = world.getData(i, j, k);
 
             if (l < 7) {
-                float f = this.k(world, i, j, k);
+                float f = this.n(world, i, j, k);
 
                 if (random.nextInt((int) (25.0F / f) + 1) == 0) {
-                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this.id, ++l); // CraftBukkit
+                    ++l;
+                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this, l); // CraftBukkit
                 }
             }
         }
     }
 
-    public void e_(World world, int i, int j, int k) {
+    public void m(World world, int i, int j, int k) {
         int l = world.getData(i, j, k) + MathHelper.nextInt(world.random, 2, 5);
 
         if (l > 7) {
@@ -45,33 +45,32 @@ public class BlockCrops extends BlockFlower {
         world.setData(i, j, k, l, 2);
     }
 
-    private float k(World world, int i, int j, int k) {
+    private float n(World world, int i, int j, int k) {
         float f = 1.0F;
-        int l = world.getTypeId(i, j, k - 1);
-        int i1 = world.getTypeId(i, j, k + 1);
-        int j1 = world.getTypeId(i - 1, j, k);
-        int k1 = world.getTypeId(i + 1, j, k);
-        int l1 = world.getTypeId(i - 1, j, k - 1);
-        int i2 = world.getTypeId(i + 1, j, k - 1);
-        int j2 = world.getTypeId(i + 1, j, k + 1);
-        int k2 = world.getTypeId(i - 1, j, k + 1);
-        boolean flag = j1 == this.id || k1 == this.id;
-        boolean flag1 = l == this.id || i1 == this.id;
-        boolean flag2 = l1 == this.id || i2 == this.id || j2 == this.id || k2 == this.id;
+        Block block = world.getType(i, j, k - 1);
+        Block block1 = world.getType(i, j, k + 1);
+        Block block2 = world.getType(i - 1, j, k);
+        Block block3 = world.getType(i + 1, j, k);
+        Block block4 = world.getType(i - 1, j, k - 1);
+        Block block5 = world.getType(i + 1, j, k - 1);
+        Block block6 = world.getType(i + 1, j, k + 1);
+        Block block7 = world.getType(i - 1, j, k + 1);
+        boolean flag = block2 == this || block3 == this;
+        boolean flag1 = block == this || block1 == this;
+        boolean flag2 = block4 == this || block5 == this || block6 == this || block7 == this;
 
-        for (int l2 = i - 1; l2 <= i + 1; ++l2) {
-            for (int i3 = k - 1; i3 <= k + 1; ++i3) {
-                int j3 = world.getTypeId(l2, j - 1, i3);
+        for (int l = i - 1; l <= i + 1; ++l) {
+            for (int i1 = k - 1; i1 <= k + 1; ++i1) {
                 float f1 = 0.0F;
 
-                if (j3 == Block.SOIL.id) {
+                if (world.getType(l, j - 1, i1) == Blocks.SOIL) {
                     f1 = 1.0F;
-                    if (world.getData(l2, j - 1, i3) > 0) {
+                    if (world.getData(l, j - 1, i1) > 0) {
                         f1 = 3.0F;
                     }
                 }
 
-                if (l2 != i || i3 != k) {
+                if (l != i || i1 != k) {
                     f1 /= 4.0F;
                 }
 
@@ -86,16 +85,16 @@ public class BlockCrops extends BlockFlower {
         return f;
     }
 
-    public int d() {
+    public int b() {
         return 6;
     }
 
-    protected int j() {
-        return Item.SEEDS.id;
+    protected Item i() {
+        return Items.SEEDS;
     }
 
-    protected int k() {
-        return Item.WHEAT.id;
+    protected Item P() {
+        return Items.WHEAT;
     }
 
     public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
@@ -106,18 +105,30 @@ public class BlockCrops extends BlockFlower {
 
                 for (int k1 = 0; k1 < j1; ++k1) {
                     if (world.random.nextInt(15) <= l) {
-                        this.b(world, i, j, k, new ItemStack(this.j(), 1, 0));
+                        this.a(world, i, j, k, new ItemStack(this.i(), 1, 0));
                     }
                 }
             }
         }
     }
 
-    public int getDropType(int i, Random random, int j) {
-        return i == 7 ? this.k() : this.j();
+    public Item getDropType(int i, Random random, int j) {
+        return i == 7 ? this.P() : this.i();
     }
 
     public int a(Random random) {
         return 1;
+    }
+
+    public boolean a(World world, int i, int j, int k, boolean flag) {
+        return world.getData(i, j, k) != 7;
+    }
+
+    public boolean a(World world, Random random, int i, int j, int k) {
+        return true;
+    }
+
+    public void b(World world, Random random, int i, int j, int k) {
+        this.m(world, i, j, k);
     }
 }

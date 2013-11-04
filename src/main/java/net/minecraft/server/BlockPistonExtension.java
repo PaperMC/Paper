@@ -5,18 +5,18 @@ import java.util.Random;
 
 public class BlockPistonExtension extends Block {
 
-    public BlockPistonExtension(int i) {
-        super(i, Material.PISTON);
-        this.a(k);
+    public BlockPistonExtension() {
+        super(Material.PISTON);
+        this.a(i);
         this.c(0.5F);
     }
 
     public void a(World world, int i, int j, int k, int l, EntityHuman entityhuman) {
         if (entityhuman.abilities.canInstantlyBuild) {
-            int i1 = d(l);
-            int j1 = world.getTypeId(i - Facing.b[i1], j - Facing.c[i1], k - Facing.d[i1]);
+            int i1 = b(l);
+            Block block = world.getType(i - Facing.b[i1], j - Facing.c[i1], k - Facing.d[i1]);
 
-            if (j1 == Block.PISTON.id || j1 == Block.PISTON_STICKY.id) {
+            if (block == Blocks.PISTON || block == Blocks.PISTON_STICKY) {
                 world.setAir(i - Facing.b[i1], j - Facing.c[i1], k - Facing.d[i1]);
             }
         }
@@ -24,26 +24,26 @@ public class BlockPistonExtension extends Block {
         super.a(world, i, j, k, l, entityhuman);
     }
 
-    public void remove(World world, int i, int j, int k, int l, int i1) {
-        super.remove(world, i, j, k, l, i1);
-        if ((i1 & 7) >= Facing.OPPOSITE_FACING.length) return; // CraftBukkit - fix a piston AIOOBE issue
-        int j1 = Facing.OPPOSITE_FACING[d(i1)];
+    public void remove(World world, int i, int j, int k, Block block, int l) {
+        super.remove(world, i, j, k, block, l);
+        if ((l & 7) >= Facing.OPPOSITE_FACING.length) return; // CraftBukkit - fix a piston AIOOBE issue
+        int i1 = Facing.OPPOSITE_FACING[b(l)];
 
-        i += Facing.b[j1];
-        j += Facing.c[j1];
-        k += Facing.d[j1];
-        int k1 = world.getTypeId(i, j, k);
+        i += Facing.b[i1];
+        j += Facing.c[i1];
+        k += Facing.d[i1];
+        Block block1 = world.getType(i, j, k);
 
-        if (k1 == Block.PISTON.id || k1 == Block.PISTON_STICKY.id) {
-            i1 = world.getData(i, j, k);
-            if (BlockPiston.e(i1)) {
-                Block.byId[k1].c(world, i, j, k, i1, 0);
+        if (block1 == Blocks.PISTON || block1 == Blocks.PISTON_STICKY) {
+            l = world.getData(i, j, k);
+            if (BlockPiston.c(l)) {
+                block1.b(world, i, j, k, l, 0);
                 world.setAir(i, j, k);
             }
         }
     }
 
-    public int d() {
+    public int b() {
         return 17;
     }
 
@@ -51,7 +51,7 @@ public class BlockPistonExtension extends Block {
         return false;
     }
 
-    public boolean b() {
+    public boolean d() {
         return false;
     }
 
@@ -75,7 +75,7 @@ public class BlockPistonExtension extends Block {
         float f3 = 0.25F;
         float f4 = 0.75F;
 
-        switch (d(l)) {
+        switch (b(l)) {
         case 0:
             this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.25F, 1.0F);
             super.a(world, i, j, k, axisalignedbb, list, entity);
@@ -125,7 +125,7 @@ public class BlockPistonExtension extends Block {
         int l = iblockaccess.getData(i, j, k);
         float f = 0.25F;
 
-        switch (d(l)) {
+        switch (b(l)) {
         case 0:
             this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.25F, 1.0F);
             break;
@@ -151,19 +151,19 @@ public class BlockPistonExtension extends Block {
         }
     }
 
-    public void doPhysics(World world, int i, int j, int k, int l) {
-        int i1 = d(world.getData(i, j, k));
-        if ((i1 & 7) >= Facing.OPPOSITE_FACING.length) return; // CraftBukkit - fix a piston AIOOBE issue
-        int j1 = world.getTypeId(i - Facing.b[i1], j - Facing.c[i1], k - Facing.d[i1]);
+    public void doPhysics(World world, int i, int j, int k, Block block) {
+        int l = b(world.getData(i, j, k));
+        if ((l & 7) >= Facing.OPPOSITE_FACING.length) return; // CraftBukkit - fix a piston AIOOBE issue
+        Block block1 = world.getType(i - Facing.b[l], j - Facing.c[l], k - Facing.d[l]);
 
-        if (j1 != Block.PISTON.id && j1 != Block.PISTON_STICKY.id) {
+        if (block1 != Blocks.PISTON && block1 != Blocks.PISTON_STICKY) {
             world.setAir(i, j, k);
         } else {
-            Block.byId[j1].doPhysics(world, i - Facing.b[i1], j - Facing.c[i1], k - Facing.d[i1], l);
+            block1.doPhysics(world, i - Facing.b[l], j - Facing.c[l], k - Facing.d[l], block);
         }
     }
 
-    public static int d(int i) {
+    public static int b(int i) {
         return i & 7;
     }
 }

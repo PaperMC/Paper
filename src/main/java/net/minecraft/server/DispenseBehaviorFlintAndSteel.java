@@ -12,7 +12,7 @@ final class DispenseBehaviorFlintAndSteel extends DispenseBehaviorItem {
     DispenseBehaviorFlintAndSteel() {}
 
     protected ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
-        EnumFacing enumfacing = BlockDispenser.l_(isourceblock.h());
+        EnumFacing enumfacing = BlockDispenser.b(isourceblock.h());
         World world = isourceblock.k();
         int i = isourceblock.getBlockX() + enumfacing.c();
         int j = isourceblock.getBlockY() + enumfacing.d();
@@ -45,14 +45,14 @@ final class DispenseBehaviorFlintAndSteel extends DispenseBehaviorItem {
         if (world.isEmpty(i, j, k)) {
             // CraftBukkit start - Ignition by dispensing flint and steel
             if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, i, j, k, isourceblock.getBlockX(), isourceblock.getBlockY(), isourceblock.getBlockZ()).isCancelled()) {
-                world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
+                world.setTypeUpdate(i, j, k, Blocks.FIRE);
                 if (itemstack.isDamaged(1, world.random)) {
                     itemstack.count = 0;
                 }
             }
             // CraftBukkit end
-        } else if (world.getTypeId(i, j, k) == Block.TNT.id) {
-            Block.TNT.postBreak(world, i, j, k, 1);
+        } else if (world.getType(i, j, k) == Blocks.TNT) {
+            Blocks.TNT.postBreak(world, i, j, k, 1);
             world.setAir(i, j, k);
         } else {
             this.b = false;

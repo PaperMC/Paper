@@ -18,14 +18,14 @@ public class PathfinderGoalEatTile extends PathfinderGoal {
     }
 
     public boolean a() {
-        if (this.b.aD().nextInt(this.b.isBaby() ? 50 : 1000) != 0) {
+        if (this.b.aI().nextInt(this.b.isBaby() ? 50 : 1000) != 0) {
             return false;
         } else {
             int i = MathHelper.floor(this.b.locX);
             int j = MathHelper.floor(this.b.locY);
             int k = MathHelper.floor(this.b.locZ);
 
-            return this.c.getTypeId(i, j, k) == Block.LONG_GRASS.id && this.c.getData(i, j, k) == 1 ? true : this.c.getTypeId(i, j - 1, k) == Block.GRASS.id;
+            return this.c.getType(i, j, k) == Blocks.LONG_GRASS && this.c.getData(i, j, k) == 1 ? true : this.c.getType(i, j - 1, k) == Blocks.GRASS;
         }
     }
 
@@ -54,21 +54,21 @@ public class PathfinderGoalEatTile extends PathfinderGoal {
             int j = MathHelper.floor(this.b.locY);
             int k = MathHelper.floor(this.b.locZ);
 
-            if (this.c.getTypeId(i, j, k) == Block.LONG_GRASS.id) {
-                // CraftBukkit start
-                if (!CraftEventFactory.callEntityChangeBlockEvent(this.b.getBukkitEntity(), this.b.world.getWorld().getBlockAt(i, j, k), Material.AIR).isCancelled()) {
+            if (this.c.getType(i, j, k) == Blocks.LONG_GRASS) {
+                // CraftBukkit
+                if (!CraftEventFactory.callEntityChangeBlockEvent(this.b, this.b.world.getWorld().getBlockAt(i, j, k), Material.AIR, !this.c.getGameRules().getBoolean("mobGriefing")).isCancelled()) {
                     this.c.setAir(i, j, k, false);
-                    this.b.n();
                 }
-                // CraftBukkit end
-            } else if (this.c.getTypeId(i, j - 1, k) == Block.GRASS.id) {
-                // CraftBukkit start
-                if (!CraftEventFactory.callEntityChangeBlockEvent(this.b.getBukkitEntity(), this.b.world.getWorld().getBlockAt(i, j - 1, k), Material.DIRT).isCancelled()) {
-                    this.c.triggerEffect(2001, i, j - 1, k, Block.GRASS.id);
-                    this.c.setTypeIdAndData(i, j - 1, k, Block.DIRT.id, 0, 2);
-                    this.b.n();
+
+                this.b.p();
+            } else if (this.c.getType(i, j - 1, k) == Blocks.GRASS) {
+                // CraftBukkit
+                if (!CraftEventFactory.callEntityChangeBlockEvent(this.b, this.b.world.getWorld().getBlockAt(i, j - 1, k), Material.DIRT, !this.c.getGameRules().getBoolean("mobGriefing")).isCancelled()) {
+                    this.c.triggerEffect(2001, i, j - 1, k, Block.b((Block) Blocks.GRASS));
+                    this.c.setTypeAndData(i, j - 1, k, Blocks.DIRT, 0, 2);
                 }
-                // CraftBukkit end
+
+                this.b.p();
             }
         }
     }

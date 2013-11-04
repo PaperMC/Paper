@@ -82,11 +82,11 @@ public class InventoryCrafting implements IInventory {
         }
     }
 
-    public String getName() {
+    public String getInventoryName() {
         return "container.crafting";
     }
 
-    public boolean c() {
+    public boolean k_() {
         return false;
     }
 
@@ -141,7 +141,7 @@ public class InventoryCrafting implements IInventory {
 
     public void startOpen() {}
 
-    public void g() {}
+    public void l_() {}
 
     public boolean b(int i, ItemStack itemstack) {
         return true;

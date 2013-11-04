@@ -10,7 +10,7 @@ public class EntityFireworks extends Entity {
         this.a(0.25F, 0.25F);
     }
 
-    protected void a() {
+    protected void c() {
         this.datawatcher.a(8, 5);
     }
 
@@ -38,11 +38,11 @@ public class EntityFireworks extends Entity {
         this.expectedLifespan = 10 * i + this.random.nextInt(6) + this.random.nextInt(7);
     }
 
-    public void l_() {
-        this.U = this.locX;
-        this.V = this.locY;
-        this.W = this.locZ;
-        super.l_();
+    public void h() {
+        this.T = this.locX;
+        this.U = this.locY;
+        this.V = this.locZ;
+        super.h();
         this.motX *= 1.15D;
         this.motZ *= 1.15D;
         this.motY += 0.04D;
@@ -93,7 +93,7 @@ public class EntityFireworks extends Entity {
             NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
             itemstack.save(nbttagcompound1);
-            nbttagcompound.setCompound("FireworksItem", nbttagcompound1);
+            nbttagcompound.set("FireworksItem", nbttagcompound1);
         }
     }
 
@@ -115,7 +115,7 @@ public class EntityFireworks extends Entity {
         return super.d(f);
     }
 
-    public boolean aq() {
+    public boolean av() {
         return false;
     }
 }

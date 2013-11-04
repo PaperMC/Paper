@@ -8,17 +8,17 @@ import org.bukkit.event.entity.EntityInteractEvent; // CraftBukkit
 
 public class BlockTripwire extends Block {
 
-    public BlockTripwire(int i) {
-        super(i, Material.ORIENTABLE);
+    public BlockTripwire() {
+        super(Material.ORIENTABLE);
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.15625F, 1.0F);
-        this.b(true);
+        this.a(true);
     }
 
     public int a(World world) {
         return 10;
     }
 
-    public AxisAlignedBB b(World world, int i, int j, int k) {
+    public AxisAlignedBB a(World world, int i, int j, int k) {
         return null;
     }
 
@@ -26,25 +26,25 @@ public class BlockTripwire extends Block {
         return false;
     }
 
-    public boolean b() {
+    public boolean d() {
         return false;
     }
 
-    public int d() {
+    public int b() {
         return 30;
     }
 
-    public int getDropType(int i, Random random, int j) {
-        return Item.STRING.id;
+    public Item getDropType(int i, Random random, int j) {
+        return Items.STRING;
     }
 
-    public void doPhysics(World world, int i, int j, int k, int l) {
-        int i1 = world.getData(i, j, k);
-        boolean flag = (i1 & 2) == 2;
-        boolean flag1 = !world.w(i, j - 1, k);
+    public void doPhysics(World world, int i, int j, int k, Block block) {
+        int l = world.getData(i, j, k);
+        boolean flag = (l & 2) == 2;
+        boolean flag1 = !World.a((IBlockAccess) world, i, j - 1, k);
 
         if (flag != flag1) {
-            this.c(world, i, j, k, i1, 0);
+            this.b(world, i, j, k, l, 0);
             world.setAir(i, j, k);
         }
     }
@@ -64,25 +64,25 @@ public class BlockTripwire extends Block {
     }
 
     public void onPlace(World world, int i, int j, int k) {
-        int l = world.w(i, j - 1, k) ? 0 : 2;
+        int l = World.a((IBlockAccess) world, i, j - 1, k) ? 0 : 2;
 
         world.setData(i, j, k, l, 3);
-        this.d(world, i, j, k, l);
+        this.a(world, i, j, k, l);
     }
 
-    public void remove(World world, int i, int j, int k, int l, int i1) {
-        this.d(world, i, j, k, i1 | 1);
+    public void remove(World world, int i, int j, int k, Block block, int l) {
+        this.a(world, i, j, k, l | 1);
     }
 
     public void a(World world, int i, int j, int k, int l, EntityHuman entityhuman) {
         if (!world.isStatic) {
-            if (entityhuman.by() != null && entityhuman.by().id == Item.SHEARS.id) {
+            if (entityhuman.bD() != null && entityhuman.bD().getItem() == Items.SHEARS) {
                 world.setData(i, j, k, l | 8, 4);
             }
         }
     }
 
-    private void d(World world, int i, int j, int k, int l) {
+    private void a(World world, int i, int j, int k, int l) {
         int i1 = 0;
 
         while (i1 < 2) {
@@ -92,15 +92,15 @@ public class BlockTripwire extends Block {
                 if (j1 < 42) {
                     int k1 = i + Direction.a[i1] * j1;
                     int l1 = k + Direction.b[i1] * j1;
-                    int i2 = world.getTypeId(k1, j, l1);
+                    Block block = world.getType(k1, j, l1);
 
-                    if (i2 == Block.TRIPWIRE_SOURCE.id) {
-                        int j2 = world.getData(k1, j, l1) & 3;
+                    if (block == Blocks.TRIPWIRE_SOURCE) {
+                        int i2 = world.getData(k1, j, l1) & 3;
 
-                        if (j2 == Direction.f[i1]) {
-                            Block.TRIPWIRE_SOURCE.a(world, k1, j, l1, i2, world.getData(k1, j, l1), true, j1, l);
+                        if (i2 == Direction.f[i1]) {
+                            Blocks.TRIPWIRE_SOURCE.a(world, k1, j, l1, false, world.getData(k1, j, l1), true, j1, l);
                         }
-                    } else if (i2 == Block.TRIPWIRE.id) {
+                    } else if (block == Blocks.TRIPWIRE) {
                         ++j1;
                         continue;
                     }
@@ -115,7 +115,7 @@ public class BlockTripwire extends Block {
     public void a(World world, int i, int j, int k, Entity entity) {
         if (!world.isStatic) {
             if ((world.getData(i, j, k) & 1) != 1) {
-                this.k(world, i, j, k);
+                this.e(world, i, j, k);
             }
         }
     }
@@ -123,12 +123,12 @@ public class BlockTripwire extends Block {
     public void a(World world, int i, int j, int k, Random random) {
         if (!world.isStatic) {
             if ((world.getData(i, j, k) & 1) == 1) {
-                this.k(world, i, j, k);
+                this.e(world, i, j, k);
             }
         }
     }
 
-    private void k(World world, int i, int j, int k) {
+    private void e(World world, int i, int j, int k) {
         int l = world.getData(i, j, k);
         boolean flag = (l & 1) == 1;
         boolean flag1 = false;
@@ -140,7 +140,7 @@ public class BlockTripwire extends Block {
             while (iterator.hasNext()) {
                 Entity entity = (Entity) iterator.next();
 
-                if (!entity.au()) {
+                if (!entity.az()) {
                     flag1 = true;
                     break;
                 }
@@ -191,11 +191,11 @@ public class BlockTripwire extends Block {
 
         if (flag1 != flag) {
             world.setData(i, j, k, l, 3);
-            this.d(world, i, j, k, l);
+            this.a(world, i, j, k, l);
         }
 
         if (flag1) {
-            world.a(i, j, k, this.id, this.a(world));
+            world.a(i, j, k, this, this.a(world));
         }
     }
 }

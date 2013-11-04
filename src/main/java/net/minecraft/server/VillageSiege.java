@@ -150,7 +150,7 @@ public class VillageSiege {
             this.world.addEntity(entityzombie, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_INVASION); // CraftBukkit
             ChunkCoordinates chunkcoordinates = this.f.getCenter();
 
-            entityzombie.b(chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z, this.f.getSize());
+            entityzombie.a(chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z, this.f.getSize());
             return true;
         }
     }

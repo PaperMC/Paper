@@ -26,19 +26,19 @@ public class PlayerAbilities {
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        if (nbttagcompound.hasKey("abilities")) {
+        if (nbttagcompound.hasKeyOfType("abilities", 10)) {
             NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("abilities");
 
             this.isInvulnerable = nbttagcompound1.getBoolean("invulnerable");
             this.isFlying = nbttagcompound1.getBoolean("flying");
             this.canFly = nbttagcompound1.getBoolean("mayfly");
             this.canInstantlyBuild = nbttagcompound1.getBoolean("instabuild");
-            if (nbttagcompound1.hasKey("flySpeed")) {
+            if (nbttagcompound1.hasKeyOfType("flySpeed", 99)) {
                 this.flySpeed = nbttagcompound1.getFloat("flySpeed");
                 this.walkSpeed = nbttagcompound1.getFloat("walkSpeed");
             }
 
-            if (nbttagcompound1.hasKey("mayBuild")) {
+            if (nbttagcompound1.hasKeyOfType("mayBuild", 1)) {
                 this.mayBuild = nbttagcompound1.getBoolean("mayBuild");
             }
         }

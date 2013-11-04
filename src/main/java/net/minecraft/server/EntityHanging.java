@@ -31,14 +31,14 @@ public abstract class EntityHanging extends Entity {
         this.z = k;
     }
 
-    protected void a() {}
+    protected void c() {}
 
     public void setDirection(int i) {
         this.direction = i;
         this.lastYaw = this.yaw = (float) (i * 90);
-        float f = (float) this.d();
-        float f1 = (float) this.e();
-        float f2 = (float) this.d();
+        float f = (float) this.f();
+        float f1 = (float) this.i();
+        float f2 = (float) this.f();
 
         if (i != 2 && i != 0) {
             f = 0.5F;
@@ -72,22 +72,22 @@ public abstract class EntityHanging extends Entity {
         }
 
         if (i == 2) {
-            f3 -= this.c(this.d());
+            f3 -= this.c(this.f());
         }
 
         if (i == 1) {
-            f5 += this.c(this.d());
+            f5 += this.c(this.f());
         }
 
         if (i == 0) {
-            f3 += this.c(this.d());
+            f3 += this.c(this.f());
         }
 
         if (i == 3) {
-            f5 -= this.c(this.d());
+            f5 -= this.c(this.f());
         }
 
-        f4 += this.c(this.e());
+        f4 += this.c(this.i());
         this.setPosition((double) f3, (double) f4, (double) f5);
         float f7 = -0.03125F;
 
@@ -98,7 +98,7 @@ public abstract class EntityHanging extends Entity {
         return i == 32 ? 0.5F : (i == 64 ? 0.5F : 0.0F);
     }
 
-    public void l_() {
+    public void h() {
         this.lastX = this.locX;
         this.lastY = this.locY;
         this.lastZ = this.locZ;
@@ -106,7 +106,7 @@ public abstract class EntityHanging extends Entity {
             this.e = 0;
             if (!this.dead && !this.survives()) {
                 // CraftBukkit start
-                Material material = this.world.getMaterial((int) this.locX, (int) this.locY, (int) this.locZ);
+                Material material = this.world.getType((int) this.locX, (int) this.locY, (int) this.locZ).getMaterial();
                 HangingBreakEvent.RemoveCause cause;
 
                 if (!material.equals(Material.AIR)) {
@@ -142,38 +142,38 @@ public abstract class EntityHanging extends Entity {
         if (!this.world.getCubes(this, this.boundingBox).isEmpty()) {
             return false;
         } else {
-            int i = Math.max(1, this.d() / 16);
-            int j = Math.max(1, this.e() / 16);
+            int i = Math.max(1, this.f() / 16);
+            int j = Math.max(1, this.i() / 16);
             int k = this.x;
             int l = this.y;
             int i1 = this.z;
 
             if (this.direction == 2) {
-                k = MathHelper.floor(this.locX - (double) ((float) this.d() / 32.0F));
+                k = MathHelper.floor(this.locX - (double) ((float) this.f() / 32.0F));
             }
 
             if (this.direction == 1) {
-                i1 = MathHelper.floor(this.locZ - (double) ((float) this.d() / 32.0F));
+                i1 = MathHelper.floor(this.locZ - (double) ((float) this.f() / 32.0F));
             }
 
             if (this.direction == 0) {
-                k = MathHelper.floor(this.locX - (double) ((float) this.d() / 32.0F));
+                k = MathHelper.floor(this.locX - (double) ((float) this.f() / 32.0F));
             }
 
             if (this.direction == 3) {
-                i1 = MathHelper.floor(this.locZ - (double) ((float) this.d() / 32.0F));
+                i1 = MathHelper.floor(this.locZ - (double) ((float) this.f() / 32.0F));
             }
 
-            l = MathHelper.floor(this.locY - (double) ((float) this.e() / 32.0F));
+            l = MathHelper.floor(this.locY - (double) ((float) this.i() / 32.0F));
 
             for (int j1 = 0; j1 < i; ++j1) {
                 for (int k1 = 0; k1 < j; ++k1) {
                     Material material;
 
                     if (this.direction != 2 && this.direction != 0) {
-                        material = this.world.getMaterial(this.x, l + k1, i1 + j1);
+                        material = this.world.getType(this.x, l + k1, i1 + j1).getMaterial();
                     } else {
-                        material = this.world.getMaterial(k + j1, l + k1, this.z);
+                        material = this.world.getType(k + j1, l + k1, this.z).getMaterial();
                     }
 
                     if (!material.isBuildable()) {
@@ -199,12 +199,16 @@ public abstract class EntityHanging extends Entity {
         }
     }
 
-    public boolean L() {
+    public boolean R() {
         return true;
     }
 
     public boolean i(Entity entity) {
         return entity instanceof EntityHuman ? this.damageEntity(DamageSource.playerAttack((EntityHuman) entity), 0.0F) : false;
+    }
+
+    public void i(int i) {
+        this.world.X();
     }
 
     public boolean damageEntity(DamageSource damagesource, float f) {
@@ -239,7 +243,7 @@ public abstract class EntityHanging extends Entity {
                 // CraftBukkit end
 
                 this.die();
-                this.K();
+                this.Q();
                 this.b(damagesource.getEntity());
             }
 
@@ -287,7 +291,7 @@ public abstract class EntityHanging extends Entity {
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        if (nbttagcompound.hasKey("Direction")) {
+        if (nbttagcompound.hasKeyOfType("Direction", 99)) {
             this.direction = nbttagcompound.getByte("Direction");
         } else {
             switch (nbttagcompound.getByte("Dir")) {
@@ -314,13 +318,13 @@ public abstract class EntityHanging extends Entity {
         this.setDirection(this.direction);
     }
 
-    public abstract int d();
+    public abstract int f();
 
-    public abstract int e();
-
-    protected boolean P() {
-        return false;
-    }
+    public abstract int i();
 
     public abstract void b(Entity entity);
+
+    protected boolean V() {
+        return false;
+    }
 }

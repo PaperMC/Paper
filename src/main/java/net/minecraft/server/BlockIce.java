@@ -2,23 +2,23 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-public class BlockIce extends BlockHalfTransparant {
+public class BlockIce extends BlockHalfTransparent {
 
-    public BlockIce(int i) {
-        super(i, "ice", Material.ICE, false);
+    public BlockIce() {
+        super("ice", Material.ICE, false);
         this.frictionFactor = 0.98F;
-        this.b(true);
+        this.a(true);
         this.a(CreativeModeTab.b);
     }
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        entityhuman.a(StatisticList.C[this.id], 1);
+        entityhuman.a(StatisticList.C[Block.b((Block) this)], 1);
         entityhuman.a(0.025F);
-        if (this.r_() && EnchantmentManager.hasSilkTouchEnchantment(entityhuman)) {
-            ItemStack itemstack = this.d_(l);
+        if (this.E() && EnchantmentManager.hasSilkTouchEnchantment(entityhuman)) {
+            ItemStack itemstack = this.j(l);
 
             if (itemstack != null) {
-                this.b(world, i, j, k, itemstack);
+                this.a(world, i, j, k, itemstack);
             }
         } else {
             if (world.worldProvider.f) {
@@ -28,11 +28,11 @@ public class BlockIce extends BlockHalfTransparant {
 
             int i1 = EnchantmentManager.getBonusBlockLootEnchantmentLevel(entityhuman);
 
-            this.c(world, i, j, k, l, i1);
-            Material material = world.getMaterial(i, j - 1, k);
+            this.b(world, i, j, k, l, i1);
+            Material material = world.getType(i, j - 1, k).getMaterial();
 
             if (material.isSolid() || material.isLiquid()) {
-                world.setTypeIdUpdate(i, j, k, Block.WATER.id);
+                world.setTypeUpdate(i, j, k, Blocks.WATER);
             }
         }
     }
@@ -42,9 +42,9 @@ public class BlockIce extends BlockHalfTransparant {
     }
 
     public void a(World world, int i, int j, int k, Random random) {
-        if (world.b(EnumSkyBlock.BLOCK, i, j, k) > 11 - Block.lightBlock[this.id]) {
+        if (world.b(EnumSkyBlock.BLOCK, i, j, k) > 11 - this.k()) {
             // CraftBukkit start
-            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(i, j, k), Block.STATIONARY_WATER.id).isCancelled()) {
+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(i, j, k), Blocks.STATIONARY_WATER).isCancelled()) {
                 return;
             }
             // CraftBukkit end
@@ -54,8 +54,8 @@ public class BlockIce extends BlockHalfTransparant {
                 return;
             }
 
-            this.c(world, i, j, k, world.getData(i, j, k), 0);
-            world.setTypeIdUpdate(i, j, k, Block.STATIONARY_WATER.id);
+            this.b(world, i, j, k, world.getData(i, j, k), 0);
+            world.setTypeUpdate(i, j, k, Blocks.STATIONARY_WATER);
         }
     }
 

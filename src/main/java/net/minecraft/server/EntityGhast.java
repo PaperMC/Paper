@@ -28,31 +28,31 @@ public class EntityGhast extends EntityFlying implements IMonster {
     public boolean damageEntity(DamageSource damagesource, float f) {
         if (this.isInvulnerable()) {
             return false;
-        } else if ("fireball".equals(damagesource.n()) && damagesource.getEntity() instanceof EntityHuman) {
+        } else if ("fireball".equals(damagesource.p()) && damagesource.getEntity() instanceof EntityHuman) {
             super.damageEntity(damagesource, 1000.0F);
-            ((EntityHuman) damagesource.getEntity()).a((Statistic) AchievementList.y);
+            ((EntityHuman) damagesource.getEntity()).a((Statistic) AchievementList.z);
             return true;
         } else {
             return super.damageEntity(damagesource, f);
         }
     }
 
-    protected void a() {
-        super.a();
+    protected void c() {
+        super.c();
         this.datawatcher.a(16, Byte.valueOf((byte) 0));
     }
 
-    protected void az() {
-        super.az();
+    protected void aD() {
+        super.aD();
         this.getAttributeInstance(GenericAttributes.a).setValue(10.0D);
     }
 
-    protected void bl() {
-        if (!this.world.isStatic && this.world.difficulty == 0) {
+    protected void bq() {
+        if (!this.world.isStatic && this.world.difficulty == EnumDifficulty.PEACEFUL) {
             this.die();
         }
 
-        this.u();
+        this.w();
         this.bo = this.bp;
         double d0 = this.i - this.locX;
         double d1 = this.j - this.locY;
@@ -181,20 +181,20 @@ public class EntityGhast extends EntityFlying implements IMonster {
         return true;
     }
 
-    protected String r() {
+    protected String t() {
         return "mob.ghast.moan";
     }
 
-    protected String aO() {
+    protected String aT() {
         return "mob.ghast.scream";
     }
 
-    protected String aP() {
+    protected String aU() {
         return "mob.ghast.death";
     }
 
-    protected int getLootId() {
-        return Item.SULPHUR.id;
+    protected Item getLoot() {
+        return Items.SULPHUR;
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
@@ -205,28 +205,28 @@ public class EntityGhast extends EntityFlying implements IMonster {
         int k;
 
         if (j > 0) {
-            loot.add(CraftItemStack.asNewCraftStack(Item.GHAST_TEAR, j));
+            loot.add(CraftItemStack.asNewCraftStack(Items.GHAST_TEAR, j));
         }
 
         j = this.random.nextInt(3) + this.random.nextInt(1 + i);
 
         if (j > 0) {
-            loot.add(CraftItemStack.asNewCraftStack(Item.SULPHUR, j));
+            loot.add(CraftItemStack.asNewCraftStack(Items.SULPHUR, j));
         }
 
         org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
     }
 
-    protected float ba() {
+    protected float bf() {
         return 10.0F;
     }
 
     public boolean canSpawn() {
-        return this.random.nextInt(20) == 0 && super.canSpawn() && this.world.difficulty > 0;
+        return this.random.nextInt(20) == 0 && super.canSpawn() && this.world.difficulty != EnumDifficulty.PEACEFUL;
     }
 
-    public int bv() {
+    public int bz() {
         return 1;
     }
 
@@ -237,7 +237,7 @@ public class EntityGhast extends EntityFlying implements IMonster {
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        if (nbttagcompound.hasKey("ExplosionPower")) {
+        if (nbttagcompound.hasKeyOfType("ExplosionPower", 99)) {
             this.explosionPower = nbttagcompound.getInt("ExplosionPower");
         }
     }

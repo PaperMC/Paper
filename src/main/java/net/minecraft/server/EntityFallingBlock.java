@@ -10,9 +10,9 @@ import org.bukkit.event.entity.EntityDamageEvent;
 
 public class EntityFallingBlock extends Entity {
 
-    public int id;
+    public Block id; // CraftBukkit - private -> public
     public int data;
-    public int c;
+    public int b;
     public boolean dropItem;
     private boolean f;
     private boolean hurtEntities;
@@ -27,18 +27,18 @@ public class EntityFallingBlock extends Entity {
         this.fallHurtAmount = 2.0F;
     }
 
-    public EntityFallingBlock(World world, double d0, double d1, double d2, int i) {
-        this(world, d0, d1, d2, i, 0);
+    public EntityFallingBlock(World world, double d0, double d1, double d2, Block block) {
+        this(world, d0, d1, d2, block, 0);
     }
 
-    public EntityFallingBlock(World world, double d0, double d1, double d2, int i, int j) {
+    public EntityFallingBlock(World world, double d0, double d1, double d2, Block block, int i) {
         super(world);
         this.dropItem = true;
         this.fallHurtMax = 40;
         this.fallHurtAmount = 2.0F;
-        this.id = i;
-        this.data = j;
-        this.m = true;
+        this.id = block;
+        this.data = i;
+        this.l = true;
         this.a(0.98F, 0.98F);
         this.height = this.length / 2.0F;
         this.setPosition(d0, d1, d2);
@@ -50,24 +50,24 @@ public class EntityFallingBlock extends Entity {
         this.lastZ = d2;
     }
 
-    protected boolean e_() {
+    protected boolean g_() {
         return false;
     }
 
-    protected void a() {}
+    protected void c() {}
 
-    public boolean L() {
+    public boolean R() {
         return !this.dead;
     }
 
-    public void l_() {
-        if (this.id == 0) {
+    public void h() {
+        if (this.id.getMaterial() == Material.AIR) {
             this.die();
         } else {
             this.lastX = this.locX;
             this.lastY = this.locY;
             this.lastZ = this.locZ;
-            ++this.c;
+            ++this.b;
             this.motY -= 0.03999999910593033D;
             this.move(this.motX, this.motY, this.motZ);
             this.motX *= 0.9800000190734863D;
@@ -78,9 +78,9 @@ public class EntityFallingBlock extends Entity {
                 int j = MathHelper.floor(this.locY);
                 int k = MathHelper.floor(this.locZ);
 
-                if (this.c == 1) {
+                if (this.b == 1) {
                     // CraftBukkit - compare data and call event
-                    if (this.c != 1 || this.world.getTypeId(i, j, k) != this.id || this.world.getData(i, j, k) != this.data || CraftEventFactory.callEntityChangeBlockEvent(this, i, j, k, 0, 0).isCancelled()) {
+                    if (this.b != 1 || this.world.getType(i, j, k) != this.id || this.world.getData(i, j, k) != this.data || CraftEventFactory.callEntityChangeBlockEvent(this, i, j, k, Blocks.AIR, 0).isCancelled()) {
                         this.die();
                         return;
                     }
@@ -92,21 +92,21 @@ public class EntityFallingBlock extends Entity {
                     this.motX *= 0.699999988079071D;
                     this.motZ *= 0.699999988079071D;
                     this.motY *= -0.5D;
-                    if (this.world.getTypeId(i, j, k) != Block.PISTON_MOVING.id) {
+                    if (this.world.getType(i, j, k) != Blocks.PISTON_MOVING) {
                         this.die();
                         // CraftBukkit start
-                        if (!this.f && this.world.mayPlace(this.id, i, j, k, true, 1, (Entity) null, (ItemStack) null) && !BlockSand.canFall(this.world, i, j - 1, k) /* mimic the false conditions of setTypeIdAndData */ && i >= -30000000 && k >= -30000000 && i < 30000000 && k < 30000000 && j > 0 && j < 256 && !(this.world.getTypeId(i, j, k) == this.id && this.world.getData(i, j, k) == this.data)) {
+                        if (!this.f && this.world.mayPlace(this.id, i, j, k, true, 1, (Entity) null, (ItemStack) null) && !BlockFalling.canFall(this.world, i, j - 1, k) /* mimic the false conditions of setTypeIdAndData */ && i >= -30000000 && k >= -30000000 && i < 30000000 && k < 30000000 && j > 0 && j < 256 && !(this.world.getType(i, j, k) == this.id && this.world.getData(i, j, k) == this.data)) {
                             if (CraftEventFactory.callEntityChangeBlockEvent(this, i, j, k, this.id, this.data).isCancelled()) {
                                 return;
                             }
-                            this.world.setTypeIdAndData(i, j, k, this.id, this.data, 3);
+                            this.world.setTypeAndData(i, j, k, this.id, this.data, 3);
                             // CraftBukkit end
 
-                            if (Block.byId[this.id] instanceof BlockSand) {
-                                ((BlockSand) Block.byId[this.id]).a_(this.world, i, j, k, this.data);
+                            if (this.id instanceof BlockFalling) {
+                                ((BlockFalling) this.id).a(this.world, i, j, k, this.data);
                             }
 
-                            if (this.tileEntityData != null && Block.byId[this.id] instanceof IContainer) {
+                            if (this.tileEntityData != null && this.id instanceof IContainer) {
                                 TileEntity tileentity = this.world.getTileEntity(i, j, k);
 
                                 if (tileentity != null) {
@@ -116,10 +116,11 @@ public class EntityFallingBlock extends Entity {
                                     Iterator iterator = this.tileEntityData.c().iterator();
 
                                     while (iterator.hasNext()) {
-                                        NBTBase nbtbase = (NBTBase) iterator.next();
+                                        String s = (String) iterator.next();
+                                        NBTBase nbtbase = this.tileEntityData.get(s);
 
-                                        if (!nbtbase.getName().equals("x") && !nbtbase.getName().equals("y") && !nbtbase.getName().equals("z")) {
-                                            nbttagcompound.set(nbtbase.getName(), nbtbase.clone());
+                                        if (!s.equals("x") && !s.equals("y") && !s.equals("z")) {
+                                            nbttagcompound.set(s, nbtbase.clone());
                                         }
                                     }
 
@@ -128,12 +129,12 @@ public class EntityFallingBlock extends Entity {
                                 }
                             }
                         } else if (this.dropItem && !this.f) {
-                            this.a(new ItemStack(this.id, 1, Block.byId[this.id].getDropData(this.data)), 0.0F);
+                            this.a(new ItemStack(this.id, 1, this.id.getDropData(this.data)), 0.0F);
                         }
                     }
-                } else if (this.c > 100 && !this.world.isStatic && (j < 1 || j > 256) || this.c > 600) {
+                } else if (this.b > 100 && !this.world.isStatic && (j < 1 || j > 256) || this.b > 600) {
                     if (this.dropItem) {
-                        this.a(new ItemStack(this.id, 1, Block.byId[this.id].getDropData(this.data)), 0.0F);
+                        this.a(new ItemStack(this.id, 1, this.id.getDropData(this.data)), 0.0F);
                     }
 
                     this.die();
@@ -148,7 +149,8 @@ public class EntityFallingBlock extends Entity {
 
             if (i > 0) {
                 ArrayList arraylist = new ArrayList(this.world.getEntities(this, this.boundingBox));
-                DamageSource damagesource = this.id == Block.ANVIL.id ? DamageSource.ANVIL : DamageSource.FALLING_BLOCK;
+                boolean flag = this.id == Blocks.ANVIL;
+                DamageSource damagesource = flag ? DamageSource.ANVIL : DamageSource.FALLING_BLOCK;
                 Iterator iterator = arraylist.iterator();
 
                 while (iterator.hasNext()) {
@@ -166,7 +168,7 @@ public class EntityFallingBlock extends Entity {
                     // CraftBukkit end
                 }
 
-                if (this.id == Block.ANVIL.id && (double) this.random.nextFloat() < 0.05000000074505806D + (double) i * 0.05D) {
+                if (flag && (double) this.random.nextFloat() < 0.05000000074505806D + (double) i * 0.05D) {
                     int j = this.data >> 2;
                     int k = this.data & 3;
 
@@ -182,52 +184,46 @@ public class EntityFallingBlock extends Entity {
     }
 
     protected void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.setByte("Tile", (byte) this.id);
-        nbttagcompound.setInt("TileID", this.id);
+        nbttagcompound.setByte("Tile", (byte) Block.b(this.id));
+        nbttagcompound.setInt("TileID", Block.b(this.id));
         nbttagcompound.setByte("Data", (byte) this.data);
-        nbttagcompound.setByte("Time", (byte) this.c);
+        nbttagcompound.setByte("Time", (byte) this.b);
         nbttagcompound.setBoolean("DropItem", this.dropItem);
         nbttagcompound.setBoolean("HurtEntities", this.hurtEntities);
         nbttagcompound.setFloat("FallHurtAmount", this.fallHurtAmount);
         nbttagcompound.setInt("FallHurtMax", this.fallHurtMax);
         if (this.tileEntityData != null) {
-            nbttagcompound.setCompound("TileEntityData", this.tileEntityData);
+            nbttagcompound.set("TileEntityData", this.tileEntityData);
         }
     }
 
     protected void a(NBTTagCompound nbttagcompound) {
-        if (nbttagcompound.hasKey("TileID")) {
-            this.id = nbttagcompound.getInt("TileID");
+        if (nbttagcompound.hasKeyOfType("TileID", 99)) {
+            this.id = Block.e(nbttagcompound.getInt("TileID"));
         } else {
-            this.id = nbttagcompound.getByte("Tile") & 255;
+            this.id = Block.e(nbttagcompound.getByte("Tile") & 255);
         }
 
         this.data = nbttagcompound.getByte("Data") & 255;
-        this.c = nbttagcompound.getByte("Time") & 255;
-        if (nbttagcompound.hasKey("HurtEntities")) {
+        this.b = nbttagcompound.getByte("Time") & 255;
+        if (nbttagcompound.hasKeyOfType("HurtEntities", 99)) {
             this.hurtEntities = nbttagcompound.getBoolean("HurtEntities");
             this.fallHurtAmount = nbttagcompound.getFloat("FallHurtAmount");
             this.fallHurtMax = nbttagcompound.getInt("FallHurtMax");
-        } else if (this.id == Block.ANVIL.id) {
+        } else if (this.id == Blocks.ANVIL) {
             this.hurtEntities = true;
         }
 
-        if (nbttagcompound.hasKey("DropItem")) {
+        if (nbttagcompound.hasKeyOfType("DropItem", 99)) {
             this.dropItem = nbttagcompound.getBoolean("DropItem");
         }
 
-        if (nbttagcompound.hasKey("TileEntityData")) {
+        if (nbttagcompound.hasKeyOfType("TileEntityData", 10)) {
             this.tileEntityData = nbttagcompound.getCompound("TileEntityData");
         }
 
-        // CraftBukkit start - Backward compatibility, remove in 1.6
-        if (nbttagcompound.hasKey("Bukkit.tileData")) {
-            this.tileEntityData = (NBTTagCompound) nbttagcompound.getCompound("Bukkit.tileData").clone();
-        }
-        // CraftBukkit end
-
-        if (this.id == 0) {
-            this.id = Block.SAND.id;
+        if (this.id.getMaterial() == Material.AIR) {
+            this.id = Blocks.SAND;
         }
     }
 
@@ -237,7 +233,11 @@ public class EntityFallingBlock extends Entity {
 
     public void a(CrashReportSystemDetails crashreportsystemdetails) {
         super.a(crashreportsystemdetails);
-        crashreportsystemdetails.a("Immitating block ID", Integer.valueOf(this.id));
+        crashreportsystemdetails.a("Immitating block ID", Integer.valueOf(Block.b(this.id)));
         crashreportsystemdetails.a("Immitating block data", Integer.valueOf(this.data));
+    }
+
+    public Block f() {
+        return this.id;
     }
 }

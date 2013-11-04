@@ -97,7 +97,7 @@ public class CraftInventoryCustom extends CraftInventory {
             }
         }
 
-        public String getName() {
+        public String getInventoryName() {
             return title;
         }
 
@@ -135,7 +135,7 @@ public class CraftInventoryCustom extends CraftInventory {
             return type;
         }
 
-        public void g() {}
+        public void l_() {}
 
         public InventoryHolder getOwner() {
             return owner;
@@ -143,7 +143,7 @@ public class CraftInventoryCustom extends CraftInventory {
 
         public void startOpen() {}
 
-        public boolean c() {
+        public boolean k_() {
             return false;
         }
 

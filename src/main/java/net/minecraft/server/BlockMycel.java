@@ -10,19 +10,19 @@ import org.bukkit.event.block.BlockSpreadEvent;
 
 public class BlockMycel extends Block {
 
-    protected BlockMycel(int i) {
-        super(i, Material.GRASS);
-        this.b(true);
+    protected BlockMycel() {
+        super(Material.GRASS);
+        this.a(true);
         this.a(CreativeModeTab.b);
     }
 
     public void a(World world, int i, int j, int k, Random random) {
         if (!world.isStatic) {
-            if (world.getLightLevel(i, j + 1, k) < 4 && Block.lightBlock[world.getTypeId(i, j + 1, k)] > 2) {
+            if (world.getLightLevel(i, j + 1, k) < 4 && world.getType(i, j + 1, k).k() > 2) {
                 // CraftBukkit start
                 org.bukkit.World bworld = world.getWorld();
                 BlockState blockState = bworld.getBlockAt(i, j, k).getState();
-                blockState.setTypeId(Block.DIRT.id);
+                blockState.setTypeId(Block.b(Blocks.DIRT));
 
                 BlockFadeEvent event = new BlockFadeEvent(blockState.getBlock(), blockState);
                 world.getServer().getPluginManager().callEvent(event);
@@ -36,13 +36,13 @@ public class BlockMycel extends Block {
                     int i1 = i + random.nextInt(3) - 1;
                     int j1 = j + random.nextInt(5) - 3;
                     int k1 = k + random.nextInt(3) - 1;
-                    int l1 = world.getTypeId(i1, j1 + 1, k1);
+                    Block block = world.getType(i1, j1 + 1, k1);
 
-                    if (world.getTypeId(i1, j1, k1) == Block.DIRT.id && world.getLightLevel(i1, j1 + 1, k1) >= 4 && Block.lightBlock[l1] <= 2) {
+                    if (world.getType(i1, j1, k1) == Blocks.DIRT && world.getData(i1, j1, k1) == 0 && world.getLightLevel(i1, j1 + 1, k1) >= 4 && block.k() <= 2) {
                         // CraftBukkit start
                         org.bukkit.World bworld = world.getWorld();
                         BlockState blockState = bworld.getBlockAt(i1, j1, k1).getState();
-                        blockState.setTypeId(this.id);
+                        blockState.setTypeId(Block.b(this));
 
                         BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(i, j, k), blockState);
                         world.getServer().getPluginManager().callEvent(event);
@@ -57,7 +57,7 @@ public class BlockMycel extends Block {
         }
     }
 
-    public int getDropType(int i, Random random, int j) {
-        return Block.DIRT.getDropType(0, random, j);
+    public Item getDropType(int i, Random random, int j) {
+        return Blocks.DIRT.getDropType(0, random, j);
     }
 }

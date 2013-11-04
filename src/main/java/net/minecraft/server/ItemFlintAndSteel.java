@@ -7,8 +7,7 @@ import org.bukkit.craftbukkit.event.CraftEventFactory;
 
 public class ItemFlintAndSteel extends Item {
 
-    public ItemFlintAndSteel(int i) {
-        super(i);
+    public ItemFlintAndSteel() {
         this.maxStackSize = 1;
         this.setMaxDurability(64);
         this.a(CreativeModeTab.i);
@@ -16,7 +15,6 @@ public class ItemFlintAndSteel extends Item {
 
     public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
         int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
-
         if (l == 0) {
             --j;
         }
@@ -44,9 +42,7 @@ public class ItemFlintAndSteel extends Item {
         if (!entityhuman.a(i, j, k, l, itemstack)) {
             return false;
         } else {
-            int i1 = world.getTypeId(i, j, k);
-
-            if (i1 == 0) {
+            if (world.getType(i, j, k).getMaterial() == Material.AIR) {
                 // CraftBukkit start - Store the clicked block
                 if (CraftEventFactory.callBlockIgniteEvent(world, i, j, k, org.bukkit.event.block.BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL, entityhuman).isCancelled()) {
                     itemstack.damage(1, entityhuman);
@@ -56,8 +52,8 @@ public class ItemFlintAndSteel extends Item {
                 CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j, k);
                 // CraftBukkit end
 
-                world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "fire.ignite", 1.0F, Item.f.nextFloat() * 0.4F + 0.8F); // CraftBukkit - fix compilation
-                world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
+                world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "fire.ignite", 1.0F, g.nextFloat() * 0.4F + 0.8F);
+                world.setTypeUpdate(i, j, k, Blocks.FIRE);
 
                 // CraftBukkit start
                 org.bukkit.event.block.BlockPlaceEvent placeEvent = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ);

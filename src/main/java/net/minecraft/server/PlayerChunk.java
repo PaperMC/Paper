@@ -11,9 +11,8 @@ class PlayerChunk {
     private int dirtyCount;
     private int f;
     private long g;
-    private boolean loaded = false; // CraftBukkit
-
     final PlayerChunkMap playerChunkMap;
+    private boolean loaded = false; // CraftBukkit
 
     public PlayerChunk(PlayerChunkMap playerchunkmap, int i, int j) {
         this.playerChunkMap = playerchunkmap;
@@ -38,12 +37,10 @@ class PlayerChunk {
             }
 
             this.b.add(entityplayer);
-
             // CraftBukkit start
             if (this.loaded) {
                 entityplayer.chunkCoordIntPairQueue.add(this.location);
             } else {
-                // Abuse getChunkAt to add another callback
                 this.playerChunkMap.a().chunkProviderServer.getChunkAt(this.location.x, this.location.z, new Runnable() {
                     public void run() {
                         entityplayer.chunkCoordIntPairQueue.add(PlayerChunk.this.location);
@@ -58,7 +55,10 @@ class PlayerChunk {
         if (this.b.contains(entityplayer)) {
             Chunk chunk = PlayerChunkMap.a(this.playerChunkMap).getChunkAt(this.location.x, this.location.z);
 
-            entityplayer.playerConnection.sendPacket(new Packet51MapChunk(chunk, true, 0));
+            if (chunk.k()) {
+                entityplayer.playerConnection.sendPacket(new PacketPlayOutMapChunk(chunk, true, 0));
+            }
+
             this.b.remove(entityplayer);
             entityplayer.chunkCoordIntPairQueue.remove(this.location);
             if (this.b.isEmpty()) {
@@ -81,7 +81,7 @@ class PlayerChunk {
     }
 
     private void a(Chunk chunk) {
-        chunk.q += PlayerChunkMap.a(this.playerChunkMap).getTime() - this.g;
+        chunk.s += PlayerChunkMap.a(this.playerChunkMap).getTime() - this.g;
         this.g = PlayerChunkMap.a(this.playerChunkMap).getTime();
     }
 
@@ -124,8 +124,8 @@ class PlayerChunk {
                 i = this.location.x * 16 + (this.dirtyBlocks[0] >> 12 & 15);
                 j = this.dirtyBlocks[0] & 255;
                 k = this.location.z * 16 + (this.dirtyBlocks[0] >> 8 & 15);
-                this.sendAll(new Packet53BlockChange(i, j, k, PlayerChunkMap.a(this.playerChunkMap)));
-                if (PlayerChunkMap.a(this.playerChunkMap).isTileEntity(i, j, k)) {
+                this.sendAll(new PacketPlayOutBlockChange(i, j, k, PlayerChunkMap.a(this.playerChunkMap)));
+                if (PlayerChunkMap.a(this.playerChunkMap).getType(i, j, k).isTileEntity()) {
                     this.sendTileEntity(PlayerChunkMap.a(this.playerChunkMap).getTileEntity(i, j, k));
                 }
             } else {
@@ -134,7 +134,7 @@ class PlayerChunk {
                 if (this.dirtyCount == 64) {
                     i = this.location.x * 16;
                     j = this.location.z * 16;
-                    this.sendAll(new Packet51MapChunk(PlayerChunkMap.a(this.playerChunkMap).getChunkAt(this.location.x, this.location.z), (this.f == 0xFFFF), this.f)); // CraftBukkit - send everything (including biome) if all sections flagged
+                    this.sendAll(new PacketPlayOutMapChunk(PlayerChunkMap.a(this.playerChunkMap).getChunkAt(this.location.x, this.location.z), (this.f == 0xFFFF), this.f)); // CraftBukkit - send everything (including biome) if all sections flagged
 
                     for (k = 0; k < 16; ++k) {
                         if ((this.f & 1 << k) != 0) {
@@ -147,13 +147,13 @@ class PlayerChunk {
                         }
                     }
                 } else {
-                    this.sendAll(new Packet52MultiBlockChange(this.location.x, this.location.z, this.dirtyBlocks, this.dirtyCount, PlayerChunkMap.a(this.playerChunkMap)));
+                    this.sendAll(new PacketPlayOutMultiBlockChange(this.dirtyCount, this.dirtyBlocks, PlayerChunkMap.a(this.playerChunkMap).getChunkAt(this.location.x, this.location.z)));
 
                     for (i = 0; i < this.dirtyCount; ++i) {
                         j = this.location.x * 16 + (this.dirtyBlocks[i] >> 12 & 15);
                         k = this.dirtyBlocks[i] & 255;
                         l = this.location.z * 16 + (this.dirtyBlocks[i] >> 8 & 15);
-                        if (PlayerChunkMap.a(this.playerChunkMap).isTileEntity(j, k, l)) {
+                        if (PlayerChunkMap.a(this.playerChunkMap).getType(j, k, l).isTileEntity()) {
                             this.sendTileEntity(PlayerChunkMap.a(this.playerChunkMap).getTileEntity(j, k, l));
                         }
                     }

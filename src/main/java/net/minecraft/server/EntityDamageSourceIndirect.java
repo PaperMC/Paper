@@ -9,7 +9,7 @@ public class EntityDamageSourceIndirect extends EntityDamageSource {
         this.owner = entity1;
     }
 
-    public Entity h() {
+    public Entity i() {
         return this.p;
     }
 
@@ -17,13 +17,13 @@ public class EntityDamageSourceIndirect extends EntityDamageSource {
         return this.owner;
     }
 
-    public ChatMessage getLocalizedDeathMessage(EntityLiving entityliving) {
-        String s = this.owner == null ? this.p.getScoreboardDisplayName() : this.owner.getScoreboardDisplayName();
-        ItemStack itemstack = this.owner instanceof EntityLiving ? ((EntityLiving) this.owner).aZ() : null;
-        String s1 = "death.attack." + this.translationIndex;
-        String s2 = s1 + ".item";
+    public IChatBaseComponent getLocalizedDeathMessage(EntityLiving entityliving) {
+        IChatBaseComponent ichatbasecomponent = this.owner == null ? this.p.getScoreboardDisplayName() : this.owner.getScoreboardDisplayName();
+        ItemStack itemstack = this.owner instanceof EntityLiving ? ((EntityLiving) this.owner).be() : null;
+        String s = "death.attack." + this.translationIndex;
+        String s1 = s + ".item";
 
-        return itemstack != null && itemstack.hasName() && LocaleI18n.b(s2) ? ChatMessage.b(s2, new Object[] { entityliving.getScoreboardDisplayName(), s, itemstack.getName()}) : ChatMessage.b(s1, new Object[] { entityliving.getScoreboardDisplayName(), s});
+        return itemstack != null && itemstack.hasName() && LocaleI18n.c(s1) ? new ChatMessage(s1, new Object[] { entityliving.getScoreboardDisplayName(), ichatbasecomponent, itemstack.E()}) : new ChatMessage(s, new Object[] { entityliving.getScoreboardDisplayName(), ichatbasecomponent});
     }
 
     // CraftBukkit start

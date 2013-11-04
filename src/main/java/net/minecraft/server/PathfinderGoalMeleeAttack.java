@@ -12,6 +12,9 @@ public class PathfinderGoalMeleeAttack extends PathfinderGoal {
     PathEntity f;
     Class g;
     private int h;
+    private double i;
+    private double j;
+    private double k;
 
     public PathfinderGoalMeleeAttack(EntityCreature entitycreature, Class oclass, double d0, boolean flag) {
         this(entitycreature, d0, flag);
@@ -67,23 +70,34 @@ public class PathfinderGoalMeleeAttack extends PathfinderGoal {
         EntityLiving entityliving = this.b.getGoalTarget();
 
         this.b.getControllerLook().a(entityliving, 30.0F, 30.0F);
-        if ((this.e || this.b.getEntitySenses().canSee(entityliving)) && --this.h <= 0) {
-            this.h = 4 + this.b.aD().nextInt(7);
-            this.b.getNavigation().a((Entity) entityliving, this.d);
+        double d0 = this.b.e(entityliving.locX, entityliving.boundingBox.b, entityliving.locZ);
+        double d1 = (double) (this.b.width * 2.0F * this.b.width * 2.0F + entityliving.width);
+
+        --this.h;
+        if ((this.e || this.b.getEntitySenses().canSee(entityliving)) && this.h <= 0 && (this.i == 0.0D && this.j == 0.0D && this.k == 0.0D || entityliving.e(this.i, this.j, this.k) >= 1.0D || this.b.aI().nextFloat() < 0.05F)) {
+            this.i = entityliving.locX;
+            this.j = entityliving.boundingBox.b;
+            this.k = entityliving.locZ;
+            this.h = 4 + this.b.aI().nextInt(7);
+            if (d0 > 1024.0D) {
+                this.h += 10;
+            } else if (d0 > 256.0D) {
+                this.h += 5;
+            }
+
+            if (!this.b.getNavigation().a((Entity) entityliving, this.d)) {
+                this.h += 15;
+            }
         }
 
         this.c = Math.max(this.c - 1, 0);
-        double d0 = (double) (this.b.width * 2.0F * this.b.width * 2.0F + entityliving.width);
-
-        if (this.b.e(entityliving.locX, entityliving.boundingBox.b, entityliving.locZ) <= d0) {
-            if (this.c <= 0) {
-                this.c = 20;
-                if (this.b.aZ() != null) {
-                    this.b.aV();
-                }
-
-                this.b.m(entityliving);
+        if (d0 <= d1 && this.c <= 20) {
+            this.c = 20;
+            if (this.b.be() != null) {
+                this.b.ba();
             }
+
+            this.b.m(entityliving);
         }
     }
 }

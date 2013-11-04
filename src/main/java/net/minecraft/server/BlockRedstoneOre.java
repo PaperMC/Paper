@@ -8,10 +8,10 @@ public class BlockRedstoneOre extends Block {
 
     private boolean a;
 
-    public BlockRedstoneOre(int i, boolean flag) {
-        super(i, Material.STONE);
+    public BlockRedstoneOre(boolean flag) {
+        super(Material.STONE);
         if (flag) {
-            this.b(true);
+            this.a(true);
         }
 
         this.a = flag;
@@ -22,7 +22,7 @@ public class BlockRedstoneOre extends Block {
     }
 
     public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
-        this.k(world, i, j, k);
+        this.e(world, i, j, k);
         super.attack(world, i, j, k, entityhuman);
     }
 
@@ -31,14 +31,14 @@ public class BlockRedstoneOre extends Block {
         if (entity instanceof EntityHuman) {
             org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, i, j, k, -1, null);
             if (!event.isCancelled()) {
-                this.k(world, i, j, k);
+                this.e(world, i, j, k);
                 super.b(world, i, j, k, entity);
             }
         } else {
             EntityInteractEvent event = new EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(i, j, k));
             world.getServer().getPluginManager().callEvent(event);
             if (!event.isCancelled()) {
-                this.k(world, i, j, k);
+                this.e(world, i, j, k);
                 super.b(world, i, j, k, entity);
             }
         }
@@ -46,25 +46,25 @@ public class BlockRedstoneOre extends Block {
     }
 
     public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
-        this.k(world, i, j, k);
+        this.e(world, i, j, k);
         return super.interact(world, i, j, k, entityhuman, l, f, f1, f2);
     }
 
-    private void k(World world, int i, int j, int k) {
+    private void e(World world, int i, int j, int k) {
         this.m(world, i, j, k);
-        if (this.id == Block.REDSTONE_ORE.id) {
-            world.setTypeIdUpdate(i, j, k, Block.GLOWING_REDSTONE_ORE.id);
+        if (this == Blocks.REDSTONE_ORE) {
+            world.setTypeUpdate(i, j, k, Blocks.GLOWING_REDSTONE_ORE);
         }
     }
 
     public void a(World world, int i, int j, int k, Random random) {
-        if (this.id == Block.GLOWING_REDSTONE_ORE.id) {
-            world.setTypeIdUpdate(i, j, k, Block.REDSTONE_ORE.id);
+        if (this == Blocks.GLOWING_REDSTONE_ORE) {
+            world.setTypeUpdate(i, j, k, Blocks.REDSTONE_ORE);
         }
     }
 
-    public int getDropType(int i, Random random, int j) {
-        return Item.REDSTONE.id;
+    public Item getDropType(int i, Random random, int j) {
+        return Items.REDSTONE;
     }
 
     public int getDropCount(int i, Random random) {
@@ -78,15 +78,16 @@ public class BlockRedstoneOre extends Block {
     public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
         super.dropNaturally(world, i, j, k, l, f, i1);
         /* CraftBukkit start - Delegated to getExpDrop
-        if (this.getDropType(l, world.random, i1) != this.id) {
+        if (this.getDropType(l, world.random, i1) != Item.getItemOf(this)) {
             int j1 = 1 + world.random.nextInt(5);
 
-            this.j(world, i, j, k, j1);
-        } */
+            this.dropExperience(world, i, j, k, j1);
+        }
+        // */
     }
 
     public int getExpDrop(World world, int l, int i1) {
-        if (this.getDropType(l, world.random, i1) != this.id) {
+        if (this.getDropType(l, world.random, i1) != Item.getItemOf(this)) {
             int j1 = 1 + world.random.nextInt(5);
 
             return j1;
@@ -105,27 +106,27 @@ public class BlockRedstoneOre extends Block {
             double d2 = (double) ((float) j + random.nextFloat());
             double d3 = (double) ((float) k + random.nextFloat());
 
-            if (l == 0 && !world.t(i, j + 1, k)) {
+            if (l == 0 && !world.getType(i, j + 1, k).c()) {
                 d2 = (double) (j + 1) + d0;
             }
 
-            if (l == 1 && !world.t(i, j - 1, k)) {
+            if (l == 1 && !world.getType(i, j - 1, k).c()) {
                 d2 = (double) (j + 0) - d0;
             }
 
-            if (l == 2 && !world.t(i, j, k + 1)) {
+            if (l == 2 && !world.getType(i, j, k + 1).c()) {
                 d3 = (double) (k + 1) + d0;
             }
 
-            if (l == 3 && !world.t(i, j, k - 1)) {
+            if (l == 3 && !world.getType(i, j, k - 1).c()) {
                 d3 = (double) (k + 0) - d0;
             }
 
-            if (l == 4 && !world.t(i + 1, j, k)) {
+            if (l == 4 && !world.getType(i + 1, j, k).c()) {
                 d1 = (double) (i + 1) + d0;
             }
 
-            if (l == 5 && !world.t(i - 1, j, k)) {
+            if (l == 5 && !world.getType(i - 1, j, k).c()) {
                 d1 = (double) (i + 0) - d0;
             }
 
@@ -135,7 +136,7 @@ public class BlockRedstoneOre extends Block {
         }
     }
 
-    protected ItemStack d_(int i) {
-        return new ItemStack(Block.REDSTONE_ORE);
+    protected ItemStack j(int i) {
+        return new ItemStack(Blocks.REDSTONE_ORE);
     }
 }

@@ -2,52 +2,53 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-import org.bukkit.BlockChangeDelegate; // CraftBukkit
+import org.bukkit.craftbukkit.CraftBlockChangeDelegate; // CraftBukkit
 
-public class WorldGenSwampTree extends WorldGenerator implements BlockSapling.TreeGenerator { // CraftBukkit add interface
+public class WorldGenSwampTree extends WorldGenTreeAbstract implements BlockSapling.TreeGenerator { // CraftBukkit - add interface
 
-    public WorldGenSwampTree() {}
+    public WorldGenSwampTree() {
+        super(false);
+    }
 
     public boolean a(World world, Random random, int i, int j, int k) {
         // CraftBukkit start - Moved to generate
-        return this.generate((BlockChangeDelegate) world, random, i, j, k);
+        return this.generate(new CraftBlockChangeDelegate((org.bukkit.BlockChangeDelegate) world), random, i, j, k);
     }
 
-    public boolean generate(BlockChangeDelegate world, Random random, int i, int j, int k) {
+    public boolean generate(CraftBlockChangeDelegate world, Random random, int i, int j, int k) {
         // CraftBukkit end
         int l;
 
-        for (l = random.nextInt(4) + 5; world.getTypeId(i, j - 1, k) != 0 && Block.byId[world.getTypeId(i, j - 1, k)].material == Material.WATER; --j) { // CraftBukkit - bypass world.getMaterial
+        for (l = random.nextInt(4) + 5; world.getType(i, j - 1, k).getMaterial() == Material.WATER; --j) {
             ;
         }
 
         boolean flag = true;
 
-        if (j >= 1 && j + l + 1 <= 128) {
+        if (j >= 1 && j + l + 1 <= 256) {
             int i1;
             int j1;
-            int k1;
-            int l1;
 
-            for (i1 = j; i1 <= j + 1 + l; ++i1) {
+            for (int k1 = j; k1 <= j + 1 + l; ++k1) {
                 byte b0 = 1;
 
-                if (i1 == j) {
+                if (k1 == j) {
                     b0 = 0;
                 }
 
-                if (i1 >= j + 1 + l - 2) {
+                if (k1 >= j + 1 + l - 2) {
                     b0 = 3;
                 }
 
-                for (j1 = i - b0; j1 <= i + b0 && flag; ++j1) {
-                    for (k1 = k - b0; k1 <= k + b0 && flag; ++k1) {
-                        if (i1 >= 0 && i1 < 128) {
-                            l1 = world.getTypeId(j1, i1, k1);
-                            if (l1 != 0 && l1 != Block.LEAVES.id) {
-                                if (l1 != Block.STATIONARY_WATER.id && l1 != Block.WATER.id) {
+                for (i1 = i - b0; i1 <= i + b0 && flag; ++i1) {
+                    for (j1 = k - b0; j1 <= k + b0 && flag; ++j1) {
+                        if (k1 >= 0 && k1 < 256) {
+                            Block block = world.getType(i1, k1, j1);
+
+                            if (block.getMaterial() != Material.AIR && block.getMaterial() != Material.LEAVES) {
+                                if (block != Blocks.STATIONARY_WATER && block != Blocks.WATER) {
                                     flag = false;
-                                } else if (i1 > j) {
+                                } else if (k1 > j) {
                                     flag = false;
                                 }
                             }
@@ -61,58 +62,61 @@ public class WorldGenSwampTree extends WorldGenerator implements BlockSapling.Tr
             if (!flag) {
                 return false;
             } else {
-                i1 = world.getTypeId(i, j - 1, k);
-                if ((i1 == Block.GRASS.id || i1 == Block.DIRT.id) && j < 128 - l - 1) {
-                    this.setType(world, i, j - 1, k, Block.DIRT.id);
+                Block block1 = world.getType(i, j - 1, k);
 
+                if ((block1 == Blocks.GRASS || block1 == Blocks.DIRT) && j < 256 - l - 1) {
+                    this.setType(world, i, j - 1, k, Blocks.DIRT);
+
+                    int l1;
                     int i2;
                     int j2;
 
                     for (j2 = j - 3 + l; j2 <= j + l; ++j2) {
-                        j1 = j2 - (j + l);
-                        k1 = 2 - j1 / 2;
+                        i1 = j2 - (j + l);
+                        j1 = 2 - i1 / 2;
 
-                        for (l1 = i - k1; l1 <= i + k1; ++l1) {
-                            i2 = l1 - i;
+                        for (i2 = i - j1; i2 <= i + j1; ++i2) {
+                            l1 = i2 - i;
 
-                            for (int k2 = k - k1; k2 <= k + k1; ++k2) {
+                            for (int k2 = k - j1; k2 <= k + j1; ++k2) {
                                 int l2 = k2 - k;
 
-                                if ((Math.abs(i2) != k1 || Math.abs(l2) != k1 || random.nextInt(2) != 0 && j1 != 0) && !Block.t[world.getTypeId(l1, j2, k2)]) {
-                                    this.setType(world, l1, j2, k2, Block.LEAVES.id);
+                                if ((Math.abs(l1) != j1 || Math.abs(l2) != j1 || random.nextInt(2) != 0 && i1 != 0) && !world.getType(i2, j2, k2).j()) {
+                                    this.setType(world, i2, j2, k2, Blocks.LEAVES);
                                 }
                             }
                         }
                     }
 
                     for (j2 = 0; j2 < l; ++j2) {
-                        j1 = world.getTypeId(i, j + j2, k);
-                        if (j1 == 0 || j1 == Block.LEAVES.id || j1 == Block.WATER.id || j1 == Block.STATIONARY_WATER.id) {
-                            this.setType(world, i, j + j2, k, Block.LOG.id);
+                        Block block2 = world.getType(i, j + j2, k);
+
+                        if (block2.getMaterial() == Material.AIR || block2.getMaterial() == Material.LEAVES || block2 == Blocks.WATER || block2 == Blocks.STATIONARY_WATER) {
+                            this.setType(world, i, j + j2, k, Blocks.LOG);
                         }
                     }
 
                     for (j2 = j - 3 + l; j2 <= j + l; ++j2) {
-                        j1 = j2 - (j + l);
-                        k1 = 2 - j1 / 2;
+                        i1 = j2 - (j + l);
+                        j1 = 2 - i1 / 2;
 
-                        for (l1 = i - k1; l1 <= i + k1; ++l1) {
-                            for (i2 = k - k1; i2 <= k + k1; ++i2) {
-                                if (world.getTypeId(l1, j2, i2) == Block.LEAVES.id) {
-                                    if (random.nextInt(4) == 0 && world.getTypeId(l1 - 1, j2, i2) == 0) {
-                                        this.b(world, l1 - 1, j2, i2, 8);
+                        for (i2 = i - j1; i2 <= i + j1; ++i2) {
+                            for (l1 = k - j1; l1 <= k + j1; ++l1) {
+                                if (world.getType(i2, j2, l1).getMaterial() == Material.LEAVES) {
+                                    if (random.nextInt(4) == 0 && world.getType(i2 - 1, j2, l1).getMaterial() == Material.AIR) {
+                                        this.a(world, i2 - 1, j2, l1, 8);
                                     }
 
-                                    if (random.nextInt(4) == 0 && world.getTypeId(l1 + 1, j2, i2) == 0) {
-                                        this.b(world, l1 + 1, j2, i2, 2);
+                                    if (random.nextInt(4) == 0 && world.getType(i2 + 1, j2, l1).getMaterial() == Material.AIR) {
+                                        this.a(world, i2 + 1, j2, l1, 2);
                                     }
 
-                                    if (random.nextInt(4) == 0 && world.getTypeId(l1, j2, i2 - 1) == 0) {
-                                        this.b(world, l1, j2, i2 - 1, 1);
+                                    if (random.nextInt(4) == 0 && world.getType(i2, j2, l1 - 1).getMaterial() == Material.AIR) {
+                                        this.a(world, i2, j2, l1 - 1, 1);
                                     }
 
-                                    if (random.nextInt(4) == 0 && world.getTypeId(l1, j2, i2 + 1) == 0) {
-                                        this.b(world, l1, j2, i2 + 1, 4);
+                                    if (random.nextInt(4) == 0 && world.getType(i2, j2, l1 + 1).getMaterial() == Material.AIR) {
+                                        this.a(world, i2, j2, l1 + 1, 4);
                                     }
                                 }
                             }
@@ -130,17 +134,17 @@ public class WorldGenSwampTree extends WorldGenerator implements BlockSapling.Tr
     }
 
     // CraftBukkit - change signature
-    private void b(BlockChangeDelegate world, int i, int j, int k, int l) {
-        this.setTypeAndData(world, i, j, k, Block.VINE.id, l);
+    private void a(CraftBlockChangeDelegate world, int i, int j, int k, int l) {
+        this.setTypeAndData(world, i, j, k, Blocks.VINE, l);
         int i1 = 4;
 
         while (true) {
             --j;
-            if (world.getTypeId(i, j, k) != 0 || i1 <= 0) {
+            if (world.getType(i, j, k).getMaterial() != Material.AIR || i1 <= 0) {
                 return;
             }
 
-            this.setTypeAndData(world, i, j, k, Block.VINE.id, l);
+            this.setTypeAndData(world, i, j, k, Blocks.VINE, l);
             --i1;
         }
     }

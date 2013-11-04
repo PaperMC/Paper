@@ -12,23 +12,23 @@ final class DispenseBehaviorEmptyBucket extends DispenseBehaviorItem {
     DispenseBehaviorEmptyBucket() {}
 
     public ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
-        EnumFacing enumfacing = BlockDispenser.l_(isourceblock.h());
+        EnumFacing enumfacing = BlockDispenser.b(isourceblock.h());
         World world = isourceblock.k();
         int i = isourceblock.getBlockX() + enumfacing.c();
         int j = isourceblock.getBlockY() + enumfacing.d();
         int k = isourceblock.getBlockZ() + enumfacing.e();
-        Material material = world.getMaterial(i, j, k);
+        Material material = world.getType(i, j, k).getMaterial();
         int l = world.getData(i, j, k);
         Item item;
 
         if (Material.WATER.equals(material) && l == 0) {
-            item = Item.WATER_BUCKET;
+            item = Items.WATER_BUCKET;
         } else {
             if (!Material.LAVA.equals(material) || l != 0) {
                 return super.b(isourceblock, itemstack);
             }
 
-            item = Item.LAVA_BUCKET;
+            item = Items.LAVA_BUCKET;
         }
 
         // CraftBukkit start
@@ -57,7 +57,7 @@ final class DispenseBehaviorEmptyBucket extends DispenseBehaviorItem {
 
         world.setAir(i, j, k);
         if (--itemstack.count == 0) {
-            itemstack.id = item.id;
+            itemstack.setItem(item);
             itemstack.count = 1;
         } else if (((TileEntityDispenser) isourceblock.getTileEntity()).addItem(new ItemStack(item)) < 0) {
             this.b.a(isourceblock, new ItemStack(item));

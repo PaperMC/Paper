@@ -10,7 +10,7 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
     }
 
     public boolean a() {
-        return !super.a() ? false : (!this.a.world.getGameRules().getBoolean("mobGriefing") ? false : !this.e.b_(this.a.world, this.b, this.c, this.d));
+        return !super.a() ? false : (!this.a.world.getGameRules().getBoolean("mobGriefing") ? false : !this.e.f((IBlockAccess) this.a.world, this.b, this.c, this.d)); // CraftBukkit - Fix decompilation issue by casting world to IBlockAccess
     }
 
     public void c() {
@@ -21,17 +21,17 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
     public boolean b() {
         double d0 = this.a.e((double) this.b, (double) this.c, (double) this.d);
 
-        return this.i <= 240 && !this.e.b_(this.a.world, this.b, this.c, this.d) && d0 < 4.0D;
+        return this.i <= 240 && !this.e.f((IBlockAccess) this.a.world, this.b, this.c, this.d) && d0 < 4.0D; // CraftBukkit - Fix decompilation issue by casting world to IBlockAccess
     }
 
     public void d() {
         super.d();
-        this.a.world.f(this.a.id, this.b, this.c, this.d, -1);
+        this.a.world.d(this.a.getId(), this.b, this.c, this.d, -1);
     }
 
     public void e() {
         super.e();
-        if (this.a.aD().nextInt(20) == 0) {
+        if (this.a.aI().nextInt(20) == 0) {
             this.a.world.triggerEffect(1010, this.b, this.c, this.d, 0);
         }
 
@@ -39,11 +39,11 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
         int i = (int) ((float) this.i / 240.0F * 10.0F);
 
         if (i != this.j) {
-            this.a.world.f(this.a.id, this.b, this.c, this.d, i);
+            this.a.world.d(this.a.getId(), this.b, this.c, this.d, i);
             this.j = i;
         }
 
-        if (this.i == 240 && this.a.world.difficulty == 3) {
+        if (this.i == 240 && this.a.world.difficulty == EnumDifficulty.HARD) {
             // CraftBukkit start
             if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreakDoorEvent(this.a, this.b, this.c, this.d).isCancelled()) {
                 this.e();
@@ -53,7 +53,7 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
 
             this.a.world.setAir(this.b, this.c, this.d);
             this.a.world.triggerEffect(1012, this.b, this.c, this.d, 0);
-            this.a.world.triggerEffect(2001, this.b, this.c, this.d, this.e.id);
+            this.a.world.triggerEffect(2001, this.b, this.c, this.d, Block.b((Block) this.e));
         }
     }
 }

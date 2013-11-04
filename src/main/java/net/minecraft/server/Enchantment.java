@@ -29,6 +29,8 @@ public abstract class Enchantment {
     public static final Enchantment ARROW_KNOCKBACK = new EnchantmentArrowKnockback(49, 2);
     public static final Enchantment ARROW_FIRE = new EnchantmentFlameArrows(50, 2);
     public static final Enchantment ARROW_INFINITE = new EnchantmentInfiniteArrows(51, 1);
+    public static final Enchantment LUCK = new EnchantmentLootBonus(61, 2, EnchantmentSlotType.FISHING_ROD);
+    public static final Enchantment LURE = new EnchantmentLure(62, 2, EnchantmentSlotType.FISHING_ROD);
     public final int id;
     private final int weight;
     public EnchantmentSlotType slot;
@@ -97,6 +99,10 @@ public abstract class Enchantment {
     public boolean canEnchant(ItemStack itemstack) {
         return this.slot.canEnchant(itemstack.getItem());
     }
+
+    public void a(EntityLiving entityliving, Entity entity, int i) {}
+
+    public void b(EntityLiving entityliving, Entity entity, int i) {}
 
     static {
         ArrayList arraylist = new ArrayList();

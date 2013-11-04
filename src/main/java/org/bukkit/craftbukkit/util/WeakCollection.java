@@ -8,7 +8,6 @@ import java.util.NoSuchElementException;
 
 import org.apache.commons.lang.Validate;
 
-
 public final class WeakCollection<T> implements Collection<T> {
     static final Object NO_VALUE = new Object();
     private final Collection<WeakReference<T>> collection;

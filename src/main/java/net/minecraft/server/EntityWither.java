@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import java.util.Iterator;
 import java.util.List;
 
 // CraftBukkit start
@@ -34,8 +35,8 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
         this.b = 50;
     }
 
-    protected void a() {
-        super.a();
+    protected void c() {
+        super.c();
         this.datawatcher.a(17, new Integer(0));
         this.datawatcher.a(18, new Integer(0));
         this.datawatcher.a(19, new Integer(0));
@@ -44,37 +45,37 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.setInt("Invul", this.bU());
+        nbttagcompound.setInt("Invul", this.bY());
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.p(nbttagcompound.getInt("Invul"));
+        this.s(nbttagcompound.getInt("Invul"));
     }
 
-    protected String r() {
+    protected String t() {
         return "mob.wither.idle";
     }
 
-    protected String aO() {
+    protected String aT() {
         return "mob.wither.hurt";
     }
 
-    protected String aP() {
+    protected String aU() {
         return "mob.wither.death";
     }
 
-    public void c() {
+    public void e() {
         this.motY *= 0.6000000238418579D;
         double d0;
         double d1;
         double d2;
 
-        if (!this.world.isStatic && this.q(0) > 0) {
-            Entity entity = this.world.getEntity(this.q(0));
+        if (!this.world.isStatic && this.t(0) > 0) {
+            Entity entity = this.world.getEntity(this.t(0));
 
             if (entity != null) {
-                if (this.locY < entity.locY || !this.bV() && this.locY < entity.locY + 5.0D) {
+                if (this.locY < entity.locY || !this.bZ() && this.locY < entity.locY + 5.0D) {
                     if (this.motY < 0.0D) {
                         this.motY = 0.0D;
                     }
@@ -98,7 +99,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
             this.yaw = (float) Math.atan2(this.motZ, this.motX) * 57.295776F - 90.0F;
         }
 
-        super.c();
+        super.e();
 
         int i;
 
@@ -110,7 +111,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
         int j;
 
         for (i = 0; i < 2; ++i) {
-            j = this.q(i + 1);
+            j = this.t(i + 1);
             Entity entity1 = null;
 
             if (j > 0) {
@@ -118,9 +119,9 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
             }
 
             if (entity1 != null) {
-                d0 = this.r(i + 1);
-                d1 = this.s(i + 1);
-                d2 = this.t(i + 1);
+                d0 = this.u(i + 1);
+                d1 = this.v(i + 1);
+                d2 = this.w(i + 1);
                 double d4 = entity1.locX - d0;
                 double d5 = entity1.locY + (double) entity1.getHeadHeight() - d1;
                 double d6 = entity1.locZ - d2;
@@ -135,12 +136,12 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
             }
         }
 
-        boolean flag = this.bV();
+        boolean flag = this.bZ();
 
         for (j = 0; j < 3; ++j) {
-            double d8 = this.r(j);
-            double d9 = this.s(j);
-            double d10 = this.t(j);
+            double d8 = this.u(j);
+            double d9 = this.v(j);
+            double d10 = this.w(j);
 
             this.world.addParticle("smoke", d8 + this.random.nextGaussian() * 0.30000001192092896D, d9 + this.random.nextGaussian() * 0.30000001192092896D, d10 + this.random.nextGaussian() * 0.30000001192092896D, 0.0D, 0.0D, 0.0D);
             if (flag && this.world.random.nextInt(4) == 0) {
@@ -148,18 +149,18 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
             }
         }
 
-        if (this.bU() > 0) {
+        if (this.bY() > 0) {
             for (j = 0; j < 3; ++j) {
                 this.world.addParticle("mobSpell", this.locX + this.random.nextGaussian() * 1.0D, this.locY + (double) (this.random.nextFloat() * 3.3F), this.locZ + this.random.nextGaussian() * 1.0D, 0.699999988079071D, 0.699999988079071D, 0.8999999761581421D);
             }
         }
     }
 
-    protected void bi() {
+    protected void bn() {
         int i;
 
-        if (this.bU() > 0) {
-            i = this.bU() - 1;
+        if (this.bY() > 0) {
+            i = this.bY() - 1;
             if (i <= 0) {
                 // CraftBukkit start
                 ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), 7.0F, false);
@@ -171,22 +172,22 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
                 // CraftBukkit end
 
                 this.world.createExplosion(this, this.locX, this.locY + (double) this.getHeadHeight(), this.locZ, 7.0F, false, this.world.getGameRules().getBoolean("mobGriefing"));
-                this.world.d(1013, (int) this.locX, (int) this.locY, (int) this.locZ, 0);
+                this.world.b(1013, (int) this.locX, (int) this.locY, (int) this.locZ, 0);
             }
 
-            this.p(i);
+            this.s(i);
             if (this.ticksLived % 10 == 0) {
                 this.heal(10.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.WITHER_SPAWN); // CraftBukkit
             }
         } else {
-            super.bi();
+            super.bn();
 
             int j;
 
             for (i = 1; i < 3; ++i) {
                 if (this.ticksLived >= this.bt[i - 1]) {
                     this.bt[i - 1] = this.ticksLived + 10 + this.random.nextInt(10);
-                    if (this.world.difficulty >= 2) {
+                    if (this.world.difficulty == EnumDifficulty.NORMAL || this.world.difficulty == EnumDifficulty.HARD) {
                         int i1001 = i - 1;
                         int i1003 = this.bu[i - 1];
 
@@ -203,7 +204,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
                         }
                     }
 
-                    j = this.q(i);
+                    j = this.t(i);
                     if (j > 0) {
                         Entity entity = this.world.getEntity(j);
 
@@ -212,7 +213,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
                             this.bt[i - 1] = this.ticksLived + 40 + this.random.nextInt(20);
                             this.bu[i - 1] = 0;
                         } else {
-                            this.c(i, 0);
+                            this.b(i, 0);
                         }
                     } else {
                         List list = this.world.a(EntityLiving.class, this.boundingBox.grow(20.0D, 8.0D, 20.0D), bw);
@@ -223,10 +224,10 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
                             if (entityliving != this && entityliving.isAlive() && this.o(entityliving)) {
                                 if (entityliving instanceof EntityHuman) {
                                     if (!((EntityHuman) entityliving).abilities.isInvulnerable) {
-                                        this.c(i, entityliving.id);
+                                        this.b(i, entityliving.getId());
                                     }
                                 } else {
-                                    this.c(i, entityliving.id);
+                                    this.b(i, entityliving.getId());
                                 }
                                 break;
                             }
@@ -238,9 +239,9 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
             }
 
             if (this.getGoalTarget() != null) {
-                this.c(0, this.getGoalTarget().id);
+                this.b(0, this.getGoalTarget().getId());
             } else {
-                this.c(0, 0);
+                this.b(0, 0);
             }
 
             if (this.bv > 0) {
@@ -257,11 +258,11 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
                                 int j2 = j + k1;
                                 int k2 = i + i2;
                                 int l2 = j1 + l1;
-                                int i3 = this.world.getTypeId(j2, k2, l2);
+                                Block block = this.world.getType(j2, k2, l2);
 
-                                if (i3 > 0 && i3 != Block.BEDROCK.id && i3 != Block.ENDER_PORTAL.id && i3 != Block.ENDER_PORTAL_FRAME.id) {
+                                if (block.getMaterial() != Material.AIR && block != Blocks.BEDROCK && block != Blocks.ENDER_PORTAL && block != Blocks.ENDER_PORTAL_FRAME && block != Blocks.COMMAND) {
                                     // CraftBukkit start
-                                    if (CraftEventFactory.callEntityChangeBlockEvent(this, j2, k2, l2, 0, 0).isCancelled()) {
+                                    if (CraftEventFactory.callEntityChangeBlockEvent(this, j2, k2, l2, Blocks.AIR, 0).isCancelled()) {
                                         continue;
                                     }
                                     // CraftBukkit end
@@ -284,18 +285,18 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
         }
     }
 
-    public void bT() {
-        this.p(220);
+    public void bX() {
+        this.s(220);
         this.setHealth(this.getMaxHealth() / 3.0F);
     }
 
-    public void am() {}
+    public void as() {}
 
-    public int aQ() {
+    public int aV() {
         return 4;
     }
 
-    private double r(int i) {
+    private double u(int i) {
         if (i <= 0) {
             return this.locX;
         } else {
@@ -306,11 +307,11 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
         }
     }
 
-    private double s(int i) {
+    private double v(int i) {
         return i <= 0 ? this.locY + 3.0D : this.locY + 2.2D;
     }
 
-    private double t(int i) {
+    private double w(int i) {
         if (i <= 0) {
             return this.locZ;
         } else {
@@ -341,9 +342,9 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
 
     private void a(int i, double d0, double d1, double d2, boolean flag) {
         this.world.a((EntityHuman) null, 1014, (int) this.locX, (int) this.locY, (int) this.locZ, 0);
-        double d3 = this.r(i);
-        double d4 = this.s(i);
-        double d5 = this.t(i);
+        double d3 = this.u(i);
+        double d4 = this.v(i);
+        double d5 = this.w(i);
         double d6 = d0 - d3;
         double d7 = d1 - d4;
         double d8 = d2 - d5;
@@ -368,13 +369,13 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
             return false;
         } else if (damagesource == DamageSource.DROWN) {
             return false;
-        } else if (this.bU() > 0) {
+        } else if (this.bY() > 0) {
             return false;
         } else {
             Entity entity;
 
-            if (this.bV()) {
-                entity = damagesource.h();
+            if (this.bZ()) {
+                entity = damagesource.i();
                 if (entity instanceof EntityArrow) {
                     return false;
                 }
@@ -400,51 +401,56 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
     protected void dropDeathLoot(boolean flag, int i) {
         // CraftBukkit start
         java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
-        loot.add(new org.bukkit.inventory.ItemStack(Item.NETHER_STAR.id, 1));
+        loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(Items.NETHER_STAR), 1));
         CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
+        if (!this.world.isStatic) {
+            Iterator iterator = this.world.a(EntityHuman.class, this.boundingBox.grow(50.0D, 100.0D, 50.0D)).iterator();
+
+            while (iterator.hasNext()) {
+                EntityHuman entityhuman = (EntityHuman) iterator.next();
+
+                entityhuman.a((Statistic) AchievementList.J);
+            }
+        }
     }
 
-    protected void u() {
+    protected void w() {
         this.aV = 0;
-    }
-
-    public boolean L() {
-        return !this.dead;
     }
 
     protected void b(float f) {}
 
     public void addEffect(MobEffect mobeffect) {}
 
-    protected boolean bf() {
+    protected boolean bk() {
         return true;
     }
 
-    protected void az() {
-        super.az();
+    protected void aD() {
+        super.aD();
         this.getAttributeInstance(GenericAttributes.a).setValue(300.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.6000000238418579D);
         this.getAttributeInstance(GenericAttributes.b).setValue(40.0D);
     }
 
-    public int bU() {
+    public int bY() {
         return this.datawatcher.getInt(20);
     }
 
-    public void p(int i) {
+    public void s(int i) {
         this.datawatcher.watch(20, Integer.valueOf(i));
     }
 
-    public int q(int i) {
+    public int t(int i) {
         return this.datawatcher.getInt(17 + i);
     }
 
-    public void c(int i, int j) {
+    public void b(int i, int j) {
         this.datawatcher.watch(17 + i, Integer.valueOf(j));
     }
 
-    public boolean bV() {
+    public boolean bZ() {
         return this.getHealth() <= this.getMaxHealth() / 2.0F;
     }
 

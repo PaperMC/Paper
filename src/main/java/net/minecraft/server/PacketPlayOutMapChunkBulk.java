@@ -1,19 +1,17 @@
 package net.minecraft.server;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.List;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
-public class Packet56MapChunkBulk extends Packet {
+public class PacketPlayOutMapChunkBulk extends Packet {
 
+    private int[] a;
+    private int[] b;
     private int[] c;
     private int[] d;
-    public int[] a;
-    public int[] b;
     private byte[] buffer;
     private byte[][] inflatedBuffers;
     private int size;
@@ -29,22 +27,22 @@ public class Packet56MapChunkBulk extends Packet {
     };
     // CraftBukkit end
 
-    public Packet56MapChunkBulk() {}
+    public PacketPlayOutMapChunkBulk() {}
 
-    public Packet56MapChunkBulk(List list) {
+    public PacketPlayOutMapChunkBulk(List list) {
         int i = list.size();
 
-        this.c = new int[i];
-        this.d = new int[i];
         this.a = new int[i];
         this.b = new int[i];
+        this.c = new int[i];
+        this.d = new int[i];
         this.inflatedBuffers = new byte[i][];
         this.h = !list.isEmpty() && !((Chunk) list.get(0)).world.worldProvider.g;
         int j = 0;
 
         for (int k = 0; k < i; ++k) {
             Chunk chunk = (Chunk) list.get(k);
-            ChunkMap chunkmap = Packet51MapChunk.a(chunk, true, '\uffff');
+            ChunkMap chunkmap = PacketPlayOutMapChunk.a(chunk, true, '\uffff');
 
             if (buildBuffer.length < j + chunkmap.a.length) {
                 byte[] abyte = new byte[j + chunkmap.a.length];
@@ -55,10 +53,10 @@ public class Packet56MapChunkBulk extends Packet {
 
             System.arraycopy(chunkmap.a, 0, buildBuffer, j, chunkmap.a.length);
             j += chunkmap.a.length;
-            this.c[k] = chunk.x;
-            this.d[k] = chunk.z;
-            this.a[k] = chunkmap.b;
-            this.b[k] = chunkmap.c;
+            this.a[k] = chunk.locX;
+            this.b[k] = chunk.locZ;
+            this.c[k] = chunkmap.b;
+            this.d[k] = chunkmap.c;
             this.inflatedBuffers[k] = chunkmap.a;
         }
 
@@ -92,22 +90,26 @@ public class Packet56MapChunkBulk extends Packet {
     }
     // CraftBukkit end
 
-    public void a(DataInput datainput) throws IOException { // CraftBukkit - throws IOException
-        short short1 = datainput.readShort();
+    public static int c() {
+        return 5;
+    }
 
-        this.size = datainput.readInt();
-        this.h = datainput.readBoolean();
-        this.c = new int[short1];
-        this.d = new int[short1];
+    public void a(PacketDataSerializer packetdataserializer) throws IOException { // CraftBukkit - throws IOException
+        short short1 = packetdataserializer.readShort();
+
+        this.size = packetdataserializer.readInt();
+        this.h = packetdataserializer.readBoolean();
         this.a = new int[short1];
         this.b = new int[short1];
+        this.c = new int[short1];
+        this.d = new int[short1];
         this.inflatedBuffers = new byte[short1][];
         if (buildBuffer.length < this.size) {
             buildBuffer = new byte[this.size];
         }
 
-        datainput.readFully(buildBuffer, 0, this.size);
-        byte[] abyte = new byte[196864 * short1];
+        packetdataserializer.readBytes(buildBuffer, 0, this.size);
+        byte[] abyte = new byte[PacketPlayOutMapChunk.c() * short1];
         Inflater inflater = new Inflater();
 
         inflater.setInput(buildBuffer, 0, this.size);
@@ -123,18 +125,18 @@ public class Packet56MapChunkBulk extends Packet {
         int i = 0;
 
         for (int j = 0; j < short1; ++j) {
-            this.c[j] = datainput.readInt();
-            this.d[j] = datainput.readInt();
-            this.a[j] = datainput.readShort();
-            this.b[j] = datainput.readShort();
+            this.a[j] = packetdataserializer.readInt();
+            this.b[j] = packetdataserializer.readInt();
+            this.c[j] = packetdataserializer.readShort();
+            this.d[j] = packetdataserializer.readShort();
             int k = 0;
             int l = 0;
 
             int i1;
 
             for (i1 = 0; i1 < 16; ++i1) {
-                k += this.a[j] >> i1 & 1;
-                l += this.b[j] >> i1 & 1;
+                k += this.c[j] >> i1 & 1;
+                l += this.d[j] >> i1 & 1;
             }
 
             i1 = 2048 * 4 * k + 256;
@@ -149,30 +151,40 @@ public class Packet56MapChunkBulk extends Packet {
         }
     }
 
-    public void a(DataOutput dataoutput) throws IOException { // CraftBukkit - throws IOException
+    public void b(PacketDataSerializer packetdataserializer) throws IOException { // CraftBukkit - throws IOException
         compress(); // CraftBukkit
-        dataoutput.writeShort(this.c.length);
-        dataoutput.writeInt(this.size);
-        dataoutput.writeBoolean(this.h);
-        dataoutput.write(this.buffer, 0, this.size);
+        packetdataserializer.writeShort(this.a.length);
+        packetdataserializer.writeInt(this.size);
+        packetdataserializer.writeBoolean(this.h);
+        packetdataserializer.writeBytes(this.buffer, 0, this.size);
 
-        for (int i = 0; i < this.c.length; ++i) {
-            dataoutput.writeInt(this.c[i]);
-            dataoutput.writeInt(this.d[i]);
-            dataoutput.writeShort((short) (this.a[i] & '\uffff'));
-            dataoutput.writeShort((short) (this.b[i] & '\uffff'));
+        for (int i = 0; i < this.a.length; ++i) {
+            packetdataserializer.writeInt(this.a[i]);
+            packetdataserializer.writeInt(this.b[i]);
+            packetdataserializer.writeShort((short) (this.c[i] & '\uffff'));
+            packetdataserializer.writeShort((short) (this.d[i] & '\uffff'));
         }
     }
 
-    public void handle(Connection connection) {
-        connection.a(this);
+    public void a(PacketPlayOutListener packetplayoutlistener) {
+        packetplayoutlistener.a(this);
     }
 
-    public int a() {
-        return 6 + this.size + 12 * this.d();
+    public String b() {
+        StringBuilder stringbuilder = new StringBuilder();
+
+        for (int i = 0; i < this.a.length; ++i) {
+            if (i > 0) {
+                stringbuilder.append(", ");
+            }
+
+            stringbuilder.append(String.format("{x=%d, z=%d, sections=%d, adds=%d, data=%d}", new Object[] { Integer.valueOf(this.a[i]), Integer.valueOf(this.b[i]), Integer.valueOf(this.c[i]), Integer.valueOf(this.d[i]), Integer.valueOf(this.inflatedBuffers[i].length)}));
+        }
+
+        return String.format("size=%d, chunks=%d[%s]", new Object[] { Integer.valueOf(this.size), Integer.valueOf(this.a.length), stringbuilder});
     }
 
-    public int d() {
-        return this.c.length;
+    public void handle(PacketListener packetlistener) {
+        this.a((PacketPlayOutListener) packetlistener);
     }
 }

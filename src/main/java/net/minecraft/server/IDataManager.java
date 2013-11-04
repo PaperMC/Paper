@@ -18,6 +18,8 @@ public interface IDataManager {
 
     void a();
 
+    File getDirectory();
+
     File getDataFile(String s);
 
     String g();

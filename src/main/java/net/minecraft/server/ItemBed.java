@@ -2,8 +2,7 @@ package net.minecraft.server;
 
 public class ItemBed extends Item {
 
-    public ItemBed(int i) {
-        super(i);
+    public ItemBed() {
         this.a(CreativeModeTab.c);
     }
 
@@ -15,7 +14,7 @@ public class ItemBed extends Item {
             return false;
         } else {
             ++j;
-            BlockBed blockbed = (BlockBed) Block.BED;
+            BlockBed blockbed = (BlockBed) Blocks.BED;
             int i1 = MathHelper.floor((double) (entityhuman.yaw * 4.0F / 360.0F) + 0.5D) & 3;
             byte b0 = 0;
             byte b1 = 0;
@@ -37,16 +36,16 @@ public class ItemBed extends Item {
             }
 
             if (entityhuman.a(i, j, k, l, itemstack) && entityhuman.a(i + b0, j, k + b1, l, itemstack)) {
-                if (world.isEmpty(i, j, k) && world.isEmpty(i + b0, j, k + b1) && world.w(i, j - 1, k) && world.w(i + b0, j - 1, k + b1)) {
+                if (world.isEmpty(i, j, k) && world.isEmpty(i + b0, j, k + b1) && World.a((IBlockAccess) world, i, j - 1, k) && World.a((IBlockAccess) world, i + b0, j - 1, k + b1)) {
                     // CraftBukkit start
-                    // world.setTypeIdAndData(i, j, k, blockbed.id, i1, 3);
-                    if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, blockbed.id, i1, clickedX, clickedY, clickedZ)) {
+                    // world.setTypeAndData(i, j, k, blockbed, i1, 3);
+                    if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, blockbed, i1, clickedX, clickedY, clickedZ)) {
                         return false;
                     }
                     // CraftBukkit end
 
-                    if (world.getTypeId(i, j, k) == blockbed.id) {
-                        world.setTypeIdAndData(i + b0, j, k + b1, blockbed.id, i1 + 8, 3);
+                    if (world.getType(i, j, k) == blockbed) {
+                        world.setTypeAndData(i + b0, j, k + b1, blockbed, i1 + 8, 3);
                     }
 
                     --itemstack.count;

@@ -2,13 +2,12 @@ package net.minecraft.server;
 
 public class ItemSeeds extends Item {
 
-    private int id;
-    private int b;
+    private Block block;
+    private Block b;
 
-    public ItemSeeds(int i, int j, int k) {
-        super(i);
-        this.id = j;
-        this.b = k;
+    public ItemSeeds(Block block, Block block1) {
+        this.block = block;
+        this.b = block1;
         this.a(CreativeModeTab.l);
     }
 
@@ -17,16 +16,13 @@ public class ItemSeeds extends Item {
         if (l != 1) {
             return false;
         } else if (entityhuman.a(i, j, k, l, itemstack) && entityhuman.a(i, j + 1, k, l, itemstack)) {
-            int i1 = world.getTypeId(i, j, k);
-
-            if (i1 == this.b && world.isEmpty(i, j + 1, k)) {
+            if (world.getType(i, j, k) == this.b && world.isEmpty(i, j + 1, k)) {
                 // CraftBukkit start - Seeds
-                // world.setTypeIdUpdate(i, j + 1, k, this.id);
-                if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j + 1, k, this.id, 0, clickedX, clickedY, clickedZ)) {
+                // world.setTypeUpdate(i, j + 1, k, this.block);
+                if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j + 1, k, this.block, 0, clickedX, clickedY, clickedZ)) {
                     return false;
                 }
                 // CraftBukkit end
-
                 --itemstack.count;
                 return true;
             } else {

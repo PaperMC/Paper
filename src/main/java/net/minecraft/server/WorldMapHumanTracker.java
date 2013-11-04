@@ -12,7 +12,6 @@ public class WorldMapHumanTracker {
     private byte[] h;
     public int d;
     private boolean i;
-
     final WorldMap worldMap;
 
     public WorldMapHumanTracker(WorldMap worldmap, EntityHuman entityhuman) {

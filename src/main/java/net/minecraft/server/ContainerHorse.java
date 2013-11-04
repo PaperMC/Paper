@@ -99,6 +99,6 @@ public class ContainerHorse extends Container {
 
     public void b(EntityHuman entityhuman) {
         super.b(entityhuman);
-        this.a.g();
+        this.a.l_();
     }
 }

@@ -63,7 +63,7 @@ public class ContainerWorkbench extends Container {
         }
 
         EntityPlayer player = (EntityPlayer) super.listeners.get(0); // TODO: Is this _always_ correct? Seems like it.
-        player.playerConnection.sendPacket(new Packet103SetSlot(player.activeContainer.windowId, 0, craftResult));
+        player.playerConnection.sendPacket(new PacketPlayOutSetSlot(player.activeContainer.windowId, 0, craftResult));
         // CraftBukkit end
     }
 
@@ -74,7 +74,7 @@ public class ContainerWorkbench extends Container {
                 ItemStack itemstack = this.craftInventory.splitWithoutUpdate(i);
 
                 if (itemstack != null) {
-                    entityhuman.drop(itemstack);
+                    entityhuman.drop(itemstack, false);
                 }
             }
         }
@@ -82,7 +82,7 @@ public class ContainerWorkbench extends Container {
 
     public boolean a(EntityHuman entityhuman) {
         if (!this.checkReachable) return true; // CraftBukkit
-        return this.g.getTypeId(this.h, this.i, this.j) != Block.WORKBENCH.id ? false : entityhuman.e((double) this.h + 0.5D, (double) this.i + 0.5D, (double) this.j + 0.5D) <= 64.0D;
+        return this.g.getType(this.h, this.i, this.j) != Blocks.WORKBENCH ? false : entityhuman.e((double) this.h + 0.5D, (double) this.i + 0.5D, (double) this.j + 0.5D) <= 64.0D;
     }
 
     public ItemStack b(EntityHuman entityhuman, int i) {

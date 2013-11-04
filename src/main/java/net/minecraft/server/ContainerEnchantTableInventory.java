@@ -8,7 +8,7 @@ import org.bukkit.entity.HumanEntity;
 
 public class ContainerEnchantTableInventory extends InventorySubcontainer { // CraftBukkit -> public
 
-    private final ContainerEnchantTable enchantTable;
+    final ContainerEnchantTable enchantTable;
 
     // CraftBukkit start
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
@@ -53,9 +53,5 @@ public class ContainerEnchantTableInventory extends InventorySubcontainer { // C
     public void update() {
         super.update();
         this.enchantTable.a((IInventory) this);
-    }
-
-    public boolean b(int i, ItemStack itemstack) {
-        return true;
     }
 }

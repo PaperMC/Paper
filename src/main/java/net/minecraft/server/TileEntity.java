@@ -4,28 +4,32 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.bukkit.inventory.InventoryHolder; // CraftBukkit
 
 public class TileEntity {
 
-    private static Map a = new HashMap();
-    private static Map b = new HashMap();
+    private static final Logger a = LogManager.getLogger();
+    private static Map i = new HashMap();
+    private static Map j = new HashMap();
     protected World world;
     public int x;
     public int y;
     public int z;
-    protected boolean o;
-    public int p = -1;
-    public Block q;
+    protected boolean f;
+    public int g = -1;
+    public Block h;
 
     public TileEntity() {}
 
     private static void a(Class oclass, String s) {
-        if (a.containsKey(s)) {
+        if (i.containsKey(s)) {
             throw new IllegalArgumentException("Duplicate id: " + s);
         } else {
-            a.put(s, oclass);
-            b.put(oclass, s);
+            i.put(s, oclass);
+            j.put(oclass, s);
         }
     }
 
@@ -33,7 +37,7 @@ public class TileEntity {
         return this.world;
     }
 
-    public void b(World world) {
+    public void a(World world) {
         this.world = world;
     }
 
@@ -48,7 +52,7 @@ public class TileEntity {
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        String s = (String) b.get(this.getClass());
+        String s = (String) j.get(this.getClass());
 
         if (s == null) {
             throw new RuntimeException(this.getClass() + " is missing a mapping! This is a bug!");
@@ -66,7 +70,7 @@ public class TileEntity {
         TileEntity tileentity = null;
 
         try {
-            Class oclass = (Class) a.get(nbttagcompound.getString("id"));
+            Class oclass = (Class) i.get(nbttagcompound.getString("id"));
 
             if (oclass != null) {
                 tileentity = (TileEntity) oclass.newInstance();
@@ -78,36 +82,36 @@ public class TileEntity {
         if (tileentity != null) {
             tileentity.a(nbttagcompound);
         } else {
-            MinecraftServer.getServer().getLogger().warning("Skipping TileEntity with id " + nbttagcompound.getString("id"));
+            a.warn("Skipping BlockEntity with id " + nbttagcompound.getString("id"));
         }
 
         return tileentity;
     }
 
     public int p() {
-        if (this.p == -1) {
-            this.p = this.world.getData(this.x, this.y, this.z);
+        if (this.g == -1) {
+            this.g = this.world.getData(this.x, this.y, this.z);
         }
 
-        return this.p;
+        return this.g;
     }
 
     public void update() {
         if (this.world != null) {
-            this.p = this.world.getData(this.x, this.y, this.z);
+            this.g = this.world.getData(this.x, this.y, this.z);
             this.world.b(this.x, this.y, this.z, this);
-            if (this.q() != null) {
-                this.world.m(this.x, this.y, this.z, this.q().id);
+            if (this.q() != Blocks.AIR) {
+                this.world.f(this.x, this.y, this.z, this.q());
             }
         }
     }
 
     public Block q() {
-        if (this.q == null) {
-            this.q = Block.byId[this.world.getTypeId(this.x, this.y, this.z)];
+        if (this.h == null) {
+            this.h = this.world.getType(this.x, this.y, this.z);
         }
 
-        return this.q;
+        return this.h;
     }
 
     public Packet getUpdatePacket() {
@@ -115,35 +119,35 @@ public class TileEntity {
     }
 
     public boolean r() {
-        return this.o;
-    }
-
-    public void w_() {
-        this.o = true;
+        return this.f;
     }
 
     public void s() {
-        this.o = false;
+        this.f = true;
     }
 
-    public boolean b(int i, int j) {
+    public void t() {
+        this.f = false;
+    }
+
+    public boolean c(int i, int j) {
         return false;
     }
 
-    public void i() {
-        this.q = null;
-        this.p = -1;
+    public void u() {
+        this.h = null;
+        this.g = -1;
     }
 
     public void a(CrashReportSystemDetails crashreportsystemdetails) {
         crashreportsystemdetails.a("Name", (Callable) (new CrashReportTileEntityName(this)));
-        CrashReportSystemDetails.a(crashreportsystemdetails, this.x, this.y, this.z, this.q().id, this.p());
+        CrashReportSystemDetails.a(crashreportsystemdetails, this.x, this.y, this.z, this.q(), this.p());
         crashreportsystemdetails.a("Actual block type", (Callable) (new CrashReportTileEntityType(this)));
         crashreportsystemdetails.a("Actual block data value", (Callable) (new CrashReportTileEntityData(this)));
     }
 
-    static Map t() {
-        return b;
+    static Map v() {
+        return j;
     }
 
     static {
@@ -166,6 +170,7 @@ public class TileEntity {
         a(TileEntityLightDetector.class, "DLDetector");
         a(TileEntityHopper.class, "Hopper");
         a(TileEntityComparator.class, "Comparator");
+        a(TileEntityFlowerPot.class, "FlowerPot");
     }
 
     // CraftBukkit start

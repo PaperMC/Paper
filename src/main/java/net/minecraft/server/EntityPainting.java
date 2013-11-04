@@ -59,11 +59,11 @@ public class EntityPainting extends EntityHanging {
         super.a(nbttagcompound);
     }
 
-    public int d() {
+    public int f() {
         return this.art.C;
     }
 
-    public int e() {
+    public int i() {
         return this.art.D;
     }
 
@@ -76,6 +76,6 @@ public class EntityPainting extends EntityHanging {
             }
         }
 
-        this.a(new ItemStack(Item.PAINTING), 0.0F);
+        this.a(new ItemStack(Items.PAINTING), 0.0F);
     }
 }

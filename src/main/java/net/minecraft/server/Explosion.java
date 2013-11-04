@@ -81,16 +81,15 @@ public class Explosion {
                             int l = MathHelper.floor(d0);
                             int i1 = MathHelper.floor(d1);
                             int j1 = MathHelper.floor(d2);
-                            int k1 = this.world.getTypeId(l, i1, j1);
+                            Block block = this.world.getType(l, i1, j1);
 
-                            if (k1 > 0) {
-                                Block block = Block.byId[k1];
+                            if (block.getMaterial() != Material.AIR) {
                                 float f3 = this.source != null ? this.source.a(this, this.world, l, i1, j1, block) : block.a(this.source);
 
                                 f1 -= (f3 + 0.3F) * f2;
                             }
 
-                            if (f1 > 0.0F && (this.source == null || this.source.a(this, this.world, l, i1, j1, k1, f1)) && i1 < 256 && i1 >= 0) { // CraftBukkit - don't wrap explosions
+                            if (f1 > 0.0F && (this.source == null || this.source.a(this, this.world, l, i1, j1, block, f1)) && i1 < 256 && i1 >= 0) { // CraftBukkit - don't wrap explosions
                                 hashset.add(new ChunkPosition(l, i1, j1));
                             }
 
@@ -108,14 +107,14 @@ public class Explosion {
         i = MathHelper.floor(this.posX - (double) this.size - 1.0D);
         j = MathHelper.floor(this.posX + (double) this.size + 1.0D);
         k = MathHelper.floor(this.posY - (double) this.size - 1.0D);
-        int l1 = MathHelper.floor(this.posY + (double) this.size + 1.0D);
-        int i2 = MathHelper.floor(this.posZ - (double) this.size - 1.0D);
-        int j2 = MathHelper.floor(this.posZ + (double) this.size + 1.0D);
-        List list = this.world.getEntities(this.source, AxisAlignedBB.a().a((double) i, (double) k, (double) i2, (double) j, (double) l1, (double) j2));
+        int k1 = MathHelper.floor(this.posY + (double) this.size + 1.0D);
+        int l1 = MathHelper.floor(this.posZ - (double) this.size - 1.0D);
+        int i2 = MathHelper.floor(this.posZ + (double) this.size + 1.0D);
+        List list = this.world.getEntities(this.source, AxisAlignedBB.a().a((double) i, (double) k, (double) l1, (double) j, (double) k1, (double) i2));
         Vec3D vec3d = this.world.getVec3DPool().create(this.posX, this.posY, this.posZ);
 
-        for (int k2 = 0; k2 < list.size(); ++k2) {
-            Entity entity = (Entity) list.get(k2);
+        for (int j2 = 0; j2 < list.size(); ++j2) {
+            Entity entity = (Entity) list.get(j2);
             double d7 = entity.f(this.posX, this.posY, this.posZ) / (double) this.size;
 
             if (d7 <= 1.0D) {
@@ -199,7 +198,7 @@ public class Explosion {
         int i;
         int j;
         int k;
-        int l;
+        Block block;
 
         if (this.b) {
             // CraftBukkit start
@@ -210,9 +209,9 @@ public class Explosion {
             List<org.bukkit.block.Block> blockList = new ArrayList<org.bukkit.block.Block>();
             for (int i1 = this.blocks.size() - 1; i1 >= 0; i1--) {
                 ChunkPosition cpos = (ChunkPosition) this.blocks.get(i1);
-                org.bukkit.block.Block block = bworld.getBlockAt(cpos.x, cpos.y, cpos.z);
-                if (block.getType() != org.bukkit.Material.AIR) {
-                    blockList.add(block);
+                org.bukkit.block.Block bblock = bworld.getBlockAt(cpos.x, cpos.y, cpos.z);
+                if (bblock.getType() != org.bukkit.Material.AIR) {
+                    blockList.add(bblock);
                 }
             }
 
@@ -221,8 +220,8 @@ public class Explosion {
 
             this.blocks.clear();
 
-            for (org.bukkit.block.Block block : event.blockList()) {
-                ChunkPosition coords = new ChunkPosition(block.getX(), block.getY(), block.getZ());
+            for (org.bukkit.block.Block bblock : event.blockList()) {
+                ChunkPosition coords = new ChunkPosition(bblock.getX(), bblock.getY(), bblock.getZ());
                 blocks.add(coords);
             }
 
@@ -239,7 +238,7 @@ public class Explosion {
                 i = chunkposition.x;
                 j = chunkposition.y;
                 k = chunkposition.z;
-                l = this.world.getTypeId(i, j, k);
+                block = this.world.getType(i, j, k);
                 if (flag) {
                     double d0 = (double) ((float) i + this.world.random.nextFloat());
                     double d1 = (double) ((float) j + this.world.random.nextFloat());
@@ -262,15 +261,13 @@ public class Explosion {
                     this.world.addParticle("smoke", d0, d1, d2, d3, d4, d5);
                 }
 
-                if (l > 0) {
-                    Block block = Block.byId[l];
-
+                if (block.getMaterial() != Material.AIR) {
                     if (block.a(this)) {
                         // CraftBukkit - add yield
                         block.dropNaturally(this.world, i, j, k, this.world.getData(i, j, k), event.getYield(), 0);
                     }
 
-                    this.world.setTypeIdAndData(i, j, k, 0, 0, 3);
+                    this.world.setTypeAndData(i, j, k, Blocks.AIR, 0, 3);
                     block.wasExploded(this.world, i, j, k, this);
                 }
             }
@@ -284,13 +281,13 @@ public class Explosion {
                 i = chunkposition.x;
                 j = chunkposition.y;
                 k = chunkposition.z;
-                l = this.world.getTypeId(i, j, k);
-                int i1 = this.world.getTypeId(i, j - 1, k);
+                block = this.world.getType(i, j, k);
+                Block block1 = this.world.getType(i, j - 1, k);
 
-                if (l == 0 && Block.t[i1] && this.j.nextInt(3) == 0) {
+                if (block.getMaterial() == Material.AIR && block1.j() && this.j.nextInt(3) == 0) {
                     // CraftBukkit start - Ignition by explosion
                     if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.world, i, j, k, this).isCancelled()) {
-                        this.world.setTypeIdUpdate(i, j, k, Block.FIRE.id);
+                        this.world.setTypeUpdate(i, j, k, Blocks.FIRE);
                     }
                     // CraftBukkit end
                 }

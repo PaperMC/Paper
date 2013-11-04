@@ -4,7 +4,7 @@ public class Slot {
 
     public final int index; // CraftBukkit - private -> public
     public final IInventory inventory;
-    public int g;
+    public int rawSlotIndex;
     public int h;
     public int i;
 
@@ -17,7 +17,7 @@ public class Slot {
 
     public void a(ItemStack itemstack, ItemStack itemstack1) {
         if (itemstack != null && itemstack1 != null) {
-            if (itemstack.id == itemstack1.id) {
+            if (itemstack.getItem() == itemstack1.getItem()) {
                 int i = itemstack1.count - itemstack.count;
 
                 if (i > 0) {

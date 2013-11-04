@@ -3,22 +3,25 @@ package net.minecraft.server;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
+import net.minecraft.util.org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.bukkit.craftbukkit.inventory.CraftInventoryView; // CraftBukkit
 
 public class ContainerAnvil extends Container {
 
-    private IInventory f = new InventoryCraftResult();
-    private IInventory g = new ContainerAnvilInventory(this, "Repair", true, 2);
-    private World h;
-    private int i;
+    private static final Logger f = LogManager.getLogger();
+    private IInventory g = new InventoryCraftResult();
+    private IInventory h = new ContainerAnvilInventory(this, "Repair", true, 2);
+    private World i;
     private int j;
     private int k;
-    public int a;
     private int l;
-    private String m;
-    private final EntityHuman n;
+    public int a;
+    private int m;
+    private String n;
+    private final EntityHuman o;
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
     private PlayerInventory player;
@@ -26,14 +29,14 @@ public class ContainerAnvil extends Container {
 
     public ContainerAnvil(PlayerInventory playerinventory, World world, int i, int j, int k, EntityHuman entityhuman) {
         this.player = playerinventory; // CraftBukkit
-        this.h = world;
-        this.i = i;
-        this.j = j;
-        this.k = k;
-        this.n = entityhuman;
-        this.a(new Slot(this.g, 0, 27, 47));
-        this.a(new Slot(this.g, 1, 76, 47));
-        this.a((Slot) (new SlotAnvilResult(this, this.f, 2, 134, 47, world, i, j, k)));
+        this.i = world;
+        this.j = i;
+        this.k = j;
+        this.l = k;
+        this.o = entityhuman;
+        this.a(new Slot(this.h, 0, 27, 47));
+        this.a(new Slot(this.h, 1, 76, 47));
+        this.a((Slot) (new SlotAnvilResult(this, this.g, 2, 134, 47, world, i, j, k)));
 
         int l;
 
@@ -50,13 +53,13 @@ public class ContainerAnvil extends Container {
 
     public void a(IInventory iinventory) {
         super.a(iinventory);
-        if (iinventory == this.g) {
+        if (iinventory == this.h) {
             this.e();
         }
     }
 
     public void e() {
-        ItemStack itemstack = this.g.getItem(0);
+        ItemStack itemstack = this.h.getItem(0);
 
         this.a = 0;
         int i = 0;
@@ -64,16 +67,16 @@ public class ContainerAnvil extends Container {
         int j = 0;
 
         if (itemstack == null) {
-            this.f.setItem(0, (ItemStack) null);
+            this.g.setItem(0, (ItemStack) null);
             this.a = 0;
         } else {
             ItemStack itemstack1 = itemstack.cloneItemStack();
-            ItemStack itemstack2 = this.g.getItem(1);
+            ItemStack itemstack2 = this.h.getItem(1);
             Map map = EnchantmentManager.a(itemstack1);
             boolean flag = false;
             int k = b0 + itemstack.getRepairCost() + (itemstack2 == null ? 0 : itemstack2.getRepairCost());
 
-            this.l = 0;
+            this.m = 0;
             int l;
             int i1;
             int j1;
@@ -83,11 +86,11 @@ public class ContainerAnvil extends Container {
             Enchantment enchantment;
 
             if (itemstack2 != null) {
-                flag = itemstack2.id == Item.ENCHANTED_BOOK.id && Item.ENCHANTED_BOOK.g(itemstack2).size() > 0;
-                if (itemstack1.g() && Item.byId[itemstack1.id].a(itemstack, itemstack2)) {
+                flag = itemstack2.getItem() == Items.ENCHANTED_BOOK && Items.ENCHANTED_BOOK.g(itemstack2).size() > 0;
+                if (itemstack1.g() && itemstack1.getItem().a(itemstack, itemstack2)) {
                     l = Math.min(itemstack1.j(), itemstack1.l() / 4);
                     if (l <= 0) {
-                        this.f.setItem(0, (ItemStack) null);
+                        this.g.setItem(0, (ItemStack) null);
                         this.a = 0;
                         return;
                     }
@@ -99,10 +102,10 @@ public class ContainerAnvil extends Container {
                         l = Math.min(itemstack1.j(), itemstack1.l() / 4);
                     }
 
-                    this.l = i1;
+                    this.m = i1;
                 } else {
-                    if (!flag && (itemstack1.id != itemstack2.id || !itemstack1.g())) {
-                        this.f.setItem(0, (ItemStack) null);
+                    if (!flag && (itemstack1.getItem() != itemstack2.getItem() || !itemstack1.g())) {
+                        this.g.setItem(0, (ItemStack) null);
                         this.a = 0;
                         return;
                     }
@@ -146,7 +149,7 @@ public class ContainerAnvil extends Container {
                         int k2 = l1 - k1;
                         boolean flag1 = enchantment.canEnchant(itemstack);
 
-                        if (this.n.abilities.canInstantlyBuild || itemstack.id == ItemEnchantedBook.ENCHANTED_BOOK.id) {
+                        if (this.o.abilities.canInstantlyBuild || itemstack.getItem() == Items.ENCHANTED_BOOK) {
                             flag1 = true;
                         }
 
@@ -204,20 +207,20 @@ public class ContainerAnvil extends Container {
                 }
             }
 
-            if (StringUtils.isBlank(this.m)) {
+            if (StringUtils.isBlank(this.n)) {
                 if (itemstack.hasName()) {
                     j = itemstack.g() ? 7 : itemstack.count * 5;
                     i += j;
                     itemstack1.t();
                 }
-            } else if (!this.m.equals(itemstack.getName())) {
+            } else if (!this.n.equals(itemstack.getName())) {
                 j = itemstack.g() ? 7 : itemstack.count * 5;
                 i += j;
                 if (itemstack.hasName()) {
                     k += j / 2;
                 }
 
-                itemstack1.c(this.m);
+                itemstack1.c(this.n);
             }
 
             l = 0;
@@ -271,7 +274,7 @@ public class ContainerAnvil extends Container {
                 this.a = 39;
             }
 
-            if (this.a >= 40 && !this.n.abilities.canInstantlyBuild) {
+            if (this.a >= 40 && !this.o.abilities.canInstantlyBuild) {
                 itemstack1 = null;
             }
 
@@ -294,7 +297,7 @@ public class ContainerAnvil extends Container {
                 EnchantmentManager.a(map, itemstack1);
             }
 
-            this.f.setItem(0, itemstack1);
+            this.g.setItem(0, itemstack1);
             this.b();
         }
     }
@@ -306,12 +309,12 @@ public class ContainerAnvil extends Container {
 
     public void b(EntityHuman entityhuman) {
         super.b(entityhuman);
-        if (!this.h.isStatic) {
-            for (int i = 0; i < this.g.getSize(); ++i) {
-                ItemStack itemstack = this.g.splitWithoutUpdate(i);
+        if (!this.i.isStatic) {
+            for (int i = 0; i < this.h.getSize(); ++i) {
+                ItemStack itemstack = this.h.splitWithoutUpdate(i);
 
                 if (itemstack != null) {
-                    entityhuman.drop(itemstack);
+                    entityhuman.drop(itemstack, false);
                 }
             }
         }
@@ -319,7 +322,7 @@ public class ContainerAnvil extends Container {
 
     public boolean a(EntityHuman entityhuman) {
         if (!this.checkReachable) return true; // CraftBukkit
-        return this.h.getTypeId(this.i, this.j, this.k) != Block.ANVIL.id ? false : entityhuman.e((double) this.i + 0.5D, (double) this.j + 0.5D, (double) this.k + 0.5D) <= 64.0D;
+        return this.i.getType(this.j, this.k, this.l) != Blocks.ANVIL ? false : entityhuman.e((double) this.j + 0.5D, (double) this.k + 0.5D, (double) this.l + 0.5D) <= 64.0D;
     }
 
     public ItemStack b(EntityHuman entityhuman, int i) {
@@ -361,14 +364,14 @@ public class ContainerAnvil extends Container {
     }
 
     public void a(String s) {
-        this.m = s;
+        this.n = s;
         if (this.getSlot(2).e()) {
             ItemStack itemstack = this.getSlot(2).getItem();
 
             if (StringUtils.isBlank(s)) {
                 itemstack.t();
             } else {
-                itemstack.c(this.m);
+                itemstack.c(this.n);
             }
         }
 
@@ -376,11 +379,11 @@ public class ContainerAnvil extends Container {
     }
 
     static IInventory a(ContainerAnvil containeranvil) {
-        return containeranvil.g;
+        return containeranvil.h;
     }
 
     static int b(ContainerAnvil containeranvil) {
-        return containeranvil.l;
+        return containeranvil.m;
     }
 
     // CraftBukkit start
@@ -389,7 +392,7 @@ public class ContainerAnvil extends Container {
             return bukkitEntity;
         }
 
-        org.bukkit.craftbukkit.inventory.CraftInventory inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryAnvil(this.g, this.f);
+        org.bukkit.craftbukkit.inventory.CraftInventory inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryAnvil(this.h, this.g);
         bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
         return bukkitEntity;
     }
