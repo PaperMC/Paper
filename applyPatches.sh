@@ -6,10 +6,10 @@ echo "Rebuilding Forked projects.... "
 function applyPatch {
     what=$1
     target=$2
-    cd $basedir/$what
+    cd "$basedir/$what"
     git branch -f upstream >/dev/null
 
-    cd $basedir
+    cd "$basedir"
     if [ ! -d  "$basedir/$target" ]; then
         git clone $1 $target -b upstream
     fi
@@ -22,7 +22,7 @@ function applyPatch {
     git reset --hard upstream/upstream
     echo "  Applying patches to $target..."
     git am --abort
-    git am --3way $basedir/${what}-Patches/*.patch
+    git am --3way "$basedir/${what}-Patches/"*.patch
     if [ "$?" != "0" ]; then
         echo "  Something did not apply cleanly to $target."
         echo "  Please review above details and finish the apply then"
