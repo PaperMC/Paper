@@ -3,6 +3,7 @@ package org.bukkit.event.server;
 import java.net.InetAddress;
 
 import org.bukkit.event.HandlerList;
+import org.bukkit.util.CachedServerIcon;
 
 /**
  * Called when a server list ping is coming in.
@@ -73,6 +74,20 @@ public class ServerListPingEvent extends ServerEvent {
      */
     public void setMaxPlayers(int maxPlayers) {
         this.maxPlayers = maxPlayers;
+    }
+
+    /**
+     * Sets the server-icon sent to the client.
+     *
+     * @param icon the icon to send to the client
+     * @throws IllegalArgumentException if the {@link CachedServerIcon} is
+     *     not created by the caller of this event; null may be accepted for
+     *     some implementations
+     * @throws UnsupportedOperationException if the caller of this event does
+     *     not support setting the server icon
+     */
+    public void setServerIcon(CachedServerIcon icon) throws IllegalArgumentException, UnsupportedOperationException {
+        throw new UnsupportedOperationException();
     }
 
     @Override

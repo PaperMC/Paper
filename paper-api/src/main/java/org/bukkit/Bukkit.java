@@ -1,5 +1,6 @@
 package org.bukkit;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Iterator;
 import java.util.List;
@@ -25,6 +26,7 @@ import org.bukkit.plugin.ServicesManager;
 import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scoreboard.ScoreboardManager;
+import org.bukkit.util.CachedServerIcon;
 
 import com.avaje.ebean.config.ServerConfig;
 import org.bukkit.inventory.ItemFactory;
@@ -653,5 +655,26 @@ public final class Bukkit {
      */
     public static ScoreboardManager getScoreboardManager() {
         return server.getScoreboardManager();
+    }
+
+    /**
+     * @see Server#getServerIcon()
+     */
+    public static CachedServerIcon getServerIcon() {
+        return server.getServerIcon();
+    }
+
+    /**
+     * @see Server#loadServerIcon(File)()
+     */
+    public static CachedServerIcon loadServerIcon(File file) throws Exception {
+        return server.loadServerIcon(file);
+    }
+
+    /**
+     * @see Server#loadServerIcon(BufferedImage)
+     */
+    public static CachedServerIcon loadServerIcon(BufferedImage image) throws Exception {
+        return server.loadServerIcon(image);
     }
 }

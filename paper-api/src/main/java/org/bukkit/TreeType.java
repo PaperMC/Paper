@@ -49,4 +49,12 @@ public enum TreeType {
      * Swamp tree (regular with vines on the side)
      */
     SWAMP,
+    /**
+     * Acacia tree.
+     */
+    ACACIA,
+    /**
+     * Dark Oak tree.
+     */
+    DARK_OAK,
 }

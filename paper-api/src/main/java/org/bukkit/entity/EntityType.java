@@ -3,6 +3,7 @@ package org.bukkit.entity;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bukkit.entity.minecart.CommandMinecart;
 import org.bukkit.entity.minecart.HopperMinecart;
 import org.bukkit.entity.minecart.SpawnerMinecart;
 import org.bukkit.entity.minecart.RideableMinecart;
@@ -80,6 +81,10 @@ public enum EntityType {
      */
     FALLING_BLOCK("FallingSand", FallingBlock.class, 21, false),
     FIREWORK("FireworksRocketEntity", Firework.class, 22, false),
+    /**
+     * @see CommandMinecart
+     */
+    MINECART_COMMAND("MinecartCommandBlock", CommandMinecart.class, 40),
     /**
      * A placed boat.
      */

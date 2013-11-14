@@ -157,7 +157,9 @@ public enum Material {
     CAKE_BLOCK(92, 64, Cake.class),
     DIODE_BLOCK_OFF(93, Diode.class),
     DIODE_BLOCK_ON(94, Diode.class),
+    @Deprecated
     LOCKED_CHEST(95),
+    STAINED_GLASS(95),
     TRAP_DOOR(96, TrapDoor.class),
     MONSTER_EGGS(97, MonsterEggs.class),
     SMOOTH_BRICK(98, SmoothBrick.class),
@@ -222,10 +224,17 @@ public enum Material {
     ACTIVATOR_RAIL(157, PoweredRail.class),
     DROPPER(158, Dispenser.class),
     STAINED_CLAY(159),
+    STAINED_GLASS_PANE(160),
+    LEAVES_2(161),
+    LOG_2(162),
+    ACACIA_STAIRS(163),
+    DARK_OAK_STAIRS(164),
     HAY_BLOCK(170),
     CARPET(171),
     HARD_CLAY(172),
     COAL_BLOCK(173),
+    PACKED_ICE(174),
+    DOUBLE_PLANT(175),
     // ----- Item Separator -----
     IRON_SPADE(256, 1, 250),
     IRON_PICKAXE(257, 1, 250),
@@ -364,7 +373,7 @@ public enum Material {
     EXP_BOTTLE(384, 64),
     FIREBALL(385, 64),
     BOOK_AND_QUILL(386, 1),
-    WRITTEN_BOOK(387, 1),
+    WRITTEN_BOOK(387, 16),
     EMERALD(388, 64),
     ITEM_FRAME(389),
     FLOWER_POT_ITEM(390),
@@ -391,6 +400,7 @@ public enum Material {
     DIAMOND_BARDING(419, 1),
     LEASH(420),
     NAME_TAG(421),
+    COMMAND_MINECART(422, 1),
     GOLD_RECORD(2256, 1),
     GREEN_RECORD(2257, 1),
     RECORD_3(2258, 1),
@@ -706,6 +716,7 @@ public enum Material {
             case JACK_O_LANTERN:
             case CAKE_BLOCK:
             case LOCKED_CHEST:
+            case STAINED_GLASS:
             case TRAP_DOOR:
             case MONSTER_EGGS:
             case SMOOTH_BRICK:
@@ -756,6 +767,12 @@ public enum Material {
             case HAY_BLOCK:
             case HARD_CLAY:
             case COAL_BLOCK:
+            case STAINED_GLASS_PANE:
+            case LEAVES_2:
+            case LOG_2:
+            case ACACIA_STAIRS:
+            case DARK_OAK_STAIRS:
+            case PACKED_ICE:
                 return true;
             default:
                 return false;
@@ -815,6 +832,7 @@ public enum Material {
             case REDSTONE_COMPARATOR_ON:
             case ACTIVATOR_RAIL:
             case CARPET:
+            case DOUBLE_PLANT:
                 return true;
             default:
                 return false;
@@ -850,7 +868,6 @@ public enum Material {
             case WOOD_PLATE:
             case JUKEBOX:
             case FENCE:
-            case LOCKED_CHEST:
             case TRAP_DOOR:
             case HUGE_MUSHROOM_1:
             case HUGE_MUSHROOM_2:
@@ -864,6 +881,10 @@ public enum Material {
             case TRAPPED_CHEST:
             case DAYLIGHT_DETECTOR:
             case CARPET:
+            case LEAVES_2:
+            case LOG_2:
+            case ACACIA_STAIRS:
+            case DARK_OAK_STAIRS:
                 return true;
             default:
                 return false;
@@ -885,6 +906,8 @@ public enum Material {
             case LEAVES:
             case LONG_GRASS:
             case WOOL:
+            case YELLOW_FLOWER:
+            case RED_ROSE:
             case TNT:
             case BOOKSHELF:
             case WOOD_STAIRS:
@@ -897,6 +920,10 @@ public enum Material {
             case JUNGLE_WOOD_STAIRS:
             case HAY_BLOCK:
             case COAL_BLOCK:
+            case LEAVES_2:
+            case LOG_2:
+            case CARPET:
+            case DOUBLE_PLANT:
                 return true;
             default:
                 return false;
@@ -954,7 +981,6 @@ public enum Material {
             case NETHERRACK:
             case SOUL_SAND:
             case JACK_O_LANTERN:
-            case LOCKED_CHEST:
             case MONSTER_EGGS:
             case SMOOTH_BRICK:
             case HUGE_MUSHROOM_1:
@@ -977,6 +1003,8 @@ public enum Material {
             case HAY_BLOCK:
             case HARD_CLAY:
             case COAL_BLOCK:
+            case LOG_2:
+            case PACKED_ICE:
                 return true;
             default:
                 return false;

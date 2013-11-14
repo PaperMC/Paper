@@ -24,7 +24,16 @@ public enum TreeSpecies {
     /**
      * Represents jungle trees.
      */
-    JUNGLE(0x3);
+    JUNGLE(0x3),
+    /**
+     * Represents acacia trees.
+     */
+    ACACIA(0x4),
+    /**
+     * Represents dark oak trees.
+     */
+    DARK_OAK(0x5),
+    ;
 
     private final byte data;
     private final static Map<Byte, TreeSpecies> BY_DATA = Maps.newHashMap();
