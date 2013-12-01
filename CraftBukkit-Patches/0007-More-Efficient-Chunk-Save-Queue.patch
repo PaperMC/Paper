@@ -1,30 +1,28 @@
-From a47bb2a8c87e3c9d9ea238e46f01c984c71428f8 Mon Sep 17 00:00:00 2001
+From ff637c04c532b97e577121ac1790ff689ad7bf31 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 11 Jun 2013 12:09:45 +1000
 Subject: [PATCH] More Efficient Chunk Save Queue
 
 
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 8a21f35..ba6d32f 100644
+index d5cf88d..1e1499e 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -13,8 +13,7 @@ import java.util.Set;
+@@ -16,6 +16,7 @@ import org.apache.logging.log4j.Logger;
  
- public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
+ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
  
--    private List a = new ArrayList();
--    private Set b = new HashSet();
 +    private java.util.LinkedHashMap<ChunkCoordIntPair, PendingChunkToSave> pendingSaves = new java.util.LinkedHashMap<ChunkCoordIntPair, PendingChunkToSave>(); // Spigot
-     private Object c = new Object();
-     private final File d;
- 
-@@ -27,13 +26,11 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
+     private static final Logger a = LogManager.getLogger();
+     private List b = new ArrayList();
+     private Set c = new HashSet();
+@@ -31,13 +32,11 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
          ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
  
-         synchronized (this.c) {
--            if (this.b.contains(chunkcoordintpair)) {
--                for (int k = 0; k < this.a.size(); ++k) {
--                    if (((PendingChunkToSave) this.a.get(k)).a.equals(chunkcoordintpair)) {
+         synchronized (this.d) {
+-            if (this.c.contains(chunkcoordintpair)) {
+-                for (int k = 0; k < this.b.size(); ++k) {
+-                    if (((PendingChunkToSave) this.b.get(k)).a.equals(chunkcoordintpair)) {
 -                        return true;
 -                    }
 -                }
@@ -36,15 +34,15 @@ index 8a21f35..ba6d32f 100644
 +            // Spigot end
          }
  
-         return RegionFileCache.a(this.d, i, j).chunkExists(i & 31, j & 31);
-@@ -60,14 +57,12 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
-         Object object = this.c;
+         return RegionFileCache.a(this.e, i, j).chunkExists(i & 31, j & 31);
+@@ -64,14 +63,12 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+         Object object = this.d;
  
-         synchronized (this.c) {
--            if (this.b.contains(chunkcoordintpair)) {
--                for (int k = 0; k < this.a.size(); ++k) {
--                    if (((PendingChunkToSave) this.a.get(k)).a.equals(chunkcoordintpair)) {
--                        nbttagcompound = ((PendingChunkToSave) this.a.get(k)).b;
+         synchronized (this.d) {
+-            if (this.c.contains(chunkcoordintpair)) {
+-                for (int k = 0; k < this.b.size(); ++k) {
+-                    if (((PendingChunkToSave) this.b.get(k)).a.equals(chunkcoordintpair)) {
+-                        nbttagcompound = ((PendingChunkToSave) this.b.get(k)).b;
 -                        break;
 -                    }
 -                }
@@ -57,14 +55,14 @@ index 8a21f35..ba6d32f 100644
          }
  
          if (nbttagcompound == null) {
-@@ -148,17 +143,11 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
-         Object object = this.c;
+@@ -151,17 +148,11 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+         Object object = this.d;
  
-         synchronized (this.c) {
--            if (this.b.contains(chunkcoordintpair)) {
--                for (int i = 0; i < this.a.size(); ++i) {
--                    if (((PendingChunkToSave) this.a.get(i)).a.equals(chunkcoordintpair)) {
--                        this.a.set(i, new PendingChunkToSave(chunkcoordintpair, nbttagcompound));
+         synchronized (this.d) {
+-            if (this.c.contains(chunkcoordintpair)) {
+-                for (int i = 0; i < this.b.size(); ++i) {
+-                    if (((PendingChunkToSave) this.b.get(i)).a.equals(chunkcoordintpair)) {
+-                        this.b.set(i, new PendingChunkToSave(chunkcoordintpair, nbttagcompound));
 -                        return;
 -                    }
 -                }
@@ -73,24 +71,24 @@ index 8a21f35..ba6d32f 100644
 +                return;
              }
 -
--            this.a.add(new PendingChunkToSave(chunkcoordintpair, nbttagcompound));
--            this.b.add(chunkcoordintpair);
+-            this.b.add(new PendingChunkToSave(chunkcoordintpair, nbttagcompound));
+-            this.c.add(chunkcoordintpair);
 +            // Spigot end
              FileIOThread.a.a(this);
          }
      }
-@@ -168,12 +157,14 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
-         Object object = this.c;
+@@ -171,12 +162,14 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+         Object object = this.d;
  
-         synchronized (this.c) {
--            if (this.a.isEmpty()) {
+         synchronized (this.d) {
+-            if (this.b.isEmpty()) {
 +            // Spigot start
 +            if (this.pendingSaves.isEmpty()) {
                  return false;
              }
  
--            pendingchunktosave = (PendingChunkToSave) this.a.remove(0);
--            this.b.remove(pendingchunktosave.a);
+-            pendingchunktosave = (PendingChunkToSave) this.b.remove(0);
+-            this.c.remove(pendingchunktosave.a);
 +            pendingchunktosave = this.pendingSaves.values().iterator().next();
 +            this.pendingSaves.remove(pendingchunktosave.a);
 +            // Spigot end
@@ -98,5 +96,5 @@ index 8a21f35..ba6d32f 100644
  
          if (pendingchunktosave != null) {
 -- 
-1.8.1.2
+1.8.3.2
 
