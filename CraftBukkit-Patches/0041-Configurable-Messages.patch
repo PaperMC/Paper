@@ -1,11 +1,29 @@
-From 53374efe82a99cd366b4b3b88be0cc4fc0f2baae Mon Sep 17 00:00:00 2001
+From 51a2f67232f5e9757f296696e04c30b5ecf4de22 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Fri, 21 Jun 2013 19:21:58 +1000
 Subject: [PATCH] Configurable Messages
 
 
+diff --git a/src/main/java/net/minecraft/server/HandshakeListener.java b/src/main/java/net/minecraft/server/HandshakeListener.java
+index b7f6775..b96e2ef 100644
+--- a/src/main/java/net/minecraft/server/HandshakeListener.java
++++ b/src/main/java/net/minecraft/server/HandshakeListener.java
+@@ -19,11 +19,11 @@ public class HandshakeListener implements PacketHandshakingInListener {
+             ChatComponentText chatcomponenttext;
+ 
+             if (packethandshakinginsetprotocol.d() > 4) {
+-                chatcomponenttext = new ChatComponentText("Outdated server! I\'m still on 1.7.2");
++                chatcomponenttext = new ChatComponentText( org.spigotmc.SpigotConfig.outdatedServerMessage ); // Spigot
+                 this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext), new GenericFutureListener[0]);
+                 this.b.a((IChatBaseComponent) chatcomponenttext);
+             } else if (packethandshakinginsetprotocol.d() < 4) {
+-                chatcomponenttext = new ChatComponentText("Outdated client! Please use 1.7.2");
++                chatcomponenttext = new ChatComponentText( org.spigotmc.SpigotConfig.outdatedClientMessage ); // Spigot
+                 this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext), new GenericFutureListener[0]);
+                 this.b.a((IChatBaseComponent) chatcomponenttext);
+             } else {
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 5b12cb4..3ddf3ae 100644
+index 196ac4f..b10b9a7 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -335,7 +335,7 @@ public abstract class PlayerList {
@@ -44,7 +62,7 @@ index 5178808..82a566d 100644
          return false;
      }
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index 3cdd6ac..a3ddb99 100644
+index 3cdd6ac..2420570 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -12,6 +12,7 @@ import java.util.Map;
@@ -55,7 +73,7 @@ index 3cdd6ac..a3ddb99 100644
  import org.bukkit.command.Command;
  import org.bukkit.configuration.file.YamlConfiguration;
  import org.bukkit.craftbukkit.command.TicksPerSecondCommand;
-@@ -148,4 +149,22 @@ public class SpigotConfig
+@@ -148,4 +149,28 @@ public class SpigotConfig
      {
          tabComplete = getBoolean( "commands.tab-complete", true );
      }
@@ -63,19 +81,25 @@ index 3cdd6ac..a3ddb99 100644
 +    public static String whitelistMessage;
 +    public static String unknownCommandMessage;
 +    public static String serverFullMessage;
-+    public static String outdatedClientMessage;
-+    public static String outdatedServerMessage;
++    public static String outdatedClientMessage = "Outdated client! Please use {}";
++    public static String outdatedServerMessage = "Outdated server! I\'m still on {0}";
 +    private static String transform(String s)
 +    {
 +        return ChatColor.translateAlternateColorCodes( '&', s ).replaceAll( "\\n", "\n" );
 +    }
 +    private static void messages()
 +    {
++        if (version < 4) 
++        {
++            set( "messages.outdated-client", outdatedClientMessage );
++            set( "messages.outdated-server", outdatedServerMessage );
++        }
++
 +        whitelistMessage = transform( getString( "messages.whitelist", "You are not whitelisted on this server!" ) );
 +        unknownCommandMessage = transform( getString( "messages.unknown-command", "Unknown command. Type \"/help\" for help." ) );
 +        serverFullMessage = transform( getString( "messages.server-full", "The server is full!" ) );
-+        outdatedClientMessage = transform( getString( "messages.outdated-client", "Outdated client!" ) );
-+        outdatedServerMessage = transform( getString( "messages.outdated-server", "Outdated server!" ) );
++        outdatedClientMessage = transform( getString( "messages.outdated-client", outdatedClientMessage ) );
++        outdatedServerMessage = transform( getString( "messages.outdated-server", outdatedServerMessage ) );
 +    }
  }
 -- 
