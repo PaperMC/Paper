@@ -32,9 +32,10 @@ public final class CraftChatMessage {
 
         private FromString(String message) {
             if (message == null) {
-                output = new IChatBaseComponent[] { new ChatComponentText("") };
+                output = new IChatBaseComponent[] { currentChatComponent };
                 return;
             }
+            list.add(currentChatComponent);
 
             EnumChatFormat format = null;
 
@@ -73,19 +74,16 @@ public final class CraftChatMessage {
                     i++;
                 } else if (currentChar == '\n') {
                     if (builder.length() > 0) {
-                        finishComponent();
+                        appendNewComponent();
                     }
+                    currentChatComponent = null;
                 } else {
                     builder.append(currentChar);
                 }
             }
 
             if (builder.length() > 0) {
-                finishComponent();
-            }
-
-            if (list.isEmpty()) {
-                list.add(new ChatComponentText(""));
+                appendNewComponent();
             }
 
             output = list.toArray(new IChatBaseComponent[0]);
@@ -95,13 +93,11 @@ public final class CraftChatMessage {
             IChatBaseComponent addition = new ChatComponentText(builder.toString()).setChatModifier(modifier);
             builder = new StringBuilder();
             modifier = modifier.clone();
-            currentChatComponent = currentChatComponent.a(addition);
-        }
-
-        private void finishComponent() {
-            appendNewComponent();
-            list.add(currentChatComponent);
-            currentChatComponent = new ChatComponentText("");
+            if (currentChatComponent == null) {
+                currentChatComponent = new ChatComponentText("");
+                list.add(currentChatComponent);
+            }
+            currentChatComponent.a(addition);
         }
 
         private IChatBaseComponent[] getOutput() {
