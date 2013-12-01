@@ -1,4 +1,4 @@
-From d4776c8e08161059f62919e41423f47216e7db43 Mon Sep 17 00:00:00 2001
+From 2e44ad82193e6afedb8f43093e8c68eab962ef79 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 7 Mar 2013 20:12:46 +1100
 Subject: [PATCH] Async Operation Catching
@@ -6,7 +6,7 @@ Subject: [PATCH] Async Operation Catching
 Catch and throw an exception when a potentially unsafe operation occurs on a thread other than the main server thread.
 
 diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
-index ad4e3a2..32f8c3f 100644
+index ad4e3a2..c063ca1 100644
 --- a/src/main/java/net/minecraft/server/Block.java
 +++ b/src/main/java/net/minecraft/server/Block.java
 @@ -433,9 +433,13 @@ public class Block {
@@ -19,7 +19,7 @@ index ad4e3a2..32f8c3f 100644
 +    }
  
 -    public void remove(World world, int i, int j, int k, Block block, int l) {}
-+    public void remove(World world, int i, int j, int k, int l, int i1) {
++    public void remove(World world, int i, int j, int k, Block block, int l) {
 +        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous block remove!"); // Spigot
 +    }
  
@@ -66,7 +66,7 @@ index 9f818cf..8052ea6 100644
              this.trackedPlayers.remove(entityplayer);
              entityplayer.removeQueue.add(Integer.valueOf(this.tracker.getId()));
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index c91ae63..967565b 100644
+index 3f9eb56..b21bff3 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -896,6 +896,7 @@ public abstract class World implements IBlockAccess {
@@ -85,7 +85,7 @@ index c91ae63..967565b 100644
          entity.die();
          if (entity instanceof EntityHuman) {
              this.players.remove(entity);
-@@ -2398,6 +2400,7 @@ public abstract class World implements IBlockAccess {
+@@ -2390,6 +2392,7 @@ public abstract class World implements IBlockAccess {
      }
  
      public void a(List list) {
