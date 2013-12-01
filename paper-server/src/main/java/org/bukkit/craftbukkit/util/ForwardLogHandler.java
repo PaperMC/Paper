@@ -5,11 +5,11 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Handler;
+import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-public class ForwardLogHandler extends Handler {
+public class ForwardLogHandler extends ConsoleHandler {
     private Map<String, Logger> cachedLoggers = new ConcurrentHashMap<String, Logger>();
 
     private Logger getLogger(String name) {
@@ -25,9 +25,9 @@ public class ForwardLogHandler extends Handler {
     @Override
     public void publish(LogRecord record) {
         Logger logger = getLogger(record.getLoggerName());
-        String message = record.getMessage();
         Throwable exception = record.getThrown();
         Level level = record.getLevel();
+        String message = getFormatter().formatMessage(record);
 
         if (level == Level.SEVERE) {
             logger.error(message, exception);
