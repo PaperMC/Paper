@@ -262,7 +262,7 @@ public abstract class PlayerList {
                 continue;
             }
             // .name -> .listName
-            entityplayer.playerConnection.sendPacket(new PacketPlayOutPlayerInfo(entityplayer1.getName(), true, entityplayer1.ping));
+            entityplayer.playerConnection.sendPacket(new PacketPlayOutPlayerInfo(entityplayer1.listName, true, entityplayer1.ping));
             // CraftBukkit end
         }
     }
