@@ -1,24 +1,17 @@
-From e88612ecce87211e7d06cb37dc9cb17329bc3e68 Mon Sep 17 00:00:00 2001
+From 4feddcc91c933967b5ea82389c2593641f28e20f Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 11 Jun 2013 12:56:02 +1000
 Subject: [PATCH] Better Chunk Tick Selection
 
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 7d4def3..15d2a62 100644
+index 9357eb9..f0a8024 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -66,13 +66,35 @@ public abstract class World implements IBlockAccess {
-     // CraftBukkit start - public, longhashset
-     public boolean allowMonsters = true;
-     public boolean allowAnimals = true;
--    protected LongHashSet chunkTickList = new LongHashSet();
-     public long ticksPerAnimalSpawns;
-     public long ticksPerMonsterSpawns;
-     // CraftBukkit end
-     private int O;
-     int[] H;
-     public boolean isStatic;
+@@ -74,6 +74,30 @@ public abstract class World implements IBlockAccess {
+     private boolean N;
+     int[] I;
+ 
 +    // Spigot start
 +    protected final gnu.trove.map.hash.TLongShortHashMap chunkTickList;
 +    protected float growthOdds = 100;
@@ -42,10 +35,11 @@ index 7d4def3..15d2a62 100644
 +        return (int) ( ( ( k >> 32 ) & 0xFFFF0000L ) | ( ( k >> 16 ) & 0x0000FFFF ) );
 +    }
 +    // Spigot end
- 
++
      public BiomeBase getBiome(int i, int j) {
          if (this.isLoaded(i, 0, j)) {
-@@ -117,6 +139,11 @@ public abstract class World implements IBlockAccess {
+             Chunk chunk = this.getChunkAtWorldCoords(i, j);
+@@ -123,6 +147,11 @@ public abstract class World implements IBlockAccess {
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
          this.ticksPerMonsterSpawns = this.getServer().getTicksPerMonsterSpawns(); // CraftBukkit
          // CraftBukkit end
@@ -55,9 +49,9 @@ index 7d4def3..15d2a62 100644
 +        this.chunkTickList.setAutoCompactionFactor( 0 );
 +        // Spigot end
  
-         this.O = this.random.nextInt(12000);
-         this.H = new int['\u8000'];
-@@ -1955,24 +1982,44 @@ public abstract class World implements IBlockAccess {
+         this.L = this.random.nextInt(12000);
+         this.allowMonsters = true;
+@@ -1896,24 +1925,44 @@ public abstract class World implements IBlockAccess {
          int j;
          int k;
  
@@ -113,16 +107,14 @@ index 7d4def3..15d2a62 100644
  
          this.methodProfiler.b();
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index eb9540f..b073b90 100644
+index b9b967f..812e887 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -300,9 +300,19 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -306,10 +306,20 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
          // CraftBukkit start
          // Iterator iterator = this.chunkTickList.iterator();
  
 -        for (long chunkCoord : this.chunkTickList.popAll()) {
--            int chunkX = LongHash.msw(chunkCoord);
--            int chunkZ = LongHash.lsw(chunkCoord);
 +        // Spigot start
 +        for (gnu.trove.iterator.TLongShortIterator iter = chunkTickList.iterator(); iter.hasNext();) {
 +            iter.advance();
@@ -137,11 +129,14 @@ index eb9540f..b073b90 100644
 +            }
 +            // Spigot end
              // ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) iterator.next();
+-            int chunkX = LongHash.msw(chunkCoord);
+-            int chunkZ = LongHash.lsw(chunkCoord);
              int k = chunkX * 16;
              int l = chunkZ * 16;
+ 
 @@ -400,6 +410,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
  
-                         if (block != null && block.isTicking()) {
+                         if (block.isTicking()) {
                              ++i;
 +                            this.growthOdds = (iter.value() < 1) ? this.modifiedOdds : 100; // Spigot - grow fast if no players are in this chunk (value = player count)
                              block.a(this, k2 + k, i3 + chunksection.getYPosition(), l2 + l, this.random);
@@ -164,5 +159,5 @@ index 961ddb4..478d9e6 100644
 +    }
  }
 -- 
-1.8.1.2
+1.8.3.2
 
