@@ -12,6 +12,7 @@ import org.bukkit.event.HandlerList;
  * <ul>
  * <li>Snow melting due to being near a light source.</li>
  * <li>Ice melting due to being near a light source.</li>
+ * <li>Fire burning out after time, without destroying fuel block.</li>
  * </ul>
  * <p>
  * If a Block Fade event is cancelled, the block will not fade, melt or disappear.

@@ -172,7 +172,7 @@ public abstract class Command {
     }
 
     /**
-     * Returns the current lable for this command
+     * Returns the current label for this command
      *
      * @return Label of this command or null if not registered
      */

@@ -133,9 +133,9 @@ public class ConversationFactory {
 
 
     /**
-     * Adds a {@link ConversationCanceller to constructed conversations.}
+     * Adds a {@link ConversationCanceller} to constructed conversations.
      *
-     * @param canceller The {@link ConversationCanceller to add.}
+     * @param canceller The {@link ConversationCanceller} to add.
      * @return This object.
      */
     public ConversationFactory withConversationCanceller(ConversationCanceller canceller) {

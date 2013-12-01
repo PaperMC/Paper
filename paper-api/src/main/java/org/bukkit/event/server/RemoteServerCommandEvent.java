@@ -4,7 +4,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.event.HandlerList;
 
 /**
- * Remote Server Command events
+ * This event is called when a command is recieved over RCON. See the javadocs
+ * of {@link ServerCommandEvent} for more information.
  */
 public class RemoteServerCommandEvent extends ServerCommandEvent {
     private static final HandlerList handlers = new HandlerList();

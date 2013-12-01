@@ -25,7 +25,7 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
     /**
      * Gets the player changing the sign involved in this event.
      *
-     * @return The Player involved in this event.
+     * @return the Player involved in this event
      */
     public Player getPlayer() {
         return player;
@@ -34,7 +34,7 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
     /**
      * Gets all of the lines of text from the sign involved in this event.
      *
-     * @return A String[] of the sign's lines of text
+     * @return the String array for the sign's lines new text
      */
     public String[] getLines() {
         return lines;
@@ -44,8 +44,10 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
      * Gets a single line of text from the sign involved in this event.
      *
      * @param index index of the line to get
-     * @return The String containing the line of text associated with the provided index
-     * @throws IndexOutOfBoundsException thrown when the provided index is > 4 and < 0
+     * @return the String containing the line of text associated with the
+     *     provided index
+     * @throws IndexOutOfBoundsException thrown when the provided index is > 3
+     *     or < 0
      */
     public String getLine(int index) throws IndexOutOfBoundsException {
         return lines[index];
@@ -56,7 +58,8 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
      *
      * @param index index of the line to set
      * @param line text to set
-     * @throws IndexOutOfBoundsException thrown when the provided index is > 4 and < 0
+     * @throws IndexOutOfBoundsException thrown when the provided index is > 3
+     *     or < 0
      */
     public void setLine(int index, String line) throws IndexOutOfBoundsException {
         lines[index] = line;

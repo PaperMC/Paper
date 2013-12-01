@@ -291,12 +291,12 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * Creates an {@link Arrow} entity at the given {@link Location}
      *
      * @param location Location to spawn the arrow
-     * @param velocity Velocity to shoot the arrow in
+     * @param direction Direction to shoot the arrow in
      * @param speed Speed of the arrow. A recommend speed is 0.6
      * @param spread Spread of the arrow. A recommend spread is 12
      * @return Arrow entity spawned as a result of this method
      */
-    public Arrow spawnArrow(Location location, Vector velocity, float speed, float spread);
+    public Arrow spawnArrow(Location location, Vector direction, float speed, float spread);
 
     /**
      * Creates a tree at the given {@link Location}
