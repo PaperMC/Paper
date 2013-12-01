@@ -1,6 +1,12 @@
 package net.minecraft.server;
 
-public class RecipeBookClone implements IRecipe {
+public class RecipeBookClone extends ShapelessRecipes implements IRecipe { // CraftBukkit - added extends
+
+    // CraftBukkit start - Delegate to new parent class
+    public RecipeBookClone() {
+        super(new ItemStack(Items.WRITTEN_BOOK, 0, -1), java.util.Arrays.asList(new ItemStack(Items.BOOK_AND_QUILL, 0, 0)));
+    }
+    // CraftBukkit end
 
     public boolean a(InventoryCrafting inventoryCrafting, World paramWorld) {
         int i = 0;
