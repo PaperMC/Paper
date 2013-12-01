@@ -7,6 +7,7 @@ import java.util.HashMap;
 
 public class HandshakeListener implements PacketHandshakingInListener {
 
+    private static final com.google.gson.Gson gson = new com.google.gson.Gson(); // Spigot
     // CraftBukkit start - add fields
     private static final HashMap<InetAddress, Long> throttleTracker = new HashMap<InetAddress, Long>();
     private static int throttleCounter = 0;
@@ -72,6 +73,26 @@ public class HandshakeListener implements PacketHandshakingInListener {
                     this.c.close(chatmessage);
                 } else {
                     this.c.setPacketListener(new LoginListener(this.b, this.c));
+                    // Spigot Start
+                    if (org.spigotmc.SpigotConfig.bungee) {
+                        String[] split = packethandshakinginsetprotocol.hostname.split("\00");
+                        if ( split.length == 3 || split.length == 4 ) {
+                            packethandshakinginsetprotocol.hostname = split[0];
+                            c.socketAddress = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) c.getSocketAddress()).getPort());
+                            c.spoofedUUID = com.mojang.util.UUIDTypeAdapter.fromString( split[2] );
+                        } else
+                        {
+                            chatmessage = new ChatMessage("If you wish to use IP forwarding, please enable it in your BungeeCord config as well!");
+                            this.c.sendPacket(new PacketLoginOutDisconnect(chatmessage));
+                            this.c.close(chatmessage);
+                            return;
+                        }
+                        if ( split.length == 4 )
+                        {
+                            c.spoofedProfile = gson.fromJson(split[3], com.mojang.authlib.properties.Property[].class);
+                        }
+                    }
+                    // Spigot End
                     ((LoginListener) this.c.j()).hostname = packethandshakinginsetprotocol.hostname + ":" + packethandshakinginsetprotocol.port; // CraftBukkit - set hostname
                 }
                 break;

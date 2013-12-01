@@ -45,6 +45,10 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
     private final Queue<NetworkManager.QueuedPacket> packetQueue = Queues.newConcurrentLinkedQueue();
     public Channel channel;
     public SocketAddress socketAddress;
+    // Spigot Start
+    public java.util.UUID spoofedUUID;
+    public com.mojang.authlib.properties.Property[] spoofedProfile;
+    // Spigot End
     private PacketListener packetListener;
     private IChatBaseComponent m;
     private boolean n;
@@ -330,4 +334,11 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
             this.b = genericfuturelistener;
         }
     }
+
+    // Spigot Start
+    public SocketAddress getRawAddress()
+    {
+        return this.channel.remoteAddress();
+    }
+    // Spigot End
 }

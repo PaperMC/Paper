@@ -14,7 +14,7 @@ public class PacketHandshakingInSetProtocol implements Packet<PacketHandshakingI
     @Override
     public void a(PacketDataSerializer packetdataserializer) throws IOException {
         this.a = packetdataserializer.i();
-        this.hostname = packetdataserializer.e(255);
+        this.hostname = packetdataserializer.e(Short.MAX_VALUE); // Spigot
         this.port = packetdataserializer.readUnsignedShort();
         this.d = EnumProtocol.a(packetdataserializer.i());
     }

@@ -99,9 +99,24 @@ public class LoginListener implements PacketLoginInListener {
     // Spigot start
     public void initUUID()
     {
-        UUID uuid = EntityHuman.getOfflineUUID( this.i.getName() );
+        UUID uuid;
+        if ( networkManager.spoofedUUID != null )
+        {
+            uuid = networkManager.spoofedUUID;
+        } else
+        {
+            uuid = EntityHuman.getOfflineUUID( this.i.getName() );
+        }
 
         this.i = new GameProfile( uuid, this.i.getName() );
+
+        if (networkManager.spoofedProfile != null)
+        {
+            for ( com.mojang.authlib.properties.Property property : networkManager.spoofedProfile )
+            {
+                this.i.getProperties().put( property.getName(), property );
+            }
+        }
     }
     // Spigot end
 
