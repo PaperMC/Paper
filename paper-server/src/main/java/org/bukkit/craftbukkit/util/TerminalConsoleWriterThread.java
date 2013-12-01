@@ -22,7 +22,7 @@ public class TerminalConsoleWriterThread implements Runnable {
 
         // Using name from log4j config in vanilla jar
         while (true) {
-            message = QueueLogAppender.getNextLogEvent("ServerGuiConsole");
+            message = QueueLogAppender.getNextLogEvent("TerminalConsole");
             if (message == null) {
                 continue;
             }
