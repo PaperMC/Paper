@@ -514,6 +514,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
     }
 
     public EntityItem a(boolean flag) {
+        // Called only when dropped by Q or CTRL-Q
         return this.a(this.inventory.splitStack(this.inventory.itemInHandIndex, flag && this.inventory.getItemInHand() != null ? this.inventory.getItemInHand().count : 1), false, true);
     }
 
@@ -565,7 +566,18 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
-                player.getInventory().addItem(drop.getItemStack());
+                org.bukkit.inventory.ItemStack cur = player.getInventory().getItemInHand();
+                if (flag1 && (cur == null || cur.getAmount() == 0)) {
+                    // The complete stack was dropped
+                    player.getInventory().setItemInHand(drop.getItemStack());
+                } else if (flag1 && cur.isSimilar(drop.getItemStack()) && drop.getItemStack().getAmount() == 1) {
+                    // Only one item is dropped
+                    cur.setAmount(cur.getAmount() + 1);
+                    player.getInventory().setItemInHand(cur);
+                } else {
+                    // Fallback
+                    player.getInventory().addItem(drop.getItemStack());
+                }
                 return null;
             }
             // CraftBukkit end
