@@ -1,4 +1,4 @@
-From e6404134e65bbc8cd3511970a0cfa38c98e54820 Mon Sep 17 00:00:00 2001
+From c6765742b160b32e27b3a77a060f5eedd7e44335 Mon Sep 17 00:00:00 2001
 From: Mike Primm <mike@primmhome.com>
 Date: Wed, 24 Apr 2013 01:43:33 -0500
 Subject: [PATCH] Improve NextTickList Performance
@@ -7,7 +7,7 @@ Improve next-tick-list performance on chunk unloads, large
  queues
 
 diff --git a/src/main/java/net/minecraft/server/NextTickListEntry.java b/src/main/java/net/minecraft/server/NextTickListEntry.java
-index acf8838..1e3e0f8 100644
+index 06934a1..d90acfc 100644
 --- a/src/main/java/net/minecraft/server/NextTickListEntry.java
 +++ b/src/main/java/net/minecraft/server/NextTickListEntry.java
 @@ -30,7 +30,7 @@ public class NextTickListEntry implements Comparable {
@@ -20,7 +20,7 @@ index acf8838..1e3e0f8 100644
  
      public NextTickListEntry a(long i) {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 74a2d45..b860ce8 100644
+index 74a2d45..3cf8a53 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -29,8 +29,8 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
@@ -77,7 +77,7 @@ index 74a2d45..b860ce8 100644
 +        int te_cnt = this.pendingTickEntries.size();
 +        for (int idx = this.nextPendingTickEntry; idx < te_cnt; idx++) {
 +            NextTickListEntry ent = this.pendingTickEntries.get(idx);
-+            if ((ent.a == i) && (ent.b == j) && (ent.c == k) && Block.b(ent.d, l)) {
++            if ((ent.a == i) && (ent.b == j) && (ent.c == k) && Block.a(ent.a(), block)) {
 +                return true;
 +            }
 +        }
@@ -277,7 +277,7 @@ index 74a2d45..b860ce8 100644
 +    }
 +    
 +    private List<NextTickListEntry> getNextTickEntriesForChunk(Chunk chunk, boolean remove) {
-+        long coord = LongHash.toLong(chunk.x, chunk.z);
++        long coord = LongHash.toLong(chunk.locX, chunk.locZ);
 +        Set<NextTickListEntry> chunkset = this.tickEntriesByChunk.get(coord);
 +        List<NextTickListEntry> list = null;
 +        if (chunkset != null) {
@@ -290,9 +290,9 @@ index 74a2d45..b860ce8 100644
 +        }
 +        // See if any on list of ticks being processed now
 +        if (this.nextPendingTickEntry < this.pendingTickEntries.size()) {
-+            int xmin = (chunk.x << 4);
++            int xmin = (chunk.locX << 4);
 +            int xmax = xmin + 16;
-+            int zmin = (chunk.z << 4);
++            int zmin = (chunk.locZ << 4);
 +            int zmax = zmin + 16;
 +            int te_cnt = this.pendingTickEntries.size();
 +            for (int i = this.nextPendingTickEntry; i < te_cnt; i++) {
