@@ -46,18 +46,19 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
         threadcommandreader.setDaemon(true);
         threadcommandreader.start();
 
-        // CraftBukkit start - TODO: See if this needs fixing
-        final org.apache.logging.log4j.core.Logger realLogger = ((org.apache.logging.log4j.core.Logger) LogManager.getRootLogger());
-        for (org.apache.logging.log4j.core.Appender appender : realLogger.getAppenders().values()) {
-            if (appender instanceof org.apache.logging.log4j.core.appender.ConsoleAppender) {
-                realLogger.removeAppender(appender);
-            }
+        // CraftBukkit start - TODO: handle command-line logging arguments
+        java.util.logging.Logger global = java.util.logging.Logger.getLogger("");
+        global.setUseParentHandlers(false);
+        for (java.util.logging.Handler handler : global.getHandlers()) {
+            global.removeHandler(handler);
         }
+        global.addHandler(new org.bukkit.craftbukkit.util.ForwardLogHandler());
 
+        final org.apache.logging.log4j.core.Logger logger = ((org.apache.logging.log4j.core.Logger) LogManager.getRootLogger());
         new Thread(new org.bukkit.craftbukkit.util.TerminalConsoleWriterThread(System.out, this.reader)).start();
 
-        System.setOut(new PrintStream(new LoggerOutputStream(realLogger, Level.INFO), true));
-        System.setErr(new PrintStream(new LoggerOutputStream(realLogger, Level.WARN), true));
+        System.setOut(new PrintStream(new LoggerOutputStream(logger, Level.INFO), true));
+        System.setErr(new PrintStream(new LoggerOutputStream(logger, Level.WARN), true));
         // CraftBukkit end
 
         h.info("Starting minecraft server version 1.7.2");
