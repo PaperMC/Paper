@@ -116,7 +116,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
         try {
             this.reader = new ConsoleReader(System.in, System.out);
             this.reader.setExpandEvents(false); // Avoid parsing exceptions for uncommonly used event designators
-        } catch (Exception e) {
+        } catch (Throwable e) {
             try {
                 // Try again with jline disabled for Windows users without C++ 2008 Redistributable
                 System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
