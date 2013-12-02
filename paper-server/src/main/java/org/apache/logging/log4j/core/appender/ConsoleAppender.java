@@ -130,7 +130,7 @@ public final class ConsoleAppender extends AbstractOutputStreamAppender {
             LOGGER.debug("Jansi is not installed, cannot find {}", JANSI_CLASS);
         } catch (final NoSuchMethodException nsme) {
             LOGGER.warn("{} is missing the proper constructor", JANSI_CLASS);
-        } catch (final Exception ex) {
+        } catch (final Throwable ex) { // CraftBukkit - Exception -> Throwable
             LOGGER.warn("Unable to instantiate {}", JANSI_CLASS);
         }
         return printStream;
