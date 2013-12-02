@@ -314,7 +314,7 @@ public class PlayerInteractManager {
 
             // CraftBukkit start - Drop event experience
             if (flag && event != null) {
-                block.c(this.world, i, j, k, event.getExpToDrop());
+                block.dropExperience(this.world, i, j, k, event.getExpToDrop());
             }
             // CraftBukkit end
 
