@@ -20,23 +20,31 @@ public abstract class WorldGenerator {
 
     public void a(double d0, double d1, double d2) {}
 
-    // CraftBukkit - change signature
-    protected void setType(CraftBlockChangeDelegate world, int i, int j, int k, Block block) {
+    protected void setType(World world, int i, int j, int k, Block block) {
         this.setTypeAndData(world, i, j, k, block, 0);
     }
 
-    // CraftBukkit - change signature
+    // CraftBukkit start - Duplicate method to add support for CraftBlockChangeDelegate
+    protected void setType(CraftBlockChangeDelegate world, int i, int j, int k, Block block) {
+        this.setTypeAndData(world, i, j, k, block, 0);
+    }
+    // CraftBukkit end
+
+    protected void setTypeAndData(World world, int i, int j, int k, Block block, int l) {
+        if (this.a) {
+            world.setTypeAndData(i, j, k, block, l, 3);
+        } else {
+            world.setTypeAndData(i, j, k, block, l, 2);
+        }
+    }
+
+    // CraftBukkit start - Duplicate method to add support for CraftBlockChangeDelegate
     protected void setTypeAndData(CraftBlockChangeDelegate world, int i, int j, int k, Block block, int l) {
         if (this.a) {
             world.setTypeAndData(i, j, k, block, l, 3);
         } else {
-            // CraftBukkit start - Layering violation :(
-            if (world.getDelegate() instanceof World) {
-                ((World) world.getDelegate()).setTypeAndData(i, j, k, block, l, 2);
-            } else {
-                world.setTypeAndData(i, j, k, block, l, 2);
-            }
-            // CraftBukkit end
+            world.setTypeAndData(i, j, k, block, l, 2);
         }
     }
+    // CraftBukkit end
 }
