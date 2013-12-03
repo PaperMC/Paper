@@ -113,6 +113,12 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
 
         // CraftBukkit start
         this.options = options;
+        // Try to see if we're actually running in a terminal, disable jline if not
+        if (System.console() == null) {
+            System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
+            org.bukkit.craftbukkit.Main.useJline = false;
+        }
+
         try {
             this.reader = new ConsoleReader(System.in, System.out);
             this.reader.setExpandEvents(false); // Avoid parsing exceptions for uncommonly used event designators
