@@ -167,6 +167,7 @@ public class PlayerConnection implements PacketPlayInListener {
         ChatComponentText chatcomponenttext = new ChatComponentText(s);
 
         this.networkManager.handle(new PacketPlayOutKickDisconnect(chatcomponenttext), new GenericFutureListener[] { new PlayerConnectionFuture(this, chatcomponenttext)});
+        this.a(chatcomponenttext); // CraftBukkit - Process quit immediately
         this.networkManager.g();
     }
 
@@ -677,6 +678,7 @@ public class PlayerConnection implements PacketPlayInListener {
     }
 
     public void a(IChatBaseComponent ichatbasecomponent) {
+        if (this.isDisconnected()) return; // CraftBukkit - Don't trigger twice on kicks
         c.info(this.player.getName() + " lost connection: " + ichatbasecomponent.c()); // CraftBukkit - Don't toString the component
         this.minecraftServer.au();
         // CraftBukkit start - Replace vanilla quit message handling with our own.
