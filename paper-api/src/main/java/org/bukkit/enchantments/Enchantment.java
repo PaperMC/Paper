@@ -120,6 +120,16 @@ public abstract class Enchantment {
      */
     public static final Enchantment ARROW_INFINITE = new EnchantmentWrapper(51);
 
+    /**
+     * Decreases odds of catching worthless junk
+     */
+    public static final Enchantment LUCK = new EnchantmentWrapper(61);
+
+    /**
+     * Increases rate of fish biting your hook
+     */
+    public static final Enchantment LURE = new EnchantmentWrapper(62);
+
     private static final Map<Integer, Enchantment> byId = new HashMap<Integer, Enchantment>();
     private static final Map<String, Enchantment> byName = new HashMap<String, Enchantment>();
     private static boolean acceptingNew = true;
