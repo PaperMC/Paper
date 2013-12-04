@@ -57,4 +57,12 @@ public enum TreeType {
      * Dark Oak tree.
      */
     DARK_OAK,
+    /**
+     * Mega redwood tree; 4 blocks wide and tall
+     */
+    MEGA_REDWOOD,
+    /**
+     * Tall birch tree
+     */
+    TALL_BIRCH,
 }
