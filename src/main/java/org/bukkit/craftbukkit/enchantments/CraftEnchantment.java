@@ -45,6 +45,8 @@ public class CraftEnchantment extends Enchantment {
             return EnchantmentTarget.WEAPON;
         case BOW:
             return EnchantmentTarget.BOW;
+        case FISHING_ROD:
+            return EnchantmentTarget.FISHING_ROD;
         default:
             return null;
         }
@@ -102,6 +104,10 @@ public class CraftEnchantment extends Enchantment {
             return "ARROW_FIRE";
         case 51:
             return "ARROW_INFINITE";
+        case 61:
+            return "LUCK";
+        case 62:
+            return "LURE";
         default:
             return "UNKNOWN_ENCHANT_" + target.id;
         }
