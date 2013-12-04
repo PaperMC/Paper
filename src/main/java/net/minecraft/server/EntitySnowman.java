@@ -49,7 +49,7 @@ public class EntitySnowman extends EntityGolem implements IRangedEntity {
             k = MathHelper.floor(this.locZ + (double) ((float) (l / 2 % 2 * 2 - 1) * 0.25F));
             if (this.world.getType(i, j, k).getMaterial() == Material.AIR && this.world.getBiome(i, k).a(i, j, k) < 0.8F && Blocks.SNOW.canPlace(this.world, i, j, k)) {
                 // CraftBukkit start
-                org.bukkit.block.BlockState blockState = this.world.getWorld().getBlockAt(j, k, l).getState();
+                org.bukkit.block.BlockState blockState = this.world.getWorld().getBlockAt(i, j, k).getState();
                 blockState.setType(CraftMagicNumbers.getMaterial(Blocks.SNOW));
 
                 EntityBlockFormEvent event = new EntityBlockFormEvent(this.getBukkitEntity(), blockState.getBlock(), blockState);
