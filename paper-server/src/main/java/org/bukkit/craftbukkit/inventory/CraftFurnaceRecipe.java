@@ -18,9 +18,10 @@ public class CraftFurnaceRecipe extends FurnaceRecipe implements CraftRecipe {
         return new CraftFurnaceRecipe(recipe.getResult(), recipe.getInput());
     }
 
+    @Override
     public void addToCraftingManager() {
         ItemStack result = this.getResult();
         ItemStack input = this.getInput();
-        RecipesFurnace.getInstance().registerRecipe(CraftMagicNumbers.getBlock(input.getTypeId()), CraftItemStack.asNMSCopy(result), 0.1f);
+        RecipesFurnace.getInstance().a(CraftMagicNumbers.getItem(input.getTypeId()), CraftItemStack.asNMSCopy(result), 0.1f);
     }
 }
