@@ -1,36 +1,39 @@
-From c05e1dfb0778e93a4d62851904fb6029fd369089 Mon Sep 17 00:00:00 2001
+From 5beedfbb607926e9dd357a806b2b48d9c40e7aaa Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 5 Dec 2013 13:55:53 +1100
 Subject: [PATCH] Fix Broken Async Chat
 
 
 diff --git a/src/main/java/net/minecraft/server/PacketPlayInChat.java b/src/main/java/net/minecraft/server/PacketPlayInChat.java
-index 604a7af..4dedd01 100644
+index 604a7af..d419f0f 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayInChat.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayInChat.java
-@@ -43,7 +43,20 @@ public class PacketPlayInChat extends Packet {
+@@ -43,7 +43,25 @@ public class PacketPlayInChat extends Packet {
      }
      // CraftBukkit end
  
 -    public void handle(PacketListener packetlistener) {
--        this.a((PacketPlayInListener) packetlistener);
--    }
 +    // Spigot Start
 +    private static final java.util.concurrent.ExecutorService executors = java.util.concurrent.Executors.newCachedThreadPool(
 +            new com.google.common.util.concurrent.ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "Async Chat Thread - #%d" ).build() );
 +    public void handle(final PacketListener packetlistener)
 +    {
-+        executors.submit( new Runnable()
++        if ( a() )
 +        {
-+
-+            @Override
-+            public void run()
++            executors.submit( new Runnable()
 +            {
-+                PacketPlayInChat.this.a( (PacketPlayInListener) packetlistener );
-+            }
-+        } );
-+    }
-+    // Spigot End
++
++                @Override
++                public void run()
++                {
++                    PacketPlayInChat.this.a( (PacketPlayInListener) packetlistener );
++                }
++            } );
++            return;
++        }
++        // Spigot End
+         this.a((PacketPlayInListener) packetlistener);
+     }
  }
 -- 
 1.8.3.2
