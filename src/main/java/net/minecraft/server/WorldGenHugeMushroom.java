@@ -168,7 +168,7 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
                                     if (event == null) {
                                         this.setTypeAndData(world, j2, j1, k2, Block.e(Block.b(Blocks.BIG_MUSHROOM_1) + l), l2);
                                     } else {
-                                        BlockState state = bukkitWorld.getBlockAt(i2, k1, k2).getState();
+                                        BlockState state = bukkitWorld.getBlockAt(j2, j1, k2).getState();
                                         state.setTypeId(Block.b(Blocks.BIG_MUSHROOM_1) + l);
                                         state.setData(new MaterialData(Block.b(Blocks.BIG_MUSHROOM_1) + l, (byte) l2));
                                         event.getBlocks().add(state);
