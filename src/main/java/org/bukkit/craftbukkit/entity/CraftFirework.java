@@ -47,14 +47,17 @@ public class CraftFirework extends CraftEntity implements Firework {
         return "CraftFirework";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.FIREWORK;
     }
 
+    @Override
     public FireworkMeta getFireworkMeta() {
         return (FireworkMeta) item.getItemMeta();
     }
 
+    @Override
     public void setFireworkMeta(FireworkMeta meta) {
         item.setItemMeta(meta);
 
@@ -62,5 +65,10 @@ public class CraftFirework extends CraftEntity implements Firework {
         getHandle().expectedLifespan = 10 * (1 + meta.getPower()) + random.nextInt(6) + random.nextInt(7);
 
         getHandle().getDataWatcher().h(FIREWORK_ITEM_INDEX); // Update
+    }
+
+    @Override
+    public void detonate() {
+        getHandle().expectedLifespan = 0;
     }
 }
