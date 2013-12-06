@@ -24,6 +24,7 @@ public class ItemDye extends Item {
     }
 
     public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
+        final int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
         if (!entityhuman.a(i, j, k, l, itemstack)) {
             return false;
         } else {
@@ -67,7 +68,12 @@ public class ItemDye extends Item {
                     if (world.isEmpty(i, j, k)) {
                         int j1 = Blocks.COCOA.getPlacedData(world, i, j, k, l, f, f1, f2, 0);
 
-                        world.setTypeAndData(i, j, k, Blocks.COCOA, j1, 2);
+                        // CraftBukkit start
+                        // world.setTypeAndData(i, j, k, Blocks.COCOA, j1, 2);
+                        if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, Blocks.COCOA, j1, clickedX, clickedY, clickedZ)) {
+                            return false;
+                        }
+                        // CraftBukkit end
                         if (!entityhuman.abilities.canInstantlyBuild) {
                             --itemstack.count;
                         }
