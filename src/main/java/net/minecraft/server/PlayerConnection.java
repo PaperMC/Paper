@@ -77,6 +77,7 @@ public class PlayerConnection implements PacketPlayInListener {
     private double z;
     private double q;
     public boolean checkMovement = true; // CraftBukkit - private -> public
+    private boolean processedDisconnect; // CraftBukkit - added
 
     public PlayerConnection(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer) {
         this.minecraftServer = minecraftserver;
@@ -678,7 +679,13 @@ public class PlayerConnection implements PacketPlayInListener {
     }
 
     public void a(IChatBaseComponent ichatbasecomponent) {
-        if (this.isDisconnected()) return; // CraftBukkit - Don't trigger twice on kicks
+        // CraftBukkit start - Rarely it would send a disconnect line twice
+        if (this.processedDisconnect) {
+            return;
+        } else {
+            this.processedDisconnect = true;
+        }
+        // CraftBukkit end
         c.info(this.player.getName() + " lost connection: " + ichatbasecomponent.c()); // CraftBukkit - Don't toString the component
         this.minecraftServer.au();
         // CraftBukkit start - Replace vanilla quit message handling with our own.
