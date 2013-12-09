@@ -1,6 +1,7 @@
 package org.bukkit.event.player;
 
 import java.net.InetAddress;
+import java.util.UUID;
 
 import org.bukkit.Warning;
 import org.bukkit.event.Event;
@@ -21,12 +22,19 @@ public class PlayerPreLoginEvent extends Event {
     private String message;
     private final String name;
     private final InetAddress ipAddress;
+    private final UUID uniqueId;
 
+    @Deprecated
     public PlayerPreLoginEvent(final String name, final InetAddress ipAddress) {
+        this(name, ipAddress, null);
+    }
+
+    public PlayerPreLoginEvent(final String name, final InetAddress ipAddress, final UUID uniqueId) {
         this.result = Result.ALLOWED;
         this.message = "";
         this.name = name;
         this.ipAddress = ipAddress;
+        this.uniqueId = uniqueId;
     }
 
     /**
@@ -106,6 +114,15 @@ public class PlayerPreLoginEvent extends Event {
     @Override
     public HandlerList getHandlers() {
         return handlers;
+    }
+
+    /**
+     * Gets the player's unique ID.
+     *
+     * @return The unique ID
+     */
+    public UUID getUniqueId() {
+        return uniqueId;
     }
 
     public static HandlerList getHandlerList() {
