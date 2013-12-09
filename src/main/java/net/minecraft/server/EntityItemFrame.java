@@ -24,10 +24,12 @@ public class EntityItemFrame extends EntityHanging {
         } else if (this.getItem() != null) {
             if (!this.world.isStatic) {
                 // CraftBukkit start
-                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleEntityDamageEvent(this, damagesource, f).isCancelled() || this.dead) {
-                    return false;
+                org.bukkit.event.entity.EntityDamageEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handleEntityDamageEvent(this, damagesource, f);
+                if ((event != null && event.isCancelled()) || this.dead) {
+                    return true;
                 }
                 // CraftBukkit end
+
                 this.b(damagesource.getEntity(), false);
                 this.setItem((ItemStack) null);
             }
