@@ -70,6 +70,7 @@ public abstract class World implements IBlockAccess {
     public boolean callingPlaceEvent = false;
     public long ticksPerAnimalSpawns;
     public long ticksPerMonsterSpawns;
+    public boolean populating;
     // CraftBukkit end
     private ArrayList M;
     private boolean N;
@@ -398,6 +399,11 @@ public abstract class World implements IBlockAccess {
     }
 
     public void update(int i, int j, int k, Block block) {
+        // CraftBukkit start
+        if (this.populating) {
+            return;
+        }
+        // CraftBukkit end
         this.applyPhysics(i, j, k, block);
     }
 

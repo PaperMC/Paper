@@ -237,8 +237,13 @@ public class ChunkProviderServer implements IChunkProvider {
 
                 org.bukkit.World world = this.world.getWorld();
                 if (world != null) {
-                    for (org.bukkit.generator.BlockPopulator populator : world.getPopulators()) {
-                        populator.populate(world, random, chunk.bukkitChunk);
+                    this.world.populating = true;
+                    try {
+                        for (org.bukkit.generator.BlockPopulator populator : world.getPopulators()) {
+                            populator.populate(world, random, chunk.bukkitChunk);
+                        }
+                    } finally {
+                        this.world.populating = false;
                     }
                 }
                 BlockSand.instaFall = false;
