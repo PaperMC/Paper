@@ -149,6 +149,7 @@ public class Main {
                     useConsole = false;
                 }
 
+                System.out.println("Loading libraries, please wait...");
                 MinecraftServer.main(options);
             } catch (Throwable t) {
                 t.printStackTrace();
