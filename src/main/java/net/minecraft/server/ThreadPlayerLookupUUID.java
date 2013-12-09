@@ -33,13 +33,14 @@ class ThreadPlayerLookupUUID extends Thread {
 
                 String playerName = LoginListener.d(this.a).getName();
                 java.net.InetAddress address = ((java.net.InetSocketAddress) a.networkManager.getSocketAddress()).getAddress();
+                java.util.UUID uniqueId = UtilUUID.b(LoginListener.d(this.a).getId());
                 final org.bukkit.craftbukkit.CraftServer server = LoginListener.b(this.a).server;
 
-                AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address);
+                AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId);
                 server.getPluginManager().callEvent(asyncEvent);
 
                 if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
-                    final PlayerPreLoginEvent event = new PlayerPreLoginEvent(playerName, address);
+                    final PlayerPreLoginEvent event = new PlayerPreLoginEvent(playerName, address, uniqueId);
                     if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
                         event.disallow(asyncEvent.getResult(), asyncEvent.getKickMessage());
                     }
