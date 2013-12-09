@@ -237,7 +237,7 @@ public abstract class EntityHanging extends Entity {
                     this.world.getServer().getPluginManager().callEvent(paintingEvent);
                 }
 
-                if (dead || event.isCancelled() || (paintingEvent != null && paintingEvent.isCancelled())) {
+                if (this.dead || event.isCancelled() || (paintingEvent != null && paintingEvent.isCancelled())) {
                     return true;
                 }
                 // CraftBukkit end
@@ -253,7 +253,17 @@ public abstract class EntityHanging extends Entity {
 
     public void move(double d0, double d1, double d2) {
         if (!this.world.isStatic && !this.dead && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
-            if (dead) return; // CraftBukkit
+            if (this.dead) return; // CraftBukkit
+
+            // CraftBukkit start
+            // TODO - Does this need its own cause? Seems to only be triggered by pistons
+            HangingBreakEvent event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), HangingBreakEvent.RemoveCause.PHYSICS);
+            this.world.getServer().getPluginManager().callEvent(event);
+
+            if (this.dead || event.isCancelled()) {
+                return;
+            }
+            // CraftBukkit end
 
             this.die();
             this.b((Entity) null);
