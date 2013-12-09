@@ -1,11 +1,11 @@
-From 33addf3303fe6773cc4d48168e9b739a05730fab Mon Sep 17 00:00:00 2001
+From 90653e58b284b1b1f0304d409faf40c6c8039bd8 Mon Sep 17 00:00:00 2001
 From: Thinkofdeath <purggames@gmail.com>
 Date: Sun, 1 Dec 2013 10:33:55 +0000
 Subject: [PATCH] Fix links in chat
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java b/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
-index cc8e715..5d6ce54 100644
+index cc8e715..22d1346 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
 @@ -3,11 +3,15 @@ package org.bukkit.craftbukkit.util;
@@ -33,7 +33,7 @@ index cc8e715..5d6ce54 100644
  
          private FromString(String message) {
              if (message == null) {
-@@ -38,10 +44,13 @@ public final class CraftChatMessage {
+@@ -38,10 +44,14 @@ public final class CraftChatMessage {
              list.add(currentChatComponent);
  
              EnumChatFormat format = null;
@@ -43,31 +43,30 @@ index cc8e715..5d6ce54 100644
              for (int i = 0; i < message.length(); i++) {
                  char currentChar = message.charAt(i);
                  if (currentChar == '\u00A7' && (i < (message.length() - 1)) && (format = formatMap.get(message.charAt(i + 1))) != null) {
-+                    checkUrl(matcher, message, i, false);
++                    checkUrl(matcher, message, i);
++                    lastWord++;
                      if (builder.length() > 0) {
                          appendNewComponent();
                      }
-@@ -78,6 +87,11 @@ public final class CraftChatMessage {
+@@ -78,6 +88,11 @@ public final class CraftChatMessage {
                      }
                      currentChatComponent = null;
                  } else {
 +                    if (currentChar == ' ' || i == message.length() - 1) {
-+                        if (checkUrl(matcher, message, i, true)) {
++                        if (checkUrl(matcher, message, i)) {
 +                            break;
 +                        }
 +                    }
                      builder.append(currentChar);
                  }
              }
-@@ -89,6 +103,36 @@ public final class CraftChatMessage {
+@@ -89,6 +104,31 @@ public final class CraftChatMessage {
              output = list.toArray(new IChatBaseComponent[0]);
          }
  
-+        private boolean checkUrl(Matcher matcher, String message, int i, boolean newWord) {
++        private boolean checkUrl(Matcher matcher, String message, int i) {
 +            Matcher urlMatcher = matcher.region(lastWord, i == message.length() - 1 ? message.length() : i);
-+            if (newWord) {
-+                lastWord = i + 1;
-+            }
++            lastWord = i + 1;
 +            if (urlMatcher.find()) {
 +                String fullUrl = urlMatcher.group(2);
 +                String protocol = urlMatcher.group(3);
@@ -83,9 +82,6 @@ index cc8e715..5d6ce54 100644
 +                modifier.a(link);
 +                appendNewComponent();
 +                modifier.a((ChatClickable) null);
-+                if (!newWord) { //Force new word to prevent double checking
-+                    lastWord = i + 1;
-+                }
 +                if (i == message.length() - 1) {
 +                    return true;
 +                }
@@ -97,5 +93,5 @@ index cc8e715..5d6ce54 100644
              IChatBaseComponent addition = new ChatComponentText(builder.toString()).setChatModifier(modifier);
              builder = new StringBuilder();
 -- 
-1.8.3.2
+1.8.4.msysgit.0
 
