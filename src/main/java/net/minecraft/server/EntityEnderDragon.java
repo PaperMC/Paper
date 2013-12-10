@@ -7,6 +7,7 @@ import java.util.List;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.util.BlockStateListPopulator;
 import org.bukkit.event.entity.EntityCreatePortalEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.Bukkit;
@@ -300,7 +301,15 @@ public class EntityEnderDragon extends EntityInsentient implements IComplex, IMo
         if (this.bC != null) {
             if (this.bC.dead) {
                 if (!this.world.isStatic) {
-                    this.a(this.bq, DamageSource.explosion((Explosion) null), 10.0F);
+                    // CraftBukkit start
+                    EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityDamageEvent.DamageCause.ENTITY_EXPLOSION, 10.0F);
+                    Bukkit.getPluginManager().callEvent(event);
+
+                    if (!event.isCancelled()) {
+                        getBukkitEntity().setLastDamageCause(event);
+                        this.a(this.bq, DamageSource.explosion((Explosion) null), (float) event.getDamage());
+                    }
+                    // CraftBukkit end
                 }
 
                 this.bC = null;
