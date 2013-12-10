@@ -311,6 +311,10 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
                 }
             }
         }
+
+        for (WorldServer world : this.worlds) {
+            this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(world.getWorld()));
+        }
         // CraftBukkit end
         this.m();
     }
