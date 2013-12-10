@@ -255,7 +255,7 @@ public class TileEntityFurnace extends TileEntity implements IWorldInventory {
 
             // CraftBukkit start
             CraftItemStack source = CraftItemStack.asCraftMirror(this.items[0]);
-            CraftItemStack result = CraftItemStack.asCraftMirror(itemstack.cloneItemStack());
+            org.bukkit.inventory.ItemStack result = CraftItemStack.asBukkitCopy(itemstack);
 
             FurnaceSmeltEvent furnaceSmeltEvent = new FurnaceSmeltEvent(this.world.getWorld().getBlockAt(this.x, this.y, this.z), source, result);
             this.world.getServer().getPluginManager().callEvent(furnaceSmeltEvent);
@@ -264,17 +264,19 @@ public class TileEntityFurnace extends TileEntity implements IWorldInventory {
                 return;
             }
 
-            itemstack = CraftItemStack.asNMSCopy(furnaceSmeltEvent.getResult());
+            result = furnaceSmeltEvent.getResult();
+            itemstack = CraftItemStack.asNMSCopy(result);
 
-            if (this.items[2] == null) {
-                this.items[2] = itemstack.cloneItemStack();
-            } else if (this.items[2].getItem() == itemstack.getItem()) {
-                // CraftBukkit - compare damage too
-                if (this.items[2].getData() == itemstack.getData()) {
+            if (itemstack != null) {
+                if (this.items[2] == null) {
+                    this.items[2] = itemstack;
+                } else if (CraftItemStack.asCraftMirror(this.items[2]).isSimilar(result)) {
                     this.items[2].count += itemstack.count;
+                } else {
+                    return;
                 }
-                // CraftBukkit end
             }
+            // CraftBukkit end
 
             --this.items[0].count;
             if (this.items[0].count <= 0) {
