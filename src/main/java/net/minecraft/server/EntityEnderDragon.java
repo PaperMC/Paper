@@ -10,6 +10,7 @@ import org.bukkit.event.entity.EntityCreatePortalEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
+import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.Bukkit;
 // CraftBukkit end
 
@@ -377,7 +378,19 @@ public class EntityEnderDragon extends EntityInsentient implements IComplex, IMo
     private void bO() {
         this.bz = false;
         if (this.random.nextInt(2) == 0 && !this.world.players.isEmpty()) {
-            this.bD = (Entity) this.world.players.get(this.random.nextInt(this.world.players.size()));
+            // CraftBukkit start
+            Entity target = (Entity) this.world.players.get(this.random.nextInt(this.world.players.size()));
+            EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), target.getBukkitEntity(), EntityTargetEvent.TargetReason.RANDOM_TARGET);
+            this.world.getServer().getPluginManager().callEvent(event);
+
+            if (!event.isCancelled()) {
+                if (event.getTarget() == null) {
+                    this.bD = null;
+                } else {
+                    this.bD = ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle();
+                }
+            }
+            // CraftBukkit end
         } else {
             boolean flag = false;
 
