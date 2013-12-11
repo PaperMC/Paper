@@ -142,7 +142,9 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
                 l += this.random.nextInt(i + 1);
             }
 
-            loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(item), l));
+            if (l > 0) {
+                loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(item), l));
+            }
         }
 
         org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
