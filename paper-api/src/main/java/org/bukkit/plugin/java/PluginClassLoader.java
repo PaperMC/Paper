@@ -1,71 +1,68 @@
 package org.bukkit.plugin.java;
 
+import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 
 import org.apache.commons.lang.Validate;
-import org.bukkit.plugin.AuthorNagException;
+import org.bukkit.plugin.InvalidPluginException;
+import org.bukkit.plugin.PluginDescriptionFile;
 
 /**
  * A ClassLoader for plugins, to allow shared classes across multiple plugins
  */
-public class PluginClassLoader extends URLClassLoader {
+final class PluginClassLoader extends URLClassLoader {
     private final JavaPluginLoader loader;
     private final Map<String, Class<?>> classes = new HashMap<String, Class<?>>();
-    final boolean extended = this.getClass() != PluginClassLoader.class;
+    private final PluginDescriptionFile description;
+    private final File dataFolder;
+    private final File file;
+    final JavaPlugin plugin;
+    private JavaPlugin pluginInit;
+    private IllegalStateException pluginState;
 
-    /**
-     * Internal class not intended to be exposed
-     */
-    @Deprecated
-    public PluginClassLoader(final JavaPluginLoader loader, final URL[] urls, final ClassLoader parent) {
-        this(loader, urls, parent, null);
-
-        if (loader.warn) {
-            if (extended) {
-                loader.server.getLogger().log(Level.WARNING, "PluginClassLoader not intended to be extended by " + getClass() + ", and may be final in a future version of Bukkit");
-            } else {
-                loader.server.getLogger().log(Level.WARNING, "Constructor \"public PluginClassLoader(JavaPluginLoader, URL[], ClassLoader)\" is Deprecated, and may be removed in a future version of Bukkit", new AuthorNagException(""));
-            }
-            loader.warn = false;
-        }
-    }
-
-
-    PluginClassLoader(final JavaPluginLoader loader, final URL[] urls, final ClassLoader parent, final Object methodSignature) {
-        super(urls, parent);
+    PluginClassLoader(final JavaPluginLoader loader, final ClassLoader parent, final PluginDescriptionFile description, final File dataFolder, final File file) throws InvalidPluginException, MalformedURLException {
+        super(new URL[] {file.toURI().toURL()}, parent);
         Validate.notNull(loader, "Loader cannot be null");
 
         this.loader = loader;
-    }
+        this.description = description;
+        this.dataFolder = dataFolder;
+        this.file = file;
 
-    @Override
-    public void addURL(URL url) { // Override for access level!
-        super.addURL(url);
+        try {
+            Class<?> jarClass;
+            try {
+                jarClass = Class.forName(description.getMain(), true, this);
+            } catch (ClassNotFoundException ex) {
+                throw new InvalidPluginException("Cannot find main class `" + description.getMain() + "'", ex);
+            }
+
+            Class<? extends JavaPlugin> pluginClass;
+            try {
+                pluginClass = jarClass.asSubclass(JavaPlugin.class);
+            } catch (ClassCastException ex) {
+                throw new InvalidPluginException("main class `" + description.getMain() + "' does not extend JavaPlugin", ex);
+            }
+
+            plugin = pluginClass.newInstance();
+        } catch (IllegalAccessException ex) {
+            throw new InvalidPluginException("No public constructor", ex);
+        } catch (InstantiationException ex) {
+            throw new InvalidPluginException("Abnormal plugin type", ex);
+        }
     }
 
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
-        return extended ? findClass(name, true) : findClass0(name, true); // Don't warn on deprecation, but maintain overridability
+        return findClass(name, true);
     }
 
-    /**
-     * @deprecated Internal method that wasn't intended to be exposed
-     */
-    @Deprecated
-    protected Class<?> findClass(String name, boolean checkGlobal) throws ClassNotFoundException {
-        if (loader.warn) {
-            loader.server.getLogger().log(Level.WARNING, "Method \"protected Class<?> findClass(String, boolean)\" is Deprecated, and may be removed in a future version of Bukkit", new AuthorNagException(""));
-            loader.warn = false;
-        }
-        return findClass0(name, checkGlobal);
-    }
-
-    Class<?> findClass0(String name, boolean checkGlobal) throws ClassNotFoundException {
+    Class<?> findClass(String name, boolean checkGlobal) throws ClassNotFoundException {
         if (name.startsWith("org.bukkit.") || name.startsWith("net.minecraft.")) {
             throw new ClassNotFoundException(name);
         }
@@ -73,18 +70,14 @@ public class PluginClassLoader extends URLClassLoader {
 
         if (result == null) {
             if (checkGlobal) {
-                result = loader.extended ? loader.getClassByName(name) : loader.getClassByName0(name); // Don't warn on deprecation, but maintain overridability
+                result = loader.getClassByName(name);
             }
 
             if (result == null) {
                 result = super.findClass(name);
 
                 if (result != null) {
-                    if (loader.extended) { // Don't warn on deprecation, but maintain overridability
-                        loader.setClass(name, result);
-                    } else {
-                        loader.setClass0(name, result);
-                    }
+                    loader.setClass(name, result);
                 }
             }
 
@@ -94,19 +87,20 @@ public class PluginClassLoader extends URLClassLoader {
         return result;
     }
 
-    /**
-     * @deprecated Internal method that wasn't intended to be exposed
-     */
-    @Deprecated
-    public Set<String> getClasses() {
-        if (loader.warn) {
-            loader.server.getLogger().log(Level.WARNING, "Method \"public Set<String> getClasses()\" is Deprecated, and may be removed in a future version of Bukkit", new AuthorNagException(""));
-            loader.warn = false;
-        }
-        return getClasses0();
+    Set<String> getClasses() {
+        return classes.keySet();
     }
 
-    Set<String> getClasses0() {
-        return classes.keySet();
+    synchronized void initialize(JavaPlugin javaPlugin) {
+        Validate.notNull(javaPlugin, "Initializing plugin cannot be null");
+        Validate.isTrue(javaPlugin.getClass().getClassLoader() == this, "Cannot initialize plugin outside of this class loader");
+        if (this.plugin != null || this.pluginInit != null) {
+            throw new IllegalArgumentException("Plugin already intialized!", pluginState);
+        }
+
+        pluginState = new IllegalStateException("Initial initialization");
+        this.pluginInit = javaPlugin;
+
+        javaPlugin.init(loader, loader.server, description, dataFolder, file, this);
     }
 }

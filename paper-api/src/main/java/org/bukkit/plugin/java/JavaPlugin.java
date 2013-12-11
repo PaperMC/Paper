@@ -13,12 +13,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.Server;
+import org.bukkit.Warning.WarningState;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.generator.ChunkGenerator;
+import org.bukkit.plugin.AuthorNagException;
 import org.bukkit.plugin.PluginBase;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
@@ -36,7 +38,6 @@ import com.avaje.ebeaninternal.server.ddl.DdlGenerator;
  */
 public abstract class JavaPlugin extends PluginBase {
     private boolean isEnabled = false;
-    private boolean initialized = false;
     private PluginLoader loader = null;
     private Server server = null;
     private File file = null;
@@ -49,7 +50,37 @@ public abstract class JavaPlugin extends PluginBase {
     private File configFile = null;
     private PluginLogger logger = null;
 
-    public JavaPlugin() {}
+    public JavaPlugin() {
+        final ClassLoader classLoader = this.getClass().getClassLoader();
+        if (!(classLoader instanceof PluginClassLoader)) {
+            throw new IllegalStateException("JavaPlugin requires " + PluginClassLoader.class.getName());
+        }
+        ((PluginClassLoader) classLoader).initialize(this);
+    }
+
+    /**
+     * @deprecated This method is intended for unit testing purposes when the
+     *     other {@linkplain #JavaPlugin(JavaPluginLoader,
+     *     PluginDescriptionFile, File, File) constructor} cannot be used.
+     *     <p>
+     *     Its existence may be temporary.
+     */
+    @Deprecated
+    protected JavaPlugin(final PluginLoader loader, final Server server, final PluginDescriptionFile description, final File dataFolder, final File file) {
+        final ClassLoader classLoader = this.getClass().getClassLoader();
+        if (classLoader instanceof PluginClassLoader) {
+            throw new IllegalStateException("Cannot use initialization constructor at runtime");
+        }
+        init(loader, server, description, dataFolder, file, classLoader);
+    }
+
+    protected JavaPlugin(final JavaPluginLoader loader, final PluginDescriptionFile description, final File dataFolder, final File file) {
+        final ClassLoader classLoader = this.getClass().getClassLoader();
+        if (classLoader instanceof PluginClassLoader) {
+            throw new IllegalStateException("Cannot use initialization constructor at runtime");
+        }
+        init(loader, loader.server, description, dataFolder, file, classLoader);
+    }
 
     /**
      * Returns the folder that the plugin data's files are located in. The
@@ -223,50 +254,46 @@ public abstract class JavaPlugin extends PluginBase {
     }
 
     /**
-     * Initializes this plugin with the given variables.
-     * <p>
-     * This method should never be called manually.
-     *
-     * @param loader PluginLoader that is responsible for this plugin
-     * @param server Server instance that is running this plugin
-     * @param description PluginDescriptionFile containing metadata on this
-     *     plugin
-     * @param dataFolder Folder containing the plugin's data
-     * @param file File containing this plugin
-     * @param classLoader ClassLoader which holds this plugin
+     * @deprecated This method is legacy and will be removed - it must be
+     *     replaced by the specially provided constructor(s).
      */
+    @Deprecated
     protected final void initialize(PluginLoader loader, Server server, PluginDescriptionFile description, File dataFolder, File file, ClassLoader classLoader) {
-        if (!initialized) {
-            this.initialized = true;
-            this.loader = loader;
-            this.server = server;
-            this.file = file;
-            this.description = description;
-            this.dataFolder = dataFolder;
-            this.classLoader = classLoader;
-            this.configFile = new File(dataFolder, "config.yml");
-            this.logger = new PluginLogger(this);
+        if (server.getWarningState() == WarningState.OFF) {
+            return;
+        }
+        getLogger().log(Level.WARNING, getClass().getName() + " is already initialized", server.getWarningState() == WarningState.DEFAULT ? null : new AuthorNagException("Explicit initialization"));
+    }
 
-            if (description.isDatabaseEnabled()) {
-                ServerConfig db = new ServerConfig();
+    final void init(PluginLoader loader, Server server, PluginDescriptionFile description, File dataFolder, File file, ClassLoader classLoader) {
+        this.loader = loader;
+        this.server = server;
+        this.file = file;
+        this.description = description;
+        this.dataFolder = dataFolder;
+        this.classLoader = classLoader;
+        this.configFile = new File(dataFolder, "config.yml");
+        this.logger = new PluginLogger(this);
 
-                db.setDefaultServer(false);
-                db.setRegister(false);
-                db.setClasses(getDatabaseClasses());
-                db.setName(description.getName());
-                server.configureDbConfig(db);
+        if (description.isDatabaseEnabled()) {
+            ServerConfig db = new ServerConfig();
 
-                DataSourceConfig ds = db.getDataSourceConfig();
+            db.setDefaultServer(false);
+            db.setRegister(false);
+            db.setClasses(getDatabaseClasses());
+            db.setName(description.getName());
+            server.configureDbConfig(db);
 
-                ds.setUrl(replaceDatabaseString(ds.getUrl()));
-                dataFolder.mkdirs();
+            DataSourceConfig ds = db.getDataSourceConfig();
 
-                ClassLoader previous = Thread.currentThread().getContextClassLoader();
+            ds.setUrl(replaceDatabaseString(ds.getUrl()));
+            dataFolder.mkdirs();
 
-                Thread.currentThread().setContextClassLoader(classLoader);
-                ebean = EbeanServerFactory.create(db);
-                Thread.currentThread().setContextClassLoader(previous);
-            }
+            ClassLoader previous = Thread.currentThread().getContextClassLoader();
+
+            Thread.currentThread().setContextClassLoader(classLoader);
+            ebean = EbeanServerFactory.create(db);
+            Thread.currentThread().setContextClassLoader(previous);
         }
     }
 
@@ -289,9 +316,12 @@ public abstract class JavaPlugin extends PluginBase {
      * Gets the initialization status of this plugin
      *
      * @return true if this plugin is initialized, otherwise false
+     * @deprecated This method cannot return false, as {@link
+     *     JavaPlugin} is now initialized in the constructor.
      */
+    @Deprecated
     public final boolean isInitialized() {
-        return initialized;
+        return true;
     }
 
     /**

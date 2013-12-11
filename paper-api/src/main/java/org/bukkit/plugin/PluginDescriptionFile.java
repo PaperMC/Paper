@@ -773,6 +773,10 @@ public final class PluginDescriptionFile {
         return name + " v" + version;
     }
 
+    /**
+     * @deprecated unused
+     */
+    @Deprecated
     public String getClassLoaderOf() {
         return classLoaderOf;
     }
