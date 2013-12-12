@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 
 import net.minecraft.server.BiomeBase;
+import net.minecraft.server.BlockCocoa;
 import net.minecraft.server.BlockRedstoneWire;
 import net.minecraft.server.Blocks;
 import net.minecraft.server.EnumSkyBlock;
@@ -428,6 +429,12 @@ public class CraftBlock implements Block {
                         }
 
                         drops.add(CraftItemStack.asBukkitCopy(nmsStack));
+                        // We don't want to drop cocoa blocks, we want to drop cocoa beans.
+                    } else if (Blocks.COCOA == block) {
+                        int dropAmount = (BlockCocoa.c(data) >= 2 ? 3 : 1);
+                        for (int j = 0; j < dropAmount; ++j) {
+                            drops.add(new ItemStack(Material.INK_SACK, 1, (short) 3));
+                        }
                     } else {
                         drops.add(new ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(item), 1, (short) block.getDropData(data)));
                     }
