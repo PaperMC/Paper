@@ -962,7 +962,17 @@ public class PlayerConnection implements PacketPlayInListener {
             Vec3D vec3d1 = vec3d.add((double) f7 * d3, (double) f6 * d3, (double) f8 * d3);
             MovingObjectPosition movingobjectposition = this.player.world.rayTrace(vec3d, vec3d1, true);
 
+            boolean valid = false;
             if (movingobjectposition == null || movingobjectposition.type != EnumMovingObjectType.BLOCK) {
+                valid = true;
+            } else {
+                Block block = this.player.world.getType(movingobjectposition.b, movingobjectposition.c, movingobjectposition.d);
+                if (!block.c()) { // Should be isBreakable?
+                    valid = true;
+                }
+            }
+
+            if (valid) {
                 CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_AIR, this.player.inventory.getItemInHand());
             }
 
