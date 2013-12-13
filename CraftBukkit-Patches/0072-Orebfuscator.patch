@@ -1,4 +1,4 @@
-From 0aa2dc80f6bb2afd62e23f03f43beca2a1a78cee Mon Sep 17 00:00:00 2001
+From 0c34e90fdc674988a33993715d0a2b974f87bea8 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 16 May 2013 18:51:05 +1000
 Subject: [PATCH] Orebfuscator
@@ -128,10 +128,10 @@ index b990081..04f5ed1 100644
      public void b(int i, int j, int k, Block block, int l) {
 diff --git a/src/main/java/org/spigotmc/AntiXray.java b/src/main/java/org/spigotmc/AntiXray.java
 new file mode 100644
-index 0000000..6413ac0
+index 0000000..297fae8
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/AntiXray.java
-@@ -0,0 +1,204 @@
+@@ -0,0 +1,200 @@
 +package org.spigotmc;
 +
 +import gnu.trove.set.TByteSet;
@@ -148,30 +148,26 @@ index 0000000..6413ac0
 +    // Used to keep track of which blocks to obfuscate
 +    private final boolean[] obfuscateBlocks = new boolean[ Short.MAX_VALUE ];
 +    // Used to select a random replacement ore
-+    private byte[] replacementOres;
++    private final byte[] replacementOres;
 +
 +    public AntiXray(SpigotWorldConfig config)
 +    {
 +        // Set all listed blocks as true to be obfuscated
-+        for ( int id : config.blocks )
++        for ( int id : ( config.engineMode == 1 ) ? config.hiddenBlocks : config.replaceBlocks )
 +        {
 +            obfuscateBlocks[id] = true;
 +        }
 +
 +        // For every block
 +        TByteSet blocks = new TByteHashSet();
-+        for ( int i = 0; i < obfuscateBlocks.length; i++ )
++        for ( Integer i : config.hiddenBlocks )
 +        {
-+            // If we are obfuscating it
-+            if ( obfuscateBlocks[i] )
++            Block block = Block.e( i );
++            // Check it exists and is not a tile entity
++            if ( block != null && !block.isTileEntity() )
 +            {
-+                Block block = Block.e(i);
-+                // Check it exists and is not a tile entity
-+                if ( block != null && !block.isTileEntity() )
-+                {
-+                    // Add it to the set of replacement blocks
-+                    blocks.add( (byte) i );
-+                }
++                // Add it to the set of replacement blocks
++                blocks.add( (byte) (int) i );
 +            }
 +        }
 +        // Bake it to a flat array of replacements
@@ -337,7 +333,7 @@ index 0000000..6413ac0
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 447581d..b4d9fc0 100644
+index 447581d..b207c02 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -1,5 +1,6 @@
@@ -347,32 +343,39 @@ index 447581d..b4d9fc0 100644
  import java.util.List;
  import org.bukkit.Bukkit;
  import org.bukkit.configuration.file.YamlConfiguration;
-@@ -206,4 +207,29 @@ public class SpigotWorldConfig
+@@ -206,4 +207,36 @@ public class SpigotWorldConfig
          arrowDespawnRate = getInt( "arrow-despawn-rate", 1200  );
          log( "Arrow Despawn Rate: " + arrowDespawnRate );
      }
 +    
-+    public boolean antiXray = true;
-+    public int engineMode = 1;
-+    public List<Integer> blocks = Arrays.asList( new Integer[]
-+    {
-+        1, 5, 14, 15, 16, 21, 48, 49, 54, 56, 73, 74, 82, 129, 130
-+    } );
++    public boolean antiXray;
++    public int engineMode;
++    public List<Integer> hiddenBlocks;
++    public List<Integer> replaceBlocks;
 +    public AntiXray antiXrayInstance;
 +    private void antiXray()
 +    {
-+        antiXray = getBoolean( "anti-xray.enabled", antiXray );
++        antiXray = getBoolean( "anti-xray.enabled", true );
 +        log( "Anti X-Ray: " + antiXray );
 +
-+        engineMode = getInt( "anti-xray.engine-mode", engineMode );
++        engineMode = getInt( "anti-xray.engine-mode", 1 );
 +        log( "\tEngine Mode: " + engineMode );
 +
-+        if ( SpigotConfig.version < 3 )
++        if ( SpigotConfig.version < 5 )
 +        {
-+            set( "anti-xray.blocks", blocks );
++            set( "anti-xray.blocks", null );
 +        }
-+        blocks = getList( "anti-xray.blocks", blocks );
-+        log( "\tBlocks: " + blocks );
++        hiddenBlocks = getList( "anti-xray.hide-blocks", Arrays.asList( new Integer[]
++        {
++            14, 15, 16, 21, 48, 49, 54, 56, 73, 74, 82, 129, 130
++        } ) );
++        log( "\tHidden Blocks: " + hiddenBlocks );
++
++        replaceBlocks = getList( "anti-xray.replace-blocks", Arrays.asList( new Integer[]
++        {
++            1, 5
++        } ) );
++        log( "\tReplace Blocks: " + hiddenBlocks );
 +
 +        antiXrayInstance = new AntiXray( this );
 +    }
