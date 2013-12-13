@@ -255,4 +255,11 @@ public class SpigotWorldConfig
         this.tridentDespawnRate = this.getInt( "trident-despawn-rate", this.arrowDespawnRate );
         this.log( "Arrow Despawn Rate: " + this.arrowDespawnRate + " Trident Respawn Rate:" + this.tridentDespawnRate );
     }
+
+    public boolean zombieAggressiveTowardsVillager;
+    private void zombieAggressiveTowardsVillager()
+    {
+        this.zombieAggressiveTowardsVillager = this.getBoolean( "zombie-aggressive-towards-villager", true );
+        this.log( "Zombie Aggressive Towards Villager: " + this.zombieAggressiveTowardsVillager );
+    }
 }
