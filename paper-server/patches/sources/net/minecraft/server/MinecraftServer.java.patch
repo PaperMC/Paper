@@ -169,7 +169,8 @@
 +                services.profileCache().setExecutor(this);
              }
  
-             this.connection = new ServerConnectionListener(this);
+-            this.connection = new ServerConnectionListener(this);
++            // this.connection = new ServerConnection(this); // Spigot
              this.tickRateManager = new ServerTickRateManager(this);
 -            this.progressListenerFactory = worldGenerationProgressListenerFactory;
 -            this.storageSource = session;
@@ -620,11 +621,10 @@
          if (flush) {
              Iterator iterator1 = this.getAllLevels().iterator();
  
-@@ -627,19 +891,41 @@
-     public void close() {
+@@ -628,18 +892,40 @@
          this.stopServer();
      }
-+
+ 
 +    // CraftBukkit start
 +    private boolean hasStopped = false;
 +    private final Object stopLock = new Object();
@@ -634,7 +634,7 @@
 +        }
 +    }
 +    // CraftBukkit end
- 
++
      public void stopServer() {
 +        // CraftBukkit start - prevent double stopping on multiple threads
 +        synchronized(this.stopLock) {
@@ -804,7 +804,7 @@
 +        SpigotTimings.commandFunctionsTimer.stopTiming(); // Spigot
          gameprofilerfiller.popPush("levels");
          Iterator iterator = this.getAllLevels().iterator();
-+
+ 
 +        // CraftBukkit start
 +        // Run tasks that are waiting on processing
 +        SpigotTimings.processQueueTimer.startTiming(); // Spigot
@@ -812,7 +812,7 @@
 +            this.processQueue.remove().run();
 +        }
 +        SpigotTimings.processQueueTimer.stopTiming(); // Spigot
- 
++
 +        SpigotTimings.timeUpdateTimer.startTiming(); // Spigot
 +        // Send time updates to everyone, it will get the right time from the world the player is in.
 +        if (this.tickCount % 20 == 0) {
@@ -872,12 +872,10 @@
  
          gameprofilerfiller.popPush("send chunks");
          iterator = this.playerList.getPlayers().iterator();
-@@ -1265,7 +1607,23 @@
-     @Nullable
-     public ServerLevel getLevel(ResourceKey<Level> key) {
+@@ -1267,6 +1609,22 @@
          return (ServerLevel) this.levels.get(key);
-+    }
-+
+     }
+ 
 +    // CraftBukkit start
 +    public void addLevel(ServerLevel level) {
 +        Map<ResourceKey<Level>, ServerLevel> oldLevels = this.levels;
@@ -891,11 +889,12 @@
 +        Map<ResourceKey<Level>, ServerLevel> newLevels = Maps.newLinkedHashMap(oldLevels);
 +        newLevels.remove(level.dimension());
 +        this.levels = Collections.unmodifiableMap(newLevels);
-     }
++    }
 +    // CraftBukkit end
- 
++
      public Set<ResourceKey<Level>> levelKeys() {
          return this.levels.keySet();
+     }
 @@ -1296,7 +1654,7 @@
  
      @DontObfuscate
@@ -905,6 +904,15 @@
      }
  
      public SystemReport fillSystemReport(SystemReport details) {
+@@ -1507,7 +1865,7 @@
+     }
+ 
+     public ServerConnectionListener getConnection() {
+-        return this.connection;
++        return this.connection == null ? this.connection = new ServerConnectionListener(this) : this.connection; // Spigot
+     }
+ 
+     public boolean isReady() {
 @@ -1634,11 +1992,11 @@
  
      public CompletableFuture<Void> reloadResources(Collection<String> dataPacks) {
@@ -945,20 +953,23 @@
  
                      try {
                          arraylist = Lists.newArrayList(NativeModuleLister.listModules());
-@@ -2108,6 +2467,22 @@
- 
-     }
- 
+@@ -2105,9 +2464,25 @@
+         if (bufferedwriter != null) {
+             bufferedwriter.close();
+         }
++
++    }
++
 +    // CraftBukkit start
 +    public boolean isDebugging() {
 +        return false;
 +    }
-+
+ 
 +    @Deprecated
 +    public static MinecraftServer getServer() {
 +        return (Bukkit.getServer() instanceof CraftServer) ? ((CraftServer) Bukkit.getServer()).getServer() : null;
-+    }
-+
+     }
+ 
 +    @Deprecated
 +    public static RegistryAccess getDefaultRegistryAccess() {
 +        return CraftRegistry.getMinecraftRegistry();
