@@ -224,4 +224,11 @@ public class SpigotConfig
         }
         bungee = getBoolean( "settings.bungeecord", false );
     }
+
+    private static void nettyThreads()
+    {
+        int count = getInt( "settings.netty-threads", 4 );
+        System.setProperty( "io.netty.eventLoopThreads", Integer.toString( count ) );
+        Bukkit.getLogger().log( Level.INFO, "Using {0} threads for Netty based IO", count );
+    }
 }
