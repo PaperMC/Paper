@@ -412,7 +412,6 @@ public class PlayerConnection implements PacketPlayInListener {
 
                 this.player.onGround = packetplayinflying.i();
                 this.minecraftServer.getPlayerList().d(this.player);
-                if (this.player.playerInteractManager.isCreative()) return; // CraftBukkit - fixed fall distance accumulating while being in Creative mode.
                 this.player.b(this.player.locY - d0, packetplayinflying.i());
             } else if (this.e % 20 == 0) {
                 this.a(this.y, this.z, this.q, this.player.yaw, this.player.pitch);

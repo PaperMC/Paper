@@ -628,6 +628,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             }
 
             getHandle().playerInteractManager.setGameMode(EnumGamemode.a(mode.getValue()));
+            getHandle().fallDistance = 0;
             getHandle().playerConnection.sendPacket(new PacketPlayOutGameStateChange(3, mode.getValue()));
         }
     }
