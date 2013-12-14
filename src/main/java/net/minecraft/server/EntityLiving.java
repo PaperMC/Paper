@@ -127,7 +127,14 @@ public abstract class EntityLiving extends Entity {
                     block = this.world.getType(i, j - 1, k);
                 }
             } else if (!this.world.isStatic && this.fallDistance > 3.0F) {
-                this.world.triggerEffect(2006, i, j, k, MathHelper.f(this.fallDistance - 3.0F));
+                // CraftBukkit start - supply player as argument in particles for visibility API to work
+                if (this instanceof EntityPlayer) {
+                    this.world.a((EntityHuman) this, 2006, i, j, k, MathHelper.f(this.fallDistance - 3.0F));
+                    ((EntityPlayer) this).playerConnection.sendPacket(new PacketPlayOutWorldEvent(2006, i, j, k, MathHelper.f(this.fallDistance - 3.0F), false));
+                } else {
+                    this.world.triggerEffect(2006, i, j, k, MathHelper.f(this.fallDistance - 3.0F));
+                }
+                // CraftBukkit end
             }
 
             block.a(this.world, i, j, k, this, this.fallDistance);
