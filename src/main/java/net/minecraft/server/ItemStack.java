@@ -6,6 +6,8 @@ import java.util.Random;
 import net.minecraft.util.com.google.common.collect.HashMultimap;
 import net.minecraft.util.com.google.common.collect.Multimap;
 
+import org.bukkit.craftbukkit.util.CraftMagicNumbers; // CraftBukkit
+
 public final class ItemStack {
 
     public static final DecimalFormat a = new DecimalFormat("#.###");
@@ -155,13 +157,12 @@ public final class ItemStack {
             return;
         }
 
-        if (!(this.usesData() || this.getItem().usesDurability())) { // || this.id > 255)) {
-            i = 0;
-        }
-
-        // Filter wool to avoid confusing the client
-        if (this.getItem() == Item.getItemOf(Blocks.WOOL)) {
-            i = Math.min(15, i);
+        // Is this a block?
+        if (CraftMagicNumbers.getBlock(CraftMagicNumbers.getId(this.getItem())) != Blocks.AIR) {
+            // If vanilla doesn't use data on it don't allow any
+            if (!(this.usesData() || this.getItem().usesDurability())) {
+                i = 0;
+            }
         }
         // CraftBukkit end
 
