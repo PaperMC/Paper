@@ -1,4 +1,4 @@
-From 6a093e7e3993c3c1aa92c2fcc1b33ccf19638993 Mon Sep 17 00:00:00 2001
+From 18db29b0ceb2bc7ed96c080d0debffb12b9aaf0e Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Fri, 13 Dec 2013 11:45:47 +1100
 Subject: [PATCH] Optimize DataWatcher
@@ -6,7 +6,7 @@ Subject: [PATCH] Optimize DataWatcher
 Use primitive orientated collections, as well as more effective copies across collections.
 
 diff --git a/src/main/java/net/minecraft/server/DataWatcher.java b/src/main/java/net/minecraft/server/DataWatcher.java
-index 90a2a80..adc1bb2 100644
+index 90a2a80..cca6bd9 100644
 --- a/src/main/java/net/minecraft/server/DataWatcher.java
 +++ b/src/main/java/net/minecraft/server/DataWatcher.java
 @@ -14,8 +14,13 @@ public class DataWatcher {
@@ -30,9 +30,10 @@ index 90a2a80..adc1bb2 100644
  
      public void a(int i, Object object) {
 -        Integer integer = (Integer) c.get(object.getClass());
-+        Integer integer = (Integer) classToId.get(object.getClass()); // Spigot
++        int integer = classToId.get(object.getClass()); // Spigot
  
-         if (integer == null) {
+-        if (integer == null) {
++        if (integer == -1) { // Spigot
              throw new IllegalArgumentException("Unknown data type: " + object.getClass());
          } else if (i > 31) {
              throw new IllegalArgumentException("Data value id is too big with " + i + "! (Max is " + 31 + ")");
@@ -40,7 +41,8 @@ index 90a2a80..adc1bb2 100644
 +        } else if (this.dataValues.containsKey(i)) { // Spigot
              throw new IllegalArgumentException("Duplicate id value for " + i + "!");
          } else {
-             WatchableObject watchableobject = new WatchableObject(integer.intValue(), i, object);
+-            WatchableObject watchableobject = new WatchableObject(integer.intValue(), i, object);
++            WatchableObject watchableobject = new WatchableObject(integer, i, object); // Spigot
  
              this.f.writeLock().lock();
 -            this.d.put(Integer.valueOf(i), watchableobject);
