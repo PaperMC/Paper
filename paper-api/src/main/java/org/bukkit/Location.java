@@ -390,12 +390,12 @@ public class Location implements Cloneable {
     }
 
     /**
-     * Gets the magnitude of the location, defined as sqrt(x^2+y^2+z^2). The value
-     * of this method is not cached and uses a costly square-root function, so
-     * do not repeatedly call this method to get the location's magnitude. NaN
-     * will be returned if the inner result of the sqrt() function overflows,
-     * which will be caused if the length is too long. Not world-aware and
-     * orientation independent.
+     * Gets the magnitude of the location, defined as sqrt(x^2+y^2+z^2). The
+     * value of this method is not cached and uses a costly square-root
+     * function, so do not repeatedly call this method to get the location's
+     * magnitude. NaN will be returned if the inner result of the sqrt()
+     * function overflows, which will be caused if the length is too long. Not
+     * world-aware and orientation independent.
      *
      * @see Vector
      * @return the magnitude
@@ -416,11 +416,11 @@ public class Location implements Cloneable {
     }
 
     /**
-     * Get the distance between this location and another. The value
-     * of this method is not cached and uses a costly square-root function, so
-     * do not repeatedly call this method to get the location's magnitude. NaN
-     * will be returned if the inner result of the sqrt() function overflows,
-     * which will be caused if the distance is too long.
+     * Get the distance between this location and another. The value of this
+     * method is not cached and uses a costly square-root function, so do not
+     * repeatedly call this method to get the location's magnitude. NaN will
+     * be returned if the inner result of the sqrt() function overflows, which
+     * will be caused if the distance is too long.
      *
      * @see Vector
      * @param o The other location
@@ -452,8 +452,8 @@ public class Location implements Cloneable {
     }
 
     /**
-     * Performs scalar multiplication, multiplying all components with a scalar.
-     * Not world-aware.
+     * Performs scalar multiplication, multiplying all components with a
+     * scalar. Not world-aware.
      *
      * @param m The factor
      * @see Vector
@@ -531,7 +531,8 @@ public class Location implements Cloneable {
     /**
      * Constructs a new {@link Vector} based on this Location
      *
-     * @return New Vector containing the coordinates represented by this Location
+     * @return New Vector containing the coordinates represented by this
+     *     Location
      */
     public Vector toVector() {
         return new Vector(x, y, z);
@@ -547,7 +548,8 @@ public class Location implements Cloneable {
     }
 
     /**
-     * Safely converts a double (location coordinate) to an int (block coordinate)
+     * Safely converts a double (location coordinate) to an int (block
+     * coordinate)
      *
      * @param loc Precise coordinate
      * @return Block coordinate

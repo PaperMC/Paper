@@ -51,8 +51,8 @@ public class PlayerEggThrowEvent extends PlayerEvent {
     /**
      * Sets whether the egg will hatch or not.
      *
-     * @param hatching true if you want the egg to hatch
-     *            false if you want it not to
+     * @param hatching true if you want the egg to hatch, false if you want it
+     *     not to
      */
     public void setHatching(boolean hatching) {
         this.hatching = hatching;
@@ -100,12 +100,13 @@ public class PlayerEggThrowEvent extends PlayerEvent {
     }
 
     /**
-     * Get the number of mob hatches from the egg. By default the number
-     * will be he number the server would've done
-     * <p>
-     * 7/8 chance of being 0
-     * 31/256 ~= 1/8 chance to be 1
-     * 1/256 chance to be 4
+     * Get the number of mob hatches from the egg. By default the number will
+     * be the number the server would've done
+     * <ul>
+     * <li>7/8 chance of being 0
+     * <li>31/256 ~= 1/8 chance to be 1
+     * <li>1/256 chance to be 4
+     * </ul>
      *
      * @return The number of mobs going to be hatched by the egg
      */
@@ -116,8 +117,8 @@ public class PlayerEggThrowEvent extends PlayerEvent {
     /**
      * Change the number of mobs coming out of the hatched egg
      * <p>
-     * The boolean hatching will override this number.
-     * Ie. If hatching = false, this number will not matter
+     * The boolean hatching will override this number. Ie. If hatching =
+     * false, this number will not matter
      *
      * @param numHatches The number of mobs coming out of the egg
      */

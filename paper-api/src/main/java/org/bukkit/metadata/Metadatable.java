@@ -5,7 +5,8 @@ import org.bukkit.plugin.Plugin;
 import java.util.List;
 
 /**
- * This interface is implemented by all objects that can provide metadata about themselves.
+ * This interface is implemented by all objects that can provide metadata
+ * about themselves.
  */
 public interface Metadatable {
     /**
@@ -13,20 +14,24 @@ public interface Metadatable {
      *
      * @param metadataKey A unique key to identify this metadata.
      * @param newMetadataValue The metadata value to apply.
-     * @throws IllegalArgumentException If value is null, or the owning plugin is null
+     * @throws IllegalArgumentException If value is null, or the owning plugin
+     *     is null
      */
     public void setMetadata(String metadataKey, MetadataValue newMetadataValue);
 
     /**
-     * Returns a list of previously set metadata values from the implementing object's metadata store.
+     * Returns a list of previously set metadata values from the implementing
+     * object's metadata store.
      *
      * @param metadataKey the unique metadata key being sought.
-     * @return A list of values, one for each plugin that has set the requested value.
+     * @return A list of values, one for each plugin that has set the
+     *     requested value.
      */
     public List<MetadataValue> getMetadata(String metadataKey);
 
     /**
-     * Tests to see whether the implementing object contains the given metadata value in its metadata store.
+     * Tests to see whether the implementing object contains the given
+     * metadata value in its metadata store.
      *
      * @param metadataKey the unique metadata key being queried.
      * @return the existence of the metadataKey within subject.
@@ -34,10 +39,13 @@ public interface Metadatable {
     public boolean hasMetadata(String metadataKey);
 
     /**
-     * Removes the given metadata value from the implementing object's metadata store.
+     * Removes the given metadata value from the implementing object's
+     * metadata store.
      *
-     * @param metadataKey the unique metadata key identifying the metadata to remove.
-     * @param owningPlugin This plugin's metadata value will be removed. All other values will be left untouched.
+     * @param metadataKey the unique metadata key identifying the metadata to
+     *     remove.
+     * @param owningPlugin This plugin's metadata value will be removed. All
+     *     other values will be left untouched.
      * @throws IllegalArgumentException If plugin is null
      */
     public void removeMetadata(String metadataKey, Plugin owningPlugin);

@@ -105,7 +105,8 @@ public abstract class PotionEffectType {
     public static final PotionEffectType POISON = new PotionEffectTypeWrapper(19);
 
     /**
-     * Deals damage to an entity over time and gives the health to the shooter.
+     * Deals damage to an entity over time and gives the health to the
+     * shooter.
      */
     public static final PotionEffectType WITHER = new PotionEffectTypeWrapper(20);
 
@@ -132,7 +133,8 @@ public abstract class PotionEffectType {
     }
 
     /**
-     * Creates a PotionEffect from this PotionEffectType, applying duration modifiers and checks.
+     * Creates a PotionEffect from this PotionEffectType, applying duration
+     * modifiers and checks.
      *
      * @see PotionBrewer#createEffect(PotionEffectType, int, int)
      * @param duration time in ticks

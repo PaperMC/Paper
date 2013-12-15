@@ -20,8 +20,8 @@ public enum EntityType {
     /**
      * An item resting on the ground.
      * <p>
-     * Spawn with {@link World#dropItem(Location, ItemStack)}
-     * or {@link World#dropItemNaturally(Location, ItemStack)}
+     * Spawn with {@link World#dropItem(Location, ItemStack)} or {@link
+     * World#dropItemNaturally(Location, ItemStack)}
      */
     DROPPED_ITEM("Item", Item.class, 1, false),
     /**
@@ -158,7 +158,7 @@ public enum EntityType {
     FISHING_HOOK(null, Fish.class, -1, false),
     /**
      * A bolt of lightning.
-     *
+     * <p>
      * Spawn with {@link World#strikeLightning(Location)}.
      */
     LIGHTNING(null, LightningStrike.class, -1, false),
@@ -250,9 +250,10 @@ public enum EntityType {
     }
 
     /**
-     * Some entities cannot be spawned using {@link World#spawnEntity(Location, EntityType)}
-     * or {@link World#spawn(Location, Class)}, usually
-     * because they require additional information in order to spawn.
+     * Some entities cannot be spawned using {@link
+     * World#spawnEntity(Location, EntityType)} or {@link
+     * World#spawn(Location, Class)}, usually because they require additional
+     * information in order to spawn.
      *
      * @return False if the entity type cannot be spawned
      */

@@ -17,12 +17,12 @@ public @interface EventHandler {
      * <p>
      * First priority to the last priority executed:
      * <ol>
-     * <li>LOWEST</li>
-     * <li>LOW</li>
-     * <li>NORMAL</li>
-     * <li>HIGH</li>
-     * <li>HIGHEST</li>
-     * <li>MONITOR</li>
+     * <li>LOWEST
+     * <li>LOW
+     * <li>NORMAL
+     * <li>HIGH
+     * <li>HIGHEST
+     * <li>MONITOR
      * </ol>
      */
     EventPriority priority() default EventPriority.NORMAL;

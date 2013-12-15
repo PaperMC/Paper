@@ -5,8 +5,10 @@ import org.bukkit.help.HelpTopic;
 import java.util.Comparator;
 
 /**
- * Used to impose a custom total ordering on help topics. All topics are listed in alphabetic order, but topics
- * that start with a slash come after topics that don't.
+ * Used to impose a custom total ordering on help topics.
+ * <p>
+ * All topics are listed in alphabetic order, but topics that start with a
+ * slash come after topics that don't.
  */
 public class HelpTopicComparator implements Comparator<HelpTopic> {
     

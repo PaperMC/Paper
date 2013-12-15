@@ -4,7 +4,8 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.BooleanUtils;
 
 /**
- * BooleanPrompt is the base class for any prompt that requires a boolean response from the user.
+ * BooleanPrompt is the base class for any prompt that requires a boolean
+ * response from the user.
  */
 public abstract class BooleanPrompt extends ValidatingPrompt{
 
@@ -24,7 +25,8 @@ public abstract class BooleanPrompt extends ValidatingPrompt{
     }
 
     /**
-     * Override this method to perform some action with the user's boolean response.
+     * Override this method to perform some action with the user's boolean
+     * response.
      *
      * @param context Context information about the conversation.
      * @param input The user's boolean response.

@@ -32,7 +32,8 @@ public interface Projectile extends Entity {
     public boolean doesBounce();
 
     /**
-     * Set whether or not this projectile should bounce or not when it hits something.
+     * Set whether or not this projectile should bounce or not when it hits
+     * something.
      *
      * @param doesBounce whether or not it should bounce.
      */

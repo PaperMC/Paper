@@ -17,8 +17,9 @@ public class ShapedRecipe implements Recipe {
     private Map<Character, ItemStack> ingredients = new HashMap<Character, ItemStack>();
 
     /**
-     * Create a shaped recipe to craft the specified ItemStack. The constructor merely determines the
-     * result and type; to set the actual recipe, you'll need to call the appropriate methods.
+     * Create a shaped recipe to craft the specified ItemStack. The
+     * constructor merely determines the result and type; to set the actual
+     * recipe, you'll need to call the appropriate methods.
      *
      * @param result The item you want the recipe to create.
      * @see ShapedRecipe#shape(String...)
@@ -31,10 +32,12 @@ public class ShapedRecipe implements Recipe {
     }
 
     /**
-     * Set the shape of this recipe to the specified rows. Each character represents a different
-     * ingredient; exactly what each character represents is set separately. The first row supplied
-     * corresponds with the upper most part of the recipe on the workbench e.g. if all three
-     * rows are supplies the first string represents the top row on the workbench.
+     * Set the shape of this recipe to the specified rows. Each character
+     * represents a different ingredient; exactly what each character
+     * represents is set separately. The first row supplied corresponds with
+     * the upper most part of the recipe on the workbench e.g. if all three
+     * rows are supplies the first string represents the top row on the
+     * workbench.
      *
      * @param shape The rows of the recipe (up to 3 rows).
      * @return The changed recipe, so you can chain calls.

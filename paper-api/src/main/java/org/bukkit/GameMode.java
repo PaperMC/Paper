@@ -7,11 +7,13 @@ import org.bukkit.entity.HumanEntity;
 import com.google.common.collect.Maps;
 
 /**
- * Represents the various type of game modes that {@link HumanEntity}s may have
+ * Represents the various type of game modes that {@link HumanEntity}s may
+ * have
  */
 public enum GameMode {
     /**
-     * Creative mode may fly, build instantly, become invulnerable and create free items.
+     * Creative mode may fly, build instantly, become invulnerable and create
+     * free items.
      */
     CREATIVE(1),
 
@@ -47,7 +49,8 @@ public enum GameMode {
      * Gets the GameMode represented by the specified value
      *
      * @param value Value to check
-     * @return Associative {@link GameMode} with the given value, or null if it doesn't exist
+     * @return Associative {@link GameMode} with the given value, or null if
+     *     it doesn't exist
      * @deprecated Magic value
      */
     @Deprecated

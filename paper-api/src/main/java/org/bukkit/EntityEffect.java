@@ -69,7 +69,8 @@ public enum EntityEffect {
      * Gets the EntityEffect with the given data value
      *
      * @param data Data value to fetch
-     * @return The {@link EntityEffect} representing the given value, or null if it doesn't exist
+     * @return The {@link EntityEffect} representing the given value, or null
+     *     if it doesn't exist
      * @deprecated Magic value
      */
     @Deprecated

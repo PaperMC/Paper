@@ -70,12 +70,14 @@ public interface MetadataValue {
     /**
      * Returns the {@link Plugin} that created this metadata item.
      *
-     * @return the plugin that owns this metadata value. This should never be null.
+     * @return the plugin that owns this metadata value. This should never be
+     *     null.
      */
     public Plugin getOwningPlugin();
 
     /**
-     * Invalidates this metadata item, forcing it to recompute when next accessed.
+     * Invalidates this metadata item, forcing it to recompute when next
+     * accessed.
      */
     public void invalidate();
 }

@@ -49,8 +49,8 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * Clarity method for getting the placed block. Not really needed
-     * except for reasons of clarity.
+     * Clarity method for getting the placed block. Not really needed except
+     * for reasons of clarity.
      *
      * @return The Block that was placed
      */
@@ -59,7 +59,8 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * Gets the BlockState for the block which was replaced. Material type air mostly.
+     * Gets the BlockState for the block which was replaced. Material type air
+     * mostly.
      *
      * @return The BlockState for the block which was replaced.
      */
@@ -79,7 +80,8 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     /**
      * Gets the item in the player's hand when they placed the block.
      *
-     * @return The ItemStack for the item in the player's hand when they placed the block
+     * @return The ItemStack for the item in the player's hand when they
+     *     placed the block
      */
     public ItemStack getItemInHand() {
         return itemInHand;

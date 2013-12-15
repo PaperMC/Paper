@@ -3,7 +3,8 @@ package org.bukkit.conversations;
 import java.util.EventObject;
 
 /**
- * ConversationAbandonedEvent contains information about an abandoned conversation.
+ * ConversationAbandonedEvent contains information about an abandoned
+ * conversation.
  */
 public class ConversationAbandonedEvent extends EventObject {
 
@@ -39,11 +40,12 @@ public class ConversationAbandonedEvent extends EventObject {
     }
 
     /**
-     * Indicates how the conversation was abandoned - naturally as part of the prompt chain or prematurely via a
-     * {@link ConversationCanceller}.
+     * Indicates how the conversation was abandoned - naturally as part of the
+     * prompt chain or prematurely via a {@link ConversationCanceller}.
      *
-     * @return True if the conversation is abandoned gracefully by a {@link Prompt} returning null
-     * or the next prompt. False of the conversations is abandoned prematurely by a ConversationCanceller.
+     * @return True if the conversation is abandoned gracefully by a {@link
+     *     Prompt} returning null or the next prompt. False of the
+     *     conversations is abandoned prematurely by a ConversationCanceller.
      */
     public boolean gracefulExit() {
         return canceller == null;

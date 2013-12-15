@@ -32,11 +32,11 @@ public class ExpBottleEvent extends ProjectileHitEvent {
 
     /**
      * This method sets if the particle effect will be shown.
+     * <p>
      * This does not change the experience created.
      *
-     * @param showEffect
-     *          true indicates the effect will be shown,
-     *          false indicates no effect will be shown
+     * @param showEffect true indicates the effect will be shown, false
+     *     indicates no effect will be shown
      */
     public void setShowEffect(final boolean showEffect) {
         this.showEffect = showEffect;
@@ -44,6 +44,7 @@ public class ExpBottleEvent extends ProjectileHitEvent {
 
     /**
      * This method retrieves the amount of experience to be created.
+     * <p>
      * The number indicates a total amount to be divided into orbs.
      *
      * @return the total amount of experience to be created
@@ -54,6 +55,7 @@ public class ExpBottleEvent extends ProjectileHitEvent {
 
     /**
      * This method sets the amount of experience to be created.
+     * <p>
      * The number indicates a total amount to be divided into orbs.
      *
      * @param exp the total amount of experience to be created

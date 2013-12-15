@@ -9,7 +9,7 @@ import org.bukkit.entity.Entity;
  * <p>
  * Examples:
  * <ul>
- * <li>Snow formed by a {@link org.bukkit.entity.Snowman}.</li>
+ * <li>Snow formed by a {@link org.bukkit.entity.Snowman}.
  * </ul>
  */
 public class EntityBlockFormEvent extends BlockFormEvent {

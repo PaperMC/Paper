@@ -10,16 +10,17 @@ import org.bukkit.Material;
 import org.bukkit.material.MaterialData;
 
 /**
- * Represents a shapeless recipe, where the arrangement of the ingredients on the crafting grid
- * does not matter.
+ * Represents a shapeless recipe, where the arrangement of the ingredients on
+ * the crafting grid does not matter.
  */
 public class ShapelessRecipe implements Recipe {
     private ItemStack output;
     private List<ItemStack> ingredients = new ArrayList<ItemStack>();
 
     /**
-     * Create a shapeless recipe to craft the specified ItemStack. The constructor merely determines the
-     * result and type; to set the actual recipe, you'll need to call the appropriate methods.
+     * Create a shapeless recipe to craft the specified ItemStack. The
+     * constructor merely determines the result and type; to set the actual
+     * recipe, you'll need to call the appropriate methods.
      *
      * @param result The item you want the recipe to create.
      * @see ShapelessRecipe#addIngredient(Material)
@@ -113,9 +114,9 @@ public class ShapelessRecipe implements Recipe {
     }
 
     /**
-     * Removes an ingredient from the list. If the ingredient occurs multiple times,
-     * only one instance of it is removed. Only removes exact matches, with a data value
-     * of 0.
+     * Removes an ingredient from the list. If the ingredient occurs multiple
+     * times, only one instance of it is removed. Only removes exact matches,
+     * with a data value of 0.
      *
      * @param ingredient The ingredient to remove
      * @return The changed recipe.
@@ -125,9 +126,9 @@ public class ShapelessRecipe implements Recipe {
     }
 
     /**
-     * Removes an ingredient from the list. If the ingredient occurs multiple times,
-     * only one instance of it is removed. If the data value is -1, only ingredients
-     * with a -1 data value will be removed.
+     * Removes an ingredient from the list. If the ingredient occurs multiple
+     * times, only one instance of it is removed. If the data value is -1,
+     * only ingredients with a -1 data value will be removed.
      *
      * @param ingredient The ingredient to remove
      * @return The changed recipe.
@@ -137,9 +138,9 @@ public class ShapelessRecipe implements Recipe {
     }
 
     /**
-     * Removes multiple instances of an ingredient from the list. If there are less instances
-     * then specified, all will be removed. Only removes exact matches, with a data value
-     * of 0.
+     * Removes multiple instances of an ingredient from the list. If there are
+     * less instances then specified, all will be removed. Only removes exact
+     * matches, with a data value of 0.
      *
      * @param count The number of copies to remove.
      * @param ingredient The ingredient to remove
@@ -150,9 +151,9 @@ public class ShapelessRecipe implements Recipe {
     }
 
     /**
-     * Removes multiple instances of an ingredient from the list. If there are less instances
-     * then specified, all will be removed. If the data value is -1, only ingredients
-     * with a -1 data value will be removed.
+     * Removes multiple instances of an ingredient from the list. If there are
+     * less instances then specified, all will be removed. If the data value
+     * is -1, only ingredients with a -1 data value will be removed.
      *
      * @param count The number of copies to remove.
      * @param ingredient The ingredient to remove.
@@ -163,9 +164,9 @@ public class ShapelessRecipe implements Recipe {
     }
 
     /**
-     * Removes an ingredient from the list. If the ingredient occurs multiple times,
-     * only one instance of it is removed. If the data value is -1, only ingredients
-     * with a -1 data value will be removed.
+     * Removes an ingredient from the list. If the ingredient occurs multiple
+     * times, only one instance of it is removed. If the data value is -1,
+     * only ingredients with a -1 data value will be removed.
      *
      * @param ingredient The ingredient to remove
      * @param rawdata The data value;
@@ -178,9 +179,9 @@ public class ShapelessRecipe implements Recipe {
     }
 
     /**
-     * Removes multiple instances of an ingredient from the list. If there are less instances
-     * then specified, all will be removed. If the data value is -1, only ingredients
-     * with a -1 data value will be removed.
+     * Removes multiple instances of an ingredient from the list. If there are
+     * less instances then specified, all will be removed. If the data value
+     * is -1, only ingredients with a -1 data value will be removed.
      *
      * @param count The number of copies to remove.
      * @param ingredient The ingredient to remove.

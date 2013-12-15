@@ -19,9 +19,11 @@ public interface PluginLoader {
      *
      * @param file File to attempt to load
      * @return Plugin that was contained in the specified file, or null if
-     *         unsuccessful
-     * @throws InvalidPluginException Thrown when the specified file is not a plugin
-     * @throws UnknownDependencyException If a required dependency could not be found
+     *     unsuccessful
+     * @throws InvalidPluginException Thrown when the specified file is not a
+     *     plugin
+     * @throws UnknownDependencyException If a required dependency could not
+     *     be found
      */
     public Plugin loadPlugin(File file) throws InvalidPluginException, UnknownDependencyException;
 
@@ -29,8 +31,10 @@ public interface PluginLoader {
      * Loads a PluginDescriptionFile from the specified file
      *
      * @param file File to attempt to load from
-     * @return A new PluginDescriptionFile loaded from the plugin.yml in the specified file
-     * @throws InvalidDescriptionException If the plugin description file could not be created
+     * @return A new PluginDescriptionFile loaded from the plugin.yml in the
+     *     specified file
+     * @throws InvalidDescriptionException If the plugin description file
+     *     could not be created
      */
     public PluginDescriptionFile getPluginDescription(File file) throws InvalidDescriptionException;
 
@@ -42,7 +46,8 @@ public interface PluginLoader {
     public Pattern[] getPluginFileFilters();
 
     /**
-     * Creates and returns registered listeners for the event classes used in this listener
+     * Creates and returns registered listeners for the event classes used in
+     * this listener
      *
      * @param listener The object that will handle the eventual call back
      * @param plugin The plugin to use when creating registered listeners
@@ -53,7 +58,8 @@ public interface PluginLoader {
     /**
      * Enables the specified plugin
      * <p>
-     * Attempting to enable a plugin that is already enabled will have no effect
+     * Attempting to enable a plugin that is already enabled will have no
+     * effect
      *
      * @param plugin Plugin to enable
      */

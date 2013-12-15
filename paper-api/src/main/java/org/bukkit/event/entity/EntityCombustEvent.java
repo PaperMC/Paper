@@ -29,7 +29,8 @@ public class EntityCombustEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * @return the amount of time (in seconds) the combustee should be alight for
+     * @return the amount of time (in seconds) the combustee should be alight
+     *     for
      */
     public int getDuration() {
         return duration;
@@ -38,7 +39,8 @@ public class EntityCombustEvent extends EntityEvent implements Cancellable {
     /**
      * The number of seconds the combustee should be alight for.
      * <p>
-     * This value will only ever increase the combustion time, not decrease existing combustion times.
+     * This value will only ever increase the combustion time, not decrease
+     * existing combustion times.
      *
      * @param duration the time in seconds to be alight for.
      */

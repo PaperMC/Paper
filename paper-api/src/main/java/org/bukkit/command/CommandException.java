@@ -7,12 +7,14 @@ package org.bukkit.command;
 public class CommandException extends RuntimeException {
 
     /**
-     * Creates a new instance of <code>CommandException</code> without detail message.
+     * Creates a new instance of <code>CommandException</code> without detail
+     * message.
      */
     public CommandException() {}
 
     /**
-     * Constructs an instance of <code>CommandException</code> with the specified detail message.
+     * Constructs an instance of <code>CommandException</code> with the
+     * specified detail message.
      *
      * @param msg the detail message.
      */

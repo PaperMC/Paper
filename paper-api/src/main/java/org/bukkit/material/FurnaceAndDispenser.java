@@ -6,6 +6,7 @@ import org.bukkit.Material;
  * Represents a furnace or dispenser, two types of directional containers
  */
 public class FurnaceAndDispenser extends DirectionalContainer {
+
     /**
      *
      * @deprecated Magic value

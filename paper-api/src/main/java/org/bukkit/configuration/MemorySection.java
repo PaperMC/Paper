@@ -26,12 +26,14 @@ public class MemorySection implements ConfigurationSection {
     private final String fullPath;
 
     /**
-     * Creates an empty MemorySection for use as a root {@link Configuration} section.
+     * Creates an empty MemorySection for use as a root {@link Configuration}
+     * section.
      * <p>
-     * Note that calling this without being yourself a {@link Configuration} will throw an
-     * exception!
+     * Note that calling this without being yourself a {@link Configuration}
+     * will throw an exception!
      *
-     * @throws IllegalStateException Thrown if this is not a {@link Configuration} root.
+     * @throws IllegalStateException Thrown if this is not a {@link
+     *     Configuration} root.
      */
     protected MemorySection() {
         if (!(this instanceof Configuration)) {
@@ -48,8 +50,10 @@ public class MemorySection implements ConfigurationSection {
      * Creates an empty MemorySection with the specified parent and path.
      *
      * @param parent Parent section that contains this own section.
-     * @param path Path that you may access this section from via the root {@link Configuration}.
-     * @throws IllegalArgumentException Thrown is parent or path is null, or if parent contains no root Configuration.
+     * @param path Path that you may access this section from via the root
+     *     {@link Configuration}.
+     * @throws IllegalArgumentException Thrown is parent or path is null, or
+     *     if parent contains no root Configuration.
      */
     protected MemorySection(ConfigurationSection parent, String path) {
         Validate.notNull(parent, "Parent cannot be null");
@@ -745,9 +749,11 @@ public class MemorySection implements ConfigurationSection {
     }
 
     /**
-     * Creates a full path to the given {@link ConfigurationSection} from its root {@link Configuration}.
+     * Creates a full path to the given {@link ConfigurationSection} from its
+     * root {@link Configuration}.
      * <p>
-     * You may use this method for any given {@link ConfigurationSection}, not only {@link MemorySection}.
+     * You may use this method for any given {@link ConfigurationSection}, not
+     * only {@link MemorySection}.
      *
      * @param section Section to create a path for.
      * @param key Name of the specified section.
@@ -758,9 +764,11 @@ public class MemorySection implements ConfigurationSection {
     }
 
     /**
-     * Creates a relative path to the given {@link ConfigurationSection} from the given relative section.
+     * Creates a relative path to the given {@link ConfigurationSection} from
+     * the given relative section.
      * <p>
-     * You may use this method for any given {@link ConfigurationSection}, not only {@link MemorySection}.
+     * You may use this method for any given {@link ConfigurationSection}, not
+     * only {@link MemorySection}.
      *
      * @param section Section to create a path for.
      * @param key Name of the specified section.

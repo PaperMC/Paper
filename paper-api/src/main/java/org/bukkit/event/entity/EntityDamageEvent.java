@@ -161,7 +161,8 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         BLOCK_EXPLOSION,
         /**
-         * Damage caused by being in the area when an entity, such as a Creeper, explodes.
+         * Damage caused by being in the area when an entity, such as a
+         * Creeper, explodes.
          * <p>
          * Damage: variable
          */
@@ -215,7 +216,8 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         FALLING_BLOCK,
         /**
-         * Damage caused in retaliation to another attack by the Thorns enchantment.
+         * Damage caused in retaliation to another attack by the Thorns
+         * enchantment.
          * <p>
          * Damage: 1-4 (Thorns)
          */

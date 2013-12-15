@@ -3,7 +3,8 @@ package org.bukkit.permissions;
 import org.bukkit.entity.Player;
 
 /**
- * Represents an object that may become a server operator, such as a {@link Player}
+ * Represents an object that may become a server operator, such as a {@link
+ * Player}
  */
 public interface ServerOperator {
 

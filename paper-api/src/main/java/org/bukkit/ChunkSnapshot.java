@@ -3,8 +3,10 @@ package org.bukkit;
 import org.bukkit.block.Biome;
 
 /**
- * Represents a static, thread-safe snapshot of chunk of blocks
- * Purpose is to allow clean, efficient copy of a chunk data to be made, and then handed off for processing in another thread (e.g. map rendering)
+ * Represents a static, thread-safe snapshot of chunk of blocks.
+ * <p>
+ * Purpose is to allow clean, efficient copy of a chunk data to be made, and
+ * then handed off for processing in another thread (e.g. map rendering)
  */
 public interface ChunkSnapshot {
 
@@ -64,7 +66,8 @@ public interface ChunkSnapshot {
     int getBlockSkyLight(int x, int y, int z);
 
     /**
-     * Get light level emitted by block at corresponding coordinate in the chunk
+     * Get light level emitted by block at corresponding coordinate in the
+     * chunk
      *
      * @param x 0-15
      * @param y 0-127

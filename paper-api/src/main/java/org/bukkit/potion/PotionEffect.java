@@ -31,7 +31,8 @@ public class PotionEffect implements ConfigurationSerializable {
      * Creates a potion effect.
      *
      * @param type effect type
-     * @param duration measured in ticks, see {@link PotionEffect#getDuration()}
+     * @param duration measured in ticks, see {@link
+     *     PotionEffect#getDuration()}
      * @param amplifier the amplifier, see {@link PotionEffect#getAmplifier()}
      * @param ambient the ambient status, see {@link PotionEffect#isAmbient()}
      */
@@ -123,9 +124,9 @@ public class PotionEffect implements ConfigurationSerializable {
     }
 
     /**
-     * Returns the amplifier of this effect. A higher amplifier means the potion
-     * effect happens more often over its duration and in some cases has more
-     * effect on its target.
+     * Returns the amplifier of this effect. A higher amplifier means the
+     * potion effect happens more often over its duration and in some cases
+     * has more effect on its target.
      *
      * @return The effect amplifier
      */

@@ -33,7 +33,8 @@ public enum Statistic {
     /**
      * Checks if this is a substatistic.
      * <p>
-     * A substatistic exists in mass for each block or item, depending on {@link #isBlock()}
+     * A substatistic exists in mass for each block or item, depending on
+     * {@link #isBlock()}
      *
      * @return true if this is a substatistic
      */
@@ -42,7 +43,8 @@ public enum Statistic {
     }
 
     /**
-     * Checks if this is a substatistic dealing with blocks (As opposed to items)
+     * Checks if this is a substatistic dealing with blocks (As opposed to
+     * items)
      *
      * @return true if this deals with blocks, false if with items
      */

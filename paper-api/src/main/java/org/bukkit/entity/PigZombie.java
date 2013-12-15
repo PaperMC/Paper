@@ -15,7 +15,8 @@ public interface PigZombie extends Zombie {
     /**
      * Set the pig zombie's current anger level.
      *
-     * @param level The anger level. Higher levels of anger take longer to wear off.
+     * @param level The anger level. Higher levels of anger take longer to
+     *     wear off.
      */
     void setAnger(int level);
 

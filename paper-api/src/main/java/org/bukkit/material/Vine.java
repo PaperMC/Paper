@@ -68,8 +68,9 @@ public class Vine extends MaterialData {
     }
 
     /**
-     * Check if the vine is attached to the specified face of an adjacent block. You can
-     * check two faces at once by passing eg {@link BlockFace#NORTH_EAST}.
+     * Check if the vine is attached to the specified face of an adjacent
+     * block. You can check two faces at once by passing e.g. {@link
+     * BlockFace#NORTH_EAST}.
      *
      * @param face The face to check.
      * @return Whether it is attached to that face.

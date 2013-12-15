@@ -80,7 +80,8 @@ public abstract class JavaPlugin extends PluginBase {
     }
 
     /**
-     * Returns a value indicating whether or not this plugin is currently enabled
+     * Returns a value indicating whether or not this plugin is currently
+     * enabled
      *
      * @return true if this plugin is enabled, otherwise false
      */
@@ -228,7 +229,8 @@ public abstract class JavaPlugin extends PluginBase {
      *
      * @param loader PluginLoader that is responsible for this plugin
      * @param server Server instance that is running this plugin
-     * @param description PluginDescriptionFile containing metadata on this plugin
+     * @param description PluginDescriptionFile containing metadata on this
+     *     plugin
      * @param dataFolder Folder containing the plugin's data
      * @param file File containing this plugin
      * @param classLoader ClassLoader which holds this plugin

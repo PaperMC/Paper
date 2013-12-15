@@ -33,14 +33,16 @@ public class MapFont {
      * Get the sprite for a given character.
      *
      * @param ch The character to get the sprite for.
-     * @return The CharacterSprite associated with the character, or null if there is none.
+     * @return The CharacterSprite associated with the character, or null if
+     *     there is none.
      */
     public CharacterSprite getChar(char ch) {
         return chars.get(ch);
     }
 
     /**
-     * Get the width of the given text as it would be rendered using this font.
+     * Get the width of the given text as it would be rendered using this
+     * font.
      *
      * @param text The text.
      * @return The width in pixels.
@@ -70,7 +72,8 @@ public class MapFont {
      * Check whether the given text is valid.
      *
      * @param text The text.
-     * @return True if the string contains only defined characters, false otherwise.
+     * @return True if the string contains only defined characters, false
+     *     otherwise.
      */
     public boolean isValid(String text) {
         for (int i = 0; i < text.length(); ++i) {

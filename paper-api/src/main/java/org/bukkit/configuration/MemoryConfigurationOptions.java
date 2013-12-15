@@ -1,7 +1,8 @@
 package org.bukkit.configuration;
 
 /**
- * Various settings for controlling the input and output of a {@link MemoryConfiguration}
+ * Various settings for controlling the input and output of a {@link
+ * MemoryConfiguration}
  */
 public class MemoryConfigurationOptions extends ConfigurationOptions {
     protected MemoryConfigurationOptions(MemoryConfiguration configuration) {

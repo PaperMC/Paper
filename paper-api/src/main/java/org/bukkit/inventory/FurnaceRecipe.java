@@ -35,7 +35,8 @@ public class FurnaceRecipe implements Recipe {
      *
      * @param result The item you want the recipe to create.
      * @param source The input material.
-     * @param data The data value. (Note: This is currently ignored by the CraftBukkit server.)
+     * @param data The data value. (Note: This is currently ignored by the
+     *     CraftBukkit server.)
      * @deprecated Magic value
      */
     @Deprecated
@@ -68,7 +69,8 @@ public class FurnaceRecipe implements Recipe {
      * Sets the input of this furnace recipe.
      *
      * @param input The input material.
-     * @param data The data value. (Note: This is currently ignored by the CraftBukkit server.)
+     * @param data The data value. (Note: This is currently ignored by the
+     *     CraftBukkit server.)
      * @return The changed recipe, so you can chain calls.
      * @deprecated Magic value
      */

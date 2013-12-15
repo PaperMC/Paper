@@ -41,7 +41,8 @@ public abstract class TexturedMaterial extends MaterialData {
     }
 
     /**
-     * Retrieve a list of possible textures. The first element of the list will be used as a default.
+     * Retrieve a list of possible textures. The first element of the list
+     * will be used as a default.
      *
      * @return a list of possible textures for this block
      */

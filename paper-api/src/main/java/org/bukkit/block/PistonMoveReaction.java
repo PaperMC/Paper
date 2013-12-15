@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum PistonMoveReaction {
+
     /**
      * Indicates that the block can be pushed or pulled.
      */

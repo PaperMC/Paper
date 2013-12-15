@@ -6,9 +6,9 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
 /**
- * Raised when a vehicle is destroyed, which could be caused by either a player
- * or the environment. This is not raised if the boat is simply 'removed'
- * due to other means.
+ * Raised when a vehicle is destroyed, which could be caused by either a
+ * player or the environment. This is not raised if the boat is simply
+ * 'removed' due to other means.
  */
 public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

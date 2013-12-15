@@ -23,16 +23,19 @@ public interface FireworkMeta extends ItemMeta {
      *
      * @param effects The firework effects to add
      * @throws IllegalArgumentException If effects is null
-     * @throws IllegalArgumentException If any effect is null (may be thrown after changes have occurred)
+     * @throws IllegalArgumentException If any effect is null (may be thrown
+     *     after changes have occurred)
      */
     void addEffects(FireworkEffect...effects) throws IllegalArgumentException;
 
     /**
      * Add several firework effects to this firework.
      *
-     * @param effects An iterable object whose iterator yields the desired firework effects
+     * @param effects An iterable object whose iterator yields the desired
+     *     firework effects
      * @throws IllegalArgumentException If effects is null
-     * @throws IllegalArgumentException If any effect is null (may be thrown after changes have occurred)
+     * @throws IllegalArgumentException If any effect is null (may be thrown
+     *     after changes have occurred)
      */
     void addEffects(Iterable<FireworkEffect> effects) throws IllegalArgumentException;
 
@@ -54,7 +57,8 @@ public interface FireworkMeta extends ItemMeta {
      * Remove an effect from this firework.
      *
      * @param index The index of the effect to remove
-     * @throws IndexOutOfBoundsException If index < 0 or index > {@link #getEffectsSize()}
+     * @throws IndexOutOfBoundsException If index < 0 or index > {@link
+     *     #getEffectsSize()}
      */
     void removeEffect(int index) throws IndexOutOfBoundsException;
 
@@ -78,7 +82,8 @@ public interface FireworkMeta extends ItemMeta {
     int getPower();
 
     /**
-     * Sets the approximate power of the firework. Each level of power is half a second of flight time.
+     * Sets the approximate power of the firework. Each level of power is half
+     * a second of flight time.
      *
      * @param power the power of the firework, from 0-128
      * @throws IllegalArgumentException if height<0 or height>128

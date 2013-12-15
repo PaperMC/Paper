@@ -23,7 +23,8 @@ public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * Gets the resultant food level that the entity involved in this event should be set to.
+     * Gets the resultant food level that the entity involved in this event
+     * should be set to.
      * <p>
      * Where 20 is a full food bar and 0 is an empty one.
      *
@@ -34,9 +35,11 @@ public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * Sets the resultant food level that the entity involved in this event should be set to
+     * Sets the resultant food level that the entity involved in this event
+     * should be set to
      *
-     * @param level the resultant food level that the entity involved in this event should be set to
+     * @param level the resultant food level that the entity involved in this
+     *     event should be set to
      */
     public void setFoodLevel(int level) {
         if (level > 20) level = 20;

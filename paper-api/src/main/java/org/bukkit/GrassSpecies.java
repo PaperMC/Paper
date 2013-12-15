@@ -43,10 +43,9 @@ public enum GrassSpecies {
     /**
      * Gets the GrassSpecies with the given data value
      *
-     * @param data
-     *            Data value to fetch
-     * @return The {@link GrassSpecies} representing the given value, or null if
-     *         it doesn't exist
+     * @param data Data value to fetch
+     * @return The {@link GrassSpecies} representing the given value, or null
+     *     if it doesn't exist
      * @deprecated Magic value
      */
     @Deprecated

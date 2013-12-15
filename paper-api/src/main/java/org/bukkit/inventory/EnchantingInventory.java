@@ -1,5 +1,8 @@
 package org.bukkit.inventory;
 
+/**
+ * Interface to the inventory of an Enchantment Table.
+ */
 public interface EnchantingInventory extends Inventory {
 
     /**
@@ -8,6 +11,7 @@ public interface EnchantingInventory extends Inventory {
      * @param item The new item
      */
     void setItem(ItemStack item);
+
     /**
      * Get the item being enchanted.
      *

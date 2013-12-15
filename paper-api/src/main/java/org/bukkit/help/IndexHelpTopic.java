@@ -9,11 +9,12 @@ import org.bukkit.util.ChatPaginator;
 import java.util.Collection;
 
 /**
- * This help topic generates a list of other help topics. This class is useful for adding your own
- * index help topics. To enforce a particular order, use a sorted collection.
- * <p/>
- * If a preamble is provided to the constructor, that text will be displayed before the first item
- * in the index.
+ * This help topic generates a list of other help topics. This class is useful
+ * for adding your own index help topics. To enforce a particular order, use a
+ * sorted collection.
+ * <p>
+ * If a preamble is provided to the constructor, that text will be displayed
+ * before the first item in the index.
  */
 public class IndexHelpTopic extends HelpTopic {
 
@@ -81,7 +82,8 @@ public class IndexHelpTopic extends HelpTopic {
     }
 
     /**
-     * Builds the topic preamble. Override this method to change how the index preamble looks.
+     * Builds the topic preamble. Override this method to change how the index
+     * preamble looks.
      *
      * @param sender The command sender requesting the preamble.
      * @return The topic preamble.
@@ -91,7 +93,8 @@ public class IndexHelpTopic extends HelpTopic {
     }
 
     /**
-     * Builds individual lines in the index topic. Override this method to change how index lines are rendered.
+     * Builds individual lines in the index topic. Override this method to
+     * change how index lines are rendered.
      *
      * @param sender The command sender requesting the index line.
      * @param topic  The topic to render into an index line.

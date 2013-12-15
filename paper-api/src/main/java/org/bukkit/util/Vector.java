@@ -143,11 +143,11 @@ public class Vector implements Cloneable, ConfigurationSerializable {
     }
 
     /**
-     * Gets the magnitude of the vector, defined as sqrt(x^2+y^2+z^2). The value
-     * of this method is not cached and uses a costly square-root function, so
-     * do not repeatedly call this method to get the vector's magnitude. NaN
-     * will be returned if the inner result of the sqrt() function overflows,
-     * which will be caused if the length is too long.
+     * Gets the magnitude of the vector, defined as sqrt(x^2+y^2+z^2). The
+     * value of this method is not cached and uses a costly square-root
+     * function, so do not repeatedly call this method to get the vector's
+     * magnitude. NaN will be returned if the inner result of the sqrt()
+     * function overflows, which will be caused if the length is too long.
      *
      * @return the magnitude
      */
@@ -165,11 +165,11 @@ public class Vector implements Cloneable, ConfigurationSerializable {
     }
 
     /**
-     * Get the distance between this vector and another. The value
-     * of this method is not cached and uses a costly square-root function, so
-     * do not repeatedly call this method to get the vector's magnitude. NaN
-     * will be returned if the inner result of the sqrt() function overflows,
-     * which will be caused if the distance is too long.
+     * Get the distance between this vector and another. The value of this
+     * method is not cached and uses a costly square-root function, so do not
+     * repeatedly call this method to get the vector's magnitude. NaN will be
+     * returned if the inner result of the sqrt() function overflows, which
+     * will be caused if the distance is too long.
      *
      * @param o The other vector
      * @return the distance
@@ -227,7 +227,8 @@ public class Vector implements Cloneable, ConfigurationSerializable {
     }
 
     /**
-     * Performs scalar multiplication, multiplying all components with a scalar.
+     * Performs scalar multiplication, multiplying all components with a
+     * scalar.
      *
      * @param m The factor
      * @return the same vector
@@ -240,7 +241,8 @@ public class Vector implements Cloneable, ConfigurationSerializable {
     }
 
     /**
-     * Performs scalar multiplication, multiplying all components with a scalar.
+     * Performs scalar multiplication, multiplying all components with a
+     * scalar.
      *
      * @param m The factor
      * @return the same vector
@@ -253,7 +255,8 @@ public class Vector implements Cloneable, ConfigurationSerializable {
     }
 
     /**
-     * Performs scalar multiplication, multiplying all components with a scalar.
+     * Performs scalar multiplication, multiplying all components with a
+     * scalar.
      *
      * @param m The factor
      * @return the same vector
@@ -279,10 +282,11 @@ public class Vector implements Cloneable, ConfigurationSerializable {
     /**
      * Calculates the cross product of this vector with another. The cross
      * product is defined as:
-     * <p>
-     * x = y1 * z2 - y2 * z1<br/>
-     * y = z1 * x2 - z2 * x1<br/>
-     * z = x1 * y2 - x2 * y1
+     * <ul>
+     * <li>x = y1 * z2 - y2 * z1
+     * <li>y = z1 * x2 - z2 * x1
+     * <li>z = x1 * y2 - x2 * y1
+     * </ul>
      *
      * @param o The other vector
      * @return the same vector
@@ -327,6 +331,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
 
     /**
      * Returns whether this vector is in an axis-aligned bounding box.
+     * <p>
      * The minimum and maximum vectors given must be truly the minimum and
      * maximum X, Y and Z components.
      *
@@ -623,8 +628,8 @@ public class Vector implements Cloneable, ConfigurationSerializable {
     }
 
     /**
-     * Gets a random vector with components having a random value between
-     * 0 and 1.
+     * Gets a random vector with components having a random value between 0
+     * and 1.
      *
      * @return A random vector.
      */

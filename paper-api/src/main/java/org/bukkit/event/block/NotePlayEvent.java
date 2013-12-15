@@ -7,7 +7,8 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
 /**
- * Called when a note block is being played through player interaction or a redstone current.
+ * Called when a note block is being played through player interaction or a
+ * redstone current.
  */
 public class NotePlayEvent extends BlockEvent implements Cancellable {
 

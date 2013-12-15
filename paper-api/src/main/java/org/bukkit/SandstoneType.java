@@ -33,10 +33,9 @@ public enum SandstoneType {
     /**
      * Gets the type of sandstone with the given data value
      *
-     * @param data
-     *            Data value to fetch
-     * @return The {@link SandstoneType} representing the given value, or null if
-     *         it doesn't exist
+     * @param data Data value to fetch
+     * @return The {@link SandstoneType} representing the given value, or null
+     *     if it doesn't exist
      * @deprecated Magic value
      */
     @Deprecated

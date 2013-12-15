@@ -146,9 +146,10 @@ public final class MapCursor {
     }
 
     /**
-     * Represents the standard types of map cursors. More may be made available
-     * by texture packs - the value is used by the client as an index in the
-     * file './misc/mapicons.png' from minecraft.jar or from a texture pack.
+     * Represents the standard types of map cursors. More may be made
+     * available by texture packs - the value is used by the client as an
+     * index in the file './misc/mapicons.png' from minecraft.jar or from a
+     * texture pack.
      */
     public enum Type {
         WHITE_POINTER(0),

@@ -22,7 +22,8 @@ public interface Fish extends Projectile {
      * 1.0 = Instant catch.
      *
      * @param chance the bite chance
-     * @throws IllegalArgumentException if the bite chance is not between 0 and 1
+     * @throws IllegalArgumentException if the bite chance is not between 0
+     *     and 1
      */
     public void setBiteChance(double chance) throws IllegalArgumentException;
 }

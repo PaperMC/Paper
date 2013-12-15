@@ -20,7 +20,8 @@ public interface Damageable extends Entity {
     void _INVALID_damage(int amount);
 
     /**
-     * Deals the given amount of damage to this entity, from a specified entity.
+     * Deals the given amount of damage to this entity, from a specified
+     * entity.
      *
      * @param amount Amount of damage to deal
      * @param source Entity which to attribute this damage from
@@ -51,10 +52,12 @@ public interface Damageable extends Entity {
     int _INVALID_getHealth();
 
     /**
-     * Sets the entity's health from 0 to {@link #getMaxHealth()}, where 0 is dead.
+     * Sets the entity's health from 0 to {@link #getMaxHealth()}, where 0 is
+     * dead.
      *
      * @param health New health represented from 0 to max
-     * @throws IllegalArgumentException Thrown if the health is < 0 or > {@link #getMaxHealth()}
+     * @throws IllegalArgumentException Thrown if the health is < 0 or >
+     *     {@link #getMaxHealth()}
      */
     void setHealth(double health);
 
@@ -84,9 +87,11 @@ public interface Damageable extends Entity {
     /**
      * Sets the maximum health this entity can have.
      * <p>
-     * If the health of the entity is above the value provided it will be set to that value.
+     * If the health of the entity is above the value provided it will be set
+     * to that value.
      * <p>
-     * Note: An entity with a health bar ({@link Player}, {@link EnderDragon}, {@link Wither}, etc...} will have their bar scaled accordingly.
+     * Note: An entity with a health bar ({@link Player}, {@link EnderDragon},
+     * {@link Wither}, etc...} will have their bar scaled accordingly.
      *
      * @param health amount of health to set the maximum to
      */

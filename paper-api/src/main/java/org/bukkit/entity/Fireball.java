@@ -10,8 +10,7 @@ public interface Fireball extends Projectile, Explosive {
     /**
      * Fireballs fly straight and do not take setVelocity(...) well.
      *
-     * @param direction
-     *            the direction this fireball is flying toward
+     * @param direction the direction this fireball is flying toward
      */
     public void setDirection(Vector direction);
 

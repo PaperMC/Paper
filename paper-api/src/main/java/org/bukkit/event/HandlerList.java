@@ -12,14 +12,15 @@ import java.util.Map.Entry;
 public class HandlerList {
 
     /**
-     * Handler array. This field being an array is the key to this system's speed.
+     * Handler array. This field being an array is the key to this system's
+     * speed.
      */
     private volatile RegisteredListener[] handlers = null;
 
     /**
      * Dynamic handler lists. These are changed using register() and
-     * unregister() and are automatically baked to the handlers array any
-     * time they have changed.
+     * unregister() and are automatically baked to the handlers array any time
+     * they have changed.
      */
     private final EnumMap<EventPriority, ArrayList<RegisteredListener>> handlerslots;
 
@@ -84,7 +85,8 @@ public class HandlerList {
     }
 
     /**
-     * Create a new handler list and initialize using EventPriority
+     * Create a new handler list and initialize using EventPriority.
+     * <p>
      * The HandlerList is then added to meta-list for use in bakeAll()
      */
     public HandlerList() {
@@ -191,7 +193,8 @@ public class HandlerList {
     }
 
     /**
-     * Get a specific plugin's registered listeners associated with this handler list
+     * Get a specific plugin's registered listeners associated with this
+     * handler list
      *
      * @param plugin the plugin to get the listeners of
      * @return the list of registered listeners

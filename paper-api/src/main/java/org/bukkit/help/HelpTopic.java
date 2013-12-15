@@ -4,14 +4,16 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
- * HelpTopic implementations are displayed to the user when the user uses the /help command.
+ * HelpTopic implementations are displayed to the user when the user uses the
+ * /help command.
  * <p>
- * Custom implementations of this class can work at two levels. A simple implementation only
- * needs to set the value of {@code name}, {@code shortText}, and {@code fullText} int the
- * constructor. This base class will take care of the rest.
+ * Custom implementations of this class can work at two levels. A simple
+ * implementation only needs to set the value of {@code name}, {@code
+ * shortText}, and {@code fullText} in the constructor. This base class will
+ * take care of the rest.
  * <p>
- * Complex implementations can be created by overriding the behavior of all the methods in
- * this class.
+ * Complex implementations can be created by overriding the behavior of all
+ * the methods in this class.
  */
 public abstract class HelpTopic {
     protected String name;
@@ -20,8 +22,10 @@ public abstract class HelpTopic {
     protected String amendedPermission;
     
     /**
-     * Determines if a {@link Player} is allowed to see this help topic. HelpTopic implementations should take
-     * server administrator wishes into account as set by the {@link HelpTopic#amendCanSee(String)} function.
+     * Determines if a {@link Player} is allowed to see this help topic.
+     * <p>
+     * HelpTopic implementations should take server administrator wishes into
+     * account as set by the {@link HelpTopic#amendCanSee(String)} function.
      *
      * @param player The Player in question.
      * @return True of the Player can see this help topic, false otherwise.
@@ -29,11 +33,15 @@ public abstract class HelpTopic {
     public abstract boolean canSee(CommandSender player);
 
     /**
-     * Allows the server administrator to override the permission required to see a help topic. HelpTopic
-     * implementations should take this into account when determining topic visibility on the
-     * {@link HelpTopic#canSee(org.bukkit.command.CommandSender)} function.
+     * Allows the server administrator to override the permission required to
+     * see a help topic.
+     * <p>
+     * HelpTopic implementations should take this into account when
+     * determining topic visibility on the {@link
+     * HelpTopic#canSee(org.bukkit.command.CommandSender)} function.
      *
-     * @param amendedPermission The permission node the server administrator wishes to apply to this topic.
+     * @param amendedPermission The permission node the server administrator
+     *     wishes to apply to this topic.
      */
     public void amendCanSee(String amendedPermission) {
         this.amendedPermission = amendedPermission;
@@ -58,11 +66,14 @@ public abstract class HelpTopic {
     }
 
     /**
-     * Returns the full description of this help topic that is displayed when the user requests this topic's details.
+     * Returns the full description of this help topic that is displayed when
+     * the user requests this topic's details.
+     * <p>
      * The result will be paginated to properly fit the user's client.
      *
-     * @param forWho The player or console requesting the full text. Useful for further security trimming
-     *               the command's full text based on sub-permissions in custom implementations.
+     * @param forWho The player or console requesting the full text. Useful
+     *     for further security trimming the command's full text based on
+     *     sub-permissions in custom implementations.
      *
      * @return A full topic description.
      */
@@ -71,13 +82,18 @@ public abstract class HelpTopic {
     }
 
     /**
-     * Allows the server admin (or another plugin) to add or replace the contents of a help topic. A null in
-     * either parameter will leave that part of the topic unchanged. In either amending parameter, the string
-     * {@literal <text>} is replaced with the existing contents in the help topic. Use this to append or prepend
-     * additional content into an automatically generated help topic.
+     * Allows the server admin (or another plugin) to add or replace the
+     * contents of a help topic.
+     * <p>
+     * A null in either parameter will leave that part of the topic unchanged.
+     * In either amending parameter, the string {@literal <text>} is replaced
+     * with the existing contents in the help topic. Use this to append or
+     * prepend additional content into an automatically generated help topic.
      *
-     * @param amendedShortText The new topic short text to use, or null to leave alone.
-     * @param amendedFullText The new topic full text to use, or null to leave alone.
+     * @param amendedShortText The new topic short text to use, or null to
+     *     leave alone.
+     * @param amendedFullText The new topic full text to use, or null to leave
+     *     alone.
      */
     public void amendTopic(String amendedShortText, String amendedFullText) {
         shortText = applyAmendment(shortText, amendedShortText);
@@ -85,14 +101,15 @@ public abstract class HelpTopic {
     }
 
     /**
-     * Developers implementing their own custom HelpTopic implementations can use this utility method to ensure
-     * their implementations comply with the expected behavior of the {@link HelpTopic#amendTopic(String, String)}
+     * Developers implementing their own custom HelpTopic implementations can
+     * use this utility method to ensure their implementations comply with the
+     * expected behavior of the {@link HelpTopic#amendTopic(String, String)}
      * method.
      *
      * @param baseText The existing text of the help topic.
      * @param amendment The amending text from the amendTopic() method.
-     * @return The application of the amending text to the existing text, according to the expected rules of
-     * amendTopic().
+     * @return The application of the amending text to the existing text,
+     *     according to the expected rules of amendTopic().
      */
     protected String applyAmendment(String baseText, String amendment) {
         if (amendment == null) {

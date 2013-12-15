@@ -26,7 +26,8 @@ public class BlockExpEvent extends BlockEvent {
     }
 
     /**
-     * Set the amount of experience dropped by the block after the event has processed
+     * Set the amount of experience dropped by the block after the event has
+     * processed
      *
      * @param exp 1 or higher to drop experience, else nothing will drop
      */

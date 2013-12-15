@@ -45,8 +45,8 @@ public class Sign extends MaterialData implements Attachable {
     /**
      * Check if this sign is attached to a wall
      *
-     * @return true if this sign is attached to a wall, false if set on top of a
-     *         block
+     * @return true if this sign is attached to a wall, false if set on top of
+     *     a block
      */
     public boolean isWallSign() {
         return getItemType() == Material.WALL_SIGN;

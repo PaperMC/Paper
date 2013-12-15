@@ -30,7 +30,8 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * Gets the bow ItemStack used to fire the arrow; is null if the shooter is a skeleton
+     * Gets the bow ItemStack used to fire the arrow; is null if the shooter
+     * is a skeleton
      *
      * @return the bow involved in this event, or null
      */

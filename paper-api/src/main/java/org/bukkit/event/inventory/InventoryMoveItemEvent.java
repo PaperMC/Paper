@@ -8,8 +8,8 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Called when some entity or block (e.g. hopper) tries to move items
- * directly from one inventory to another.
+ * Called when some entity or block (e.g. hopper) tries to move items directly
+ * from one inventory to another.
  * <p>
  * When this event is called, the initiator may already have removed the item
  * from the source inventory and is ready to move it into the destination
@@ -18,11 +18,10 @@ import org.bukkit.inventory.ItemStack;
  * If this event is cancelled, the items will be returned to the source
  * inventory, if needed.
  * <p>
- * If this event is not cancelled, the initiator will try to put the
- * ItemStack into the destination inventory. If this is not possible and the
- * ItemStack has not been modified, the source inventory slot will be
- * restored to its former state. Otherwise any additional items will be
- * discarded.
+ * If this event is not cancelled, the initiator will try to put the ItemStack
+ * into the destination inventory. If this is not possible and the ItemStack
+ * has not been modified, the source inventory slot will be restored to its
+ * former state. Otherwise any additional items will be discarded.
  */
 public class InventoryMoveItemEvent extends Event implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -50,8 +49,8 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
     }
 
     /**
-     * Gets the ItemStack being moved; if modified, the original item will
-     * not be removed from the source inventory.
+     * Gets the ItemStack being moved; if modified, the original item will not
+     * be removed from the source inventory.
      *
      * @return ItemStack
      */
@@ -81,8 +80,8 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
     }
 
     /**
-     * Gets the Inventory that initiated the transfer.  This will always
-     * be either the destination or source Inventory.
+     * Gets the Inventory that initiated the transfer. This will always be
+     * either the destination or source Inventory.
      *
      * @return Inventory that initiated the transfer
      */

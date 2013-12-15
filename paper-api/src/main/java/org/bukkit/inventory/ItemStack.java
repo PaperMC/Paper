@@ -120,7 +120,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * Creates a new item stack derived from the specified stack
      *
      * @param stack the stack to copy
-     * @throws IllegalArgumentException if the specified stack is null or returns an item meta not created by the item factory
+     * @throws IllegalArgumentException if the specified stack is null or
+     *     returns an item meta not created by the item factory
      */
     public ItemStack(final ItemStack stack) throws IllegalArgumentException {
         Validate.notNull(stack, "Cannot copy null stack");
@@ -263,8 +264,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     }
 
     /**
-     * Get the maximum stacksize for the material hold in this ItemStack
-     * Returns -1 if it has no idea.
+     * Get the maximum stacksize for the material hold in this ItemStack.
+     * (Returns -1 if it has no idea)
      *
      * @return The maximum you can stack this material to.
      */
@@ -312,7 +313,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     }
 
     /**
-     * This method is the same as equals, but does not consider stack size (amount).
+     * This method is the same as equals, but does not consider stack size
+     * (amount).
      *
      * @param stack the item stack to compare to
      * @return true if the two stacks are equal, ignoring the amount
@@ -392,13 +394,15 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     /**
      * Adds the specified enchantments to this item stack.
      * <p>
-     * This method is the same as calling {@link #addEnchantment(org.bukkit.enchantments.Enchantment, int)}
-     * for each element of the map.
+     * This method is the same as calling {@link
+     * #addEnchantment(org.bukkit.enchantments.Enchantment, int)} for each
+     * element of the map.
      *
      * @param enchantments Enchantments to add
      * @throws IllegalArgumentException if the specified enchantments is null
-     * @throws IllegalArgumentException if any specific enchantment or level is null.
-     *          <b>Warning</b>: Some enchantments may be added before this exception is thrown.
+     * @throws IllegalArgumentException if any specific enchantment or level
+     *     is null. <b>Warning</b>: Some enchantments may be added before this
+     *     exception is thrown.
      */
     @Utility
     public void addEnchantments(Map<Enchantment, Integer> enchantments) {
@@ -411,11 +415,13 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     /**
      * Adds the specified {@link Enchantment} to this item stack.
      * <p>
-     * If this item stack already contained the given enchantment (at any level), it will be replaced.
+     * If this item stack already contained the given enchantment (at any
+     * level), it will be replaced.
      *
      * @param ench Enchantment to add
      * @param level Level of the enchantment
-     * @throws IllegalArgumentException if enchantment null, or enchantment is not applicable
+     * @throws IllegalArgumentException if enchantment null, or enchantment is
+     *     not applicable
      */
     @Utility
     public void addEnchantment(Enchantment ench, int level) {
@@ -432,8 +438,9 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     /**
      * Adds the specified enchantments to this item stack in an unsafe manner.
      * <p>
-     * This method is the same as calling {@link #addUnsafeEnchantment(org.bukkit.enchantments.Enchantment, int)}
-     * for each element of the map.
+     * This method is the same as calling {@link
+     * #addUnsafeEnchantment(org.bukkit.enchantments.Enchantment, int)} for
+     * each element of the map.
      *
      * @param enchantments Enchantments to add
      */
@@ -447,10 +454,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     /**
      * Adds the specified {@link Enchantment} to this item stack.
      * <p>
-     * If this item stack already contained the given enchantment (at any level), it will be replaced.
+     * If this item stack already contained the given enchantment (at any
+     * level), it will be replaced.
      * <p>
-     * This method is unsafe and will ignore level restrictions or item type. Use at your own
-     * discretion.
+     * This method is unsafe and will ignore level restrictions or item type.
+     * Use at your own discretion.
      *
      * @param ench Enchantment to add
      * @param level Level of the enchantment
@@ -460,7 +468,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     }
 
     /**
-     * Removes the specified {@link Enchantment} if it exists on this item stack
+     * Removes the specified {@link Enchantment} if it exists on this
+     * ItemStack
      *
      * @param ench Enchantment to remove
      * @return Previous level, or 0
@@ -564,8 +573,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * Set the ItemMeta of this ItemStack.
      *
      * @param itemMeta new ItemMeta, or null to indicate meta data be cleared.
-     * @return True if successfully applied ItemMeta, see {@link ItemFactory#isApplicable(ItemMeta, ItemStack)}
-     * @throws IllegalArgumentException if the item meta was not created by the {@link ItemFactory}
+     * @return True if successfully applied ItemMeta, see {@link
+     *     ItemFactory#isApplicable(ItemMeta, ItemStack)}
+     * @throws IllegalArgumentException if the item meta was not created by
+     *     the {@link ItemFactory}
      */
     public boolean setItemMeta(ItemMeta itemMeta) {
         return setItemMeta0(itemMeta, getType0());

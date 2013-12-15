@@ -8,12 +8,13 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.metadata.Metadatable;
 
 /**
- * Represents a captured state of a block, which will not change automatically.
+ * Represents a captured state of a block, which will not change
+ * automatically.
  * <p>
- * Unlike Block, which only one object can exist per coordinate, BlockState can
- * exist multiple times for any given Block. Note that another plugin may change
- * the state of the block and you will not know, or they may change the block to
- * another type entirely, causing your BlockState to become invalid.
+ * Unlike Block, which only one object can exist per coordinate, BlockState
+ * can exist multiple times for any given Block. Note that another plugin may
+ * change the state of the block and you will not know, or they may change the
+ * block to another type entirely, causing your BlockState to become invalid.
  */
 public interface BlockState extends Metadatable {
 
@@ -90,8 +91,10 @@ public interface BlockState extends Metadatable {
     Location getLocation();
 
     /**
-     * Stores the location of this block in the provided Location object.<br />
-     * If the provided Location is null this method does nothing and returns null.
+     * Stores the location of this block in the provided Location object.
+     * <p>
+     * If the provided Location is null this method does nothing and returns
+     * null.
      *
      * @return The Location object provided or null
      */
@@ -129,8 +132,8 @@ public interface BlockState extends Metadatable {
     boolean setTypeId(int type);
 
     /**
-     * Attempts to update the block represented by this state, setting it to the
-     * new values as defined by this state.
+     * Attempts to update the block represented by this state, setting it to
+     * the new values as defined by this state.
      * <p>
      * This has the same effect as calling update(false). That is to say,
      * this will not modify the state of a block if it is no longer the same
@@ -143,11 +146,11 @@ public interface BlockState extends Metadatable {
     boolean update();
 
     /**
-     * Attempts to update the block represented by this state, setting it to the
-     * new values as defined by this state.
+     * Attempts to update the block represented by this state, setting it to
+     * the new values as defined by this state.
      * <p>
-     * This has the same effect as calling update(force, true). That is to say,
-     * this will trigger a physics update to surrounding blocks.
+     * This has the same effect as calling update(force, true). That is to
+     * say, this will trigger a physics update to surrounding blocks.
      *
      * @param force true to forcefully set the state
      * @return true if the update was successful, otherwise false
@@ -155,21 +158,22 @@ public interface BlockState extends Metadatable {
     boolean update(boolean force);
 
     /**
-     * Attempts to update the block represented by this state, setting it to the
-     * new values as defined by this state.
+     * Attempts to update the block represented by this state, setting it to
+     * the new values as defined by this state.
      * <p>
-     * Unless force is true, this will not modify the state of a block if it is
-     * no longer the same type as it was when this state was taken. It will return
-     * false in this eventuality.
+     * Unless force is true, this will not modify the state of a block if it
+     * is no longer the same type as it was when this state was taken. It will
+     * return false in this eventuality.
      * <p>
-     * If force is true, it will set the type of the block to match the new state,
-     * set the state data and then return true.
+     * If force is true, it will set the type of the block to match the new
+     * state, set the state data and then return true.
      * <p>
-     * If applyPhysics is true, it will trigger a physics update on surrounding
-     * blocks which could cause them to update or disappear.
+     * If applyPhysics is true, it will trigger a physics update on
+     * surrounding blocks which could cause them to update or disappear.
      *
      * @param force true to forcefully set the state
-     * @param applyPhysics false to cancel updating physics on surrounding blocks
+     * @param applyPhysics false to cancel updating physics on surrounding
+     *     blocks
      * @return true if the update was successful, otherwise false
      */
     boolean update(boolean force, boolean applyPhysics);

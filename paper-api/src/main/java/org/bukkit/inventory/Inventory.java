@@ -9,7 +9,8 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
 
 /**
- * Interface to the various inventories. Behavior relating to {@link Material#AIR} is unspecified.
+ * Interface to the various inventories. Behavior relating to {@link
+ * Material#AIR} is unspecified.
  */
 public interface Inventory extends Iterable<ItemStack> {
 
@@ -28,15 +29,17 @@ public interface Inventory extends Iterable<ItemStack> {
     public int getMaxStackSize();
 
     /**
-     * This method allows you to change the maximum stack size for an inventory.
-     * <p><b>Caveats:</b>
+     * This method allows you to change the maximum stack size for an
+     * inventory.
+     * <p>
+     * <b>Caveats:</b>
      * <ul>
      * <li>Not all inventories respect this value.
      * <li>Stacks larger than 127 may be clipped when the world is saved.
-     * <li>This value is not guaranteed to be preserved; be sure to set it before every time
-     * you want to set a slot over the max stack size.
-     * <li>Stacks larger than the default max size for this type of inventory may not display
-     * correctly in the client.
+     * <li>This value is not guaranteed to be preserved; be sure to set it
+     *     before every time you want to set a slot over the max stack size.
+     * <li>Stacks larger than the default max size for this type of inventory
+     *     may not display correctly in the client.
      * </ul>
      *
      * @param size The new maximum stack size for items in this inventory.
@@ -67,13 +70,13 @@ public interface Inventory extends Iterable<ItemStack> {
     public void setItem(int index, ItemStack item);
 
     /**
-     * Stores the given ItemStacks in the inventory.
-     * This will try to fill existing stacks and empty slots as well as it can.
+     * Stores the given ItemStacks in the inventory. This will try to fill
+     * existing stacks and empty slots as well as it can.
      * <p>
-     * The returned HashMap contains what it couldn't store, where the key is the
-     * index of the parameter, and the value is the ItemStack at that index
-     * of the varargs parameter. If all items are stored, it will return an
-     * empty HashMap.
+     * The returned HashMap contains what it couldn't store, where the key is
+     * the index of the parameter, and the value is the ItemStack at that
+     * index of the varargs parameter. If all items are stored, it will return
+     * an empty HashMap.
      * <p>
      * If you pass in ItemStacks which exceed the maximum stack size for the
      * Material, first they will be added to partial stacks where
@@ -91,13 +94,13 @@ public interface Inventory extends Iterable<ItemStack> {
     /**
      * Removes the given ItemStacks from the inventory.
      * <p>
-     * It will try to remove 'as much as possible' from the types and amounts you
-     * give as arguments.
+     * It will try to remove 'as much as possible' from the types and amounts
+     * you give as arguments.
      * <p>
-     * The returned HashMap contains what it couldn't remove, where the key is the
-     * index of the parameter, and the value is the ItemStack at that index of the
-     * varargs parameter. If all the given ItemStacks are removed, it will return
-     * an empty HashMap.
+     * The returned HashMap contains what it couldn't remove, where the key is
+     * the index of the parameter, and the value is the ItemStack at that
+     * index of the varargs parameter. If all the given ItemStacks are
+     * removed, it will return an empty HashMap.
      *
      * @param items The ItemStacks to remove
      * @return A HashMap containing items that couldn't be removed.
@@ -116,13 +119,16 @@ public interface Inventory extends Iterable<ItemStack> {
      * Completely replaces the inventory's contents. Removes all existing
      * contents and replaces it with the ItemStacks given in the array.
      *
-     * @param items A complete replacement for the contents; the length must be less than or equal to {@link #getSize()}.
-     * @throws IllegalArgumentException If the array has more items than the inventory.
+     * @param items A complete replacement for the contents; the length must
+     *     be less than or equal to {@link #getSize()}.
+     * @throws IllegalArgumentException If the array has more items than the
+     *     inventory.
      */
     public void setContents(ItemStack[] items) throws IllegalArgumentException;
 
     /**
-     * Checks if the inventory contains any ItemStacks with the given materialId
+     * Checks if the inventory contains any ItemStacks with the given
+     * materialId
      *
      * @param materialId The materialId to check for
      * @return true if an ItemStack in this inventory contains the materialId
@@ -132,7 +138,8 @@ public interface Inventory extends Iterable<ItemStack> {
     public boolean contains(int materialId);
 
     /**
-     * Checks if the inventory contains any ItemStacks with the given material.
+     * Checks if the inventory contains any ItemStacks with the given
+     * material.
      *
      * @param material The material to check for
      * @return true if an ItemStack is found with the given Material
@@ -141,31 +148,39 @@ public interface Inventory extends Iterable<ItemStack> {
     public boolean contains(Material material) throws IllegalArgumentException;
 
     /**
-     * Checks if the inventory contains any ItemStacks matching the given ItemStack.
-     * This will only return true if both the type and the amount of the stack match.
+     * Checks if the inventory contains any ItemStacks matching the given
+     * ItemStack.
+     * <p>
+     * This will only return true if both the type and the amount of the stack
+     * match.
      *
      * @param item The ItemStack to match against
-     * @return false if item is null, true if any exactly matching ItemStacks were found
+     * @return false if item is null, true if any exactly matching ItemStacks
+     *     were found
      */
     public boolean contains(ItemStack item);
 
     /**
-     * Checks if the inventory contains any ItemStacks with the given materialId, adding to at least the minimum amount specified.
+     * Checks if the inventory contains any ItemStacks with the given
+     * materialId, adding to at least the minimum amount specified.
      *
      * @param materialId The materialId to check for
      * @param amount The minimum amount to look for
-     * @return true if this contains any matching ItemStack with the given materialId and amount
+     * @return true if this contains any matching ItemStack with the given
+     *     materialId and amount
      * @deprecated Magic value
      */
     @Deprecated
     public boolean contains(int materialId, int amount);
 
     /**
-     * Checks if the inventory contains any ItemStacks with the given material, adding to at least the minimum amount specified.
+     * Checks if the inventory contains any ItemStacks with the given
+     * material, adding to at least the minimum amount specified.
      *
      * @param material The material to check for
      * @param amount The minimum amount
-     * @return true if amount is less than 1, true if enough ItemStacks were found to add to the given amount
+     * @return true if amount is less than 1, true if enough ItemStacks were
+     *     found to add to the given amount
      * @throws IllegalArgumentException if material is null
      */
     public boolean contains(Material material, int amount) throws IllegalArgumentException;
@@ -226,12 +241,13 @@ public interface Inventory extends Iterable<ItemStack> {
     public HashMap<Integer, ? extends ItemStack> all(Material material) throws IllegalArgumentException;
 
     /**
-     * Finds all slots in the inventory containing any ItemStacks with the given ItemStack
-     * This will only match slots if both the type and the amount of the stack match
+     * Finds all slots in the inventory containing any ItemStacks with the
+     * given ItemStack. This will only match slots if both the type and the
+     * amount of the stack match
      * <p>
-     * The HashMap contains entries where, the key is the
-     * slot index, and the value is the ItemStack in that slot. If no matching
-     * ImemStrack with the given Material is found, an empty map is returned.
+     * The HashMap contains entries where, the key is the slot index, and the
+     * value is the ItemStack in that slot. If no matching ItemStack with the
+     * given Material is found, an empty map is returned.
      *
      * @param item The ItemStack to match against
      * @return A map from slot indexes to item at index
@@ -239,7 +255,8 @@ public interface Inventory extends Iterable<ItemStack> {
     public HashMap<Integer, ? extends ItemStack> all(ItemStack item);
 
     /**
-     * Finds the first slot in the inventory containing an ItemStack with the given materialId.
+     * Finds the first slot in the inventory containing an ItemStack with the
+     * given materialId.
      *
      * @param materialId The materialId to look for
      * @return The slot index of the given materialId or -1 if not found
@@ -249,7 +266,8 @@ public interface Inventory extends Iterable<ItemStack> {
     public int first(int materialId);
 
     /**
-     * Finds the first slot in the inventory containing an ItemStack with the given material
+     * Finds the first slot in the inventory containing an ItemStack with the
+     * given material
      *
      * @param material The material to look for
      * @return The slot index of the given Material or -1 if not found
@@ -258,8 +276,9 @@ public interface Inventory extends Iterable<ItemStack> {
     public int first(Material material) throws IllegalArgumentException;
 
     /**
-     * Returns the first slot in the inventory containing an ItemStack with the given stack
-     * This will only match a slot if both the type and the amount of the stack match
+     * Returns the first slot in the inventory containing an ItemStack with
+     * the given stack. This will only match a slot if both the type and the
+     * amount of the stack match
      *
      * @param item The ItemStack to match against
      * @return The slot index of the given ItemStack or -1 if not found
@@ -292,7 +311,9 @@ public interface Inventory extends Iterable<ItemStack> {
 
     /**
      * Removes all stacks in the inventory matching the given stack.
-     * This will only match a slot if both the type and the amount of the stack match
+     * <p>
+     * This will only match a slot if both the type and the amount of the
+     * stack match
      *
      * @param item The ItemStack to match against
      */
@@ -311,10 +332,12 @@ public interface Inventory extends Iterable<ItemStack> {
     public void clear();
 
     /**
-     * Gets a list of players viewing. Note that a player is considered to be viewing their own
-     * inventory and internal crafting screen even when said inventory is not open. They will normally
-     * be considered to be viewing their inventory even when they have a different inventory screen open,
-     * but it's possible for customized inventory screens to exclude the viewer's inventory, so this should
+     * Gets a list of players viewing the inventory. Note that a player is
+     * considered to be viewing their own inventory and internal crafting
+     * screen even when said inventory is not open. They will normally be
+     * considered to be viewing their inventory even when they have a
+     * different inventory screen open, but it's possible for customized
+     * inventory screens to exclude the viewer's inventory, so this should
      * never be assumed to be non-empty.
      *
      * @return A list of HumanEntities who are viewing this Inventory.
@@ -346,9 +369,10 @@ public interface Inventory extends Iterable<ItemStack> {
     public ListIterator<ItemStack> iterator();
 
     /**
-     * Returns an iterator starting at the given index. If the index is positive, then the first
-     * call to next() will return the item at that index; if it is negative, the first call to
-     * previous will return the item at index (getSize() + index).
+     * Returns an iterator starting at the given index. If the index is
+     * positive, then the first call to next() will return the item at that
+     * index; if it is negative, the first call to previous will return the
+     * item at index (getSize() + index).
      *
      * @param index The index.
      * @return An iterator.

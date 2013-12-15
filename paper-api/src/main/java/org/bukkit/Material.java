@@ -495,8 +495,8 @@ public enum Material {
     }
 
     /**
-     * Constructs a new MaterialData relevant for this Material, with the given
-     * initial data
+     * Constructs a new MaterialData relevant for this Material, with the
+     * given initial data
      *
      * @param raw Initial data to construct the MaterialData with
      * @return New MaterialData with the given data
@@ -582,6 +582,7 @@ public enum Material {
 
     /**
      * Attempts to get the Material with the given name.
+     * <p>
      * This is a normal lookup, names must be the precise name they are given
      * in the enum.
      *
@@ -594,8 +595,10 @@ public enum Material {
 
     /**
      * Attempts to match the Material with the given name.
-     * This is a match lookup; names will be converted to uppercase, then stripped
-     * of special characters in an attempt to format it like the enum.
+     * <p>
+     * This is a match lookup; names will be converted to uppercase, then
+     * stripped of special characters in an attempt to format it like the
+     * enum.
      * <p>
      * Using this for match by ID is deprecated.
      *
@@ -641,7 +644,8 @@ public enum Material {
     }
 
     /**
-     * Check if the material is a block and solid (cannot be passed through by a player)
+     * Check if the material is a block and solid (cannot be passed through by
+     * a player)
      *
      * @return True if this material is a block and solid
      */

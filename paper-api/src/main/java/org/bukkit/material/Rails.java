@@ -62,11 +62,11 @@ public class Rails extends MaterialData {
     }
 
     /**
-     * @return the direction these tracks are set <br>
-     *         Note that tracks are bidirectional and that the direction
-     *         returned is the ascending direction if the track is set on a
-     *         slope. If it is set as a curve, the corner of the track is
-     *         returned.
+     * @return the direction these tracks are set
+     *     <p>
+     *     Note that tracks are bidirectional and that the direction returned
+     *     is the ascending direction if the track is set on a slope. If it is
+     *     set as a curve, the corner of the track is returned.
      */
     public BlockFace getDirection() {
         byte d = getConvertedData();
@@ -111,7 +111,9 @@ public class Rails extends MaterialData {
     }
 
     /**
-     * Return the data without the extended properties used by {@link PoweredRail} and {@link DetectorRail}. Overridden in {@link ExtendedRails}
+     * Return the data without the extended properties used by {@link
+     * PoweredRail} and {@link DetectorRail}. Overridden in {@link
+     * ExtendedRails}
      *
      * @return the data without the extended part
      * @deprecated Magic value
@@ -122,11 +124,11 @@ public class Rails extends MaterialData {
     }
 
     /**
-     * Set the direction of these tracks<br>
-     * Note that tracks are bidirectional and that the direction
-     * returned is the ascending direction if the track is set on a
-     * slope. If it is set as a curve, the corner of the track should
-     * be supplied.
+     * Set the direction of these tracks
+     * <p>
+     * Note that tracks are bidirectional and that the direction returned is
+     * the ascending direction if the track is set on a slope. If it is set as
+     * a curve, the corner of the track should be supplied.
      *
      * @param face the direction the track should be facing
      * @param isOnSlope whether or not the track should be on a slope

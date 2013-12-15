@@ -40,7 +40,9 @@ public class PlayerChatTabCompleteEvent extends PlayerEvent {
 
     /**
      * Gets the last 'token' of the message being tab-completed.
-     * The token is the substring starting with the character after the last space in the message.
+     * <p>
+     * The token is the substring starting with the character after the last
+     * space in the message.
      *
      * @return The last token for the chat message
      */

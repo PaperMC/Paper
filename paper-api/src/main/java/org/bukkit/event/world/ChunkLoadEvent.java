@@ -17,6 +17,7 @@ public class ChunkLoadEvent extends ChunkEvent {
 
     /**
      * Gets if this chunk was newly created or not.
+     * <p>
      * Note that if this chunk is new, it will not be populated at this time.
      *
      * @return true if the chunk is new, otherwise false

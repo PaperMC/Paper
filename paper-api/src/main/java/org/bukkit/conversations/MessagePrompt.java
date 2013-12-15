@@ -1,7 +1,8 @@
 package org.bukkit.conversations;
 
 /**
- * MessagePrompt is the base class for any prompt that only displays a message to the user and requires no input.
+ * MessagePrompt is the base class for any prompt that only displays a message
+ * to the user and requires no input.
  */
 public abstract class MessagePrompt implements Prompt{
 
@@ -20,7 +21,8 @@ public abstract class MessagePrompt implements Prompt{
     }
 
     /**
-     * Accepts and ignores any user input, returning the next prompt in the prompt graph instead.
+     * Accepts and ignores any user input, returning the next prompt in the
+     * prompt graph instead.
      *
      * @param context Context information about the conversation.
      * @param input Ignored.

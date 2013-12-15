@@ -28,8 +28,8 @@ public interface Ocelot extends Animals, Tameable {
     public boolean isSitting();
 
     /**
-     * Sets if this ocelot is sitting
-     * Will remove any path that the ocelot was following beforehand.
+     * Sets if this ocelot is sitting. Will remove any path that the ocelot
+     * was following beforehand.
      *
      * @param sitting true if sitting
      */

@@ -6,7 +6,9 @@ import org.bukkit.entity.Painting;
 
 /**
  * Triggered when a painting is removed by an entity
- * @deprecated Use {@link org.bukkit.event.hanging.HangingBreakByEntityEvent} instead.
+ *
+ * @deprecated Use {@link org.bukkit.event.hanging.HangingBreakByEntityEvent}
+ *     instead.
  */
 @Deprecated
 @Warning(reason="This event has been replaced by HangingBreakByEntityEvent")

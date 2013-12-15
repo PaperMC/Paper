@@ -2,6 +2,9 @@ package org.bukkit.inventory;
 
 import org.bukkit.block.DoubleChest;
 
+/**
+ * Interface to the inventory of a Double Chest.
+ */
 public interface DoubleChestInventory extends Inventory {
 
     /**

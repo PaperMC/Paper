@@ -5,8 +5,9 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 /**
- * The PluginLogger class is a modified {@link Logger} that prepends all logging calls with the name of the
- * plugin doing the logging. The API for PluginLogger is exactly the same as {@link Logger}.
+ * The PluginLogger class is a modified {@link Logger} that prepends all
+ * logging calls with the name of the plugin doing the logging. The API for
+ * PluginLogger is exactly the same as {@link Logger}.
  *
  * @see Logger
  */

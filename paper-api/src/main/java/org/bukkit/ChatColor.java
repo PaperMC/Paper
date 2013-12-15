@@ -101,8 +101,8 @@ public enum ChatColor {
     RESET('r', 0x15);
 
     /**
-     * The special character which prefixes all chat colour codes. Use this if you need to dynamically
-     * convert colour codes from your custom format.
+     * The special character which prefixes all chat colour codes. Use this if
+     * you need to dynamically convert colour codes from your custom format.
      */
     public static final char COLOR_CHAR = '\u00A7';
     private static final Pattern STRIP_COLOR_PATTERN = Pattern.compile("(?i)" + String.valueOf(COLOR_CHAR) + "[0-9A-FK-OR]");
@@ -157,7 +157,8 @@ public enum ChatColor {
      * Gets the color represented by the specified color code
      *
      * @param code Code to check
-     * @return Associative {@link org.bukkit.ChatColor} with the given code, or null if it doesn't exist
+     * @return Associative {@link org.bukkit.ChatColor} with the given code,
+     *     or null if it doesn't exist
      */
     public static ChatColor getByChar(char code) {
         return BY_CHAR.get(code);
@@ -167,7 +168,8 @@ public enum ChatColor {
      * Gets the color represented by the specified color code
      *
      * @param code Code to check
-     * @return Associative {@link org.bukkit.ChatColor} with the given code, or null if it doesn't exist
+     * @return Associative {@link org.bukkit.ChatColor} with the given code,
+     *     or null if it doesn't exist
      */
     public static ChatColor getByChar(String code) {
         Validate.notNull(code, "Code cannot be null");
@@ -191,9 +193,10 @@ public enum ChatColor {
     }
 
     /**
-     * Translates a string using an alternate color code character into a string that uses the internal
-     * ChatColor.COLOR_CODE color code character. The alternate color code character will only be replaced
-     * if it is immediately followed by 0-9, A-F, a-f, K-O, k-o, R or r.
+     * Translates a string using an alternate color code character into a
+     * string that uses the internal ChatColor.COLOR_CODE color code
+     * character. The alternate color code character will only be replaced if
+     * it is immediately followed by 0-9, A-F, a-f, K-O, k-o, R or r.
      *
      * @param altColorChar The alternate color code character to replace. Ex: &
      * @param textToTranslate Text containing the alternate color code character.

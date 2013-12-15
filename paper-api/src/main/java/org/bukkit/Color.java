@@ -9,8 +9,9 @@ import org.bukkit.configuration.serialization.SerializableAs;
 import com.google.common.collect.ImmutableMap;
 
 /**
- * A container for a color palette. This class is immutable; the set methods return a new color.
- * The color names listed as fields are HTML4 standards, but subject to change.
+ * A container for a color palette. This class is immutable; the set methods
+ * return a new color. The color names listed as fields are HTML4 standards,
+ * but subject to change.
  */
 @SerializableAs("Color")
 public final class Color implements ConfigurationSerializable {
@@ -132,11 +133,13 @@ public final class Color implements ConfigurationSerializable {
     }
 
     /**
-     * Creates a new color object from an integer that contains the red, green, and blue bytes in the lowest order 24 bits.
+     * Creates a new color object from an integer that contains the red,
+     * green, and blue bytes in the lowest order 24 bits.
      *
      * @param rgb the integer storing the red, green, and blue values
      * @return a new color object for specified values
-     * @throws IllegalArgumentException if any data is in the highest order 8 bits
+     * @throws IllegalArgumentException if any data is in the highest order 8
+     *     bits
      */
     public static Color fromRGB(int rgb) throws IllegalArgumentException {
         Validate.isTrue((rgb >> 24) == 0, "Extrenuous data in: ", rgb);
@@ -144,11 +147,13 @@ public final class Color implements ConfigurationSerializable {
     }
 
     /**
-     * Creates a new color object from an integer that contains the blue, green, and red bytes in the lowest order 24 bits.
+     * Creates a new color object from an integer that contains the blue,
+     * green, and red bytes in the lowest order 24 bits.
      *
      * @param bgr the integer storing the blue, green, and red values
      * @return a new color object for specified values
-     * @throws IllegalArgumentException if any data is in the highest order 8 bits
+     * @throws IllegalArgumentException if any data is in the highest order 8
+     *     bits
      */
     public static Color fromBGR(int bgr) throws IllegalArgumentException {
         Validate.isTrue((bgr >> 24) == 0, "Extrenuous data in: ", bgr);
@@ -239,8 +244,8 @@ public final class Color implements ConfigurationSerializable {
     }
 
     /**
-     * Creates a new color with its RGB components changed as if it was dyed with the colors passed in, replicating
-     * vanilla workbench dyeing
+     * Creates a new color with its RGB components changed as if it was dyed
+     * with the colors passed in, replicating vanilla workbench dyeing
      *
      * @param colors The DyeColors to dye with
      * @return A new color with the changed rgb components
@@ -258,8 +263,8 @@ public final class Color implements ConfigurationSerializable {
     }
 
     /**
-     * Creates a new color with its RGB components changed as if it was dyed with the colors passed in, replicating
-     * vanilla workbench dyeing
+     * Creates a new color with its RGB components changed as if it was dyed
+     * with the colors passed in, replicating vanilla workbench dyeing
      *
      * @param colors The colors to dye with
      * @return A new color with the changed rgb components

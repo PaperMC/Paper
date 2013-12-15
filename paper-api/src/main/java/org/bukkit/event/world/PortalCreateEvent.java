@@ -64,11 +64,13 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
      */
     public enum CreateReason {
         /**
-         * When a portal is created 'traditionally' due to a portal frame being set on fire.
+         * When a portal is created 'traditionally' due to a portal frame
+         * being set on fire.
          */
         FIRE,
         /**
-         * When a portal is created as a destination for an existing portal when using the custom PortalTravelAgent
+         * When a portal is created as a destination for an existing portal
+         * when using the custom PortalTravelAgent
          */
         OBC_DESTINATION
     }

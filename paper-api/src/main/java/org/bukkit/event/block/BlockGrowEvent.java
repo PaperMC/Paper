@@ -10,11 +10,11 @@ import org.bukkit.event.HandlerList;
  * <p>
  * Examples:
  * <ul>
- * <li>Wheat</li>
- * <li>Sugar Cane</li>
- * <li>Cactus</li>
- * <li>Watermelon</li>
- * <li>Pumpkin</li>
+ * <li>Wheat
+ * <li>Sugar Cane
+ * <li>Cactus
+ * <li>Watermelon
+ * <li>Pumpkin
  * </ul>
  * <p>
  * If a Block Grow event is cancelled, the block will not grow.

@@ -1,8 +1,8 @@
 package org.bukkit.conversations;
 
 /**
- * A ConversationCanceller is a class that cancels an active {@link Conversation}. A Conversation can have more
- * than one ConversationCanceller.
+ * A ConversationCanceller is a class that cancels an active {@link
+ * Conversation}. A Conversation can have more than one ConversationCanceller.
  */
 public interface ConversationCanceller extends Cloneable {
 
@@ -23,7 +23,8 @@ public interface ConversationCanceller extends Cloneable {
     public boolean cancelBasedOnInput(ConversationContext context, String input);
 
     /**
-     * Allows the {@link ConversationFactory} to duplicate this ConversationCanceller when creating a new {@link Conversation}.
+     * Allows the {@link ConversationFactory} to duplicate this
+     * ConversationCanceller when creating a new {@link Conversation}.
      * <p>
      * Implementing this method should reset any internal object state.
      *

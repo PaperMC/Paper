@@ -1,6 +1,7 @@
 package org.bukkit;
 
 public enum NetherWartsState {
+
     /**
      * State when first seeded
      */

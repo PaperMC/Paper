@@ -22,13 +22,11 @@ public enum ClickType {
      */
     SHIFT_RIGHT,
     /**
-     * Clicking the left mouse button on the grey area around the
-     * inventory.
+     * Clicking the left mouse button on the grey area around the inventory.
      */
     WINDOW_BORDER_LEFT,
     /**
-     * Clicking the right mouse button on the grey area around the
-     * inventory.
+     * Clicking the right mouse button on the grey area around the inventory.
      */
     WINDOW_BORDER_RIGHT,
     /**
@@ -57,8 +55,9 @@ public enum ClickType {
     CREATIVE,
     /**
      * A type of inventory manipulation not yet recognized by Bukkit.
-     * This is only for transitional purposes on a new Minecraft update,
-     * and should never be relied upon.
+     * <p>
+     * This is only for transitional purposes on a new Minecraft update, and
+     * should never be relied upon.
      * <p>
      * Any ClickType.UNKNOWN is called on a best-effort basis.
      */

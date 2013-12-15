@@ -1,7 +1,8 @@
 package org.bukkit.permissions;
 
 /**
- * Holds information on a permission and which {@link PermissionAttachment} provides it
+ * Holds information on a permission and which {@link PermissionAttachment}
+ * provides it
  */
 public class PermissionAttachmentInfo {
     private final Permissible permissible;
@@ -41,8 +42,8 @@ public class PermissionAttachmentInfo {
     }
 
     /**
-     * Gets the attachment providing this permission. This may be null for default
-     * permissions (usually parent permissions).
+     * Gets the attachment providing this permission. This may be null for
+     * default permissions (usually parent permissions).
      *
      * @return Attachment
      */

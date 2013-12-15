@@ -7,7 +7,8 @@ public class InvalidDescriptionException extends Exception {
     private static final long serialVersionUID = 5721389122281775896L;
 
     /**
-     * Constructs a new InvalidDescriptionException based on the given Exception
+     * Constructs a new InvalidDescriptionException based on the given
+     * Exception
      *
      * @param message Brief message explaining the cause of the exception
      * @param cause Exception that triggered this Exception
@@ -17,7 +18,8 @@ public class InvalidDescriptionException extends Exception {
     }
 
     /**
-     * Constructs a new InvalidDescriptionException based on the given Exception
+     * Constructs a new InvalidDescriptionException based on the given
+     * Exception
      *
      * @param cause Exception that triggered this Exception
      */

@@ -20,7 +20,8 @@ public enum PermissionDefault {
     }
 
     /**
-     * Calculates the value of this PermissionDefault for the given operator value
+     * Calculates the value of this PermissionDefault for the given operator
+     * value
      *
      * @param op If the target is op
      * @return True if the default should be true, or false

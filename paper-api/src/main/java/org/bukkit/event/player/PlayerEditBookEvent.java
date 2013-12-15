@@ -8,8 +8,8 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.meta.BookMeta;
 
 /**
- * Called when a player edits or signs a book and quill item.  If the event
- * is cancelled, no changes are made to the BookMeta
+ * Called when a player edits or signs a book and quill item. If the event is
+ * cancelled, no changes are made to the BookMeta
  */
 public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -39,7 +39,7 @@ public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
     /**
      * Gets the book meta currently on the book.
      * <p>
-     * Note: this is a copy of the book meta.  You cannot use this object to
+     * Note: this is a copy of the book meta. You cannot use this object to
      * change the existing book meta.
      *
      * @return the book meta currently on the book
@@ -49,12 +49,11 @@ public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * Gets the book meta that the player is attempting to add to
-     * the book.
+     * Gets the book meta that the player is attempting to add to the book.
      * <p>
      * Note: this is a copy of the proposed new book meta. Use {@link
-     * #setNewBookMeta(BookMeta)} to change what will actually be
-     * added to the book.
+     * #setNewBookMeta(BookMeta)} to change what will actually be added to the
+     * book.
      *
      * @return the book meta that the player is attempting to add
      */

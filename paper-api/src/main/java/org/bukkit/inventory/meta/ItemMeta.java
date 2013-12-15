@@ -8,6 +8,7 @@ import org.bukkit.enchantments.Enchantment;
 
 /**
  * This type represents the storage mechanism for auxiliary item data.
+ * <p>
  * An implementation will handle the creation and application for ItemMeta.
  * This class should not be implemented by a plugin in a live environment.
  */
@@ -22,7 +23,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
 
     /**
      * Gets the display name that is set.
-     * Plugins should check that hasDisplayName() returns <code>true</code> before calling this method.
+     * <p>
+     * Plugins should check that hasDisplayName() returns <code>true</code>
+     * before calling this method.
      *
      * @return the display name that is set
      */
@@ -44,7 +47,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
 
     /**
      * Gets the lore that is set.
-     * Plugins should check if hasLore() returns <code>true</code> before calling this method.
+     * <p>
+     * Plugins should check if hasLore() returns <code>true</code> before
+     * calling this method.
      * 
      * @return a list of lore that is set
      */
@@ -94,8 +99,10 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      *
      * @param ench Enchantment to add
      * @param level Level for the enchantment
-     * @param ignoreLevelRestriction this indicates the enchantment should be applied, ignoring the level limit
-     * @return true if the item meta changed as a result of this call, false otherwise
+     * @param ignoreLevelRestriction this indicates the enchantment should be
+     *     applied, ignoring the level limit
+     * @return true if the item meta changed as a result of this call, false
+     *     otherwise
      */
     boolean addEnchant(Enchantment ench, int level, boolean ignoreLevelRestriction);
 
@@ -103,12 +110,14 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      * Removes the specified enchantment from this item meta.
      *
      * @param ench Enchantment to remove
-     * @return true if the item meta changed as a result of this call, false otherwise
+     * @return true if the item meta changed as a result of this call, false
+     *     otherwise
      */
     boolean removeEnchant(Enchantment ench);
 
    /**
-    * Checks if the specified enchantment conflicts with any enchantments in this ItemMeta.
+    * Checks if the specified enchantment conflicts with any enchantments in
+    * this ItemMeta.
     *
     * @param ench enchantment to test
     * @return true if the enchantment conflicts, false otherwise

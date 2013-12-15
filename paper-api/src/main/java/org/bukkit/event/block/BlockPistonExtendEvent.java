@@ -8,6 +8,9 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.event.HandlerList;
 
+/**
+ * Called when a piston extends
+ */
 public class BlockPistonExtendEvent extends BlockPistonEvent {
     private static final HandlerList handlers = new HandlerList();
     private final int length;
@@ -29,7 +32,8 @@ public class BlockPistonExtendEvent extends BlockPistonEvent {
     }
 
     /**
-     * Get an immutable list of the blocks which will be moved by the extending.
+     * Get an immutable list of the blocks which will be moved by the
+     * extending.
      *
      * @return Immutable list of the moved blocks.
      */

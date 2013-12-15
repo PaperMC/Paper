@@ -40,7 +40,8 @@ public enum Achievement {
     ;
 
     /**
-     * The offset used to distinguish Achievements and Statistics
+     * The offset used to distinguish Achievements and Statistics.
+     *
      * @deprecated Magic value
      */
     @Deprecated

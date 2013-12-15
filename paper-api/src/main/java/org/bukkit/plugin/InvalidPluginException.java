@@ -23,19 +23,25 @@ public class InvalidPluginException extends Exception {
     }
 
     /**
-     * Constructs a new InvalidPluginException with the specified detail message and cause.
+     * Constructs a new InvalidPluginException with the specified detail
+     * message and cause.
      *
-     * @param message the detail message (which is saved for later retrieval by the getMessage() method).
-     * @param cause the cause (which is saved for later retrieval by the getCause() method). (A null value is permitted, and indicates that the cause is nonexistent or unknown.)
+     * @param message the detail message (which is saved for later retrieval
+     *     by the getMessage() method).
+     * @param cause the cause (which is saved for later retrieval by the
+     *     getCause() method). (A null value is permitted, and indicates that
+     *     the cause is nonexistent or unknown.)
      */
     public InvalidPluginException(final String message, final Throwable cause) {
         super(message, cause);
     }
 
     /**
-     * Constructs a new InvalidPluginException with the specified detail message
+     * Constructs a new InvalidPluginException with the specified detail
+     * message
      *
-     * @param message TThe detail message is saved for later retrieval by the getMessage() method.
+     * @param message TThe detail message is saved for later retrieval by the
+     *     getMessage() method.
      */
     public InvalidPluginException(final String message) {
         super(message);

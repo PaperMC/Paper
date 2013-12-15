@@ -4,8 +4,8 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Manages services and service providers. Services are an interface specifying
- * a list of methods that a provider must implement. Providers are
+ * Manages services and service providers. Services are an interface
+ * specifying a list of methods that a provider must implement. Providers are
  * implementations of these services. A provider can be queried from the
  * services manager in order to use a service (if one is available). If
  * multiple plugins register a service, then the service with the highest

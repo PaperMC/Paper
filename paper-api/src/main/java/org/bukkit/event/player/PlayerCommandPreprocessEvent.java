@@ -75,7 +75,9 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
 
     /**
      * Gets the command that the player is attempting to send.
-     * All commands begin with a special character; implementations do not consider the first character when executing the content.
+     * <p>
+     * All commands begin with a special character; implementations do not
+     * consider the first character when executing the content.
      *
      * @return Message the player is attempting to send
      */
@@ -85,7 +87,9 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
 
     /**
      * Sets the command that the player will send.
-     * All commands begin with a special character; implementations do not consider the first character when executing the content.
+     * <p>
+     * All commands begin with a special character; implementations do not
+     * consider the first character when executing the content.
      *
      * @param command New message that the player will send
      * @throws IllegalArgumentException if command is null or empty
@@ -110,7 +114,8 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
     /**
      * Gets the format to use to display this chat message
      *
-     * @deprecated This method is provided for backward compatibility with no guarantee to the use of the format.
+     * @deprecated This method is provided for backward compatibility with no
+     *     guarantee to the use of the format.
      * @return String.Format compatible format string
      */
     @Deprecated
@@ -121,7 +126,8 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
     /**
      * Sets the format to use to display this chat message
      *
-     * @deprecated This method is provided for backward compatibility with no guarantee to the effect of modifying the format.
+     * @deprecated This method is provided for backward compatibility with no
+     *     guarantee to the effect of modifying the format.
      * @param format String.Format compatible format string
      */
     @Deprecated
@@ -139,11 +145,16 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
 
     /**
      * Gets a set of recipients that this chat message will be displayed to.
-     * The set returned is not guaranteed to be mutable and may auto-populate on access.
-     * Any listener accessing the returned set should be aware that it may reduce performance for a lazy set implementation.
-     * Listeners should be aware that modifying the list may throw {@link UnsupportedOperationException} if the event caller provides an unmodifiable set.
+     * <p>
+     * The set returned is not guaranteed to be mutable and may auto-populate
+     * on access. Any listener accessing the returned set should be aware that
+     * it may reduce performance for a lazy set implementation. Listeners
+     * should be aware that modifying the list may throw {@link
+     * UnsupportedOperationException} if the event caller provides an
+     * unmodifiable set.
      *
-     * @deprecated This method is provided for backward compatibility with no guarantee to the effect of viewing or modifying the set.
+     * @deprecated This method is provided for backward compatibility with no
+     *     guarantee to the effect of viewing or modifying the set.
      * @return All Players who will see this chat message
      */
     @Deprecated

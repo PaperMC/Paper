@@ -41,14 +41,16 @@ import org.bukkit.inventory.meta.ItemMeta;
 public interface Server extends PluginMessageRecipient {
 
     /**
-     * Used for all administrative messages, such as an operator using a command.
+     * Used for all administrative messages, such as an operator using a
+     * command.
      * <p>
      * For use in {@link #broadcast(java.lang.String, java.lang.String)}
      */
     public static final String BROADCAST_CHANNEL_ADMINISTRATIVE = "bukkit.broadcast.admin";
 
     /**
-     * Used for all announcement messages, such as informing users that a player has joined.
+     * Used for all announcement messages, such as informing users that a
+     * player has joined.
      * <p>
      * For use in {@link #broadcast(java.lang.String, java.lang.String)}
      */
@@ -104,9 +106,11 @@ public interface Server extends PluginMessageRecipient {
     public int getViewDistance();
 
     /**
-     * Get the IP that this server is bound to or empty string if not specified
+     * Get the IP that this server is bound to or empty string if not
+     * specified
      *
-     * @return The IP string that this server is bound to, otherwise empty string
+     * @return The IP string that this server is bound to, otherwise empty
+     *     string
      */
     public String getIp();
 
@@ -118,8 +122,8 @@ public interface Server extends PluginMessageRecipient {
     public String getServerName();
 
     /**
-     * Get an ID of this server. The ID is a simple generally alphanumeric
-     * ID that can be used for uniquely identifying this server.
+     * Get an ID of this server. The ID is a simple generally alphanumeric ID
+     * that can be used for uniquely identifying this server.
      *
      * @return The ID of this server
      */
@@ -182,7 +186,8 @@ public interface Server extends PluginMessageRecipient {
     /**
      * Broadcast a message to all players.
      * <p>
-     * This is the same as calling {@link #broadcast(java.lang.String, java.lang.String)} to {@link #BROADCAST_CHANNEL_USERS}
+     * This is the same as calling {@link #broadcast(java.lang.String,
+     * java.lang.String)} to {@link #BROADCAST_CHANNEL_USERS}
      *
      * @param message the message
      * @return the number of players
@@ -190,8 +195,8 @@ public interface Server extends PluginMessageRecipient {
     public int broadcastMessage(String message);
 
     /**
-     * Gets the name of the update folder. The update folder is used to safely update
-     * plugins at the right moment on a plugin load.
+     * Gets the name of the update folder. The update folder is used to safely
+     * update plugins at the right moment on a plugin load.
      * <p>
      * The update folder name is relative to the plugins folder.
      *
@@ -219,13 +224,15 @@ public interface Server extends PluginMessageRecipient {
      * <p>
      * <b>Example Usage:</b>
      * <ul>
-     * <li>A value of 1 will mean the server will attempt to spawn monsters every tick.
-     * <li>A value of 400 will mean the server will attempt to spawn monsters every 400th tick.
+     * <li>A value of 1 will mean the server will attempt to spawn monsters
+     *     every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn monsters
+     *     every 400th tick.
      * <li>A value below 0 will be reset back to Minecraft's default.
      * </ul>
      * <p>
-     * <b>Note:</b>
-     * If set to 0, animal spawning will be disabled. We recommend using spawn-animals to control this instead.
+     * <b>Note:</b> If set to 0, animal spawning will be disabled. We
+     * recommend using spawn-animals to control this instead.
      * <p>
      * Minecraft default: 400.
      *
@@ -238,13 +245,15 @@ public interface Server extends PluginMessageRecipient {
      * <p>
      * <b>Example Usage:</b>
      * <ul>
-     * <li>A value of 1 will mean the server will attempt to spawn monsters every tick.
-     * <li>A value of 400 will mean the server will attempt to spawn monsters every 400th tick.
+     * <li>A value of 1 will mean the server will attempt to spawn monsters
+     *     every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn monsters
+     *     every 400th tick.
      * <li>A value below 0 will be reset back to Minecraft's default.
      * </ul>
      * <p>
-     * <b>Note:</b>
-     * If set to 0, monsters spawning will be disabled. We recommend using spawn-monsters to control this instead.
+     * <b>Note:</b> If set to 0, monsters spawning will be disabled. We
+     * recommend using spawn-monsters to control this instead.
      * <p>
      * Minecraft default: 1.
      *
@@ -274,8 +283,8 @@ public interface Server extends PluginMessageRecipient {
      * Attempts to match any players with the given name, and returns a list
      * of all possibly matches
      * <p>
-     * This list is not sorted in any particular order. If an exact match is found,
-     * the returned list will only contain a single result.
+     * This list is not sorted in any particular order. If an exact match is
+     * found, the returned list will only contain a single result.
      *
      * @param name Name to match
      * @return List of all possible players
@@ -311,7 +320,8 @@ public interface Server extends PluginMessageRecipient {
     public List<World> getWorlds();
 
     /**
-     * Creates or loads a world with the given name using the specified options.
+     * Creates or loads a world with the given name using the specified
+     * options.
      * <p>
      * If the world is already loaded, it will just return the equivalent of
      * getWorld(creator.name()).
@@ -404,12 +414,14 @@ public interface Server extends PluginMessageRecipient {
      * @param sender The apparent sender of the command
      * @param commandLine command + arguments. Example: "test abc 123"
      * @return returns false if no target is found.
-     * @throws CommandException Thrown when the executor for the given command fails with an unhandled exception
+     * @throws CommandException Thrown when the executor for the given command
+     *     fails with an unhandled exception
      */
     public boolean dispatchCommand(CommandSender sender, String commandLine) throws CommandException;
 
     /**
-     * Populates a given {@link ServerConfig} with values attributes to this server
+     * Populates a given {@link ServerConfig} with values attributes to this
+     * server
      *
      * @param config ServerConfig to populate
      */
@@ -419,13 +431,14 @@ public interface Server extends PluginMessageRecipient {
      * Adds a recipe to the crafting manager.
      *
      * @param recipe The recipe to add.
-     * @return True if the recipe was added, false if it wasn't for some reason.
+     * @return True if the recipe was added, false if it wasn't for some
+     *     reason.
      */
     public boolean addRecipe(Recipe recipe);
 
     /**
-     * Get a list of all recipes for a given item. The stack size is ignored in comparisons.
-     * If the durability is -1, it will match any data value.
+     * Get a list of all recipes for a given item. The stack size is ignored
+     * in comparisons. If the durability is -1, it will match any data value.
      *
      * @param result The item whose recipes you want
      * @return The list of recipes
@@ -494,8 +507,11 @@ public interface Server extends PluginMessageRecipient {
     /**
      * Gets whether to use vanilla (false) or exact behaviour (true).
      *
-     * Vanilla behaviour: check for collisions and move the player if needed.
-     * Exact behaviour: spawn players exactly where they should be.
+     * <ul>
+     * <li>Vanilla behaviour: check for collisions and move the player if
+     *     needed.
+     * <li>Exact behaviour: spawn players exactly where they should be.
+     * </ul>
      *
      * @return Whether to use vanilla (false) or exact behaviour (true).
      */
@@ -507,7 +523,8 @@ public interface Server extends PluginMessageRecipient {
     public void shutdown();
 
     /**
-     * Broadcasts the specified message to every user with the given permission
+     * Broadcasts the specified message to every user with the given
+     * permission
      *
      * @param message Message to broadcast
      * @param permission Permission the users must have to receive the broadcast
@@ -516,9 +533,11 @@ public interface Server extends PluginMessageRecipient {
     public int broadcast(String message, String permission);
 
     /**
-     * Gets the player by the given name, regardless if they are offline or online.
+     * Gets the player by the given name, regardless if they are offline or
+     * online.
      * <p>
-     * This will return an object even if the player does not exist. To this method, all players will exist.
+     * This will return an object even if the player does not exist. To this
+     * method, all players will exist.
      *
      * @param name Name of the player to retrieve
      * @return OfflinePlayer object
@@ -575,8 +594,8 @@ public interface Server extends PluginMessageRecipient {
     public void setDefaultGameMode(GameMode mode);
 
     /**
-     * Gets the {@link ConsoleCommandSender} that may be used as an input source
-     * for this server.
+     * Gets the {@link ConsoleCommandSender} that may be used as an input
+     * source for this server.
      *
      * @return The Console CommandSender
      */
@@ -611,20 +630,23 @@ public interface Server extends PluginMessageRecipient {
     public HelpMap getHelpMap();
 
     /**
-     * Creates an empty inventory of the specified type. If the type is {@link InventoryType#CHEST},
-     * the new inventory has a size of 27; otherwise the new inventory has the normal size for
-     * its type.
+     * Creates an empty inventory of the specified type. If the type is {@link
+     * InventoryType#CHEST}, the new inventory has a size of 27; otherwise the
+     * new inventory has the normal size for its type.
      *
-     * @param owner The holder of the inventory; can be null if there's no holder.
+     * @param owner The holder of the inventory; can be null if there's no
+     *     holder.
      * @param type The type of inventory to create.
      * @return The new inventory.
      */
     Inventory createInventory(InventoryHolder owner, InventoryType type);
 
     /**
-     * Creates an empty inventory of type {@link InventoryType#CHEST} with the specified size.
+     * Creates an empty inventory of type {@link InventoryType#CHEST} with the
+     * specified size.
      *
-     * @param owner The holder of the inventory; can be null if there's no holder.
+     * @param owner The holder of the inventory; can be null if there's no
+     *     holder.
      * @param size The size of inventory to create; must be a multiple of 9.
      * @return The new inventory.
      * @throws IllegalArgumentException If the size is not a multiple of 9.
@@ -632,46 +654,54 @@ public interface Server extends PluginMessageRecipient {
     Inventory createInventory(InventoryHolder owner, int size);
 
     /**
-     * Creates an empty inventory of type {@link InventoryType#CHEST} with the specified size and title.
+     * Creates an empty inventory of type {@link InventoryType#CHEST} with the
+     * specified size and title.
      *
-     * @param owner The holder of the inventory; can be null if there's no holder.
+     * @param owner The holder of the inventory; can be null if there's no
+     *     holder.
      * @param size The size of inventory to create; must be a multiple of 9.
-     * @param title The title of the inventory, to be displayed when it is viewed.
+     * @param title The title of the inventory, to be displayed when it is
+     *     viewed.
      * @return The new inventory.
      * @throws IllegalArgumentException If the size is not a multiple of 9.
      */
     Inventory createInventory(InventoryHolder owner, int size, String title);
 
     /**
-     * Gets user-specified limit for number of monsters that can spawn in a chunk
+     * Gets user-specified limit for number of monsters that can spawn in a
+     * chunk
      *
      * @return The monster spawn limit
      */
     int getMonsterSpawnLimit();
 
     /**
-     * Gets user-specified limit for number of animals that can spawn in a chunk
+     * Gets user-specified limit for number of animals that can spawn in a
+     * chunk
      *
      * @return The animal spawn limit
      */
     int getAnimalSpawnLimit();
 
     /**
-     * Gets user-specified limit for number of water animals that can spawn in a chunk
+     * Gets user-specified limit for number of water animals that can spawn in
+     * a chunk
      *
      * @return The water animal spawn limit
      */
     int getWaterAnimalSpawnLimit();
 
     /**
-     * Gets user-specified limit for number of ambient mobs that can spawn in a chunk
+     * Gets user-specified limit for number of ambient mobs that can spawn in
+     * a chunk
      *
      * @return The ambient spawn limit
      */
     int getAmbientSpawnLimit();
 
     /**
-     * Returns true if the current {@link Thread} is the server's primary thread
+     * Returns true if the current {@link Thread} is the server's primary
+     * thread
      */
     boolean isPrimaryThread();
 
@@ -723,16 +753,16 @@ public interface Server extends PluginMessageRecipient {
     CachedServerIcon getServerIcon();
 
     /**
-     * Loads an image from a file, and returns a cached image for the
-     * specific server-icon.
+     * Loads an image from a file, and returns a cached image for the specific
+     * server-icon.
      * <p>
      * Size and type are implementation defined. An incompatible file is
      * guaranteed to throw an implementation-defined {@link Exception}.
      *
      * @param file the file to load the from
      * @throws IllegalArgumentException if image is null
-     * @throws Exception if the image does not meet current server
-     *     server-icon specifications
+     * @throws Exception if the image does not meet current server server-icon
+     *     specifications
      * @return a cached server-icon that can be used for a {@link
      *     ServerListPingEvent#setServerIcon(CachedServerIcon)}
      */

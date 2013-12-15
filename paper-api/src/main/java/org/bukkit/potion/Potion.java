@@ -20,9 +20,10 @@ public class Potion {
     private PotionType type;
 
     /**
-     * Construct a new potion of the given type. Unless the type is {@link PotionType#WATER},
-     * it will be level one, without extended duration. Don't use this constructor to create
-     * a no-effect potion other than water bottle.
+     * Construct a new potion of the given type. Unless the type is {@link
+     * PotionType#WATER}, it will be level one, without extended duration.
+     * Don't use this constructor to create a no-effect potion other than
+     * water bottle.
      *
      * @param type The potion type
      * @see #Potion(int)
@@ -57,7 +58,8 @@ public class Potion {
     }
 
     /**
-     * @deprecated In favour of {@link #Potion(PotionType, int, boolean, boolean)}
+     * @deprecated In favour of {@link #Potion(PotionType, int, boolean,
+     *     boolean)}
      */
     @SuppressWarnings("javadoc")
     @Deprecated
@@ -86,7 +88,8 @@ public class Potion {
      * @param type The type of potion.
      * @param level The potion's level.
      * @param splash Whether it is a splash potion.
-     * @deprecated In favour of using {@link #Potion(PotionType)} with {@link #splash()}.
+     * @deprecated In favour of using {@link #Potion(PotionType)} with {@link
+     *     #splash()}.
      */
     @Deprecated
     public Potion(PotionType type, int level, boolean splash) {
@@ -101,8 +104,8 @@ public class Potion {
      * @param level The potion's level.
      * @param splash Whether it is a splash potion.
      * @param extended Whether it has an extended duration.
-     * @deprecated In favour of using {@link #Potion(PotionType)} with {@link #extend()}
-     * and possibly {@link #splash()}.
+     * @deprecated In favour of using {@link #Potion(PotionType)} with {@link
+     *     #extend()} and possibly {@link #splash()}.
      */
     @Deprecated
     public Potion(PotionType type, int level, boolean splash, boolean extended) {
@@ -146,7 +149,7 @@ public class Potion {
 
     /**
      * Applies the effects of this potion to the given {@link ItemStack}. The
-     * itemstack must be a potion.
+     * ItemStack must be a potion.
      *
      * @param to The itemstack to apply to
      */
@@ -250,8 +253,8 @@ public class Potion {
     }
 
     /**
-     * Set whether this potion has extended duration. This will cause the potion
-     * to have roughly 8/3 more duration than a regular potion.
+     * Set whether this potion has extended duration. This will cause the
+     * potion to have roughly 8/3 more duration than a regular potion.
      *
      * @param isExtended Whether the potion should have extended duration
      */
@@ -261,11 +264,10 @@ public class Potion {
     }
 
     /**
-     * Sets whether this potion is a splash potion. Splash potions can be thrown
-     * for a radius effect.
+     * Sets whether this potion is a splash potion. Splash potions can be
+     * thrown for a radius effect.
      *
-     * @param isSplash
-     *            Whether this is a splash potion
+     * @param isSplash Whether this is a splash potion
      */
     public void setSplash(boolean isSplash) {
         splash = isSplash;
@@ -286,8 +288,7 @@ public class Potion {
     /**
      * Sets the {@link PotionType} of this potion.
      *
-     * @param type
-     *            The new type of this potion
+     * @param type The new type of this potion
      */
     public void setType(PotionType type) {
         this.type = type;

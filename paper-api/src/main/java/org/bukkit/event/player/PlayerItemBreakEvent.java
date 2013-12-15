@@ -6,8 +6,9 @@ import org.bukkit.inventory.ItemStack;
 
 /**
  * Fired when a player's item breaks (such as a shovel or flint and steel).
- * The item that's breaking will exist in the inventory with a stack size of 0.
- * After the event, the item's durability will be reset to 0.
+ * <p>
+ * The item that's breaking will exist in the inventory with a stack size of
+ * 0. After the event, the item's durability will be reset to 0.
  */
 public class PlayerItemBreakEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();

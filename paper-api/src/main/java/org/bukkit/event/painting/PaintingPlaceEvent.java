@@ -10,6 +10,7 @@ import org.bukkit.event.HandlerList;
 
 /**
  * Triggered when a painting is created in the world
+ *
  * @deprecated Use {@link org.bukkit.event.hanging.HangingPlaceEvent} instead.
  */
 @Deprecated
@@ -49,7 +50,8 @@ public class PaintingPlaceEvent extends PaintingEvent implements Cancellable {
     /**
      * Returns the face of the block that the painting was placed on
      *
-     * @return BlockFace returns the face of the block the painting was placed on
+     * @return BlockFace returns the face of the block the painting was placed
+     *     on
      */
     public BlockFace getBlockFace() {
         return blockFace;

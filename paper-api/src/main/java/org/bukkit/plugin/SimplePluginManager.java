@@ -62,7 +62,8 @@ public final class SimplePluginManager implements PluginManager {
      * Registers the specified plugin loader
      *
      * @param loader Class name of the PluginLoader to register
-     * @throws IllegalArgumentException Thrown when the given Class is not a valid PluginLoader
+     * @throws IllegalArgumentException Thrown when the given Class is not a
+     *     valid PluginLoader
      */
     public void registerInterface(Class<? extends PluginLoader> loader) throws IllegalArgumentException {
         PluginLoader instance;
@@ -284,8 +285,10 @@ public final class SimplePluginManager implements PluginManager {
      *
      * @param file File containing the plugin to load
      * @return The Plugin loaded, or null if it was invalid
-     * @throws InvalidPluginException Thrown when the specified file is not a valid plugin
-     * @throws UnknownDependencyException If a required dependency could not be found
+     * @throws InvalidPluginException Thrown when the specified file is not a
+     *     valid plugin
+     * @throws UnknownDependencyException If a required dependency could not
+     *     be found
      */
     public synchronized Plugin loadPlugin(File file) throws InvalidPluginException, UnknownDependencyException {
         Validate.notNull(file, "File cannot be null");
@@ -443,7 +446,8 @@ public final class SimplePluginManager implements PluginManager {
     }
 
     /**
-     * Calls an event with the given details.<br>
+     * Calls an event with the given details.
+     * <p>
      * This method only synchronizes when the event is not asynchronous.
      *
      * @param event Event details
@@ -510,14 +514,16 @@ public final class SimplePluginManager implements PluginManager {
     }
 
     /**
-     * Registers the given event to the specified listener using a directly passed EventExecutor
+     * Registers the given event to the specified listener using a directly
+     * passed EventExecutor
      *
      * @param event Event class to register
      * @param listener PlayerListener to register
      * @param priority Priority of this event
      * @param executor EventExecutor to register
      * @param plugin Plugin to register
-     * @param ignoreCancelled Do not call executor if event was already cancelled
+     * @param ignoreCancelled Do not call executor if event was already
+     *     cancelled
      */
     public void registerEvent(Class<? extends Event> event, Listener listener, EventPriority priority, EventExecutor executor, Plugin plugin, boolean ignoreCancelled) {
         Validate.notNull(listener, "Listener cannot be null");

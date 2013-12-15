@@ -13,8 +13,10 @@ public interface TabCompleter {
      * @param sender Source of the command
      * @param command Command which was executed
      * @param alias The alias used
-     * @param args The arguments passed to the command, including final partial argument to be completed and command label
-     * @return A List of possible completions for the final argument, or null to default to the command executor
+     * @param args The arguments passed to the command, including final
+     *     partial argument to be completed and command label
+     * @return A List of possible completions for the final argument, or null
+     *     to default to the command executor
      */
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args);
 }

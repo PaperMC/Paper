@@ -19,8 +19,11 @@ public interface PotionMeta extends ItemMeta {
     boolean hasCustomEffects();
 
     /**
-     * Gets an immutable list containing all custom potion effects applied to this potion.
-     * Plugins should check that hasCustomEffects() returns true before calling this method.
+     * Gets an immutable list containing all custom potion effects applied to
+     * this potion.
+     * <p>
+     * Plugins should check that hasCustomEffects() returns true before
+     * calling this method.
      *
      * @return the immutable list of custom potion effects
      */
@@ -30,7 +33,8 @@ public interface PotionMeta extends ItemMeta {
      * Adds a custom potion effect to this potion.
      *
      * @param effect the potion effect to add
-     * @param overwrite true if any existing effect of the same type should be overwritten
+     * @param overwrite true if any existing effect of the same type should be
+     *     overwritten
      * @return true if the potion meta changed as a result of this call
      */
     boolean addCustomEffect(PotionEffect effect, boolean overwrite);
@@ -53,7 +57,9 @@ public interface PotionMeta extends ItemMeta {
 
     /**
      * Moves a potion effect to the top of the potion effect list.
-     * This causes the client to display the potion effect in the potion's name.
+     * <p>
+     * This causes the client to display the potion effect in the potion's
+     * name.
      *
      * @param type the potion effect type to move
      * @return true if the potion meta changed as a result of this call

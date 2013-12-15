@@ -2,6 +2,9 @@ package org.bukkit.inventory;
 
 import org.bukkit.block.BrewingStand;
 
+/**
+ * Interface to the inventory of a Brewing Stand.
+ */
 public interface BrewerInventory extends Inventory {
 
     /**
@@ -10,6 +13,7 @@ public interface BrewerInventory extends Inventory {
      * @return The ingredient.
      */
     ItemStack getIngredient();
+
     /**
      * Set the current ingredient for brewing.
      *

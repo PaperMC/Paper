@@ -25,15 +25,14 @@ public interface LivingEntity extends Entity, Damageable {
     /**
      * Gets the height of the living entity's eyes above its Location.
      *
-     * @param ignoreSneaking if set to true, the effects of sneaking
-     *     will be ignored
+     * @param ignoreSneaking if set to true, the effects of sneaking will be
+     *     ignored
      * @return height of the living entity's eyes above its location
      */
     public double getEyeHeight(boolean ignoreSneaking);
 
     /**
-     * Get a Location detailing the current eye position of the living
-     * entity.
+     * Get a Location detailing the current eye position of the living entity.
      *
      * @return a location at the eyes of the living entity
      */
@@ -42,15 +41,15 @@ public interface LivingEntity extends Entity, Damageable {
     /**
      * Gets all blocks along the living entity's line of sight.
      * <p>
-     * This list contains all blocks from the living entity's eye position
-     * to target inclusive.
+     * This list contains all blocks from the living entity's eye position to
+     * target inclusive.
      *
-     * @param transparent HashSet containing all transparent block IDs
-     *     (set to null for only air)
-     * @param maxDistance this is the maximum distance to scan (may be
-     *     limited by server by at least 100 blocks, no less)
-     * @return list containing all blocks along the living entity's line
-     *     of sight
+     * @param transparent HashSet containing all transparent block IDs (set to
+     *     null for only air)
+     * @param maxDistance this is the maximum distance to scan (may be limited
+     *     by server by at least 100 blocks, no less)
+     * @return list containing all blocks along the living entity's line of
+     *     sight
      * @deprecated Magic value
      */
     @Deprecated
@@ -59,10 +58,10 @@ public interface LivingEntity extends Entity, Damageable {
     /**
      * Gets the block that the living entity has targeted.
      *
-     * @param transparent HashSet containing all transparent block IDs
-     *     (set to null for only air)
-     * @param maxDistance this is the maximum distance to scan
-     *     (may be limited by server by at least 100 blocks, no less)
+     * @param transparent HashSet containing all transparent block IDs (set to
+     *     null for only air)
+     * @param maxDistance this is the maximum distance to scan (may be limited
+     *     by server by at least 100 blocks, no less)
      * @return block that the living entity has targeted
      * @deprecated Magic value
      */
@@ -74,8 +73,8 @@ public interface LivingEntity extends Entity, Damageable {
      * <p>
      * The target block will be the last block in the list.
      *
-     * @param transparent HashSet containing all transparent block IDs
-     *     (set to null for only air)
+     * @param transparent HashSet containing all transparent block IDs (set to
+     *     null for only air)
      * @param maxDistance this is the maximum distance to scan. This may be
      *     further limited by the server, but never to less than 100 blocks
      * @return list containing the last 2 blocks along the living entity's
@@ -129,16 +128,14 @@ public interface LivingEntity extends Entity, Damageable {
     public int getRemainingAir();
 
     /**
-     * Sets the amount of air that the living entity has remaining, in
-     * ticks.
+     * Sets the amount of air that the living entity has remaining, in ticks.
      *
      * @param ticks amount of air remaining
      */
     public void setRemainingAir(int ticks);
 
     /**
-     * Returns the maximum amount of air the living entity can
-     * have, in ticks.
+     * Returns the maximum amount of air the living entity can have, in ticks.
      *
      * @return maximum amount of air
      */
@@ -154,8 +151,8 @@ public interface LivingEntity extends Entity, Damageable {
     /**
      * Returns the living entity's current maximum no damage ticks.
      * <p>
-     * This is the maximum duration in which the living entity will not
-     * take damage.
+     * This is the maximum duration in which the living entity will not take
+     * damage.
      *
      * @return maximum no damage ticks
      */
@@ -169,8 +166,8 @@ public interface LivingEntity extends Entity, Damageable {
     public void setMaximumNoDamageTicks(int ticks);
 
     /**
-     * Returns the living entity's last damage taken in the current no
-     * damage ticks time.
+     * Returns the living entity's last damage taken in the current no damage
+     * ticks time.
      * <p>
      * Only damage higher than this amount will further damage the living
      * entity.
@@ -228,8 +225,8 @@ public interface LivingEntity extends Entity, Damageable {
     /**
      * Adds the given {@link PotionEffect} to the living entity.
      * <p>
-     * Only one potion effect can be present for a given
-     * {@link PotionEffectType}.
+     * Only one potion effect can be present for a given {@link
+     * PotionEffectType}.
      *
      * @param effect PotionEffect to be added
      * @return whether the effect could be added
@@ -239,8 +236,8 @@ public interface LivingEntity extends Entity, Damageable {
     /**
      * Adds the given {@link PotionEffect} to the living entity.
      * <p>
-     * Only one potion effect can be present for a given
-     * {@link PotionEffectType}.
+     * Only one potion effect can be present for a given {@link
+     * PotionEffectType}.
      *
      * @param effect PotionEffect to be added
      * @param force whether conflicting effects should be removed
@@ -262,8 +259,7 @@ public interface LivingEntity extends Entity, Damageable {
      * the given {@link PotionEffectType} applied to it.
      *
      * @param type the potion type to check
-     * @return whether the living entity has this potion effect active
-     *     on them
+     * @return whether the living entity has this potion effect active on them
      */
     public boolean hasPotionEffect(PotionEffectType type);
 
@@ -275,8 +271,8 @@ public interface LivingEntity extends Entity, Damageable {
     public void removePotionEffect(PotionEffectType type);
 
     /**
-     * Returns all currently active {@link PotionEffect}s on the
-     * living entity.
+     * Returns all currently active {@link PotionEffect}s on the living
+     * entity.
      *
      * @return a collection of {@link PotionEffect}s
      */
@@ -285,8 +281,8 @@ public interface LivingEntity extends Entity, Damageable {
     /**
      * Checks whether the living entity has block line of sight to another.
      * <p>
-     * This uses the same algorithm that hostile mobs use to find the
-     * closest player.
+     * This uses the same algorithm that hostile mobs use to find the closest
+     * player.
      *
      * @param other the entity to determine line of sight to
      * @return true if there is a line of sight, false if not
@@ -303,8 +299,8 @@ public interface LivingEntity extends Entity, Damageable {
     public boolean getRemoveWhenFarAway();
 
     /**
-     * Sets whether or not the living entity despawns when away from
-     * players or not.
+     * Sets whether or not the living entity despawns when away from players
+     * or not.
      *
      * @param remove the removal status
      */
@@ -332,8 +328,8 @@ public interface LivingEntity extends Entity, Damageable {
     public boolean getCanPickupItems();
 
     /**
-     * Sets a custom name on a mob. This name will be used in death
-     * messages and can be sent to the client as a nameplate over the mob.
+     * Sets a custom name on a mob. This name will be used in death messages
+     * and can be sent to the client as a nameplate over the mob.
      * <p>
      * Setting the name to null or an empty string will clear it.
      * <p>
@@ -356,8 +352,8 @@ public interface LivingEntity extends Entity, Damageable {
     public String getCustomName();
 
     /**
-     * Sets whether or not to display the mob's custom name client side.
-     * The name will be displayed above the mob similarly to a player.
+     * Sets whether or not to display the mob's custom name client side. The
+     * name will be displayed above the mob similarly to a player.
      * <p>
      * This value has no effect on players, they will always display their
      * name.

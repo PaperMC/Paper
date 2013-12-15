@@ -3,7 +3,8 @@ package org.bukkit.conversations;
 import java.util.regex.Pattern;
 
 /**
- * RegexPrompt is the base class for any prompt that requires an input validated by a regular expression.
+ * RegexPrompt is the base class for any prompt that requires an input
+ * validated by a regular expression.
  */
 public abstract class RegexPrompt extends ValidatingPrompt {
 

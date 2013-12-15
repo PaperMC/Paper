@@ -7,7 +7,8 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a block is destroyed as a result of being burnt by fire.
  * <p>
- * If a Block Burn event is cancelled, the block will not be destroyed as a result of being burnt by fire.
+ * If a Block Burn event is cancelled, the block will not be destroyed as a
+ * result of being burnt by fire.
  */
 public class BlockBurnEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

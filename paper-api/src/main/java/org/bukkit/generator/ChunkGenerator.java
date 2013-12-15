@@ -10,17 +10,21 @@ import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 
 /**
- * A chunk generator is responsible for the initial shaping of an entire chunk.
- * For example, the nether chunk generator should shape netherrack and soulsand
+ * A chunk generator is responsible for the initial shaping of an entire
+ * chunk. For example, the nether chunk generator should shape netherrack and
+ * soulsand
  */
 public abstract class ChunkGenerator {
 
     /**
-     * Interface to biome data for chunk to be generated: initialized with default values for world type and seed.
+     * Interface to biome data for chunk to be generated: initialized with
+     * default values for world type and seed.
      * <p>
-     * Custom generator is free to access and tailor values during generateBlockSections() or generateExtBlockSections().
+     * Custom generator is free to access and tailor values during
+     * generateBlockSections() or generateExtBlockSections().
      */
     public interface BiomeGrid {
+
         /**
          * Get biome at x, z within chunk being generated
          *
@@ -29,6 +33,7 @@ public abstract class ChunkGenerator {
          * @return Biome value
          */
         Biome getBiome(int x, int z);
+
         /**
          * Set biome at x, z within chunk being generated
          *
@@ -43,7 +48,6 @@ public abstract class ChunkGenerator {
      * Shapes the chunk for the given coordinates.
      * <p>
      * This method should return a byte[32768] in the following format:
-     *
      * <pre>
      * for (int x = 0; x &lt; 16; x++) {
      *     for (int z = 0; z &lt; 16; z++) {
@@ -57,36 +61,43 @@ public abstract class ChunkGenerator {
      * Note that this method should <b>never</b> attempt to get the Chunk at
      * the passed coordinates, as doing so may cause an infinite loop
      * <p>
-     * Note this deprecated method will only be called when both generateExtBlockSections()
-     * and generateBlockSections() are unimplemented and return null.
-
+     * Note this deprecated method will only be called when both
+     * generateExtBlockSections() and generateBlockSections() are
+     * unimplemented and return null.
+     *
      * @param world The world this chunk will be used for
      * @param random The random generator to use
      * @param x The X-coordinate of the chunk
      * @param z The Z-coordinate of the chunk
-     * @return byte[] containing the types for each block created by this generator
+     * @return byte[] containing the types for each block created by this
+     *     generator
      */
     public byte[] generate(World world, Random random, int x, int z) {
         throw new UnsupportedOperationException("Custom generator is missing required methods: generate(), generateBlockSections() and generateExtBlockSections()");
     }
 
     /**
-     * Shapes the chunk for the given coordinates, with extended block IDs supported (0-4095).
+     * Shapes the chunk for the given coordinates, with extended block IDs
+     * supported (0-4095).
      * <p>
-     * As of 1.2, chunks are represented by a vertical array of chunk sections, each of which is 16 x 16 x 16 blocks.  If a section
-     * is empty (all zero), the section does not need to be supplied, reducing memory usage.
+     * As of 1.2, chunks are represented by a vertical array of chunk
+     * sections, each of which is 16 x 16 x 16 blocks. If a section is empty
+     * (all zero), the section does not need to be supplied, reducing memory
+     * usage.
      * <p>
      * This method must return a short[][] array in the following format:
      * <pre>
      *     short[][] result = new short[world-height / 16][];
      * </pre>
-     * Each section (sectionID = (Y>>4)) that has blocks needs to be allocated space for the 4096 blocks in that section:
+     * Each section (sectionID = (Y>>4)) that has blocks needs to be allocated
+     * space for the 4096 blocks in that section:
      * <pre>
      *     result[sectionID] = new short[4096];
      * </pre>
      * while sections that are not populated can be left null.
      * <p>
-     * Setting a block at X, Y, Z within the chunk can be done with the following mapping function:
+     * Setting a block at X, Y, Z within the chunk can be done with the
+     * following mapping function:
      * <pre>
      *    void setBlock(short[][] result, int x, int y, int z, short blkid) {
      *        if (result[y >> 4] == null) {
@@ -95,7 +106,8 @@ public abstract class ChunkGenerator {
      *        result[y >> 4][((y & 0xF) << 8) | (z << 4) | x] = blkid;
      *    }
      * </pre>
-     * while reading a block ID can be done with the following mapping function:
+     * while reading a block ID can be done with the following mapping
+     * function:
      * <pre>
      *    short getBlock(short[][] result, int x, int y, int z) {
      *        if (result[y >> 4] == null) {
@@ -106,7 +118,8 @@ public abstract class ChunkGenerator {
      * </pre>
      * while sections that are not populated can be left null.
      * <p>
-     * Setting a block at X, Y, Z within the chunk can be done with the following mapping function:
+     * Setting a block at X, Y, Z within the chunk can be done with the
+     * following mapping function:
      * <pre>
      *    void setBlock(short[][] result, int x, int y, int z, short blkid) {
      *        if (result[y >> 4) == null) {
@@ -115,7 +128,8 @@ public abstract class ChunkGenerator {
      *        result[y >> 4][((y & 0xF) << 8) | (z << 4) | x] = blkid;
      *    }
      * </pre>
-     * while reading a block ID can be done with the following mapping function:
+     * while reading a block ID can be done with the following mapping
+     * function:
      * <pre>
      *    short getBlock(short[][] result, int x, int y, int z) {
      *        if (result[y >> 4) == null) {
@@ -128,16 +142,18 @@ public abstract class ChunkGenerator {
      * Note that this method should <b>never</b> attempt to get the Chunk at
      * the passed coordinates, as doing so may cause an infinite loop
      * <p>
-     * Note generators that do not return block IDs above 255 should not implement
-     * this method, or should have it return null (which will result in the
-     * generateBlockSections() method being called).
+     * Note generators that do not return block IDs above 255 should not
+     * implement this method, or should have it return null (which will result
+     * in the generateBlockSections() method being called).
      *
      * @param world The world this chunk will be used for
      * @param random The random generator to use
      * @param x The X-coordinate of the chunk
      * @param z The Z-coordinate of the chunk
-     * @param biomes Proposed biome values for chunk - can be updated by generator
-     * @return short[][] containing the types for each block created by this generator
+     * @param biomes Proposed biome values for chunk - can be updated by
+     *     generator
+     * @return short[][] containing the types for each block created by this
+     *     generator
      * @deprecated Magic value
      */
     @Deprecated
@@ -148,20 +164,24 @@ public abstract class ChunkGenerator {
     /**
      * Shapes the chunk for the given coordinates.
      * <p>
-     * As of 1.2, chunks are represented by a vertical array of chunk sections, each of which is 16 x 16 x 16 blocks.  If a section
-     * is empty (all zero), the section does not need to be supplied, reducing memory usage.
+     * As of 1.2, chunks are represented by a vertical array of chunk
+     * sections, each of which is 16 x 16 x 16 blocks.  If a section is empty
+     * (all zero), the section does not need to be supplied, reducing memory
+     * usage.
      * <p>
      * This method must return a byte[][] array in the following format:
      * <pre>
      *     byte[][] result = new byte[world-height / 16][];
      * </pre>
-     * Each section (sectionID = (Y>>4)) that has blocks needs to be allocated space for the 4096 blocks in that section:
+     * Each section (sectionID = (Y>>4)) that has blocks needs to be allocated
+     * space for the 4096 blocks in that section:
      * <pre>
      *     result[sectionID] = new byte[4096];
      * </pre>
      * while sections that are not populated can be left null.
      * <p>
-     * Setting a block at X, Y, Z within the chunk can be done with the following mapping function:
+     * Setting a block at X, Y, Z within the chunk can be done with the
+     * following mapping function:
      * <pre>
      *    void setBlock(byte[][] result, int x, int y, int z, byte blkid) {
      *        if (result[y >> 4) == null) {
@@ -170,7 +190,8 @@ public abstract class ChunkGenerator {
      *        result[y >> 4][((y & 0xF) << 8) | (z << 4) | x] = blkid;
      *    }
      * </pre>
-     * while reading a block ID can be done with the following mapping function:
+     * while reading a block ID can be done with the following mapping
+     * function:
      * <pre>
      *    byte getBlock(byte[][] result, int x, int y, int z) {
      *        if (result[y >> 4) == null) {
@@ -187,8 +208,10 @@ public abstract class ChunkGenerator {
      * @param random The random generator to use
      * @param x The X-coordinate of the chunk
      * @param z The Z-coordinate of the chunk
-     * @param biomes Proposed biome values for chunk - can be updated by generator
-     * @return short[][] containing the types for each block created by this generator
+     * @param biomes Proposed biome values for chunk - can be updated by
+     *     generator
+     * @return short[][] containing the types for each block created by this
+     *     generator
      * @deprecated Magic value
      */
     @Deprecated
@@ -219,7 +242,8 @@ public abstract class ChunkGenerator {
     }
 
     /**
-     * Gets a list of default {@link BlockPopulator}s to apply to a given world
+     * Gets a list of default {@link BlockPopulator}s to apply to a given
+     * world
      *
      * @param world World to apply to
      * @return List containing any amount of BlockPopulators

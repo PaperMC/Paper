@@ -48,11 +48,12 @@ public class PotionSplashEvent extends ProjectileHitEvent implements Cancellable
     }
 
     /**
-     * Gets the intensity of the potion's effects for given entity;
-     * This depends on the distance to the impact center
+     * Gets the intensity of the potion's effects for given entity; This
+     * depends on the distance to the impact center
      *
      * @param entity Which entity to get intensity for
-     * @return intensity relative to maximum effect; 0.0: not affected; 1.0: fully hit by potion effects
+     * @return intensity relative to maximum effect; 0.0: not affected; 1.0:
+     *     fully hit by potion effects
      */
     public double getIntensity(LivingEntity entity) {
         Double intensity = affectedEntities.get(entity);

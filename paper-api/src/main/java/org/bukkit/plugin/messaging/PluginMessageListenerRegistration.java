@@ -3,7 +3,8 @@ package org.bukkit.plugin.messaging;
 import org.bukkit.plugin.Plugin;
 
 /**
- * Contains information about a {@link Plugin}s registration to a plugin channel.
+ * Contains information about a {@link Plugin}s registration to a plugin
+ * channel.
  */
 public final class PluginMessageListenerRegistration {
     private final Messenger messenger;

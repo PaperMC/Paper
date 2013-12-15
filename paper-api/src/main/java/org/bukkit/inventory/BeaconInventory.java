@@ -1,5 +1,8 @@
 package org.bukkit.inventory;
 
+/**
+ * Interface to the inventory of a Beacon.
+ */
 public interface BeaconInventory extends Inventory {
 
     /**
@@ -8,6 +11,7 @@ public interface BeaconInventory extends Inventory {
      * @param item The new item
      */
     void setItem(ItemStack item);
+
     /**
      * Get the item powering the beacon.
      *

@@ -134,13 +134,15 @@ public class ConfigurationSerialization {
     }
 
     /**
-     * Attempts to deserialize the given arguments into a new instance of the given class.
+     * Attempts to deserialize the given arguments into a new instance of the
+     * given class.
      * <p>
-     * The class must implement {@link ConfigurationSerializable}, including the extra methods
-     * as specified in the javadoc of ConfigurationSerializable.
+     * The class must implement {@link ConfigurationSerializable}, including
+     * the extra methods as specified in the javadoc of
+     * ConfigurationSerializable.
      * <p>
-     * If a new instance could not be made, an example being the class not fully implementing
-     * the interface, null will be returned.
+     * If a new instance could not be made, an example being the class not
+     * fully implementing the interface, null will be returned.
      *
      * @param args Arguments for deserialization
      * @param clazz Class to deserialize into
@@ -151,13 +153,15 @@ public class ConfigurationSerialization {
     }
 
     /**
-     * Attempts to deserialize the given arguments into a new instance of the given class.
+     * Attempts to deserialize the given arguments into a new instance of the
+     * given class.
      * <p>
-     * The class must implement {@link ConfigurationSerializable}, including the extra methods
-     * as specified in the javadoc of ConfigurationSerializable.
+     * The class must implement {@link ConfigurationSerializable}, including
+     * the extra methods as specified in the javadoc of
+     * ConfigurationSerializable.
      * <p>
-     * If a new instance could not be made, an example being the class not fully implementing
-     * the interface, null will be returned.
+     * If a new instance could not be made, an example being the class not
+     * fully implementing the interface, null will be returned.
      *
      * @param args Arguments for deserialization
      * @return New instance of the specified class
@@ -188,7 +192,8 @@ public class ConfigurationSerialization {
     }
 
     /**
-     * Registers the given {@link ConfigurationSerializable} class by its alias
+     * Registers the given {@link ConfigurationSerializable} class by its
+     * alias
      *
      * @param clazz Class to register
      */
@@ -202,7 +207,8 @@ public class ConfigurationSerialization {
     }
 
     /**
-     * Registers the given alias to the specified {@link ConfigurationSerializable} class
+     * Registers the given alias to the specified {@link
+     * ConfigurationSerializable} class
      *
      * @param clazz Class to register
      * @param alias Alias to register as
@@ -222,7 +228,8 @@ public class ConfigurationSerialization {
     }
 
     /**
-     * Unregisters any aliases for the specified {@link ConfigurationSerializable} class
+     * Unregisters any aliases for the specified {@link
+     * ConfigurationSerializable} class
      *
      * @param clazz Class to unregister
      */
@@ -233,7 +240,8 @@ public class ConfigurationSerialization {
     }
 
     /**
-     * Attempts to get a registered {@link ConfigurationSerializable} class by its alias
+     * Attempts to get a registered {@link ConfigurationSerializable} class by
+     * its alias
      *
      * @param alias Alias of the serializable
      * @return Registered class, or null if not found
@@ -243,7 +251,8 @@ public class ConfigurationSerialization {
     }
 
     /**
-     * Gets the correct alias for the given {@link ConfigurationSerializable} class
+     * Gets the correct alias for the given {@link ConfigurationSerializable}
+     * class
      *
      * @param clazz Class to get alias for
      * @return Alias to use for the class

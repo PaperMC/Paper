@@ -3,7 +3,8 @@ package org.bukkit.event.inventory;
 public enum InventoryType {
 
     /**
-     * A chest inventory, with 0, 9, 18, 27, 36, 45, or 54 slots of type CONTAINER.
+     * A chest inventory, with 0, 9, 18, 27, 36, 45, or 54 slots of type
+     * CONTAINER.
      */
     CHEST(27,"Chest"),
     /**
@@ -15,7 +16,8 @@ public enum InventoryType {
      */
     DROPPER(9, "Dropper"),
     /**
-     * A furnace inventory, with a RESULT slot, a CRAFTING slot, and a FUEL slot.
+     * A furnace inventory, with a RESULT slot, a CRAFTING slot, and a FUEL
+     * slot.
      */
     FURNACE(3,"Furnace"),
     /**
@@ -23,12 +25,13 @@ public enum InventoryType {
      */
     WORKBENCH(10,"Crafting"),
     /**
-     * A player's crafting inventory, with 4 CRAFTING slots and a RESULT slot. Also implies that the
-     * 4 ARMOR slots are accessible.
+     * A player's crafting inventory, with 4 CRAFTING slots and a RESULT slot.
+     * Also implies that the 4 ARMOR slots are accessible.
      */
     CRAFTING(5,"Crafting"),
     /**
-     * An enchantment table inventory, with one CRAFTING slot and three enchanting buttons.
+     * An enchantment table inventory, with one CRAFTING slot and three
+     * enchanting buttons.
      */
     ENCHANTING(1,"Enchanting"),
     /**
@@ -36,13 +39,14 @@ public enum InventoryType {
      */
     BREWING(4,"Brewing"),
     /**
-     * A player's inventory, with 9 QUICKBAR slots, 27 CONTAINER slots, and 4 ARMOR slots. The
-     * ARMOUR slots may not be visible to the player, though.
+     * A player's inventory, with 9 QUICKBAR slots, 27 CONTAINER slots, and 4
+     * ARMOR slots. The ARMOUR slots may not be visible to the player, though.
      */
     PLAYER(36,"Player"),
     /**
-     * The creative mode inventory, with only 9 QUICKBAR slots and nothing else. (The actual
-     * creative interface with the items is client-side and cannot be altered by the server.)
+     * The creative mode inventory, with only 9 QUICKBAR slots and nothing
+     * else. (The actual creative interface with the items is client-side and
+     * cannot be altered by the server.)
      */
     CREATIVE(9,"Creative"),
     /**
@@ -89,8 +93,9 @@ public enum InventoryType {
          */
         RESULT,
         /**
-         * A slot in the crafting matrix, or the input slot in a furnace inventory,
-         * the potion slot in the brewing stand, or the enchanting slot.
+         * A slot in the crafting matrix, or the input slot in a furnace
+         * inventory, the potion slot in the brewing stand, or the enchanting
+         * slot.
          */
         CRAFTING,
         /**
@@ -98,8 +103,8 @@ public enum InventoryType {
          */
         ARMOR,
         /**
-         * A regular slot in the container or the player's inventory; anything not covered
-         * by the other enum values.
+         * A regular slot in the container or the player's inventory; anything
+         * not covered by the other enum values.
          */
         CONTAINER,
         /**
@@ -111,7 +116,8 @@ public enum InventoryType {
          */
         OUTSIDE,
         /**
-         * The fuel slot in a furnace inventory, or the ingredient slot in a brewing stand inventory.
+         * The fuel slot in a furnace inventory, or the ingredient slot in a
+         * brewing stand inventory.
          */
         FUEL;
     }

@@ -7,10 +7,14 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.Plugin;
 
 /**
- * The LazyMetadataValue class implements a type of metadata that is not computed until another plugin asks for it.
- * By making metadata values lazy, no computation is done by the providing plugin until absolutely necessary (if ever).
- * Additionally, LazyMetadataValue objects cache their values internally unless overridden by a {@link CacheStrategy}
- * or invalidated at the individual or plugin level. Once invalidated, the LazyMetadataValue will recompute its value
+ * The LazyMetadataValue class implements a type of metadata that is not
+ * computed until another plugin asks for it.
+ * <p>
+ * By making metadata values lazy, no computation is done by the providing
+ * plugin until absolutely necessary (if ever). Additionally,
+ * LazyMetadataValue objects cache their values internally unless overridden
+ * by a {@link CacheStrategy} or invalidated at the individual or plugin
+ * level. Once invalidated, the LazyMetadataValue will recompute its value
  * when asked.
  */
 public class LazyMetadataValue extends MetadataValueAdapter implements MetadataValue {
@@ -20,9 +24,11 @@ public class LazyMetadataValue extends MetadataValueAdapter implements MetadataV
     private static final Object ACTUALLY_NULL = new Object();
 
     /**
-     * Initialized a LazyMetadataValue object with the default CACHE_AFTER_FIRST_EVAL cache strategy.
+     * Initialized a LazyMetadataValue object with the default
+     * CACHE_AFTER_FIRST_EVAL cache strategy.
      *
-     * @param owningPlugin the {@link Plugin} that created this metadata value.
+     * @param owningPlugin the {@link Plugin} that created this metadata
+     *     value.
      * @param lazyValue the lazy value assigned to this metadata value.
      */
     public LazyMetadataValue(Plugin owningPlugin, Callable<Object> lazyValue) {
@@ -32,8 +38,10 @@ public class LazyMetadataValue extends MetadataValueAdapter implements MetadataV
     /**
      * Initializes a LazyMetadataValue object with a specific cache strategy.
      *
-     * @param owningPlugin the {@link Plugin} that created this metadata value.
-     * @param cacheStrategy determines the rules for caching this metadata value.
+     * @param owningPlugin the {@link Plugin} that created this metadata
+     *     value.
+     * @param cacheStrategy determines the rules for caching this metadata
+     *     value.
      * @param lazyValue the lazy value assigned to this metadata value.
      */
     public LazyMetadataValue(Plugin owningPlugin, CacheStrategy cacheStrategy, Callable<Object> lazyValue) {
@@ -45,7 +53,10 @@ public class LazyMetadataValue extends MetadataValueAdapter implements MetadataV
         this.cacheStrategy = cacheStrategy;
     }
 
-    /** Protected special constructor used by FixedMetadataValue to bypass standard setup. */
+    /**
+     * Protected special constructor used by FixedMetadataValue to bypass
+     * standard setup.
+     */
     protected LazyMetadataValue(Plugin owningPlugin) {
         super(owningPlugin);
     }
@@ -62,7 +73,8 @@ public class LazyMetadataValue extends MetadataValueAdapter implements MetadataV
     /**
      * Lazily evaluates the value of this metadata item.
      *
-     * @throws MetadataEvaluationException if computing the metadata value fails.
+     * @throws MetadataEvaluationException if computing the metadata value
+     *     fails.
      */
     private synchronized void eval() throws MetadataEvaluationException {
         if (cacheStrategy == CacheStrategy.NEVER_CACHE || internalValue.get() == null) {
@@ -89,7 +101,8 @@ public class LazyMetadataValue extends MetadataValueAdapter implements MetadataV
      */
     public enum CacheStrategy {
         /**
-         * Once the metadata value has been evaluated, do not re-evaluate the value until it is manually invalidated.
+         * Once the metadata value has been evaluated, do not re-evaluate the
+         * value until it is manually invalidated.
          */
         CACHE_AFTER_FIRST_EVAL,
 
@@ -99,7 +112,8 @@ public class LazyMetadataValue extends MetadataValueAdapter implements MetadataV
         NEVER_CACHE,
 
         /**
-         * Once the metadata value has been evaluated, do not re-evaluate the value in spite of manual invalidation.
+         * Once the metadata value has been evaluated, do not re-evaluate the
+         * value in spite of manual invalidation.
          */
         CACHE_ETERNALLY
     }

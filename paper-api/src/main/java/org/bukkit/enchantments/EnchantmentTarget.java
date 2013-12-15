@@ -101,7 +101,8 @@ public enum EnchantmentTarget {
     },
 
     /**
-     * Allows the Enchantment to be placed on tools (spades, pickaxe, hoes, axes)
+     * Allows the Enchantment to be placed on tools (spades, pickaxe, hoes,
+     * axes)
      */
     TOOL {
         @Override

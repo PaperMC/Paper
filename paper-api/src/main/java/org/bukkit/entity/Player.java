@@ -25,20 +25,22 @@ import org.bukkit.scoreboard.Scoreboard;
 public interface Player extends HumanEntity, Conversable, CommandSender, OfflinePlayer, PluginMessageRecipient {
 
     /**
-     * Gets the "friendly" name to display of this player. This may include color.
+     * Gets the "friendly" name to display of this player. This may include
+     * color.
      * <p>
-     * Note that this name will not be displayed in game, only in chat and places
-     * defined by plugins
+     * Note that this name will not be displayed in game, only in chat and
+     * places defined by plugins.
      *
      * @return the friendly name
      */
     public String getDisplayName();
 
     /**
-     * Sets the "friendly" name to display of this player. This may include color.
+     * Sets the "friendly" name to display of this player. This may include
+     * color.
      * <p>
-     * Note that this name will not be displayed in game, only in chat and places
-     * defined by plugins
+     * Note that this name will not be displayed in game, only in chat and
+     * places defined by plugins.
      *
      * @param name The new display name.
      */
@@ -54,20 +56,22 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     /**
      * Sets the name that is shown on the in-game player list.
      * <p>
-     * The name cannot be longer than 16 characters, but {@link ChatColor} is supported.
+     * The name cannot be longer than 16 characters, but {@link ChatColor} is
+     * supported.
      * <p>
      * If the value is null, the name will be identical to {@link #getName()}.
      * <p>
-     * This name is case sensitive and unique, two names with different casing will
-     * appear as two different people. If a player joins afterwards with
-     * a name that conflicts with a player's custom list name, the
-     * joining player's player list name will have a random number appended to it
-     * (1-2 characters long in the default implementation). If the joining
-     * player's name is 15 or 16 characters long, part of the name will
-     * be truncated at the end to allow the addition of the two digits.
+     * This name is case sensitive and unique, two names with different casing
+     * will appear as two different people. If a player joins afterwards with
+     * a name that conflicts with a player's custom list name, the joining
+     * player's player list name will have a random number appended to it (1-2
+     * characters long in the default implementation). If the joining player's
+     * name is 15 or 16 characters long, part of the name will be truncated at
+     * the end to allow the addition of the two digits.
      *
      * @param name new player list name
-     * @throws IllegalArgumentException if the name is already used by someone else
+     * @throws IllegalArgumentException if the name is already used by someone
+     *     else
      * @throws IllegalArgumentException if the length of the name is too long
      */
     public void setPlayerListName(String name);
@@ -151,14 +155,19 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public void setSprinting(boolean sprinting);
 
     /**
-     * Saves the players current location, health, inventory, motion, and other information into the username.dat file, in the world/player folder
+     * Saves the players current location, health, inventory, motion, and
+     * other information into the username.dat file, in the world/player
+     * folder
      */
     public void saveData();
 
     /**
-     * Loads the players current location, health, inventory, motion, and other information from the username.dat file, in the world/player folder
+     * Loads the players current location, health, inventory, motion, and
+     * other information from the username.dat file, in the world/player
+     * folder.
      * <p>
-     * Note: This will overwrite the players current inventory, health, motion, etc, with the state from the saved dat file.
+     * Note: This will overwrite the players current inventory, health,
+     * motion, etc, with the state from the saved dat file.
      */
     public void loadData();
 
@@ -253,8 +262,8 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public <T> void playEffect(Location loc, Effect effect, T data);
 
     /**
-     * Send a block change. This fakes a block change packet for a user at
-     * a certain location. This will not actually change the world in any way.
+     * Send a block change. This fakes a block change packet for a user at a
+     * certain location. This will not actually change the world in any way.
      *
      * @param loc The location of the changed block
      * @param material The new block
@@ -265,13 +274,13 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public void sendBlockChange(Location loc, Material material, byte data);
 
     /**
-     * Send a chunk change. This fakes a chunk change packet for a user at
-     * a certain location. The updated cuboid must be entirely within a single
+     * Send a chunk change. This fakes a chunk change packet for a user at a
+     * certain location. The updated cuboid must be entirely within a single
      * chunk. This will not actually change the world in any way.
      * <p>
-     * At least one of the dimensions of the cuboid must be even. The size of the
-     * data buffer must be 2.5*sx*sy*sz and formatted in accordance with the Packet51
-     * format.
+     * At least one of the dimensions of the cuboid must be even. The size of
+     * the data buffer must be 2.5*sx*sy*sz and formatted in accordance with
+     * the Packet51 format.
      *
      * @param loc The location of the cuboid
      * @param sx The x size of the cuboid
@@ -285,8 +294,8 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public boolean sendChunkChange(Location loc, int sx, int sy, int sz, byte[] data);
 
     /**
-     * Send a block change. This fakes a block change packet for a user at
-     * a certain location. This will not actually change the world in any way.
+     * Send a block change. This fakes a block change packet for a user at a
+     * certain location. This will not actually change the world in any way.
      *
      * @param loc The location of the changed block
      * @param material The new block ID
@@ -297,8 +306,8 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public void sendBlockChange(Location loc, int material, byte data);
 
     /**
-     * Render a map and send it to the player in its entirety. This may be used
-     * when streaming the map in the normal manner is not desirable.
+     * Render a map and send it to the player in its entirety. This may be
+     * used when streaming the map in the normal manner is not desirable.
      *
      * @param map The map to be sent
      */
@@ -307,7 +316,8 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     /**
      * Forces an update of the player's entire inventory.
      *
-     * @deprecated This method should not be relied upon as it is a temporary work-around for a larger, more complicated issue.
+     * @deprecated This method should not be relied upon as it is a temporary
+     *     work-around for a larger, more complicated issue.
      */
     @Deprecated
     public void updateInventory();
@@ -352,14 +362,19 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public void incrementStatistic(Statistic statistic, Material material, int amount);
 
     /**
-     * Sets the current time on the player's client. When relative is true the player's time
-     * will be kept synchronized to its world time with the specified offset.
+     * Sets the current time on the player's client. When relative is true the
+     * player's time will be kept synchronized to its world time with the
+     * specified offset.
      * <p>
-     * When using non relative time the player's time will stay fixed at the specified time parameter. It's up to
-     * the caller to continue updating the player's time. To restore player time to normal use resetPlayerTime().
+     * When using non relative time the player's time will stay fixed at the
+     * specified time parameter. It's up to the caller to continue updating
+     * the player's time. To restore player time to normal use
+     * resetPlayerTime().
      *
-     * @param time The current player's perceived time or the player's time offset from the server time.
-     * @param relative When true the player time is kept relative to its world time.
+     * @param time The current player's perceived time or the player's time
+     *     offset from the server time.
+     * @param relative When true the player time is kept relative to its world
+     *     time.
      */
     public void setPlayerTime(long time, boolean relative);
 
@@ -371,23 +386,26 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public long getPlayerTime();
 
     /**
-     * Returns the player's current time offset relative to server time, or the current player's fixed time
-     * if the player's time is absolute.
+     * Returns the player's current time offset relative to server time, or
+     * the current player's fixed time if the player's time is absolute.
      *
      * @return The player's time
      */
     public long getPlayerTimeOffset();
 
     /**
-     * Returns true if the player's time is relative to the server time, otherwise the player's time is absolute and
-     * will not change its current time unless done so with setPlayerTime().
+     * Returns true if the player's time is relative to the server time,
+     * otherwise the player's time is absolute and will not change its current
+     * time unless done so with setPlayerTime().
      *
      * @return true if the player's time is relative to the server time.
      */
     public boolean isPlayerTimeRelative();
 
     /**
-     * Restores the normal condition where the player's time is synchronized with the server time.
+     * Restores the normal condition where the player's time is synchronized
+     * with the server time.
+     * <p>
      * Equivalent to calling setPlayerTime(0, true).
      */
     public void resetPlayerTime();
@@ -405,7 +423,7 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * Returns the type of weather the player is currently experiencing.
      *
      * @return The WeatherType that the player is currently experiencing or
-     * null if player is seeing server weather.
+     *     null if player is seeing server weather.
      */
     public WeatherType getPlayerWeather();
 
@@ -423,7 +441,8 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public void giveExp(int amount);
 
     /**
-     * Gives the player the amount of experience levels specified. Levels can be taken by specifying a negative amount.
+     * Gives the player the amount of experience levels specified. Levels can
+     * be taken by specifying a negative amount.
      *
      * @param amount amount of experience levels to give or take
      */
@@ -478,9 +497,9 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     /**
      * Gets the players current exhaustion level.
      * <p>
-     * Exhaustion controls how fast the food level drops. While you have a certain
-     * amount of exhaustion, your saturation will drop to zero, and then your food
-     * will drop to zero.
+     * Exhaustion controls how fast the food level drops. While you have a
+     * certain amount of exhaustion, your saturation will drop to zero, and
+     * then your food will drop to zero.
      *
      * @return Exhaustion level
      */
@@ -496,8 +515,8 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     /**
      * Gets the players current saturation level.
      * <p>
-     * Saturation is a buffer for food level. Your food level will not drop if you
-     * are saturated > 0.
+     * Saturation is a buffer for food level. Your food level will not drop if
+     * you are saturated > 0.
      *
      * @return Saturation level
      */
@@ -525,7 +544,8 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public void setFoodLevel(int value);
 
     /**
-     * Gets the Location where the player will spawn at their bed, null if they have not slept in one or their current bed spawn is invalid.
+     * Gets the Location where the player will spawn at their bed, null if
+     * they have not slept in one or their current bed spawn is invalid.
      *
      * @return Bed Spawn Location if bed exists, otherwise null.
      */
@@ -542,19 +562,22 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * Sets the Location where the player will spawn at their bed.
      *
      * @param location where to set the respawn location
-     * @param force whether to forcefully set the respawn location even if a valid bed is not present
+     * @param force whether to forcefully set the respawn location even if a
+     *     valid bed is not present
      */
     public void setBedSpawnLocation(Location location, boolean force);
 
     /**
-     * Determines if the Player is allowed to fly via jump key double-tap like in creative mode.
+     * Determines if the Player is allowed to fly via jump key double-tap like
+     * in creative mode.
      *
      * @return True if the player is allowed to fly.
      */
     public boolean getAllowFlight();
 
     /**
-     * Sets if the Player is allowed to fly via jump key double-tap like in creative mode.
+     * Sets if the Player is allowed to fly via jump key double-tap like in
+     * creative mode.
      *
      * @param flight If flight should be allowed.
      */
@@ -578,16 +601,19 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * Checks to see if a player has been hidden from this player
      *
      * @param player Player to check
-     * @return True if the provided player is not being hidden from this player
+     * @return True if the provided player is not being hidden from this
+     *     player
      */
     public boolean canSee(Player player);
 
     /**
-     * Checks to see if this player is currently standing on a block. This information may
-     * not be reliable, as it is a state provided by the client, and may therefore not be accurate.
+     * Checks to see if this player is currently standing on a block. This
+     * information may not be reliable, as it is a state provided by the
+     * client, and may therefore not be accurate.
      *
      * @return True if the player standing on a solid block, else false.
-     * @deprecated Inconsistent with {@link org.bukkit.entity.Entity#isOnGround()}
+     * @deprecated Inconsistent with {@link
+     *     org.bukkit.entity.Entity#isOnGround()}
      */
     @Deprecated
     public boolean isOnGround();
@@ -607,18 +633,22 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public void setFlying(boolean value);
 
     /**
-     * Sets the speed at which a client will fly. Negative values indicate reverse directions.
+     * Sets the speed at which a client will fly. Negative values indicate
+     * reverse directions.
      *
      * @param value The new speed, from -1 to 1.
-     * @throws IllegalArgumentException If new speed is less than -1 or greater than 1
+     * @throws IllegalArgumentException If new speed is less than -1 or
+     *     greater than 1
      */
     public void setFlySpeed(float value) throws IllegalArgumentException;
 
     /**
-     * Sets the speed at which a client will walk. Negative values indicate reverse directions.
+     * Sets the speed at which a client will walk. Negative values indicate
+     * reverse directions.
      *
      * @param value The new speed, from -1 to 1.
-     * @throws IllegalArgumentException If new speed is less than -1 or greater than 1
+     * @throws IllegalArgumentException If new speed is less than -1 or
+     *     greater than 1
      */
     public void setWalkSpeed(float value) throws IllegalArgumentException;
 
@@ -639,21 +669,26 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     /**
      * Request that the player's client download and switch texture packs.
      * <p>
-     * The player's client will download the new texture pack asynchronously in the background, and
-     * will automatically switch to it once the download is complete. If the client has downloaded
-     * and cached the same texture pack in the past, it will perform a quick timestamp check over
-     * the network to determine if the texture pack has changed and needs to be downloaded again.
-     * When this request is sent for the very first time from a given server, the client will first
-     * display a confirmation GUI to the player before proceeding with the download.
+     * The player's client will download the new texture pack asynchronously
+     * in the background, and will automatically switch to it once the
+     * download is complete. If the client has downloaded and cached the same
+     * texture pack in the past, it will perform a quick timestamp check over
+     * the network to determine if the texture pack has changed and needs to
+     * be downloaded again. When this request is sent for the very first time
+     * from a given server, the client will first display a confirmation GUI
+     * to the player before proceeding with the download.
      * <p>
      * Notes:
-     *   <ul>
-     *     <li>Players can disable server textures on their client, in which case this method will have no affect on them.</li>
-     *     <li>There is no concept of resetting texture packs back to default within Minecraft, so players will have to relog to do so.</li>
-     *   </ul>
+     * <ul>
+     * <li>Players can disable server textures on their client, in which
+     *     case this method will have no affect on them.
+     * <li>There is no concept of resetting texture packs back to default
+     *     within Minecraft, so players will have to relog to do so.
+     * </ul>
      *
-     * @param url The URL from which the client will download the texture pack. The string must contain
-     * only US-ASCII characters and should be encoded as per RFC 1738.
+     * @param url The URL from which the client will download the texture
+     *     pack. The string must contain only US-ASCII characters and should
+     *     be encoded as per RFC 1738.
      * @throws IllegalArgumentException Thrown if the URL is null.
      * @throws IllegalArgumentException Thrown if the URL is too long.
      */

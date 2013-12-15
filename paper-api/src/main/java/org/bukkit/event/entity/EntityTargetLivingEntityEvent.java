@@ -4,7 +4,8 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 
 /**
- * Called when an Entity targets a {@link LivingEntity} and can only target LivingEntity's.
+ * Called when an Entity targets a {@link LivingEntity} and can only target
+ * LivingEntity's.
  */
 public class EntityTargetLivingEntityEvent extends EntityTargetEvent{
     public EntityTargetLivingEntityEvent(final Entity entity, final LivingEntity target, final TargetReason reason) {
@@ -17,10 +18,11 @@ public class EntityTargetLivingEntityEvent extends EntityTargetEvent{
 
     /**
      * Set the Entity that you want the mob to target.
+     * <p>
      * It is possible to be null, null will cause the entity to be
      * target-less.
      * <p>
-     * Must be a LivingEntity, or null
+     * Must be a LivingEntity, or null.
      *
      * @param target The entity to target
      */

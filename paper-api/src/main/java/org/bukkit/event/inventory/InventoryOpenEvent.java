@@ -30,7 +30,8 @@ public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
      * Gets the cancellation state of this event. A cancelled event will not
      * be executed in the server, but will still pass to other plugins.
      * <p>
-     * If an inventory open event is cancelled, the inventory screen will not show.
+     * If an inventory open event is cancelled, the inventory screen will not
+     * show.
      *
      * @return true if this event is cancelled
      */
@@ -42,7 +43,8 @@ public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
      * Sets the cancellation state of this event. A cancelled event will not
      * be executed in the server, but will still pass to other plugins.
      * <p>
-     * If an inventory open event is cancelled, the inventory screen will not show.
+     * If an inventory open event is cancelled, the inventory screen will not
+     * show.
      *
      * @param cancel true if you wish to cancel this event
      */

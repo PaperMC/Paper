@@ -29,7 +29,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param y Y-coordinate of the block
      * @param z Z-coordinate of the block
      * @return Block at the given coordinates
-     * @see #getBlockTypeIdAt(int, int, int) Returns the current type ID of the block
+     * @see #getBlockTypeIdAt(int, int, int) Returns the current type ID of
+     *     the block
      */
     public Block getBlockAt(int x, int y, int z);
 
@@ -38,7 +39,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
      *
      * @param location Location of the block
      * @return Block at the given location
-     * @see #getBlockTypeIdAt(org.bukkit.Location) Returns the current type ID of the block
+     * @see #getBlockTypeIdAt(org.bukkit.Location) Returns the current type ID
+     *     of the block
      */
     public Block getBlockAt(Location location);
 
@@ -49,7 +51,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param y Y-coordinate of the block
      * @param z Z-coordinate of the block
      * @return Type ID of the block at the given coordinates
-     * @see #getBlockAt(int, int, int) Returns a live Block object at the given location
+     * @see #getBlockAt(int, int, int) Returns a live Block object at the
+     *     given location
      * @deprecated Magic value
      */
     @Deprecated
@@ -60,7 +63,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
      *
      * @param location Location of the block
      * @return Type ID of the block at the given location
-     * @see #getBlockAt(org.bukkit.Location) Returns a live Block object at the given location
+     * @see #getBlockAt(org.bukkit.Location) Returns a live Block object at
+     *     the given location
      * @deprecated Magic value
      */
     @Deprecated
@@ -157,11 +161,13 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public boolean isChunkLoaded(int x, int z);
 
     /**
-     * Checks if the {@link Chunk} at the specified coordinates is loaded and in use by one or more players
+     * Checks if the {@link Chunk} at the specified coordinates is loaded and
+     * in use by one or more players
      *
      * @param x X-coordinate of the chunk
      * @param z Z-coordinate of the chunk
-     * @return true if the chunk is loaded and in use by one or more players, otherwise false
+     * @return true if the chunk is loaded and in use by one or more players,
+     *     otherwise false
      */
     public boolean isChunkInUse(int x, int z);
 
@@ -169,7 +175,9 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * Loads the {@link Chunk} at the specified coordinates
      * <p>
      * If the chunk does not exist, it will be generated.
-     * This method is analogous to {@link #loadChunk(int, int, boolean)} where generate is true.
+     * <p>
+     * This method is analogous to {@link #loadChunk(int, int, boolean)} where
+     * generate is true.
      *
      * @param x X-coordinate of the chunk
      * @param z Z-coordinate of the chunk
@@ -181,7 +189,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
      *
      * @param x X-coordinate of the chunk
      * @param z Z-coordinate of the chunk
-     * @param generate Whether or not to generate a chunk if it doesn't already exist
+     * @param generate Whether or not to generate a chunk if it doesn't
+     *     already exist
      * @return true if the chunk has loaded successfully, otherwise false
      */
     public boolean loadChunk(int x, int z, boolean generate);
@@ -189,7 +198,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Safely unloads and saves the {@link Chunk} at the specified coordinates
      * <p>
-     * This method is analogous to {@link #unloadChunk(int, int, boolean, boolean)} where safe and saveis true
+     * This method is analogous to {@link #unloadChunk(int, int, boolean,
+     * boolean)} where safe and saveis true
      *
      * @param chunk the chunk to unload
      * @return true if the chunk has unloaded successfully, otherwise false
@@ -199,7 +209,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Safely unloads and saves the {@link Chunk} at the specified coordinates
      * <p>
-     * This method is analogous to {@link #unloadChunk(int, int, boolean, boolean)} where safe and saveis true
+     * This method is analogous to {@link #unloadChunk(int, int, boolean,
+     * boolean)} where safe and saveis true
      *
      * @param x X-coordinate of the chunk
      * @param z Z-coordinate of the chunk
@@ -208,9 +219,11 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public boolean unloadChunk(int x, int z);
 
     /**
-     * Safely unloads and optionally saves the {@link Chunk} at the specified coordinates
+     * Safely unloads and optionally saves the {@link Chunk} at the specified
+     * coordinates
      * <p>
-     * This method is analogous to {@link #unloadChunk(int, int, boolean, boolean)} where save is true
+     * This method is analogous to {@link #unloadChunk(int, int, boolean,
+     * boolean)} where save is true
      *
      * @param x X-coordinate of the chunk
      * @param z Z-coordinate of the chunk
@@ -220,20 +233,24 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public boolean unloadChunk(int x, int z, boolean save);
 
     /**
-     * Unloads and optionally saves the {@link Chunk} at the specified coordinates
+     * Unloads and optionally saves the {@link Chunk} at the specified
+     * coordinates
      *
      * @param x X-coordinate of the chunk
      * @param z Z-coordinate of the chunk
      * @param save Controls whether the chunk is saved
-     * @param safe Controls whether to unload the chunk when players are nearby
+     * @param safe Controls whether to unload the chunk when players are
+     *     nearby
      * @return true if the chunk has unloaded successfully, otherwise false
      */
     public boolean unloadChunk(int x, int z, boolean save, boolean safe);
 
     /**
-     * Safely queues the {@link Chunk} at the specified coordinates for unloading
+     * Safely queues the {@link Chunk} at the specified coordinates for
+     * unloading
      * <p>
-     * This method is analogous to {@link #unloadChunkRequest(int, int, boolean)} where safe is true
+     * This method is analogous to {@link #unloadChunkRequest(int, int,
+     * boolean)} where safe is true
      *
      * @param x X-coordinate of the chunk
      * @param z Z-coordinate of the chunk
@@ -312,7 +329,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
      *
      * @param loc Location to spawn the tree
      * @param type Type of the tree to create
-     * @param delegate A class to call for each block changed as a result of this method
+     * @param delegate A class to call for each block changed as a result of
+     *     this method
      * @return true if the tree was created successfully, otherwise false
      */
     public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate);
@@ -331,8 +349,10 @@ public interface World extends PluginMessageRecipient, Metadatable {
      *
      * @param loc The location to spawn the creature
      * @param type The creature to spawn
-     * @return Resulting LivingEntity of this method, or null if it was unsuccessful
-     * @deprecated Has issues spawning non LivingEntities. Use {@link #spawnEntity(Location, EntityType) spawnEntity} instead.
+     * @return Resulting LivingEntity of this method, or null if it was
+     *     unsuccessful
+     * @deprecated Has issues spawning non LivingEntities. Use {@link
+     *     #spawnEntity(Location, EntityType) spawnEntity} instead.
      */
     @Deprecated
     public LivingEntity spawnCreature(Location loc, EntityType type);
@@ -342,7 +362,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
      *
      * @param loc The location to spawn the creature
      * @param type The creature to spawn
-     * @return Resulting LivingEntity of this method, or null if it was unsuccessful
+     * @return Resulting LivingEntity of this method, or null if it was
+     *     unsuccessful
      */
     @Deprecated
     public LivingEntity spawnCreature(Location loc, CreatureType type);
@@ -378,27 +399,33 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public List<LivingEntity> getLivingEntities();
 
     /**
-     * Get a collection of all entities in this World matching the given class/interface
+     * Get a collection of all entities in this World matching the given
+     * class/interface
      *
      * @param classes The classes representing the types of entity to match
-     * @return A List of all Entities currently residing in this world that match the given class/interface
+     * @return A List of all Entities currently residing in this world that
+     *     match the given class/interface
      */
     @Deprecated
     public <T extends Entity> Collection<T> getEntitiesByClass(Class<T>... classes);
 
     /**
-     * Get a collection of all entities in this World matching the given class/interface
+     * Get a collection of all entities in this World matching the given
+     * class/interface
      *
      * @param cls The class representing the type of entity to match
-     * @return A List of all Entities currently residing in this world that match the given class/interface
+     * @return A List of all Entities currently residing in this world that
+     *     match the given class/interface
      */
     public <T extends Entity> Collection<T> getEntitiesByClass(Class<T> cls);
 
     /**
-     * Get a collection of all entities in this World matching any of the given classes/interfaces
+     * Get a collection of all entities in this World matching any of the
+     * given classes/interfaces
      *
      * @param classes The classes representing the types of entity to match
-     * @return A List of all Entities currently residing in this world that match one or more of the given classes/interfaces
+     * @return A List of all Entities currently residing in this world that
+     *     match one or more of the given classes/interfaces
      */
     public Collection<Entity> getEntitiesByClasses(Class<?>... classes);
 
@@ -455,11 +482,12 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * <p>
      * The relative time is analogous to hours * 1000
      * <p>
-     * Note that setting the relative time below the current relative time will
-     * actually move the clock forward a day. If you require to rewind time, please
-     * see setFullTime
+     * Note that setting the relative time below the current relative time
+     * will actually move the clock forward a day. If you require to rewind
+     * time, please see {@link #setFullTime()}
      *
-     * @param time The new relative time to set the in-game time to (in hours*1000)
+     * @param time The new relative time to set the in-game time to (in
+     *     hours*1000)
      * @see #setFullTime(long) Sets the absolute time of this world
      */
     public void setTime(long time);
@@ -552,8 +580,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public boolean createExplosion(double x, double y, double z, float power);
 
     /**
-     * Creates explosion at given coordinates with given power and optionally setting
-     * blocks on fire.
+     * Creates explosion at given coordinates with given power and optionally
+     * setting blocks on fire.
      *
      * @param x X coordinate
      * @param y Y coordinate
@@ -565,8 +593,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public boolean createExplosion(double x, double y, double z, float power, boolean setFire);
 
     /**
-     * Creates explosion at given coordinates with given power and optionally setting
-     * blocks on fire or breaking blocks.
+     * Creates explosion at given coordinates with given power and optionally
+     * setting blocks on fire or breaking blocks.
      *
      * @param x X coordinate
      * @param y Y coordinate
@@ -588,8 +616,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public boolean createExplosion(Location loc, float power);
 
     /**
-     * Creates explosion at given coordinates with given power and optionally setting
-     * blocks on fire.
+     * Creates explosion at given coordinates with given power and optionally
+     * setting blocks on fire.
      *
      * @param loc Location to blow up
      * @param power The power of explosion, where 4F is TNT
@@ -652,41 +680,48 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param clazz the class of the {@link Entity} to spawn
      * @param <T> the class of the {@link Entity} to spawn
      * @return an instance of the spawned {@link Entity}
-     * @throws IllegalArgumentException if either parameter is null or the {@link Entity} requested cannot be spawned
+     * @throws IllegalArgumentException if either parameter is null or the
+     *     {@link Entity} requested cannot be spawned
      */
     public <T extends Entity> T spawn(Location location, Class<T> clazz) throws IllegalArgumentException;
 
     /**
-     * Spawn a {@link FallingBlock} entity at the given {@link Location} of the specified {@link Material}.
-     * The material dictates what is falling. When the FallingBlock hits the ground, it will place that block.
+     * Spawn a {@link FallingBlock} entity at the given {@link Location} of
+     * the specified {@link Material}. The material dictates what is falling.
+     * When the FallingBlock hits the ground, it will place that block.
      * <p>
-     * The Material must be a block type, check with {@link Material#isBlock() material.isBlock()}.
-     * The Material may not be air.
+     * The Material must be a block type, check with {@link Material#isBlock()
+     * material.isBlock()}. The Material may not be air.
      *
      * @param location The {@link Location} to spawn the FallingBlock
      * @param material The block {@link Material} type
      * @param data The block data
      * @return The spawned {@link FallingBlock} instance
-     * @throws IllegalArgumentException if {@link Location} or {@link Material} are null or {@link Material} is not a block
+     * @throws IllegalArgumentException if {@link Location} or {@link
+     *     Material} are null or {@link Material} is not a block
      */
     public FallingBlock spawnFallingBlock(Location location, Material material, byte data) throws IllegalArgumentException;
 
     /**
-     * Spawn a {@link FallingBlock} entity at the given {@link Location} of the specified blockId (converted to {@link Material})
+     * Spawn a {@link FallingBlock} entity at the given {@link Location} of
+     * the specified blockId (converted to {@link Material})
      *
      * @param location The {@link Location} to spawn the FallingBlock
      * @param blockId The id of the intended material
      * @param blockData The block data
      * @return The spawned FallingBlock instance
-     * @throws IllegalArgumentException if location is null, or blockId is invalid
+     * @throws IllegalArgumentException if location is null, or blockId is
+     *     invalid
      * @see #spawnFallingBlock(org.bukkit.Location, org.bukkit.Material, byte)
      */
     public FallingBlock spawnFallingBlock(Location location, int blockId, byte blockData) throws IllegalArgumentException;
 
     /**
-     * Plays an effect to all players within a default radius around a given location.
+     * Plays an effect to all players within a default radius around a given
+     * location.
      *
-     * @param location the {@link Location} around which players must be to hear the sound
+     * @param location the {@link Location} around which players must be to
+     *     hear the sound
      * @param effect the {@link Effect}
      * @param data a data bit needed for some effects
      */
@@ -695,7 +730,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Plays an effect to all players within a given radius around a location.
      *
-     * @param location the {@link Location} around which players must be to hear the effect
+     * @param location the {@link Location} around which players must be to
+     *     hear the effect
      * @param effect the {@link Effect}
      * @param data a data bit needed for some effects
      * @param radius the radius around the location
@@ -703,9 +739,11 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public void playEffect(Location location, Effect effect, int data, int radius);
 
     /**
-     * Plays an effect to all players within a default radius around a given location.
+     * Plays an effect to all players within a default radius around a given
+     * location.
      *
-     * @param location the {@link Location} around which players must be to hear the sound
+     * @param location the {@link Location} around which players must be to
+     *     hear the sound
      * @param effect the {@link Effect}
      * @param data a data bit needed for some effects
      */
@@ -714,7 +752,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Plays an effect to all players within a given radius around a location.
      *
-     * @param location the {@link Location} around which players must be to hear the effect
+     * @param location the {@link Location} around which players must be to
+     *     hear the effect
      * @param effect the {@link Effect}
      * @param data a data bit needed for some effects
      * @param radius the radius around the location
@@ -722,13 +761,16 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public <T> void playEffect(Location location, Effect effect, T data, int radius);
 
     /**
-     * Get empty chunk snapshot (equivalent to all air blocks), optionally including valid biome
-     * data. Used for representing an ungenerated chunk, or for fetching only biome data without loading a chunk.
+     * Get empty chunk snapshot (equivalent to all air blocks), optionally
+     * including valid biome data. Used for representing an ungenerated chunk,
+     * or for fetching only biome data without loading a chunk.
      *
      * @param x - chunk x coordinate
      * @param z - chunk z coordinate
-     * @param includeBiome - if true, snapshot includes per-coordinate biome type
-     * @param includeBiomeTempRain - if true, snapshot includes per-coordinate raw biome temperature and rainfall
+     * @param includeBiome - if true, snapshot includes per-coordinate biome
+     *     type
+     * @param includeBiomeTempRain - if true, snapshot includes per-coordinate
+     *     raw biome temperature and rainfall
      * @return The empty snapshot.
      */
     public ChunkSnapshot getEmptyChunkSnapshot(int x, int z, boolean includeBiome, boolean includeBiomeTempRain);
@@ -736,8 +778,10 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Sets the spawn flags for this.
      *
-     * @param allowMonsters - if true, monsters are allowed to spawn in this world.
-     * @param allowAnimals - if true, animals are allowed to spawn in this world.
+     * @param allowMonsters - if true, monsters are allowed to spawn in this
+     *     world.
+     * @param allowAnimals - if true, animals are allowed to spawn in this
+     *     world.
      */
     public void setSpawnFlags(boolean allowMonsters, boolean allowAnimals);
 
@@ -776,7 +820,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Gets the temperature for the given block coordinates.
      * <p>
-     * It is safe to run this method when the block does not exist, it will not create the block.
+     * It is safe to run this method when the block does not exist, it will
+     * not create the block.
      *
      * @param x X coordinate of the block
      * @param z Z coordinate of the block
@@ -787,7 +832,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Gets the humidity for the given block coordinates.
      * <p>
-     * It is safe to run this method when the block does not exist, it will not create the block.
+     * It is safe to run this method when the block does not exist, it will
+     * not create the block.
      *
      * @param x X coordinate of the block
      * @param z Z coordinate of the block
@@ -814,16 +860,19 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public int getSeaLevel();
 
     /**
-     * Gets whether the world's spawn area should be kept loaded into memory or not.
+     * Gets whether the world's spawn area should be kept loaded into memory
+     * or not.
      *
      * @return true if the world's spawn area will be kept loaded into memory.
      */
     public boolean getKeepSpawnInMemory();
 
     /**
-     * Sets whether the world's spawn area should be kept loaded into memory or not.
+     * Sets whether the world's spawn area should be kept loaded into memory
+     * or not.
      *
-     * @param keepLoaded if true then the world's spawn area will be kept loaded into memory.
+     * @param keepLoaded if true then the world's spawn area will be kept
+     *     loaded into memory.
      */
     public void setKeepSpawnInMemory(boolean keepLoaded);
 
@@ -837,7 +886,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Sets whether or not the world will automatically save
      *
-     * @param value true if the world should automatically save, otherwise false
+     * @param value true if the world should automatically save, otherwise
+     *     false
      */
     public void setAutoSave(boolean value);
 
@@ -879,17 +929,22 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Gets the world's ticks per animal spawns value
      * <p>
-     * This value determines how many ticks there are between attempts to spawn animals.
+     * This value determines how many ticks there are between attempts to
+     * spawn animals.
      * <p>
      * <b>Example Usage:</b>
      * <ul>
-     * <li>A value of 1 will mean the server will attempt to spawn animals in this world every tick.
-     * <li>A value of 400 will mean the server will attempt to spawn animals in this world every 400th tick.
+     * <li>A value of 1 will mean the server will attempt to spawn animals in
+     *     this world every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn animals
+     *     in this world every 400th tick.
      * <li>A value below 0 will be reset back to Minecraft's default.
      * </ul>
      * <p>
      * <b>Note:</b>
-     * If set to 0, animal spawning will be disabled for this world. We recommend using {@link #setSpawnFlags(boolean, boolean)} to control this instead.
+     * If set to 0, animal spawning will be disabled for this world. We
+     * recommend using {@link #setSpawnFlags(boolean, boolean)} to control
+     * this instead.
      * <p>
      * Minecraft default: 400.
      *
@@ -900,38 +955,49 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Sets the world's ticks per animal spawns value
      * <p>
-     * This value determines how many ticks there are between attempts to spawn animals.
+     * This value determines how many ticks there are between attempts to
+     * spawn animals.
      * <p>
      * <b>Example Usage:</b>
      * <ul>
-     * <li>A value of 1 will mean the server will attempt to spawn animals in this world every tick.
-     * <li>A value of 400 will mean the server will attempt to spawn animals in this world every 400th tick.
+     * <li>A value of 1 will mean the server will attempt to spawn animals in
+     *     this world every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn animals
+     *     in this world every 400th tick.
      * <li>A value below 0 will be reset back to Minecraft's default.
      * </ul>
      * <p>
      * <b>Note:</b>
-     * If set to 0, animal spawning will be disabled for this world. We recommend using {@link #setSpawnFlags(boolean, boolean)} to control this instead.
+     * If set to 0, animal spawning will be disabled for this world. We
+     * recommend using {@link #setSpawnFlags(boolean, boolean)} to control
+     * this instead.
      * <p>
      * Minecraft default: 400.
      *
-     * @param ticksPerAnimalSpawns the ticks per animal spawns value you want to set the world to
+     * @param ticksPerAnimalSpawns the ticks per animal spawns value you want
+     *     to set the world to
      */
     public void setTicksPerAnimalSpawns(int ticksPerAnimalSpawns);
 
     /**
      * Gets the world's ticks per monster spawns value
      * <p>
-     * This value determines how many ticks there are between attempts to spawn monsters.
+     * This value determines how many ticks there are between attempts to
+     * spawn monsters.
      * <p>
      * <b>Example Usage:</b>
      * <ul>
-     * <li>A value of 1 will mean the server will attempt to spawn monsters in this world every tick.
-     * <li>A value of 400 will mean the server will attempt to spawn monsters in this world every 400th tick.
+     * <li>A value of 1 will mean the server will attempt to spawn monsters in
+     *     this world every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn monsters
+     *     in this world every 400th tick.
      * <li>A value below 0 will be reset back to Minecraft's default.
      * </ul>
      * <p>
      * <b>Note:</b>
-     * If set to 0, monsters spawning will be disabled for this world. We recommend using {@link #setSpawnFlags(boolean, boolean)} to control this instead.
+     * If set to 0, monsters spawning will be disabled for this world. We
+     * recommend using {@link #setSpawnFlags(boolean, boolean)} to control
+     * this instead.
      * <p>
      * Minecraft default: 1.
      *
@@ -942,80 +1008,95 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Sets the world's ticks per monster spawns value
      * <p>
-     * This value determines how many ticks there are between attempts to spawn monsters.
+     * This value determines how many ticks there are between attempts to
+     * spawn monsters.
      * <p>
      * <b>Example Usage:</b>
      * <ul>
-     * <li>A value of 1 will mean the server will attempt to spawn monsters in this world on every tick.
-     * <li>A value of 400 will mean the server will attempt to spawn monsters in this world every 400th tick.
+     * <li>A value of 1 will mean the server will attempt to spawn monsters in
+     *     this world on every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn monsters
+     *     in this world every 400th tick.
      * <li>A value below 0 will be reset back to Minecraft's default.
      * </ul>
      * <p>
      * <b>Note:</b>
-     * If set to 0, monsters spawning will be disabled for this world. We recommend using {@link #setSpawnFlags(boolean, boolean)} to control this instead.
+     * If set to 0, monsters spawning will be disabled for this world. We
+     * recommend using {@link #setSpawnFlags(boolean, boolean)} to control
+     * this instead.
      * <p>
      * Minecraft default: 1.
      *
-     * @param ticksPerMonsterSpawns the ticks per monster spawns value you want to set the world to
+     * @param ticksPerMonsterSpawns the ticks per monster spawns value you
+     *     want to set the world to
      */
     public void setTicksPerMonsterSpawns(int ticksPerMonsterSpawns);
 
     /**
-     * Gets limit for number of monsters that can spawn in a chunk in this world
+     * Gets limit for number of monsters that can spawn in a chunk in this
+     * world
+     *
      * @return The monster spawn limit
      */
     int getMonsterSpawnLimit();
 
     /**
-     * Sets the limit for number of monsters that can spawn in a chunk in this world
+     * Sets the limit for number of monsters that can spawn in a chunk in this
+     * world
      * <p>
-     * <b>Note:</b>
-     * If set to a negative number the world will use the server-wide spawn limit instead.
+     * <b>Note:</b> If set to a negative number the world will use the
+     * server-wide spawn limit instead.
      */
     void setMonsterSpawnLimit(int limit);
 
     /**
-     * Gets the limit for number of animals that can spawn in a chunk in this world
+     * Gets the limit for number of animals that can spawn in a chunk in this
+     * world
      *
      * @return The animal spawn limit
      */
     int getAnimalSpawnLimit();
 
     /**
-     * Sets the limit for number of animals that can spawn in a chunk in this world
+     * Sets the limit for number of animals that can spawn in a chunk in this
+     * world
      * <p>
-     * <b>Note:</b>
-     * If set to a negative number the world will use the server-wide spawn limit instead.
+     * <b>Note:</b> If set to a negative number the world will use the
+     * server-wide spawn limit instead.
      */
     void setAnimalSpawnLimit(int limit);
 
     /**
-     * Gets the limit for number of water animals that can spawn in a chunk in this world
+     * Gets the limit for number of water animals that can spawn in a chunk in
+     * this world
      *
      * @return The water animal spawn limit
      */
     int getWaterAnimalSpawnLimit();
 
     /**
-     * Sets the limit for number of water animals that can spawn in a chunk in this world
+     * Sets the limit for number of water animals that can spawn in a chunk in
+     * this world
      * <p>
-     * <b>Note:</b>
-     * If set to a negative number the world will use the server-wide spawn limit instead.
+     * <b>Note:</b> If set to a negative number the world will use the
+     * server-wide spawn limit instead.
      */
     void setWaterAnimalSpawnLimit(int limit);
 
     /**
-     * Gets the limit for number of ambient mobs that can spawn in a chunk in this world
+     * Gets the limit for number of ambient mobs that can spawn in a chunk in
+     * this world
      *
      * @return The ambient spawn limit
      */
     int getAmbientSpawnLimit();
 
     /**
-     * Sets the limit for number of ambient mobs that can spawn in a chunk in this world
+     * Sets the limit for number of ambient mobs that can spawn in a chunk in
+     * this world
      * <p>
-     * <b>Note:</b>
-     * If set to a negative number the world will use the server-wide spawn limit instead.
+     * <b>Note:</b> If set to a negative number the world will use the
+     * server-wide spawn limit instead.
      */
     void setAmbientSpawnLimit(int limit);
 
@@ -1074,6 +1155,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * Represents various map environment types that a world may be
      */
     public enum Environment {
+
         /**
          * Represents the "normal"/"surface world" map
          */

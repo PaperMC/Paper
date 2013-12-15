@@ -17,7 +17,8 @@ public interface Scoreboard {
      * @return The registered Objective
      * @throws IllegalArgumentException if name is null
      * @throws IllegalArgumentException if criteria is null
-     * @throws IllegalArgumentException if an objective by that name already exists
+     * @throws IllegalArgumentException if an objective by that name already
+     *     exists
      */
     Objective registerNewObjective(String name, String criteria) throws IllegalArgumentException;
 
@@ -46,10 +47,12 @@ public interface Scoreboard {
     Set<Objective> getObjectives();
 
     /**
-     * Gets the Objective currently displayed in a DisplaySlot on this Scoreboard
+     * Gets the Objective currently displayed in a DisplaySlot on this
+     * Scoreboard
      *
      * @param slot The DisplaySlot
-     * @return the Objective currently displayed or null if nothing is displayed in that DisplaySlot
+     * @return the Objective currently displayed or null if nothing is
+     *     displayed in that DisplaySlot
      * @throws IllegalArgumentException if slot is null
      */
     Objective getObjective(DisplaySlot slot) throws IllegalArgumentException;

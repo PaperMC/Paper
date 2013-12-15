@@ -4,12 +4,12 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
 
 /**
- * Represents a view linking two inventories and a single player
- * (whose inventory may or may not be one of the two)
+ * Represents a view linking two inventories and a single player (whose
+ * inventory may or may not be one of the two).
  * <p>
  * Note: If you implement this interface but fail to satisfy the expected
- * contracts of certain methods, there's no guarantee that the game
- * will work as it should.
+ * contracts of certain methods, there's no guarantee that the game will work
+ * as it should.
  */
 public abstract class InventoryView {
     public final static int OUTSIDE = -999;
@@ -34,15 +34,18 @@ public abstract class InventoryView {
          */
         TICKS_FOR_CURRENT_FUEL(2, InventoryType.FURNACE),
         /**
-         * In an enchanting inventory, the top button's experience level value.
+         * In an enchanting inventory, the top button's experience level
+         * value.
          */
         ENCHANT_BUTTON1(0, InventoryType.ENCHANTING),
         /**
-         * In an enchanting inventory, the middle button's experience level value.
+         * In an enchanting inventory, the middle button's experience level
+         * value.
          */
         ENCHANT_BUTTON2(1, InventoryType.ENCHANTING),
         /**
-         * In an enchanting inventory, the bottom button's experience level value.
+         * In an enchanting inventory, the bottom button's experience level
+         * value.
          */
         ENCHANT_BUTTON3(2, InventoryType.ENCHANTING);
         int id;
@@ -87,9 +90,9 @@ public abstract class InventoryView {
     public abstract HumanEntity getPlayer();
 
     /**
-     * Determine the type of inventory involved in the transaction. This indicates
-     * the window style being shown. It will never return PLAYER, since that is
-     * common to all windows.
+     * Determine the type of inventory involved in the transaction. This
+     * indicates the window style being shown. It will never return PLAYER,
+     * since that is common to all windows.
      *
      * @return the inventory type
      */
@@ -136,7 +139,8 @@ public abstract class InventoryView {
     /**
      * Sets the item on the cursor of one of the viewing players.
      *
-     * @param item The item to put on the cursor, or null to remove the item on their cursor.
+     * @param item The item to put on the cursor, or null to remove the item
+     *     on their cursor.
      */
     public final void setCursor(ItemStack item) {
         getPlayer().setItemOnCursor(item);
@@ -145,18 +149,21 @@ public abstract class InventoryView {
     /**
      * Get the item on the cursor of one of the viewing players.
      *
-     * @return The item on the player's cursor, or null if they aren't holding one.
+     * @return The item on the player's cursor, or null if they aren't holding
+     *     one.
      */
     public final ItemStack getCursor() {
         return getPlayer().getItemOnCursor();
     }
 
     /**
-     * Converts a raw slot ID into its local slot ID into whichever of the two inventories
-     * the slot points to. If the raw slot refers to the upper inventory, it will be returned
-     * unchanged and thus be suitable for getTopInventory().getItem(); if it refers to the
-     * lower inventory, the output will differ from the input and be suitable for
-     * getBottomInventory().getItem().
+     * Converts a raw slot ID into its local slot ID into whichever of the two
+     * inventories the slot points to.
+     * <p>
+     * If the raw slot refers to the upper inventory, it will be returned
+     * unchanged and thus be suitable for getTopInventory().getItem(); if it
+     * refers to the lower inventory, the output will differ from the input
+     * and be suitable for getBottomInventory().getItem().
      *
      * @param rawSlot The raw slot ID.
      * @return The converted slot ID.
@@ -184,9 +191,11 @@ public abstract class InventoryView {
     }
 
     /**
-     * Check the total number of slots in this view, combining the upper and lower inventories.
-     * Note though that it's possible for this to be greater than the sum of the two inventories
-     * if for example some slots are not being used.
+     * Check the total number of slots in this view, combining the upper and
+     * lower inventories.
+     * <p>
+     * Note though that it's possible for this to be greater than the sum of
+     * the two inventories if for example some slots are not being used.
      *
      * @return The total size
      */

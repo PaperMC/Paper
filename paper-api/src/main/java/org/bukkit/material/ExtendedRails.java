@@ -4,7 +4,8 @@ import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 
 /**
- * This is the superclass for the {@link DetectorRail} and {@link PoweredRail} classes
+ * This is the superclass for the {@link DetectorRail} and {@link PoweredRail}
+ * classes
  */
 public class ExtendedRails extends Rails {
     /**

@@ -3,7 +3,8 @@ package org.bukkit.configuration.file;
 import org.bukkit.configuration.*;
 
 /**
- * Various settings for controlling the input and output of a {@link FileConfiguration}
+ * Various settings for controlling the input and output of a {@link
+ * FileConfiguration}
  */
 public class FileConfigurationOptions extends MemoryConfigurationOptions {
     private String header = null;
@@ -33,13 +34,14 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
     /**
      * Gets the header that will be applied to the top of the saved output.
      * <p>
-     * This header will be commented out and applied directly at the top of the
-     * generated output of the {@link FileConfiguration}. It is not required to
-     * include a newline at the end of the header as it will automatically be applied,
-     * but you may include one if you wish for extra spacing.
+     * This header will be commented out and applied directly at the top of
+     * the generated output of the {@link FileConfiguration}. It is not
+     * required to include a newline at the end of the header as it will
+     * automatically be applied, but you may include one if you wish for extra
+     * spacing.
      * <p>
-     * Null is a valid value which will indicate that no header is to be applied.
-     * The default value is null.
+     * Null is a valid value which will indicate that no header is to be
+     * applied. The default value is null.
      *
      * @return Header
      */
@@ -50,12 +52,14 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
     /**
      * Sets the header that will be applied to the top of the saved output.
      * <p>
-     * This header will be commented out and applied directly at the top of the
-     * generated output of the {@link FileConfiguration}. It is not required to
-     * include a newline at the end of the header as it will automatically be applied,
-     * but you may include one if you wish for extra spacing.
+     * This header will be commented out and applied directly at the top of
+     * the generated output of the {@link FileConfiguration}. It is not
+     * required to include a newline at the end of the header as it will
+     * automatically be applied, but you may include one if you wish for extra
+     * spacing.
      * <p>
-     * Null is a valid value which will indicate that no header is to be applied.
+     * Null is a valid value which will indicate that no header is to be
+     * applied.
      *
      * @param value New header
      * @return This object, for chaining
@@ -69,12 +73,15 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      * Gets whether or not the header should be copied from a default source.
      * <p>
      * If this is true, if a default {@link FileConfiguration} is passed to
-     * {@link FileConfiguration#setDefaults(org.bukkit.configuration.Configuration)}
-     * then upon saving it will use the header from that config, instead of the one provided here.
+     * {@link
+     * FileConfiguration#setDefaults(org.bukkit.configuration.Configuration)}
+     * then upon saving it will use the header from that config, instead of
+     * the one provided here.
      * <p>
-     * If no default is set on the configuration, or the default is not of type FileConfiguration,
-     * or that config has no header ({@link #header()} returns null) then the header
-     * specified in this configuration will be used.
+     * If no default is set on the configuration, or the default is not of
+     * type FileConfiguration, or that config has no header ({@link #header()}
+     * returns null) then the header specified in this configuration will be
+     * used.
      * <p>
      * Defaults to true.
      *
@@ -88,12 +95,15 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      * Sets whether or not the header should be copied from a default source.
      * <p>
      * If this is true, if a default {@link FileConfiguration} is passed to
-     * {@link FileConfiguration#setDefaults(org.bukkit.configuration.Configuration)}
-     * then upon saving it will use the header from that config, instead of the one provided here.
+     * {@link
+     * FileConfiguration#setDefaults(org.bukkit.configuration.Configuration)}
+     * then upon saving it will use the header from that config, instead of
+     * the one provided here.
      * <p>
-     * If no default is set on the configuration, or the default is not of type FileConfiguration,
-     * or that config has no header ({@link #header()} returns null) then the header
-     * specified in this configuration will be used.
+     * If no default is set on the configuration, or the default is not of
+     * type FileConfiguration, or that config has no header ({@link #header()}
+     * returns null) then the header specified in this configuration will be
+     * used.
      * <p>
      * Defaults to true.
      *

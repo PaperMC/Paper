@@ -10,9 +10,8 @@ public enum DragType {
      */
     SINGLE,
     /**
-     * The cursor is split evenly across all selected slots, not to
-     * exceed the Material's max stack size, with the remainder going to
-     * the cursor.
+     * The cursor is split evenly across all selected slots, not to exceed the
+     * Material's max stack size, with the remainder going to the cursor.
      */
     EVEN,
 }

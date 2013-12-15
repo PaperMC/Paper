@@ -1,6 +1,7 @@
 package org.bukkit.material;
 
 public interface Openable {
+
     /**
      * Check to see if the door is open.
      *

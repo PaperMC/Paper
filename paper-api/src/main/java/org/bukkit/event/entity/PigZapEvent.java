@@ -44,8 +44,8 @@ public class PigZapEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * Gets the zombie pig that will replace the pig,
-     * provided the event is not cancelled first.
+     * Gets the zombie pig that will replace the pig, provided the event is
+     * not cancelled first.
      *
      * @return resulting entity
      */

@@ -75,8 +75,7 @@ public class TimedRegisteredListener extends RegisteredListener {
      * multiple classes of event, the closest shared superclass will be
      * returned, such that for any event this listener has handled,
      * <code>this.getEventClass().isAssignableFrom(event.getClass())</code>
-     * and no class
-     * <code>this.getEventClass().isAssignableFrom(clazz)
+     * and no class <code>this.getEventClass().isAssignableFrom(clazz)
      * && this.getEventClass() != clazz &&
      * event.getClass().isAssignableFrom(clazz)</code> for all handled events.
      *

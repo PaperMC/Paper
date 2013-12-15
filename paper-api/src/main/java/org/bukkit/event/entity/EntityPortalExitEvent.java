@@ -8,8 +8,8 @@ import org.bukkit.util.Vector;
 /**
  * Called before an entity exits a portal.
  * <p>
- * This event allows you to modify the velocity of the entity after they
- * have successfully exeted the portal.
+ * This event allows you to modify the velocity of the entity after they have
+ * successfully exited the portal.
  */
 public class EntityPortalExitEvent extends EntityTeleportEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -23,7 +23,8 @@ public class EntityPortalExitEvent extends EntityTeleportEvent {
     }
 
     /**
-     * Gets a copy of the velocity that the entity has before entering the portal.
+     * Gets a copy of the velocity that the entity has before entering the
+     * portal.
      *
      * @return velocity of entity before entering portal
      */
@@ -32,7 +33,8 @@ public class EntityPortalExitEvent extends EntityTeleportEvent {
     }
 
     /**
-     * Gets a copy of the velocity that the entity will have after exiting the portal.
+     * Gets a copy of the velocity that the entity will have after exiting the
+     * portal.
      *
      * @return velocity of entity after exiting portal
      */

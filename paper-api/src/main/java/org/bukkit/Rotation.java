@@ -2,6 +2,7 @@ package org.bukkit;
 
 /**
  * An enum to specify a rotation based orientation, like that on a clock.
+ * <p>
  * It represents how something is viewed, as opposed to cardinal directions.
  */
 public enum Rotation {

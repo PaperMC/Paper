@@ -17,8 +17,9 @@ public class PrepareItemCraftEvent extends InventoryEvent {
     }
 
     /**
-     * Get the recipe that has been formed. If this event was triggered by a tool repair, this
-     * will be a temporary shapeless recipe representing the repair.
+     * Get the recipe that has been formed. If this event was triggered by a
+     * tool repair, this will be a temporary shapeless recipe representing the
+     * repair.
      *
      * @return The recipe being crafted.
      */
@@ -35,7 +36,8 @@ public class PrepareItemCraftEvent extends InventoryEvent {
     }
 
     /**
-     * Check if this event was triggered by a tool repair operation rather than a crafting recipe.
+     * Check if this event was triggered by a tool repair operation rather
+     * than a crafting recipe.
      *
      * @return True if this is a repair.
      */

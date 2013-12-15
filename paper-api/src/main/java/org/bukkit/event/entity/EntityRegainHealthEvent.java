@@ -74,7 +74,8 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
     /**
      * Gets the reason for why the entity is regaining health
      *
-     * @return A RegainReason detailing the reason for the entity regaining health
+     * @return A RegainReason detailing the reason for the entity regaining
+     *     health
      */
     public RegainReason getRegainReason() {
         return regainReason;
@@ -95,11 +96,13 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
     public enum RegainReason {
 
         /**
-         * When a player regains health from regenerating due to Peaceful mode (difficulty=0)
+         * When a player regains health from regenerating due to Peaceful mode
+         * (difficulty=0)
          */
         REGEN,
         /**
-         * When a player regains health from regenerating due to their hunger being satisfied
+         * When a player regains health from regenerating due to their hunger
+         * being satisfied
          */
         SATIATED,
         /**

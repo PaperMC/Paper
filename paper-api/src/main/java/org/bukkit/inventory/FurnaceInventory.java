@@ -2,6 +2,9 @@ package org.bukkit.inventory;
 
 import org.bukkit.block.Furnace;
 
+/**
+ * Interface to the inventory of a Furnace.
+ */
 public interface FurnaceInventory extends Inventory {
 
     /**

@@ -12,10 +12,13 @@ import org.bukkit.event.HandlerList;
 
 /**
  * Holds information for player chat and commands
- * @deprecated This event will fire from the main thread and allows the use of all of the Bukkit API, unlike the {@link AsyncPlayerChatEvent}.<br>
- *  <br>
- *  Listening to this event forces chat to wait for the main thread which causes delays for chat.<br>
- *  {@link AsyncPlayerChatEvent} is the encouraged alternative for thread safe implementations.
+ *
+ * @deprecated This event will fire from the main thread and allows the use of
+ *     all of the Bukkit API, unlike the {@link AsyncPlayerChatEvent}.
+ *     <p>
+ *     Listening to this event forces chat to wait for the main thread which
+ *     causes delays for chat. {@link AsyncPlayerChatEvent} is the encouraged
+ *     alternative for thread safe implementations.
  */
 @Deprecated
 @Warning(reason="Listening to this event forces chat to wait for the main thread, delaying chat messages.")

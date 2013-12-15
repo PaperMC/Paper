@@ -80,9 +80,9 @@ public class ServerListPingEvent extends ServerEvent {
      * Sets the server-icon sent to the client.
      *
      * @param icon the icon to send to the client
-     * @throws IllegalArgumentException if the {@link CachedServerIcon} is
-     *     not created by the caller of this event; null may be accepted for
-     *     some implementations
+     * @throws IllegalArgumentException if the {@link CachedServerIcon} is not
+     *     created by the caller of this event; null may be accepted for some
+     *     implementations
      * @throws UnsupportedOperationException if the caller of this event does
      *     not support setting the server icon
      */

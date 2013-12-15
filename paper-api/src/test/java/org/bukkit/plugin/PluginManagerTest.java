@@ -17,7 +17,7 @@ public class PluginManagerTest {
     }
 
     private static final PluginManager pm = TestServer.getInstance().getPluginManager();
-    
+
     private final MutableObject store = new MutableObject();
 
     @Test
@@ -51,7 +51,9 @@ public class PluginManagerTest {
                     } catch (Throwable ex) {
                         store.value = ex;
                     }
-                }});
+                }
+            }
+        );
         secondThread.start();
         secondThread.join();
         assertThat(store.value, is(instanceOf(IllegalStateException.class)));
@@ -88,7 +90,9 @@ public class PluginManagerTest {
                     } catch (Throwable ex) {
                         store.value = ex;
                     }
-                }});
+                }
+            }
+        );
         secondThread.start();
         secondThread.join();
         if (store.value != null) {
@@ -109,7 +113,9 @@ public class PluginManagerTest {
                     } catch (Throwable ex) {
                         store.value = ex;
                     }
-                }});
+                }
+            }
+        );
         secondThread.start();
         secondThread.join();
         if (store.value != null) {
@@ -161,7 +167,7 @@ public class PluginManagerTest {
         pm.removePermission(perm);
         assertThat("Permission \"" + name + "\" was not removed", pm.getPermission(name), is(nullValue()));
     }
-    
+
     @After
     public void tearDown() {
         pm.clearPlugins();

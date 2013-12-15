@@ -7,7 +7,9 @@ import org.bukkit.World;
  * Generates simplex-based noise.
  * <p>
  * This is a modified version of the freely published version in the paper by
- * Stefan Gustavson at http://staffwww.itn.liu.se/~stegu/simplexnoise/simplexnoise.pdf
+ * Stefan Gustavson at
+ * <a href="http://staffwww.itn.liu.se/~stegu/simplexnoise/simplexnoise.pdf">
+ * http://staffwww.itn.liu.se/~stegu/simplexnoise/simplexnoise.pdf</a>
  */
 public class SimplexNoiseGenerator extends PerlinNoiseGenerator {
     protected static final double SQRT_3 = Math.sqrt(3);
@@ -87,7 +89,8 @@ public class SimplexNoiseGenerator extends PerlinNoiseGenerator {
     }
 
     /**
-     * Computes and returns the 1D unseeded simplex noise for the given coordinates in 1D space
+     * Computes and returns the 1D unseeded simplex noise for the given
+     * coordinates in 1D space
      *
      * @param xin X coordinate
      * @return Noise at given location, from range -1 to 1
@@ -97,7 +100,8 @@ public class SimplexNoiseGenerator extends PerlinNoiseGenerator {
     }
 
     /**
-     * Computes and returns the 2D unseeded simplex noise for the given coordinates in 2D space
+     * Computes and returns the 2D unseeded simplex noise for the given
+     * coordinates in 2D space
      *
      * @param xin X coordinate
      * @param yin Y coordinate
@@ -108,7 +112,8 @@ public class SimplexNoiseGenerator extends PerlinNoiseGenerator {
     }
 
     /**
-     * Computes and returns the 3D unseeded simplex noise for the given coordinates in 3D space
+     * Computes and returns the 3D unseeded simplex noise for the given
+     * coordinates in 3D space
      *
      * @param xin X coordinate
      * @param yin Y coordinate
@@ -120,7 +125,8 @@ public class SimplexNoiseGenerator extends PerlinNoiseGenerator {
     }
 
     /**
-     * Computes and returns the 4D simplex noise for the given coordinates in 4D space
+     * Computes and returns the 4D simplex noise for the given coordinates in
+     * 4D space
      *
      * @param x X coordinate
      * @param y Y coordinate
@@ -348,7 +354,8 @@ public class SimplexNoiseGenerator extends PerlinNoiseGenerator {
     }
 
     /**
-     * Computes and returns the 4D simplex noise for the given coordinates in 4D space
+     * Computes and returns the 4D simplex noise for the given coordinates in
+     * 4D space
      *
      * @param x X coordinate
      * @param y Y coordinate

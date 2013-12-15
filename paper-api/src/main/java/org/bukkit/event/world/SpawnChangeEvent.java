@@ -5,8 +5,8 @@ import org.bukkit.Location;
 import org.bukkit.event.HandlerList;
 
 /**
- * An event that is called when a world's spawn changes. The
- * world's previous spawn location is included.
+ * An event that is called when a world's spawn changes. The world's previous
+ * spawn location is included.
  */
 public class SpawnChangeEvent extends WorldEvent {
     private static final HandlerList handlers = new HandlerList();

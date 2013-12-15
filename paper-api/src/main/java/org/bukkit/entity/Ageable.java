@@ -19,7 +19,8 @@ public interface Ageable extends Creature {
     public void setAge(int age);
 
     /**
-     * Lock the age of the animal, setting this will prevent the animal from maturing or getting ready for mating.
+     * Lock the age of the animal, setting this will prevent the animal from
+     * maturing or getting ready for mating.
      *
      * @param lock new lock
      */
@@ -57,7 +58,8 @@ public interface Ageable extends Creature {
     public boolean canBreed();
 
     /**
-     * Set breedability of the animal, if the animal is a baby and set to breed it will instantly grow up.
+     * Set breedability of the animal, if the animal is a baby and set to
+     * breed it will instantly grow up.
      *
      * @param breed breedability of the animal
      */

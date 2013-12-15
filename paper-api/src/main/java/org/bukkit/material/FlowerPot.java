@@ -50,7 +50,8 @@ public class FlowerPot extends MaterialData {
     /**
      * Get the material in the flower pot
      *
-     * @return material MaterialData for the block currently in the flower pot or null if empty
+     * @return material MaterialData for the block currently in the flower pot
+     *     or null if empty
      */
     public MaterialData getContents() {
         switch (getData()) {

@@ -13,7 +13,8 @@ import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Called when an ItemStack is successfully enchanted (currently at enchantment table)
+ * Called when an ItemStack is successfully enchanted (currently at
+ * enchantment table)
  */
 public class EnchantItemEvent extends InventoryEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -82,8 +83,9 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
     }
 
     /**
-     * Get map of enchantment (levels, keyed by type) to be added to item (modify map returned to change values)
-     * Note: Any enchantments not allowed for the item will be ignored
+     * Get map of enchantment (levels, keyed by type) to be added to item
+     * (modify map returned to change values). Note: Any enchantments not
+     * allowed for the item will be ignored
      *
      * @return map of enchantment levels, keyed by enchantment
      */
