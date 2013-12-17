@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityArrow;
 
+import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.EntityType;
@@ -25,6 +26,15 @@ public class CraftArrow extends AbstractProjectile implements Arrow {
         if (shooter instanceof CraftLivingEntity) {
             getHandle().shooter = ((CraftLivingEntity) shooter).getHandle();
         }
+    }
+
+    public void setKnockbackStrength(int knockbackStrength) {
+        Validate.isTrue(knockbackStrength >= 0, "Knockback cannot be negative");
+        getHandle().a(knockbackStrength);
+    }
+
+    public int getKnockbackStrength() {
+        return getHandle().aw;
     }
 
     @Override

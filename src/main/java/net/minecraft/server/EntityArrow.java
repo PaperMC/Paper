@@ -21,7 +21,7 @@ public class EntityArrow extends Entity implements IProjectile {
     private int j;
     private int au;
     private double damage = 2.0D;
-    private int aw;
+    public int aw; // CraftBukkit - private -> public
 
     public EntityArrow(World world) {
         super(world);
