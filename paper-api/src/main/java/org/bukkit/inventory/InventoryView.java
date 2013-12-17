@@ -1,5 +1,6 @@
 package org.bukkit.inventory;
 
+import org.bukkit.GameMode;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
 
@@ -174,6 +175,9 @@ public abstract class InventoryView {
             return rawSlot;
         }
         int slot = rawSlot - numInTop;
+        if (getPlayer().getGameMode() == GameMode.CREATIVE && getType() == InventoryType.PLAYER) {
+            return slot;
+        }
         if (getType() == InventoryType.CRAFTING) {
             if(slot < 4) return 39 - slot;
             else slot -= 4;
