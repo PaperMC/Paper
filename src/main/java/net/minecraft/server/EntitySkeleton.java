@@ -243,8 +243,20 @@ public class EntitySkeleton extends EntityMonster implements IRangedEntity {
             entityarrow.setOnFire(100);
         }
 
+        // CraftBukkit start
+        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.be(), entityarrow, 0.8F);
+        if (event.isCancelled()) {
+            event.getProjectile().remove();
+            return;
+        }
+
+        if (event.getProjectile() == entityarrow.getBukkitEntity()) {
+            world.addEntity(entityarrow);
+        }
+        // CraftBukkit end
+
         this.makeSound("random.bow", 1.0F, 1.0F / (this.aI().nextFloat() * 0.4F + 0.8F));
-        this.world.addEntity(entityarrow);
+        // this.world.addEntity(entityarrow); // CraftBukkit - moved up
     }
 
     public int getSkeletonType() {
