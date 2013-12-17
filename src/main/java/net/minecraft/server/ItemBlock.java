@@ -103,6 +103,11 @@ public class ItemBlock extends Item {
 
         world.update(x, y, z, block);
 
+        // Cocoa beans placed via ItemDye do not need the rest of the processing
+        if (block == Blocks.COCOA && itemstack != null && itemstack.getItem() instanceof ItemDye) {
+            return true;
+        }
+
         // Skulls don't get block data applied to them
         if (block != null && block != Blocks.SKULL) {
             block.postPlace(world, x, y, z, entityhuman, itemstack);

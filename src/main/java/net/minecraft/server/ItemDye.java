@@ -70,7 +70,7 @@ public class ItemDye extends Item {
 
                         // CraftBukkit start
                         // world.setTypeAndData(i, j, k, Blocks.COCOA, j1, 2);
-                        if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, Blocks.COCOA, j1, clickedX, clickedY, clickedZ)) {
+                        if (!ItemBlock.processBlockPlace(world, entityhuman, itemstack, i, j, k, Blocks.COCOA, j1, clickedX, clickedY, clickedZ)) {
                             return false;
                         }
                         // CraftBukkit end
