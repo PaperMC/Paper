@@ -3,6 +3,8 @@ package org.bukkit.craftbukkit.util;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.minecraft.server.Block;
+import net.minecraft.server.Blocks;
 import net.minecraft.server.World;
 
 import org.bukkit.BlockChangeDelegate;
@@ -39,6 +41,12 @@ public class StructureGrowDelegate implements BlockChangeDelegate {
     }
 
     public int getTypeId(int x, int y, int z) {
+        for (BlockState state : blocks) {
+            if (state.getX() == x && state.getY() == y && state.getZ() == z) {
+                return state.getTypeId();
+            }
+        }
+
         return world.getBlockTypeIdAt(x, y, z);
     }
 
@@ -51,6 +59,12 @@ public class StructureGrowDelegate implements BlockChangeDelegate {
     }
 
     public boolean isEmpty(int x, int y, int z) {
+        for (BlockState state : blocks) {
+            if (state.getX() == x && state.getY() == y && state.getZ() == z) {
+                return Block.e(state.getTypeId()) == Blocks.AIR;
+            }
+        }
+
         return world.getBlockAt(x, y, z).isEmpty();
     }
 }
