@@ -37,6 +37,14 @@ public class CraftArrow extends AbstractProjectile implements Arrow {
         return getHandle().aw;
     }
 
+    public boolean isCritical() {
+        return getHandle().f();
+    }
+
+    public void setCritical(boolean critical) {
+        getHandle().a(critical);
+    }
+
     @Override
     public EntityArrow getHandle() {
         return (EntityArrow) entity;
