@@ -1602,7 +1602,7 @@ public class PlayerConnection implements PacketPlayInListener {
     public void a(PacketPlayInAbilities packetplayinabilities) {
         // CraftBukkit start - d() should be isFlying()
         if (this.player.abilities.canFly && this.player.abilities.isFlying != packetplayinabilities.d()) {
-            PlayerToggleFlightEvent event = new PlayerToggleFlightEvent(this.server.getPlayer(this.player), packetplayinabilities.f());
+            PlayerToggleFlightEvent event = new PlayerToggleFlightEvent(this.server.getPlayer(this.player), packetplayinabilities.d());
             this.server.getPluginManager().callEvent(event);
             if (!event.isCancelled()) {
                 this.player.abilities.isFlying = packetplayinabilities.d(); // Actually set the player's flying status
