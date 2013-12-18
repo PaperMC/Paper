@@ -606,10 +606,10 @@ public class EntityEnderDragon extends EntityInsentient implements IComplex, IMo
         world.setType(i, b0 + 0, j, Blocks.BEDROCK);
         world.setType(i, b0 + 1, j, Blocks.BEDROCK);
         world.setType(i, b0 + 2, j, Blocks.BEDROCK);
-        world.setType(i - 1, b0 + 2, j, Blocks.TORCH);
-        world.setType(i + 1, b0 + 2, j, Blocks.TORCH);
-        world.setType(i, b0 + 2, j - 1, Blocks.TORCH);
-        world.setType(i, b0 + 2, j + 1, Blocks.TORCH);
+        world.setTypeAndData(i - 1, b0 + 2, j, Blocks.TORCH, 2, 0);
+        world.setTypeAndData(i + 1, b0 + 2, j, Blocks.TORCH, 1, 0);
+        world.setTypeAndData(i, b0 + 2, j - 1, Blocks.TORCH, 4, 0);
+        world.setTypeAndData(i, b0 + 2, j + 1, Blocks.TORCH, 3, 0);
         world.setType(i, b0 + 3, j, Blocks.BEDROCK);
         world.setType(i, b0 + 4, j, Blocks.DRAGON_EGG);
 
