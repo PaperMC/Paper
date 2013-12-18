@@ -691,8 +691,40 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      *     be encoded as per RFC 1738.
      * @throws IllegalArgumentException Thrown if the URL is null.
      * @throws IllegalArgumentException Thrown if the URL is too long.
+     * @deprecated Minecraft no longer uses textures packs. Instead you
+     *     should use {@link #setResourcePack(String)}.
      */
+    @Deprecated
     public void setTexturePack(String url);
+
+    /**
+     * Request that the player's client download and switch resource packs.
+     * <p>
+     * The player's client will download the new resource pack asynchronously
+     * in the background, and will automatically switch to it once the
+     * download is complete. If the client has downloaded and cached the same
+     * resource pack in the past, it will perform a quick timestamp check
+     * over the network to determine if the resource pack has changed and
+     * needs to be downloaded again. When this request is sent for the very
+     * first time from a given server, the client will first display a
+     * confirmation GUI to the player before proceeding with the download.
+     * <p>
+     * Notes:
+     * <ul>
+     * <li>Players can disable server resources on their client, in which
+     *     case this method will have no affect on them.
+     * <li>There is no concept of resetting resource packs back to default
+     *     within Minecraft, so players will have to relog to do so.
+     * </ul>
+     *
+     * @param url The URL from which the client will download the resource
+     *     pack. The string must contain only US-ASCII characters and should
+     *     be encoded as per RFC 1738.
+     * @throws IllegalArgumentException Thrown if the URL is null.
+     * @throws IllegalArgumentException Thrown if the URL is too long. The
+     *     length restriction is an implementation specific arbitrary value.
+     */
+    public void setResourcePack(String url);
 
     /**
      * Gets the Scoreboard displayed to this player
