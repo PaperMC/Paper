@@ -1,4 +1,4 @@
-From 6f8c9264a359086a030be0348390caed19323c18 Mon Sep 17 00:00:00 2001
+From 74545d3df2c4499287022b01b051bb88d953e041 Mon Sep 17 00:00:00 2001
 From: Thinkofdeath <thethinkofdeath@gmail.com>
 Date: Wed, 18 Dec 2013 10:32:15 +1100
 Subject: [PATCH] Add VanillaCommand Wrapper to Support New Commands
@@ -111,13 +111,14 @@ index c4a5488..628533e 100644
  }
 diff --git a/src/main/java/org/spigotmc/VanillaCommandWrapper.java b/src/main/java/org/spigotmc/VanillaCommandWrapper.java
 new file mode 100644
-index 0000000..e778d47
+index 0000000..a6c76cc
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/VanillaCommandWrapper.java
-@@ -0,0 +1,146 @@
+@@ -0,0 +1,194 @@
 +package org.spigotmc;
 +
 +import com.google.common.collect.ImmutableList;
++import net.minecraft.server.ChatComponentText;
 +import net.minecraft.server.ChunkCoordinates;
 +import net.minecraft.server.EntityMinecartCommandBlock;
 +import net.minecraft.server.IChatBaseComponent;
@@ -125,6 +126,7 @@ index 0000000..e778d47
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.TileEntityCommand;
 +import net.minecraft.server.World;
++import org.bukkit.Bukkit;
 +import org.bukkit.ChatColor;
 +import org.bukkit.block.Block;
 +import org.bukkit.command.CommandSender;
@@ -211,7 +213,7 @@ index 0000000..e778d47
 +        {
 +            return ( (EntityMinecartCommandBlock) ( (CraftMinecartCommand) sender ).getHandle() ).e();
 +        }
-+        return null;
++        return new ConsoleListener(sender); // Assume console/rcon
 +    }
 +
 +    private static class PlayerListener implements ICommandListener
@@ -260,7 +262,53 @@ index 0000000..e778d47
 +            return handle.getWorld();
 +        }
 +    }
++
++    private static class ConsoleListener implements ICommandListener {
++
++        private final CommandSender sender;
++
++        public ConsoleListener( CommandSender sender )
++        {
++            this.sender = sender;
++        }
++
++        @Override
++        public String getName()
++        {
++            return sender.getName();
++        }
++
++        @Override
++        public IChatBaseComponent getScoreboardDisplayName()
++        {
++            return new ChatComponentText( getName() );
++        }
++
++        @Override
++        public void sendMessage( IChatBaseComponent iChatBaseComponent )
++        {
++            sender.sendMessage( iChatBaseComponent.e() );
++        }
++
++        @Override
++        public boolean a( int i, String s )
++        {
++            return true;
++        }
++
++        @Override
++        public ChunkCoordinates getChunkCoordinates()
++        {
++            return new ChunkCoordinates( 0, 0, 0 );
++        }
++
++        @Override
++        public World getWorld()
++        {
++            return MinecraftServer.getServer().getWorld();
++        }
++    }
 +}
 -- 
-1.8.3.2
+1.8.4.msysgit.0
 
