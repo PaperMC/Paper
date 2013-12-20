@@ -2,6 +2,8 @@ package net.minecraft.server;
 
 import java.util.List;
 
+import org.bukkit.event.entity.EntityDamageByEntityEvent; // CraftBukkit
+
 public abstract class EntityFireball extends Entity {
 
     private int e = -1;
@@ -231,6 +233,16 @@ public abstract class EntityFireball extends Entity {
         } else {
             this.Q();
             if (damagesource.getEntity() != null) {
+                // CraftBukkit start
+                EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damagesource.getEntity().getBukkitEntity(), this.getBukkitEntity(), org.bukkit.event.entity.EntityDamageEvent.DamageCause.ENTITY_ATTACK, f);
+
+                world.getServer().getPluginManager().callEvent(event);
+
+                if (event.isCancelled()) {
+                    return false;
+                }
+                // CraftBukkit end
+
                 Vec3D vec3d = damagesource.getEntity().ag();
 
                 if (vec3d != null) {
