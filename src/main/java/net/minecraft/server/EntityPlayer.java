@@ -1029,7 +1029,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.expTotal = this.newTotalExp;
         this.exp = 0;
         this.deathTicks = 0;
-        this.removeAllEffects();
+        this.aP(); // Should be remapped: removeAllEffects should be remapped to this.
         this.updateEffects = true;
         this.activeContainer = this.defaultContainer;
         this.killer = null;
