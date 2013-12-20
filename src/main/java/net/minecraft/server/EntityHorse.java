@@ -881,7 +881,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
     }
 
     public void e(float f, float f1) {
-        if (this.passenger != null && this.cs()) {
+        if (this.passenger != null && this.passenger instanceof EntityLiving && this.cs()) { // CraftBukkit - Check type of passenger
             this.lastYaw = this.yaw = this.passenger.yaw;
             this.pitch = this.passenger.pitch * 0.5F;
             this.b(this.yaw, this.pitch);
