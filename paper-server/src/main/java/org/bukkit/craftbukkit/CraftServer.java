@@ -961,11 +961,13 @@ public final class CraftServer implements Server {
     public void clearRecipes() {
         CraftingManager.getInstance().recipes.clear();
         RecipesFurnace.getInstance().recipes.clear();
+        RecipesFurnace.getInstance().customRecipes.clear();
     }
 
     public void resetRecipes() {
         CraftingManager.getInstance().recipes = new CraftingManager().recipes;
         RecipesFurnace.getInstance().recipes = new RecipesFurnace().recipes;
+        RecipesFurnace.getInstance().customRecipes.clear();
     }
 
     public Map<String, String[]> getCommandAliases() {
