@@ -10,6 +10,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.minecart.CommandMinecart;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.util.StringUtil;
@@ -352,9 +353,20 @@ public abstract class Command {
     public static void broadcastCommandMessage(CommandSender source, String message, boolean sendToSource) {
         String result = source.getName() + ": " + message;
 
-        if (source instanceof BlockCommandSender && ((BlockCommandSender) source).getBlock().getWorld().getGameRuleValue("commandBlockOutput").equalsIgnoreCase("false")) {
-            Bukkit.getConsoleSender().sendMessage(result);
-            return;
+        if (source instanceof BlockCommandSender) {
+            BlockCommandSender blockCommandSender = (BlockCommandSender) source;
+
+            if (blockCommandSender.getBlock().getWorld().getGameRuleValue("commandBlockOutput").equalsIgnoreCase("false")) {
+                Bukkit.getConsoleSender().sendMessage(result);
+                return;
+            }
+        } else if (source instanceof CommandMinecart) {
+            CommandMinecart commandMinecart = (CommandMinecart) source;
+
+            if (commandMinecart.getWorld().getGameRuleValue("commandBlockOutput").equalsIgnoreCase("false")) {
+                Bukkit.getConsoleSender().sendMessage(result);
+                return;
+            }
         }
 
         Set<Permissible> users = Bukkit.getPluginManager().getPermissionSubscriptions(Server.BROADCAST_CHANNEL_ADMINISTRATIVE);
