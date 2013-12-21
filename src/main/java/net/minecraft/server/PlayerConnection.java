@@ -55,6 +55,7 @@ import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.event.player.PlayerToggleSprintEvent;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.InventoryView;
+import org.bukkit.util.NumberConversions;
 // CraftBukkit end
 
 public class PlayerConnection implements PacketPlayInListener {
@@ -94,7 +95,8 @@ public class PlayerConnection implements PacketPlayInListener {
     private int lastTick = MinecraftServer.currentTick;
     private int lastDropTick = MinecraftServer.currentTick;
     private int dropCount = 0;
-    private static final int PLACE_DISTANCE_SQUARED = 6 * 6;
+    private static final int SURVIVAL_PLACE_DISTANCE_SQUARED = 6 * 6;
+    private static final int CREATIVE_PLACE_DISTANCE_SQUARED = 7 * 7;
 
     // Get position of last block hit for BlockDamageLevel.STOPPED
     private double lastPosX = Double.MAX_VALUE;
@@ -618,7 +620,8 @@ public class PlayerConnection implements PacketPlayInListener {
         } else {
             // CraftBukkit start - Check if we can actually do something over this large a distance
             Location eyeLoc = this.getPlayer().getEyeLocation();
-            if (Math.pow(eyeLoc.getX() - i, 2) + Math.pow(eyeLoc.getY() - j, 2) + Math.pow(eyeLoc.getZ() - k, 2) > PLACE_DISTANCE_SQUARED) {
+            double reachDistance = NumberConversions.square(eyeLoc.getX() - i) + NumberConversions.square(eyeLoc.getY() - j) + NumberConversions.square(eyeLoc.getZ() - k);
+            if (reachDistance > (this.getPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE ? CREATIVE_PLACE_DISTANCE_SQUARED : SURVIVAL_PLACE_DISTANCE_SQUARED)) {
                 return;
             }
 
@@ -1606,8 +1609,7 @@ public class PlayerConnection implements PacketPlayInListener {
             this.server.getPluginManager().callEvent(event);
             if (!event.isCancelled()) {
                 this.player.abilities.isFlying = packetplayinabilities.d(); // Actually set the player's flying status
-            }
-            else {
+            } else {
                 this.player.updateAbilities(); // Tell the player their ability was reverted
             }
         }
