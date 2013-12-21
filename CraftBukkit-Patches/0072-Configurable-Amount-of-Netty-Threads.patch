@@ -1,0 +1,57 @@
+From 28d8e9d734ccd0c04d564bafa44ac378cbe11fc9 Mon Sep 17 00:00:00 2001
+From: md_5 <git@md-5.net>
+Date: Fri, 13 Dec 2013 11:58:58 +1100
+Subject: [PATCH] Configurable Amount of Netty Threads
+
+This brings back the option that the Spigot version of netty saw. By default Netty will try and use cores*2 threads, however if running multiple servers on the same machine, this can be too many threads. Additionally some people have 16 core servers. If 32 Netty threads are allowed in this setup, then the lock contention, and thus blocking between threads becomes much greater, leading to decreased performance.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 1f057b1..eee0119 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -51,7 +51,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+     private final List m = new ArrayList();
+     private final ICommandHandler n;
+     public final MethodProfiler methodProfiler = new MethodProfiler();
+-    private final ServerConnection o;
++    private ServerConnection o; // Spigot
+     private final ServerPing p = new ServerPing();
+     private final Random q = new Random();
+     private String serverIp;
+@@ -112,7 +112,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+         i = this;
+         this.c = proxy;
+         // this.universe = file1; // CraftBukkit
+-        this.o = new ServerConnection(this);
++        // this.o = new ServerConnection(this); // Spigot
+         this.n = new CommandDispatcher();
+         // this.convertable = new WorldLoaderServer(file1); // CraftBukkit - moved to DedicatedServer.init
+         this.S = (new YggdrasilAuthenticationService(proxy, UUID.randomUUID().toString())).createMinecraftSessionService();
+@@ -1211,7 +1211,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+     }
+ 
+     public ServerConnection ag() {
+-        return this.o;
++        return ( this.o ) == null ? this.o = new ServerConnection( this ) : this.o; // Spigot
+     }
+ 
+     public boolean ai() {
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index acd5567..c4a5488 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -197,4 +197,11 @@ public class SpigotConfig
+         }
+         bungee = getBoolean( "settings.bungeecord", false );
+     }
++
++    private static void nettyThreads()
++    {
++        int count = getInt( "settings.netty-threads", 4 );
++        System.setProperty( "io.netty.eventLoopThreads", Integer.toString( count ) );
++        Bukkit.getLogger().log( Level.INFO, "Using {0} threads for Netty based IO", count );
++    }
+ }
+-- 
+1.8.3.2
+
