@@ -1,4 +1,4 @@
-From 89b6aa601e2a99d4a0a0e4535ef544de9ae42494 Mon Sep 17 00:00:00 2001
+From 04ebf9dffc8583903b7c28bf511e007c109d1a04 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sat, 23 Feb 2013 12:33:20 +1100
 Subject: [PATCH] Watchdog Thread.
@@ -168,10 +168,10 @@ index 6d0a08e..6e32691 100644
  }
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
 new file mode 100644
-index 0000000..8d6e1b4
+index 0000000..de08ad6
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
-@@ -0,0 +1,121 @@
+@@ -0,0 +1,117 @@
 +package org.spigotmc;
 +
 +import java.lang.management.ManagementFactory;
@@ -266,30 +266,26 @@ index 0000000..8d6e1b4
 +
 +    private static void dumpThread(ThreadInfo thread, Logger log)
 +    {
-+        if ( thread.getThreadState() != State.WAITING )
++        log.log( Level.SEVERE, "------------------------------" );
++        //
++        log.log( Level.SEVERE, "Current Thread: " + thread.getThreadName() );
++        log.log( Level.SEVERE, "\tPID: " + thread.getThreadId()
++                + " | Suspended: " + thread.isSuspended()
++                + " | Native: " + thread.isInNative()
++                + " | State: " + thread.getThreadState() );
++        if ( thread.getLockedMonitors().length != 0 )
 +        {
-+            log.log( Level.SEVERE, "------------------------------" );
-+            //
-+            log.log( Level.SEVERE, "Current Thread: " + thread.getThreadName() );
-+            log.log( Level.SEVERE, "\tPID: " + thread.getThreadId()
-+                    + " | Suspended: " + thread.isSuspended()
-+                    + " | Native: " + thread.isInNative()
-+                    + " | State: " + thread.getThreadState() );
-+            if ( thread.getLockedMonitors().length != 0 )
++            log.log( Level.SEVERE, "\tThread is waiting on monitor(s):" );
++            for ( MonitorInfo monitor : thread.getLockedMonitors() )
 +            {
-+                log.log( Level.SEVERE, "\tThread is waiting on monitor(s):" );
-+                for ( MonitorInfo monitor : thread.getLockedMonitors() )
-+                {
-+                    log.log( Level.SEVERE, "\t\tLocked on:" + monitor.getLockedStackFrame() );
-+                }
++                log.log( Level.SEVERE, "\t\tLocked on:" + monitor.getLockedStackFrame() );
 +            }
-+            log.log( Level.SEVERE, "\tStack:" );
-+            //
-+            StackTraceElement[] stack = thread.getStackTrace();
-+            for ( int line = 0; line < stack.length; line++ )
-+            {
-+                log.log( Level.SEVERE, "\t\t" + stack[line].toString() );
-+            }
++        }
++        log.log( Level.SEVERE, "\tStack:" );
++        //
++        for ( StackTraceElement stack : thread.getStackTrace() )
++        {
++            log.log( Level.SEVERE, "\t\t" + stack );
 +        }
 +    }
 +}
