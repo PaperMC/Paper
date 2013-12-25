@@ -430,13 +430,23 @@ public class Chunk {
                 block1.f(this.world, l1, j, i2, k1);
             }
 
-            // chunksection.setTypeId(i, j & 15, k, block); // CraftBukkit - Moved down
+            // CraftBukkit start - Delay removing containers until after they're cleaned up
+            if (!(block1 instanceof IContainer)) {
+                chunksection.setTypeId(i, j & 15, k, block);
+            }
+            // CraftBukkit end
+
             if (!this.world.isStatic) {
                 block1.remove(this.world, l1, j, i2, block1, k1);
             } else if (block1 instanceof IContainer && block1 != block) {
                 this.world.p(l1, j, i2);
             }
-            chunksection.setTypeId(i, j & 15, k, block); // CraftBukkit - Set new block after cleaning up old one
+
+            // CraftBukkit start - Remove containers now after cleanup
+            if (block1 instanceof IContainer) {
+                chunksection.setTypeId(i, j & 15, k, block);
+            }
+            // CraftBukkit end
 
             if (chunksection.getTypeId(i, j & 15, k) != block) {
                 return false;
