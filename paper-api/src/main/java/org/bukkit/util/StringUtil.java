@@ -21,7 +21,7 @@ public class StringUtil {
      * @throws IllegalArgumentException if originals contains a null element.
      *     <b>Note: the collection may be modified before this is thrown</b>
      */
-    public static <T extends Collection<String>> T copyPartialMatches(final String token, final Iterable<String> originals, final T collection) throws UnsupportedOperationException, IllegalArgumentException {
+    public static <T extends Collection<? super String>> T copyPartialMatches(final String token, final Iterable<String> originals, final T collection) throws UnsupportedOperationException, IllegalArgumentException {
         Validate.notNull(token, "Search token cannot be null");
         Validate.notNull(collection, "Collection cannot be null");
         Validate.notNull(originals, "Originals cannot be null");
@@ -36,7 +36,7 @@ public class StringUtil {
     }
 
     /**
-     * This method uses a substring to check case-insensitive equality. This
+     * This method uses a region to check case-insensitive equality. This
      * means the internal array does not need to be copied like a
      * toLowerCase() call would.
      *
@@ -52,6 +52,6 @@ public class StringUtil {
         if (string.length() < prefix.length()) {
             return false;
         }
-        return string.substring(0, prefix.length()).equalsIgnoreCase(prefix);
+        return string.regionMatches(true, 0, prefix, 0, prefix.length());
     }
 }
