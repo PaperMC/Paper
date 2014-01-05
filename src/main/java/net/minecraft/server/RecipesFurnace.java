@@ -80,7 +80,7 @@ public class RecipesFurnace {
         do {
             if (!iterator.hasNext()) {
                 // CraftBukkit start
-                if (!vanilla) {
+                if (!vanilla && recipes.size() != 0) {
                     iterator = this.recipes.entrySet().iterator();
                     vanilla = true;
                 } else {
