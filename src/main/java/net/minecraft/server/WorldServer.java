@@ -22,9 +22,9 @@ import org.bukkit.event.block.BlockFormEvent;
 import org.bukkit.event.weather.LightningStrikeEvent;
 import org.bukkit.event.weather.ThunderChangeEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
+// CraftBukkit end
 
-public class WorldServer extends World implements org.bukkit.BlockChangeDelegate {
-    // CraftBukkit end
+public class WorldServer extends World {
 
     private static final Logger a = LogManager.getLogger();
     private final MinecraftServer server;
@@ -998,23 +998,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
         }
     }
 
-    // CraftBukkit start - Compatibility methods for BlockChangeDelegate
-    public boolean setRawTypeId(int x, int y, int z, int typeId) {
-        return this.setTypeAndData(x, y, z, Block.e(typeId), 0, 4);
-    }
-
-    public boolean setRawTypeIdAndData(int x, int y, int z, int typeId, int data) {
-        return this.setTypeAndData(x, y, z, Block.e(typeId), data, 4);
-    }
-
-    public boolean setTypeId(int x, int y, int z, int typeId) {
-        return this.setTypeAndData(x, y, z, Block.e(typeId), 0, 3);
-    }
-
-    public boolean setTypeIdAndData(int x, int y, int z, int typeId, int data) {
-        return this.setTypeAndData(x, y, z, Block.e(typeId), data, 3);
-    }
-
+    // CraftBukkit start - Helper method
     public int getTypeId(int x, int y, int z) {
         return Block.b(getType(x, y, z));
     }

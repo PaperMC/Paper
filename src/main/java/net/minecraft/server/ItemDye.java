@@ -1,9 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.entity.Player;
-import org.bukkit.event.entity.SheepDyeWoolEvent;
-// CraftBukkit end
+import org.bukkit.event.entity.SheepDyeWoolEvent; // CraftBukkit
 
 public class ItemDye extends Item {
 
@@ -24,12 +21,11 @@ public class ItemDye extends Item {
     }
 
     public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
-        final int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
         if (!entityhuman.a(i, j, k, l, itemstack)) {
             return false;
         } else {
             if (itemstack.getData() == 15) {
-                if (a(itemstack, world, i, j, k, entityhuman)) { // CraftBukkit - pass entity for StructureGrowEvent
+                if (a(itemstack, world, i, j, k)) {
                     if (!world.isStatic) {
                         world.triggerEffect(2005, i, j, k, 0);
                     }
@@ -68,12 +64,7 @@ public class ItemDye extends Item {
                     if (world.isEmpty(i, j, k)) {
                         int j1 = Blocks.COCOA.getPlacedData(world, i, j, k, l, f, f1, f2, 0);
 
-                        // CraftBukkit start - fire BlockPlaceEvent
-                        // world.setTypeAndData(i, j, k, Blocks.COCOA, j1, 2);
-                        if (!ItemBlock.processBlockPlace(world, entityhuman, itemstack, i, j, k, Blocks.COCOA, j1, clickedX, clickedY, clickedZ)) {
-                            return false;
-                        }
-                        // CraftBukkit end
+                        world.setTypeAndData(i, j, k, Blocks.COCOA, j1, 2);
                         if (!entityhuman.abilities.canInstantlyBuild) {
                             --itemstack.count;
                         }
@@ -88,12 +79,6 @@ public class ItemDye extends Item {
     }
 
     public static boolean a(ItemStack itemstack, World world, int i, int j, int k) {
-        // CraftBukkit start - add EntityHuman parameter
-        return a(itemstack, world, i, j, k, null);
-    }
-
-    public static boolean a(ItemStack itemstack, World world, int i, int j, int k, EntityHuman entityhuman) {
-        // CraftBukkit end
         Block block = world.getType(i, j, k);
 
         if (block instanceof IBlockFragilePlantElement) {
@@ -102,18 +87,7 @@ public class ItemDye extends Item {
             if (iblockfragileplantelement.a(world, i, j, k, world.isStatic)) {
                 if (!world.isStatic) {
                     if (iblockfragileplantelement.a(world, world.random, i, j, k)) {
-                        // CraftBukkit start - Special case BlockSapling and BlockMushroom to use our methods
-                        if (block instanceof BlockSapling) {
-                            Player player = (entityhuman instanceof EntityPlayer) ? (Player) entityhuman.getBukkitEntity() : null;
-                            ((BlockSapling) block).grow(world, i, j, k, world.random, true, player, null);
-                        } else if (block instanceof BlockMushroom) {
-                            Player player = (entityhuman instanceof EntityPlayer) ? (Player) entityhuman.getBukkitEntity() : null;
-                            ((BlockMushroom) block).grow(world, i, j, k, world.random, true, player, null);
-                        } else {
-                            iblockfragileplantelement.b(world, world.random, i, j, k);
-                        }
-                        // CraftBukkit end
-
+                        iblockfragileplantelement.b(world, world.random, i, j, k);
                     }
 
                     --itemstack.count;

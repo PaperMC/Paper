@@ -480,17 +480,12 @@ public class Chunk {
                     }
                 }
 
-                // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer
-                if (!this.world.isStatic && (!this.world.callingPlaceEvent || (block instanceof BlockContainer))) {
+                // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled.
+                if (!this.world.isStatic && (!this.world.captureBlockStates || block instanceof BlockContainer)) {
                     block.onPlace(this.world, l1, j, i2);
                 }
 
                 if (block instanceof IContainer) {
-                    // CraftBukkit start - Don't create tile entity if placement failed
-                    if (this.getType(i, j, k) != block) {
-                        return false;
-                    }
-                    // CraftBukkit end
 
                     tileentity = this.e(i, j, k);
                     if (tileentity == null) {

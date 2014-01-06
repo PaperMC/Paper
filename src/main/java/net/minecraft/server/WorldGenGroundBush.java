@@ -2,8 +2,6 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-import org.bukkit.craftbukkit.CraftBlockChangeDelegate; // CraftBukkit
-
 public class WorldGenGroundBush extends WorldGenTrees {
 
     private int a;
@@ -16,13 +14,6 @@ public class WorldGenGroundBush extends WorldGenTrees {
     }
 
     public boolean a(World world, Random random, int i, int j, int k) {
-        // CraftBukkit start - Moved to generate
-        return this.generate(new CraftBlockChangeDelegate((org.bukkit.BlockChangeDelegate) world), random, i, j, k);
-    }
-
-    @Override
-    public boolean generate(CraftBlockChangeDelegate world, Random random, int i, int j, int k) {
-        // CraftBukkit end
         Block block;
 
         while (((block = world.getType(i, j, k)).getMaterial() == Material.AIR || block.getMaterial() == Material.LEAVES) && j > 0) {

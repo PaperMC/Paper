@@ -3,11 +3,11 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
+import java.util.List;
+
 import org.bukkit.Location;
 import org.bukkit.TreeType;
-import org.bukkit.craftbukkit.CraftBlockChangeDelegate;
-import org.bukkit.craftbukkit.util.StructureGrowDelegate;
-import org.bukkit.entity.Player;
+import org.bukkit.block.BlockState;
 import org.bukkit.event.world.StructureGrowEvent;
 // CraftBukkit end
 
@@ -15,6 +15,7 @@ public class BlockSapling extends BlockPlant implements IBlockFragilePlantElemen
 
     public static final String[] a = new String[] { "oak", "spruce", "birch", "jungle", "acacia", "roofed_oak"};
     private static final IIcon[] b = new IIcon[a.length];
+    public static TreeType treeType; // CraftBukkit
 
     protected BlockSapling() {
         float f = 0.4F;
@@ -27,32 +28,50 @@ public class BlockSapling extends BlockPlant implements IBlockFragilePlantElemen
         if (!world.isStatic) {
             super.a(world, i, j, k, random);
             if (world.getLightLevel(i, j + 1, k) >= 9 && random.nextInt(7) == 0) {
-                this.grow(world, i, j, k, random, false, null, null); // CraftBukkit - added bonemeal, player and itemstack
+                // CraftBukkit start
+                world.captureTreeGeneration = true;
+                // CraftBukkit end
+                this.grow(world, i, j, k, random);
+                // CraftBukkit start
+                world.captureTreeGeneration = false;
+                if (world.capturedBlockStates.size() > 0)
+                {
+                    TreeType treeType = BlockSapling.treeType;
+                    BlockSapling.treeType = null;
+                    Location location = new Location(world.getWorld(), i, j, k);
+                    List<BlockState> blocks = (List<BlockState>) world.capturedBlockStates.clone();
+                    world.capturedBlockStates.clear();
+                    StructureGrowEvent event = null;
+                    if (treeType != null) {
+                        event = new StructureGrowEvent(location, treeType, false, null, blocks);
+                        org.bukkit.Bukkit.getPluginManager().callEvent(event);
+                    }
+                    if (event == null || !event.isCancelled()) {
+                        for (BlockState blockstate : blocks) {
+                            blockstate.update(true);
+                        }
+                    }
+                }
+                // CraftBukkit end
             }
         }
     }
 
-    // CraftBukkit - added bonemeal, player and itemstack
-    public void grow(World world, int i, int j, int k, Random random, boolean bonemeal, Player player, ItemStack itemstack) {
+    public void grow(World world, int i, int j, int k, Random random) {
         int l = world.getData(i, j, k);
 
         if ((l & 8) == 0) {
             world.setData(i, j, k, l | 8, 4);
         } else {
-            this.d(world, i, j, k, random, bonemeal, player, itemstack); // CraftBukkit
+            this.d(world, i, j, k, random);
         }
     }
 
-    // CraftBukkit - Added bonemeal, player and itemstack
-    public void d(World world, int i, int j, int k, Random random, boolean bonemeal, Player player, ItemStack itemstack) {
+    public void d(World world, int i, int j, int k, Random random) {
         int l = world.getData(i, j, k) & 7;
-        // CraftBukkit start - Records tree generation and calls StructureGrowEvent
-        StructureGrowDelegate delegate = new StructureGrowDelegate(world);
-        TreeType treeType = null;
-        boolean grownTree = false;
-        // Turn ternary operator into if statement to set treeType
-        //Object object = random.nextInt(10) == 0 ? new WorldGenBigTree(true) : new WorldGenTrees(true);
-        TreeGenerator object; // Changed to TreeGenerator
+        // CraftBukkit start - Turn ternary operator into if statement to set treeType
+        // Object object = random.nextInt(10) == 0 ? new WorldGenBigTree(true) : new WorldGenTrees(true);
+        Object object;
         if (random.nextInt(10) == 0) {
             treeType = TreeType.BIG_TREE;
             object = new WorldGenBigTree(true);
@@ -71,11 +90,11 @@ public class BlockSapling extends BlockPlant implements IBlockFragilePlantElemen
             break;
 
         case 1:
-            treeType = TreeType.REDWOOD; // CraftBukkit
             label78:
             for (i1 = 0; i1 >= -1; --i1) {
                 for (j1 = 0; j1 >= -1; --j1) {
                     if (this.a(world, i + i1, j, k + j1, 1) && this.a(world, i + i1 + 1, j, k + j1, 1) && this.a(world, i + i1, j, k + j1 + 1, 1) && this.a(world, i + i1 + 1, j, k + j1 + 1, 1)) {
+                        treeType = TreeType.TALL_REDWOOD; // CraftBukkit
                         object = new WorldGenMegaTree(false, random.nextBoolean());
                         flag = true;
                         break label78;
@@ -86,6 +105,7 @@ public class BlockSapling extends BlockPlant implements IBlockFragilePlantElemen
             if (!flag) {
                 j1 = 0;
                 i1 = 0;
+                treeType = TreeType.REDWOOD; // CraftBukkit
                 object = new WorldGenTaiga2(true);
             }
             break;
@@ -150,29 +170,7 @@ public class BlockSapling extends BlockPlant implements IBlockFragilePlantElemen
             world.setTypeAndData(i, j, k, block, 0, 4);
         }
 
-        // CraftBukkit start
-        grownTree = object.generate(new CraftBlockChangeDelegate(delegate), random, i + i1, j, k + j1);
-        if (grownTree) {
-            Location location = new Location(world.getWorld(), i, j, k);
-            StructureGrowEvent event = new StructureGrowEvent(location, treeType, bonemeal, player, delegate.getBlocks());
-            org.bukkit.Bukkit.getPluginManager().callEvent(event);
-            if (event.isCancelled()) {
-                grownTree = false;
-            } else {
-                for (org.bukkit.block.BlockState state : event.getBlocks()) {
-                    state.update(true);
-                }
-                if (event.isFromBonemeal() && itemstack != null) {
-                    --itemstack.count;
-                }
-            }
-        } else if (bonemeal && itemstack != null) {
-            // We always consume bonemeal when trying to grow
-            --itemstack.count;
-        }
-        // No need to generate the tree again.
-        if (!grownTree) {
-            // CraftBukkit end
+        if (!((WorldGenerator) object).a(world, random, i + i1, j, k + j1)) {
             if (flag) {
                 world.setTypeAndData(i + i1, j, k + j1, this, l, 4);
                 world.setTypeAndData(i + i1 + 1, j, k + j1, this, l, 4);
@@ -201,15 +199,6 @@ public class BlockSapling extends BlockPlant implements IBlockFragilePlantElemen
     }
 
     public void b(World world, Random random, int i, int j, int k) {
-        this.grow(world, i, j, k, random, false, null, null); // CraftBukkit - added bonemeal, player and itemstack
+        this.grow(world, i, j, k, random);
     }
-
-    // CraftBukkit start
-    public interface TreeGenerator {
-
-        public boolean a(World world, Random random, int i, int j, int k);
-
-        public boolean generate(org.bukkit.craftbukkit.CraftBlockChangeDelegate world, Random random, int i, int j, int k);
-    }
-    // CraftBukkit end
 }

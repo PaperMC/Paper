@@ -2,8 +2,6 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-import org.bukkit.craftbukkit.CraftBlockChangeDelegate; // CraftBukkit
-
 public abstract class WorldGenMegaTreeAbstract extends WorldGenTreeAbstract {
 
     protected final int a;
@@ -29,8 +27,7 @@ public abstract class WorldGenMegaTreeAbstract extends WorldGenTreeAbstract {
         return i;
     }
 
-    // CraftBukkit - Changed world to CraftBlockChangeDelegate
-    private boolean b(CraftBlockChangeDelegate world, Random random, int i, int j, int k, int l) {
+    private boolean b(World world, Random random, int i, int j, int k, int l) {
         boolean flag = true;
 
         if (j >= 1 && j + l + 1 <= 256) {
@@ -67,8 +64,7 @@ public abstract class WorldGenMegaTreeAbstract extends WorldGenTreeAbstract {
         }
     }
 
-    // CraftBukkit - Change world to CraftBlockChangeDelegate
-    private boolean c(CraftBlockChangeDelegate world, Random random, int i, int j, int k) {
+    private boolean c(World world, Random random, int i, int j, int k) {
         Block block = world.getType(i, j - 1, k);
 
         if ((block == Blocks.GRASS || block == Blocks.DIRT) && j >= 2) {
@@ -82,13 +78,11 @@ public abstract class WorldGenMegaTreeAbstract extends WorldGenTreeAbstract {
         }
     }
 
-    // CraftBukkit - Change world to CraftBlockChangeDelegate
-    protected boolean a(CraftBlockChangeDelegate world, Random random, int i, int j, int k, int l) {
+    protected boolean a(World world, Random random, int i, int j, int k, int l) {
         return this.b(world, random, i, j, k, l) && this.c(world, random, i, j, k);
     }
 
-    // CraftBukkit - Change world to CraftBlockChangeDelegate
-    protected void a(CraftBlockChangeDelegate world, int i, int j, int k, int l, Random random) {
+    protected void a(World world, int i, int j, int k, int l, Random random) {
         int i1 = l * l;
 
         for (int j1 = i - l; j1 <= i + l + 1; ++j1) {
@@ -110,8 +104,7 @@ public abstract class WorldGenMegaTreeAbstract extends WorldGenTreeAbstract {
         }
     }
 
-    // CraftBukkit - Change world to CraftBlockChangeDelegate
-    protected void b(CraftBlockChangeDelegate world, int i, int j, int k, int l, Random random) {
+    protected void b(World world, int i, int j, int k, int l, Random random) {
         int i1 = l * l;
 
         for (int j1 = i - l; j1 <= i + l; ++j1) {

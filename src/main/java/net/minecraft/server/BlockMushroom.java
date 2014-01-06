@@ -3,13 +3,9 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
-import java.util.ArrayList;
-
-import org.bukkit.Location;
 import org.bukkit.TreeType;
 import org.bukkit.block.BlockState;
 import org.bukkit.event.block.BlockSpreadEvent;
-import org.bukkit.event.world.StructureGrowEvent;
 // CraftBukkit end
 
 public class BlockMushroom extends BlockPlant implements IBlockFragilePlantElement {
@@ -95,37 +91,25 @@ public class BlockMushroom extends BlockPlant implements IBlockFragilePlantEleme
         }
     }
 
-    // CraftBukkit - added bonemeal, player and itemstack
-    public boolean grow(World world, int i, int j, int k, Random random, boolean bonemeal, org.bukkit.entity.Player player, ItemStack itemstack) {
+    public boolean grow(World world, int i, int j, int k, Random random) {
         int l = world.getData(i, j, k);
-
         world.setAir(i, j, k);
-        // CraftBukkit start
-        boolean grown = false;
-        StructureGrowEvent event = null;
-        Location location = new Location(world.getWorld(), i, j, k);
         WorldGenHugeMushroom worldgenhugemushroom = null;
 
         if (this == Blocks.BROWN_MUSHROOM) {
-            event = new StructureGrowEvent(location, TreeType.BROWN_MUSHROOM, bonemeal, player, new ArrayList<BlockState>());
+            BlockSapling.treeType = TreeType.BROWN_MUSHROOM; // CraftBukkit
             worldgenhugemushroom = new WorldGenHugeMushroom(0);
         } else if (this == Blocks.RED_MUSHROOM) {
-            event = new StructureGrowEvent(location, TreeType.RED_MUSHROOM, bonemeal, player, new ArrayList<BlockState>());
+            BlockSapling.treeType = TreeType.RED_MUSHROOM; // CraftBukkit
             worldgenhugemushroom = new WorldGenHugeMushroom(1);
         }
 
-        if (worldgenhugemushroom != null && event != null) {
-            grown = worldgenhugemushroom.grow(new org.bukkit.craftbukkit.CraftBlockChangeDelegate((org.bukkit.BlockChangeDelegate) world), random, i, j, k, event, itemstack, world.getWorld());
-            if (event.isFromBonemeal() && itemstack != null) {
-                --itemstack.count;
-            }
-        }
-        if (!grown || event.isCancelled()) {
+        if (worldgenhugemushroom != null && worldgenhugemushroom.a(world, random, i, j, k)) {
+            return true;
+        } else {
             world.setTypeAndData(i, j, k, this, l, 3);
             return false;
         }
-        return true;
-        // CraftBukkit end
     }
 
     public boolean a(World world, int i, int j, int k, boolean flag) {
@@ -137,6 +121,6 @@ public class BlockMushroom extends BlockPlant implements IBlockFragilePlantEleme
     }
 
     public void b(World world, Random random, int i, int j, int k) {
-        this.grow(world, i, j, k, random, false, null, null); // CraftBukkit - Add bonemeal, player, and itemstack
+        this.grow(world, i, j, k, random);
     }
 }

@@ -13,6 +13,7 @@ import java.util.concurrent.Callable;
 
 // CraftBukkit start
 import org.bukkit.Bukkit;
+import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.LongHashSet;
 import org.bukkit.generator.ChunkGenerator;
@@ -66,7 +67,9 @@ public abstract class World implements IBlockAccess {
     public boolean allowMonsters;
     public boolean allowAnimals;
     // Added the following
-    public boolean callingPlaceEvent = false;
+    public boolean captureBlockStates = false;
+    public boolean captureTreeGeneration = false;
+    public ArrayList<BlockState> capturedBlockStates= new ArrayList<BlockState>();
     public long ticksPerAnimalSpawns;
     public long ticksPerMonsterSpawns;
     public boolean populating;
@@ -196,6 +199,17 @@ public abstract class World implements IBlockAccess {
     }
 
     public Block getType(int i, int j, int k) {
+        // CraftBukkit start - tree generation
+        if (captureTreeGeneration) {
+            Iterator<BlockState> it = capturedBlockStates.iterator();
+            while (it.hasNext()) {
+                BlockState previous = it.next();
+                if (previous.getX() == i && previous.getY() == j && previous.getZ() == k) {
+                    return CraftMagicNumbers.getBlock(previous.getTypeId());
+                }
+            }
+        }
+        // CraftBukkit end
         if (i >= -30000000 && k >= -30000000 && i < 30000000 && k < 30000000 && j >= 0 && j < 256) {
             Chunk chunk = null;
 
@@ -262,6 +276,26 @@ public abstract class World implements IBlockAccess {
     }
 
     public boolean setTypeAndData(int i, int j, int k, Block block, int l, int i1) {
+        // CraftBukkit start - tree generation
+        if (this.captureTreeGeneration) {
+            BlockState blockstate = null;
+            Iterator<BlockState> it = capturedBlockStates.iterator();
+            while (it.hasNext()) {
+                BlockState previous = it.next();
+                if (previous.getX() == i && previous.getY() == j && previous.getZ() == k) {
+                    blockstate = previous;
+                    it.remove();
+                    break;
+                }
+            }
+            if (blockstate == null) {
+                blockstate = org.bukkit.craftbukkit.block.CraftBlockState.getBlockState(this, i, j, k, i1);
+            }
+            blockstate.setTypeId(CraftMagicNumbers.getId(block));
+            blockstate.setRawData((byte) l);
+            this.capturedBlockStates.add(blockstate);
+            return true;
+        }
         if (i >= -30000000 && k >= -30000000 && i < 30000000 && k < 30000000) {
             if (j < 0) {
                 return false;
@@ -275,22 +309,30 @@ public abstract class World implements IBlockAccess {
                     block1 = chunk.getType(i & 15, j, k & 15);
                 }
 
+                // CraftBukkit start - capture blockstates
+                BlockState blockstate = null;
+                if (this.captureBlockStates) {
+                    blockstate = org.bukkit.craftbukkit.block.CraftBlockState.getBlockState(this, i, j, k, i1);
+                    this.capturedBlockStates.add(blockstate);
+                }
+                // CraftBukkit end
+
                 boolean flag = chunk.a(i & 15, j, k & 15, block, l);
+
+                // CraftBukkit start - remove blockstate if failed
+                if (!flag && this.captureBlockStates) {
+                    this.capturedBlockStates.remove(blockstate);
+                }
+                // CraftBukkit end
 
                 this.methodProfiler.a("checkLight");
                 this.t(i, j, k);
                 this.methodProfiler.b();
-                if (flag) {
-                    if ((i1 & 2) != 0 && (!this.isStatic || (i1 & 4) == 0) && chunk.k()) {
-                        this.notify(i, j, k);
-                    }
-
-                    if (!this.isStatic && (i1 & 1) != 0) {
-                        this.update(i, j, k, block1);
-                        if (block.M()) {
-                            this.f(i, j, k, block);
-                        }
-                    }
+                // CraftBukkit start
+                if (flag && !this.captureBlockStates) { // Don't notify clients or update physics while capturing blockstates
+                    // Modularize client and physic updates
+                    this.notifyAndUpdatePhysics(i, j, k, chunk, block1, block, i1);
+                // CraftBukkit end
                 }
 
                 return flag;
@@ -300,7 +342,35 @@ public abstract class World implements IBlockAccess {
         }
     }
 
+    // CraftBukkit start - Split off from original setTypeAndData(int i, int j, int k, Block block, int l, int i1) method in order to directly send client and physic updates
+    public void notifyAndUpdatePhysics(int i, int j, int k, Chunk chunk, Block oldBlock, Block newBlock, int flag)
+    {
+        // should be isReady()
+        if ((flag & 2) != 0 && (chunk == null || chunk.k())) { // allow chunk to be null here as chunk.k() is false when we send our notification during block placement
+            this.notify(i, j, k);
+        }
+
+        if ((flag & 1) != 0) {
+            this.update(i, j, k, oldBlock);
+            if (newBlock.M()) { // should be isComplexRedstone()
+                this.f(i, j, k, newBlock); // should be updateAdjacentComparators
+            }
+        }
+    }
+    // CraftBukkit end
+
     public int getData(int i, int j, int k) {
+        // CraftBukkit start - tree generation
+        if (captureTreeGeneration) {
+            Iterator<BlockState> it = capturedBlockStates.iterator();
+            while (it.hasNext()) {
+                BlockState previous = it.next();
+                if (previous.getX() == i && previous.getY() == j && previous.getZ() == k) {
+                    return previous.getRawData();
+                }
+            }
+        }
+        // CraftBukkit end
         if (i >= -30000000 && k >= -30000000 && i < 30000000 && k < 30000000) {
             if (j < 0) {
                 return 0;
@@ -319,6 +389,26 @@ public abstract class World implements IBlockAccess {
     }
 
     public boolean setData(int i, int j, int k, int l, int i1) {
+        // CraftBukkit start - tree generation
+        if (this.captureTreeGeneration) {
+            BlockState blockstate = null;
+            Iterator<BlockState> it = capturedBlockStates.iterator();
+            while (it.hasNext()) {
+                BlockState previous = it.next();
+                if (previous.getX() == i && previous.getY() == j && previous.getZ() == k) {
+                    blockstate = previous;
+                    it.remove();
+                    break;
+                }
+            }
+            if (blockstate == null) {
+                blockstate = org.bukkit.craftbukkit.block.CraftBlockState.getBlockState(this, i, j, k, i1);
+            }
+            blockstate.setRawData((byte) l);
+            this.capturedBlockStates.add(blockstate);
+            return true;
+        }
+        // CraftBukkit end
         if (i >= -30000000 && k >= -30000000 && i < 30000000 && k < 30000000) {
             if (j < 0) {
                 return false;
