@@ -14,7 +14,7 @@ import com.google.common.collect.ImmutableList;
 public class SayCommand extends VanillaCommand {
     public SayCommand() {
         super("say");
-        this.description = "Broadcasts the given message as the console";
+        this.description = "Broadcasts the given message as the sender";
         this.usageMessage = "/say <message ...>";
         this.setPermission("bukkit.command.say");
     }

@@ -95,7 +95,7 @@ final class PluginClassLoader extends URLClassLoader {
         Validate.notNull(javaPlugin, "Initializing plugin cannot be null");
         Validate.isTrue(javaPlugin.getClass().getClassLoader() == this, "Cannot initialize plugin outside of this class loader");
         if (this.plugin != null || this.pluginInit != null) {
-            throw new IllegalArgumentException("Plugin already intialized!", pluginState);
+            throw new IllegalArgumentException("Plugin already initialized!", pluginState);
         }
 
         pluginState = new IllegalStateException("Initial initialization");
