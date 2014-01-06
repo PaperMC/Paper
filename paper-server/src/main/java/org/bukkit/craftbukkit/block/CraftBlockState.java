@@ -22,6 +22,7 @@ public class CraftBlockState implements BlockState {
     private final int z;
     protected int type;
     protected MaterialData data;
+    protected int flag;
     protected final byte light;
 
     public CraftBlockState(final Block block) {
@@ -32,12 +33,22 @@ public class CraftBlockState implements BlockState {
         this.type = block.getTypeId();
         this.light = block.getLightLevel();
         this.chunk = (CraftChunk) block.getChunk();
+        this.flag = 3;
 
         createData(block.getData());
     }
 
+    public CraftBlockState(final Block block, int flag) {
+        this(block);
+        this.flag = flag;
+    }
+
     public static CraftBlockState getBlockState(net.minecraft.server.World world, int x, int y, int z) {
         return new CraftBlockState(world.getWorld().getBlockAt(x, y, z));
+    }
+
+    public static CraftBlockState getBlockState(net.minecraft.server.World world, int x, int y, int z, int flag) {
+        return new CraftBlockState(world.getWorld().getBlockAt(x, y, z), flag);
     }
 
     public World getWorld() {
@@ -94,6 +105,14 @@ public class CraftBlockState implements BlockState {
 
     public Material getType() {
         return Material.getMaterial(getTypeId());
+    }
+
+    public void setFlag(int flag) {
+        this.flag = flag;
+    }
+
+    public int getFlag() {
+        return flag;
     }
 
     public int getTypeId() {

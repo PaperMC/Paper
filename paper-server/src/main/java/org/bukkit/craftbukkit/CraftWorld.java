@@ -25,10 +25,13 @@ import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.entity.*;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.metadata.BlockMetadataStore;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.LongHash;
 import org.bukkit.entity.*;
 import org.bukkit.entity.Entity;
@@ -351,11 +354,7 @@ public class CraftWorld implements World {
     }
 
     public boolean generateTree(Location loc, TreeType type) {
-        return generateTree(loc, type, world);
-    }
-
-    public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate) {
-        BlockSapling.TreeGenerator gen;
+        net.minecraft.server.WorldGenerator gen;
         switch (type) {
         case BIG_TREE:
             gen = new WorldGenBigTree(true);
@@ -405,7 +404,34 @@ public class CraftWorld implements World {
             break;
         }
 
-        return gen.generate(new CraftBlockChangeDelegate(delegate), rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        return gen.a(world, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+    }
+
+    public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate) {
+        world.captureTreeGeneration = true;
+        world.captureBlockStates = true;
+        boolean grownTree = generateTree(loc, type);
+        world.captureBlockStates = false;
+        world.captureTreeGeneration = false;
+        if (grownTree) { // Copy block data to delegate
+            for (BlockState blockstate : world.capturedBlockStates) {
+                int x = blockstate.getX();
+                int y = blockstate.getY();
+                int z = blockstate.getZ();
+                net.minecraft.server.Block oldBlock = world.getType(x, y, z);
+                int typeId = blockstate.getTypeId();
+                int data = blockstate.getRawData();
+                int flag = ((CraftBlockState)blockstate).getFlag();
+                delegate.setTypeIdAndData(x, y, z, typeId, data);
+                net.minecraft.server.Block newBlock = world.getType(x, y, z);
+                world.notifyAndUpdatePhysics(x, y, z, null, oldBlock, newBlock, flag);
+            }
+            world.capturedBlockStates.clear();
+            return true;
+        } else {
+            world.capturedBlockStates.clear();
+            return false;
+        }
     }
 
     public TileEntity getTileEntityAt(final int x, final int y, final int z) {

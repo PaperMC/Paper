@@ -102,6 +102,27 @@ public class CraftEventFactory {
     /**
      * Block place methods
      */
+    public static BlockMultiPlaceEvent callBlockMultiPlaceEvent(World world, EntityHuman who, List<BlockState> blockStates, int clickedX, int clickedY, int clickedZ) {
+        CraftWorld craftWorld = world.getWorld();
+        CraftServer craftServer = world.getServer();
+        Player player = (who == null) ? null : (Player) who.getBukkitEntity();
+
+        Block blockClicked = craftWorld.getBlockAt(clickedX, clickedY, clickedZ);
+
+        boolean canBuild = true;
+        for (int i = 0; i < blockStates.size(); i++) {
+            if (!canBuild(craftWorld, player, blockStates.get(i).getX(), blockStates.get(i).getZ())) {
+                canBuild = false;
+                break;
+            }
+        }
+
+        BlockMultiPlaceEvent event = new BlockMultiPlaceEvent(blockStates, blockClicked, player.getItemInHand(), player, canBuild);
+        craftServer.getPluginManager().callEvent(event);
+
+        return event;
+    }
+
     public static BlockPlaceEvent callBlockPlaceEvent(World world, EntityHuman who, BlockState replacedBlockState, int clickedX, int clickedY, int clickedZ) {
         CraftWorld craftWorld = world.getWorld();
         CraftServer craftServer = world.getServer();
