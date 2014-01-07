@@ -46,7 +46,7 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
         if (this.i == 240 && this.a.world.difficulty == EnumDifficulty.HARD) {
             // CraftBukkit start
             if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreakDoorEvent(this.a, this.b, this.c, this.d).isCancelled()) {
-                this.e();
+                this.c();
                 return;
             }
             // CraftBukkit end
