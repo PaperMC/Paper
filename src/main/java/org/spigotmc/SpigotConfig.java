@@ -10,10 +10,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import net.minecraft.server.IRegistry;
+import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -230,5 +233,37 @@ public class SpigotConfig
         int count = getInt( "settings.netty-threads", 4 );
         System.setProperty( "io.netty.eventLoopThreads", Integer.toString( count ) );
         Bukkit.getLogger().log( Level.INFO, "Using {0} threads for Netty based IO", count );
+    }
+
+    public static boolean disableStatSaving;
+    public static Map<MinecraftKey, Integer> forcedStats = new HashMap<>();
+    private static void stats()
+    {
+        disableStatSaving = getBoolean( "stats.disable-saving", false );
+
+        if ( !config.contains( "stats.forced-stats" ) ) {
+            config.createSection( "stats.forced-stats" );
+        }
+
+        ConfigurationSection section = config.getConfigurationSection( "stats.forced-stats" );
+        for ( String name : section.getKeys( true ) )
+        {
+            if ( section.isInt( name ) )
+            {
+                try
+                {
+                    MinecraftKey key = new MinecraftKey( name );
+                    if ( IRegistry.CUSTOM_STAT.get( key ) == null )
+                    {
+                        Bukkit.getLogger().log(Level.WARNING, "Ignoring non existent stats.forced-stats " + name);
+                        continue;
+                    }
+                    forcedStats.put( key, section.getInt( name ) );
+                } catch (Exception ex)
+                {
+                    Bukkit.getLogger().log(Level.WARNING, "Ignoring invalid stats.forced-stats " + name);
+                }
+            }
+        }
     }
 }
