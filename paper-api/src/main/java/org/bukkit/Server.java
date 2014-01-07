@@ -782,4 +782,21 @@ public interface Server extends PluginMessageRecipient {
      *     ServerListPingEvent#setServerIcon(CachedServerIcon)}
      */
     CachedServerIcon loadServerIcon(BufferedImage image) throws IllegalArgumentException, Exception;
+
+    /**
+     * Set the idle kick timeout. Any players idle for the specified amount of
+     * time will be automatically kicked.
+     * <p>
+     * A value of 0 will disable the idle kick timeout.
+     *
+     * @param threshold the idle timeout in minutes
+     */
+    public void setIdleTimeout(int threshold);
+
+    /**
+     * Gets the idle kick timeout.
+     *
+     * @return the idle timeout in minutes
+     */
+    public int getIdleTimeout();
 }

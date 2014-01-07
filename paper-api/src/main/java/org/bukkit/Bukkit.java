@@ -666,7 +666,7 @@ public final class Bukkit {
     }
 
     /**
-     * @see Server#loadServerIcon(File)()
+     * @see Server#loadServerIcon(File)
      */
     public static CachedServerIcon loadServerIcon(File file) throws Exception {
         return server.loadServerIcon(file);
@@ -677,5 +677,19 @@ public final class Bukkit {
      */
     public static CachedServerIcon loadServerIcon(BufferedImage image) throws Exception {
         return server.loadServerIcon(image);
+    }
+
+    /**
+     * @see Server#setIdleTimeout(int)
+     */
+    public static void setIdleTimeout(int threshold) {
+        server.setIdleTimeout(threshold);
+    }
+
+    /**
+     * @see Server#getIdleTimeout()
+     */
+    public static int getIdleTimeout() {
+        return server.getIdleTimeout();
     }
 }
