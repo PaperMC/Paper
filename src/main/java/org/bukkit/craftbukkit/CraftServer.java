@@ -1452,4 +1452,12 @@ public final class CraftServer implements Server {
 
         return new CraftIconCache("data:image/png;base64," + bytebuf1.toString(Charsets.UTF_8));
     }
+
+    public void setIdleTimeout(int threshold) {
+        console.d(threshold); // Should be setIdleTimeout
+    }
+
+    public int getIdleTimeout() {
+        return console.aq(); // Should be getIdleTimeout
+    }
 }
