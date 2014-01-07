@@ -455,8 +455,10 @@ public class CraftEventFactory {
         if (!(source instanceof EntityDamageSource)) {
             return false;
         }
-        // We don't need to check for null, since EntityDamageSource will always return an event
         EntityDamageEvent event = handleEntityDamageEvent(entity, source, damage);
+        if (event == null) {
+            return false;
+        }
         return event.isCancelled() || event.getDamage() == 0;
     }
 
