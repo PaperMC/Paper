@@ -5,7 +5,37 @@
  package net.minecraft.stats;
  
  import com.google.common.collect.Maps;
-@@ -158,13 +159,12 @@
+@@ -47,6 +48,13 @@
+     public ServerStatsCounter(MinecraftServer server, File file) {
+         this.server = server;
+         this.file = file;
++        // Spigot start
++        for ( Map.Entry<ResourceLocation, Integer> entry : org.spigotmc.SpigotConfig.forcedStats.entrySet() )
++        {
++            Stat<ResourceLocation> wrapper = Stats.CUSTOM.get( entry.getKey() );
++            this.stats.put( wrapper, entry.getValue().intValue() );
++        }
++        // Spigot end
+         if (file.isFile()) {
+             try {
+                 this.parseLocal(server.getFixerUpper(), FileUtils.readFileToString(file));
+@@ -60,6 +68,7 @@
+     }
+ 
+     public void save() {
++        if ( org.spigotmc.SpigotConfig.disableStatSaving ) return; // Spigot
+         try {
+             FileUtils.writeStringToFile(this.file, this.toJson());
+         } catch (IOException ioexception) {
+@@ -70,6 +79,7 @@
+ 
+     @Override
+     public void setValue(Player player, Stat<?> stat, int value) {
++        if ( org.spigotmc.SpigotConfig.disableStatSaving ) return; // Spigot
+         super.setValue(player, stat, value);
+         this.dirty.add(stat);
+     }
+@@ -158,13 +168,12 @@
      }
  
      private <T> Optional<Stat<T>> getStat(StatType<T> type, String id) {

@@ -10,10 +10,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -230,5 +233,37 @@ public class SpigotConfig
         int count = SpigotConfig.getInt( "settings.netty-threads", 4 );
         System.setProperty( "io.netty.eventLoopThreads", Integer.toString( count ) );
         Bukkit.getLogger().log( Level.INFO, "Using {0} threads for Netty based IO", count );
+    }
+
+    public static boolean disableStatSaving;
+    public static Map<ResourceLocation, Integer> forcedStats = new HashMap<>();
+    private static void stats()
+    {
+        SpigotConfig.disableStatSaving = SpigotConfig.getBoolean( "stats.disable-saving", false );
+
+        if ( !SpigotConfig.config.contains( "stats.forced-stats" ) ) {
+            SpigotConfig.config.createSection( "stats.forced-stats" );
+        }
+
+        ConfigurationSection section = SpigotConfig.config.getConfigurationSection( "stats.forced-stats" );
+        for ( String name : section.getKeys( true ) )
+        {
+            if ( section.isInt( name ) )
+            {
+                try
+                {
+                    ResourceLocation key = ResourceLocation.parse( name );
+                    if ( BuiltInRegistries.CUSTOM_STAT.get( key ) == null )
+                    {
+                        Bukkit.getLogger().log(Level.WARNING, "Ignoring non existent stats.forced-stats " + name);
+                        continue;
+                    }
+                    SpigotConfig.forcedStats.put( key, section.getInt( name ) );
+                } catch (Exception ex)
+                {
+                    Bukkit.getLogger().log(Level.WARNING, "Ignoring invalid stats.forced-stats " + name);
+                }
+            }
+        }
     }
 }
