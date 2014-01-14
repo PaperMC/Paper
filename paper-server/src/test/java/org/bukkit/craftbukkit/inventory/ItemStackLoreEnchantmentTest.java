@@ -6,6 +6,7 @@ import java.util.List;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.Repairable;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -234,6 +235,61 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                         }
                     },
                     "Enchant vs Other"
+                }
+            ),
+            Arrays.asList(
+                new Object[] {
+                    new Operator() {
+                        public ItemStack operate(ItemStack cleanStack) {
+                            ItemMeta meta = cleanStack.getItemMeta();
+                            ((Repairable) meta).setRepairCost(42);
+                            cleanStack.setItemMeta(meta);
+                            return cleanStack;
+                        }
+                    },
+                    new Operator() {
+                        public ItemStack operate(ItemStack cleanStack) {
+                            return cleanStack;
+                        }
+                    },
+                    "Repair vs Null"
+                },
+                new Object[] {
+                    new Operator() {
+                        public ItemStack operate(ItemStack cleanStack) {
+                            ItemMeta meta = cleanStack.getItemMeta();
+                            ((Repairable) meta).setRepairCost(36);
+                            cleanStack.setItemMeta(meta);
+                            return cleanStack;
+                        }
+                    },
+                    new Operator() {
+                        public ItemStack operate(ItemStack cleanStack) {
+                            ItemMeta meta = cleanStack.getItemMeta();
+                            cleanStack.setItemMeta(meta);
+                            return cleanStack;
+                        }
+                    },
+                    "Repair vs Blank"
+                },
+                new Object[] {
+                    new Operator() {
+                        public ItemStack operate(ItemStack cleanStack) {
+                            ItemMeta meta = cleanStack.getItemMeta();
+                            ((Repairable) meta).setRepairCost(89);
+                            cleanStack.setItemMeta(meta);
+                            return cleanStack;
+                        }
+                    },
+                    new Operator() {
+                        public ItemStack operate(ItemStack cleanStack) {
+                            ItemMeta meta = cleanStack.getItemMeta();
+                            ((Repairable) meta).setRepairCost(88);
+                            cleanStack.setItemMeta(meta);
+                            return cleanStack;
+                        }
+                    },
+                    "Repair vs Other"
                 }
             )
         );
