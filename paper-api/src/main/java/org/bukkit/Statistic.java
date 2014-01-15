@@ -1,7 +1,7 @@
 package org.bukkit;
 
 /**
- * Represents a countable statistic, which is collected by the client
+ * Represents a countable statistic, which is tracked by the server.
  */
 public enum Statistic {
     DAMAGE_DEALT,
@@ -10,45 +10,99 @@ public enum Statistic {
     MOB_KILLS,
     PLAYER_KILLS,
     FISH_CAUGHT,
-    MINE_BLOCK(true),
-    USE_ITEM(false),
-    BREAK_ITEM(true);
+    ANIMALS_BRED,
+    TREASURE_FISHED,
+    JUNK_FISHED,
+    LEAVE_GAME,
+    JUMP,
+    DROP,
+    PLAY_ONE_TICK,
+    WALK_ONE_CM,
+    SWIM_ONE_CM,
+    FALL_ONE_CM,
+    CLIMB_ONE_CM,
+    FLY_ONE_CM,
+    DIVE_ONE_CM,
+    MINECART_ONE_CM,
+    BOAT_ONE_CM,
+    PIG_ONE_CM,
+    HORSE_ONE_CM,
+    MINE_BLOCK(Type.BLOCK),
+    USE_ITEM(Type.ITEM),
+    BREAK_ITEM(Type.ITEM),
+    CRAFT_ITEM(Type.ITEM),
+    KILL_ENTITY(Type.ENTITY),
+    ENTITY_KILLED_BY(Type.ENTITY);
 
-    private final boolean isSubstat;
-    private final boolean isBlock;
+    private final Type type;
 
     private Statistic() {
-        this(false, false);
+        this(Type.UNTYPED);
     }
 
-    private Statistic(boolean isBlock) {
-        this(true, isBlock);
+    private Statistic(Type type) {
+        this.type = type;
     }
 
-    private Statistic(boolean isSubstat, boolean isBlock) {
-        this.isSubstat = isSubstat;
-        this.isBlock = isBlock;
+    /**
+     * Gets the type of this statistic.
+     *
+     * @return the type of this statistic
+     */
+    public Type getType() {
+        return type;
     }
 
     /**
      * Checks if this is a substatistic.
      * <p>
-     * A substatistic exists in mass for each block or item, depending on
-     * {@link #isBlock()}
+     * A substatistic exists en masse for each block, item, or entitytype, depending on
+     * {@link #getType()}.
+     * <p>
+     * This is a redundant method and equivalent to checking
+     * <code>getType() != Type.UNTYPED</code>
      *
      * @return true if this is a substatistic
      */
     public boolean isSubstatistic() {
-        return isSubstat;
+        return type != Type.UNTYPED;
     }
 
     /**
-     * Checks if this is a substatistic dealing with blocks (As opposed to
-     * items)
+     * Checks if this is a substatistic dealing with blocks.
+     * <p>
+     * This is a redundant method and equivalent to checking
+     * <code>getType() == Type.BLOCK</code>
      *
-     * @return true if this deals with blocks, false if with items
+     * @return true if this deals with blocks
      */
     public boolean isBlock() {
-        return isSubstat && isBlock;
+        return type == Type.BLOCK;
+    }
+
+    /**
+     * The type of statistic.
+     *
+     */
+    public enum Type {
+        /**
+         * Statistics of this type do not require a qualifier.
+         */
+        UNTYPED,
+
+        /**
+         * Statistics of this type require an Item Material qualifier.
+         */
+        ITEM,
+
+        /**
+         * Statistics of this type require a Block Material qualifier.
+         */
+        BLOCK,
+
+        /**
+         * Statistics of this type require an EntityType qualifier.
+         */
+        ENTITY;
     }
 }
