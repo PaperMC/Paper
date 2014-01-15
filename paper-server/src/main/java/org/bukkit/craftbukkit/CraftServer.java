@@ -61,6 +61,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
+import org.bukkit.UnsafeValues;
 import org.bukkit.Warning.WarningState;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
@@ -93,6 +94,7 @@ import org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager;
 import org.bukkit.craftbukkit.updater.AutoUpdater;
 import org.bukkit.craftbukkit.updater.BukkitDLUpdaterService;
 import org.bukkit.craftbukkit.util.CraftIconCache;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.DatFileFilter;
 import org.bukkit.craftbukkit.util.Versioning;
 import org.bukkit.entity.Player;
@@ -1459,5 +1461,11 @@ public final class CraftServer implements Server {
 
     public int getIdleTimeout() {
         return console.aq(); // Should be getIdleTimeout
+    }
+
+    @Deprecated
+    @Override
+    public UnsafeValues getUnsafe() {
+        return CraftMagicNumbers.INSTANCE;
     }
 }
