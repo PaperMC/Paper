@@ -692,4 +692,12 @@ public final class Bukkit {
     public static int getIdleTimeout() {
         return server.getIdleTimeout();
     }
+
+    /**
+     * @see Server#getUnsafe()
+     */
+    @Deprecated
+    public static UnsafeValues getUnsafe() {
+        return server.getUnsafe();
+    }
 }

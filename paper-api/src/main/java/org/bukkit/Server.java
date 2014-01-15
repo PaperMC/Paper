@@ -799,4 +799,10 @@ public interface Server extends PluginMessageRecipient {
      * @return the idle timeout in minutes
      */
     public int getIdleTimeout();
+
+    /**
+     * @see UnsafeValues
+     */
+    @Deprecated
+    UnsafeValues getUnsafe();
 }
