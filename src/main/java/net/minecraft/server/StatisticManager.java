@@ -20,6 +20,12 @@ public class StatisticManager {
 
     public void b(EntityHuman entityhuman, Statistic statistic, int i) {
         if (!statistic.d() || this.b((Achievement) statistic)) {
+            // CraftBukkit start
+            org.bukkit.event.Cancellable cancellable = org.bukkit.craftbukkit.event.CraftEventFactory.handleStatisticsIncrease(entityhuman, statistic, a(statistic), i);
+            if (cancellable != null && cancellable.isCancelled()) {
+                return;
+            }
+            // CraftBukkit end
             this.a(entityhuman, statistic, this.a(statistic) + i);
         }
     }
