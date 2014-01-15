@@ -30,7 +30,7 @@ public class ArtTest {
 
             Art subject = Art.getById(id);
 
-            String message = String.format("org.bukkit.Art is missing id: %d named: '%s'", id - Achievement.STATISTIC_OFFSET, name);
+            String message = String.format("org.bukkit.Art is missing id: %d named: '%s'", id, name);
             assertNotNull(message, subject);
 
             assertThat(Art.getByName(name), is(subject));
