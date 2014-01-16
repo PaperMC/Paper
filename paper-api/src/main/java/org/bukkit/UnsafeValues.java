@@ -24,4 +24,10 @@ public interface UnsafeValues {
     List<String> tabCompleteInternalMaterialName(String token, List<String> completions);
 
     ItemStack modifyItemStack(ItemStack stack, String arguments);
+
+    Statistic getStatisticFromInternalName(String name);
+
+    Achievement getAchievementFromInternalName(String name);
+
+    List<String> tabCompleteInternalStatisticOrAchievementName(String token, List<String> completions);
 }
