@@ -179,6 +179,13 @@ public class PlayerConnection implements PacketPlayInListener {
     }
 
     public void a(PacketPlayInFlying packetplayinflying) {
+        // CraftBukkit start - Check for NaN
+        if (Double.isNaN(packetplayinflying.x) || Double.isNaN(packetplayinflying.y) || Double.isNaN(packetplayinflying.z) || Double.isNaN(packetplayinflying.stance)) {
+            c.warn(player.getName() + " was caught trying to crash the server with an invalid position.");
+            getPlayer().kickPlayer("Nope!");
+            return;
+        }
+        // CraftBukkit end
         WorldServer worldserver = this.minecraftServer.getWorldServer(this.player.dimension);
 
         this.g = true;
@@ -247,13 +254,6 @@ public class PlayerConnection implements PacketPlayInListener {
                         return;
                     }
                 }
-            }
-
-            if (Double.isNaN(packetplayinflying.x) || Double.isNaN(packetplayinflying.y) || Double.isNaN(packetplayinflying.z) || Double.isNaN(packetplayinflying.stance)) {
-                player.teleport(player.getWorld().getSpawnLocation(), PlayerTeleportEvent.TeleportCause.UNKNOWN);
-                System.err.println(player.getName() + " was caught trying to crash the server with an invalid position.");
-                player.kickPlayer("Nope!");
-                return;
             }
 
             if (this.checkMovement && !this.player.dead) {
