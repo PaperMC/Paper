@@ -1,14 +1,19 @@
 package org.bukkit.event.server;
 
 import java.net.InetAddress;
+import java.util.Iterator;
 
+import org.apache.commons.lang.Validate;
+import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.util.CachedServerIcon;
 
 /**
- * Called when a server list ping is coming in.
+ * Called when a server list ping is coming in. Displayed players can be
+ * checked and removed by {@link #iterator() iterating} over this event.
  */
-public class ServerListPingEvent extends ServerEvent {
+public class ServerListPingEvent extends ServerEvent implements Iterable<Player> {
+    private static final int MAGIC_PLAYER_COUNT = Integer.MIN_VALUE;
     private static final HandlerList handlers = new HandlerList();
     private final InetAddress address;
     private String motd;
@@ -16,9 +21,22 @@ public class ServerListPingEvent extends ServerEvent {
     private int maxPlayers;
 
     public ServerListPingEvent(final InetAddress address, final String motd, final int numPlayers, final int maxPlayers) {
+        Validate.isTrue(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
         this.address = address;
         this.motd = motd;
         this.numPlayers = numPlayers;
+        this.maxPlayers = maxPlayers;
+    }
+
+    /**
+     * This constructor is intended for implementations that provide the
+     * {@link #iterator()} method, thus provided the {@link #getNumPlayers()}
+     * count.
+     */
+    protected ServerListPingEvent(final InetAddress address, final String motd, final int maxPlayers) {
+        this.numPlayers = MAGIC_PLAYER_COUNT;
+        this.address = address;
+        this.motd = motd;
         this.maxPlayers = maxPlayers;
     }
 
@@ -55,6 +73,13 @@ public class ServerListPingEvent extends ServerEvent {
      * @return the number of players
      */
     public int getNumPlayers() {
+        int numPlayers = this.numPlayers;
+        if (numPlayers == MAGIC_PLAYER_COUNT) {
+            numPlayers = 0;
+            for (@SuppressWarnings("unused") final Player player : this) {
+                numPlayers++;
+            }
+        }
         return numPlayers;
     }
 
@@ -97,5 +122,21 @@ public class ServerListPingEvent extends ServerEvent {
 
     public static HandlerList getHandlerList() {
         return handlers;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Calling the {@link Iterator#remove()} method will force that particular
+     * player to not be displayed on the player list, decrease the size
+     * returned by {@link #getNumPlayers()}, and will not be returned again by
+     * any new iterator.
+     *
+     * @throws UnsupportedOperationException if the caller of this event does
+     *     not support removing players
+     */
+    @Override
+    public Iterator<Player> iterator() throws UnsupportedOperationException {
+        throw new UnsupportedOperationException();
     }
 }
