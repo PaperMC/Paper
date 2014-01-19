@@ -2,7 +2,14 @@ package net.minecraft.server;
 
 import java.net.InetSocketAddress;
 
-import org.bukkit.craftbukkit.util.CraftIconCache; // CraftBukkit
+// CraftBukkit start
+import java.util.Iterator;
+
+import org.bukkit.craftbukkit.util.CraftIconCache;
+import org.bukkit.entity.Player;
+
+import net.minecraft.util.com.mojang.authlib.GameProfile;
+// CraftBukkit end
 
 import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
 
@@ -28,11 +35,12 @@ public class PacketStatusListener implements PacketStatusInListener {
 
     public void a(PacketStatusInStart packetstatusinstart) {
         // CraftBukkit start - fire ping event
+        final Object[] players = minecraftServer.getPlayerList().players.toArray();
         class ServerListPingEvent extends org.bukkit.event.server.ServerListPingEvent {
             CraftIconCache icon = minecraftServer.server.getServerIcon();
 
             ServerListPingEvent() {
-                super(((InetSocketAddress) networkManager.getSocketAddress()).getAddress(), minecraftServer.getMotd(), minecraftServer.getPlayerList().getPlayerCount(), minecraftServer.getPlayerList().getMaxPlayers());
+                super(((InetSocketAddress) networkManager.getSocketAddress()).getAddress(), minecraftServer.getMotd(), minecraftServer.getPlayerList().getMaxPlayers());
             }
 
             @Override
@@ -42,14 +50,72 @@ public class PacketStatusListener implements PacketStatusInListener {
                 }
                 this.icon = (CraftIconCache) icon;
             }
+
+            @Override
+            public Iterator<Player> iterator() throws UnsupportedOperationException {
+                return new Iterator<Player>() {
+                    int i;
+                    int ret = Integer.MIN_VALUE;
+                    EntityPlayer player;
+
+                    @Override
+                    public boolean hasNext() {
+                        if (player != null) {
+                            return true;
+                        }
+                        final Object[] currentPlayers = players;
+                        for (int length = currentPlayers.length, i = this.i; i < length; i++) {
+                            final EntityPlayer player = (EntityPlayer) currentPlayers[i];
+                            if (player != null) {
+                                this.i = i + 1;
+                                this.player = player;
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+
+                    @Override
+                    public Player next() {
+                        if (!hasNext()) {
+                            throw new java.util.NoSuchElementException();
+                        }
+                        final EntityPlayer player = this.player;
+                        this.player = null;
+                        this.ret = this.i - 1;
+                        return player.getBukkitEntity();
+                    }
+
+                    @Override
+                    public void remove() {
+                        final Object[] currentPlayers = players;
+                        final int i = this.ret;
+                        if (i < 0 || currentPlayers[i] == null) {
+                            throw new IllegalStateException();
+                        }
+                        currentPlayers[i] = null;
+                    }
+                };
+            }
         }
 
         ServerListPingEvent event = new ServerListPingEvent();
         this.minecraftServer.server.getPluginManager().callEvent(event);
+
+        java.util.List<GameProfile> profiles = new java.util.ArrayList<GameProfile>(players.length);
+        for (Object player : players) {
+            if (player != null) {
+                profiles.add(((EntityPlayer) player).getProfile());
+            }
+        }
+
+        ServerPingPlayerSample playerSample = new ServerPingPlayerSample(event.getMaxPlayers(), profiles.size());
+        playerSample.a(profiles.toArray(new GameProfile[profiles.size()]));
+
         ServerPing ping = new ServerPing();
         ping.setFavicon(event.icon.value);
         ping.setMOTD(new ChatComponentText(event.getMotd()));
-        ping.setPlayerSample(new ServerPingPlayerSample(event.getMaxPlayers(), minecraftServer.getPlayerList().getPlayerCount()));
+        ping.setPlayerSample(playerSample);
         ping.setServerInfo(new ServerPingServerData(minecraftServer.getServerModName() + " " + minecraftServer.getVersion(), 4)); // TODO: Update when protocol changes
 
         this.networkManager.handle(new PacketStatusOutServerInfo(ping), new GenericFutureListener[0]);
