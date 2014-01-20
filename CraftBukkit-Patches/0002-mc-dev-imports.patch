@@ -1,4 +1,4 @@
-From 728698cfb07683d5ce15c07ea8cf32591cc4c95c Mon Sep 17 00:00:00 2001
+From 1d5b81555def55b67178090ba0e5f3ecf27f5bda Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 1 Dec 2013 15:10:48 +1100
 Subject: [PATCH] mc-dev imports
@@ -1187,6 +1187,281 @@ index 0000000..90a2a80
 +        c.put(ChunkCoordinates.class, Integer.valueOf(6));
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/server/NBTBase.java b/src/main/java/net/minecraft/server/NBTBase.java
+new file mode 100644
+index 0000000..6e7c3a2
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/NBTBase.java
+@@ -0,0 +1,129 @@
++package net.minecraft.server;
++
++import java.io.DataInput;
++import java.io.DataOutput;
++import java.io.IOException;
++
++public abstract class NBTBase {
++
++    public static final String[] a = new String[] { "END", "BYTE", "SHORT", "INT", "LONG", "FLOAT", "DOUBLE", "BYTE[]", "STRING", "LIST", "COMPOUND", "INT[]"};
++
++    abstract void write(DataOutput dataoutput) throws IOException;
++
++    abstract void load(DataInput datainput, int i) throws IOException;
++
++    public abstract String toString();
++
++    public abstract byte getTypeId();
++
++    protected NBTBase() {}
++
++    protected static NBTBase createTag(byte b0) {
++        switch (b0) {
++        case 0:
++            return new NBTTagEnd();
++
++        case 1:
++            return new NBTTagByte();
++
++        case 2:
++            return new NBTTagShort();
++
++        case 3:
++            return new NBTTagInt();
++
++        case 4:
++            return new NBTTagLong();
++
++        case 5:
++            return new NBTTagFloat();
++
++        case 6:
++            return new NBTTagDouble();
++
++        case 7:
++            return new NBTTagByteArray();
++
++        case 8:
++            return new NBTTagString();
++
++        case 9:
++            return new NBTTagList();
++
++        case 10:
++            return new NBTTagCompound();
++
++        case 11:
++            return new NBTTagIntArray();
++
++        default:
++            return null;
++        }
++    }
++
++    public static String getTagName(int i) {
++        switch (i) {
++        case 0:
++            return "TAG_End";
++
++        case 1:
++            return "TAG_Byte";
++
++        case 2:
++            return "TAG_Short";
++
++        case 3:
++            return "TAG_Int";
++
++        case 4:
++            return "TAG_Long";
++
++        case 5:
++            return "TAG_Float";
++
++        case 6:
++            return "TAG_Double";
++
++        case 7:
++            return "TAG_Byte_Array";
++
++        case 8:
++            return "TAG_String";
++
++        case 9:
++            return "TAG_List";
++
++        case 10:
++            return "TAG_Compound";
++
++        case 11:
++            return "TAG_Int_Array";
++
++        case 99:
++            return "Any Numeric Tag";
++
++        default:
++            return "UNKNOWN";
++        }
++    }
++
++    public abstract NBTBase clone();
++
++    public boolean equals(Object object) {
++        if (!(object instanceof NBTBase)) {
++            return false;
++        } else {
++            NBTBase nbtbase = (NBTBase) object;
++
++            return this.getTypeId() == nbtbase.getTypeId();
++        }
++    }
++
++    public int hashCode() {
++        return this.getTypeId();
++    }
++
++    protected String a_() {
++        return this.toString();
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/NBTTagByteArray.java b/src/main/java/net/minecraft/server/NBTTagByteArray.java
+new file mode 100644
+index 0000000..916d935
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/NBTTagByteArray.java
+@@ -0,0 +1,56 @@
++package net.minecraft.server;
++
++import java.io.DataInput;
++import java.io.DataOutput;
++import java.io.IOException;
++import java.util.Arrays;
++
++public class NBTTagByteArray extends NBTBase {
++
++    private byte[] data;
++
++    NBTTagByteArray() {}
++
++    public NBTTagByteArray(byte[] abyte) {
++        this.data = abyte;
++    }
++
++    void write(DataOutput dataoutput) throws IOException {
++        dataoutput.writeInt(this.data.length);
++        dataoutput.write(this.data);
++    }
++
++    void load(DataInput datainput, int i) throws IOException {
++        int j = datainput.readInt();
++
++        this.data = new byte[j];
++        datainput.readFully(this.data);
++    }
++
++    public byte getTypeId() {
++        return (byte) 7;
++    }
++
++    public String toString() {
++        return "[" + this.data.length + " bytes]";
++    }
++
++    public NBTBase clone() {
++        byte[] abyte = new byte[this.data.length];
++
++        System.arraycopy(this.data, 0, abyte, 0, this.data.length);
++        return new NBTTagByteArray(abyte);
++    }
++
++    public boolean equals(Object object) {
++        return super.equals(object) ? Arrays.equals(this.data, ((NBTTagByteArray) object).data) : false;
++    }
++
++    public int hashCode() {
++        return super.hashCode() ^ Arrays.hashCode(this.data);
++    }
++
++    public byte[] c() {
++        return this.data;
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/NBTTagIntArray.java b/src/main/java/net/minecraft/server/NBTTagIntArray.java
+new file mode 100644
+index 0000000..49b3f14
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/NBTTagIntArray.java
+@@ -0,0 +1,72 @@
++package net.minecraft.server;
++
++import java.io.DataInput;
++import java.io.DataOutput;
++import java.io.IOException;
++import java.util.Arrays;
++
++public class NBTTagIntArray extends NBTBase {
++
++    private int[] data;
++
++    NBTTagIntArray() {}
++
++    public NBTTagIntArray(int[] aint) {
++        this.data = aint;
++    }
++
++    void write(DataOutput dataoutput) throws IOException {
++        dataoutput.writeInt(this.data.length);
++
++        for (int i = 0; i < this.data.length; ++i) {
++            dataoutput.writeInt(this.data[i]);
++        }
++    }
++
++    void load(DataInput datainput, int i) throws IOException {
++        int j = datainput.readInt();
++
++        this.data = new int[j];
++
++        for (int k = 0; k < j; ++k) {
++            this.data[k] = datainput.readInt();
++        }
++    }
++
++    public byte getTypeId() {
++        return (byte) 11;
++    }
++
++    public String toString() {
++        String s = "[";
++        int[] aint = this.data;
++        int i = aint.length;
++
++        for (int j = 0; j < i; ++j) {
++            int k = aint[j];
++
++            s = s + k + ",";
++        }
++
++        return s + "]";
++    }
++
++    public NBTBase clone() {
++        int[] aint = new int[this.data.length];
++
++        System.arraycopy(this.data, 0, aint, 0, this.data.length);
++        return new NBTTagIntArray(aint);
++    }
++
++    public boolean equals(Object object) {
++        return super.equals(object) ? Arrays.equals(this.data, ((NBTTagIntArray) object).data) : false;
++    }
++
++    public int hashCode() {
++        return super.hashCode() ^ Arrays.hashCode(this.data);
++    }
++
++    public int[] c() {
++        return this.data;
++    }
++}
 diff --git a/src/main/java/net/minecraft/server/NextTickListEntry.java b/src/main/java/net/minecraft/server/NextTickListEntry.java
 new file mode 100644
 index 0000000..06934a1
@@ -2282,5 +2557,5 @@ index 0000000..c0db754
 +    }
 +}
 -- 
-1.8.4.msysgit.0
+1.8.3.2
 
