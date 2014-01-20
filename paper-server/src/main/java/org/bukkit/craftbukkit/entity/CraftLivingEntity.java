@@ -13,6 +13,7 @@ import net.minecraft.server.EntityEnderDragon;
 import net.minecraft.server.EntityEnderPearl;
 import net.minecraft.server.EntityFishingHook;
 import net.minecraft.server.EntityHuman;
+import net.minecraft.server.EntityFireball;
 import net.minecraft.server.EntityInsentient;
 import net.minecraft.server.EntityLargeFireball;
 import net.minecraft.server.EntityLiving;
@@ -293,8 +294,12 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return effects;
     }
 
-    @SuppressWarnings("unchecked")
     public <T extends Projectile> T launchProjectile(Class<? extends T> projectile) {
+        return launchProjectile(projectile, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity) {
         net.minecraft.server.World world = ((CraftWorld) getWorld()).getHandle();
         net.minecraft.server.Entity launch = null;
 
@@ -324,10 +329,15 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
                 launch = new EntityLargeFireball(world, getHandle(), direction.getX(), direction.getY(), direction.getZ());
             }
 
+            ((EntityFireball) launch).projectileSource = this;
             launch.setPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         }
 
         Validate.notNull(launch, "Projectile not supported");
+
+        if (velocity != null) {
+            ((T) launch.getBukkitEntity()).setVelocity(velocity);
+        }
 
         world.addEntity(launch);
         return (T) launch.getBukkitEntity();
