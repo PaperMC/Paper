@@ -244,4 +244,11 @@ public class SpigotWorldConfig
         nerfSpawnerMobs = getBoolean( "nerf-spawner-mobs", false );
         log( "Nerfing mobs spawned from spawners: " + nerfSpawnerMobs );
     }
+
+    public boolean enableZombiePigmenPortalSpawns;
+    private void enableZombiePigmenPortalSpawns()
+    {
+        enableZombiePigmenPortalSpawns = getBoolean( "enable-zombie-pigmen-portal-spawns", true );
+        log( "Allow Zombie Pigmen to spawn from portal blocks: " + enableZombiePigmenPortalSpawns );
+    }
 }
