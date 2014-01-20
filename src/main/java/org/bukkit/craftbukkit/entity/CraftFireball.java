@@ -7,6 +7,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.util.Vector;
 
 public class CraftFireball extends AbstractProjectile implements Fireball {
@@ -30,18 +31,17 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
         getHandle().bukkitYield = yield;
     }
 
-    public LivingEntity getShooter() {
-        if (getHandle().shooter != null) {
-            return (LivingEntity) getHandle().shooter.getBukkitEntity();
-        }
-
-        return null;
+    public ProjectileSource getShooter() {
+        return getHandle().projectileSource;
     }
 
-    public void setShooter(LivingEntity shooter) {
+    public void setShooter(ProjectileSource shooter) {
         if (shooter instanceof CraftLivingEntity) {
-            getHandle().shooter = (EntityLiving) ((CraftLivingEntity) shooter).entity;
+            getHandle().shooter = ((CraftLivingEntity) shooter).getHandle();
+        } else {
+            getHandle().shooter = null;
         }
+        getHandle().projectileSource = shooter;
     }
 
     public Vector getDirection() {
@@ -64,5 +64,18 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
 
     public EntityType getType() {
         return EntityType.UNKNOWN;
+    }
+
+    @Deprecated
+    public void _INVALID_setShooter(LivingEntity shooter) {
+        setShooter(shooter);
+    }
+
+    @Deprecated
+    public LivingEntity _INVALID_getShooter() {
+        if (getHandle().shooter != null) {
+            return (LivingEntity) getHandle().shooter.getBukkitEntity();
+        }
+        return null;
     }
 }

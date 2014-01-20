@@ -109,6 +109,7 @@ public abstract class Entity {
     public UUID uniqueID; // CraftBukkit - protected -> public
     public EnumEntitySize at;
     public boolean valid; // CraftBukkit
+    public org.bukkit.projectiles.ProjectileSource projectileSource; // CraftBukkit - For projectiles only
 
     public int getId() {
         return this.id;

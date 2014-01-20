@@ -49,7 +49,10 @@ final class DispenseBehaviorFireball extends DispenseBehaviorItem {
             }
         }
 
-        world.addEntity(new EntitySmallFireball(world, d0, d1, d2, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ()));
+        EntitySmallFireball entitysmallfireball = new EntitySmallFireball(world, d0, d1, d2, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ());
+        entitysmallfireball.projectileSource = new org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource((TileEntityDispenser) isourceblock.getTileEntity());
+
+        world.addEntity(entitysmallfireball);
         // itemstack.a(1); // Handled during event processing
         // CraftBukkit end
 

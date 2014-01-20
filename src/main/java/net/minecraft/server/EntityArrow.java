@@ -3,6 +3,7 @@ package net.minecraft.server;
 import java.util.List;
 
 // CraftBukkit start
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.entity.EntityCombustByEntityEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 // CraftBukkit end
@@ -41,6 +42,7 @@ public class EntityArrow extends Entity implements IProjectile {
         super(world);
         this.k = 10.0D;
         this.shooter = entityliving;
+        this.projectileSource = (LivingEntity) entityliving.getBukkitEntity(); // CraftBukkit
         if (entityliving instanceof EntityHuman) {
             this.fromPlayer = 1;
         }
@@ -69,6 +71,7 @@ public class EntityArrow extends Entity implements IProjectile {
         super(world);
         this.k = 10.0D;
         this.shooter = entityliving;
+        this.projectileSource = (LivingEntity) entityliving.getBukkitEntity(); // CraftBukkit
         if (entityliving instanceof EntityHuman) {
             this.fromPlayer = 1;
         }

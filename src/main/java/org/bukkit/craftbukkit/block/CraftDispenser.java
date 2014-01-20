@@ -3,12 +3,15 @@ package org.bukkit.craftbukkit.block;
 import net.minecraft.server.BlockDispenser;
 import net.minecraft.server.Blocks;
 import net.minecraft.server.TileEntityDispenser;
+
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Dispenser;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
+import org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.projectiles.BlockProjectileSource;
 
 public class CraftDispenser extends CraftBlockState implements Dispenser {
     private final CraftWorld world;
@@ -23,6 +26,16 @@ public class CraftDispenser extends CraftBlockState implements Dispenser {
 
     public Inventory getInventory() {
         return new CraftInventory(dispenser);
+    }
+
+    public BlockProjectileSource getBlockProjectileSource() {
+        Block block = getBlock();
+
+        if (block.getType() != Material.DISPENSER) {
+            return null;
+        }
+
+        return new CraftBlockProjectileSource(dispenser);
     }
 
     public boolean dispense() {

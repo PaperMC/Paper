@@ -9,6 +9,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fish;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.projectiles.ProjectileSource;
 
 public class CraftFish extends AbstractProjectile implements Fish {
     private double biteChance = -1;
@@ -17,7 +18,7 @@ public class CraftFish extends AbstractProjectile implements Fish {
         super(server, entity);
     }
 
-    public LivingEntity getShooter() {
+    public ProjectileSource getShooter() {
         if (getHandle().owner != null) {
             return getHandle().owner.getBukkitEntity();
         }
@@ -25,7 +26,7 @@ public class CraftFish extends AbstractProjectile implements Fish {
         return null;
     }
 
-    public void setShooter(LivingEntity shooter) {
+    public void setShooter(ProjectileSource shooter) {
         if (shooter instanceof CraftHumanEntity) {
             getHandle().owner = (EntityHuman) ((CraftHumanEntity) shooter).entity;
         }
@@ -60,5 +61,15 @@ public class CraftFish extends AbstractProjectile implements Fish {
     public void setBiteChance(double chance) {
         Validate.isTrue(chance >= 0 && chance <= 1, "The bite chance must be between 0 and 1.");
         this.biteChance = chance;
+    }
+
+    @Deprecated
+    public LivingEntity _INVALID_getShooter() {
+        return (LivingEntity) getShooter();
+    }
+
+    @Deprecated
+    public void _INVALID_setShooter(LivingEntity shooter) {
+        setShooter(shooter);
     }
 }

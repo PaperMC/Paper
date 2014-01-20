@@ -42,6 +42,7 @@ public abstract class DispenseBehaviorProjectile extends DispenseBehaviorItem {
         }
 
         iprojectile.shoot(event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), this.b(), this.a());
+        ((Entity) iprojectile).projectileSource = new org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource((TileEntityDispenser) isourceblock.getTileEntity());
         // CraftBukkit end
 
         world.addEntity((Entity) iprojectile);

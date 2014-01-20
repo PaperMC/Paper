@@ -42,6 +42,7 @@ public abstract class EntityFireball extends Entity {
     public EntityFireball(World world, EntityLiving entityliving, double d0, double d1, double d2) {
         super(world);
         this.shooter = entityliving;
+        this.projectileSource = (org.bukkit.entity.LivingEntity) entityliving.getBukkitEntity(); // CraftBukkit
         this.a(1.0F, 1.0F);
         this.setPositionRotation(entityliving.locX, entityliving.locY, entityliving.locZ, entityliving.yaw, entityliving.pitch);
         this.setPosition(this.locX, this.locY, this.locZ);

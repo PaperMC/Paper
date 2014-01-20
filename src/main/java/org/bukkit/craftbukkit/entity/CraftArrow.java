@@ -7,25 +7,12 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.projectiles.ProjectileSource;
 
 public class CraftArrow extends AbstractProjectile implements Arrow {
 
     public CraftArrow(CraftServer server, EntityArrow entity) {
         super(server, entity);
-    }
-
-    public LivingEntity getShooter() {
-        if (getHandle().shooter != null) {
-            return (LivingEntity) getHandle().shooter.getBukkitEntity();
-        }
-
-        return null;
-    }
-
-    public void setShooter(LivingEntity shooter) {
-        if (shooter instanceof CraftLivingEntity) {
-            getHandle().shooter = ((CraftLivingEntity) shooter).getHandle();
-        }
     }
 
     public void setKnockbackStrength(int knockbackStrength) {
@@ -45,6 +32,19 @@ public class CraftArrow extends AbstractProjectile implements Arrow {
         getHandle().a(critical);
     }
 
+    public ProjectileSource getShooter() {
+        return getHandle().projectileSource;
+    }
+
+    public void setShooter(ProjectileSource shooter) {
+        if (shooter instanceof LivingEntity) {
+            getHandle().shooter = ((CraftLivingEntity) shooter).getHandle();
+        } else {
+            getHandle().shooter = null;
+        }
+        getHandle().projectileSource = shooter;
+    }
+
     @Override
     public EntityArrow getHandle() {
         return (EntityArrow) entity;
@@ -57,5 +57,18 @@ public class CraftArrow extends AbstractProjectile implements Arrow {
 
     public EntityType getType() {
         return EntityType.ARROW;
+    }
+
+    @Deprecated
+    public LivingEntity _INVALID_getShooter() {
+        if (getHandle().shooter == null) {
+            return null;
+        }
+        return (LivingEntity) getHandle().shooter.getBukkitEntity();
+    }
+
+    @Deprecated
+    public void _INVALID_setShooter(LivingEntity shooter) {
+        getHandle().shooter = ((CraftLivingEntity) shooter).getHandle();
     }
 }
