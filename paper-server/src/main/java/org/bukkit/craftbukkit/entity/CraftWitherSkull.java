@@ -11,6 +11,16 @@ public class CraftWitherSkull extends CraftFireball implements WitherSkull {
     }
 
     @Override
+    public void setCharged(boolean charged) {
+        getHandle().a(charged);
+    }
+
+    @Override
+    public boolean isCharged() {
+        return getHandle().f();
+    }
+
+    @Override
     public EntityWitherSkull getHandle() {
         return (EntityWitherSkull) entity;
     }
