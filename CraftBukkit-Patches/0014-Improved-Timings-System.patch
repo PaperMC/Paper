@@ -1,4 +1,4 @@
-From 3d0e03d41e52731cea8e9ea8b6f1eca63a4b07ba Mon Sep 17 00:00:00 2001
+From 5281adb89f494f0ae890612a90cb218e69ea7af0 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 10 Jan 2013 00:18:11 -0500
 Subject: [PATCH] Improved Timings System
@@ -64,7 +64,7 @@ index dc0abc5..3d6aeff 100644
  
      protected String H() {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 6a01982..94fabdb 100644
+index 6a01982..2519af6 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -10,7 +10,6 @@ import java.util.ArrayList;
@@ -83,19 +83,15 @@ index 6a01982..94fabdb 100644
  import org.bukkit.craftbukkit.util.Waitable;
  import org.bukkit.event.server.RemoteServerCommandEvent;
  import org.bukkit.event.world.WorldSaveEvent;
-@@ -458,8 +458,11 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
-                         }
-                     }
+@@ -531,6 +531,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+     protected void s() {}
  
-+                    SpigotTimings.serverTickTimer.startTiming();
-                     Thread.sleep(1L);
-                     this.N = true;
-+                    SpigotTimings.serverTickTimer.stopTiming();
-+                    org.spigotmc.CustomTimingsHandler.tick();
-                 }
-             } else {
-                 this.a((CrashReport) null);
-@@ -583,6 +586,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+     protected void t() throws ExceptionWorldConflict { // CraftBukkit - added throws
++        SpigotTimings.serverTickTimer.startTiming(); // Spigot
+         long i = System.nanoTime();
+ 
+         AxisAlignedBB.a().a();
+@@ -583,6 +584,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
      public void u() {
          this.methodProfiler.a("levels");
  
@@ -103,7 +99,7 @@ index 6a01982..94fabdb 100644
          // CraftBukkit start
          this.server.getScheduler().mainThreadHeartbeat(this.ticks);
  
-@@ -591,7 +595,10 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -591,7 +593,10 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
              processQueue.remove().run();
          }
  
@@ -114,7 +110,7 @@ index 6a01982..94fabdb 100644
  
          // Send time updates to everyone, it will get the right time from the world the player is in.
          if (this.ticks % 20 == 0) {
-@@ -643,7 +650,9 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -643,7 +648,9 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
  
                  this.methodProfiler.b();
                  this.methodProfiler.a("tracker");
@@ -124,7 +120,7 @@ index 6a01982..94fabdb 100644
                  this.methodProfiler.b();
                  this.methodProfiler.b();
              // } // CraftBukkit
-@@ -652,14 +661,20 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -652,16 +659,24 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
          }
  
          this.methodProfiler.c("connection");
@@ -144,7 +140,11 @@ index 6a01982..94fabdb 100644
 +        SpigotTimings.tickablesTimer.stopTiming(); // Spigot
  
          this.methodProfiler.b();
++        SpigotTimings.serverTickTimer.stopTiming(); // Spigot
++        org.spigotmc.CustomTimingsHandler.tick(); // Spigot
      }
+ 
+     public boolean getAllowNether() {
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
 index 29335ea..d0ea17a 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
