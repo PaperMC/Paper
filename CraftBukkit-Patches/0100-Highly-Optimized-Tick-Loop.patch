@@ -1,0 +1,145 @@
+From 704af76ef5f2f961623aa145c110df9e651fe2cf Mon Sep 17 00:00:00 2001
+From: md_5 <git@md-5.net>
+Date: Wed, 22 Jan 2014 19:14:15 +1100
+Subject: [PATCH] Highly Optimized Tick Loop
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 85e9e53..1225411 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -101,6 +101,11 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+     public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
+     public int autosavePeriod;
+     // CraftBukkit end
++    // Spigot start
++    private static final int TPS = 20;
++    private static final int TICK_TIME = 1000000000 / TPS;
++    public static double currentTPS = 0;
++    // Spigot end
+ 
+     public MinecraftServer(OptionSet options, Proxy proxy) { // CraftBukkit - signature file -> OptionSet
+         i = this;
+@@ -429,42 +434,29 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+                 this.p.setServerInfo(new ServerPingServerData("1.7.2", 4));
+                 this.a(this.p);
+ 
++                // Spigot start
++                long lastTick = 0, catchupTime = 0, curTime, wait;
+                 while (this.isRunning) {
+-                    long k = ap();
+-                    long l = k - i;
+-
+-                    if (l > 2000L && i - this.O >= 15000L) {
+-                        if (this.server.getWarnOnOverload()) // CraftBukkit - Added option to suppress warning messages
+-                        h.warn("Can\'t keep up! Did the system time change, or is the server overloaded? Running {}ms behind, skipping {} tick(s)", new Object[] { Long.valueOf(l), Long.valueOf(l / 50L)});
+-                        l = 2000L;
+-                        this.O = i;
+-                    }
+-
+-                    if (l < 0L) {
+-                        h.warn("Time ran backwards! Did the system time change?");
+-                        l = 0L;
+-                    }
+-
+-                    j += l;
+-                    i = k;
+-                    if (this.worlds.get(0).everyoneDeeplySleeping()) { // CraftBukkit
+-                        this.t();
+-                        j = 0L;
++                    curTime = System.nanoTime();
++                    wait = TICK_TIME - (curTime - lastTick) - catchupTime;
++                    if (wait > 0) {
++                        Thread.sleep(wait / 1000000);
++                        catchupTime = 0;
++                        continue;
+                     } else {
+-                        while (j > 50L) {
+-                            MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
+-                            j -= 50L;
+-                            this.t();
+-                        }
++                        catchupTime = Math.min(1000000000, Math.abs(wait));
+                     }
+-
++                    currentTPS = (currentTPS * 0.95) + (1E9 / (curTime - lastTick) * 0.05);
++                    lastTick = curTime;
++                    MinecraftServer.currentTick++;
+                     SpigotTimings.serverTickTimer.startTiming();
+-                    Thread.sleep(1L);
++                    this.t();
+                     this.N = true;
+                     SpigotTimings.serverTickTimer.stopTiming();
+                     org.spigotmc.CustomTimingsHandler.tick();
+                     org.spigotmc.WatchdogThread.tick();
+                 }
++                // Spigot end
+             } else {
+                 this.a((CrashReport) null);
+             }
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/TicksPerSecondCommand.java b/src/main/java/org/bukkit/craftbukkit/command/TicksPerSecondCommand.java
+new file mode 100644
+index 0000000..f114a31
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/command/TicksPerSecondCommand.java
+@@ -0,0 +1,35 @@
++package org.bukkit.craftbukkit.command;
++
++import net.minecraft.server.MinecraftServer;
++import org.bukkit.ChatColor;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++
++public class TicksPerSecondCommand extends Command {
++
++    public TicksPerSecondCommand(String name) {
++        super(name);
++        this.description = "Gets the current ticks per second for the server";
++        this.usageMessage = "/tps";
++        this.setPermission("bukkit.command.tps");
++    }
++
++    @Override
++    public boolean execute(CommandSender sender, String currentAlias, String[] args) {
++        if (!testPermission(sender)) return true;
++
++        double tps = Math.min(20,  Math.round(MinecraftServer.currentTPS * 10) / 10.0);
++        ChatColor color;
++        if (tps > 19.2D) {
++            color = ChatColor.GREEN;
++        } else if (tps > 17.4D) {
++            color = ChatColor.YELLOW;
++        } else {
++            color = ChatColor.RED;
++        }
++
++        sender.sendMessage(ChatColor.GOLD + "[TPS] " + color + tps);
++
++        return true;
++    }
++}
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index 205249e..4319e9b 100755
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -20,6 +20,7 @@ import org.bukkit.command.Command;
+ import org.bukkit.command.SimpleCommandMap;
+ import org.bukkit.configuration.ConfigurationSection;
+ import org.bukkit.configuration.file.YamlConfiguration;
++import org.bukkit.craftbukkit.command.TicksPerSecondCommand;
+ 
+ public class SpigotConfig
+ {
+@@ -248,4 +249,9 @@ public class SpigotConfig
+                     "screen." );
+         }
+     }
++
++    private static void tpsCommand()
++    {
++        commands.put( "tps", new TicksPerSecondCommand( "tps" ) );
++    }
+ }
+-- 
+1.8.3.2
+
