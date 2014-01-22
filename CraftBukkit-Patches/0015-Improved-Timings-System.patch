@@ -1,4 +1,4 @@
-From 67aa884a8f52483111b5a4e2c3327d4163750602 Mon Sep 17 00:00:00 2001
+From 98e68a83a33a2f4152c4afe7eeae5450739829bc Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 10 Jan 2013 00:18:11 -0500
 Subject: [PATCH] Improved Timings System
@@ -64,7 +64,7 @@ index dc0abc5..3d6aeff 100644
  
      protected String H() {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 0966b4b..d740620 100644
+index 7dabffb..59f6831 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -10,7 +10,6 @@ import java.util.ArrayList;
@@ -83,18 +83,19 @@ index 0966b4b..d740620 100644
  import org.bukkit.craftbukkit.util.Waitable;
  import org.bukkit.event.server.RemoteServerCommandEvent;
  import org.bukkit.event.world.WorldSaveEvent;
-@@ -442,7 +442,10 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -449,8 +449,11 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
                      currentTPS = (currentTPS * 0.95) + (1E9 / (curTime - lastTick) * 0.05);
                      lastTick = curTime;
                      MinecraftServer.currentTick++;
 +                    SpigotTimings.serverTickTimer.startTiming();
                      this.t();
+                     this.N = true;
 +                    SpigotTimings.serverTickTimer.stopTiming();
 +                    org.spigotmc.CustomTimingsHandler.tick();
                  }
                  // Spigot end
              } else {
-@@ -567,6 +570,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -575,6 +578,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
      public void u() {
          this.methodProfiler.a("levels");
  
@@ -102,7 +103,7 @@ index 0966b4b..d740620 100644
          // CraftBukkit start
          this.server.getScheduler().mainThreadHeartbeat(this.ticks);
  
-@@ -575,7 +579,10 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -583,7 +587,10 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
              processQueue.remove().run();
          }
  
@@ -113,7 +114,7 @@ index 0966b4b..d740620 100644
  
          // Send time updates to everyone, it will get the right time from the world the player is in.
          if (this.ticks % 20 == 0) {
-@@ -627,7 +634,9 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -635,7 +642,9 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
  
                  this.methodProfiler.b();
                  this.methodProfiler.a("tracker");
@@ -123,7 +124,7 @@ index 0966b4b..d740620 100644
                  this.methodProfiler.b();
                  this.methodProfiler.b();
              // } // CraftBukkit
-@@ -636,14 +645,20 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -644,14 +653,20 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
          }
  
          this.methodProfiler.c("connection");
@@ -300,7 +301,7 @@ index 00c2a18..f1bf467 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 9f09a3d..74a2d45 100644
+index a0e4ade..9672508 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -184,10 +184,12 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
