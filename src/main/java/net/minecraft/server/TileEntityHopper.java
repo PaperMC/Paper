@@ -150,7 +150,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
     }
 
     public int getMaxStackSize() {
-        return 64;
+        return maxStack; // CraftBukkit
     }
 
     public boolean a(EntityHuman entityhuman) {

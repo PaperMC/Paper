@@ -411,7 +411,7 @@ public class PlayerInventory implements IInventory {
     }
 
     public int getMaxStackSize() {
-        return 64;
+        return maxStack; // CraftBukkit
     }
 
     public boolean b(Block block) {

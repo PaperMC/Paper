@@ -145,7 +145,7 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
     }
 
     public int getMaxStackSize() {
-        return 64;
+        return maxStack; // CraftBukkit
     }
 
     public void b(int i) {
