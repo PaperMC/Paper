@@ -360,7 +360,7 @@ public final class CraftItemStack extends ItemStack {
         if (item == null) {
             return false;
         }
-        if (itemMeta == null) {
+        if (CraftItemFactory.instance().equals(itemMeta, null)) {
             item.tag = null;
             return true;
         }
