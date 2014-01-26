@@ -271,4 +271,11 @@ public class SpigotConfig
     {
         commands.put( "tps", new TicksPerSecondCommand( "tps" ) );
     }
+
+    public static int playerSample;
+    private static void playerSample()
+    {
+        playerSample = getInt( "settings.sample-count", 12 );
+        System.out.println( "Server Ping Player Sample Count: " + playerSample );
+    }
 }
