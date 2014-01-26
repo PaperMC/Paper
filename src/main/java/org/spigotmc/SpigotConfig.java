@@ -278,4 +278,10 @@ public class SpigotConfig
         playerSample = getInt( "settings.sample-count", 12 );
         System.out.println( "Server Ping Player Sample Count: " + playerSample );
     }
+
+    public static int playerShuffle;
+    private static void playerShuffle()
+    {
+        playerShuffle = getInt( "settings.player-shuffle", 0 );
+    }
 }
