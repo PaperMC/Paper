@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+
 public class BlockPoweredRail extends BlockMinecartTrackAbstract {
     protected BlockPoweredRail() {
         super(true);
@@ -115,9 +117,21 @@ public class BlockPoweredRail extends BlockMinecartTrackAbstract {
         boolean flag1 = false;
 
         if (flag && (l & 0x8) == 0) {
+            // CraftBukkit start
+            if (CraftEventFactory.callRedstoneChange(world, i, j, k, 0, 15).getNewCurrent() <= 0) {
+                return;
+            }
+            // CraftBukkit end
+
             world.setData(i, j, k, i1 | 0x8, 3);
             flag1 = true;
         } else if (!flag && (l & 0x8) != 0) {
+            // CraftBukkit start
+            if (CraftEventFactory.callRedstoneChange(world, i, j, k, 15, 0).getNewCurrent() > 0) {
+                return;
+            }
+            // CraftBukkit end
+
             world.setData(i, j, k, i1, 3);
             flag1 = true;
         }
