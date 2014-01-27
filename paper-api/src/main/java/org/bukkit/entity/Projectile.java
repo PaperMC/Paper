@@ -1,26 +1,41 @@
 package org.bukkit.entity;
 
-import org.bukkit.block.Dispenser;
+import org.bukkit.projectiles.ProjectileSource;
 
 /**
- * Represents a shootable entity
+ * Represents a shootable entity.
  */
 public interface Projectile extends Entity {
 
     /**
-     * Retrieve the shooter of this projectile. The returned value can be null
-     * for projectiles shot from a {@link Dispenser} for example.
-     *
-     * @return the {@link LivingEntity} that shot this projectile
+     * This method exists for legacy reasons to provide backwards
+     * compatibility. It will not exist at runtime and should not be used
+     * under any circumstances.
      */
-    public LivingEntity getShooter();
+    @Deprecated
+    public LivingEntity _INVALID_getShooter();
 
     /**
-     * Set the shooter of this projectile
+     * Retrieve the shooter of this projectile.
      *
-     * @param shooter the {@link LivingEntity} that shot this projectile
+     * @return the {@link ProjectileSource} that shot this projectile
      */
-    public void setShooter(LivingEntity shooter);
+    public ProjectileSource getShooter();
+
+    /**
+     * This method exists for legacy reasons to provide backwards
+     * compatibility. It will not exist at runtime and should not be used
+     * under any circumstances.
+     */
+    @Deprecated
+    public void _INVALID_setShooter(LivingEntity shooter);
+
+    /**
+     * Set the shooter of this projectile.
+     *
+     * @param shooter the {@link ProjectileSource} that shot this projectile
+     */
+    public void setShooter(ProjectileSource source);
 
     /**
      * Determine if this projectile should bounce or not when it hits.

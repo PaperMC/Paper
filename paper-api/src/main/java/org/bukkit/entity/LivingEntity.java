@@ -9,11 +9,12 @@ import org.bukkit.block.Block;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.projectiles.ProjectileSource;
 
 /**
  * Represents a living entity, such as a monster or player
  */
-public interface LivingEntity extends Entity, Damageable {
+public interface LivingEntity extends Entity, Damageable, ProjectileSource {
 
     /**
      * Gets the height of the living entity's eyes above its Location.
@@ -110,14 +111,6 @@ public interface LivingEntity extends Entity, Damageable {
      */
     @Deprecated
     public Arrow shootArrow();
-
-    /**
-     * Launches a {@link Projectile} from the living entity.
-     *
-     * @param projectile class of the projectile to launch
-     * @return the launched projectile
-     */
-    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile);
 
     /**
      * Returns the amount of air that the living entity has remaining, in
