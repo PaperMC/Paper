@@ -1,9 +1,21 @@
-From c1d148a1f2b801d24c81d9ffdbfb8669de69cc55 Mon Sep 17 00:00:00 2001
+From ec5eb62165143ba7444a7f39afe0e24d4032370a Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Tue, 28 Jan 2014 20:32:07 +1100
 Subject: [PATCH] Implement Threaded Bulk Chunk Compression and Caching
 
 
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 9b853a9..a4c8843 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -228,6 +228,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             }
+ 
+             if (!arraylist.isEmpty()) {
++                java.util.Collections.sort( arraylist, new PlayerChunkMap.ChunkComparator( this ) ); // Spigot - sort a final time before sending
+                 this.playerConnection.sendPacket(new PacketPlayOutMapChunkBulk(arraylist));
+                 Iterator iterator2 = arraylist1.iterator();
+ 
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
 index 30bf8a7..e05c870 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
@@ -35,6 +47,39 @@ index 30bf8a7..e05c870 100644
          packetdataserializer.writeShort(this.a.length);
          packetdataserializer.writeInt(this.size);
          packetdataserializer.writeBoolean(this.h);
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index ae4ca63..962e902 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -279,8 +279,27 @@ public class PlayerChunkMap {
+         return playermanager.d;
+     }
+ 
++    // Spigot Start
++    public static class ChunkComparator implements java.util.Comparator<Chunk>
++    {
++
++        private final ChunkCoordComparator base;
++
++        public ChunkComparator(EntityPlayer player)
++        {
++            this.base = new ChunkCoordComparator( player );
++        }
++
++        @Override
++        public int compare(Chunk o1, Chunk o2)
++        {
++            return base.compare( o1.l(), o2.l() );
++        }
++
++    }
+     // CraftBukkit start - Sorter to load nearby chunks first
+-    private static class ChunkCoordComparator implements java.util.Comparator<ChunkCoordIntPair> {
++    public static class ChunkCoordComparator implements java.util.Comparator<ChunkCoordIntPair> {
++        // Spigot End
+         private int x;
+         private int z;
+ 
 diff --git a/src/main/java/net/minecraft/server/ServerConnectionChannel.java b/src/main/java/net/minecraft/server/ServerConnectionChannel.java
 index fb95be4..2875c94 100644
 --- a/src/main/java/net/minecraft/server/ServerConnectionChannel.java
