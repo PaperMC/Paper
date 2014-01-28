@@ -1,4 +1,4 @@
-From 95e52dc06241d2a34781b0c4258c99d900ea3c44 Mon Sep 17 00:00:00 2001
+From 944e2150034a80c046ca0651cdf53d7cdf7e0b7f Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 1 Dec 2013 15:10:48 +1100
 Subject: [PATCH] mc-dev imports
@@ -2075,6 +2075,49 @@ index 0000000..3691094
 +
 +    static MinecraftServer b(ServerConnection serverconnection) {
 +        return serverconnection.d;
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/ServerConnectionChannel.java b/src/main/java/net/minecraft/server/ServerConnectionChannel.java
+new file mode 100644
+index 0000000..fb95be4
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/ServerConnectionChannel.java
+@@ -0,0 +1,37 @@
++package net.minecraft.server;
++
++import net.minecraft.util.io.netty.channel.Channel;
++import net.minecraft.util.io.netty.channel.ChannelException;
++import net.minecraft.util.io.netty.channel.ChannelInitializer;
++import net.minecraft.util.io.netty.channel.ChannelOption;
++import net.minecraft.util.io.netty.handler.timeout.ReadTimeoutHandler;
++
++class ServerConnectionChannel extends ChannelInitializer {
++
++    final ServerConnection a;
++
++    ServerConnectionChannel(ServerConnection serverconnection) {
++        this.a = serverconnection;
++    }
++
++    protected void initChannel(Channel channel) {
++        try {
++            channel.config().setOption(ChannelOption.IP_TOS, Integer.valueOf(24));
++        } catch (ChannelException channelexception) {
++            ;
++        }
++
++        try {
++            channel.config().setOption(ChannelOption.TCP_NODELAY, Boolean.valueOf(false));
++        } catch (ChannelException channelexception1) {
++            ;
++        }
++
++        channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30)).addLast("legacy_query", new LegacyPingHandler(this.a)).addLast("splitter", new PacketSplitter()).addLast("decoder", new PacketDecoder()).addLast("prepender", new PacketPrepender()).addLast("encoder", new PacketEncoder());
++        NetworkManager networkmanager = new NetworkManager(false);
++
++        ServerConnection.a(this.a).add(networkmanager);
++        channel.pipeline().addLast("packet_handler", networkmanager);
++        networkmanager.a((PacketListener) (new HandshakeListener(ServerConnection.b(this.a), networkmanager)));
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/ServerStatisticManager.java b/src/main/java/net/minecraft/server/ServerStatisticManager.java
