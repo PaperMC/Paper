@@ -2,7 +2,17 @@ package net.minecraft.server;
 
 import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
 
+// CraftBukkit start
+import java.net.InetAddress;
+import java.util.HashMap;
+// CraftBukkit end
+
 public class HandshakeListener implements PacketHandshakingInListener {
+
+    // CraftBukkit start
+    private static final HashMap<InetAddress, Long> throttleTracker = new HashMap<InetAddress, Long>();
+    private static int throttleCounter = 0;
+    // CraftBukkit end
 
     private final MinecraftServer a;
     private final NetworkManager b;
@@ -17,6 +27,41 @@ public class HandshakeListener implements PacketHandshakingInListener {
         case 1:
             this.b.a(EnumProtocol.LOGIN);
             ChatComponentText chatcomponenttext;
+
+            // CraftBukkit start
+            try {
+                long currentTime = System.currentTimeMillis();
+                long connectionThrottle = MinecraftServer.getServer().server.getConnectionThrottle();
+                InetAddress address = ((java.net.InetSocketAddress) this.b.getSocketAddress()).getAddress();
+
+                synchronized (throttleTracker) {
+                    if (throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - throttleTracker.get(address) < connectionThrottle) {
+                        throttleTracker.put(address, currentTime);
+                        chatcomponenttext = new ChatComponentText("Connection throttled! Please wait before reconnecting.");
+                        this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext), new GenericFutureListener[0]);
+                        this.b.a(chatcomponenttext); // Should be close
+                        return;
+                    }
+
+                    throttleTracker.put(address, currentTime);
+                    throttleCounter++;
+                    if (throttleCounter > 200) {
+                        throttleCounter = 0;
+
+                        // Cleanup stale entries
+                        java.util.Iterator iter = throttleTracker.entrySet().iterator();
+                        while (iter.hasNext()) {
+                            java.util.Map.Entry<InetAddress, Long> entry = (java.util.Map.Entry) iter.next();
+                            if (entry.getValue() > connectionThrottle) {
+                                iter.remove();
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable t) {
+                org.apache.logging.log4j.LogManager.getLogger().error("Failed to check connection throttle", t);
+            }
+            // CraftBukkit end
 
             if (packethandshakinginsetprotocol.d() > 4) {
                 chatcomponenttext = new ChatComponentText("Outdated server! I\'m still on 1.7.2");
