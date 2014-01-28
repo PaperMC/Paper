@@ -1,22 +1,13 @@
-From d44a0d5bd59d7bd85e365791a64fd49abc6d8dcc Mon Sep 17 00:00:00 2001
+From 51ae763d497d8e343058f92fc46793cf235e47e0 Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Tue, 28 Jan 2014 20:32:07 +1100
 Subject: [PATCH] Implement Threaded Bulk Chunk Compression
 
 
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
-index 30bf8a7..178a4ba 100644
+index 30bf8a7..9d1a3d5 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
-@@ -6,7 +6,7 @@ import java.util.zip.DataFormatException;
- import java.util.zip.Deflater;
- import java.util.zip.Inflater;
- 
--public class PacketPlayOutMapChunkBulk extends Packet {
-+public class PacketPlayOutMapChunkBulk extends Packet implements org.spigotmc.Compressible { // Spigot
- 
-     private int[] a;
-     private int[] b;
 @@ -174,7 +174,7 @@ public class PacketPlayOutMapChunkBulk extends Packet {
      }
  
@@ -70,12 +61,13 @@ index fb95be4..2875c94 100644
          ServerConnection.a(this.a).add(networkmanager);
 diff --git a/src/main/java/org/spigotmc/ChunkCompressor.java b/src/main/java/org/spigotmc/ChunkCompressor.java
 new file mode 100644
-index 0000000..50485d0
+index 0000000..0391e50
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/ChunkCompressor.java
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,22 @@
 +package org.spigotmc;
 +
++import net.minecraft.server.PacketPlayOutMapChunkBulk;
 +import net.minecraft.util.io.netty.channel.ChannelHandler;
 +import net.minecraft.util.io.netty.channel.ChannelHandlerContext;
 +import net.minecraft.util.io.netty.channel.ChannelOutboundHandlerAdapter;
@@ -88,25 +80,12 @@ index 0000000..50485d0
 +    @Override
 +    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception
 +    {
-+        if ( msg instanceof Compressible )
++        if ( msg instanceof PacketPlayOutMapChunkBulk )
 +        {
-+            ( (Compressible) msg ).compress(); // TODO: Caching!
++            ( (PacketPlayOutMapChunkBulk) msg ).compress(); // TODO: Caching!
 +        }
 +        super.write( ctx, msg, promise );
 +    }
-+}
-diff --git a/src/main/java/org/spigotmc/Compressible.java b/src/main/java/org/spigotmc/Compressible.java
-new file mode 100644
-index 0000000..f1cc789
---- /dev/null
-+++ b/src/main/java/org/spigotmc/Compressible.java
-@@ -0,0 +1,7 @@
-+package org.spigotmc;
-+
-+public interface Compressible
-+{
-+
-+    void compress();
 +}
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
 index 552266b..ca41dd9 100755
