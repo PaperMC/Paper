@@ -1,4 +1,4 @@
-From e752e877dd0a7fffdcbd8a375ee35f47db3ca983 Mon Sep 17 00:00:00 2001
+From 8d913a3ada460ef4eb29dd7be5c09aa6d440d349 Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Tue, 28 Jan 2014 20:32:07 +1100
 Subject: [PATCH] Implement Threaded Bulk Chunk Compression and Caching
@@ -17,23 +17,18 @@ index 9b853a9..a4c8843 100644
                  Iterator iterator2 = arraylist1.iterator();
  
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
-index 30bf8a7..e05c870 100644
+index 30bf8a7..c27b2e3 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
-@@ -8,13 +8,13 @@ import java.util.zip.Inflater;
- 
- public class PacketPlayOutMapChunkBulk extends Packet {
- 
--    private int[] a;
--    private int[] b;
-+    public int[] a; // Spigot
-+    public int[] b; // Spigot
+@@ -12,9 +12,9 @@ public class PacketPlayOutMapChunkBulk extends Packet {
+     private int[] b;
      private int[] c;
      private int[] d;
 -    private byte[] buffer;
-+    public byte[] buffer; // Spigot
-     private byte[][] inflatedBuffers;
+-    private byte[][] inflatedBuffers;
 -    private int size;
++    public byte[] buffer; // Spigot
++    public byte[][] inflatedBuffers; // Spigot
 +    public int size; // Spigot
      private boolean h;
      private byte[] buildBuffer = new byte[0]; // CraftBukkit - remove static
@@ -124,16 +119,16 @@ index fb95be4..2875c94 100644
          ServerConnection.a(this.a).add(networkmanager);
 diff --git a/src/main/java/org/spigotmc/ChunkCompressor.java b/src/main/java/org/spigotmc/ChunkCompressor.java
 new file mode 100644
-index 0000000..3fd45dc
+index 0000000..90e03cb
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/ChunkCompressor.java
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,62 @@
 +package org.spigotmc;
 +
 +import java.util.Arrays;
 +import java.util.Iterator;
 +import java.util.LinkedHashMap;
-+import java.util.Map;
++import java.util.zip.CRC32;
 +import net.minecraft.server.PacketPlayOutMapChunkBulk;
 +import net.minecraft.util.io.netty.channel.ChannelHandler;
 +import net.minecraft.util.io.netty.channel.ChannelHandlerContext;
@@ -144,7 +139,7 @@ index 0000000..3fd45dc
 +public class ChunkCompressor extends ChannelOutboundHandlerAdapter
 +{
 +
-+    private final LinkedHashMap<Integer, byte[]> cache = new LinkedHashMap<Integer, byte[]>( 16, 0.75f, true ); // Defaults, order by access
++    private final LinkedHashMap<Long, byte[]> cache = new LinkedHashMap<Long, byte[]>( 16, 0.75f, true ); // Defaults, order by access
 +    private volatile int cacheSize;
 +
 +    @Override
@@ -155,15 +150,13 @@ index 0000000..3fd45dc
 +        if ( msg instanceof PacketPlayOutMapChunkBulk )
 +        {
 +            PacketPlayOutMapChunkBulk chunk = (PacketPlayOutMapChunkBulk) msg;
-+            // Here we assign a hash to the chunk based on the array of its coordinates: x1, z1, x2, z2, x3, z3 etc etc
-+            int[] series = new int[ chunk.a.length * 2 ];
-+            int pos = 0; // TODO: Can this be determined mathematically?
-+            for ( int i = 0; i < chunk.a.length; i++ )
++            // Here we assign a hash to the chunk based on its contents. CRC32 is fast and sufficient for use here.
++            CRC32 crc = new CRC32();
++            for ( byte[] c : chunk.inflatedBuffers )
 +            {
-+                series[pos++] = chunk.a[i];
-+                series[pos++] = chunk.b[i];
++                crc.update( c );
 +            }
-+            int hash = Arrays.hashCode( series );
++            long hash = crc.getValue();
 +
 +            byte[] deflated = cache.get( hash );
 +            if ( deflated != null )
