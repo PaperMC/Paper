@@ -1,4 +1,4 @@
-From 8d913a3ada460ef4eb29dd7be5c09aa6d440d349 Mon Sep 17 00:00:00 2001
+From 816113b6ab797579e991512bb391cf432670565e Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Tue, 28 Jan 2014 20:32:07 +1100
 Subject: [PATCH] Implement Threaded Bulk Chunk Compression and Caching
@@ -119,21 +119,23 @@ index fb95be4..2875c94 100644
          ServerConnection.a(this.a).add(networkmanager);
 diff --git a/src/main/java/org/spigotmc/ChunkCompressor.java b/src/main/java/org/spigotmc/ChunkCompressor.java
 new file mode 100644
-index 0000000..90e03cb
+index 0000000..9992bca
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/ChunkCompressor.java
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,70 @@
 +package org.spigotmc;
 +
 +import java.util.Arrays;
 +import java.util.Iterator;
 +import java.util.LinkedHashMap;
++import java.util.logging.Level;
 +import java.util.zip.CRC32;
 +import net.minecraft.server.PacketPlayOutMapChunkBulk;
 +import net.minecraft.util.io.netty.channel.ChannelHandler;
 +import net.minecraft.util.io.netty.channel.ChannelHandlerContext;
 +import net.minecraft.util.io.netty.channel.ChannelOutboundHandlerAdapter;
 +import net.minecraft.util.io.netty.channel.ChannelPromise;
++import org.bukkit.Bukkit;
 +
 +@ChannelHandler.Sharable
 +public class ChunkCompressor extends ChannelOutboundHandlerAdapter
@@ -183,6 +185,12 @@ index 0000000..90e03cb
 +        }
 +
 +        super.write( ctx, msg, promise );
++    }
++
++    @Override
++    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
++    {
++        Bukkit.getServer().getLogger().log( Level.WARNING, "Error compressing or caching chunk", cause );
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
