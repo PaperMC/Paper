@@ -132,6 +132,40 @@ public class ShapelessRecipe extends CraftingRecipe {
         return this;
     }
 
+    // Paper start
+    @NotNull
+    public ShapelessRecipe addIngredient(@NotNull ItemStack item) {
+        return addIngredient(item.getAmount(), item);
+    }
+
+    @NotNull
+    public ShapelessRecipe addIngredient(int count, @NotNull ItemStack item) {
+        Preconditions.checkArgument(ingredients.size() + count <= 9, "Shapeless recipes cannot have more than 9 ingredients");
+        while (count-- > 0) {
+            ingredients.add(new RecipeChoice.ExactChoice(item));
+        }
+        return this;
+    }
+
+    @NotNull
+    public ShapelessRecipe removeIngredient(@NotNull ItemStack item) {
+        return removeIngredient(1, item);
+    }
+
+    @NotNull
+    public ShapelessRecipe removeIngredient(int count, @NotNull ItemStack item) {
+        Iterator<RecipeChoice> iterator = ingredients.iterator();
+        while (count > 0 && iterator.hasNext()) {
+            RecipeChoice choice = iterator.next();
+            if (choice.test(item)) {
+                iterator.remove();
+                count--;
+            }
+        }
+        return this;
+    }
+    // Paper end
+
     /**
      * Removes an ingredient from the list.
      *
@@ -155,7 +189,7 @@ public class ShapelessRecipe extends CraftingRecipe {
      */
     @NotNull
     public ShapelessRecipe removeIngredient(@NotNull Material ingredient) {
-        return removeIngredient(ingredient, 0);
+        return removeIngredient(new ItemStack(ingredient)); // Paper - avoid using deprecated methods (magic values; RecipeChoice#getItemStack)
     }
 
     /**
@@ -182,7 +216,7 @@ public class ShapelessRecipe extends CraftingRecipe {
      */
     @NotNull
     public ShapelessRecipe removeIngredient(int count, @NotNull Material ingredient) {
-        return removeIngredient(count, ingredient, 0);
+        return removeIngredient(count, new ItemStack(ingredient)); // Paper - avoid using deprecated methods (magic values; RecipeChoice#getItemStack)
     }
 
     /**
