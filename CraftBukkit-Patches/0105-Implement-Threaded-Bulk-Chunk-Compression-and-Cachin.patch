@@ -1,4 +1,4 @@
-From 816113b6ab797579e991512bb391cf432670565e Mon Sep 17 00:00:00 2001
+From 9cc3d9cf3540af0ac2e95217a151fe19d381f9f9 Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Tue, 28 Jan 2014 20:32:07 +1100
 Subject: [PATCH] Implement Threaded Bulk Chunk Compression and Caching
@@ -17,7 +17,7 @@ index 9b853a9..a4c8843 100644
                  Iterator iterator2 = arraylist1.iterator();
  
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
-index 30bf8a7..c27b2e3 100644
+index 30bf8a7..c40cf30 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
 @@ -12,9 +12,9 @@ public class PacketPlayOutMapChunkBulk extends Packet {
@@ -33,15 +33,6 @@ index 30bf8a7..c27b2e3 100644
      private boolean h;
      private byte[] buildBuffer = new byte[0]; // CraftBukkit - remove static
      // CraftBukkit start
-@@ -174,7 +174,7 @@ public class PacketPlayOutMapChunkBulk extends Packet {
-     }
- 
-     public void b(PacketDataSerializer packetdataserializer) throws IOException { // CraftBukkit - throws IOException
--        compress(); // CraftBukkit
-+        // compress(); // CraftBukkit // Spigot - removed
-         packetdataserializer.writeShort(this.a.length);
-         packetdataserializer.writeInt(this.size);
-         packetdataserializer.writeBoolean(this.h);
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 index ae4ca63..962e902 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
@@ -76,10 +67,10 @@ index ae4ca63..962e902 100644
          private int z;
  
 diff --git a/src/main/java/net/minecraft/server/ServerConnectionChannel.java b/src/main/java/net/minecraft/server/ServerConnectionChannel.java
-index fb95be4..2875c94 100644
+index fb95be4..a382235 100644
 --- a/src/main/java/net/minecraft/server/ServerConnectionChannel.java
 +++ b/src/main/java/net/minecraft/server/ServerConnectionChannel.java
-@@ -1,15 +1,26 @@
+@@ -1,14 +1,25 @@
  package net.minecraft.server;
  
 +import com.google.common.util.concurrent.ThreadFactoryBuilder; // Spigot
@@ -98,28 +89,24 @@ index fb95be4..2875c94 100644
  class ServerConnectionChannel extends ChannelInitializer {
  
      final ServerConnection a;
--
 +    // Spigot Start
 +    private static final EventExecutorGroup threadPool = new DefaultEventExecutorGroup( SpigotConfig.compressionThreads, new ThreadFactoryBuilder().setNameFormat( "Chunk Compressor #%d" ).setDaemon( true ).build() );
 +    private static final ChunkCompressor chunkCompressor = new ChunkCompressor();
 +    // Spigot End
-+    
+ 
      ServerConnectionChannel(ServerConnection serverconnection) {
          this.a = serverconnection;
-     }
-@@ -27,7 +38,8 @@ class ServerConnectionChannel extends ChannelInitializer {
-             ;
+@@ -28,6 +39,7 @@ class ServerConnectionChannel extends ChannelInitializer {
          }
  
--        channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30)).addLast("legacy_query", new LegacyPingHandler(this.a)).addLast("splitter", new PacketSplitter()).addLast("decoder", new PacketDecoder()).addLast("prepender", new PacketPrepender()).addLast("encoder", new PacketEncoder());
-+        channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30)).addLast("legacy_query", new LegacyPingHandler(this.a)).addLast("splitter", new PacketSplitter()).addLast("decoder", new PacketDecoder()).addLast("prepender", new PacketPrepender()).addLast("encoder", new PacketEncoder())
-+                .addLast( threadPool, "compressor", chunkCompressor ); // Spigot
+         channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30)).addLast("legacy_query", new LegacyPingHandler(this.a)).addLast("splitter", new PacketSplitter()).addLast("decoder", new PacketDecoder()).addLast("prepender", new PacketPrepender()).addLast("encoder", new PacketEncoder());
++        channel.pipeline().addLast( threadPool, "compressor", chunkCompressor ); // Spigot
          NetworkManager networkmanager = new NetworkManager(false);
  
          ServerConnection.a(this.a).add(networkmanager);
 diff --git a/src/main/java/org/spigotmc/ChunkCompressor.java b/src/main/java/org/spigotmc/ChunkCompressor.java
 new file mode 100644
-index 0000000..9992bca
+index 0000000..f82a26d
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/ChunkCompressor.java
 @@ -0,0 +1,70 @@
@@ -147,50 +134,50 @@ index 0000000..9992bca
 +    @Override
 +    public synchronized void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception
 +    {
-+        long start = System.currentTimeMillis();
-+        boolean cached = false;
-+        if ( msg instanceof PacketPlayOutMapChunkBulk )
++        try
 +        {
-+            PacketPlayOutMapChunkBulk chunk = (PacketPlayOutMapChunkBulk) msg;
-+            // Here we assign a hash to the chunk based on its contents. CRC32 is fast and sufficient for use here.
-+            CRC32 crc = new CRC32();
-+            for ( byte[] c : chunk.inflatedBuffers )
++            long start = System.currentTimeMillis();
++            boolean cached = false;
++            if ( msg instanceof PacketPlayOutMapChunkBulk )
 +            {
-+                crc.update( c );
-+            }
-+            long hash = crc.getValue();
-+
-+            byte[] deflated = cache.get( hash );
-+            if ( deflated != null )
-+            {
-+                chunk.buffer = deflated;
-+                chunk.size = deflated.length;
-+                cached = true;
-+            } else
-+            {
-+                chunk.compress(); // Compress the chunk
-+                byte[] buffer = Arrays.copyOf( chunk.buffer, chunk.size ); // Resize the array to correct sizing
-+
-+                Iterator<byte[]> iter = cache.values().iterator(); // Grab a single iterator reference
-+                // Whilst this next entry is too big for us, and we have stuff to remove
-+                while ( cacheSize + buffer.length > org.spigotmc.SpigotConfig.chunkCacheBytes && iter.hasNext() )
++                PacketPlayOutMapChunkBulk chunk = (PacketPlayOutMapChunkBulk) msg;
++                // Here we assign a hash to the chunk based on its contents. CRC32 is fast and sufficient for use here.
++                CRC32 crc = new CRC32();
++                for ( byte[] c : chunk.inflatedBuffers )
 +                {
-+                    cacheSize -= iter.next().length; // Update size table
-+                    iter.remove(); // Remove it alltogether
++                    crc.update( c );
 +                }
-+                cacheSize += buffer.length; // Update size table
-+                cache.put( hash, buffer ); // Pop the new one in the cache
++                long hash = crc.getValue();
++
++                byte[] deflated = cache.get( hash );
++                if ( deflated != null )
++                {
++                    chunk.buffer = deflated;
++                    chunk.size = deflated.length;
++                    cached = true;
++                } else
++                {
++                    chunk.compress(); // Compress the chunk
++                    byte[] buffer = Arrays.copyOf( chunk.buffer, chunk.size ); // Resize the array to correct sizing
++
++                    Iterator<byte[]> iter = cache.values().iterator(); // Grab a single iterator reference
++                    // Whilst this next entry is too big for us, and we have stuff to remove
++                    while ( cacheSize + buffer.length > org.spigotmc.SpigotConfig.chunkCacheBytes && iter.hasNext() )
++                    {
++                        cacheSize -= iter.next().length; // Update size table
++                        iter.remove(); // Remove it alltogether
++                    }
++                    cacheSize += buffer.length; // Update size table
++                    cache.put( hash, buffer ); // Pop the new one in the cache
++                }
++                // System.out.println( "Time: " + ( System.currentTimeMillis() - start ) + " " + cached + " " + cacheSize );
 +            }
-+            // System.out.println( "Time: " + ( System.currentTimeMillis() - start ) + " " + cached + " " + cacheSize );
++        } catch ( Throwable t )
++        {
++            Bukkit.getServer().getLogger().log( Level.WARNING, "Error compressing or caching chunk", t );
 +        }
 +
 +        super.write( ctx, msg, promise );
-+    }
-+
-+    @Override
-+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
-+    {
-+        Bukkit.getServer().getLogger().log( Level.WARNING, "Error compressing or caching chunk", cause );
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
