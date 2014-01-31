@@ -280,7 +280,7 @@ public class EntityArrow extends Entity implements IProjectile {
                     this.d = movingobjectposition.b;
                     this.e = movingobjectposition.c;
                     this.f = movingobjectposition.d;
-                    this.g = block;
+                    this.g = this.world.getType(d, e, f); // CraftBukkit - Get correct block for storage
                     this.h = this.world.getData(this.d, this.e, this.f);
                     this.motX = (double) ((float) (movingobjectposition.pos.c - this.locX));
                     this.motY = (double) ((float) (movingobjectposition.pos.d - this.locY));
