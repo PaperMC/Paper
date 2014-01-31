@@ -92,6 +92,12 @@ public class ItemMonsterEgg extends Item {
     }
 
     public static Entity a(World world, int i, double d0, double d1, double d2) {
+        // CraftBukkit start - delegate to spawnCreature
+        return spawnCreature(world, i, d0, d1, d2, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG);
+    }
+
+    public static Entity spawnCreature(World world, int i, double d0, double d1, double d2, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
+        // CraftBukkit end
         if (!EntityTypes.a.containsKey(Integer.valueOf(i))) {
             return null;
         } else {
@@ -106,7 +112,7 @@ public class ItemMonsterEgg extends Item {
                     entityinsentient.aP = entityinsentient.yaw;
                     entityinsentient.aN = entityinsentient.yaw;
                     entityinsentient.a((GroupDataEntity) null);
-                    world.addEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // CraftBukkit
+                    world.addEntity(entity, spawnReason); // CraftBukkit
                     entityinsentient.r();
                 }
             }

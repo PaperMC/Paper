@@ -44,7 +44,7 @@ final class DispenseBehaviorMonsterEgg extends DispenseBehaviorItem {
 
         itemstack1 = CraftItemStack.asNMSCopy(event.getItem());
 
-        Entity entity = ItemMonsterEgg.a(isourceblock.k(), itemstack.getData(), event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ());
+        Entity entity = ItemMonsterEgg.spawnCreature(isourceblock.k(), itemstack.getData(), event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DISPENSE_EGG);
 
         if (entity instanceof EntityLiving && itemstack.hasName()) {
             ((EntityInsentient) entity).setCustomName(itemstack.getName());
