@@ -1,4 +1,4 @@
-From 9cc3d9cf3540af0ac2e95217a151fe19d381f9f9 Mon Sep 17 00:00:00 2001
+From cf130aa4f7b9f3dae460f43d761870222b408fcd Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Tue, 28 Jan 2014 20:32:07 +1100
 Subject: [PATCH] Implement Threaded Bulk Chunk Compression and Caching
@@ -17,7 +17,7 @@ index 9b853a9..a4c8843 100644
                  Iterator iterator2 = arraylist1.iterator();
  
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
-index 30bf8a7..c40cf30 100644
+index fc92026..484d727 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
 @@ -12,9 +12,9 @@ public class PacketPlayOutMapChunkBulk extends Packet {
@@ -106,10 +106,10 @@ index fb95be4..a382235 100644
          ServerConnection.a(this.a).add(networkmanager);
 diff --git a/src/main/java/org/spigotmc/ChunkCompressor.java b/src/main/java/org/spigotmc/ChunkCompressor.java
 new file mode 100644
-index 0000000..f82a26d
+index 0000000..78560c6
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/ChunkCompressor.java
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,87 @@
 +package org.spigotmc;
 +
 +import java.util.Arrays;
@@ -179,9 +179,26 @@ index 0000000..f82a26d
 +
 +        super.write( ctx, msg, promise );
 +    }
++
++    @Override
++    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
++    {
++        // In short, there isn't actually anything wrong with the async chunk compressor, it just accidentally caused console logging of errors which were previously ignored.\
++        // This commit restores that behaviour
++
++        // You may be asking yourself why we are completely ignoring any errors which come this far down the pipeline.
++        // The answer is quite simple:
++        // Mojang did it
++        // The default Mojang pipeline doesn't have any ChannelOutboundHandlerAdapter or similar instances, and thus nothing to handle exceptionCaught
++        // So when a channel.write() or channel.flush() fails, the error message is actually just passed straight to the future provided.
++        // It is then subsequently discarded, the channel closed, and no one except the user was any the wiser it actually happened!
++        // Unfortunately for us, the default exceptionCaught in this class sends a blaring warning to the server admins indicating that it couldn't send a packet to a disconnected user!
++        // We don't care about these warnings, if we did something wrong to disconnect the user, it is already logged in the proper location, as are broken sockets
++        // tl;dr no need to blare warnings on each write to a broken socket
++    }
 +}
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index 552266b..6c6e6b0 100755
+index 769ef2a..fb944e7 100755
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -266,4 +266,16 @@ public class SpigotConfig
