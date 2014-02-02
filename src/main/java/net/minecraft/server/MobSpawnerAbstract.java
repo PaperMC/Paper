@@ -131,6 +131,12 @@ public abstract class MobSpawnerAbstract {
                                 if (this.spawnData.getEntity().e() == 1 && this.spawnData.getEntity().hasKeyOfType("id", 8)) {
                                     ((EntityInsentient) entity).prepare(worldserver, world.getDamageScaler(entity.getChunkCoordinates()), EnumMobSpawn.SPAWNER, (GroupDataEntity) null, (NBTTagCompound) null);
                                 }
+                                // Spigot Start
+                                if ( entityinsentient.world.spigotConfig.nerfSpawnerMobs )
+                                {
+                                    entityinsentient.aware = false;
+                                }
+                                // Spigot End
                             }
 
                             if (!worldserver.addAllEntitiesSafely(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER)) { // CraftBukkit
