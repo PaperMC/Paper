@@ -498,10 +498,14 @@ public abstract class PlayerList {
         entityplayer1.playerConnection.sendPacket(new PacketPlayOutSpawnPosition(chunkcoordinates1.x, chunkcoordinates1.y, chunkcoordinates1.z));
         entityplayer1.playerConnection.sendPacket(new PacketPlayOutExperience(entityplayer1.exp, entityplayer1.expTotal, entityplayer1.expLevel));
         this.b(entityplayer1, worldserver);
-        worldserver.getPlayerChunkMap().addPlayer(entityplayer1);
-        worldserver.addEntity(entityplayer1);
-        this.players.add(entityplayer1);
-        // CraftBukkit start - Added from changeDimension
+        // CraftBukkit start
+        // Don't re-add player to player list if disconnected
+        if (!entityplayer.playerConnection.isDisconnected()) {
+	        worldserver.getPlayerChunkMap().addPlayer(entityplayer1);
+	        worldserver.addEntity(entityplayer1);
+	        this.players.add(entityplayer1);
+        }
+        // Added from changeDimension
         this.updateClient(entityplayer1); // Update health, etc...
         entityplayer1.updateAbilities();
         Iterator iterator = entityplayer1.getEffects().iterator();
@@ -515,10 +519,16 @@ public abstract class PlayerList {
         // CraftBukkit end
         entityplayer1.setHealth(entityplayer1.getHealth());
 
-        // CraftBukkit start - Don't fire on respawn
+        // CraftBukkit start
+        // Don't fire on respawn
         if (fromWorld != location.getWorld()) {
             PlayerChangedWorldEvent event = new PlayerChangedWorldEvent((Player) entityplayer1.getBukkitEntity(), fromWorld);
             Bukkit.getServer().getPluginManager().callEvent(event);
+        }
+
+        // Save player file again if they were disconnected
+        if (entityplayer.playerConnection.isDisconnected()) {
+            this.b(entityplayer1);
         }
         // CraftBukkit end
 
