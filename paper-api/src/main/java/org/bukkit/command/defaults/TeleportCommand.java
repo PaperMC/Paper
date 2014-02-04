@@ -71,7 +71,7 @@ public class TeleportCommand extends VanillaCommand {
             playerLocation.setY(y);
             playerLocation.setZ(z);
 
-            player.teleport(playerLocation);
+            player.teleport(playerLocation, TeleportCause.COMMAND);
             Command.broadcastCommandMessage(sender, String.format("Teleported %s to %.2f, %.2f, %.2f", player.getDisplayName(), x, y, z));
         }
         return true;
