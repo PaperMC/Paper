@@ -2,7 +2,9 @@ package org.bukkit.command.defaults;
 
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
+import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -27,8 +29,8 @@ public class BanCommand extends VanillaCommand {
             return false;
         }
 
-        // TODO: Ban Reason support
-        Bukkit.getOfflinePlayer(args[0]).setBanned(true);
+        String reason = args.length > 0 ? StringUtils.join(args, ' ', 1, args.length) : null;
+        Bukkit.getBanList(BanList.Type.NAME).addBan(args[0], reason, null, sender.getName());
 
         Player player = Bukkit.getPlayer(args[0]);
         if (player != null) {

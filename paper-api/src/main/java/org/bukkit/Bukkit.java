@@ -448,6 +448,13 @@ public final class Bukkit {
     }
 
     /**
+     * @see Server#getBanList(BanList.Type)
+     */
+    public static BanList getBanList(BanList.Type type){
+    	return server.getBanList(type);
+    }
+
+    /**
      * @see Server#setWhitelist(boolean value)
      */
     public static void setWhitelist(boolean value) {

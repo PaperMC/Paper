@@ -573,6 +573,14 @@ public interface Server extends PluginMessageRecipient {
     public Set<OfflinePlayer> getBannedPlayers();
 
     /**
+     * Gets a BanList for the supplied BanList Type
+     *
+     * @param type The BanList Type to fetch, cannot be null
+     * @return the BanList of the specified type
+     */
+    public BanList getBanList(BanList.Type type);
+
+    /**
      * Gets a set containing all player operators
      *
      * @return Set containing player operators
