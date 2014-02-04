@@ -1,4 +1,4 @@
-From 7fc2e775270cd5909fc9dd80b84c4883a2226df5 Mon Sep 17 00:00:00 2001
+From af77f1fa0985f52d888dfd1d6302aa41d0dc786d Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 16 May 2013 18:51:05 +1000
 Subject: [PATCH] Orebfuscator
@@ -37,29 +37,71 @@ index 39e5b5b..d2587c1 100644
                      double d0 = (double) ((float) i + this.world.random.nextFloat());
                      double d1 = (double) ((float) j + this.world.random.nextFloat());
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
-index 09b34e9..e80d8b9 100644
+index 09b34e9..3006712 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 @@ -28,6 +28,7 @@ public class PacketPlayOutMapChunk extends Packet {
  
          this.d = chunkmap.c;
          this.c = chunkmap.b;
-+        chunk.world.spigotConfig.antiXrayInstance.obfuscate(chunk.locX, chunk.locZ, i, chunkmap.a, chunk.world); // Spigot
++        chunk.world.spigotConfig.antiXrayInstance.obfuscateSync(chunk.locX, chunk.locZ, i, chunkmap.a, chunk.world); // Spigot
  
          try {
              this.buffer = chunkmap.a;
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
-index bf3a139..fc92026 100644
+index bf3a139..30bf8a7 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
-@@ -43,6 +43,7 @@ public class PacketPlayOutMapChunkBulk extends Packet {
-         for (int k = 0; k < i; ++k) {
+@@ -26,6 +26,7 @@ public class PacketPlayOutMapChunkBulk extends Packet {
+         }
+     };
+     // CraftBukkit end
++    private World world; // Spigot
+ 
+     public PacketPlayOutMapChunkBulk() {}
+ 
+@@ -44,6 +45,9 @@ public class PacketPlayOutMapChunkBulk extends Packet {
              Chunk chunk = (Chunk) list.get(k);
              ChunkMap chunkmap = PacketPlayOutMapChunk.a(chunk, true, '\uffff');
-+            chunk.world.spigotConfig.antiXrayInstance.obfuscate(chunk.locX, chunk.locZ, chunkmap.b, chunkmap.a, chunk.world); // Spigot
  
++            // Spigot start
++            world = chunk.world;
++            /*
              if (buildBuffer.length < j + chunkmap.a.length) {
                  byte[] abyte = new byte[j + chunkmap.a.length];
+ 
+@@ -52,6 +56,8 @@ public class PacketPlayOutMapChunkBulk extends Packet {
+             }
+ 
+             System.arraycopy(chunkmap.a, 0, buildBuffer, j, chunkmap.a.length);
++            */
++            // Spigot end
+             j += chunkmap.a.length;
+             this.a[k] = chunk.locX;
+             this.b[k] = chunk.locZ;
+@@ -79,6 +85,22 @@ public class PacketPlayOutMapChunkBulk extends Packet {
+         if (this.buffer != null) {
+             return;
+         }
++        // Spigot start
++        int finalBufferSize = 0;
++        // Obfuscate all sections
++        for (int i = 0; i < a.length; i++) {
++            world.spigotConfig.antiXrayInstance.obfuscate(a[i], b[i], c[i], inflatedBuffers[i], world);
++            finalBufferSize += inflatedBuffers[i].length;
++        }
++
++        // Now it's time to efficiently copy the chunk to the build buffer
++        buildBuffer = new byte[finalBufferSize];
++        int bufferLocation = 0;
++        for (int i = 0; i < a.length; i++) {
++            System.arraycopy(inflatedBuffers[i], 0, buildBuffer, bufferLocation, inflatedBuffers[i].length);
++            bufferLocation += inflatedBuffers[i].length;
++        }
++        // Spigot end
+ 
+         Deflater deflater = localDeflater.get();
+         deflater.reset();
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
 index bceba7b..c963fac 100644
 --- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
@@ -86,10 +128,10 @@ index 5b0875d..1aca7f6 100644
      public void b(int i, int j, int k, Block block, int l) {
 diff --git a/src/main/java/org/spigotmc/AntiXray.java b/src/main/java/org/spigotmc/AntiXray.java
 new file mode 100644
-index 0000000..30280d4
+index 0000000..297fae8
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/AntiXray.java
-@@ -0,0 +1,189 @@
+@@ -0,0 +1,200 @@
 +package org.spigotmc;
 +
 +import gnu.trove.set.TByteSet;
@@ -122,12 +164,11 @@ index 0000000..30280d4
 +        {
 +            Block block = Block.e( i );
 +            // Check it exists and is not a tile entity
-+            if ( block != null && block.isTileEntity() )
++            if ( block != null && !block.isTileEntity() )
 +            {
-+                continue;
++                // Add it to the set of replacement blocks
++                blocks.add( (byte) (int) i );
 +            }
-+            // Add it to the set of replacement blocks
-+            blocks.add( (byte) (int) i );
 +        }
 +        // Bake it to a flat array of replacements
 +        replacementOres = blocks.toArray();
@@ -148,14 +189,27 @@ index 0000000..30280d4
 +    }
 +
 +    /**
++     * Starts the timings handler, and then removes all non exposed ores from
++     * the chunk buffer.
++     */
++    public void obfuscateSync(int chunkX, int chunkY, int bitmask, byte[] buffer, World world)
++    {
++        if ( world.spigotConfig.antiXray )
++        {
++            obfuscate.startTiming();
++            obfuscate( chunkX, chunkY, bitmask, buffer, world );
++            obfuscate.stopTiming();
++        }
++    }
++
++    /**
 +     * Removes all non exposed ores from the chunk buffer.
 +     */
-+    public void obfuscate(int chunkX, int chunkZ, int bitmask, byte[] buffer, World world)
++    public void obfuscate(int chunkX, int chunkY, int bitmask, byte[] buffer, World world)
 +    {
 +        // If the world is marked as obfuscated
 +        if ( world.spigotConfig.antiXray )
 +        {
-+            obfuscate.startTiming();
 +            // Initial radius to search around for air
 +            int initialRadius = 1;
 +            // Which block in the buffer we are looking at, anywhere from 0 to 16^4
@@ -165,7 +219,7 @@ index 0000000..30280d4
 +
 +            // Chunk corner X and Z blocks
 +            int startX = chunkX << 4;
-+            int startZ = chunkZ << 4;
++            int startZ = chunkY << 4;
 +
 +            // Chunks can have up to 16 sections
 +            for ( int i = 0; i < 16; i++ )
@@ -223,7 +277,6 @@ index 0000000..30280d4
 +                    }
 +                }
 +            }
-+            obfuscate.stopTiming();
 +        }
 +    }
 +
@@ -233,10 +286,10 @@ index 0000000..30280d4
 +        if ( world.isLoaded( x, y, z ) )
 +        {
 +            // Get block id
-+            Block block = world.getType( x, y, z );
++            Block block = world.getType(x, y, z);
 +
 +            // See if it needs update
-+            if ( updateSelf && obfuscateBlocks[Block.b( block )] )
++            if ( updateSelf && obfuscateBlocks[Block.b(block)] )
 +            {
 +                // Send the update
 +                world.notify( x, y, z );
@@ -269,7 +322,7 @@ index 0000000..30280d4
 +
 +    private static boolean hasTransparentBlockAdjacent(World world, int x, int y, int z, int radius)
 +    {
-+        return !world.getType( x, y, z ).r() /* isSolidBlock */
++        return !world.getType(x, y, z).r() /* isSolidBlock */
 +                || ( radius > 0
 +                && ( hasTransparentBlockAdjacent( world, x + 1, y, z, radius - 1 )
 +                || hasTransparentBlockAdjacent( world, x - 1, y, z, radius - 1 )
