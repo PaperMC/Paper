@@ -156,7 +156,7 @@ public class EntitySpider extends EntityMonster {
 
             entityskeleton.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, 0.0F);
             entityskeleton.a((GroupDataEntity) null);
-            this.world.addEntity(entityskeleton);
+            this.world.addEntity(entityskeleton, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.JOCKEY); // CraftBukkit - add SpawnReason
             entityskeleton.mount(this);
         }
 

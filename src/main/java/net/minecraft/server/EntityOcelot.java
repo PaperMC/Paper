@@ -221,7 +221,7 @@ public class EntityOcelot extends EntityTameableAnimal {
 
                 entityocelot.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, 0.0F);
                 entityocelot.setAge(-24000);
-                this.world.addEntity(entityocelot);
+                this.world.addEntity(entityocelot, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.OCELOT_BABY); // CraftBukkit - add SpawnReason
             }
         }
 

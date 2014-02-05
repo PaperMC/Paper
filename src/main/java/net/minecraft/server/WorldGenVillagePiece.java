@@ -107,7 +107,7 @@ abstract class WorldGenVillagePiece extends StructurePiece {
                 EntityVillager entityvillager = new EntityVillager(world, this.b(i1));
 
                 entityvillager.setPositionRotation((double) j1 + 0.5D, (double) k1, (double) l1 + 0.5D, 0.0F, 0.0F);
-                world.addEntity(entityvillager);
+                world.addEntity(entityvillager, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CHUNK_GEN); // CraftBukkit - add SpawnReason
             }
         }
     }

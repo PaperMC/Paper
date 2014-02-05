@@ -4,6 +4,8 @@ import java.util.Random;
 
 import net.minecraft.util.org.apache.commons.lang3.tuple.ImmutablePair;
 
+import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason; // CraftBukkit
+
 public class BlockMonsterEggs extends Block {
 
     public static final String[] a = new String[] { "stone", "cobble", "brick", "mossybrick", "crackedbrick", "chiseledbrick"};
@@ -19,7 +21,7 @@ public class BlockMonsterEggs extends Block {
             EntitySilverfish entitysilverfish = new EntitySilverfish(world);
 
             entitysilverfish.setPositionRotation((double) i + 0.5D, (double) j, (double) k + 0.5D, 0.0F, 0.0F);
-            world.addEntity(entitysilverfish);
+            world.addEntity(entitysilverfish, SpawnReason.SILVERFISH_BLOCK); // CraftBukkit - add SpawnReason
             entitysilverfish.s();
         }
 
@@ -108,7 +110,7 @@ public class BlockMonsterEggs extends Block {
             EntitySilverfish entitysilverfish = new EntitySilverfish(world);
 
             entitysilverfish.setPositionRotation((double) i + 0.5D, (double) j, (double) k + 0.5D, 0.0F, 0.0F);
-            world.addEntity(entitysilverfish);
+            world.addEntity(entitysilverfish, SpawnReason.SILVERFISH_BLOCK); // CraftBukkit - add SpawnReason
             entitysilverfish.s();
         }
     }
