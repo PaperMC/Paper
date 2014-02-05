@@ -163,6 +163,27 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
          */
         DISPENSE_EGG,
         /**
+         * When a zombie infects a villager
+         */
+        INFECTION,
+        /**
+         * When a villager is cured from infection
+         */
+        CURED,
+        /**
+         * When an ocelot has a baby spawned along with them
+         */
+        OCELOT_BABY,
+        /**
+         * When a silverfish spawns from a block
+         */
+        SILVERFISH_BLOCK,
+        /**
+         * When an entity spawns as a mount of another entity (mostly chicken
+         * jockeys)
+         */
+        MOUNT,
+        /**
          * When a creature is spawned by plugins
          */
         CUSTOM,
