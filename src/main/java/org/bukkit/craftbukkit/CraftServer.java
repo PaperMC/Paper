@@ -56,6 +56,7 @@ import net.minecraft.util.io.netty.buffer.ByteBufOutputStream;
 import net.minecraft.util.io.netty.buffer.Unpooled;
 import net.minecraft.util.io.netty.handler.codec.base64.Base64;
 
+import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -129,12 +130,11 @@ import org.bukkit.plugin.messaging.StandardMessenger;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.util.StringUtil;
 import org.bukkit.util.permissions.DefaultPermissions;
-
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.MarkedYAMLException;
-
 import org.apache.commons.lang.Validate;
+
 import com.avaje.ebean.config.DataSourceConfig;
 import com.avaje.ebean.config.ServerConfig;
 import com.avaje.ebean.config.dbplatform.SQLitePlatform;
@@ -1139,20 +1139,19 @@ public final class CraftServer implements Server {
 
     @SuppressWarnings("unchecked")
     public Set<String> getIPBans() {
-        return playerList.getIPBans().getEntries().keySet();
+        return new HashSet<String>(playerList.getIPBans().getEntries().keySet());
     }
 
     public void banIP(String address) {
         Validate.notNull(address, "Address cannot be null.");
 
-        BanEntry entry = new BanEntry(address);
-        playerList.getIPBans().add(entry);
-        playerList.getIPBans().save();
+        this.getBanList(org.bukkit.BanList.Type.IP).addBan(address, null, null, null);
     }
 
     public void unbanIP(String address) {
-        playerList.getIPBans().remove(address);
-        playerList.getIPBans().save();
+        Validate.notNull(address, "Address cannot be null.");
+
+        this.getBanList(org.bukkit.BanList.Type.IP).pardon(address);
     }
 
     public Set<OfflinePlayer> getBannedPlayers() {
@@ -1163,6 +1162,19 @@ public final class CraftServer implements Server {
         }
 
         return result;
+    }
+
+    @Override
+    public BanList getBanList(BanList.Type type){
+        Validate.notNull(type, "Type cannot be null");
+
+        switch(type){
+        case IP:
+            return new CraftBanList(playerList.getIPBans());
+        case NAME:
+        default: // Fall through as a player name list for safety
+            return new CraftBanList(playerList.getNameBans());
+        }
     }
 
     public void setWhitelist(boolean value) {
