@@ -1,5 +1,10 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
+// CraftBukkit end
+
 public class EntityWolf extends EntityTameableAnimal {
 
     private float bq;
@@ -236,6 +241,11 @@ public class EntityWolf extends EntityTameableAnimal {
                 this.bc = false;
                 this.setPathEntity((PathEntity) null);
                 this.setTarget((Entity) null);
+                // CraftBukkit start
+                if (this.getGoalTarget() != null) {
+                    CraftEventFactory.callEntityTargetEvent(this, null, TargetReason.FORGOT_TARGET);
+                }
+                // CraftBukkit end
                 this.setGoalTarget((EntityLiving) null);
             }
         } else if (itemstack != null && itemstack.getItem() == Items.BONE && !this.isAngry()) {
@@ -249,9 +259,14 @@ public class EntityWolf extends EntityTameableAnimal {
 
             if (!this.world.isStatic) {
                 // CraftBukkit - added event call and isCancelled check.
-                if (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) {
+                if (this.random.nextInt(3) == 0 && !CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) {
                     this.setTamed(true);
                     this.setPathEntity((PathEntity) null);
+                    // CraftBukkit start
+                    if (this.getGoalTarget() != null) {
+                        CraftEventFactory.callEntityTargetEvent(this, null, TargetReason.FORGOT_TARGET);
+                    }
+                    // CraftBukkit end
                     this.setGoalTarget((EntityLiving) null);
                     this.bp.setSitting(true);
                     this.setHealth(this.getMaxHealth()); // CraftBukkit - 20.0 -> getMaxHealth()

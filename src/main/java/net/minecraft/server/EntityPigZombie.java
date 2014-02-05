@@ -83,22 +83,20 @@ public class EntityPigZombie extends EntityZombie {
                     if (entity1 instanceof EntityPigZombie) {
                         EntityPigZombie entitypigzombie = (EntityPigZombie) entity1;
 
-                        entitypigzombie.c(entity);
+                        entitypigzombie.c(entity, EntityTargetEvent.TargetReason.PIG_ZOMBIE_TARGET);
                     }
                 }
 
-                this.c(entity);
+                this.c(entity, EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY);
             }
 
             return super.damageEntity(damagesource, f);
         }
     }
 
-    private void c(Entity entity) {
-        // CraftBukkit start
-        org.bukkit.entity.Entity bukkitTarget = entity == null ? null : entity.getBukkitEntity();
-
-        EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), bukkitTarget, EntityTargetEvent.TargetReason.PIG_ZOMBIE_TARGET);
+    // CraftBukkit start
+    private void c(Entity entity, EntityTargetEvent.TargetReason reason) { // add TargetReason
+        EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), entity.getBukkitEntity(), reason);
         this.world.getServer().getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {
