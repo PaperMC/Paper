@@ -44,7 +44,7 @@ public class BlockIce extends BlockHalfTransparent {
     public void a(World world, int i, int j, int k, Random random) {
         if (world.b(EnumSkyBlock.BLOCK, i, j, k) > 11 - this.k()) {
             // CraftBukkit start
-            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(i, j, k), Blocks.STATIONARY_WATER).isCancelled()) {
+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(i, j, k), world.worldProvider.f ? Blocks.AIR : Blocks.STATIONARY_WATER).isCancelled()) {
                 return;
             }
             // CraftBukkit end
