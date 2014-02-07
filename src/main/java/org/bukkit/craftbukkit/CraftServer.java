@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -23,6 +24,47 @@ import javax.imageio.ImageIO;
 
 import net.minecraft.server.BanEntry;
 import net.minecraft.server.ChunkCoordinates;
+import net.minecraft.server.CommandAchievement;
+import net.minecraft.server.CommandBan;
+import net.minecraft.server.CommandBanIp;
+import net.minecraft.server.CommandBanList;
+import net.minecraft.server.CommandClear;
+import net.minecraft.server.CommandDeop;
+import net.minecraft.server.CommandDifficulty;
+import net.minecraft.server.CommandEffect;
+import net.minecraft.server.CommandEnchant;
+import net.minecraft.server.CommandGamemode;
+import net.minecraft.server.CommandGamemodeDefault;
+import net.minecraft.server.CommandGamerule;
+import net.minecraft.server.CommandGive;
+import net.minecraft.server.CommandHelp;
+import net.minecraft.server.CommandIdleTimeout;
+import net.minecraft.server.CommandKick;
+import net.minecraft.server.CommandKill;
+import net.minecraft.server.CommandList;
+import net.minecraft.server.CommandMe;
+import net.minecraft.server.CommandOp;
+import net.minecraft.server.CommandPardon;
+import net.minecraft.server.CommandPardonIP;
+import net.minecraft.server.CommandPlaySound;
+import net.minecraft.server.CommandSay;
+import net.minecraft.server.CommandScoreboard;
+import net.minecraft.server.CommandSeed;
+import net.minecraft.server.CommandSetBlock;
+import net.minecraft.server.CommandSetWorldSpawn;
+import net.minecraft.server.CommandSpawnpoint;
+import net.minecraft.server.CommandSpreadPlayers;
+import net.minecraft.server.CommandSummon;
+import net.minecraft.server.CommandTell;
+import net.minecraft.server.CommandTellRaw;
+import net.minecraft.server.CommandTestFor;
+import net.minecraft.server.CommandTestForBlock;
+import net.minecraft.server.CommandTime;
+import net.minecraft.server.CommandToggleDownfall;
+import net.minecraft.server.CommandTp;
+import net.minecraft.server.CommandWeather;
+import net.minecraft.server.CommandWhitelist;
+import net.minecraft.server.CommandXp;
 import net.minecraft.server.Convertable;
 import net.minecraft.server.ConvertProgressUpdater;
 import net.minecraft.server.CraftingManager;
@@ -77,6 +119,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.conversations.Conversable;
+import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.bukkit.craftbukkit.help.SimpleHelpMap;
 import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCustom;
@@ -159,6 +202,7 @@ public final class CraftServer implements Server {
     protected final DedicatedPlayerList playerList;
     private final Map<String, World> worlds = new LinkedHashMap<String, World>();
     private YamlConfiguration configuration;
+    private YamlConfiguration commandsConfiguration;
     private final Yaml yaml = new Yaml(new SafeConstructor());
     private final Map<String, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
     private final AutoUpdater updater;
@@ -178,6 +222,7 @@ public final class CraftServer implements Server {
     public boolean playerCommandState;
     private boolean printSaveWarning;
     private CraftIconCache icon;
+    private boolean overrideAllCommandBlockCommands = false;
 
     private final class BooleanWrapper {
         private boolean value = true;
@@ -212,7 +257,27 @@ public final class CraftServer implements Server {
         configuration = YamlConfiguration.loadConfiguration(getConfigFile());
         configuration.options().copyDefaults(true);
         configuration.setDefaults(YamlConfiguration.loadConfiguration(getClass().getClassLoader().getResourceAsStream("configurations/bukkit.yml")));
+        ConfigurationSection legacyAlias = null;
+        if (!configuration.isString("aliases")) {
+            legacyAlias = configuration.getConfigurationSection("aliases");
+            configuration.set("aliases", "now-in-commands.yml");
+        }
         saveConfig();
+        if (getCommandsConfigFile().isFile()) {
+            legacyAlias = null;
+        }
+        commandsConfiguration = YamlConfiguration.loadConfiguration(getCommandsConfigFile());
+        commandsConfiguration.options().copyDefaults(true);
+        commandsConfiguration.setDefaults(YamlConfiguration.loadConfiguration(getClass().getClassLoader().getResourceAsStream("configurations/commands.yml")));
+        saveCommandsConfig();
+        if (legacyAlias != null) {
+            ConfigurationSection aliases = commandsConfiguration.createSection("aliases");
+            for (Entry<String, Object> entry : legacyAlias.getValues(true).entrySet()) {
+                aliases.set(entry.getKey(), entry.getValue());
+            }
+        }
+        saveCommandsConfig();
+        overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
         ((SimplePluginManager) pluginManager).useTimings(configuration.getBoolean("settings.plugin-profiling"));
         monsterSpawn = configuration.getInt("spawn-limits.monsters");
         animalSpawn = configuration.getInt("spawn-limits.animals");
@@ -235,8 +300,16 @@ public final class CraftServer implements Server {
         enablePlugins(PluginLoadOrder.STARTUP);
     }
 
+    public boolean getCommandBlockOverride(String command) {
+        return overrideAllCommandBlockCommands || commandsConfiguration.getStringList("command-block-overrides").contains(command);
+    }
+
     private File getConfigFile() {
         return (File) console.options.valueOf("bukkit-settings");
+    }
+
+    private File getCommandsConfigFile() {
+        return (File) console.options.valueOf("commands-settings");
     }
 
     private void saveConfig() {
@@ -244,6 +317,14 @@ public final class CraftServer implements Server {
             configuration.save(getConfigFile());
         } catch (IOException ex) {
             Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "Could not save " + getConfigFile(), ex);
+        }
+    }
+
+    private void saveCommandsConfig() {
+        try {
+            commandsConfiguration.save(getCommandsConfigFile());
+        } catch (IOException ex) {
+            Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "Could not save " + getCommandsConfigFile(), ex);
         }
     }
 
@@ -283,6 +364,8 @@ public final class CraftServer implements Server {
         }
 
         if (type == PluginLoadOrder.POSTWORLD) {
+            commandMap.setFallbackCommands();
+            setVanillaCommands();
             commandMap.registerServerAliases();
             loadCustomPermissions();
             DefaultPermissions.registerCorePermissions();
@@ -292,6 +375,50 @@ public final class CraftServer implements Server {
 
     public void disablePlugins() {
         pluginManager.disablePlugins();
+    }
+
+    private void setVanillaCommands() {
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandAchievement(), "/achievement give <stat_name> [player]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandBan(), "/ban <playername> [reason]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandBanIp(), "/ban-ip <ip-address|playername>"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandBanList(), "/banlist [ips]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandClear(), "/clear <playername> [item] [metadata]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandGamemodeDefault(), "/defaultgamemode <mode>"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandDeop(), "/deop <playername>"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandDifficulty(), "/difficulty <new difficulty>"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandEffect(), "/effect <player> <effect|clear> [seconds] [amplifier]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandEnchant(), "/enchant <playername> <enchantment ID> [enchantment level]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandGamemode(), "/gamemode <mode> [player]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandGamerule(), "/gamerule <rulename> [true|false]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandGive(), "/give <playername> <item> [amount] [metadata] [dataTag]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandHelp(), "/help [page|commandname]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandIdleTimeout(), "/setidletimeout <Minutes until kick>"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandKick(), "/kick <playername> [reason]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandKill(), "/kill [playername]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandList(), "/list"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandMe(), "/me <actiontext>"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandOp(), "/op <playername>"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandPardon(), "/pardon <playername>"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandPardonIP(), "/pardon-ip <ip-address>"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandPlaySound(), "/playsound <sound> <playername> [x] [y] [z] [volume] [pitch] [minimumVolume]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandSay(), "/say <message>"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandScoreboard(), "/scoreboard"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandSeed(), "/seed"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandSetBlock(), "/setblock <x> <y> <z> <tilename> [datavalue] [oldblockHandling] [dataTag]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandSetWorldSpawn(), "/setworldspawn [x] [y] [z]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandSpawnpoint(), "/spawnpoint <playername> [x] [y] [z]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandSpreadPlayers(), "/spreadplayers <x> <z> [spreadDistance] [maxRange] [respectTeams] <playernames>"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandSummon(), "/summon <EntityName> [x] [y] [z] [dataTag]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandTp(), "/tp [player] <target>\n/tp [player] <x> <y> <z>"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandTell(), "/tell <playername> <message>"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandTellRaw(), "/tellraw <playername> <raw message>"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandTestFor(), "/testfor <playername | selector> [dataTag]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandTestForBlock(), "/testforblock <x> <y> <z> <tilename> [datavalue] [dataTag]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandTime(), "/time set <value>\n/time add <value>"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandToggleDownfall(), "/toggledownfall"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandWeather(), "/weather <clear/rain/thunder> [duration in seconds]"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandWhitelist(), "/whitelist (add|remove) <player>\n/whitelist (on|off|list|reload)"));
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandXp(), "/xp <amount> [player]\n/xp <amount>L [player]"));
     }
 
     private void loadPlugin(Plugin plugin) {
@@ -555,6 +682,7 @@ public final class CraftServer implements Server {
 
     public void reload() {
         configuration = YamlConfiguration.loadConfiguration(getConfigFile());
+        commandsConfiguration = YamlConfiguration.loadConfiguration(getCommandsConfigFile());
         PropertyManager config = new PropertyManager(console.options);
 
         ((DedicatedServer) console).propertyManager = config;
@@ -601,6 +729,7 @@ public final class CraftServer implements Server {
         pluginManager.clearPlugins();
         commandMap.clearCommands();
         resetRecipes();
+        overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
 
         int pollCount = 0;
 
@@ -972,7 +1101,7 @@ public final class CraftServer implements Server {
     }
 
     public Map<String, String[]> getCommandAliases() {
-        ConfigurationSection section = configuration.getConfigurationSection("aliases");
+        ConfigurationSection section = commandsConfiguration.getConfigurationSection("aliases");
         Map<String, String[]> result = new LinkedHashMap<String, String[]>();
 
         if (section != null) {

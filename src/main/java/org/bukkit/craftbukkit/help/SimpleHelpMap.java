@@ -3,10 +3,12 @@ package org.bukkit.craftbukkit.help;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Collections2;
+
 import org.bukkit.command.*;
 import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.command.defaults.VanillaCommand;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.bukkit.help.*;
 
 import java.util.*;
@@ -131,16 +133,10 @@ public class SimpleHelpMap implements HelpMap {
                 continue;
             }
             for (String alias : command.getAliases()) {
-                if (!helpTopics.containsKey("/" + alias)) {
+                // Only register if this command owns the alias
+                if (server.getCommandMap().getCommand(alias) == command) {
                     addTopic(new CommandAliasHelpTopic("/" + alias, "/" + command.getLabel(), this));
                 }
-            }
-        }
-
-        // Initialize help topics from the server's fallback commands
-        for (VanillaCommand command : server.getCommandMap().getFallbackCommands()) {
-            if (!commandInIgnoredPlugin(command, ignoredPlugins)) {
-                addTopic(new GenericCommandHelpTopic(command));
             }
         }
 
@@ -153,7 +149,6 @@ public class SimpleHelpMap implements HelpMap {
         // Initialize plugin-level sub-topics
         Map<String, Set<HelpTopic>> pluginIndexes = new HashMap<String, Set<HelpTopic>>();
         fillPluginIndexes(pluginIndexes, server.getCommandMap().getCommands());
-        fillPluginIndexes(pluginIndexes, server.getCommandMap().getFallbackCommands());
 
         for (Map.Entry<String, Set<HelpTopic>> entry : pluginIndexes.entrySet()) {
             addTopic(new IndexHelpTopic(entry.getKey(), "All commands for " + entry.getKey(), null, entry.getValue(), "Below is a list of all " + entry.getKey() + " commands:"));
@@ -186,6 +181,9 @@ public class SimpleHelpMap implements HelpMap {
     }
 
     private String getCommandPluginName(Command command) {
+        if (command instanceof VanillaCommandWrapper) {
+            return "Minecraft";
+        }
         if (command instanceof BukkitCommand || command instanceof VanillaCommand) {
             return "Bukkit";
         }

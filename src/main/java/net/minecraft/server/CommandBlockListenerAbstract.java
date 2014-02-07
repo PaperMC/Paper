@@ -6,6 +6,7 @@ import java.util.Date;
 // CraftBukkit start
 import java.util.ArrayList;
 import org.apache.logging.log4j.Level;
+import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import com.google.common.base.Joiner;
 // CraftBukkit end
 
@@ -94,14 +95,23 @@ public abstract class CommandBlockListenerAbstract implements ICommandListener {
                 return;
             }
 
-            // Make sure this is a valid command
-            if (commandMap.getCommand(args[0]) == null) {
+            // If the world has no players don't run
+            if (this.getWorld().players.isEmpty()) {
                 this.b = 0;
                 return;
             }
 
-            // If the world has no players don't run
-            if (this.getWorld().players.isEmpty()) {
+            // Handle vanilla commands;
+            if (minecraftserver.server.getCommandBlockOverride(args[0])) {
+                org.bukkit.command.Command commandBlockCommand = commandMap.getCommand("minecraft:" + args[0]);
+                if (commandBlockCommand instanceof VanillaCommandWrapper) {
+                    this.b = ((VanillaCommandWrapper) commandBlockCommand).dispatchVanillaCommandBlock(this, this.e);
+                    return;
+                }
+            }
+
+            // Make sure this is a valid command
+            if (commandMap.getCommand(args[0]) == null) {
                 this.b = 0;
                 return;
             }
