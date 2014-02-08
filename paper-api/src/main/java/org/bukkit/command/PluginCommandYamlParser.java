@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
 public class PluginCommandYamlParser {
@@ -19,6 +20,10 @@ public class PluginCommandYamlParser {
         }
 
         for (Entry<String, Map<String, Object>> entry : map.entrySet()) {
+            if (entry.getKey().contains(":")) {
+                Bukkit.getServer().getLogger().severe("Could not load command " + entry.getKey() + " for plugin " + plugin.getName() + ": Illegal Characters");
+                continue;
+            }
             Command newCmd = new PluginCommand(entry.getKey(), plugin);
             Object description = entry.getValue().get("description");
             Object usage = entry.getValue().get("usage");
