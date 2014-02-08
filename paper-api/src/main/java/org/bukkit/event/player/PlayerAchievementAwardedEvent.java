@@ -20,7 +20,7 @@ public class PlayerAchievementAwardedEvent extends PlayerEvent implements Cancel
 
     /**
      * Gets the Achievement being awarded.
-     * 
+     *
      * @return the achievement being awarded
      */
     public Achievement getAchievement() {

@@ -755,7 +755,7 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     /**
      * Sets the players current saturation level
      *
-     * @param value Exhaustion level
+     * @param value Saturation level
      */
     public void setSaturation(float value);
 

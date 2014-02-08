@@ -617,6 +617,7 @@ public final class PluginDescriptionFile {
      *  # Having an empty declaration is useful for defining the description, permission, and messages from a configuration dynamically
      *  apocalypse:
      *</pre></blockquote>
+     * Note: command names may not have a colon in their name.
      *
      * @return the commands this plugin will register
      */
