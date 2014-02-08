@@ -91,26 +91,23 @@ public class FormattedCommandAlias extends Command {
                 throw new IllegalArgumentException("Missing required argument " + (position + 1));
             }
 
-            String replacement = null;
+            StringBuilder replacement = new StringBuilder();
             if (rest && position < args.length) {
-                StringBuilder builder = new StringBuilder();
                 for (int i = position; i < args.length; i++) {
                     if (i != position) {
-                        builder.append(' ');
+                        replacement.append(' ');
                     }
-                    builder.append(args[i]);
+                    replacement.append(args[i]);
                 }
-                replacement = builder.toString();
             } else if (position < args.length) {
-                replacement = args[position];
+                replacement.append(args[position]);
             }
 
-            if (replacement != null && replacement.length() > 0) {
-                formatString = formatString.substring(0, start) + replacement + formatString.substring(end);
-                // Move index past the replaced data so we don't process it again
-                index = start + replacement.length();
-            }
+            formatString = formatString.substring(0, start) + replacement.toString() + formatString.substring(end);
+            // Move index past the replaced data so we don't process it again
+            index = start + replacement.length();
 
+            // Move to the next replacement token
             index = formatString.indexOf("$", index);
         }
 
