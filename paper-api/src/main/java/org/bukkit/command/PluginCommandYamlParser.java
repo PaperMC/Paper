@@ -44,10 +44,18 @@ public class PluginCommandYamlParser {
 
                 if (aliases instanceof List) {
                     for (Object o : (List<?>) aliases) {
+                        if (o.toString().contains(":")) {
+                            Bukkit.getServer().getLogger().severe("Could not load alias " + o.toString() + " for plugin " + plugin.getName() + ": Illegal Characters");
+                            continue;
+                        }
                         aliasList.add(o.toString());
                     }
                 } else {
-                    aliasList.add(aliases.toString());
+                    if (aliases.toString().contains(":")) {
+                        Bukkit.getServer().getLogger().severe("Could not load alias " + aliases.toString() + " for plugin " + plugin.getName() + ": Illegal Characters");
+                    } else {
+                        aliasList.add(aliases.toString());
+                    }
                 }
 
                 newCmd.setAliases(aliasList);

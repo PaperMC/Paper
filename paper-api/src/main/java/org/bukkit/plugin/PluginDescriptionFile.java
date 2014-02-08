@@ -537,7 +537,9 @@ public final class PluginDescriptionFile {
      *     <td>Alternative command names, with special usefulness for commands
      *         that are already registered. <i>Aliases are not effective when
      *         defined at runtime,</i> so the plugin description file is the
-     *         only way to have them properly defined.</td>
+     *         only way to have them properly defined.
+     *         <p>
+     *         Note: Command aliases may not have a colon in them.</td>
      *     <td>Single alias format:
      *         <blockquote><pre>aliases: combust_me</pre></blockquote> or
      *         multiple alias format:
@@ -617,7 +619,7 @@ public final class PluginDescriptionFile {
      *  # Having an empty declaration is useful for defining the description, permission, and messages from a configuration dynamically
      *  apocalypse:
      *</pre></blockquote>
-     * Note: command names may not have a colon in their name.
+     * Note: Command names may not have a colon in their name.
      *
      * @return the commands this plugin will register
      */
