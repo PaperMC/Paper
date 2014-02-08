@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -283,5 +284,14 @@ public class SpigotConfig
     private static void playerShuffle()
     {
         playerShuffle = getInt( "settings.player-shuffle", 0 );
+    }
+
+    public static List<String> spamExclusions;
+    private static void spamExclusions()
+    {
+        spamExclusions = getList( "commands.spam-exclusions", Arrays.asList( new String[]
+        {
+                "/skill"
+        } ) );
     }
 }
