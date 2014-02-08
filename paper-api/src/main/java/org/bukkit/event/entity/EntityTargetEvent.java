@@ -122,6 +122,18 @@ public class EntityTargetEvent extends EntityEvent implements Cancellable {
          */
         DEFEND_VILLAGE,
         /**
+         * When the target attacks a nearby entity of the same type, so the entity targets it
+         */
+        TARGET_ATTACKED_NEARBY_ENTITY,
+        /**
+         * When a zombie targeting an entity summons reinforcements, so the reinforcements target the same entity
+         */
+        REINFORCEMENT_TARGET,
+        /**
+         * When an entity targets another entity after colliding with it.
+         */
+        COLLISION,
+        /**
          * For custom calls to the event.
          */
         CUSTOM
