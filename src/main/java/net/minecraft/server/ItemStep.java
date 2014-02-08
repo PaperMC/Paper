@@ -54,6 +54,7 @@ public class ItemStep extends ItemBlock {
     }
 
     private boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+        final int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
         if (l == 0) {
             --j;
         }
@@ -83,8 +84,11 @@ public class ItemStep extends ItemBlock {
         int j1 = i1 & 7;
 
         if (block == this.c && j1 == itemstack.getData()) {
-            if (world.b(this.d.a(world, i, j, k)) && world.setTypeAndData(i, j, k, this.d, j1, 3)) {
-                world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), this.d.stepSound.getPlaceSound(), (this.d.stepSound.getVolume1() + 1.0F) / 2.0F, this.d.stepSound.getVolume2() * 0.8F);
+            // CraftBukkit start - world.setTypeIdAndData -> processBlockPlace()
+            // if (world.b(this.d.a(world, i, j, k)) && world.setTypeAndData(i, j, k, this.d, j1, 3)) {
+            if (world.b(this.d.a(world, i, j, k)) && processBlockPlace(world, entityhuman, null, i, j, k, this.d, j1, clickedX, clickedY, clickedZ)) {
+                // world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), this.d.stepSound.getPlaceSound(), (this.d.stepSound.getVolume1() + 1.0F) / 2.0F, this.d.stepSound.getVolume2() * 0.8F);
+                // CraftBukkit end
                 --itemstack.count;
             }
 
