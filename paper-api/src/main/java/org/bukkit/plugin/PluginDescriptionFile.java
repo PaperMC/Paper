@@ -207,7 +207,7 @@ public final class PluginDescriptionFile {
      * @param mainClass Full location of the main class of this plugin
      */
     public PluginDescriptionFile(final String pluginName, final String pluginVersion, final String mainClass) {
-        name = pluginName;
+        name = pluginName.replace(' ', '_');
         version = pluginVersion;
         main = mainClass;
     }
@@ -801,6 +801,7 @@ public final class PluginDescriptionFile {
             if (!name.matches("^[A-Za-z0-9 _.-]+$")) {
                 throw new InvalidDescriptionException("name '" + name + "' contains invalid characters.");
             }
+            name = name.replace(' ', '_');
         } catch (NullPointerException ex) {
             throw new InvalidDescriptionException(ex, "name is not defined");
         } catch (ClassCastException ex) {
