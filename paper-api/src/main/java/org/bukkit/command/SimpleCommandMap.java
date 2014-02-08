@@ -6,11 +6,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.Validate;
@@ -22,56 +20,14 @@ import org.bukkit.util.StringUtil;
 public class SimpleCommandMap implements CommandMap {
     private static final Pattern PATTERN_ON_SPACE = Pattern.compile(" ", Pattern.LITERAL);
     protected final Map<String, Command> knownCommands = new HashMap<String, Command>();
-    protected final Set<String> aliases = new HashSet<String>();
     private final Server server;
-    protected static final Set<VanillaCommand> fallbackCommands = new HashSet<VanillaCommand>();
-
-    static {
-        fallbackCommands.add(new ListCommand());
-        fallbackCommands.add(new OpCommand());
-        fallbackCommands.add(new DeopCommand());
-        fallbackCommands.add(new BanIpCommand());
-        fallbackCommands.add(new PardonIpCommand());
-        fallbackCommands.add(new BanCommand());
-        fallbackCommands.add(new PardonCommand());
-        fallbackCommands.add(new KickCommand());
-        fallbackCommands.add(new TeleportCommand());
-        fallbackCommands.add(new GiveCommand());
-        fallbackCommands.add(new TimeCommand());
-        fallbackCommands.add(new SayCommand());
-        fallbackCommands.add(new WhitelistCommand());
-        fallbackCommands.add(new TellCommand());
-        fallbackCommands.add(new MeCommand());
-        fallbackCommands.add(new KillCommand());
-        fallbackCommands.add(new GameModeCommand());
-        fallbackCommands.add(new HelpCommand());
-        fallbackCommands.add(new ExpCommand());
-        fallbackCommands.add(new ToggleDownfallCommand());
-        fallbackCommands.add(new BanListCommand());
-        fallbackCommands.add(new DefaultGameModeCommand());
-        fallbackCommands.add(new SeedCommand());
-        fallbackCommands.add(new DifficultyCommand());
-        fallbackCommands.add(new WeatherCommand());
-        fallbackCommands.add(new SpawnpointCommand());
-        fallbackCommands.add(new ClearCommand());
-        fallbackCommands.add(new GameRuleCommand());
-        fallbackCommands.add(new EnchantCommand());
-        fallbackCommands.add(new TestForCommand());
-        fallbackCommands.add(new EffectCommand());
-        fallbackCommands.add(new ScoreboardCommand());
-        fallbackCommands.add(new PlaySoundCommand());
-        fallbackCommands.add(new SpreadPlayersCommand());
-        fallbackCommands.add(new SetWorldSpawnCommand());
-        fallbackCommands.add(new SetIdleTimeoutCommand());
-        fallbackCommands.add(new AchievementCommand());
-    }
 
     public SimpleCommandMap(final Server server) {
         this.server = server;
-        setDefaultCommands(server);
+        setDefaultCommands();
     }
 
-    private void setDefaultCommands(final Server server) {
+    private void setDefaultCommands() {
         register("bukkit", new SaveCommand());
         register("bukkit", new SaveOnCommand());
         register("bukkit", new SaveOffCommand());
@@ -80,6 +36,46 @@ public class SimpleCommandMap implements CommandMap {
         register("bukkit", new ReloadCommand("reload"));
         register("bukkit", new PluginsCommand("plugins"));
         register("bukkit", new TimingsCommand("timings"));
+    }
+
+    public void setFallbackCommands() {
+        register("bukkit", new ListCommand());
+        register("bukkit", new OpCommand());
+        register("bukkit", new DeopCommand());
+        register("bukkit", new BanIpCommand());
+        register("bukkit", new PardonIpCommand());
+        register("bukkit", new BanCommand());
+        register("bukkit", new PardonCommand());
+        register("bukkit", new KickCommand());
+        register("bukkit", new TeleportCommand());
+        register("bukkit", new GiveCommand());
+        register("bukkit", new TimeCommand());
+        register("bukkit", new SayCommand());
+        register("bukkit", new WhitelistCommand());
+        register("bukkit", new TellCommand());
+        register("bukkit", new MeCommand());
+        register("bukkit", new KillCommand());
+        register("bukkit", new GameModeCommand());
+        register("bukkit", new HelpCommand());
+        register("bukkit", new ExpCommand());
+        register("bukkit", new ToggleDownfallCommand());
+        register("bukkit", new BanListCommand());
+        register("bukkit", new DefaultGameModeCommand());
+        register("bukkit", new SeedCommand());
+        register("bukkit", new DifficultyCommand());
+        register("bukkit", new WeatherCommand());
+        register("bukkit", new SpawnpointCommand());
+        register("bukkit", new ClearCommand());
+        register("bukkit", new GameRuleCommand());
+        register("bukkit", new EnchantCommand());
+        register("bukkit", new TestForCommand());
+        register("bukkit", new EffectCommand());
+        register("bukkit", new ScoreboardCommand());
+        register("bukkit", new PlaySoundCommand());
+        register("bukkit", new SpreadPlayersCommand());
+        register("bukkit", new SetWorldSpawnCommand());
+        register("bukkit", new SetIdleTimeoutCommand());
+        register("bukkit", new AchievementCommand());
     }
 
     /**
@@ -104,77 +100,56 @@ public class SimpleCommandMap implements CommandMap {
      * {@inheritDoc}
      */
     public boolean register(String label, String fallbackPrefix, Command command) {
-        boolean registeredPassedLabel = register(label, fallbackPrefix, command, false);
+        label = label.toLowerCase();
+        boolean registered = register(label, command, false);
+        knownCommands.put(fallbackPrefix + ":" + label, command);
 
         Iterator<String> iterator = command.getAliases().iterator();
         while (iterator.hasNext()) {
-            if (!register(iterator.next(), fallbackPrefix, command, true)) {
+            if (!register(iterator.next(), command, true)) {
                 iterator.remove();
             }
+        }
+
+        // If we failed to register under the real name, we need to set the command label to the direct address
+        if (!registered) {
+            command.setLabel(fallbackPrefix + ":" + label);
         }
 
         // Register to us so further updates of the commands label and aliases are postponed until its reregistered
         command.register(this);
 
-        return registeredPassedLabel;
+        return registered;
     }
 
     /**
-     * Registers a command with the given name is possible, otherwise uses
-     * fallbackPrefix to create a unique name if its not an alias
+     * Registers a command with the given name is possible.
      *
      * @param label the name of the command, without the '/'-prefix.
-     * @param fallbackPrefix a prefix which is prepended to the command with a
-     *     ':' one or more times to make the command unique
      * @param command the command to register
-     * @return true if command was registered with the passed in label, false
-     *     otherwise. If isAlias was true a return of false indicates no
-     *     command was registered. If isAlias was false a return of false
-     *     indicates the fallbackPrefix was used one or more times to create a
-     *     unique name for the command
+     * @return true if command was registered, false otherwise.
      */
-    private synchronized boolean register(String label, String fallbackPrefix, Command command, boolean isAlias) {
-        String lowerLabel = label.trim().toLowerCase();
-
-        if (isAlias && knownCommands.containsKey(lowerLabel)) {
+    private synchronized boolean register(String label, Command command, boolean isAlias) {
+        if (isAlias && knownCommands.containsKey(label)) {
             // Request is for an alias and it conflicts with a existing command or previous alias ignore it
             // Note: This will mean it gets removed from the commands list of active aliases
             return false;
         }
 
-        String lowerPrefix = fallbackPrefix.trim().toLowerCase();
-        boolean registerdPassedLabel = true;
+        boolean registered = true;
 
-        // If the command exists but is an alias we overwrite it, otherwise we rename it based on the fallbackPrefix
-        while (knownCommands.containsKey(lowerLabel) && !aliases.contains(lowerLabel)) {
-            lowerLabel = lowerPrefix + ":" + lowerLabel;
-            registerdPassedLabel = false;
+        // If the command exists but is an alias we overwrite it, otherwise we return
+        Command conflict = knownCommands.get(label);
+        if (conflict != null && conflict.getLabel().equals(label)) {
+            return false;
         }
 
-        if (isAlias) {
-            aliases.add(lowerLabel);
-        } else {
-            // Ensure lowerLabel isn't listed as a alias anymore and update the commands registered name
-            aliases.remove(lowerLabel);
-            command.setLabel(lowerLabel);
+        if (!isAlias) {
+            command.setLabel(label);
         }
-        knownCommands.put(lowerLabel, command);
+        knownCommands.put(label, command);
 
-        return registerdPassedLabel;
-    }
-
-    protected Command getFallback(String label) {
-        for (VanillaCommand cmd : fallbackCommands) {
-            if (cmd.matches(label)) {
-                return cmd;
-            }
-        }
-
-        return null;
-    }
-
-    public Set<VanillaCommand> getFallbackCommands() {
-        return Collections.unmodifiableSet(fallbackCommands);
+        return registered;
     }
 
     /**
@@ -212,15 +187,11 @@ public class SimpleCommandMap implements CommandMap {
             entry.getValue().unregister(this);
         }
         knownCommands.clear();
-        aliases.clear();
-        setDefaultCommands(server);
+        setDefaultCommands();
     }
 
     public Command getCommand(String name) {
         Command target = knownCommands.get(name.toLowerCase());
-        if (target == null) {
-            target = getFallback(name);
-        }
         return target;
     }
 
@@ -235,24 +206,6 @@ public class SimpleCommandMap implements CommandMap {
             Map<String, Command> knownCommands = this.knownCommands;
 
             final String prefix = (sender instanceof Player ? "/" : "");
-
-            for (VanillaCommand command : fallbackCommands) {
-                String name = command.getName();
-
-                if (!command.testPermissionSilent(sender)) {
-                    continue;
-                }
-                if (knownCommands.containsKey(name)) {
-                    // Don't let a vanilla command override a command added below
-                    // This has to do with the way aliases work
-                    continue;
-                }
-                if (!StringUtil.startsWithIgnoreCase(name, cmdLine)) {
-                    continue;
-                }
-
-                completions.add(prefix + name);
-            }
 
             for (Map.Entry<String, Command> commandEntry : knownCommands.entrySet()) {
                 Command command = commandEntry.getValue();
@@ -296,7 +249,7 @@ public class SimpleCommandMap implements CommandMap {
     }
 
     public Collection<Command> getCommands() {
-        return knownCommands.values();
+        return Collections.unmodifiableCollection(knownCommands.values());
     }
 
     public void registerServerAliases() {
