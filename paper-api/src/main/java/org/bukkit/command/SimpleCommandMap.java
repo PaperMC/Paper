@@ -3,6 +3,7 @@ package org.bukkit.command;
 import static org.bukkit.util.Java15Compat.Arrays_copyOfRange;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -256,27 +257,27 @@ public class SimpleCommandMap implements CommandMap {
         Map<String, String[]> values = server.getCommandAliases();
 
         for (String alias : values.keySet()) {
-            String[] targetNames = values.get(alias);
-            List<Command> targets = new ArrayList<Command>();
+            String[] commandStrings = values.get(alias);
+            List<String> targets = new ArrayList<String>();
             StringBuilder bad = new StringBuilder();
 
-            for (String name : targetNames) {
-                Command command = getCommand(name);
+            for (String commandString : commandStrings) {
+                String[] commandArgs = commandString.split(" ");
+                Command command = getCommand(commandArgs[0]);
 
                 if (command == null) {
                     if (bad.length() > 0) {
                         bad.append(", ");
                     }
-                    bad.append(name);
+                    bad.append(commandString);
                 } else {
-                    targets.add(command);
+                    targets.add(commandString);
                 }
             }
 
             // We register these as commands so they have absolute priority.
-
             if (targets.size() > 0) {
-                knownCommands.put(alias.toLowerCase(), new MultipleCommandAlias(alias.toLowerCase(), targets.toArray(new Command[0])));
+                knownCommands.put(alias.toLowerCase(), new FormattedCommandAlias(alias.toLowerCase(), targets.toArray(new String[targets.size()])));
             } else {
                 knownCommands.remove(alias.toLowerCase());
             }
