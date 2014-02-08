@@ -270,12 +270,25 @@ public final class CraftServer implements Server {
         commandsConfiguration.options().copyDefaults(true);
         commandsConfiguration.setDefaults(YamlConfiguration.loadConfiguration(getClass().getClassLoader().getResourceAsStream("configurations/commands.yml")));
         saveCommandsConfig();
+
+        // Migrate aliases from old file and add previously implicit $1- to pass all arguments
         if (legacyAlias != null) {
             ConfigurationSection aliases = commandsConfiguration.createSection("aliases");
-            for (Entry<String, Object> entry : legacyAlias.getValues(true).entrySet()) {
-                aliases.set(entry.getKey(), entry.getValue());
+            for (String key : legacyAlias.getKeys(false)) {
+                ArrayList<String> commands = new ArrayList<String>();
+
+                if (legacyAlias.isList(key)) {
+                    for (String command : legacyAlias.getStringList(key)) {
+                        commands.add(command + " $1-");
+                    }
+                } else {
+                    commands.add(legacyAlias.getString(key) + " $1-");
+                }
+
+                aliases.set(key, commands);
             }
         }
+
         saveCommandsConfig();
         overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
         ((SimplePluginManager) pluginManager).useTimings(configuration.getBoolean("settings.plugin-profiling"));
