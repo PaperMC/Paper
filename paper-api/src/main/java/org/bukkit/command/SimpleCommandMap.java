@@ -3,7 +3,6 @@ package org.bukkit.command;
 import static org.bukkit.util.Java15Compat.Arrays_copyOfRange;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -101,7 +100,8 @@ public class SimpleCommandMap implements CommandMap {
      * {@inheritDoc}
      */
     public boolean register(String label, String fallbackPrefix, Command command) {
-        label = label.toLowerCase();
+        label = label.toLowerCase().trim();
+        fallbackPrefix = fallbackPrefix.toLowerCase().trim();
         boolean registered = register(label, command, false);
         knownCommands.put(fallbackPrefix + ":" + label, command);
 

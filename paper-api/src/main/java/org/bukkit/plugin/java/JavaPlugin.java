@@ -351,11 +351,11 @@ public abstract class JavaPlugin extends PluginBase {
         String alias = name.toLowerCase();
         PluginCommand command = getServer().getPluginCommand(alias);
 
-        if ((command != null) && (command.getPlugin() != this)) {
+        if (command == null || command.getPlugin() != this) {
             command = getServer().getPluginCommand(description.getName().toLowerCase() + ":" + alias);
         }
 
-        if ((command != null) && (command.getPlugin() == this)) {
+        if (command != null && command.getPlugin() == this) {
             return command;
         } else {
             return null;
