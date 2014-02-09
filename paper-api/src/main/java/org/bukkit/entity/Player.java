@@ -2308,6 +2308,16 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
         public void respawn() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
+        /**
+         * Gets all players hidden with {@link #hidePlayer(org.bukkit.entity.Player)}.
+         *
+         * @return a Set with all hidden players
+         */
+        @NotNull
+        public java.util.Set<Player> getHiddenPlayers() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     }
 
     @NotNull
