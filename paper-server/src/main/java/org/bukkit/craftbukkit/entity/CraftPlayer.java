@@ -2358,6 +2358,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 CraftPlayer.this.server.getServer().getPlayerList().respawn( CraftPlayer.this.getHandle(), false, Entity.RemovalReason.KILLED, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason.PLUGIN );
             }
         }
+
+        @Override
+        public Set<Player> getHiddenPlayers()
+        {
+            Set<Player> ret = new HashSet<>();
+            for ( Player p : CraftPlayer.this.getServer().getOnlinePlayers() )
+            {
+                if ( !CraftPlayer.this.canSee(p) )
+                {
+                    ret.add( p );
+                }
+            }
+
+            return java.util.Collections.unmodifiableSet( ret );
+        }
     };
 
     public Player.Spigot spigot()
