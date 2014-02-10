@@ -59,7 +59,7 @@ public class HandshakeListener implements PacketHandshakingInListener {
                     }
                 }
             } catch (Throwable t) {
-                org.apache.logging.log4j.LogManager.getLogger().error("Failed to check connection throttle", t);
+                org.apache.logging.log4j.LogManager.getLogger().debug("Failed to check connection throttle", t);
             }
             // CraftBukkit end
 
