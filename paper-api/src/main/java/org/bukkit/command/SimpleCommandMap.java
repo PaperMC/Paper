@@ -257,6 +257,11 @@ public class SimpleCommandMap implements CommandMap {
         Map<String, String[]> values = server.getCommandAliases();
 
         for (String alias : values.keySet()) {
+            if (alias.contains(":") || alias.contains(" ")) {
+                server.getLogger().warning("Could not register alias " + alias + " because it contains illegal characters");
+                continue;
+            }
+
             String[] commandStrings = values.get(alias);
             List<String> targets = new ArrayList<String>();
             StringBuilder bad = new StringBuilder();
@@ -275,15 +280,16 @@ public class SimpleCommandMap implements CommandMap {
                 }
             }
 
+            if (bad.length() > 0) {
+                server.getLogger().warning("Could not register alias " + alias + " because it contains commands that do not exist: " + bad);
+                continue;
+            }
+
             // We register these as commands so they have absolute priority.
             if (targets.size() > 0) {
                 knownCommands.put(alias.toLowerCase(), new FormattedCommandAlias(alias.toLowerCase(), targets.toArray(new String[targets.size()])));
             } else {
                 knownCommands.remove(alias.toLowerCase());
-            }
-
-            if (bad.length() > 0) {
-                server.getLogger().warning("The following command(s) could not be aliased under '" + alias + "' because they do not exist: " + bad);
             }
         }
     }

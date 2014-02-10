@@ -48,7 +48,6 @@ public class FormattedCommandAlias extends Command {
                 } else {
                     sender.sendMessage(org.bukkit.ChatColor.RED + "An internal error occurred while attempting to perform this command");
                 }
-                Bukkit.getLogger().log(Level.WARNING, "Failed to parse command alias " + commandLabel + ": " + formatString, throwable);
                 return false;
             }
         }
