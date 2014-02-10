@@ -23,24 +23,6 @@ public class FormattedCommandAlias extends Command {
         ArrayList<String> commands = new ArrayList<String>();
         for (String formatString : formatStrings) {
             try {
-                if (sender instanceof Player) {
-                    PlayerCommandPreprocessEvent event = new PlayerCommandPreprocessEvent((Player) sender, "/" + formatString);
-                    Bukkit.getPluginManager().callEvent(event);
-                    if (event.isCancelled()) {
-                        return false;
-                    } else {
-                        formatString = event.getMessage().substring(1);
-                    }
-                } else if (sender instanceof RemoteConsoleCommandSender) {
-                    RemoteServerCommandEvent event = new RemoteServerCommandEvent(sender, formatString);
-                    Bukkit.getPluginManager().callEvent(event);
-                    formatString = event.getCommand();
-                } else if (sender instanceof ConsoleCommandSender) {
-                    ServerCommandEvent event = new ServerCommandEvent(sender, formatString);
-                    Bukkit.getPluginManager().callEvent(event);
-                    formatString = event.getCommand();
-                }
-
                 commands.add(buildCommand(formatString, args));
             } catch (Throwable throwable) {
                 if (throwable instanceof IllegalArgumentException) {
