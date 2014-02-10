@@ -65,6 +65,12 @@ public class FormattedCommandAlias extends Command {
         while (index != -1) {
             int start = index;
 
+            if (index > 0 && formatString.charAt(start - 1) == '\\') {
+                formatString = formatString.substring(0, start - 1) + formatString.substring(start);
+                index = formatString.indexOf("$", index);
+                continue;
+            }
+
             boolean required = false;
             if (formatString.charAt(index + 1) == '$') {
                 required = true;
@@ -74,9 +80,15 @@ public class FormattedCommandAlias extends Command {
 
             // Move index past the $
             index++;
-            int position = Character.getNumericValue(formatString.charAt(index)) - 1;
+            int position = Character.getNumericValue(formatString.charAt(index));
             // Move index past the position
             index++;
+
+            if (position == -1) {
+                throw new IllegalArgumentException("Invalid replacement token");
+            }
+            // Convert position to 0 index
+            position--;
 
             boolean rest = false;
             if (index < formatString.length() && formatString.charAt(index) == '-') {
