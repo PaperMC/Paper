@@ -80,13 +80,24 @@ public class FormattedCommandAlias extends Command {
 
             // Move index past the $
             index++;
-            int position = Character.getNumericValue(formatString.charAt(index));
-            // Move index past the position
-            index++;
+            int argStart = index;
+            while (index < formatString.length() && inRange(((int) formatString.charAt(index)) - 48, 0, 9)) {
+                // Move index past current digit
+                index++;
+            }
 
-            if (position == -1) {
+            // No numbers found
+            if (argStart == index) {
                 throw new IllegalArgumentException("Invalid replacement token");
             }
+
+            int position = Integer.valueOf(formatString.substring(argStart, index));
+
+            // Arguments are not 0 indexed
+            if (position == 0) {
+                throw new IllegalArgumentException("Invalid replacement token");
+            }
+
             // Convert position to 0 index
             position--;
 
@@ -124,5 +135,9 @@ public class FormattedCommandAlias extends Command {
         }
 
         return formatString;
+    }
+
+    private static boolean inRange(int i, int j, int k) {
+        return i >= j && i <= k;
     }
 }
