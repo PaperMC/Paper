@@ -82,6 +82,8 @@ public class CraftInventoryView extends InventoryView {
                     type = SlotType.RESULT;
                 } else if(slot == 1) {
                     type = SlotType.FUEL;
+                } else {
+                    type = SlotType.CRAFTING;
                 }
                 break;
             case BREWING:
