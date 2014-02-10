@@ -153,8 +153,14 @@ public final class AsynchronousExecutor<P, T, C, E extends Throwable> {
             }
         }
 
+        @SuppressWarnings("unchecked")
         T get() throws E {
             initSync();
+            if (callbacks.isEmpty()) {
+                // 'this' is a placeholder to prevent callbacks from being empty during finish call
+                // See get method below
+                callbacks.add((C) this);
+            }
             finish();
             return object;
         }
@@ -171,6 +177,9 @@ public final class AsynchronousExecutor<P, T, C, E extends Throwable> {
                         if (t != null) {
                             throw t;
                         }
+                        if (callbacks.isEmpty()) {
+                            return;
+                        }
 
                         final CallBackProvider<P, T, C, E> provider = AsynchronousExecutor.this.provider;
                         final P parameter = this.parameter;
@@ -178,6 +187,11 @@ public final class AsynchronousExecutor<P, T, C, E extends Throwable> {
 
                         provider.callStage2(parameter, object);
                         for (C callback : callbacks) {
+                            if (callback == this) {
+                                // 'this' is a placeholder to prevent callbacks from being empty on a get() call
+                                // See get method above
+                                continue;
+                            }
                             provider.callStage3(parameter, object, callback);
                         }
                     } finally {
@@ -185,6 +199,17 @@ public final class AsynchronousExecutor<P, T, C, E extends Throwable> {
                         state = FINISHED;
                     }
                 case FINISHED:
+            }
+        }
+
+        boolean drop() {
+            if (set(this, PENDING, FINISHED)) {
+                // If we succeed that variable switch, good as forgotten
+                tasks.remove(parameter);
+                return true;
+            } else {
+                // We need the async thread to finish normally to properly dispose of the task
+                return false;
             }
         }
     }
@@ -218,6 +243,35 @@ public final class AsynchronousExecutor<P, T, C, E extends Throwable> {
             pool.execute(task);
         }
         task.callbacks.add(callback);
+    }
+
+    /**
+     * This removes a particular callback from the specified parameter.
+     * <p>
+     * If no callbacks remain for a given parameter, then the {@link CallBackProvider CallBackProvider's} stages may be omitted from execution.
+     * Stage 3 will have no callbacks, stage 2 will be skipped unless a {@link #get(Object)} is used, and stage 1 will be avoided on a best-effort basis.
+     * <p>
+     * Subsequent calls to {@link #getSkipQueue(Object)} will always work.
+     * <p>
+     * Subsequent calls to {@link #get(Object)} might work.
+     * <p>
+     * This should always be synchronous
+     * @return true if no further execution for the parameter is possible, such that, no exceptions will be thrown in {@link #finishActive()} for the parameter, and {@link #get(Object)} will throw an {@link IllegalStateException}, false otherwise
+     * @throws IllegalStateException if parameter is not in the queue anymore
+     * @throws IllegalStateException if the callback was not specified for given parameter
+     */
+    public boolean drop(P parameter, C callback) throws IllegalStateException {
+        final Task task = tasks.get(parameter);
+        if (task == null) {
+            throw new IllegalStateException("Unknown " + parameter);
+        }
+        if (!task.callbacks.remove(callback)) {
+            throw new IllegalStateException("Unknown " + callback + " for " + parameter);
+        }
+        if (task.callbacks.isEmpty()) {
+            return task.drop();
+        }
+        return false;
     }
 
     /**
