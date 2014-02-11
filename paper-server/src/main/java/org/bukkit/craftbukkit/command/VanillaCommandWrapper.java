@@ -44,7 +44,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
         this.vanillaCommand = vanillaCommand;
         this.description = "A Mojang provided command.";
         this.usageMessage = usage;
-        this.setPermission("vanilla.command." + vanillaCommand.c());
+        this.setPermission("minecraft.command." + vanillaCommand.c());
     }
 
     @Override
