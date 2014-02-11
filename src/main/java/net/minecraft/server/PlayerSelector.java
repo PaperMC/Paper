@@ -33,6 +33,12 @@ public class PlayerSelector {
     }
 
     public static EntityPlayer[] getPlayers(ICommandListener icommandlistener, String s) {
+        // CraftBukkit start
+        if (!(icommandlistener instanceof CommandBlockListenerAbstract)) {
+            return null;
+        }
+        // CraftBukkit end
+
         Matcher matcher = a.matcher(s);
 
         if (!matcher.matches()) {
