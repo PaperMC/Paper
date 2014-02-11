@@ -976,10 +976,12 @@ public abstract class World implements IBlockAccess {
 
         // CraftBukkit start - Decrement loop variable field if we've already ticked this entity
         int index = this.entityList.indexOf(entity);
-        if (index <= this.tickPosition) {
-            this.tickPosition--;
+        if (index != -1) {
+            if (index <= this.tickPosition) {
+                this.tickPosition--;
+            }
+            this.entityList.remove(index);
         }
-        this.entityList.remove(index);
         // CraftBukkit end
 
         this.b(entity);
