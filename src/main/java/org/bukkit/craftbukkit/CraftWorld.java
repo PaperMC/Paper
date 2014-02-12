@@ -1032,6 +1032,10 @@ public class CraftWorld implements World {
         }
 
         if (entity != null) {
+            if (entity instanceof EntityInsentient) {
+                ((EntityInsentient) entity).a((GroupDataEntity) null); // Should be prepare?
+            }
+
             world.addEntity(entity, reason);
             return (T) entity.getBukkitEntity();
         }
