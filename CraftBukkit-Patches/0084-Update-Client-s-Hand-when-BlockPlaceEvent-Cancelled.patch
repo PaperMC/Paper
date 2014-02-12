@@ -1,0 +1,35 @@
+From ad4c58f956161e81eb940369b6ec91cb1c8cab45 Mon Sep 17 00:00:00 2001
+From: bloodshot <jdroque@gmail.com>
+Date: Mon, 6 Jan 2014 18:02:01 -0500
+Subject: [PATCH] Update Client's Hand when BlockPlaceEvent Cancelled
+
+Send a Packet103SetSlot to client when a BlockPlaceEvent is cancelled.
+
+Fixes BUKKIT-5284
+
+Currently, whenever a player places a block in a protected area the
+equipped itemstack size on client is never updated properly since the
+client thinks the block was placed. The reason this happens is because
+ItemStack.matches returns true since the server does not decrement stack
+size if a BlockPlaceEvent is cancelled. This causes
+PlayerConnection.a(handlePlace) not to send the appropriate packet to
+client which causes the bug.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index c9585fc..9e6901c 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -626,7 +626,9 @@ public class PlayerConnection implements PacketPlayInListener {
+                 return;
+             }
+ 
+-            this.player.playerInteractManager.interact(this.player, worldserver, itemstack, i, j, k, l, packetplayinblockplace.h(), packetplayinblockplace.i(), packetplayinblockplace.j());
++            if (!this.player.playerInteractManager.interact(this.player, worldserver, itemstack, i, j, k, l, packetplayinblockplace.h(), packetplayinblockplace.i(), packetplayinblockplace.j())) {
++                always = true; // force Packet103SetSlot to be sent to client to update ItemStack count
++            }
+             // CraftBukkit end
+ 
+             flag = true;
+-- 
+1.8.4.msysgit.0
+
