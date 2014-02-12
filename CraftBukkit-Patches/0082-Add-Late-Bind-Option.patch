@@ -1,0 +1,72 @@
+From e16c36c3db4e4483dc97a9f6016e678c3a765e38 Mon Sep 17 00:00:00 2001
+From: slide23 <me@slide.ws>
+Date: Fri, 20 Dec 2013 20:15:33 -0600
+Subject: [PATCH] Add Late Bind Option
+
+Add late-bind config option to delay binding until loading is done.
+
+diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+old mode 100644
+new mode 100755
+index c9bb3a6..8ec6474
+--- a/src/main/java/net/minecraft/server/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -119,13 +119,15 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+         this.a(MinecraftEncryption.b());
+         h.info("Starting Minecraft server on " + (this.getServerIp().length() == 0 ? "*" : this.getServerIp()) + ":" + this.J());
+ 
+-        try {
+-            this.ag().a(inetaddress, this.J());
+-        } catch (Throwable ioexception) { // CraftBukkit - IOException -> Throwable
+-            h.warn("**** FAILED TO BIND TO PORT!");
+-            h.warn("The exception was: {}", new Object[] { ioexception.toString()});
+-            h.warn("Perhaps a server is already running on that port?");
+-            return false;
++        if (!org.spigotmc.SpigotConfig.lateBind) {
++            try {
++                this.ag().a(inetaddress, this.J());
++            } catch (Throwable ioexception) { // CraftBukkit - IOException -> Throwable
++                h.warn("**** FAILED TO BIND TO PORT!");
++                h.warn("The exception was: {}", new Object[] { ioexception.toString()});
++                h.warn("Perhaps a server is already running on that port?");
++                return false;
++            }
+         }
+ 
+         // Spigot Start - Move DedicatedPlayerList up and bring plugin loading from CraftServer to here
+@@ -186,6 +188,18 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+         String s3 = String.format("%.3fs", new Object[] { Double.valueOf((double) i1 / 1.0E9D)});
+ 
+         h.info("Done (" + s3 + ")! For help, type \"help\" or \"?\"");
++
++        if (org.spigotmc.SpigotConfig.lateBind) {
++            try {
++                this.ag().a(inetaddress, this.J());
++            } catch (Throwable ioexception) { // CraftBukkit - IOException -> Throwable
++                h.warn("**** FAILED TO BIND TO PORT!");
++                h.warn("The exception was: {}", new Object[] { ioexception.toString()});
++                h.warn("Perhaps a server is already running on that port?");
++                return false;
++            }
++        }
++
+         if (this.propertyManager.getBoolean("enable-query", false)) {
+             h.info("Starting GS4 status listener");
+             this.j = new RemoteStatusListener(this);
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index cfddd28..69306cb 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -198,4 +198,9 @@ public class SpigotConfig
+         System.setProperty( "io.netty.eventLoopThreads", Integer.toString( count ) );
+         Bukkit.getLogger().log( Level.INFO, "Using {0} threads for Netty based IO", count );
+     }
++
++    public static boolean lateBind;
++    private static void lateBind() {
++        lateBind = getBoolean( "settings.late-bind", false );
++    }
+ }
+-- 
+1.8.4.msysgit.0
+

@@ -1,0 +1,32 @@
+From 881a1a02214adbec1f4b19c43aacb653b2713701 Mon Sep 17 00:00:00 2001
+From: md_5 <git@md-5.net>
+Date: Sun, 12 Jan 2014 21:07:18 +1100
+Subject: [PATCH] Replace AutoSave Mechanism
+
+The problem here is that MinecraftServer.save(..), will attempt to sleep whilst all pending chunks are written to disk, however due to various and complicated bugs, it will wait for an incorrect amount of chunks, which may cause it to sleep for an overly long amount of time. Instead we will mimic the save-all command in its behaviour, which is both safe and performant.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 7616d7b..588ce0a 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -568,7 +568,16 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+         if ((this.autosavePeriod > 0) && ((this.ticks % this.autosavePeriod) == 0)) { // CraftBukkit
+             this.methodProfiler.a("save");
+             this.t.savePlayers();
+-            this.saveChunks(true);
++            // Spigot Start
++            // We replace this with saving each individual world as this.saveChunks(...) is broken,
++            // and causes the main thread to sleep for random amounts of time depending on chunk activity
++            server.playerCommandState = true;
++            for (World world : worlds) {
++                world.getWorld().save();
++            }
++            server.playerCommandState = false;
++            // this.saveChunks(true);
++            // Spigot End
+             this.methodProfiler.b();
+         }
+ 
+-- 
+1.8.4.msysgit.0
+
