@@ -8,8 +8,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -299,5 +301,17 @@ public class SpigotConfig
     private static void silentCommandBlocks()
     {
         SpigotConfig.silentCommandBlocks = SpigotConfig.getBoolean( "commands.silent-commandblock-console", false );
+    }
+
+    public static Set<String> replaceCommands;
+    private static void replaceCommands()
+    {
+        if ( SpigotConfig.config.contains( "replace-commands" ) )
+        {
+            SpigotConfig.set( "commands.replace-commands", SpigotConfig.config.getStringList( "replace-commands" ) );
+            SpigotConfig.config.set( "replace-commands", null );
+        }
+        SpigotConfig.replaceCommands = new HashSet<String>( (List<String>) SpigotConfig.getList( "commands.replace-commands",
+                Arrays.asList( "setblock", "summon", "testforblock", "tellraw" ) ) );
     }
 }
