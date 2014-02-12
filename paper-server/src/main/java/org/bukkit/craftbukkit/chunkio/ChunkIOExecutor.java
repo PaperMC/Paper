@@ -20,6 +20,11 @@ public class ChunkIOExecutor {
         instance.add(new QueuedChunk(x, z, loader, world, provider), runnable);
     }
 
+    // Abuses the fact that hashCode and equals for QueuedChunk only use world and coords
+    public static void dropQueuedChunkLoad(World world, int x, int z, Runnable runnable) {
+        instance.drop(new QueuedChunk(x, z, null, world, null), runnable);
+    }
+
     public static void adjustPoolSize(int players) {
         int size = Math.max(BASE_THREADS, (int) Math.ceil(players / PLAYERS_PER_THREAD));
         instance.setActiveThreads(size);
