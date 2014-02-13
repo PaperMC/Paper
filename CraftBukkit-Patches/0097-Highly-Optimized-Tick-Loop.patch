@@ -1,26 +1,27 @@
-From d15323381c6e474f215120e8126ca1ab16d10ab3 Mon Sep 17 00:00:00 2001
+From fefaf743d90b67d61c488d9c664aba1021049810 Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Sat, 25 Jan 2014 14:08:35 +1100
 Subject: [PATCH] Highly Optimized Tick Loop
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 588ce0a..022e032 100644
+index 588ce0a..2f273ee 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -101,6 +101,11 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -101,6 +101,12 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
      // CraftBukkit end
 +    // Spigot start
 +    private static final int TPS = 20;
 +    private static final int TICK_TIME = 1000000000 / TPS;
++    private static final int SAMPLE_INTERVAL = 100;
 +    public final double[] recentTps = new double[ 3 ];
 +    // Spigot end
  
      public MinecraftServer(OptionSet options, Proxy proxy) { // CraftBukkit - signature file -> OptionSet
          i = this;
-@@ -419,6 +424,13 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -419,6 +425,13 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
          this.isRunning = false;
      }
  
@@ -34,13 +35,13 @@ index 588ce0a..022e032 100644
      public void run() {
          try {
              if (this.init()) {
-@@ -429,38 +441,33 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -429,38 +442,34 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
                  this.p.setServerInfo(new ServerPingServerData("1.7.2", 4));
                  this.a(this.p);
  
 +                // Spigot start
 +                Arrays.fill( recentTps, 20 );
-+                long lastTick = 0, catchupTime = 0, curTime, wait;
++                long lastTick = 0, catchupTime = 0, curTime, wait, tickSection = System.nanoTime();
                  while (this.isRunning) {
 -                    long k = ap();
 -                    long l = k - i;
@@ -76,12 +77,13 @@ index 588ce0a..022e032 100644
 -                            j -= 50L;
 -                            this.t();
 -                        }
-+                    if ( MinecraftServer.currentTick++ % 100 == 0 )
++                    if ( MinecraftServer.currentTick++ % SAMPLE_INTERVAL == 0 )
 +                    {
-+                        double currentTps = 1E9 / ( curTime - lastTick );
++                        double currentTps = 1E9 / ( curTime - tickSection ) * SAMPLE_INTERVAL;
 +                        recentTps[0] = calcTps( recentTps[0], 0.92, currentTps ); // 1/exp(5sec/1min)
 +                        recentTps[1] = calcTps( recentTps[1], 0.9835, currentTps ); // 1/exp(5sec/5min)
 +                        recentTps[2] = calcTps( recentTps[2], 0.9945, currentTps ); // 1/exp(5sec/15min)
++                        tickSection = curTime;
                      }
 +                    lastTick = curTime;
  
@@ -94,7 +96,7 @@ index 588ce0a..022e032 100644
                  this.a((CrashReport) null);
              }
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index eaafc2d..713b351 100644
+index 049d88a..9b6243a 100755
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -233,4 +233,9 @@ public class SpigotConfig
