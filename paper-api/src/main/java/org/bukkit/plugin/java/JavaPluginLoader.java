@@ -10,7 +10,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -42,8 +41,6 @@ import org.bukkit.plugin.TimedRegisteredListener;
 import org.bukkit.plugin.UnknownDependencyException;
 import org.yaml.snakeyaml.error.YAMLException;
 
-import com.google.common.collect.ImmutableList;
-
 /**
  * Represents a Java plugin loader, allowing plugins in the form of .jar
  */
@@ -62,41 +59,43 @@ public final class JavaPluginLoader implements PluginLoader {
         server = instance;
     }
 
-    public Plugin loadPlugin(File file) throws InvalidPluginException {
+    public Plugin loadPlugin(final File file) throws InvalidPluginException {
         Validate.notNull(file, "File cannot be null");
 
         if (!file.exists()) {
             throw new InvalidPluginException(new FileNotFoundException(file.getPath() + " does not exist"));
         }
 
-        PluginDescriptionFile description;
+        final PluginDescriptionFile description;
         try {
             description = getPluginDescription(file);
         } catch (InvalidDescriptionException ex) {
             throw new InvalidPluginException(ex);
         }
 
-        File dataFolder = new File(file.getParentFile(), description.getName());
-        File oldDataFolder = getDataFolder(file);
+        final File parentFile = file.getParentFile();
+        final File dataFolder = new File(parentFile, description.getName());
+        @SuppressWarnings("deprecation")
+        final File oldDataFolder = new File(parentFile, description.getRawName());
 
         // Found old data folder
         if (dataFolder.equals(oldDataFolder)) {
             // They are equal -- nothing needs to be done!
         } else if (dataFolder.isDirectory() && oldDataFolder.isDirectory()) {
-            server.getLogger().log(Level.INFO, String.format(
-                "While loading %s (%s) found old-data folder: %s next to the new one: %s",
-                description.getName(),
+            server.getLogger().warning(String.format(
+                "While loading %s (%s) found old-data folder: `%s' next to the new one `%s'",
+                description.getFullName(),
                 file,
                 oldDataFolder,
                 dataFolder
             ));
         } else if (oldDataFolder.isDirectory() && !dataFolder.exists()) {
             if (!oldDataFolder.renameTo(dataFolder)) {
-                throw new InvalidPluginException("Unable to rename old data folder: '" + oldDataFolder + "' to: '" + dataFolder + "'");
+                throw new InvalidPluginException("Unable to rename old data folder: `" + oldDataFolder + "' to: `" + dataFolder + "'");
             }
             server.getLogger().log(Level.INFO, String.format(
-                "While loading %s (%s) renamed data folder: '%s' to '%s'",
-                description.getName(),
+                "While loading %s (%s) renamed data folder: `%s' to `%s'",
+                description.getFullName(),
                 file,
                 oldDataFolder,
                 dataFolder
@@ -105,19 +104,14 @@ public final class JavaPluginLoader implements PluginLoader {
 
         if (dataFolder.exists() && !dataFolder.isDirectory()) {
             throw new InvalidPluginException(String.format(
-                "Projected datafolder: '%s' for %s (%s) exists and is not a directory",
+                "Projected datafolder: `%s' for %s (%s) exists and is not a directory",
                 dataFolder,
-                description.getName(),
+                description.getFullName(),
                 file
             ));
         }
 
-        List<String> depend = description.getDepend();
-        if (depend == null) {
-            depend = ImmutableList.<String>of();
-        }
-
-        for (String pluginName : depend) {
+        for (final String pluginName : description.getDepend()) {
             if (loaders == null) {
                 throw new UnknownDependencyException(pluginName);
             }
@@ -128,7 +122,7 @@ public final class JavaPluginLoader implements PluginLoader {
             }
         }
 
-        PluginClassLoader loader;
+        final PluginClassLoader loader;
         try {
             loader = new PluginClassLoader(this, getClass().getClassLoader(), description, dataFolder, file);
         } catch (InvalidPluginException ex) {
@@ -140,26 +134,6 @@ public final class JavaPluginLoader implements PluginLoader {
         loaders.put(description.getName(), loader);
 
         return loader.plugin;
-    }
-
-    private File getDataFolder(File file) {
-        File dataFolder = null;
-
-        String filename = file.getName();
-        int index = file.getName().lastIndexOf(".");
-
-        if (index != -1) {
-            String name = filename.substring(0, index);
-
-            dataFolder = new File(file.getParentFile(), name);
-        } else {
-            // This is if there is no extension, which should not happen
-            // Using _ to prevent name collision
-
-            dataFolder = new File(file.getParentFile(), filename + "_");
-        }
-
-        return dataFolder;
     }
 
     public PluginDescriptionFile getPluginDescription(File file) throws InvalidDescriptionException {

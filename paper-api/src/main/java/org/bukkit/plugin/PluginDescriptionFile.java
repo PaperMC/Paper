@@ -1005,4 +1005,12 @@ public final class PluginDescriptionFile {
         }
         throw new InvalidDescriptionException(object + " is not properly structured.");
     }
+
+    /**
+     * @deprecated Internal use
+     */
+    @Deprecated
+    public String getRawName() {
+        return rawName;
+    }
 }
