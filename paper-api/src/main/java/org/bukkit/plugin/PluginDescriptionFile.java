@@ -166,6 +166,7 @@ import com.google.common.collect.ImmutableMap;
  */
 public final class PluginDescriptionFile {
     private static final Yaml yaml = new Yaml(new SafeConstructor());
+    String rawName = null;
     private String name = null;
     private String main = null;
     private String classLoaderOf = null;
@@ -228,6 +229,7 @@ public final class PluginDescriptionFile {
      * <li>Case sensitive.
      * <li>The is the token referenced in {@link #getDepend()}, {@link
      *     #getSoftDepend()}, and {@link #getLoadBefore()}.
+     * <li>Using spaces in the plugin's name is deprecated.
      * </ul>
      * <p>
      * In the plugin.yml, this entry is named <code>name</code>.
@@ -799,7 +801,7 @@ public final class PluginDescriptionFile {
 
     private void loadMap(Map<?, ?> map) throws InvalidDescriptionException {
         try {
-            name = map.get("name").toString();
+            name = rawName = map.get("name").toString();
 
             if (!name.matches("^[A-Za-z0-9 _.-]+$")) {
                 throw new InvalidDescriptionException("name '" + name + "' contains invalid characters.");
