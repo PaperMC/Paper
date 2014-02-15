@@ -169,9 +169,9 @@ public final class PluginDescriptionFile {
     private String name = null;
     private String main = null;
     private String classLoaderOf = null;
-    private List<String> depend = null;
-    private List<String> softDepend = null;
-    private List<String> loadBefore = null;
+    private List<String> depend = ImmutableList.of();
+    private List<String> softDepend = ImmutableList.of();
+    private List<String> loadBefore = ImmutableList.of();
     private String version = null;
     private Map<String, Map<String, Object>> commands = null;
     private String description = null;
@@ -863,47 +863,9 @@ public final class PluginDescriptionFile {
             classLoaderOf = map.get("class-loader-of").toString();
         }
 
-        if (map.get("depend") != null) {
-            ImmutableList.Builder<String> dependBuilder = ImmutableList.<String>builder();
-            try {
-                for (Object dependency : (Iterable<?>) map.get("depend")) {
-                    dependBuilder.add(dependency.toString());
-                }
-            } catch (ClassCastException ex) {
-                throw new InvalidDescriptionException(ex, "depend is of wrong type");
-            } catch (NullPointerException e) {
-                throw new InvalidDescriptionException(e, "invalid dependency format");
-            }
-            depend = dependBuilder.build();
-        }
-
-        if (map.get("softdepend") != null) {
-            ImmutableList.Builder<String> softDependBuilder = ImmutableList.<String>builder();
-            try {
-                for (Object dependency : (Iterable<?>) map.get("softdepend")) {
-                    softDependBuilder.add(dependency.toString());
-                }
-            } catch (ClassCastException ex) {
-                throw new InvalidDescriptionException(ex, "softdepend is of wrong type");
-            } catch (NullPointerException ex) {
-                throw new InvalidDescriptionException(ex, "invalid soft-dependency format");
-            }
-            softDepend = softDependBuilder.build();
-        }
-
-        if (map.get("loadbefore") != null) {
-            ImmutableList.Builder<String> loadBeforeBuilder = ImmutableList.<String>builder();
-            try {
-                for (Object predependency : (Iterable<?>) map.get("loadbefore")) {
-                    loadBeforeBuilder.add(predependency.toString());
-                }
-            } catch (ClassCastException ex) {
-                throw new InvalidDescriptionException(ex, "loadbefore is of wrong type");
-            } catch (NullPointerException ex) {
-                throw new InvalidDescriptionException(ex, "invalid load-before format");
-            }
-            loadBefore = loadBeforeBuilder.build();
-        }
+        depend = makePluginNameList(map, "depend");
+        softDepend = makePluginNameList(map, "softdepend");
+        loadBefore = makePluginNameList(map, "loadbefore");
 
         if (map.get("database") != null) {
             try {
@@ -971,6 +933,25 @@ public final class PluginDescriptionFile {
         if (map.get("prefix") != null) {
             prefix = map.get("prefix").toString();
         }
+    }
+
+    private static List<String> makePluginNameList(final Map<?, ?> map, final String key) throws InvalidDescriptionException {
+        final Object value = map.get(key);
+        if (value == null) {
+            return ImmutableList.of();
+        }
+
+        final ImmutableList.Builder<String> builder = ImmutableList.<String>builder();
+        try {
+            for (final Object entry : (Iterable<?>) value) {
+                builder.add(entry.toString().replace(' ', '_'));
+            }
+        } catch (ClassCastException ex) {
+            throw new InvalidDescriptionException(ex, key + " is of wrong type");
+        } catch (NullPointerException ex) {
+            throw new InvalidDescriptionException(ex, "invalid " + key + " format");
+        }
+        return builder.build();
     }
 
     private Map<String, Object> saveMap() {
