@@ -1,4 +1,4 @@
-From c2abeafd78bd06afce4fe95d8476572e6b2041d3 Mon Sep 17 00:00:00 2001
+From 6dffe591a8463b5525a743b97af91e479e4b2e47 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 20 Feb 2013 11:58:47 -0500
 Subject: [PATCH] Entity Tracking Ranges
@@ -24,7 +24,7 @@ index 97d0bbb..fc679ae 100644
              i = this.e;
          }
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 1d95207..43f7fd8 100644
+index 1d95207..de221d9 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -149,4 +149,19 @@ public class SpigotWorldConfig
@@ -36,23 +36,23 @@ index 1d95207..43f7fd8 100644
 +    public int animalTrackingRange = 48;
 +    public int monsterTrackingRange = 48;
 +    public int miscTrackingRange = 32;
-+    public int maxTrackingRange = 64;
++    public int otherTrackingRange = 64;
 +    private void trackingRange()
 +    {
 +        playerTrackingRange = getInt( "entity-tracking-range.players", playerTrackingRange );
 +        animalTrackingRange = getInt( "entity-tracking-range.animals", animalTrackingRange );
 +        monsterTrackingRange = getInt( "entity-tracking-range.monsters", monsterTrackingRange );
 +        miscTrackingRange = getInt( "entity-tracking-range.misc", miscTrackingRange );
-+        maxTrackingRange = getInt( "entity-tracking-range.other", maxTrackingRange );
-+        log( "Entity Tracking Range: Pl " + playerTrackingRange + " / An " + animalTrackingRange + " / Mo " + monsterTrackingRange + " / Mi " + miscTrackingRange + " / Other " + maxTrackingRange );
++        otherTrackingRange = getInt( "entity-tracking-range.other", otherTrackingRange );
++        log( "Entity Tracking Range: Pl " + playerTrackingRange + " / An " + animalTrackingRange + " / Mo " + monsterTrackingRange + " / Mi " + miscTrackingRange + " / Other " + otherTrackingRange );
 +    }
  }
 diff --git a/src/main/java/org/spigotmc/TrackingRange.java b/src/main/java/org/spigotmc/TrackingRange.java
 new file mode 100644
-index 0000000..bc6438d
+index 0000000..4bf4d2a
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/TrackingRange.java
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,51 @@
 +package org.spigotmc;
 +
 +import net.minecraft.server.Entity;
@@ -77,27 +77,33 @@ index 0000000..bc6438d
 +    public static int getEntityTrackingRange(Entity entity, int defaultRange)
 +    {
 +        SpigotWorldConfig config = entity.world.spigotConfig;
-+        int range = defaultRange;
 +        if ( entity instanceof EntityPlayer )
 +        {
-+            range = config.playerTrackingRange;
-+        } else if ( entity.defaultActivationState || entity instanceof EntityGhast )
++            return config.playerTrackingRange;
++        }  else if ( entity.activationType == 1 )
 +        {
-+            range = defaultRange;
-+        } else if ( entity.activationType == 1 )
++            return config.monsterTrackingRange;
++        } else if ( entity instanceof EntityGhast )
 +        {
-+            range = config.monsterTrackingRange;
++            if ( config.monsterTrackingRange > config.monsterActivationRange )
++            {
++                return config.monsterTrackingRange;
++            } else
++            {
++                return config.monsterActivationRange;
++            }
 +        } else if ( entity.activationType == 2 )
 +        {
-+            range = config.animalTrackingRange;
++            return config.animalTrackingRange;
 +        } else if ( entity instanceof EntityItemFrame || entity instanceof EntityPainting || entity instanceof EntityItem || entity instanceof EntityExperienceOrb )
 +        {
-+            range = config.miscTrackingRange;
++            return config.miscTrackingRange;
++        } else 
++        {
++            return config.otherTrackingRange;
 +        }
-+
-+        return Math.min( config.maxTrackingRange, range );
 +    }
 +}
 -- 
-1.8.3.2
+1.8.5.2.msysgit.0
 
