@@ -131,8 +131,9 @@ public class SimpleCommandMap implements CommandMap {
      * @return true if command was registered, false otherwise.
      */
     private synchronized boolean register(String label, Command command, boolean isAlias) {
-        if (isAlias && knownCommands.containsKey(label)) {
-            // Request is for an alias and it conflicts with a existing command or previous alias ignore it
+        if ((command instanceof VanillaCommand || isAlias) && knownCommands.containsKey(label)) {
+            // Request is for an alias/fallback command and it conflicts with
+            // a existing command or previous alias ignore it
             // Note: This will mean it gets removed from the commands list of active aliases
             return false;
         }
