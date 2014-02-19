@@ -370,8 +370,6 @@ public class EntityFishingHook extends Entity {
                 this.world.getServer().getPluginManager().callEvent(playerFishEvent);
 
                 if (playerFishEvent.isCancelled()) {
-                    this.die();
-                    this.owner.hookedFish = null;
                     return 0;
                 }
                 // CraftBukkit end
@@ -394,8 +392,6 @@ public class EntityFishingHook extends Entity {
                 this.world.getServer().getPluginManager().callEvent(playerFishEvent);
 
                 if (playerFishEvent.isCancelled()) {
-                    this.die();
-                    this.owner.hookedFish = null;
                     return 0;
                 }
                 // CraftBukkit end
@@ -421,8 +417,6 @@ public class EntityFishingHook extends Entity {
                 this.world.getServer().getPluginManager().callEvent(playerFishEvent);
 
                 if (playerFishEvent.isCancelled()) {
-                    this.die();
-                    this.owner.hookedFish = null;
                     return 0;
                 }
                 // CraftBukkit end
@@ -434,6 +428,9 @@ public class EntityFishingHook extends Entity {
             if (b0 == 0) {
                 PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) this.owner.getBukkitEntity(), null, (Fish) this.getBukkitEntity(), PlayerFishEvent.State.FAILED_ATTEMPT);
                 this.world.getServer().getPluginManager().callEvent(playerFishEvent);
+                if (playerFishEvent.isCancelled()) {
+                    return 0;
+                }
             }
             // CraftBukkit end
 
