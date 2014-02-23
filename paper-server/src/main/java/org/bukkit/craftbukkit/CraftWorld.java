@@ -2092,6 +2092,18 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Spigot start
     private final org.bukkit.World.Spigot spigot = new org.bukkit.World.Spigot()
     {
+
+        @Override
+        public LightningStrike strikeLightning(Location loc, boolean isSilent)
+        {
+            return CraftWorld.this.strikeLightning(loc);
+        }
+
+        @Override
+        public LightningStrike strikeLightningEffect(Location loc, boolean isSilent)
+        {
+            return CraftWorld.this.strikeLightningEffect(loc);
+        }
     };
 
     public org.bukkit.World.Spigot spigot()
