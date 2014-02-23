@@ -2831,6 +2831,35 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     // Spigot start
     public class Spigot {
 
+        /**
+         * Strikes lightning at the given {@link Location} and possibly without sound
+         *
+         * @param loc The location to strike lightning
+         * @param isSilent Whether this strike makes no sound
+         * @return The lightning entity.
+         * @deprecated sound is now client side and cannot be removed
+         * @see World#strikeLightning(org.bukkit.Location)
+         */
+        @NotNull
+        @Deprecated(since = "1.20.4")
+        public LightningStrike strikeLightning(@NotNull Location loc, boolean isSilent) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        /**
+         * Strikes lightning at the given {@link Location} without doing damage and possibly without sound
+         *
+         * @param loc The location to strike lightning
+         * @param isSilent Whether this strike makes no sound
+         * @return The lightning entity.
+         * @deprecated sound is now client side and cannot be removed
+         * @see World#strikeLightningEffect(org.bukkit.Location)
+         */
+        @NotNull
+        @Deprecated(since = "1.20.4")
+        public LightningStrike strikeLightningEffect(@NotNull Location loc, boolean isSilent) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     }
 
     @NotNull
