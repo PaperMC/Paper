@@ -15,6 +15,7 @@ public class EntityLightning extends Entity {
     public boolean isEffect;
     @Nullable
     private EntityPlayer f;
+    public boolean isSilent = false; // Spigot
 
     public EntityLightning(EntityTypes<? extends EntityLightning> entitytypes, World world) {
         super(entitytypes, world);
@@ -40,7 +41,7 @@ public class EntityLightning extends Entity {
     @Override
     public void tick() {
         super.tick();
-        if (this.lifeTicks == 2) {
+        if (!isSilent && this.lifeTicks == 2) { // Spigot
             EnumDifficulty enumdifficulty = this.world.getDifficulty();
 
             if (enumdifficulty == EnumDifficulty.NORMAL || enumdifficulty == EnumDifficulty.HARD) {

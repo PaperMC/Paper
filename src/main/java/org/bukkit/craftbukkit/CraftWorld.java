@@ -2328,6 +2328,26 @@ public class CraftWorld implements World {
     // Spigot start
     private final Spigot spigot = new Spigot()
     {
+
+        @Override
+        public LightningStrike strikeLightning(Location loc, boolean isSilent)
+        {
+            EntityLightning lightning = EntityTypes.LIGHTNING_BOLT.a( world );
+            lightning.teleportAndSync( loc.getX(), loc.getY(), loc.getZ() );
+            lightning.isSilent = isSilent;
+            world.strikeLightning( lightning );
+            return (LightningStrike) lightning.getBukkitEntity();
+        }
+
+        @Override
+        public LightningStrike strikeLightningEffect(Location loc, boolean isSilent)
+        {
+            EntityLightning lightning = EntityTypes.LIGHTNING_BOLT.a( world );
+            lightning.teleportAndSync( loc.getX(), loc.getY(), loc.getZ() );
+            lightning.isEffect = true;
+            lightning.isSilent = isSilent;
+            return (LightningStrike) lightning.getBukkitEntity();
+        }
     };
 
     public Spigot spigot()
