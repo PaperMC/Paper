@@ -1,11 +1,11 @@
-From 35c118d7278bdca1671c45a5e8f6ab1a99ad5ee3 Mon Sep 17 00:00:00 2001
+From 0afa39732c99413db7ac202857278521cfad9204 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 6 Oct 2013 17:36:28 +1100
 Subject: [PATCH] Don't Special Case X Move Value
 
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 0c85c57..0cf3c98 100644
+index e9652a5..58e0e41 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -105,6 +105,7 @@ public class PlayerConnection implements PacketPlayInListener {
@@ -16,24 +16,34 @@ index 0c85c57..0cf3c98 100644
  
      // For the PacketPlayOutBlockPlace hack :(
      Long lastPacket;
-@@ -229,7 +230,7 @@ public class PlayerConnection implements PacketPlayInListener {
+@@ -201,6 +202,18 @@ public class PlayerConnection implements PacketPlayInListener {
+ 
+             // CraftBukkit start
+             Player player = this.getPlayer();
++            // Spigot Start
++            if ( !hasMoved )
++            {
++                Location curPos = player.getLocation();
++                lastPosX = curPos.getX();
++                lastPosY = curPos.getY();
++                lastPosZ = curPos.getZ();
++                lastYaw = curPos.getYaw();
++                lastPitch = curPos.getPitch();
++                hasMoved = true;
++            }
++            // Spigot End
+             Location from = new Location(player.getWorld(), lastPosX, lastPosY, lastPosZ, lastYaw, lastPitch); // Get the Players previous Event location.
+             Location to = player.getLocation().clone(); // Start off the To location as the Players current location.
+ 
+@@ -229,7 +242,7 @@ public class PlayerConnection implements PacketPlayInListener {
                  this.lastPitch = to.getPitch();
  
                  // Skip the first time we do this
 -                if (from.getX() != Double.MAX_VALUE) {
-+                if (hasMoved) { // Spigot - Better Check!
++                if (true) { // Spigot - don't skip any move events
                      PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
                      this.server.getPluginManager().callEvent(event);
  
-@@ -253,7 +254,7 @@ public class PlayerConnection implements PacketPlayInListener {
-                         this.justTeleported = false;
-                         return;
-                     }
--                }
-+                } else { hasMoved = true; } // Spigot - Better Check!
-             }
- 
-             if (this.checkMovement && !this.player.dead) {
 -- 
-1.8.4.msysgit.0
+1.8.3.2
 
