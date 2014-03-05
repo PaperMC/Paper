@@ -433,6 +433,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
     public static IInventory a(World world, double d0, double d1, double d2) {
         Object object = null;
         BlockPosition blockposition = new BlockPosition(d0, d1, d2);
+        if ( !world.isLoaded( blockposition ) ) return null; // Spigot
         IBlockData iblockdata = world.getType(blockposition);
         Block block = iblockdata.getBlock();
 
