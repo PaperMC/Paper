@@ -1,73 +1,79 @@
-From 650dacaaa5ff0cdb2050aff041af1453241dc8cf Mon Sep 17 00:00:00 2001
-From: Ammar Askar <ammar@ammaraskar.com>
-Date: Sat, 3 Aug 2013 21:42:00 +0500
-Subject: [PATCH] Guard entity list
+From 71dc389b977238a15bb2a1aa44670aa12a6513a6 Mon Sep 17 00:00:00 2001
+From: md_5 <git@md-5.net>
+Date: Mon, 10 Mar 2014 09:03:28 +1100
+Subject: [PATCH] Guard Entity List
 
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 6ec7f5a..9bc4256 100644
+index 6ec7f5a..d0d9ea9 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -29,7 +29,25 @@ import java.util.concurrent.Callable;
+@@ -29,7 +29,32 @@ import org.bukkit.event.weather.ThunderChangeEvent;
  public abstract class World implements IBlockAccess {
  
      public boolean d;
 -    public List entityList = new ArrayList();
-+    public List entityList = new ArrayList() { // Spigot start - guard entity list from removals
++    // Spigot start - guard entity list from removals
++    public List entityList = new ArrayList()
++    {
 +        @Override
-+        public Object remove(int index) {
++        public Object remove(int index)
++        {
 +            guard();
-+            return super.remove(index);
++            return super.remove( index );
 +        }
 +
 +        @Override
-+        public boolean remove(Object o) {
++        public boolean remove(Object o)
++        {
 +            guard();
-+            return super.remove(o);
++            return super.remove( o );
 +        }
 +
-+        private void guard() {
-+            if (guardEntityList) {
++        private void guard()
++        {
++            if ( guardEntityList )
++            {
 +                throw new java.util.ConcurrentModificationException();
 +            }
 +        }
-+    }; // Spigot end
++    };
++    // Spigot end
      protected List f = new ArrayList();
      public Set tileEntityList = new HashSet(); // CraftBukkit - ArrayList -> HashSet
      private List a = new ArrayList();
-@@ -74,6 +92,7 @@ public abstract class World implements IBlockAccess {
-     int[] H;
-     public boolean isStatic;
+@@ -78,6 +103,7 @@ public abstract class World implements IBlockAccess {
+     int[] I;
+ 
      // Spigot start
 +    private boolean guardEntityList;
      protected final gnu.trove.map.hash.TLongShortHashMap chunkTickList;
      protected float growthOdds = 100;
      protected float modifiedOdds = 100;
-@@ -1285,6 +1304,7 @@ public abstract class World implements IBlockAccess {
+@@ -1272,6 +1298,7 @@ public abstract class World implements IBlockAccess {
  
          org.spigotmc.ActivationRange.activateEntities(this); // Spigot
          timings.entityTick.startTiming(); // Spigot
 +        guardEntityList = true; // Spigot
-         for (i = 0; i < this.entityList.size(); ++i) {
-             entity = (Entity) this.entityList.get(i);
- 
-@@ -1331,14 +1351,16 @@ public abstract class World implements IBlockAccess {
-                 if (entity.ai && this.isChunkLoaded(j, k)) {
+         // CraftBukkit start - Use field for loop variable
+         for (this.tickPosition = 0; this.tickPosition < this.entityList.size(); ++this.tickPosition) {
+             entity = (Entity) this.entityList.get(this.tickPosition);
+@@ -1320,12 +1347,15 @@ public abstract class World implements IBlockAccess {
                      this.getChunkAt(j, k).b(entity);
                  }
--
+ 
 +                guardEntityList = false; // Spigot
-                 this.entityList.remove(i--);
+                 this.entityList.remove(this.tickPosition--); // CraftBukkit - Use field for loop variable
 +                guardEntityList = true; // Spigot
                  this.b(entity);
              }
  
              this.methodProfiler.b();
          }
-         lastChunk = Long.MIN_VALUE; // Spigot
 +        guardEntityList = false; // Spigot
  
          timings.entityTick.stopTiming(); // Spigot
-         this.methodProfiler.c("tileEntities");
+         this.methodProfiler.c("blockEntities");
 -- 
-1.8.1.msysgit.1
+1.8.3.2
+
