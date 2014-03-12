@@ -1,0 +1,54 @@
+From 6a1f414ca1faf1148d0a2d0db1916ff043b3a834 Mon Sep 17 00:00:00 2001
+From: Thinkofdeath <thethinkofdeath@gmail.com>
+Date: Tue, 14 Jan 2014 20:11:25 +0000
+Subject: [PATCH] Fix ConcurrentModificationException while being idle kicked
+ in a vehicle
+
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index d0d9ea9..97486db 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1045,23 +1045,24 @@ public abstract class World implements IBlockAccess {
+             this.players.remove(entity);
+             this.everyoneSleeping();
+         }
+-
+-        int i = entity.ai;
+-        int j = entity.ak;
+-
+-        if (entity.ah && this.isChunkLoaded(i, j)) {
+-            this.getChunkAt(i, j).b(entity);
+-        }
+-
+-        // CraftBukkit start - Decrement loop variable field if we've already ticked this entity
+-        int index = this.entityList.indexOf(entity);
+-        if (index != -1) {
+-            if (index <= this.tickPosition) {
+-                this.tickPosition--;
++        // Spigot start
++        if (!guardEntityList) { // It will get removed after the tick if we are ticking
++            int i = entity.ai;
++            int j = entity.ak;
++            if (entity.ah && this.isChunkLoaded(i, j)) {
++                this.getChunkAt(i, j).b(entity);
+             }
+-            this.entityList.remove(index);
++            // CraftBukkit start - Decrement loop variable field if we've already ticked this entity
++            int index = this.entityList.indexOf(entity);
++            if (index != -1) {
++                if (index <= this.tickPosition) {
++                    this.tickPosition--;
++                }
++                this.entityList.remove(index);
++            }
++            // CraftBukkit end
+         }
+-        // CraftBukkit end
++        // Spigot end
+ 
+         this.b(entity);
+     }
+-- 
+1.8.5.2.msysgit.0
+
