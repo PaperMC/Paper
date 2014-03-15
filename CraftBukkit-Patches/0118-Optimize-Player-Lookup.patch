@@ -1,0 +1,187 @@
+From 503e6bf3b59942ce08eabe10e0f6ece396c06514 Mon Sep 17 00:00:00 2001
+From: md_5 <git@md-5.net>
+Date: Sat, 15 Mar 2014 14:34:03 +1100
+Subject: [PATCH] Optimize Player Lookup
+
+Optimize player lookup and various player operations. We mainly do this by keeping a map instead of iterating through all players. We also speed up the duplicate login check and a few other checks by simply checking for one matching player.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 2ff1e19..9a1ea8c 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -56,6 +56,25 @@ public abstract class PlayerList {
+     private boolean o;
+     private int p;
+ 
++    // Spigot Start
++    private final Map<String, EntityPlayer> playerMap = new java.util.HashMap<String, EntityPlayer>();
++
++    private void removePlayer(EntityPlayer player)
++    {
++        playerMap.remove( player.getName().toLowerCase() );
++    }
++
++    private void addPlayer(EntityPlayer player)
++    {
++        playerMap.put( player.getName().toLowerCase(), player );
++    }
++
++    private EntityPlayer getPlayerByName(String name)
++    {
++        return playerMap.get( name.toLowerCase() );
++    }
++    // Spigot End
++
+     // CraftBukkit start
+     private CraftServer cserver;
+ 
+@@ -218,6 +237,7 @@ public abstract class PlayerList {
+         cserver.detectListNameConflict(entityplayer); // CraftBukkit
+         // this.sendAll(new PacketPlayOutPlayerInfo(entityplayer.getName(), true, 1000)); // CraftBukkit - replaced with loop below
+         this.players.add(entityplayer);
++        addPlayer( entityplayer ); // Spigot
+         WorldServer worldserver = this.server.getWorldServer(entityplayer.dimension);
+ 
+         // CraftBukkit start
+@@ -292,6 +312,7 @@ public abstract class PlayerList {
+         worldserver.kill(entityplayer);
+         worldserver.getPlayerChunkMap().removePlayer(entityplayer);
+         this.players.remove(entityplayer);
++        removePlayer( entityplayer ); // Spigot
+         this.k.remove(entityplayer.getName());
+         ChunkIOExecutor.adjustPoolSize(this.getPlayerCount()); // CraftBukkit
+ 
+@@ -370,23 +391,14 @@ public abstract class PlayerList {
+     }
+ 
+     public EntityPlayer processLogin(GameProfile gameprofile, EntityPlayer player) { // CraftBukkit - added EntityPlayer
+-        ArrayList arraylist = new ArrayList();
+-
+-        EntityPlayer entityplayer;
++        // Spigot Start
++        EntityPlayer entityplayer = getPlayer( gameprofile.getName() );
+ 
+-        for (int i = 0; i < this.players.size(); ++i) {
+-            entityplayer = (EntityPlayer) this.players.get(i);
+-            if (entityplayer.getName().equalsIgnoreCase(gameprofile.getName())) {
+-                arraylist.add(entityplayer);
+-            }
+-        }
+-
+-        Iterator iterator = arraylist.iterator();
+-
+-        while (iterator.hasNext()) {
+-            entityplayer = (EntityPlayer) iterator.next();
+-            entityplayer.playerConnection.disconnect("You logged in from another location");
++        if ( entityplayer != null )
++        {
++            entityplayer.playerConnection.disconnect( "You logged in from another location" );
+         }
++        // Spigot End
+ 
+         /* CraftBukkit start
+         Object object;
+@@ -882,19 +894,7 @@ public abstract class PlayerList {
+     }
+ 
+     public EntityPlayer getPlayer(String s) {
+-        Iterator iterator = this.players.iterator();
+-
+-        EntityPlayer entityplayer;
+-
+-        do {
+-            if (!iterator.hasNext()) {
+-                return null;
+-            }
+-
+-            entityplayer = (EntityPlayer) iterator.next();
+-        } while (!entityplayer.getName().equalsIgnoreCase(s));
+-
+-        return entityplayer;
++        return getPlayerByName( s ); // Spigot
+     }
+ 
+     public List a(ChunkCoordinates chunkcoordinates, int i, int j, int k, int l, int i1, int j1, Map map, String s, String s1, World world) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
+index 36bcfef..55df803 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
+@@ -101,14 +101,10 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
+     }
+ 
+     public Player getPlayer() {
+-        for (Object obj : server.getHandle().players) {
+-            EntityPlayer player = (EntityPlayer) obj;
+-            if (player.getName().equalsIgnoreCase(getName())) {
+-                return (player.playerConnection != null) ? player.playerConnection.getPlayer() : null;
+-            }
+-        }
+-
+-        return null;
++        // Spigot Start
++        EntityPlayer player = server.getHandle().getPlayer( name );
++        return ( player != null && player.playerConnection != null ) ? player.getBukkitEntity() : null;
++        // Spigot End
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 931cae7..c6f473f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -500,6 +500,13 @@ public final class CraftServer implements Server {
+     public Player getPlayer(final String name) {
+         Validate.notNull(name, "Name cannot be null");
+ 
++        // Spigot End
++        Player directLookup = getPlayerExact( name );
++        if ( directLookup != null )
++        {
++            return directLookup;
++        }
++        // Spigot End
+         Player[] players = getOnlinePlayers();
+ 
+         Player found = null;
+@@ -521,15 +528,10 @@ public final class CraftServer implements Server {
+     public Player getPlayerExact(String name) {
+         Validate.notNull(name, "Name cannot be null");
+ 
+-        String lname = name.toLowerCase();
+-
+-        for (Player player : getOnlinePlayers()) {
+-            if (player.getName().equalsIgnoreCase(lname)) {
+-                return player;
+-            }
+-        }
+-
+-        return null;
++        // Spigot Start
++        EntityPlayer entityPlayer = playerList.getPlayer( name );
++        return ( entityPlayer != null ) ? entityPlayer.getBukkitEntity() : null;
++        // Spigot End
+     }
+ 
+     public int broadcastMessage(String message) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 9b0672b..93d733b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -94,13 +94,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+ 
+     public boolean isOnline() {
+-        for (Object obj : server.getHandle().players) {
+-            EntityPlayer player = (EntityPlayer) obj;
+-            if (player.getName().equalsIgnoreCase(getName())) {
+-                return true;
+-            }
+-        }
+-        return false;
++        return server.getHandle().getPlayer( getName() ) != null; // Spigot
+     }
+ 
+     public InetSocketAddress getAddress() {
+-- 
+1.8.3.2
+
