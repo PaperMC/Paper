@@ -12,7 +12,7 @@ public class PortalCreator {
     private ChunkCoordinates f;
     private int g;
     private int h;
-    java.util.Collection<org.bukkit.block.Block> blocks; // CraftBukkit - add field
+    java.util.Collection<org.bukkit.block.Block> blocks = new java.util.HashSet<org.bukkit.block.Block>(); // CraftBukkit - add field
 
     public PortalCreator(World world, int i, int j, int k, int l) {
         this.a = world;
@@ -65,8 +65,10 @@ public class PortalCreator {
     }
 
     protected int a() {
-        this.blocks = new java.util.HashSet<org.bukkit.block.Block>(); // CraftBukkit
+        // CraftBukkit start
+        this.blocks.clear();
         org.bukkit.World bworld = this.a.getWorld();
+        // CraftBukkit end
         int i;
         int j;
         int k;
@@ -118,6 +120,10 @@ public class PortalCreator {
             if (this.a.getType(j, k, l) != Blocks.OBSIDIAN) {
                 this.g = 0;
                 break;
+                // CraftBukkit start - add the block to our list
+            } else {
+                blocks.add(bworld.getBlockAt(j, k, l));
+                // CraftBukkit end
             }
         }
 
@@ -151,7 +157,7 @@ public class PortalCreator {
             for (int l = 0; l < this.g; ++l) {
                 int i1 = this.f.y + l;
 
-                bworld.getBlockAt(j, i1, k);
+                blocks.add(bworld.getBlockAt(j, i1, k));
             }
         }
 
