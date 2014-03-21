@@ -43,7 +43,7 @@ public class Slot {
         return this.inventory.getItem(this.index);
     }
 
-    public boolean e() {
+    public boolean hasItem() {
         return this.getItem() != null;
     }
 
@@ -56,7 +56,7 @@ public class Slot {
         this.inventory.update();
     }
 
-    public int a() {
+    public int getMaxStackSize() {
         return this.inventory.getMaxStackSize();
     }
 
@@ -68,7 +68,7 @@ public class Slot {
         return iinventory == this.inventory && i == this.index;
     }
 
-    public boolean a(EntityHuman entityhuman) {
+    public boolean isAllowed(EntityHuman entityhuman) {
         return true;
     }
 }

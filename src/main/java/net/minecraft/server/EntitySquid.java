@@ -25,8 +25,8 @@ public class EntitySquid extends EntityWaterAnimal {
         this.by = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
     }
 
-    protected void aD() {
-        super.aD();
+    protected void aC() {
+        super.aC();
         this.getAttributeInstance(GenericAttributes.a).setValue(10.0D);
     }
 
@@ -34,15 +34,15 @@ public class EntitySquid extends EntityWaterAnimal {
         return null;
     }
 
+    protected String aS() {
+        return null;
+    }
+
     protected String aT() {
         return null;
     }
 
-    protected String aU() {
-        return null;
-    }
-
-    protected float bf() {
+    protected float be() {
         return 0.4F;
     }
 
@@ -68,7 +68,7 @@ public class EntitySquid extends EntityWaterAnimal {
     }
 
     /* CraftBukkit start - Delegate to Entity to use existing inWater value
-    public boolean M() {
+    public boolean L() {
         return this.world.a(this.boundingBox.grow(0.0D, -0.6000000238418579D, 0.0D), Material.WATER, (Entity) this);
     }
     // CraftBukkit end */
@@ -87,7 +87,7 @@ public class EntitySquid extends EntityWaterAnimal {
             }
         }
 
-        if (this.M()) {
+        if (this.L()) {
             float f;
 
             if (this.bt < 3.1415927F) {
@@ -113,8 +113,8 @@ public class EntitySquid extends EntityWaterAnimal {
 
             f = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
             // CraftBukkit - Math -> TrigMath
-            this.aN += (-((float) TrigMath.atan2(this.motX, this.motZ)) * 180.0F / 3.1415927F - this.aN) * 0.1F;
-            this.yaw = this.aN;
+            this.aM += (-((float) TrigMath.atan2(this.motX, this.motZ)) * 180.0F / 3.1415927F - this.aM) * 0.1F;
+            this.yaw = this.aM;
             this.br += 3.1415927F * this.bz * 1.5F;
             // CraftBukkit - Math -> TrigMath
             this.bp += (-((float) TrigMath.atan2((double) f, this.motY)) * 180.0F / 3.1415927F - this.bp) * 0.1F;
@@ -135,9 +135,9 @@ public class EntitySquid extends EntityWaterAnimal {
         this.move(this.motX, this.motY, this.motZ);
     }
 
-    protected void bq() {
-        ++this.aV;
-        if (this.aV > 100) {
+    protected void bp() {
+        ++this.aU;
+        if (this.aU > 100) {
             this.bA = this.bB = this.bC = 0.0F;
         } else if (this.random.nextInt(50) == 0 || !this.inWater || this.bA == 0.0F && this.bB == 0.0F && this.bC == 0.0F) {
             float f = this.random.nextFloat() * 3.1415927F * 2.0F;

@@ -18,7 +18,7 @@ public class EntityFishingHook extends Entity {
     private int g = -1;
     private int h = -1;
     private int i = -1;
-    private Block j;
+    private Block at;
     private boolean au;
     public int a;
     public EntityHuman owner;
@@ -39,12 +39,12 @@ public class EntityFishingHook extends Entity {
     public EntityFishingHook(World world) {
         super(world);
         this.a(0.25F, 0.25F);
-        this.al = true;
+        this.ak = true;
     }
 
     public EntityFishingHook(World world, EntityHuman entityhuman) {
         super(world);
-        this.al = true;
+        this.ak = true;
         this.owner = entityhuman;
         this.owner.hookedFish = this;
         this.a(0.25F, 0.25F);
@@ -101,9 +101,9 @@ public class EntityFishingHook extends Entity {
             this.b(this.yaw, this.pitch);
         } else {
             if (!this.world.isStatic) {
-                ItemStack itemstack = this.owner.bD();
+                ItemStack itemstack = this.owner.bE();
 
-                if (this.owner.dead || !this.owner.isAlive() || itemstack == null || itemstack.getItem() != Items.FISHING_ROD || this.e(this.owner) > 1024.0D) {
+                if (this.owner.dead || !this.owner.isAlive() || itemstack == null || itemstack.getItem() != Items.FISHING_ROD || this.f(this.owner) > 1024.0D) {
                     this.die();
                     this.owner.hookedFish = null;
                     return;
@@ -126,7 +126,7 @@ public class EntityFishingHook extends Entity {
             }
 
             if (this.au) {
-                if (this.world.getType(this.g, this.h, this.i) == this.j) {
+                if (this.world.getType(this.g, this.h, this.i) == this.at) {
                     ++this.av;
                     if (this.av == 1200) {
                         this.die();
@@ -145,14 +145,14 @@ public class EntityFishingHook extends Entity {
                 ++this.aw;
             }
 
-            Vec3D vec3d = this.world.getVec3DPool().create(this.locX, this.locY, this.locZ);
-            Vec3D vec3d1 = this.world.getVec3DPool().create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+            Vec3D vec3d = Vec3D.a(this.locX, this.locY, this.locZ);
+            Vec3D vec3d1 = Vec3D.a(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
             MovingObjectPosition movingobjectposition = this.world.a(vec3d, vec3d1);
 
-            vec3d = this.world.getVec3DPool().create(this.locX, this.locY, this.locZ);
-            vec3d1 = this.world.getVec3DPool().create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+            vec3d = Vec3D.a(this.locX, this.locY, this.locZ);
+            vec3d1 = Vec3D.a(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
             if (movingobjectposition != null) {
-                vec3d1 = this.world.getVec3DPool().create(movingobjectposition.pos.c, movingobjectposition.pos.d, movingobjectposition.pos.e);
+                vec3d1 = Vec3D.a(movingobjectposition.pos.a, movingobjectposition.pos.b, movingobjectposition.pos.c);
             }
 
             Entity entity = null;
@@ -164,7 +164,7 @@ public class EntityFishingHook extends Entity {
             for (int i = 0; i < list.size(); ++i) {
                 Entity entity1 = (Entity) list.get(i);
 
-                if (entity1.R() && (entity1 != this.owner || this.aw >= 5)) {
+                if (entity1.Q() && (entity1 != this.owner || this.aw >= 5)) {
                     float f = 0.3F;
                     AxisAlignedBB axisalignedbb = entity1.boundingBox.grow((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
@@ -230,7 +230,7 @@ public class EntityFishingHook extends Entity {
                 for (int j = 0; j < b0; ++j) {
                     double d7 = this.boundingBox.b + (this.boundingBox.e - this.boundingBox.b) * (double) (j + 0) / (double) b0 - 0.125D + 0.125D;
                     double d8 = this.boundingBox.b + (this.boundingBox.e - this.boundingBox.b) * (double) (j + 1) / (double) b0 - 0.125D + 0.125D;
-                    AxisAlignedBB axisalignedbb1 = AxisAlignedBB.a().a(this.boundingBox.a, d7, this.boundingBox.c, this.boundingBox.d, d8, this.boundingBox.f);
+                    AxisAlignedBB axisalignedbb1 = AxisAlignedBB.a(this.boundingBox.a, d7, this.boundingBox.c, this.boundingBox.d, d8, this.boundingBox.f);
 
                     if (this.world.b(axisalignedbb1, Material.WATER)) {
                         d6 += 1.0D / (double) b0;
@@ -344,7 +344,7 @@ public class EntityFishingHook extends Entity {
         nbttagcompound.setShort("xTile", (short) this.g);
         nbttagcompound.setShort("yTile", (short) this.h);
         nbttagcompound.setShort("zTile", (short) this.i);
-        nbttagcompound.setByte("inTile", (byte) Block.b(this.j));
+        nbttagcompound.setByte("inTile", (byte) Block.b(this.at));
         nbttagcompound.setByte("shake", (byte) this.a);
         nbttagcompound.setByte("inGround", (byte) (this.au ? 1 : 0));
     }
@@ -353,7 +353,7 @@ public class EntityFishingHook extends Entity {
         this.g = nbttagcompound.getShort("xTile");
         this.h = nbttagcompound.getShort("yTile");
         this.i = nbttagcompound.getShort("zTile");
-        this.j = Block.e(nbttagcompound.getByte("inTile") & 255);
+        this.at = Block.e(nbttagcompound.getByte("inTile") & 255);
         this.a = nbttagcompound.getByte("shake") & 255;
         this.au = nbttagcompound.getByte("inGround") == 1;
     }

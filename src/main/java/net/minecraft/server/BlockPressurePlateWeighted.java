@@ -1,7 +1,5 @@
 package net.minecraft.server;
 
-import java.util.List;
-
 import org.bukkit.event.entity.EntityInteractEvent; // CraftBukkit
 
 public class BlockPressurePlateWeighted extends BlockPressurePlateAbstract {

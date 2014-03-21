@@ -14,9 +14,9 @@ final class DispenseBehaviorEmptyBucket extends DispenseBehaviorItem {
     public ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
         EnumFacing enumfacing = BlockDispenser.b(isourceblock.h());
         World world = isourceblock.k();
-        int i = isourceblock.getBlockX() + enumfacing.c();
-        int j = isourceblock.getBlockY() + enumfacing.d();
-        int k = isourceblock.getBlockZ() + enumfacing.e();
+        int i = isourceblock.getBlockX() + enumfacing.getAdjacentX();
+        int j = isourceblock.getBlockY() + enumfacing.getAdjacentY();
+        int k = isourceblock.getBlockZ() + enumfacing.getAdjacentZ();
         Material material = world.getType(i, j, k).getMaterial();
         int l = world.getData(i, j, k);
         Item item;
@@ -47,7 +47,7 @@ final class DispenseBehaviorEmptyBucket extends DispenseBehaviorItem {
         if (!event.getItem().equals(craftItem)) {
             // Chain to handler for new item
             ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
-            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.a(eventStack.getItem());
+            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.get(eventStack.getItem());
             if (idispensebehavior != IDispenseBehavior.a && idispensebehavior != this) {
                 idispensebehavior.a(isourceblock, eventStack);
                 return itemstack;

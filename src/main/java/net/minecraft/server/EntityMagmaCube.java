@@ -7,8 +7,8 @@ public class EntityMagmaCube extends EntitySlime {
         this.fireProof = true;
     }
 
-    protected void aD() {
-        super.aD();
+    protected void aC() {
+        super.aC();
         this.getAttributeInstance(GenericAttributes.d).setValue(0.20000000298023224D);
     }
 
@@ -16,7 +16,7 @@ public class EntityMagmaCube extends EntitySlime {
         return this.world.difficulty != EnumDifficulty.PEACEFUL && this.world.b(this.boundingBox) && this.world.getCubes(this, this.boundingBox).isEmpty() && !this.world.containsLiquid(this.boundingBox);
     }
 
-    public int aV() {
+    public int aU() {
         return this.getSize() * 3;
     }
 
@@ -24,11 +24,11 @@ public class EntityMagmaCube extends EntitySlime {
         return 1.0F;
     }
 
-    protected String bN() {
+    protected String bP() {
         return "flame";
     }
 
-    protected EntitySlime bO() {
+    protected EntitySlime bQ() {
         return new EntityMagmaCube(this.world);
     }
 
@@ -61,38 +61,38 @@ public class EntityMagmaCube extends EntitySlime {
         return false;
     }
 
-    protected int bP() {
-        return super.bP() * 4;
+    protected int bR() {
+        return super.bR() * 4;
     }
 
-    protected void bQ() {
+    protected void bS() {
         this.h *= 0.9F;
     }
 
-    protected void bj() {
+    protected void bi() {
         this.motY = (double) (0.42F + (float) this.getSize() * 0.1F);
-        this.am = true;
+        this.al = true;
     }
 
     protected void b(float f) {}
 
-    protected boolean bR() {
+    protected boolean bT() {
         return true;
     }
 
-    protected int bS() {
-        return super.bS() + 2;
+    protected int bU() {
+        return super.bU() + 2;
     }
 
-    protected String bT() {
+    protected String bV() {
         return this.getSize() > 1 ? "mob.magmacube.big" : "mob.magmacube.small";
     }
 
-    public boolean P() {
+    public boolean O() {
         return false;
     }
 
-    protected boolean bU() {
+    protected boolean bW() {
         return true;
     }
 }

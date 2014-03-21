@@ -58,7 +58,7 @@ public class ContainerBeacon extends Container {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.c.get(i);
 
-        if (slot != null && slot.e()) {
+        if (slot != null && slot.hasItem()) {
             ItemStack itemstack1 = slot.getItem();
 
             itemstack = itemstack1.cloneItemStack();
@@ -68,7 +68,7 @@ public class ContainerBeacon extends Container {
                 }
 
                 slot.a(itemstack1, itemstack);
-            } else if (!this.f.e() && this.f.isAllowed(itemstack1) && itemstack1.count == 1) {
+            } else if (!this.f.hasItem() && this.f.isAllowed(itemstack1) && itemstack1.count == 1) {
                 if (!this.a(itemstack1, 0, 1, false)) {
                     return null;
                 }

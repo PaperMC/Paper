@@ -173,7 +173,7 @@ public class TileEntity {
         a(TileEntityFlowerPot.class, "FlowerPot");
     }
 
-    // CraftBukkit start
+    // CraftBukkit start - add method
     public InventoryHolder getOwner() {
         org.bukkit.block.BlockState state = world.getWorld().getBlockAt(x, y, z).getState();
         if (state instanceof InventoryHolder) return (InventoryHolder) state;

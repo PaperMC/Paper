@@ -23,9 +23,9 @@ public class PathfinderGoalPanic extends PathfinderGoal {
             if (vec3d == null) {
                 return false;
             } else {
-                this.c = vec3d.c;
-                this.d = vec3d.d;
-                this.e = vec3d.e;
+                this.c = vec3d.a;
+                this.d = vec3d.b;
+                this.e = vec3d.c;
                 return true;
             }
         }
@@ -37,7 +37,7 @@ public class PathfinderGoalPanic extends PathfinderGoal {
 
     public boolean b() {
         // CraftBukkit start - introduce a temporary timeout hack until this is fixed properly
-        if ((this.a.ticksLived - this.a.aK()) > 100) {
+        if ((this.a.ticksLived - this.a.aJ()) > 100) {
             this.a.b((EntityLiving) null);
             return false;
         }

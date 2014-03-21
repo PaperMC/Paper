@@ -64,12 +64,12 @@ public class ContainerBrewingStand extends Container {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.c.get(i);
 
-        if (slot != null && slot.e()) {
+        if (slot != null && slot.hasItem()) {
             ItemStack itemstack1 = slot.getItem();
 
             itemstack = itemstack1.cloneItemStack();
             if ((i < 0 || i > 2) && i != 3) {
-                if (!this.f.e() && this.f.isAllowed(itemstack1)) {
+                if (!this.f.hasItem() && this.f.isAllowed(itemstack1)) {
                     if (!this.a(itemstack1, 3, 4, false)) {
                         return null;
                     }

@@ -21,9 +21,9 @@ public class PathfinderGoalTame extends PathfinderGoal {
             if (vec3d == null) {
                 return false;
             } else {
-                this.c = vec3d.c;
-                this.d = vec3d.d;
-                this.e = vec3d.e;
+                this.c = vec3d.a;
+                this.d = vec3d.b;
+                this.e = vec3d.c;
                 return true;
             }
         } else {
@@ -40,13 +40,13 @@ public class PathfinderGoalTame extends PathfinderGoal {
     }
 
     public void e() {
-        if (this.entity.aI().nextInt(50) == 0) {
+        if (this.entity.aH().nextInt(50) == 0) {
             if (this.entity.passenger instanceof EntityHuman) {
                 int i = this.entity.getTemper();
                 int j = this.entity.getMaxDomestication();
 
-                // CraftBukkit
-                if (j > 0 && this.entity.aI().nextInt(j) < i && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this.entity, (EntityHuman) this.entity.passenger).isCancelled() && this.entity.passenger instanceof EntityHuman) {
+                // CraftBukkit - fire EntityTameEvent
+                if (j > 0 && this.entity.aH().nextInt(j) < i && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this.entity, (EntityHuman) this.entity.passenger).isCancelled() && this.entity.passenger instanceof EntityHuman) {
                     this.entity.h((EntityHuman) this.entity.passenger);
                     this.entity.world.broadcastEntityEffect(this.entity, (byte) 7);
                     return;
@@ -65,7 +65,7 @@ public class PathfinderGoalTame extends PathfinderGoal {
             }
             // this.entity.passenger = null;
             // CraftBukkit end
-            this.entity.cH();
+            this.entity.cJ();
             this.entity.world.broadcastEntityEffect(this.entity, (byte) 6);
         }
     }

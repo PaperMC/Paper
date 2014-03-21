@@ -60,7 +60,7 @@ public class EntityExperienceOrb extends Entity {
         double d0 = 8.0D;
 
         if (this.targetTime < this.a - 20 + this.getId() % 100) {
-            if (this.targetPlayer == null || this.targetPlayer.e(this) > d0 * d0) {
+            if (this.targetPlayer == null || this.targetPlayer.f(this) > d0 * d0) {
                 this.targetPlayer = this.world.findNearbyPlayer(this, d0);
             }
 
@@ -109,7 +109,7 @@ public class EntityExperienceOrb extends Entity {
         }
     }
 
-    public boolean N() {
+    public boolean M() {
         return this.world.a(this.boundingBox, Material.WATER, (Entity) this);
     }
 
@@ -121,7 +121,7 @@ public class EntityExperienceOrb extends Entity {
         if (this.isInvulnerable()) {
             return false;
         } else {
-            this.Q();
+            this.P();
             this.d = (int) ((float) this.d - f);
             if (this.d <= 0) {
                 this.die();
@@ -145,11 +145,11 @@ public class EntityExperienceOrb extends Entity {
 
     public void b_(EntityHuman entityhuman) {
         if (!this.world.isStatic) {
-            if (this.c == 0 && entityhuman.bu == 0) {
-                entityhuman.bu = 2;
+            if (this.c == 0 && entityhuman.bt == 0) {
+                entityhuman.bt = 2;
                 this.world.makeSound(entityhuman, "random.orb", 0.1F, 0.5F * ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.8F));
                 entityhuman.receive(this, 1);
-                entityhuman.giveExp(CraftEventFactory.callPlayerExpChangeEvent(entityhuman, this.value).getAmount()); // CraftBukkit - this.value to event.getAmount()
+                entityhuman.giveExp(CraftEventFactory.callPlayerExpChangeEvent(entityhuman, this.value).getAmount()); // CraftBukkit - this.value -> event.getAmount()
                 this.die();
             }
         }
@@ -182,7 +182,7 @@ public class EntityExperienceOrb extends Entity {
         return i >= 2477 ? 2477 : (i >= 1237 ? 1237 : (i >= 617 ? 617 : (i >= 307 ? 307 : (i >= 149 ? 149 : (i >= 73 ? 73 : (i >= 37 ? 37 : (i >= 17 ? 17 : (i >= 7 ? 7 : (i >= 3 ? 3 : 1)))))))));
     }
 
-    public boolean av() {
+    public boolean au() {
         return false;
     }
 }

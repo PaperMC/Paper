@@ -10,7 +10,7 @@ public class RecipesFurnace {
     private static final RecipesFurnace a = new RecipesFurnace();
     public Map recipes = new HashMap(); // CraftBukkit - private -> public
     private Map c = new HashMap();
-    public Map customRecipes = new HashMap(); // CraftBukkit
+    public Map customRecipes = new HashMap(); // CraftBukkit - add field
 
     public static RecipesFurnace getInstance() {
         return a;
@@ -63,14 +63,14 @@ public class RecipesFurnace {
         this.c.put(itemstack1, Float.valueOf(f));
     }
 
-    // CraftBukkit start
+    // CraftBukkit start - add method
     public void registerRecipe(ItemStack itemstack, ItemStack itemstack1) {
         this.customRecipes.put(itemstack, itemstack1);
     }
     // CraftBukkit end
 
     public ItemStack getResult(ItemStack itemstack) {
-        // CraftBukkit start
+        // CraftBukkit start - initialize to customRecipes
         boolean vanilla = false;
         Iterator iterator = this.customRecipes.entrySet().iterator();
         // CraftBukkit end
@@ -79,7 +79,7 @@ public class RecipesFurnace {
 
         do {
             if (!iterator.hasNext()) {
-                // CraftBukkit start
+                // CraftBukkit start - fall back to vanilla recipes
                 if (!vanilla && recipes.size() != 0) {
                     iterator = this.recipes.entrySet().iterator();
                     vanilla = true;

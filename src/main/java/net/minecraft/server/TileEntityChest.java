@@ -25,7 +25,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
 
     public TileEntityChest() {}
 
-    // CraftBukkit start
+    // CraftBukkit start - add fields and methods
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     private int maxStack = MAX_STACK;
 
@@ -239,9 +239,13 @@ public class TileEntityChest extends TileEntity implements IInventory {
     }
 
     private boolean a(int i, int j, int k) {
-        Block block = this.world.getType(i, j, k);
+        if (this.world == null) {
+            return false;
+        } else {
+            Block block = this.world.getType(i, j, k);
 
-        return block instanceof BlockChest && ((BlockChest) block).a == this.j();
+            return block instanceof BlockChest && ((BlockChest) block).a == this.j();
+        }
     }
 
     public void h() {
@@ -254,7 +258,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
         if (!this.world.isStatic && this.o != 0 && (this.ticks + this.x + this.y + this.z) % 200 == 0) {
             this.o = 0;
             f = 5.0F;
-            List list = this.world.a(EntityHuman.class, AxisAlignedBB.a().a((double) ((float) this.x - f), (double) ((float) this.y - f), (double) ((float) this.z - f), (double) ((float) (this.x + 1) + f), (double) ((float) (this.y + 1) + f), (double) ((float) (this.z + 1) + f)));
+            List list = this.world.a(EntityHuman.class, AxisAlignedBB.a((double) ((float) this.x - f), (double) ((float) this.y - f), (double) ((float) this.z - f), (double) ((float) (this.x + 1) + f), (double) ((float) (this.y + 1) + f), (double) ((float) (this.z + 1) + f)));
             Iterator iterator = list.iterator();
 
             while (iterator.hasNext()) {

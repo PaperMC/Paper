@@ -21,11 +21,11 @@ public class EntityEnderman extends EntityMonster {
     public EntityEnderman(World world) {
         super(world);
         this.a(0.6F, 2.9F);
-        this.X = 1.0F;
+        this.W = 1.0F;
     }
 
-    protected void aD() {
-        super.aD();
+    protected void aC() {
+        super.aC();
         this.getAttributeInstance(GenericAttributes.a).setValue(40.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.30000001192092896D);
         this.getAttributeInstance(GenericAttributes.e).setValue(7.0D);
@@ -80,18 +80,18 @@ public class EntityEnderman extends EntityMonster {
             return false;
         } else {
             Vec3D vec3d = entityhuman.j(1.0F).a();
-            Vec3D vec3d1 = this.world.getVec3DPool().create(this.locX - entityhuman.locX, this.boundingBox.b + (double) (this.length / 2.0F) - (entityhuman.locY + (double) entityhuman.getHeadHeight()), this.locZ - entityhuman.locZ);
+            Vec3D vec3d1 = Vec3D.a(this.locX - entityhuman.locX, this.boundingBox.b + (double) (this.length / 2.0F) - (entityhuman.locY + (double) entityhuman.getHeadHeight()), this.locZ - entityhuman.locZ);
             double d0 = vec3d1.b();
 
             vec3d1 = vec3d1.a();
             double d1 = vec3d.b(vec3d1);
 
-            return d1 > 1.0D - 0.025D / d0 ? entityhuman.o(this) : false;
+            return d1 > 1.0D - 0.025D / d0 && entityhuman.p(this);
         }
     }
 
     public void e() {
-        if (this.L()) {
+        if (this.K()) {
             this.damageEntity(DamageSource.DROWN, 1.0F);
         }
 
@@ -150,29 +150,29 @@ public class EntityEnderman extends EntityMonster {
             this.world.addParticle("portal", this.locX + (this.random.nextDouble() - 0.5D) * (double) this.width, this.locY + this.random.nextDouble() * (double) this.length - 0.25D, this.locZ + (this.random.nextDouble() - 0.5D) * (double) this.width, (this.random.nextDouble() - 0.5D) * 2.0D, -this.random.nextDouble(), (this.random.nextDouble() - 0.5D) * 2.0D);
         }
 
-        if (this.world.v() && !this.world.isStatic) {
+        if (this.world.w() && !this.world.isStatic) {
             float f = this.d(1.0F);
 
             if (f > 0.5F && this.world.i(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
                 this.target = null;
                 this.a(false);
                 this.bv = false;
-                this.bX();
+                this.bZ();
             }
         }
 
-        if (this.L() || this.isBurning()) {
+        if (this.K() || this.isBurning()) {
             this.target = null;
             this.a(false);
             this.bv = false;
-            this.bX();
+            this.bZ();
         }
 
-        if (this.cb() && !this.bv && this.random.nextInt(100) == 0) {
+        if (this.cd() && !this.bv && this.random.nextInt(100) == 0) {
             this.a(false);
         }
 
-        this.bd = false;
+        this.bc = false;
         if (this.target != null) {
             this.a(this.target, 100.0F, 100.0F);
         }
@@ -180,12 +180,12 @@ public class EntityEnderman extends EntityMonster {
         if (!this.world.isStatic && this.isAlive()) {
             if (this.target != null) {
                 if (this.target instanceof EntityHuman && this.f((EntityHuman) this.target)) {
-                    if (this.target.e((Entity) this) < 16.0D) {
-                        this.bX();
+                    if (this.target.f((Entity) this) < 16.0D) {
+                        this.bZ();
                     }
 
                     this.bs = 0;
-                } else if (this.target.e((Entity) this) > 256.0D && this.bs++ >= 30 && this.c(this.target)) {
+                } else if (this.target.f((Entity) this) > 256.0D && this.bs++ >= 30 && this.c(this.target)) {
                     this.bs = 0;
                 }
             } else {
@@ -197,7 +197,7 @@ public class EntityEnderman extends EntityMonster {
         super.e();
     }
 
-    protected boolean bX() {
+    protected boolean bZ() {
         double d0 = this.locX + (this.random.nextDouble() - 0.5D) * 64.0D;
         double d1 = this.locY + (double) (this.random.nextInt(64) - 32);
         double d2 = this.locZ + (this.random.nextDouble() - 0.5D) * 64.0D;
@@ -206,13 +206,13 @@ public class EntityEnderman extends EntityMonster {
     }
 
     protected boolean c(Entity entity) {
-        Vec3D vec3d = this.world.getVec3DPool().create(this.locX - entity.locX, this.boundingBox.b + (double) (this.length / 2.0F) - entity.locY + (double) entity.getHeadHeight(), this.locZ - entity.locZ);
+        Vec3D vec3d = Vec3D.a(this.locX - entity.locX, this.boundingBox.b + (double) (this.length / 2.0F) - entity.locY + (double) entity.getHeadHeight(), this.locZ - entity.locZ);
 
         vec3d = vec3d.a();
         double d0 = 16.0D;
-        double d1 = this.locX + (this.random.nextDouble() - 0.5D) * 8.0D - vec3d.c * d0;
-        double d2 = this.locY + (double) (this.random.nextInt(16) - 8) - vec3d.d * d0;
-        double d3 = this.locZ + (this.random.nextDouble() - 0.5D) * 8.0D - vec3d.e * d0;
+        double d1 = this.locX + (this.random.nextDouble() - 0.5D) * 8.0D - vec3d.a * d0;
+        double d2 = this.locY + (double) (this.random.nextInt(16) - 8) - vec3d.b * d0;
+        double d3 = this.locZ + (this.random.nextDouble() - 0.5D) * 8.0D - vec3d.c * d0;
 
         return this.k(d1, d2, d3);
     }
@@ -287,14 +287,14 @@ public class EntityEnderman extends EntityMonster {
     }
 
     protected String t() {
-        return this.cb() ? "mob.endermen.scream" : "mob.endermen.idle";
+        return this.cd() ? "mob.endermen.scream" : "mob.endermen.idle";
     }
 
-    protected String aT() {
+    protected String aS() {
         return "mob.endermen.hit";
     }
 
-    protected String aU() {
+    protected String aT() {
         return "mob.endermen.death";
     }
 
@@ -348,7 +348,7 @@ public class EntityEnderman extends EntityMonster {
                 this.bv = false;
 
                 for (int i = 0; i < 64; ++i) {
-                    if (this.bX()) {
+                    if (this.bZ()) {
                         return true;
                     }
                 }
@@ -360,7 +360,7 @@ public class EntityEnderman extends EntityMonster {
         }
     }
 
-    public boolean cb() {
+    public boolean cd() {
         return this.datawatcher.getByte(18) > 0;
     }
 
@@ -371,7 +371,7 @@ public class EntityEnderman extends EntityMonster {
     static {
         br[Block.b((Block) Blocks.GRASS)] = true;
         br[Block.b(Blocks.DIRT)] = true;
-        br[Block.b(Blocks.SAND)] = true;
+        br[Block.b((Block) Blocks.SAND)] = true;
         br[Block.b(Blocks.GRAVEL)] = true;
         br[Block.b((Block) Blocks.YELLOW_FLOWER)] = true;
         br[Block.b((Block) Blocks.RED_ROSE)] = true;

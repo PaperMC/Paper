@@ -21,14 +21,14 @@ public class EntityPigZombie extends EntityZombie {
         this.fireProof = true;
     }
 
-    protected void aD() {
-        super.aD();
+    protected void aC() {
+        super.aC();
         this.getAttributeInstance(bp).setValue(0.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.5D);
         this.getAttributeInstance(GenericAttributes.e).setValue(5.0D);
     }
 
-    protected boolean bk() {
+    protected boolean bj() {
         return false;
     }
 
@@ -44,7 +44,7 @@ public class EntityPigZombie extends EntityZombie {
 
         this.bu = this.target;
         if (this.soundDelay > 0 && --this.soundDelay == 0) {
-            this.makeSound("mob.zombiepig.zpigangry", this.bf() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
+            this.makeSound("mob.zombiepig.zpigangry", this.be() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
         }
 
         super.h();
@@ -121,11 +121,11 @@ public class EntityPigZombie extends EntityZombie {
         return "mob.zombiepig.zpig";
     }
 
-    protected String aT() {
+    protected String aS() {
         return "mob.zombiepig.zpighurt";
     }
 
-    protected String aU() {
+    protected String aT() {
         return "mob.zombiepig.zpigdeath";
     }
 
@@ -170,7 +170,7 @@ public class EntityPigZombie extends EntityZombie {
     }
     // CraftBukkit end
 
-    protected void bA() {
+    protected void bC() {
         this.setEquipment(0, new ItemStack(Items.GOLD_SWORD));
     }
 

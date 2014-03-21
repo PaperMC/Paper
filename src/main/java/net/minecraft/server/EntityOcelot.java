@@ -27,7 +27,7 @@ public class EntityOcelot extends EntityTameableAnimal {
         this.datawatcher.a(18, Byte.valueOf((byte) 0));
     }
 
-    public void bp() {
+    public void bo() {
         if (this.getControllerMove().a()) {
             double d0 = this.getControllerMove().b();
 
@@ -48,15 +48,15 @@ public class EntityOcelot extends EntityTameableAnimal {
     }
 
     protected boolean isTypeNotPersistent() {
-        return !this.isTamed(); // CraftBukkit
+        return !this.isTamed() /*&& this.ticksLived > 2400*/; // CraftBukkit
     }
 
-    public boolean bk() {
+    public boolean bj() {
         return true;
     }
 
-    protected void aD() {
-        super.aD();
+    protected void aC() {
+        super.aC();
         this.getAttributeInstance(GenericAttributes.a).setValue(10.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.30000001192092896D);
     }
@@ -74,18 +74,18 @@ public class EntityOcelot extends EntityTameableAnimal {
     }
 
     protected String t() {
-        return this.isTamed() ? (this.cc() ? "mob.cat.purr" : (this.random.nextInt(4) == 0 ? "mob.cat.purreow" : "mob.cat.meow")) : "";
+        return this.isTamed() ? (this.ce() ? "mob.cat.purr" : (this.random.nextInt(4) == 0 ? "mob.cat.purreow" : "mob.cat.meow")) : "";
+    }
+
+    protected String aS() {
+        return "mob.cat.hitt";
     }
 
     protected String aT() {
         return "mob.cat.hitt";
     }
 
-    protected String aU() {
-        return "mob.cat.hitt";
-    }
-
-    protected float bf() {
+    protected float be() {
         return 0.4F;
     }
 
@@ -93,7 +93,7 @@ public class EntityOcelot extends EntityTameableAnimal {
         return Items.LEATHER;
     }
 
-    public boolean m(Entity entity) {
+    public boolean n(Entity entity) {
         return entity.damageEntity(DamageSource.mobAttack(this), 3.0F);
     }
 
@@ -117,7 +117,7 @@ public class EntityOcelot extends EntityTameableAnimal {
             if (entityhuman.getName().equalsIgnoreCase(this.getOwnerName()) && !this.world.isStatic && !this.c(itemstack)) {
                 this.bp.setSitting(!this.isSitting());
             }
-        } else if (this.bq.f() && itemstack != null && itemstack.getItem() == Items.RAW_FISH && entityhuman.e(this) < 9.0D) {
+        } else if (this.bq.f() && itemstack != null && itemstack.getItem() == Items.RAW_FISH && entityhuman.f(this) < 9.0D) {
             if (!entityhuman.abilities.canInstantlyBuild) {
                 --itemstack.count;
             }
@@ -173,7 +173,7 @@ public class EntityOcelot extends EntityTameableAnimal {
         } else {
             EntityOcelot entityocelot = (EntityOcelot) entityanimal;
 
-            return !entityocelot.isTamed() ? false : this.cc() && entityocelot.cc();
+            return !entityocelot.isTamed() ? false : this.ce() && entityocelot.ce();
         }
     }
 

@@ -18,7 +18,7 @@ public class PathfinderGoalEatTile extends PathfinderGoal {
     }
 
     public boolean a() {
-        if (this.b.aI().nextInt(this.b.isBaby() ? 50 : 1000) != 0) {
+        if (this.b.aH().nextInt(this.b.isBaby() ? 50 : 1000) != 0) {
             return false;
         } else {
             int i = MathHelper.floor(this.b.locX);

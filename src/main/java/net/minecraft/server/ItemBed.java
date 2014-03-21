@@ -37,7 +37,7 @@ public class ItemBed extends Item {
 
             if (entityhuman.a(i, j, k, l, itemstack) && entityhuman.a(i + b0, j, k + b1, l, itemstack)) {
                 if (world.isEmpty(i, j, k) && world.isEmpty(i + b0, j, k + b1) && World.a((IBlockAccess) world, i, j - 1, k) && World.a((IBlockAccess) world, i + b0, j - 1, k + b1)) {
-                    // CraftBukkit start
+                    // CraftBukkit start - fire BlockPlaceEvent
                     // world.setTypeAndData(i, j, k, blockbed, i1, 3);
                     if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, blockbed, i1, clickedX, clickedY, clickedZ)) {
                         return false;

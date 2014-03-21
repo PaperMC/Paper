@@ -31,7 +31,7 @@ public class Explosion {
     public float size;
     public List blocks = new ArrayList();
     private Map l = new HashMap();
-    public boolean wasCanceled = false; // CraftBukkit
+    public boolean wasCanceled = false; // CraftBukkit - add field
 
     public Explosion(World world, Entity entity, double d0, double d1, double d2, float f) {
         this.world = world;
@@ -110,8 +110,8 @@ public class Explosion {
         int k1 = MathHelper.floor(this.posY + (double) this.size + 1.0D);
         int l1 = MathHelper.floor(this.posZ - (double) this.size - 1.0D);
         int i2 = MathHelper.floor(this.posZ + (double) this.size + 1.0D);
-        List list = this.world.getEntities(this.source, AxisAlignedBB.a().a((double) i, (double) k, (double) l1, (double) j, (double) k1, (double) i2));
-        Vec3D vec3d = this.world.getVec3DPool().create(this.posX, this.posY, this.posZ);
+        List list = this.world.getEntities(this.source, AxisAlignedBB.a((double) i, (double) k, (double) l1, (double) j, (double) k1, (double) i2));
+        Vec3D vec3d = Vec3D.a(this.posX, this.posY, this.posZ);
 
         for (int j2 = 0; j2 < list.size(); ++j2) {
             Entity entity = (Entity) list.get(j2);
@@ -149,7 +149,7 @@ public class Explosion {
                             entity.motY += d1 * d11;
                             entity.motZ += d2 * d11;
                             if (entity instanceof EntityHuman) {
-                                this.l.put((EntityHuman) entity, this.world.getVec3DPool().create(d0 * d10, d1 * d10, d2 * d10));
+                                this.l.put((EntityHuman) entity, Vec3D.a(d0 * d10, d1 * d10, d2 * d10));
                             }
                         }
                     } else {
@@ -173,7 +173,7 @@ public class Explosion {
                             entity.motY += d1 * d10;
                             entity.motZ += d2 * d10;
                             if (entity instanceof EntityHuman) {
-                                this.l.put((EntityHuman) entity, this.world.getVec3DPool().create(d0 * d10, d1 * d10, d2 * d10));
+                                this.l.put((EntityHuman) entity, Vec3D.a(d0 * d10, d1 * d10, d2 * d10));
                             }
                         }
                     }

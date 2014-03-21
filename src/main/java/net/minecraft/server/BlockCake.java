@@ -31,7 +31,7 @@ public class BlockCake extends Block {
         float f1 = (float) (1 + l * 2) / 16.0F;
         float f2 = 0.5F;
 
-        return AxisAlignedBB.a().a((double) ((float) i + f1), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) ((float) j + f2 - f), (double) ((float) (k + 1) - f));
+        return AxisAlignedBB.a((double) ((float) i + f1), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) ((float) j + f2 - f), (double) ((float) (k + 1) - f));
     }
 
     public boolean d() {

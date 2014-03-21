@@ -19,7 +19,8 @@ public class ItemMonsterEgg extends Item {
     }
 
     public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
-        if (world.isStatic || itemstack.getData() == 48 || itemstack.getData() == 49 || itemstack.getData() == 63 || itemstack.getData() == 64) { // CraftBukkit
+        // CraftBukkit - check ItemStack data
+        if (world.isStatic || itemstack.getData() == 48 || itemstack.getData() == 49 || itemstack.getData() == 63 || itemstack.getData() == 64) {
             return true;
         } else {
             Block block = world.getType(i, j, k);
@@ -98,7 +99,7 @@ public class ItemMonsterEgg extends Item {
 
     public static Entity spawnCreature(World world, int i, double d0, double d1, double d2, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
         // CraftBukkit end
-        if (!EntityTypes.a.containsKey(Integer.valueOf(i))) {
+        if (!EntityTypes.eggInfo.containsKey(Integer.valueOf(i))) {
             return null;
         } else {
             Entity entity = null;
@@ -109,8 +110,8 @@ public class ItemMonsterEgg extends Item {
                     EntityInsentient entityinsentient = (EntityInsentient) entity;
 
                     entity.setPositionRotation(d0, d1, d2, MathHelper.g(world.random.nextFloat() * 360.0F), 0.0F);
-                    entityinsentient.aP = entityinsentient.yaw;
-                    entityinsentient.aN = entityinsentient.yaw;
+                    entityinsentient.aO = entityinsentient.yaw;
+                    entityinsentient.aM = entityinsentient.yaw;
                     entityinsentient.a((GroupDataEntity) null);
                     world.addEntity(entity, spawnReason); // CraftBukkit
                     entityinsentient.r();

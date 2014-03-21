@@ -10,7 +10,7 @@ public class InventoryEnderChest extends InventorySubcontainer {
 
     private TileEntityEnderChest a;
 
-    // CraftBukkit start
+    // CraftBukkit start - add fields and methods
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     public org.bukkit.entity.Player player;
     private int maxStack = MAX_STACK;

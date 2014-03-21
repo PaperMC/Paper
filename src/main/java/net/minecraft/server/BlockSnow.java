@@ -16,7 +16,7 @@ public class BlockSnow extends Block {
         int l = world.getData(i, j, k) & 7;
         float f = 0.125F;
 
-        return AxisAlignedBB.a().a((double) i + this.minX, (double) j + this.minY, (double) k + this.minZ, (double) i + this.maxX, (double) ((float) j + (float) l * f), (double) k + this.maxZ);
+        return AxisAlignedBB.a((double) i + this.minX, (double) j + this.minY, (double) k + this.minZ, (double) i + this.maxX, (double) ((float) j + (float) l * f), (double) k + this.maxZ);
     }
 
     public boolean c() {
@@ -67,7 +67,7 @@ public class BlockSnow extends Block {
 
         this.a(world, i, j, k, new ItemStack(Items.SNOW_BALL, i1 + 1, 0));
         world.setAir(i, j, k);
-        entityhuman.a(StatisticList.C[Block.b((Block) this)], 1);
+        entityhuman.a(StatisticList.MINE_BLOCK_COUNT[Block.b((Block) this)], 1);
     }
 
     public Item getDropType(int i, Random random, int j) {

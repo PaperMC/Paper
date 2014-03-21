@@ -85,9 +85,9 @@ public final class CraftChatMessage {
                     currentChatComponent = null;
                     break;
                 case 3:
-                    modifier.a(new ChatClickable(EnumClickAction.OPEN_URL, match)); // Should be setChatClickable
+                    modifier.setChatClickable(new ChatClickable(EnumClickAction.OPEN_URL, match));
                     appendNewComponent(matcher.end(groupId));
-                    modifier.a((ChatClickable) null);
+                    modifier.setChatClickable((ChatClickable) null);
                 }
                 currentIndex = matcher.end(groupId);
             }

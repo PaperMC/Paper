@@ -14,9 +14,9 @@ final class DispenseBehaviorFlintAndSteel extends DispenseBehaviorItem {
     protected ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
         EnumFacing enumfacing = BlockDispenser.b(isourceblock.h());
         World world = isourceblock.k();
-        int i = isourceblock.getBlockX() + enumfacing.c();
-        int j = isourceblock.getBlockY() + enumfacing.d();
-        int k = isourceblock.getBlockZ() + enumfacing.e();
+        int i = isourceblock.getBlockX() + enumfacing.getAdjacentX();
+        int j = isourceblock.getBlockY() + enumfacing.getAdjacentY();
+        int k = isourceblock.getBlockZ() + enumfacing.getAdjacentZ();
 
         // CraftBukkit start
         org.bukkit.block.Block block = world.getWorld().getBlockAt(isourceblock.getBlockX(), isourceblock.getBlockY(), isourceblock.getBlockZ());
@@ -34,7 +34,7 @@ final class DispenseBehaviorFlintAndSteel extends DispenseBehaviorItem {
         if (!event.getItem().equals(craftItem)) {
             // Chain to handler for new item
             ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
-            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.a(eventStack.getItem());
+            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.get(eventStack.getItem());
             if (idispensebehavior != IDispenseBehavior.a && idispensebehavior != this) {
                 idispensebehavior.a(isourceblock, eventStack);
                 return itemstack;

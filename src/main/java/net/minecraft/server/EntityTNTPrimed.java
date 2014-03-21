@@ -6,12 +6,12 @@ public class EntityTNTPrimed extends Entity {
 
     public int fuseTicks;
     private EntityLiving source;
-    public float yield = 4; // CraftBukkit
-    public boolean isIncendiary = false; // CraftBukkit
+    public float yield = 4; // CraftBukkit - add field
+    public boolean isIncendiary = false; // CraftBukkit - add field
 
     public EntityTNTPrimed(World world) {
         super(world);
-        this.l = true;
+        this.k = true;
         this.a(0.98F, 0.98F);
         this.height = this.length / 2.0F;
     }
@@ -37,7 +37,7 @@ public class EntityTNTPrimed extends Entity {
         return false;
     }
 
-    public boolean R() {
+    public boolean Q() {
         return !this.dead;
     }
 

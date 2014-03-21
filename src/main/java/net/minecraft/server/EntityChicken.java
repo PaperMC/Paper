@@ -10,6 +10,7 @@ public class EntityChicken extends EntityAnimal {
     public float bs;
     public float bt = 1.0F;
     public int bu;
+    public boolean bv;
 
     public EntityChicken(World world) {
         super(world);
@@ -25,12 +26,12 @@ public class EntityChicken extends EntityAnimal {
         this.goalSelector.a(7, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean bk() {
+    public boolean bj() {
         return true;
     }
 
-    protected void aD() {
-        super.aD();
+    protected void aC() {
+        super.aC();
         this.getAttributeInstance(GenericAttributes.a).setValue(4.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.25D);
     }
@@ -71,11 +72,11 @@ public class EntityChicken extends EntityAnimal {
         return "mob.chicken.say";
     }
 
-    protected String aT() {
+    protected String aS() {
         return "mob.chicken.hurt";
     }
 
-    protected String aU() {
+    protected String aT() {
         return "mob.chicken.hurt";
     }
 
@@ -112,6 +113,45 @@ public class EntityChicken extends EntityAnimal {
 
     public boolean c(ItemStack itemstack) {
         return itemstack != null && itemstack.getItem() instanceof ItemSeeds;
+    }
+
+    public void a(NBTTagCompound nbttagcompound) {
+        super.a(nbttagcompound);
+        this.bv = nbttagcompound.getBoolean("IsChickenJockey");
+    }
+
+    protected int getExpValue(EntityHuman entityhuman) {
+        return this.bZ() ? 10 : super.getExpValue(entityhuman);
+    }
+
+    public void b(NBTTagCompound nbttagcompound) {
+        super.b(nbttagcompound);
+        nbttagcompound.setBoolean("IsChickenJockey", this.bv);
+    }
+
+    protected boolean isTypeNotPersistent() {
+        return this.bZ() && this.passenger == null;
+    }
+
+    public void ab() {
+        super.ab();
+        float f = MathHelper.sin(this.aM * 3.1415927F / 180.0F);
+        float f1 = MathHelper.cos(this.aM * 3.1415927F / 180.0F);
+        float f2 = 0.1F;
+        float f3 = 0.0F;
+
+        this.passenger.setPosition(this.locX + (double) (f2 * f), this.locY + (double) (this.length * 0.5F) + this.passenger.ac() + (double) f3, this.locZ - (double) (f2 * f1));
+        if (this.passenger instanceof EntityLiving) {
+            ((EntityLiving) this.passenger).aM = this.aM;
+        }
+    }
+
+    public boolean bZ() {
+        return this.bv;
+    }
+
+    public void i(boolean flag) {
+        this.bv = flag;
     }
 
     public EntityAgeable createChild(EntityAgeable entityageable) {

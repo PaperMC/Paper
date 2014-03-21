@@ -20,7 +20,7 @@ public class PathfinderGoalBreed extends PathfinderGoal {
     }
 
     public boolean a() {
-        if (!this.d.cc()) {
+        if (!this.d.ce()) {
             return false;
         } else {
             this.e = this.f();
@@ -29,7 +29,7 @@ public class PathfinderGoalBreed extends PathfinderGoal {
     }
 
     public boolean b() {
-        return this.e.isAlive() && this.e.cc() && this.b < 60;
+        return this.e.isAlive() && this.e.ce() && this.b < 60;
     }
 
     public void d() {
@@ -38,10 +38,10 @@ public class PathfinderGoalBreed extends PathfinderGoal {
     }
 
     public void e() {
-        this.d.getControllerLook().a(this.e, 10.0F, (float) this.d.x());
+        this.d.getControllerLook().a(this.e, 10.0F, (float) this.d.bv());
         this.d.getNavigation().a((Entity) this.e, this.c);
         ++this.b;
-        if (this.b >= 60 && this.d.e(this.e) < 9.0D) {
+        if (this.b >= 60 && this.d.f(this.e) < 9.0D) {
             this.g();
         }
     }
@@ -56,9 +56,9 @@ public class PathfinderGoalBreed extends PathfinderGoal {
         while (iterator.hasNext()) {
             EntityAnimal entityanimal1 = (EntityAnimal) iterator.next();
 
-            if (this.d.mate(entityanimal1) && this.d.e(entityanimal1) < d0) {
+            if (this.d.mate(entityanimal1) && this.d.f(entityanimal1) < d0) {
                 entityanimal = entityanimal1;
-                d0 = this.d.e(entityanimal1);
+                d0 = this.d.f(entityanimal1);
             }
         }
 
@@ -74,10 +74,10 @@ public class PathfinderGoalBreed extends PathfinderGoal {
                 entityageable.persistent = true;
             }
             // CraftBukkit end
-            EntityHuman entityhuman = this.d.cb();
+            EntityHuman entityhuman = this.d.cd();
 
-            if (entityhuman == null && this.e.cb() != null) {
-                entityhuman = this.e.cb();
+            if (entityhuman == null && this.e.cd() != null) {
+                entityhuman = this.e.cd();
             }
 
             if (entityhuman != null) {
@@ -89,12 +89,12 @@ public class PathfinderGoalBreed extends PathfinderGoal {
 
             this.d.setAge(6000);
             this.e.setAge(6000);
-            this.d.cd();
-            this.e.cd();
+            this.d.cf();
+            this.e.cf();
             entityageable.setAge(-24000);
             entityageable.setPositionRotation(this.d.locX, this.d.locY, this.d.locZ, 0.0F, 0.0F);
             this.a.addEntity(entityageable, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - added SpawnReason
-            Random random = this.d.aI();
+            Random random = this.d.aH();
 
             for (int i = 0; i < 7; ++i) {
                 double d0 = random.nextGaussian() * 0.02D;

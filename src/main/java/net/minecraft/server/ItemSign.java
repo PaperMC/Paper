@@ -41,7 +41,7 @@ public class ItemSign extends Item {
             } else if (world.isStatic) {
                 return true;
             } else {
-                // CraftBukkit start
+                // CraftBukkit start - fire BlockPlaceEvent
                 final Block block;
                 if (l == 1) {
                     int i1 = MathHelper.floor((double) ((entityhuman.yaw + 180.0F) * 16.0F / 360.0F) + 0.5D) & 15;

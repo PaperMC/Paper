@@ -167,12 +167,12 @@ public abstract class CommandBlockListenerAbstract implements ICommandListener {
                 } catch (Throwable exception) {
                     if(this instanceof TileEntityCommandListener) {
                         TileEntityCommandListener listener = (TileEntityCommandListener) this;
-                        MinecraftServer.av().log(Level.WARN, String.format("CommandBlock at (%d,%d,%d) failed to handle command", listener.getChunkCoordinates().x, listener.getChunkCoordinates().y, listener.getChunkCoordinates().z), exception);
+                        MinecraftServer.getLogger().log(Level.WARN, String.format("CommandBlock at (%d,%d,%d) failed to handle command", listener.getChunkCoordinates().x, listener.getChunkCoordinates().y, listener.getChunkCoordinates().z), exception);
                     } else if (this instanceof EntityMinecartCommandBlockListener) {
                         EntityMinecartCommandBlockListener listener = (EntityMinecartCommandBlockListener) this;
-                        MinecraftServer.av().log(Level.WARN, String.format("MinecartCommandBlock at (%d,%d,%d) failed to handle command", listener.getChunkCoordinates().x, listener.getChunkCoordinates().y, listener.getChunkCoordinates().z), exception);
+                        MinecraftServer.getLogger().log(Level.WARN, String.format("MinecartCommandBlock at (%d,%d,%d) failed to handle command", listener.getChunkCoordinates().x, listener.getChunkCoordinates().y, listener.getChunkCoordinates().z), exception);
                     } else {
-                        MinecraftServer.av().log(Level.WARN, String.format("Unknown CommandBlock failed to handle command"), exception);
+                        MinecraftServer.getLogger().log(Level.WARN, String.format("Unknown CommandBlock failed to handle command"), exception);
                     }
                 }
             }

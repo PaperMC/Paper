@@ -226,5 +226,5 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
         return "CustomChunkGenerator";
     }
 
-    public void b() {}
+    public void c() {}
 }

@@ -24,7 +24,7 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
     private final File baseDir;
     private final File playerDir;
     private final File dataDir;
-    private final long sessionId = MinecraftServer.ap();
+    private final long sessionId = MinecraftServer.aq();
     private final String f;
     private UUID uuid = null; // CraftBukkit
 

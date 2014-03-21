@@ -38,7 +38,7 @@ public class EntityFallingBlock extends Entity {
         this.fallHurtAmount = 2.0F;
         this.id = block;
         this.data = i;
-        this.l = true;
+        this.k = true;
         this.a(0.98F, 0.98F);
         this.height = this.length / 2.0F;
         this.setPosition(d0, d1, d2);
@@ -56,7 +56,7 @@ public class EntityFallingBlock extends Entity {
 
     protected void c() {}
 
-    public boolean R() {
+    public boolean Q() {
         return !this.dead;
     }
 
@@ -94,7 +94,7 @@ public class EntityFallingBlock extends Entity {
                     this.motY *= -0.5D;
                     if (this.world.getType(i, j, k) != Blocks.PISTON_MOVING) {
                         this.die();
-                        // CraftBukkit start
+                        // CraftBukkit start - fire EntityChangeBlockEvent
                         if (!this.f && this.world.mayPlace(this.id, i, j, k, true, 1, (Entity) null, (ItemStack) null) && !BlockFalling.canFall(this.world, i, j - 1, k) /* mimic the false conditions of setTypeIdAndData */ && i >= -30000000 && k >= -30000000 && i < 30000000 && k < 30000000 && j > 0 && j < 256 && !(this.world.getType(i, j, k) == this.id && this.world.getData(i, j, k) == this.data)) {
                             if (CraftEventFactory.callEntityChangeBlockEvent(this, i, j, k, this.id, this.data).isCancelled()) {
                                 return;

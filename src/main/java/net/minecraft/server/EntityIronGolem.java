@@ -31,16 +31,16 @@ public class EntityIronGolem extends EntityGolem {
         this.datawatcher.a(16, Byte.valueOf((byte) 0));
     }
 
-    public boolean bk() {
+    public boolean bj() {
         return true;
     }
 
-    protected void bp() {
+    protected void bo() {
         if (--this.bq <= 0) {
             this.bq = 70 + this.random.nextInt(50);
             this.bp = this.world.villages.getClosestVillage(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ), 32);
             if (this.bp == null) {
-                this.bV();
+                this.bX();
             } else {
                 ChunkCoordinates chunkcoordinates = this.bp.getCenter();
 
@@ -48,11 +48,11 @@ public class EntityIronGolem extends EntityGolem {
             }
         }
 
-        super.bp();
+        super.bo();
     }
 
-    protected void aD() {
-        super.aD();
+    protected void aC() {
+        super.aC();
         this.getAttributeInstance(GenericAttributes.a).setValue(100.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.25D);
     }
@@ -61,12 +61,12 @@ public class EntityIronGolem extends EntityGolem {
         return i;
     }
 
-    protected void n(Entity entity) {
-        if (entity instanceof IMonster && this.aI().nextInt(20) == 0) {
+    protected void o(Entity entity) {
+        if (entity instanceof IMonster && this.aH().nextInt(20) == 0) {
             this.setGoalTarget((EntityLiving) entity);
         }
 
-        super.n(entity);
+        super.o(entity);
     }
 
     public void e() {
@@ -105,7 +105,7 @@ public class EntityIronGolem extends EntityGolem {
         this.setPlayerCreated(nbttagcompound.getBoolean("PlayerCreated"));
     }
 
-    public boolean m(Entity entity) {
+    public boolean n(Entity entity) {
         this.br = 10;
         this.world.broadcastEntityEffect(this, (byte) 4);
         boolean flag = entity.damageEntity(DamageSource.mobAttack(this), (float) (7 + this.random.nextInt(15)));
@@ -118,7 +118,7 @@ public class EntityIronGolem extends EntityGolem {
         return flag;
     }
 
-    public Village bX() {
+    public Village bZ() {
         return this.bp;
     }
 
@@ -127,11 +127,11 @@ public class EntityIronGolem extends EntityGolem {
         this.world.broadcastEntityEffect(this, (byte) 11);
     }
 
-    protected String aT() {
+    protected String aS() {
         return "mob.irongolem.hit";
     }
 
-    protected String aU() {
+    protected String aT() {
         return "mob.irongolem.death";
     }
 
@@ -160,7 +160,7 @@ public class EntityIronGolem extends EntityGolem {
         // CraftBukkit end
     }
 
-    public int bZ() {
+    public int cb() {
         return this.bs;
     }
 

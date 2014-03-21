@@ -129,7 +129,7 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
     public void update() {}
 
     public boolean a(EntityHuman entityhuman) {
-        return this.dead ? false : entityhuman.e(this) <= 64.0D;
+        return this.dead ? false : entityhuman.f(this) <= 64.0D;
     }
 
     public void startOpen() {}

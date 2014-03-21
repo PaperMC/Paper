@@ -22,12 +22,12 @@ public class EntityCow extends EntityAnimal {
         this.goalSelector.a(7, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean bk() {
+    public boolean bj() {
         return true;
     }
 
-    protected void aD() {
-        super.aD();
+    protected void aC() {
+        super.aC();
         this.getAttributeInstance(GenericAttributes.a).setValue(10.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.20000000298023224D);
     }
@@ -36,11 +36,11 @@ public class EntityCow extends EntityAnimal {
         return "mob.cow.say";
     }
 
-    protected String aT() {
+    protected String aS() {
         return "mob.cow.hurt";
     }
 
-    protected String aU() {
+    protected String aT() {
         return "mob.cow.hurt";
     }
 
@@ -48,7 +48,7 @@ public class EntityCow extends EntityAnimal {
         this.makeSound("mob.cow.step", 0.15F, 1.0F);
     }
 
-    protected float bf() {
+    protected float be() {
         return 0.4F;
     }
 

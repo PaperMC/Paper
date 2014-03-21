@@ -12,8 +12,8 @@ public class EntityBlaze extends EntityMonster {
         this.b = 10;
     }
 
-    protected void aD() {
-        super.aD();
+    protected void aC() {
+        super.aC();
         this.getAttributeInstance(GenericAttributes.e).setValue(6.0D);
     }
 
@@ -26,11 +26,11 @@ public class EntityBlaze extends EntityMonster {
         return "mob.blaze.breathe";
     }
 
-    protected String aT() {
+    protected String aS() {
         return "mob.blaze.hit";
     }
 
-    protected String aU() {
+    protected String aT() {
         return "mob.blaze.death";
     }
 
@@ -40,7 +40,7 @@ public class EntityBlaze extends EntityMonster {
 
     public void e() {
         if (!this.world.isStatic) {
-            if (this.L()) {
+            if (this.K()) {
                 this.damageEntity(DamageSource.DROWN, 1.0F);
             }
 
@@ -50,7 +50,7 @@ public class EntityBlaze extends EntityMonster {
                 this.bp = 0.5F + (float) this.random.nextGaussian() * 3.0F;
             }
 
-            if (this.bR() != null && this.bR().locY + (double) this.bR().getHeadHeight() > this.locY + (double) this.getHeadHeight() + (double) this.bp) {
+            if (this.bT() != null && this.bT().locY + (double) this.bT().getHeadHeight() > this.locY + (double) this.getHeadHeight() + (double) this.bp) {
                 this.motY += (0.30000001192092896D - this.motY) * 0.30000001192092896D;
             }
         }
@@ -73,7 +73,7 @@ public class EntityBlaze extends EntityMonster {
     protected void a(Entity entity, float f) {
         if (this.attackTicks <= 0 && f < 2.0F && entity.boundingBox.e > this.boundingBox.b && entity.boundingBox.b < this.boundingBox.e) {
             this.attackTicks = 20;
-            this.m(entity);
+            this.n(entity);
         } else if (f < 30.0F) {
             double d0 = entity.locX - this.locX;
             double d1 = entity.boundingBox.b + (double) (entity.length / 2.0F) - (this.locY + (double) (this.length / 2.0F));
@@ -118,7 +118,7 @@ public class EntityBlaze extends EntityMonster {
     }
 
     public boolean isBurning() {
-        return this.bX();
+        return this.bZ();
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
@@ -137,7 +137,7 @@ public class EntityBlaze extends EntityMonster {
         // CraftBukkit end
     }
 
-    public boolean bX() {
+    public boolean bZ() {
         return (this.datawatcher.getByte(16) & 1) != 0;
     }
 

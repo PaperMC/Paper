@@ -13,10 +13,10 @@ final class DispenseBehaviorArmor extends DispenseBehaviorItem {
 
     protected ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
         EnumFacing enumfacing = BlockDispenser.b(isourceblock.h());
-        int i = isourceblock.getBlockX() + enumfacing.c();
-        int j = isourceblock.getBlockY() + enumfacing.d();
-        int k = isourceblock.getBlockZ() + enumfacing.e();
-        AxisAlignedBB axisalignedbb = AxisAlignedBB.a().a((double) i, (double) j, (double) k, (double) (i + 1), (double) (j + 1), (double) (k + 1));
+        int i = isourceblock.getBlockX() + enumfacing.getAdjacentX();
+        int j = isourceblock.getBlockY() + enumfacing.getAdjacentY();
+        int k = isourceblock.getBlockZ() + enumfacing.getAdjacentZ();
+        AxisAlignedBB axisalignedbb = AxisAlignedBB.a((double) i, (double) j, (double) k, (double) (i + 1), (double) (j + 1), (double) (k + 1));
         List list = isourceblock.k().a(EntityLiving.class, axisalignedbb, (IEntitySelector) (new EntitySelectorEquipable(itemstack)));
 
         if (list.size() > 0) {
@@ -44,7 +44,7 @@ final class DispenseBehaviorArmor extends DispenseBehaviorItem {
                 itemstack.count++;
                 // Chain to handler for new item
                 ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
-                IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.a(eventStack.getItem());
+                IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.get(eventStack.getItem());
                 if (idispensebehavior != IDispenseBehavior.a && idispensebehavior != this) {
                     idispensebehavior.a(isourceblock, eventStack);
                     return itemstack;

@@ -17,7 +17,7 @@ class PlayerChunk {
     private int f;
     private long g;
     final PlayerChunkMap playerChunkMap;
-    // CraftBukkit start
+    // CraftBukkit start - add fields
     private final HashMap<EntityPlayer, Runnable> players = new HashMap<EntityPlayer, Runnable>();
     private boolean loaded = false;
     private Runnable loadedRunnable = new Runnable() {
@@ -37,14 +37,14 @@ class PlayerChunk {
 
     public void a(final EntityPlayer entityplayer) { // CraftBukkit - added final to argument
         if (this.b.contains(entityplayer)) {
-            throw new IllegalStateException("Failed to add player. " + entityplayer + " already is in chunk " + this.location.x + ", " + this.location.z);
+            PlayerChunkMap.c().debug("Failed to add player. {} already is in chunk {}, {}", new Object[] { entityplayer, Integer.valueOf(this.location.x), Integer.valueOf(this.location.z)});
         } else {
             if (this.b.isEmpty()) {
                 this.g = PlayerChunkMap.a(this.playerChunkMap).getTime();
             }
 
             this.b.add(entityplayer);
-            // CraftBukkit start
+            // CraftBukkit start - use async chunk io
             Runnable playerRunnable;
             if (this.loaded) {
                 playerRunnable = null;

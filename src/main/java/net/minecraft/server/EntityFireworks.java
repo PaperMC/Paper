@@ -39,9 +39,9 @@ public class EntityFireworks extends Entity {
     }
 
     public void h() {
-        this.T = this.locX;
-        this.U = this.locY;
-        this.V = this.locZ;
+        this.S = this.locX;
+        this.T = this.locY;
+        this.U = this.locZ;
         super.h();
         this.motX *= 1.15D;
         this.motZ *= 1.15D;
@@ -115,7 +115,7 @@ public class EntityFireworks extends Entity {
         return super.d(f);
     }
 
-    public boolean av() {
+    public boolean au() {
         return false;
     }
 }

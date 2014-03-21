@@ -14,7 +14,7 @@ public class InventoryCrafting implements IInventory {
     private int b;
     private Container c;
 
-    // CraftBukkit start
+    // CraftBukkit start - add fields
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     public IRecipe currentRecipe;
     public IInventory resultInventory;

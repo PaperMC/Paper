@@ -15,7 +15,7 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
     private Random j = new Random();
     protected String a;
 
-    // CraftBukkit start
+    // CraftBukkit start - add fields and methods
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     private int maxStack = MAX_STACK;
 

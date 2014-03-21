@@ -87,7 +87,7 @@ public class ContainerPlayer extends Container {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.c.get(i);
 
-        if (slot != null && slot.e()) {
+        if (slot != null && slot.hasItem()) {
             ItemStack itemstack1 = slot.getItem();
 
             itemstack = itemstack1.cloneItemStack();
@@ -105,7 +105,7 @@ public class ContainerPlayer extends Container {
                 if (!this.a(itemstack1, 9, 45, false)) {
                     return null;
                 }
-            } else if (itemstack.getItem() instanceof ItemArmor && !((Slot) this.c.get(5 + ((ItemArmor) itemstack.getItem()).b)).e()) {
+            } else if (itemstack.getItem() instanceof ItemArmor && !((Slot) this.c.get(5 + ((ItemArmor) itemstack.getItem()).b)).hasItem()) {
                 int j = 5 + ((ItemArmor) itemstack.getItem()).b;
 
                 if (!this.a(itemstack1, j, j + 1, false)) {

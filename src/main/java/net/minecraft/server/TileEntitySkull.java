@@ -44,7 +44,7 @@ public class TileEntitySkull extends TileEntity {
         this.i = i;
     }
 
-    // CraftBukkit start
+    // CraftBukkit start - add method
     public int getRotation() {
         return this.i;
     }

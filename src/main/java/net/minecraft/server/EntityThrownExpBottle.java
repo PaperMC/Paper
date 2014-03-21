@@ -28,7 +28,7 @@ public class EntityThrownExpBottle extends EntityProjectile {
 
     protected void a(MovingObjectPosition movingobjectposition) {
         if (!this.world.isStatic) {
-            // CraftBukkit moved after event
+            // CraftBukkit - moved to after event
             // this.world.triggerEffect(2002, (int) Math.round(this.locX), (int) Math.round(this.locY), (int) Math.round(this.locZ), 0);
             int i = 3 + this.world.random.nextInt(5) + this.world.random.nextInt(5);
 

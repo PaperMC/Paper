@@ -42,7 +42,7 @@ public class ItemRedstone extends Item {
             return false;
         } else {
             if (Blocks.REDSTONE_WIRE.canPlace(world, i, j, k)) {
-                // CraftBukkit start
+                // CraftBukkit start - fire BlockPlaceEvent
                 // --itemstack.count;
                 // world.setTypeUpdate(i, j, k, Blocks.REDSTONE_WIRE);
                 if (!ItemBlock.processBlockPlace(world, entityhuman, itemstack, i, j, k, Blocks.REDSTONE_WIRE, 0, clickedX, clickedY, clickedZ)) {

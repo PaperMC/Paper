@@ -13,8 +13,8 @@ public class EntitySilverfish extends EntityMonster {
         this.a(0.3F, 0.7F);
     }
 
-    protected void aD() {
-        super.aD();
+    protected void aC() {
+        super.aC();
         this.getAttributeInstance(GenericAttributes.a).setValue(8.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.6000000238418579D);
         this.getAttributeInstance(GenericAttributes.e).setValue(1.0D);
@@ -34,11 +34,11 @@ public class EntitySilverfish extends EntityMonster {
         return "mob.silverfish.say";
     }
 
-    protected String aT() {
+    protected String aS() {
         return "mob.silverfish.hit";
     }
 
-    protected String aU() {
+    protected String aT() {
         return "mob.silverfish.kill";
     }
 
@@ -57,7 +57,7 @@ public class EntitySilverfish extends EntityMonster {
     protected void a(Entity entity, float f) {
         if (this.attackTicks <= 0 && f < 1.2F && entity.boundingBox.e > this.boundingBox.b && entity.boundingBox.b < this.boundingBox.e) {
             this.attackTicks = 20;
-            this.m(entity);
+            this.n(entity);
         }
     }
 
@@ -70,12 +70,12 @@ public class EntitySilverfish extends EntityMonster {
     }
 
     public void h() {
-        this.aN = this.yaw;
+        this.aM = this.yaw;
         super.h();
     }
 
-    protected void bq() {
-        super.bq();
+    protected void bp() {
+        super.bp();
         if (!this.world.isStatic) {
             int i;
             int j;
@@ -120,7 +120,7 @@ public class EntitySilverfish extends EntityMonster {
                 }
             }
 
-            if (this.target == null && !this.bQ()) {
+            if (this.target == null && !this.bS()) {
                 i = MathHelper.floor(this.locX);
                 j = MathHelper.floor(this.locY + 0.5D);
                 k = MathHelper.floor(this.locZ);
@@ -139,9 +139,9 @@ public class EntitySilverfish extends EntityMonster {
                     this.s();
                     this.die();
                 } else {
-                    this.bO();
+                    this.bQ();
                 }
-            } else if (this.target != null && !this.bQ()) {
+            } else if (this.target != null && !this.bS()) {
                 this.target = null;
             }
         }

@@ -12,7 +12,7 @@ public abstract class EntityFireball extends Entity {
     private Block h;
     private boolean i;
     public EntityLiving shooter;
-    private int j;
+    private int at;
     private int au;
     public double dirX;
     public double dirY;
@@ -72,8 +72,8 @@ public abstract class EntityFireball extends Entity {
             this.setOnFire(1);
             if (this.i) {
                 if (this.world.getType(this.e, this.f, this.g) == this.h) {
-                    ++this.j;
-                    if (this.j == 600) {
+                    ++this.at;
+                    if (this.at == 600) {
                         this.die();
                     }
 
@@ -84,20 +84,20 @@ public abstract class EntityFireball extends Entity {
                 this.motX *= (double) (this.random.nextFloat() * 0.2F);
                 this.motY *= (double) (this.random.nextFloat() * 0.2F);
                 this.motZ *= (double) (this.random.nextFloat() * 0.2F);
-                this.j = 0;
+                this.at = 0;
                 this.au = 0;
             } else {
                 ++this.au;
             }
 
-            Vec3D vec3d = this.world.getVec3DPool().create(this.locX, this.locY, this.locZ);
-            Vec3D vec3d1 = this.world.getVec3DPool().create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+            Vec3D vec3d = Vec3D.a(this.locX, this.locY, this.locZ);
+            Vec3D vec3d1 = Vec3D.a(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
             MovingObjectPosition movingobjectposition = this.world.a(vec3d, vec3d1);
 
-            vec3d = this.world.getVec3DPool().create(this.locX, this.locY, this.locZ);
-            vec3d1 = this.world.getVec3DPool().create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+            vec3d = Vec3D.a(this.locX, this.locY, this.locZ);
+            vec3d1 = Vec3D.a(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
             if (movingobjectposition != null) {
-                vec3d1 = this.world.getVec3DPool().create(movingobjectposition.pos.c, movingobjectposition.pos.d, movingobjectposition.pos.e);
+                vec3d1 = Vec3D.a(movingobjectposition.pos.a, movingobjectposition.pos.b, movingobjectposition.pos.c);
             }
 
             Entity entity = null;
@@ -107,7 +107,7 @@ public abstract class EntityFireball extends Entity {
             for (int i = 0; i < list.size(); ++i) {
                 Entity entity1 = (Entity) list.get(i);
 
-                if (entity1.R() && (!entity1.h(this.shooter) || this.au >= 25)) {
+                if (entity1.Q() && (!entity1.i(this.shooter) || this.au >= 25)) {
                     float f = 0.3F;
                     AxisAlignedBB axisalignedbb = entity1.boundingBox.grow((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
@@ -130,7 +130,7 @@ public abstract class EntityFireball extends Entity {
             if (movingobjectposition != null) {
                 this.a(movingobjectposition);
 
-                // CraftBukkit start
+                // CraftBukkit start - Fire ProjectileHitEvent
                 if (this.dead) {
                     org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this);
                 }
@@ -164,7 +164,7 @@ public abstract class EntityFireball extends Entity {
             this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
             float f2 = this.e();
 
-            if (this.M()) {
+            if (this.L()) {
                 for (int j = 0; j < 4; ++j) {
                     float f3 = 0.25F;
 
@@ -220,11 +220,11 @@ public abstract class EntityFireball extends Entity {
         }
     }
 
-    public boolean R() {
+    public boolean Q() {
         return true;
     }
 
-    public float af() {
+    public float ae() {
         return 1.0F;
     }
 
@@ -232,7 +232,7 @@ public abstract class EntityFireball extends Entity {
         if (this.isInvulnerable()) {
             return false;
         } else {
-            this.Q();
+            this.P();
             if (damagesource.getEntity() != null) {
                 // CraftBukkit start
                 EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damagesource.getEntity().getBukkitEntity(), this.getBukkitEntity(), org.bukkit.event.entity.EntityDamageEvent.DamageCause.ENTITY_ATTACK, f);
@@ -244,12 +244,12 @@ public abstract class EntityFireball extends Entity {
                 }
                 // CraftBukkit end
 
-                Vec3D vec3d = damagesource.getEntity().ag();
+                Vec3D vec3d = damagesource.getEntity().af();
 
                 if (vec3d != null) {
-                    this.motX = vec3d.c;
-                    this.motY = vec3d.d;
-                    this.motZ = vec3d.e;
+                    this.motX = vec3d.a;
+                    this.motY = vec3d.b;
+                    this.motZ = vec3d.c;
                     this.dirX = this.motX * 0.1D;
                     this.dirY = this.motY * 0.1D;
                     this.dirZ = this.motZ * 0.1D;

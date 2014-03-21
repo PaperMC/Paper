@@ -97,7 +97,7 @@ public abstract class BlockDiodeAbstract extends BlockDirectional {
     protected void b(World world, int i, int j, int k, Block block) {
         int l = world.getData(i, j, k);
 
-        if (!this.g((IBlockAccess) world, i, j, k, l)) {
+        if (!this.g((IBlockAccess) world, i, j, k, l)) { // CraftBukkit - Cast world to IBlockAccess to call the right method.
             boolean flag = this.a(world, i, j, k, l);
 
             if ((this.a && !flag || !this.a && flag) && !world.a(i, j, k, (Block) this)) {

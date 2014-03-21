@@ -17,7 +17,7 @@ public class ItemSeedFood extends ItemFood {
             return false;
         } else if (entityhuman.a(i, j, k, l, itemstack) && entityhuman.a(i, j + 1, k, l, itemstack)) {
             if (world.getType(i, j, k) == this.c && world.isEmpty(i, j + 1, k)) {
-                // CraftBukkit start
+                // CraftBukkit start - fire BlockPlaceEvent
                 // world.setTypeUpdate(i, j + 1, k, this.b);
                 if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j + 1, k, this.b, 0, clickedX, clickedY, clickedZ)) {
                     return false;

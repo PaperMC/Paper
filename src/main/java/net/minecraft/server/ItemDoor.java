@@ -30,7 +30,7 @@ public class ItemDoor extends Item {
                 } else {
                     int i1 = MathHelper.floor((double) ((entityhuman.yaw + 180.0F) * 4.0F / 360.0F) - 0.5D) & 3;
 
-                    // CraftBukkit start
+                    // CraftBukkit start - fire BlockPlaceEvent
                     if (!place(world, i, j, k, i1, block, entityhuman, clickedX, clickedY, clickedZ)) {
                         return false;
                     }
@@ -83,7 +83,7 @@ public class ItemDoor extends Item {
             flag2 = true;
         }
 
-        // CraftBukkit start
+        // CraftBukkit start - fire BlockPlaceEvent
         if (entityhuman != null) {
             if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, block, l, clickedX, clickedY, clickedZ)) {
                 ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(i, j + 1, k, world));

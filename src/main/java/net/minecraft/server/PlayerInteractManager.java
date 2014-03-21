@@ -225,7 +225,7 @@ public class PlayerInteractManager {
     }
 
     public boolean breakBlock(int i, int j, int k) {
-        // CraftBukkit start
+        // CraftBukkit start - fire BlockBreakEvent
         BlockBreakEvent event = null;
 
         if (this.player instanceof EntityPlayer) {
@@ -245,7 +245,7 @@ public class PlayerInteractManager {
             event.setCancelled(this.gamemode.isAdventure() && !this.player.d(i, j, k));
 
             // Sword + Creative mode pre-cancel
-            event.setCancelled(event.isCancelled() || (this.gamemode.d() && this.player.be() != null && this.player.be().getItem() instanceof ItemSword));
+            event.setCancelled(event.isCancelled() || (this.gamemode.d() && this.player.bd() != null && this.player.bd().getItem() instanceof ItemSword));
 
             // Calculate default block experience
             Block nmsBlock = this.world.getType(i, j, k);
@@ -277,7 +277,7 @@ public class PlayerInteractManager {
         if (false && this.gamemode.isAdventure() && !this.player.d(i, j, k)) { // Never trigger
             // CraftBukkit end
             return false;
-        } else if (false && this.gamemode.d() && this.player.be() != null && this.player.be().getItem() instanceof ItemSword) { // CraftBukkit - never trigger
+        } else if (false && this.gamemode.d() && this.player.bd() != null && this.player.bd().getItem() instanceof ItemSword) { // CraftBukkit - never trigger
             return false;
         } else {
             Block block = this.world.getType(i, j, k);
@@ -297,13 +297,13 @@ public class PlayerInteractManager {
             if (this.isCreative()) {
                 this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(i, j, k, this.world));
             } else {
-                ItemStack itemstack = this.player.bD();
+                ItemStack itemstack = this.player.bE();
                 boolean flag1 = this.player.a(block);
 
                 if (itemstack != null) {
                     itemstack.a(this.world, block, i, j, k, this.player);
                     if (itemstack.count == 0) {
-                        this.player.bE();
+                        this.player.bF();
                     }
                 }
 
@@ -342,7 +342,7 @@ public class PlayerInteractManager {
                 entityhuman.inventory.items[entityhuman.inventory.itemInHandIndex] = null;
             }
 
-            if (!entityhuman.bw()) {
+            if (!entityhuman.bx()) {
                 ((EntityPlayer) entityhuman).updateInventory(entityhuman.defaultContainer);
             }
 
@@ -352,7 +352,7 @@ public class PlayerInteractManager {
 
     public boolean interact(EntityHuman entityhuman, World world, ItemStack itemstack, int i, int j, int k, int l, float f, float f1, float f2) {
         /* CraftBukkit start - whole method
-        if ((!entityhuman.isSneaking() || entityhuman.be() == null) && world.getType(i, j, k).interact(world, i, j, k, entityhuman, l, f, f1, f2)) {
+        if ((!entityhuman.isSneaking() || entityhuman.bd() == null) && world.getType(i, j, k).interact(world, i, j, k, entityhuman, l, f, f1, f2)) {
             return true;
         } else if (itemstack == null) {
             return false;

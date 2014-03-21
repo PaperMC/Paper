@@ -50,7 +50,7 @@ public class Village {
             if (vec3d != null) {
                 EntityIronGolem entityirongolem = new EntityIronGolem(this.world);
 
-                entityirongolem.setPosition(vec3d.c, vec3d.d, vec3d.e);
+                entityirongolem.setPosition(vec3d.a, vec3d.b, vec3d.c);
                 this.world.addEntity(entityirongolem, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE); // CraftBukkit
                 ++this.ironGolemCount;
             }
@@ -64,7 +64,7 @@ public class Village {
             int j2 = k + this.world.random.nextInt(16) - 8;
 
             if (this.a(l1, i2, j2) && this.b(l1, i2, j2, l, i1, j1)) {
-                return this.world.getVec3DPool().create((double) l1, (double) i2, (double) j2);
+                return Vec3D.a((double) l1, (double) i2, (double) j2);
             }
         }
 
@@ -93,13 +93,13 @@ public class Village {
     }
 
     private void countPopulation() {
-        List list = this.world.a(EntityIronGolem.class, AxisAlignedBB.a().a((double) (this.center.x - this.size), (double) (this.center.y - 4), (double) (this.center.z - this.size), (double) (this.center.x + this.size), (double) (this.center.y + 4), (double) (this.center.z + this.size)));
+        List list = this.world.a(EntityIronGolem.class, AxisAlignedBB.a((double) (this.center.x - this.size), (double) (this.center.y - 4), (double) (this.center.z - this.size), (double) (this.center.x + this.size), (double) (this.center.y + 4), (double) (this.center.z + this.size)));
 
         this.ironGolemCount = list.size();
     }
 
     private void k() {
-        List list = this.world.a(EntityVillager.class, AxisAlignedBB.a().a((double) (this.center.x - this.size), (double) (this.center.y - 4), (double) (this.center.z - this.size), (double) (this.center.x + this.size), (double) (this.center.y + 4), (double) (this.center.z + this.size)));
+        List list = this.world.a(EntityVillager.class, AxisAlignedBB.a((double) (this.center.x - this.size), (double) (this.center.y - 4), (double) (this.center.z - this.size), (double) (this.center.x + this.size), (double) (this.center.y + 4), (double) (this.center.z + this.size)));
 
         this.population = list.size();
         if (this.population == 0) {
@@ -233,7 +233,7 @@ public class Village {
 
         for (int i = 0; i < this.aggressors.size(); ++i) {
             VillageAggressor villageaggressor1 = (VillageAggressor) this.aggressors.get(i);
-            double d1 = villageaggressor1.a.e(entityliving);
+            double d1 = villageaggressor1.a.f(entityliving);
 
             if (d1 <= d0) {
                 villageaggressor = villageaggressor1;
@@ -256,7 +256,7 @@ public class Village {
                 EntityHuman entityhuman1 = this.world.a(s);
 
                 if (entityhuman1 != null) {
-                    double d1 = entityhuman1.e(entityliving);
+                    double d1 = entityhuman1.f(entityliving);
 
                     if (d1 <= d0) {
                         entityhuman = entityhuman1;

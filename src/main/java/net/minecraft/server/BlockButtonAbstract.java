@@ -250,7 +250,7 @@ public abstract class BlockButtonAbstract extends Block {
         boolean flag = (l & 8) != 0;
 
         this.b(l);
-        List list = world.a(EntityArrow.class, AxisAlignedBB.a().a((double) i + this.minX, (double) j + this.minY, (double) k + this.minZ, (double) i + this.maxX, (double) j + this.maxY, (double) k + this.maxZ));
+        List list = world.a(EntityArrow.class, AxisAlignedBB.a((double) i + this.minX, (double) j + this.minY, (double) k + this.minZ, (double) i + this.maxX, (double) j + this.maxY, (double) k + this.maxZ));
         boolean flag1 = !list.isEmpty();
 
         // CraftBukkit start - Call interact event when arrows turn on wooden buttons

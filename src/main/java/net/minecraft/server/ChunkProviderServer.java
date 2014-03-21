@@ -2,10 +2,11 @@ package net.minecraft.server;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,6 +46,13 @@ public class ChunkProviderServer implements IChunkProvider {
         return this.chunks.containsKey(LongHash.toLong(i, j)); // CraftBukkit
     }
 
+    // CraftBukkit start - Change return type to Collection and return the values of our chunk map
+    public java.util.Collection a() {
+        // return this.chunkList;
+        return this.chunks.values();
+        // CraftBukkit end
+    }
+
     public void queueUnload(int i, int j) {
         if (this.world.worldProvider.e()) {
             ChunkCoordinates chunkcoordinates = this.world.getSpawn();
@@ -74,7 +82,7 @@ public class ChunkProviderServer implements IChunkProvider {
         }
     }
 
-    public void a() {
+    public void b() {
         Iterator iterator = this.chunks.values().iterator(); // CraftBukkit
 
         while (iterator.hasNext()) {
@@ -291,7 +299,7 @@ public class ChunkProviderServer implements IChunkProvider {
         return true;
     }
 
-    public void b() {
+    public void c() {
         if (this.f != null) {
             this.f.b();
         }

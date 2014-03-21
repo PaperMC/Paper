@@ -31,11 +31,11 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
         return "mob.witch.idle";
     }
 
-    protected String aT() {
+    protected String aS() {
         return "mob.witch.hurt";
     }
 
-    protected String aU() {
+    protected String aT() {
         return "mob.witch.death";
     }
 
@@ -43,26 +43,26 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
         this.getDataWatcher().watch(21, Byte.valueOf((byte) (flag ? 1 : 0)));
     }
 
-    public boolean bX() {
+    public boolean bZ() {
         return this.getDataWatcher().getByte(21) == 1;
     }
 
-    protected void aD() {
-        super.aD();
+    protected void aC() {
+        super.aC();
         this.getAttributeInstance(GenericAttributes.a).setValue(26.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.25D);
     }
 
-    public boolean bk() {
+    public boolean bj() {
         return true;
     }
 
     public void e() {
         if (!this.world.isStatic) {
-            if (this.bX()) {
+            if (this.bZ()) {
                 if (this.bs-- <= 0) {
                     this.a(false);
-                    ItemStack itemstack = this.be();
+                    ItemStack itemstack = this.bd();
 
                     this.setEquipment(0, (ItemStack) null);
                     if (itemstack != null && itemstack.getItem() == Items.POTION) {
@@ -90,15 +90,15 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
                     short1 = 16307;
                 } else if (this.random.nextFloat() < 0.05F && this.getHealth() < this.getMaxHealth()) {
                     short1 = 16341;
-                } else if (this.random.nextFloat() < 0.25F && this.getGoalTarget() != null && !this.hasEffect(MobEffectList.FASTER_MOVEMENT) && this.getGoalTarget().e(this) > 121.0D) {
+                } else if (this.random.nextFloat() < 0.25F && this.getGoalTarget() != null && !this.hasEffect(MobEffectList.FASTER_MOVEMENT) && this.getGoalTarget().f(this) > 121.0D) {
                     short1 = 16274;
-                } else if (this.random.nextFloat() < 0.25F && this.getGoalTarget() != null && !this.hasEffect(MobEffectList.FASTER_MOVEMENT) && this.getGoalTarget().e(this) > 121.0D) {
+                } else if (this.random.nextFloat() < 0.25F && this.getGoalTarget() != null && !this.hasEffect(MobEffectList.FASTER_MOVEMENT) && this.getGoalTarget().f(this) > 121.0D) {
                     short1 = 16274;
                 }
 
                 if (short1 > -1) {
                     this.setEquipment(0, new ItemStack(Items.POTION, 1, short1));
-                    this.bs = this.be().n();
+                    this.bs = this.bd().n();
                     this.a(true);
                     AttributeInstance attributeinstance = this.getAttributeInstance(GenericAttributes.d);
 
@@ -152,7 +152,7 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
     }
 
     public void a(EntityLiving entityliving, float f) {
-        if (!this.bX()) {
+        if (!this.bZ()) {
             EntityPotion entitypotion = new EntityPotion(this.world, this, 32732);
 
             entitypotion.pitch -= -20.0F;

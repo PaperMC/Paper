@@ -29,7 +29,7 @@ public class ItemBow extends Item {
             EntityArrow entityarrow = new EntityArrow(world, entityhuman, f * 2.0F);
 
             if (f == 1.0F) {
-                entityarrow.a(true);
+                entityarrow.setCritical(true);
             }
 
             int k = EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_DAMAGE.id, itemstack);
@@ -41,7 +41,7 @@ public class ItemBow extends Item {
             int l = EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_KNOCKBACK.id, itemstack);
 
             if (l > 0) {
-                entityarrow.a(l);
+                entityarrow.setKnockbackStrength(l);
             }
 
             if (EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_FIRE.id, itemstack) > 0) {

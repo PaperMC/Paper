@@ -4,6 +4,7 @@ import java.util.Random;
 
 // CraftBukkit start
 import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.event.block.BlockFadeEvent;
 import org.bukkit.event.block.BlockSpreadEvent;
 // CraftBukkit end
@@ -22,7 +23,7 @@ public class BlockMycel extends Block {
                 // CraftBukkit start
                 org.bukkit.World bworld = world.getWorld();
                 BlockState blockState = bworld.getBlockAt(i, j, k).getState();
-                blockState.setTypeId(Block.b(Blocks.DIRT));
+                blockState.setType(CraftMagicNumbers.getMaterial(Blocks.DIRT));
 
                 BlockFadeEvent event = new BlockFadeEvent(blockState.getBlock(), blockState);
                 world.getServer().getPluginManager().callEvent(event);
@@ -42,7 +43,7 @@ public class BlockMycel extends Block {
                         // CraftBukkit start
                         org.bukkit.World bworld = world.getWorld();
                         BlockState blockState = bworld.getBlockAt(i1, j1, k1).getState();
-                        blockState.setTypeId(Block.b(this));
+                        blockState.setType(CraftMagicNumbers.getMaterial(this));
 
                         BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(i, j, k), blockState);
                         world.getServer().getPluginManager().callEvent(event);

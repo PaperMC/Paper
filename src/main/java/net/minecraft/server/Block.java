@@ -408,7 +408,7 @@ public class Block {
     }
 
     public AxisAlignedBB a(World world, int i, int j, int k) {
-        return AxisAlignedBB.a().a((double) i + this.minX, (double) j + this.minY, (double) k + this.minZ, (double) i + this.maxX, (double) j + this.maxY, (double) k + this.maxZ);
+        return AxisAlignedBB.a((double) i + this.minX, (double) j + this.minY, (double) k + this.minZ, (double) i + this.maxX, (double) j + this.maxY, (double) k + this.maxZ);
     }
 
     public boolean c() {
@@ -599,15 +599,15 @@ public class Block {
     }
 
     private boolean a(Vec3D vec3d) {
-        return vec3d == null ? false : vec3d.d >= this.minY && vec3d.d <= this.maxY && vec3d.e >= this.minZ && vec3d.e <= this.maxZ;
+        return vec3d == null ? false : vec3d.b >= this.minY && vec3d.b <= this.maxY && vec3d.c >= this.minZ && vec3d.c <= this.maxZ;
     }
 
     private boolean b(Vec3D vec3d) {
-        return vec3d == null ? false : vec3d.c >= this.minX && vec3d.c <= this.maxX && vec3d.e >= this.minZ && vec3d.e <= this.maxZ;
+        return vec3d == null ? false : vec3d.a >= this.minX && vec3d.a <= this.maxX && vec3d.c >= this.minZ && vec3d.c <= this.maxZ;
     }
 
     private boolean c(Vec3D vec3d) {
-        return vec3d == null ? false : vec3d.c >= this.minX && vec3d.c <= this.maxX && vec3d.d >= this.minY && vec3d.d <= this.maxY;
+        return vec3d == null ? false : vec3d.a >= this.minX && vec3d.a <= this.maxX && vec3d.b >= this.minY && vec3d.b <= this.maxY;
     }
 
     public void wasExploded(World world, int i, int j, int k, Explosion explosion) {}
@@ -681,7 +681,7 @@ public class Block {
     public void g() {}
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        entityhuman.a(StatisticList.C[b(this)], 1);
+        entityhuman.a(StatisticList.MINE_BLOCK_COUNT[b(this)], 1);
         entityhuman.a(0.025F);
         if (this.E() && EnchantmentManager.hasSilkTouchEnchantment(entityhuman)) {
             ItemStack itemstack = this.j(l);

@@ -1011,7 +1011,7 @@ public class CraftWorld implements World {
                 entity = new EntityItemFrame(world, (int) x, (int) y, (int) z, dir);
             } else if (LeashHitch.class.isAssignableFrom(clazz)) {
                 entity = new EntityLeash(world, (int) x, (int) y, (int) z);
-                entity.o = true;
+                entity.n = true;
             }
 
             if (entity != null && !((EntityHanging) entity).survives()) {

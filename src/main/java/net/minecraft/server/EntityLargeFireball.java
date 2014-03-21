@@ -20,7 +20,7 @@ public class EntityLargeFireball extends EntityFireball {
                 movingobjectposition.entity.damageEntity(DamageSource.fireball(this, this.shooter), 6.0F);
             }
 
-            // CraftBukkit start
+            // CraftBukkit start - fire ExplosionPrimeEvent
             ExplosionPrimeEvent event = new ExplosionPrimeEvent((org.bukkit.entity.Explosive) org.bukkit.craftbukkit.entity.CraftEntity.getEntity(this.world.getServer(), this));
             this.world.getServer().getPluginManager().callEvent(event);
 

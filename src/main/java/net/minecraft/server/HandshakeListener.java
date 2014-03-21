@@ -9,7 +9,7 @@ import java.util.HashMap;
 
 public class HandshakeListener implements PacketHandshakingInListener {
 
-    // CraftBukkit start
+    // CraftBukkit start - add fields
     private static final HashMap<InetAddress, Long> throttleTracker = new HashMap<InetAddress, Long>();
     private static int throttleCounter = 0;
     // CraftBukkit end
@@ -28,7 +28,7 @@ public class HandshakeListener implements PacketHandshakingInListener {
             this.b.a(EnumProtocol.LOGIN);
             ChatComponentText chatcomponenttext;
 
-            // CraftBukkit start
+            // CraftBukkit start - Connection throttle
             try {
                 long currentTime = System.currentTimeMillis();
                 long connectionThrottle = MinecraftServer.getServer().server.getConnectionThrottle();
@@ -39,7 +39,7 @@ public class HandshakeListener implements PacketHandshakingInListener {
                         throttleTracker.put(address, currentTime);
                         chatcomponenttext = new ChatComponentText("Connection throttled! Please wait before reconnecting.");
                         this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext), new GenericFutureListener[0]);
-                        this.b.a(chatcomponenttext); // Should be close
+                        this.b.close(chatcomponenttext);
                         return;
                     }
 
@@ -64,13 +64,13 @@ public class HandshakeListener implements PacketHandshakingInListener {
             // CraftBukkit end
 
             if (packethandshakinginsetprotocol.d() > 4) {
-                chatcomponenttext = new ChatComponentText("Outdated server! I\'m still on 1.7.2");
+                chatcomponenttext = new ChatComponentText("Outdated server! I\'m still on 1.7.5");
                 this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext), new GenericFutureListener[0]);
-                this.b.a((IChatBaseComponent) chatcomponenttext);
+                this.b.close(chatcomponenttext);
             } else if (packethandshakinginsetprotocol.d() < 4) {
-                chatcomponenttext = new ChatComponentText("Outdated client! Please use 1.7.2");
+                chatcomponenttext = new ChatComponentText("Outdated client! Please use 1.7.5");
                 this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext), new GenericFutureListener[0]);
-                this.b.a((IChatBaseComponent) chatcomponenttext);
+                this.b.close(chatcomponenttext);
             } else {
                 this.b.a((PacketListener) (new LoginListener(this.a, this.b)));
                 ((LoginListener) this.b.getPacketListener()).hostname = packethandshakinginsetprotocol.b + ":" + packethandshakinginsetprotocol.c; // CraftBukkit - set hostname

@@ -73,7 +73,7 @@ public abstract class Enchantment {
         return 0;
     }
 
-    public float a(int i, EntityLiving entityliving) {
+    public float a(int i, EnumMonsterType enummonstertype) {
         return 0.0F;
     }
 

@@ -82,5 +82,5 @@ public class NormalChunkGenerator extends InternalChunkGenerator {
         return "NormalWorldGenerator";
     }
 
-    public void b() {}
+    public void c() {}
 }

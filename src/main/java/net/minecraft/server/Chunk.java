@@ -591,7 +591,7 @@ public class Chunk {
         if (i != this.locX || j != this.locZ) {
             // CraftBukkit start
             Bukkit.getLogger().warning("Wrong location for " + entity + " in world '" + world.getWorld().getName() + "'!");
-            // t.error("Wrong location! " + entity);
+            // t.warn("Wrong location! " + entity + " (at " + i + ", " + j + " instead of " + this.locX + ", " + this.locZ + ")");
             // Thread.dumpStack();
             Bukkit.getLogger().warning("Entity is at " + entity.locX + "," + entity.locZ + " (chunk " + i + "," + j + ") but was stored in chunk " + this.locX + "," + this.locZ);
             // CraftBukkit end
@@ -607,15 +607,15 @@ public class Chunk {
             k = this.entitySlices.length - 1;
         }
 
-        entity.ah = true;
-        entity.ai = this.locX;
-        entity.aj = k;
-        entity.ak = this.locZ;
+        entity.ag = true;
+        entity.ah = this.locX;
+        entity.ai = k;
+        entity.aj = this.locZ;
         this.entitySlices[k].add(entity);
     }
 
     public void b(Entity entity) {
-        this.a(entity, entity.aj);
+        this.a(entity, entity.ai);
     }
 
     public void a(Entity entity, int i) {
@@ -685,7 +685,7 @@ public class Chunk {
             // CraftBukkit start
         } else {
             System.out.println("Attempted to place a tile entity (" + tileentity + ") at " + tileentity.x + "," + tileentity.y + "," + tileentity.z
-                    + " (" + org.bukkit.Material.getMaterial(Block.b(getType(i, j, k))) + ") where there was no entity tile!");
+                    + " (" + org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(getType(i, j, k)) + ") where there was no entity tile!");
             System.out.println("Chunk coordinates: " + (this.locX * 16) + "," + (this.locZ * 16));
             new Exception().printStackTrace();
             // CraftBukkit end
@@ -714,7 +714,7 @@ public class Chunk {
             while (iterator.hasNext()) {
                 Entity entity = (Entity) iterator.next();
 
-                entity.X();
+                entity.W();
             }
 
             this.world.a(this.entitySlices[i]);
@@ -768,7 +768,7 @@ public class Chunk {
 
                 if (entity1 != entity && entity1.boundingBox.b(axisalignedbb) && (ientityselector == null || ientityselector.a(entity1))) {
                     list.add(entity1);
-                    Entity[] aentity = entity1.at();
+                    Entity[] aentity = entity1.as();
 
                     if (aentity != null) {
                         for (int i1 = 0; i1 < aentity.length; ++i1) {

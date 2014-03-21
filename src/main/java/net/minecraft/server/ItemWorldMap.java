@@ -43,7 +43,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
     }
 
     public void a(World world, Entity entity, WorldMap worldmap) {
-        // CraftBukkit
+        // CraftBukkit - world.worldProvider -> ((WorldServer) world)
         if (((WorldServer) world).dimension == worldmap.map && entity instanceof EntityHuman) {
             int i = 1 << worldmap.scale;
             int j = worldmap.centerX;

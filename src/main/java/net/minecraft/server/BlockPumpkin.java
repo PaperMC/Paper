@@ -33,6 +33,7 @@ public class BlockPumpkin extends BlockDirectional {
                 if (world.addEntity(entitysnowman, SpawnReason.BUILD_SNOWMAN)) {
                     blockList.updateList();
                 }
+                // CraftBukkit end
             }
 
             for (int l = 0; l < 120; ++l) {

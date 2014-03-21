@@ -43,6 +43,7 @@ import net.minecraft.server.CommandKick;
 import net.minecraft.server.CommandKill;
 import net.minecraft.server.CommandList;
 import net.minecraft.server.CommandMe;
+import net.minecraft.server.CommandNetstat;
 import net.minecraft.server.CommandOp;
 import net.minecraft.server.CommandPardon;
 import net.minecraft.server.CommandPardonIP;
@@ -432,6 +433,8 @@ public final class CraftServer implements Server {
         commandMap.register("minecraft", new VanillaCommandWrapper(new CommandWeather(), "/weather <clear/rain/thunder> [duration in seconds]"));
         commandMap.register("minecraft", new VanillaCommandWrapper(new CommandWhitelist(), "/whitelist (add|remove) <player>\n/whitelist (on|off|list|reload)"));
         commandMap.register("minecraft", new VanillaCommandWrapper(new CommandXp(), "/xp <amount> [player]\n/xp <amount>L [player]"));
+        // This is what is in the lang file, I swear.
+        commandMap.register("minecraft", new VanillaCommandWrapper(new CommandNetstat(), "/list"));
     }
 
     private void loadPlugin(Plugin plugin) {
@@ -1609,11 +1612,11 @@ public final class CraftServer implements Server {
     }
 
     public void setIdleTimeout(int threshold) {
-        console.d(threshold); // Should be setIdleTimeout
+        console.setIdleTimeout(threshold);
     }
 
     public int getIdleTimeout() {
-        return console.aq(); // Should be getIdleTimeout
+        return console.getIdleTimeout();
     }
 
     @Deprecated

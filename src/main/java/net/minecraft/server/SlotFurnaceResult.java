@@ -20,7 +20,7 @@ public class SlotFurnaceResult extends Slot {
     }
 
     public ItemStack a(int i) {
-        if (this.e()) {
+        if (this.hasItem()) {
             this.b += Math.min(i, this.getItem().count);
         }
 
@@ -55,7 +55,7 @@ public class SlotFurnaceResult extends Slot {
                 i = j;
             }
 
-            // CraftBukkit start
+            // CraftBukkit start - fire FurnaceExtractEvent
             Player player = (Player) a.getBukkitEntity();
             TileEntityFurnace furnace = ((TileEntityFurnace) this.inventory);
             org.bukkit.block.Block block = a.world.getWorld().getBlockAt(furnace.x, furnace.y, furnace.z);

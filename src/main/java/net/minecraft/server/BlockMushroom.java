@@ -64,7 +64,7 @@ public class BlockMushroom extends BlockPlant implements IBlockFragilePlantEleme
                 // CraftBukkit start
                 org.bukkit.World bworld = world.getWorld();
                 BlockState blockState = bworld.getBlockAt(i1, j1, k1).getState();
-                blockState.setTypeId(Block.b(this)); // nms: this.id, 0, 2
+                blockState.setType(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(this)); // nms: this.id, 0, 2
 
                 BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(sourceX, sourceY, sourceZ), blockState);
                 world.getServer().getPluginManager().callEvent(event);

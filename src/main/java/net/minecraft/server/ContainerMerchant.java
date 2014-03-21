@@ -73,7 +73,7 @@ public class ContainerMerchant extends Container {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.c.get(i);
 
-        if (slot != null && slot.e()) {
+        if (slot != null && slot.hasItem()) {
             ItemStack itemstack1 = slot.getItem();
 
             itemstack = itemstack1.cloneItemStack();

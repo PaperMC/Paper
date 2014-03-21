@@ -30,7 +30,7 @@ public class ItemLeash extends Item {
         EntityLeash entityleash = EntityLeash.b(world, i, j, k);
         boolean flag = false;
         double d0 = 7.0D;
-        List list = world.a(EntityInsentient.class, AxisAlignedBB.a().a((double) i - d0, (double) j - d0, (double) k - d0, (double) i + d0, (double) j + d0, (double) k + d0));
+        List list = world.a(EntityInsentient.class, AxisAlignedBB.a((double) i - d0, (double) j - d0, (double) k - d0, (double) i + d0, (double) j + d0, (double) k + d0));
 
         if (list != null) {
             Iterator iterator = list.iterator();
@@ -38,11 +38,11 @@ public class ItemLeash extends Item {
             while (iterator.hasNext()) {
                 EntityInsentient entityinsentient = (EntityInsentient) iterator.next();
 
-                if (entityinsentient.bL() && entityinsentient.getLeashHolder() == entityhuman) {
+                if (entityinsentient.bN() && entityinsentient.getLeashHolder() == entityhuman) {
                     if (entityleash == null) {
                         entityleash = EntityLeash.a(world, i, j, k);
 
-                        // CraftBukkit start
+                        // CraftBukkit start - fire HangingPlaceEvent
                         HangingPlaceEvent event = new HangingPlaceEvent((org.bukkit.entity.Hanging) entityleash.getBukkitEntity(), entityhuman != null ? (org.bukkit.entity.Player) entityhuman.getBukkitEntity() : null, world.getWorld().getBlockAt(i, j, k), org.bukkit.block.BlockFace.SELF);
                         world.getServer().getPluginManager().callEvent(event);
 

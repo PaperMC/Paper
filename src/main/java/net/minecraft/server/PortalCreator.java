@@ -12,7 +12,7 @@ public class PortalCreator {
     private ChunkCoordinates f;
     private int g;
     private int h;
-    java.util.Collection<org.bukkit.block.Block> blocks; // CraftBukkit
+    java.util.Collection<org.bukkit.block.Block> blocks; // CraftBukkit - add field
 
     public PortalCreator(World world, int i, int j, int k, int l) {
         this.a = world;

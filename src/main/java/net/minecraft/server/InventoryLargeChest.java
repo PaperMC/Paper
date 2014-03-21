@@ -13,7 +13,7 @@ public class InventoryLargeChest implements IInventory {
     public IInventory left; // CraftBukkit - private -> public
     public IInventory right; // CraftBukkit - private -> public
 
-    // CraftBukkit start
+    // CraftBukkit start - add fields and methods
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
 
     public ItemStack[] getContents() {

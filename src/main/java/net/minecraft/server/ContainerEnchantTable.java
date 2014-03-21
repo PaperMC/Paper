@@ -226,7 +226,7 @@ public class ContainerEnchantTable extends Container {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.c.get(i);
 
-        if (slot != null && slot.e()) {
+        if (slot != null && slot.hasItem()) {
             ItemStack itemstack1 = slot.getItem();
 
             itemstack = itemstack1.cloneItemStack();
@@ -235,7 +235,7 @@ public class ContainerEnchantTable extends Container {
                     return null;
                 }
             } else {
-                if (((Slot) this.c.get(0)).e() || !((Slot) this.c.get(0)).isAllowed(itemstack1)) {
+                if (((Slot) this.c.get(0)).hasItem() || !((Slot) this.c.get(0)).isAllowed(itemstack1)) {
                     return null;
                 }
 

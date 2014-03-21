@@ -60,14 +60,14 @@ public class ContainerHorse extends Container {
     }
 
     public boolean a(EntityHuman entityhuman) {
-        return this.a.a(entityhuman) && this.f.isAlive() && this.f.d(entityhuman) < 8.0F;
+        return this.a.a(entityhuman) && this.f.isAlive() && this.f.e(entityhuman) < 8.0F;
     }
 
     public ItemStack b(EntityHuman entityhuman, int i) {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.c.get(i);
 
-        if (slot != null && slot.e()) {
+        if (slot != null && slot.hasItem()) {
             ItemStack itemstack1 = slot.getItem();
 
             itemstack = itemstack1.cloneItemStack();
@@ -75,7 +75,7 @@ public class ContainerHorse extends Container {
                 if (!this.a(itemstack1, this.a.getSize(), this.c.size(), true)) {
                     return null;
                 }
-            } else if (this.getSlot(1).isAllowed(itemstack1) && !this.getSlot(1).e()) {
+            } else if (this.getSlot(1).isAllowed(itemstack1) && !this.getSlot(1).hasItem()) {
                 if (!this.a(itemstack1, 1, 2, false)) {
                     return null;
                 }

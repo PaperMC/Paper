@@ -126,7 +126,7 @@ public abstract class BlockPressurePlateAbstract extends Block {
     protected AxisAlignedBB a(int i, int j, int k) {
         float f = 0.125F;
 
-        return AxisAlignedBB.a().a((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) j + 0.25D, (double) ((float) (k + 1) - f));
+        return AxisAlignedBB.a((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) j + 0.25D, (double) ((float) (k + 1) - f));
     }
 
     public void remove(World world, int i, int j, int k, Block block, int l) {

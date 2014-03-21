@@ -37,7 +37,7 @@ public class BlockCactus extends Block {
     public AxisAlignedBB a(World world, int i, int j, int k) {
         float f = 0.0625F;
 
-        return AxisAlignedBB.a().a((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) ((float) (j + 1) - f), (double) ((float) (k + 1) - f));
+        return AxisAlignedBB.a((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) ((float) (j + 1) - f), (double) ((float) (k + 1) - f));
     }
 
     public boolean d() {

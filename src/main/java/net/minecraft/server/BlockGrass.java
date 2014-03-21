@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 
 // CraftBukkit start
 import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.block.BlockFadeEvent;
 // CraftBukkit end
@@ -27,7 +28,7 @@ public class BlockGrass extends Block implements IBlockFragilePlantElement {
                 // CraftBukkit start
                 org.bukkit.World bworld = world.getWorld();
                 BlockState blockState = bworld.getBlockAt(i, j, k).getState();
-                blockState.setTypeId(Block.b(Blocks.DIRT));
+                blockState.setType(CraftMagicNumbers.getMaterial(Blocks.DIRT));
 
                 BlockFadeEvent event = new BlockFadeEvent(blockState.getBlock(), blockState);
                 world.getServer().getPluginManager().callEvent(event);
@@ -47,7 +48,7 @@ public class BlockGrass extends Block implements IBlockFragilePlantElement {
                         // CraftBukkit start
                         org.bukkit.World bworld = world.getWorld();
                         BlockState blockState = bworld.getBlockAt(i1, j1, k1).getState();
-                        blockState.setTypeId(Block.b(Blocks.GRASS));
+                        blockState.setType(CraftMagicNumbers.getMaterial(Blocks.GRASS));
 
                         BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(i, j, k), blockState);
                         world.getServer().getPluginManager().callEvent(event);

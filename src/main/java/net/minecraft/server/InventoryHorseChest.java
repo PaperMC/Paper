@@ -12,7 +12,7 @@ public class InventoryHorseChest extends InventorySubcontainer {
         super(s, false, i);
     }
 
-    // CraftBukkit start
+    // CraftBukkit start - add fields and methods
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     private EntityHorse horse;
     private int maxStack = MAX_STACK;

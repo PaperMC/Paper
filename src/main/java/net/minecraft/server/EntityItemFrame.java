@@ -23,7 +23,7 @@ public class EntityItemFrame extends EntityHanging {
             return false;
         } else if (this.getItem() != null) {
             if (!this.world.isStatic) {
-                // CraftBukkit start
+                // CraftBukkit start - fire EntityDamageEvent
                 org.bukkit.event.entity.EntityDamageEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handleEntityDamageEvent(this, damagesource, f);
                 if ((event != null && event.isCancelled()) || this.dead) {
                     return true;
@@ -136,7 +136,7 @@ public class EntityItemFrame extends EntityHanging {
 
     public boolean c(EntityHuman entityhuman) {
         if (this.getItem() == null) {
-            ItemStack itemstack = entityhuman.be();
+            ItemStack itemstack = entityhuman.bd();
 
             if (itemstack != null && !this.world.isStatic) {
                 this.setItem(itemstack);

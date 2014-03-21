@@ -29,7 +29,7 @@ public class ItemHanging extends Item {
             } else {
                 if (entityhanging != null && entityhanging.survives()) {
                     if (!world.isStatic) {
-                        // CraftBukkit start
+                        // CraftBukkit start - fire HangingPlaceEvent
                         Player who = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
                         org.bukkit.block.Block blockClicked = world.getWorld().getBlockAt(i, j, k);
                         org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(l);

@@ -52,7 +52,7 @@ public class BlockMinecartDetector extends BlockMinecartTrackAbstract {
         boolean flag = (l & 8) != 0;
         boolean flag1 = false;
         float f = 0.125F;
-        List list = world.a(EntityMinecartAbstract.class, AxisAlignedBB.a().a((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) ((float) (j + 1) - f), (double) ((float) (k + 1) - f)));
+        List list = world.a(EntityMinecartAbstract.class, AxisAlignedBB.a((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) ((float) (j + 1) - f), (double) ((float) (k + 1) - f)));
 
         if (!list.isEmpty()) {
             flag1 = true;
@@ -102,13 +102,13 @@ public class BlockMinecartDetector extends BlockMinecartTrackAbstract {
     public int g(World world, int i, int j, int k, int l) {
         if ((world.getData(i, j, k) & 8) > 0) {
             float f = 0.125F;
-            List list = world.a(EntityMinecartCommandBlock.class, AxisAlignedBB.a().a((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) ((float) (j + 1) - f), (double) ((float) (k + 1) - f)));
+            List list = world.a(EntityMinecartCommandBlock.class, AxisAlignedBB.a((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) ((float) (j + 1) - f), (double) ((float) (k + 1) - f)));
 
             if (list.size() > 0) {
                 return ((EntityMinecartCommandBlock) list.get(0)).e().g();
             }
 
-            List list1 = world.a(EntityMinecartAbstract.class, AxisAlignedBB.a().a((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) ((float) (j + 1) - f), (double) ((float) (k + 1) - f)), IEntitySelector.b);
+            List list1 = world.a(EntityMinecartAbstract.class, AxisAlignedBB.a((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) ((float) (j + 1) - f), (double) ((float) (k + 1) - f)), IEntitySelector.c);
 
             if (list1.size() > 0) {
                 return Container.b((IInventory) list1.get(0));

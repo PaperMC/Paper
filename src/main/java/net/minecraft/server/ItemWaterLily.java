@@ -27,7 +27,7 @@ public class ItemWaterLily extends ItemWithAuxData {
                 }
 
                 if (world.getType(i, j, k).getMaterial() == Material.WATER && world.getData(i, j, k) == 0 && world.isEmpty(i, j + 1, k)) {
-                    // CraftBukkit start
+                    // CraftBukkit start - fire BlockPlaceEvent
                     // world.setTypeUpdate(i, j + 1, k, Blocks.WATER_LILY);
                     if (!processBlockPlace(world, entityhuman, null, i, j + 1, k, Blocks.WATER_LILY, 0, clickedX, clickedY, clickedZ)) {
                         return itemstack;

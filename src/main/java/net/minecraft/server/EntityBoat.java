@@ -48,7 +48,7 @@ public class EntityBoat extends Entity {
         super(world);
         this.a = true;
         this.b = 0.07D;
-        this.l = true;
+        this.k = true;
         this.a(1.5F, 0.6F);
         this.height = this.length / 2.0F;
     }
@@ -63,15 +63,15 @@ public class EntityBoat extends Entity {
         this.datawatcher.a(19, new Float(0.0F));
     }
 
-    public AxisAlignedBB g(Entity entity) {
+    public AxisAlignedBB h(Entity entity) {
         return entity.boundingBox;
     }
 
-    public AxisAlignedBB J() {
+    public AxisAlignedBB I() {
         return this.boundingBox;
     }
 
-    public boolean S() {
+    public boolean R() {
         return true;
     }
 
@@ -88,7 +88,7 @@ public class EntityBoat extends Entity {
         this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit
     }
 
-    public double ae() {
+    public double ad() {
         return (double) this.length * 0.0D - 0.30000001192092896D;
     }
 
@@ -112,7 +112,7 @@ public class EntityBoat extends Entity {
             this.c(-this.i());
             this.a(10);
             this.setDamage(this.getDamage() + f * 10.0F);
-            this.Q();
+            this.P();
             boolean flag = damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).abilities.canInstantlyBuild;
 
             if (flag || this.getDamage() > 40.0F) {
@@ -143,7 +143,7 @@ public class EntityBoat extends Entity {
         }
     }
 
-    public boolean R() {
+    public boolean Q() {
         return !this.dead;
     }
 
@@ -174,7 +174,7 @@ public class EntityBoat extends Entity {
         for (int i = 0; i < b0; ++i) {
             double d1 = this.boundingBox.b + (this.boundingBox.e - this.boundingBox.b) * (double) (i + 0) / (double) b0 - 0.125D;
             double d2 = this.boundingBox.b + (this.boundingBox.e - this.boundingBox.b) * (double) (i + 1) / (double) b0 - 0.125D;
-            AxisAlignedBB axisalignedbb = AxisAlignedBB.a().a(this.boundingBox.a, d1, this.boundingBox.c, this.boundingBox.d, d2, this.boundingBox.f);
+            AxisAlignedBB axisalignedbb = AxisAlignedBB.a(this.boundingBox.a, d1, this.boundingBox.c, this.boundingBox.d, d2, this.boundingBox.f);
 
             if (this.world.b(axisalignedbb, Material.WATER)) {
                 d0 += 1.0D / (double) b0;
@@ -251,10 +251,10 @@ public class EntityBoat extends Entity {
 
             if (this.passenger != null && this.passenger instanceof EntityLiving) {
                 EntityLiving entityliving = (EntityLiving) this.passenger;
-                float f = this.passenger.yaw + -entityliving.be * 90.0F;
+                float f = this.passenger.yaw + -entityliving.bd * 90.0F;
 
-                this.motX += -Math.sin((double) (f * 3.1415927F / 180.0F)) * this.b * (double) entityliving.bf * 0.05000000074505806D;
-                this.motZ += Math.cos((double) (f * 3.1415927F / 180.0F)) * this.b * (double) entityliving.bf * 0.05000000074505806D;
+                this.motX += -Math.sin((double) (f * 3.1415927F / 180.0F)) * this.b * (double) entityliving.be * 0.05000000074505806D;
+                this.motZ += Math.cos((double) (f * 3.1415927F / 180.0F)) * this.b * (double) entityliving.be * 0.05000000074505806D;
             }
             // CraftBukkit start - Support unoccupied deceleration
             else if (unoccupiedDeceleration >= 0) {
@@ -397,7 +397,7 @@ public class EntityBoat extends Entity {
                     for (int k1 = 0; k1 < list.size(); ++k1) {
                         Entity entity = (Entity) list.get(k1);
 
-                        if (entity != this.passenger && entity.S() && entity instanceof EntityBoat) {
+                        if (entity != this.passenger && entity.R() && entity instanceof EntityBoat) {
                             entity.collide(this);
                         }
                     }
@@ -411,12 +411,12 @@ public class EntityBoat extends Entity {
         }
     }
 
-    public void ac() {
+    public void ab() {
         if (this.passenger != null) {
             double d0 = Math.cos((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
             double d1 = Math.sin((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
 
-            this.passenger.setPosition(this.locX + d0, this.locY + this.ae() + this.passenger.ad(), this.locZ + d1);
+            this.passenger.setPosition(this.locX + d0, this.locY + this.ad() + this.passenger.ac(), this.locZ + d1);
         }
     }
 

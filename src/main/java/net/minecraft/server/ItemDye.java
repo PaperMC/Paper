@@ -68,7 +68,7 @@ public class ItemDye extends Item {
                     if (world.isEmpty(i, j, k)) {
                         int j1 = Blocks.COCOA.getPlacedData(world, i, j, k, l, f, f1, f2, 0);
 
-                        // CraftBukkit start
+                        // CraftBukkit start - fire BlockPlaceEvent
                         // world.setTypeAndData(i, j, k, Blocks.COCOA, j1, 2);
                         if (!ItemBlock.processBlockPlace(world, entityhuman, itemstack, i, j, k, Blocks.COCOA, j1, clickedX, clickedY, clickedZ)) {
                             return false;
@@ -88,7 +88,7 @@ public class ItemDye extends Item {
     }
 
     public static boolean a(ItemStack itemstack, World world, int i, int j, int k) {
-        // CraftBukkit start
+        // CraftBukkit start - add EntityHuman parameter
         return a(itemstack, world, i, j, k, null);
     }
 
