@@ -93,14 +93,14 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public List<String> tabCompleteInternalMaterialName(String token, List<String> completions) {
-        return StringUtil.copyPartialMatches(token, Item.REGISTRY.b(), completions);
+        return StringUtil.copyPartialMatches(token, Item.REGISTRY.keySet(), completions);
     }
 
     @Override
     public ItemStack modifyItemStack(ItemStack stack, String arguments) {
         net.minecraft.server.ItemStack nmsStack = CraftItemStack.asNMSCopy(stack);
 
-        nmsStack.setTag((NBTTagCompound) MojangsonParser.a(arguments));
+        nmsStack.setTag((NBTTagCompound) MojangsonParser.parse(arguments));
 
         stack.setItemMeta(CraftItemStack.getItemMeta(nmsStack));
 
@@ -122,7 +122,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         List<String> matches = new ArrayList<String>();
         Iterator iterator = StatisticList.b.iterator();
         while (iterator.hasNext()) {
-            String statistic = ((net.minecraft.server.Statistic) iterator.next()).e;
+            String statistic = ((net.minecraft.server.Statistic) iterator.next()).name;
             if (statistic.startsWith(token)) {
                 matches.add(statistic);
             }

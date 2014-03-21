@@ -393,8 +393,7 @@ public class CraftEventFactory {
     }
 
     public static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, float damage) {
-        // Should be isExplosion
-        if (source.c()) {
+        if (source.isExplosion()) {
             return null;
         } else if (source instanceof EntityDamageSource) {
             Entity damager = source.getEntity();

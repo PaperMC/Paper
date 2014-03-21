@@ -83,13 +83,13 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
             ((EntityArrow) launch).fromPlayer = 1;
             ((EntityArrow) launch).projectileSource = this;
         } else if (Fireball.class.isAssignableFrom(projectile)) {
-            double d0 = iposition.getX() + (double) ((float) enumfacing.c() * 0.3F);
-            double d1 = iposition.getY() + (double) ((float) enumfacing.c() * 0.3F);
-            double d2 = iposition.getZ() + (double) ((float) enumfacing.e() * 0.3F);
+            double d0 = iposition.getX() + (double) ((float) enumfacing.getAdjacentX() * 0.3F);
+            double d1 = iposition.getY() + (double) ((float) enumfacing.getAdjacentY() * 0.3F);
+            double d2 = iposition.getZ() + (double) ((float) enumfacing.getAdjacentZ() * 0.3F);
             Random random = world.random;
-            double d3 = random.nextGaussian() * 0.05D + (double) enumfacing.c();
-            double d4 = random.nextGaussian() * 0.05D + (double) enumfacing.d();
-            double d5 = random.nextGaussian() * 0.05D + (double) enumfacing.e();
+            double d3 = random.nextGaussian() * 0.05D + (double) enumfacing.getAdjacentX();
+            double d4 = random.nextGaussian() * 0.05D + (double) enumfacing.getAdjacentY();
+            double d5 = random.nextGaussian() * 0.05D + (double) enumfacing.getAdjacentZ();
 
             if (SmallFireball.class.isAssignableFrom(projectile)) {
                 launch = new EntitySmallFireball(world, d0, d1, d2, d3, d4, d5);
@@ -129,7 +129,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
                 b *= 1.25F;
             }
             // Copied from DispenseBehaviorProjectile
-            ((IProjectile) launch).shoot((double) enumfacing.c(), (double) ((float) enumfacing.d() + 0.1F), (double) enumfacing.e(), b, a);
+            ((IProjectile) launch).shoot((double) enumfacing.getAdjacentX(), (double) ((float) enumfacing.getAdjacentY() + 0.1F), (double) enumfacing.getAdjacentZ(), b, a);
         }
 
         if (velocity != null) {

@@ -17,19 +17,19 @@ public class CraftArrow extends AbstractProjectile implements Arrow {
 
     public void setKnockbackStrength(int knockbackStrength) {
         Validate.isTrue(knockbackStrength >= 0, "Knockback cannot be negative");
-        getHandle().a(knockbackStrength);
+        getHandle().setKnockbackStrength(knockbackStrength);
     }
 
     public int getKnockbackStrength() {
-        return getHandle().aw;
+        return getHandle().knockbackStrength;
     }
 
     public boolean isCritical() {
-        return getHandle().f();
+        return getHandle().isCritical();
     }
 
     public void setCritical(boolean critical) {
-        getHandle().a(critical);
+        getHandle().setCritical(critical);
     }
 
     public ProjectileSource getShooter() {
