@@ -101,7 +101,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
                     String s2 = as[i];
                     EntityPlayer aentityplayer1[] = aentityplayer;
                     int k = aentityplayer1.length;
-                    for (int l = 0; l < k;) {
+                    for (int l = 0; l < k;l++) {
                         EntityPlayer entityplayer = aentityplayer1[l];
                         as[i] = entityplayer.getName();
                         try {
@@ -112,7 +112,6 @@ public final class VanillaCommandWrapper extends VanillaCommand {
                             ChatMessage chatmessage4 = new ChatMessage(commandexception1.getMessage(), commandexception1.a());
                             chatmessage4.getChatModifier().setColor(EnumChatFormat.RED);
                             icommandlistener.sendMessage(chatmessage4);
-                            l++;
                         }
                     }
 
