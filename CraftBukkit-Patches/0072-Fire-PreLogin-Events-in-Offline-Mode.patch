@@ -1,16 +1,16 @@
-From 62c97feaeddb9eaceebfe726ec48857c522d2702 Mon Sep 17 00:00:00 2001
+From 1895a51bc8ae18591ad19bde12d5a6dbfc597d87 Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Wed, 18 Dec 2013 13:32:10 +1100
 Subject: [PATCH] Fire PreLogin Events in Offline Mode
 
 
 diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
-index aa06e92..fa80b74 100644
+index efba029..6f35aa0 100644
 --- a/src/main/java/net/minecraft/server/LoginListener.java
 +++ b/src/main/java/net/minecraft/server/LoginListener.java
 @@ -108,7 +108,7 @@ public class LoginListener implements PacketLoginInListener {
              this.g = EnumProtocolState.KEY;
-             this.networkManager.handle(new PacketLoginOutEncryptionBegin(this.j, this.server.I().getPublic(), this.e), new GenericFutureListener[0]);
+             this.networkManager.handle(new PacketLoginOutEncryptionBegin(this.j, this.server.J().getPublic(), this.e), new GenericFutureListener[0]);
          } else {
 -            this.g = EnumProtocolState.READY_TO_ACCEPT;
 +            (new ThreadPlayerLookupUUID(this, "User Authenticator #" + b.incrementAndGet())).start(); // Spigot
@@ -18,10 +18,10 @@ index aa06e92..fa80b74 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/ThreadPlayerLookupUUID.java b/src/main/java/net/minecraft/server/ThreadPlayerLookupUUID.java
-index cc96775..ea8c269 100644
+index f48ce53..2723fb8 100644
 --- a/src/main/java/net/minecraft/server/ThreadPlayerLookupUUID.java
 +++ b/src/main/java/net/minecraft/server/ThreadPlayerLookupUUID.java
-@@ -22,47 +22,21 @@ class ThreadPlayerLookupUUID extends Thread {
+@@ -22,47 +22,20 @@ class ThreadPlayerLookupUUID extends Thread {
  
      public void run() {
          try {
@@ -32,13 +32,13 @@ index cc96775..ea8c269 100644
 +                LoginListener.a(this.a, EnumProtocolState.READY_TO_ACCEPT);
 +                return;
 +            }
-+            // Spigot End            
-             String s = (new BigInteger(MinecraftEncryption.a(LoginListener.a(this.a), LoginListener.b(this.a).I().getPublic(), LoginListener.c(this.a)))).toString(16);
- 
-             LoginListener.a(this.a, LoginListener.b(this.a).as().hasJoinedServer(new GameProfile((String) null, LoginListener.d(this.a).getName()), s));
++            // Spigot End
+             String s = (new BigInteger(MinecraftEncryption.a(LoginListener.a(this.a), LoginListener.b(this.a).J().getPublic(), LoginListener.c(this.a)))).toString(16);
+-
+             LoginListener.a(this.a, LoginListener.b(this.a).at().hasJoinedServer(new GameProfile((String) null, LoginListener.d(this.a).getName()), s));
              if (LoginListener.d(this.a) != null) {
--                // CraftBukkit start
--                if (!this.a.networkManager.d()) {
+-                // CraftBukkit start - fire PlayerPreLoginEvent
+-                if (!this.a.networkManager.isConnected()) {
 -                    return;
 -                }
 -
@@ -80,15 +80,15 @@ index cc96775..ea8c269 100644
                  LoginListener.e().info("UUID of player " + LoginListener.d(this.a).getName() + " is " + LoginListener.d(this.a).getId());
                  LoginListener.a(this.a, EnumProtocolState.READY_TO_ACCEPT);
              } else {
-@@ -79,4 +53,44 @@ class ThreadPlayerLookupUUID extends Thread {
+@@ -79,4 +52,44 @@ class ThreadPlayerLookupUUID extends Thread {
              // CraftBukkit end
          }
      }
 +
 +    private void fireLoginEvents() throws Exception
 +    {
-+        // CraftBukkit start
-+        if (!this.a.networkManager.d()) {
++        // CraftBukkit start - fire PlayerPreLoginEvent
++        if (!this.a.networkManager.isConnected()) {
 +            return;
 +        }
 +
@@ -126,5 +126,5 @@ index cc96775..ea8c269 100644
 +    }
  }
 -- 
-1.8.3.2
+1.8.5.2.msysgit.0
 

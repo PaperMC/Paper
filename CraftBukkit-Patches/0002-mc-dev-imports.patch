@@ -1,4 +1,4 @@
-From a7f103fcbb778d58ff85a1897bfa9ea3f1b01405 Mon Sep 17 00:00:00 2001
+From 796630458aee1aab9b870fece5ead790d7f0274b Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 1 Dec 2013 15:10:48 +1100
 Subject: [PATCH] mc-dev imports
@@ -491,10 +491,10 @@ index 0000000..3287d77
 +}
 diff --git a/src/main/java/net/minecraft/server/BlockFlowerPot.java b/src/main/java/net/minecraft/server/BlockFlowerPot.java
 new file mode 100644
-index 0000000..ef909f7
+index 0000000..ca6f4f0
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/BlockFlowerPot.java
-@@ -0,0 +1,195 @@
+@@ -0,0 +1,186 @@
 +package net.minecraft.server;
 +
 +import java.util.Random;
@@ -529,12 +529,12 @@ index 0000000..ef909f7
 +        ItemStack itemstack = entityhuman.inventory.getItemInHand();
 +
 +        if (itemstack != null && itemstack.getItem() instanceof ItemBlock) {
-+            if (world.getData(i, j, k) != 0) {
-+                return false;
-+            } else {
-+                TileEntityFlowerPot tileentityflowerpot = this.e(world, i, j, k);
++            TileEntityFlowerPot tileentityflowerpot = this.e(world, i, j, k);
 +
-+                if (tileentityflowerpot != null) {
++            if (tileentityflowerpot != null) {
++                if (tileentityflowerpot.a() != null) {
++                    return false;
++                } else {
 +                    Block block = Block.a(itemstack.getItem());
 +
 +                    if (!this.a(block, itemstack.getData())) {
@@ -552,9 +552,9 @@ index 0000000..ef909f7
 +
 +                        return true;
 +                    }
-+                } else {
-+                    return false;
 +                }
++            } else {
++                return false;
 +            }
 +        } else {
 +            return false;
@@ -579,15 +579,6 @@ index 0000000..ef909f7
 +        if (!World.a((IBlockAccess) world, i, j - 1, k)) {
 +            this.b(world, i, j, k, world.getData(i, j, k), 0);
 +            world.setAir(i, j, k);
-+        }
-+    }
-+
-+    public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
-+        super.dropNaturally(world, i, j, k, l, f, i1);
-+        TileEntityFlowerPot tileentityflowerpot = this.e(world, i, j, k);
-+
-+        if (tileentityflowerpot != null && tileentityflowerpot.a() != null) {
-+            this.a(world, i, j, k, new ItemStack(tileentityflowerpot.a(), 1, tileentityflowerpot.b()));
 +        }
 +    }
 +
@@ -692,7 +683,7 @@ index 0000000..ef909f7
 +}
 diff --git a/src/main/java/net/minecraft/server/BlockTNT.java b/src/main/java/net/minecraft/server/BlockTNT.java
 new file mode 100644
-index 0000000..6d5090b
+index 0000000..e943676
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/BlockTNT.java
 @@ -0,0 +1,80 @@
@@ -751,10 +742,10 @@ index 0000000..6d5090b
 +    }
 +
 +    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
-+        if (entityhuman.bD() != null && entityhuman.bD().getItem() == Items.FLINT_AND_STEEL) {
++        if (entityhuman.bE() != null && entityhuman.bE().getItem() == Items.FLINT_AND_STEEL) {
 +            this.a(world, i, j, k, 1, entityhuman);
 +            world.setAir(i, j, k);
-+            entityhuman.bD().damage(1, entityhuman);
++            entityhuman.bE().damage(1, entityhuman);
 +            return true;
 +        } else {
 +            return super.interact(world, i, j, k, entityhuman, l, f, f1, f2);
@@ -778,10 +769,10 @@ index 0000000..6d5090b
 +}
 diff --git a/src/main/java/net/minecraft/server/CommandDispatcher.java b/src/main/java/net/minecraft/server/CommandDispatcher.java
 new file mode 100644
-index 0000000..e63f17c
+index 0000000..4c21643
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/CommandDispatcher.java
-@@ -0,0 +1,93 @@
+@@ -0,0 +1,94 @@
 +package net.minecraft.server;
 +
 +import java.util.Iterator;
@@ -820,7 +811,7 @@ index 0000000..e63f17c
 +        this.a(new CommandSetBlock());
 +        this.a(new CommandTestForBlock());
 +        this.a(new CommandTellRaw());
-+        if (MinecraftServer.getServer().V()) {
++        if (MinecraftServer.getServer().W()) {
 +            this.a(new CommandOp());
 +            this.a(new CommandDeop());
 +            this.a(new CommandStop());
@@ -836,6 +827,7 @@ index 0000000..e63f17c
 +            this.a(new CommandList());
 +            this.a(new CommandWhitelist());
 +            this.a(new CommandIdleTimeout());
++            this.a(new CommandNetstat());
 +        } else {
 +            this.a(new CommandPublish());
 +        }
@@ -843,7 +835,7 @@ index 0000000..e63f17c
 +        CommandAbstract.a((ICommandDispatcher) this);
 +    }
 +
-+    public void a(ICommandListener icommandlistener, int i, String s, Object... aobject) {
++    public void a(ICommandListener icommandlistener, ICommand icommand, int i, String s, Object... aobject) {
 +        boolean flag = true;
 +
 +        if (icommandlistener instanceof CommandBlockListenerAbstract && !MinecraftServer.getServer().worldServer[0].getGameRules().getBoolean("commandBlockOutput")) {
@@ -852,15 +844,15 @@ index 0000000..e63f17c
 +
 +        ChatMessage chatmessage = new ChatMessage("chat.type.admin", new Object[] { icommandlistener.getName(), new ChatMessage(s, aobject)});
 +
-+        chatmessage.b().setColor(EnumChatFormat.GRAY);
-+        chatmessage.b().setItalic(Boolean.valueOf(true));
++        chatmessage.getChatModifier().setColor(EnumChatFormat.GRAY);
++        chatmessage.getChatModifier().setItalic(Boolean.valueOf(true));
 +        if (flag) {
 +            Iterator iterator = MinecraftServer.getServer().getPlayerList().players.iterator();
 +
 +            while (iterator.hasNext()) {
 +                EntityPlayer entityplayer = (EntityPlayer) iterator.next();
 +
-+                if (entityplayer != icommandlistener && MinecraftServer.getServer().getPlayerList().isOp(entityplayer.getName())) {
++                if (entityplayer != icommandlistener && MinecraftServer.getServer().getPlayerList().isOp(entityplayer.getName()) && icommand.canUse(entityplayer) && (!(icommandlistener instanceof RemoteControlCommandListener) || MinecraftServer.getServer().m())) {
 +                    entityplayer.sendMessage(chatmessage);
 +                }
 +            }
@@ -1971,7 +1963,7 @@ index 0000000..900ed68
 +}
 diff --git a/src/main/java/net/minecraft/server/ServerConnection.java b/src/main/java/net/minecraft/server/ServerConnection.java
 new file mode 100644
-index 0000000..3691094
+index 0000000..c2194af
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/ServerConnection.java
 @@ -0,0 +1,102 @@
@@ -2035,7 +2027,7 @@ index 0000000..3691094
 +            while (iterator.hasNext()) {
 +                NetworkManager networkmanager = (NetworkManager) iterator.next();
 +
-+                if (!networkmanager.d()) {
++                if (!networkmanager.isConnected()) {
 +                    iterator.remove();
 +                    if (networkmanager.f() != null) {
 +                        networkmanager.getPacketListener().a(networkmanager.f());
@@ -2079,7 +2071,7 @@ index 0000000..3691094
 +}
 diff --git a/src/main/java/net/minecraft/server/ServerConnectionChannel.java b/src/main/java/net/minecraft/server/ServerConnectionChannel.java
 new file mode 100644
-index 0000000..fb95be4
+index 0000000..d7d93a0
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/ServerConnectionChannel.java
 @@ -0,0 +1,37 @@
@@ -2112,7 +2104,7 @@ index 0000000..fb95be4
 +            ;
 +        }
 +
-+        channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30)).addLast("legacy_query", new LegacyPingHandler(this.a)).addLast("splitter", new PacketSplitter()).addLast("decoder", new PacketDecoder()).addLast("prepender", new PacketPrepender()).addLast("encoder", new PacketEncoder());
++        channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30)).addLast("legacy_query", new LegacyPingHandler(this.a)).addLast("splitter", new PacketSplitter()).addLast("decoder", new PacketDecoder(NetworkManager.h)).addLast("prepender", new PacketPrepender()).addLast("encoder", new PacketEncoder(NetworkManager.h));
 +        NetworkManager networkmanager = new NetworkManager(false);
 +
 +        ServerConnection.a(this.a).add(networkmanager);
@@ -2122,10 +2114,10 @@ index 0000000..fb95be4
 +}
 diff --git a/src/main/java/net/minecraft/server/ServerStatisticManager.java b/src/main/java/net/minecraft/server/ServerStatisticManager.java
 new file mode 100644
-index 0000000..2f980cb
+index 0000000..0becb94
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/ServerStatisticManager.java
-@@ -0,0 +1,201 @@
+@@ -0,0 +1,202 @@
 +package net.minecraft.server;
 +
 +import java.io.File;
@@ -2183,14 +2175,14 @@ index 0000000..2f980cb
 +        }
 +    }
 +
-+    public void a(EntityHuman entityhuman, Statistic statistic, int i) {
-+        int j = statistic.d() ? this.a(statistic) : 0;
++    public void setStatistic(EntityHuman entityhuman, Statistic statistic, int i) {
++        int j = statistic.d() ? this.getStatisticValue(statistic) : 0;
 +
-+        super.a(entityhuman, statistic, i);
++        super.setStatistic(entityhuman, statistic, i);
 +        this.e.add(statistic);
 +        if (statistic.d() && j == 0 && i > 0) {
 +            this.g = true;
-+            if (this.c.ar()) {
++            if (this.c.as()) {
 +                this.c.getPlayerList().sendMessage(new ChatMessage("chat.type.achievement", new Object[] { entityhuman.getScoreboardDisplayName(), statistic.j()}));
 +            }
 +        }
@@ -2216,7 +2208,7 @@ index 0000000..2f980cb
 +
 +            while (iterator.hasNext()) {
 +                Entry entry = (Entry) iterator.next();
-+                Statistic statistic = StatisticList.a((String) entry.getKey());
++                Statistic statistic = StatisticList.getStatistic((String) entry.getKey());
 +
 +                if (statistic != null) {
 +                    StatisticWrapper statisticwrapper = new StatisticWrapper();
@@ -2235,6 +2227,7 @@ index 0000000..2f980cb
 +                                Constructor constructor = statistic.l().getConstructor(new Class[0]);
 +                                IJsonStatistic ijsonstatistic = (IJsonStatistic) constructor.newInstance(new Object[0]);
 +
++                                ijsonstatistic.a(jsonobject1.get("progress"));
 +                                statisticwrapper.a(ijsonstatistic);
 +                            } catch (Throwable throwable) {
 +                                b.warn("Invalid statistic progress in " + this.d, throwable);
@@ -2270,9 +2263,9 @@ index 0000000..2f980cb
 +                    b.warn("Couldn\'t save statistic " + ((Statistic) entry.getKey()).e() + ": error serializing progress", throwable);
 +                }
 +
-+                jsonobject.add(((Statistic) entry.getKey()).e, jsonobject1);
++                jsonobject.add(((Statistic) entry.getKey()).name, jsonobject1);
 +            } else {
-+                jsonobject.addProperty(((Statistic) entry.getKey()).e, Integer.valueOf(((StatisticWrapper) entry.getValue()).a()));
++                jsonobject.addProperty(((Statistic) entry.getKey()).name, Integer.valueOf(((StatisticWrapper) entry.getValue()).a()));
 +            }
 +        }
 +
@@ -2290,7 +2283,7 @@ index 0000000..2f980cb
 +    }
 +
 +    public void a(EntityPlayer entityplayer) {
-+        int i = this.c.aj();
++        int i = this.c.ak();
 +        HashMap hashmap = Maps.newHashMap();
 +
 +        if (this.g || i - this.f > 300) {
@@ -2300,14 +2293,14 @@ index 0000000..2f980cb
 +            while (iterator.hasNext()) {
 +                Statistic statistic = (Statistic) iterator.next();
 +
-+                hashmap.put(statistic, Integer.valueOf(this.a(statistic)));
++                hashmap.put(statistic, Integer.valueOf(this.getStatisticValue(statistic)));
 +            }
 +        }
 +
 +        entityplayer.playerConnection.sendPacket(new PacketPlayOutStatistic(hashmap));
 +    }
 +
-+    public void b(EntityPlayer entityplayer) {
++    public void updateStatistics(EntityPlayer entityplayer) {
 +        HashMap hashmap = Maps.newHashMap();
 +        Iterator iterator = AchievementList.e.iterator();
 +
@@ -2315,7 +2308,7 @@ index 0000000..2f980cb
 +            Achievement achievement = (Achievement) iterator.next();
 +
 +            if (this.a(achievement)) {
-+                hashmap.put(achievement, Integer.valueOf(this.a((Statistic) achievement)));
++                hashmap.put(achievement, Integer.valueOf(this.getStatisticValue(achievement)));
 +                this.e.remove(achievement);
 +            }
 +        }
@@ -2329,10 +2322,10 @@ index 0000000..2f980cb
 +}
 diff --git a/src/main/java/net/minecraft/server/StructureGenerator.java b/src/main/java/net/minecraft/server/StructureGenerator.java
 new file mode 100644
-index 0000000..1eb87ae
+index 0000000..97308d0
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/StructureGenerator.java
-@@ -0,0 +1,217 @@
+@@ -0,0 +1,219 @@
 +package net.minecraft.server;
 +
 +import java.util.HashMap;
@@ -2533,7 +2526,9 @@ index 0000000..1eb87ae
 +                            int j = nbttagcompound1.getInt("ChunkZ");
 +                            StructureStart structurestart = WorldGenFactory.a(nbttagcompound1, world);
 +
-+                            this.d.put(Long.valueOf(ChunkCoordIntPair.a(i, j)), structurestart);
++                            if (structurestart != null) {
++                                this.d.put(Long.valueOf(ChunkCoordIntPair.a(i, j)), structurestart);
++                            }
 +                        }
 +                    }
 +                }
@@ -2708,5 +2703,5 @@ index 0000000..c0db754
 +    }
 +}
 -- 
-1.8.3.2
+1.8.5.2.msysgit.0
 
