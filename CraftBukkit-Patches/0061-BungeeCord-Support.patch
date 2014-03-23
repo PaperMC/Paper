@@ -1,4 +1,4 @@
-From 8efc549832c3ed150b6427738460301fce938ab5 Mon Sep 17 00:00:00 2001
+From 801e2763278c04fdae00d5c825364fcc11d39ce9 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 1 Dec 2013 18:18:41 +1100
 Subject: [PATCH] BungeeCord Support
@@ -6,11 +6,11 @@ Subject: [PATCH] BungeeCord Support
 Provides support for IP forwarding via BungeeCord.
 
 diff --git a/src/main/java/net/minecraft/server/HandshakeListener.java b/src/main/java/net/minecraft/server/HandshakeListener.java
-index ff7b3d3..0215891 100644
+index b80a760..42539b4 100644
 --- a/src/main/java/net/minecraft/server/HandshakeListener.java
 +++ b/src/main/java/net/minecraft/server/HandshakeListener.java
 @@ -73,6 +73,22 @@ public class HandshakeListener implements PacketHandshakingInListener {
-                 this.b.a((IChatBaseComponent) chatcomponenttext);
+                 this.b.close(chatcomponenttext);
              } else {
                  this.b.a((PacketListener) (new LoginListener(this.a, this.b)));
 +                // Spigot Start
@@ -18,13 +18,13 @@ index ff7b3d3..0215891 100644
 +                    String[] split = packethandshakinginsetprotocol.b.split("\00");
 +                    if ( split.length == 3 ) {
 +                        packethandshakinginsetprotocol.b = split[0];
-+                        b.l = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) b.getSocketAddress()).getPort());
++                        b.n = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) b.getSocketAddress()).getPort());
 +                        b.spoofedUUID = split[2];
 +                    } else
 +                    {
 +                        chatcomponenttext = new ChatComponentText("If you wish to use IP forwarding, please enable it in your BungeeCord config as well!");
 +                        this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext), new GenericFutureListener[0]);
-+                        this.b.a(chatcomponenttext);
++                        this.b.close(chatcomponenttext);
 +                        return;
 +                    }
 +                }
@@ -33,7 +33,7 @@ index ff7b3d3..0215891 100644
              }
              break;
 diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
-index 6beac82..aa06e92 100644
+index dddd9aa..efba029 100644
 --- a/src/main/java/net/minecraft/server/LoginListener.java
 +++ b/src/main/java/net/minecraft/server/LoginListener.java
 @@ -61,9 +61,18 @@ public class LoginListener implements PacketLoginInListener {
@@ -57,35 +57,35 @@ index 6beac82..aa06e92 100644
 +            // Spigot End
          }
  
-         // CraftBukkit start
+         // CraftBukkit start - fire PlayerLoginEvent
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index 8f829bb..6b2fbb9 100644
+index 9ff1694..f6cca80 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
-@@ -34,7 +34,8 @@ public class NetworkManager extends SimpleChannelInboundHandler {
-     private final Queue i = Queues.newConcurrentLinkedQueue();
-     private final Queue j = Queues.newConcurrentLinkedQueue();
-     private Channel k;
--    private SocketAddress l;
-+    public SocketAddress l; // Spigot
+@@ -36,7 +36,8 @@ public class NetworkManager extends SimpleChannelInboundHandler {
+     private final Queue k = Queues.newConcurrentLinkedQueue();
+     private final Queue l = Queues.newConcurrentLinkedQueue();
+     private Channel m;
+-    private SocketAddress n;
++    public SocketAddress n; // Spigot
 +    public String spoofedUUID; // Spigot
-     private PacketListener m;
-     private EnumProtocol n;
-     private IChatBaseComponent o;
-@@ -195,4 +196,11 @@ public class NetworkManager extends SimpleChannelInboundHandler {
+     private PacketListener o;
+     private EnumProtocol p;
+     private IChatBaseComponent q;
+@@ -196,4 +197,11 @@ public class NetworkManager extends SimpleChannelInboundHandler {
      static Channel a(NetworkManager networkmanager) {
-         return networkmanager.k;
+         return networkmanager.m;
      }
 +
 +    // Spigot Start
 +    public SocketAddress getRawAddress()
 +    {
-+        return this.k.remoteAddress();
++        return this.m.remoteAddress();
 +    }
 +    // Spigot End
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 1b902b2..a85b08e 100644
+index d5903b7..3b626be 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1259,6 +1259,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -101,6 +101,27 @@ index 1b902b2..a85b08e 100644
          public boolean getCollidesWithEntities()
          {
              return getHandle().collidesWithEntities;
+diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
+index a8840c9..922981e 100644
+--- a/src/main/java/org/spigotmc/RestartCommand.java
++++ b/src/main/java/org/spigotmc/RestartCommand.java
+@@ -44,7 +44,6 @@ public class RestartCommand extends Command
+                 for ( EntityPlayer p : (List< EntityPlayer>) MinecraftServer.getServer().getPlayerList().players )
+                 {
+                     p.playerConnection.disconnect(SpigotConfig.restartMessage);
+-                    p.playerConnection.networkManager.d();
+                 }
+                 // Give the socket a chance to send the packets
+                 try
+@@ -54,7 +53,7 @@ public class RestartCommand extends Command
+                 {
+                 }
+                 // Close the socket so we can rebind with the new process
+-                MinecraftServer.getServer().ag().b();
++                MinecraftServer.getServer().ah().b();
+ 
+                 // Give time for it to kick in
+                 try
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
 index 2ea1be7..08bd5ba 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
@@ -121,5 +142,5 @@ index 2ea1be7..08bd5ba 100644
 +    }
  }
 -- 
-1.8.3.2
+1.8.5.2.msysgit.0
 

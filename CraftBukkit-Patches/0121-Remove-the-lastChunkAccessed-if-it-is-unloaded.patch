@@ -1,4 +1,4 @@
-From 2c68ddcb2ac529bdd2476720d924e5e09e588b7c Mon Sep 17 00:00:00 2001
+From e903a62a93d1db04232d902a7de96e40953609bb Mon Sep 17 00:00:00 2001
 From: Thinkofdeath <thethinkofdeath@gmail.com>
 Date: Tue, 18 Mar 2014 09:49:30 +0000
 Subject: [PATCH] Remove the lastChunkAccessed if it is unloaded.
@@ -6,10 +6,10 @@ Subject: [PATCH] Remove the lastChunkAccessed if it is unloaded.
 This fixes an issue where a chunk would be unloaded but remain in lastChunkAccessed meaning calls on getChunkAt could return a chunk that is no longer loaded, this caused an issue where the chunk could be reloaded whilst in use reverting any block changes. This caused findEndPortal to return null even after createEndPortal which would crash the server trying to teleport to a null location.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 9ccc057..3614cb0 100644
+index 7f19bec..a9ef533 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -307,6 +307,13 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -315,6 +315,13 @@ public class ChunkProviderServer implements IChunkProvider {
                  long chunkcoordinates = this.unloadQueue.popFirst();
                  Chunk chunk = this.chunks.get(chunkcoordinates);
                  if (chunk == null) continue;
@@ -24,10 +24,10 @@ index 9ccc057..3614cb0 100644
                  ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
                  server.getPluginManager().callEvent(event);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 97486db..02dd02e 100644
+index 8aa11c2..26c97af 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -154,7 +154,7 @@ public abstract class World implements IBlockAccess {
+@@ -153,7 +153,7 @@ public abstract class World implements IBlockAccess {
      public boolean pvpMode;
      public boolean keepSpawnInMemory = true;
      public ChunkGenerator generator;
@@ -37,7 +37,7 @@ index 97486db..02dd02e 100644
      int lastZAccessed = Integer.MIN_VALUE;
      final Object chunkLock = new Object();
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index ab87519..545ae96 100644
+index 466c687..a7393db 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -187,6 +187,14 @@ public class CraftWorld implements World {

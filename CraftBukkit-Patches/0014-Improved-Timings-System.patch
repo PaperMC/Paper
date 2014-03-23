@@ -1,4 +1,4 @@
-From 83cc70ebbad10d6e03feab85177ce37e5dda3ff0 Mon Sep 17 00:00:00 2001
+From 27707ff83ec487195342dfbc2aef269f265be531 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 10 Jan 2013 00:18:11 -0500
 Subject: [PATCH] Improved Timings System
@@ -6,10 +6,10 @@ Subject: [PATCH] Improved Timings System
 Tracks nearly every point of minecraft internals and plugin events to give a good quick overview on what is causing TPS loss.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index bf60f4e..9ccc057 100644
+index 5b3c821..7f19bec 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -124,6 +124,7 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -132,6 +132,7 @@ public class ChunkProviderServer implements IChunkProvider {
          boolean newChunk = false;
  
          if (chunk == null) {
@@ -17,7 +17,7 @@ index bf60f4e..9ccc057 100644
              chunk = this.loadChunk(i, j);
              if (chunk == null) {
                  if (this.chunkProvider == null) {
-@@ -159,6 +160,7 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -167,6 +168,7 @@ public class ChunkProviderServer implements IChunkProvider {
              }
              // CraftBukkit end
              chunk.a(this, this, i, j);
@@ -26,7 +26,7 @@ index bf60f4e..9ccc057 100644
  
          return chunk;
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index f74d937..ff07aa7 100644
+index 9d933cb..491ef6b 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -14,6 +14,7 @@ import org.bukkit.block.BlockFace;
@@ -37,7 +37,7 @@ index f74d937..ff07aa7 100644
  import org.bukkit.event.entity.EntityCombustByEntityEvent;
  import org.bukkit.event.painting.PaintingBreakByEntityEvent;
  import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
-@@ -111,6 +112,8 @@ public abstract class Entity {
+@@ -112,6 +113,8 @@ public abstract class Entity {
      public boolean valid; // CraftBukkit
      public org.bukkit.projectiles.ProjectileSource projectileSource; // CraftBukkit - For projectiles only
  
@@ -46,36 +46,29 @@ index f74d937..ff07aa7 100644
      public int getId() {
          return this.id;
      }
-@@ -424,6 +427,8 @@ public abstract class Entity {
+@@ -424,7 +427,8 @@ public abstract class Entity {
+         if (d0 == 0 && d1 == 0 && d2 == 0 && this.vehicle == null && this.passenger == null) {
              return;
          }
-         // CraftBukkit end
-+
+-        // CraftBukkit end
++        // CraftBukkit end       
 +        org.bukkit.craftbukkit.SpigotTimings.entityMoveTimer.startTiming(); // Spigot
-         if (this.Y) {
+         if (this.X) {
              this.boundingBox.d(d0, d1, d2);
              this.locX = (this.boundingBox.a + this.boundingBox.d) / 2.0D;
-@@ -732,6 +737,7 @@ public abstract class Entity {
+@@ -733,6 +737,7 @@ public abstract class Entity {
  
              this.world.methodProfiler.b();
          }
 +        org.bukkit.craftbukkit.SpigotTimings.entityMoveTimer.stopTiming(); // Spigot
      }
  
-     protected String H() {
+     protected String G() {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 6a01982..2519af6 100644
+index 6788c5d..8f61474 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -10,7 +10,6 @@ import java.util.ArrayList;
- import java.util.Arrays;
- import java.util.Collections;
- import java.util.Date;
--import java.util.Iterator;
- import java.util.List;
- import java.util.Random;
- import java.util.UUID;
-@@ -36,6 +35,7 @@ import jline.console.ConsoleReader;
+@@ -36,6 +36,7 @@ import jline.console.ConsoleReader;
  import joptsimple.OptionSet;
  
  import org.bukkit.World.Environment;
@@ -83,23 +76,23 @@ index 6a01982..2519af6 100644
  import org.bukkit.craftbukkit.util.Waitable;
  import org.bukkit.event.server.RemoteServerCommandEvent;
  import org.bukkit.event.world.WorldSaveEvent;
-@@ -531,6 +531,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
-     protected void s() {}
+@@ -535,6 +536,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+     protected void t() {}
  
-     protected void t() throws ExceptionWorldConflict { // CraftBukkit - added throws
+     protected void u() throws ExceptionWorldConflict { // CraftBukkit - added throws
 +        SpigotTimings.serverTickTimer.startTiming(); // Spigot
          long i = System.nanoTime();
  
-         AxisAlignedBB.a().a();
-@@ -583,6 +584,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
-     public void u() {
+         ++this.ticks;
+@@ -586,6 +588,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+     public void v() {
          this.methodProfiler.a("levels");
  
 +        SpigotTimings.schedulerTimer.startTiming(); // Spigot
          // CraftBukkit start
          this.server.getScheduler().mainThreadHeartbeat(this.ticks);
  
-@@ -591,7 +593,10 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -594,7 +597,10 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
              processQueue.remove().run();
          }
  
@@ -110,7 +103,7 @@ index 6a01982..2519af6 100644
  
          // Send time updates to everyone, it will get the right time from the world the player is in.
          if (this.ticks % 20 == 0) {
-@@ -643,7 +648,9 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -645,7 +651,9 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
  
                  this.methodProfiler.b();
                  this.methodProfiler.a("tracker");
@@ -120,12 +113,12 @@ index 6a01982..2519af6 100644
                  this.methodProfiler.b();
                  this.methodProfiler.b();
              // } // CraftBukkit
-@@ -652,16 +659,24 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -654,16 +662,24 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
          }
  
          this.methodProfiler.c("connection");
 +        SpigotTimings.connectionTimer.startTiming(); // Spigot
-         this.ag().c();
+         this.ah().c();
 +        SpigotTimings.connectionTimer.stopTiming(); // Spigot
          this.methodProfiler.c("players");
 +        SpigotTimings.playerListTimer.startTiming(); // Spigot
@@ -146,7 +139,7 @@ index 6a01982..2519af6 100644
  
      public boolean getAllowNether() {
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 3e8517c..333a23f 100644
+index 10c2ee7..22c75f9 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -937,6 +937,7 @@ public class PlayerConnection implements PacketPlayInListener {
@@ -154,7 +147,7 @@ index 3e8517c..333a23f 100644
  
      private void handleCommand(String s) {
 +        org.bukkit.craftbukkit.SpigotTimings.playerCommandTimer.startTiming(); // Spigot
-         // CraftBukkit start
+         // CraftBukkit start - whole method
          CraftPlayer player = this.getPlayer();
  
 @@ -944,19 +945,23 @@ public class PlayerConnection implements PacketPlayInListener {
@@ -166,7 +159,7 @@ index 3e8517c..333a23f 100644
          }
  
          try {
-             this.c.info(event.getPlayer().getName() + " issued server command: " + event.getMessage()); // CraftBukkit
+             this.c.info(event.getPlayer().getName() + " issued server command: " + event.getMessage());
              if (this.server.dispatchCommand(event.getPlayer(), event.getMessage().substring(1))) {
 +                org.bukkit.craftbukkit.SpigotTimings.playerCommandTimer.stopTiming(); // Spigot
                  return;
@@ -182,7 +175,7 @@ index 3e8517c..333a23f 100644
          // CraftBukkit end
      }
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 811f1a4..3de32fe 100644
+index 2a3d647..78e17d7 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
 @@ -7,10 +7,12 @@ import java.util.concurrent.Callable;
@@ -199,7 +192,7 @@ index 811f1a4..3de32fe 100644
      private static Map i = new HashMap();
      private static Map j = new HashMap();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 3d7aa71..e64658d 100644
+index d2679dc..7360dfc 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -14,6 +14,7 @@ import java.util.concurrent.Callable;
@@ -210,7 +203,7 @@ index 3d7aa71..e64658d 100644
  import org.bukkit.generator.ChunkGenerator;
  import org.bukkit.craftbukkit.CraftServer;
  import org.bukkit.craftbukkit.CraftWorld;
-@@ -133,6 +134,8 @@ public abstract class World implements IBlockAccess {
+@@ -132,6 +133,8 @@ public abstract class World implements IBlockAccess {
      final Object chunkLock = new Object();
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
  
@@ -219,7 +212,7 @@ index 3d7aa71..e64658d 100644
      public CraftWorld getWorld() {
          return this.world;
      }
-@@ -212,6 +215,7 @@ public abstract class World implements IBlockAccess {
+@@ -211,6 +214,7 @@ public abstract class World implements IBlockAccess {
          this.a();
  
          this.getServer().addWorld(this.world); // CraftBukkit
@@ -227,7 +220,7 @@ index 3d7aa71..e64658d 100644
      }
  
      protected abstract IChunkProvider j();
-@@ -1239,6 +1243,7 @@ public abstract class World implements IBlockAccess {
+@@ -1236,6 +1240,7 @@ public abstract class World implements IBlockAccess {
          this.f.clear();
          this.methodProfiler.c("regular");
  
@@ -235,7 +228,7 @@ index 3d7aa71..e64658d 100644
          // CraftBukkit start - Use field for loop variable
          for (this.tickPosition = 0; this.tickPosition < this.entityList.size(); ++this.tickPosition) {
              entity = (Entity) this.entityList.get(this.tickPosition);
-@@ -1262,7 +1267,9 @@ public abstract class World implements IBlockAccess {
+@@ -1259,7 +1264,9 @@ public abstract class World implements IBlockAccess {
              this.methodProfiler.a("tick");
              if (!entity.dead) {
                  try {
@@ -245,17 +238,17 @@ index 3d7aa71..e64658d 100644
                  } catch (Throwable throwable1) {
                      crashreport = CrashReport.a(throwable1, "Ticking entity");
                      crashreportsystemdetails = crashreport.a("Entity being ticked");
-@@ -1287,7 +1294,9 @@ public abstract class World implements IBlockAccess {
+@@ -1284,7 +1291,9 @@ public abstract class World implements IBlockAccess {
              this.methodProfiler.b();
          }
  
 +        timings.entityTick.stopTiming(); // Spigot
          this.methodProfiler.c("blockEntities");
 +        timings.tileEntityTick.startTiming(); // Spigot
-         this.N = true;
+         this.M = true;
          Iterator iterator = this.tileEntityList.iterator();
  
-@@ -1302,8 +1311,11 @@ public abstract class World implements IBlockAccess {
+@@ -1299,8 +1308,11 @@ public abstract class World implements IBlockAccess {
  
              if (!tileentity.r() && tileentity.o() && this.isLoaded(tileentity.x, tileentity.y, tileentity.z)) {
                  try {
@@ -267,16 +260,16 @@ index 3d7aa71..e64658d 100644
                      crashreport = CrashReport.a(throwable2, "Ticking block entity");
                      crashreportsystemdetails = crashreport.a("Block entity being ticked");
                      tileentity.a(crashreportsystemdetails);
-@@ -1323,6 +1335,8 @@ public abstract class World implements IBlockAccess {
+@@ -1320,6 +1332,8 @@ public abstract class World implements IBlockAccess {
              }
          }
  
 +        timings.tileEntityTick.stopTiming(); // Spigot
 +        timings.tileEntityPending.startTiming(); // Spigot
-         this.N = false;
+         this.M = false;
          if (!this.b.isEmpty()) {
              this.tileEntityList.removeAll(this.b);
-@@ -1361,6 +1375,7 @@ public abstract class World implements IBlockAccess {
+@@ -1358,6 +1372,7 @@ public abstract class World implements IBlockAccess {
              this.a.clear();
          }
  
@@ -284,15 +277,15 @@ index 3d7aa71..e64658d 100644
          this.methodProfiler.b();
          this.methodProfiler.b();
      }
-@@ -1383,6 +1398,7 @@ public abstract class World implements IBlockAccess {
+@@ -1380,6 +1395,7 @@ public abstract class World implements IBlockAccess {
          byte b0 = 32;
  
          if (!flag || this.b(i - b0, 0, j - b0, i + b0, 0, j + b0)) {
 +            entity.tickTimer.startTiming(); // Spigot
-             entity.T = entity.locX;
-             entity.U = entity.locY;
-             entity.V = entity.locZ;
-@@ -1444,6 +1460,7 @@ public abstract class World implements IBlockAccess {
+             entity.S = entity.locX;
+             entity.T = entity.locY;
+             entity.U = entity.locZ;
+@@ -1441,6 +1457,7 @@ public abstract class World implements IBlockAccess {
                      entity.passenger = null;
                  }
              }
@@ -301,25 +294,24 @@ index 3d7aa71..e64658d 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index a0e4ade..9672508 100644
+index 0c24d9a..6307686 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -184,10 +184,12 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -184,10 +184,13 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
          // CraftBukkit start - Only call spawner if we have players online and the world allows for mobs or animals
          long time = this.worldData.getTime();
          if (this.getGameRules().getBoolean("doMobSpawning") && (this.allowMonsters || this.allowAnimals) && (this instanceof WorldServer && this.players.size() > 0)) {
 +            timings.mobSpawn.startTiming(); // Spigot
              this.R.spawnEntities(this, this.allowMonsters && (this.ticksPerMonsterSpawns != 0 && time % this.ticksPerMonsterSpawns == 0L), this.allowAnimals && (this.ticksPerAnimalSpawns != 0 && time % this.ticksPerAnimalSpawns == 0L), this.worldData.getTime() % 400L == 0L);
--            // CraftBukkit end
 +            timings.mobSpawn.stopTiming(); // Spigot
+             // CraftBukkit end
          }
--
-+        // CraftBukkit end
+ 
 +        timings.doChunkUnload.startTiming(); // Spigot
          this.methodProfiler.c("chunkSource");
          this.chunkProvider.unloadChunks();
          int j = this.a(1.0F);
-@@ -201,21 +203,36 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -201,21 +204,36 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
              this.worldData.setDayTime(this.worldData.getDayTime() + 1L);
          }
  
@@ -547,5 +539,5 @@ index 55db3ff..7d294c0 100644
      }
  
 -- 
-1.8.3.2
+1.8.5.2.msysgit.0
 

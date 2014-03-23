@@ -1,14 +1,14 @@
-From f3ce30c5d5beb328ac7c6070d6c9520d85730ca0 Mon Sep 17 00:00:00 2001
+From fe0feeb70937b2f8d2cf5c34da2de99c9e99ec02 Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Sat, 25 Jan 2014 14:08:35 +1100
 Subject: [PATCH] Highly Optimized Tick Loop
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 588ce0a..5a83c45 100644
+index 1b7f65e..6d7d52f 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -101,6 +101,12 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -102,6 +102,12 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
      // CraftBukkit end
@@ -21,7 +21,7 @@ index 588ce0a..5a83c45 100644
  
      public MinecraftServer(OptionSet options, Proxy proxy) { // CraftBukkit - signature file -> OptionSet
          i = this;
-@@ -419,6 +425,13 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+@@ -422,6 +428,13 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
          this.isRunning = false;
      }
  
@@ -35,27 +35,22 @@ index 588ce0a..5a83c45 100644
      public void run() {
          try {
              if (this.init()) {
-@@ -429,38 +442,34 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
-                 this.p.setServerInfo(new ServerPingServerData("1.7.2", 4));
+@@ -432,38 +445,35 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+                 this.p.setServerInfo(new ServerPingServerData("1.7.5", 4));
                  this.a(this.p);
  
 +                // Spigot start
 +                Arrays.fill( recentTps, 20 );
 +                long lastTick = System.nanoTime(), catchupTime = 0, curTime, wait, tickSection = lastTick;
                  while (this.isRunning) {
--                    long k = ap();
+-                    long k = aq();
 -                    long l = k - i;
 -
 -                    if (l > 2000L && i - this.O >= 15000L) {
 -                        if (this.server.getWarnOnOverload()) // CraftBukkit - Added option to suppress warning messages
 -                        h.warn("Can\'t keep up! Did the system time change, or is the server overloaded? Running {}ms behind, skipping {} tick(s)", new Object[] { Long.valueOf(l), Long.valueOf(l / 50L)});
 -                        l = 2000L;
--                        this.O = i;
--                    }
--
--                    if (l < 0L) {
--                        h.warn("Time ran backwards! Did the system time change?");
--                        l = 0L;
+                         this.O = i;
 +                    curTime = System.nanoTime();
 +                    wait = TICK_TIME - (curTime - lastTick) - catchupTime;
 +                    if (wait > 0) {
@@ -66,16 +61,21 @@ index 588ce0a..5a83c45 100644
 +                        catchupTime = Math.min(1000000000, Math.abs(wait));
                      }
  
+-                    if (l < 0L) {
+-                        h.warn("Time ran backwards! Did the system time change?");
+-                        l = 0L;
+-                    }
+-
 -                    j += l;
 -                    i = k;
 -                    if (this.worlds.get(0).everyoneDeeplySleeping()) { // CraftBukkit
--                        this.t();
+-                        this.u();
 -                        j = 0L;
 -                    } else {
 -                        while (j > 50L) {
 -                            MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
 -                            j -= 50L;
--                            this.t();
+-                            this.u();
 -                        }
 +                    if ( MinecraftServer.currentTick++ % SAMPLE_INTERVAL == 0 )
 +                    {
@@ -87,7 +87,7 @@ index 588ce0a..5a83c45 100644
                      }
 +                    lastTick = curTime;
  
--                    Thread.sleep(1L);
+-                    Thread.sleep(Math.max(1L,  50L - j));
 +                    this.t();
                      this.N = true;
                  }
@@ -161,5 +161,5 @@ index 0000000..2b8343d
 +    }
 +}
 -- 
-1.8.3.2
+1.8.5.2.msysgit.0
 

@@ -1,4 +1,4 @@
-From ac2e43846d8af2209154832a747057ea92c06360 Mon Sep 17 00:00:00 2001
+From ddf36039c168fa7bc9a3453246096353cf3bd7e8 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 7 Mar 2013 20:12:46 +1100
 Subject: [PATCH] Async Operation Catching
@@ -6,7 +6,7 @@ Subject: [PATCH] Async Operation Catching
 Catch and throw an exception when a potentially unsafe operation occurs on a thread other than the main server thread.
 
 diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
-index ad4e3a2..c063ca1 100644
+index 51f8279..cbd6f1d 100644
 --- a/src/main/java/net/minecraft/server/Block.java
 +++ b/src/main/java/net/minecraft/server/Block.java
 @@ -433,9 +433,13 @@ public class Block {
@@ -26,7 +26,7 @@ index ad4e3a2..c063ca1 100644
      public int a(Random random) {
          return 1;
 diff --git a/src/main/java/net/minecraft/server/EntityTracker.java b/src/main/java/net/minecraft/server/EntityTracker.java
-index 7447e42..97d0bbb 100644
+index af440b9..b169df4 100644
 --- a/src/main/java/net/minecraft/server/EntityTracker.java
 +++ b/src/main/java/net/minecraft/server/EntityTracker.java
 @@ -91,6 +91,7 @@ public class EntityTracker {
@@ -46,7 +46,7 @@ index 7447e42..97d0bbb 100644
              EntityPlayer entityplayer = (EntityPlayer) entity;
              Iterator iterator = this.c.iterator();
 diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
-index 9f818cf..8052ea6 100644
+index c148c4d..cd52d7c 100644
 --- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 +++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 @@ -299,6 +299,7 @@ public class EntityTrackerEntry {
@@ -64,12 +64,12 @@ index 9f818cf..8052ea6 100644
 +        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous player tracker clear!"); // Spigot
          if (this.trackedPlayers.contains(entityplayer)) {
              this.trackedPlayers.remove(entityplayer);
-             entityplayer.removeQueue.add(Integer.valueOf(this.tracker.getId()));
+             entityplayer.d(this.tracker);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 164d268..e26ba96 100644
+index d023889..1ed1e27 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -903,6 +903,7 @@ public abstract class World implements IBlockAccess {
+@@ -900,6 +900,7 @@ public abstract class World implements IBlockAccess {
      }
  
      public boolean addEntity(Entity entity, SpawnReason spawnReason) { // Changed signature, added SpawnReason
@@ -77,7 +77,7 @@ index 164d268..e26ba96 100644
          if (entity == null) return false;
          // CraftBukkit end
  
-@@ -1009,6 +1010,7 @@ public abstract class World implements IBlockAccess {
+@@ -1006,6 +1007,7 @@ public abstract class World implements IBlockAccess {
      }
  
      public void removeEntity(Entity entity) {
@@ -85,7 +85,7 @@ index 164d268..e26ba96 100644
          entity.die();
          if (entity instanceof EntityHuman) {
              this.players.remove(entity);
-@@ -2388,6 +2390,7 @@ public abstract class World implements IBlockAccess {
+@@ -2390,6 +2392,7 @@ public abstract class World implements IBlockAccess {
      }
  
      public void a(List list) {
@@ -94,7 +94,7 @@ index 164d268..e26ba96 100644
          // this.entityList.addAll(list);
          Entity entity = null;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 965d860..57dd4e7 100644
+index d9fbd00..89cc715 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -159,6 +159,7 @@ public class CraftWorld implements World {
@@ -122,7 +122,7 @@ index 965d860..57dd4e7 100644
          if (generate) {
              // Use the default variant of loadChunk when generate == true.
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 573f9a5..bf3c9db 100644
+index b045cb9..07c8a2c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -231,6 +231,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -146,5 +146,5 @@ index 84091a4..2f30d66 100644
          scoreboards.add(scoreboard);
          return scoreboard;
 -- 
-1.8.3.2
+1.8.5.2.msysgit.0
 
