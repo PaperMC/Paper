@@ -368,7 +368,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         int i = this.cl();
         boolean flag = this.cu();
 
-        this.cM();
+        this.cO();
         if (this.ticksLived > 20) {
             if (i == 0 && i != this.cl()) {
                 this.makeSound("mob.horse.armor", 0.5F, 1.0F);
