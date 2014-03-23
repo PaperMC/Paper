@@ -61,6 +61,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public int newTotalExp = 0;
     public boolean keepLevel = false;
     public double maxHealthCache;
+    public boolean joining = true;
     // CraftBukkit end
 
     public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, PlayerInteractManager playerinteractmanager) {
@@ -159,6 +160,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public void h() {
+        // CraftBukkit start
+        if (this.joining) {
+            this.joining = false;
+        }
+        // CraftBukkit end
+
         this.playerInteractManager.a();
         --this.invulnerableTicks;
         if (this.noDamageTicks > 0) {
