@@ -259,7 +259,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
                         InventoryMoveItemEvent event = new InventoryMoveItemEvent(this.getOwner().getInventory(), oitemstack.clone(), destinationInventory, true);
                         this.getWorld().getServer().getPluginManager().callEvent(event);
                         if (event.isCancelled()) {
-                            this.setItem(i, itemstack);
+                            this.setItem(j, itemstack);
                             this.c(8); // Delay hopper checks
                             return false;
                         }

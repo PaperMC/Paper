@@ -328,7 +328,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
             // First statement moved down, second statement handled in parent method.
             /*
             if (!this.world.isStatic) {
-                this.l(this.vehicle);
+                this.m(this.vehicle);
             }
 
             if (this.vehicle != null) {

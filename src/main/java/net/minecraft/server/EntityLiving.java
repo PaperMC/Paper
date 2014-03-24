@@ -1407,7 +1407,7 @@ public abstract class EntityLiving extends Entity {
             double d3 = MathHelper.g(this.bk - (double) this.yaw);
 
             this.yaw = (float) ((double) this.yaw + d3 / (double) this.bg);
-            this.pitch = (float) ((double) this.pitch + (this.bm - (double) this.pitch) / (double) this.bg);
+            this.pitch = (float) ((double) this.pitch + (this.bl - (double) this.pitch) / (double) this.bg);
             --this.bg;
             this.setPosition(d0, d1, d2);
             this.b(this.yaw, this.pitch);
