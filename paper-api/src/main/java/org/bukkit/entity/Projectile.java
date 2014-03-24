@@ -33,7 +33,7 @@ public interface Projectile extends Entity {
     /**
      * Set the shooter of this projectile.
      *
-     * @param shooter the {@link ProjectileSource} that shot this projectile
+     * @param source the {@link ProjectileSource} that shot this projectile
      */
     public void setShooter(ProjectileSource source);
 

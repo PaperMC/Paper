@@ -39,7 +39,7 @@ public interface Team {
     void setDisplayName(String displayName) throws IllegalStateException, IllegalArgumentException;
 
     /**
-     * Sets the prefix prepended to the display of players on this team.
+     * Gets the prefix prepended to the display of players on this team.
      *
      * @return Team prefix
      * @throws IllegalStateException if this team has been unregistered
@@ -102,8 +102,8 @@ public interface Team {
     boolean canSeeFriendlyInvisibles() throws IllegalStateException;
 
     /**
-     * Sets the team's ability to see invisible {@link
-     * PotionEffectType#INVISIBILITY invisible} teammates.
+     * Sets the team's ability to see {@link PotionEffectType#INVISIBILITY
+     * invisible} teammates.
      *
      * @param enabled true if invisible teammates are to be visible
      * @throws IllegalStateException if this team has been unregistered

@@ -13,10 +13,10 @@ import org.bukkit.event.HandlerList;
  * <p>
  * The constructor provides a boolean to indicate if the event was fired
  * synchronously or asynchronously. When asynchronous, this event can be
- * called from any thread, but the main thread, and has limited access to the
+ * called from any thread, sans the main thread, and has limited access to the
  * API.
  * <p>
- * If a player is the direct cause of this event by incoming packet, this
+ * If a player is the direct cause of this event by an incoming packet, this
  * event will be asynchronous. If a plugin triggers this event by compelling a
  * player to chat, this event will be synchronous.
  * <p>

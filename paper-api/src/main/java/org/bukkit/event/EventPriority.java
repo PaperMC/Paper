@@ -15,7 +15,8 @@ public enum EventPriority {
      */
     LOW(1),
     /**
-     * Event call is neither important or unimportant, and may be ran normally
+     * Event call is neither important nor unimportant, and may be ran
+     * normally
      */
     NORMAL(2),
     /**

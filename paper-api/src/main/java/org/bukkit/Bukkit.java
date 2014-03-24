@@ -451,7 +451,7 @@ public final class Bukkit {
      * @see Server#getBanList(BanList.Type)
      */
     public static BanList getBanList(BanList.Type type){
-    	return server.getBanList(type);
+        return server.getBanList(type);
     }
 
     /**

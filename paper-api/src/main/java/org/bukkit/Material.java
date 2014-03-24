@@ -59,7 +59,7 @@ import org.bukkit.util.Java15Compat;
 import com.google.common.collect.Maps;
 
 /**
- * An enum of all material ids accepted by the official server + client
+ * An enum of all material IDs accepted by the official server and client
  */
 public enum Material {
     AIR(0, 0),

@@ -10,8 +10,8 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a player statistic is incremented.
  * <p>
- * This event is not called for {@link org.bukkit.Statistic#PLAY_ONE_MINUTE}
- * or movement based statistics.
+ * This event is not called for {@link org.bukkit.Statistic#PLAY_ONE_TICK} or
+ * movement based statistics.
  *
  */
 public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancellable {
@@ -52,7 +52,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
 
     /**
      * Gets the statistic that is being incremented.
-     * 
+     *
      * @return the incremented statistic
      */
     public Statistic getStatistic() {
@@ -61,7 +61,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
 
     /**
      * Gets the previous value of the statistic.
-     * 
+     *
      * @return the previous value of the statistic
      */
     public int getPreviousValue() {
@@ -70,7 +70,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
 
     /**
      * Gets the new value of the statistic.
-     * 
+     *
      * @return the new value of the statistic
      */
     public int getNewValue() {
@@ -80,7 +80,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
     /**
      * Gets the EntityType if {@link #getStatistic() getStatistic()} is an
      * entity statistic otherwise returns null.
-     * 
+     *
      * @return the EntityType of the statistic
      */
     public EntityType getEntityType() {
@@ -90,7 +90,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
     /**
      * Gets the Material if {@link #getStatistic() getStatistic()} is a block
      * or item statistic otherwise returns null.
-     * 
+     *
      * @return the Material of the statistic
      */
     public Material getMaterial() {

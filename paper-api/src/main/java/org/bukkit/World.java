@@ -484,7 +484,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * <p>
      * Note that setting the relative time below the current relative time
      * will actually move the clock forward a day. If you require to rewind
-     * time, please see {@link #setFullTime()}
+     * time, please see {@link #setFullTime(long)}
      *
      * @param time The new relative time to set the in-game time to (in
      *     hours*1000)

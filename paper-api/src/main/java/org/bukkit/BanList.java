@@ -4,53 +4,12 @@ import java.util.Date;
 import java.util.Set;
 
 /**
- * A ban list, containing bans of type {@link org.bukkit.BanList.Type}
+ * A ban list, containing bans of some {@link Type}.
  */
 public interface BanList {
-    /**
-     * Gets a {@link BanEntry} by target.
-     *
-     * @param target Entry parameter to search for
-     * @return BanEntry for the submitted query, or null if none found
-     */
-    public BanEntry getBanEntry(String target);
 
     /**
-     * Adds a ban to the ban list. If a previous ban exists, this will overwrite the previous
-     * entry.
-     *
-     * @param target The target of the ban
-     * @param reason Reason for the ban. If null, the implementation default is assumed
-     * @param expires Expiration Date of the ban. If null, "infinity" is assumed
-     * @param source Source of the ban. If null, the implementation default is assumed
-     * @return The BanEntry of the added ban
-     */
-    public BanEntry addBan(String target, String reason, Date expires, String source);
-
-    /**
-     * Gets a set containing every {@link BanEntry} in the BanList.
-     *
-     * @return an immutable set containing every BanEntry tracked by the BanList
-     */
-    public Set<BanEntry> getBanEntries();
-
-    /**
-     * Gets if a {@link BanEntry} exists for the target, indicating ban status
-     *
-     * @param target Entry target to lookup
-     * @return true if a {@link BanEntry} exists for the name, indicating ban status
-     */
-    public boolean isBanned(String target);
-
-    /**
-     * Removes the specified target from the list, therefore indicating a "not banned" status.
-     *
-     * @param target The target to remove from the list
-     */
-    public void pardon(String target);
-
-    /**
-     * Represents the various types a {@link BanList} may track.
+     * Represents a ban-type that a {@link BanList} may track.
      */
     public enum Type {
         /**
@@ -60,7 +19,54 @@ public interface BanList {
         /**
          * Banned player IP addresses
          */
-        IP;
+        IP,
+        ;
     }
 
+    /**
+     * Gets a {@link BanEntry} by target.
+     *
+     * @param target entry parameter to search for
+     * @return the corresponding entry, or null if none found
+     */
+    public BanEntry getBanEntry(String target);
+
+    /**
+     * Adds a ban to the this list. If a previous ban exists, this will
+     * update the previous entry.
+     *
+     * @param target the target of the ban
+     * @param reason reason for the ban, null indicates implementation default
+     * @param expires date for the ban's expiration (unban), or null to imply
+     *     forever
+     * @param source source of the ban, null indicates implementation default
+     * @return the entry for the newly created ban, or the entry for the
+     *     (updated) previous ban
+     */
+    public BanEntry addBan(String target, String reason, Date expires, String source);
+
+    /**
+     * Gets a set containing every {@link BanEntry} in this list.
+     *
+     * @return an immutable set containing every entry tracked by this list
+     */
+    public Set<BanEntry> getBanEntries();
+
+    /**
+     * Gets if a {@link BanEntry} exists for the target, indicating an active
+     * ban status.
+     *
+     * @param target the target to find
+     * @return true if a {@link BanEntry} exists for the name, indicating an
+     *     active ban status, false otherwise
+     */
+    public boolean isBanned(String target);
+
+    /**
+     * Removes the specified target from this list, therefore indicating a
+     * "not banned" status.
+     *
+     * @param target the target to remove from this list
+     */
+    public void pardon(String target);
 }
