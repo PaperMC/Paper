@@ -882,6 +882,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
 
     // CraftBukkit start
     private boolean addEntity0(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
+        org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
         if (entity.dead) {
             // WorldServer.LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityTypes.getName(entity.getEntityType())); // CraftBukkit
             return false;
@@ -988,6 +989,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
     }
 
     public void unregisterEntity(Entity entity) {
+        org.spigotmc.AsyncCatcher.catchOp("entity unregister"); // Spigot
         if (entity instanceof EntityEnderDragon) {
             EntityComplexPart[] aentitycomplexpart = ((EntityEnderDragon) entity).eJ();
             int i = aentitycomplexpart.length;
@@ -1022,6 +1024,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
     }
 
     private void registerEntity(Entity entity) {
+        org.spigotmc.AsyncCatcher.catchOp("entity register"); // Spigot
         if (this.tickingEntities) {
             this.entitiesToAdd.add(entity);
         } else {

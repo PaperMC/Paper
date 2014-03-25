@@ -883,6 +883,7 @@ public abstract class EntityLiving extends Entity {
     }
 
     public boolean addEffect(MobEffect mobeffect, EntityPotionEffectEvent.Cause cause) {
+        org.spigotmc.AsyncCatcher.catchOp("effect add"); // Spigot
         if (isTickingEffects) {
             effectsToProcess.add(new ProcessableEffect(mobeffect, cause));
             return true;
