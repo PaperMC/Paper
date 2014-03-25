@@ -4,8 +4,10 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.PluginCommand;
@@ -15,10 +17,14 @@ import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.nodes.Node;
+import org.yaml.snakeyaml.nodes.Tag;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 
 /**
  * This type is the runtime-container for the information in the plugin.yml.
@@ -111,6 +117,10 @@ import com.google.common.collect.ImmutableMap;
  *     <td>The default {@link Permission#getDefault() default} permission
  *         state for defined {@link #getPermissions() permissions} the plugin
  *         will register</td>
+ * </tr><tr>
+ *     <td><code>awareness</code></td>
+ *     <td>{@link #getAwareness()}</td>
+ *     <td>The concepts that the plugin acknowledges</td>
  * </tr>
  * </table>
  * <p>
@@ -165,7 +175,39 @@ import com.google.common.collect.ImmutableMap;
  *</pre></blockquote>
  */
 public final class PluginDescriptionFile {
-    private static final Yaml yaml = new Yaml(new SafeConstructor());
+    private static final ThreadLocal<Yaml> YAML = new ThreadLocal<Yaml>() {
+        @Override
+        protected Yaml initialValue() {
+            return new Yaml(new SafeConstructor() {
+                {
+                    yamlConstructors.put(null, new AbstractConstruct() {
+                        @Override
+                        public Object construct(final Node node) {
+                            if (!node.getTag().startsWith("!@")) {
+                                // Unknown tag - will fail
+                                return SafeConstructor.undefinedConstructor.construct(node);
+                            }
+                            // Unknown awareness - provide a graceful substitution
+                            return new PluginAwareness() {
+                                @Override
+                                public String toString() {
+                                    return node.toString();
+                                }
+                            };
+                        }
+                    });
+                    for (final PluginAwareness.Flags flag : PluginAwareness.Flags.values()) {
+                        yamlConstructors.put(new Tag("!@" + flag.name()), new AbstractConstruct() {
+                            @Override
+                            public PluginAwareness.Flags construct(final Node node) {
+                                return flag;
+                            }
+                        });
+                    }
+                }
+            });
+        }
+    };
     String rawName = null;
     private String name = null;
     private String main = null;
@@ -184,9 +226,10 @@ public final class PluginDescriptionFile {
     private List<Permission> permissions = null;
     private Map<?, ?> lazyPermissions = null;
     private PermissionDefault defaultPerm = PermissionDefault.OP;
+    private Set<PluginAwareness> awareness = ImmutableSet.of();
 
     public PluginDescriptionFile(final InputStream stream) throws InvalidDescriptionException {
-        loadMap(asMap(yaml.load(stream)));
+        loadMap(asMap(YAML.get().load(stream)));
     }
 
     /**
@@ -197,7 +240,7 @@ public final class PluginDescriptionFile {
      *     invalid
      */
     public PluginDescriptionFile(final Reader reader) throws InvalidDescriptionException {
-        loadMap(asMap(yaml.load(reader)));
+        loadMap(asMap(YAML.get().load(reader)));
     }
 
     /**
@@ -768,6 +811,45 @@ public final class PluginDescriptionFile {
     }
 
     /**
+     * Gives a set of every {@link PluginAwareness} for a plugin. An awareness
+     * dictates something that a plugin developer acknowledges when the plugin
+     * is compiled. Some implementions may define extra awarenesses that are
+     * not included in the API. Any unrecognized
+     * awareness (one unsupported or in a future version) will cause a dummy
+     * object to be created instead of failing.
+     * <p>
+     * <ul>
+     * <li>Currently only supports the enumerated values in {@link
+     *     PluginAwareness.Flags}.
+     * <li>Each awareness starts the identifier with bang-at
+     *     (<code>!@</code>).
+     * <li>Unrecognized (future / unimplemented) entries are quietly replaced
+     *     by a generic object that implements PluginAwareness.
+     * <li>A type of awareness must be defined by the runtime and acknowledged
+     *     by the API, effectively discluding any derived type from any
+     *     plugin's classpath.
+     * <li><code>awareness</code> must be in <a
+     *     href="http://en.wikipedia.org/wiki/YAML#Lists">YAML list
+     *     format</a>.
+     * </ul>
+     * <p>
+     * In the plugin.yml, this entry is named <code>awareness</code>.
+     * <p>
+     * Example:<blockquote><pre>awareness:
+     *- !@UTF8</pre></blockquote>
+     * <p>
+     * <b>Note:</b> Although unknown versions of some future awareness are
+     * gracefully substituted, previous versions of Bukkit (ones prior to the
+     * first implementation of awareness) will fail to load a plugin that
+     * defines any awareness.
+     *
+     * @return a set containing every awareness for the plugin
+     */
+    public Set<PluginAwareness> getAwareness() {
+        return awareness;
+    }
+
+    /**
      * Returns the name of a plugin, including the version. This method is
      * provided for convenience; it uses the {@link #getName()} and {@link
      * #getVersion()} entries.
@@ -796,7 +878,7 @@ public final class PluginDescriptionFile {
      * @param writer Writer to output this file to
      */
     public void save(Writer writer) {
-        yaml.dump(saveMap(), writer);
+        YAML.get().dump(saveMap(), writer);
     }
 
     private void loadMap(Map<?, ?> map) throws InvalidDescriptionException {
@@ -924,6 +1006,18 @@ public final class PluginDescriptionFile {
             } catch (IllegalArgumentException ex) {
                 throw new InvalidDescriptionException(ex, "default-permission is not a valid choice");
             }
+        }
+
+        if (map.get("awareness") instanceof Iterable) {
+            Set<PluginAwareness> awareness = new HashSet<PluginAwareness>();
+            try {
+                for (Object o : (Iterable<?>) map.get("awareness")) {
+                    awareness.add((PluginAwareness) o);
+                }
+            } catch (ClassCastException ex) {
+                throw new InvalidDescriptionException(ex, "awareness has wrong type");
+            }
+            this.awareness = ImmutableSet.copyOf(awareness);
         }
 
         try {

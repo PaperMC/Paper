@@ -4,9 +4,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -18,10 +21,12 @@ import org.bukkit.Warning.WarningState;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.AuthorNagException;
+import org.bukkit.plugin.PluginAwareness;
 import org.bukkit.plugin.PluginBase;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
@@ -33,6 +38,8 @@ import com.avaje.ebean.config.DataSourceConfig;
 import com.avaje.ebean.config.ServerConfig;
 import com.avaje.ebeaninternal.api.SpiEbeanServer;
 import com.avaje.ebeaninternal.server.ddl.DdlGenerator;
+import com.google.common.base.Charsets;
+import com.google.common.io.ByteStreams;
 
 /**
  * Represents a Java plugin
@@ -89,6 +96,7 @@ public abstract class JavaPlugin extends PluginBase {
      *
      * @return The folder.
      */
+    @Override
     public final File getDataFolder() {
         return dataFolder;
     }
@@ -98,6 +106,7 @@ public abstract class JavaPlugin extends PluginBase {
      *
      * @return PluginLoader that controls this plugin
      */
+    @Override
     public final PluginLoader getPluginLoader() {
         return loader;
     }
@@ -107,6 +116,7 @@ public abstract class JavaPlugin extends PluginBase {
      *
      * @return Server running this plugin
      */
+    @Override
     public final Server getServer() {
         return server;
     }
@@ -117,6 +127,7 @@ public abstract class JavaPlugin extends PluginBase {
      *
      * @return true if this plugin is enabled, otherwise false
      */
+    @Override
     public final boolean isEnabled() {
         return isEnabled;
     }
@@ -135,10 +146,12 @@ public abstract class JavaPlugin extends PluginBase {
      *
      * @return Contents of the plugin.yaml file
      */
+    @Override
     public final PluginDescriptionFile getDescription() {
         return description;
     }
 
+    @Override
     public FileConfiguration getConfig() {
         if (newConfig == null) {
             reloadConfig();
@@ -146,17 +159,67 @@ public abstract class JavaPlugin extends PluginBase {
         return newConfig;
     }
 
+    /**
+     * Provides a reader for a text file located inside the jar. The behavior
+     * of this method adheres to {@link PluginAwareness.Flags#UTF8}, or if not
+     * defined, uses UTF8 if {@link FileConfiguration#UTF8_OVERRIDE} is
+     * specified, or system default otherwise.
+     *
+     * @param file the filename of the resource to load
+     * @return null if {@link #getResource(String)} returns null
+     * @throws IllegalArgumentException if file is null
+     * @see ClassLoader#getResourceAsStream(String)
+     */
+    @SuppressWarnings("deprecation")
+    protected final Reader getTextResource(String file) {
+        final InputStream in = getResource(file);
+
+        return in == null ? null : new InputStreamReader(in, isStrictlyUTF8() || FileConfiguration.UTF8_OVERRIDE ? Charsets.UTF_8 : Charset.defaultCharset());
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
     public void reloadConfig() {
         newConfig = YamlConfiguration.loadConfiguration(configFile);
 
-        InputStream defConfigStream = getResource("config.yml");
-        if (defConfigStream != null) {
-            YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(defConfigStream);
-
-            newConfig.setDefaults(defConfig);
+        final InputStream defConfigStream = getResource("config.yml");
+        if (defConfigStream == null) {
+            return;
         }
+
+        final YamlConfiguration defConfig;
+        if (isStrictlyUTF8() || FileConfiguration.UTF8_OVERRIDE) {
+            defConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(defConfigStream, Charsets.UTF_8));
+        } else {
+            final byte[] contents;
+            defConfig = new YamlConfiguration();
+            try {
+                contents = ByteStreams.toByteArray(defConfigStream);
+            } catch (final IOException e) {
+                getLogger().log(Level.SEVERE, "Unexpected failure reading config.yml", e);
+                return;
+            }
+
+            final String text = new String(contents, Charset.defaultCharset());
+            if (!text.equals(new String(contents, Charsets.UTF_8))) {
+                getLogger().warning("Default system encoding may have misread config.yml from plugin jar");
+            }
+
+            try {
+                defConfig.loadFromString(text);
+            } catch (final InvalidConfigurationException e) {
+                getLogger().log(Level.SEVERE, "Cannot load configuration from jar", e);
+            }
+        }
+
+        newConfig.setDefaults(defConfig);
     }
 
+    private boolean isStrictlyUTF8() {
+        return getDescription().getAwareness().contains(PluginAwareness.Flags.UTF8);
+    }
+
+    @Override
     public void saveConfig() {
         try {
             getConfig().save(configFile);
@@ -165,12 +228,14 @@ public abstract class JavaPlugin extends PluginBase {
         }
     }
 
+    @Override
     public void saveDefaultConfig() {
         if (!configFile.exists()) {
             saveResource("config.yml", false);
         }
     }
 
+    @Override
     public void saveResource(String resourcePath, boolean replace) {
         if (resourcePath == null || resourcePath.equals("")) {
             throw new IllegalArgumentException("ResourcePath cannot be null or empty");
@@ -208,6 +273,7 @@ public abstract class JavaPlugin extends PluginBase {
         }
     }
 
+    @Override
     public InputStream getResource(String filename) {
         if (filename == null) {
             throw new IllegalArgumentException("Filename cannot be null");
@@ -328,6 +394,7 @@ public abstract class JavaPlugin extends PluginBase {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         return false;
     }
@@ -335,6 +402,7 @@ public abstract class JavaPlugin extends PluginBase {
     /**
      * {@inheritDoc}
      */
+    @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         return null;
     }
@@ -362,24 +430,31 @@ public abstract class JavaPlugin extends PluginBase {
         }
     }
 
+    @Override
     public void onLoad() {}
 
+    @Override
     public void onDisable() {}
 
+    @Override
     public void onEnable() {}
 
+    @Override
     public ChunkGenerator getDefaultWorldGenerator(String worldName, String id) {
         return null;
     }
 
+    @Override
     public final boolean isNaggable() {
         return naggable;
     }
 
+    @Override
     public final void setNaggable(boolean canNag) {
         this.naggable = canNag;
     }
 
+    @Override
     public EbeanServer getDatabase() {
         return ebean;
     }
@@ -398,6 +473,7 @@ public abstract class JavaPlugin extends PluginBase {
         gen.runScript(true, gen.generateDropDdl());
     }
 
+    @Override
     public final Logger getLogger() {
         return logger;
     }
