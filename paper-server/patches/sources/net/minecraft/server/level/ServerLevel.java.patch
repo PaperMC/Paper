@@ -78,7 +78,7 @@
 +    // CraftBukkit start
 +    public final LevelStorageSource.LevelStorageAccess convertable;
 +    public final UUID uuid;
-+
+ 
 +    public LevelChunk getChunkIfLoaded(int x, int z) {
 +        return this.chunkSource.getChunk(x, z, false);
 +    }
@@ -102,7 +102,7 @@
 +        ChunkGenerator chunkgenerator = worlddimension.generator();
 +        // CraftBukkit start
 +        this.serverLevelData.setWorld(this);
- 
++
 +        if (biomeProvider != null) {
 +            BiomeSource worldChunkManager = new CustomWorldChunkManager(this.getWorld(), biomeProvider, this.server.registryAccess().lookupOrThrow(Registries.BIOME));
 +            if (chunkgenerator instanceof NoiseBasedChunkGenerator cga) {
@@ -284,14 +284,14 @@
 -            this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, this.thunderLevel));
 +            this.server.getPlayerList().broadcastAll(new PacketPlayOutGameStateChange(PacketPlayOutGameStateChange.RAIN_LEVEL_CHANGE, this.rainLevel));
 +            this.server.getPlayerList().broadcastAll(new PacketPlayOutGameStateChange(PacketPlayOutGameStateChange.THUNDER_LEVEL_CHANGE, this.thunderLevel));
-         }
++        }
 +        // */
 +        for (int idx = 0; idx < this.players.size(); ++idx) {
 +            if (((ServerPlayer) this.players.get(idx)).level() == this) {
 +                ((ServerPlayer) this.players.get(idx)).tickWeather();
 +            }
 +        }
- 
++
 +        if (flag != this.isRaining()) {
 +            // Only send weather packets to those affected
 +            for (int idx = 0; idx < this.players.size(); ++idx) {
@@ -299,14 +299,14 @@
 +                    ((ServerPlayer) this.players.get(idx)).setPlayerWeather((!flag ? WeatherType.DOWNFALL : WeatherType.CLEAR), false);
 +                }
 +            }
-+        }
+         }
 +        for (int idx = 0; idx < this.players.size(); ++idx) {
 +            if (((ServerPlayer) this.players.get(idx)).level() == this) {
 +                ((ServerPlayer) this.players.get(idx)).updateWeather(this.oRainLevel, this.rainLevel, this.oThunderLevel, this.thunderLevel);
 +            }
 +        }
 +        // CraftBukkit end
-+
+ 
      }
  
      @VisibleForTesting
@@ -421,13 +421,14 @@
          }
  
      }
-@@ -939,24 +1061,37 @@
+@@ -939,24 +1061,38 @@
          this.entityManager.addNewEntity(player);
      }
  
 -    private boolean addEntity(Entity entity) {
 +    // CraftBukkit start
 +    private boolean addEntity(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
++        org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
          if (entity.isRemoved()) {
 -            ServerLevel.LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityType.getKey(entity.getType()));
 +            // WorldServer.LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityTypes.getKey(entity.getType())); // CraftBukkit
@@ -463,7 +464,7 @@
              return true;
          }
      }
-@@ -967,13 +1102,35 @@
+@@ -967,13 +1103,35 @@
      }
  
      public void removePlayerImmediately(ServerPlayer player, Entity.RemovalReason reason) {
@@ -500,7 +501,7 @@
          while (iterator.hasNext()) {
              ServerPlayer entityplayer = (ServerPlayer) iterator.next();
  
-@@ -982,6 +1139,12 @@
+@@ -982,6 +1140,12 @@
                  double d1 = (double) pos.getY() - entityplayer.getY();
                  double d2 = (double) pos.getZ() - entityplayer.getZ();
  
@@ -513,7 +514,7 @@
                  if (d0 * d0 + d1 * d1 + d2 * d2 < 1024.0D) {
                      entityplayer.connection.send(new ClientboundBlockDestructionPacket(entityId, pos, progress));
                  }
-@@ -1060,7 +1223,18 @@
+@@ -1060,7 +1224,18 @@
              Iterator iterator = this.navigatingMobs.iterator();
  
              while (iterator.hasNext()) {
@@ -533,7 +534,7 @@
                  PathNavigation navigationabstract = entityinsentient.getNavigation();
  
                  if (navigationabstract.shouldRecomputePath(pos)) {
-@@ -1126,9 +1300,15 @@
+@@ -1126,9 +1301,15 @@
  
      @Override
      public void explode(@Nullable Entity entity, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator behavior, double x, double y, double z, float power, boolean createFire, Level.ExplosionInteraction explosionSourceType, ParticleOptions smallParticle, ParticleOptions largeParticle, Holder<SoundEvent> soundEvent) {
@@ -550,7 +551,7 @@
              case NONE:
                  explosion_effect = Explosion.BlockInteraction.KEEP;
                  break;
-@@ -1144,16 +1324,26 @@
+@@ -1144,16 +1325,26 @@
              case TRIGGER:
                  explosion_effect = Explosion.BlockInteraction.TRIGGER_BLOCK;
                  break;
@@ -580,7 +581,7 @@
          Iterator iterator = this.players.iterator();
  
          while (iterator.hasNext()) {
-@@ -1162,10 +1352,11 @@
+@@ -1162,10 +1353,11 @@
              if (entityplayer.distanceToSqr(vec3d) < 4096.0D) {
                  Optional<Vec3> optional = Optional.ofNullable((Vec3) serverexplosion.getHitPlayers().get(entityplayer));
  
@@ -593,7 +594,7 @@
      }
  
      private Explosion.BlockInteraction getDestroyType(GameRules.Key<GameRules.BooleanValue> decayRule) {
-@@ -1226,17 +1417,24 @@
+@@ -1226,17 +1418,24 @@
      }
  
      public <T extends ParticleOptions> int sendParticles(T parameters, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed) {
@@ -621,7 +622,7 @@
                  ++j;
              }
          }
-@@ -1292,7 +1490,7 @@
+@@ -1292,7 +1491,7 @@
  
      @Nullable
      public BlockPos findNearestMapStructure(TagKey<Structure> structureTag, BlockPos pos, int radius, boolean skipReferencedStructures) {
@@ -630,7 +631,7 @@
              return null;
          } else {
              Optional<HolderSet.Named<Structure>> optional = this.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(structureTag);
-@@ -1334,11 +1532,22 @@
+@@ -1334,11 +1533,22 @@
      @Nullable
      @Override
      public MapItemSavedData getMapData(MapId id) {
@@ -654,7 +655,7 @@
          this.getServer().overworld().getDataStorage().set(id.key(), state);
      }
  
-@@ -1649,6 +1858,11 @@
+@@ -1649,6 +1859,11 @@
      @Override
      public void blockUpdated(BlockPos pos, Block block) {
          if (!this.isDebug()) {
@@ -666,7 +667,7 @@
              this.updateNeighborsAt(pos, block);
          }
  
-@@ -1668,12 +1882,12 @@
+@@ -1668,12 +1883,12 @@
      }
  
      public boolean isFlat() {
@@ -681,7 +682,7 @@
      }
  
      @Nullable
-@@ -1696,7 +1910,7 @@
+@@ -1696,7 +1911,7 @@
      private static <T> String getTypeCount(Iterable<T> items, Function<T, String> classifier) {
          try {
              Object2IntOpenHashMap<String> object2intopenhashmap = new Object2IntOpenHashMap();
@@ -690,7 +691,7 @@
  
              while (iterator.hasNext()) {
                  T t0 = iterator.next();
-@@ -1705,7 +1919,7 @@
+@@ -1705,7 +1920,7 @@
                  object2intopenhashmap.addTo(s, 1);
              }
  
@@ -699,7 +700,23 @@
                  String s1 = (String) entry.getKey();
  
                  return s1 + ":" + entry.getIntValue();
-@@ -1864,6 +2078,8 @@
+@@ -1717,6 +1932,7 @@
+ 
+     @Override
+     public LevelEntityGetter<Entity> getEntities() {
++        org.spigotmc.AsyncCatcher.catchOp("Chunk getEntities call"); // Spigot
+         return this.entityManager.getEntityGetter();
+     }
+ 
+@@ -1836,6 +2052,7 @@
+         }
+ 
+         public void onTrackingStart(Entity entity) {
++            org.spigotmc.AsyncCatcher.catchOp("entity register"); // Spigot
+             ServerLevel.this.getChunkSource().addEntity(entity);
+             if (entity instanceof ServerPlayer entityplayer) {
+                 ServerLevel.this.players.add(entityplayer);
+@@ -1864,9 +2081,12 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -708,7 +725,11 @@
          }
  
          public void onTrackingEnd(Entity entity) {
-@@ -1895,6 +2111,14 @@
++            org.spigotmc.AsyncCatcher.catchOp("entity unregister"); // Spigot
+             ServerLevel.this.getChunkSource().removeEntity(entity);
+             if (entity instanceof ServerPlayer entityplayer) {
+                 ServerLevel.this.players.remove(entityplayer);
+@@ -1895,6 +2115,14 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
