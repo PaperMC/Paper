@@ -149,7 +149,7 @@ public abstract class EntityInsentient extends EntityLiving {
     public void h() {
         super.h();
         if (!this.world.isStatic) {
-            this.bJ();
+            this.bL();
         }
     }
 

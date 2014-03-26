@@ -949,7 +949,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
             this.server.getPlayerList().sendAll(new PacketPlayOutGameStateChange(8, this.p));
         }
         // */
-        if (flag != this.P()) {
+        if (flag != this.Q()) {
             // Only send weather packets to those affected
             for (int i = 0; i < this.players.size(); ++i) {
                 if (((EntityPlayer) this.players.get(i)).world == this) {
