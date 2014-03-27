@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import org.bukkit.event.entity.EntityCombustByEntityEvent;
 import org.bukkit.event.entity.EntityTargetEvent; // CraftBukkit
 
 public abstract class EntityMonster extends EntityCreature implements IMonster {
@@ -108,7 +109,14 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
             int j = EnchantmentManager.getFireAspectEnchantmentLevel(this);
 
             if (j > 0) {
-                entity.setOnFire(j * 4);
+                // CraftBukkit start - Call a combust event when somebody hits with a fire enchanted item
+                EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), j * 4);
+                org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
+
+                if (!combustEvent.isCancelled()) {
+                    entity.setOnFire(combustEvent.getDuration());
+                }
+                // CraftBukkit end
             }
 
             if (entity instanceof EntityLiving) {

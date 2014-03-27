@@ -911,8 +911,15 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
                     int j = EnchantmentManager.getFireAspectEnchantmentLevel(this);
 
                     if (entity instanceof EntityLiving && j > 0 && !entity.isBurning()) {
-                        flag1 = true;
-                        entity.setOnFire(1);
+                        // CraftBukkit start - Call a combust event when somebody hits with a fire enchanted item
+                        EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 1);
+                        org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
+
+                        if (!combustEvent.isCancelled()) {
+                            flag1 = true;
+                            entity.setOnFire(combustEvent.getDuration());
+                        }
+                        // CraftBukkit end
                     }
 
                     boolean flag2 = entity.damageEntity(DamageSource.playerAttack(this), f);

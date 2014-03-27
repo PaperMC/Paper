@@ -201,20 +201,19 @@ public abstract class BlockButtonAbstract extends Block {
             int l = world.getData(i, j, k);
 
             if ((l & 8) != 0) {
-                // CraftBukkit start
-                org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
-
-                BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, 15, 0);
-                world.getServer().getPluginManager().callEvent(eventRedstone);
-
-                if (eventRedstone.getNewCurrent() > 0) {
-                    return;
-                }
-                // CraftBukkit end
-
                 if (this.a) {
                     this.n(world, i, j, k);
                 } else {
+                    // CraftBukkit start
+                    org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
+
+                    BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, 15, 0);
+                    world.getServer().getPluginManager().callEvent(eventRedstone);
+
+                    if (eventRedstone.getNewCurrent() > 0) {
+                        return;
+                    }
+                    // CraftBukkit end
                     world.setData(i, j, k, l & 7, 3);
                     int i1 = l & 7;
 
@@ -278,6 +277,16 @@ public abstract class BlockButtonAbstract extends Block {
         // CraftBukkit end
 
         if (flag1 && !flag) {
+            // CraftBukkit start
+            org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
+
+            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, 0, 15);
+            world.getServer().getPluginManager().callEvent(eventRedstone);
+
+            if (eventRedstone.getNewCurrent() <= 0) {
+                return;
+            }
+            // CraftBukkit end
             world.setData(i, j, k, i1 | 8, 3);
             this.a(world, i, j, k, i1);
             world.c(i, j, k, i, j, k);
@@ -285,6 +294,16 @@ public abstract class BlockButtonAbstract extends Block {
         }
 
         if (!flag1 && flag) {
+            // CraftBukkit start
+            org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
+
+            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, 15, 0);
+            world.getServer().getPluginManager().callEvent(eventRedstone);
+
+            if (eventRedstone.getNewCurrent() > 0) {
+                return;
+            }
+            // CraftBukkit end
             world.setData(i, j, k, i1, 3);
             this.a(world, i, j, k, i1);
             world.c(i, j, k, i, j, k);

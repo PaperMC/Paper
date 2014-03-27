@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 
 // CraftBukkit start
 import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.block.BlockFadeEvent;
@@ -96,7 +97,7 @@ public class BlockGrass extends Block implements IBlockFragilePlantElement {
                 } else if (world.getType(i1, j1, k1).material == Material.AIR) {
                     if (random.nextInt(8) != 0) {
                         if (Blocks.LONG_GRASS.j(world, i1, j1, k1)) {
-                            world.setTypeAndData(i1, j1, k1, Blocks.LONG_GRASS, 1, 3);
+                            CraftEventFactory.handleBlockGrowEvent(world, i1, j1, k1, Blocks.LONG_GRASS, 1); // CraftBukkit
                         }
                     } else {
                         String s = world.getBiome(i1, k1).a(random, i1, j1, k1);
@@ -107,7 +108,7 @@ public class BlockGrass extends Block implements IBlockFragilePlantElement {
                         if (blockflowers != null && blockflowers.j(world, i1, j1, k1)) {
                             int i2 = BlockFlowers.f(s);
 
-                            world.setTypeAndData(i1, j1, k1, blockflowers, i2, 3);
+                            CraftEventFactory.handleBlockGrowEvent(world, i1, j1, k1, blockflowers, i2); // CraftBukkit
                         }
                     }
                 }

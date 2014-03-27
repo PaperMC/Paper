@@ -67,8 +67,11 @@ public class BlockSoil extends Block {
             if (cancellable.isCancelled()) {
                 return;
             }
-            // CraftBukkit end
 
+            if (CraftEventFactory.callEntityChangeBlockEvent(entity, i, j, k, Blocks.DIRT, 0).isCancelled()) {
+                return;
+            }
+            // CraftBukkit end
             world.setTypeUpdate(i, j, k, Blocks.DIRT);
         }
     }

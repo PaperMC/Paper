@@ -5,6 +5,7 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
 // CraftBukkit end
 
@@ -177,7 +178,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
 
             this.s(i);
             if (this.ticksLived % 10 == 0) {
-                this.heal(10.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.WITHER_SPAWN); // CraftBukkit
+                this.heal(10.0F, EntityRegainHealthEvent.RegainReason.WITHER_SPAWN); // CraftBukkit
             }
         } else {
             super.bm();
@@ -280,7 +281,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
             }
 
             if (this.ticksLived % 20 == 0) {
-                this.heal(1.0F);
+                this.heal(1.0F, EntityRegainHealthEvent.RegainReason.REGEN); // CraftBukkit
             }
         }
     }

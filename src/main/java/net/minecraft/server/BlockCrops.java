@@ -2,6 +2,8 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+
 public class BlockCrops extends BlockPlant implements IBlockFragilePlantElement {
 
     protected BlockCrops() {
@@ -29,7 +31,7 @@ public class BlockCrops extends BlockPlant implements IBlockFragilePlantElement 
 
                 if (random.nextInt((int) (25.0F / f) + 1) == 0) {
                     ++l;
-                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this, l); // CraftBukkit
+                    CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this, l); // CraftBukkit
                 }
             }
         }
@@ -42,7 +44,7 @@ public class BlockCrops extends BlockPlant implements IBlockFragilePlantElement 
             l = 7;
         }
 
-        world.setData(i, j, k, l, 2);
+        CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this, l); // CraftBukkit
     }
 
     private float n(World world, int i, int j, int k) {

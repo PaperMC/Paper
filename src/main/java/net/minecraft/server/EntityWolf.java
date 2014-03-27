@@ -210,7 +210,7 @@ public class EntityWolf extends EntityTameableAnimal {
                             --itemstack.count;
                         }
 
-                        this.heal((float) itemfood.getNutrition(itemstack));
+                        this.heal((float) itemfood.getNutrition(itemstack), org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // CraftBukkit
                         if (itemstack.count <= 0) {
                             entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, (ItemStack) null);
                         }

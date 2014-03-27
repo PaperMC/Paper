@@ -2,6 +2,8 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+
 public class BlockCocoa extends BlockDirectional implements IBlockFragilePlantElement {
 
     public BlockCocoa() {
@@ -20,7 +22,7 @@ public class BlockCocoa extends BlockDirectional implements IBlockFragilePlantEl
             if (i1 < 2) {
                 ++i1;
                 // CraftBukkit
-                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this, i1 << 2 | l(l));
+                CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this, i1 << 2 | l(l));
             }
         }
     }
@@ -137,6 +139,6 @@ public class BlockCocoa extends BlockDirectional implements IBlockFragilePlantEl
         int j1 = c(l);
 
         ++j1;
-        world.setData(i, j, k, j1 << 2 | i1, 2);
+        CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this, j1 << 2 | i1); // CraftBukkit
     }
 }

@@ -240,7 +240,14 @@ public class EntitySkeleton extends EntityMonster implements IRangedEntity {
         }
 
         if (EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_FIRE.id, this.bd()) > 0 || this.getSkeletonType() == 1) {
-            entityarrow.setOnFire(100);
+            // CraftBukkit start - call EntityCombustEvent
+            EntityCombustEvent event = new EntityCombustEvent(entityarrow.getBukkitEntity(), 100);
+            this.world.getServer().getPluginManager().callEvent(event);
+
+            if (!event.isCancelled()) {
+                entityarrow.setOnFire(event.getDuration());
+            }
+            // CraftBukkit end
         }
 
         // CraftBukkit start

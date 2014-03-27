@@ -1,6 +1,9 @@
 package net.minecraft.server;
 
-import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+// CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.entity.ExplosionPrimeEvent;
+// CraftBukkit end
 
 public class EntityEnderCrystal extends Entity {
 
@@ -64,10 +67,18 @@ public class EntityEnderCrystal extends Entity {
 
                 this.b = 0;
                 if (this.b <= 0) {
-                    this.die();
+                    // this.die(); // CraftBukkit - moved down
                     if (!this.world.isStatic) {
-                        this.world.explode(this, this.locX, this.locY, this.locZ, 6.0F, true); // CraftBukkit - (Entity) null -> this
+                        // CraftBukkit start
+                        ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), 6.0F, false);
+                        this.world.getServer().getPluginManager().callEvent(event);
+                        if (event.isCancelled()) {
+                            return false;
+                        }
+                        this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire(), true);
                     }
+                    this.die();
+                    // CraftBukkit end
                 }
             }
 

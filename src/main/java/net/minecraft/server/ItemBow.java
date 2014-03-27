@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import org.bukkit.event.entity.EntityCombustEvent; // CraftBukkit
+
 public class ItemBow extends Item {
 
     public static final String[] a = new String[] { "pulling_0", "pulling_1", "pulling_2"};
@@ -45,7 +47,14 @@ public class ItemBow extends Item {
             }
 
             if (EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_FIRE.id, itemstack) > 0) {
-                entityarrow.setOnFire(100);
+                // CraftBukkit start - call EntityCombustEvent
+                EntityCombustEvent event = new EntityCombustEvent(entityarrow.getBukkitEntity(), 100);
+                entityarrow.world.getServer().getPluginManager().callEvent(event);
+
+                if (!event.isCancelled()) {
+                    entityarrow.setOnFire(event.getDuration());
+                }
+                // CraftBukkit end
             }
 
             // CraftBukkit start

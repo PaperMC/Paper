@@ -2,7 +2,10 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-import org.bukkit.event.entity.EntityInteractEvent; // CraftBukkit
+// CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.entity.EntityInteractEvent;
+// CraftBukkit end
 
 public class BlockRedstoneOre extends Block {
 
@@ -22,7 +25,7 @@ public class BlockRedstoneOre extends Block {
     }
 
     public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
-        this.e(world, i, j, k);
+        this.e(world, i, j, k, entityhuman); // CraftBukkit - add entityhuman
         super.attack(world, i, j, k, entityhuman);
     }
 
@@ -31,14 +34,14 @@ public class BlockRedstoneOre extends Block {
         if (entity instanceof EntityHuman) {
             org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, i, j, k, -1, null);
             if (!event.isCancelled()) {
-                this.e(world, i, j, k);
+                this.e(world, i, j, k, entity); // add entity
                 super.b(world, i, j, k, entity);
             }
         } else {
             EntityInteractEvent event = new EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(i, j, k));
             world.getServer().getPluginManager().callEvent(event);
             if (!event.isCancelled()) {
-                this.e(world, i, j, k);
+                this.e(world, i, j, k, entity); // add entity
                 super.b(world, i, j, k, entity);
             }
         }
@@ -46,19 +49,29 @@ public class BlockRedstoneOre extends Block {
     }
 
     public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
-        this.e(world, i, j, k);
+        this.e(world, i, j, k, entityhuman); // CraftBukkit - add entityhuman
         return super.interact(world, i, j, k, entityhuman, l, f, f1, f2);
     }
 
-    private void e(World world, int i, int j, int k) {
+    private void e(World world, int i, int j, int k, Entity entity) { // CraftBukkit - add Entity
         this.m(world, i, j, k);
         if (this == Blocks.REDSTONE_ORE) {
+            // CraftBukkit start
+            if (CraftEventFactory.callEntityChangeBlockEvent(entity, i, j, k, Blocks.GLOWING_REDSTONE_ORE, 0).isCancelled()) {
+                return;
+            }
+            // CraftBukkit end
             world.setTypeUpdate(i, j, k, Blocks.GLOWING_REDSTONE_ORE);
         }
     }
 
     public void a(World world, int i, int j, int k, Random random) {
         if (this == Blocks.GLOWING_REDSTONE_ORE) {
+            // CraftBukkit start
+            if (CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(i, j, k), Blocks.REDSTONE_ORE).isCancelled()) {
+                return;
+            }
+            // CraftBukkit end
             world.setTypeUpdate(i, j, k, Blocks.REDSTONE_ORE);
         }
     }

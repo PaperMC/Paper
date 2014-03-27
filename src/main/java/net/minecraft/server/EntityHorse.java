@@ -6,6 +6,7 @@ import java.util.List;
 // CraftBukkit start
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
 // CraftBukkit end
 
 public class EntityHorse extends EntityAnimal implements IInventoryListener {
@@ -601,7 +602,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
                     }
 
                     if (this.getHealth() < this.getMaxHealth() && f > 0.0F) {
-                        this.heal(f);
+                        this.heal(f, RegainReason.EATING); // CraftBukkit
                         flag = true;
                     }
 
@@ -720,7 +721,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         super.e();
         if (!this.world.isStatic) {
             if (this.random.nextInt(900) == 0 && this.deathTicks == 0) {
-                this.heal(1.0F);
+                this.heal(1.0F, RegainReason.REGEN); // CraftBukkit
             }
 
             if (!this.cm() && this.passenger == null && this.random.nextInt(300) == 0 && this.world.getType(MathHelper.floor(this.locX), MathHelper.floor(this.locY) - 1, MathHelper.floor(this.locZ)) == Blocks.GRASS) {

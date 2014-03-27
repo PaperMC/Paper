@@ -76,7 +76,7 @@ public class BlockTallPlant extends BlockPlant implements IBlockFragilePlantElem
 
     public void c(World world, int i, int j, int k, int l, int i1) {
         world.setTypeAndData(i, j, k, this, l, i1);
-        world.setTypeAndData(i, j + 1, k, this, 8, i1);
+        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j + 1, k, this, 8); // CraftBukkit
     }
 
     public void postPlace(World world, int i, int j, int k, EntityLiving entityliving, ItemStack itemstack) {

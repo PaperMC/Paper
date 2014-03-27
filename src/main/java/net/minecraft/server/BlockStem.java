@@ -86,7 +86,7 @@ public class BlockStem extends BlockPlant implements IBlockFragilePlantElement {
             l = 7;
         }
 
-        world.setData(i, j, k, l, 2);
+        CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this, l); // CraftBukkit
     }
 
     private float n(World world, int i, int j, int k) {
