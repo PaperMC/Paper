@@ -445,17 +445,24 @@ public class EntityBoat extends Entity {
             if (this.fallDistance > 3.0F) {
                 this.b(this.fallDistance);
                 if (!this.world.isStatic && !this.dead) {
-                    this.die();
+                    // CraftBukkit start
+                    Vehicle vehicle = (Vehicle) this.getBukkitEntity();
+                    VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, null);
+                    this.world.getServer().getPluginManager().callEvent(destroyEvent);
+                    if (!destroyEvent.isCancelled()) {
+                        this.die();
 
-                    int l;
+                        int l;
 
-                    for (l = 0; l < 3; ++l) {
-                        this.a(Item.getItemOf(Blocks.WOOD), 1, 0.0F);
+                        for (l = 0; l < 3; ++l) {
+                            this.a(Item.getItemOf(Blocks.WOOD), 1, 0.0F);
+                        }
+
+                        for (l = 0; l < 2; ++l) {
+                            this.a(Items.STICK, 1, 0.0F);
+                        }
                     }
-
-                    for (l = 0; l < 2; ++l) {
-                        this.a(Items.STICK, 1, 0.0F);
-                    }
+                    // CraftBukkit end
                 }
 
                 this.fallDistance = 0.0F;
