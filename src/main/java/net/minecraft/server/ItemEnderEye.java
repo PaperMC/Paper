@@ -34,7 +34,25 @@ public class ItemEnderEye extends Item {
                         }
                     }
 
-                    world.b(1038, blockposition1.b(1, 0, 1), 0);
+                    // CraftBukkit start - Use relative location for far away sounds
+                    // world.b(1038, blockposition1.b(1, 0, 1), 0);
+                    int viewDistance = world.getServer().getViewDistance() * 16;
+                    BlockPosition soundPos = blockposition1.b(1, 0, 1);
+                    for (EntityPlayer player : world.getServer().getServer().getPlayerList().players) {
+                        double deltaX = soundPos.getX() - player.locX();
+                        double deltaZ = soundPos.getZ() - player.locZ();
+                        double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
+                        if (world.spigotConfig.endPortalSoundRadius > 0 && distanceSquared > world.spigotConfig.endPortalSoundRadius * world.spigotConfig.endPortalSoundRadius) continue; // Spigot
+                        if (distanceSquared > viewDistance * viewDistance) {
+                            double deltaLength = Math.sqrt(distanceSquared);
+                            double relativeX = player.locX() + (deltaX / deltaLength) * viewDistance;
+                            double relativeZ = player.locZ() + (deltaZ / deltaLength) * viewDistance;
+                            player.playerConnection.sendPacket(new PacketPlayOutWorldEvent(1038, new BlockPosition((int) relativeX, (int) soundPos.getY(), (int) relativeZ), 0, true));
+                        } else {
+                            player.playerConnection.sendPacket(new PacketPlayOutWorldEvent(1038, soundPos, 0, true));
+                        }
+                    }
+                    // CraftBukkit end
                 }
 
                 return EnumInteractionResult.CONSUME;
