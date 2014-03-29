@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import net.minecraft.server.BanEntry;
 import net.minecraft.server.EntityPlayer;
@@ -39,6 +40,20 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     public String getName() {
         return name;
+    }
+
+    // TODO: In 1.7.6+ OfflinePlayer lookup should be by UUID and store it like it does the name now
+    public UUID getUniqueId() {
+        NBTTagCompound data = getData();
+        if (data == null) {
+            return null;
+        }
+
+        if (data.hasKeyOfType("UUIDMost", 4) && data.hasKeyOfType("UUIDLeast", 4)) {
+            return new UUID(data.getLong("UUIDMost"), data.getLong("UUIDLeast"));
+        }
+
+        return null;
     }
 
     public Server getServer() {
