@@ -276,4 +276,22 @@ public class SpigotWorldConfig
         this.enableZombiePigmenPortalSpawns = this.getBoolean( "enable-zombie-pigmen-portal-spawns", true );
         this.log( "Allow Zombie Pigmen to spawn from portal blocks: " + this.enableZombiePigmenPortalSpawns );
     }
+
+    public int dragonDeathSoundRadius;
+    private void keepDragonDeathPerWorld()
+    {
+        this.dragonDeathSoundRadius = this.getInt( "dragon-death-sound-radius", 0 );
+    }
+
+    public int witherSpawnSoundRadius;
+    private void witherSpawnSoundRadius()
+    {
+        this.witherSpawnSoundRadius = this.getInt( "wither-spawn-sound-radius", 0 );
+    }
+
+    public int endPortalSoundRadius;
+    private void endPortalSoundRadius()
+    {
+        this.endPortalSoundRadius = this.getInt( "end-portal-sound-radius", 0 );
+    }
 }

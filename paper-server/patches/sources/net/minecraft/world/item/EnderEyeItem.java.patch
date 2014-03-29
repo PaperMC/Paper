@@ -1,6 +1,33 @@
 --- a/net/minecraft/world/item/EnderEyeItem.java
 +++ b/net/minecraft/world/item/EnderEyeItem.java
-@@ -99,7 +99,11 @@
+@@ -62,7 +62,25 @@
+                         }
+                     }
+ 
+-                    world.globalLevelEvent(1038, blockposition1.offset(1, 0, 1), 0);
++                    // CraftBukkit start - Use relative location for far away sounds
++                    // world.globalLevelEvent(1038, blockposition1.offset(1, 0, 1), 0);
++                    int viewDistance = world.getCraftServer().getViewDistance() * 16;
++                    BlockPos soundPos = blockposition1.offset(1, 0, 1);
++                    for (ServerPlayer player : world.getServer().getPlayerList().players) {
++                        double deltaX = soundPos.getX() - player.getX();
++                        double deltaZ = soundPos.getZ() - player.getZ();
++                        double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
++                        if (world.spigotConfig.endPortalSoundRadius > 0 && distanceSquared > world.spigotConfig.endPortalSoundRadius * world.spigotConfig.endPortalSoundRadius) continue; // Spigot
++                        if (distanceSquared > viewDistance * viewDistance) {
++                            double deltaLength = Math.sqrt(distanceSquared);
++                            double relativeX = player.getX() + (deltaX / deltaLength) * viewDistance;
++                            double relativeZ = player.getZ() + (deltaZ / deltaLength) * viewDistance;
++                            player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelEventPacket(1038, new BlockPos((int) relativeX, (int) soundPos.getY(), (int) relativeZ), 0, true));
++                        } else {
++                            player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelEventPacket(1038, soundPos, 0, true));
++                        }
++                    }
++                    // CraftBukkit end
+                 }
+ 
+                 return InteractionResult.SUCCESS;
+@@ -99,7 +117,11 @@
                  entityendersignal.setItem(itemstack);
                  entityendersignal.signalTo(blockposition);
                  world.gameEvent((Holder) GameEvent.PROJECTILE_SHOOT, entityendersignal.position(), GameEvent.Context.of((Entity) user));

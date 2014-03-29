@@ -91,7 +91,7 @@
  
          for (int k1 = i; k1 <= l; ++k1) {
              for (int l1 = j; l1 <= i1; ++l1) {
-@@ -467,14 +494,61 @@
+@@ -467,7 +494,11 @@
  
                      if (!iblockdata.isAir() && !iblockdata.is(BlockTags.DRAGON_TRANSPARENT)) {
                          if (world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && !iblockdata.is(BlockTags.DRAGON_IMMUNE)) {
@@ -104,11 +104,10 @@
                          } else {
                              flag = true;
                          }
-                     }
-+                }
-+            }
-+        }
-+
+@@ -476,6 +507,49 @@
+             }
+         }
+ 
 +        // CraftBukkit start - Set off an EntityExplodeEvent for the dragon exploding all these blocks
 +        // SPIGOT-4882: don't fire event if nothing hit
 +        if (!flag1) {
@@ -130,7 +129,7 @@
 +                org.bukkit.Material blockId = block.getType();
 +                if (blockId.isAir()) {
 +                    continue;
-                 }
++                }
 +
 +                CraftBlock craftBlock = ((CraftBlock) block);
 +                BlockPos blockposition = craftBlock.getPosition();
@@ -148,13 +147,14 @@
 +                nmsBlock.wasExploded((ServerLevel) this.level(), blockposition, this.explosionSource);
 +
 +                this.level().removeBlock(blockposition, false);
-             }
-         }
++            }
++        }
 +        // CraftBukkit end
- 
++
          if (flag1) {
              BlockPos blockposition1 = new BlockPos(i + this.random.nextInt(l - i + 1), j + this.random.nextInt(i1 - j + 1), k + this.random.nextInt(j1 - k + 1));
-@@ -531,14 +605,29 @@
+ 
+@@ -531,7 +605,7 @@
  
      @Override
      public void kill(ServerLevel world) {
@@ -163,13 +163,12 @@
          this.gameEvent(GameEvent.ENTITY_DIE);
          if (this.dragonFight != null) {
              this.dragonFight.updateDragon(this);
-             this.dragonFight.setDragonKilled(this);
-+        }
-+
-+    }
-+
+@@ -540,7 +614,22 @@
+ 
+     }
+ 
 +    // CraftBukkit start - SPIGOT-2420: Special case, the ender dragon drops 12000 xp for the first kill and 500 xp for every other kill and this over time.
-+    @Override
+     @Override
 +    public int getExpReward(ServerLevel worldserver, Entity entity) {
 +        // CraftBukkit - Moved from #tickDeath method
 +        boolean flag = worldserver.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT);
@@ -177,15 +176,17 @@
 +
 +        if (this.dragonFight != null && !this.dragonFight.hasPreviouslyKilledDragon()) {
 +            short0 = 12000;
-         }
- 
++        }
++
 +        return flag ? short0 : 0;
-     }
++    }
 +    // CraftBukkit end
- 
-     @Override
++
++    @Override
      protected void tickDeath() {
-@@ -555,16 +644,21 @@
+         if (this.dragonFight != null) {
+             this.dragonFight.updateDragon(this);
+@@ -555,21 +644,43 @@
              this.level().addParticle(ParticleTypes.EXPLOSION_EMITTER, this.getX() + (double) f, this.getY() + 2.0D + (double) f1, this.getZ() + (double) f2, 0.0D, 0.0D, 0.0D);
          }
  
@@ -208,7 +209,30 @@
                  ExperienceOrb.award(worldserver, this.position(), Mth.floor((float) short0 * 0.08F));
              }
  
-@@ -592,7 +686,7 @@
+             if (this.dragonDeathTime == 1 && !this.isSilent()) {
+-                worldserver.globalLevelEvent(1028, this.blockPosition(), 0);
++                // CraftBukkit start - Use relative location for far away sounds
++                // worldserver.globalLevelEvent(1028, this.blockPosition(), 0);
++                int viewDistance = worldserver.getCraftServer().getViewDistance() * 16;
++                for (net.minecraft.server.level.ServerPlayer player : worldserver.getServer().getPlayerList().players) {
++                    double deltaX = this.getX() - player.getX();
++                    double deltaZ = this.getZ() - player.getZ();
++                    double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
++                    if ( worldserver.spigotConfig.dragonDeathSoundRadius > 0 && distanceSquared > worldserver.spigotConfig.dragonDeathSoundRadius * worldserver.spigotConfig.dragonDeathSoundRadius ) continue; // Spigot
++                    if (distanceSquared > viewDistance * viewDistance) {
++                        double deltaLength = Math.sqrt(distanceSquared);
++                        double relativeX = player.getX() + (deltaX / deltaLength) * viewDistance;
++                        double relativeZ = player.getZ() + (deltaZ / deltaLength) * viewDistance;
++                        player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelEventPacket(1028, new BlockPos((int) relativeX, (int) this.getY(), (int) relativeZ), 0, true));
++                    } else {
++                        player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelEventPacket(1028, new BlockPos((int) this.getX(), (int) this.getY(), (int) this.getZ()), 0, true));
++                    }
++                }
++                // CraftBukkit end
+             }
+         }
+ 
+@@ -592,7 +703,7 @@
              if (world1 instanceof ServerLevel) {
                  ServerLevel worldserver1 = (ServerLevel) world1;
  
@@ -217,7 +241,7 @@
                      ExperienceOrb.award(worldserver1, this.position(), Mth.floor((float) short0 * 0.2F));
                  }
  
-@@ -600,7 +694,7 @@
+@@ -600,7 +711,7 @@
                      this.dragonFight.setDragonKilled(this);
                  }
  
@@ -226,7 +250,7 @@
                  this.gameEvent(GameEvent.ENTITY_DIE);
              }
          }
-@@ -814,6 +908,7 @@
+@@ -814,6 +925,7 @@
          super.addAdditionalSaveData(nbt);
          nbt.putInt("DragonPhase", this.phaseManager.getCurrentPhase().getPhase().getId());
          nbt.putInt("DragonDeathTime", this.dragonDeathTime);
@@ -234,7 +258,7 @@
      }
  
      @Override
-@@ -827,6 +922,11 @@
+@@ -827,6 +939,11 @@
              this.dragonDeathTime = nbt.getInt("DragonDeathTime");
          }
  
