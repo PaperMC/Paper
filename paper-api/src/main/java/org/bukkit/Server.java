@@ -268,17 +268,23 @@ public interface Server extends PluginMessageRecipient {
      * <p>
      * This method may not return objects for offline players.
      *
+     * @deprecated Use {@link #getPlayer(UUID)} as player names are no longer
+     *     guaranteed to be unique
      * @param name the name to look up
      * @return a player if one was found, null otherwise
      */
+    @Deprecated
     public Player getPlayer(String name);
 
     /**
      * Gets the player with the exact given name, case insensitive.
      *
+     * @deprecated Use {@link #getPlayer(UUID)} as player names are no longer
+     *     guaranteed to be unique
      * @param name Exact name of the player to retrieve
      * @return a player object if one was found, null otherwise
      */
+    @Deprecated
     public Player getPlayerExact(String name);
 
     /**
@@ -288,10 +294,21 @@ public interface Server extends PluginMessageRecipient {
      * This list is not sorted in any particular order. If an exact match is
      * found, the returned list will only contain a single result.
      *
+     * @deprecated Use {@link #getPlayer(UUID)} as player names are no longer
+     *     guaranteed to be unique
      * @param name the (partial) name to match
      * @return list of all possible players
      */
+    @Deprecated
     public List<Player> matchPlayer(String name);
+
+    /**
+     * Gets the player with the given UUID.
+     *
+     * @param id UUID of the player to retrieve
+     * @return a player object if one was found, null otherwise
+     */
+    public Player getPlayer(UUID id);
 
     /**
      * Gets the plugin manager for interfacing with plugins.
@@ -544,10 +561,25 @@ public interface Server extends PluginMessageRecipient {
      * This will return an object even if the player does not exist. To this
      * method, all players will exist.
      *
+     * @deprecated Use {@link #getOfflinePlayer(UUID)} as player names are no
+     *     longer guaranteed to be unique
      * @param name the name the player to retrieve
      * @return an offline player
      */
+    @Deprecated
     public OfflinePlayer getOfflinePlayer(String name);
+
+    /**
+     * Gets the player by the given UUID, regardless if they are offline or
+     * online.
+     * <p>
+     * This will return an object even if the player does not exist. To this
+     * method, all players will exist.
+     *
+     * @param id the UUID of the player to retrieve
+     * @return an offline player
+     */
+    public OfflinePlayer getOfflinePlayer(UUID id);
 
     /**
      * Gets a set containing all current IPs that are banned.

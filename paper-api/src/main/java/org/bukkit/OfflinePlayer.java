@@ -1,6 +1,7 @@
 package org.bukkit;
 
 import java.util.Date;
+import java.util.UUID;
 
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.AnimalTamer;
@@ -19,9 +20,19 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
     /**
      * Returns the name of this player
      *
+     * @deprecated Use {@link #getUniqueId()} as player names are no longer
+     *     guaranteed to be unique
      * @return Player name
      */
+    @Deprecated
     public String getName();
+
+    /**
+     * Returns the UUID of this player
+     *
+     * @return Player UUID
+     */
+    public UUID getUniqueId();
 
     /**
      * Checks if this player is banned or not
