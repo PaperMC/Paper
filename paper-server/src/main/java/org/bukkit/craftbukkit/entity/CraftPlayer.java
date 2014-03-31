@@ -971,6 +971,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         data.setBoolean("keepLevel", handle.keepLevel);
         data.setLong("firstPlayed", getFirstPlayed());
         data.setLong("lastPlayed", System.currentTimeMillis());
+        data.setString("lastKnownName", handle.getName());
     }
 
     public boolean beginConversation(Conversation conversation) {
