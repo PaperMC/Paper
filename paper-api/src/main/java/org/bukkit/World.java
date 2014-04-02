@@ -699,7 +699,9 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @return The spawned {@link FallingBlock} instance
      * @throws IllegalArgumentException if {@link Location} or {@link
      *     Material} are null or {@link Material} is not a block
+     * @deprecated Magic value
      */
+    @Deprecated
     public FallingBlock spawnFallingBlock(Location location, Material material, byte data) throws IllegalArgumentException;
 
     /**
@@ -713,7 +715,9 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @throws IllegalArgumentException if location is null, or blockId is
      *     invalid
      * @see #spawnFallingBlock(org.bukkit.Location, org.bukkit.Material, byte)
+     * @deprecated Magic value
      */
+    @Deprecated
     public FallingBlock spawnFallingBlock(Location location, int blockId, byte blockData) throws IllegalArgumentException;
 
     /**
