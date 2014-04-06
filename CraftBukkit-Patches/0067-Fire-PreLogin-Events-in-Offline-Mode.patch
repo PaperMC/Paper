@@ -1,14 +1,40 @@
-From d95c3ac45bb9a2ce9fbe9e241d64e8a1ea467a9a Mon Sep 17 00:00:00 2001
+From 731f42f442109e046706fe7c92d9e71359eadc99 Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Wed, 18 Dec 2013 13:32:10 +1100
 Subject: [PATCH] Fire PreLogin Events in Offline Mode
 
 
 diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
-index efba029..6f35aa0 100644
+index dddd9aa..0d82e7d 100644
 --- a/src/main/java/net/minecraft/server/LoginListener.java
 +++ b/src/main/java/net/minecraft/server/LoginListener.java
-@@ -108,7 +108,7 @@ public class LoginListener implements PacketLoginInListener {
+@@ -59,12 +59,25 @@ public class LoginListener implements PacketLoginInListener {
+         }
+     }
+ 
++    // Spigot start
++    public void initUUID()
++    {
++        String uuid = UUID.nameUUIDFromBytes( ( "OfflinePlayer:" + this.i.getName() ).getBytes( Charsets.UTF_8 ) ).toString().replaceAll( "-", "" );
++
++        this.i = new GameProfile( uuid, this.i.getName() );
++    }
++    // Spigot end
++
+     public void c() {
++        // Spigot start - Moved to initUUID
++        /*
+         if (!this.i.isComplete()) {
+             UUID uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + this.i.getName()).getBytes(Charsets.UTF_8));
+ 
+             this.i = new GameProfile(uuid.toString().replaceAll("-", ""), this.i.getName());
+         }
++        */
++        // Spigot end
+ 
+         // CraftBukkit start - fire PlayerLoginEvent
+         EntityPlayer s = this.server.getPlayerList().attemptLogin(this, this.i, this.hostname);
+@@ -99,7 +112,7 @@ public class LoginListener implements PacketLoginInListener {
              this.g = EnumProtocolState.KEY;
              this.networkManager.handle(new PacketLoginOutEncryptionBegin(this.j, this.server.J().getPublic(), this.e), new GenericFutureListener[0]);
          } else {
@@ -18,18 +44,20 @@ index efba029..6f35aa0 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/ThreadPlayerLookupUUID.java b/src/main/java/net/minecraft/server/ThreadPlayerLookupUUID.java
-index 496b7c9..766b8c7 100644
+index 496b7c9..fe4502a 100644
 --- a/src/main/java/net/minecraft/server/ThreadPlayerLookupUUID.java
 +++ b/src/main/java/net/minecraft/server/ThreadPlayerLookupUUID.java
-@@ -22,48 +22,20 @@ class ThreadPlayerLookupUUID extends Thread {
+@@ -22,48 +22,22 @@ class ThreadPlayerLookupUUID extends Thread {
  
      public void run() {
          try {
 +            // Spigot Start
 +            if ( !LoginListener.b( this.a ).getOnlineMode() )
 +            {
++                a.initUUID();
 +                fireLoginEvents();
-+                LoginListener.a(this.a, EnumProtocolState.READY_TO_ACCEPT);
++                LoginListener.e().info( "UUID of player " + LoginListener.d( this.a ).getName() + " is " + LoginListener.d( this.a ).getId() );
++                LoginListener.a( this.a, EnumProtocolState.READY_TO_ACCEPT );
 +                return;
 +            }
 +            // Spigot End
@@ -81,7 +109,7 @@ index 496b7c9..766b8c7 100644
                  LoginListener.e().info("UUID of player " + LoginListener.d(this.a).getName() + " is " + LoginListener.d(this.a).getId());
                  LoginListener.a(this.a, EnumProtocolState.READY_TO_ACCEPT);
              } else {
-@@ -80,4 +52,45 @@ class ThreadPlayerLookupUUID extends Thread {
+@@ -80,4 +54,45 @@ class ThreadPlayerLookupUUID extends Thread {
              // CraftBukkit end
          }
      }
