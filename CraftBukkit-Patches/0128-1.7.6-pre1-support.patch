@@ -1,0 +1,287 @@
+From 0ffd0ed8c389b46d9a9e4c5b48a4c1754ff464d4 Mon Sep 17 00:00:00 2001
+From: Thinkofdeath <thethinkofdeath@gmail.com>
+Date: Thu, 3 Apr 2014 17:04:18 +0100
+Subject: [PATCH] 1.7.6-pre1 support
+
+
+diff --git a/src/main/java/net/minecraft/server/HandshakeListener.java b/src/main/java/net/minecraft/server/HandshakeListener.java
+index 42539b4..490123f 100644
+--- a/src/main/java/net/minecraft/server/HandshakeListener.java
++++ b/src/main/java/net/minecraft/server/HandshakeListener.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server;
+ 
++import net.minecraft.util.io.netty.util.AttributeKey;
+ import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
+ 
+ // CraftBukkit start
+@@ -13,6 +14,7 @@ public class HandshakeListener implements PacketHandshakingInListener {
+     private static final HashMap<InetAddress, Long> throttleTracker = new HashMap<InetAddress, Long>();
+     private static int throttleCounter = 0;
+     // CraftBukkit end
++    public static final AttributeKey<Integer> protocolVersion = new AttributeKey<Integer>( "protocolVersion" ); // Spigot
+ 
+     private final MinecraftServer a;
+     private final NetworkManager b;
+@@ -23,6 +25,12 @@ public class HandshakeListener implements PacketHandshakingInListener {
+     }
+ 
+     public void a(PacketHandshakingInSetProtocol packethandshakinginsetprotocol) {
++        // Spigot start
++        b.m.attr( protocolVersion ).set( 4 );
++        if (packethandshakinginsetprotocol.d() == 5) {
++            b.m.attr( protocolVersion ).set( 5 );
++        }
++        // Spigot end
+         switch (ProtocolOrdinalWrapper.a[packethandshakinginsetprotocol.c().ordinal()]) {
+         case 1:
+             this.b.a(EnumProtocol.LOGIN);
+@@ -62,8 +70,7 @@ public class HandshakeListener implements PacketHandshakingInListener {
+                 org.apache.logging.log4j.LogManager.getLogger().debug("Failed to check connection throttle", t);
+             }
+             // CraftBukkit end
+-
+-            if (packethandshakinginsetprotocol.d() > 4) {
++            if (packethandshakinginsetprotocol.d() > 5) { // Spigot
+                 chatcomponenttext = new ChatComponentText( org.spigotmc.SpigotConfig.outdatedServerMessage ); // Spigot
+                 this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext), new GenericFutureListener[0]);
+                 this.b.close(chatcomponenttext);
+diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
+index f6cca80..56bfe34 100644
+--- a/src/main/java/net/minecraft/server/NetworkManager.java
++++ b/src/main/java/net/minecraft/server/NetworkManager.java
+@@ -35,7 +35,7 @@ public class NetworkManager extends SimpleChannelInboundHandler {
+     private final boolean j;
+     private final Queue k = Queues.newConcurrentLinkedQueue();
+     private final Queue l = Queues.newConcurrentLinkedQueue();
+-    private Channel m;
++    public Channel m; // Spigot
+     public SocketAddress n; // Spigot
+     public String spoofedUUID; // Spigot
+     private PacketListener o;
+diff --git a/src/main/java/net/minecraft/server/Packet.java b/src/main/java/net/minecraft/server/Packet.java
+index 592ffc5..190da32 100644
+--- a/src/main/java/net/minecraft/server/Packet.java
++++ b/src/main/java/net/minecraft/server/Packet.java
+@@ -47,6 +47,12 @@ public abstract class Packet {
+ 
+     public abstract void b(PacketDataSerializer packetdataserializer) throws IOException; // CraftBukkit - added throws
+ 
++    // Spigot start
++    public void writeSnapshot(PacketDataSerializer packetDataSerializer) throws IOException {
++        b( packetDataSerializer );
++    }
++    // Spigot end
++
+     public abstract void handle(PacketListener packetlistener);
+ 
+     public boolean a() {
+diff --git a/src/main/java/net/minecraft/server/PacketEncoder.java b/src/main/java/net/minecraft/server/PacketEncoder.java
+new file mode 100644
+index 0000000..ab00152
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/PacketEncoder.java
+@@ -0,0 +1,52 @@
++package net.minecraft.server;
++
++import java.io.IOException;
++
++import net.minecraft.util.com.google.common.collect.BiMap;
++import net.minecraft.util.io.netty.buffer.ByteBuf;
++import net.minecraft.util.io.netty.channel.ChannelHandlerContext;
++import net.minecraft.util.io.netty.handler.codec.MessageToByteEncoder;
++import org.apache.logging.log4j.LogManager;
++import org.apache.logging.log4j.Logger;
++import org.apache.logging.log4j.Marker;
++import org.apache.logging.log4j.MarkerManager;
++
++public class PacketEncoder extends MessageToByteEncoder {
++
++    private static final Logger a = LogManager.getLogger();
++    private static final Marker b = MarkerManager.getMarker("PACKET_SENT", NetworkManager.b);
++    private final NetworkStatistics c;
++
++    public PacketEncoder(NetworkStatistics networkstatistics) {
++        this.c = networkstatistics;
++    }
++
++    protected void a(ChannelHandlerContext channelhandlercontext, Packet packet, ByteBuf bytebuf) throws IOException
++    {
++        Integer integer = (Integer) ((BiMap) channelhandlercontext.channel().attr(NetworkManager.f).get()).inverse().get(packet.getClass());
++
++        if (a.isDebugEnabled()) {
++            a.debug(b, "OUT: [{}:{}] {}[{}]", new Object[] { channelhandlercontext.channel().attr(NetworkManager.d).get(), integer, packet.getClass().getName(), packet.b()});
++        }
++
++        if (integer == null) {
++            throw new IOException("Can\'t serialize unregistered packet");
++        } else {
++            PacketDataSerializer packetdataserializer = new PacketDataSerializer(bytebuf);
++
++            packetdataserializer.b(integer.intValue());
++            if ( channelhandlercontext.channel().attr( HandshakeListener.protocolVersion ).get() == 4)
++            {
++                packet.b( packetdataserializer );
++            } else {
++                packet.writeSnapshot( packetdataserializer );
++            }
++            this.c.b(integer.intValue(), (long) packetdataserializer.readableBytes());
++        }
++    }
++
++    protected void encode(ChannelHandlerContext channelhandlercontext, Object object, ByteBuf bytebuf) throws IOException
++    {
++        this.a(channelhandlercontext, (Packet) object, bytebuf);
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/PacketLoginOutSuccess.java b/src/main/java/net/minecraft/server/PacketLoginOutSuccess.java
+new file mode 100644
+index 0000000..3aa93cd
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/PacketLoginOutSuccess.java
+@@ -0,0 +1,51 @@
++package net.minecraft.server;
++
++import net.minecraft.util.com.mojang.authlib.GameProfile;
++
++import java.io.IOException;
++
++public class PacketLoginOutSuccess extends Packet {
++
++    private GameProfile a;
++
++    public PacketLoginOutSuccess() {}
++
++    public PacketLoginOutSuccess(GameProfile gameprofile) {
++        this.a = gameprofile;
++    }
++
++    public void a(PacketDataSerializer packetdataserializer) throws IOException
++    {
++        String s = packetdataserializer.c(36);
++        String s1 = packetdataserializer.c(16);
++
++        this.a = new GameProfile(s, s1);
++    }
++
++    public void b(PacketDataSerializer packetdataserializer) throws IOException
++    {
++        packetdataserializer.a(this.a.getId());
++        packetdataserializer.a(this.a.getName());
++    }
++
++    // Spigot start
++    @Override
++    public void writeSnapshot(PacketDataSerializer packetdataserializer) throws IOException
++    {
++        packetdataserializer.a( EntityHuman.a( this.a ).toString() );
++        packetdataserializer.a( this.a.getName());
++    }
++    // Spigot end
++
++    public void a(PacketLoginOutListener packetloginoutlistener) {
++        packetloginoutlistener.a(this);
++    }
++
++    public boolean a() {
++        return true;
++    }
++
++    public void handle(PacketListener packetlistener) {
++        this.a((PacketLoginOutListener) packetlistener);
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutNamedEntitySpawn.java b/src/main/java/net/minecraft/server/PacketPlayOutNamedEntitySpawn.java
+index 8bab528..e746d8e 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutNamedEntitySpawn.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutNamedEntitySpawn.java
+@@ -60,6 +60,25 @@ public class PacketPlayOutNamedEntitySpawn extends Packet {
+         this.i.a(packetdataserializer);
+     }
+ 
++    // Spigot start
++    @Override
++    public void writeSnapshot(PacketDataSerializer packetdataserializer) throws IOException
++    { // CraftBukkit - added throws
++        packetdataserializer.b( this.a );
++        packetdataserializer.a( EntityHuman.a( this.b ).toString() );
++        packetdataserializer.a( this.b.getName().length() > 16 ? this.b.getName().substring( 0, 16 ) : this.b.getName() ); // CraftBukkit - Limit name length to 16 characters
++        packetdataserializer.b( 0 ); // TODO
++        packetdataserializer.writeInt( this.c );
++        packetdataserializer.writeInt( this.d );
++        packetdataserializer.writeInt( this.e );
++        packetdataserializer.writeByte( this.f );
++        packetdataserializer.writeByte( this.g );
++        packetdataserializer.writeShort( this.h );
++        this.i.a( packetdataserializer );
++    }
++
++    // Spigot end
++
+     public void a(PacketPlayOutListener packetplayoutlistener) {
+         packetplayoutlistener.a(this);
+     }
+diff --git a/src/main/java/net/minecraft/server/PacketStatusListener.java b/src/main/java/net/minecraft/server/PacketStatusListener.java
+index f9da452..fa493ca 100644
+--- a/src/main/java/net/minecraft/server/PacketStatusListener.java
++++ b/src/main/java/net/minecraft/server/PacketStatusListener.java
+@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
+ 
+ // CraftBukkit start
+ import java.util.Iterator;
++import java.util.UUID;
+ 
+ import org.bukkit.craftbukkit.util.CraftIconCache;
+ import org.bukkit.entity.Player;
+@@ -117,13 +118,22 @@ public class PacketStatusListener implements PacketStatusInListener {
+             profiles = profiles.subList( 0, Math.min( profiles.size(), org.spigotmc.SpigotConfig.playerSample ) ); // Cap the sample to n (or less) displayed players, ie: Vanilla behaviour
+         }
+         // Spigot End
+-        playerSample.a(profiles.toArray(new GameProfile[profiles.size()]));
++        // Spigot start
++        GameProfile[] aProfiles = profiles.toArray( new GameProfile[ profiles.size() ] );
++        if ( networkManager.m.attr( HandshakeListener.protocolVersion ).get() == 5 )
++        {
++            for (int i = 0; i < aProfiles.length; i++) {
++                aProfiles[i] = new GameProfileWrapper( EntityHuman.a( aProfiles[i] ), aProfiles[i].getName() );
++            }
++        }
++        // Spigot end
++        playerSample.a(aProfiles);
+ 
+         ServerPing ping = new ServerPing();
+         ping.setFavicon(event.icon.value);
+         ping.setMOTD(new ChatComponentText(event.getMotd()));
+         ping.setPlayerSample(playerSample);
+-        ping.setServerInfo(new ServerPingServerData(minecraftServer.getServerModName() + " " + minecraftServer.getVersion(), 4)); // TODO: Update when protocol changes
++        ping.setServerInfo(new ServerPingServerData(minecraftServer.getServerModName() + " " + minecraftServer.getVersion(), networkManager.m.attr( HandshakeListener.protocolVersion ).get())); // Spigot // TODO: Update when protocol changes
+ 
+         this.networkManager.handle(new PacketStatusOutServerInfo(ping), new GenericFutureListener[0]);
+         // CraftBukkit end
+@@ -132,4 +142,23 @@ public class PacketStatusListener implements PacketStatusInListener {
+     public void a(PacketStatusInPing packetstatusinping) {
+         this.networkManager.handle(new PacketStatusOutPong(packetstatusinping.c()), new GenericFutureListener[0]);
+     }
++
++
++    // Spigot start
++    private static class GameProfileWrapper extends GameProfile {
++
++        private final UUID uuid;
++
++        public GameProfileWrapper(UUID uuid, String name) {
++            super("", name);
++            this.uuid = uuid;
++        }
++
++        @Override
++        public String getId() {
++            return uuid.toString();
++        }
++    }
++
++    // Spigot end
+ }
+-- 
+1.8.5.2.msysgit.0
+
