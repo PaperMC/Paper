@@ -1,4 +1,4 @@
-From 127178fe81c99ba39c9bf3fb1a8d89c192bd1b41 Mon Sep 17 00:00:00 2001
+From d303eb8ffc3f82badc690c1bad71782f0d5f7b57 Mon Sep 17 00:00:00 2001
 From: Thinkofdeath <thethinkofdeath@gmail.com>
 Date: Wed, 9 Apr 2014 13:29:57 +0100
 Subject: [PATCH] Convert player heads async
@@ -112,10 +112,10 @@ index b241cfe..925e017 100644
      public Packet getUpdatePacket() {
 diff --git a/src/main/java/org/spigotmc/HeadConverter.java b/src/main/java/org/spigotmc/HeadConverter.java
 new file mode 100644
-index 0000000..0f465f0
+index 0000000..bc949a1
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/HeadConverter.java
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,163 @@
 +package org.spigotmc;
 +
 +import com.google.common.base.Charsets;
@@ -128,7 +128,6 @@ index 0000000..0f465f0
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.NBTTagCompound;
 +import net.minecraft.server.NBTTagList;
-+import net.minecraft.server.PacketPlayOutTileEntityData;
 +import net.minecraft.server.TileEntitySkull;
 +import net.minecraft.util.com.mojang.authlib.GameProfile;
 +import org.bukkit.Bukkit;
@@ -162,7 +161,8 @@ index 0000000..0f465f0
 +        final String name = head.getExtraType();
 +        final NBTTagCompound tag = new NBTTagCompound();
 +        head.b( tag );
-+        if ( tag.hasKey( "Owner" ) && tag.getCompound( "Owner" ).hasKey( "Properties" ) ) {
++        if ( tag.hasKey( "Owner" ) && tag.getCompound( "Owner" ).hasKey( "Properties" ) )
++        {
 +            return;
 +        }
 +
@@ -171,12 +171,13 @@ index 0000000..0f465f0
 +            @Override
 +            public void run()
 +            {
++                HttpURLConnection connection = null;
 +                try
 +                {
 +                    // Firstly convert name -> uuid
 +                    URL accountsAPI = new URL( "https://api.mojang.com/profiles/page/1" );
 +
-+                    HttpURLConnection connection = (HttpURLConnection) accountsAPI.openConnection();
++                    connection = (HttpURLConnection) accountsAPI.openConnection();
 +                    connection.setRequestProperty( "Content-Type", "application/json" );
 +                    connection.setRequestMethod( "POST" );
 +                    connection.setDoInput( true );
@@ -188,8 +189,16 @@ index 0000000..0f465f0
 +                    outputStream.flush();
 +                    outputStream.close();
 +
-+                    JsonObject response = new JsonParser().parse( new InputStreamReader( connection.getInputStream() ) )
-+                            .getAsJsonObject();
++                    InputStreamReader inputStreamReader = new InputStreamReader( connection.getInputStream() );
++                    JsonObject response;
++                    try
++                    {
++                        response = new JsonParser().parse( inputStreamReader )
++                                .getAsJsonObject();
++                    } finally
++                    {
++                        inputStreamReader.close();
++                    }
 +                    if ( response.get( "size" ).getAsInt() != 1 )
 +                    {
 +                        return;
@@ -208,10 +217,18 @@ index 0000000..0f465f0
 +                    // Now to lookup the textures
 +
 +                    URL url = new URL( "https://sessionserver.mojang.com/session/minecraft/profile/" + uuid );
++                    connection.disconnect();
 +                    connection = (HttpURLConnection) url.openConnection();
 +                    connection.setDoOutput( true );
-+                    response = new JsonParser().parse( new InputStreamReader( connection.getInputStream() ) )
-+                            .getAsJsonObject();
++                    inputStreamReader = new InputStreamReader( connection.getInputStream() );
++                    try
++                    {
++                        response = new JsonParser().parse( inputStreamReader )
++                                .getAsJsonObject();
++                    } finally
++                    {
++                        inputStreamReader.close();
++                    }
 +
 +                    if ( !response.has( "properties" ) )
 +                    {
@@ -251,6 +268,12 @@ index 0000000..0f465f0
 +                } catch ( IOException e )
 +                {
 +                    Bukkit.getLogger().warning( "Error connecting to Mojang servers, cannot convert player heads" );
++                } finally
++                {
++                    if ( connection != null )
++                    {
++                        connection.disconnect();
++                    }
 +                }
 +            }
 +        } );
