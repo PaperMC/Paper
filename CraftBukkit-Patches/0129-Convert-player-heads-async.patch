@@ -1,0 +1,261 @@
+From 127178fe81c99ba39c9bf3fb1a8d89c192bd1b41 Mon Sep 17 00:00:00 2001
+From: Thinkofdeath <thethinkofdeath@gmail.com>
+Date: Wed, 9 Apr 2014 13:29:57 +0100
+Subject: [PATCH] Convert player heads async
+
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 90f32ed..6c2e905 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -513,6 +513,13 @@ public class Chunk {
+                     if (tileentity != null) {
+                         tileentity.u();
+                     }
++
++                    // Spigot start
++                    if ( tileentity instanceof TileEntitySkull )
++                    {
++                        org.spigotmc.HeadConverter.convertHead( (TileEntitySkull) tileentity );
++                    }
++                    // Spigot end
+                 }
+ 
+                 this.n = true;
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index fb262bc..4c086d3 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -378,6 +378,12 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+                 TileEntity tileentity = TileEntity.c(nbttagcompound4);
+ 
+                 if (tileentity != null) {
++                    // Spigot start
++                    if ( tileentity instanceof TileEntitySkull )
++                    {
++                        org.spigotmc.HeadConverter.convertHead( (TileEntitySkull) tileentity );
++                    }
++                    // Spigot end
+                     chunk.a(tileentity);
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/server/ItemSkull.java b/src/main/java/net/minecraft/server/ItemSkull.java
+index 6b2bf9b..5a74142 100644
+--- a/src/main/java/net/minecraft/server/ItemSkull.java
++++ b/src/main/java/net/minecraft/server/ItemSkull.java
+@@ -68,6 +68,7 @@ public class ItemSkull extends Item {
+                     ((TileEntitySkull) tileentity).setSkullType(itemstack.getData(), s);
+                     ((TileEntitySkull) tileentity).setRotation(i1);
+                     ((BlockSkull) Blocks.SKULL).a(world, i, j, k, (TileEntitySkull) tileentity);
++                    org.spigotmc.HeadConverter.convertHead( (TileEntitySkull) tileentity ); // Spigot
+                 }
+ 
+                 --itemstack.count;
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutTileEntityData.java b/src/main/java/net/minecraft/server/PacketPlayOutTileEntityData.java
+index 005f1fe..4780c53 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutTileEntityData.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutTileEntityData.java
+@@ -1,5 +1,7 @@
+ package net.minecraft.server;
+ 
++import net.minecraft.util.com.mojang.authlib.GameProfile;
++
+ public class PacketPlayOutTileEntityData extends Packet {
+ 
+     private int a;
+@@ -41,12 +43,14 @@ public class PacketPlayOutTileEntityData extends Packet {
+         packetdataserializer.writeShort(this.b);
+         packetdataserializer.writeInt(this.c);
+         packetdataserializer.writeByte((byte) this.d);
+-        if ( this.e.hasKey( "ExtraType" ) )
++        if ( this.e.hasKey( "ExtraType" ) && !this.e.hasKey( "Owner" ) )
+         {
+             NBTTagCompound profile = new NBTTagCompound();
+             profile.setString( "Name", this.e.getString( "ExtraType" ) );
+             profile.setString( "Id", "" );
+             this.e.set( "Owner", profile );
++        } else {
++            this.e.remove( "ExtraType" );
+         }
+         packetdataserializer.a(this.e);
+     }
+diff --git a/src/main/java/net/minecraft/server/TileEntitySkull.java b/src/main/java/net/minecraft/server/TileEntitySkull.java
+index b241cfe..925e017 100644
+--- a/src/main/java/net/minecraft/server/TileEntitySkull.java
++++ b/src/main/java/net/minecraft/server/TileEntitySkull.java
+@@ -5,6 +5,7 @@ public class TileEntitySkull extends TileEntity {
+     private int a;
+     private int i;
+     private String j = "";
++    private NBTTagCompound owner = null;
+ 
+     public TileEntitySkull() {}
+ 
+@@ -13,6 +14,7 @@ public class TileEntitySkull extends TileEntity {
+         nbttagcompound.setByte("SkullType", (byte) (this.a & 255));
+         nbttagcompound.setByte("Rot", (byte) (this.i & 255));
+         nbttagcompound.setString("ExtraType", this.j);
++        if ( owner != null ) nbttagcompound.set( "Owner", owner );
+     }
+ 
+     public void a(NBTTagCompound nbttagcompound) {
+@@ -22,6 +24,10 @@ public class TileEntitySkull extends TileEntity {
+         if (nbttagcompound.hasKeyOfType("ExtraType", 8)) {
+             this.j = nbttagcompound.getString("ExtraType");
+         }
++        if ( nbttagcompound.hasKey( "Owner" ) )
++        {
++            owner = nbttagcompound.getCompound( "Owner" );
++        }
+     }
+ 
+     public Packet getUpdatePacket() {
+diff --git a/src/main/java/org/spigotmc/HeadConverter.java b/src/main/java/org/spigotmc/HeadConverter.java
+new file mode 100644
+index 0000000..0f465f0
+--- /dev/null
++++ b/src/main/java/org/spigotmc/HeadConverter.java
+@@ -0,0 +1,140 @@
++package org.spigotmc;
++
++import com.google.common.base.Charsets;
++import com.google.common.util.concurrent.ThreadFactoryBuilder;
++import com.google.gson.JsonArray;
++import com.google.gson.JsonElement;
++import com.google.gson.JsonObject;
++import com.google.gson.JsonParser;
++import net.minecraft.server.EntityHuman;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.NBTTagCompound;
++import net.minecraft.server.NBTTagList;
++import net.minecraft.server.PacketPlayOutTileEntityData;
++import net.minecraft.server.TileEntitySkull;
++import net.minecraft.util.com.mojang.authlib.GameProfile;
++import org.bukkit.Bukkit;
++
++import java.io.IOException;
++import java.io.InputStreamReader;
++import java.io.OutputStream;
++import java.net.HttpURLConnection;
++import java.net.MalformedURLException;
++import java.net.URL;
++import java.util.concurrent.Executor;
++import java.util.concurrent.Executors;
++
++public class HeadConverter
++{
++    private static final Executor executor = Executors.newFixedThreadPool( 3,
++            new ThreadFactoryBuilder()
++                    .setNameFormat( "Head Conversion Thread - %1$d" )
++                    .build()
++    );
++
++    public static void convertHead(final TileEntitySkull head)
++    {
++        if ( head.getSkullType() != 3 )
++        {
++            return;
++        }
++        final int x = head.x;
++        final int y = head.y;
++        final int z = head.z;
++        final String name = head.getExtraType();
++        final NBTTagCompound tag = new NBTTagCompound();
++        head.b( tag );
++        if ( tag.hasKey( "Owner" ) && tag.getCompound( "Owner" ).hasKey( "Properties" ) ) {
++            return;
++        }
++
++        executor.execute( new Runnable()
++        {
++            @Override
++            public void run()
++            {
++                try
++                {
++                    // Firstly convert name -> uuid
++                    URL accountsAPI = new URL( "https://api.mojang.com/profiles/page/1" );
++
++                    HttpURLConnection connection = (HttpURLConnection) accountsAPI.openConnection();
++                    connection.setRequestProperty( "Content-Type", "application/json" );
++                    connection.setRequestMethod( "POST" );
++                    connection.setDoInput( true );
++                    connection.setDoOutput( true );
++
++                    OutputStream outputStream = connection.getOutputStream();
++                    outputStream.write( ( "[{\"name\":\"" + name +
++                            "\", \"agent\":\"minecraft\"}]" ).getBytes( Charsets.UTF_8 ) );
++                    outputStream.flush();
++                    outputStream.close();
++
++                    JsonObject response = new JsonParser().parse( new InputStreamReader( connection.getInputStream() ) )
++                            .getAsJsonObject();
++                    if ( response.get( "size" ).getAsInt() != 1 )
++                    {
++                        return;
++                    }
++                    String uuid = response.getAsJsonArray( "profiles" )
++                            .get( 0 ).getAsJsonObject()
++                            .get( "id" ).getAsString();
++
++                    NBTTagCompound owner = new NBTTagCompound();
++                    GameProfile gameProfile = new GameProfile( uuid, name );
++                    owner.setString( "Name", name );
++                    owner.setString( "Id", EntityHuman.a( gameProfile ).toString() );
++
++                    NBTTagCompound properties = new NBTTagCompound();
++
++                    // Now to lookup the textures
++
++                    URL url = new URL( "https://sessionserver.mojang.com/session/minecraft/profile/" + uuid );
++                    connection = (HttpURLConnection) url.openConnection();
++                    connection.setDoOutput( true );
++                    response = new JsonParser().parse( new InputStreamReader( connection.getInputStream() ) )
++                            .getAsJsonObject();
++
++                    if ( !response.has( "properties" ) )
++                    {
++                        return;
++                    }
++                    JsonArray props = response.getAsJsonArray( "properties" );
++                    for ( JsonElement e : props )
++                    {
++                        JsonObject element = e.getAsJsonObject();
++                        NBTTagCompound prop = new NBTTagCompound();
++                        prop.setString( "Signature", element.get( "signature" ).getAsString() );
++                        prop.setString( "Value", element.get( "value" ).getAsString() );
++                        NBTTagList propList = new NBTTagList();
++                        propList.add( prop );
++                        properties.set( element.get( "name" ).getAsString(), propList );
++                    }
++                    owner.set( "Properties", properties );
++                    tag.set( "Owner", owner );
++
++                    // Update the tile entity
++                    MinecraftServer.getServer().processQueue.add( new Runnable()
++                    {
++                        @Override
++                        public void run()
++                        {
++                            head.a( tag );
++                            // Send the updated version
++                            MinecraftServer.getServer().getPlayerList().sendPacketNearby(
++                                    x, y, z, head.getWorld().spigotConfig.viewDistance * 16, head.getWorld().worldData.j(),
++                                    head.getUpdatePacket() );
++                        }
++                    } );
++
++                } catch ( MalformedURLException e )
++                {
++                    e.printStackTrace();
++                } catch ( IOException e )
++                {
++                    Bukkit.getLogger().warning( "Error connecting to Mojang servers, cannot convert player heads" );
++                }
++            }
++        } );
++    }
++}
+-- 
+1.8.5.2.msysgit.0
+
