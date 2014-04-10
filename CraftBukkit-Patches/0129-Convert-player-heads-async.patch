@@ -1,4 +1,4 @@
-From 91bdfad229c2a64a1308cb3733e11af2a88d6959 Mon Sep 17 00:00:00 2001
+From c0929058940f075b24985d67861f7adb2cd4d739 Mon Sep 17 00:00:00 2001
 From: Thinkofdeath <thethinkofdeath@gmail.com>
 Date: Wed, 9 Apr 2014 13:29:57 +0100
 Subject: [PATCH] Convert player heads async
@@ -112,10 +112,10 @@ index b241cfe..925e017 100644
      public Packet getUpdatePacket() {
 diff --git a/src/main/java/org/spigotmc/HeadConverter.java b/src/main/java/org/spigotmc/HeadConverter.java
 new file mode 100644
-index 0000000..d84a862
+index 0000000..3c522d9
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/HeadConverter.java
-@@ -0,0 +1,169 @@
+@@ -0,0 +1,159 @@
 +package org.spigotmc;
 +
 +import com.google.common.base.Charsets;
@@ -131,6 +131,7 @@ index 0000000..d84a862
 +import net.minecraft.server.TileEntitySkull;
 +import net.minecraft.util.com.mojang.authlib.GameProfile;
 +import org.bukkit.Bukkit;
++import org.spigotmc.authlib.properties.Property;
 +
 +import java.io.IOException;
 +import java.io.InputStreamReader;
@@ -217,36 +218,25 @@ index 0000000..d84a862
 +                    NBTTagCompound properties = new NBTTagCompound();
 +
 +                    // Now to lookup the textures
++                    org.spigotmc.authlib.GameProfile newStyleProfile = new org.spigotmc.authlib.GameProfile(
++                            EntityHuman.a( gameProfile ),
++                            gameProfile.getName() );
++                    MinecraftServer.getServer().newSessionService.fillProfileProperties( newStyleProfile );
 +
-+                    URL url = new URL( "https://sessionserver.mojang.com/session/minecraft/profile/" + uuid );
-+                    connection.disconnect();
-+                    connection = (HttpURLConnection) url.openConnection();
-+                    connection.setDoOutput( true );
-+                    inputStreamReader = new InputStreamReader( connection.getInputStream() );
-+                    try
-+                    {
-+                        response = new JsonParser().parse( inputStreamReader )
-+                                .getAsJsonObject();
-+                    } finally
-+                    {
-+                        inputStreamReader.close();
-+                    }
 +
-+                    if ( !response.has( "properties" ) )
++                    for ( String key : newStyleProfile.getProperties().keys() )
 +                    {
-+                        return;
-+                    }
-+                    JsonArray props = response.getAsJsonArray( "properties" );
-+                    for ( JsonElement e : props )
-+                    {
-+                        JsonObject element = e.getAsJsonObject();
-+                        NBTTagCompound prop = new NBTTagCompound();
-+                        prop.setString( "Signature", element.get( "signature" ).getAsString() );
-+                        prop.setString( "Value", element.get( "value" ).getAsString() );
 +                        NBTTagList propList = new NBTTagList();
-+                        propList.add( prop );
-+                        properties.set( element.get( "name" ).getAsString(), propList );
++                        for ( Property prop : newStyleProfile.getProperties().get( key ) )
++                        {
++                            NBTTagCompound nprop = new NBTTagCompound();
++                            nprop.setString( "Signature", prop.getValue() );
++                            nprop.setString( "Value", prop.getSignature()  );
++                            propList.add( nprop );
++                        }
++                        properties.set( key, propList );
 +                    }
++
 +                    owner.set( "Properties", properties );
 +                    tag.set( "Owner", owner );
 +
