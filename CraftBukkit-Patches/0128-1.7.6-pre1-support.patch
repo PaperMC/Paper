@@ -1,9 +1,46 @@
-From 24006334930fb7f4c64ffebdb0ccea93e9baa5c1 Mon Sep 17 00:00:00 2001
+From af89e32891c1b2b4be699afe3bdae190e1c4babb Mon Sep 17 00:00:00 2001
 From: Thinkofdeath <thethinkofdeath@gmail.com>
 Date: Thu, 3 Apr 2014 17:04:18 +0100
 Subject: [PATCH] 1.7.6-pre1 support
 
 
+diff --git a/pom.xml b/pom.xml
+index c8285e0..21876f0 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -31,6 +31,10 @@
+       <id>repobo-snap</id>
+       <url>http://repo.bukkit.org/content/groups/public</url>
+     </repository>
++    <repository>
++      <id>vanilla</id>
++      <url>https://libraries.minecraft.net/</url>
++    </repository>
+   </repositories>
+ 
+   <pluginRepositories>
+@@ -114,6 +118,21 @@
+       <artifactId>trove4j</artifactId>
+       <version>3.0.3</version>
+     </dependency>
++    <dependency>
++      <groupId>org.apache.commons</groupId>
++      <artifactId>commons-lang3</artifactId>
++      <version>3.2.1</version>
++    </dependency>
++    <dependency>
++      <groupId>commons-io</groupId>
++      <artifactId>commons-io</artifactId>
++      <version>2.4</version>
++    </dependency>
++    <dependency>
++      <groupId>com.mojang</groupId>
++      <artifactId>authlib</artifactId>
++      <version>1.5.5</version>
++    </dependency>
+   </dependencies>
+ 
+   <!-- This builds a completely 'ready to start' jar with all dependencies inside -->
 diff --git a/src/main/java/net/minecraft/server/HandshakeListener.java b/src/main/java/net/minecraft/server/HandshakeListener.java
 index 42539b4..490123f 100644
 --- a/src/main/java/net/minecraft/server/HandshakeListener.java
@@ -46,6 +83,34 @@ index 42539b4..490123f 100644
                  chatcomponenttext = new ChatComponentText( org.spigotmc.SpigotConfig.outdatedServerMessage ); // Spigot
                  this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext), new GenericFutureListener[0]);
                  this.b.close(chatcomponenttext);
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 8ce9dd7..b95123c 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -17,6 +17,7 @@ import java.util.UUID;
+ import java.util.concurrent.Callable;
+ import javax.imageio.ImageIO;
+ 
++import com.mojang.authlib.yggdrasil.YggdrasilMinecraftSessionService;
+ import net.minecraft.util.com.google.common.base.Charsets;
+ import net.minecraft.util.com.mojang.authlib.GameProfile;
+ import net.minecraft.util.com.mojang.authlib.minecraft.MinecraftSessionService;
+@@ -107,6 +108,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+     private static final int TICK_TIME = 1000000000 / TPS;
+     private static final int SAMPLE_INTERVAL = 100;
+     public final double[] recentTps = new double[ 3 ];
++    public final com.mojang.authlib.minecraft.MinecraftSessionService newSessionService;
+     // Spigot end
+ 
+     public MinecraftServer(OptionSet options, Proxy proxy) { // CraftBukkit - signature file -> OptionSet
+@@ -117,6 +119,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
+         this.n = new CommandDispatcher();
+         // this.convertable = new WorldLoaderServer(file1); // CraftBukkit - moved to DedicatedServer.init
+         this.S = (new YggdrasilAuthenticationService(proxy, UUID.randomUUID().toString())).createMinecraftSessionService();
++        newSessionService = new com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService(proxy, UUID.randomUUID().toString()).createMinecraftSessionService();
+ 
+         // CraftBukkit start
+         this.options = options;
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
 index f6cca80..56bfe34 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
@@ -192,10 +257,18 @@ index 0000000..3aa93cd
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutNamedEntitySpawn.java b/src/main/java/net/minecraft/server/PacketPlayOutNamedEntitySpawn.java
-index 8bab528..e746d8e 100644
+index 8bab528..01630be 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutNamedEntitySpawn.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutNamedEntitySpawn.java
-@@ -60,6 +60,25 @@ public class PacketPlayOutNamedEntitySpawn extends Packet {
+@@ -2,6 +2,7 @@ package net.minecraft.server;
+ 
+ import java.util.List;
+ 
++import com.mojang.authlib.properties.Property;
+ import net.minecraft.util.com.mojang.authlib.GameProfile;
+ 
+ import java.io.IOException; // CraftBukkit
+@@ -60,6 +61,41 @@ public class PacketPlayOutNamedEntitySpawn extends Packet {
          this.i.a(packetdataserializer);
      }
  
@@ -206,7 +279,23 @@ index 8bab528..e746d8e 100644
 +        packetdataserializer.b( this.a );
 +        packetdataserializer.a( EntityHuman.a( this.b ).toString() );
 +        packetdataserializer.a( this.b.getName().length() > 16 ? this.b.getName().substring( 0, 16 ) : this.b.getName() ); // CraftBukkit - Limit name length to 16 characters
-+        packetdataserializer.b( 0 ); // TODO
++
++        if ( this.b instanceof ThreadPlayerLookupUUID.NewGameProfileWrapper )
++        {
++            com.mojang.authlib.GameProfile newProfile = ((ThreadPlayerLookupUUID.NewGameProfileWrapper) b).newProfile;
++            packetdataserializer.b( newProfile.getProperties().size() );
++            for ( String key : newProfile.getProperties().keys() )
++            {
++                for ( Property prop : newProfile.getProperties().get( key ) )
++                {
++                    packetdataserializer.a( prop.getName() );
++                    packetdataserializer.a( prop.getValue() );
++                    packetdataserializer.a( prop.getSignature() );
++                }
++            }
++        } else {
++            packetdataserializer.b( 0 );
++        }
 +        packetdataserializer.writeInt( this.c );
 +        packetdataserializer.writeInt( this.d );
 +        packetdataserializer.writeInt( this.e );
@@ -348,6 +437,37 @@ index f9da452..fa493ca 100644
 +    }
 +
 +    // Spigot end
+ }
+diff --git a/src/main/java/net/minecraft/server/ThreadPlayerLookupUUID.java b/src/main/java/net/minecraft/server/ThreadPlayerLookupUUID.java
+index fe4502a..0649ccf 100644
+--- a/src/main/java/net/minecraft/server/ThreadPlayerLookupUUID.java
++++ b/src/main/java/net/minecraft/server/ThreadPlayerLookupUUID.java
+@@ -33,7 +33,9 @@ class ThreadPlayerLookupUUID extends Thread {
+             }
+             // Spigot End
+             String s = (new BigInteger(MinecraftEncryption.a(LoginListener.a(this.a), LoginListener.b(this.a).J().getPublic(), LoginListener.c(this.a)))).toString(16);
+-            LoginListener.a(this.a, LoginListener.b(this.a).at().hasJoinedServer(new GameProfile((String) null, LoginListener.d(this.a).getName()), s));
++            //LoginListener.a(this.a, LoginListener.b(this.a).at().hasJoinedServer(new GameProfile((String) null, LoginListener.d(this.a).getName()), s));
++            com.mojang.authlib.GameProfile profile = LoginListener.b(this.a).newSessionService.hasJoinedServer( new com.mojang.authlib.GameProfile( null, LoginListener.d(this.a).getName() ), s );
++            LoginListener.a(this.a, new NewGameProfileWrapper( profile ) );
+             if (LoginListener.d(this.a) != null) {
+                 // Spigot Start
+                 fireLoginEvents();
+@@ -95,4 +97,15 @@ class ThreadPlayerLookupUUID extends Thread {
+         }
+         // CraftBukkit end
+     }
++
++    public static class NewGameProfileWrapper extends GameProfile {
++
++        public com.mojang.authlib.GameProfile newProfile;
++
++        public NewGameProfileWrapper(com.mojang.authlib.GameProfile newProfile)
++        {
++            super( newProfile.getId().toString().replaceAll( "-", "" ), newProfile.getName() );
++            this.newProfile = newProfile;
++        }
++    }
  }
 -- 
 1.8.5.2.msysgit.0
