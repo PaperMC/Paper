@@ -1,4 +1,4 @@
-From a2183033f2832025d51a0e22d8f0033c86f5a504 Mon Sep 17 00:00:00 2001
+From a03d3471b1741d354da03ff76313f057e5a0b51f Mon Sep 17 00:00:00 2001
 From: Thinkofdeath <thethinkofdeath@gmail.com>
 Date: Wed, 9 Apr 2014 13:29:57 +0100
 Subject: [PATCH] Convert player heads async
@@ -112,10 +112,10 @@ index b241cfe..925e017 100644
      public Packet getUpdatePacket() {
 diff --git a/src/main/java/org/spigotmc/HeadConverter.java b/src/main/java/org/spigotmc/HeadConverter.java
 new file mode 100644
-index 0000000..6f40f22
+index 0000000..ad0454a
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/HeadConverter.java
-@@ -0,0 +1,164 @@
+@@ -0,0 +1,195 @@
 +package org.spigotmc;
 +
 +import com.google.common.base.Charsets;
@@ -126,6 +126,7 @@ index 0000000..6f40f22
 +import com.google.gson.JsonParser;
 +import net.minecraft.server.EntityHuman;
 +import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.NBTBase;
 +import net.minecraft.server.NBTTagCompound;
 +import net.minecraft.server.NBTTagList;
 +import net.minecraft.server.TileEntitySkull;
@@ -139,6 +140,8 @@ index 0000000..6f40f22
 +import java.net.HttpURLConnection;
 +import java.net.MalformedURLException;
 +import java.net.URL;
++import java.util.Set;
++import java.util.UUID;
 +import java.util.concurrent.Executor;
 +import java.util.concurrent.Executors;
 +
@@ -165,7 +168,15 @@ index 0000000..6f40f22
 +        head.b( tag );
 +        if ( tag.hasKey( "Owner" ) && tag.getCompound( "Owner" ).hasKey( "Properties" ) )
 +        {
-+            return;
++            // Validate the head
++            org.spigotmc.authlib.GameProfile profile = getProfile( tag.getCompound( "Owner" ) );
++            if ( MinecraftServer.getServer().newSessionService.getTextures( profile, false ).size() == 0 ) {
++                tag.remove( "Owner" );
++                head.a( tag );
++            } else
++            {
++                return;
++            }
 +        }
 +
 +        executor.execute( new Runnable()
@@ -209,10 +220,13 @@ index 0000000..6f40f22
 +                    String uuid = response.getAsJsonArray( "profiles" )
 +                            .get( 0 ).getAsJsonObject()
 +                            .get( "id" ).getAsString();
++                    String correctedName = response.getAsJsonArray( "profiles" )
++                            .get( 0 ).getAsJsonObject()
++                            .get( "name" ).getAsString();
 +
 +                    NBTTagCompound owner = new NBTTagCompound();
-+                    GameProfile gameProfile = new GameProfile( uuid, name );
-+                    owner.setString( "Name", name );
++                    GameProfile gameProfile = new GameProfile( uuid, correctedName );
++                    owner.setString( "Name", correctedName );
 +                    owner.setString( "Id", EntityHuman.a( gameProfile ).toString() );
 +
 +                    NBTTagCompound properties = new NBTTagCompound();
@@ -278,6 +292,23 @@ index 0000000..6f40f22
 +                }
 +            }
 +        } );
++    }
++
++    private static org.spigotmc.authlib.GameProfile getProfile(NBTTagCompound owner)
++    {
++        org.spigotmc.authlib.GameProfile profile = new org.spigotmc.authlib.GameProfile(
++                UUID.fromString( owner.getString( "Id" ) ), owner.getString( "Name" ) );
++
++        NBTTagCompound properties = owner.getCompound( "Properties" );
++        for (String key : (Set<String>) properties.c())
++        {
++            NBTTagList props = properties.getList( key, 10 );
++            for (int i = 0; i < props.size(); i++) {
++                NBTTagCompound prop = props.get( i );
++                profile.getProperties().put( key, new Property( key, prop.getString( "Value" ), prop.getString( "Signature" ) ) );
++            }
++        }
++        return profile;
 +    }
 +}
 -- 
