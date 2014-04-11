@@ -52,10 +52,16 @@ public class MapFont {
             throw new IllegalArgumentException("text contains invalid characters");
         }
 
+        if (text.length() == 0){
+            return 0;
+        }
+
         int result = 0;
         for (int i = 0; i < text.length(); ++i) {
             result += chars.get(text.charAt(i)).getWidth();
         }
+        result += text.length() - 1; // Account for 1px spacing between characters
+
         return result;
     }
 
