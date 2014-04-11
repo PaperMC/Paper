@@ -1,28 +1,30 @@
 package org.bukkit.craftbukkit.block;
 
-import com.google.common.base.Strings;
-
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TileEntitySkull;
 
+import net.minecraft.util.com.mojang.authlib.GameProfile;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.SkullType;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Skull;
+import org.bukkit.craftbukkit.CraftOfflinePlayer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 
 public class CraftSkull extends CraftBlockState implements Skull {
     private final TileEntitySkull skull;
-    private String player;
+    private GameProfile profile;
     private SkullType skullType;
     private byte rotation;
-    private final int MAX_OWNER_LENGTH = 16;
 
     public CraftSkull(final Block block) {
         super(block);
 
         CraftWorld world = (CraftWorld) block.getWorld();
         skull = (TileEntitySkull) world.getTileEntityAt(getX(), getY(), getZ());
-        player = skull.getExtraType();
+        profile = skull.getGameProfile();
         skullType = getSkullType(skull.getSkullType());
         rotation = (byte) skull.getRotation();
     }
@@ -140,23 +142,36 @@ public class CraftSkull extends CraftBlockState implements Skull {
     }
 
     public boolean hasOwner() {
-        return !Strings.isNullOrEmpty(player);
+        return profile != null;
     }
 
     public String getOwner() {
-        return player;
+        return profile.getName();
     }
 
     public boolean setOwner(String name) {
-        if (name == null || name.length() > MAX_OWNER_LENGTH) {
+        return false;
+    }
+
+    public OfflinePlayer getPlayer() {
+        return MinecraftServer.getServer().server.getOfflinePlayer(profile);
+    }
+
+    public boolean setPlayer(OfflinePlayer player) {
+        GameProfile profile;
+        if (player instanceof CraftPlayer) {
+            profile = ((CraftPlayer) player).getProfile();
+        } else if (player instanceof CraftOfflinePlayer) {
+            profile = ((CraftOfflinePlayer) player).getProfile();
+        } else {
             return false;
         }
-        player = name;
 
-        if (skullType != SkullType.PLAYER) {
-            skullType = SkullType.PLAYER;
+        if (profile == null) {
+            return false;
         }
 
+        this.profile = profile;
         return true;
     }
 
@@ -176,7 +191,7 @@ public class CraftSkull extends CraftBlockState implements Skull {
         this.skullType = skullType;
 
         if (skullType != SkullType.PLAYER) {
-            player = "";
+            profile = null;
         }
     }
 
@@ -185,7 +200,8 @@ public class CraftSkull extends CraftBlockState implements Skull {
         boolean result = super.update(force, applyPhysics);
 
         if (result) {
-            skull.setSkullType(getSkullType(skullType), player);
+            skull.setSkullType(getSkullType(skullType));
+            skull.setGameProfile(profile);
             skull.setRotation(rotation);
             skull.update();
         }

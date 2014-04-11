@@ -9,6 +9,8 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Horse;
 import org.bukkit.inventory.HorseInventory;
 
+import java.util.UUID;
+
 public class CraftHorse extends CraftAnimals implements Horse {
 
     public CraftHorse(CraftServer server, EntityHorse entity) {
@@ -97,28 +99,36 @@ public class CraftHorse extends CraftAnimals implements Horse {
 
     @Override
     public AnimalTamer getOwner() {
-        if (getOwnerName() == null || "".equals(getOwnerName())) return null;
-        return getServer().getOfflinePlayer(getOwnerName());
+        if (getOwnerUUID() == null) return null;
+        return getServer().getOfflinePlayer(getOwnerUUID());
     }
 
     @Override
     public void setOwner(AnimalTamer owner) {
-        if (owner != null && !"".equals(owner.getName())) {
+        if (owner != null) {
             setTamed(true);
             getHandle().setPathEntity(null);
-            setOwnerName(owner.getName());
+            setOwnerUUID(owner.getUniqueId());
         } else {
             setTamed(false);
-            setOwnerName("");
+            setOwnerUUID(null);
         }
     }
 
-    public String getOwnerName() {
-        return getHandle().getOwnerName();
+    public UUID getOwnerUUID() {
+        try {
+            return UUID.fromString(getHandle().getOwnerUUID());
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
     }
 
-    public void setOwnerName(String name) {
-        getHandle().setOwnerName(name);
+    public void setOwnerUUID(UUID uuid) {
+        if (uuid == null) {
+            getHandle().setOwnerUUID("");
+        } else {
+            getHandle().setOwnerUUID(uuid.toString());
+        }
     }
 
     public HorseInventory getInventory() {
