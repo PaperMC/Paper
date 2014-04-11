@@ -74,7 +74,7 @@ public class PacketDataSerializer extends ByteBuf {
             byte[] abyte = new byte[short1];
 
             this.readBytes(abyte);
-            return NBTCompressedStreamTools.a(abyte);
+            return NBTCompressedStreamTools.a(abyte, new NBTReadLimiter(2097152L));
         }
     }
 

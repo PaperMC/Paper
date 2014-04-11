@@ -1,5 +1,9 @@
 package net.minecraft.server;
 
+import java.util.UUID;
+
+import net.minecraft.util.com.mojang.authlib.GameProfile;
+
 public class ItemSkull extends Item {
 
     private static final String[] b = new String[] { "skeleton", "wither", "zombie", "char", "creeper"};
@@ -38,11 +42,7 @@ public class ItemSkull extends Item {
                 ++i;
             }
 
-            if (!entityhuman.a(i, j, k, l, itemstack)) {
-                return false;
-            } else if (!Blocks.SKULL.canPlace(world, i, j, k)) {
-                return false;
-            } else {
+            if (!world.isStatic) {
                 // CraftBukkit start - Handle in ItemBlock
                 // world.setTypeAndData(i, j, k, Blocks.SKULL, l, 2);
                 if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, Blocks.SKULL, l, clickedX, clickedY, clickedZ)) {
@@ -59,20 +59,32 @@ public class ItemSkull extends Item {
                 TileEntity tileentity = world.getTileEntity(i, j, k);
 
                 if (tileentity != null && tileentity instanceof TileEntitySkull) {
-                    String s = "";
+                    if (itemstack.getData() == 3) {
+                        GameProfile gameprofile = null;
 
-                    if (itemstack.hasTag() && itemstack.getTag().hasKeyOfType("SkullOwner", 8)) {
-                        s = itemstack.getTag().getString("SkullOwner");
+                        if (itemstack.hasTag()) {
+                            NBTTagCompound nbttagcompound = itemstack.getTag();
+
+                            if (nbttagcompound.hasKeyOfType("SkullOwner", 10)) {
+                                gameprofile = GameProfileSerializer.a(nbttagcompound.getCompound("SkullOwner"));
+                            } else if (nbttagcompound.hasKeyOfType("SkullOwner", 8) && nbttagcompound.getString("SkullOwner").length() > 0) {
+                                gameprofile = new GameProfile((UUID) null, nbttagcompound.getString("SkullOwner"));
+                            }
+                        }
+
+                        ((TileEntitySkull) tileentity).setGameProfile(gameprofile);
+                    } else {
+                        ((TileEntitySkull) tileentity).setSkullType(itemstack.getData());
                     }
 
-                    ((TileEntitySkull) tileentity).setSkullType(itemstack.getData(), s);
                     ((TileEntitySkull) tileentity).setRotation(i1);
                     ((BlockSkull) Blocks.SKULL).a(world, i, j, k, (TileEntitySkull) tileentity);
                 }
 
                 --itemstack.count;
-                return true;
             }
+
+            return true;
         }
     }
 
@@ -91,6 +103,16 @@ public class ItemSkull extends Item {
     }
 
     public String n(ItemStack itemstack) {
-        return itemstack.getData() == 3 && itemstack.hasTag() && itemstack.getTag().hasKeyOfType("SkullOwner", 8) ? LocaleI18n.get("item.skull.player.name", new Object[] { itemstack.getTag().getString("SkullOwner")}) : super.n(itemstack);
+        if (itemstack.getData() == 3 && itemstack.hasTag()) {
+            if (itemstack.getTag().hasKeyOfType("SkullOwner", 10)) {
+                return LocaleI18n.get("item.skull.player.name", new Object[] { GameProfileSerializer.a(itemstack.getTag().getCompound("SkullOwner")).getName()});
+            }
+
+            if (itemstack.getTag().hasKeyOfType("SkullOwner", 8)) {
+                return LocaleI18n.get("item.skull.player.name", new Object[] { itemstack.getTag().getString("SkullOwner")});
+            }
+        }
+
+        return super.n(itemstack);
     }
 }

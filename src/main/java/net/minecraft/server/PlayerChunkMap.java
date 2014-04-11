@@ -28,7 +28,7 @@ public class PlayerChunkMap {
 
     public PlayerChunkMap(WorldServer worldserver) {
         this.world = worldserver;
-        this.a(worldserver.getMinecraftServer().getPlayerList().o());
+        this.a(worldserver.getMinecraftServer().getPlayerList().s());
     }
 
     public WorldServer a() {

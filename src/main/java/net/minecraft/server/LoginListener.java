@@ -61,9 +61,7 @@ public class LoginListener implements PacketLoginInListener {
 
     public void c() {
         if (!this.i.isComplete()) {
-            UUID uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + this.i.getName()).getBytes(Charsets.UTF_8));
-
-            this.i = new GameProfile(uuid.toString().replaceAll("-", ""), this.i.getName());
+            this.i = this.a(this.i);
         }
 
         // CraftBukkit start - fire PlayerLoginEvent
@@ -97,7 +95,7 @@ public class LoginListener implements PacketLoginInListener {
         this.i = packetlogininstart.c();
         if (this.server.getOnlineMode() && !this.networkManager.c()) {
             this.g = EnumProtocolState.KEY;
-            this.networkManager.handle(new PacketLoginOutEncryptionBegin(this.j, this.server.J().getPublic(), this.e), new GenericFutureListener[0]);
+            this.networkManager.handle(new PacketLoginOutEncryptionBegin(this.j, this.server.K().getPublic(), this.e), new GenericFutureListener[0]);
         } else {
             this.g = EnumProtocolState.READY_TO_ACCEPT;
         }
@@ -105,7 +103,7 @@ public class LoginListener implements PacketLoginInListener {
 
     public void a(PacketLoginInEncryptionBegin packetlogininencryptionbegin) {
         Validate.validState(this.g == EnumProtocolState.KEY, "Unexpected key packet", new Object[0]);
-        PrivateKey privatekey = this.server.J().getPrivate();
+        PrivateKey privatekey = this.server.K().getPrivate();
 
         if (!Arrays.equals(this.e, packetlogininencryptionbegin.b(privatekey))) {
             throw new IllegalStateException("Invalid nonce!");
@@ -117,24 +115,30 @@ public class LoginListener implements PacketLoginInListener {
         }
     }
 
-    static String a(LoginListener loginlistener) {
+    protected GameProfile a(GameProfile gameprofile) {
+        UUID uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + gameprofile.getName()).getBytes(Charsets.UTF_8));
+
+        return new GameProfile(uuid, gameprofile.getName());
+    }
+
+    static GameProfile a(LoginListener loginlistener) {
+        return loginlistener.i;
+    }
+
+    static String b(LoginListener loginlistener) {
         return loginlistener.j;
     }
 
-    static MinecraftServer b(LoginListener loginlistener) {
+    static MinecraftServer c(LoginListener loginlistener) {
         return loginlistener.server;
     }
 
-    static SecretKey c(LoginListener loginlistener) {
+    static SecretKey d(LoginListener loginlistener) {
         return loginlistener.loginKey;
     }
 
     static GameProfile a(LoginListener loginlistener, GameProfile gameprofile) {
         return loginlistener.i = gameprofile;
-    }
-
-    static GameProfile d(LoginListener loginlistener) {
-        return loginlistener.i;
     }
 
     static Logger e() {

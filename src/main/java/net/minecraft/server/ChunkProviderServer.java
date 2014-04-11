@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.minecraft.util.com.google.common.collect.Lists;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -317,12 +318,15 @@ public class ChunkProviderServer implements IChunkProvider {
                 ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
                 server.getPluginManager().callEvent(event);
                 if (!event.isCancelled()) {
-                    chunk.removeEntities();
-                    this.saveChunk(chunk);
-                    this.saveChunkNOP(chunk);
+                    if (chunk != null) {
+                        chunk.removeEntities();
+                        this.saveChunk(chunk);
+                        this.saveChunkNOP(chunk);
+                        this.chunks.remove(chunkcoordinates); // CraftBukkit
+                    }
+
                     // this.unloadQueue.remove(olong);
                     // this.chunks.remove(olong.longValue());
-                    this.chunks.remove(chunkcoordinates); // CraftBukkit
                 }
             }
             // CraftBukkit end

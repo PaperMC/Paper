@@ -1563,7 +1563,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
     }
 
     public static UUID a(GameProfile gameprofile) {
-        UUID uuid = UtilUUID.b(gameprofile.getId());
+        UUID uuid = gameprofile.getId();
 
         if (uuid == null) {
             uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + gameprofile.getName()).getBytes(Charsets.UTF_8));

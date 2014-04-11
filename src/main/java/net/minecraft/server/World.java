@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 // CraftBukkit start
@@ -2532,8 +2533,22 @@ public abstract class World implements IBlockAccess {
 
     public EntityHuman a(String s) {
         for (int i = 0; i < this.players.size(); ++i) {
-            if (s.equals(((EntityHuman) this.players.get(i)).getName())) {
-                return (EntityHuman) this.players.get(i);
+            EntityHuman entityhuman = (EntityHuman) this.players.get(i);
+
+            if (s.equals(entityhuman.getName())) {
+                return entityhuman;
+            }
+        }
+
+        return null;
+    }
+
+    public EntityHuman a(UUID uuid) {
+        for (int i = 0; i < this.players.size(); ++i) {
+            EntityHuman entityhuman = (EntityHuman) this.players.get(i);
+
+            if (uuid.equals(entityhuman.getUniqueID())) {
+                return entityhuman;
             }
         }
 
@@ -2726,7 +2741,7 @@ public abstract class World implements IBlockAccess {
 
     public Calendar V() {
         if (this.getTime() % 600L == 0L) {
-            this.J.setTimeInMillis(MinecraftServer.aq());
+            this.J.setTimeInMillis(MinecraftServer.ar());
         }
 
         return this.J;

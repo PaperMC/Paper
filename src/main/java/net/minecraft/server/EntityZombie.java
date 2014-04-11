@@ -327,7 +327,7 @@ public class EntityZombie extends EntityMonster {
     public void a(EntityLiving entityliving) {
         super.a(entityliving);
         if ((this.world.difficulty == EnumDifficulty.NORMAL || this.world.difficulty == EnumDifficulty.HARD) && entityliving instanceof EntityVillager) {
-            if (this.random.nextBoolean()) {
+            if (this.world.difficulty != EnumDifficulty.HARD && this.random.nextBoolean()) {
                 return;
             }
 

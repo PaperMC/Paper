@@ -804,7 +804,7 @@ public abstract class EntityInsentient extends EntityLiving {
                     return true;
                 }
 
-                if (entityhuman.getName().equalsIgnoreCase(((EntityTameableAnimal) this).getOwnerName())) {
+                if (((EntityTameableAnimal) this).e(entityhuman)) {
                     // CraftBukkit start - fire PlayerLeashEntityEvent
                     if (CraftEventFactory.callPlayerLeashEntityEvent(this, entityhuman, entityhuman).isCancelled()) {
                         ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutAttachEntity(1, this, this.getLeashHolder()));

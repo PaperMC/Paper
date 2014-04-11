@@ -39,7 +39,7 @@ class ThreadCommandReader extends Thread {
                 // CraftBukkit end
             }
         } catch (IOException ioexception) {
-            DedicatedServer.aA().error("Exception handling console input", ioexception);
+            DedicatedServer.aF().error("Exception handling console input", ioexception);
         }
     }
 }

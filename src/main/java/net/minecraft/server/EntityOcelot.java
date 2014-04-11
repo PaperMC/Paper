@@ -114,7 +114,7 @@ public class EntityOcelot extends EntityTameableAnimal {
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
         if (this.isTamed()) {
-            if (entityhuman.getName().equalsIgnoreCase(this.getOwnerName()) && !this.world.isStatic && !this.c(itemstack)) {
+            if (this.e(entityhuman) && !this.world.isStatic && !this.c(itemstack)) {
                 this.bp.setSitting(!this.isSitting());
             }
         } else if (this.bq.f() && itemstack != null && itemstack.getItem() == Items.RAW_FISH && entityhuman.f(this) < 9.0D) {
@@ -131,7 +131,7 @@ public class EntityOcelot extends EntityTameableAnimal {
                 if (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) {
                     this.setTamed(true);
                     this.setCatType(1 + this.world.random.nextInt(3));
-                    this.setOwnerName(entityhuman.getName());
+                    this.setOwnerUUID(entityhuman.getUniqueID().toString());
                     this.i(true);
                     this.bp.setSitting(true);
                     this.world.broadcastEntityEffect(this, (byte) 7);
@@ -151,7 +151,7 @@ public class EntityOcelot extends EntityTameableAnimal {
         EntityOcelot entityocelot = new EntityOcelot(this.world);
 
         if (this.isTamed()) {
-            entityocelot.setOwnerName(this.getOwnerName());
+            entityocelot.setOwnerUUID(this.getOwnerUUID());
             entityocelot.setTamed(true);
             entityocelot.setCatType(this.getCatType());
         }

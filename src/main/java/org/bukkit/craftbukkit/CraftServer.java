@@ -15,7 +15,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -92,6 +91,7 @@ import net.minecraft.server.WorldServer;
 import net.minecraft.server.WorldSettings;
 import net.minecraft.server.WorldType;
 import net.minecraft.util.com.google.common.base.Charsets;
+import net.minecraft.util.com.mojang.authlib.GameProfile;
 import net.minecraft.util.io.netty.buffer.ByteBuf;
 import net.minecraft.util.io.netty.buffer.ByteBufOutputStream;
 import net.minecraft.util.io.netty.buffer.Unpooled;
@@ -204,7 +204,7 @@ public final class CraftServer implements Server {
     private YamlConfiguration configuration;
     private YamlConfiguration commandsConfiguration;
     private final Yaml yaml = new Yaml(new SafeConstructor());
-    private final Map<String, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
+    private final Map<java.util.UUID, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
     private final AutoUpdater updater;
     private final EntityMetadataStore entityMetadata = new EntityMetadataStore();
     private final PlayerMetadataStore playerMetadata = new PlayerMetadataStore();
@@ -514,7 +514,7 @@ public final class CraftServer implements Server {
     }
 
     // TODO: In 1.7.6+ this should use the server's UUID->EntityPlayer map
-    public Player getPlayer(UUID id) {
+    public Player getPlayer(java.util.UUID id) {
         for (Player player : getOnlinePlayers()) {
             if (player.getUniqueId().equals(id)) {
                 return player;
@@ -734,7 +734,7 @@ public final class CraftServer implements Server {
         loadIcon();
 
         playerList.getIPBans().load();
-        playerList.getNameBans().load();
+        playerList.getProfileBans().load();
 
         for (WorldServer world : console.worlds) {
             world.difficulty = difficulty;
@@ -1013,7 +1013,7 @@ public final class CraftServer implements Server {
         return worlds.get(name.toLowerCase());
     }
 
-    public World getWorld(UUID uid) {
+    public World getWorld(java.util.UUID uid) {
         for (World world : worlds.values()) {
             if (world.getUID().equals(uid)) {
                 return world;
@@ -1258,54 +1258,44 @@ public final class CraftServer implements Server {
     }
 
     public OfflinePlayer getOfflinePlayer(String name) {
-        return getOfflinePlayer(name, true);
-    }
-
-    public OfflinePlayer getOfflinePlayer(String name, boolean search) {
         Validate.notNull(name, "Name cannot be null");
 
-        OfflinePlayer result = getPlayerExact(name);
-        String lname = name.toLowerCase();
+        // This is potentially blocking :(
+        GameProfile profile = MinecraftServer.getServer().getUserCache().a(name);
+        if (profile == null) {
+            // Make an OfflinePlayer using an offline mode UUID since the name has no profile
+            return getOfflinePlayer(new GameProfile(java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name));
+        }
 
+        return getOfflinePlayer(profile.getId());
+    }
+
+    public OfflinePlayer getOfflinePlayer(java.util.UUID id) {
+        Validate.notNull(id, "UUID cannot be null");
+
+        OfflinePlayer result = getPlayer(id);
         if (result == null) {
-            result = offlinePlayers.get(lname);
-
+            result = offlinePlayers.get(id);
             if (result == null) {
-                if (search) {
-                    WorldNBTStorage storage = (WorldNBTStorage) console.worlds.get(0).getDataManager();
-                    for (String dat : storage.getPlayerDir().list(new DatFileFilter())) {
-                        String datName = dat.substring(0, dat.length() - 4);
-                        if (datName.equalsIgnoreCase(name)) {
-                            name = datName;
-                            break;
-                        }
-                    }
-                }
-
-                result = new CraftOfflinePlayer(this, name);
-                offlinePlayers.put(lname, result);
+                result = new CraftOfflinePlayer(this, new GameProfile(id, null));
+                offlinePlayers.put(id, result);
             }
         } else {
-            offlinePlayers.remove(lname);
+            offlinePlayers.remove(id);
         }
 
         return result;
     }
 
-    // TODO: In 1.7.6+ this should just lookup the UUID-based player data filename
-    public OfflinePlayer getOfflinePlayer(UUID id) {
-        String name = MojangNameLookup.lookupName(id);
-        if (name == null) {
-            // This is completely wrong
-            name = "InvalidUUID";
-        }
-
-        return getOfflinePlayer(name);
+    public OfflinePlayer getOfflinePlayer(GameProfile profile) {
+        OfflinePlayer player = new CraftOfflinePlayer(this, profile);
+        offlinePlayers.put(profile.getId(), player);
+        return player;
     }
 
     @SuppressWarnings("unchecked")
     public Set<String> getIPBans() {
-        return new HashSet<String>(playerList.getIPBans().getEntries().keySet());
+        return new HashSet<String>(Arrays.asList(playerList.getIPBans().getEntries()));
     }
 
     public void banIP(String address) {
@@ -1323,28 +1313,34 @@ public final class CraftServer implements Server {
     public Set<OfflinePlayer> getBannedPlayers() {
         Set<OfflinePlayer> result = new HashSet<OfflinePlayer>();
 
-        for (Object name : playerList.getNameBans().getEntries().keySet()) {
-            result.add(getOfflinePlayer((String) name));
+        for (String id : playerList.getProfileBans().getEntries()) {
+            try {
+                result.add(getOfflinePlayer(java.util.UUID.fromString(id)));
+            } catch (IllegalArgumentException ex) {
+                // This shouldn't happen
+            }
         }
 
         return result;
     }
 
     @Override
-    public BanList getBanList(BanList.Type type){
+    public BanList getBanList(BanList.Type type) {
         Validate.notNull(type, "Type cannot be null");
 
         switch(type){
         case IP:
-            return new CraftBanList(playerList.getIPBans());
+            return new CraftIpBanList(playerList.getIPBans());
         case NAME:
-        default: // Fall through as a player name list for safety
-            return new CraftBanList(playerList.getNameBans());
+            return null;
+        case UUID:
+        default:
+            return new CraftProfileBanList(playerList.getProfileBans());
         }
     }
 
     public void setWhitelist(boolean value) {
-        playerList.hasWhitelist = value;
+        playerList.setHasWhitelist(value);
         console.getPropertyManager().a("white-list", value);
     }
 
@@ -1364,8 +1360,12 @@ public final class CraftServer implements Server {
     public Set<OfflinePlayer> getOperators() {
         Set<OfflinePlayer> result = new HashSet<OfflinePlayer>();
 
-        for (Object name : playerList.getOPs()) {
-            result.add(getOfflinePlayer((String) name));
+        for (String id : playerList.getOPs().getEntries()) {
+            try {
+                result.add(getOfflinePlayer(java.util.UUID.fromString(id)));
+            } catch (IllegalArgumentException ex) {
+                // This shouldn't ever happen
+            }
         }
 
         return result;
@@ -1442,8 +1442,13 @@ public final class CraftServer implements Server {
         Set<OfflinePlayer> players = new HashSet<OfflinePlayer>();
 
         for (String file : files) {
-            players.add(getOfflinePlayer(file.substring(0, file.length() - 4), false));
+            try {
+                players.add(getOfflinePlayer(java.util.UUID.fromString(file.substring(0, file.length() - 4))));
+            } catch (IllegalArgumentException ex) {
+                // Who knows what is in this directory, just ignore invalid files
+            }
         }
+
         players.addAll(Arrays.asList(getOnlinePlayers()));
 
         return players.toArray(new OfflinePlayer[players.size()]);

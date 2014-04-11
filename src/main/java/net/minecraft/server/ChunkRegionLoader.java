@@ -1,6 +1,5 @@
 package net.minecraft.server;
 
-import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
@@ -81,7 +80,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
                 return null;
             }
 
-            nbttagcompound = NBTCompressedStreamTools.a((DataInput) datainputstream);
+            nbttagcompound = NBTCompressedStreamTools.a(datainputstream);
         }
 
         return this.a(world, i, j, nbttagcompound);

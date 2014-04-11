@@ -82,7 +82,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
 
         this.server = minecraftserver;
-        this.bO = minecraftserver.getPlayerList().i(this.getName());
+        this.bO = minecraftserver.getPlayerList().a((EntityHuman) this);
         this.W = 0.0F;
         this.height = 0.0F;
         this.setPositionRotation((double) i + 0.5D, (double) k, (double) j + 0.5D, 0.0F, 0.0F);
@@ -235,7 +235,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             }
         }
 
-        if (this.bX > 0L && this.server.getIdleTimeout() > 0 && MinecraftServer.aq() - this.bX > (long) (this.server.getIdleTimeout() * 1000 * 60)) {
+        if (this.bX > 0L && this.server.getIdleTimeout() > 0 && MinecraftServer.ar() - this.bX > (long) (this.server.getIdleTimeout() * 1000 * 60)) {
             this.playerConnection.disconnect("You have been idle for too long!");
         }
     }
@@ -428,7 +428,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             return false;
         } else {
             // CraftBukkit - this.server.getPvP() -> this.world.pvpMode
-            boolean flag = this.server.W() && this.world.pvpMode && "fall".equals(damagesource.translationIndex);
+            boolean flag = this.server.X() && this.world.pvpMode && "fall".equals(damagesource.translationIndex);
 
             if (!flag && this.invulnerableTicks > 0 && damagesource != DamageSource.OUT_OF_WORLD) {
                 return false;
@@ -923,7 +923,19 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public boolean a(int i, String s) {
-        return "seed".equals(s) && !this.server.W() ? true : (!"tell".equals(s) && !"help".equals(s) && !"me".equals(s) ? (this.server.getPlayerList().isOp(this.getName()) ? this.server.l() >= i : false) : true);
+        if ("seed".equals(s) && !this.server.X()) {
+            return true;
+        } else if (!"tell".equals(s) && !"help".equals(s) && !"me".equals(s)) {
+            if (this.server.getPlayerList().isOp(this.getProfile())) {
+                OpListEntry oplistentry = (OpListEntry) this.server.getPlayerList().getOPs().get(this.getProfile());
+
+                return oplistentry != null ? oplistentry.a() >= i : this.server.l() >= i;
+            } else {
+                return false;
+            }
+        } else {
+            return true;
+        }
     }
 
     public String s() {
@@ -944,7 +956,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
         this.bV = packetplayinsettings.e();
         this.bW = packetplayinsettings.f();
-        if (this.server.M() && this.server.L().equals(this.getName())) {
+        if (this.server.N() && this.server.M().equals(this.getName())) {
             this.server.a(packetplayinsettings.g());
         }
 
@@ -964,7 +976,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public void v() {
-        this.bX = MinecraftServer.aq();
+        this.bX = MinecraftServer.ar();
     }
 
     public ServerStatisticManager getStatisticManager() {

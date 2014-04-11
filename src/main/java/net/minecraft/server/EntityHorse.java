@@ -137,11 +137,11 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         return this.cb();
     }
 
-    public String getOwnerName() {
+    public String getOwnerUUID() {
         return this.datawatcher.getString(21);
     }
 
-    public void setOwnerName(String s) {
+    public void setOwnerUUID(String s) {
         this.datawatcher.watch(21, s);
     }
 
@@ -875,7 +875,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
     }
 
     public boolean h(EntityHuman entityhuman) {
-        this.setOwnerName(entityhuman.getName());
+        this.setOwnerUUID(entityhuman.getUniqueID().toString());
         this.setTame(true);
         return true;
     }
@@ -958,7 +958,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         nbttagcompound.setInt("Variant", this.getVariant());
         nbttagcompound.setInt("Temper", this.getTemper());
         nbttagcompound.setBoolean("Tame", this.isTame());
-        nbttagcompound.setString("OwnerName", this.getOwnerName());
+        nbttagcompound.setString("OwnerUUID", this.getOwnerUUID());
         nbttagcompound.setInt("Bukkit.MaxDomestication", this.maxDomestication); // CraftBukkit
         if (this.hasChest()) {
             NBTTagList nbttaglist = new NBTTagList();
@@ -997,8 +997,8 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         this.setVariant(nbttagcompound.getInt("Variant"));
         this.setTemper(nbttagcompound.getInt("Temper"));
         this.setTame(nbttagcompound.getBoolean("Tame"));
-        if (nbttagcompound.hasKeyOfType("OwnerName", 8)) {
-            this.setOwnerName(nbttagcompound.getString("OwnerName"));
+        if (nbttagcompound.hasKeyOfType("OwnerUUID", 8)) {
+            this.setOwnerUUID(nbttagcompound.getString("OwnerUUID"));
         }
         // CraftBukkit start
         if (nbttagcompound.hasKey("Bukkit.MaxDomestication")) {

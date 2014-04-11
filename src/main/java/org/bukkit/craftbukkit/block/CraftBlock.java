@@ -10,6 +10,7 @@ import net.minecraft.server.BlockCocoa;
 import net.minecraft.server.BlockRedstoneWire;
 import net.minecraft.server.Blocks;
 import net.minecraft.server.EnumSkyBlock;
+import net.minecraft.server.GameProfileSerializer;
 import net.minecraft.server.Item;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.TileEntitySkull;
@@ -423,9 +424,12 @@ public class CraftBlock implements Block {
                         net.minecraft.server.ItemStack nmsStack = new net.minecraft.server.ItemStack(item, 1, block.getDropData(chunk.getHandle().world, x, y, z));
                         TileEntitySkull tileentityskull = (TileEntitySkull) chunk.getHandle().world.getTileEntity(x, y, z);
 
-                        if (tileentityskull.getSkullType() == 3 && tileentityskull.getExtraType() != null && tileentityskull.getExtraType().length() > 0) {
+                        if (tileentityskull.getSkullType() == 3 && tileentityskull.getGameProfile() != null) {
                             nmsStack.setTag(new NBTTagCompound());
-                            nmsStack.getTag().setString("SkullOwner", tileentityskull.getExtraType());
+                            NBTTagCompound nbttagcompound = new NBTTagCompound();
+
+                            GameProfileSerializer.a(nbttagcompound, tileentityskull.getGameProfile());
+                            nmsStack.getTag().set("SkullOwner", nbttagcompound);
                         }
 
                         drops.add(CraftItemStack.asBukkitCopy(nmsStack));

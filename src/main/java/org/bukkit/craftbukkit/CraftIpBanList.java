@@ -1,21 +1,20 @@
 package org.bukkit.craftbukkit;
 
-import java.util.Collection;
+import java.net.InetSocketAddress;
 import java.util.Date;
 import java.util.Set;
 
+import net.minecraft.server.IpBanEntry;
+import net.minecraft.server.IpBanList;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 
 import com.google.common.collect.ImmutableSet;
 
-import net.minecraft.server.BanEntry;
-import net.minecraft.server.BanList;
+public class CraftIpBanList implements org.bukkit.BanList {
+    private final IpBanList list;
 
-public class CraftBanList implements org.bukkit.BanList {
-    private final BanList list;
-
-    public CraftBanList(BanList list){
+    public CraftIpBanList(IpBanList list) {
         this.list = list;
     }
 
@@ -23,33 +22,34 @@ public class CraftBanList implements org.bukkit.BanList {
     public org.bukkit.BanEntry getBanEntry(String target) {
         Validate.notNull(target, "Target cannot be null");
 
-        if (!list.getEntries().containsKey(target)) {
+        IpBanEntry entry = (IpBanEntry) list.get(target);
+        if (entry == null) {
             return null;
         }
 
-        return new CraftBanEntry((BanEntry) list.getEntries().get(target), list);
+        return new CraftIpBanEntry(target, entry, list);
     }
 
     @Override
     public org.bukkit.BanEntry addBan(String target, String reason, Date expires, String source) {
         Validate.notNull(target, "Ban target cannot be null");
 
-        BanEntry entry = new BanEntry(target);
-        entry.setSource(StringUtils.isBlank(source) ? entry.getSource() : source); // Use default if null/empty
-        entry.setExpires(expires); // Null values are interpreted as "forever"
-        entry.setReason(StringUtils.isBlank(reason) ? entry.getReason() : reason); // Use default if null/empty
+        IpBanEntry entry = new IpBanEntry(target, new Date(),
+                StringUtils.isBlank(source) ? null : source, expires,
+                StringUtils.isBlank(reason) ? null : reason);
 
         list.add(entry);
         list.save();
-        return new CraftBanEntry(entry, list);
+        return new CraftIpBanEntry(target, entry, list);
     }
 
     @Override
     public Set<org.bukkit.BanEntry> getBanEntries() {
         ImmutableSet.Builder<org.bukkit.BanEntry> builder = ImmutableSet.builder();
-        for (BanEntry entry : (Collection<BanEntry>) list.getEntries().values()) {
-            builder.add(new CraftBanEntry(entry, list));
+        for (String target : list.getEntries()) {
+            builder.add(new CraftIpBanEntry(target, (IpBanEntry) list.get(target), list));
         }
+
         return builder.build();
     }
 
@@ -57,7 +57,7 @@ public class CraftBanList implements org.bukkit.BanList {
     public boolean isBanned(String target) {
         Validate.notNull(target, "Target cannot be null");
 
-        return list.isBanned(target);
+        return list.isBanned(InetSocketAddress.createUnresolved(target, 0));
     }
 
     @Override
@@ -66,5 +66,4 @@ public class CraftBanList implements org.bukkit.BanList {
 
         list.remove(target);
     }
-
 }

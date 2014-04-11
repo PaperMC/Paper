@@ -13,11 +13,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.minecraft.server.*;
 
+import net.minecraft.util.com.mojang.authlib.GameProfile;
 import org.apache.commons.lang.Validate;
 import org.apache.commons.lang.NotImplementedException;
 import org.bukkit.*;
@@ -64,7 +66,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     private boolean hasPlayedBefore = false;
     private final ConversationTracker conversationTracker = new ConversationTracker();
     private final Set<String> channels = new HashSet<String>();
-    private final Map<String, Player> hiddenPlayers = new MapMaker().softValues().makeMap();
+    private final Set<UUID> hiddenPlayers = new HashSet<UUID>();
     private int hash = 0;
     private double health = 20;
     private boolean scaledHealth = false;
@@ -76,9 +78,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         firstPlayed = System.currentTimeMillis();
     }
 
+    public GameProfile getProfile() {
+        return getHandle().getProfile();
+    }
+
     @Override
     public boolean isOp() {
-        return server.getHandle().isOp(getName());
+        return server.getHandle().isOp(getProfile());
     }
 
     @Override
@@ -86,9 +92,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (value == isOp()) return;
 
         if (value) {
-            server.getHandle().addOp(getName());
+            server.getHandle().addOp(getProfile());
         } else {
-            server.getHandle().removeOp(getName());
+            server.getHandle().removeOp(getProfile());
         }
 
         perm.recalculatePermissions();
@@ -732,29 +738,29 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public boolean isBanned() {
-        return server.getBanList(BanList.Type.NAME).isBanned(getName());
+        return server.getBanList(BanList.Type.UUID).isBanned(getUniqueId().toString());
     }
 
     @Override
     public void setBanned(boolean value) {
         if (value) {
-            server.getBanList(BanList.Type.NAME).addBan(getName(), null, null, null);
+            server.getBanList(BanList.Type.UUID).addBan(getUniqueId().toString(), null, null, null);
         } else {
-            server.getBanList(BanList.Type.NAME).pardon(getName());
+            server.getBanList(BanList.Type.UUID).pardon(getUniqueId().toString());
         }
     }
 
     @Override
     public boolean isWhitelisted() {
-        return server.getHandle().getWhitelisted().contains(getName().toLowerCase());
+        return server.getHandle().isWhitelisted(getProfile());
     }
 
     @Override
     public void setWhitelisted(boolean value) {
         if (value) {
-            server.getHandle().addWhitelist(getName().toLowerCase());
+            server.getHandle().addWhitelist(getProfile());
         } else {
-            server.getHandle().removeWhitelist(getName().toLowerCase());
+            server.getHandle().removeWhitelist(getProfile());
         }
     }
 
@@ -872,8 +878,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         Validate.notNull(player, "hidden player cannot be null");
         if (getHandle().playerConnection == null) return;
         if (equals(player)) return;
-        if (hiddenPlayers.containsKey(player.getName())) return;
-        hiddenPlayers.put(player.getName(), player);
+        if (hiddenPlayers.contains(player.getUniqueId())) return;
+        hiddenPlayers.add(player.getUniqueId());
 
         //remove this player from the hidden player's EntityTrackerEntry
         EntityTracker tracker = ((WorldServer) entity.world).tracker;
@@ -891,8 +897,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         Validate.notNull(player, "shown player cannot be null");
         if (getHandle().playerConnection == null) return;
         if (equals(player)) return;
-        if (!hiddenPlayers.containsKey(player.getName())) return;
-        hiddenPlayers.remove(player.getName());
+        if (!hiddenPlayers.contains(player.getUniqueId())) return;
+        hiddenPlayers.remove(player.getUniqueId());
 
         EntityTracker tracker = ((WorldServer) entity.world).tracker;
         EntityPlayer other = ((CraftPlayer) player).getHandle();
@@ -904,8 +910,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getHandle().playerConnection.sendPacket(new PacketPlayOutPlayerInfo(player.getPlayerListName(), true, getHandle().ping));
     }
 
+    public void removeDisconnectingPlayer(Player player) {
+        hiddenPlayers.remove(player.getUniqueId());
+    }
+
     public boolean canSee(Player player) {
-        return !hiddenPlayers.containsKey(player.getName());
+        return !hiddenPlayers.contains(player.getUniqueId());
     }
 
     public Map<String, Object> serialize() {

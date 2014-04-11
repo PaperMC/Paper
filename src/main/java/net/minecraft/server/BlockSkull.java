@@ -84,9 +84,12 @@ public class BlockSkull extends BlockContainer {
             ItemStack itemstack = new ItemStack(Items.SKULL, 1, this.getDropData(world, i, j, k));
             TileEntitySkull tileentityskull = (TileEntitySkull) world.getTileEntity(i, j, k);
 
-            if (tileentityskull.getSkullType() == 3 && tileentityskull.getExtraType() != null && tileentityskull.getExtraType().length() > 0) {
+            if (tileentityskull.getSkullType() == 3 && tileentityskull.getGameProfile() != null) {
                 itemstack.setTag(new NBTTagCompound());
-                itemstack.getTag().setString("SkullOwner", tileentityskull.getExtraType());
+                NBTTagCompound nbttagcompound = new NBTTagCompound();
+
+                GameProfileSerializer.a(nbttagcompound, tileentityskull.getGameProfile());
+                itemstack.getTag().set("SkullOwner", nbttagcompound);
             }
 
             this.a(world, i, j, k, itemstack);
@@ -112,9 +115,12 @@ public class BlockSkull extends BlockContainer {
                 ItemStack itemstack = new ItemStack(Items.SKULL, 1, this.getDropData(world, i, j, k));
                 TileEntitySkull tileentityskull = (TileEntitySkull) world.getTileEntity(i, j, k);
 
-                if (tileentityskull.getSkullType() == 3 && tileentityskull.getExtraType() != null && tileentityskull.getExtraType().length() > 0) {
+                if (tileentityskull.getSkullType() == 3 && tileentityskull.getGameProfile() != null) {
                     itemstack.setTag(new NBTTagCompound());
-                    itemstack.getTag().setString("SkullOwner", tileentityskull.getExtraType());
+                    NBTTagCompound nbttagcompound = new NBTTagCompound();
+
+                    GameProfileSerializer.a(nbttagcompound, tileentityskull.getGameProfile());
+                    itemstack.getTag().set("SkullOwner", nbttagcompound);
                 }
 
                 this.a(world, i, j, k, itemstack);

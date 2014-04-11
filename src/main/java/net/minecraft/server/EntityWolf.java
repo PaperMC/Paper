@@ -231,7 +231,7 @@ public class EntityWolf extends EntityTameableAnimal {
                 }
             }
 
-            if (entityhuman.getName().equalsIgnoreCase(this.getOwnerName()) && !this.world.isStatic && !this.c(itemstack)) {
+            if (this.e(entityhuman) && !this.world.isStatic && !this.c(itemstack)) {
                 this.bp.setSitting(!this.isSitting());
                 this.bc = false;
                 this.setPathEntity((PathEntity) null);
@@ -255,7 +255,7 @@ public class EntityWolf extends EntityTameableAnimal {
                     this.setGoalTarget((EntityLiving) null);
                     this.bp.setSitting(true);
                     this.setHealth(this.getMaxHealth()); // CraftBukkit - 20.0 -> getMaxHealth()
-                    this.setOwnerName(entityhuman.getName());
+                    this.setOwnerUUID(entityhuman.getUniqueID().toString());
                     this.i(true);
                     this.world.broadcastEntityEffect(this, (byte) 7);
                 } else {
@@ -302,10 +302,10 @@ public class EntityWolf extends EntityTameableAnimal {
 
     public EntityWolf b(EntityAgeable entityageable) {
         EntityWolf entitywolf = new EntityWolf(this.world);
-        String s = this.getOwnerName();
+        String s = this.getOwnerUUID();
 
         if (s != null && s.trim().length() > 0) {
-            entitywolf.setOwnerName(s);
+            entitywolf.setOwnerUUID(s);
             entitywolf.setTamed(true);
         }
 

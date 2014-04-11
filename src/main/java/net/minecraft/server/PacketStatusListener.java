@@ -116,7 +116,7 @@ public class PacketStatusListener implements PacketStatusInListener {
         ping.setFavicon(event.icon.value);
         ping.setMOTD(new ChatComponentText(event.getMotd()));
         ping.setPlayerSample(playerSample);
-        ping.setServerInfo(new ServerPingServerData(minecraftServer.getServerModName() + " " + minecraftServer.getVersion(), 4)); // TODO: Update when protocol changes
+        ping.setServerInfo(new ServerPingServerData(minecraftServer.getServerModName() + " " + minecraftServer.getVersion(), 5)); // TODO: Update when protocol changes
 
         this.networkManager.handle(new PacketStatusOutServerInfo(ping), new GenericFutureListener[0]);
         // CraftBukkit end

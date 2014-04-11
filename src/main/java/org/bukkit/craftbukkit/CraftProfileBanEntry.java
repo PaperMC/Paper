@@ -1,21 +1,22 @@
 package org.bukkit.craftbukkit;
 
+import net.minecraft.server.GameProfileBanEntry;
+import net.minecraft.server.GameProfileBanList;
+import net.minecraft.util.com.mojang.authlib.GameProfile;
+
 import java.util.Date;
 
-import net.minecraft.server.BanEntry;
-import net.minecraft.server.BanList;
-
-public final class CraftBanEntry implements org.bukkit.BanEntry {
-    private final BanList list;
-    private final String name;
+public final class CraftProfileBanEntry implements org.bukkit.BanEntry {
+    private final GameProfileBanList list;
+    private final GameProfile profile;
     private Date created;
     private String source;
     private Date expiration;
     private String reason;
 
-    public CraftBanEntry(BanEntry entry, BanList list) {
+    public CraftProfileBanEntry(GameProfile profile, GameProfileBanEntry entry, GameProfileBanList list) {
         this.list = list;
-        this.name = entry.getName();
+        this.profile = profile;
         this.created = entry.getCreated() != null ? new Date(entry.getCreated().getTime()) : null;
         this.source = entry.getSource();
         this.expiration = entry.getExpires() != null ? new Date(entry.getExpires().getTime()) : null;
@@ -24,7 +25,7 @@ public final class CraftBanEntry implements org.bukkit.BanEntry {
 
     @Override
     public String getTarget() {
-        return this.name;
+        return this.profile.getId().toString();
     }
 
     @Override
@@ -73,14 +74,8 @@ public final class CraftBanEntry implements org.bukkit.BanEntry {
 
     @Override
     public void save() {
-        BanEntry entry = new BanEntry(this.name);
-        entry.setCreated(this.created);
-        entry.setSource(this.source);
-        entry.setExpires(this.expiration);
-        entry.setReason(this.reason);
-
+        GameProfileBanEntry entry = new GameProfileBanEntry(profile, this.created, this.source, this.expiration, this.reason);
         this.list.add(entry);
         this.list.save();
     }
-
 }

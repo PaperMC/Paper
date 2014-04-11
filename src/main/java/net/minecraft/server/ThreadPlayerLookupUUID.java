@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
 import java.math.BigInteger;
+import java.util.UUID;
 
 import net.minecraft.util.com.mojang.authlib.GameProfile;
 import net.minecraft.util.com.mojang.authlib.exceptions.AuthenticationUnavailableException;
@@ -21,20 +22,22 @@ class ThreadPlayerLookupUUID extends Thread {
     }
 
     public void run() {
-        try {
-            String s = (new BigInteger(MinecraftEncryption.a(LoginListener.a(this.a), LoginListener.b(this.a).J().getPublic(), LoginListener.c(this.a)))).toString(16);
+        GameProfile gameprofile = LoginListener.a(this.a);
 
-            LoginListener.a(this.a, LoginListener.b(this.a).at().hasJoinedServer(new GameProfile((String) null, LoginListener.d(this.a).getName()), s));
-            if (LoginListener.d(this.a) != null) {
+        try {
+            String s = (new BigInteger(MinecraftEncryption.a(LoginListener.b(this.a), LoginListener.c(this.a).K().getPublic(), LoginListener.d(this.a)))).toString(16);
+
+            LoginListener.a(this.a, LoginListener.c(this.a).av().hasJoinedServer(new GameProfile((UUID) null, gameprofile.getName()), s));
+            if (LoginListener.a(this.a) != null) {
                 // CraftBukkit start - fire PlayerPreLoginEvent
                 if (!this.a.networkManager.isConnected()) {
                     return;
                 }
 
-                String playerName = LoginListener.d(this.a).getName();
+                String playerName = LoginListener.a(this.a).getName();
                 java.net.InetAddress address = ((java.net.InetSocketAddress) a.networkManager.getSocketAddress()).getAddress();
-                java.util.UUID uniqueId = UtilUUID.b(LoginListener.d(this.a).getId());
-                final org.bukkit.craftbukkit.CraftServer server = LoginListener.b(this.a).server;
+                java.util.UUID uniqueId = LoginListener.a(this.a).getId();
+                final org.bukkit.craftbukkit.CraftServer server = LoginListener.c(this.a).server;
 
                 AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId);
                 server.getPluginManager().callEvent(asyncEvent);
@@ -51,7 +54,7 @@ class ThreadPlayerLookupUUID extends Thread {
                             return event.getResult();
                         }};
 
-                    LoginListener.b(this.a).processQueue.add(waitable);
+                    LoginListener.c(this.a).processQueue.add(waitable);
                     if (waitable.get() != PlayerPreLoginEvent.Result.ALLOWED) {
                         this.a.disconnect(event.getKickMessage());
                         return;
@@ -64,19 +67,29 @@ class ThreadPlayerLookupUUID extends Thread {
                 }
                 // CraftBukkit end
 
-                LoginListener.e().info("UUID of player " + LoginListener.d(this.a).getName() + " is " + LoginListener.d(this.a).getId());
+                LoginListener.e().info("UUID of player " + LoginListener.a(this.a).getName() + " is " + LoginListener.a(this.a).getId());
+                LoginListener.a(this.a, EnumProtocolState.READY_TO_ACCEPT);
+            } else if (LoginListener.c(this.a).N()) {
+                LoginListener.e().warn("Failed to verify username but will let them in anyway!");
+                LoginListener.a(this.a, this.a.a(gameprofile));
                 LoginListener.a(this.a, EnumProtocolState.READY_TO_ACCEPT);
             } else {
                 this.a.disconnect("Failed to verify username!");
-                LoginListener.e().error("Username \'" + LoginListener.d(this.a).getName() + "\' tried to join with an invalid session");
+                LoginListener.e().error("Username \'" + LoginListener.a(this.a).getName() + "\' tried to join with an invalid session");
             }
         } catch (AuthenticationUnavailableException authenticationunavailableexception) {
-            this.a.disconnect("Authentication servers are down. Please try again later, sorry!");
-            LoginListener.e().error("Couldn\'t verify username because servers are unavailable");
+            if (LoginListener.c(this.a).N()) {
+                LoginListener.e().warn("Authentication servers are down but will let them in anyway!");
+                LoginListener.a(this.a, this.a.a(gameprofile));
+                LoginListener.a(this.a, EnumProtocolState.READY_TO_ACCEPT);
+            } else {
+                this.a.disconnect("Authentication servers are down. Please try again later, sorry!");
+                LoginListener.e().error("Couldn\'t verify username because servers are unavailable");
+            }
             // CraftBukkit start - catch all exceptions
         } catch (Exception exception) {
             this.a.disconnect("Failed to verify username!");
-            LoginListener.b(this.a).server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + LoginListener.d(this.a).getName(), exception);
+            LoginListener.c(this.a).server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + LoginListener.a(this.a).getName(), exception);
             // CraftBukkit end
         }
     }

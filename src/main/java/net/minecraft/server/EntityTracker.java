@@ -19,7 +19,7 @@ public class EntityTracker {
 
     public EntityTracker(WorldServer worldserver) {
         this.world = worldserver;
-        this.e = worldserver.getMinecraftServer().getPlayerList().a();
+        this.e = worldserver.getMinecraftServer().getPlayerList().d();
     }
 
     public void track(Entity entity) {

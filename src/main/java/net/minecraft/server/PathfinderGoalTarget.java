@@ -78,8 +78,8 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
         } else if (!this.c.a(entityliving.getClass())) {
             return false;
         } else {
-            if (this.c instanceof EntityOwnable && StringUtils.isNotEmpty(((EntityOwnable) this.c).getOwnerName())) {
-                if (entityliving instanceof EntityOwnable && ((EntityOwnable) this.c).getOwnerName().equals(((EntityOwnable) entityliving).getOwnerName())) {
+            if (this.c instanceof EntityOwnable && StringUtils.isNotEmpty(((EntityOwnable) this.c).getOwnerUUID())) {
+                if (entityliving instanceof EntityOwnable && ((EntityOwnable) this.c).getOwnerUUID().equals(((EntityOwnable) entityliving).getOwnerUUID())) {
                     return false;
                 }
 
