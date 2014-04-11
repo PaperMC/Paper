@@ -1,4 +1,4 @@
-From 4efc939384fd110152d57ffc5f276be538f57bb1 Mon Sep 17 00:00:00 2001
+From 809c29fa77ca09648e0035f1b1861a13dace5442 Mon Sep 17 00:00:00 2001
 From: Thinkofdeath <thethinkofdeath@gmail.com>
 Date: Thu, 3 Apr 2014 17:04:18 +0100
 Subject: [PATCH] 1.7.8 support
@@ -273,7 +273,7 @@ index 0000000..3aa93cd
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutNamedEntitySpawn.java b/src/main/java/net/minecraft/server/PacketPlayOutNamedEntitySpawn.java
-index 8bab528..5483641 100644
+index 8bab528..0884047 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutNamedEntitySpawn.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutNamedEntitySpawn.java
 @@ -2,6 +2,7 @@ package net.minecraft.server;
@@ -284,37 +284,7 @@ index 8bab528..5483641 100644
  import net.minecraft.util.com.mojang.authlib.GameProfile;
  
  import java.io.IOException; // CraftBukkit
-@@ -33,7 +34,29 @@ public class PacketPlayOutNamedEntitySpawn extends Packet {
- 
-         this.h = itemstack == null ? 0 : Item.b(itemstack.getItem());
-         this.i = entityhuman.getDataWatcher();
-+
-+        // Spigot start - Validate Profile
-+        validate();
-+    }
-+
-+    private void validate()
-+    {
-+        if ( MinecraftServer.getServer().getOnlineMode() )
-+        {
-+            if ( this.b instanceof ThreadPlayerLookupUUID.NewGameProfileWrapper )
-+            {
-+                org.spigotmc.authlib.GameProfile newProfile = ( (ThreadPlayerLookupUUID.NewGameProfileWrapper) this.b ).newProfile;
-+                if ( MinecraftServer.getServer().newSessionService.getTextures( newProfile, true ).size() == 0 )
-+                {
-+                    throw new IllegalArgumentException( "PacketPlayOutNamedEntitySpawn requires a valid profile in online mode" );
-+                }
-+            } else
-+            {
-+                throw new IllegalArgumentException( "PacketPlayOutNamedEntitySpawn requires a valid profile in online mode" );
-+            }
-+        }
-     }
-+    // Spigot end
- 
-     public void a(PacketDataSerializer packetdataserializer) throws IOException { // CraftBukkit - added throws
-         this.a = packetdataserializer.a();
-@@ -60,6 +83,42 @@ public class PacketPlayOutNamedEntitySpawn extends Packet {
+@@ -60,6 +61,41 @@ public class PacketPlayOutNamedEntitySpawn extends Packet {
          this.i.a(packetdataserializer);
      }
  
@@ -322,7 +292,6 @@ index 8bab528..5483641 100644
 +    @Override
 +    public void writeSnapshot(PacketDataSerializer packetdataserializer) throws IOException
 +    { // CraftBukkit - added throws
-+        validate();
 +        packetdataserializer.b( this.a );
 +        packetdataserializer.a( EntityHuman.a( this.b ).toString() );
 +        packetdataserializer.a( this.b.getName().length() > 16 ? this.b.getName().substring( 0, 16 ) : this.b.getName() ); // CraftBukkit - Limit name length to 16 characters
