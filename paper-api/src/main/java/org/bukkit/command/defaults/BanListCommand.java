@@ -2,12 +2,14 @@ package org.bukkit.command.defaults;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.BanEntry;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.util.StringUtil;
 
@@ -27,7 +29,7 @@ public class BanListCommand extends VanillaCommand {
     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
         if (!testPermission(sender)) return true;
 
-        BanList.Type banType = BanList.Type.NAME;
+        BanList.Type banType = BanList.Type.UUID;
         if (args.length > 0) {
             if (args[0].equalsIgnoreCase("ips")) {
                 banType = BanList.Type.IP;
@@ -48,6 +50,19 @@ public class BanListCommand extends VanillaCommand {
                     message.append(", ");
                 }
             }
+
+            String output = banlist[x].getTarget();
+            if (banType == BanList.Type.UUID) {
+                try {
+                    OfflinePlayer player = sender.getServer().getOfflinePlayer(UUID.fromString(output));
+                    if (player.getName() != null) {
+                        output = player.getName();
+                    }
+                } catch (IllegalArgumentException ex) {
+                    // We seem to have an invalid UUID, what do?
+                }
+            }
+
             message.append(banlist[x].getTarget());
         }
 

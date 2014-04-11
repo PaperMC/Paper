@@ -20,6 +20,10 @@ public interface BanList {
          * Banned player IP addresses
          */
         IP,
+        /**
+         * Banned player UUID
+         */
+        UUID,
         ;
     }
 

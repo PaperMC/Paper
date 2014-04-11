@@ -30,7 +30,8 @@ public class PardonCommand extends VanillaCommand {
             return false;
         }
 
-        Bukkit.getBanList(BanList.Type.NAME).pardon(args[0]);
+        String uuid = sender.getServer().getOfflinePlayer(args[0]).getUniqueId().toString();
+        Bukkit.getBanList(BanList.Type.UUID).pardon(uuid);
         Command.broadcastCommandMessage(sender, "Pardoned " + args[0]);
         return true;
     }

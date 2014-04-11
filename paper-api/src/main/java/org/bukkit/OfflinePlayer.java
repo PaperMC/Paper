@@ -19,12 +19,12 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
 
     /**
      * Returns the name of this player
+     * <p>
+     * Names are no longer unique past a single game session. For persistent storage
+     * it is recommended that you use {@link #getUniqueId()} instead.
      *
-     * @deprecated Use {@link #getUniqueId()} as player names are no longer
-     *     guaranteed to be unique
-     * @return Player name
+     * @return Player name or null if we have not seen a name for this player yet
      */
-    @Deprecated
     public String getName();
 
     /**

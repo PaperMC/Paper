@@ -558,13 +558,17 @@ public interface Server extends PluginMessageRecipient {
      * Gets the player by the given name, regardless if they are offline or
      * online.
      * <p>
+     * This method may involve a blocking web request to get the UUID for the
+     * given name.
+     * <p>
      * This will return an object even if the player does not exist. To this
      * method, all players will exist.
      *
-     * @deprecated Use {@link #getOfflinePlayer(UUID)} as player names are no
-     *     longer guaranteed to be unique
+     * @deprecated Persistent storage of users should be by UUID as names are no longer
+     *             unique past a single session.
      * @param name the name the player to retrieve
      * @return an offline player
+     * @see #getOfflinePlayer(java.util.UUID)
      */
     @Deprecated
     public OfflinePlayer getOfflinePlayer(String name);
@@ -611,6 +615,9 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * Gets a ban list for the supplied type.
+     * <p>
+     * Bans by name are no longer supported and this method will return
+     * null when trying to request them. The replacement is bans by UUID.
      *
      * @param type the type of list to fetch, cannot be null
      * @return a ban list of the specified type
