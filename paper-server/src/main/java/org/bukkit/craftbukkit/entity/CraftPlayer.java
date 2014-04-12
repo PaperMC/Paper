@@ -752,7 +752,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public boolean isWhitelisted() {
-        return server.getHandle().isWhitelisted(getProfile());
+        return server.getHandle().getWhitelist().isWhitelisted(getProfile());
     }
 
     @Override
