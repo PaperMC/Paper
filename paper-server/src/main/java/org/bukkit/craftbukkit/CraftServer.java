@@ -1260,14 +1260,22 @@ public final class CraftServer implements Server {
     public OfflinePlayer getOfflinePlayer(String name) {
         Validate.notNull(name, "Name cannot be null");
 
-        // This is potentially blocking :(
-        GameProfile profile = MinecraftServer.getServer().getUserCache().a(name);
-        if (profile == null) {
-            // Make an OfflinePlayer using an offline mode UUID since the name has no profile
-            return getOfflinePlayer(new GameProfile(java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name));
+        OfflinePlayer result = getPlayerExact(name);
+        if (result == null) {
+            // This is potentially blocking :(
+            GameProfile profile = MinecraftServer.getServer().getUserCache().a(name);
+            if (profile == null) {
+                // Make an OfflinePlayer using an offline mode UUID since the name has no profile
+                result = getOfflinePlayer(new GameProfile(java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name));
+            } else {
+                // Use the GameProfile even when we get a UUID so we ensure we still have a name
+                result = getOfflinePlayer(profile);
+            }
+        } else {
+            offlinePlayers.remove(result.getUniqueId());
         }
 
-        return getOfflinePlayer(profile.getId());
+        return result;
     }
 
     public OfflinePlayer getOfflinePlayer(java.util.UUID id) {
