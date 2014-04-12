@@ -55,7 +55,7 @@ public class NameReferencingFileConverter {
             return new String[i];
         });
 
-        if (minecraftserver.getOnlineMode()) {
+        if (minecraftserver.getOnlineMode() || org.spigotmc.SpigotConfig.bungee) { // Spigot: bungee = online mode, for now.
             minecraftserver.getGameProfileRepository().findProfilesByNames(astring, Agent.MINECRAFT, profilelookupcallback);
         } else {
             String[] astring1 = astring;
