@@ -102,7 +102,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     }
 
     public boolean isWhitelisted() {
-        return server.getHandle().isWhitelisted(profile);
+        return server.getHandle().getWhitelist().isWhitelisted(profile);
     }
 
     public void setWhitelisted(boolean value) {
