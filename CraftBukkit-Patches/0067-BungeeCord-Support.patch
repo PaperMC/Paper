@@ -1,4 +1,4 @@
-From 7a40301085d45e555e5d980b663a03fc7215870e Mon Sep 17 00:00:00 2001
+From 356dff0aa787496546e42947c933cf0b3a316114 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 1 Dec 2013 18:18:41 +1100
 Subject: [PATCH] BungeeCord Support
@@ -6,10 +6,18 @@ Subject: [PATCH] BungeeCord Support
 Provides support for IP forwarding via BungeeCord.
 
 diff --git a/src/main/java/net/minecraft/server/HandshakeListener.java b/src/main/java/net/minecraft/server/HandshakeListener.java
-index b98079c..0542db3 100644
+index b98079c..c738ab5 100644
 --- a/src/main/java/net/minecraft/server/HandshakeListener.java
 +++ b/src/main/java/net/minecraft/server/HandshakeListener.java
-@@ -73,6 +73,22 @@ public class HandshakeListener implements PacketHandshakingInListener {
+@@ -5,6 +5,7 @@ import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
+ // CraftBukkit start
+ import java.net.InetAddress;
+ import java.util.HashMap;
++import net.minecraft.util.com.mojang.util.UUIDTypeAdapter;
+ // CraftBukkit end
+ 
+ public class HandshakeListener implements PacketHandshakingInListener {
+@@ -73,6 +74,22 @@ public class HandshakeListener implements PacketHandshakingInListener {
                  this.b.close(chatcomponenttext);
              } else {
                  this.b.a((PacketListener) (new LoginListener(this.a, this.b)));
@@ -19,7 +27,7 @@ index b98079c..0542db3 100644
 +                    if ( split.length == 3 ) {
 +                        packethandshakinginsetprotocol.b = split[0];
 +                        b.n = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) b.getSocketAddress()).getPort());
-+                        b.spoofedUUID = split[2];
++                        b.spoofedUUID = UUIDTypeAdapter.fromString( split[2] );
 +                    } else
 +                    {
 +                        chatcomponenttext = new ChatComponentText("If you wish to use IP forwarding, please enable it in your BungeeCord config as well!");
@@ -33,28 +41,27 @@ index b98079c..0542db3 100644
              }
              break;
 diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
-index eb227bc..04d9f73 100644
+index 0755d36..990dbef 100644
 --- a/src/main/java/net/minecraft/server/LoginListener.java
 +++ b/src/main/java/net/minecraft/server/LoginListener.java
-@@ -62,8 +62,14 @@ public class LoginListener implements PacketLoginInListener {
+@@ -62,7 +62,14 @@ public class LoginListener implements PacketLoginInListener {
      // Spigot start
      public void initUUID()
      {
--        String uuid = UUID.nameUUIDFromBytes( ( "OfflinePlayer:" + this.i.getName() ).getBytes( Charsets.UTF_8 ) ).toString().replaceAll( "-", "" );
--
-+        String uuid;
+-        UUID uuid = UUID.nameUUIDFromBytes( ( "OfflinePlayer:" + this.i.getName() ).getBytes( Charsets.UTF_8 ) );
++        UUID uuid;
 +        if ( networkManager.spoofedUUID != null )
 +        {
 +            uuid = networkManager.spoofedUUID;
 +        } else
 +        {
-+            uuid = UUID.nameUUIDFromBytes( ( "OfflinePlayer:" + this.i.getName() ).getBytes( Charsets.UTF_8 ) ).toString().replaceAll("-", "");
++            uuid = UUID.nameUUIDFromBytes( ( "OfflinePlayer:" + this.i.getName() ).getBytes( Charsets.UTF_8 ) );
 +        }
+ 
          this.i = new GameProfile( uuid, this.i.getName() );
      }
-     // Spigot end
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index 1dd2227..c4a86bf 100644
+index 1dd2227..6789ca8 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
 @@ -36,7 +36,8 @@ public class NetworkManager extends SimpleChannelInboundHandler {
@@ -63,7 +70,7 @@ index 1dd2227..c4a86bf 100644
      private Channel m;
 -    private SocketAddress n;
 +    public SocketAddress n; // Spigot
-+    public String spoofedUUID; // Spigot
++    public java.util.UUID spoofedUUID; // Spigot
      private PacketListener o;
      private EnumProtocol p;
      private IChatBaseComponent q;
