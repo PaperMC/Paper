@@ -99,7 +99,7 @@
 +                    @Override
 +                    public void run() {
 +                        try {
-+                            GameProfile gameprofile = UUIDUtil.createOfflineProfile(ServerLoginPacketListenerImpl.this.requestedUsername);
++                            GameProfile gameprofile = ServerLoginPacketListenerImpl.this.createOfflineProfile(ServerLoginPacketListenerImpl.this.requestedUsername); // Spigot
 +
 +                            ServerLoginPacketListenerImpl.this.callPlayerPreLoginEvents(gameprofile);
 +                            ServerLoginPacketListenerImpl.LOGGER.info("UUID of player {} is {}", gameprofile.getName(), gameprofile.getId());
@@ -160,7 +160,7 @@
              }
          }
  
-@@ -205,6 +281,12 @@
+@@ -205,11 +281,17 @@
                      if (profileresult != null) {
                          GameProfile gameprofile = profileresult.profile();
  
@@ -173,7 +173,19 @@
                          ServerLoginPacketListenerImpl.LOGGER.info("UUID of player {} is {}", gameprofile.getName(), gameprofile.getId());
                          ServerLoginPacketListenerImpl.this.startClientVerification(gameprofile);
                      } else if (ServerLoginPacketListenerImpl.this.server.isSingleplayer()) {
-@@ -222,6 +304,11 @@
+                         ServerLoginPacketListenerImpl.LOGGER.warn("Failed to verify username but will let them in anyway!");
+-                        ServerLoginPacketListenerImpl.this.startClientVerification(UUIDUtil.createOfflineProfile(s1));
++                        ServerLoginPacketListenerImpl.this.startClientVerification(ServerLoginPacketListenerImpl.this.createOfflineProfile(s1)); // Spigot
+                     } else {
+                         ServerLoginPacketListenerImpl.this.disconnect(Component.translatable("multiplayer.disconnect.unverified_username"));
+                         ServerLoginPacketListenerImpl.LOGGER.error("Username '{}' tried to join with an invalid session", s1);
+@@ -217,11 +299,16 @@
+                 } catch (AuthenticationUnavailableException authenticationunavailableexception) {
+                     if (ServerLoginPacketListenerImpl.this.server.isSingleplayer()) {
+                         ServerLoginPacketListenerImpl.LOGGER.warn("Authentication servers are down but will let them in anyway!");
+-                        ServerLoginPacketListenerImpl.this.startClientVerification(UUIDUtil.createOfflineProfile(s1));
++                        ServerLoginPacketListenerImpl.this.startClientVerification(ServerLoginPacketListenerImpl.this.createOfflineProfile(s1)); // Spigot
+                     } else {
                          ServerLoginPacketListenerImpl.this.disconnect(Component.translatable("multiplayer.disconnect.authservers_down"));
                          ServerLoginPacketListenerImpl.LOGGER.error("Couldn't verify username because servers are unavailable");
                      }
@@ -242,7 +254,7 @@
  
          this.connection.setupInboundProtocol(ConfigurationProtocols.SERVERBOUND, serverconfigurationpacketlistenerimpl);
          serverconfigurationpacketlistenerimpl.startConfiguration();
-@@ -264,12 +389,18 @@
+@@ -264,12 +389,44 @@
  
      @Override
      public void handleCookieResponse(ServerboundCookieResponsePacket packet) {
@@ -255,6 +267,32 @@
          this.disconnect(ServerCommonPacketListenerImpl.DISCONNECT_UNEXPECTED_QUERY);
      }
  
++    // Spigot start
++    protected GameProfile createOfflineProfile(String s) {
++        java.util.UUID uuid;
++        if ( this.connection.spoofedUUID != null )
++        {
++            uuid = this.connection.spoofedUUID;
++        } else
++        {
++            uuid = UUIDUtil.createOfflinePlayerUUID( s );
++        }
++
++        GameProfile gameProfile = new GameProfile( uuid, s );
++
++        if (this.connection.spoofedProfile != null)
++        {
++            for ( com.mojang.authlib.properties.Property property : this.connection.spoofedProfile )
++            {
++                if ( !ServerHandshakePacketListenerImpl.PROP_PATTERN.matcher( property.name()).matches() ) continue;
++                gameProfile.getProperties().put( property.name(), property );
++            }
++        }
++
++        return gameProfile;
++    }
++    // Spigot end
++
      public static enum State {
  
 -        HELLO, KEY, AUTHENTICATING, NEGOTIATING, VERIFYING, WAITING_FOR_DUPE_DISCONNECT, PROTOCOL_SWITCHING, ACCEPTED;

@@ -214,4 +214,14 @@ public class SpigotConfig
         SpigotConfig.commands.put( "restart", new RestartCommand( "restart" ) );
         WatchdogThread.doStart( SpigotConfig.timeoutTime, SpigotConfig.restartOnCrash );
     }
+
+    public static boolean bungee;
+    private static void bungee() {
+        if ( SpigotConfig.version < 4 )
+        {
+            SpigotConfig.set( "settings.bungeecord", false );
+            System.out.println( "Outdated config, disabling BungeeCord support!" );
+        }
+        SpigotConfig.bungee = SpigotConfig.getBoolean( "settings.bungeecord", false );
+    }
 }

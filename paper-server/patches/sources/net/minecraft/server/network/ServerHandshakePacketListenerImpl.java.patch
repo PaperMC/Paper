@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
-@@ -13,8 +13,17 @@
+@@ -13,8 +13,22 @@
  import net.minecraft.network.protocol.status.StatusProtocols;
  import net.minecraft.server.MinecraftServer;
  
@@ -11,6 +11,11 @@
 +
  public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketListener {
  
++    // Spigot start
++    private static final com.google.gson.Gson gson = new com.google.gson.Gson();
++    static final java.util.regex.Pattern HOST_PATTERN = java.util.regex.Pattern.compile("[0-9a-f\\.:]{0,45}");
++    static final java.util.regex.Pattern PROP_PATTERN = java.util.regex.Pattern.compile("\\w{0,16}");
++    // Spigot end
 +    // CraftBukkit start - add fields
 +    private static final HashMap<InetAddress, Long> throttleTracker = new HashMap<InetAddress, Long>();
 +    private static int throttleCounter = 0;
@@ -18,7 +23,7 @@
      private static final Component IGNORE_STATUS_REASON = Component.translatable("disconnect.ignoring_status_request");
      private final MinecraftServer server;
      private final Connection connection;
-@@ -26,6 +35,7 @@
+@@ -26,6 +40,7 @@
  
      @Override
      public void handleIntention(ClientIntentionPacket packet) {
@@ -26,7 +31,7 @@
          switch (packet.intention()) {
              case LOGIN:
                  this.beginLogin(packet, false);
-@@ -59,13 +69,47 @@
+@@ -59,19 +74,78 @@
  
      private void beginLogin(ClientIntentionPacket packet, boolean transfer) {
          this.connection.setupOutboundProtocol(LoginProtocols.CLIENTBOUND);
@@ -77,3 +82,34 @@
              }
  
              this.connection.send(new ClientboundLoginDisconnectPacket(ichatmutablecomponent));
+             this.connection.disconnect((Component) ichatmutablecomponent);
+         } else {
+             this.connection.setupInboundProtocol(LoginProtocols.SERVERBOUND, new ServerLoginPacketListenerImpl(this.server, this.connection, transfer));
++            // Spigot Start
++            String[] split = packet.hostName().split("\00");
++            if (org.spigotmc.SpigotConfig.bungee) {
++                if ( ( split.length == 3 || split.length == 4 ) && ( ServerHandshakePacketListenerImpl.HOST_PATTERN.matcher( split[1] ).matches() ) ) {
++                    this.connection.hostname = split[0];
++                    this.connection.address = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getPort());
++                    this.connection.spoofedUUID = com.mojang.util.UndashedUuid.fromStringLenient( split[2] );
++                } else
++                {
++                    Component chatmessage = Component.literal("If you wish to use IP forwarding, please enable it in your BungeeCord config as well!");
++                    this.connection.send(new ClientboundLoginDisconnectPacket(chatmessage));
++                    this.connection.disconnect(chatmessage);
++                    return;
++                }
++                if ( split.length == 4 )
++                {
++                    this.connection.spoofedProfile = ServerHandshakePacketListenerImpl.gson.fromJson(split[3], com.mojang.authlib.properties.Property[].class);
++                }
++            } else if ( ( split.length == 3 || split.length == 4 ) && ( ServerHandshakePacketListenerImpl.HOST_PATTERN.matcher( split[1] ).matches() ) ) {
++                Component chatmessage = Component.literal("Unknown data in login hostname, did you forget to enable BungeeCord in spigot.yml?");
++                this.connection.send(new ClientboundLoginDisconnectPacket(chatmessage));
++                this.connection.disconnect(chatmessage);
++                return;
++            }
++            // Spigot End
+         }
+ 
+     }

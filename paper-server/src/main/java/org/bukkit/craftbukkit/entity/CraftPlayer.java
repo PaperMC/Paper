@@ -2345,6 +2345,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     {
 
         @Override
+        public InetSocketAddress getRawAddress()
+        {
+            return (InetSocketAddress) CraftPlayer.this.getHandle().connection.getRawAddress();
+        }
+
+        @Override
         public void respawn()
         {
             if ( CraftPlayer.this.getHealth() <= 0 && CraftPlayer.this.isOnline() )

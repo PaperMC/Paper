@@ -803,7 +803,13 @@ public final class CraftServer implements Server {
 
     @Override
     public long getConnectionThrottle() {
-        return this.configuration.getInt("settings.connection-throttle");
+        // Spigot Start - Automatically set connection throttle for bungee configurations
+        if (org.spigotmc.SpigotConfig.bungee) {
+            return -1;
+        } else {
+            return this.configuration.getInt("settings.connection-throttle");
+        }
+        // Spigot End
     }
 
     @Override
@@ -1814,7 +1820,7 @@ public final class CraftServer implements Server {
         if (result == null) {
             GameProfile profile = null;
             // Only fetch an online UUID in online mode
-            if (this.getOnlineMode()) {
+            if (this.getOnlineMode() || org.spigotmc.SpigotConfig.bungee) { // Spigot: bungee = online mode, for now.
                 // This is potentially blocking :(
                 profile = this.console.getProfileCache().get(name).orElse(null);
             }
