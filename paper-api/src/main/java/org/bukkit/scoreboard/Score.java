@@ -3,7 +3,7 @@ package org.bukkit.scoreboard;
 import org.bukkit.OfflinePlayer;
 
 /**
- * A score entry for a {@link #getPlayer() player} on an {@link
+ * A score entry for an {@link #getEntry() entry} on an {@link
  * #getObjective() objective}. Changing this will not affect any other
  * objective or scoreboard.
  */
@@ -13,8 +13,18 @@ public interface Score {
      * Gets the OfflinePlayer being tracked by this Score
      *
      * @return this Score's tracked player
+     * @deprecated Scoreboards can contain entries that aren't players
+     * @see #getEntry()
      */
+    @Deprecated
     OfflinePlayer getPlayer();
+
+    /**
+     * Gets the entry being tracked by this Score
+     *
+     * @return this Score's tracked entry
+     */
+    String getEntry();
 
     /**
      * Gets the Objective being tracked by this Score

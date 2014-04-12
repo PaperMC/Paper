@@ -63,16 +63,39 @@ public interface Scoreboard {
      * @param player the player whose scores are being retrieved
      * @return immutable set of all scores tracked for the player
      * @throws IllegalArgumentException if player is null
+     * @deprecated Scoreboards can contain entries that aren't players
+     * @see #getScores(String)
      */
+    @Deprecated
     Set<Score> getScores(OfflinePlayer player) throws IllegalArgumentException;
+
+    /**
+     * Gets all scores for an entry on this Scoreboard
+     *
+     * @param entry the entry whose scores are being retrieved
+     * @return immutable set of all scores tracked for the entry
+     * @throws IllegalArgumentException if entry is null
+     */
+    Set<Score> getScores(String entry) throws IllegalArgumentException;
 
     /**
      * Removes all scores for a player on this Scoreboard
      *
-     * @param player the player to drop all current scores
+     * @param player the player to drop all current scores for
      * @throws IllegalArgumentException if player is null
+     * @deprecated Scoreboards can contain entries that aren't players
+     * @see #resetScores(String)
      */
+    @Deprecated
     void resetScores(OfflinePlayer player) throws IllegalArgumentException;
+
+    /**
+     * Removes all scores for an entry on this Scoreboard
+     *
+     * @param entry the entry to drop all current scores for
+     * @throws IllegalArgumentException if entry is null
+     */
+    void resetScores(String entry) throws IllegalArgumentException;
 
     /**
      * Gets a player's Team on this Scoreboard
@@ -113,8 +136,18 @@ public interface Scoreboard {
      * Gets all players tracked by this Scoreboard
      *
      * @return immutable set of all tracked players
+     * @deprecated Scoreboards can contain entries that aren't players
+     * @see #getEntries()
      */
+    @Deprecated
     Set<OfflinePlayer> getPlayers();
+
+    /**
+     * Gets all entries tracked by this Scoreboard
+     *
+     * @return immutable set of all tracked entries
+     */
+    Set<String> getEntries();
 
     /**
      * Clears any objective in the specified slot.

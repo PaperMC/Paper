@@ -209,7 +209,7 @@ public class ScoreboardCommand extends VanillaCommand {
                     sender.sendMessage(ChatColor.RED + "'" + playerName + "' is too long for a player name");
                     return false;
                 }
-                Score score = objective.getScore(Bukkit.getOfflinePlayer(playerName));
+                Score score = objective.getScore(playerName);
                 int newScore;
                 if (args[1].equalsIgnoreCase("set")) {
                     newScore = value;
@@ -230,7 +230,7 @@ public class ScoreboardCommand extends VanillaCommand {
                     sender.sendMessage(ChatColor.RED + "'" + playerName + "' is too long for a player name");
                     return false;
                 }
-                mainScoreboard.resetScores(Bukkit.getOfflinePlayer(playerName));
+                mainScoreboard.resetScores(playerName);
                 sender.sendMessage("Reset all scores of player " + playerName);
             } else if (args[1].equalsIgnoreCase("list")) {
                 if (args.length > 3) {
@@ -238,12 +238,12 @@ public class ScoreboardCommand extends VanillaCommand {
                     return false;
                 }
                 if (args.length == 2) {
-                    Set<OfflinePlayer> players = mainScoreboard.getPlayers();
-                    if (players.isEmpty()) {
+                    Set<String> entries = mainScoreboard.getEntries();
+                    if (entries.isEmpty()) {
                         sender.sendMessage(ChatColor.RED + "There are no tracked players on the scoreboard");
                     } else {
-                        sender.sendMessage(ChatColor.DARK_GREEN + "Showing " + players.size() + " tracked players on the scoreboard");
-                        sender.sendMessage(offlinePlayerSetToString(players));
+                        sender.sendMessage(ChatColor.DARK_GREEN + "Showing " + entries.size() + " tracked players on the scoreboard");
+                        sender.sendMessage(stringCollectionToString(entries));
                     }
                 } else {
                     String playerName = args[2];
@@ -251,7 +251,7 @@ public class ScoreboardCommand extends VanillaCommand {
                         sender.sendMessage(ChatColor.RED + "'" + playerName + "' is too long for a player name");
                         return false;
                     }
-                    Set<Score> scores = mainScoreboard.getScores(Bukkit.getOfflinePlayer(playerName));
+                    Set<Score> scores = mainScoreboard.getScores(playerName);
                     if (scores.isEmpty()) {
                         sender.sendMessage(ChatColor.RED + "Player " + playerName + " has no scores recorded");
                     } else {
@@ -520,7 +520,7 @@ public class ScoreboardCommand extends VanillaCommand {
                     }
                 } else {
                     if (args.length == 3) {
-                        return StringUtil.copyPartialMatches(args[2], this.getCurrentPlayers(), new ArrayList<String>());
+                        return StringUtil.copyPartialMatches(args[2], this.getCurrentEntries(), new ArrayList<String>());
                     }
                 }
             } else if (args[0].equalsIgnoreCase("teams")) {
@@ -597,10 +597,10 @@ public class ScoreboardCommand extends VanillaCommand {
         return list;
     }
 
-    private List<String> getCurrentPlayers() {
+    private List<String> getCurrentEntries() {
         List<String> list = new ArrayList<String>();
-        for (OfflinePlayer player : Bukkit.getScoreboardManager().getMainScoreboard().getPlayers()) {
-            list.add(player.getName());
+        for (String entry : Bukkit.getScoreboardManager().getMainScoreboard().getEntries()) {
+            list.add(entry);
         }
         Collections.sort(list, String.CASE_INSENSITIVE_ORDER);
         return list;

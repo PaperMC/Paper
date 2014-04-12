@@ -3,7 +3,7 @@ package org.bukkit.scoreboard;
 import org.bukkit.OfflinePlayer;
 
 /**
- * An objective on a scoreboard that can show scores specific to players. This
+ * An objective on a scoreboard that can show scores specific to entries. This
  * objective is only relevant to the display of the associated {@link
  * #getScoreboard() scoreboard}.
  */
@@ -92,6 +92,19 @@ public interface Objective {
      * @return Score tracking the Objective and player specified
      * @throws IllegalArgumentException if player is null
      * @throws IllegalStateException if this objective has been unregistered
+     * @deprecated Scoreboards can contain entries that aren't players
+     * @see #getScore(String)
      */
+    @Deprecated
     Score getScore(OfflinePlayer player) throws IllegalArgumentException, IllegalStateException;
+
+    /**
+     * Gets an entry's Score for an Objective on this Scoreboard.
+     *
+     * @param entry Entry for the Score
+     * @return Score tracking the Objective and entry specified
+     * @throws IllegalArgumentException if entry is null
+     * @throws IllegalStateException if this objective has been unregistered
+     */
+    Score getScore(String entry) throws IllegalArgumentException, IllegalStateException;
 }
