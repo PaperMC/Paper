@@ -78,7 +78,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         ChunkCoordinates chunkcoordinates = world.getSpawn();
 
         this.setPositionRotation((double) chunkcoordinates.x + 0.5D, (double) (chunkcoordinates.y + 1), (double) chunkcoordinates.z + 0.5D, 0.0F, 0.0F);
-        this.az = 180.0F;
+        this.aZ = 180.0F;
         this.maxFireTicks = 20;
     }
 
@@ -190,7 +190,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         }
 
         if (d0 < -d3) {
-            this.bu = this.by = this.locX;
+            this.bu = this.bx = this.locX;
         }
 
         if (d2 < -d3) {
@@ -198,7 +198,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         }
 
         if (d1 < -d3) {
-            this.bv = this.bz = this.locY;
+            this.bv = this.by = this.locY;
         }
 
         this.bx += d0 * 0.25D;

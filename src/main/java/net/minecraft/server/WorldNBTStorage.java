@@ -208,7 +208,11 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
             // CraftBukkit start
             if (entityhuman instanceof EntityPlayer) {
                 CraftPlayer player = (CraftPlayer) entityhuman.bukkitEntity;
-                player.setFirstPlayed(new File(playerDir, entityhuman.getName() + ".dat").lastModified());
+                // Only update first played if it is older than the one we have
+                long modified = new File(this.playerDir, entityhuman.getUniqueID().toString() + ".dat").lastModified();
+                if (modified < player.getFirstPlayed()) {
+                    player.setFirstPlayed(modified);
+                }
             }
             // CraftBukkit end
 

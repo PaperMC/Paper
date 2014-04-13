@@ -341,7 +341,7 @@ public class PlayerConnection implements PacketPlayInListener {
                 }
 
                 this.player.i();
-                this.player.W = 0.0F;
+                this.player.V = 0.0F;
                 this.player.setLocation(this.y, this.z, this.q, f2, f3);
                 if (!this.checkMovement) {
                     return;

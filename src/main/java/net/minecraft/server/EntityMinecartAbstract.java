@@ -199,7 +199,7 @@ public abstract class EntityMinecartAbstract extends Entity {
         }
 
         if (this.locY < -64.0D) {
-            this.G();
+            this.F();
         }
 
         int i;

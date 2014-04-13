@@ -164,7 +164,7 @@ public abstract class PlayerList {
         }
 
         // CraftBukkit - Moved from above, added world
-        g.info(entityplayer.getName() + "[" + s + "] logged in with entity id " + entityplayer.getId() + " at ([" + entityplayer.world.worldData.getName() + "] " + entityplayer.locX + ", " + entityplayer.locY + ", " + entityplayer.locZ + ")");
+        g.info(entityplayer.getName() + "[" + s1 + "] logged in with entity id " + entityplayer.getId() + " at ([" + entityplayer.world.worldData.getName() + "] " + entityplayer.locX + ", " + entityplayer.locY + ", " + entityplayer.locZ + ")");
     }
 
     public void a(ScoreboardServer scoreboardserver, EntityPlayer entityplayer) { // CraftBukkit - protected -> public
@@ -374,7 +374,7 @@ public abstract class PlayerList {
                 s = s + "\nYour ban will be removed on " + h.format(ipbanentry.getExpires());
             }
 
-            // return s2;
+            // return s;
             event.disallow(PlayerLoginEvent.Result.KICK_BANNED, s);
         } else {
             // return this.players.size() >= this.maxPlayers ? "The server is full!" : null;
@@ -768,7 +768,7 @@ public abstract class PlayerList {
             */
             if (entity.isAlive()) {
                 // entity.setPositionRotation(d0, entity.locY, d1, entity.yaw, entity.pitch)
-                // worldserver1.s().a(entity, d3, d4, d5, f);
+                // worldserver1.getTravelAgent().a(entity, d3, d4, d5, f);
                 if (portal) {
                     Vector velocity = entity.getBukkitEntity().getVelocity();
                     worldserver1.getTravelAgent().adjustExit(entity, exit, velocity);
@@ -794,7 +794,7 @@ public abstract class PlayerList {
         }
 
         /* CraftBukkit start - Remove updating of lag to players -- it spams way to much on big servers.
-        if (this.p < this.players.size()) {
+        if (this.t < this.players.size()) {
             EntityPlayer entityplayer = (EntityPlayer) this.players.get(this.p);
 
             this.sendAll(new PacketPlayOutPlayerInfo(entityplayer.getName(), true, entityplayer.ping));

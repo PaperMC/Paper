@@ -146,7 +146,7 @@ public class EntitySlime extends EntityInsentient implements IMonster {
         } else {
             this.bc = false;
             if (this.onGround) {
-                this.bd = this.bf = 0.0F;
+                this.bd = this.be = 0.0F;
             }
         }
     }
