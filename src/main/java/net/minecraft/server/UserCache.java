@@ -141,7 +141,7 @@ public class UserCache {
             usercache_usercacheentry.a(this.d());
             gameprofile = usercache_usercacheentry.a();
         } else {
-            gameprofile = a(this.e, s1);
+            gameprofile = a(this.e, s); // Spigot - use correct case for offline players
             if (gameprofile != null) {
                 this.a(gameprofile);
                 flag = false;
