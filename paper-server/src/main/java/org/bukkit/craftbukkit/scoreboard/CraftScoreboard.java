@@ -84,10 +84,26 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
         return scores.build();
     }
 
+    public ImmutableSet<Score> getScores(String entry) throws IllegalArgumentException {
+        Validate.notNull(entry, "Entry cannot be null");
+
+        ImmutableSet.Builder<Score> scores = ImmutableSet.builder();
+        for (CraftObjective objective : objectives.values()) {
+            scores.add(objective.getScore(entry));
+        }
+        return scores.build();
+    }
+
     public void resetScores(OfflinePlayer player) throws IllegalArgumentException {
         Validate.notNull(player, "OfflinePlayer cannot be null");
 
         board.resetPlayerScores(player.getName());
+    }
+
+    public void resetScores(String entry) throws IllegalArgumentException {
+        Validate.notNull(entry, "Entry cannot be null");
+
+        board.resetPlayerScores(entry);
     }
 
     public Team getPlayerTeam(OfflinePlayer player) throws IllegalArgumentException {
@@ -121,6 +137,14 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
             players.add(Bukkit.getOfflinePlayer(playerName.toString()));
         }
         return players.build();
+    }
+
+    public ImmutableSet<String> getEntries() {
+        ImmutableSet.Builder<String> entries = ImmutableSet.builder();
+        for (Object entry : board.getPlayers()) {
+            entries.add(entry.toString());
+        }
+        return entries.build();
     }
 
     public void clearSlot(DisplaySlot slot) throws IllegalArgumentException {
