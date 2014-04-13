@@ -93,6 +93,13 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
         return new CraftScore(this, player.getName());
     }
 
+    public Score getScore(String entry) throws IllegalArgumentException, IllegalStateException {
+        Validate.notNull(entry, "Entry cannot be null");
+        CraftScoreboard scoreboard = checkState();
+
+        return new CraftScore(this, entry);
+    }
+
     @Override
     public void unregister() throws IllegalStateException {
         CraftScoreboard scoreboard = checkState();
