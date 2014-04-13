@@ -11,7 +11,7 @@
  import org.slf4j.Logger;
  
  public class PlayerDataStorage {
-@@ -49,34 +51,36 @@
+@@ -49,34 +51,55 @@
  
      }
  
@@ -48,17 +48,37 @@
 -        File file1 = new File(file, s1 + extension);
 +        // String s1 = entityhuman.getStringUUID(); // CraftBukkit - used above
 +        File file1 = new File(file, s1 + s);
++        // Spigot Start
++        boolean usingWrongFile = false;
++        if ( !file1.exists() )
++        {
++            file1 = new File( file, java.util.UUID.nameUUIDFromBytes( ( "OfflinePlayer:" + name ).getBytes( java.nio.charset.StandardCharsets.UTF_8 ) ).toString() + s );
++            if ( file1.exists() )
++            {
++                usingWrongFile = true;
++                org.bukkit.Bukkit.getServer().getLogger().warning( "Using offline mode UUID file for player " + name + " as it is the only copy we can find." );
++            }
++        }
++        // Spigot End
  
          if (file1.exists() && file1.isFile()) {
              try {
-                 return Optional.of(NbtIo.readCompressed(file1.toPath(), NbtAccounter.unlimitedHeap()));
+-                return Optional.of(NbtIo.readCompressed(file1.toPath(), NbtAccounter.unlimitedHeap()));
++                // Spigot Start
++                Optional<CompoundTag> optional = Optional.of(NbtIo.readCompressed(file1.toPath(), NbtAccounter.unlimitedHeap()));
++                if ( usingWrongFile )
++                {
++                    file1.renameTo( new File( file1.getPath() + ".offline-read" ) );
++                }
++                return optional;
++                // Spigot End
              } catch (Exception exception) {
 -                PlayerDataStorage.LOGGER.warn("Failed to load player data for {}", player.getName().getString());
 +                PlayerDataStorage.LOGGER.warn("Failed to load player data for {}", name); // CraftBukkit
              }
          }
  
-@@ -84,20 +88,44 @@
+@@ -84,20 +107,44 @@
      }
  
      public Optional<CompoundTag> load(Player player) {
