@@ -1,5 +1,6 @@
 #!/bin/bash
 
+PS1="$"
 basedir=`pwd`
 echo "Rebuilding Forked projects.... "
 
