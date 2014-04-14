@@ -1,4 +1,4 @@
-From 326665012cc6ce86d73c955b8a61c7880b734c49 Mon Sep 17 00:00:00 2001
+From 969ea97d8abf9fb99e0a647371546068db211211 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 1 Dec 2013 18:18:41 +1100
 Subject: [PATCH] BungeeCord Support
@@ -6,10 +6,15 @@ Subject: [PATCH] BungeeCord Support
 Provides support for IP forwarding via BungeeCord.
 
 diff --git a/src/main/java/net/minecraft/server/HandshakeListener.java b/src/main/java/net/minecraft/server/HandshakeListener.java
-index b98079c..c738ab5 100644
+index b98079c..ee24038 100644
 --- a/src/main/java/net/minecraft/server/HandshakeListener.java
 +++ b/src/main/java/net/minecraft/server/HandshakeListener.java
-@@ -5,6 +5,7 @@ import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
+@@ -1,14 +1,17 @@
+ package net.minecraft.server;
+ 
++import net.minecraft.util.com.mojang.authlib.properties.Property; // Spigot
+ import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
+ 
  // CraftBukkit start
  import java.net.InetAddress;
  import java.util.HashMap;
@@ -17,14 +22,19 @@ index b98079c..c738ab5 100644
  // CraftBukkit end
  
  public class HandshakeListener implements PacketHandshakingInListener {
-@@ -73,6 +74,22 @@ public class HandshakeListener implements PacketHandshakingInListener {
+ 
++    private static final com.google.gson.Gson gson = new com.google.gson.Gson(); // Spigot
+     // CraftBukkit start - add fields
+     private static final HashMap<InetAddress, Long> throttleTracker = new HashMap<InetAddress, Long>();
+     private static int throttleCounter = 0;
+@@ -73,6 +76,26 @@ public class HandshakeListener implements PacketHandshakingInListener {
                  this.b.close(chatcomponenttext);
              } else {
                  this.b.a((PacketListener) (new LoginListener(this.a, this.b)));
 +                // Spigot Start
 +                if (org.spigotmc.SpigotConfig.bungee) {
 +                    String[] split = packethandshakinginsetprotocol.b.split("\00");
-+                    if ( split.length == 3 ) {
++                    if ( split.length == 3 || split.length == 4 ) {
 +                        packethandshakinginsetprotocol.b = split[0];
 +                        b.n = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) b.getSocketAddress()).getPort());
 +                        b.spoofedUUID = UUIDTypeAdapter.fromString( split[2] );
@@ -35,16 +45,28 @@ index b98079c..c738ab5 100644
 +                        this.b.close(chatcomponenttext);
 +                        return;
 +                    }
++                    if ( split.length == 4 )
++                    {
++                        b.spoofedProfile = gson.fromJson(split[3], Property[].class);
++                    }
 +                }
 +                // Spigot End
                  ((LoginListener) this.b.getPacketListener()).hostname = packethandshakinginsetprotocol.b + ":" + packethandshakinginsetprotocol.c; // CraftBukkit - set hostname
              }
              break;
 diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
-index 0755d36..990dbef 100644
+index 0755d36..e380a70 100644
 --- a/src/main/java/net/minecraft/server/LoginListener.java
 +++ b/src/main/java/net/minecraft/server/LoginListener.java
-@@ -62,7 +62,14 @@ public class LoginListener implements PacketLoginInListener {
+@@ -9,6 +9,7 @@ import javax.crypto.SecretKey;
+ 
+ import net.minecraft.util.com.google.common.base.Charsets;
+ import net.minecraft.util.com.mojang.authlib.GameProfile;
++import net.minecraft.util.com.mojang.authlib.properties.Property;
+ import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
+ import net.minecraft.util.org.apache.commons.lang3.Validate;
+ import org.apache.logging.log4j.LogManager;
+@@ -62,9 +63,24 @@ public class LoginListener implements PacketLoginInListener {
      // Spigot start
      public void initUUID()
      {
@@ -59,22 +81,43 @@ index 0755d36..990dbef 100644
 +        }
  
          this.i = new GameProfile( uuid, this.i.getName() );
++
++        if (networkManager.spoofedProfile != null)
++        {
++            for ( Property property : networkManager.spoofedProfile )
++            {
++                this.i.getProperties().put( property.getName(), property );
++            }
++        }
      }
+     // Spigot end
+ 
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index 1dd2227..6789ca8 100644
+index 1dd2227..e8e20fd 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
-@@ -36,7 +36,8 @@ public class NetworkManager extends SimpleChannelInboundHandler {
+@@ -6,6 +6,7 @@ import javax.crypto.SecretKey;
+ 
+ import net.minecraft.util.com.google.common.collect.Queues;
+ import net.minecraft.util.com.google.common.util.concurrent.ThreadFactoryBuilder;
++import net.minecraft.util.com.mojang.authlib.properties.Property;
+ import net.minecraft.util.io.netty.channel.Channel;
+ import net.minecraft.util.io.netty.channel.ChannelFutureListener;
+ import net.minecraft.util.io.netty.channel.ChannelHandlerContext;
+@@ -36,7 +37,11 @@ public class NetworkManager extends SimpleChannelInboundHandler {
      private final Queue k = Queues.newConcurrentLinkedQueue();
      private final Queue l = Queues.newConcurrentLinkedQueue();
      private Channel m;
 -    private SocketAddress n;
-+    public SocketAddress n; // Spigot
-+    public java.util.UUID spoofedUUID; // Spigot
++    // Spigot Start
++    public SocketAddress n;
++    public java.util.UUID spoofedUUID;
++    public Property[] spoofedProfile;
++    // Spigot End
      private PacketListener o;
      private EnumProtocol p;
      private IChatBaseComponent q;
-@@ -198,4 +199,11 @@ public class NetworkManager extends SimpleChannelInboundHandler {
+@@ -198,4 +203,11 @@ public class NetworkManager extends SimpleChannelInboundHandler {
      static Channel a(NetworkManager networkmanager) {
          return networkmanager.m;
      }
@@ -86,6 +129,19 @@ index 1dd2227..6789ca8 100644
 +    }
 +    // Spigot End
  }
+diff --git a/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java b/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
+index 16d4765..39692ee 100644
+--- a/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
++++ b/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
+@@ -13,7 +13,7 @@ public class PacketHandshakingInSetProtocol extends Packet {
+ 
+     public void a(PacketDataSerializer packetdataserializer) throws IOException { // CraftBukkit - added throws
+         this.a = packetdataserializer.a();
+-        this.b = packetdataserializer.c(255);
++        this.b = packetdataserializer.c(Short.MAX_VALUE); // Spigot
+         this.c = packetdataserializer.readUnsignedShort();
+         this.d = EnumProtocol.a(packetdataserializer.a());
+     }
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
 index 9c98a62..d2a378e 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
