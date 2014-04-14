@@ -1,7 +1,9 @@
 #!/bin/bash
 
+PS1="$"
 basedir=`pwd`
 echo "Rebuilding patch files from current fork state..."
+
 function cleanupPatches {
     cd "$1"
     for patch in *.patch; do
@@ -20,6 +22,7 @@ function cleanupPatches {
         fi
     done
 }
+
 function savePatches {
     what=$1
     target=$2
