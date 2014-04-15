@@ -38,20 +38,29 @@ public class GameProfileBanEntry extends ExpirableListEntry<GameProfile> {
     }
 
     private static GameProfile b(JsonObject jsonobject) {
-        if (jsonobject.has("uuid") && jsonobject.has("name")) {
+        // Spigot start
+        // this whole method has to be reworked to account for the fact Bukkit only accepts UUID bans and gives no way for usernames to be stored!
+        UUID uuid = null;
+        String name = null;
+        if (jsonobject.has("uuid")) {
             String s = jsonobject.get("uuid").getAsString();
-
-            UUID uuid;
 
             try {
                 uuid = UUID.fromString(s);
             } catch (Throwable throwable) {
-                return null;
             }
 
-            return new GameProfile(uuid, jsonobject.get("name").getAsString());
+        }
+        if ( jsonobject.has("name"))
+        {
+            name = jsonobject.get("name").getAsString();
+        }
+        if ( uuid != null || name != null )
+        {
+            return new GameProfile( uuid, name );
         } else {
             return null;
         }
+        // Spigot End
     }
 }
