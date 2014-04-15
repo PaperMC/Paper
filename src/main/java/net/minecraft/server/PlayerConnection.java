@@ -1665,7 +1665,7 @@ public class PlayerConnection implements PacketPlayInListener {
                 itemstack1 = this.player.inventory.getItemInHand();
                 if (itemstack1 != null) {
                     if (itemstack.getItem() == Items.BOOK_AND_QUILL && itemstack.getItem() == itemstack1.getItem()) {
-                        itemstack1.a("pages", (NBTBase) itemstack.getTag().getList("pages", 8));
+                        CraftEventFactory.handleEditBookEvent(player, itemstack); // CraftBukkit
                     }
 
                     return;
