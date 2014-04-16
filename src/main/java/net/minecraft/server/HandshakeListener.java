@@ -64,11 +64,11 @@ public class HandshakeListener implements PacketHandshakingInListener {
             // CraftBukkit end
 
             if (packethandshakinginsetprotocol.d() > 5) {
-                chatcomponenttext = new ChatComponentText("Outdated server! I\'m still on 1.7.8");
+                chatcomponenttext = new ChatComponentText("Outdated server! I\'m still on 1.7.9");
                 this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext), new GenericFutureListener[0]);
                 this.b.close(chatcomponenttext);
             } else if (packethandshakinginsetprotocol.d() < 5) {
-                chatcomponenttext = new ChatComponentText("Outdated client! Please use 1.7.8");
+                chatcomponenttext = new ChatComponentText("Outdated client! Please use 1.7.9");
                 this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext), new GenericFutureListener[0]);
                 this.b.close(chatcomponenttext);
             } else {

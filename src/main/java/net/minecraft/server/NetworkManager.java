@@ -13,6 +13,7 @@ import net.minecraft.util.io.netty.channel.SimpleChannelInboundHandler;
 import net.minecraft.util.io.netty.channel.local.LocalChannel;
 import net.minecraft.util.io.netty.channel.local.LocalServerChannel;
 import net.minecraft.util.io.netty.channel.nio.NioEventLoopGroup;
+import net.minecraft.util.io.netty.handler.timeout.TimeoutException;
 import net.minecraft.util.io.netty.util.AttributeKey;
 import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
 import net.minecraft.util.org.apache.commons.lang3.Validate;
@@ -66,7 +67,15 @@ public class NetworkManager extends SimpleChannelInboundHandler {
     }
 
     public void exceptionCaught(ChannelHandlerContext channelhandlercontext, Throwable throwable) {
-        this.close(new ChatMessage("disconnect.genericReason", new Object[] { "Internal Exception: " + throwable}));
+        ChatMessage chatmessage;
+
+        if (throwable instanceof TimeoutException) {
+            chatmessage = new ChatMessage("disconnect.timeout", new Object[0]);
+        } else {
+            chatmessage = new ChatMessage("disconnect.genericReason", new Object[] { "Internal Exception: " + throwable});
+        }
+
+        this.close(chatmessage);
     }
 
     protected void a(ChannelHandlerContext channelhandlercontext, Packet packet) {
