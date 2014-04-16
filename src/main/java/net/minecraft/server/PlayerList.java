@@ -505,7 +505,7 @@ public abstract class PlayerList {
             }
 
             // return chatmessage;
-            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(chatmessage));
+            if (!gameprofilebanentry.hasExpired()) event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(chatmessage)); // Spigot
         } else if (!this.isWhitelisted(gameprofile)) {
             chatmessage = new ChatMessage("multiplayer.disconnect.not_whitelisted");
             event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, org.spigotmc.SpigotConfig.whitelistMessage); // Spigot
