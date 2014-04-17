@@ -353,7 +353,7 @@ public abstract class PlayerList {
         PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, ((java.net.InetSocketAddress) socketaddress).getAddress());
         String s;
 
-        if (this.j.isBanned(gameprofile)) {
+        if (this.j.isBanned(gameprofile) && !this.j.get(gameprofile).e()) { // Should be hasExpired
             GameProfileBanEntry gameprofilebanentry = (GameProfileBanEntry) this.j.get(gameprofile);
 
             s = "You are banned from this server!\nReason: " + gameprofilebanentry.getReason();
@@ -366,7 +366,7 @@ public abstract class PlayerList {
         } else if (!this.isWhitelisted(gameprofile)) {
             // return "You are not white-listed on this server!";
             event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, "You are not white-listed on this server!");
-        } else if (this.k.isBanned(socketaddress)) {
+        } else if (this.k.isBanned(socketaddress) && !this.j.get(gameprofile).e()) { // Should be hasExpired
             IpBanEntry ipbanentry = this.k.get(socketaddress);
 
             s = "Your IP address is banned from this server!\nReason: " + ipbanentry.getReason();
