@@ -2,14 +2,16 @@ package org.bukkit.craftbukkit.inventory;
 
 import java.util.Map;
 
+import net.minecraft.server.GameProfileSerializer;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.NBTTagCompound;
+import net.minecraft.util.com.mojang.authlib.GameProfile;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap.Builder;
 
 @DelegateDeserialization(SerializableMeta.class)
@@ -17,7 +19,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     static final ItemMetaKey SKULL_OWNER = new ItemMetaKey("SkullOwner", "skull-owner");
     static final int MAX_OWNER_LENGTH = 16;
 
-    private String player;
+    private GameProfile profile;
 
     CraftMetaSkull(CraftMetaItem meta) {
         super(meta);
@@ -25,14 +27,16 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
             return;
         }
         CraftMetaSkull skullMeta = (CraftMetaSkull) meta;
-        this.player = skullMeta.player;
+        this.profile = skullMeta.profile;
     }
 
     CraftMetaSkull(NBTTagCompound tag) {
         super(tag);
 
-        if (tag.hasKey(SKULL_OWNER.NBT)) {
-            player = tag.getString(SKULL_OWNER.NBT);
+        if (tag.hasKeyOfType(SKULL_OWNER.NBT, 10)) {
+            profile = GameProfileSerializer.a(tag.getCompound(SKULL_OWNER.NBT));
+        } else if (tag.hasKeyOfType(SKULL_OWNER.NBT, 8)) {
+            profile = MinecraftServer.getServer().getUserCache().a(tag.getString(SKULL_OWNER.NBT));
         }
     }
 
@@ -46,7 +50,9 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         super.applyToItem(tag);
 
         if (hasOwner()) {
-            tag.setString(SKULL_OWNER.NBT, player);
+            NBTTagCompound owner = new NBTTagCompound();
+            GameProfileSerializer.a(owner, profile);
+            tag.set(SKULL_OWNER.NBT, owner);
         }
     }
 
@@ -75,18 +81,24 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     }
 
     public boolean hasOwner() {
-        return !Strings.isNullOrEmpty(player);
+        return profile != null;
     }
 
     public String getOwner() {
-        return player;
+        return hasOwner() ? profile.getName() : null;
     }
 
     public boolean setOwner(String name) {
         if (name != null && name.length() > MAX_OWNER_LENGTH) {
             return false;
         }
-        player = name;
+
+        GameProfile profile = MinecraftServer.getServer().getUserCache().a(name);
+        if (profile == null) {
+            return false;
+        }
+
+        this.profile = profile;
         return true;
     }
 
@@ -95,7 +107,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         final int original;
         int hash = original = super.applyHash();
         if (hasOwner()) {
-            hash = 61 * hash + player.hashCode();
+            hash = 61 * hash + profile.hashCode();
         }
         return original != hash ? CraftMetaSkull.class.hashCode() ^ hash : hash;
     }
@@ -108,7 +120,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         if (meta instanceof CraftMetaSkull) {
             CraftMetaSkull that = (CraftMetaSkull) meta;
 
-            return (this.hasOwner() ? that.hasOwner() && this.player.equals(that.player) : !that.hasOwner());
+            return (this.hasOwner() ? that.hasOwner() && this.profile.equals(that.profile) : !that.hasOwner());
         }
         return true;
     }
@@ -122,7 +134,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     Builder<String, Object> serialize(Builder<String, Object> builder) {
         super.serialize(builder);
         if (hasOwner()) {
-            return builder.put(SKULL_OWNER.BUKKIT, this.player);
+            return builder.put(SKULL_OWNER.BUKKIT, this.profile.getName());
         }
         return builder;
     }

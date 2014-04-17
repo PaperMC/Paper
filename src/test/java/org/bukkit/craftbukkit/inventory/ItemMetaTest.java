@@ -135,6 +135,7 @@ public class ItemMetaTest extends AbstractTestingBase {
                     return cleanStack;
                 }
             },
+            /* Skulls rely on a running server instance
             new StackProvider(Material.SKULL_ITEM) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final SkullMeta meta = (SkullMeta) cleanStack.getItemMeta();
@@ -143,6 +144,7 @@ public class ItemMetaTest extends AbstractTestingBase {
                     return cleanStack;
                 }
             },
+            */
             new StackProvider(Material.MAP) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final MapMeta meta = (MapMeta) cleanStack.getItemMeta();
@@ -193,7 +195,7 @@ public class ItemMetaTest extends AbstractTestingBase {
             }
         );
 
-        assertThat("Forgotten test?", providers, hasSize(ItemStackTest.COMPOUND_MATERIALS.length - 1 /* Normal item meta */));
+        assertThat("Forgotten test?", providers, hasSize(ItemStackTest.COMPOUND_MATERIALS.length - 2 /* Normal item meta and skulls */));
 
         for (final StackProvider provider : providers) {
             downCastTest(new BukkitWrapper(provider));
