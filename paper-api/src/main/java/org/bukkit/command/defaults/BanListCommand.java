@@ -29,7 +29,7 @@ public class BanListCommand extends VanillaCommand {
     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
         if (!testPermission(sender)) return true;
 
-        BanList.Type banType = BanList.Type.UUID;
+        BanList.Type banType = BanList.Type.NAME;
         if (args.length > 0) {
             if (args[0].equalsIgnoreCase("ips")) {
                 banType = BanList.Type.IP;
@@ -48,18 +48,6 @@ public class BanListCommand extends VanillaCommand {
                     message.append(" and ");
                 } else {
                     message.append(", ");
-                }
-            }
-
-            String output = banlist[x].getTarget();
-            if (banType == BanList.Type.UUID) {
-                try {
-                    OfflinePlayer player = sender.getServer().getOfflinePlayer(UUID.fromString(output));
-                    if (player.getName() != null) {
-                        output = player.getName();
-                    }
-                } catch (IllegalArgumentException ex) {
-                    // We seem to have an invalid UUID, what do?
                 }
             }
 
