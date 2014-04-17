@@ -15,8 +15,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 
@@ -204,7 +206,7 @@ public final class CraftServer implements Server {
     private YamlConfiguration configuration;
     private YamlConfiguration commandsConfiguration;
     private final Yaml yaml = new Yaml(new SafeConstructor());
-    private final Map<java.util.UUID, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
+    private final Map<UUID, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
     private final AutoUpdater updater;
     private final EntityMetadataStore entityMetadata = new EntityMetadataStore();
     private final PlayerMetadataStore playerMetadata = new PlayerMetadataStore();
@@ -223,6 +225,8 @@ public final class CraftServer implements Server {
     private boolean printSaveWarning;
     private CraftIconCache icon;
     private boolean overrideAllCommandBlockCommands = false;
+    private final Pattern validUserPattern = Pattern.compile("^[a-zA-Z0-9_]{2,16}$");
+    private final UUID invalidUserUUID = UUID.nameUUIDFromBytes("InvalidUsername".getBytes(Charsets.UTF_8));
 
     private final class BooleanWrapper {
         private boolean value = true;
@@ -513,8 +517,8 @@ public final class CraftServer implements Server {
         return null;
     }
 
-    // TODO: In 1.7.6+ this should use the server's UUID->EntityPlayer map
-    public Player getPlayer(java.util.UUID id) {
+    // TODO: In 1.8+ this should use the server's UUID->EntityPlayer map
+    public Player getPlayer(UUID id) {
         for (Player player : getOnlinePlayers()) {
             if (player.getUniqueId().equals(id)) {
                 return player;
@@ -1013,7 +1017,7 @@ public final class CraftServer implements Server {
         return worlds.get(name.toLowerCase());
     }
 
-    public World getWorld(java.util.UUID uid) {
+    public World getWorld(UUID uid) {
         for (World world : worlds.values()) {
             if (world.getUID().equals(uid)) {
                 return world;
@@ -1260,13 +1264,18 @@ public final class CraftServer implements Server {
     public OfflinePlayer getOfflinePlayer(String name) {
         Validate.notNull(name, "Name cannot be null");
 
+        // If the name given cannot ever be a valid username give a dummy return, for scoreboard plugins
+        if (!validUserPattern.matcher(name).matches()) {
+            return new CraftOfflinePlayer(this, new GameProfile(invalidUserUUID, name));
+        }
+
         OfflinePlayer result = getPlayerExact(name);
         if (result == null) {
             // This is potentially blocking :(
             GameProfile profile = MinecraftServer.getServer().getUserCache().a(name);
             if (profile == null) {
                 // Make an OfflinePlayer using an offline mode UUID since the name has no profile
-                result = getOfflinePlayer(new GameProfile(java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name));
+                result = getOfflinePlayer(new GameProfile(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name));
             } else {
                 // Use the GameProfile even when we get a UUID so we ensure we still have a name
                 result = getOfflinePlayer(profile);
@@ -1278,7 +1287,7 @@ public final class CraftServer implements Server {
         return result;
     }
 
-    public OfflinePlayer getOfflinePlayer(java.util.UUID id) {
+    public OfflinePlayer getOfflinePlayer(UUID id) {
         Validate.notNull(id, "UUID cannot be null");
 
         OfflinePlayer result = getPlayer(id);
@@ -1323,7 +1332,7 @@ public final class CraftServer implements Server {
 
         for (String id : playerList.getProfileBans().getEntries()) {
             try {
-                result.add(getOfflinePlayer(java.util.UUID.fromString(id)));
+                result.add(getOfflinePlayer(UUID.fromString(id)));
             } catch (IllegalArgumentException ex) {
                 // This shouldn't happen
             }
@@ -1370,7 +1379,7 @@ public final class CraftServer implements Server {
 
         for (String id : playerList.getOPs().getEntries()) {
             try {
-                result.add(getOfflinePlayer(java.util.UUID.fromString(id)));
+                result.add(getOfflinePlayer(UUID.fromString(id)));
             } catch (IllegalArgumentException ex) {
                 // This shouldn't ever happen
             }
@@ -1451,7 +1460,7 @@ public final class CraftServer implements Server {
 
         for (String file : files) {
             try {
-                players.add(getOfflinePlayer(java.util.UUID.fromString(file.substring(0, file.length() - 4))));
+                players.add(getOfflinePlayer(UUID.fromString(file.substring(0, file.length() - 4))));
             } catch (IllegalArgumentException ex) {
                 // Who knows what is in this directory, just ignore invalid files
             }
