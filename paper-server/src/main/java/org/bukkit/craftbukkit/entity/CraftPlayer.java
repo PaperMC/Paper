@@ -738,15 +738,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public boolean isBanned() {
-        return server.getBanList(BanList.Type.UUID).isBanned(getUniqueId().toString());
+        return server.getBanList(BanList.Type.NAME).isBanned(getName());
     }
 
     @Override
     public void setBanned(boolean value) {
         if (value) {
-            server.getBanList(BanList.Type.UUID).addBan(getUniqueId().toString(), null, null, null);
+            server.getBanList(BanList.Type.NAME).addBan(getName(), null, null, null);
         } else {
-            server.getBanList(BanList.Type.UUID).pardon(getUniqueId().toString());
+            server.getBanList(BanList.Type.NAME).pardon(getName());
         }
     }
 

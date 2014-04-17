@@ -1356,8 +1356,6 @@ public final class CraftServer implements Server {
         case IP:
             return new CraftIpBanList(playerList.getIPBans());
         case NAME:
-            return null;
-        case UUID:
         default:
             return new CraftProfileBanList(playerList.getProfileBans());
         }
