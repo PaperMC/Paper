@@ -14,6 +14,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 
 public class CraftSkull extends CraftBlockState implements Skull {
+    private static final int MAX_OWNER_LENGTH = 16;
     private final TileEntitySkull skull;
     private GameProfile profile;
     private SkullType skullType;
@@ -146,29 +147,21 @@ public class CraftSkull extends CraftBlockState implements Skull {
     }
 
     public String getOwner() {
-        return profile.getName();
+        return hasOwner() ? profile.getName() : null;
     }
 
     public boolean setOwner(String name) {
-        return false;
-    }
-
-    public OfflinePlayer getPlayer() {
-        return MinecraftServer.getServer().server.getOfflinePlayer(profile);
-    }
-
-    public boolean setPlayer(OfflinePlayer player) {
-        GameProfile profile;
-        if (player instanceof CraftPlayer) {
-            profile = ((CraftPlayer) player).getProfile();
-        } else if (player instanceof CraftOfflinePlayer) {
-            profile = ((CraftOfflinePlayer) player).getProfile();
-        } else {
+        if (name == null || name.length() > MAX_OWNER_LENGTH) {
             return false;
         }
 
+        GameProfile profile = MinecraftServer.getServer().getUserCache().a(name);
         if (profile == null) {
             return false;
+        }
+
+        if (skullType != SkullType.PLAYER) {
+            skullType = SkullType.PLAYER;
         }
 
         this.profile = profile;
