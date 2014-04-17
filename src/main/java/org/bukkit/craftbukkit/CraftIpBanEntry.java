@@ -2,7 +2,9 @@ package org.bukkit.craftbukkit;
 
 import net.minecraft.server.IpBanEntry;
 import net.minecraft.server.IpBanList;
+import net.minecraft.server.MinecraftServer;
 
+import java.io.IOException;
 import java.util.Date;
 
 public final class CraftIpBanEntry implements org.bukkit.BanEntry {
@@ -75,6 +77,10 @@ public final class CraftIpBanEntry implements org.bukkit.BanEntry {
     public void save() {
         IpBanEntry entry = new IpBanEntry(target, this.created, this.source, this.expiration, this.reason);
         this.list.add(entry);
-        this.list.save();
+        try {
+            this.list.save();
+        } catch (IOException ex) {
+            MinecraftServer.getLogger().error("Failed to save banned-ips.json, " + ex.getMessage());
+        }
     }
 }

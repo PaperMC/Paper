@@ -77,14 +77,12 @@ public class NameReferencingFileConverter {
 
         if (b.exists() && b.isFile()) {
             if (gameprofilebanlist.c().exists()) {
-                /* CraftBukkit start - Exception is never thrown
                 try {
                     gameprofilebanlist.load();
-                } catch (FileNotFoundException filenotfoundexception) {
-                    e.warn("Could not load existing file " + gameprofilebanlist.c().getName(), filenotfoundexception);
+                // CraftBukkit start - FileNotFoundException -> IOException, don't print stacetrace
+                } catch (IOException filenotfoundexception) {
+                    e.warn("Could not load existing file " + gameprofilebanlist.c().getName() + ", " + filenotfoundexception.getMessage());
                 }
-                */
-                gameprofilebanlist.load();
                 // CraftBukkit end
             }
 
@@ -115,14 +113,12 @@ public class NameReferencingFileConverter {
 
         if (a.exists() && a.isFile()) {
             if (ipbanlist.c().exists()) {
-                /* CraftBukkit start - Exception is never thrown
                 try {
                     ipbanlist.load();
-                } catch (FileNotFoundException filenotfoundexception) {
-                    e.warn("Could not load existing file " + ipbanlist.c().getName(), filenotfoundexception);
+                // CraftBukkit start - FileNotFoundException -> IOException, don't print stacetrace
+                } catch (IOException filenotfoundexception) {
+                    e.warn("Could not load existing file " + ipbanlist.c().getName() + ", " + filenotfoundexception.getMessage());
                 }
-                */
-                ipbanlist.load();
                 // CraftBukkit end
             }
 
@@ -160,14 +156,12 @@ public class NameReferencingFileConverter {
 
         if (c.exists() && c.isFile()) {
             if (oplist.c().exists()) {
-                /* CraftBukkit start - Exception is never thrown
                 try {
                     oplist.load();
-                } catch (FileNotFoundException filenotfoundexception) {
-                    e.warn("Could not load existing file " + oplist.c().getName(), filenotfoundexception);
+                // CraftBukkit start - FileNotFoundException -> IOException, don't print stacetrace
+                } catch (IOException filenotfoundexception) {
+                    e.warn("Could not load existing file " + oplist.c().getName() + ", " + filenotfoundexception.getMessage());
                 }
-                */
-                oplist.load();
                 // CraftBukkit end
             }
 
@@ -196,14 +190,12 @@ public class NameReferencingFileConverter {
 
         if (d.exists() && d.isFile()) {
             if (whitelist.c().exists()) {
-                /* CraftBukkit start - Exception is never thrown
                 try {
                     whitelist.load();
-                } catch (FileNotFoundException filenotfoundexception) {
-                    e.warn("Could not load existing file " + whitelist.c().getName(), filenotfoundexception);
+                // CraftBukkit start - FileNotFoundException -> IOException, don't print stacetrace
+                } catch (IOException filenotfoundexception) {
+                    e.warn("Could not load existing file " + whitelist.c().getName() + ", " + filenotfoundexception.getMessage());
                 }
-                */
-                whitelist.load();
                 // CraftBukkit end
             }
 

@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+// CraftBukkit - Imported for package private use in JsonList
+
 import java.lang.reflect.Type;
 
 import net.minecraft.util.com.google.gson.JsonDeserializationContext;

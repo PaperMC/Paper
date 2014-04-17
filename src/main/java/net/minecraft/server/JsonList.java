@@ -79,6 +79,12 @@ public class JsonList {
         return (String[]) this.d.keySet().toArray(new String[this.d.size()]);
     }
 
+    // CraftBukkit start
+    public Collection<JsonListEntry> getValues() {
+        return this.d.values();
+    }
+    // CraftBukkit end
+
     public boolean d() {
         return this.d.size() < 1;
     }
@@ -120,7 +126,7 @@ public class JsonList {
         return this.d;
     }
 
-    public void save() {
+    public void save() throws IOException { // CraftBukkit - Added throws
         Collection collection = this.d.values();
         String s = this.b.toJson(collection);
         BufferedWriter bufferedwriter = null;
@@ -133,7 +139,7 @@ public class JsonList {
         }
     }
 
-    public void load() {
+    public void load() throws IOException { // CraftBukkit - Added throws
         Collection collection = null;
         BufferedReader bufferedreader = null;
 

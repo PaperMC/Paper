@@ -14,7 +14,7 @@ public class JsonListEntry {
         this.a = object;
     }
 
-    Object f() {
+    public Object f() { // CraftBukkit -> package private -> public
         return this.a;
     }
 
