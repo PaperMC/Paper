@@ -27,7 +27,7 @@ public final class CraftProfileBanEntry implements org.bukkit.BanEntry {
 
     @Override
     public String getTarget() {
-        return this.profile.getId().toString();
+        return this.profile.getName();
     }
 
     @Override

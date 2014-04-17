@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Set;
-import java.util.UUID;
 
 import net.minecraft.server.GameProfileBanEntry;
 import net.minecraft.server.GameProfileBanList;
@@ -27,8 +26,10 @@ public class CraftProfileBanList implements org.bukkit.BanList {
     public org.bukkit.BanEntry getBanEntry(String target) {
         Validate.notNull(target, "Target cannot be null");
 
-        UUID id = UUID.fromString(target);
-        GameProfile profile = new GameProfile(id, null);
+        GameProfile profile = MinecraftServer.getServer().getUserCache().a(target);
+        if (profile == null) {
+            return null;
+        }
 
         GameProfileBanEntry entry = (GameProfileBanEntry) list.get(profile);
         if (entry == null) {
@@ -42,8 +43,10 @@ public class CraftProfileBanList implements org.bukkit.BanList {
     public org.bukkit.BanEntry addBan(String target, String reason, Date expires, String source) {
         Validate.notNull(target, "Ban target cannot be null");
 
-        UUID id = UUID.fromString(target);
-        GameProfile profile = new GameProfile(id, null);
+        GameProfile profile = MinecraftServer.getServer().getUserCache().a(target);
+        if (profile == null) {
+            return null;
+        }
 
         GameProfileBanEntry entry = new GameProfileBanEntry(profile, new Date(),
                 StringUtils.isBlank(source) ? null : source, expires,
@@ -75,8 +78,10 @@ public class CraftProfileBanList implements org.bukkit.BanList {
     public boolean isBanned(String target) {
         Validate.notNull(target, "Target cannot be null");
 
-        UUID id = UUID.fromString(target);
-        GameProfile profile = new GameProfile(id, null);
+        GameProfile profile = MinecraftServer.getServer().getUserCache().a(target);
+        if (profile == null) {
+            return false;
+        }
 
         return list.isBanned(profile);
     }
@@ -85,9 +90,7 @@ public class CraftProfileBanList implements org.bukkit.BanList {
     public void pardon(String target) {
         Validate.notNull(target, "Target cannot be null");
 
-        UUID id = UUID.fromString(target);
-        GameProfile profile = new GameProfile(id, null);
-
+        GameProfile profile = MinecraftServer.getServer().getUserCache().a(target);
         list.remove(profile);
     }
 }
