@@ -76,7 +76,10 @@ import net.minecraft.server.EntityTracker;
 import net.minecraft.server.EnumDifficulty;
 import net.minecraft.server.EnumGamemode;
 import net.minecraft.server.ExceptionWorldConflict;
+import net.minecraft.server.GameProfileBanEntry;
+import net.minecraft.server.GameProfileBanList;
 import net.minecraft.server.Items;
+import net.minecraft.server.JsonListEntry;
 import net.minecraft.server.PlayerList;
 import net.minecraft.server.RecipesFurnace;
 import net.minecraft.server.MinecraftServer;
@@ -737,8 +740,16 @@ public final class CraftServer implements Server {
         chunkGCLoadThresh = configuration.getInt("chunk-gc.load-threshold");
         loadIcon();
 
-        playerList.getIPBans().load();
-        playerList.getProfileBans().load();
+        try {
+            playerList.getIPBans().load();
+        } catch (IOException ex) {
+            logger.log(Level.WARNING, "Failed to load banned-ips.json, " + ex.getMessage());
+        }
+        try {
+            playerList.getProfileBans().load();
+        } catch (IOException ex) {
+            logger.log(Level.WARNING, "Failed to load banned-players.json, " + ex.getMessage());
+        }
 
         for (WorldServer world : console.worlds) {
             world.difficulty = difficulty;
@@ -1330,12 +1341,8 @@ public final class CraftServer implements Server {
     public Set<OfflinePlayer> getBannedPlayers() {
         Set<OfflinePlayer> result = new HashSet<OfflinePlayer>();
 
-        for (String id : playerList.getProfileBans().getEntries()) {
-            try {
-                result.add(getOfflinePlayer(UUID.fromString(id)));
-            } catch (IllegalArgumentException ex) {
-                // This shouldn't happen
-            }
+        for (JsonListEntry entry : playerList.getProfileBans().getValues()) {
+            result.add(getOfflinePlayer((GameProfile) entry.f())); // Should be getKey
         }
 
         return result;
@@ -1364,11 +1371,8 @@ public final class CraftServer implements Server {
     public Set<OfflinePlayer> getWhitelistedPlayers() {
         Set<OfflinePlayer> result = new LinkedHashSet<OfflinePlayer>();
 
-        for (Object name : playerList.getWhitelisted()) {
-            if (((String)name).length() == 0 || ((String)name).startsWith("#")) {
-                continue;
-            }
-            result.add(getOfflinePlayer((String) name));
+        for (JsonListEntry entry : playerList.getWhitelist().getValues()) {
+            result.add(getOfflinePlayer((GameProfile) entry.f())); // Should be getKey
         }
 
         return result;
@@ -1377,12 +1381,8 @@ public final class CraftServer implements Server {
     public Set<OfflinePlayer> getOperators() {
         Set<OfflinePlayer> result = new HashSet<OfflinePlayer>();
 
-        for (String id : playerList.getOPs().getEntries()) {
-            try {
-                result.add(getOfflinePlayer(UUID.fromString(id)));
-            } catch (IllegalArgumentException ex) {
-                // This shouldn't ever happen
-            }
+        for (JsonListEntry entry : playerList.getOPs().getValues()) {
+            result.add(getOfflinePlayer((GameProfile) entry.f())); // Should be getKey
         }
 
         return result;

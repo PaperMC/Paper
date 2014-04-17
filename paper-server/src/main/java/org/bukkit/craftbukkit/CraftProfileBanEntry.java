@@ -2,8 +2,10 @@ package org.bukkit.craftbukkit;
 
 import net.minecraft.server.GameProfileBanEntry;
 import net.minecraft.server.GameProfileBanList;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.com.mojang.authlib.GameProfile;
 
+import java.io.IOException;
 import java.util.Date;
 
 public final class CraftProfileBanEntry implements org.bukkit.BanEntry {
@@ -76,6 +78,10 @@ public final class CraftProfileBanEntry implements org.bukkit.BanEntry {
     public void save() {
         GameProfileBanEntry entry = new GameProfileBanEntry(profile, this.created, this.source, this.expiration, this.reason);
         this.list.add(entry);
-        this.list.save();
+        try {
+            this.list.save();
+        } catch (IOException ex) {
+            MinecraftServer.getLogger().error("Failed to save banned-players.json, " + ex.getMessage());
+        }
     }
 }

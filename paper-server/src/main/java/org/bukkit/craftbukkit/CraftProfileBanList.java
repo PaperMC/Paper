@@ -1,11 +1,14 @@
 package org.bukkit.craftbukkit;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
 
 import net.minecraft.server.GameProfileBanEntry;
 import net.minecraft.server.GameProfileBanList;
+import net.minecraft.server.JsonListEntry;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.com.mojang.authlib.GameProfile;
 
 import org.apache.commons.lang.StringUtils;
@@ -47,18 +50,22 @@ public class CraftProfileBanList implements org.bukkit.BanList {
                 StringUtils.isBlank(reason) ? null : reason);
 
         list.add(entry);
-        list.save();
+
+        try {
+            list.save();
+        } catch (IOException ex) {
+            MinecraftServer.getLogger().error("Failed to save banned-players.json, " + ex.getMessage());
+        }
+
         return new CraftProfileBanEntry(profile, entry, list);
     }
 
     @Override
     public Set<org.bukkit.BanEntry> getBanEntries() {
         ImmutableSet.Builder<org.bukkit.BanEntry> builder = ImmutableSet.builder();
-        for (String target : list.getEntries()) {
-            UUID id = UUID.fromString(target);
-            GameProfile profile = new GameProfile(id, null);
-
-            builder.add(new CraftProfileBanEntry(profile, (GameProfileBanEntry) list.get(profile), list));
+        for (JsonListEntry entry : list.getValues()) {
+            GameProfile profile = (GameProfile) entry.f(); // Should be getKey
+            builder.add(new CraftProfileBanEntry(profile, (GameProfileBanEntry) entry, list));
         }
 
         return builder.build();
