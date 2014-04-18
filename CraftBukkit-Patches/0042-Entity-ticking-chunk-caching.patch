@@ -1,0 +1,66 @@
+From 9d2e1c3bc82d814be967daa62994dcc080384945 Mon Sep 17 00:00:00 2001
+From: Ammar Askar <ammar@ammaraskar.com>
+Date: Tue, 16 Jul 2013 03:32:32 +0500
+Subject: [PATCH] Entity ticking chunk caching
+
+Cache known loaded chunks so we avoid making a potentially expensive contains call for every single entity in exchange for some simple arithmetic. Best case scenario, this cuts down contains call to once per chunk, worst case it adds on some simple arithmetic operations
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 932686f..2f7be96 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1173,6 +1173,7 @@ public abstract class World implements IBlockAccess {
+         CrashReport crashreport;
+         CrashReportSystemDetails crashreportsystemdetails;
+ 
++        long lastChunk = Long.MIN_VALUE; // Spigot - cache chunk x, z cords for unload queue
+         for (i = 0; i < this.i.size(); ++i) {
+             entity = (Entity) this.i.get(i);
+             // CraftBukkit start - Fixed an NPE, don't process entities in chunks queued for unload
+@@ -1181,10 +1182,15 @@ public abstract class World implements IBlockAccess {
+             }
+ 
+             ChunkProviderServer chunkProviderServer = ((WorldServer) this).chunkProviderServer;
+-            if (chunkProviderServer.unloadQueue.contains(MathHelper.floor(entity.locX) >> 4, MathHelper.floor(entity.locZ) >> 4)) {
+-                continue;
++            // Spigot start - check last chunk to see if this loaded (fast cache)
++            long chunk = org.bukkit.craftbukkit.util.LongHash.toLong(MathHelper.floor(entity.locX) >> 4, MathHelper.floor(entity.locZ) >> 4);
++            if (lastChunk != chunk) {
++                if (chunkProviderServer.unloadQueue.contains(chunk)) { // Spigot end
++                    continue;
++                }
+             }
+             // CraftBukkit end
++            lastChunk = chunk; // Spigot
+ 
+             try {
+                 ++entity.ticksLived;
+@@ -1205,6 +1211,7 @@ public abstract class World implements IBlockAccess {
+                 this.i.remove(i--);
+             }
+         }
++        lastChunk = Long.MIN_VALUE; // Spigot
+ 
+         this.methodProfiler.c("remove");
+         this.entityList.removeAll(this.f);
+@@ -1236,10 +1243,15 @@ public abstract class World implements IBlockAccess {
+ 
+             // Don't tick entities in chunks queued for unload
+             ChunkProviderServer chunkProviderServer = ((WorldServer) this).chunkProviderServer;
+-            if (chunkProviderServer.unloadQueue.contains(MathHelper.floor(entity.locX) >> 4, MathHelper.floor(entity.locZ) >> 4)) {
+-                continue;
++            // Spigot start - check last chunk to see if this loaded (fast cache)
++            long chunk = org.bukkit.craftbukkit.util.LongHash.toLong(MathHelper.floor(entity.locX) >> 4, MathHelper.floor(entity.locZ) >> 4);
++            if (lastChunk != chunk) {
++                if (chunkProviderServer.unloadQueue.contains(chunk)) { // Spigot end
++                    continue;
++                }
+             }
+             // CraftBukkit end
++            lastChunk = Long.MIN_VALUE; // Spigot
+ 
+             if (entity.vehicle != null) {
+                 if (!entity.vehicle.dead && entity.vehicle.passenger == entity) {
+-- 
+1.9.1
+
