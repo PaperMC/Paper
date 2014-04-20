@@ -197,7 +197,14 @@ public abstract class TileEntity {
     // CraftBukkit start - add method
     public InventoryHolder getOwner() {
         if (world == null) return null;
-        org.bukkit.block.BlockState state = world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()).getState();
+        // Spigot start
+        org.bukkit.block.Block block = world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ());
+        if (block == null) {
+            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.WARNING, "No block for owner at %s %d %d %d", new Object[]{world.getWorld(), position.getX(), position.getY(), position.getZ()});
+            return null;
+        }
+        // Spigot end
+        org.bukkit.block.BlockState state = block.getState();
         if (state instanceof InventoryHolder) return (InventoryHolder) state;
         return null;
     }
