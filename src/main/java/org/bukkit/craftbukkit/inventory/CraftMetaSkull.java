@@ -89,7 +89,8 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
         if (profile != null) {
             // Fill in textures
-            setProfile(TileEntitySkull.b(profile));
+            // Must be done sync due to way client handles textures
+            setProfile(com.google.common.util.concurrent.Futures.getUnchecked(TileEntitySkull.b(profile, com.google.common.base.Predicates.alwaysTrue(), true))); // Spigot
 
             tag.set(SKULL_OWNER.NBT, serializedProfile);
         }

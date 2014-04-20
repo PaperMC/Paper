@@ -7,6 +7,23 @@ import com.mojang.authlib.properties.Property;
 import java.util.UUID;
 import javax.annotation.Nullable;
 
+// Spigot start
+import com.google.common.base.Predicate;
+import com.google.common.cache.LoadingCache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.util.concurrent.Futures;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.mojang.authlib.Agent;
+import com.mojang.authlib.ProfileLookupCallback;
+import java.util.concurrent.Callable;
+// Spigot end
+
 public class TileEntitySkull extends TileEntity implements ITickable {
 
     @Nullable
@@ -17,6 +34,58 @@ public class TileEntitySkull extends TileEntity implements ITickable {
     public GameProfile gameProfile;
     private int g;
     private boolean h;
+    // Spigot start
+    public static final ExecutorService executor = Executors.newFixedThreadPool(3,
+            new ThreadFactoryBuilder()
+                    .setNameFormat("Head Conversion Thread - %1$d")
+                    .build()
+    );
+    public static final LoadingCache<String, GameProfile> skinCache = CacheBuilder.newBuilder()
+            .maximumSize( 5000 )
+            .expireAfterAccess( 60, TimeUnit.MINUTES )
+            .build( new CacheLoader<String, GameProfile>()
+            {
+                @Override
+                public GameProfile load(String key) throws Exception
+                {
+                    final GameProfile[] profiles = new GameProfile[1];
+                    ProfileLookupCallback gameProfileLookup = new ProfileLookupCallback() {
+
+                        @Override
+                        public void onProfileLookupSucceeded(GameProfile gp) {
+                            profiles[0] = gp;
+                        }
+
+                        @Override
+                        public void onProfileLookupFailed(GameProfile gp, Exception excptn) {
+                            profiles[0] = gp;
+                        }
+                    };
+
+                    MinecraftServer.getServer().getGameProfileRepository().findProfilesByNames(new String[] { key }, Agent.MINECRAFT, gameProfileLookup);
+
+                    GameProfile profile = profiles[ 0 ];
+                    if (profile == null) {
+                        UUID uuid = EntityHuman.a(new GameProfile(null, key));
+                        profile = new GameProfile(uuid, key);
+
+                        gameProfileLookup.onProfileLookupSucceeded(profile);
+                    } else
+                    {
+
+                        Property property = Iterables.getFirst( profile.getProperties().get( "textures" ), null );
+
+                        if ( property == null )
+                        {
+                            profile = TileEntitySkull.sessionService.fillProfileProperties( profile, true );
+                        }
+                    }
+
+
+                    return profile;
+                }
+            } );
+    // Spigot end
 
     public TileEntitySkull() {
         super(TileEntityTypes.SKULL);
@@ -90,34 +159,68 @@ public class TileEntitySkull extends TileEntity implements ITickable {
     }
 
     private void f() {
-        this.gameProfile = b(this.gameProfile);
-        this.update();
+        // Spigot start
+        GameProfile profile = this.gameProfile;
+        b(profile, new Predicate<GameProfile>() {
+
+            @Override
+            public boolean apply(GameProfile input) {
+                gameProfile = input;
+                update();
+                return false;
+            }
+        }, false);
+        // Spigot end
     }
 
-    @Nullable
-    public static GameProfile b(@Nullable GameProfile gameprofile) {
+    // Spigot start - Support async lookups
+    public static Future<GameProfile> b(@Nullable final GameProfile gameprofile, final Predicate<GameProfile> callback, boolean sync) {
         if (gameprofile != null && !UtilColor.b(gameprofile.getName())) {
             if (gameprofile.isComplete() && gameprofile.getProperties().containsKey("textures")) {
-                return gameprofile;
-            } else if (TileEntitySkull.userCache != null && TileEntitySkull.sessionService != null) {
-                GameProfile gameprofile1 = TileEntitySkull.userCache.getProfile(gameprofile.getName());
-
-                if (gameprofile1 == null) {
-                    return gameprofile;
-                } else {
-                    Property property = (Property) Iterables.getFirst(gameprofile1.getProperties().get("textures"), (Object) null);
-
-                    if (property == null) {
-                        gameprofile1 = TileEntitySkull.sessionService.fillProfileProperties(gameprofile1, true);
-                    }
-
-                    return gameprofile1;
-                }
+                callback.apply(gameprofile);
+            } else if (MinecraftServer.getServer() == null) {
+                callback.apply(gameprofile);
             } else {
-                return gameprofile;
+                GameProfile profile = skinCache.getIfPresent(gameprofile.getName().toLowerCase(java.util.Locale.ROOT));
+                if (profile != null && Iterables.getFirst(profile.getProperties().get("textures"), (Object) null) != null) {
+                    callback.apply(profile);
+
+                    return Futures.immediateFuture(profile);
+                } else {
+                    Callable<GameProfile> callable = new Callable<GameProfile>() {
+                        @Override
+                        public GameProfile call() {
+                            final GameProfile profile = skinCache.getUnchecked(gameprofile.getName().toLowerCase(java.util.Locale.ROOT));
+                            MinecraftServer.getServer().processQueue.add(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (profile == null) {
+                                        callback.apply(gameprofile);
+                                    } else {
+                                        callback.apply(profile);
+                                    }
+                                }
+                            });
+                            return profile;
+                        }
+                    };
+                    if (sync) {
+                        try {
+                            return Futures.immediateFuture(callable.call());
+                        } catch (Exception ex) {
+                            com.google.common.base.Throwables.throwIfUnchecked(ex);
+                            throw new RuntimeException(ex); // Not possible
+                        }
+                    } else {
+                        return executor.submit(callable);
+                    }
+                }
             }
         } else {
-            return gameprofile;
+            callback.apply(gameprofile);
         }
+
+        return Futures.immediateFuture(gameprofile);
     }
+    // Spigot end
 }
