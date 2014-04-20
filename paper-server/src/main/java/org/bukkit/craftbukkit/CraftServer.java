@@ -170,8 +170,6 @@ public final class CraftServer implements Server {
     private CraftIconCache icon;
     private boolean overrideAllCommandBlockCommands = false;
     private boolean unrestrictedAdvancements;
-    private final Pattern validUserPattern = Pattern.compile("^[a-zA-Z0-9_]{2,16}$");
-    private final UUID invalidUserUUID = UUID.nameUUIDFromBytes("InvalidUsername".getBytes(Charsets.UTF_8));
     private final List<CraftPlayer> playerView;
     public int reloadCount;
 
@@ -1245,11 +1243,6 @@ public final class CraftServer implements Server {
     @Deprecated
     public OfflinePlayer getOfflinePlayer(String name) {
         Validate.notNull(name, "Name cannot be null");
-
-        // If the name given cannot ever be a valid username give a dummy return, for scoreboard plugins
-        if (!validUserPattern.matcher(name).matches()) {
-            return new CraftOfflinePlayer(this, new GameProfile(invalidUserUUID, name));
-        }
 
         OfflinePlayer result = getPlayerExact(name);
         if (result == null) {
