@@ -78,6 +78,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
     public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
 
     public final SpigotTimings.WorldTimingsHandler timings; // Spigot
+    public static BlockPosition lastPhysicsProblem; // Spigot
 
     public CraftWorld getWorld() {
         return this.world;
@@ -299,7 +300,13 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
                 // CraftBukkit start
                 if (!this.captureBlockStates) { // Don't notify clients or update physics while capturing blockstates
                     // Modularize client and physic updates
-                    notifyAndUpdatePhysics(blockposition, chunk, iblockdata1, iblockdata, iblockdata2, i, j);
+                    // Spigot start
+                    try {
+                        notifyAndUpdatePhysics(blockposition, chunk, iblockdata1, iblockdata, iblockdata2, i, j);
+                    } catch (StackOverflowError ex) {
+                        lastPhysicsProblem = new BlockPosition(blockposition);
+                    }
+                    // Spigot end
                 }
                 // CraftBukkit end
 
@@ -446,6 +453,10 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
                 }
                 // CraftBukkit end
                 iblockdata.doPhysics(this, blockposition, block, blockposition1, false);
+            // Spigot Start
+            } catch (StackOverflowError ex) {
+                lastPhysicsProblem = new BlockPosition(blockposition);
+                // Spigot End
             } catch (Throwable throwable) {
                 CrashReport crashreport = CrashReport.a(throwable, "Exception while updating neighbours");
                 CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Block being updated");
