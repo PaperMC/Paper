@@ -1,14 +1,14 @@
-From 644d19dee7e8c63e7dce45426b0365e00633d1e9 Mon Sep 17 00:00:00 2001
+From e380a7c833bf83afcc83bbc477466f1266441288 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 11 Jun 2013 12:56:02 +1000
 Subject: [PATCH] Better Chunk Tick Selection
 
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 4567ee2..234ea35 100644
+index fab5025..93b7a72 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -61,7 +61,7 @@ public abstract class World implements IBlockAccess {
+@@ -62,7 +62,7 @@ public abstract class World implements IBlockAccess {
      public Scoreboard scoreboard = new Scoreboard(); // CraftBukkit - protected -> public
      public boolean isStatic;
      // CraftBukkit start - public, longhashset
@@ -17,7 +17,7 @@ index 4567ee2..234ea35 100644
      private int K;
      public boolean allowMonsters;
      public boolean allowAnimals;
-@@ -76,6 +76,30 @@ public abstract class World implements IBlockAccess {
+@@ -79,6 +79,30 @@ public abstract class World implements IBlockAccess {
      private boolean M;
      int[] I;
  
@@ -48,7 +48,7 @@ index 4567ee2..234ea35 100644
      public BiomeBase getBiome(int i, int j) {
          if (this.isLoaded(i, 0, j)) {
              Chunk chunk = this.getChunkAtWorldCoords(i, j);
-@@ -121,6 +145,11 @@ public abstract class World implements IBlockAccess {
+@@ -124,6 +148,11 @@ public abstract class World implements IBlockAccess {
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
          this.ticksPerMonsterSpawns = this.getServer().getTicksPerMonsterSpawns(); // CraftBukkit
          // CraftBukkit end
@@ -60,7 +60,7 @@ index 4567ee2..234ea35 100644
  
          this.K = this.random.nextInt(12000);
          this.allowMonsters = true;
-@@ -1900,24 +1929,44 @@ public abstract class World implements IBlockAccess {
+@@ -1990,24 +2019,44 @@ public abstract class World implements IBlockAccess {
          int k;
          int l;
  
@@ -93,13 +93,12 @@ index 4567ee2..234ea35 100644
 -                        continue;
 -                    }
 -                    // CraftBukkit end
--
--                    this.chunkTickList.add(org.bukkit.craftbukkit.util.LongHash.toLong(i1 + j, j1 + k)); // CraftBukkit
 +            // Spigot start - Always update the chunk the player is on
 +            long key = chunkToKey( j, k );
 +            int existingPlayers = Math.max( 0, chunkTickList.get( key ) ); // filter out -1
 +            chunkTickList.put(key, (short) (existingPlayers + 1));
-+
+ 
+-                    this.chunkTickList.add(org.bukkit.craftbukkit.util.LongHash.toLong(i1 + j, j1 + k)); // CraftBukkit
 +            // Check and see if we update the chunks surrounding the player this tick
 +            for ( int chunk = 0; chunk < chunksPerPlayer; chunk++ )
 +            {
@@ -116,10 +115,10 @@ index 4567ee2..234ea35 100644
  
          this.methodProfiler.b();
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 843761a..01d7105 100644
+index 3fa3a81..9b5b370 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -307,10 +307,20 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -307,10 +307,20 @@ public class WorldServer extends World {
          // CraftBukkit start
          // Iterator iterator = this.chunkTickList.iterator();
  
@@ -143,7 +142,7 @@ index 843761a..01d7105 100644
              int k = chunkX * 16;
              int l = chunkZ * 16;
  
-@@ -401,6 +411,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -401,6 +411,7 @@ public class WorldServer extends World {
  
                          if (block.isTicking()) {
                              ++i;
@@ -151,7 +150,7 @@ index 843761a..01d7105 100644
                              block.a(this, k2 + k, i3 + chunksection.getYPosition(), l2 + l, this.random);
                          }
                      }
-@@ -409,6 +420,12 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
+@@ -409,6 +420,12 @@ public class WorldServer extends World {
  
              this.methodProfiler.b();
          }
