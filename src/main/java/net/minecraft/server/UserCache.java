@@ -230,7 +230,7 @@ public class UserCache {
         JsonArray jsonarray = new JsonArray();
         DateFormat dateformat = e();
 
-        this.a(1000).forEach((usercache_usercacheentry) -> {
+        this.a(org.spigotmc.SpigotConfig.userCacheCap).forEach((usercache_usercacheentry) -> { // Spigot
             jsonarray.add(a(usercache_usercacheentry, dateformat));
         });
         String s = this.f.toJson(jsonarray);
