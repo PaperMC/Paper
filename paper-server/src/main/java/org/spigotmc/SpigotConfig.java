@@ -314,4 +314,10 @@ public class SpigotConfig
         SpigotConfig.replaceCommands = new HashSet<String>( (List<String>) SpigotConfig.getList( "commands.replace-commands",
                 Arrays.asList( "setblock", "summon", "testforblock", "tellraw" ) ) );
     }
+
+    public static int userCacheCap;
+    private static void userCacheCap()
+    {
+        SpigotConfig.userCacheCap = SpigotConfig.getInt( "settings.user-cache-size", 1000 );
+    }
 }
