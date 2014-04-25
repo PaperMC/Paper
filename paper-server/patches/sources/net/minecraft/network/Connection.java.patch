@@ -1,17 +1,18 @@
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
-@@ -96,6 +96,10 @@
+@@ -96,6 +96,11 @@
      private final Queue<Consumer<Connection>> pendingActions = Queues.newConcurrentLinkedQueue();
      public Channel channel;
      public SocketAddress address;
 +    // Spigot Start
 +    public java.util.UUID spoofedUUID;
 +    public com.mojang.authlib.properties.Property[] spoofedProfile;
++    public boolean preparing = true;
 +    // Spigot End
      @Nullable
      private volatile PacketListener disconnectListener;
      @Nullable
-@@ -114,6 +118,7 @@
+@@ -114,6 +119,7 @@
      private volatile DisconnectionDetails delayedDisconnect;
      @Nullable
      BandwidthDebugMonitor bandwidthDebugMonitor;
@@ -19,7 +20,17 @@
  
      public Connection(PacketFlow side) {
          this.receiving = side;
-@@ -176,6 +181,7 @@
+@@ -123,6 +129,9 @@
+         super.channelActive(channelhandlercontext);
+         this.channel = channelhandlercontext.channel();
+         this.address = this.channel.remoteAddress();
++        // Spigot Start
++        this.preparing = false;
++        // Spigot End
+         if (this.delayedDisconnect != null) {
+             this.disconnect(this.delayedDisconnect);
+         }
+@@ -176,6 +185,7 @@
  
              }
          }
@@ -27,7 +38,7 @@
      }
  
      protected void channelRead0(ChannelHandlerContext channelhandlercontext, Packet<?> packet) {
-@@ -205,7 +211,7 @@
+@@ -205,7 +215,7 @@
      }
  
      private static <T extends PacketListener> void genericsFtw(Packet<T> packet, PacketListener listener) {
@@ -36,7 +47,15 @@
      }
  
      private void validateListener(ProtocolInfo<?> state, PacketListener listener) {
-@@ -469,7 +475,7 @@
+@@ -464,12 +474,15 @@
+     }
+ 
+     public void disconnect(DisconnectionDetails disconnectionInfo) {
++        // Spigot Start
++        this.preparing = false;
++        // Spigot End
+         if (this.channel == null) {
+             this.delayedDisconnect = disconnectionInfo;
          }
  
          if (this.isConnected()) {
@@ -45,7 +64,7 @@
              this.disconnectionDetails = disconnectionInfo;
          }
  
-@@ -537,7 +543,7 @@
+@@ -537,7 +550,7 @@
      }
  
      public void configurePacketHandler(ChannelPipeline pipeline) {
