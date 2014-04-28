@@ -374,6 +374,9 @@ public class CraftWorld implements World {
         case SMALL_JUNGLE:
             gen = new WorldGenTrees(true, 4 + rand.nextInt(7), 3, 3, false);
             break;
+        case COCOA_TREE:
+            gen = new WorldGenTrees(true, 4 + rand.nextInt(7), 3, 3, true);
+            break;
         case JUNGLE_BUSH:
             gen = new WorldGenGroundBush(3, 0);
             break;
