@@ -6,6 +6,7 @@ import java.util.UUID;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.entity.EntityUnleashEvent;
 import org.bukkit.event.entity.EntityUnleashEvent.UnleashReason;
 // CraftBukkit end
@@ -194,8 +195,15 @@ public abstract class EntityInsentient extends EntityLiving {
             if (k < 5) {
                 ItemStack itemstack = this.getRareDrop(k <= 0 ? 1 : 0);
                 if (itemstack != null) {
-                    loot.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack));
+                    loot.add(CraftItemStack.asCraftMirror(itemstack));
                 }
+            }
+        }
+
+        // Include equipment
+        for (ItemStack stack : this.dropEquipment(this.lastDamageByPlayerTime > 0, i)) {
+            if (stack != null) {
+                loot.add(CraftItemStack.asCraftMirror(stack));
             }
         }
 
@@ -565,7 +573,10 @@ public abstract class EntityInsentient extends EntityLiving {
         return this.equipment;
     }
 
-    protected void dropEquipment(boolean flag, int i) {
+    // CraftBukkit start - return array of dropped items
+    protected ItemStack[] dropEquipment(boolean flag, int i) {
+        ItemStack[] dropped = new ItemStack[this.equipment.length];
+        // CraftBukkit end
         for (int j = 0; j < this.getEquipment().length; ++j) {
             ItemStack itemstack = this.getEquipment(j);
             boolean flag1 = this.dropChances[j] > 1.0F;
@@ -586,9 +597,13 @@ public abstract class EntityInsentient extends EntityLiving {
                     itemstack.setData(l);
                 }
 
-                this.a(itemstack, 0.0F);
+                // CraftBukkit start
+                // this.a(itemstack, 0.0F);
+                dropped[j] = itemstack;
+                // CraftBukkit end
             }
         }
+        return dropped; // CraftBukkit
     }
 
     protected void bC() {

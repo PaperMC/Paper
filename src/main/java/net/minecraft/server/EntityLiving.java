@@ -798,7 +798,11 @@ public abstract class EntityLiving extends Entity {
         this.world.broadcastEntityEffect(this, (byte) 3);
     }
 
-    protected void dropEquipment(boolean flag, int i) {}
+    // CraftBukkit start - return dropped equipment for EntityDeathEvent processing
+    protected ItemStack[] dropEquipment(boolean flag, int i) {
+        return new ItemStack[this.getEquipment().length];
+    }
+    // CraftBukkit end
 
     public void a(Entity entity, float f, double d0, double d1) {
         if (this.random.nextDouble() >= this.getAttributeInstance(GenericAttributes.c).getValue()) {
