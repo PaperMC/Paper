@@ -37,6 +37,11 @@ public class EntityChicken extends EntityAnimal {
     }
 
     public void e() {
+        // CraftBukkit start
+        if (this.bZ()) { // should be isChickenJockey
+            this.persistent = !this.isTypeNotPersistent();
+        }
+        // CraftBukkit end
         super.e();
         this.bs = this.bp;
         this.br = this.bq;
