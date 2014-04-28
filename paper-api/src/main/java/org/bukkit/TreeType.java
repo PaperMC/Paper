@@ -34,6 +34,10 @@ public enum TreeType {
      */
     SMALL_JUNGLE,
     /**
+     * Jungle tree with cocoa plants; 1 block wide
+     */
+    COCOA_TREE,
+    /**
      * Small bush that grows in the jungle
      */
     JUNGLE_BUSH,
