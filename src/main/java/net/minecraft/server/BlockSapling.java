@@ -94,7 +94,7 @@ public class BlockSapling extends BlockPlant implements IBlockFragilePlantElemen
             for (i1 = 0; i1 >= -1; --i1) {
                 for (j1 = 0; j1 >= -1; --j1) {
                     if (this.a(world, i + i1, j, k + j1, 1) && this.a(world, i + i1 + 1, j, k + j1, 1) && this.a(world, i + i1, j, k + j1 + 1, 1) && this.a(world, i + i1 + 1, j, k + j1 + 1, 1)) {
-                        treeType = TreeType.TALL_REDWOOD; // CraftBukkit
+                        treeType = TreeType.MEGA_REDWOOD; // CraftBukkit
                         object = new WorldGenMegaTree(false, random.nextBoolean());
                         flag = true;
                         break label78;

@@ -393,7 +393,7 @@ public class CraftWorld implements World {
             gen = new WorldGenForestTree(true);
             break;
         case MEGA_REDWOOD:
-            gen = new WorldGenMegaTree(true, rand.nextBoolean());
+            gen = new WorldGenMegaTree(false, rand.nextBoolean());
             break;
         case TALL_BIRCH:
             gen = new WorldGenForest(true, true);
