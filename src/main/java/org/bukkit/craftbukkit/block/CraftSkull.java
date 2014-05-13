@@ -2,16 +2,13 @@ package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TileEntitySkull;
-
 import net.minecraft.util.com.mojang.authlib.GameProfile;
-import org.bukkit.OfflinePlayer;
+
 import org.bukkit.SkullType;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Skull;
-import org.bukkit.craftbukkit.CraftOfflinePlayer;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
 
 public class CraftSkull extends CraftBlockState implements Skull {
     private static final int MAX_OWNER_LENGTH = 16;
@@ -193,8 +190,12 @@ public class CraftSkull extends CraftBlockState implements Skull {
         boolean result = super.update(force, applyPhysics);
 
         if (result) {
-            skull.setSkullType(getSkullType(skullType));
-            skull.setGameProfile(profile);
+            if (skullType == SkullType.PLAYER) {
+                skull.setGameProfile(profile);
+            } else {
+                skull.setSkullType(getSkullType(skullType));
+            }
+
             skull.setRotation(rotation);
             skull.update();
         }
