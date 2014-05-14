@@ -6,8 +6,11 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.help.HelpTopic;
 
+import com.google.common.base.Charsets;
+
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -25,7 +28,7 @@ public class HelpYamlReader {
         this.server = server;
 
         File helpYamlFile = new File("help.yml");
-        YamlConfiguration defaultConfig = YamlConfiguration.loadConfiguration(getClass().getClassLoader().getResourceAsStream("configurations/help.yml"));
+        YamlConfiguration defaultConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(getClass().getClassLoader().getResourceAsStream("configurations/help.yml"), Charsets.UTF_8));
 
         try {
             helpYaml = YamlConfiguration.loadConfiguration(helpYamlFile);
