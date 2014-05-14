@@ -1,0 +1,38 @@
+From 46d77f4798eef547b30a250a71e8a91c88bcd742 Mon Sep 17 00:00:00 2001
+From: FrozenBrain <carstenbamsti@googlemail.com>
+Date: Sun, 23 Mar 2014 01:49:13 +0100
+Subject: [PATCH] Fix TileEntities getting ticked after being queued for
+ removal
+
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index fa3f5e0..4ff8211 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1436,6 +1436,12 @@ public abstract class World implements IBlockAccess {
+         timings.entityTick.stopTiming(); // Spigot
+         this.methodProfiler.c("blockEntities");
+         timings.tileEntityTick.startTiming(); // Spigot
++        // Spigot start - brought up from below
++        if (!this.b.isEmpty()) {
++            this.tileEntityList.removeAll(this.b);
++            this.b.clear();
++        }
++        // Spigot End
+         this.M = true;
+         Iterator iterator = this.tileEntityList.iterator();
+ 
+@@ -1484,10 +1490,6 @@ public abstract class World implements IBlockAccess {
+         timings.tileEntityTick.stopTiming(); // Spigot
+         timings.tileEntityPending.startTiming(); // Spigot
+         this.M = false;
+-        if (!this.b.isEmpty()) {
+-            this.tileEntityList.removeAll(this.b);
+-            this.b.clear();
+-        }
+ 
+         this.methodProfiler.c("pendingBlockEntities");
+         if (!this.a.isEmpty()) {
+-- 
+1.9.1
+
