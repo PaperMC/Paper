@@ -1,11 +1,11 @@
-From 6c5aedbf683a97a43a001c8765154d810dc42d46 Mon Sep 17 00:00:00 2001
+From 943d0348729b7ec03ab4fb9f52566267a4805d14 Mon Sep 17 00:00:00 2001
 From: Thinkofdeath <thethinkofdeath@gmail.com>
 Date: Sun, 20 Apr 2014 13:18:55 +0100
 Subject: [PATCH] Convert player skulls async
 
 
 diff --git a/src/main/java/net/minecraft/server/TileEntitySkull.java b/src/main/java/net/minecraft/server/TileEntitySkull.java
-index 748f00a..a239f04 100644
+index 748f00a..255e0de 100644
 --- a/src/main/java/net/minecraft/server/TileEntitySkull.java
 +++ b/src/main/java/net/minecraft/server/TileEntitySkull.java
 @@ -6,11 +6,25 @@ import net.minecraft.util.com.google.common.collect.Iterables;
@@ -34,7 +34,7 @@ index 748f00a..a239f04 100644
  
      public TileEntitySkull() {}
  
-@@ -65,18 +79,45 @@ public class TileEntitySkull extends TileEntity {
+@@ -65,18 +79,53 @@ public class TileEntitySkull extends TileEntity {
      private void d() {
          if (this.j != null && !UtilColor.b(this.j.getName())) {
              if (!this.j.isComplete() || !this.j.getProperties().containsKey("textures")) {
@@ -47,6 +47,7 @@ index 748f00a..a239f04 100644
 -                        gameprofile = MinecraftServer.getServer().av().fillProfileProperties(gameprofile, true);
 +                // Spigot start - Handle async
 +                final String name = this.j.getName();
++                setSkullType( 0 ); // Work around a client bug
 +                executor.execute(new Runnable() {
 +                    @Override
 +                    public void run() {
@@ -73,11 +74,18 @@ index 748f00a..a239f04 100644
 +                            MinecraftServer.getServer().processQueue.add(new Runnable() {
 +                                @Override
 +                                public void run() {
++                                    a = 3;
 +                                    j = finalProfile;
-+                                    update();
-+                                    MinecraftServer.getServer().getPlayerList().sendPacketNearby(x, y, z,
-+                                            world.spigotConfig.viewDistance * 16,
-+                                            world.worldData.j()/*Dimension*/, getUpdatePacket());
++                                    world.notify( x, y, z );
++                                }
++                            });
++                        } else {
++                            MinecraftServer.getServer().processQueue.add(new Runnable() {
++                                @Override
++                                public void run() {
++                                    a = 3;
++                                    j = new GameProfile( null, name );
++                                    world.notify( x, y, z );
 +                                }
 +                            });
 +                        }
