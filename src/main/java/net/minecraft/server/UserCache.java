@@ -115,7 +115,7 @@ public class UserCache {
         UserCache.UserCacheEntry usercache_usercacheentry = new UserCache.UserCacheEntry(gameprofile, date);
 
         this.a(usercache_usercacheentry);
-        this.b();
+        if( !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly ) this.b(); // Spigot - skip saving if disabled
     }
 
     private long d() {
@@ -148,7 +148,7 @@ public class UserCache {
             }
         }
 
-        if (flag) {
+        if (flag && !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) { // Spigot - skip saving if disabled
             this.b();
         }
 
