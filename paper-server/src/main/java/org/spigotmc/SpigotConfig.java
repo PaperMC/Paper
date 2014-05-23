@@ -320,4 +320,10 @@ public class SpigotConfig
     {
         SpigotConfig.userCacheCap = SpigotConfig.getInt( "settings.user-cache-size", 1000 );
     }
+
+    public static boolean saveUserCacheOnStopOnly;
+    private static void saveUserCacheOnStopOnly()
+    {
+        SpigotConfig.saveUserCacheOnStopOnly = SpigotConfig.getBoolean( "settings.save-user-cache-on-stop-only", false );
+    }
 }
