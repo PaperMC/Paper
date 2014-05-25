@@ -504,7 +504,7 @@ public abstract class Container {
                         itemstack.count -= maxStack - itemstack1.count;
                         itemstack1.count = maxStack;
                         slot.f();
-                        flag1 = itemstack.count == 0; // Don't give a success return if we have leftovers
+                        flag1 = true;
                     }
                     // CraftBukkit end
                 }
@@ -530,10 +530,8 @@ public abstract class Container {
                 if (itemstack1 == null) {
                     slot.set(itemstack.cloneItemStack());
                     slot.f();
-                    // CraftBukkit start - Don't assume entire stack went in
-                    itemstack.count -= slot.getItem().count;
-                    flag1 = itemstack.count == 0;
-                    // CraftBukkit end
+                    itemstack.count = 0;
+                    flag1 = true;
                     break;
                 }
 
