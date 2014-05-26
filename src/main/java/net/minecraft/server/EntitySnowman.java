@@ -68,16 +68,11 @@ public class EntitySnowman extends EntityGolem implements IRangedEntity {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        // CraftBukkit start
-        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         int j = this.random.nextInt(16);
 
-        if (j > 0) {
-            loot.add(new org.bukkit.inventory.ItemStack(CraftMagicNumbers.getMaterial(Items.SNOW_BALL), j));
+        for (int k = 0; k < j; ++k) {
+            this.a(Items.SNOW_BALL, 1);
         }
-
-        CraftEventFactory.callEntityDeathEvent(this, loot);
-        // CraftBukkit end
     }
 
     public void a(EntityLiving entityliving, float f) {

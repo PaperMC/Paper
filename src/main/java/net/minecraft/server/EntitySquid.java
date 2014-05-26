@@ -55,16 +55,11 @@ public class EntitySquid extends EntityWaterAnimal {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        // CraftBukkit start - Whole method
-        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
+        int j = this.random.nextInt(3 + i) + 1;
 
-        int count = this.random.nextInt(3 + i) + 1;
-        if (count > 0) {
-            loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.Material.INK_SACK, count));
+        for (int k = 0; k < j; ++k) {
+            this.a(new ItemStack(Items.INK_SACK, 1, 0), 0.0F);
         }
-
-        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
-        // CraftBukkit end
     }
 
     /* CraftBukkit start - Delegate to Entity to use existing inWater value

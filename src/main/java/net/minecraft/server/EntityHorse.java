@@ -708,10 +708,23 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
 
     public void die(DamageSource damagesource) {
         super.die(damagesource);
+        /* CraftBukkit start - Handle chest dropping in dropDeathLoot below
         if (!this.world.isStatic) {
             this.cK();
         }
+        // CraftBukkit end */
     }
+
+    // CraftBukkit start - Add method
+    protected void dropDeathLoot(boolean flag, int i) {
+        super.dropDeathLoot(flag, i);
+
+        // Moved from die method above
+        if (!this.world.isStatic) {
+            this.cK(); // Should be dropChest
+        }
+    }
+    // CraftBukkit end
 
     public void e() {
         if (this.random.nextInt(200) == 0) {

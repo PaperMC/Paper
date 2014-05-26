@@ -400,11 +400,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        // CraftBukkit start
-        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
-        loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(Items.NETHER_STAR), 1));
-        CraftEventFactory.callEntityDeathEvent(this, loot);
-        // CraftBukkit end
+        this.a(Items.NETHER_STAR, 1);
         if (!this.world.isStatic) {
             Iterator iterator = this.world.a(EntityHuman.class, this.boundingBox.grow(50.0D, 100.0D, 50.0D)).iterator();
 

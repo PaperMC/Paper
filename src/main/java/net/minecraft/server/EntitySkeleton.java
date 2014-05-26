@@ -137,49 +137,34 @@ public class EntitySkeleton extends EntityMonster implements IRangedEntity {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        // CraftBukkit start - Whole method
-        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
+        int j;
+        int k;
 
         if (this.getSkeletonType() == 1) {
-            int count = this.random.nextInt(3 + i) - 1;
-            if (count > 0) {
-                loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.Material.COAL, count));
+            j = this.random.nextInt(3 + i) - 1;
+
+            for (k = 0; k < j; ++k) {
+                this.a(Items.COAL, 1);
             }
         } else {
-            int count = this.random.nextInt(3 + i);
-            if (count > 0) {
-                loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.Material.ARROW, count));
+            j = this.random.nextInt(3 + i);
+
+            for (k = 0; k < j; ++k) {
+                this.a(Items.ARROW, 1);
             }
         }
 
-        int count = this.random.nextInt(3 + i);
-        if (count > 0) {
-            loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.Material.BONE, count));
+        j = this.random.nextInt(3 + i);
+
+        for (k = 0; k < j; ++k) {
+            this.a(Items.BONE, 1);
         }
-
-        // Determine rare item drops and add them to the loot
-        if (this.lastDamageByPlayerTime > 0) {
-            int k = this.random.nextInt(200) - i;
-
-            if (k < 5) {
-                ItemStack itemstack = this.getRareDrop(k <= 0 ? 1 : 0);
-                if (itemstack != null) {
-                    loot.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack));
-                }
-            }
-        }
-
-        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
-        // CraftBukkit end
     }
 
-    // CraftBukkit - return rare dropped item instead of dropping it
-    protected ItemStack getRareDrop(int i) {
+    protected void getRareDrop(int i) {
         if (this.getSkeletonType() == 1) {
-            return new ItemStack(Items.SKULL, 1, 1); // CraftBukkit
+            this.a(new ItemStack(Items.SKULL, 1, 1), 0.0F);
         }
-
-        return null; // CraftBukkit
     }
 
     protected void bC() {

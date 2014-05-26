@@ -3,7 +3,6 @@ package net.minecraft.server;
 // CraftBukkit start
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 // CraftBukkit end
 
 public class EntityCow extends EntityAnimal {
@@ -57,24 +56,23 @@ public class EntityCow extends EntityAnimal {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        // CraftBukkit start - Whole method
-        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         int j = this.random.nextInt(3) + this.random.nextInt(1 + i);
 
         int k;
 
-        if (j > 0) {
-            loot.add(new org.bukkit.inventory.ItemStack(CraftMagicNumbers.getMaterial(Items.LEATHER), j));
+        for (k = 0; k < j; ++k) {
+            this.a(Items.LEATHER, 1);
         }
 
         j = this.random.nextInt(3) + 1 + this.random.nextInt(1 + i);
 
-        if (j > 0) {
-            loot.add(new org.bukkit.inventory.ItemStack(this.isBurning() ? CraftMagicNumbers.getMaterial(Items.COOKED_BEEF) : CraftMagicNumbers.getMaterial(Items.RAW_BEEF), j));
+        for (k = 0; k < j; ++k) {
+            if (this.isBurning()) {
+                this.a(Items.COOKED_BEEF, 1);
+            } else {
+                this.a(Items.RAW_BEEF, 1);
+            }
         }
-
-        CraftEventFactory.callEntityDeathEvent(this, loot);
-        // CraftBukkit end
     }
 
     public boolean a(EntityHuman entityhuman) {

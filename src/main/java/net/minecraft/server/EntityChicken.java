@@ -1,7 +1,5 @@
 package net.minecraft.server;
 
-import org.bukkit.craftbukkit.util.CraftMagicNumbers; // CraftBukkit
-
 public class EntityChicken extends EntityAnimal {
 
     public float bp;
@@ -94,22 +92,17 @@ public class EntityChicken extends EntityAnimal {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        // CraftBukkit start - Whole method
-        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         int j = this.random.nextInt(3) + this.random.nextInt(1 + i);
 
-        if (j > 0) {
-            loot.add(new org.bukkit.inventory.ItemStack(CraftMagicNumbers.getMaterial(Items.FEATHER), j));
+        for (int k = 0; k < j; ++k) {
+            this.a(Items.FEATHER, 1);
         }
 
         if (this.isBurning()) {
-            loot.add(new org.bukkit.inventory.ItemStack(CraftMagicNumbers.getMaterial(Items.COOKED_CHICKEN), 1));
+            this.a(Items.COOKED_CHICKEN, 1);
         } else {
-            loot.add(new org.bukkit.inventory.ItemStack(CraftMagicNumbers.getMaterial(Items.RAW_CHICKEN), 1));
+            this.a(Items.RAW_CHICKEN, 1);
         }
-
-        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
-        // CraftBukkit end
     }
 
     public EntityChicken b(EntityAgeable entityageable) {

@@ -6,7 +6,6 @@ import java.util.UUID;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.entity.EntityUnleashEvent;
 import org.bukkit.event.entity.EntityUnleashEvent.UnleashReason;
 // CraftBukkit end
@@ -172,8 +171,6 @@ public abstract class EntityInsentient extends EntityLiving {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        // CraftBukkit start - Whole method
-        List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         Item item = this.getLoot();
 
         if (item != null) {
@@ -183,32 +180,10 @@ public abstract class EntityInsentient extends EntityLiving {
                 j += this.random.nextInt(i + 1);
             }
 
-            if (j > 0) {
-                loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(item), j));
+            for (int k = 0; k < j; ++k) {
+                this.a(item, 1);
             }
         }
-
-        // Determine rare item drops and add them to the loot
-        if (this.lastDamageByPlayerTime > 0) {
-            int k = this.random.nextInt(200) - i;
-
-            if (k < 5) {
-                ItemStack itemstack = this.getRareDrop(k <= 0 ? 1 : 0);
-                if (itemstack != null) {
-                    loot.add(CraftItemStack.asCraftMirror(itemstack));
-                }
-            }
-        }
-
-        // Include equipment
-        for (ItemStack stack : this.dropEquipment(this.lastDamageByPlayerTime > 0, i)) {
-            if (stack != null) {
-                loot.add(CraftItemStack.asCraftMirror(stack));
-            }
-        }
-
-        CraftEventFactory.callEntityDeathEvent(this, loot); // raise event even for those times when the entity does not drop loot
-        // CraftBukkit end
     }
 
     public void b(NBTTagCompound nbttagcompound) {
@@ -573,10 +548,7 @@ public abstract class EntityInsentient extends EntityLiving {
         return this.equipment;
     }
 
-    // CraftBukkit start - return array of dropped items
-    protected ItemStack[] dropEquipment(boolean flag, int i) {
-        ItemStack[] dropped = new ItemStack[this.equipment.length];
-        // CraftBukkit end
+    protected void dropEquipment(boolean flag, int i) {
         for (int j = 0; j < this.getEquipment().length; ++j) {
             ItemStack itemstack = this.getEquipment(j);
             boolean flag1 = this.dropChances[j] > 1.0F;
@@ -597,13 +569,9 @@ public abstract class EntityInsentient extends EntityLiving {
                     itemstack.setData(l);
                 }
 
-                // CraftBukkit start
-                // this.a(itemstack, 0.0F);
-                dropped[j] = itemstack;
-                // CraftBukkit end
+                this.a(itemstack, 0.0F);
             }
         }
-        return dropped; // CraftBukkit
     }
 
     protected void bC() {

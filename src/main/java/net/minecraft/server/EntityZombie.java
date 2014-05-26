@@ -273,20 +273,20 @@ public class EntityZombie extends EntityMonster {
         return EnumMonsterType.UNDEAD;
     }
 
-    // CraftBukkit start - Return rare dropped item instead of dropping it
-    protected ItemStack getRareDrop(int i) {
+    protected void getRareDrop(int i) {
         switch (this.random.nextInt(3)) {
-        case 0:
-            return new ItemStack(Items.IRON_INGOT, 1, 0);
-        case 1:
-            return new ItemStack(Items.CARROT, 1, 0);
-        case 2:
-            return new ItemStack(Items.POTATO, 1, 0);
-        default:
-            return null;
+            case 0:
+                this.a(Items.IRON_INGOT, 1);
+                break;
+
+            case 1:
+                this.a(Items.CARROT, 1);
+                break;
+
+            case 2:
+                this.a(Items.POTATO, 1);
         }
     }
-    // CraftBukkit end
 
     protected void bC() {
         super.bC();

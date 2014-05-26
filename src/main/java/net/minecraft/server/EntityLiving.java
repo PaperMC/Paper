@@ -8,6 +8,7 @@ import java.util.Random;
 import java.util.UUID;
 
 // CraftBukkit start
+import java.util.ArrayList;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
@@ -77,6 +78,7 @@ public abstract class EntityLiving extends Entity {
     // CraftBukkit start
     public int expToDrop;
     public int maxAirTicks = 300;
+    ArrayList<org.bukkit.inventory.ItemStack> drops = null;
     // CraftBukkit end
 
     public EntityLiving(World world) {
@@ -781,28 +783,31 @@ public abstract class EntityLiving extends Entity {
             }
 
             if (this.aF() && this.world.getGameRules().getBoolean("doMobLoot")) {
+                this.drops = new ArrayList<org.bukkit.inventory.ItemStack>(); // CraftBukkit - Setup drop capture
+
                 this.dropDeathLoot(this.lastDamageByPlayerTime > 0, i);
                 this.dropEquipment(this.lastDamageByPlayerTime > 0, i);
-                if (false && this.lastDamageByPlayerTime > 0) { // CraftBukkit - move rare item drop call to dropDeathLoot
+                if (this.lastDamageByPlayerTime > 0) {
                     int j = this.random.nextInt(200) - i;
 
                     if (j < 5) {
                         this.getRareDrop(j <= 0 ? 1 : 0);
                     }
                 }
-            } else { // CraftBukkit
-                CraftEventFactory.callEntityDeathEvent(this); // CraftBukkit
+
+                // CraftBukkit start - Call death event
+                CraftEventFactory.callEntityDeathEvent(this, this.drops);
+                this.drops = null;
+            } else {
+                CraftEventFactory.callEntityDeathEvent(this);
+                // CraftBukkit end
             }
         }
 
         this.world.broadcastEntityEffect(this, (byte) 3);
     }
 
-    // CraftBukkit start - return dropped equipment for EntityDeathEvent processing
-    protected ItemStack[] dropEquipment(boolean flag, int i) {
-        return new ItemStack[this.getEquipment().length];
-    }
-    // CraftBukkit end
+    protected void dropEquipment(boolean flag, int i) {}
 
     public void a(Entity entity, float f, double d0, double d1) {
         if (this.random.nextDouble() >= this.getAttributeInstance(GenericAttributes.c).getValue()) {
@@ -830,11 +835,7 @@ public abstract class EntityLiving extends Entity {
         return "game.neutral.die";
     }
 
-    // CraftBukkit start - Change return type to ItemStack
-    protected ItemStack getRareDrop(int i) {
-        return null;
-    }
-    // CraftBukkit end
+    protected void getRareDrop(int i) {}
 
     protected void dropDeathLoot(boolean flag, int i) {}
 

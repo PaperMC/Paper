@@ -306,16 +306,11 @@ public class EntityEnderman extends EntityMonster {
         Item item = this.getLoot();
 
         if (item != null) {
-            // CraftBukkit start - Whole method
-            java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
-            int count = this.random.nextInt(2 + i);
+            int j = this.random.nextInt(2 + i);
 
-            if (count > 0) {
-                loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(item), count));
+            for (int k = 0; k < j; ++k) {
+                this.a(item, 1);
             }
-
-            CraftEventFactory.callEntityDeathEvent(this, loot);
-            // CraftBukkit end
         }
     }
 

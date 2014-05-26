@@ -117,45 +117,30 @@ public class EntityCreeper extends EntityMonster {
     }
 
     public void die(DamageSource damagesource) {
-        // CraftBukkit start - Rearranged the method (super call to end, drop to dropDeathLoot)
+        // super.die(damagesource); // CraftBukkit - Moved to end
         if (damagesource.getEntity() instanceof EntitySkeleton) {
             int i = Item.b(Items.RECORD_1);
             int j = Item.b(Items.RECORD_12);
             int k = i + this.random.nextInt(j - i + 1);
 
-            // this.a(Item.d(k), 1); // CraftBukkit
+            // CraftBukkit start - Store record for now, drop in dropDeathLoot
+            // this.a(Item.d(k), 1);
             this.record = k;
+            // CraftBukkit end
         }
 
-        super.die(damagesource);
-        // CraftBukkit end
+        super.die(damagesource); // CraftBukkit - Moved from above
     }
 
     // CraftBukkit start - Whole method
     protected void dropDeathLoot(boolean flag, int i) {
-        Item j = this.getLoot();
-
-        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
-
-        if (j != null) {
-            int k = this.random.nextInt(3);
-
-            if (i > 0) {
-                k += this.random.nextInt(i + 1);
-            }
-
-            if (k > 0) {
-                loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(j), k));
-            }
-        }
+        super.dropDeathLoot(flag, i);
 
         // Drop a music disc?
         if (this.record != -1) {
-            loot.add(new org.bukkit.inventory.ItemStack(this.record, 1)); // TODO: Material
+            this.a(Item.d(this.record), 1);
             this.record = -1;
         }
-
-        CraftEventFactory.callEntityDeathEvent(this, loot); // raise event even for those times when the entity does not drop loot
     }
     // CraftBukkit end
 
