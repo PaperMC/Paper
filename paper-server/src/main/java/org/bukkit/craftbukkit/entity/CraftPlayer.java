@@ -222,18 +222,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return false;
         }
         OfflinePlayer other = (OfflinePlayer) obj;
-        if ((this.getName() == null) || (other.getName() == null)) {
+        if ((this.getUniqueId() == null) || (other.getUniqueId() == null)) {
             return false;
         }
 
-        boolean nameEquals = this.getName().equalsIgnoreCase(other.getName());
+        boolean uuidEquals = this.getUniqueId().equals(other.getUniqueId());
         boolean idEquals = true;
 
         if (other instanceof CraftPlayer) {
             idEquals = this.getEntityId() == ((CraftPlayer) other).getEntityId();
         }
 
-        return nameEquals && idEquals;
+        return uuidEquals && idEquals;
     }
 
     @Override
@@ -947,7 +947,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public int hashCode() {
         if (hash == 0 || hash == 485) {
-            hash = 97 * 5 + (this.getName() != null ? this.getName().toLowerCase().hashCode() : 0);
+            hash = 97 * 5 + (this.getUniqueId() != null ? this.getUniqueId().hashCode() : 0);
         }
         return hash;
     }
