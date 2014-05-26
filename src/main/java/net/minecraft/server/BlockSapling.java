@@ -34,8 +34,7 @@ public class BlockSapling extends BlockPlant implements IBlockFragilePlantElemen
                 this.grow(world, i, j, k, random);
                 // CraftBukkit start
                 world.captureTreeGeneration = false;
-                if (world.capturedBlockStates.size() > 0)
-                {
+                if (world.capturedBlockStates.size() > 0) {
                     TreeType treeType = BlockSapling.treeType;
                     BlockSapling.treeType = null;
                     Location location = new Location(world.getWorld(), i, j, k);

@@ -100,6 +100,10 @@ public final class ItemStack {
             }
         }
         boolean flag = this.getItem().interactWith(this, entityhuman, world, i, j, k, l, f, f1, f2);
+        int newData = this.getData();
+        int newCount = this.count;
+        this.count = count;
+        this.setData(data);
         world.captureBlockStates = false;
         if (flag && world.captureTreeGeneration && world.capturedBlockStates.size() > 0) {
             world.captureTreeGeneration = false;
@@ -114,6 +118,11 @@ public final class ItemStack {
                 org.bukkit.Bukkit.getPluginManager().callEvent(event);
             }
             if (event == null || !event.isCancelled()) {
+                // Change the stack to its new contents if it hasn't been tampered with.
+                if (this.count == count && this.getData() == data) {
+                    this.setData(newData);
+                    this.count = newCount;
+                }
                 for (BlockState blockstate : blocks) {
                     blockstate.update(true);
                 }
@@ -139,10 +148,12 @@ public final class ItemStack {
                 for (BlockState blockstate : blocks) {
                     blockstate.update(true, false);
                 }
-                // make sure to restore stack after cancel
-                this.setData(data);
-                this.count = count;
             } else {
+                // Change the stack to its new contents if it hasn't been tampered with.
+                if (this.count == count && this.getData() == data) {
+                    this.setData(newData);
+                    this.count = newCount;
+                }
                 for (BlockState blockstate : blocks) {
                     int x = blockstate.getX();
                     int y = blockstate.getY();
