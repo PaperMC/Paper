@@ -64,7 +64,11 @@ public class EntityIronGolem extends EntityGolem {
             // CraftBukkit start
             org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(this, (EntityLiving) entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.COLLISION);
             if (!event.isCancelled()) {
-                this.setGoalTarget(((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getTarget()).getHandle());
+                if (event.getTarget() == null) {
+                    this.setGoalTarget(null);
+                } else {
+                    this.setGoalTarget(((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getTarget()).getHandle());
+                }
             }
             // CraftBukkit end
         }

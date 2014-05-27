@@ -191,9 +191,12 @@ public class EntityZombie extends EntityMonster {
                             this.world.addEntity(entityzombie, CreatureSpawnEvent.SpawnReason.REINFORCEMENTS); // CraftBukkit
                             // CraftBukkit start - call EntityTargetEvent
                             org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(entityzombie, entityliving, EntityTargetEvent.TargetReason.REINFORCEMENT_TARGET);
-                            entityliving = ((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getTarget()).getHandle();
                             if (!event.isCancelled()) {
-                                entityzombie.setGoalTarget(entityliving);
+                                if (event.getTarget() == null) {
+                                    entityzombie.setGoalTarget(null);
+                                } else {
+                                    entityzombie.setGoalTarget(((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getTarget()).getHandle());
+                                }
                             }
                             // CraftBukkit end
                             entityzombie.a((GroupDataEntity) null);
