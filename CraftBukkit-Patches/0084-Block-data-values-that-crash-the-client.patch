@@ -1,11 +1,11 @@
-From bf0e4ceeed93592042942a2b81f3e7fe4ddf00d9 Mon Sep 17 00:00:00 2001
+From 049447a07afd2593061a234a82daea7098690941 Mon Sep 17 00:00:00 2001
 From: Thinkofdeath <thethinkofdeath@gmail.com>
 Date: Wed, 15 Jan 2014 21:52:47 +0000
 Subject: [PATCH] Block data values that crash the client
 
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 874a089..364df1d 100644
+index 874a089..2c95832 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -115,7 +115,7 @@ public class Chunk {
@@ -22,13 +22,13 @@ index 874a089..364df1d 100644
      }
  
 +    // Spigot start - prevent invalid data values
-+    private static int checkData( Block block, int l )
++    public static int checkData( Block block, int data )
 +    {
-+        if (block == Block.b( "minecraft:double_plant" ) )
++        if (block == Blocks.DOUBLE_PLANT )
 +        {
-+            return l == 7 ? 0 : l;
++            return data == 7 || data > 15 ? 0 : data;
 +        }
-+        return l;
++        return data;
 +    }
 +    // Spigot end
 +
@@ -56,6 +56,39 @@ index 874a089..364df1d 100644
                      TileEntity tileentity = this.e(i, j, k);
  
                      if (tileentity != null) {
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index 3a18002..a5b2f2f 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -204,10 +204,7 @@ public final class ItemStack {
+     public void c(NBTTagCompound nbttagcompound) {
+         this.item = Item.d(nbttagcompound.getShort("id"));
+         this.count = nbttagcompound.getByte("Count");
+-        this.damage = nbttagcompound.getShort("Damage");
+-        if (this.damage < 0) {
+-            this.damage = 0;
+-        }
++        setData( nbttagcompound.getShort("Damage") ); // Spigot
+ 
+         if (nbttagcompound.hasKeyOfType("tag", 10)) {
+             // CraftBukkit - make defensive copy as this data may be coming from the save thread
+@@ -258,11 +255,15 @@ public final class ItemStack {
+         }
+ 
+         // Is this a block?
+-        if (CraftMagicNumbers.getBlock(CraftMagicNumbers.getId(this.getItem())) != Blocks.AIR) {
++        // Spigot start - filter
++        Block block = CraftMagicNumbers.getBlock(CraftMagicNumbers.getId(this.getItem()));
++        if (block != Blocks.AIR) {
+             // If vanilla doesn't use data on it don't allow any
+             if (!(this.usesData() || this.getItem().usesDurability())) {
+                 i = 0;
+             }
++            i = Chunk.checkData( block, i );
++        // Spigot end
+         }
+         // CraftBukkit end
+ 
 -- 
 1.9.1
 
