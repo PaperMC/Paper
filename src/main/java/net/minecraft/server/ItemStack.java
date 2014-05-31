@@ -204,10 +204,14 @@ public final class ItemStack {
     public void c(NBTTagCompound nbttagcompound) {
         this.item = Item.d(nbttagcompound.getShort("id"));
         this.count = nbttagcompound.getByte("Count");
+        /* CraftBukkit start - Route through setData for filtering
         this.damage = nbttagcompound.getShort("Damage");
         if (this.damage < 0) {
             this.damage = 0;
         }
+        */
+        this.setData(nbttagcompound.getShort("Damage"));
+        // CraftBukkit end
 
         if (nbttagcompound.hasKeyOfType("tag", 10)) {
             // CraftBukkit - make defensive copy as this data may be coming from the save thread
@@ -257,6 +261,11 @@ public final class ItemStack {
             if (!(this.usesData() || this.getItem().usesDurability())) {
                 i = 0;
             }
+        }
+
+        // Filter invalid plant data
+        if (CraftMagicNumbers.getBlock(CraftMagicNumbers.getId(this.getItem())) == Blocks.DOUBLE_PLANT && (i > 5 || i < 0)) {
+            i = 0;
         }
         // CraftBukkit end
 
@@ -565,6 +574,7 @@ public final class ItemStack {
 
     public void setItem(Item item) {
         this.item = item;
+        this.setData(this.getData()); // CraftBukkit - Set data again to ensure it is filtered properly
     }
 
     public IChatBaseComponent E() {
