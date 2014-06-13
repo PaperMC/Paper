@@ -1,0 +1,67 @@
+From 36dd238b869b47e8f0236bfe03ef60240ba9fdb9 Mon Sep 17 00:00:00 2001
+From: Suddenly <suddenly@suddenly.coffee>
+Date: Mon, 16 Jun 2014 14:44:21 +0100
+Subject: [PATCH] Make JSON errors more friendly and less crashy
+
+
+diff --git a/src/main/java/net/minecraft/server/JsonList.java b/src/main/java/net/minecraft/server/JsonList.java
+index 36dbcf6..85c6dbc 100644
+--- a/src/main/java/net/minecraft/server/JsonList.java
++++ b/src/main/java/net/minecraft/server/JsonList.java
+@@ -9,6 +9,8 @@ import java.util.ArrayList;
+ import java.util.Collection;
+ import java.util.Iterator;
+ import java.util.Map;
++import java.io.FileNotFoundException; // PaperSpigot
++import java.util.logging.Level; // PaperSpigot
+ 
+ import net.minecraft.util.com.google.common.base.Charsets;
+ import net.minecraft.util.com.google.common.collect.Lists;
+@@ -20,6 +22,7 @@ import net.minecraft.util.com.google.gson.JsonObject;
+ import net.minecraft.util.org.apache.commons.io.IOUtils;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
++import net.minecraft.util.com.google.gson.JsonSyntaxException; // PaperSpigot
+ 
+ public class JsonList {
+ 
+@@ -146,6 +149,13 @@ public class JsonList {
+         try {
+             bufferedreader = Files.newReader(this.c, Charsets.UTF_8);
+             collection = (Collection) this.b.fromJson(bufferedreader, f);
++        } catch (FileNotFoundException e) { // PaperSpigot Start
++            org.bukkit.Bukkit.getLogger().log(Level.WARNING, "Unable to find file {0}, creating new {0}.", this.c);
++        } catch (JsonSyntaxException jsonSyntaxEception) {
++            org.bukkit.Bukkit.getLogger().log(Level.WARNING, "Unable to read file {0}, backing up {0} at {0}.backup and creating new {0}.", this.c);
++            File backup = new File(this.c + ".backup");
++            this.c.renameTo(backup);
++            this.c.delete(); // PaperSpigot End
+         } finally {
+             IOUtils.closeQuietly(bufferedreader);
+         }
+diff --git a/src/main/java/net/minecraft/server/UserCache.java b/src/main/java/net/minecraft/server/UserCache.java
+index cc178c6..44ce9e2 100644
+--- a/src/main/java/net/minecraft/server/UserCache.java
++++ b/src/main/java/net/minecraft/server/UserCache.java
+@@ -27,6 +27,7 @@ import net.minecraft.util.com.google.gson.GsonBuilder;
+ import net.minecraft.util.com.mojang.authlib.Agent;
+ import net.minecraft.util.com.mojang.authlib.GameProfile;
+ import net.minecraft.util.org.apache.commons.io.IOUtils;
++import net.minecraft.util.com.google.gson.JsonSyntaxException; // PaperSpigot
+ 
+ public class UserCache {
+ 
+@@ -176,6 +177,10 @@ public class UserCache {
+                 break label81;
+             } catch (FileNotFoundException filenotfoundexception) {
+                 ;
++            } catch (JsonSyntaxException jsonSyntaxEception) { // PaperSpigot Start
++                System.err.printf("Usercache.json is corrupted or has bad formatting.");
++                System.err.printf("Deleting usercache.json to prevent further issues.");
++                this.g.delete(); // PaperSpigot End
+             } finally {
+                 IOUtils.closeQuietly(bufferedreader);
+             }
+-- 
+1.9.1
+
