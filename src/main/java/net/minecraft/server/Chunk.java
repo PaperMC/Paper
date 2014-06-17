@@ -41,6 +41,34 @@ public class Chunk {
     public long s;
     private int x;
 
+    // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
+    private int neighbors = 0x1 << 12;
+
+    public boolean areNeighborsLoaded(final int radius) {
+        switch(radius) {
+            case 2:
+                return this.neighbors == Integer.MAX_VALUE >> 6;
+            case 1:
+                final int mask =
+                    //        x        z   offset            x        z   offset            x         z   offset
+                    ( 0x1 << (1 * 5 +  1 + 12) ) | ( 0x1 << (0 * 5 +  1 + 12) ) | ( 0x1 << (-1 * 5 +  1 + 12) ) |
+                    ( 0x1 << (1 * 5 +  0 + 12) ) | ( 0x1 << (0 * 5 +  0 + 12) ) | ( 0x1 << (-1 * 5 +  0 + 12) ) |
+                    ( 0x1 << (1 * 5 + -1 + 12) ) | ( 0x1 << (0 * 5 + -1 + 12) ) | ( 0x1 << (-1 * 5 + -1 + 12) );
+                return (this.neighbors & mask) == mask;
+            default:
+                throw new UnsupportedOperationException(String.valueOf(radius));
+        }
+    }
+
+    public void setNeighborLoaded(final int x, final int z) {
+        this.neighbors |= 0x1 << (x * 5 + 12 + z);
+    }
+
+    public void setNeighborUnloaded(final int x, final int z) {
+        this.neighbors &= ~(0x1 << (x * 5 + 12 + z));
+    }
+    // CraftBukkit end
+
     public Chunk(World world, int i, int j) {
         this.sections = new ChunkSection[16];
         this.v = new byte[256];
