@@ -799,7 +799,12 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         return (float) i / (float) this.inventory.armor.length;
     }
 
-    protected void d(DamageSource damagesource, float f) {
+    // CraftBukkit start
+    protected boolean d(DamageSource damagesource, float f) { // void -> boolean
+        if (true) {
+            return super.d(damagesource, f);
+        }
+        // CraftBukkit end
         if (!this.isInvulnerable()) {
             if (!damagesource.ignoresArmor() && this.isBlocking() && f > 0.0F) {
                 f = (1.0F + f) * 0.5F;
@@ -819,6 +824,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
                 this.aV().a(damagesource, f2, f);
             }
         }
+        return false; // CraftBukkit
     }
 
     public void openFurnace(TileEntityFurnace tileentityfurnace) {}

@@ -3,11 +3,7 @@ package net.minecraft.server;
 import java.util.Iterator;
 import java.util.List;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
-// CraftBukkit end
+import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason; // CraftBukkit
 
 public class EntityHorse extends EntityAnimal implements IInventoryListener {
 
@@ -294,26 +290,9 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         int i = MathHelper.f(f * 0.5F - 3.0F);
 
         if (i > 0) {
-            // CraftBukkit start - fire EntityDamageEvent
-            EntityDamageEvent event = CraftEventFactory.callEntityDamageEvent(null, this, EntityDamageEvent.DamageCause.FALL, i);
-            if (!event.isCancelled()) {
-                float damage = (float) event.getDamage();
-                if (damage > 0) {
-                    this.getBukkitEntity().setLastDamageCause(event);
-                    this.damageEntity(DamageSource.FALL, damage);
-                }
-            }
-
+            this.damageEntity(DamageSource.FALL, (float) i);
             if (this.passenger != null) {
-                EntityDamageEvent passengerEvent = CraftEventFactory.callEntityDamageEvent(null, this.passenger, EntityDamageEvent.DamageCause.FALL, i);
-                if (!passengerEvent.isCancelled() && this.passenger != null) { // Check again in case of plugin
-                    float damage = (float) passengerEvent.getDamage();
-                    if (damage > 0) {
-                        this.passenger.getBukkitEntity().setLastDamageCause(passengerEvent);
-                        this.passenger.damageEntity(DamageSource.FALL, damage);
-                    }
-                }
-                // CraftBukkit end
+                this.passenger.damageEntity(DamageSource.FALL, (float) i);
             }
 
             Block block = this.world.getType(MathHelper.floor(this.locX), MathHelper.floor(this.locY - 0.2D - (double) this.lastYaw), MathHelper.floor(this.locZ));

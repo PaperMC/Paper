@@ -24,9 +24,8 @@ import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.entity.EntityCombustEvent;
-import org.bukkit.event.entity.EntityDamageByBlockEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.plugin.PluginManager;
 // CraftBukkit end
@@ -349,26 +348,17 @@ public abstract class Entity {
 
     protected void D() {
         if (!this.fireProof) {
+            this.damageEntity(DamageSource.LAVA, 4);
+
             // CraftBukkit start - Fallen in lava TODO: this event spams!
             if (this instanceof EntityLiving) {
-                Server server = this.world.getServer();
-
-                // TODO: shouldn't be sending null for the block.
-                org.bukkit.block.Block damager = null; // ((WorldServer) this.l).getWorld().getBlockAt(i, j, k);
-                org.bukkit.entity.Entity damagee = this.getBukkitEntity();
-
-                EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(damager, damagee, EntityDamageEvent.DamageCause.LAVA, 4D);
-                server.getPluginManager().callEvent(event);
-
-                if (!event.isCancelled()) {
-                    damagee.setLastDamageCause(event);
-                    this.damageEntity(DamageSource.LAVA, (float) event.getDamage());
-                }
-
                 if (this.fireTicks <= 0) {
                     // not on fire yet
+                    // TODO: shouldn't be sending null for the block.
+                    org.bukkit.block.Block damager = null; // ((WorldServer) this.l).getWorld().getBlockAt(i, j, k);
+                    org.bukkit.entity.Entity damagee = this.getBukkitEntity();
                     EntityCombustEvent combustEvent = new org.bukkit.event.entity.EntityCombustByBlockEvent(damager, damagee, 15);
-                    server.getPluginManager().callEvent(combustEvent);
+                    this.world.getServer().getPluginManager().callEvent(combustEvent);
 
                     if (!combustEvent.isCancelled()) {
                         this.setOnFire(combustEvent.getDuration());
@@ -381,7 +371,6 @@ public abstract class Entity {
             }
             // CraftBukkit end - we also don't throw an event unless the object in lava is living, to save on some event calls
 
-            this.damageEntity(DamageSource.LAVA, 4);
             this.setOnFire(15);
         }
     }
@@ -1617,12 +1606,14 @@ public abstract class Entity {
             }
         }
 
-        EntityDamageEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDamageEvent(entitylightning, this, EntityDamageEvent.DamageCause.LIGHTNING, 5D);
-        if (event.isCancelled()) {
+        if (this.fireProof) {
             return;
         }
-
-        this.burn((float) event.getDamage());
+        CraftEventFactory.entityDamage = entitylightning;
+        if (!this.damageEntity(DamageSource.FIRE, 5.0F)) {
+            CraftEventFactory.entityDamage = null;
+            return;
+        }
         // CraftBukkit end
 
         ++this.fireTicks;

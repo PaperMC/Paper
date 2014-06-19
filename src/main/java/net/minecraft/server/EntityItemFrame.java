@@ -24,8 +24,7 @@ public class EntityItemFrame extends EntityHanging {
         } else if (this.getItem() != null) {
             if (!this.world.isStatic) {
                 // CraftBukkit start - fire EntityDamageEvent
-                org.bukkit.event.entity.EntityDamageEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handleEntityDamageEvent(this, damagesource, f);
-                if ((event != null && event.isCancelled()) || this.dead) {
+                if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f) || this.dead) {
                     return true;
                 }
                 // CraftBukkit end

@@ -2,7 +2,7 @@ package net.minecraft.server;
 
 import java.util.List;
 
-import org.bukkit.event.entity.EntityDamageByEntityEvent; // CraftBukkit
+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 
 public abstract class EntityFireball extends Entity {
 
@@ -132,7 +132,7 @@ public abstract class EntityFireball extends Entity {
 
                 // CraftBukkit start - Fire ProjectileHitEvent
                 if (this.dead) {
-                    org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this);
+                    CraftEventFactory.callProjectileHitEvent(this);
                 }
                 // CraftBukkit end
             }
@@ -235,11 +235,7 @@ public abstract class EntityFireball extends Entity {
             this.P();
             if (damagesource.getEntity() != null) {
                 // CraftBukkit start
-                EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damagesource.getEntity().getBukkitEntity(), this.getBukkitEntity(), org.bukkit.event.entity.EntityDamageEvent.DamageCause.ENTITY_ATTACK, f);
-
-                world.getServer().getPluginManager().callEvent(event);
-
-                if (event.isCancelled()) {
+                if (!CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f)) {
                     return false;
                 }
                 // CraftBukkit end

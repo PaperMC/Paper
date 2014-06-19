@@ -9,10 +9,7 @@ import java.util.Map;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.Bukkit;
-import org.bukkit.event.entity.EntityDamageByBlockEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.Location;
 // CraftBukkit end
@@ -130,55 +127,21 @@ public class Explosion {
                     double d9 = (double) this.world.a(vec3d, entity.boundingBox);
                     double d10 = (1.0D - d7) * d9;
 
-                    // CraftBukkit start - Explosion damage hook
-                    org.bukkit.entity.Entity damagee = (entity == null) ? null : entity.getBukkitEntity();
-                    float damageDone = (float) ((int) ((d10 * d10 + d10) / 2.0D * 8.0D * (double) this.size + 1.0D));
-
-                    if (damagee == null) {
-                        // nothing was hurt
-                    } else if (this.source == null) { // Block explosion (without an entity source; bed etc.)
-                        EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(null, damagee, EntityDamageEvent.DamageCause.BLOCK_EXPLOSION, damageDone);
-                        Bukkit.getPluginManager().callEvent(event);
-
-                        if (!event.isCancelled()) {
-                            damagee.setLastDamageCause(event);
-                            entity.damageEntity(DamageSource.explosion(this), (float) event.getDamage());
-                            double d11 = EnchantmentProtection.a(entity, d10);
-
-                            entity.motX += d0 * d11;
-                            entity.motY += d1 * d11;
-                            entity.motZ += d2 * d11;
-                            if (entity instanceof EntityHuman) {
-                                this.l.put((EntityHuman) entity, Vec3D.a(d0 * d10, d1 * d10, d2 * d10));
-                            }
-                        }
-                    } else {
-                        final org.bukkit.entity.Entity damager = this.source.getBukkitEntity();
-                        final EntityDamageEvent.DamageCause damageCause;
-
-                        if (damager instanceof org.bukkit.entity.TNTPrimed) {
-                            damageCause = EntityDamageEvent.DamageCause.BLOCK_EXPLOSION;
-                        } else {
-                            damageCause = EntityDamageEvent.DamageCause.ENTITY_EXPLOSION;
-                        }
-
-                        EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, damageCause, damageDone);
-                        Bukkit.getPluginManager().callEvent(event);
-
-                        if (!event.isCancelled()) {
-                            entity.getBukkitEntity().setLastDamageCause(event);
-                            entity.damageEntity(DamageSource.explosion(this), (float) event.getDamage());
-                            double d11 = EnchantmentProtection.a(entity, d10);
-
-                            entity.motX += d0 * d11;
-                            entity.motY += d1 * d11;
-                            entity.motZ += d2 * d11;
-                            if (entity instanceof EntityHuman) {
-                                this.l.put((EntityHuman) entity, Vec3D.a(d0 * d10, d1 * d10, d2 * d10));
-                            }
-                        }
+                    // CraftBukkit start
+                    CraftEventFactory.entityDamage = source;
+                    if (!entity.damageEntity(DamageSource.explosion(this), (float) ((int) ((d10 * d10 + d10) / 2.0D * 8.0D * (double) this.size + 1.0D)))) {
+                        CraftEventFactory.entityDamage = null;
+                        continue;
                     }
                     // CraftBukkit end
+                    double d11 = EnchantmentProtection.a(entity, d10);
+
+                    entity.motX += d0 * d11;
+                    entity.motY += d1 * d11;
+                    entity.motZ += d2 * d11;
+                    if (entity instanceof EntityHuman) {
+                        this.l.put((EntityHuman) entity, Vec3D.a(d0 * d10, d1 * d10, d2 * d10));
+                    }
                 }
             }
         }
