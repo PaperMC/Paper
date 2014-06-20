@@ -253,6 +253,7 @@ public abstract class EntityFireball extends Entity {
 
                 if (damagesource.getEntity() instanceof EntityLiving) {
                     this.shooter = (EntityLiving) damagesource.getEntity();
+                    this.projectileSource = (org.bukkit.projectiles.ProjectileSource) this.shooter.getBukkitEntity();
                 }
 
                 return true;
