@@ -1,0 +1,44 @@
+From 49438c7205d9dbb80e861a3c7c5bd113e45de256 Mon Sep 17 00:00:00 2001
+From: Suddenly <suddenly@suddenly.coffee>
+Date: Tue, 27 May 2014 14:00:41 +0100
+Subject: [PATCH] Prevent null hopper owners crashing the server
+
+
+diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
+index c7b3495..45be65f 100644
+--- a/src/main/java/net/minecraft/server/TileEntityHopper.java
++++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
+@@ -243,13 +243,23 @@ public class TileEntityHopper extends TileEntity implements IHopper {
+             if (!this.j() && BlockHopper.c(this.p())) {
+                 boolean flag = false;
+ 
+-                if (!this.k()) {
+-                    flag = this.x();
+-                }
+-
+-                if (!this.l()) {
+-                    flag = suckInItems(this) || flag;
+-                }
++                try { // PaperSpigot Start (Try/catch to prevent null owner crash)
++                    if (!this.k()) {
++                        flag = this.x();
++                    }
++                } catch (NullPointerException e) {
++                    this.getWorld().setAir(this.x, this.y, this.z);
++                    org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.WARNING, "Null owner found for hopper, removing hopper at {0} {1}, {2}, {3}", new Object[]{this.getWorld().getWorld().getName(), this.x, this.y, this.z});
++                }
++
++                try {
++                    if (!this.l()) {
++                        flag = suckInItems(this) || flag;
++                    }
++                } catch (NullPointerException e) {
++                    this.getWorld().setAir(this.x, this.y, this.z);
++                    org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.WARNING, "Null owner found for hopper, removing hopper at {0} {1}, {2}, {3}", new Object[]{this.getWorld().getWorld().getName(), this.x, this.y, this.z});
++                } // PaperSpigot End
+ 
+                 if (flag) {
+                     this.c(world.spigotConfig.hopperTransfer); // Spigot
+-- 
+1.9.1
+
