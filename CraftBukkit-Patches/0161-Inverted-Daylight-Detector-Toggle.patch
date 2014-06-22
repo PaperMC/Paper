@@ -1,0 +1,77 @@
+From 41046c8486ca4b85479b214b4907ee8a29d451ee Mon Sep 17 00:00:00 2001
+From: gsand <gsandowns@gmail.com>
+Date: Tue, 15 Apr 2014 22:57:01 -0700
+Subject: [PATCH] Inverted Daylight Detector Toggle
+
+
+diff --git a/src/main/java/net/minecraft/server/BlockDaylightDetector.java b/src/main/java/net/minecraft/server/BlockDaylightDetector.java
+index 96e9c37..536fad0 100644
+--- a/src/main/java/net/minecraft/server/BlockDaylightDetector.java
++++ b/src/main/java/net/minecraft/server/BlockDaylightDetector.java
+@@ -2,6 +2,10 @@ package net.minecraft.server;
+ 
+ import java.util.Random;
+ 
++// PaperSpigot start
++import org.spigotmc.SpigotWorldConfig;
++// PaperSpigot end
++
+ public class BlockDaylightDetector extends BlockContainer {
+ 
+     private IIcon[] a = new IIcon[2];
+@@ -38,14 +42,29 @@ public class BlockDaylightDetector extends BlockContainer {
+                 f += (6.2831855F - f) * 0.2F;
+             }
+ 
+-            i1 = Math.round((float) i1 * MathHelper.cos(f));
+-            if (i1 < 0) {
+-                i1 = 0;
++            // PaperSpigot start - Inverted Daylight Detectors
++            if (SpigotWorldConfig.InvertedDaylightDetectors) {
++                i1 = Math.round((float) i1 * MathHelper.cos(f) * -1 + 15);
++                if (i1 < 10) {
++                    i1 = 0;
++                }
++
++                if (i1 > 9) {
++                    i1 = 15;
++                }
+             }
+ 
+-            if (i1 > 15) {
+-                i1 = 15;
++            else {
++                i1 = Math.round((float) i1 * MathHelper.cos(f));
++                if (i1 < 0) {
++                    i1 = 0;
++                }
++
++                if (i1 > 15) {
++                    i1 = 15;
++                }
+             }
++            // PaperSpigot end
+ 
+             if (l != i1) {
+                 i1 = org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(world, i, j, k, l, i1).getNewCurrent(); // CraftBukkit - Call BlockRedstoneEvent
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index c6095f2..aa30c9d 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -323,6 +323,13 @@ public class SpigotWorldConfig
+         log( "Allow undead horse types to be leashed: " + allowUndeadHorseLeashing );
+     }
+ 
++    public static boolean InvertedDaylightDetectors;
++    private void InvertedDaylightDetectors()
++    {
++        InvertedDaylightDetectors = getBoolean( "inverted-daylight-detectors", false);
++        log( "Inverted Redstone Lamps: " + InvertedDaylightDetectors );
++    }
++
+     public int maxBulkChunk;
+     private void bulkChunkCount()
+     {
+-- 
+1.9.1
+
