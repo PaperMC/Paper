@@ -1,0 +1,57 @@
+From 819a750cc7f1c9fcd9a095d1b1c88bca4d5c8000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <Zbob750@live.com>
+Date: Sat, 17 May 2014 00:18:54 -0500
+Subject: [PATCH] Allow undead horse types to be leashed
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityHorse.java b/src/main/java/net/minecraft/server/EntityHorse.java
+index f2a1cb3..0bda363 100644
+--- a/src/main/java/net/minecraft/server/EntityHorse.java
++++ b/src/main/java/net/minecraft/server/EntityHorse.java
+@@ -9,6 +9,10 @@ import org.bukkit.event.entity.EntityDamageEvent;
+ import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
+ // CraftBukkit end
+ 
++// PaperSpigot start
++import org.spigotmc.SpigotWorldConfig;
++// PaperSpigot end
++
+ public class EntityHorse extends EntityAnimal implements IInventoryListener {
+ 
+     private static final IEntitySelector bu = new EntitySelectorHorse();
+@@ -173,7 +177,13 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
+     }
+ 
+     public boolean bM() {
+-        return !this.cE() && super.bM();
++        // PaperSpigot start - Configurable undead horse leashing
++        if (SpigotWorldConfig.allowUndeadHorseLeashing) {
++            return super.bM();
++        } else {
++            return !this.cE() && super.bM();
++        }
++        // PaperSpigot end
+     }
+ 
+     protected void o(float f) {
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index a81b7c9..4a6edad 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -292,6 +292,13 @@ public class SpigotWorldConfig
+         log( "Allow Zombie Pigmen to spawn from portal blocks: " + enableZombiePigmenPortalSpawns );
+     }
+ 
++    public static boolean allowUndeadHorseLeashing;
++    private void allowUndeadHorseLeashing()
++    {
++        allowUndeadHorseLeashing = getBoolean( "allow-undead-horse-leashing", true);
++        log( "Allow undead horse types to be leashed: " + allowUndeadHorseLeashing );
++    }
++
+     public int maxBulkChunk;
+     private void bulkChunkCount()
+     {
+-- 
+1.9.1
+
