@@ -1,4 +1,4 @@
-From 1a8db6be08fe4fb0d33d2f448b4ad333324ba75b Mon Sep 17 00:00:00 2001
+From 240e3a0afa47aa7e53f6f647c000dc5c627d5d95 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 10 Jan 2013 00:18:11 -0500
 Subject: [PATCH] Improved Timings System
@@ -6,10 +6,10 @@ Subject: [PATCH] Improved Timings System
 Tracks nearly every point of minecraft internals and plugin events to give a good quick overview on what is causing TPS loss.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 1b22934..b669d05 100644
+index 8cc2efd..64ae190 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -133,6 +133,7 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -137,6 +137,7 @@ public class ChunkProviderServer implements IChunkProvider {
          boolean newChunk = false;
  
          if (chunk == null) {
@@ -17,7 +17,7 @@ index 1b22934..b669d05 100644
              chunk = this.loadChunk(i, j);
              if (chunk == null) {
                  if (this.chunkProvider == null) {
-@@ -168,6 +169,7 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -187,6 +188,7 @@ public class ChunkProviderServer implements IChunkProvider {
              }
              // CraftBukkit end
              chunk.a(this, this, i, j);
@@ -26,7 +26,7 @@ index 1b22934..b669d05 100644
  
          return chunk;
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 1d0dee0..d817369 100644
+index 04f5bc6..0999562 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -15,6 +15,7 @@ import org.bukkit.entity.Hanging;
@@ -139,7 +139,7 @@ index 17b15f6..21cf068 100644
  
      public boolean getAllowNether() {
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 89ef6fa..253a448 100644
+index ec45c30..92284eb 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -940,6 +940,7 @@ public class PlayerConnection implements PacketPlayInListener {
@@ -191,7 +191,7 @@ index 2a3d647..78e17d7 100644
      private static Map i = new HashMap();
      private static Map j = new HashMap();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 1031066..6946e31 100644
+index 1fea307..40a3fcf 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -16,6 +16,7 @@ import org.bukkit.Bukkit;
@@ -211,7 +211,7 @@ index 1031066..6946e31 100644
      public CraftWorld getWorld() {
          return this.world;
      }
-@@ -211,6 +214,7 @@ public abstract class World implements IBlockAccess {
+@@ -215,6 +218,7 @@ public abstract class World implements IBlockAccess {
          this.a();
  
          this.getServer().addWorld(this.world); // CraftBukkit
@@ -219,7 +219,7 @@ index 1031066..6946e31 100644
      }
  
      protected abstract IChunkProvider j();
-@@ -1314,6 +1318,7 @@ public abstract class World implements IBlockAccess {
+@@ -1312,6 +1316,7 @@ public abstract class World implements IBlockAccess {
          this.f.clear();
          this.methodProfiler.c("regular");
  
@@ -227,7 +227,7 @@ index 1031066..6946e31 100644
          // CraftBukkit start - Use field for loop variable
          for (this.tickPosition = 0; this.tickPosition < this.entityList.size(); ++this.tickPosition) {
              entity = (Entity) this.entityList.get(this.tickPosition);
-@@ -1337,7 +1342,9 @@ public abstract class World implements IBlockAccess {
+@@ -1327,7 +1332,9 @@ public abstract class World implements IBlockAccess {
              this.methodProfiler.a("tick");
              if (!entity.dead) {
                  try {
@@ -237,7 +237,7 @@ index 1031066..6946e31 100644
                  } catch (Throwable throwable1) {
                      crashreport = CrashReport.a(throwable1, "Ticking entity");
                      crashreportsystemdetails = crashreport.a("Entity being ticked");
-@@ -1362,7 +1369,9 @@ public abstract class World implements IBlockAccess {
+@@ -1352,7 +1359,9 @@ public abstract class World implements IBlockAccess {
              this.methodProfiler.b();
          }
  
@@ -245,9 +245,9 @@ index 1031066..6946e31 100644
          this.methodProfiler.c("blockEntities");
 +        timings.tileEntityTick.startTiming(); // Spigot
          this.M = true;
-         Iterator iterator = this.tileEntityList.iterator();
- 
-@@ -1377,8 +1386,11 @@ public abstract class World implements IBlockAccess {
+         // CraftBukkit start - From below, clean up tile entities before ticking them
+         if (!this.b.isEmpty()) {
+@@ -1368,8 +1377,11 @@ public abstract class World implements IBlockAccess {
  
              if (!tileentity.r() && tileentity.o() && this.isLoaded(tileentity.x, tileentity.y, tileentity.z)) {
                  try {
@@ -259,16 +259,16 @@ index 1031066..6946e31 100644
                      crashreport = CrashReport.a(throwable2, "Ticking block entity");
                      crashreportsystemdetails = crashreport.a("Block entity being ticked");
                      tileentity.a(crashreportsystemdetails);
-@@ -1398,6 +1410,8 @@ public abstract class World implements IBlockAccess {
+@@ -1389,6 +1401,8 @@ public abstract class World implements IBlockAccess {
              }
          }
  
 +        timings.tileEntityTick.stopTiming(); // Spigot
 +        timings.tileEntityPending.startTiming(); // Spigot
          this.M = false;
+         /* CraftBukkit start - Moved up
          if (!this.b.isEmpty()) {
-             this.tileEntityList.removeAll(this.b);
-@@ -1436,6 +1450,7 @@ public abstract class World implements IBlockAccess {
+@@ -1429,6 +1443,7 @@ public abstract class World implements IBlockAccess {
              this.a.clear();
          }
  
@@ -276,15 +276,15 @@ index 1031066..6946e31 100644
          this.methodProfiler.b();
          this.methodProfiler.b();
      }
-@@ -1458,6 +1473,7 @@ public abstract class World implements IBlockAccess {
-         byte b0 = 32;
- 
-         if (!flag || this.b(i - b0, 0, j - b0, i + b0, 0, j + b0)) {
+@@ -1453,6 +1468,7 @@ public abstract class World implements IBlockAccess {
+         // CraftBukkit start - Use neighbor cache instead of looking up
+         Chunk startingChunk = this.getChunkIfLoaded(i >> 4, j >> 4);
+         if (!flag || (startingChunk != null && startingChunk.areNeighborsLoaded(2)) /* this.b(i - b0, 0, j - b0, i + b0, 0, j + b0) */) {
 +            entity.tickTimer.startTiming(); // Spigot
+             // CraftBukkit end
              entity.S = entity.locX;
              entity.T = entity.locY;
-             entity.U = entity.locZ;
-@@ -1519,6 +1535,7 @@ public abstract class World implements IBlockAccess {
+@@ -1515,6 +1531,7 @@ public abstract class World implements IBlockAccess {
                      entity.passenger = null;
                  }
              }
@@ -293,7 +293,7 @@ index 1031066..6946e31 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 3d938d8..2dc3a13 100644
+index e74f777..8cbfa30 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -185,10 +185,13 @@ public class WorldServer extends World {

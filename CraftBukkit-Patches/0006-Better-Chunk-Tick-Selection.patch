@@ -1,11 +1,11 @@
-From 4973ff00be3ca5a6c77b3e8b2877efd627c72df3 Mon Sep 17 00:00:00 2001
+From 622e47b08274e5a09f6a7e0bcf98300fb438062f Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 11 Jun 2013 12:56:02 +1000
 Subject: [PATCH] Better Chunk Tick Selection
 
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index fab5025..870bddc 100644
+index c6ba026..02600a7 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -62,7 +62,7 @@ public abstract class World implements IBlockAccess {
@@ -48,7 +48,7 @@ index fab5025..870bddc 100644
      public BiomeBase getBiome(int i, int j) {
          if (this.isLoaded(i, 0, j)) {
              Chunk chunk = this.getChunkAtWorldCoords(i, j);
-@@ -124,6 +148,11 @@ public abstract class World implements IBlockAccess {
+@@ -128,6 +152,11 @@ public abstract class World implements IBlockAccess {
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
          this.ticksPerMonsterSpawns = this.getServer().getTicksPerMonsterSpawns(); // CraftBukkit
          // CraftBukkit end
@@ -60,7 +60,7 @@ index fab5025..870bddc 100644
  
          this.K = this.random.nextInt(12000);
          this.allowMonsters = true;
-@@ -1990,24 +2019,44 @@ public abstract class World implements IBlockAccess {
+@@ -1986,17 +2015,44 @@ public abstract class World implements IBlockAccess {
          int k;
          int l;
  
@@ -87,18 +87,12 @@ index fab5025..870bddc 100644
  
 -            for (int i1 = -l; i1 <= l; ++i1) {
 -                for (int j1 = -l; j1 <= l; ++j1) {
--                    // CraftBukkit start - Don't tick chunks queued for unload
--                    ChunkProviderServer chunkProviderServer = ((WorldServer) entityhuman.world).chunkProviderServer;
--                    if (chunkProviderServer.unloadQueue.contains(i1 + j, j1 + k)) {
--                        continue;
--                    }
--                    // CraftBukkit end
+-                    this.chunkTickList.add(org.bukkit.craftbukkit.util.LongHash.toLong(i1 + j, j1 + k)); // CraftBukkit
 +            // Spigot start - Always update the chunk the player is on
 +            long key = chunkToKey( j, k );
 +            int existingPlayers = Math.max( 0, chunkTickList.get( key ) ); // filter out -1
 +            chunkTickList.put(key, (short) (existingPlayers + 1));
- 
--                    this.chunkTickList.add(org.bukkit.craftbukkit.util.LongHash.toLong(i1 + j, j1 + k)); // CraftBukkit
++
 +            // Check and see if we update the chunks surrounding the player this tick
 +            for ( int chunk = 0; chunk < chunksPerPlayer; chunk++ )
 +            {
