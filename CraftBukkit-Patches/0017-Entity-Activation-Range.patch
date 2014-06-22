@@ -1,4 +1,4 @@
-From a49d646e20683324316f385e6fd2d3614f425a48 Mon Sep 17 00:00:00 2001
+From a972387b658808e5a9bdfaf911454fd39dda1300 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 3 Feb 2013 05:10:21 -0500
 Subject: [PATCH] Entity Activation Range
@@ -155,10 +155,10 @@ index b3bf43a..a180c89 100644
      public EntityLiving(World world) {
          super(world);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index e0daffb..1a2a640 100644
+index 3e93cfd..0cb803e 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1318,6 +1318,7 @@ public abstract class World implements IBlockAccess {
+@@ -1316,6 +1316,7 @@ public abstract class World implements IBlockAccess {
          this.f.clear();
          this.methodProfiler.c("regular");
  
@@ -166,19 +166,21 @@ index e0daffb..1a2a640 100644
          timings.entityTick.startTiming(); // Spigot
          // CraftBukkit start - Use field for loop variable
          for (this.tickPosition = 0; this.tickPosition < this.entityList.size(); ++this.tickPosition) {
-@@ -1479,7 +1480,11 @@ public abstract class World implements IBlockAccess {
+@@ -1472,9 +1473,11 @@ public abstract class World implements IBlockAccess {
          int j = MathHelper.floor(entity.locZ);
          byte b0 = 32;
  
--        if (!flag || this.b(i - b0, 0, j - b0, i + b0, 0, j + b0)) {
+-        // CraftBukkit start - Use neighbor cache instead of looking up
+-        Chunk startingChunk = this.getChunkIfLoaded(i >> 4, j >> 4);
+-        if (!flag || (startingChunk != null && startingChunk.areNeighborsLoaded(2)) /* this.b(i - b0, 0, j - b0, i + b0, 0, j + b0) */) {
 +        // Spigot start
 +        if (!org.spigotmc.ActivationRange.checkIfActive(entity)) {
 +            entity.ticksLived++;
 +            entity.inactiveTick();
 +        } else {
              entity.tickTimer.startTiming(); // Spigot
+             // CraftBukkit end
              entity.S = entity.locX;
-             entity.T = entity.locY;
 diff --git a/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java b/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java
 index 8340c13..541dfe4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java
