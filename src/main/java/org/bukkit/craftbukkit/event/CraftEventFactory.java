@@ -511,6 +511,8 @@ public class CraftEventFactory {
             cause = DamageCause.MAGIC;
         } else if (source == DamageSource.FALL) {
             cause = DamageCause.FALL;
+        } else if (source == DamageSource.GENERIC) {
+            return new EntityDamageEvent(entity.getBukkitEntity(), null, modifiers);
         }
 
         if (cause != null) {
