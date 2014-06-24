@@ -235,7 +235,7 @@ public abstract class EntityFireball extends Entity {
             this.P();
             if (damagesource.getEntity() != null) {
                 // CraftBukkit start
-                if (!CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f)) {
+                if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f)) {
                     return false;
                 }
                 // CraftBukkit end
