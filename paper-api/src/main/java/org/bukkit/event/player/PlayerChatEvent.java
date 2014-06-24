@@ -1,6 +1,5 @@
 package org.bukkit.event.player;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -33,7 +32,7 @@ public class PlayerChatEvent extends PlayerEvent implements Cancellable {
         super(player);
         this.message = message;
         this.format = "<%1$s> %2$s";
-        this.recipients = new HashSet<Player>(Arrays.asList(player.getServer().getOnlinePlayers()));
+        this.recipients = new HashSet<Player>(player.getServer().getOnlinePlayers());
     }
 
     public PlayerChatEvent(final Player player, final String message, final String format, final Set<Player> recipients) {

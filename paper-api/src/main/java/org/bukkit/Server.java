@@ -2,6 +2,9 @@ package org.bukkit;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +17,7 @@ import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.server.ServerListPingEvent;
@@ -33,6 +37,7 @@ import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.util.CachedServerIcon;
 
 import com.avaje.ebean.config.ServerConfig;
+import com.google.common.collect.ImmutableList;
 
 import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -80,11 +85,46 @@ public interface Server extends PluginMessageRecipient {
     public String getBukkitVersion();
 
     /**
-     * Gets a list of all currently logged in players.
+     * Gets an array copy of all currently logged in players.
+     * <p>
+     * This method exists for legacy reasons to provide backwards
+     * compatibility. It will not exist at runtime and should not be used
+     * under any circumstances.
      *
+     * @Deprecated superseded by {@link #getOnlinePlayers()}
      * @return an array of Players that are currently online
      */
-    public Player[] getOnlinePlayers();
+    @Deprecated
+    public Player[] _INVALID_getOnlinePlayers();
+
+    /**
+     * Gets a view of all currently logged in players. This {@linkplain
+     * Collections#unmodifiableCollection(Collection) view} is a reused
+     * object, making some operations like {@link Collection#size()}
+     * zero-allocation.
+     * <p>
+     * The collection is a view backed by the internal representation, such
+     * that, changes to the internal state of the server will be reflected
+     * immediately. However, the reuse of the returned collection (identity)
+     * is not strictly guaranteed for future or all implementations. Casting
+     * the collection, or relying on interface implementations (like {@link
+     * Serializable} or {@link List}), is deprecated.
+     * <p>
+     * Iteration behavior is undefined outside of self-contained main-thread
+     * uses. Normal and immediate iterator use without consequences that
+     * affect the collection are fully supported. The effects following
+     * (non-exhaustive) {@link Entity#teleport(Location) teleportation},
+     * {@link Player#setHealth(double) death}, and {@link Player#kickPlayer(
+     * String) kicking} are undefined. Any use of this collection from
+     * asynchronous threads is unsafe.
+     * <p>
+     * For safe consequential iteration or mimicking the old array behavior,
+     * using {@link Collection#toArray(Object[])} is recommended. For making
+     * snapshots, {@link ImmutableList#copyOf(Collection)} is recommended.
+     *
+     * @return a view of currently online players.
+     */
+    public Collection<? extends Player> getOnlinePlayers();
 
     /**
      * Get the maximum amount of players which can login to this server.

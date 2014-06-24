@@ -2,6 +2,7 @@ package org.bukkit;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -90,9 +91,22 @@ public final class Bukkit {
     }
 
     /**
+     * This method exists for legacy reasons to provide backwards
+     * compatibility. It will not exist at runtime and should not be used
+     * under any circumstances.
+     *
+     * @Deprecated
+     * @see Server#_INVALID_getOnlinePlayers()
+     */
+    @Deprecated
+    public static Player[] _INVALID_getOnlinePlayers() {
+        return server._INVALID_getOnlinePlayers();
+    }
+
+    /**
      * @see Server#getOnlinePlayers()
      */
-    public static Player[] getOnlinePlayers() {
+    public static Collection<? extends Player> getOnlinePlayers() {
         return server.getOnlinePlayers();
     }
 
