@@ -150,7 +150,7 @@ public class CraftChunk implements Chunk {
     public ChunkSnapshot getChunkSnapshot(boolean includeMaxBlockY, boolean includeBiome, boolean includeBiomeTempRain) {
         net.minecraft.server.Chunk chunk = getHandle();
 
-        ChunkSection[] cs = chunk.i(); /* Get sections */
+        ChunkSection[] cs = chunk.getSections();
         short[][] sectionBlockIDs = new short[cs.length][];
         byte[][] sectionBlockData = new byte[cs.length][];
         byte[][] sectionSkyLights = new byte[cs.length][];
@@ -221,7 +221,7 @@ public class CraftChunk implements Chunk {
             if (includeBiome) {
                 biome = new BiomeBase[256];
                 for (int i = 0; i < 256; i++) {
-                    biome[i] = chunk.a(i & 0xF, i >> 4, wcm);
+                    biome[i] = chunk.getBiome(i & 0xF, i >> 4, wcm);
                 }
             }
 

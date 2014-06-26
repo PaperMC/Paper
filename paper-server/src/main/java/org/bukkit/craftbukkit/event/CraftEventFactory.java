@@ -95,7 +95,7 @@ public class CraftEventFactory {
 
         if (world.getHandle().dimension != 0) return true;
         if (spawnSize <= 0) return true;
-        if (((CraftServer) Bukkit.getServer()).getHandle().getOPs().d()) return true; // Should be isEmpty
+        if (((CraftServer) Bukkit.getServer()).getHandle().getOPs().isEmpty()) return true;
         if (player.isOp()) return true;
 
         ChunkCoordinates chunkcoordinates = worldServer.getSpawn();
@@ -332,7 +332,7 @@ public class CraftEventFactory {
      */
     public static BlockFadeEvent callBlockFadeEvent(Block block, net.minecraft.server.Block type) {
         BlockState state = block.getState();
-        state.setTypeId(net.minecraft.server.Block.b(type));
+        state.setTypeId(net.minecraft.server.Block.getId(type));
 
         BlockFadeEvent event = new BlockFadeEvent(block, state);
         Bukkit.getPluginManager().callEvent(event);
@@ -341,7 +341,7 @@ public class CraftEventFactory {
 
     public static void handleBlockSpreadEvent(Block block, Block source, net.minecraft.server.Block type, int data) {
         BlockState state = block.getState();
-        state.setTypeId(net.minecraft.server.Block.b(type));
+        state.setTypeId(net.minecraft.server.Block.getId(type));
         state.setRawData((byte) data);
 
         BlockSpreadEvent event = new BlockSpreadEvent(block, source, state);
@@ -583,7 +583,7 @@ public class CraftEventFactory {
     public static void handleBlockGrowEvent(World world, int x, int y, int z, net.minecraft.server.Block type, int data) {
         Block block = world.getWorld().getBlockAt(x, y, z);
         CraftBlockState state = (CraftBlockState) block.getState();
-        state.setTypeId(net.minecraft.server.Block.b(type));
+        state.setTypeId(net.minecraft.server.Block.getId(type));
         state.setRawData((byte) data);
 
         BlockGrowEvent event = new BlockGrowEvent(block, state);
@@ -824,7 +824,7 @@ public class CraftEventFactory {
             }
 
             // Client will have updated its idea of the book item; we need to overwrite that
-            Slot slot = player.activeContainer.a((IInventory) player.inventory, itemInHandIndex);
+            Slot slot = player.activeContainer.getSlot(player.inventory, itemInHandIndex);
             player.playerConnection.sendPacket(new PacketPlayOutSetSlot(player.activeContainer.windowId, slot.rawSlotIndex, itemInHand));
         }
     }

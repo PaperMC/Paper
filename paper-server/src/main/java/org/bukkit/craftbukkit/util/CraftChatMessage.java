@@ -110,7 +110,7 @@ public final class CraftChatMessage {
                 currentChatComponent = new ChatComponentText("");
                 list.add(currentChatComponent);
             }
-            currentChatComponent.a(addition);
+            currentChatComponent.addSibling(addition);
         }
 
         private IChatBaseComponent[] getOutput() {

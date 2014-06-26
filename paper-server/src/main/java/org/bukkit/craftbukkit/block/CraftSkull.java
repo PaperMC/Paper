@@ -152,7 +152,7 @@ public class CraftSkull extends CraftBlockState implements Skull {
             return false;
         }
 
-        GameProfile profile = MinecraftServer.getServer().getUserCache().a(name);
+        GameProfile profile = MinecraftServer.getServer().getUserCache().getProfile(name);
         if (profile == null) {
             return false;
         }

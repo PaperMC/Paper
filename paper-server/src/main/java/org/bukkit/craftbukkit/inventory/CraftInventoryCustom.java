@@ -144,7 +144,7 @@ public class CraftInventoryCustom extends CraftInventory {
             return type;
         }
 
-        public void l_() {}
+        public void closeContainer() {}
 
         public InventoryHolder getOwner() {
             return owner;

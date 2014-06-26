@@ -15,8 +15,8 @@ public class CraftCommandBlock extends CraftBlockState implements CommandBlock {
 
         CraftWorld world = (CraftWorld) block.getWorld();
         commandBlock = (TileEntityCommand) world.getTileEntityAt(getX(), getY(), getZ());
-        command = commandBlock.a().e;
-        name = commandBlock.a().getName();
+        command = commandBlock.getCommandBlock().getCommand();
+        name = commandBlock.getCommandBlock().getName();
     }
 
     public String getCommand() {
@@ -39,8 +39,8 @@ public class CraftCommandBlock extends CraftBlockState implements CommandBlock {
         boolean result = super.update(force, applyPhysics);
 
         if (result) {
-            commandBlock.a().a(command);
-            commandBlock.a().b(name);
+            commandBlock.getCommandBlock().setCommand(command);
+            commandBlock.getCommandBlock().setName(name);
         }
 
         return result;

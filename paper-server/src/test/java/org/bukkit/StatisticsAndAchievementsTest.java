@@ -39,7 +39,7 @@ public class StatisticsAndAchievementsTest extends AbstractTestingBase {
     @SuppressWarnings("unchecked")
     public void verifyStatisticMapping() throws Throwable {
         HashMultiset<Statistic> statistics = HashMultiset.create();
-        for (net.minecraft.server.Statistic statistic : (List<net.minecraft.server.Statistic>) StatisticList.b) {
+        for (net.minecraft.server.Statistic statistic : (List<net.minecraft.server.Statistic>) StatisticList.stats) {
             if (statistic instanceof net.minecraft.server.Achievement) {
                 continue;
             }

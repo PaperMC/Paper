@@ -760,7 +760,7 @@ public final class CraftServer implements Server {
 
         boolean animals = config.getBoolean("spawn-animals", console.getSpawnAnimals());
         boolean monsters = config.getBoolean("spawn-monsters", console.worlds.get(0).difficulty != EnumDifficulty.PEACEFUL);
-        EnumDifficulty difficulty = EnumDifficulty.a(config.getInt("difficulty", console.worlds.get(0).difficulty.ordinal()));
+        EnumDifficulty difficulty = EnumDifficulty.getById(config.getInt("difficulty", console.worlds.get(0).difficulty.ordinal()));
 
         online.value = config.getBoolean("online-mode", console.getOnlineMode());
         console.setSpawnAnimals(config.getBoolean("spawn-animals", console.getSpawnAnimals()));
@@ -961,7 +961,7 @@ public final class CraftServer implements Server {
         } while(used);
         boolean hardcore = false;
 
-        WorldServer internal = new WorldServer(console, new ServerNBTManager(getWorldContainer(), name, true), name, dimension, new WorldSettings(creator.seed(), EnumGamemode.a(getDefaultGameMode().getValue()), generateStructures, hardcore, type), console.methodProfiler, creator.environment(), generator);
+        WorldServer internal = new WorldServer(console, new ServerNBTManager(getWorldContainer(), name, true), name, dimension, new WorldSettings(creator.seed(), EnumGamemode.getById(getDefaultGameMode().getValue()), generateStructures, hardcore, type), console.methodProfiler, creator.environment(), generator);
 
         if (!(worlds.containsKey(name.toLowerCase()))) {
             return null;
@@ -1350,7 +1350,7 @@ public final class CraftServer implements Server {
         OfflinePlayer result = getPlayerExact(name);
         if (result == null) {
             // This is potentially blocking :(
-            GameProfile profile = MinecraftServer.getServer().getUserCache().a(name);
+            GameProfile profile = MinecraftServer.getServer().getUserCache().getProfile(name);
             if (profile == null) {
                 // Make an OfflinePlayer using an offline mode UUID since the name has no profile
                 result = getOfflinePlayer(new GameProfile(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name));
@@ -1414,7 +1414,7 @@ public final class CraftServer implements Server {
         Set<OfflinePlayer> result = new HashSet<OfflinePlayer>();
 
         for (JsonListEntry entry : playerList.getProfileBans().getValues()) {
-            result.add(getOfflinePlayer((GameProfile) entry.f())); // Should be getKey
+            result.add(getOfflinePlayer((GameProfile) entry.getKey()));
         }
 
         return result;
@@ -1436,7 +1436,7 @@ public final class CraftServer implements Server {
     @Override
     public void setWhitelist(boolean value) {
         playerList.setHasWhitelist(value);
-        console.getPropertyManager().a("white-list", value);
+        console.getPropertyManager().setProperty("white-list", value);
     }
 
     @Override
@@ -1444,7 +1444,7 @@ public final class CraftServer implements Server {
         Set<OfflinePlayer> result = new LinkedHashSet<OfflinePlayer>();
 
         for (JsonListEntry entry : playerList.getWhitelist().getValues()) {
-            result.add(getOfflinePlayer((GameProfile) entry.f())); // Should be getKey
+            result.add(getOfflinePlayer((GameProfile) entry.getKey()));
         }
 
         return result;
@@ -1455,7 +1455,7 @@ public final class CraftServer implements Server {
         Set<OfflinePlayer> result = new HashSet<OfflinePlayer>();
 
         for (JsonListEntry entry : playerList.getOPs().getValues()) {
-            result.add(getOfflinePlayer((GameProfile) entry.f())); // Should be getKey
+            result.add(getOfflinePlayer((GameProfile) entry.getKey()));
         }
 
         return result;
@@ -1468,7 +1468,7 @@ public final class CraftServer implements Server {
 
     @Override
     public GameMode getDefaultGameMode() {
-        return GameMode.getByValue(console.worlds.get(0).getWorldData().getGameType().a());
+        return GameMode.getByValue(console.worlds.get(0).getWorldData().getGameType().getId());
     }
 
     @Override
@@ -1476,7 +1476,7 @@ public final class CraftServer implements Server {
         Validate.notNull(mode, "Mode cannot be null");
 
         for (World world : getWorlds()) {
-            ((CraftWorld) world).getHandle().worldData.setGameType(EnumGamemode.a(mode.getValue()));
+            ((CraftWorld) world).getHandle().worldData.setGameType(EnumGamemode.getById(mode.getValue()));
         }
     }
 

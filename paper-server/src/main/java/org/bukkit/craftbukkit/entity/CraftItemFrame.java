@@ -31,8 +31,8 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
 
     public void setItem(org.bukkit.inventory.ItemStack item) {
         if (item == null || item.getTypeId() == 0) {
-            getHandle().getDataWatcher().a(2, 5);
-            getHandle().getDataWatcher().h(2);
+            getHandle().getDataWatcher().add(2, 5);
+            getHandle().getDataWatcher().update(2);
         } else {
             getHandle().setItem(CraftItemStack.asNMSCopy(item));
         }

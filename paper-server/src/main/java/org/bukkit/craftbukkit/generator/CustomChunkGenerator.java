@@ -63,7 +63,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
         if (xbtypes != null) {
             chunk = new Chunk(this.world, x, z);
 
-            ChunkSection[] csect = chunk.i();
+            ChunkSection[] csect = chunk.getSections();
             int scnt = Math.min(csect.length, xbtypes.length);
 
             // Loop through returned sections
@@ -100,7 +100,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
             if (btypes != null) {
                 chunk = new Chunk(this.world, x, z);
 
-                ChunkSection[] csect = chunk.i();
+                ChunkSection[] csect = chunk.getSections();
                 int scnt = Math.min(csect.length, btypes.length);
 
                 for (int sec = 0; sec < scnt; sec++) {
@@ -118,7 +118,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
 
                 chunk = new Chunk(this.world, x, z); // Create empty chunk
 
-                ChunkSection[] csect = chunk.i();
+                ChunkSection[] csect = chunk.getSections();
 
                 scnt = Math.min(scnt, csect.length);
                 // Loop through sections

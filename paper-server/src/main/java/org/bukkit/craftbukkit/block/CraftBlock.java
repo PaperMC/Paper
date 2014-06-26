@@ -381,7 +381,7 @@ public class CraftBlock implements Block {
 
     private boolean itemCausesDrops(ItemStack item) {
         net.minecraft.server.Block block = this.getNMSBlock();
-        net.minecraft.server.Item itemType = item != null ? net.minecraft.server.Item.d(item.getTypeId()) : null;
+        net.minecraft.server.Item itemType = item != null ? net.minecraft.server.Item.getById(item.getTypeId()) : null;
         return block != null && (block.getMaterial().isAlwaysDestroyable() || (itemType != null && itemType.canDestroySpecialBlock(block)));
     }
 
@@ -428,7 +428,7 @@ public class CraftBlock implements Block {
                             nmsStack.setTag(new NBTTagCompound());
                             NBTTagCompound nbttagcompound = new NBTTagCompound();
 
-                            GameProfileSerializer.a(nbttagcompound, tileentityskull.getGameProfile());
+                            GameProfileSerializer.serialize(nbttagcompound, tileentityskull.getGameProfile());
                             nmsStack.getTag().set("SkullOwner", nbttagcompound);
                         }
 
@@ -458,7 +458,7 @@ public class CraftBlock implements Block {
 
     /* Build biome index based lookup table for BiomeBase to Biome mapping */
     static {
-        BIOME_MAPPING = new Biome[BiomeBase.n().length];
+        BIOME_MAPPING = new Biome[BiomeBase.getBiomes().length];
         BIOMEBASE_MAPPING = new BiomeBase[Biome.values().length];
         BIOME_MAPPING[BiomeBase.OCEAN.id] = Biome.OCEAN;
         BIOME_MAPPING[BiomeBase.PLAINS.id] = Biome.PLAINS;

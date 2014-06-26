@@ -12,12 +12,12 @@ public class CraftWitherSkull extends CraftFireball implements WitherSkull {
 
     @Override
     public void setCharged(boolean charged) {
-        getHandle().a(charged);
+        getHandle().setCharged(charged);
     }
 
     @Override
     public boolean isCharged() {
-        return getHandle().f();
+        return getHandle().isCharged();
     }
 
     @Override
