@@ -14,7 +14,7 @@ final class CraftCriteria {
     static {
         ImmutableMap.Builder<String, CraftCriteria> defaults = ImmutableMap.builder();
 
-        for (Map.Entry<?, ?> entry : ((Map<?,?> ) IScoreboardCriteria.a).entrySet()) {
+        for (Map.Entry<?, ?> entry : ((Map<?,?> ) IScoreboardCriteria.criteria).entrySet()) {
             String name = entry.getKey().toString();
             IScoreboardCriteria criteria = (IScoreboardCriteria) entry.getValue();
             if (!criteria.getName().equals(name)) {

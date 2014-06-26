@@ -82,7 +82,7 @@ public class PacketDataSerializer extends ByteBuf {
         if (itemstack == null || itemstack.getItem() == null) { // CraftBukkit - NPE fix itemstack.getItem()
             this.writeShort(-1);
         } else {
-            this.writeShort(Item.b(itemstack.getItem()));
+            this.writeShort(Item.getId(itemstack.getItem()));
             this.writeByte(itemstack.count);
             this.writeShort(itemstack.getData());
             NBTTagCompound nbttagcompound = null;
@@ -103,7 +103,7 @@ public class PacketDataSerializer extends ByteBuf {
             byte b0 = this.readByte();
             short short2 = this.readShort();
 
-            itemstack = new ItemStack(Item.d(short1), b0, short2);
+            itemstack = new ItemStack(Item.getById(short1), b0, short2);
             itemstack.tag = this.b();
             // CraftBukkit start
             if (itemstack.tag != null) {

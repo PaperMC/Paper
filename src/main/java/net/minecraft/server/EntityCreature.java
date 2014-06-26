@@ -29,7 +29,7 @@ public abstract class EntityCreature extends EntityInsentient {
         return false;
     }
 
-    protected void bp() {
+    protected void bq() {
         this.world.methodProfiler.a("ai");
         if (this.bo > 0 && --this.bo == 0) {
             AttributeInstance attributeinstance = this.getAttributeInstance(GenericAttributes.d);
@@ -63,7 +63,7 @@ public abstract class EntityCreature extends EntityInsentient {
         } else if (this.target.isAlive()) {
             float f1 = this.target.e((Entity) this);
 
-            if (this.p(this.target)) {
+            if (this.hasLineOfSight(this.target)) {
                 this.a(this.target, f1);
             }
         } else {
@@ -93,8 +93,8 @@ public abstract class EntityCreature extends EntityInsentient {
         }
 
         int i = MathHelper.floor(this.boundingBox.b + 0.5D);
-        boolean flag = this.L();
-        boolean flag1 = this.O();
+        boolean flag = this.M();
+        boolean flag1 = this.P();
 
         this.pitch = 0.0F;
         if (this.pathEntity != null && this.random.nextInt(100) != 0) {
@@ -161,7 +161,7 @@ public abstract class EntityCreature extends EntityInsentient {
 
             this.world.methodProfiler.b();
         } else {
-            super.bp();
+            super.bq();
             this.pathEntity = null;
         }
     }

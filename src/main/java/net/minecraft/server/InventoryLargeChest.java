@@ -118,9 +118,9 @@ public class InventoryLargeChest implements IInventory {
         this.right.startOpen();
     }
 
-    public void l_() {
-        this.left.l_();
-        this.right.l_();
+    public void closeContainer() {
+        this.left.closeContainer();
+        this.right.closeContainer();
     }
 
     public boolean b(int i, ItemStack itemstack) {

@@ -26,16 +26,16 @@ public class Item {
 
     public Item() {}
 
-    public static int b(Item item) {
+    public static int getId(Item item) {
         return item == null ? 0 : REGISTRY.b(item);
     }
 
-    public static Item d(int i) {
+    public static Item getById(int i) {
         return (Item) REGISTRY.a(i);
     }
 
     public static Item getItemOf(Block block) {
-        return d(Block.b(block));
+        return getById(Block.getId(block));
     }
 
     public static void l() {
@@ -217,7 +217,7 @@ public class Item {
 
         while (iterator.hasNext()) {
             String s = (String) iterator.next();
-            Block block = (Block) Block.REGISTRY.a(s);
+            Block block = (Block) Block.REGISTRY.get(s);
             Object object;
 
             if (block == Blocks.WOOL) {
@@ -296,7 +296,7 @@ public class Item {
                 object = new ItemBlock(block);
             }
 
-            REGISTRY.a(Block.b(block), s, object);
+            REGISTRY.a(Block.getId(block), s, object);
         }
     }
 

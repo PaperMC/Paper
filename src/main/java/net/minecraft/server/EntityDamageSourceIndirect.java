@@ -19,7 +19,7 @@ public class EntityDamageSourceIndirect extends EntityDamageSource {
 
     public IChatBaseComponent getLocalizedDeathMessage(EntityLiving entityliving) {
         IChatBaseComponent ichatbasecomponent = this.owner == null ? this.p.getScoreboardDisplayName() : this.owner.getScoreboardDisplayName();
-        ItemStack itemstack = this.owner instanceof EntityLiving ? ((EntityLiving) this.owner).bd() : null;
+        ItemStack itemstack = this.owner instanceof EntityLiving ? ((EntityLiving) this.owner).be() : null;
         String s = "death.attack." + this.translationIndex;
         String s1 = s + ".item";
 

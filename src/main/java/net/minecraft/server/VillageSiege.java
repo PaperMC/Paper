@@ -139,7 +139,7 @@ public class VillageSiege {
 
             try {
                 entityzombie = new EntityZombie(this.world);
-                entityzombie.a((GroupDataEntity) null);
+                entityzombie.prepare((GroupDataEntity) null);
                 entityzombie.setVillager(false);
             } catch (Exception exception) {
                 exception.printStackTrace();

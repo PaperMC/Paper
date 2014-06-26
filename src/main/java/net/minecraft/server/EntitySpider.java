@@ -21,9 +21,9 @@ public class EntitySpider extends EntityMonster {
         }
     }
 
-    protected void aC() {
-        super.aC();
-        this.getAttributeInstance(GenericAttributes.a).setValue(16.0D);
+    protected void aD() {
+        super.aD();
+        this.getAttributeInstance(GenericAttributes.maxHealth).setValue(16.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.800000011920929D);
     }
 
@@ -43,11 +43,11 @@ public class EntitySpider extends EntityMonster {
         return "mob.spider.say";
     }
 
-    protected String aS() {
+    protected String aT() {
         return "mob.spider.say";
     }
 
-    protected String aT() {
+    protected String aU() {
         return "mob.spider.death";
     }
 
@@ -104,7 +104,7 @@ public class EntitySpider extends EntityMonster {
         return this.bZ();
     }
 
-    public void ar() {}
+    public void as() {}
 
     public EnumMonsterType getMonsterType() {
         return EnumMonsterType.ARTHROPOD;
@@ -130,14 +130,14 @@ public class EntitySpider extends EntityMonster {
         this.datawatcher.watch(16, Byte.valueOf(b0));
     }
 
-    public GroupDataEntity a(GroupDataEntity groupdataentity) {
-        Object object = super.a(groupdataentity);
+    public GroupDataEntity prepare(GroupDataEntity groupdataentity) {
+        Object object = super.prepare(groupdataentity);
 
         if (this.world.random.nextInt(100) == 0) {
             EntitySkeleton entityskeleton = new EntitySkeleton(this.world);
 
             entityskeleton.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, 0.0F);
-            entityskeleton.a((GroupDataEntity) null);
+            entityskeleton.prepare((GroupDataEntity) null);
             this.world.addEntity(entityskeleton, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.JOCKEY); // CraftBukkit - add SpawnReason
             entityskeleton.mount(this);
         }

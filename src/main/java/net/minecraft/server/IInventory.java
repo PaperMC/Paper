@@ -26,7 +26,7 @@ public interface IInventory {
 
     void startOpen();
 
-    void l_();
+    void closeContainer();
 
     boolean b(int i, ItemStack itemstack);
 

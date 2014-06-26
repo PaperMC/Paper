@@ -107,7 +107,7 @@ public abstract class EntityFireball extends Entity {
             for (int i = 0; i < list.size(); ++i) {
                 Entity entity1 = (Entity) list.get(i);
 
-                if (entity1.Q() && (!entity1.i(this.shooter) || this.au >= 25)) {
+                if (entity1.R() && (!entity1.i(this.shooter) || this.au >= 25)) {
                     float f = 0.3F;
                     AxisAlignedBB axisalignedbb = entity1.boundingBox.grow((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
@@ -164,7 +164,7 @@ public abstract class EntityFireball extends Entity {
             this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
             float f2 = this.e();
 
-            if (this.L()) {
+            if (this.M()) {
                 for (int j = 0; j < 4; ++j) {
                     float f3 = 0.25F;
 
@@ -195,7 +195,7 @@ public abstract class EntityFireball extends Entity {
         nbttagcompound.setShort("xTile", (short) this.e);
         nbttagcompound.setShort("yTile", (short) this.f);
         nbttagcompound.setShort("zTile", (short) this.g);
-        nbttagcompound.setByte("inTile", (byte) Block.b(this.h));
+        nbttagcompound.setByte("inTile", (byte) Block.getId(this.h));
         nbttagcompound.setByte("inGround", (byte) (this.i ? 1 : 0));
         // CraftBukkit - Fix direction being mismapped to invalid variables
         nbttagcompound.set("power", this.a(new double[] { this.dirX, this.dirY, this.dirZ}));
@@ -205,7 +205,7 @@ public abstract class EntityFireball extends Entity {
         this.e = nbttagcompound.getShort("xTile");
         this.f = nbttagcompound.getShort("yTile");
         this.g = nbttagcompound.getShort("zTile");
-        this.h = Block.e(nbttagcompound.getByte("inTile") & 255);
+        this.h = Block.getById(nbttagcompound.getByte("inTile") & 255);
         this.i = nbttagcompound.getByte("inGround") == 1;
         // CraftBukkit start - direction -> power
         if (nbttagcompound.hasKeyOfType("power", 9)) {
@@ -220,11 +220,11 @@ public abstract class EntityFireball extends Entity {
         }
     }
 
-    public boolean Q() {
+    public boolean R() {
         return true;
     }
 
-    public float ae() {
+    public float af() {
         return 1.0F;
     }
 
@@ -232,7 +232,7 @@ public abstract class EntityFireball extends Entity {
         if (this.isInvulnerable()) {
             return false;
         } else {
-            this.P();
+            this.Q();
             if (damagesource.getEntity() != null) {
                 // CraftBukkit start
                 if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f)) {
@@ -240,7 +240,7 @@ public abstract class EntityFireball extends Entity {
                 }
                 // CraftBukkit end
 
-                Vec3D vec3d = damagesource.getEntity().af();
+                Vec3D vec3d = damagesource.getEntity().ag();
 
                 if (vec3d != null) {
                     this.motX = vec3d.a;

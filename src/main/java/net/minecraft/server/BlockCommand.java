@@ -42,10 +42,10 @@ public class BlockCommand extends BlockContainer {
         TileEntity tileentity = world.getTileEntity(i, j, k);
 
         if (tileentity != null && tileentity instanceof TileEntityCommand) {
-            CommandBlockListenerAbstract commandblocklistenerabstract = ((TileEntityCommand) tileentity).a();
+            CommandBlockListenerAbstract commandblocklistenerabstract = ((TileEntityCommand) tileentity).getCommandBlock();
 
             commandblocklistenerabstract.a(world);
-            world.f(i, j, k, this);
+            world.updateAdjacentComparators(i, j, k, this);
         }
     }
 
@@ -63,21 +63,21 @@ public class BlockCommand extends BlockContainer {
         return true;
     }
 
-    public boolean M() {
+    public boolean isComplexRedstone() {
         return true;
     }
 
     public int g(World world, int i, int j, int k, int l) {
         TileEntity tileentity = world.getTileEntity(i, j, k);
 
-        return tileentity != null && tileentity instanceof TileEntityCommand ? ((TileEntityCommand) tileentity).a().g() : 0;
+        return tileentity != null && tileentity instanceof TileEntityCommand ? ((TileEntityCommand) tileentity).getCommandBlock().g() : 0;
     }
 
     public void postPlace(World world, int i, int j, int k, EntityLiving entityliving, ItemStack itemstack) {
         TileEntityCommand tileentitycommand = (TileEntityCommand) world.getTileEntity(i, j, k);
 
         if (itemstack.hasName()) {
-            tileentitycommand.a().b(itemstack.getName());
+            tileentitycommand.getCommandBlock().setName(itemstack.getName());
         }
     }
 

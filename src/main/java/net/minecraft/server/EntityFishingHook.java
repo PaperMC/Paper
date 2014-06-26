@@ -101,7 +101,7 @@ public class EntityFishingHook extends Entity {
             this.b(this.yaw, this.pitch);
         } else {
             if (!this.world.isStatic) {
-                ItemStack itemstack = this.owner.bE();
+                ItemStack itemstack = this.owner.bF();
 
                 if (this.owner.dead || !this.owner.isAlive() || itemstack == null || itemstack.getItem() != Items.FISHING_ROD || this.f(this.owner) > 1024.0D) {
                     this.die();
@@ -164,7 +164,7 @@ public class EntityFishingHook extends Entity {
             for (int i = 0; i < list.size(); ++i) {
                 Entity entity1 = (Entity) list.get(i);
 
-                if (entity1.Q() && (entity1 != this.owner || this.aw >= 5)) {
+                if (entity1.R() && (entity1 != this.owner || this.aw >= 5)) {
                     float f = 0.3F;
                     AxisAlignedBB axisalignedbb = entity1.boundingBox.grow((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
@@ -344,7 +344,7 @@ public class EntityFishingHook extends Entity {
         nbttagcompound.setShort("xTile", (short) this.g);
         nbttagcompound.setShort("yTile", (short) this.h);
         nbttagcompound.setShort("zTile", (short) this.i);
-        nbttagcompound.setByte("inTile", (byte) Block.b(this.at));
+        nbttagcompound.setByte("inTile", (byte) Block.getId(this.at));
         nbttagcompound.setByte("shake", (byte) this.a);
         nbttagcompound.setByte("inGround", (byte) (this.au ? 1 : 0));
     }
@@ -353,7 +353,7 @@ public class EntityFishingHook extends Entity {
         this.g = nbttagcompound.getShort("xTile");
         this.h = nbttagcompound.getShort("yTile");
         this.i = nbttagcompound.getShort("zTile");
-        this.at = Block.e(nbttagcompound.getByte("inTile") & 255);
+        this.at = Block.getById(nbttagcompound.getByte("inTile") & 255);
         this.a = nbttagcompound.getByte("shake") & 255;
         this.au = nbttagcompound.getByte("inGround") == 1;
     }

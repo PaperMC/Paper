@@ -347,7 +347,7 @@ public class WorldGenBigTree extends WorldGenTreeAbstract {
         this.k = d2;
     }
 
-    public boolean a(World world, Random random, int i, int j, int k) {
+    public boolean generate(World world, Random random, int i, int j, int k) {
         this.world = world;
         long l = random.nextLong();
 

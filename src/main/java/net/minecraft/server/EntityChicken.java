@@ -24,19 +24,19 @@ public class EntityChicken extends EntityAnimal {
         this.goalSelector.a(7, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean bj() {
+    public boolean bk() {
         return true;
     }
 
-    protected void aC() {
-        super.aC();
-        this.getAttributeInstance(GenericAttributes.a).setValue(4.0D);
+    protected void aD() {
+        super.aD();
+        this.getAttributeInstance(GenericAttributes.maxHealth).setValue(4.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.25D);
     }
 
     public void e() {
         // CraftBukkit start
-        if (this.bZ()) { // should be isChickenJockey
+        if (this.isChickenJockey()) {
             this.persistent = !this.isTypeNotPersistent();
         }
         // CraftBukkit end
@@ -62,7 +62,7 @@ public class EntityChicken extends EntityAnimal {
         }
 
         this.bp += this.bt * 2.0F;
-        if (!this.world.isStatic && !this.isBaby() && !this.bZ() && --this.bu <= 0) {
+        if (!this.world.isStatic && !this.isBaby() && !this.isChickenJockey() && --this.bu <= 0) {
             this.makeSound("mob.chicken.plop", 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
             this.a(Items.EGG, 1);
             this.bu = this.random.nextInt(6000) + 6000;
@@ -75,11 +75,11 @@ public class EntityChicken extends EntityAnimal {
         return "mob.chicken.say";
     }
 
-    protected String aS() {
+    protected String aT() {
         return "mob.chicken.hurt";
     }
 
-    protected String aT() {
+    protected String aU() {
         return "mob.chicken.hurt";
     }
 
@@ -119,7 +119,7 @@ public class EntityChicken extends EntityAnimal {
     }
 
     protected int getExpValue(EntityHuman entityhuman) {
-        return this.bZ() ? 10 : super.getExpValue(entityhuman);
+        return this.isChickenJockey() ? 10 : super.getExpValue(entityhuman);
     }
 
     public void b(NBTTagCompound nbttagcompound) {
@@ -128,23 +128,23 @@ public class EntityChicken extends EntityAnimal {
     }
 
     protected boolean isTypeNotPersistent() {
-        return this.bZ() && this.passenger == null;
+        return this.isChickenJockey() && this.passenger == null;
     }
 
-    public void ab() {
-        super.ab();
+    public void ac() {
+        super.ac();
         float f = MathHelper.sin(this.aM * 3.1415927F / 180.0F);
         float f1 = MathHelper.cos(this.aM * 3.1415927F / 180.0F);
         float f2 = 0.1F;
         float f3 = 0.0F;
 
-        this.passenger.setPosition(this.locX + (double) (f2 * f), this.locY + (double) (this.length * 0.5F) + this.passenger.ac() + (double) f3, this.locZ - (double) (f2 * f1));
+        this.passenger.setPosition(this.locX + (double) (f2 * f), this.locY + (double) (this.length * 0.5F) + this.passenger.ad() + (double) f3, this.locZ - (double) (f2 * f1));
         if (this.passenger instanceof EntityLiving) {
             ((EntityLiving) this.passenger).aM = this.aM;
         }
     }
 
-    public boolean bZ() {
+    public boolean isChickenJockey() {
         return this.bv;
     }
 

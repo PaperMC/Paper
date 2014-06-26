@@ -33,7 +33,7 @@ public class ItemFactoryTest extends AbstractTestingBase {
             for (final Field field : clazz.getDeclaredFields()) {
                 if (IAttribute.class.isAssignableFrom(field.getType()) && Modifier.isStatic(field.getModifiers())) {
                     field.setAccessible(true);
-                    final String attributeName = ((IAttribute) field.get(null)).a();
+                    final String attributeName = ((IAttribute) field.get(null)).getName();
                     assertThat("Logical error: duplicate name `" + attributeName + "' in " + clazz.getName(), names.add(attributeName), is(true));
                     assertThat(clazz.getName(), CraftItemFactory.KNOWN_NBT_ATTRIBUTE_NAMES, hasItem(attributeName));
                 }

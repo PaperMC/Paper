@@ -11,7 +11,7 @@ public class EntityFireworks extends Entity {
     }
 
     protected void c() {
-        this.datawatcher.a(8, 5);
+        this.datawatcher.add(8, 5);
     }
 
     public EntityFireworks(World world, double d0, double d1, double d2, ItemStack itemstack) {

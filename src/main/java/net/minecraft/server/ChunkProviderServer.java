@@ -186,7 +186,7 @@ public class ChunkProviderServer implements IChunkProvider {
                 }
             }
             // CraftBukkit end
-            chunk.a(this, this, i, j);
+            chunk.loadNearby(this, this, i, j);
         }
 
         return chunk;
@@ -217,7 +217,7 @@ public class ChunkProviderServer implements IChunkProvider {
                 Chunk chunk = this.f.a(this.world, i, j);
 
                 if (chunk != null) {
-                    chunk.p = this.world.getTime();
+                    chunk.lastSaved = this.world.getTime();
                     if (this.chunkProvider != null) {
                         this.chunkProvider.recreateStructures(i, j);
                     }
@@ -244,7 +244,7 @@ public class ChunkProviderServer implements IChunkProvider {
     public void saveChunk(Chunk chunk) { // CraftBukkit - private -> public
         if (this.f != null) {
             try {
-                chunk.p = this.world.getTime();
+                chunk.lastSaved = this.world.getTime();
                 this.f.a(this.world, chunk);
                 // CraftBukkit start - IOException to Exception
             } catch (Exception ioexception) {

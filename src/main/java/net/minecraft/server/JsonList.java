@@ -51,7 +51,7 @@ public class JsonList {
     }
 
     public void add(JsonListEntry jsonlistentry) {
-        this.d.put(this.a(jsonlistentry.f()), jsonlistentry);
+        this.d.put(this.a(jsonlistentry.getKey()), jsonlistentry);
 
         try {
             this.save();
@@ -85,7 +85,7 @@ public class JsonList {
     }
     // CraftBukkit end
 
-    public boolean d() {
+    public boolean isEmpty() {
         return this.d.size() < 1;
     }
 
@@ -104,8 +104,8 @@ public class JsonList {
         while (iterator.hasNext()) {
             JsonListEntry jsonlistentry = (JsonListEntry) iterator.next();
 
-            if (jsonlistentry.e()) {
-                arraylist.add(jsonlistentry.f());
+            if (jsonlistentry.hasExpired()) {
+                arraylist.add(jsonlistentry.getKey());
             }
         }
 
@@ -157,8 +157,8 @@ public class JsonList {
             while (iterator.hasNext()) {
                 JsonListEntry jsonlistentry = (JsonListEntry) iterator.next();
 
-                if (jsonlistentry.f() != null) {
-                    this.d.put(this.a(jsonlistentry.f()), jsonlistentry);
+                if (jsonlistentry.getKey() != null) {
+                    this.d.put(this.a(jsonlistentry.getKey()), jsonlistentry);
                 }
             }
         }

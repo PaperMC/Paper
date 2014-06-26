@@ -29,11 +29,11 @@ public class EntityIronGolem extends EntityGolem {
         this.datawatcher.a(16, Byte.valueOf((byte) 0));
     }
 
-    public boolean bj() {
+    public boolean bk() {
         return true;
     }
 
-    protected void bo() {
+    protected void bp() {
         if (--this.bq <= 0) {
             this.bq = 70 + this.random.nextInt(50);
             this.bp = this.world.villages.getClosestVillage(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ), 32);
@@ -46,12 +46,12 @@ public class EntityIronGolem extends EntityGolem {
             }
         }
 
-        super.bo();
+        super.bp();
     }
 
-    protected void aC() {
-        super.aC();
-        this.getAttributeInstance(GenericAttributes.a).setValue(100.0D);
+    protected void aD() {
+        super.aD();
+        this.getAttributeInstance(GenericAttributes.maxHealth).setValue(100.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.25D);
     }
 
@@ -60,7 +60,7 @@ public class EntityIronGolem extends EntityGolem {
     }
 
     protected void o(Entity entity) {
-        if (entity instanceof IMonster && this.aH().nextInt(20) == 0) {
+        if (entity instanceof IMonster && this.aI().nextInt(20) == 0) {
             // CraftBukkit start
             org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(this, (EntityLiving) entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.COLLISION);
             if (!event.isCancelled()) {
@@ -93,7 +93,7 @@ public class EntityIronGolem extends EntityGolem {
             Block block = this.world.getType(i, j, k);
 
             if (block.getMaterial() != Material.AIR) {
-                this.world.addParticle("blockcrack_" + Block.b(block) + "_" + this.world.getData(i, j, k), this.locX + ((double) this.random.nextFloat() - 0.5D) * (double) this.width, this.boundingBox.b + 0.1D, this.locZ + ((double) this.random.nextFloat() - 0.5D) * (double) this.width, 4.0D * ((double) this.random.nextFloat() - 0.5D), 0.5D, ((double) this.random.nextFloat() - 0.5D) * 4.0D);
+                this.world.addParticle("blockcrack_" + Block.getId(block) + "_" + this.world.getData(i, j, k), this.locX + ((double) this.random.nextFloat() - 0.5D) * (double) this.width, this.boundingBox.b + 0.1D, this.locZ + ((double) this.random.nextFloat() - 0.5D) * (double) this.width, 4.0D * ((double) this.random.nextFloat() - 0.5D), 0.5D, ((double) this.random.nextFloat() - 0.5D) * 4.0D);
             }
         }
     }
@@ -134,11 +134,11 @@ public class EntityIronGolem extends EntityGolem {
         this.world.broadcastEntityEffect(this, (byte) 11);
     }
 
-    protected String aS() {
+    protected String aT() {
         return "mob.irongolem.hit";
     }
 
-    protected String aT() {
+    protected String aU() {
         return "mob.irongolem.death";
     }
 

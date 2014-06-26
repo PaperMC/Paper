@@ -24,8 +24,8 @@ public class BlockStationary extends BlockFluids {
     private void n(World world, int i, int j, int k) {
         int l = world.getData(i, j, k);
 
-        world.setTypeAndData(i, j, k, Block.e(Block.b((Block) this) - 1), l, 2);
-        world.a(i, j, k, Block.e(Block.b((Block) this) - 1), this.a(world));
+        world.setTypeAndData(i, j, k, Block.getById(Block.getId(this) - 1), l, 2);
+        world.a(i, j, k, Block.getById(Block.getId(this) - 1), this.a(world));
     }
 
     public void a(World world, int i, int j, int k, Random random) {

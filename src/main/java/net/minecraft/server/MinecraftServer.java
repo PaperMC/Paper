@@ -438,7 +438,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
                 long j = 0L;
 
                 this.q.setMOTD(new ChatComponentText(this.motd));
-                this.q.setServerInfo(new ServerPingServerData("1.7.9", 5));
+                this.q.setServerInfo(new ServerPingServerData("1.7.10", 5));
                 this.a(this.q);
 
                 while (this.isRunning) {
@@ -689,7 +689,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
 
         try {
             /* CraftBukkit start - Replace everything
-            boolean flag = !GraphicsEnvironment.isHeadless();
+            boolean flag = true;
             String s = null;
             String s1 = ".";
             String s2 = null;
@@ -827,7 +827,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
     }
 
     public String getVersion() {
-        return "1.7.9";
+        return "1.7.10";
     }
 
     public int C() {

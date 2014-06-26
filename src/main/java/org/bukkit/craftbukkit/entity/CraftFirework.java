@@ -64,7 +64,7 @@ public class CraftFirework extends CraftEntity implements Firework {
         // Copied from EntityFireworks constructor, update firework lifetime/power
         getHandle().expectedLifespan = 10 * (1 + meta.getPower()) + random.nextInt(6) + random.nextInt(7);
 
-        getHandle().getDataWatcher().h(FIREWORK_ITEM_INDEX); // Update
+        getHandle().getDataWatcher().update(FIREWORK_ITEM_INDEX);
     }
 
     @Override

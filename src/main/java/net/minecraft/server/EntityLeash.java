@@ -41,7 +41,7 @@ public class EntityLeash extends EntityHanging {
     public void a(NBTTagCompound nbttagcompound) {}
 
     public boolean c(EntityHuman entityhuman) {
-        ItemStack itemstack = entityhuman.bd();
+        ItemStack itemstack = entityhuman.be();
         boolean flag = false;
         double d0;
         List list;
@@ -112,7 +112,7 @@ public class EntityLeash extends EntityHanging {
     public static EntityLeash a(World world, int i, int j, int k) {
         EntityLeash entityleash = new EntityLeash(world, i, j, k);
 
-        entityleash.n = true;
+        entityleash.attachedToPlayer = true;
         world.addEntity(entityleash);
         return entityleash;
     }

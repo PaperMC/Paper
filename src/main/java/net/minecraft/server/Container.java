@@ -89,7 +89,7 @@ public abstract class Container {
         return false;
     }
 
-    public Slot a(IInventory iinventory, int i) {
+    public Slot getSlot(IInventory iinventory, int i) {
         for (int j = 0; j < this.c.size(); ++j) {
             Slot slot = (Slot) this.c.get(j);
 

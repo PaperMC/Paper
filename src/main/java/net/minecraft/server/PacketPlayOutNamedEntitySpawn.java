@@ -34,7 +34,7 @@ public class PacketPlayOutNamedEntitySpawn extends Packet {
         this.g = (byte) ((int) (entityhuman.pitch * 256.0F / 360.0F));
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
-        this.h = itemstack == null ? 0 : Item.b(itemstack.getItem());
+        this.h = itemstack == null ? 0 : Item.getId(itemstack.getItem());
         this.i = entityhuman.getDataWatcher();
     }
 

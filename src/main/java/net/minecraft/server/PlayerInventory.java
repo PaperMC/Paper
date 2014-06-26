@@ -264,7 +264,7 @@ public class PlayerInventory implements IInventory {
                 CrashReport crashreport = CrashReport.a(throwable, "Adding item to inventory");
                 CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Item being added");
 
-                crashreportsystemdetails.a("Item ID", Integer.valueOf(Item.b(itemstack.getItem())));
+                crashreportsystemdetails.a("Item ID", Integer.valueOf(Item.getId(itemstack.getItem())));
                 crashreportsystemdetails.a("Item data", Integer.valueOf(itemstack.getData()));
                 crashreportsystemdetails.a("Item name", (Callable) (new CrashReportItemName(this, itemstack)));
                 throw new ReportedException(crashreport);
@@ -517,7 +517,7 @@ public class PlayerInventory implements IInventory {
 
     public void startOpen() {}
 
-    public void l_() {}
+    public void closeContainer() {}
 
     public boolean b(int i, ItemStack itemstack) {
         return true;

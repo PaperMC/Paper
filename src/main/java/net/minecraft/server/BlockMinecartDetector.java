@@ -87,7 +87,7 @@ public class BlockMinecartDetector extends BlockMinecartTrackAbstract {
             world.a(i, j, k, this, this.a(world));
         }
 
-        world.f(i, j, k, this);
+        world.updateAdjacentComparators(i, j, k, this);
     }
 
     public void onPlace(World world, int i, int j, int k) {
@@ -95,7 +95,7 @@ public class BlockMinecartDetector extends BlockMinecartTrackAbstract {
         this.a(world, i, j, k, world.getData(i, j, k));
     }
 
-    public boolean M() {
+    public boolean isComplexRedstone() {
         return true;
     }
 
@@ -105,7 +105,7 @@ public class BlockMinecartDetector extends BlockMinecartTrackAbstract {
             List list = world.a(EntityMinecartCommandBlock.class, AxisAlignedBB.a((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) ((float) (j + 1) - f), (double) ((float) (k + 1) - f)));
 
             if (list.size() > 0) {
-                return ((EntityMinecartCommandBlock) list.get(0)).e().g();
+                return ((EntityMinecartCommandBlock) list.get(0)).getCommandBlock().g();
             }
 
             List list1 = world.a(EntityMinecartAbstract.class, AxisAlignedBB.a((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) ((float) (j + 1) - f), (double) ((float) (k + 1) - f)), IEntitySelector.c);

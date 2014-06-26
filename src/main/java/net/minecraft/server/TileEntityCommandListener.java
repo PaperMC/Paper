@@ -18,8 +18,8 @@ public class TileEntityCommandListener extends CommandBlockListenerAbstract {
         return this.a.getWorld();
     }
 
-    public void a(String s) {
-        super.a(s);
+    public void setCommand(String s) {
+        super.setCommand(s);
         this.a.update();
     }
 

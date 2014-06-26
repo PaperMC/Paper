@@ -164,6 +164,6 @@ public class BlockPistonExtension extends Block {
     }
 
     public static int b(int i) {
-        return i & 7;
+        return MathHelper.a(i & 7, 0, Facing.b.length - 1);
     }
 }

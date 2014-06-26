@@ -80,14 +80,14 @@ public abstract class EntityMinecartAbstract extends Entity {
     }
 
     public AxisAlignedBB h(Entity entity) {
-        return entity.R() ? entity.boundingBox : null;
+        return entity.S() ? entity.boundingBox : null;
     }
 
-    public AxisAlignedBB I() {
+    public AxisAlignedBB J() {
         return null;
     }
 
-    public boolean R() {
+    public boolean S() {
         return true;
     }
 
@@ -104,7 +104,7 @@ public abstract class EntityMinecartAbstract extends Entity {
         this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit
     }
 
-    public double ad() {
+    public double ae() {
         return (double) this.length * 0.0D - 0.30000001192092896D;
     }
 
@@ -129,7 +129,7 @@ public abstract class EntityMinecartAbstract extends Entity {
 
                 this.j(-this.l());
                 this.c(10);
-                this.P();
+                this.Q();
                 this.setDamage(this.getDamage() + f * 10.0F);
                 boolean flag = damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).abilities.canInstantlyBuild;
 
@@ -173,7 +173,7 @@ public abstract class EntityMinecartAbstract extends Entity {
         this.a(itemstack, 0.0F);
     }
 
-    public boolean Q() {
+    public boolean R() {
         return !this.dead;
     }
 
@@ -199,7 +199,7 @@ public abstract class EntityMinecartAbstract extends Entity {
         }
 
         if (this.locY < -64.0D) {
-            this.F();
+            this.G();
         }
 
         int i;
@@ -208,12 +208,12 @@ public abstract class EntityMinecartAbstract extends Entity {
             this.world.methodProfiler.a("portal");
             MinecraftServer minecraftserver = ((WorldServer) this.world).getMinecraftServer();
 
-            i = this.C();
+            i = this.D();
             if (this.an) {
                 if (true || minecraftserver.getAllowNether()) { // CraftBukkit - multi-world should still allow teleport even if default vanilla nether disabled
                     if (this.vehicle == null && this.ao++ >= i) {
                         this.ao = i;
-                        this.portalCooldown = this.ah();
+                        this.portalCooldown = this.ai();
                         byte b0;
 
                         if (this.world.worldProvider.dimension == -1) {
@@ -289,7 +289,7 @@ public abstract class EntityMinecartAbstract extends Entity {
                 this.b(d4);
             }
 
-            this.H();
+            this.I();
             this.pitch = 0.0F;
             double d6 = this.lastX - this.locX;
             double d7 = this.lastZ - this.locZ;
@@ -329,7 +329,7 @@ public abstract class EntityMinecartAbstract extends Entity {
                 for (int i1 = 0; i1 < list.size(); ++i1) {
                     Entity entity = (Entity) list.get(i1);
 
-                    if (entity != this.passenger && entity.R() && entity instanceof EntityMinecartAbstract) {
+                    if (entity != this.passenger && entity.S() && entity instanceof EntityMinecartAbstract) {
                         entity.collide(this);
                     }
                 }
@@ -666,7 +666,7 @@ public abstract class EntityMinecartAbstract extends Entity {
     protected void b(NBTTagCompound nbttagcompound) {
         if (this.t()) {
             nbttagcompound.setBoolean("CustomDisplayTile", true);
-            nbttagcompound.setInt("DisplayTile", this.n().getMaterial() == Material.AIR ? 0 : Block.b(this.n()));
+            nbttagcompound.setInt("DisplayTile", this.n().getMaterial() == Material.AIR ? 0 : Block.getId(this.n()));
             nbttagcompound.setInt("DisplayData", this.p());
             nbttagcompound.setInt("DisplayOffset", this.r());
         }
@@ -795,7 +795,7 @@ public abstract class EntityMinecartAbstract extends Entity {
         } else {
             int i = this.getDataWatcher().getInt(20) & '\uffff';
 
-            return Block.e(i);
+            return Block.getById(i);
         }
     }
 
@@ -825,7 +825,7 @@ public abstract class EntityMinecartAbstract extends Entity {
     }
 
     public void l(int i) {
-        this.getDataWatcher().watch(20, Integer.valueOf(Block.b(this.n()) & '\uffff' | i << 16));
+        this.getDataWatcher().watch(20, Integer.valueOf(Block.getId(this.n()) & '\uffff' | i << 16));
         this.a(true);
     }
 

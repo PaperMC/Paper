@@ -67,11 +67,11 @@ public class EntityBoat extends Entity {
         return entity.boundingBox;
     }
 
-    public AxisAlignedBB I() {
+    public AxisAlignedBB J() {
         return this.boundingBox;
     }
 
-    public boolean R() {
+    public boolean S() {
         return true;
     }
 
@@ -88,7 +88,7 @@ public class EntityBoat extends Entity {
         this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit
     }
 
-    public double ad() {
+    public double ae() {
         return (double) this.length * 0.0D - 0.30000001192092896D;
     }
 
@@ -112,7 +112,7 @@ public class EntityBoat extends Entity {
             this.c(-this.i());
             this.a(10);
             this.setDamage(this.getDamage() + f * 10.0F);
-            this.P();
+            this.Q();
             boolean flag = damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).abilities.canInstantlyBuild;
 
             if (flag || this.getDamage() > 40.0F) {
@@ -143,7 +143,7 @@ public class EntityBoat extends Entity {
         }
     }
 
-    public boolean Q() {
+    public boolean R() {
         return !this.dead;
     }
 
@@ -397,7 +397,7 @@ public class EntityBoat extends Entity {
                     for (int k1 = 0; k1 < list.size(); ++k1) {
                         Entity entity = (Entity) list.get(k1);
 
-                        if (entity != this.passenger && entity.R() && entity instanceof EntityBoat) {
+                        if (entity != this.passenger && entity.S() && entity instanceof EntityBoat) {
                             entity.collide(this);
                         }
                     }
@@ -411,12 +411,12 @@ public class EntityBoat extends Entity {
         }
     }
 
-    public void ab() {
+    public void ac() {
         if (this.passenger != null) {
             double d0 = Math.cos((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
             double d1 = Math.sin((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
 
-            this.passenger.setPosition(this.locX + d0, this.locY + this.ad() + this.passenger.ac(), this.locZ + d1);
+            this.passenger.setPosition(this.locX + d0, this.locY + this.ae() + this.passenger.ad(), this.locZ + d1);
         }
     }
 

@@ -568,7 +568,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public boolean hasAchievement(Achievement achievement) {
         Validate.notNull(achievement, "Achievement cannot be null");
-        return getHandle().getStatisticManager().a(CraftStatistic.getNMSAchievement(achievement));
+        return getHandle().getStatisticManager().hasAchievement(CraftStatistic.getNMSAchievement(achievement));
     }
 
     @Override
@@ -779,7 +779,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 return;
             }
 
-            getHandle().playerInteractManager.setGameMode(EnumGamemode.a(mode.getValue()));
+            getHandle().playerInteractManager.setGameMode(EnumGamemode.getById(mode.getValue()));
             getHandle().fallDistance = 0;
             getHandle().playerConnection.sendPacket(new PacketPlayOutGameStateChange(3, mode.getValue()));
         }
@@ -787,7 +787,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public GameMode getGameMode() {
-        return GameMode.getByValue(getHandle().playerInteractManager.getGameMode().a());
+        return GameMode.getByValue(getHandle().playerInteractManager.getGameMode().getId());
     }
 
     public void giveExp(int exp) {
@@ -1258,13 +1258,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void updateScaledHealth() {
-        AttributeMapServer attributemapserver = (AttributeMapServer) getHandle().bb();
-        Set set = attributemapserver.b();
+        AttributeMapServer attributemapserver = (AttributeMapServer) getHandle().getAttributeMap();
+        Set set = attributemapserver.getAttributes();
 
         injectScaledMaxHealth(set, true);
 
         getHandle().getDataWatcher().watch(6, (float) getScaledHealth());
-        getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateHealth(getScaledHealth(), getHandle().getFoodData().a(), getHandle().getFoodData().e()));
+        getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateHealth(getScaledHealth(), getHandle().getFoodData().getFoodLevel(), getHandle().getFoodData().getSaturationLevel()));
         getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateAttributes(getHandle().getId(), set));
 
         set.clear();
@@ -1276,13 +1276,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return;
         }
         for (Object genericInstance : collection) {
-            IAttribute attribute = ((AttributeInstance) genericInstance).a();
-            if (attribute.a().equals("generic.maxHealth")) {
+            IAttribute attribute = ((AttributeInstance) genericInstance).getAttribute();
+            if (attribute.getName().equals("generic.maxHealth")) {
                 collection.remove(genericInstance);
                 break;
             }
-            continue;
         }
-        collection.add(new AttributeModifiable(getHandle().bb(), (new AttributeRanged("generic.maxHealth", scaledHealth ? healthScale : getMaxHealth(), 0.0D, Float.MAX_VALUE)).a("Max Health").a(true)));
+        collection.add(new AttributeModifiable(getHandle().getAttributeMap(), (new AttributeRanged("generic.maxHealth", scaledHealth ? healthScale : getMaxHealth(), 0.0D, Float.MAX_VALUE)).a("Max Health").a(true)));
     }
 }

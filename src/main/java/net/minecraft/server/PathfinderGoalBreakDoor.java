@@ -31,7 +31,7 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
 
     public void e() {
         super.e();
-        if (this.a.aH().nextInt(20) == 0) {
+        if (this.a.aI().nextInt(20) == 0) {
             this.a.world.triggerEffect(1010, this.b, this.c, this.d, 0);
         }
 
@@ -53,7 +53,7 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
 
             this.a.world.setAir(this.b, this.c, this.d);
             this.a.world.triggerEffect(1012, this.b, this.c, this.d, 0);
-            this.a.world.triggerEffect(2001, this.b, this.c, this.d, Block.b((Block) this.e));
+            this.a.world.triggerEffect(2001, this.b, this.c, this.d, Block.getId(this.e));
         }
     }
 }

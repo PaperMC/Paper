@@ -58,11 +58,11 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
         return "mob.wither.idle";
     }
 
-    protected String aS() {
+    protected String aT() {
         return "mob.wither.hurt";
     }
 
-    protected String aT() {
+    protected String aU() {
         return "mob.wither.death";
     }
 
@@ -157,7 +157,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
         }
     }
 
-    protected void bm() {
+    protected void bn() {
         int i;
 
         if (this.ca() > 0) {
@@ -181,7 +181,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
                 this.heal(10.0F, EntityRegainHealthEvent.RegainReason.WITHER_SPAWN); // CraftBukkit
             }
         } else {
-            super.bm();
+            super.bn();
 
             int j;
 
@@ -209,7 +209,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
                     if (j > 0) {
                         Entity entity = this.world.getEntity(j);
 
-                        if (entity != null && entity.isAlive() && this.f(entity) <= 900.0D && this.p(entity)) {
+                        if (entity != null && entity.isAlive() && this.f(entity) <= 900.0D && this.hasLineOfSight(entity)) {
                             this.a(i + 1, (EntityLiving) entity);
                             this.bt[i - 1] = this.ticksLived + 40 + this.random.nextInt(20);
                             this.bu[i - 1] = 0;
@@ -222,7 +222,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
                         for (int i1 = 0; i1 < 10 && !list.isEmpty(); ++i1) {
                             EntityLiving entityliving = (EntityLiving) list.get(this.random.nextInt(list.size()));
 
-                            if (entityliving != this && entityliving.isAlive() && this.p(entityliving)) {
+                            if (entityliving != this && entityliving.isAlive() && this.hasLineOfSight(entityliving)) {
                                 if (entityliving instanceof EntityHuman) {
                                     if (!((EntityHuman) entityliving).abilities.isInvulnerable) {
                                         this.b(i, entityliving.getId());
@@ -291,9 +291,9 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
         this.setHealth(this.getMaxHealth() / 3.0F);
     }
 
-    public void ar() {}
+    public void as() {}
 
-    public int aU() {
+    public int aV() {
         return 4;
     }
 
@@ -352,7 +352,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
         EntityWitherSkull entitywitherskull = new EntityWitherSkull(this.world, this, d6, d7, d8);
 
         if (flag) {
-            entitywitherskull.a(true);
+            entitywitherskull.setCharged(true);
         }
 
         entitywitherskull.locY = d4;
@@ -420,13 +420,13 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
 
     public void addEffect(MobEffect mobeffect) {}
 
-    protected boolean bj() {
+    protected boolean bk() {
         return true;
     }
 
-    protected void aC() {
-        super.aC();
-        this.getAttributeInstance(GenericAttributes.a).setValue(300.0D);
+    protected void aD() {
+        super.aD();
+        this.getAttributeInstance(GenericAttributes.maxHealth).setValue(300.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.6000000238418579D);
         this.getAttributeInstance(GenericAttributes.b).setValue(40.0D);
     }

@@ -22,7 +22,7 @@ public class PacketPlayOutBlockChange extends Packet {
         this.a = packetdataserializer.readInt();
         this.b = packetdataserializer.readUnsignedByte();
         this.c = packetdataserializer.readInt();
-        this.block = Block.e(packetdataserializer.a());
+        this.block = Block.getById(packetdataserializer.a());
         this.data = packetdataserializer.readUnsignedByte();
     }
 
@@ -30,7 +30,7 @@ public class PacketPlayOutBlockChange extends Packet {
         packetdataserializer.writeInt(this.a);
         packetdataserializer.writeByte(this.b);
         packetdataserializer.writeInt(this.c);
-        packetdataserializer.b(Block.b(this.block));
+        packetdataserializer.b(Block.getId(this.block));
         packetdataserializer.writeByte(this.data);
     }
 
@@ -39,7 +39,7 @@ public class PacketPlayOutBlockChange extends Packet {
     }
 
     public String b() {
-        return String.format("type=%d, data=%d, x=%d, y=%d, z=%d", new Object[] { Integer.valueOf(Block.b(this.block)), Integer.valueOf(this.data), Integer.valueOf(this.a), Integer.valueOf(this.b), Integer.valueOf(this.c)});
+        return String.format("type=%d, data=%d, x=%d, y=%d, z=%d", new Object[] { Integer.valueOf(Block.getId(this.block)), Integer.valueOf(this.data), Integer.valueOf(this.a), Integer.valueOf(this.b), Integer.valueOf(this.c)});
     }
 
     public void handle(PacketListener packetlistener) {

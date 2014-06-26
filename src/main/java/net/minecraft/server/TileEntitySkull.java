@@ -21,7 +21,7 @@ public class TileEntitySkull extends TileEntity {
         if (this.j != null) {
             NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
-            GameProfileSerializer.a(nbttagcompound1, this.j);
+            GameProfileSerializer.serialize(nbttagcompound1, this.j);
             nbttagcompound.set("Owner", nbttagcompound1);
         }
     }
@@ -32,7 +32,7 @@ public class TileEntitySkull extends TileEntity {
         this.i = nbttagcompound.getByte("Rot");
         if (this.a == 3) {
             if (nbttagcompound.hasKeyOfType("Owner", 10)) {
-                this.j = GameProfileSerializer.a(nbttagcompound.getCompound("Owner"));
+                this.j = GameProfileSerializer.deserialize(nbttagcompound.getCompound("Owner"));
             } else if (nbttagcompound.hasKeyOfType("ExtraType", 8) && !UtilColor.b(nbttagcompound.getString("ExtraType"))) {
                 this.j = new GameProfile((UUID) null, nbttagcompound.getString("ExtraType"));
                 this.d();
@@ -65,7 +65,7 @@ public class TileEntitySkull extends TileEntity {
     private void d() {
         if (this.j != null && !UtilColor.b(this.j.getName())) {
             if (!this.j.isComplete() || !this.j.getProperties().containsKey("textures")) {
-                GameProfile gameprofile = MinecraftServer.getServer().getUserCache().a(this.j.getName());
+                GameProfile gameprofile = MinecraftServer.getServer().getUserCache().getProfile(this.j.getName());
 
                 if (gameprofile != null) {
                     Property property = (Property) Iterables.getFirst(gameprofile.getProperties().get("textures"), null);

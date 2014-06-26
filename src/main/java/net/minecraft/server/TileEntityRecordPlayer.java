@@ -11,7 +11,7 @@ public class TileEntityRecordPlayer extends TileEntity {
         if (nbttagcompound.hasKeyOfType("RecordItem", 10)) {
             this.setRecord(ItemStack.createStack(nbttagcompound.getCompound("RecordItem")));
         } else if (nbttagcompound.getInt("Record") > 0) {
-            this.setRecord(new ItemStack(Item.d(nbttagcompound.getInt("Record")), 1, 0));
+            this.setRecord(new ItemStack(Item.getById(nbttagcompound.getInt("Record")), 1, 0));
         }
     }
 
@@ -19,7 +19,7 @@ public class TileEntityRecordPlayer extends TileEntity {
         super.b(nbttagcompound);
         if (this.getRecord() != null) {
             nbttagcompound.set("RecordItem", this.getRecord().save(new NBTTagCompound()));
-            nbttagcompound.setInt("Record", Item.b(this.getRecord().getItem()));
+            nbttagcompound.setInt("Record", Item.getId(this.getRecord().getItem()));
         }
     }
 

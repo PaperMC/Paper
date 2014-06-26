@@ -9,7 +9,7 @@ public class EntityFallingBlock extends Entity {
 
     public Block id; // CraftBukkit - private -> public
     public int data;
-    public int b;
+    public int ticksLived;
     public boolean dropItem;
     private boolean f;
     private boolean hurtEntities;
@@ -53,7 +53,7 @@ public class EntityFallingBlock extends Entity {
 
     protected void c() {}
 
-    public boolean Q() {
+    public boolean R() {
         return !this.dead;
     }
 
@@ -64,7 +64,7 @@ public class EntityFallingBlock extends Entity {
             this.lastX = this.locX;
             this.lastY = this.locY;
             this.lastZ = this.locZ;
-            ++this.b;
+            ++this.ticksLived;
             this.motY -= 0.03999999910593033D;
             this.move(this.motX, this.motY, this.motZ);
             this.motX *= 0.9800000190734863D;
@@ -75,9 +75,9 @@ public class EntityFallingBlock extends Entity {
                 int j = MathHelper.floor(this.locY);
                 int k = MathHelper.floor(this.locZ);
 
-                if (this.b == 1) {
+                if (this.ticksLived == 1) {
                     // CraftBukkit - compare data and call event
-                    if (this.b != 1 || this.world.getType(i, j, k) != this.id || this.world.getData(i, j, k) != this.data || CraftEventFactory.callEntityChangeBlockEvent(this, i, j, k, Blocks.AIR, 0).isCancelled()) {
+                    if (this.ticksLived != 1 || this.world.getType(i, j, k) != this.id || this.world.getData(i, j, k) != this.data || CraftEventFactory.callEntityChangeBlockEvent(this, i, j, k, Blocks.AIR, 0).isCancelled()) {
                         this.die();
                         return;
                     }
@@ -129,7 +129,7 @@ public class EntityFallingBlock extends Entity {
                             this.a(new ItemStack(this.id, 1, this.id.getDropData(this.data)), 0.0F);
                         }
                     }
-                } else if (this.b > 100 && !this.world.isStatic && (j < 1 || j > 256) || this.b > 600) {
+                } else if (this.ticksLived > 100 && !this.world.isStatic && (j < 1 || j > 256) || this.ticksLived > 600) {
                     if (this.dropItem) {
                         this.a(new ItemStack(this.id, 1, this.id.getDropData(this.data)), 0.0F);
                     }
@@ -174,10 +174,10 @@ public class EntityFallingBlock extends Entity {
     }
 
     protected void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.setByte("Tile", (byte) Block.b(this.id));
-        nbttagcompound.setInt("TileID", Block.b(this.id));
+        nbttagcompound.setByte("Tile", (byte) Block.getId(this.id));
+        nbttagcompound.setInt("TileID", Block.getId(this.id));
         nbttagcompound.setByte("Data", (byte) this.data);
-        nbttagcompound.setByte("Time", (byte) this.b);
+        nbttagcompound.setByte("Time", (byte) this.ticksLived);
         nbttagcompound.setBoolean("DropItem", this.dropItem);
         nbttagcompound.setBoolean("HurtEntities", this.hurtEntities);
         nbttagcompound.setFloat("FallHurtAmount", this.fallHurtAmount);
@@ -189,13 +189,13 @@ public class EntityFallingBlock extends Entity {
 
     protected void a(NBTTagCompound nbttagcompound) {
         if (nbttagcompound.hasKeyOfType("TileID", 99)) {
-            this.id = Block.e(nbttagcompound.getInt("TileID"));
+            this.id = Block.getById(nbttagcompound.getInt("TileID"));
         } else {
-            this.id = Block.e(nbttagcompound.getByte("Tile") & 255);
+            this.id = Block.getById(nbttagcompound.getByte("Tile") & 255);
         }
 
         this.data = nbttagcompound.getByte("Data") & 255;
-        this.b = nbttagcompound.getByte("Time") & 255;
+        this.ticksLived = nbttagcompound.getByte("Time") & 255;
         if (nbttagcompound.hasKeyOfType("HurtEntities", 99)) {
             this.hurtEntities = nbttagcompound.getBoolean("HurtEntities");
             this.fallHurtAmount = nbttagcompound.getFloat("FallHurtAmount");
@@ -223,7 +223,7 @@ public class EntityFallingBlock extends Entity {
 
     public void a(CrashReportSystemDetails crashreportsystemdetails) {
         super.a(crashreportsystemdetails);
-        crashreportsystemdetails.a("Immitating block ID", Integer.valueOf(Block.b(this.id)));
+        crashreportsystemdetails.a("Immitating block ID", Integer.valueOf(Block.getId(this.id)));
         crashreportsystemdetails.a("Immitating block data", Integer.valueOf(this.data));
     }
 

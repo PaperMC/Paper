@@ -13,9 +13,9 @@ public class EntitySilverfish extends EntityMonster {
         this.a(0.3F, 0.7F);
     }
 
-    protected void aC() {
-        super.aC();
-        this.getAttributeInstance(GenericAttributes.a).setValue(8.0D);
+    protected void aD() {
+        super.aD();
+        this.getAttributeInstance(GenericAttributes.maxHealth).setValue(8.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.6000000238418579D);
         this.getAttributeInstance(GenericAttributes.e).setValue(1.0D);
     }
@@ -34,11 +34,11 @@ public class EntitySilverfish extends EntityMonster {
         return "mob.silverfish.say";
     }
 
-    protected String aS() {
+    protected String aT() {
         return "mob.silverfish.hit";
     }
 
-    protected String aT() {
+    protected String aU() {
         return "mob.silverfish.kill";
     }
 
@@ -66,7 +66,7 @@ public class EntitySilverfish extends EntityMonster {
     }
 
     protected Item getLoot() {
-        return Item.d(0);
+        return Item.getById(0);
     }
 
     public void h() {
@@ -74,8 +74,8 @@ public class EntitySilverfish extends EntityMonster {
         super.h();
     }
 
-    protected void bp() {
-        super.bp();
+    protected void bq() {
+        super.bq();
         if (!this.world.isStatic) {
             int i;
             int j;
@@ -130,7 +130,7 @@ public class EntitySilverfish extends EntityMonster {
                 l = this.world.getData(i + Facing.b[l1], j + Facing.c[l1], k + Facing.d[l1]);
                 if (BlockMonsterEggs.a(block)) {
                     // CraftBukkit start
-                    if (CraftEventFactory.callEntityChangeBlockEvent(this, i + Facing.b[l1], j + Facing.c[l1], k + Facing.d[l1], Blocks.MONSTER_EGGS, Block.b(BlockMonsterEggs.e(l))).isCancelled()) {
+                    if (CraftEventFactory.callEntityChangeBlockEvent(this, i + Facing.b[l1], j + Facing.c[l1], k + Facing.d[l1], Blocks.MONSTER_EGGS, Block.getId(BlockMonsterEggs.getById(l))).isCancelled()) {
                         return;
                     }
                     // CraftBukkit end

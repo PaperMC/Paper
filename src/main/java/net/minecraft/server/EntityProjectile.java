@@ -127,7 +127,7 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
             for (int i = 0; i < list.size(); ++i) {
                 Entity entity1 = (Entity) list.get(i);
 
-                if (entity1.Q() && (entity1 != entityliving || this.at >= 5)) {
+                if (entity1.R() && (entity1 != entityliving || this.at >= 5)) {
                     float f = 0.3F;
                     AxisAlignedBB axisalignedbb = entity1.boundingBox.grow((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
@@ -150,7 +150,7 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
 
         if (movingobjectposition != null) {
             if (movingobjectposition.type == EnumMovingObjectType.BLOCK && this.world.getType(movingobjectposition.b, movingobjectposition.c, movingobjectposition.d) == Blocks.PORTAL) {
-                this.ag();
+                this.ah();
             } else {
                 this.a(movingobjectposition);
                 // CraftBukkit start
@@ -189,7 +189,7 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
         float f2 = 0.99F;
         float f3 = this.i();
 
-        if (this.L()) {
+        if (this.M()) {
             for (int j = 0; j < 4; ++j) {
                 float f4 = 0.25F;
 
@@ -216,7 +216,7 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
         nbttagcompound.setShort("xTile", (short) this.blockX);
         nbttagcompound.setShort("yTile", (short) this.blockY);
         nbttagcompound.setShort("zTile", (short) this.blockZ);
-        nbttagcompound.setByte("inTile", (byte) Block.b(this.inBlockId));
+        nbttagcompound.setByte("inTile", (byte) Block.getId(this.inBlockId));
         nbttagcompound.setByte("shake", (byte) this.shake);
         nbttagcompound.setByte("inGround", (byte) (this.inGround ? 1 : 0));
         if ((this.shooterName == null || this.shooterName.length() == 0) && this.shooter != null && this.shooter instanceof EntityHuman) {
@@ -230,7 +230,7 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
         this.blockX = nbttagcompound.getShort("xTile");
         this.blockY = nbttagcompound.getShort("yTile");
         this.blockZ = nbttagcompound.getShort("zTile");
-        this.inBlockId = Block.e(nbttagcompound.getByte("inTile") & 255);
+        this.inBlockId = Block.getById(nbttagcompound.getByte("inTile") & 255);
         this.shake = nbttagcompound.getByte("shake") & 255;
         this.inGround = nbttagcompound.getByte("inGround") == 1;
         this.shooterName = nbttagcompound.getString("ownerName");

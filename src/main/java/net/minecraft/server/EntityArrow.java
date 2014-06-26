@@ -177,7 +177,7 @@ public class EntityArrow extends Entity implements IProjectile {
             for (j = 0; j < list.size(); ++j) {
                 Entity entity1 = (Entity) list.get(j);
 
-                if (entity1.Q() && (entity1 != this.shooter || this.au >= 5)) {
+                if (entity1.R() && (entity1 != this.shooter || this.au >= 5)) {
                     f1 = 0.3F;
                     AxisAlignedBB axisalignedbb1 = entity1.boundingBox.grow((double) f1, (double) f1, (double) f1);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb1.a(vec3d, vec3d1);
@@ -244,7 +244,7 @@ public class EntityArrow extends Entity implements IProjectile {
                             EntityLiving entityliving = (EntityLiving) movingobjectposition.entity;
 
                             if (!this.world.isStatic) {
-                                entityliving.p(entityliving.aY() + 1);
+                                entityliving.p(entityliving.aZ() + 1);
                             }
 
                             if (this.knockbackStrength > 0) {
@@ -332,7 +332,7 @@ public class EntityArrow extends Entity implements IProjectile {
             float f4 = 0.99F;
 
             f1 = 0.05F;
-            if (this.L()) {
+            if (this.M()) {
                 for (int l = 0; l < 4; ++l) {
                     f3 = 0.25F;
                     this.world.addParticle("bubble", this.locX - this.motX * (double) f3, this.locY - this.motY * (double) f3, this.locZ - this.motZ * (double) f3, this.motX, this.motY, this.motZ);
@@ -341,7 +341,7 @@ public class EntityArrow extends Entity implements IProjectile {
                 f4 = 0.8F;
             }
 
-            if (this.K()) {
+            if (this.L()) {
                 this.extinguish();
             }
 
@@ -350,7 +350,7 @@ public class EntityArrow extends Entity implements IProjectile {
             this.motZ *= (double) f4;
             this.motY -= (double) f1;
             this.setPosition(this.locX, this.locY, this.locZ);
-            this.H();
+            this.I();
         }
     }
 
@@ -359,7 +359,7 @@ public class EntityArrow extends Entity implements IProjectile {
         nbttagcompound.setShort("yTile", (short) this.e);
         nbttagcompound.setShort("zTile", (short) this.f);
         nbttagcompound.setShort("life", (short) this.at);
-        nbttagcompound.setByte("inTile", (byte) Block.b(this.g));
+        nbttagcompound.setByte("inTile", (byte) Block.getId(this.g));
         nbttagcompound.setByte("inData", (byte) this.h);
         nbttagcompound.setByte("shake", (byte) this.shake);
         nbttagcompound.setByte("inGround", (byte) (this.inGround ? 1 : 0));
@@ -372,7 +372,7 @@ public class EntityArrow extends Entity implements IProjectile {
         this.e = nbttagcompound.getShort("yTile");
         this.f = nbttagcompound.getShort("zTile");
         this.at = nbttagcompound.getShort("life");
-        this.g = Block.e(nbttagcompound.getByte("inTile") & 255);
+        this.g = Block.getById(nbttagcompound.getByte("inTile") & 255);
         this.h = nbttagcompound.getByte("inData") & 255;
         this.shake = nbttagcompound.getByte("shake") & 255;
         this.inGround = nbttagcompound.getByte("inGround") == 1;
@@ -434,7 +434,7 @@ public class EntityArrow extends Entity implements IProjectile {
         this.knockbackStrength = i;
     }
 
-    public boolean au() {
+    public boolean av() {
         return false;
     }
 

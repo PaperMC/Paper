@@ -88,7 +88,7 @@ public class BlockSkull extends BlockContainer {
                 itemstack.setTag(new NBTTagCompound());
                 NBTTagCompound nbttagcompound = new NBTTagCompound();
 
-                GameProfileSerializer.a(nbttagcompound, tileentityskull.getGameProfile());
+                GameProfileSerializer.serialize(nbttagcompound, tileentityskull.getGameProfile());
                 itemstack.getTag().set("SkullOwner", nbttagcompound);
             }
 
@@ -119,7 +119,7 @@ public class BlockSkull extends BlockContainer {
                     itemstack.setTag(new NBTTagCompound());
                     NBTTagCompound nbttagcompound = new NBTTagCompound();
 
-                    GameProfileSerializer.a(nbttagcompound, tileentityskull.getGameProfile());
+                    GameProfileSerializer.serialize(nbttagcompound, tileentityskull.getGameProfile());
                     itemstack.getTag().set("SkullOwner", nbttagcompound);
                 }
 
@@ -151,13 +151,13 @@ public class BlockSkull extends BlockContainer {
                     world.setData(i, j, k + l + 1, 8, 2);
                     world.setData(i, j, k + l + 2, 8, 2);
 
-                    blockList.setTypeAndData(i, j, k + l, e(0), 0, 2);
-                    blockList.setTypeAndData(i, j, k + l + 1, e(0), 0, 2);
-                    blockList.setTypeAndData(i, j, k + l + 2, e(0), 0, 2);
-                    blockList.setTypeAndData(i, j - 1, k + l, e(0), 0, 2);
-                    blockList.setTypeAndData(i, j - 1, k + l + 1, e(0), 0, 2);
-                    blockList.setTypeAndData(i, j - 1, k + l + 2, e(0), 0, 2);
-                    blockList.setTypeAndData(i, j - 2, k + l + 1, e(0), 0, 2);
+                    blockList.setTypeAndData(i, j, k + l, getById(0), 0, 2);
+                    blockList.setTypeAndData(i, j, k + l + 1, getById(0), 0, 2);
+                    blockList.setTypeAndData(i, j, k + l + 2, getById(0), 0, 2);
+                    blockList.setTypeAndData(i, j - 1, k + l, getById(0), 0, 2);
+                    blockList.setTypeAndData(i, j - 1, k + l + 1, getById(0), 0, 2);
+                    blockList.setTypeAndData(i, j - 1, k + l + 2, getById(0), 0, 2);
+                    blockList.setTypeAndData(i, j - 2, k + l + 1, getById(0), 0, 2);
 
                     if (!world.isStatic) {
                         entitywither = new EntityWither(world);
@@ -196,13 +196,13 @@ public class BlockSkull extends BlockContainer {
                     world.setData(i + l + 1, j, k, 8, 2);
                     world.setData(i + l + 2, j, k, 8, 2);
 
-                    blockList.setTypeAndData(i + l, j, k, e(0), 0, 2);
-                    blockList.setTypeAndData(i + l + 1, j, k, e(0), 0, 2);
-                    blockList.setTypeAndData(i + l + 2, j, k, e(0), 0, 2);
-                    blockList.setTypeAndData(i + l, j - 1, k, e(0), 0, 2);
-                    blockList.setTypeAndData(i + l + 1, j - 1, k, e(0), 0, 2);
-                    blockList.setTypeAndData(i + l + 2, j - 1, k, e(0), 0, 2);
-                    blockList.setTypeAndData(i + l + 1, j - 2, k, e(0), 0, 2);
+                    blockList.setTypeAndData(i + l, j, k, getById(0), 0, 2);
+                    blockList.setTypeAndData(i + l + 1, j, k, getById(0), 0, 2);
+                    blockList.setTypeAndData(i + l + 2, j, k, getById(0), 0, 2);
+                    blockList.setTypeAndData(i + l, j - 1, k, getById(0), 0, 2);
+                    blockList.setTypeAndData(i + l + 1, j - 1, k, getById(0), 0, 2);
+                    blockList.setTypeAndData(i + l + 2, j - 1, k, getById(0), 0, 2);
+                    blockList.setTypeAndData(i + l + 1, j - 2, k, getById(0), 0, 2);
                     if (!world.isStatic) {
                         entitywither = new EntityWither(world);
                         entitywither.setPositionRotation((double) (i + l) + 1.5D, (double) j - 1.45D, (double) k + 0.5D, 0.0F, 0.0F);

@@ -215,7 +215,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
         nbttagcompound.setBoolean("TerrainPopulated", chunk.done);
         nbttagcompound.setBoolean("LightPopulated", chunk.lit);
         nbttagcompound.setLong("InhabitedTime", chunk.s);
-        ChunkSection[] achunksection = chunk.i();
+        ChunkSection[] achunksection = chunk.getSections();
         NBTTagList nbttaglist = new NBTTagList();
         boolean flag = !world.worldProvider.g;
         ChunkSection[] achunksection1 = achunksection;
@@ -292,7 +292,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
                 NextTickListEntry nextticklistentry = (NextTickListEntry) iterator1.next();
                 NBTTagCompound nbttagcompound2 = new NBTTagCompound();
 
-                nbttagcompound2.setInt("i", Block.b(nextticklistentry.a()));
+                nbttagcompound2.setInt("i", Block.getId(nextticklistentry.a()));
                 nbttagcompound2.setInt("x", nextticklistentry.a);
                 nbttagcompound2.setInt("y", nextticklistentry.b);
                 nbttagcompound2.setInt("z", nextticklistentry.c);
@@ -396,7 +396,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
                 for (int j1 = 0; j1 < nbttaglist3.size(); ++j1) {
                     NBTTagCompound nbttagcompound5 = nbttaglist3.get(j1);
 
-                    world.b(nbttagcompound5.getInt("x"), nbttagcompound5.getInt("y"), nbttagcompound5.getInt("z"), Block.e(nbttagcompound5.getInt("i")), nbttagcompound5.getInt("t"), nbttagcompound5.getInt("p"));
+                    world.b(nbttagcompound5.getInt("x"), nbttagcompound5.getInt("y"), nbttagcompound5.getInt("z"), Block.getById(nbttagcompound5.getInt("i")), nbttagcompound5.getInt("t"), nbttagcompound5.getInt("p"));
                 }
             }
         }

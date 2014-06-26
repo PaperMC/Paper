@@ -112,7 +112,7 @@ public class ItemMonsterEgg extends Item {
                     entity.setPositionRotation(d0, d1, d2, MathHelper.g(world.random.nextFloat() * 360.0F), 0.0F);
                     entityinsentient.aO = entityinsentient.yaw;
                     entityinsentient.aM = entityinsentient.yaw;
-                    entityinsentient.a((GroupDataEntity) null);
+                    entityinsentient.prepare((GroupDataEntity) null);
                     world.addEntity(entity, spawnReason); // CraftBukkit
                     entityinsentient.r();
                 }

@@ -141,7 +141,7 @@ public class InventoryCrafting implements IInventory {
 
     public void startOpen() {}
 
-    public void l_() {}
+    public void closeContainer() {}
 
     public boolean b(int i, ItemStack itemstack) {
         return true;

@@ -12,8 +12,8 @@ public class BlockIce extends BlockHalfTransparent {
     }
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        entityhuman.a(StatisticList.MINE_BLOCK_COUNT[Block.b((Block) this)], 1);
-        entityhuman.a(0.025F);
+        entityhuman.a(StatisticList.MINE_BLOCK_COUNT[Block.getId(this)], 1);
+        entityhuman.applyExhaustion(0.025F);
         if (this.E() && EnchantmentManager.hasSilkTouchEnchantment(entityhuman)) {
             ItemStack itemstack = this.j(l);
 

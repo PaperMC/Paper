@@ -14,7 +14,7 @@ public class BlockCocoa extends BlockDirectional implements IBlockFragilePlantEl
     public void a(World world, int i, int j, int k, Random random) {
         if (!this.j(world, i, j, k)) {
             this.b(world, i, j, k, world.getData(i, j, k), 0);
-            world.setTypeAndData(i, j, k, e(0), 0, 2);
+            world.setTypeAndData(i, j, k, getById(0), 0, 2);
         } else if (world.random.nextInt(5) == 0) {
             int l = world.getData(i, j, k);
             int i1 = c(l);
@@ -97,7 +97,7 @@ public class BlockCocoa extends BlockDirectional implements IBlockFragilePlantEl
     public void doPhysics(World world, int i, int j, int k, Block block) {
         if (!this.j(world, i, j, k)) {
             this.b(world, i, j, k, world.getData(i, j, k), 0);
-            world.setTypeAndData(i, j, k, e(0), 0, 2);
+            world.setTypeAndData(i, j, k, getById(0), 0, 2);
         }
     }
 

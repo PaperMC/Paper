@@ -85,7 +85,7 @@ public class ChunkSection {
                 id |= this.extBlockIds.a(i, j, k) << 8;
             }
 
-            return Block.e(id); // Should be getBlockForId
+            return Block.getById(id);
         }
         // CraftBukkit end
 
@@ -95,7 +95,7 @@ public class ChunkSection {
             l |= this.extBlockIds.a(i, j, k) << 8;
         }
 
-        return Block.e(l);
+        return Block.getById(l);
     }
 
     public void setTypeId(int i, int j, int k, Block block) {
@@ -120,7 +120,7 @@ public class ChunkSection {
             }
         }
 
-        int i1 = Block.b(block);
+        int i1 = Block.getId(block);
 
         // CraftBukkit start - Compact storage
         if (this.blockIds == null) {
@@ -226,7 +226,7 @@ public class ChunkSection {
             if (this.extBlockIds == null) {
                 id |= this.compactExtId << 8;
                 if (id > 0) {
-                    Block block = Block.e(id); // Should be getBlockForId
+                    Block block = Block.getById(id);
                     if (block == null) {
                         this.compactId = 0;
                         this.compactExtId = 0;
@@ -243,7 +243,7 @@ public class ChunkSection {
                     byte extid = ext[off2];
                     int l = (id & 0xFF) | ((extid & 0xF) << 8); // Even data
                     if (l > 0) {
-                        Block block = Block.e(l); // Should be getBlockForId
+                        Block block = Block.getById(l);
                         if (block == null) {
                             this.compactId = 0;
                             ext[off2] &= 0xF0;
@@ -257,7 +257,7 @@ public class ChunkSection {
                     off++;
                     l = (id & 0xFF) | ((extid & 0xF0) << 4); // Odd data
                     if (l > 0) {
-                        Block block = Block.e(l); // Should be getBlockForId
+                        Block block = Block.getById(l);
                         if (block == null) {
                             this.compactId = 0;
                             ext[off2] &= 0x0F;
@@ -278,11 +278,11 @@ public class ChunkSection {
                 for (int off = 0; off < blkIds.length; off++) {
                     int l = blkIds[off] & 0xFF;
                     if (l > 0) {
-                        if (Block.e(l) == null) {
+                        if (Block.getById(l) == null) {
                             blkIds[off] = 0;
                         } else {
                             ++cntNonEmpty;
-                            if (Block.e(l).isTicking()) {
+                            if (Block.getById(l).isTicking()) {
                                 ++cntTicking;
                             }
                         }
@@ -294,12 +294,12 @@ public class ChunkSection {
                     byte extid = ext[off2];
                     int l = (blkIds[off] & 0xFF) | ((extid & 0xF) << 8); // Even data
                     if (l > 0) {
-                        if (Block.e(l) == null) {
+                        if (Block.getById(l) == null) {
                             blkIds[off] = 0;
                             ext[off2] &= 0xF0;
                         } else {
                             ++cntNonEmpty;
-                            if (Block.e(l).isTicking()) {
+                            if (Block.getById(l).isTicking()) {
                                 ++cntTicking;
                             }
                         }
@@ -307,12 +307,12 @@ public class ChunkSection {
                     off++;
                     l = (blkIds[off] & 0xFF) | ((extid & 0xF0) << 4); // Odd data
                     if (l > 0) {
-                        if (Block.e(l) == null) {
+                        if (Block.getById(l) == null) {
                             blkIds[off] = 0;
                             ext[off2] &= 0x0F;
                         } else {
                             ++cntNonEmpty;
-                            if (Block.e(l).isTicking()) {
+                            if (Block.getById(l).isTicking()) {
                                 ++cntTicking;
                             }
                         }

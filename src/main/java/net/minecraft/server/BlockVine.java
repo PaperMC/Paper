@@ -294,8 +294,8 @@ public class BlockVine extends Block {
     }
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        if (!world.isStatic && entityhuman.bE() != null && entityhuman.bE().getItem() == Items.SHEARS) {
-            entityhuman.a(StatisticList.MINE_BLOCK_COUNT[Block.b((Block) this)], 1);
+        if (!world.isStatic && entityhuman.bF() != null && entityhuman.bF().getItem() == Items.SHEARS) {
+            entityhuman.a(StatisticList.MINE_BLOCK_COUNT[Block.getId(this)], 1);
             this.a(world, i, j, k, new ItemStack(Blocks.VINE, 1, 0));
         } else {
             super.a(world, entityhuman, i, j, k, l);

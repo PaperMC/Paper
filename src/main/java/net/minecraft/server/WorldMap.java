@@ -23,7 +23,7 @@ public class WorldMap extends PersistentBase {
     public byte[] colors = new byte[16384];
     public List f = new ArrayList();
     private Map i = new HashMap();
-    public Map g = new LinkedHashMap();
+    public Map decorations = new LinkedHashMap();
 
     // CraftBukkit start
     public final CraftMapView mapView;
@@ -141,7 +141,7 @@ public class WorldMap extends PersistentBase {
         }
 
         if (!entityhuman.inventory.c(itemstack)) {
-            this.g.remove(entityhuman.getName());
+            this.decorations.remove(entityhuman.getName());
         }
 
         for (int i = 0; i < this.f.size(); ++i) {
@@ -181,7 +181,7 @@ public class WorldMap extends PersistentBase {
             }
         } else {
             if (Math.abs(f) >= 320.0F || Math.abs(f1) >= 320.0F) {
-                this.g.remove(s);
+                this.decorations.remove(s);
                 return;
             }
 
@@ -204,7 +204,7 @@ public class WorldMap extends PersistentBase {
             }
         }
 
-        this.g.put(s, new WorldMapDecoration(this, (byte) i, b0, b1, b3));
+        this.decorations.put(s, new WorldMapDecoration(this, (byte) i, b0, b1, b3));
     }
 
     public byte[] getUpdatePacket(ItemStack itemstack, World world, EntityHuman entityhuman) {

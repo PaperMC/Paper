@@ -15,7 +15,7 @@ public class EntityWitherSkull extends EntityFireball {
     }
 
     protected float e() {
-        return this.f() ? 0.73F : super.e();
+        return this.isCharged() ? 0.73F : super.e();
     }
 
     public boolean isBurning() {
@@ -25,7 +25,7 @@ public class EntityWitherSkull extends EntityFireball {
     public float a(Explosion explosion, World world, int i, int j, int k, Block block) {
         float f = super.a(explosion, world, i, j, k, block);
 
-        if (this.f() && block != Blocks.BEDROCK && block != Blocks.ENDER_PORTAL && block != Blocks.ENDER_PORTAL_FRAME && block != Blocks.COMMAND) {
+        if (this.isCharged() && block != Blocks.BEDROCK && block != Blocks.ENDER_PORTAL && block != Blocks.ENDER_PORTAL_FRAME && block != Blocks.COMMAND) {
             f = Math.min(0.8F, f);
         }
 
@@ -71,7 +71,7 @@ public class EntityWitherSkull extends EntityFireball {
         }
     }
 
-    public boolean Q() {
+    public boolean R() {
         return false;
     }
 
@@ -83,11 +83,11 @@ public class EntityWitherSkull extends EntityFireball {
         this.datawatcher.a(10, Byte.valueOf((byte) 0));
     }
 
-    public boolean f() {
+    public boolean isCharged() {
         return this.datawatcher.getByte(10) == 1;
     }
 
-    public void a(boolean flag) {
+    public void setCharged(boolean flag) {
         this.datawatcher.watch(10, Byte.valueOf((byte) (flag ? 1 : 0)));
     }
 }

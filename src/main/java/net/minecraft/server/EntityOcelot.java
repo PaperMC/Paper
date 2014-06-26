@@ -27,7 +27,7 @@ public class EntityOcelot extends EntityTameableAnimal {
         this.datawatcher.a(18, Byte.valueOf((byte) 0));
     }
 
-    public void bo() {
+    public void bp() {
         if (this.getControllerMove().a()) {
             double d0 = this.getControllerMove().b();
 
@@ -51,13 +51,13 @@ public class EntityOcelot extends EntityTameableAnimal {
         return !this.isTamed() /*&& this.ticksLived > 2400*/; // CraftBukkit
     }
 
-    public boolean bj() {
+    public boolean bk() {
         return true;
     }
 
-    protected void aC() {
-        super.aC();
-        this.getAttributeInstance(GenericAttributes.a).setValue(10.0D);
+    protected void aD() {
+        super.aD();
+        this.getAttributeInstance(GenericAttributes.maxHealth).setValue(10.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.30000001192092896D);
     }
 
@@ -77,15 +77,15 @@ public class EntityOcelot extends EntityTameableAnimal {
         return this.isTamed() ? (this.ce() ? "mob.cat.purr" : (this.random.nextInt(4) == 0 ? "mob.cat.purreow" : "mob.cat.meow")) : "";
     }
 
-    protected String aS() {
-        return "mob.cat.hitt";
-    }
-
     protected String aT() {
         return "mob.cat.hitt";
     }
 
-    protected float be() {
+    protected String aU() {
+        return "mob.cat.hitt";
+    }
+
+    protected float bf() {
         return 0.4F;
     }
 
@@ -211,8 +211,8 @@ public class EntityOcelot extends EntityTameableAnimal {
         return this.hasCustomName() ? this.getCustomName() : (this.isTamed() ? LocaleI18n.get("entity.Cat.name") : super.getName());
     }
 
-    public GroupDataEntity a(GroupDataEntity groupdataentity) {
-        groupdataentity = super.a(groupdataentity);
+    public GroupDataEntity prepare(GroupDataEntity groupdataentity) {
+        groupdataentity = super.prepare(groupdataentity);
         if (this.world.random.nextInt(7) == 0) {
             for (int i = 0; i < 2; ++i) {
                 EntityOcelot entityocelot = new EntityOcelot(this.world);

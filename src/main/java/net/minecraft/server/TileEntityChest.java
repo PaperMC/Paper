@@ -347,7 +347,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
 
         ++this.o;
         if (this.world == null) return; // CraftBukkit
-        this.world.playNote(this.x, this.y, this.z, this.q(), 1, this.o);
+        this.world.playBlockAction(this.x, this.y, this.z, this.q(), 1, this.o);
 
         // CraftBukkit start - Call redstone event
         if (this.q() == Blocks.TRAPPED_CHEST) {
@@ -363,13 +363,13 @@ public class TileEntityChest extends TileEntity implements IInventory {
         this.world.applyPhysics(this.x, this.y - 1, this.z, this.q());
     }
 
-    public void l_() {
+    public void closeContainer() {
         if (this.q() instanceof BlockChest) {
             int oldPower = Math.max(0, Math.min(15, this.o)); // CraftBukkit - Get power before new viewer is added
 
             --this.o;
             if (this.world == null) return; // CraftBukkit
-            this.world.playNote(this.x, this.y, this.z, this.q(), 1, this.o);
+            this.world.playBlockAction(this.x, this.y, this.z, this.q(), 1, this.o);
 
             // CraftBukkit start - Call redstone event
             if (this.q() == Blocks.TRAPPED_CHEST) {

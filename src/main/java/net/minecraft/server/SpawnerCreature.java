@@ -157,7 +157,7 @@ public final class SpawnerCreature {
                                                             if (entityinsentient.canSpawn()) {
                                                                 ++j2;
                                                                 // CraftBukkit start - Added a reason for spawning this creature, moved entityinsentient.a(groupdataentity) up
-                                                                groupdataentity = entityinsentient.a(groupdataentity);
+                                                                groupdataentity = entityinsentient.prepare(groupdataentity);
                                                                 worldserver.addEntity(entityinsentient, SpawnReason.NATURAL);
                                                                 // CraftBukkit end
                                                                 if (j2 >= entityinsentient.bB()) {
@@ -236,7 +236,7 @@ public final class SpawnerCreature {
 
                             entityinsentient.setPositionRotation((double) f, (double) f1, (double) f2, random.nextFloat() * 360.0F, 0.0F);
                             // CraftBukkit start - Added a reason for spawning this creature, moved entityinsentient.a(groupdataentity) up
-                            groupdataentity = entityinsentient.a(groupdataentity);
+                            groupdataentity = entityinsentient.prepare(groupdataentity);
                             world.addEntity(entityinsentient, SpawnReason.CHUNK_GEN);
                             // CraftBukkit end
                             flag = true;

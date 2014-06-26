@@ -35,7 +35,7 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
         }
 
         queuedChunk.loader.loadEntities(chunk, queuedChunk.compound.getCompound("Level"), queuedChunk.world);
-        chunk.p = queuedChunk.provider.world.getTime();
+        chunk.lastSaved = queuedChunk.provider.world.getTime();
         queuedChunk.provider.chunks.put(LongHash.toLong(queuedChunk.x, queuedChunk.z), chunk);
         chunk.addEntities();
 
@@ -63,7 +63,7 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
             }
         }
 
-        chunk.a(queuedChunk.provider, queuedChunk.provider, queuedChunk.x, queuedChunk.z);
+        chunk.loadNearby(queuedChunk.provider, queuedChunk.provider, queuedChunk.x, queuedChunk.z);
     }
 
     public void callStage3(QueuedChunk queuedChunk, Chunk chunk, Runnable runnable) throws RuntimeException {

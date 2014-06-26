@@ -86,7 +86,7 @@ public class BlockTallPlant extends BlockPlant implements IBlockFragilePlantElem
     }
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        if (world.isStatic || entityhuman.bE() == null || entityhuman.bE().getItem() != Items.SHEARS || c(l) || !this.b(world, i, j, k, l, entityhuman)) {
+        if (world.isStatic || entityhuman.bF() == null || entityhuman.bF().getItem() != Items.SHEARS || c(l) || !this.b(world, i, j, k, l, entityhuman)) {
             super.a(world, entityhuman, i, j, k, l);
         }
     }
@@ -101,7 +101,7 @@ public class BlockTallPlant extends BlockPlant implements IBlockFragilePlantElem
                     if (j1 != 3 && j1 != 2) {
                         world.setAir(i, j - 1, k, true);
                     } else {
-                        if (!world.isStatic && entityhuman.bE() != null && entityhuman.bE().getItem() == Items.SHEARS) {
+                        if (!world.isStatic && entityhuman.bF() != null && entityhuman.bF().getItem() == Items.SHEARS) {
                             this.b(world, i, j, k, i1, entityhuman);
                         }
 
@@ -124,7 +124,7 @@ public class BlockTallPlant extends BlockPlant implements IBlockFragilePlantElem
         if (i1 != 3 && i1 != 2) {
             return false;
         } else {
-            entityhuman.a(StatisticList.MINE_BLOCK_COUNT[Block.b((Block) this)], 1);
+            entityhuman.a(StatisticList.MINE_BLOCK_COUNT[Block.getId(this)], 1);
             byte b0 = 1;
 
             if (i1 == 3) {

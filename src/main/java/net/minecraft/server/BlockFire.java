@@ -19,29 +19,29 @@ public class BlockFire extends Block {
     }
 
     public static void e() {
-        Blocks.FIRE.a(b(Blocks.WOOD), 5, 20);
-        Blocks.FIRE.a(b(Blocks.WOOD_DOUBLE_STEP), 5, 20);
-        Blocks.FIRE.a(b(Blocks.WOOD_STEP), 5, 20);
-        Blocks.FIRE.a(b(Blocks.FENCE), 5, 20);
-        Blocks.FIRE.a(b(Blocks.WOOD_STAIRS), 5, 20);
-        Blocks.FIRE.a(b(Blocks.BIRCH_WOOD_STAIRS), 5, 20);
-        Blocks.FIRE.a(b(Blocks.SPRUCE_WOOD_STAIRS), 5, 20);
-        Blocks.FIRE.a(b(Blocks.JUNGLE_WOOD_STAIRS), 5, 20);
-        Blocks.FIRE.a(b(Blocks.LOG), 5, 5);
-        Blocks.FIRE.a(b(Blocks.LOG2), 5, 5);
-        Blocks.FIRE.a(b(Blocks.LEAVES), 30, 60);
-        Blocks.FIRE.a(b(Blocks.LEAVES2), 30, 60);
-        Blocks.FIRE.a(b(Blocks.BOOKSHELF), 30, 20);
-        Blocks.FIRE.a(b(Blocks.TNT), 15, 100);
-        Blocks.FIRE.a(b(Blocks.LONG_GRASS), 60, 100);
-        Blocks.FIRE.a(b(Blocks.DOUBLE_PLANT), 60, 100);
-        Blocks.FIRE.a(b(Blocks.YELLOW_FLOWER), 60, 100);
-        Blocks.FIRE.a(b(Blocks.RED_ROSE), 60, 100);
-        Blocks.FIRE.a(b(Blocks.WOOL), 30, 60);
-        Blocks.FIRE.a(b(Blocks.VINE), 15, 100);
-        Blocks.FIRE.a(b(Blocks.COAL_BLOCK), 5, 5);
-        Blocks.FIRE.a(b(Blocks.HAY_BLOCK), 60, 20);
-        Blocks.FIRE.a(b(Blocks.WOOL_CARPET), 60, 20);
+        Blocks.FIRE.a(getId(Blocks.WOOD), 5, 20);
+        Blocks.FIRE.a(getId(Blocks.WOOD_DOUBLE_STEP), 5, 20);
+        Blocks.FIRE.a(getId(Blocks.WOOD_STEP), 5, 20);
+        Blocks.FIRE.a(getId(Blocks.FENCE), 5, 20);
+        Blocks.FIRE.a(getId(Blocks.WOOD_STAIRS), 5, 20);
+        Blocks.FIRE.a(getId(Blocks.BIRCH_WOOD_STAIRS), 5, 20);
+        Blocks.FIRE.a(getId(Blocks.SPRUCE_WOOD_STAIRS), 5, 20);
+        Blocks.FIRE.a(getId(Blocks.JUNGLE_WOOD_STAIRS), 5, 20);
+        Blocks.FIRE.a(getId(Blocks.LOG), 5, 5);
+        Blocks.FIRE.a(getId(Blocks.LOG2), 5, 5);
+        Blocks.FIRE.a(getId(Blocks.LEAVES), 30, 60);
+        Blocks.FIRE.a(getId(Blocks.LEAVES2), 30, 60);
+        Blocks.FIRE.a(getId(Blocks.BOOKSHELF), 30, 20);
+        Blocks.FIRE.a(getId(Blocks.TNT), 15, 100);
+        Blocks.FIRE.a(getId(Blocks.LONG_GRASS), 60, 100);
+        Blocks.FIRE.a(getId(Blocks.DOUBLE_PLANT), 60, 100);
+        Blocks.FIRE.a(getId(Blocks.YELLOW_FLOWER), 60, 100);
+        Blocks.FIRE.a(getId(Blocks.RED_ROSE), 60, 100);
+        Blocks.FIRE.a(getId(Blocks.WOOL), 30, 60);
+        Blocks.FIRE.a(getId(Blocks.VINE), 15, 100);
+        Blocks.FIRE.a(getId(Blocks.COAL_BLOCK), 5, 5);
+        Blocks.FIRE.a(getId(Blocks.HAY_BLOCK), 60, 20);
+        Blocks.FIRE.a(getId(Blocks.WOOL_CARPET), 60, 20);
     }
 
     public void a(int i, int j, int k) {
@@ -151,8 +151,8 @@ public class BlockFire extends Block {
                                                 org.bukkit.Server server = world.getServer();
                                                 org.bukkit.World bworld = world.getWorld();
                                                 org.bukkit.block.BlockState blockState = bworld.getBlockAt(i1, k1, j1).getState();
-                                                blockState.setTypeId(Block.b(this));
-                                                blockState.setData(new org.bukkit.material.MaterialData(Block.b(this), (byte) k2));
+                                                blockState.setTypeId(Block.getId(this));
+                                                blockState.setData(new org.bukkit.material.MaterialData(Block.getId(this), (byte) k2));
 
                                                 BlockSpreadEvent spreadEvent = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(i, j, k), blockState);
                                                 server.getPluginManager().callEvent(spreadEvent);
@@ -178,7 +178,7 @@ public class BlockFire extends Block {
     }
 
     private void a(World world, int i, int j, int k, int l, Random random, int i1) {
-        int j1 = this.b[Block.b(world.getType(i, j, k))];
+        int j1 = this.b[Block.getId(world.getType(i, j, k))];
 
         if (random.nextInt(l) < j1) {
             boolean flag = world.getType(i, j, k) == Blocks.TNT;
@@ -238,11 +238,11 @@ public class BlockFire extends Block {
     }
 
     public boolean e(IBlockAccess iblockaccess, int i, int j, int k) {
-        return this.a[Block.b(iblockaccess.getType(i, j, k))] > 0;
+        return this.a[Block.getId(iblockaccess.getType(i, j, k))] > 0;
     }
 
     public int a(World world, int i, int j, int k, int l) {
-        int i1 = this.a[Block.b(world.getType(i, j, k))];
+        int i1 = this.a[Block.getId(world.getType(i, j, k))];
 
         return i1 > l ? i1 : l;
     }

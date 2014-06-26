@@ -39,34 +39,34 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Deprecated
     // A bad method for bad magic.
     public static int getId(Block block) {
-        return Block.b(block);
+        return Block.getId(block);
     }
 
     public static Material getMaterial(Block block) {
-        return Material.getMaterial(Block.b(block));
+        return Material.getMaterial(Block.getId(block));
     }
 
     public static Item getItem(Material material) {
         // TODO: Don't use ID
-        Item item = Item.d(material.getId());
+        Item item = Item.getById(material.getId());
         return item;
     }
 
     @Deprecated
     // A bad method for bad magic.
     public static Item getItem(int id) {
-        return Item.d(id);
+        return Item.getById(id);
     }
 
     @Deprecated
     // A bad method for bad magic.
     public static int getId(Item item) {
-        return Item.b(item);
+        return Item.getId(item);
     }
 
     public static Material getMaterial(Item item) {
         // TODO: Don't use ID
-        Material material = Material.getMaterial(Item.b(item));
+        Material material = Material.getMaterial(Item.getId(item));
 
         if (material == null) {
             return Material.AIR;
@@ -77,7 +77,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     public static Block getBlock(Material material) {
         // TODO: Don't use ID
-        Block block = Block.e(material.getId());
+        Block block = Block.getById(material.getId());
 
         if (block == null) {
             return Blocks.AIR;
@@ -88,7 +88,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public Material getMaterialFromInternalName(String name) {
-        return getMaterial((Item) Item.REGISTRY.a(name));
+        return getMaterial((Item) Item.REGISTRY.get(name));
     }
 
     @Override
@@ -120,7 +120,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public List<String> tabCompleteInternalStatisticOrAchievementName(String token, List<String> completions) {
         List<String> matches = new ArrayList<String>();
-        Iterator iterator = StatisticList.b.iterator();
+        Iterator iterator = StatisticList.stats.iterator();
         while (iterator.hasNext()) {
             String statistic = ((net.minecraft.server.Statistic) iterator.next()).name;
             if (statistic.startsWith(token)) {

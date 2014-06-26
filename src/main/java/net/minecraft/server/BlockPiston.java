@@ -73,7 +73,7 @@ public class BlockPiston extends Block {
                     }
                     // CraftBukkit end
 
-                    world.playNote(i, j, k, this, 0, i1);
+                    world.playBlockAction(i, j, k, this, 0, i1);
                 }
             } else if (!flag && c(l)) {
                 // CraftBukkit start
@@ -87,7 +87,7 @@ public class BlockPiston extends Block {
                 // CraftBukkit end
 
                 world.setData(i, j, k, i1, 2);
-                world.playNote(i, j, k, this, 1, i1);
+                world.playBlockAction(i, j, k, this, 1, i1);
             }
         }
     }

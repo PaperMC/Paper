@@ -14,11 +14,11 @@ public class JsonListEntry {
         this.a = object;
     }
 
-    public Object f() { // CraftBukkit -> package private -> public
+    public Object getKey() { // CraftBukkit -> package private -> public
         return this.a;
     }
 
-    boolean e() {
+    boolean hasExpired() {
         return false;
     }
 

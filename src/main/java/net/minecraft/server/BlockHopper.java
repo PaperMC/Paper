@@ -126,7 +126,7 @@ public class BlockHopper extends BlockContainer {
                 }
             }
 
-            world.f(i, j, k, block);
+            world.updateAdjacentComparators(i, j, k, block);
         }
 
         super.remove(world, i, j, k, block, l);
@@ -152,7 +152,7 @@ public class BlockHopper extends BlockContainer {
         return (i & 8) != 8;
     }
 
-    public boolean M() {
+    public boolean isComplexRedstone() {
         return true;
     }
 

@@ -36,7 +36,7 @@ public class MobEffectList {
     public static final MobEffectList WEAKNESS = (new MobEffectAttackDamage(18, true, 4738376)).b("potion.weakness").b(5, 0).a(GenericAttributes.e, "22653B89-116E-49DC-9B6B-9971489B5BE5", 2.0D, 0);
     public static final MobEffectList POISON = (new MobEffectList(19, true, 5149489)).b("potion.poison").b(6, 0).a(0.25D);
     public static final MobEffectList WITHER = (new MobEffectList(20, true, 3484199)).b("potion.wither").b(1, 2).a(0.25D);
-    public static final MobEffectList HEALTH_BOOST = (new MobEffectHealthBoost(21, false, 16284963)).b("potion.healthBoost").b(2, 2).a(GenericAttributes.a, "5D6F0BA2-1186-46AC-B896-C61C5CEE99CC", 4.0D, 0);
+    public static final MobEffectList HEALTH_BOOST = (new MobEffectHealthBoost(21, false, 16284963)).b("potion.healthBoost").b(2, 2).a(GenericAttributes.maxHealth, "5D6F0BA2-1186-46AC-B896-C61C5CEE99CC", 4.0D, 0);
     public static final MobEffectList ABSORPTION = (new MobEffectAbsorption(22, false, 2445989)).b("potion.absorption").b(2, 2);
     public static final MobEffectList SATURATION = (new InstantMobEffect(23, false, 16262179)).b("potion.saturation");
     public static final MobEffectList z = null;
@@ -92,7 +92,7 @@ public class MobEffectList {
         } else if (this.id == WITHER.id) {
             entityliving.damageEntity(DamageSource.WITHER, 1.0F);
         } else if (this.id == HUNGER.id && entityliving instanceof EntityHuman) {
-            ((EntityHuman) entityliving).a(0.025F * (float) (i + 1));
+            ((EntityHuman) entityliving).applyExhaustion(0.025F * (float) (i + 1));
         } else if (this.id == SATURATION.id && entityliving instanceof EntityHuman) {
             if (!entityliving.world.isStatic) {
                 // CraftBukkit start
@@ -108,8 +108,8 @@ public class MobEffectList {
                 ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutUpdateHealth(((EntityPlayer) entityhuman).getBukkitEntity().getScaledHealth(), entityhuman.getFoodData().foodLevel, entityhuman.getFoodData().saturationLevel));
                 // CraftBukkit end
             }
-        } else if ((this.id != HEAL.id || entityliving.aQ()) && (this.id != HARM.id || !entityliving.aQ())) {
-            if (this.id == HARM.id && !entityliving.aQ() || this.id == HEAL.id && entityliving.aQ()) {
+        } else if ((this.id != HEAL.id || entityliving.aR()) && (this.id != HARM.id || !entityliving.aR())) {
+            if (this.id == HARM.id && !entityliving.aR() || this.id == HEAL.id && entityliving.aR()) {
                 entityliving.damageEntity(DamageSource.MAGIC, (float) (6 << i));
             }
         } else {
@@ -126,8 +126,8 @@ public class MobEffectList {
         // CraftBukkit end
         int j;
 
-        if ((this.id != HEAL.id || entityliving1.aQ()) && (this.id != HARM.id || !entityliving1.aQ())) {
-            if (this.id == HARM.id && !entityliving1.aQ() || this.id == HEAL.id && entityliving1.aQ()) {
+        if ((this.id != HEAL.id || entityliving1.aR()) && (this.id != HARM.id || !entityliving1.aR())) {
+            if (this.id == HARM.id && !entityliving1.aR() || this.id == HEAL.id && entityliving1.aR()) {
                 j = (int) (d0 * (double) (6 << i) + 0.5D);
                 if (entityliving == null) {
                     entityliving1.damageEntity(DamageSource.MAGIC, (float) j);

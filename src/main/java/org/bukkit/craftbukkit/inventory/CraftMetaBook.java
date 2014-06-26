@@ -57,7 +57,7 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
             String[] pageArray = new String[pages.size()];
 
             for (int i = 0; i < pages.size(); i++) {
-                String page = pages.f(i);
+                String page = pages.getString(i);
                 pageArray[i] = page;
             }
 

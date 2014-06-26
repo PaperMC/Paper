@@ -101,7 +101,7 @@ public class TileEntity {
             this.g = this.world.getData(this.x, this.y, this.z);
             this.world.b(this.x, this.y, this.z, this);
             if (this.q() != Blocks.AIR) {
-                this.world.f(this.x, this.y, this.z, this.q());
+                this.world.updateAdjacentComparators(this.x, this.y, this.z, this.q());
             }
         }
     }

@@ -49,7 +49,7 @@ public class PlayerSelector {
             int k = f(s1);
             int l = e(s1);
             int i1 = g(s1);
-            int j1 = EnumGamemode.NONE.a();
+            int j1 = EnumGamemode.NONE.getId();
             ChunkCoordinates chunkcoordinates = icommandlistener.getChunkCoordinates();
             Map map1 = a(map);
             String s2 = null;

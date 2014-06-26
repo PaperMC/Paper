@@ -59,11 +59,11 @@ public final class VanillaCommandWrapper extends VanillaCommand {
         try {
             vanillaCommand.execute(icommandlistener, args);
         } catch (ExceptionUsage exceptionusage) {
-            ChatMessage chatmessage = new ChatMessage("commands.generic.usage", new Object[] {new ChatMessage(exceptionusage.getMessage(), exceptionusage.a())});
+            ChatMessage chatmessage = new ChatMessage("commands.generic.usage", new Object[] {new ChatMessage(exceptionusage.getMessage(), exceptionusage.getArgs())});
             chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
             icommandlistener.sendMessage(chatmessage);
         } catch (CommandException commandexception) {
-            ChatMessage chatmessage = new ChatMessage(commandexception.getMessage(), commandexception.a());
+            ChatMessage chatmessage = new ChatMessage(commandexception.getMessage(), commandexception.getArgs());
             chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
             icommandlistener.sendMessage(chatmessage);
         } finally {
@@ -109,7 +109,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
                             j++;
                             continue;
                         } catch (CommandException commandexception1) {
-                            ChatMessage chatmessage4 = new ChatMessage(commandexception1.getMessage(), commandexception1.a());
+                            ChatMessage chatmessage4 = new ChatMessage(commandexception1.getMessage(), commandexception1.getArgs());
                             chatmessage4.getChatModifier().setColor(EnumChatFormat.RED);
                             icommandlistener.sendMessage(chatmessage4);
                         }
@@ -126,11 +126,11 @@ public final class VanillaCommandWrapper extends VanillaCommand {
                 icommandlistener.sendMessage(chatmessage);
             }
         } catch (ExceptionUsage exceptionusage) {
-            ChatMessage chatmessage1 = new ChatMessage("commands.generic.usage", new Object[] { new ChatMessage(exceptionusage.getMessage(), exceptionusage.a()) });
+            ChatMessage chatmessage1 = new ChatMessage("commands.generic.usage", new Object[] { new ChatMessage(exceptionusage.getMessage(), exceptionusage.getArgs()) });
             chatmessage1.getChatModifier().setColor(EnumChatFormat.RED);
             icommandlistener.sendMessage(chatmessage1);
         } catch (CommandException commandexception) {
-            ChatMessage chatmessage2 = new ChatMessage(commandexception.getMessage(), commandexception.a());
+            ChatMessage chatmessage2 = new ChatMessage(commandexception.getMessage(), commandexception.getArgs());
             chatmessage2.getChatModifier().setColor(EnumChatFormat.RED);
             icommandlistener.sendMessage(chatmessage2);
         } catch (Throwable throwable) {
@@ -160,7 +160,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
             return ((CraftBlockCommandSender) sender).getTileEntity();
         }
         if (sender instanceof CommandMinecart) {
-            return ((EntityMinecartCommandBlock) ((CraftMinecartCommand) sender).getHandle()).e();
+            return ((EntityMinecartCommandBlock) ((CraftMinecartCommand) sender).getHandle()).getCommandBlock();
         }
         if (sender instanceof RemoteConsoleCommandSender) {
             return RemoteControlCommandListener.instance;

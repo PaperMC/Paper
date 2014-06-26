@@ -114,7 +114,7 @@ public class TileEntityPiston extends TileEntity {
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.a = Block.e(nbttagcompound.getInt("blockId"));
+        this.a = Block.getById(nbttagcompound.getInt("blockId"));
         this.i = nbttagcompound.getInt("blockData");
         this.j = nbttagcompound.getInt("facing");
         this.n = this.m = nbttagcompound.getFloat("progress");
@@ -123,7 +123,7 @@ public class TileEntityPiston extends TileEntity {
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.setInt("blockId", Block.b(this.a));
+        nbttagcompound.setInt("blockId", Block.getId(this.a));
         nbttagcompound.setInt("blockData", this.i);
         nbttagcompound.setInt("facing", this.j);
         nbttagcompound.setFloat("progress", this.n);

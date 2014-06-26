@@ -15,7 +15,7 @@ public class BlockBloodStone extends Block {
 
     // CraftBukkit start
     public void doPhysics(World world, int i, int j, int k, int l) {
-        if (net.minecraft.server.Block.e(l) != null && net.minecraft.server.Block.e(l).isPowerSource()) {
+        if (net.minecraft.server.Block.getById(l) != null && net.minecraft.server.Block.getById(l).isPowerSource()) {
             org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
             int power = block.getBlockPower();
 

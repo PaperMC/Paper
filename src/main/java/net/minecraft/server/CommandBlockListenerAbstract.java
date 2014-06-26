@@ -61,11 +61,11 @@ public abstract class CommandBlockListenerAbstract implements ICommandListener {
         return i <= 2;
     }
 
-    public void a(String s) {
+    public void setCommand(String s) {
         this.e = s;
     }
 
-    public String i() {
+    public String getCommand() {
         return this.e;
     }
 
@@ -211,13 +211,13 @@ public abstract class CommandBlockListenerAbstract implements ICommandListener {
         return new ChatComponentText(this.getName());
     }
 
-    public void b(String s) {
+    public void setName(String s) {
         this.f = s;
     }
 
     public void sendMessage(IChatBaseComponent ichatbasecomponent) {
         if (this.c && this.getWorld() != null && !this.getWorld().isStatic) {
-            this.d = (new ChatComponentText("[" + a.format(new Date()) + "] ")).a(ichatbasecomponent);
+            this.d = (new ChatComponentText("[" + a.format(new Date()) + "] ")).addSibling(ichatbasecomponent);
             this.e();
         }
     }

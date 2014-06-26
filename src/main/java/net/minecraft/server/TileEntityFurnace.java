@@ -323,7 +323,7 @@ public class TileEntityFurnace extends TileEntity implements IWorldInventory {
 
     public void startOpen() {}
 
-    public void l_() {}
+    public void closeContainer() {}
 
     public boolean b(int i, ItemStack itemstack) {
         return i == 2 ? false : (i == 1 ? isFuel(itemstack) : true);

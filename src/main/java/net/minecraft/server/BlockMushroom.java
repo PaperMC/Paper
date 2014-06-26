@@ -104,7 +104,7 @@ public class BlockMushroom extends BlockPlant implements IBlockFragilePlantEleme
             worldgenhugemushroom = new WorldGenHugeMushroom(1);
         }
 
-        if (worldgenhugemushroom != null && worldgenhugemushroom.a(world, random, i, j, k)) {
+        if (worldgenhugemushroom != null && worldgenhugemushroom.generate(world, random, i, j, k)) {
             return true;
         } else {
             world.setTypeAndData(i, j, k, this, l, 3);

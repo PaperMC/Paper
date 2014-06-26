@@ -76,7 +76,7 @@ public class BlockTripwire extends Block {
 
     public void a(World world, int i, int j, int k, int l, EntityHuman entityhuman) {
         if (!world.isStatic) {
-            if (entityhuman.bE() != null && entityhuman.bE().getItem() == Items.SHEARS) {
+            if (entityhuman.bF() != null && entityhuman.bF().getItem() == Items.SHEARS) {
                 world.setData(i, j, k, l | 8, 4);
             }
         }
@@ -140,7 +140,7 @@ public class BlockTripwire extends Block {
             while (iterator.hasNext()) {
                 Entity entity = (Entity) iterator.next();
 
-                if (!entity.ay()) {
+                if (!entity.az()) {
                     flag1 = true;
                     break;
                 }

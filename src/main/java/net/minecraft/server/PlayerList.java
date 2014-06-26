@@ -121,7 +121,7 @@ public abstract class PlayerList {
         playerconnection.sendPacket(new PacketPlayOutHeldItemSlot(entityplayer.inventory.itemInHandIndex));
         entityplayer.getStatisticManager().d();
         entityplayer.getStatisticManager().updateStatistics(entityplayer);
-        this.a((ScoreboardServer) worldserver.getScoreboard(), entityplayer);
+        this.sendScoreboard((ScoreboardServer) worldserver.getScoreboard(), entityplayer);
         this.server.az();
         /* CraftBukkit start - login message is handled in the event
         ChatMessage chatmessage;
@@ -156,10 +156,10 @@ public abstract class PlayerList {
             Entity entity = EntityTypes.a(nbttagcompound.getCompound("Riding"), worldserver);
 
             if (entity != null) {
-                entity.n = true;
+                entity.attachedToPlayer = true;
                 worldserver.addEntity(entity);
                 entityplayer.mount(entity);
-                entity.n = false;
+                entity.attachedToPlayer = false;
             }
         }
 
@@ -167,7 +167,7 @@ public abstract class PlayerList {
         g.info(entityplayer.getName() + "[" + s1 + "] logged in with entity id " + entityplayer.getId() + " at ([" + entityplayer.world.worldData.getName() + "] " + entityplayer.locX + ", " + entityplayer.locY + ", " + entityplayer.locZ + ")");
     }
 
-    public void a(ScoreboardServer scoreboardserver, EntityPlayer entityplayer) { // CraftBukkit - protected -> public
+    public void sendScoreboard(ScoreboardServer scoreboardserver, EntityPlayer entityplayer) { // CraftBukkit - protected -> public
         HashSet hashset = new HashSet();
         Iterator iterator = scoreboardserver.getTeams().iterator();
 
@@ -353,7 +353,7 @@ public abstract class PlayerList {
         PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, ((java.net.InetSocketAddress) socketaddress).getAddress());
         String s;
 
-        if (this.j.isBanned(gameprofile) && !this.j.get(gameprofile).e()) { // Should be hasExpired
+        if (this.j.isBanned(gameprofile) && !this.j.get(gameprofile).hasExpired()) {
             GameProfileBanEntry gameprofilebanentry = (GameProfileBanEntry) this.j.get(gameprofile);
 
             s = "You are banned from this server!\nReason: " + gameprofilebanentry.getReason();
@@ -366,7 +366,7 @@ public abstract class PlayerList {
         } else if (!this.isWhitelisted(gameprofile)) {
             // return "You are not white-listed on this server!";
             event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, "You are not white-listed on this server!");
-        } else if (this.k.isBanned(socketaddress) && !this.j.get(gameprofile).e()) { // Should be hasExpired
+        } else if (this.k.isBanned(socketaddress) && !this.k.get(gameprofile).hasExpired()) {
             IpBanEntry ipbanentry = this.k.get(socketaddress);
 
             s = "Your IP address is banned from this server!\nReason: " + ipbanentry.getReason();
@@ -952,7 +952,7 @@ public abstract class PlayerList {
                         }
                     }
 
-                    if (this.a((EntityHuman) entityplayer, map) && (l == EnumGamemode.NONE.a() || l == entityplayer.playerInteractManager.getGameMode().a()) && (i1 <= 0 || entityplayer.expLevel >= i1) && entityplayer.expLevel <= j1) {
+                    if (this.a((EntityHuman) entityplayer, map) && (l == EnumGamemode.NONE.getId() || l == entityplayer.playerInteractManager.getGameMode().getId()) && (i1 <= 0 || entityplayer.expLevel >= i1) && entityplayer.expLevel <= j1) {
                         ((List) object).add(entityplayer);
                     }
                 }

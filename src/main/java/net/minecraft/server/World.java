@@ -84,7 +84,7 @@ public abstract class World implements IBlockAccess {
             Chunk chunk = this.getChunkAtWorldCoords(i, j);
 
             try {
-                return chunk.a(i & 15, j & 15, this.worldProvider.e);
+                return chunk.getBiome(i & 15, j & 15, this.worldProvider.e);
             } catch (Throwable throwable) {
                 CrashReport crashreport = CrashReport.a(throwable, "Getting biome");
                 CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Coordinates of biome request");
@@ -349,14 +349,14 @@ public abstract class World implements IBlockAccess {
     public void notifyAndUpdatePhysics(int i, int j, int k, Chunk chunk, Block oldBlock, Block newBlock, int flag)
     {
         // should be isReady()
-        if ((flag & 2) != 0 && (chunk == null || chunk.k())) { // allow chunk to be null here as chunk.k() is false when we send our notification during block placement
+        if ((flag & 2) != 0 && (chunk == null || chunk.isReady())) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
             this.notify(i, j, k);
         }
 
         if ((flag & 1) != 0) {
             this.update(i, j, k, oldBlock);
-            if (newBlock.M()) { // should be isComplexRedstone()
-                this.f(i, j, k, newBlock); // should be updateAdjacentComparators
+            if (newBlock.isComplexRedstone()) {
+                this.updateAdjacentComparators(i, j, k, newBlock);
             }
         }
     }
@@ -426,14 +426,14 @@ public abstract class World implements IBlockAccess {
                 if (flag) {
                     Block block = chunk.getType(j1, j, k1);
 
-                    if ((i1 & 2) != 0 && (!this.isStatic || (i1 & 4) == 0) && chunk.k()) {
+                    if ((i1 & 2) != 0 && (!this.isStatic || (i1 & 4) == 0) && chunk.isReady()) {
                         this.notify(i, j, k);
                     }
 
                     if (!this.isStatic && (i1 & 1) != 0) {
                         this.update(i, j, k, block);
-                        if (block.M()) {
-                            this.f(i, j, k, block);
+                        if (block.isComplexRedstone()) {
+                            this.updateAdjacentComparators(i, j, k, block);
                         }
                     }
                 }
@@ -457,7 +457,7 @@ public abstract class World implements IBlockAccess {
         } else {
             int l = this.getData(i, j, k);
 
-            this.triggerEffect(2001, i, j, k, Block.b(block) + (l << 12));
+            this.triggerEffect(2001, i, j, k, Block.getId(block) + (l << 12));
             if (flag) {
                 block.b(this, i, j, k, l, 0);
             }
@@ -953,7 +953,7 @@ public abstract class World implements IBlockAccess {
 
         int i = MathHelper.floor(entity.locX / 16.0D);
         int j = MathHelper.floor(entity.locZ / 16.0D);
-        boolean flag = entity.n;
+        boolean flag = entity.attachedToPlayer;
 
         if (entity instanceof EntityHuman) {
             flag = true;
@@ -995,6 +995,7 @@ public abstract class World implements IBlockAccess {
 
                 this.players.add(entityhuman);
                 this.everyoneSleeping();
+                this.b(entity);
             }
 
             this.getChunkAt(i, j).a(entity);
@@ -1098,7 +1099,7 @@ public abstract class World implements IBlockAccess {
         List list = this.getEntities(entity, axisalignedbb.grow(d0, d0, d0));
 
         for (int j2 = 0; j2 < list.size(); ++j2) {
-            AxisAlignedBB axisalignedbb1 = ((Entity) list.get(j2)).I();
+            AxisAlignedBB axisalignedbb1 = ((Entity) list.get(j2)).J();
 
             if (axisalignedbb1 != null && axisalignedbb1.b(axisalignedbb)) {
                 this.L.add(axisalignedbb1);
@@ -1412,7 +1413,7 @@ public abstract class World implements IBlockAccess {
             if (flag && entity.ag) {
                 ++entity.ticksLived;
                 if (entity.vehicle != null) {
-                    entity.aa();
+                    entity.ab();
                 } else {
                     entity.h();
                 }
@@ -1612,7 +1613,7 @@ public abstract class World implements IBlockAccess {
                 }
             }
 
-            if (vec3d.b() > 0.0D && entity.aB()) {
+            if (vec3d.b() > 0.0D && entity.aC()) {
                 vec3d = vec3d.a();
                 double d1 = 0.014D;
 
@@ -2579,7 +2580,7 @@ public abstract class World implements IBlockAccess {
                 }
 
                 if (entityhuman1.isInvisible()) {
-                    float f = entityhuman1.bD();
+                    float f = entityhuman1.bE();
 
                     if (f < 0.1F) {
                         f = 0.1F;
@@ -2660,7 +2661,7 @@ public abstract class World implements IBlockAccess {
         return this.chunkProvider;
     }
 
-    public void playNote(int i, int j, int k, Block block, int l, int i1) {
+    public void playBlockAction(int i, int j, int k, Block block, int l, int i1) {
         block.a(this, i, j, k, l, i1);
     }
 
@@ -2818,7 +2819,7 @@ public abstract class World implements IBlockAccess {
         return this.scoreboard;
     }
 
-    public void f(int i, int j, int k, Block block) {
+    public void updateAdjacentComparators(int i, int j, int k, Block block) {
         for (int l = 0; l < 4; ++l) {
             int i1 = i + Direction.a[l];
             int j1 = k + Direction.b[l];

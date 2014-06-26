@@ -44,21 +44,21 @@ public class Block {
     public float frictionFactor;
     private String name;
 
-    public static int b(Block block) {
+    public static int getId(Block block) {
         return REGISTRY.b(block);
     }
 
-    public static Block e(int i) {
+    public static Block getById(int i) {
         return (Block) REGISTRY.a(i);
     }
 
     public static Block a(Item item) {
-        return e(Item.b(item));
+        return getById(Item.getId(item));
     }
 
     public static Block b(String s) {
         if (REGISTRY.b(s)) {
-            return (Block) REGISTRY.a(s);
+            return (Block) REGISTRY.get(s);
         } else {
             try {
                 return (Block) REGISTRY.a(Integer.parseInt(s));
@@ -681,8 +681,8 @@ public class Block {
     public void g() {}
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        entityhuman.a(StatisticList.MINE_BLOCK_COUNT[b(this)], 1);
-        entityhuman.a(0.025F);
+        entityhuman.a(StatisticList.MINE_BLOCK_COUNT[getId(this)], 1);
+        entityhuman.applyExhaustion(0.025F);
         if (this.E() && EnchantmentManager.hasSilkTouchEnchantment(entityhuman)) {
             ItemStack itemstack = this.j(l);
 
@@ -786,7 +786,7 @@ public class Block {
         return block != null && block1 != null ? (block == block1 ? true : block.c(block1)) : false;
     }
 
-    public boolean M() {
+    public boolean isComplexRedstone() {
         return false;
     }
 

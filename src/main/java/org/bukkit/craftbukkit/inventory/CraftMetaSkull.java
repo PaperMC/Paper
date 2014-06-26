@@ -34,7 +34,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         super(tag);
 
         if (tag.hasKeyOfType(SKULL_OWNER.NBT, 10)) {
-            profile = GameProfileSerializer.a(tag.getCompound(SKULL_OWNER.NBT));
+            profile = GameProfileSerializer.deserialize(tag.getCompound(SKULL_OWNER.NBT));
         } else if (tag.hasKeyOfType(SKULL_OWNER.NBT, 8)) {
             profile = new GameProfile(null, tag.getString(SKULL_OWNER.NBT));
         }
@@ -51,7 +51,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
         if (hasOwner()) {
             NBTTagCompound owner = new NBTTagCompound();
-            GameProfileSerializer.a(owner, profile);
+            GameProfileSerializer.serialize(owner, profile);
             tag.set(SKULL_OWNER.NBT, owner);
         }
     }

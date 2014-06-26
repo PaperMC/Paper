@@ -11,7 +11,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     }
 
     public void e() {
-        this.ba();
+        this.bb();
         float f = this.d(1.0F);
 
         if (f > 0.5F) {
@@ -28,18 +28,18 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         }
     }
 
-    protected String G() {
+    protected String H() {
         return "game.hostile.swim";
     }
 
-    protected String N() {
+    protected String O() {
         return "game.hostile.swim.splash";
     }
 
     protected Entity findTarget() {
         EntityHuman entityhuman = this.world.findNearbyVulnerablePlayer(this, 16.0D);
 
-        return entityhuman != null && this.p(entityhuman) ? entityhuman : null;
+        return entityhuman != null && this.hasLineOfSight(entityhuman) ? entityhuman : null;
     }
 
     public boolean damageEntity(DamageSource damagesource, float f) {
@@ -76,11 +76,11 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         }
     }
 
-    protected String aS() {
+    protected String aT() {
         return "game.hostile.hurt";
     }
 
-    protected String aT() {
+    protected String aU() {
         return "game.hostile.die";
     }
 
@@ -166,12 +166,12 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         return this.world.difficulty != EnumDifficulty.PEACEFUL && this.j_() && super.canSpawn();
     }
 
-    protected void aC() {
-        super.aC();
-        this.bb().b(GenericAttributes.e);
+    protected void aD() {
+        super.aD();
+        this.getAttributeMap().b(GenericAttributes.e);
     }
 
-    protected boolean aF() {
+    protected boolean aG() {
         return true;
     }
 }

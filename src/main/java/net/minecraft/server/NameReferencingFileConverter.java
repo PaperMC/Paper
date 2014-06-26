@@ -222,7 +222,7 @@ public class NameReferencingFileConverter {
     public static String a(String s) {
         if (!UtilColor.b(s) && s.length() <= 16) {
             MinecraftServer minecraftserver = MinecraftServer.getServer();
-            GameProfile gameprofile = minecraftserver.getUserCache().a(s);
+            GameProfile gameprofile = minecraftserver.getUserCache().getProfile(s);
 
             if (gameprofile != null && gameprofile.getId() != null) {
                 return gameprofile.getId().toString();

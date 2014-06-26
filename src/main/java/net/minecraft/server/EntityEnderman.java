@@ -24,9 +24,9 @@ public class EntityEnderman extends EntityMonster {
         this.W = 1.0F;
     }
 
-    protected void aC() {
-        super.aC();
-        this.getAttributeInstance(GenericAttributes.a).setValue(40.0D);
+    protected void aD() {
+        super.aD();
+        this.getAttributeInstance(GenericAttributes.maxHealth).setValue(40.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.30000001192092896D);
         this.getAttributeInstance(GenericAttributes.e).setValue(7.0D);
     }
@@ -40,13 +40,13 @@ public class EntityEnderman extends EntityMonster {
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.setShort("carried", (short) Block.b(this.getCarried()));
+        nbttagcompound.setShort("carried", (short) Block.getId(this.getCarried()));
         nbttagcompound.setShort("carriedData", (short) this.getCarriedData());
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.setCarried(Block.e(nbttagcompound.getShort("carried")));
+        this.setCarried(Block.getById(nbttagcompound.getShort("carried")));
         this.setCarriedData(nbttagcompound.getShort("carriedData"));
     }
 
@@ -86,12 +86,12 @@ public class EntityEnderman extends EntityMonster {
             vec3d1 = vec3d1.a();
             double d1 = vec3d.b(vec3d1);
 
-            return d1 > 1.0D - 0.025D / d0 && entityhuman.p(this);
+            return d1 > 1.0D - 0.025D / d0 && entityhuman.hasLineOfSight(this);
         }
     }
 
     public void e() {
-        if (this.K()) {
+        if (this.L()) {
             this.damageEntity(DamageSource.DROWN, 1.0F);
         }
 
@@ -118,7 +118,7 @@ public class EntityEnderman extends EntityMonster {
                     j = MathHelper.floor(this.locY + this.random.nextDouble() * 3.0D);
                     k = MathHelper.floor(this.locZ - 2.0D + this.random.nextDouble() * 4.0D);
                     block = this.world.getType(i, j, k);
-                    if (br[Block.b(block)]) {
+                    if (br[Block.getId(block)]) {
                         // CraftBukkit start - Pickup event
                         if (!CraftEventFactory.callEntityChangeBlockEvent(this, this.world.getWorld().getBlockAt(i, j, k), org.bukkit.Material.AIR).isCancelled()) {
                             this.setCarried(block);
@@ -161,7 +161,7 @@ public class EntityEnderman extends EntityMonster {
             }
         }
 
-        if (this.K() || this.isBurning()) {
+        if (this.L() || this.isBurning()) {
             this.target = null;
             this.a(false);
             this.bv = false;
@@ -290,11 +290,11 @@ public class EntityEnderman extends EntityMonster {
         return this.cd() ? "mob.endermen.scream" : "mob.endermen.idle";
     }
 
-    protected String aS() {
+    protected String aT() {
         return "mob.endermen.hit";
     }
 
-    protected String aT() {
+    protected String aU() {
         return "mob.endermen.death";
     }
 
@@ -315,11 +315,11 @@ public class EntityEnderman extends EntityMonster {
     }
 
     public void setCarried(Block block) {
-        this.datawatcher.watch(16, Byte.valueOf((byte) (Block.b(block) & 255)));
+        this.datawatcher.watch(16, Byte.valueOf((byte) (Block.getId(block) & 255)));
     }
 
     public Block getCarried() {
-        return Block.e(this.datawatcher.getByte(16));
+        return Block.getById(this.datawatcher.getByte(16));
     }
 
     public void setCarriedData(int i) {
@@ -364,19 +364,19 @@ public class EntityEnderman extends EntityMonster {
     }
 
     static {
-        br[Block.b((Block) Blocks.GRASS)] = true;
-        br[Block.b(Blocks.DIRT)] = true;
-        br[Block.b((Block) Blocks.SAND)] = true;
-        br[Block.b(Blocks.GRAVEL)] = true;
-        br[Block.b((Block) Blocks.YELLOW_FLOWER)] = true;
-        br[Block.b((Block) Blocks.RED_ROSE)] = true;
-        br[Block.b((Block) Blocks.BROWN_MUSHROOM)] = true;
-        br[Block.b((Block) Blocks.RED_MUSHROOM)] = true;
-        br[Block.b(Blocks.TNT)] = true;
-        br[Block.b(Blocks.CACTUS)] = true;
-        br[Block.b(Blocks.CLAY)] = true;
-        br[Block.b(Blocks.PUMPKIN)] = true;
-        br[Block.b(Blocks.MELON)] = true;
-        br[Block.b((Block) Blocks.MYCEL)] = true;
+        br[Block.getId(Blocks.GRASS)] = true;
+        br[Block.getId(Blocks.DIRT)] = true;
+        br[Block.getId(Blocks.SAND)] = true;
+        br[Block.getId(Blocks.GRAVEL)] = true;
+        br[Block.getId(Blocks.YELLOW_FLOWER)] = true;
+        br[Block.getId(Blocks.RED_ROSE)] = true;
+        br[Block.getId(Blocks.BROWN_MUSHROOM)] = true;
+        br[Block.getId(Blocks.RED_MUSHROOM)] = true;
+        br[Block.getId(Blocks.TNT)] = true;
+        br[Block.getId(Blocks.CACTUS)] = true;
+        br[Block.getId(Blocks.CLAY)] = true;
+        br[Block.getId(Blocks.PUMPKIN)] = true;
+        br[Block.getId(Blocks.MELON)] = true;
+        br[Block.getId(Blocks.MYCEL)] = true;
     }
 }
