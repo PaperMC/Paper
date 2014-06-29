@@ -6,11 +6,13 @@ public class PacketPlayInUseItem implements Packet<PacketListenerPlayIn> {
 
     private MovingObjectPositionBlock a;
     private EnumHand b;
+    public long timestamp;
 
     public PacketPlayInUseItem() {}
 
     @Override
     public void a(PacketDataSerializer packetdataserializer) throws IOException {
+        this.timestamp = System.currentTimeMillis(); // Spigot
         this.b = (EnumHand) packetdataserializer.a(EnumHand.class);
         this.a = packetdataserializer.r();
     }
