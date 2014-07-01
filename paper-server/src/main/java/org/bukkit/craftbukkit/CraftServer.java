@@ -186,9 +186,7 @@ import com.avaje.ebean.config.DataSourceConfig;
 import com.avaje.ebean.config.ServerConfig;
 import com.avaje.ebean.config.dbplatform.SQLitePlatform;
 import com.avaje.ebeaninternal.server.lib.sql.TransactionIsolation;
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
 
 import jline.console.ConsoleReader;
@@ -246,7 +244,7 @@ public final class CraftServer implements Server {
     public CraftServer(MinecraftServer console, PlayerList playerList) {
         this.console = console;
         this.playerList = (DedicatedPlayerList) playerList;
-        this.playerView = Collections.unmodifiableList(Lists.transform(playerList.players, new Function<EntityPlayer, CraftPlayer>() {
+        this.playerView = Collections.unmodifiableList(net.minecraft.util.com.google.common.collect.Lists.transform(playerList.players, new net.minecraft.util.com.google.common.base.Function<EntityPlayer, CraftPlayer>() {
             @Override
             public CraftPlayer apply(EntityPlayer player) {
                 return player.getBukkitEntity();
