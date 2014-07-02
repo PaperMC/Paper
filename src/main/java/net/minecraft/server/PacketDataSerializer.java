@@ -281,6 +281,10 @@ public class PacketDataSerializer extends ByteBuf {
             NBTTagCompound nbttagcompound = null;
 
             if (item.usesDurability() || item.n()) {
+                // Spigot start - filter
+                itemstack = itemstack.cloneItemStack();
+                CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
+                // Spigot end
                 nbttagcompound = itemstack.getTag();
             }
 

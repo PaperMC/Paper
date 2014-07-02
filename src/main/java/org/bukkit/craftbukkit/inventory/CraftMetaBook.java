@@ -18,6 +18,10 @@ import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.meta.BookMeta;
 
+// Spigot start
+import static org.spigotmc.ValidateUtils.*;
+// Spigot end
+
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaBook extends CraftMetaItem implements BookMeta {
     static final ItemMetaKey BOOK_TITLE = new ItemMetaKey("title");
@@ -54,11 +58,11 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
         super(tag);
 
         if (tag.hasKey(BOOK_TITLE.NBT)) {
-            this.title = tag.getString(BOOK_TITLE.NBT);
+            this.title = limit( tag.getString(BOOK_TITLE.NBT), 8192 ); // Spigot
         }
 
         if (tag.hasKey(BOOK_AUTHOR.NBT)) {
-            this.author = tag.getString(BOOK_AUTHOR.NBT);
+            this.author = limit( tag.getString(BOOK_AUTHOR.NBT), 8192 ); // Spigot
         }
 
         boolean resolved = false;
@@ -83,7 +87,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
                         // Ignore and treat as an old book
                     }
                 }
-                addPage(page);
+                addPage( limit( page, 16384 ) ); // Spigot
             }
         }
     }

@@ -78,6 +78,10 @@ import org.bukkit.inventory.meta.Repairable;
 import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
 import org.bukkit.persistence.PersistentDataContainer;
 
+// Spigot start
+import static org.spigotmc.ValidateUtils.*;
+// Spigot end
+
 /**
  * Children must include the following:
  *
@@ -327,7 +331,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
             if (display.hasKey(NAME.NBT)) {
                 try {
-                    displayName = IChatBaseComponent.ChatSerializer.a(display.getString(NAME.NBT));
+                    displayName = IChatBaseComponent.ChatSerializer.a( limit( display.getString(NAME.NBT), 8192 ) ); // Spigot
                 } catch (JsonParseException ex) {
                     // Ignore (stripped like Vanilla)
                 }
@@ -335,7 +339,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
             if (display.hasKey(LOCNAME.NBT)) {
                 try {
-                    locName = IChatBaseComponent.ChatSerializer.a(display.getString(LOCNAME.NBT));
+                    locName = IChatBaseComponent.ChatSerializer.a( limit( display.getString(LOCNAME.NBT), 8192 ) ); // Spigot
                 } catch (JsonParseException ex) {
                     // Ignore (stripped like Vanilla)
                 }
@@ -346,7 +350,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 lore = new ArrayList<IChatBaseComponent>(list.size());
 
                 for (int index = 0; index < list.size(); index++) {
-                    String line = list.getString(index);
+                    String line = limit( list.getString(index), 8192 ); // Spigot
                     try {
                         lore.add(IChatBaseComponent.ChatSerializer.a(line));
                     } catch (JsonParseException ex) {
