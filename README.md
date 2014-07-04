@@ -1,13 +1,14 @@
-Spigot [![Build Status](https://travis-ci.org/SpigotMC/Spigot.png)](https://travis-ci.org/SpigotMC/Spigot)
+PaperSpigot [![Build Status](https://travis-ci.org/PaperSpigot/Spigot.png)](https://travis-ci.org/SpigotMC/Spigot)
 ===========
 
-High performance Minecraft server implementation
+High performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.
+[IRC Support and Project Discussion](http://irc.spi.gt/iris/?channels=PaperSpigot)
 
 
 How To
 -----------
 
-Init a Craftbukkit and Bukkit module : `git submodule update --init`
+Init the submodules : `git submodule update --init`
 
 Apply Patches : `./applyPatches.sh`
 
