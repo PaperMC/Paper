@@ -326,4 +326,10 @@ public class SpigotConfig
     {
         SpigotConfig.saveUserCacheOnStopOnly = SpigotConfig.getBoolean( "settings.save-user-cache-on-stop-only", false );
     }
+
+    public static double movedWronglyThreshold;
+    private static void movedWronglyThreshold()
+    {
+        SpigotConfig.movedWronglyThreshold = SpigotConfig.getDouble( "settings.moved-wrongly-threshold", 0.0625D );
+    }
 }
