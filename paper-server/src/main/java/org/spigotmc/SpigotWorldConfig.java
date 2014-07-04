@@ -294,4 +294,40 @@ public class SpigotWorldConfig
     {
         this.endPortalSoundRadius = this.getInt( "end-portal-sound-radius", 0 );
     }
+
+    public int villageSeed;
+    public int desertSeed;
+    public int iglooSeed;
+    public int jungleSeed;
+    public int swampSeed;
+    public int monumentSeed;
+    public int oceanSeed;
+    public int outpostSeed;
+    public int shipwreckSeed;
+    public int slimeSeed;
+    public int endCitySeed;
+    public int netherSeed;
+    public int mansionSeed;
+    public int fossilSeed;
+    public int portalSeed;
+    private void initWorldGenSeeds()
+    {
+        this.villageSeed = this.getInt( "seed-village", 10387312 );
+        this.desertSeed = this.getInt( "seed-desert", 14357617 );
+        this.iglooSeed = this.getInt( "seed-igloo", 14357618 );
+        this.jungleSeed = this.getInt( "seed-jungle", 14357619 );
+        this.swampSeed = this.getInt( "seed-swamp", 14357620 );
+        this.monumentSeed = this.getInt( "seed-monument", 10387313 );
+        this.shipwreckSeed = this.getInt( "seed-shipwreck", 165745295 );
+        this.oceanSeed = this.getInt( "seed-ocean", 14357621 );
+        this.outpostSeed = this.getInt( "seed-outpost", 165745296 );
+        this.endCitySeed = this.getInt( "seed-endcity", 10387313 );
+        this.slimeSeed = this.getInt( "seed-slime", 987234911 );
+        this.netherSeed = this.getInt( "seed-nether", 30084232 );
+        this.mansionSeed = this.getInt( "seed-mansion", 10387319 );
+        this.fossilSeed = this.getInt( "seed-fossil", 14357921 );
+        this.portalSeed = this.getInt( "seed-portal", 34222645 );
+        this.log( "Custom Map Seeds:  Village: " + this.villageSeed + " Desert: " + this.desertSeed + " Igloo: " + this.iglooSeed + " Jungle: " + this.jungleSeed + " Swamp: " + this.swampSeed + " Monument: " + this.monumentSeed
+                + " Ocean: " + this.oceanSeed + " Shipwreck: " + this.shipwreckSeed + " End City: " + this.endCitySeed + " Slime: " + this.slimeSeed + " Nether: " + this.netherSeed + " Mansion: " + this.mansionSeed + " Fossil: " + this.fossilSeed + " Portal: " + this.portalSeed );
+    }
 }
