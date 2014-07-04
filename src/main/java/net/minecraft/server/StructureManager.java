@@ -58,4 +58,10 @@ public class StructureManager {
             });
         }).findFirst(), StructureStart.a);
     }
+
+    // Spigot start
+    public World getWorld() {
+        return this.a.getMinecraftWorld();
+    }
+    // Spigot end
 }

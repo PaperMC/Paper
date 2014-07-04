@@ -150,6 +150,7 @@ public abstract class ChunkGenerator {
 
             return blockposition1;
         } else {
+            updateStructureSettings(worldserver, structureSettings); // Spigot
             StructureSettingsFeature structuresettingsfeature = this.structureSettings.a(structuregenerator);
 
             return structuresettingsfeature == null ? null : structuregenerator.getNearestGeneratedFeature(worldserver, worldserver.getStructureManager(), blockposition, i, flag, worldserver.getSeed(), structuresettingsfeature);
@@ -227,6 +228,7 @@ public abstract class ChunkGenerator {
     private void a(StructureFeature<?, ?> structurefeature, IRegistryCustom iregistrycustom, StructureManager structuremanager, IChunkAccess ichunkaccess, DefinedStructureManager definedstructuremanager, long i, ChunkCoordIntPair chunkcoordintpair, BiomeBase biomebase) {
         StructureStart<?> structurestart = structuremanager.a(SectionPosition.a(ichunkaccess.getPos(), 0), structurefeature.d, ichunkaccess);
         int j = structurestart != null ? structurestart.j() : 0;
+        updateStructureSettings(structuremanager.getWorld(), structureSettings); // Spigot
         StructureSettingsFeature structuresettingsfeature = this.structureSettings.a(structurefeature.d);
 
         if (structuresettingsfeature != null) {
@@ -236,6 +238,83 @@ public abstract class ChunkGenerator {
         }
 
     }
+
+    // Spigot start
+    private volatile boolean injected;
+    private void updateStructureSettings(World world, StructureSettings settings) {
+        if (injected) {
+            return;
+        }
+        synchronized (settings) {
+            if (injected) {
+                return;
+            }
+            java.util.Map<StructureGenerator<?>, StructureSettingsFeature> original = settings.a();
+            java.util.Map<StructureGenerator<?>, StructureSettingsFeature> updated = new java.util.HashMap<>();
+            org.spigotmc.SpigotWorldConfig conf = world.spigotConfig;
+
+            for (java.util.Map.Entry<StructureGenerator<?>, StructureSettingsFeature> entry : original.entrySet()) {
+                String name = IRegistry.STRUCTURE_FEATURE.getKey(entry.getKey()).getKey();
+                StructureSettingsFeature feature = entry.getValue();
+                int seed = feature.c();
+
+                switch (name) {
+                    case "bastion_remnant":
+                        seed = conf.bastionSeed;
+                        break;
+                    case "desert_pyramid":
+                        seed = conf.desertSeed;
+                        break;
+                    case "endcity":
+                        seed = conf.endCitySeed;
+                        break;
+                    case "fortress":
+                        seed = conf.fortressSeed;
+                        break;
+                    case "igloo":
+                        seed = conf.iglooSeed;
+                        break;
+                    case "jungle_pyramid":
+                        seed = conf.jungleSeed;
+                        break;
+                    case "mansion":
+                        seed = conf.mansionSeed;
+                        break;
+                    case "monument":
+                        seed = conf.monumentSeed;
+                        break;
+                    case "nether_fossil":
+                        seed = conf.fossilSeed;
+                        break;
+                    case "ocean_ruin":
+                        seed = conf.oceanSeed;
+                        break;
+                    case "pillager_outpost":
+                        seed = conf.outpostSeed;
+                        break;
+                    case "ruined_portal":
+                        seed = conf.portalSeed;
+                        break;
+                    case "shipwreck":
+                        seed = conf.shipwreckSeed;
+                        break;
+                    case "swamp_hut":
+                        seed = conf.swampSeed;
+                        break;
+                    case "village":
+                        seed = conf.villageSeed;
+                        break;
+                }
+
+                updated.put(entry.getKey(), new StructureSettingsFeature(feature.a(), feature.b(), seed));
+            }
+
+            original.clear();
+            original.putAll(updated);
+            injected = true;
+        }
+    }
+    // Spigot end
 
     public void storeStructures(GeneratorAccessSeed generatoraccessseed, StructureManager structuremanager, IChunkAccess ichunkaccess) {
         boolean flag = true;
