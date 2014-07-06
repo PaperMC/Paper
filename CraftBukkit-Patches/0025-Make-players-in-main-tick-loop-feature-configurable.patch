@@ -1,11 +1,11 @@
-From bcc9626b269c27b7c3b72cc6d1ee56793f517305 Mon Sep 17 00:00:00 2001
+From b4ccfcda70b29d207685f5ca29f5f405d4f1ed6e Mon Sep 17 00:00:00 2001
 From: Zach Brown <Zbob750@live.com>
-Date: Sat, 5 Jul 2014 22:54:54 -0500
+Date: Sun, 6 Jul 2014 01:49:28 -0500
 Subject: [PATCH] Make players in main tick loop feature configurable
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 93b974a..ffd0549 100644
+index 93b974a..1bf5d73 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -27,6 +27,8 @@ import org.bukkit.event.inventory.InventoryType;
@@ -17,19 +17,20 @@ index 93b974a..ffd0549 100644
  public class EntityPlayer extends EntityHuman implements ICrafting {
  
      private static final Logger bL = LogManager.getLogger();
-@@ -175,13 +177,16 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -175,13 +177,18 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
          return 1.62F;
      }
  
 -    // Spigot start
 -    private AxisAlignedBB groundCheck = AxisAlignedBB.a( 0, 0, 0, 0, 0, 0 );
--
++    private boolean playerTickMainLoop = PaperSpigotConfig.playerTickMainLoop;
+ 
      public void h() {
 -        groundCheck.b( locX - 0.3, locY - 0.1, locZ - 0.3, locX + 0.3, locY, locZ + 0.3 );
 -        onGround = world.c(groundCheck);
 -    // Spigot end
 +        // PaperSpigot start - Make player tick in main loop configurable
-+        if (PaperSpigotConfig.playerTickMainLoop) {
++        if (playerTickMainLoop) {
 +            // Spigot start
 +            AxisAlignedBB groundCheck = AxisAlignedBB.a( 0, 0, 0, 0, 0, 0 );
 +            groundCheck.b( locX - 0.3, locY - 0.1, locZ - 0.3, locX + 0.3, locY, locZ + 0.3 );
@@ -40,7 +41,7 @@ index 93b974a..ffd0549 100644
  
          // CraftBukkit start
          if (this.joining) {
-@@ -261,14 +266,19 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -261,14 +268,19 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
          if (this.bX > 0L && this.server.getIdleTimeout() > 0 && MinecraftServer.ar() - this.bX > (long) (this.server.getIdleTimeout() * 1000 * 60)) {
              this.playerConnection.disconnect("You have been idle for too long!");
          }
@@ -50,7 +51,7 @@ index 93b974a..ffd0549 100644
 -        {
 +
 +        // PaperSpigot start - Make player tick in main loop configurable
-+        if (PaperSpigotConfig.playerTickMainLoop) {
++        if (playerTickMainLoop) {
 +            // Spigot start
 +            this.i();
 +            if ( Double.isNaN( previousY ) )
@@ -67,15 +68,24 @@ index 93b974a..ffd0549 100644
  
      private double previousY = Double.NaN;
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index d5f3b7b..d8dd9af 100644
+index d5f3b7b..04eead9 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -291,6 +291,12 @@ public class PlayerConnection implements PacketPlayInListener {
+@@ -182,6 +182,8 @@ public class PlayerConnection implements PacketPlayInListener {
+         this.player.a(packetplayinsteervehicle.c(), packetplayinsteervehicle.d(), packetplayinsteervehicle.e(), packetplayinsteervehicle.f());
+     }
+ 
++    private boolean playerTickMainLoop = PaperSpigotConfig.playerTickMainLoop;
++
+     public void a(PacketPlayInFlying packetplayinflying) {
+         // CraftBukkit start - Check for NaN
+         if (Double.isNaN(packetplayinflying.x) || Double.isNaN(packetplayinflying.y) || Double.isNaN(packetplayinflying.z) || Double.isNaN(packetplayinflying.stance)) {
+@@ -291,6 +293,12 @@ public class PlayerConnection implements PacketPlayInListener {
                          f1 = packetplayinflying.h();
                      }
  
 +                    // PaperSpigot start - Make player tick in main loop configurable
-+                    if (!PaperSpigotConfig.playerTickMainLoop) {
++                    if (!playerTickMainLoop) {
 +                        this.player.onGround = packetplayinflying.i();
 +                        this.player.i();
 +                    }
@@ -83,54 +93,54 @@ index d5f3b7b..d8dd9af 100644
                      this.player.V = 0.0F;
                      this.player.setLocation(d1, d2, d3, f, f1);
                      if (this.player.vehicle != null) {
-@@ -309,6 +315,11 @@ public class PlayerConnection implements PacketPlayInListener {
+@@ -309,6 +317,11 @@ public class PlayerConnection implements PacketPlayInListener {
                  }
  
                  if (this.player.isSleeping()) {
 +                    // PaperSpigot start - Make player tick in main loop configurable
-+                    if (!PaperSpigotConfig.playerTickMainLoop) {
++                    if (!playerTickMainLoop) {
 +                        this.player.i();
 +                    }
 +                    // PaperSpigot end
                      this.player.setLocation(this.y, this.z, this.q, this.player.yaw, this.player.pitch);
                      worldserver.playerJoinedWorld(this.player);
                      return;
-@@ -352,6 +363,11 @@ public class PlayerConnection implements PacketPlayInListener {
+@@ -352,6 +365,11 @@ public class PlayerConnection implements PacketPlayInListener {
                      f3 = packetplayinflying.h();
                  }
  
 +                // PaperSpigot start - Make player tick in main loop configurable
-+                if (!PaperSpigotConfig.playerTickMainLoop) {
++                if (!playerTickMainLoop) {
 +                    this.player.i();
 +                }
 +                // PaperSpigot end
                  this.player.V = 0.0F;
                  this.player.setLocation(this.y, this.z, this.q, f2, f3);
                  if (!this.checkMovement) {
-@@ -382,6 +398,11 @@ public class PlayerConnection implements PacketPlayInListener {
+@@ -382,6 +400,11 @@ public class PlayerConnection implements PacketPlayInListener {
                  }
  
                  this.player.move(d4, d5, d6);
 +                // PaperSpigot start - Make player tick in main loop configurable
-+                if (!PaperSpigotConfig.playerTickMainLoop) {
++                if (!playerTickMainLoop) {
 +                    this.player.onGround = packetplayinflying.i();
 +                }
 +                // PaperSpigot end
                  this.player.checkMovement(d4, d5, d6);
                  double d11 = d5;
  
-@@ -423,7 +444,17 @@ public class PlayerConnection implements PacketPlayInListener {
+@@ -423,7 +446,17 @@ public class PlayerConnection implements PacketPlayInListener {
                      this.f = 0;
                  }
  
 +                // PaperSpigot start - Make player tick in main loop configurable
-+                if (!PaperSpigotConfig.playerTickMainLoop) {
++                if (!playerTickMainLoop) {
 +                    this.player.onGround = packetplayinflying.i();
 +                }
 +                // PaperSpigot end
                  this.minecraftServer.getPlayerList().d(this.player);
 +                // PaperSpigot start - Make player tick in main loop configurable
-+                if (!PaperSpigotConfig.playerTickMainLoop) {
++                if (!playerTickMainLoop) {
 +                    this.player.b(this.player.locY - d0, packetplayinflying.i());
 +                }
 +                // PaperSpigot end
