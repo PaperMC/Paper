@@ -219,6 +219,11 @@ public class UserCache {
             return arraylist1;
         } catch (FileNotFoundException filenotfoundexception) {
             ;
+        // Spigot Start
+        } catch (com.google.gson.JsonSyntaxException ex) {
+            JsonList.LOGGER.warn( "Usercache.json is corrupted or has bad formatting. Deleting it to prevent further issues." );
+            this.g.delete();
+        // Spigot End
         } catch (JsonParseException | IOException ioexception) {
             UserCache.LOGGER.warn("Failed to load profile cache {}", this.g, ioexception);
         }

@@ -172,6 +172,14 @@ public abstract class JsonList<K, V extends JsonListEntry<K>> {
                         this.d.put(this.a(jsonlistentry.getKey()), (V) jsonlistentry); // CraftBukkit - fix decompile error
                     }
                 }
+            // Spigot Start
+            } catch ( com.google.gson.JsonParseException ex )
+            {
+                org.bukkit.Bukkit.getLogger().log( java.util.logging.Level.WARNING, "Unable to read file " + this.c + ", backing it up to {0}.backup and creating new copy.", ex );
+                File backup = new File( this.c + ".backup" );
+                this.c.renameTo( backup );
+                this.c.delete();
+            // Spigot End
             } catch (Throwable throwable1) {
                 throwable = throwable1;
                 throw throwable1;
