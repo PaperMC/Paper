@@ -148,14 +148,14 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
     public int getSleepTicks();
 
     /**
-     * Gets this humans current {@link GameMode}
+     * Gets this human's current {@link GameMode}
      *
      * @return Current game mode
      */
     public GameMode getGameMode();
 
     /**
-     * Sets this humans current {@link GameMode}
+     * Sets this human's current {@link GameMode}
      *
      * @param mode New game mode
      */

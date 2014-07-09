@@ -219,7 +219,7 @@ public class Location implements Cloneable {
     }
 
     /**
-     * Sets the pitch of this location, measured in degrees.
+     * Gets the pitch of this location, measured in degrees.
      * <ul>
      * <li>A pitch of 0 represents level forward facing.
      * <li>A pitch of 90 represents downward facing, or negative y

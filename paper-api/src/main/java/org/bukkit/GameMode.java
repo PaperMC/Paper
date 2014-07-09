@@ -23,7 +23,7 @@ public enum GameMode {
     SURVIVAL(0),
 
     /**
-     * Adventure mode cannot break blocks, use chat, use buckets, etc.
+     * Adventure mode cannot break blocks without the correct tools.
      */
     ADVENTURE(2);
 
