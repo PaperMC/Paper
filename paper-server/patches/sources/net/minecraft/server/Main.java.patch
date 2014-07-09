@@ -71,7 +71,7 @@
                  JvmProfiler.INSTANCE.start(Environment.SERVER);
              }
  
-@@ -112,14 +125,27 @@
+@@ -112,28 +125,52 @@
              Bootstrap.validate();
              Util.startTimerHackThread();
              Path path1 = Paths.get("server.properties");
@@ -101,7 +101,19 @@
                  Main.LOGGER.info("Initialized '{}' and '{}'", path1.toAbsolutePath(), path2.toAbsolutePath());
                  return;
              }
-@@ -129,11 +155,13 @@
+ 
+-            if (!eula.hasAgreedToEULA()) {
++            // Spigot Start
++            boolean eulaAgreed = Boolean.getBoolean( "com.mojang.eula.agree" );
++            if ( eulaAgreed )
++            {
++                System.err.println( "You have used the Spigot command line EULA agreement flag." );
++                System.err.println( "By using this setting you are indicating your agreement to Mojang's EULA (https://account.mojang.com/documents/minecraft_eula)." );
++                System.err.println( "If you do not agree to the above EULA please stop your server and remove this flag immediately." );
++            }
++            // Spigot End
++            if (!eula.hasAgreedToEULA() && !eulaAgreed) { // Spigot
+                 Main.LOGGER.info("You need to agree to the EULA in order to run the server. Go to eula.txt for more info.");
                  return;
              }
  
@@ -118,7 +130,7 @@
              Dynamic dynamic;
  
              if (convertable_conversionsession.hasWorldData()) {
-@@ -174,13 +202,31 @@
+@@ -174,13 +211,31 @@
              }
  
              Dynamic<?> dynamic1 = dynamic;
@@ -151,7 +163,7 @@
  
              WorldStem worldstem;
  
-@@ -189,6 +235,7 @@
+@@ -189,6 +244,7 @@
  
                  worldstem = (WorldStem) Util.blockUntilDone((executor) -> {
                      return WorldLoader.load(worldloader_c, (worldloader_a) -> {
@@ -159,7 +171,7 @@
                          Registry<LevelStem> iregistry = worldloader_a.datapackDimensions().lookupOrThrow(Registries.LEVEL_STEM);
  
                          if (dynamic1 != null) {
-@@ -201,7 +248,7 @@
+@@ -201,7 +257,7 @@
                              WorldOptions worldoptions;
                              WorldDimensions worlddimensions;
  
@@ -168,7 +180,7 @@
                                  worldsettings = MinecraftServer.DEMO_SETTINGS;
                                  worldoptions = WorldOptions.DEMO_OPTIONS;
                                  worlddimensions = WorldPresets.createNormalWorldDimensions(worldloader_a.datapackWorldgen());
-@@ -209,7 +256,7 @@
+@@ -209,7 +265,7 @@
                                  DedicatedServerProperties dedicatedserverproperties = dedicatedserversettings.getProperties();
  
                                  worldsettings = new LevelSettings(dedicatedserverproperties.levelName, dedicatedserverproperties.gamemode, dedicatedserverproperties.hardcore, dedicatedserverproperties.difficulty, false, new GameRules(worldloader_a.dataConfiguration().enabledFeatures()), worldloader_a.dataConfiguration());
@@ -177,7 +189,7 @@
                                  worlddimensions = dedicatedserverproperties.createDimensions(worldloader_a.datapackWorldgen());
                              }
  
-@@ -225,32 +272,44 @@
+@@ -225,32 +281,44 @@
                  return;
              }
  
@@ -227,7 +239,7 @@
              Thread thread = new Thread("Server Shutdown Thread") {
                  public void run() {
                      dedicatedserver.halt(true);
-@@ -259,6 +318,7 @@
+@@ -259,6 +327,7 @@
  
              thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(Main.LOGGER));
              Runtime.getRuntime().addShutdownHook(thread);
@@ -235,7 +247,7 @@
          } catch (Exception exception1) {
              Main.LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", exception1);
          }
-@@ -295,7 +355,7 @@
+@@ -295,7 +364,7 @@
      }
  
      public static void forceUpgrade(LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, boolean eraseCache, BooleanSupplier continueCheck, RegistryAccess dynamicRegistryManager, boolean recreateRegionFiles) {
