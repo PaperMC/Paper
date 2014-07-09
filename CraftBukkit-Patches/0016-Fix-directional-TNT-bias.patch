@@ -1,28 +1,35 @@
-From 7913b1797fbba21781b1fd38c82f934e312dcc54 Mon Sep 17 00:00:00 2001
-From: Zach Brown <Zbob750@live.com>
-Date: Tue, 8 Jul 2014 16:29:49 -0500
+From 0ea448246573309b06011437399cb3f3131a9ef2 Mon Sep 17 00:00:00 2001
+From: Jedediah Smith <jedediah@silencegreys.com>
+Date: Mon, 10 Mar 2014 16:18:41 -0400
 Subject: [PATCH] Fix directional TNT bias
 
 
-diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
-index a442cb1..252ed04 100644
---- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
-+++ b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
-@@ -19,11 +19,11 @@ public class EntityTNTPrimed extends Entity {
-     public EntityTNTPrimed(World world, double d0, double d1, double d2, EntityLiving entityliving) {
-         this(world);
-         this.setPosition(d0, d1, d2);
--        float f = (float) (Math.random() * 3.1415927410125732D * 2.0D);
-+        //float f = (float) (Math.random() * 3.1415927410125732D * 2.0D); // PaperSpigot - Fix directional TNT bias
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 9741e94..62b732d 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1896,6 +1896,12 @@ public abstract class World implements IBlockAccess {
+         double d1 = 1.0D / ((axisalignedbb.e - axisalignedbb.b) * 2.0D + 1.0D);
+         double d2 = 1.0D / ((axisalignedbb.f - axisalignedbb.c) * 2.0D + 1.0D);
  
--        this.motX = (double) (-((float) Math.sin((double) f)) * 0.02F);
-+        this.motX = // PaperSpigot - Fix directional TNT bias //(double) (-((float) Math.sin((double) f)) * 0.02F);
-         this.motY = 0.20000000298023224D;
--        this.motZ = (double) (-((float) Math.cos((double) f)) * 0.02F);
-+        this.motZ = // PaperSpigot - Fix directional TNT bias //(double) (-((float) Math.cos((double) f)) * 0.02F);
-         this.fuseTicks = 80;
-         this.lastX = d0;
-         this.lastY = d1;
++        // PaperSpigot start
++        // Shift the sample points so they are centered on the BB, to avoid directional bias
++        double xOffset = (1.0 - Math.floor(1.0 / d0) * d0) / 2.0;
++        double zOffset = (1.0 - Math.floor(1.0 / d2) * d2) / 2.0;
++        // PaperSpigot end
++
+         if (d0 >= 0.0D && d1 >= 0.0D && d2 >= 0.0D) {
+             int i = 0;
+             int j = 0;
+@@ -1908,7 +1914,7 @@ public abstract class World implements IBlockAccess {
+                         double d4 = axisalignedbb.b + (axisalignedbb.e - axisalignedbb.b) * (double) f1;
+                         double d5 = axisalignedbb.c + (axisalignedbb.f - axisalignedbb.c) * (double) f2;
+ 
+-                        if (this.a(vec3d2.b(d3, d4, d5), vec3d) == null) { // CraftBukkit
++                        if (this.a(vec3d2.b(xOffset + d3, d4, zOffset + d5), vec3d) == null) { // PaperSpigot // CraftBukkit
+                             ++i;
+                         }
+ 
 -- 
 1.9.1
 
