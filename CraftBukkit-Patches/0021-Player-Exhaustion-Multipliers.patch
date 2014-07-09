@@ -1,11 +1,11 @@
-From 36c586d93bb138448fc82a3dfb9b52c85893dcd8 Mon Sep 17 00:00:00 2001
+From c601e3e2e6043058a1e246d40f8b81662e55a242 Mon Sep 17 00:00:00 2001
 From: gsand <gsandowns@gmail.com>
-Date: Sun, 6 Jul 2014 06:42:49 -0400
+Date: Tue, 8 Jul 2014 21:41:43 -0500
 Subject: [PATCH] Player Exhaustion Multipliers
 
 
 diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
-index aaead32..51f0ab5 100644
+index 0893a6f..89c2832 100644
 --- a/src/main/java/net/minecraft/server/Block.java
 +++ b/src/main/java/net/minecraft/server/Block.java
 @@ -4,6 +4,8 @@ import java.util.Iterator;
@@ -20,33 +20,33 @@ index aaead32..51f0ab5 100644
 @@ -686,7 +688,7 @@ public class Block {
  
      public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-         entityhuman.a(StatisticList.MINE_BLOCK_COUNT[b(this)], 1);
--        entityhuman.a(0.025F);
+         entityhuman.a(StatisticList.MINE_BLOCK_COUNT[getId(this)], 1);
+-        entityhuman.applyExhaustion(0.025F);
 +        entityhuman.a( PaperSpigotWorldConfig.playerExhaustionBlockBreak ); // PaperSpigot - Configurable block breaking exhaustion
          if (this.E() && EnchantmentManager.hasSilkTouchEnchantment(entityhuman)) {
              ItemStack itemstack = this.j(l);
  
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index eb123ff..ad3b0a1 100644
+index a75e854..814a02b 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
 @@ -996,7 +996,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
                              }
                          }
  
--                        this.a(0.3F);
+-                        this.applyExhaustion(0.3F);
 +                        this.a( PaperSpigotWorldConfig.playerExhaustionAttack ); // PaperSpigot - Configurable attack exhaustion
                      } else if (flag1) {
                          entity.extinguish();
                      }
 @@ -1256,9 +1256,9 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
-         super.bi();
+         super.bj();
          this.a(StatisticList.r, 1);
          if (this.isSprinting()) {
--            this.a(0.8F);
+-            this.applyExhaustion(0.8F);
 +            this.a( PaperSpigotWorldConfig.playerExhaustionSprintJumping ); // PaperSpigot - Configurable sprint jumping exhaustion
          } else {
--            this.a(0.2F);
+-            this.applyExhaustion(0.2F);
 +            this.a( PaperSpigotWorldConfig.playerExhaustionJumping ); // PaperSpigot - Configurable jumping exhaustion
          }
      }
@@ -55,14 +55,14 @@ index eb123ff..ad3b0a1 100644
                  i = Math.round(MathHelper.sqrt(d0 * d0 + d1 * d1 + d2 * d2) * 100.0F);
                  if (i > 0) {
                      this.a(StatisticList.m, i);
--                    this.a(0.015F * (float) i * 0.01F);
+-                    this.applyExhaustion(0.015F * (float) i * 0.01F);
 +                    this.a( PaperSpigotWorldConfig.playerExhaustionSwimming * (float) i * 0.01F); // PaperSpigot - Configurable swimming exhaustion
                  }
-             } else if (this.L()) {
+             } else if (this.M()) {
                  i = Math.round(MathHelper.sqrt(d0 * d0 + d2 * d2) * 100.0F);
                  if (i > 0) {
                      this.a(StatisticList.i, i);
--                    this.a(0.015F * (float) i * 0.01F);
+-                    this.applyExhaustion(0.015F * (float) i * 0.01F);
 +                    this.a( PaperSpigotWorldConfig.playerExhaustionSwimming * (float) i * 0.01F); // PaperSpigot - Configurable swimming (diving) exhaustion
                  }
              } else if (this.h_()) {
@@ -71,16 +71,16 @@ index eb123ff..ad3b0a1 100644
                  if (i > 0) {
                      this.a(StatisticList.h, i);
                      if (this.isSprinting()) {
--                        this.a(0.099999994F * (float) i * 0.01F);
+-                        this.applyExhaustion(0.099999994F * (float) i * 0.01F);
 +                        this.a( PaperSpigotWorldConfig.playerExhaustionSprinting * (float) i * 0.01F); // PaperSpigot - Configurable sprinting exhaustion
                      } else {
--                        this.a(0.01F * (float) i * 0.01F);
+-                        this.applyExhaustion(0.01F * (float) i * 0.01F);
 +                        this.a( PaperSpigotWorldConfig.playerExhaustionWalking * (float) i * 0.01F); // PaperSpigot - Configurable walking exhaustion
                      }
                  }
              } else {
 diff --git a/src/main/java/net/minecraft/server/FoodMetaData.java b/src/main/java/net/minecraft/server/FoodMetaData.java
-index 4e91fe9..423a0c4 100644
+index 4169231..30f79a1 100644
 --- a/src/main/java/net/minecraft/server/FoodMetaData.java
 +++ b/src/main/java/net/minecraft/server/FoodMetaData.java
 @@ -1,5 +1,7 @@
