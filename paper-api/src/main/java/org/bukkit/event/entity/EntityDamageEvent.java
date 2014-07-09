@@ -10,6 +10,8 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.util.NumberConversions;
 
+import com.google.common.base.Function;
+import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableMap;
 
 /**
@@ -18,7 +20,9 @@ import com.google.common.collect.ImmutableMap;
 public class EntityDamageEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private static final DamageModifier[] MODIFIERS = DamageModifier.values();
+    private static final Function<? super Double, Double> ZERO = Functions.constant(-0.0);
     private final Map<DamageModifier, Double> modifiers;
+    private final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions;
     private final Map<DamageModifier, Double> originals;
     private boolean cancelled;
     private final DamageCause cause;
@@ -30,16 +34,20 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
 
     @Deprecated
     public EntityDamageEvent(final Entity damagee, final DamageCause cause, final double damage) {
-        this(damagee, cause, new EnumMap<DamageModifier, Double>(ImmutableMap.of(DamageModifier.BASE, damage)));
+        this(damagee, cause, new EnumMap<DamageModifier, Double>(ImmutableMap.of(DamageModifier.BASE, damage)), new EnumMap<DamageModifier, Function<? super Double, Double>>(ImmutableMap.of(DamageModifier.BASE, ZERO)));
     }
 
-    public EntityDamageEvent(final Entity damagee, final DamageCause cause, final Map<DamageModifier, Double> modifiers) {
+    public EntityDamageEvent(final Entity damagee, final DamageCause cause, final Map<DamageModifier, Double> modifiers, final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
         super(damagee);
         Validate.isTrue(modifiers.containsKey(DamageModifier.BASE), "BASE DamageModifier missing");
         Validate.isTrue(!modifiers.containsKey(null), "Cannot have null DamageModifier");
+        Validate.noNullElements(modifiers.values(), "Cannot have null modifier values");
+        Validate.isTrue(modifiers.keySet().equals(modifierFunctions.keySet()), "Must have a modifier function for each DamageModifier");
+        Validate.noNullElements(modifierFunctions.values(), "Cannot have null modifier function");
         this.originals = new EnumMap<DamageModifier, Double>(modifiers);
         this.cause = cause;
         this.modifiers = modifiers;
+        this.modifierFunctions = modifierFunctions;
     }
 
     public boolean isCancelled() {
@@ -149,11 +157,39 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * Sets the raw amount of damage caused by the event
+     * Sets the raw amount of damage caused by the event.
+     * <p>
+     * For compatibility this also recalculates the modifiers and scales
+     * them by the difference between the modifier for the previous damage
+     * value and the new one.
      *
      * @param damage The raw amount of damage caused by the event
      */
     public void setDamage(double damage) {
+        // These have to happen in the same order as the server calculates them, keep the enum sorted
+        double remaining = damage;
+        double oldRemaining = getDamage(DamageModifier.BASE);
+        for (DamageModifier modifier : MODIFIERS) {
+            if (!isApplicable(modifier)) {
+                continue;
+            }
+
+            Function<? super Double, Double> modifierFunction = modifierFunctions.get(modifier);
+            double newVanilla = modifierFunction.apply(remaining);
+            double oldVanilla = modifierFunction.apply(oldRemaining);
+            double difference = oldVanilla - newVanilla;
+
+            // Don't allow value to cross zero, assume zero values should be negative
+            double old = getDamage(modifier);
+            if (old > 0) {
+                setDamage(modifier, Math.max(0, old - difference));
+            } else {
+                setDamage(modifier, Math.min(0, old - difference));
+            }
+            remaining += newVanilla;
+            oldRemaining += oldVanilla;
+        }
+
         setDamage(DamageModifier.BASE, damage);
     }
 
