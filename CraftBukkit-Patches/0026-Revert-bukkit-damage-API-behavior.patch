@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 8 Jul 2014 19:21:28 -0400
+Subject: [PATCH] Revert Bukkit Damage API Behavior
+
+This API is extremely broken and even updated plugins can not adequately restore their intended behavior with the existing API.
+
+Until Bukkit comes up with an adequate solution, lets revert the change in behavior.
+
+New plugins using the API will not error but will also not behave as intended, but there are likely no plugins using this new API.
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
+     // CraftBukkit start
+     protected boolean d(DamageSource damagesource, float f) { // void -> boolean
+         if (!this.isInvulnerable()) {
++            // PaperSpigot start - moved up from below to bring back old behavior.
++            EntityDamageEvent event = CraftEventFactory.handleLivingEntityDamageEvent(this, damagesource, f, 0, 0, 0, 0, 0, 0);
++
++            if (event.isCancelled()) {
++                return false;
++            }
++
++            f = (float) event.getDamage();
++            // PaperSpigot end
++
+             boolean human = this instanceof EntityHuman;
+             float originalDamage = f;
+             float preDamage = f;
+@@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
+             f = Math.max(f - this.br(), 0.0F);
+             float absorptionModifier = Math.max(f1 - f, 0.0F);
+ 
+-            EntityDamageEvent event = CraftEventFactory.handleLivingEntityDamageEvent(this, damagesource, originalDamage, -hardHatModifier, -blockingModifier, -armorModifier, -resistanceModifier, -magicModifier, -absorptionModifier);
+-
+-            if (event.isCancelled()) {
+-                return false;
++            // PaperSpigot start - Moved event call up
++            event.setDamage(DamageModifier.ARMOR,      -armorModifier);
++            if (damagesource == DamageSource.FALLING_BLOCK || damagesource == DamageSource.ANVIL) {
++                event.setDamage(DamageModifier.HARD_HAT, -hardHatModifier);
+             }
+-
+-            f = (float) event.getFinalDamage();
++            if (human) {
++                event.setDamage(DamageModifier.BLOCKING, -blockingModifier);
++            }
++            event.setDamage(DamageModifier.RESISTANCE, -resistanceModifier);
++            event.setDamage(DamageModifier.MAGIC,      -magicModifier);
++            event.setDamage(DamageModifier.ABSORPTION, -absorptionModifier);
++            // PaperSpigot end
+ 
+             // Apply damage to helmet
+             if ((damagesource == DamageSource.ANVIL || damagesource == DamageSource.FALLING_BLOCK) && this.getEquipment(4) != null) {
+--
