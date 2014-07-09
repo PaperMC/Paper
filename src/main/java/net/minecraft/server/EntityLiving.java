@@ -9,6 +9,7 @@ import java.util.UUID;
 
 // CraftBukkit start
 import java.util.ArrayList;
+import com.google.common.base.Function;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageModifier;
@@ -956,49 +957,78 @@ public abstract class EntityLiving extends Entity {
     }
 
     // CraftBukkit start
-    protected boolean d(DamageSource damagesource, float f) { // void -> boolean
+    protected boolean d(final DamageSource damagesource, float f) { // void -> boolean, add final
         if (!this.isInvulnerable()) {
-            boolean human = this instanceof EntityHuman;
+            final boolean human = this instanceof EntityHuman;
             float originalDamage = f;
-            float preDamage = f;
-            float hardHatModifier = 0;
-            if ((damagesource == DamageSource.ANVIL || damagesource == DamageSource.FALLING_BLOCK) && this.getEquipment(4) != null) {
-                f *= 0.75F;
-                hardHatModifier = preDamage - f;
-                preDamage = f;
-            }
-            float blockingModifier = 0;
-            if (human) {
-                if (!damagesource.ignoresArmor() && ((EntityHuman) this).isBlocking() && f > 0.0F) {
-                    f = (1.0F + f) * 0.5F;
-                    blockingModifier = preDamage - f;
-                    preDamage = f;
+            Function<Double, Double> hardHat = new Function<Double, Double>() {
+                @Override
+                public Double apply(Double f) {
+                    if ((damagesource == DamageSource.ANVIL || damagesource == DamageSource.FALLING_BLOCK) && EntityLiving.this.getEquipment(4) != null) {
+                        return -(f - (f * 0.75F));
+                    }
+                    return -0.0;
                 }
-            }
-            // Armor modifier
-            f = this.applyArmorModifier(damagesource, f);
-            float armorModifier = preDamage - f;
-            preDamage = f;
-            // Resistance Potion Effect
-            if (!damagesource.isStarvation() && this.hasEffect(MobEffectList.RESISTANCE) && damagesource != DamageSource.OUT_OF_WORLD) {
-                int i = (this.getEffect(MobEffectList.RESISTANCE).getAmplifier() + 1) * 5;
-                int j = 25 - i;
-                float f1 = f * (float) j;
-                f = f1 / 25.0F;
-            }
-            float resistanceModifier = preDamage - f;
-            preDamage = f;
-            // Magic modifier
-            f = this.applyMagicModifier(damagesource, f);
-            float magicModifier = preDamage - f;
-            float f1 = f;
+            };
+            float hardHatModifier = hardHat.apply((double) f).floatValue();
+            f += hardHatModifier;
 
-            // Absorption modifier
-            f = Math.max(f - this.getAbsorptionHearts(), 0.0F);
-            float absorptionModifier = Math.max(f1 - f, 0.0F);
+            Function<Double, Double> blocking = new Function<Double, Double>() {
+                @Override
+                public Double apply(Double f) {
+                    if (human) {
+                        if (!damagesource.ignoresArmor() && ((EntityHuman) EntityLiving.this).isBlocking() && f > 0.0F) {
+                            return -(f - ((1.0F + f) * 0.5F));
+                        }
+                    }
+                    return -0.0;
+                }
+            };
+            float blockingModifier = blocking.apply((double) f).floatValue();
+            f += blockingModifier;
 
-            EntityDamageEvent event = CraftEventFactory.handleLivingEntityDamageEvent(this, damagesource, originalDamage, -hardHatModifier, -blockingModifier, -armorModifier, -resistanceModifier, -magicModifier, -absorptionModifier);
+            Function<Double, Double> armor = new Function<Double, Double>() {
+                @Override
+                public Double apply(Double f) {
+                    return -(f - EntityLiving.this.applyArmorModifier(damagesource, f.floatValue()));
+                }
+            };
+            float armorModifier = armor.apply((double) f).floatValue();
+            f += armorModifier;
 
+            Function<Double, Double> resistance = new Function<Double, Double>() {
+                @Override
+                public Double apply(Double f) {
+                    if (!damagesource.isStarvation() && EntityLiving.this.hasEffect(MobEffectList.RESISTANCE) && damagesource != DamageSource.OUT_OF_WORLD) {
+                        int i = (EntityLiving.this.getEffect(MobEffectList.RESISTANCE).getAmplifier() + 1) * 5;
+                        int j = 25 - i;
+                        float f1 = f.floatValue() * (float) j;
+                        return -(f - (f1 / 25.0F));
+                    }
+                    return -0.0;
+                }
+            };
+            float resistanceModifier = resistance.apply((double) f).floatValue();
+            f += resistanceModifier;
+
+            Function<Double, Double> magic = new Function<Double, Double>() {
+                @Override
+                public Double apply(Double f) {
+                    return -(f - EntityLiving.this.applyMagicModifier(damagesource, f.floatValue()));
+                }
+            };
+            float magicModifier = magic.apply((double) f).floatValue();
+            f += magicModifier;
+
+            Function<Double, Double> absorption = new Function<Double, Double>() {
+                @Override
+                public Double apply(Double f) {
+                    return -(Math.max(f - Math.max(f - EntityLiving.this.getAbsorptionHearts(), 0.0F), 0.0F));
+                }
+            };
+            float absorptionModifier = absorption.apply((double) f).floatValue();
+
+            EntityDamageEvent event = CraftEventFactory.handleLivingEntityDamageEvent(this, damagesource, originalDamage, hardHatModifier, blockingModifier, armorModifier, resistanceModifier, magicModifier, absorptionModifier, hardHat, blocking, armor, resistance, magic, absorption);
             if (event.isCancelled()) {
                 return false;
             }
