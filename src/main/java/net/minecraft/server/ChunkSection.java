@@ -13,7 +13,7 @@ public class ChunkSection {
     private NibbleArray emittedLight;
     private NibbleArray skyLight;
     // CraftBukkit start - Compact storage
-    private byte compactId;
+    private int compactId;
     private byte compactExtId;
     private byte compactData;
     private byte compactEmitted;
@@ -125,7 +125,7 @@ public class ChunkSection {
         // CraftBukkit start - Compact storage
         if (this.blockIds == null) {
             this.blockIds = new byte[4096];
-            Arrays.fill(this.blockIds, this.compactId);
+            Arrays.fill(this.blockIds, (byte) (this.compactId & 255));
         }
         // CraftBukkit end
 
@@ -351,7 +351,7 @@ public class ChunkSection {
         // CraftBukkit start - Compact storage
         if (this.blockIds == null) {
             byte[] ids = new byte[4096];
-            Arrays.fill(ids, this.compactId);
+            Arrays.fill(ids, (byte) (this.compactId & 255));
             return ids;
         }
         // CraftBukkit end
@@ -401,7 +401,7 @@ public class ChunkSection {
             this.blockIds = null;
             return;
         } else if (canBeCompact(abyte)) {
-            this.compactId = abyte[0];
+            this.compactId = abyte[0] & 255;
             return;
         }
         // CraftBukkit end
