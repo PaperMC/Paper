@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Zach Brown <1254957+zachbr@users.noreply.github.com>
-Date: Tue, 8 Jul 2014 21:08:51 -0500
+Date: Sat, 12 Jul 2014 19:32:01 -0500
 Subject: [PATCH] PaperSpigot config files
 
 
@@ -87,6 +87,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.server.MinecraftServer;
 +import org.bukkit.Bukkit;
 +import org.bukkit.command.Command;
++import org.bukkit.configuration.InvalidConfigurationException;
 +import org.bukkit.configuration.file.YamlConfiguration;
 +
 +public class PaperSpigotConfig
@@ -109,7 +110,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public static void init()
 +    {
-+        config = YamlConfiguration.loadConfiguration( CONFIG_FILE );
++        config = new YamlConfiguration();
++        try
++        {
++            config.load ( CONFIG_FILE );
++        } catch ( IOException ex )
++        {
++        } catch ( InvalidConfigurationException ex )
++        {
++            Bukkit.getLogger().log( Level.SEVERE, "Could not load paper.yml, please correct your syntax errors", ex );
++            throw Throwables.propagate( ex );
++        }
 +        config.options().header( HEADER );
 +        config.options().copyDefaults( true );
 +
@@ -142,7 +153,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        method.invoke( instance );
 +                    } catch ( InvocationTargetException ex )
 +                    {
-+                        Throwables.propagate( ex.getCause() );
++                        throw Throwables.propagate( ex.getCause() );
 +                    } catch ( Exception ex )
 +                    {
 +                        Bukkit.getLogger().log( Level.SEVERE, "Error invoking " + method, ex );
@@ -195,7 +206,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return config.getString( path, config.getString( path ) );
 +    }
 +}
-\ No newline at end of file
 diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -279,5 +289,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return config.getString( "world-settings." + worldName + "." + path, config.getString( "world-settings.default." + path ) );
 +    }
 +}
-\ No newline at end of file
 --
