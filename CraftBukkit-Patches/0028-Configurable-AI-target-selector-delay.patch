@@ -1,0 +1,58 @@
+From 2cfc2582dd24e6b137480a4792920a00aeb74701 Mon Sep 17 00:00:00 2001
+From: Zach Brown <Zbob750@live.com>
+Date: Mon, 14 Jul 2014 01:20:46 -0500
+Subject: [PATCH] Configurable AI target selector delay
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
+index d0f7033..83b0fe2 100644
+--- a/src/main/java/net/minecraft/server/EntityInsentient.java
++++ b/src/main/java/net/minecraft/server/EntityInsentient.java
+@@ -395,6 +395,11 @@ public abstract class EntityInsentient extends EntityLiving {
+         }
+     }
+ 
++    // PaperSpigot start - Configurable AI delay
++    private int aiTickDelay = org.github.paperspigot.PaperSpigotWorldConfig.aiTickDelay;
++    private int lastRun = -1;
++    // PaperSpigot end
++
+     protected void bn() {
+         ++this.aU;
+         this.world.methodProfiler.a("checkDespawn");
+@@ -415,9 +420,14 @@ public abstract class EntityInsentient extends EntityLiving {
+         this.world.methodProfiler.a("sensing");
+         this.bq.a();
+         this.world.methodProfiler.b();
+-        this.world.methodProfiler.a("targetSelector");
+-        this.targetSelector.a();
+-        this.world.methodProfiler.b();
++        // PaperSpigot start - Configurable AI delay
++        if (aiTickDelay == 0 || lastRun == -1 || MinecraftServer.currentTick - lastRun >= aiTickDelay) {
++            this.world.methodProfiler.a("targetSelector");
++            this.targetSelector.a();
++            this.world.methodProfiler.b();
++            lastRun = MinecraftServer.currentTick;
++        }
++        // PaperSpigot stop
+         this.world.methodProfiler.a("goalSelector");
+         this.goalSelector.a();
+         this.world.methodProfiler.b();
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+index 0d388af..765023d 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+@@ -175,4 +175,10 @@ public class PaperSpigotWorldConfig
+     {
+         tntHeightNerf = getDouble( "tnt-entity-height-nerf", 0 );
+     }
++
++    public static int aiTickDelay;
++    private void aiTickDelay()
++    {
++        aiTickDelay = getInt( "ai-tick-delay", 0 );
++    }
+ }
+-- 
+1.9.1
+
