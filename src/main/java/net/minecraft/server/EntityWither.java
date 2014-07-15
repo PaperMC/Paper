@@ -173,7 +173,23 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
                 // CraftBukkit end
 
                 this.world.createExplosion(this, this.locX, this.locY + (double) this.getHeadHeight(), this.locZ, 7.0F, false, this.world.getGameRules().getBoolean("mobGriefing"));
-                this.world.b(1013, (int) this.locX, (int) this.locY, (int) this.locZ, 0);
+                // CraftBukkit start - Use relative location for far away sounds
+                //this.world.b(1013, (int) this.locX, (int) this.locY, (int) this.locZ, 0);
+                int viewDistance = ((WorldServer) this.world).getServer().getViewDistance() * 16;
+                for (EntityPlayer player : (List<EntityPlayer>) this.world.players) {
+                    double deltaX = this.locX - player.locX;
+                    double deltaZ = this.locZ - player.locZ;
+                    double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
+                    if (distanceSquared > viewDistance * viewDistance) {
+                        double deltaLength = Math.sqrt(distanceSquared);
+                        double relativeX = player.locX + (deltaX / deltaLength) * viewDistance;
+                        double relativeZ = player.locZ + (deltaZ / deltaLength) * viewDistance;
+                        player.playerConnection.sendPacket(new PacketPlayOutWorldEvent(1013, (int) relativeX, (int) this.locY, (int) relativeZ, 0, true));
+                    } else {
+                        player.playerConnection.sendPacket(new PacketPlayOutWorldEvent(1013, (int) this.locX, (int) this.locY, (int) this.locZ, 0, true));
+                    }
+                }
+                // CraftBukkit end
             }
 
             this.s(i);

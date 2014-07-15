@@ -544,7 +544,23 @@ public class EntityEnderDragon extends EntityInsentient implements IComplex, IMo
             }
 
             if (this.bB == 1) {
-                this.world.b(1018, (int) this.locX, (int) this.locY, (int) this.locZ, 0);
+                // CraftBukkit start - Use relative location for far away sounds
+                //this.world.b(1018, (int) this.locX, (int) this.locY, (int) this.locZ, 0);
+                int viewDistance = ((WorldServer) this.world).getServer().getViewDistance() * 16;
+                for (EntityPlayer player : (List<EntityPlayer>) this.world.players) {
+                    double deltaX = this.locX - player.locX;
+                    double deltaZ = this.locZ - player.locZ;
+                    double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
+                    if (distanceSquared > viewDistance * viewDistance) {
+                        double deltaLength = Math.sqrt(distanceSquared);
+                        double relativeX = player.locX + (deltaX / deltaLength) * viewDistance;
+                        double relativeZ = player.locZ + (deltaZ / deltaLength) * viewDistance;
+                        player.playerConnection.sendPacket(new PacketPlayOutWorldEvent(1018, (int) relativeX, (int) this.locY, (int) relativeZ, 0, true));
+                    } else {
+                        player.playerConnection.sendPacket(new PacketPlayOutWorldEvent(1018, (int) this.locX, (int) this.locY, (int) this.locZ, 0, true));
+                    }
+                }
+                // CraftBukkit end
             }
         }
 
