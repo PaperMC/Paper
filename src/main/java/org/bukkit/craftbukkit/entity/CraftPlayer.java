@@ -1549,7 +1549,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             }
         }
         AttributeModifiable dummy = new AttributeModifiable(GenericAttributes.MAX_HEALTH, (attribute) -> { });
-        dummy.setValue(scaledHealth ? healthScale : getMaxHealth());
+        // Spigot start
+        double healthMod = scaledHealth ? healthScale : getMaxHealth();
+        if ( healthMod >= Float.MAX_VALUE || healthMod <= 0 )
+        {
+            healthMod = 20; // Reset health
+            getServer().getLogger().warning( getName() + " tried to crash the server with a large health attribute" );
+        }
+        dummy.setValue(healthMod);
+        // Spigot end
         collection.add(dummy);
     }
 
