@@ -1,4 +1,4 @@
-PaperSpigot [![Build Status](https://travis-ci.org/PaperSpigot/Spigot.png)](https://travis-ci.org/SpigotMC/Spigot)
+PaperSpigot [![Build Status](https://travis-ci.org/PaperSpigot/Spigot.png)](https://travis-ci.org/PaperSpigot/Spigot)
 ===========
 
 High performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.
@@ -14,7 +14,7 @@ Apply Patches : `./applyPatches.sh`
 
 ### Create patch for server ###
 
-`cd Spigot-Server`
+`cd PaperSpigot-Server`
 
 Add your file for commit : `git add <file>`
 
@@ -26,7 +26,7 @@ Create Patch `./rebuildPatches.sh`
 
 ### Create patch for API ###
 
-`cd Spigot-API`
+`cd Paperspigot-API`
 
 Add your file for commit : `git add <file>`
 
