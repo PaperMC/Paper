@@ -36,3 +36,5 @@ function savePatches {
 
 savePatches Bukkit Spigot-API
 savePatches CraftBukkit Spigot-Server
+savePatches Spigot-API PaperSpigot-API
+savePatches Spigot-Server PaperSpigot-Server

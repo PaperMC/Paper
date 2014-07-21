@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jonas Konrad <me@yawk.at>
+Date: Fri, 25 Apr 2014 23:46:46 +0200
+Subject: [PATCH] Fix race condition that could kill connections before they
+ were initiated
+
+Because NetworkManagers are registered before they get their channel in
+channelActive, the ServerConnection would remove them sometimes because
+it thought they were disconnected. This commit fixes this by introducing
+a 'preparing' variable that is true while the NetworkManager is not
+initialized. The ServerConnection does not remove NetworkManagers with
+this flag.
+
+diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/NetworkManager.java
++++ b/src/main/java/net/minecraft/server/NetworkManager.java
+@@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler {
+     public SocketAddress n;
+     public java.util.UUID spoofedUUID;
+     public Property[] spoofedProfile;
++    public boolean preparing = true;
+     // Spigot End
+     private PacketListener o;
+     private EnumProtocol p;
+@@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler {
+         super.channelActive(channelhandlercontext);
+         this.m = channelhandlercontext.channel();
+         this.n = this.m.remoteAddress();
++        // Spigot Start
++        this.preparing = false;
++        // Spigot End
+         this.a(EnumProtocol.HANDSHAKING);
+     }
+ 
+@@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler {
+     }
+ 
+     public void close(IChatBaseComponent ichatbasecomponent) {
++        // Spigot Start
++        this.preparing = false;
++        // Spigot End
+         if (this.m.isOpen()) {
+             this.m.close();
+             this.q = ichatbasecomponent;
+diff --git a/src/main/java/net/minecraft/server/ServerConnection.java b/src/main/java/net/minecraft/server/ServerConnection.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/ServerConnection.java
++++ b/src/main/java/net/minecraft/server/ServerConnection.java
+@@ -0,0 +0,0 @@ public class ServerConnection {
+                 NetworkManager networkmanager = (NetworkManager) iterator.next();
+ 
+                 if (!networkmanager.isConnected()) {
++                    // Spigot Start
++                    // Fix a race condition where a NetworkManager could be unregistered just before connection.
++                    if (networkmanager.preparing) continue;
++                    // Spigot End
+                     iterator.remove();
+                     if (networkmanager.f() != null) {
+                         networkmanager.getPacketListener().a(networkmanager.f());
+--
