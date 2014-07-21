@@ -1,0 +1,183 @@
+From 3f18958bc3eb43a0c0aa3841b24810d9af5c7378 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Tue, 11 Jun 2013 12:56:02 +1000
+Subject: [PATCH] Better Chunk Tick Selection
+
+An optimized chunk ticking algorithm which better selects chunks around players which are active on the server.
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 12c613c..7ecd668 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -62,7 +62,7 @@ public abstract class World implements IBlockAccess {
+     public Scoreboard scoreboard = new Scoreboard(); // CraftBukkit - protected -> public
+     public boolean isStatic;
+     // CraftBukkit start - public, longhashset
+-    protected LongHashSet chunkTickList = new LongHashSet();
++    // protected LongHashSet chunkTickList = new LongHashSet(); // Spigot
+     private int K;
+     public boolean allowMonsters;
+     public boolean allowAnimals;
+@@ -79,6 +79,30 @@ public abstract class World implements IBlockAccess {
+     private boolean M;
+     int[] I;
+ 
++    // Spigot start
++    protected final net.minecraft.util.gnu.trove.map.hash.TLongShortHashMap chunkTickList;
++    protected float growthOdds = 100;
++    protected float modifiedOdds = 100;
++    private final byte chunkTickRadius;
++
++    public static long chunkToKey(int x, int z)
++    {
++        long k = ( ( ( (long) x ) & 0xFFFF0000L ) << 16 ) | ( ( ( (long) x ) & 0x0000FFFFL ) << 0 );
++        k     |= ( ( ( (long) z ) & 0xFFFF0000L ) << 32 ) | ( ( ( (long) z ) & 0x0000FFFFL ) << 16 );
++        return k;
++    }
++
++    public static int keyToX(long k)
++    {
++        return (int) ( ( ( k >> 16 ) & 0xFFFF0000 ) | ( k & 0x0000FFFF ) );
++    }
++
++    public static int keyToZ(long k)
++    {
++        return (int) ( ( ( k >> 32 ) & 0xFFFF0000L ) | ( ( k >> 16 ) & 0x0000FFFF ) );
++    }
++    // Spigot end
++
+     public BiomeBase getBiome(int i, int j) {
+         if (this.isLoaded(i, 0, j)) {
+             Chunk chunk = this.getChunkAtWorldCoords(i, j);
+@@ -128,6 +152,11 @@ public abstract class World implements IBlockAccess {
+         this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
+         this.ticksPerMonsterSpawns = this.getServer().getTicksPerMonsterSpawns(); // CraftBukkit
+         // CraftBukkit end
++        // Spigot start
++        this.chunkTickRadius = (byte) ( ( this.getServer().getViewDistance() < 7 ) ? this.getServer().getViewDistance() : 7 );
++        this.chunkTickList = new net.minecraft.util.gnu.trove.map.hash.TLongShortHashMap( spigotConfig.chunksPerTick * 5, 0.7f, Long.MIN_VALUE, Short.MIN_VALUE );
++        this.chunkTickList.setAutoCompactionFactor( 0 );
++        // Spigot end
+ 
+         this.K = this.random.nextInt(12000);
+         this.allowMonsters = true;
+@@ -1987,17 +2016,44 @@ public abstract class World implements IBlockAccess {
+         int k;
+         int l;
+ 
++        // Spigot start
++        int optimalChunks = spigotConfig.chunksPerTick;
++        // Quick conditions to allow us to exist early
++        if ( optimalChunks <= 0 || players.isEmpty() )
++        {
++            return;
++        }
++        // Keep chunks with growth inside of the optimal chunk range
++        int chunksPerPlayer = Math.min( 200, Math.max( 1, (int) ( ( ( optimalChunks - players.size() ) / (double) players.size() ) + 0.5 ) ) );
++        int randRange = 3 + chunksPerPlayer / 30;
++        // Limit to normal tick radius - including view distance
++        randRange = ( randRange > chunkTickRadius ) ? chunkTickRadius : randRange;
++        // odds of growth happening vs growth happening in vanilla
++        this.growthOdds = this.modifiedOdds = Math.max( 35, Math.min( 100, ( ( chunksPerPlayer + 1 ) * 100F ) / 15F ) );
++        // Spigot end
+         for (i = 0; i < this.players.size(); ++i) {
+             entityhuman = (EntityHuman) this.players.get(i);
+             j = MathHelper.floor(entityhuman.locX / 16.0D);
+             k = MathHelper.floor(entityhuman.locZ / 16.0D);
+             l = this.p();
+ 
+-            for (int i1 = -l; i1 <= l; ++i1) {
+-                for (int j1 = -l; j1 <= l; ++j1) {
+-                    this.chunkTickList.add(org.bukkit.craftbukkit.util.LongHash.toLong(i1 + j, j1 + k)); // CraftBukkit
++            // Spigot start - Always update the chunk the player is on
++            long key = chunkToKey( j, k );
++            int existingPlayers = Math.max( 0, chunkTickList.get( key ) ); // filter out -1
++            chunkTickList.put(key, (short) (existingPlayers + 1));
++
++            // Check and see if we update the chunks surrounding the player this tick
++            for ( int chunk = 0; chunk < chunksPerPlayer; chunk++ )
++            {
++                int dx = ( random.nextBoolean() ? 1 : -1 ) * random.nextInt( randRange );
++                int dz = ( random.nextBoolean() ? 1 : -1 ) * random.nextInt( randRange );
++                long hash = chunkToKey( dx + j, dz + k );
++                if ( !chunkTickList.contains( hash ) && this.isChunkLoaded( dx + j, dz + k ) )
++                {
++                    chunkTickList.put( hash, (short) -1 ); // no players
+                 }
+             }
++            // Spigot End
+         }
+ 
+         this.methodProfiler.b();
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index ba7965d..71626fa 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -307,10 +307,20 @@ public class WorldServer extends World {
+         // CraftBukkit start
+         // Iterator iterator = this.chunkTickList.iterator();
+ 
+-        for (long chunkCoord : this.chunkTickList.popAll()) {
++        // Spigot start
++        for (net.minecraft.util.gnu.trove.iterator.TLongShortIterator iter = chunkTickList.iterator(); iter.hasNext();) {
++            iter.advance();
++            long chunkCoord = iter.key();
++            int chunkX = World.keyToX(chunkCoord);
++            int chunkZ = World.keyToZ(chunkCoord);
++            // If unloaded, or in procedd of being unloaded, drop it
++            if ( ( !this.isChunkLoaded( chunkX, chunkZ ) ) || ( this.chunkProviderServer.unloadQueue.contains( chunkX, chunkZ ) ) )
++            {
++                iter.remove();
++                continue;
++            }
++            // Spigot end
+             // ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) iterator.next();
+-            int chunkX = LongHash.msw(chunkCoord);
+-            int chunkZ = LongHash.lsw(chunkCoord);
+             int k = chunkX * 16;
+             int l = chunkZ * 16;
+ 
+@@ -401,6 +411,7 @@ public class WorldServer extends World {
+ 
+                         if (block.isTicking()) {
+                             ++i;
++                            this.growthOdds = (iter.value() < 1) ? this.modifiedOdds : 100; // Spigot - grow fast if no players are in this chunk (value = player count)
+                             block.a(this, k2 + k, i3 + chunksection.getYPosition(), l2 + l, this.random);
+                         }
+                     }
+@@ -409,6 +420,12 @@ public class WorldServer extends World {
+ 
+             this.methodProfiler.b();
+         }
++        // Spigot Start
++        if ( spigotConfig.clearChunksOnTick )
++        {
++            chunkTickList.clear();
++        }
++        // Spigot End
+     }
+ 
+     public boolean a(int i, int j, int k, Block block) {
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index 961ddb4..90a227f 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -68,4 +68,15 @@ public class SpigotWorldConfig
+         config.addDefault( "world-settings.default." + path, def );
+         return config.getString( "world-settings." + worldName + "." + path, config.getString( "world-settings.default." + path ) );
+     }
++
++    public int chunksPerTick;
++    public boolean clearChunksOnTick;
++    private void chunksPerTick()
++    {
++        chunksPerTick = getInt( "chunks-per-tick", 650 );
++        log( "Chunks to Grow per Tick: " + chunksPerTick );
++
++        clearChunksOnTick = getBoolean( "clear-tick-list", false );
++        log( "Clear tick list: " + clearChunksOnTick );
++    }
+ }
+-- 
+1.9.1
+

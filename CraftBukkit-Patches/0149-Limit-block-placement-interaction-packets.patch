@@ -1,0 +1,56 @@
+From dbda8287c85efa3395598057b157ff3130dabda9 Mon Sep 17 00:00:00 2001
+From: Thinkofdeath <thinkofdeath@spigotmc.org>
+Date: Sun, 29 Jun 2014 21:10:34 +0100
+Subject: [PATCH] Limit block placement/interaction packets
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index b723b73..9a7b256 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -573,7 +573,18 @@ public class PlayerConnection implements PacketPlayInListener {
+         }
+     }
+ 
++    // Spigot start - limit place/interactions
++    private long lastPlace = -1;
++
+     public void a(PacketPlayInBlockPlace packetplayinblockplace) {
++        boolean throttled = false;
++        if (lastPlace != -1 && packetplayinblockplace.timestamp - lastPlace < 5) {
++            throttled = true;
++        } else
++        {
++            lastPlace = packetplayinblockplace.timestamp;
++        }
++    // Spigot end
+         WorldServer worldserver = this.minecraftServer.getWorldServer(this.player.dimension);
+ 
+         // CraftBukkit start
+@@ -616,10 +627,14 @@ public class PlayerConnection implements PacketPlayInListener {
+ 
+             // CraftBukkit start
+             int itemstackAmount = itemstack.count;
++            // Spigot start - skip the event if throttled
++            if (!throttled) {
+             org.bukkit.event.player.PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.RIGHT_CLICK_AIR, itemstack);
+             if (event.useItemInHand() != Event.Result.DENY) {
+                 this.player.playerInteractManager.useItem(this.player, this.player.world, itemstack);
+             }
++            }
++            // Spigot end
+ 
+             // CraftBukkit - notch decrements the counter by 1 in the above method with food,
+             // snowballs and so forth, but he does it in a place that doesn't cause the
+@@ -640,7 +655,7 @@ public class PlayerConnection implements PacketPlayInListener {
+                 return;
+             }
+ 
+-            if (!this.player.playerInteractManager.interact(this.player, worldserver, itemstack, i, j, k, l, packetplayinblockplace.h(), packetplayinblockplace.i(), packetplayinblockplace.j())) {
++            if (throttled || !this.player.playerInteractManager.interact(this.player, worldserver, itemstack, i, j, k, l, packetplayinblockplace.h(), packetplayinblockplace.i(), packetplayinblockplace.j())) { // Spigot - skip the event if throttled
+                 always = true; // force PacketPlayOutSetSlot to be sent to client to update ItemStack count
+             }
+             // CraftBukkit end
+-- 
+1.9.1
+

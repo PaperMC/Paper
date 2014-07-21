@@ -1,0 +1,105 @@
+From 4fe9d7419abffc0cfc9b9df05ddd841c3c27b567 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 17 May 2014 02:12:39 -0500
+Subject: [PATCH] Teleport passenger/vehicle with player
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index dea5e19..5dc7e95 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -38,6 +38,13 @@ public abstract class Entity {
+     static boolean isLevelAtLeast(NBTTagCompound tag, int level) {
+         return tag.hasKey("Bukkit.updateLevel") && tag.getInt("Bukkit.updateLevel") >= level;
+     }
++    // PaperSpigot start
++    public void retrack() {
++        final EntityTracker entityTracker = ((WorldServer) world).getTracker();
++        entityTracker.untrackEntity(this);
++        entityTracker.track(this);
++    }
++    // PaperSpigot end
+     // CraftBukkit end
+ 
+     private static int entityCount;
+@@ -1849,7 +1856,7 @@ public abstract class Entity {
+             // minecraftserver.getPlayerList().a(this, j, worldserver, worldserver1);
+             boolean before = worldserver1.chunkProviderServer.forceChunkLoad;
+             worldserver1.chunkProviderServer.forceChunkLoad = true;
+-            worldserver1.getMinecraftServer().getPlayerList().repositionEntity(this, exit, portal);
++            //worldserver1.getMinecraftServer().getPlayerList().repositionEntity(this, exit, portal); // PaperSpigot - no... this entity is dead
+             worldserver1.chunkProviderServer.forceChunkLoad = before;
+             // CraftBukkit end
+             this.world.methodProfiler.c("reloading");
+@@ -1857,6 +1864,10 @@ public abstract class Entity {
+ 
+             if (entity != null) {
+                 entity.a(this, true);
++                // PaperSpigot start - move entity to new location
++                exit.getBlock(); // force load
++                entity.setLocation(exit.getX(), exit.getY(), exit.getZ(), exit.getYaw(), exit.getPitch());
++                // PaperSpigot end
+                 /* CraftBukkit start - We need to do this...
+                 if (j == 1 && i == 1) {
+                     ChunkCoordinates chunkcoordinates = worldserver1.getSpawn();
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 1127461..849b971 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -477,12 +477,33 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         if (event.isCancelled()) {
+             return false;
+         }
+-        
++
++        // PaperSpigot start
+         // Spigot Start
+-        eject();
+-        leaveVehicle();
++        //eject();
++        //leaveVehicle();
+         // Spigot End
+ 
++        // PaperSpigot start
++        Entity vehicle = entity.vehicle;
++        Entity passenger = entity.passenger;
++        if (vehicle != null) {
++            vehicle.passenger = null;
++            vehicle.teleportTo(location, false);
++            vehicle = vehicle.getBukkitEntity().getHandle();
++            entity.vehicle = vehicle;
++            vehicle.passenger = entity;
++        }
++
++        if (passenger != null) {
++            passenger.vehicle = null;
++            passenger.teleportTo(location, false);
++            passenger = passenger.getBukkitEntity().getHandle();
++            entity.passenger = passenger;
++            entity.vehicle = entity;
++        }
++        // PaperSpigot end
++
+         // Update the From Location
+         from = event.getFrom();
+         // Grab the new To Location dependent on whether the event was cancelled.
+@@ -502,6 +523,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         } else {
+             server.getHandle().moveToWorld(entity, toWorld.dimension, true, to, true);
+         }
++
++        // PaperSpigot start
++        if (vehicle != null) {
++            vehicle.retrack();
++            //entity.retrack();
++        }
++        if (passenger != null) {
++            passenger.retrack();
++        }
++        // PaperSpigot end
+         return true;
+     }
+ 
+-- 
+1.9.1
+

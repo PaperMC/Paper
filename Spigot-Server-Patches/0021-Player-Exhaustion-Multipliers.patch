@@ -1,0 +1,134 @@
+From 6d23494e84e5fc782b166de87b7f7c77d54b8fd1 Mon Sep 17 00:00:00 2001
+From: gsand <gsandowns@gmail.com>
+Date: Tue, 8 Jul 2014 21:41:43 -0500
+Subject: [PATCH] Player Exhaustion Multipliers
+
+
+diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
+index 0893a6f..89c2832 100644
+--- a/src/main/java/net/minecraft/server/Block.java
++++ b/src/main/java/net/minecraft/server/Block.java
+@@ -4,6 +4,8 @@ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Random;
+ 
++import org.github.paperspigot.PaperSpigotWorldConfig; // PaperSpigot
++
+ public class Block {
+ 
+     public static final RegistryMaterials REGISTRY = new RegistryBlocks("air");
+@@ -686,7 +688,7 @@ public class Block {
+ 
+     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
+         entityhuman.a(StatisticList.MINE_BLOCK_COUNT[getId(this)], 1);
+-        entityhuman.applyExhaustion(0.025F);
++        entityhuman.a( PaperSpigotWorldConfig.playerExhaustionBlockBreak ); // PaperSpigot - Configurable block breaking exhaustion
+         if (this.E() && EnchantmentManager.hasSilkTouchEnchantment(entityhuman)) {
+             ItemStack itemstack = this.j(l);
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index a75e854..814a02b 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -996,7 +996,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
+                             }
+                         }
+ 
+-                        this.applyExhaustion(0.3F);
++                        this.a( PaperSpigotWorldConfig.playerExhaustionAttack ); // PaperSpigot - Configurable attack exhaustion
+                     } else if (flag1) {
+                         entity.extinguish();
+                     }
+@@ -1256,9 +1256,9 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
+         super.bj();
+         this.a(StatisticList.r, 1);
+         if (this.isSprinting()) {
+-            this.applyExhaustion(0.8F);
++            this.a( PaperSpigotWorldConfig.playerExhaustionSprintJumping ); // PaperSpigot - Configurable sprint jumping exhaustion
+         } else {
+-            this.applyExhaustion(0.2F);
++            this.a( PaperSpigotWorldConfig.playerExhaustionJumping ); // PaperSpigot - Configurable jumping exhaustion
+         }
+     }
+ 
+@@ -1294,13 +1294,13 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
+                 i = Math.round(MathHelper.sqrt(d0 * d0 + d1 * d1 + d2 * d2) * 100.0F);
+                 if (i > 0) {
+                     this.a(StatisticList.m, i);
+-                    this.applyExhaustion(0.015F * (float) i * 0.01F);
++                    this.a( PaperSpigotWorldConfig.playerExhaustionSwimming * (float) i * 0.01F); // PaperSpigot - Configurable swimming exhaustion
+                 }
+             } else if (this.M()) {
+                 i = Math.round(MathHelper.sqrt(d0 * d0 + d2 * d2) * 100.0F);
+                 if (i > 0) {
+                     this.a(StatisticList.i, i);
+-                    this.applyExhaustion(0.015F * (float) i * 0.01F);
++                    this.a( PaperSpigotWorldConfig.playerExhaustionSwimming * (float) i * 0.01F); // PaperSpigot - Configurable swimming (diving) exhaustion
+                 }
+             } else if (this.h_()) {
+                 if (d1 > 0.0D) {
+@@ -1311,9 +1311,9 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
+                 if (i > 0) {
+                     this.a(StatisticList.h, i);
+                     if (this.isSprinting()) {
+-                        this.applyExhaustion(0.099999994F * (float) i * 0.01F);
++                        this.a( PaperSpigotWorldConfig.playerExhaustionSprinting * (float) i * 0.01F); // PaperSpigot - Configurable sprinting exhaustion
+                     } else {
+-                        this.applyExhaustion(0.01F * (float) i * 0.01F);
++                        this.a( PaperSpigotWorldConfig.playerExhaustionWalking * (float) i * 0.01F); // PaperSpigot - Configurable walking exhaustion
+                     }
+                 }
+             } else {
+diff --git a/src/main/java/net/minecraft/server/FoodMetaData.java b/src/main/java/net/minecraft/server/FoodMetaData.java
+index 4169231..30f79a1 100644
+--- a/src/main/java/net/minecraft/server/FoodMetaData.java
++++ b/src/main/java/net/minecraft/server/FoodMetaData.java
+@@ -1,5 +1,7 @@
+ package net.minecraft.server;
+ 
++import org.github.paperspigot.PaperSpigotWorldConfig; // PaperSpigot
++
+ public class FoodMetaData {
+ 
+     // CraftBukkit start - All made public
+@@ -65,7 +67,7 @@ public class FoodMetaData {
+             if (this.foodTickTimer >= 80) {
+                 // CraftBukkit - added RegainReason
+                 entityhuman.heal(1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED);
+-                this.a(3.0F);
++                this.a( PaperSpigotWorldConfig.playerExhaustionRegeneration ); // PaperSpigot - Configurable regeneration exhaustion
+                 this.foodTickTimer = 0;
+             }
+         } else if (this.foodLevel <= 0) {
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+index 554e74a..dec078a 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+@@ -124,4 +124,24 @@ public class PaperSpigotWorldConfig
+         fishingMinTicks = getInt( "fishing-time-range.MinimumTicks", fishingMinTicks );
+         fishingMaxTicks = getInt( "fishing-time-range.MaximumTicks", fishingMaxTicks );
+     }
++
++    public static float playerExhaustionWalking;
++    public static float playerExhaustionSwimming;
++    public static float playerExhaustionBlockBreak;
++    public static float playerExhaustionSprinting;
++    public static float playerExhaustionJumping;
++    public static float playerExhaustionSprintJumping;
++    public static float playerExhaustionAttack;
++    public static float playerExhaustionRegeneration;
++    private void playerExhaustion()
++    {
++        playerExhaustionWalking = getFloat( "player-exhaustion.walking", 0.01F );
++        playerExhaustionSwimming = getFloat( "player-exhaustion.swimming", 0.015F );
++        playerExhaustionBlockBreak = getFloat( "player-exhaustion.block-break", 0.025F );
++        playerExhaustionSprinting = getFloat( "player-exhaustion.sprinting", 0.1F );
++        playerExhaustionJumping = getFloat( "player-exhaustion.jumping", 0.2F );
++        playerExhaustionSprintJumping = getFloat( "player-exhaustion.sprint-jumping", 0.8F );
++        playerExhaustionAttack = getFloat( "player-exhaustion.attack", 0.3F );
++        playerExhaustionRegeneration = getFloat( "player-exhaustion.regeneration", 3.0F );
++    }
+ }
+-- 
+1.9.1
+

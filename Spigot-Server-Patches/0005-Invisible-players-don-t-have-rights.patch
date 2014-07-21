@@ -1,0 +1,66 @@
+From cae545bf871afc71fe4c8acb0f274b422cd13b9f Mon Sep 17 00:00:00 2001
+From: Zach Brown <Zbob750@live.com>
+Date: Sun, 18 May 2014 16:35:38 -0500
+Subject: [PATCH] Invisible players don't have rights
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityArrow.java b/src/main/java/net/minecraft/server/EntityArrow.java
+index de8dda7..69e254a 100644
+--- a/src/main/java/net/minecraft/server/EntityArrow.java
++++ b/src/main/java/net/minecraft/server/EntityArrow.java
+@@ -3,6 +3,7 @@ package net.minecraft.server;
+ import java.util.List;
+ 
+ // CraftBukkit start
++import org.bukkit.craftbukkit.entity.CraftPlayer; // PaperSpigot
+ import org.bukkit.entity.LivingEntity;
+ import org.bukkit.event.entity.EntityCombustByEntityEvent;
+ import org.bukkit.event.player.PlayerPickupItemEvent;
+@@ -220,6 +221,16 @@ public class EntityArrow extends Entity implements IProjectile {
+             float f2;
+             float f3;
+ 
++            // PaperSpigot start - Allow projectiles and arrows to pass through players the shooter can't see
++            if(movingobjectposition != null && movingobjectposition.entity instanceof EntityPlayer && shooter != null && shooter instanceof EntityPlayer) {
++                CraftPlayer playerBlocking = ((EntityPlayer) movingobjectposition.entity).getBukkitEntity();
++                CraftPlayer playerShooter = ((EntityPlayer)shooter).getBukkitEntity();
++                if(!playerShooter.canSee(playerBlocking)) {
++                    movingobjectposition = null;
++                }
++            }
++            // PaperSpigot end
++
+             if (movingobjectposition != null) {
+                 org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this); // CraftBukkit - Call event
+ 
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index b7509c4..9741e94 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -14,6 +14,7 @@ import java.util.concurrent.Callable;
+ // CraftBukkit start
+ import org.bukkit.Bukkit;
+ import org.bukkit.block.BlockState;
++import org.bukkit.craftbukkit.entity.CraftPlayer; // PaperSpigot
+ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+ import org.bukkit.craftbukkit.util.LongHashSet;
+ import org.bukkit.craftbukkit.SpigotTimings; // Spigot
+@@ -1666,6 +1667,15 @@ public abstract class World implements IBlockAccess {
+ 
+         for (int i = 0; i < list.size(); ++i) {
+             Entity entity1 = (Entity) list.get(i);
++            // PaperSpigot start - Allow block placement when the player can't see an invisible player
++            if (entity != null && entity instanceof EntityPlayer && entity1 != null && entity1 instanceof EntityPlayer) {
++                CraftPlayer placer = ((EntityPlayer)entity).getBukkitEntity();
++                CraftPlayer blocking = ((EntityPlayer)entity1).getBukkitEntity();
++                if(!placer.canSee(blocking)) {
++                    continue;
++                }
++            }
++            // PaperSpigot end
+ 
+             if (!entity1.dead && entity1.k && entity1 != entity) {
+                 return false;
+-- 
+1.9.1
+

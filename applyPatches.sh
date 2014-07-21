@@ -33,5 +33,11 @@ function applyPatch {
         echo "  Patches applied cleanly to $target"
     fi
 }
-
+echo
+echo "Applying SpigotMC patches to CraftBukkit and Bukkit"
+echo
 applyPatch Bukkit Spigot-API && applyPatch CraftBukkit Spigot-Server
+echo
+echo "Applying PaperSpigot patches to Spigot-Server and Spigot-API"
+echo
+applyPatch Spigot-API PaperSpigot-API && applyPatch Spigot-Server PaperSpigot-Server
