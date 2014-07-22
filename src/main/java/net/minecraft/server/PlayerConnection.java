@@ -339,7 +339,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
                 }
                 speed *= 2f; // TODO: Get the speed of the vehicle instead of the player
 
-                if (d10 - d9 > Math.max(100.0D, Math.pow((double) (10.0F * (float) i * speed), 2)) && !this.isExemptPlayer()) {
+                if (d10 - d9 > Math.max(100.0D, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && !this.isExemptPlayer()) {
                 // CraftBukkit end
                     PlayerConnection.LOGGER.warn("{} (vehicle of {}) moved too quickly! {},{},{}", entity.getDisplayName().getString(), this.player.getDisplayName().getString(), d6, d7, d8);
                     this.networkManager.sendPacket(new PacketPlayOutVehicleMove(entity));
@@ -924,7 +924,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
                             if (!this.player.H() && (!this.player.getWorldServer().getGameRules().getBoolean(GameRules.DISABLE_ELYTRA_MOVEMENT_CHECK) || !this.player.isGliding())) {
                                 float f2 = this.player.isGliding() ? 300.0F : 100.0F;
 
-                                if (d11 - d10 > Math.max(f2, Math.pow((double) (10.0F * (float) i * speed), 2)) && !this.isExemptPlayer()) {
+                                if (d11 - d10 > Math.max(f2, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && !this.isExemptPlayer()) {
                                 // CraftBukkit end
                                     PlayerConnection.LOGGER.warn("{} moved too quickly! {},{},{}", this.player.getDisplayName().getString(), d7, d8, d9);
                                     this.a(this.player.locX(), this.player.locY(), this.player.locZ(), this.player.yaw, this.player.pitch);
