@@ -1,4 +1,4 @@
-From ed472fc3b22d71daf95948176d72e4f748781566 Mon Sep 17 00:00:00 2001
+From a9b22efe398e06c3376a674f74e63ad12786f2b7 Mon Sep 17 00:00:00 2001
 From: riking <rikingcoding@gmail.com>
 Date: Wed, 14 May 2014 13:46:48 -0700
 Subject: [PATCH] Process conversation input on the main thread. Fixes
@@ -6,33 +6,26 @@ Subject: [PATCH] Process conversation input on the main thread. Fixes
 
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 0804fe7..b723b73 100644
+index 0804fe7..9491101 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -835,7 +835,25 @@ public class PlayerConnection implements PacketPlayInListener {
+@@ -835,7 +835,18 @@ public class PlayerConnection implements PacketPlayInListener {
              } else if (s.isEmpty()) {
                  c.warn(this.player.getName() + " tried to send an empty message");
              } else if (getPlayer().isConversing()) {
 -                getPlayer().acceptConversationInput(s);
++                // Spigot start
 +                final String message = s;
-+
-+                Waitable waitable = new Waitable() {
++                this.minecraftServer.processQueue.add( new Waitable()
++                {
 +                    @Override
-+                    protected Object evaluate() {
-+                        getPlayer().acceptConversationInput(message);
++                    protected Object evaluate()
++                    {
++                        getPlayer().acceptConversationInput( message );
 +                        return null;
 +                    }
-+                };
-+
-+                this.minecraftServer.processQueue.add(waitable);
-+
-+                try {
-+                    waitable.get();
-+                } catch (InterruptedException e) {
-+                    Thread.currentThread().interrupt();
-+                } catch (ExecutionException e) {
-+                    throw new RuntimeException(e);
-+                }
++                } );
++                // Spigot end
              } else if (this.player.getChatFlags() == EnumChatVisibility.SYSTEM) { // Re-add "Command Only" flag check
                  ChatMessage chatmessage = new ChatMessage("chat.cannotSend", new Object[0]);
  
