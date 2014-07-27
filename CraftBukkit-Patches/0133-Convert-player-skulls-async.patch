@@ -4,6 +4,80 @@ Date: Sun, 20 Apr 2014 13:18:55 +0100
 Subject: [PATCH] Convert player skulls async
 
 
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -0,0 +0,0 @@ public final class ItemStack {
+         if (nbttagcompound.hasKeyOfType("tag", 10)) {
+             // CraftBukkit - make defensive copy as this data may be coming from the save thread
+             this.tag = (NBTTagCompound) nbttagcompound.getCompound("tag").clone();
++            validateSkullSkin(); // Spigot
+         }
+     }
+ 
++    // Spigot start - make sure the tag is given the full gameprofile if it's a skull (async lookup)
++    public void validateSkullSkin()
++    {
++        if ( this.item == Items.SKULL && this.getData() == 3 )
++        {
++            String owner;
++            if ( this.tag.hasKeyOfType( "SkullOwner", 8 ) )
++            {
++                owner = this.tag.getString( "SkullOwner" );
++            } else if ( this.tag.hasKeyOfType( "SkullOwner", 10 ) )
++            {
++                net.minecraft.util.com.mojang.authlib.GameProfile profile = GameProfileSerializer.deserialize( this.tag.getCompound( "SkullOwner" ) );
++                if ( profile == null || !profile.getProperties().isEmpty() )
++                {
++                    return;
++                } else
++                {
++                    owner = profile.getName();
++                }
++            } else
++            {
++                return;
++            }
++
++            final String finalOwner = owner;
++            TileEntitySkull.executor.execute( new Runnable()
++            {
++                @Override
++                public void run()
++                {
++
++                    final net.minecraft.util.com.mojang.authlib.GameProfile profile = TileEntitySkull.skinCache.getUnchecked( finalOwner.toLowerCase() );
++                    if ( profile != null )
++                    {
++                        MinecraftServer.getServer().processQueue.add( new Runnable()
++                        {
++                            @Override
++                            public void run()
++                            {
++                                NBTTagCompound nbtProfile = new NBTTagCompound();
++                                GameProfileSerializer.serialize( nbtProfile, profile );
++                                ItemStack.this.tag.set( "SkullOwner", nbtProfile );
++                            }
++                        } );
++                    }
++                }
++            } );
++        }
++    }
++    // Spigot end
++    
+     public int getMaxStackSize() {
+         return this.getItem().getMaxStackSize();
+     }
+@@ -0,0 +0,0 @@ public final class ItemStack {
+ 
+     public void setTag(NBTTagCompound nbttagcompound) {
+         this.tag = nbttagcompound;
++        validateSkullSkin(); // Spigot
+     }
+ 
+     public String getName() {
 diff --git a/src/main/java/net/minecraft/server/TileEntitySkull.java b/src/main/java/net/minecraft/server/TileEntitySkull.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/TileEntitySkull.java
@@ -30,12 +104,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private int i;
      private GameProfile j = null;
 +    // Spigot start
-+    private static final Executor executor = Executors.newFixedThreadPool(3,
++    public static final Executor executor = Executors.newFixedThreadPool(3,
 +            new ThreadFactoryBuilder()
 +                    .setNameFormat("Head Conversion Thread - %1$d")
 +                    .build()
 +    );
-+    private static final Cache<String, GameProfile> skinCache = CacheBuilder.newBuilder()
++    public static final Cache<String, GameProfile> skinCache = CacheBuilder.newBuilder()
 +            .maximumSize( 5000 )
 +            .expireAfterAccess( 60, TimeUnit.MINUTES )
 +            .build( new CacheLoader<String, GameProfile>()
@@ -120,4 +194,50 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
      }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
+@@ -0,0 +0,0 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+     }
+ 
+     @Override
+-    void applyToItem(NBTTagCompound tag) {
++    void applyToItem(final NBTTagCompound tag) { // Spigot - make final
+         super.applyToItem(tag);
+ 
+         if (hasOwner()) {
+             NBTTagCompound owner = new NBTTagCompound();
+             GameProfileSerializer.serialize(owner, profile);
+-            tag.set(SKULL_OWNER.NBT, owner);
++            tag.set( SKULL_OWNER.NBT, owner );
++            // Spigot start - do an async lookup of the profile. 
++            // Unfortunately there is not way to refresh the holding
++            // inventory, so that responsibility is left to the user.
++            net.minecraft.server.TileEntitySkull.executor.execute( new Runnable()
++            {
++                @Override
++                public void run()
++                {
++
++                    final GameProfile profile = net.minecraft.server.TileEntitySkull.skinCache.getUnchecked( CraftMetaSkull.this.profile.getName().toLowerCase() );
++                    if ( profile != null )
++                    {
++                        MinecraftServer.getServer().processQueue.add( new Runnable()
++                        {
++                            @Override
++                            public void run()
++                            {
++                                NBTTagCompound owner = new NBTTagCompound();
++                                GameProfileSerializer.serialize( owner, profile );
++                                tag.set( SKULL_OWNER.NBT, owner );
++                            }
++                        } );
++                    }
++                }
++            } );
++            // Spigot end
+         }
+     }
+ 
 --
