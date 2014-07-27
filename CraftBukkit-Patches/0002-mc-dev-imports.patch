@@ -1,10 +1,28 @@
-From 3396c90bea2a2d2bf1cd932b1355d4545c22ecaa Mon Sep 17 00:00:00 2001
+From 7d7028eccdbe9281dbfcc7d294d4ba650acc0ae1 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 1 Dec 2013 15:10:48 +1100
 Subject: [PATCH] mc-dev imports
 
 Imported files which are only modified by Spigot, not upstream. Files here should be completely unmodified aside from trivial changes such as adding throws statements to ensure proper compilation. You may need to add unrelated files in order to ensure a compilable result in the face of synthetic methods.
 
+diff --git a/pom.xml b/pom.xml
+index 6aeffa8..3c0cdff 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -108,6 +108,13 @@
+       <version>1.3</version>
+       <scope>test</scope>
+     </dependency>
++    <dependency>
++        <groupId>org.spigotmc</groupId>
++        <artifactId>sneaky-throw</artifactId>
++        <version>1.0</version>
++        <scope>system</scope>
++        <systemPath>${project.basedir}/../SneakyThrow.jar</systemPath>
++    </dependency>
+   </dependencies>
+ 
+   <!-- This builds a completely 'ready to start' jar with all dependencies inside -->
 diff --git a/src/main/java/net/minecraft/server/BanEntrySerializer.java b/src/main/java/net/minecraft/server/BanEntrySerializer.java
 new file mode 100644
 index 0000000..3b4b596
@@ -1602,6 +1620,144 @@ index 0000000..af13af5
 +
 +    protected String a_() {
 +        return this.toString();
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java b/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java
+new file mode 100644
+index 0000000..20fe0f1
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java
+@@ -0,0 +1,132 @@
++package net.minecraft.server;
++
++import java.io.BufferedInputStream;
++import java.io.BufferedOutputStream;
++import java.io.ByteArrayInputStream;
++import java.io.ByteArrayOutputStream;
++import java.io.DataInput;
++import java.io.DataInputStream;
++import java.io.DataOutput;
++import java.io.DataOutputStream;
++import java.io.IOException;
++import java.io.InputStream;
++import java.io.OutputStream;
++import java.util.zip.GZIPInputStream;
++import java.util.zip.GZIPOutputStream;
++
++public class NBTCompressedStreamTools {
++
++    public static NBTTagCompound a(InputStream inputstream) {
++        try {
++        DataInputStream datainputstream = new DataInputStream(new BufferedInputStream(new GZIPInputStream(inputstream)));
++
++        NBTTagCompound nbttagcompound;
++
++        try {
++            nbttagcompound = a((DataInput) datainputstream, NBTReadLimiter.a);
++        } finally {
++            datainputstream.close();
++        }
++
++        return nbttagcompound;
++        } catch (IOException ex) { org.spigotmc.SneakyThrow.sneaky( ex ); } return null;
++    }
++
++    public static void a(NBTTagCompound nbttagcompound, OutputStream outputstream) {
++        try {
++        DataOutputStream dataoutputstream = new DataOutputStream(new BufferedOutputStream(new GZIPOutputStream(outputstream)));
++
++        try {
++            a(nbttagcompound, (DataOutput) dataoutputstream);
++        } finally {
++            dataoutputstream.close();
++        }
++        } catch (IOException ex) { org.spigotmc.SneakyThrow.sneaky( ex ); }
++    }
++
++    public static NBTTagCompound a(byte[] abyte, NBTReadLimiter nbtreadlimiter) {
++        try {
++        DataInputStream datainputstream = new DataInputStream(new BufferedInputStream(new GZIPInputStream(new ByteArrayInputStream(abyte))));
++
++        NBTTagCompound nbttagcompound;
++
++        try {
++            nbttagcompound = a((DataInput) datainputstream, nbtreadlimiter);
++        } finally {
++            datainputstream.close();
++        }
++
++        return nbttagcompound;
++        } catch (IOException ex) { org.spigotmc.SneakyThrow.sneaky( ex ); } return null;
++    }
++
++    public static byte[] a(NBTTagCompound nbttagcompound) {
++        try {
++        ByteArrayOutputStream bytearrayoutputstream = new ByteArrayOutputStream();
++        DataOutputStream dataoutputstream = new DataOutputStream(new GZIPOutputStream(bytearrayoutputstream));
++
++        try {
++            a(nbttagcompound, (DataOutput) dataoutputstream);
++        } finally {
++            dataoutputstream.close();
++        }
++
++        return bytearrayoutputstream.toByteArray();
++        } catch (IOException ex) { org.spigotmc.SneakyThrow.sneaky( ex ); } return null;
++    }
++
++    public static NBTTagCompound a(DataInputStream datainputstream) {
++        return a((DataInput) datainputstream, NBTReadLimiter.a);
++    }
++
++    public static NBTTagCompound a(DataInput datainput, NBTReadLimiter nbtreadlimiter) {
++        try {
++        NBTBase nbtbase = a(datainput, 0, nbtreadlimiter);
++
++        if (nbtbase instanceof NBTTagCompound) {
++            return (NBTTagCompound) nbtbase;
++        } else {
++            throw new IOException("Root tag must be a named compound tag");
++        }
++        } catch (IOException ex) { org.spigotmc.SneakyThrow.sneaky( ex ); } return null;
++    }
++
++    public static void a(NBTTagCompound nbttagcompound, DataOutput dataoutput) {
++        a((NBTBase) nbttagcompound, dataoutput);
++    }
++
++    private static void a(NBTBase nbtbase, DataOutput dataoutput) {
++        try {
++        dataoutput.writeByte(nbtbase.getTypeId());
++        if (nbtbase.getTypeId() != 0) {
++            dataoutput.writeUTF("");
++            nbtbase.write(dataoutput);
++        }
++        } catch (IOException ex) { org.spigotmc.SneakyThrow.sneaky( ex ); }
++    }
++
++    private static NBTBase a(DataInput datainput, int i, NBTReadLimiter nbtreadlimiter) {
++        try {
++        byte b0 = datainput.readByte();
++
++        if (b0 == 0) {
++            return new NBTTagEnd();
++        } else {
++            datainput.readUTF();
++            NBTBase nbtbase = NBTBase.createTag(b0);
++
++            try {
++                nbtbase.load(datainput, i, nbtreadlimiter);
++                return nbtbase;
++            } catch (IOException ioexception) {
++                CrashReport crashreport = CrashReport.a(ioexception, "Loading NBT data");
++                CrashReportSystemDetails crashreportsystemdetails = crashreport.a("NBT Tag");
++
++                crashreportsystemdetails.a("Tag name", "[UNNAMED TAG]");
++                crashreportsystemdetails.a("Tag type", Byte.valueOf(b0));
++                throw new ReportedException(crashreport);
++            }
++        }
++        } catch (IOException ex) { org.spigotmc.SneakyThrow.sneaky( ex ); } return null;
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/NBTTagByteArray.java b/src/main/java/net/minecraft/server/NBTTagByteArray.java
@@ -3706,6 +3862,18 @@ index 0000000..7ca18a1
 +        return new WorldGenVillageStart(this.c, this.b, i, j, this.f);
 +    }
 +}
+diff --git a/src/main/resources/org/spigotmc/SneakyThrow.class b/src/main/resources/org/spigotmc/SneakyThrow.class
+new file mode 100644
+index 0000000000000000000000000000000000000000..635518693adaeee6f771d2a4c9f92672048a4c4d
+GIT binary patch
+literal 184
+zcmX^0Z`VEsW(HjbE=C64;Jnnt?8=agqWp5bEOrKVMh1bb#Ii*FoW#6zegCAa)Z`LI
+z2Cm@z(xT*4x6GVWMg|t={1hN1q2Ys22-csNl#^<$83vTfFG|-hF33#JFUd{TN3wyD
+ufvp&9A3M-~MFu7YP6iNQ1kxM~Y(Sb7$m0Xjj6j-6Yd=U5$YufY7#IQ5^(s;T
+
+literal 0
+HcmV?d00001
+
 -- 
 1.9.1
 
