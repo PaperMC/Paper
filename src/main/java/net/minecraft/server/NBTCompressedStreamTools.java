@@ -132,6 +132,12 @@ public class NBTCompressedStreamTools {
     }
 
     public static NBTTagCompound a(DataInput datainput, NBTReadLimiter nbtreadlimiter) throws IOException {
+        // Spigot start
+        if ( datainput instanceof io.netty.buffer.ByteBufInputStream )
+        {
+            datainput = new DataInputStream(new org.spigotmc.LimitStream((InputStream) datainput, nbtreadlimiter));
+        }
+        // Spigot end
         NBTBase nbtbase = a(datainput, 0, nbtreadlimiter);
 
         if (nbtbase instanceof NBTTagCompound) {
