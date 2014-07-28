@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
+import net.minecraft.server.AttributeRanged;
+import net.minecraft.server.GenericAttributes;
 import net.minecraft.server.IRegistry;
 import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.MinecraftServer;
@@ -337,5 +339,18 @@ public class SpigotConfig
     private static void movedTooQuicklyMultiplier()
     {
         movedTooQuicklyMultiplier = getDouble( "settings.moved-too-quickly-multiplier", 10.0D );
+    }
+
+    public static double maxHealth = 2048;
+    public static double movementSpeed = 2048;
+    public static double attackDamage = 2048;
+    private static void attributeMaxes()
+    {
+        maxHealth = getDouble( "settings.attribute.maxHealth.max", maxHealth );
+        ( (AttributeRanged) GenericAttributes.MAX_HEALTH ).maximum = maxHealth;
+        movementSpeed = getDouble( "settings.attribute.movementSpeed.max", movementSpeed );
+        ( (AttributeRanged) GenericAttributes.MOVEMENT_SPEED ).maximum = movementSpeed;
+        attackDamage = getDouble( "settings.attribute.attackDamage.max", attackDamage );
+        ( (AttributeRanged) GenericAttributes.ATTACK_DAMAGE ).maximum = attackDamage;
     }
 }
