@@ -1,4 +1,4 @@
-From 7d7028eccdbe9281dbfcc7d294d4ba650acc0ae1 Mon Sep 17 00:00:00 2001
+From a615a6adb52d72e718f4d493dd4436a0a2678ff9 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 1 Dec 2013 15:10:48 +1100
 Subject: [PATCH] mc-dev imports
@@ -23,6 +23,54 @@ index 6aeffa8..3c0cdff 100644
    </dependencies>
  
    <!-- This builds a completely 'ready to start' jar with all dependencies inside -->
+diff --git a/src/main/java/net/minecraft/server/AttributeRanged.java b/src/main/java/net/minecraft/server/AttributeRanged.java
+new file mode 100644
+index 0000000..d424f04
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/AttributeRanged.java
+@@ -0,0 +1,42 @@
++package net.minecraft.server;
++
++public class AttributeRanged extends AttributeBase {
++
++    private final double a;
++    private final double b;
++    private String c;
++
++    public AttributeRanged(String s, double d0, double d1, double d2) {
++        super(s, d0);
++        this.a = d1;
++        this.b = d2;
++        if (d1 > d2) {
++            throw new IllegalArgumentException("Minimum value cannot be bigger than maximum value!");
++        } else if (d0 < d1) {
++            throw new IllegalArgumentException("Default value cannot be lower than minimum value!");
++        } else if (d0 > d2) {
++            throw new IllegalArgumentException("Default value cannot be bigger than maximum value!");
++        }
++    }
++
++    public AttributeRanged a(String s) {
++        this.c = s;
++        return this;
++    }
++
++    public String f() {
++        return this.c;
++    }
++
++    public double a(double d0) {
++        if (d0 < this.a) {
++            d0 = this.a;
++        }
++
++        if (d0 > this.b) {
++            d0 = this.b;
++        }
++
++        return d0;
++    }
++}
 diff --git a/src/main/java/net/minecraft/server/BanEntrySerializer.java b/src/main/java/net/minecraft/server/BanEntrySerializer.java
 new file mode 100644
 index 0000000..3b4b596
@@ -1345,6 +1393,117 @@ index 0000000..2943244
 +        } else {
 +            return null;
 +        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/GenericAttributes.java b/src/main/java/net/minecraft/server/GenericAttributes.java
+new file mode 100644
+index 0000000..6202bba
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/GenericAttributes.java
+@@ -0,0 +1,105 @@
++package net.minecraft.server;
++
++import java.util.Collection;
++import java.util.Iterator;
++import java.util.UUID;
++
++import org.apache.logging.log4j.LogManager;
++import org.apache.logging.log4j.Logger;
++
++public class GenericAttributes {
++
++    private static final Logger f = LogManager.getLogger();
++    public static final IAttribute maxHealth = (new AttributeRanged("generic.maxHealth", 20.0D, 0.0D, Double.MAX_VALUE)).a("Max Health").a(true);
++    public static final IAttribute b = (new AttributeRanged("generic.followRange", 32.0D, 0.0D, 2048.0D)).a("Follow Range");
++    public static final IAttribute c = (new AttributeRanged("generic.knockbackResistance", 0.0D, 0.0D, 1.0D)).a("Knockback Resistance");
++    public static final IAttribute d = (new AttributeRanged("generic.movementSpeed", 0.699999988079071D, 0.0D, Double.MAX_VALUE)).a("Movement Speed").a(true);
++    public static final IAttribute e = new AttributeRanged("generic.attackDamage", 2.0D, 0.0D, Double.MAX_VALUE);
++
++    public static NBTTagList a(AttributeMapBase attributemapbase) {
++        NBTTagList nbttaglist = new NBTTagList();
++        Iterator iterator = attributemapbase.a().iterator();
++
++        while (iterator.hasNext()) {
++            AttributeInstance attributeinstance = (AttributeInstance) iterator.next();
++
++            nbttaglist.add(a(attributeinstance));
++        }
++
++        return nbttaglist;
++    }
++
++    private static NBTTagCompound a(AttributeInstance attributeinstance) {
++        NBTTagCompound nbttagcompound = new NBTTagCompound();
++        IAttribute iattribute = attributeinstance.getAttribute();
++
++        nbttagcompound.setString("Name", iattribute.getName());
++        nbttagcompound.setDouble("Base", attributeinstance.b());
++        Collection collection = attributeinstance.c();
++
++        if (collection != null && !collection.isEmpty()) {
++            NBTTagList nbttaglist = new NBTTagList();
++            Iterator iterator = collection.iterator();
++
++            while (iterator.hasNext()) {
++                AttributeModifier attributemodifier = (AttributeModifier) iterator.next();
++
++                if (attributemodifier.e()) {
++                    nbttaglist.add(a(attributemodifier));
++                }
++            }
++
++            nbttagcompound.set("Modifiers", nbttaglist);
++        }
++
++        return nbttagcompound;
++    }
++
++    private static NBTTagCompound a(AttributeModifier attributemodifier) {
++        NBTTagCompound nbttagcompound = new NBTTagCompound();
++
++        nbttagcompound.setString("Name", attributemodifier.b());
++        nbttagcompound.setDouble("Amount", attributemodifier.d());
++        nbttagcompound.setInt("Operation", attributemodifier.c());
++        nbttagcompound.setLong("UUIDMost", attributemodifier.a().getMostSignificantBits());
++        nbttagcompound.setLong("UUIDLeast", attributemodifier.a().getLeastSignificantBits());
++        return nbttagcompound;
++    }
++
++    public static void a(AttributeMapBase attributemapbase, NBTTagList nbttaglist) {
++        for (int i = 0; i < nbttaglist.size(); ++i) {
++            NBTTagCompound nbttagcompound = nbttaglist.get(i);
++            AttributeInstance attributeinstance = attributemapbase.a(nbttagcompound.getString("Name"));
++
++            if (attributeinstance != null) {
++                a(attributeinstance, nbttagcompound);
++            } else {
++                f.warn("Ignoring unknown attribute \'" + nbttagcompound.getString("Name") + "\'");
++            }
++        }
++    }
++
++    private static void a(AttributeInstance attributeinstance, NBTTagCompound nbttagcompound) {
++        attributeinstance.setValue(nbttagcompound.getDouble("Base"));
++        if (nbttagcompound.hasKeyOfType("Modifiers", 9)) {
++            NBTTagList nbttaglist = nbttagcompound.getList("Modifiers", 10);
++
++            for (int i = 0; i < nbttaglist.size(); ++i) {
++                AttributeModifier attributemodifier = a(nbttaglist.get(i));
++                AttributeModifier attributemodifier1 = attributeinstance.a(attributemodifier.a());
++
++                if (attributemodifier1 != null) {
++                    attributeinstance.b(attributemodifier1);
++                }
++
++                attributeinstance.a(attributemodifier);
++            }
++        }
++    }
++
++    public static AttributeModifier a(NBTTagCompound nbttagcompound) {
++        UUID uuid = new UUID(nbttagcompound.getLong("UUIDMost"), nbttagcompound.getLong("UUIDLeast"));
++
++        return new AttributeModifier(uuid, nbttagcompound.getString("Name"), nbttagcompound.getDouble("Amount"), nbttagcompound.getInt("Operation"));
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/IntCache.java b/src/main/java/net/minecraft/server/IntCache.java
@@ -3876,4 +4035,3 @@ HcmV?d00001
 
 -- 
 1.9.1
-
