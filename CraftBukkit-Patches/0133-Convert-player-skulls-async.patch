@@ -1,11 +1,11 @@
-From 6eaf9a0a9503de652b7a3dfad975c891c09d74ca Mon Sep 17 00:00:00 2001
+From a9c0273e82c8e1ea6a93e66482b23d7b74061c0d Mon Sep 17 00:00:00 2001
 From: Thinkofdeath <thethinkofdeath@gmail.com>
 Date: Sun, 20 Apr 2014 13:18:55 +0100
 Subject: [PATCH] Convert player skulls async
 
 
 diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index 2723ccb..26f9fae 100644
+index 7d2d401..ee82aba 100644
 --- a/src/main/java/net/minecraft/server/ItemStack.java
 +++ b/src/main/java/net/minecraft/server/ItemStack.java
 @@ -216,9 +216,61 @@ public final class ItemStack {
@@ -79,10 +79,10 @@ index 2723ccb..26f9fae 100644
  
      public String getName() {
 diff --git a/src/main/java/net/minecraft/server/TileEntitySkull.java b/src/main/java/net/minecraft/server/TileEntitySkull.java
-index 2a50db9..c95e4c8 100644
+index 2a50db9..1796a56 100644
 --- a/src/main/java/net/minecraft/server/TileEntitySkull.java
 +++ b/src/main/java/net/minecraft/server/TileEntitySkull.java
-@@ -6,11 +6,61 @@ import net.minecraft.util.com.google.common.collect.Iterables;
+@@ -6,11 +6,64 @@ import net.minecraft.util.com.google.common.collect.Iterables;
  import net.minecraft.util.com.mojang.authlib.GameProfile;
  import net.minecraft.util.com.mojang.authlib.properties.Property;
  
@@ -121,19 +121,22 @@ index 2a50db9..c95e4c8 100644
 +                    GameProfileLookup gameProfileLookup = new GameProfileLookup(profiles);
 +
 +                    MinecraftServer.getServer().getGameProfileRepository().findProfilesByNames(new String[] { key }, Agent.MINECRAFT, gameProfileLookup);
-+                    if (!MinecraftServer.getServer().getOnlineMode() && profiles[0] == null) {
++
++                    GameProfile profile = profiles[ 0 ];
++                    if (profile == null) {
 +                        UUID uuid = EntityHuman.a(new GameProfile(null, key));
-+                        GameProfile profile = new GameProfile(uuid, key);
++                        profile = new GameProfile(uuid, key);
 +
 +                        gameProfileLookup.onProfileLookupSucceeded(profile);
-+                    }
++                    } else
++                    {
 +
-+                    GameProfile profile = profiles[0];
++                        Property property = Iterables.getFirst( profile.getProperties().get( "textures" ), null );
 +
-+                    Property property = Iterables.getFirst(profile.getProperties().get("textures"), null);
-+
-+                    if (property == null) {
-+                        profile = MinecraftServer.getServer().av().fillProfileProperties(profile, true);
++                        if ( property == null )
++                        {
++                            profile = MinecraftServer.getServer().av().fillProfileProperties( profile, true );
++                        }
 +                    }
 +
 +
@@ -144,7 +147,7 @@ index 2a50db9..c95e4c8 100644
  
      public TileEntitySkull() {}
  
-@@ -66,18 +116,38 @@ public class TileEntitySkull extends TileEntity {
+@@ -66,18 +119,38 @@ public class TileEntitySkull extends TileEntity {
      private void d() {
          if (this.j != null && !UtilColor.b(this.j.getName())) {
              if (!this.j.isComplete() || !this.j.getProperties().containsKey("textures")) {
