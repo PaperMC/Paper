@@ -366,7 +366,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         IChatBaseComponent chatmessage = this.aW().b();
 
         String deathmessage = chatmessage.c();
-        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, deathmessage);
+        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, deathmessage, keepInventory);
 
         String deathMessage = event.getDeathMessage();
 
@@ -379,7 +379,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
 
         // we clean the player's inventory after the EntityDeathEvent is called so plugins can get the exact state of the inventory.
-        if (!keepInventory) {
+        if (!event.getKeepInventory()) {
             for (int i = 0; i < this.inventory.items.length; ++i) {
                 this.inventory.items[i] = null;
             }
