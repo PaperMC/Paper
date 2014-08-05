@@ -1,37 +1,29 @@
-From 3a2f833cbbc263cd50e7a3cdb01c909cc32a7377 Mon Sep 17 00:00:00 2001
+From 6960ce33320bd8116f780e553b8dcbd3dcdd7c5d Mon Sep 17 00:00:00 2001
 From: Zach Brown <Zbob750@live.com>
-Date: Thu, 24 Jul 2014 22:19:44 -0500
+Date: Tue, 5 Aug 2014 17:56:02 -0500
 Subject: [PATCH] Toggle for player interact limiter
 
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 97037ff..43bce01 100644
+index 97037ff..f78824c 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -59,6 +59,8 @@ import org.bukkit.inventory.InventoryView;
- import org.bukkit.util.NumberConversions;
- // CraftBukkit end
- 
-+import org.github.paperspigot.PaperSpigotConfig; // PaperSpigot
-+
- public class PlayerConnection implements PacketPlayInListener {
- 
-     private static final Logger c = LogManager.getLogger();
-@@ -581,7 +583,7 @@ public class PlayerConnection implements PacketPlayInListener {
+@@ -581,7 +581,8 @@ public class PlayerConnection implements PacketPlayInListener {
  
      public void a(PacketPlayInBlockPlace packetplayinblockplace) {
          boolean throttled = false;
 -        if (lastPlace != -1 && packetplayinblockplace.timestamp - lastPlace < 30 && packets++ >= 4) {
-+        if (PaperSpigotConfig.interactLimitEnabled && lastPlace != -1 && packetplayinblockplace.timestamp - lastPlace < 30 && packets++ >= 4) {
++        // PaperSpigot - Allow disabling the player interaction limiter
++        if (org.github.paperspigot.PaperSpigotConfig.interactLimitEnabled && lastPlace != -1 && packetplayinblockplace.timestamp - lastPlace < 30 && packets++ >= 4) {
              throttled = true;
          } else if ( packetplayinblockplace.timestamp - lastPlace >= 30 || lastPlace == -1 )
          {
 diff --git a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
-index f7dc787..ec800c3 100644
+index 2cc159b..25a94a6 100644
 --- a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
 +++ b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
-@@ -140,4 +140,10 @@ public class PaperSpigotConfig
-             Bukkit.getLogger().log( Level.INFO, "Disabling async plugin bad ju-ju catcher, this might be bad depending on your plugins" );
+@@ -152,4 +152,13 @@ public class PaperSpigotConfig
+             Bukkit.getLogger().log( Level.INFO, "Disabling async plugin bad ju-ju catcher, this may be bad depending on your plugins" );
          }
      }
 +
@@ -39,6 +31,9 @@ index f7dc787..ec800c3 100644
 +    private static void interactLimitEnabled()
 +    {
 +        interactLimitEnabled = getBoolean( "settings.limit-player-interactions", true );
++        if (!interactLimitEnabled) {
++            Bukkit.getLogger().log( Level.INFO, "Disabling player interaction limiter, your server may be more vulnerable to malicious users" );
++        }
 +    }
  }
 -- 

@@ -1,46 +1,38 @@
-From db7ac74f4f1a87642f72e9d3afc2c2c2cf7fb6f7 Mon Sep 17 00:00:00 2001
+From 117d035fae9747b3caa7d77448cebb4f1828bb8d Mon Sep 17 00:00:00 2001
 From: Zach Brown <Zbob750@live.com>
-Date: Sun, 29 Jun 2014 13:22:09 -0500
+Date: Tue, 5 Aug 2014 17:49:02 -0500
 Subject: [PATCH] Configurable fishing time ranges
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityFishingHook.java b/src/main/java/net/minecraft/server/EntityFishingHook.java
-index 197dca1..3cd7838 100644
+index 197dca1..7d0fda6 100644
 --- a/src/main/java/net/minecraft/server/EntityFishingHook.java
 +++ b/src/main/java/net/minecraft/server/EntityFishingHook.java
-@@ -10,6 +10,8 @@ import org.bukkit.entity.Fish;
- import org.bukkit.event.player.PlayerFishEvent;
- // CraftBukkit end
- 
-+import org.github.paperspigot.PaperSpigotWorldConfig; // PaperSpigot
-+
- public class EntityFishingHook extends Entity {
- 
-     private static final List d = Arrays.asList(new PossibleFishingResult[] { (new PossibleFishingResult(new ItemStack(Items.LEATHER_BOOTS), 10)).a(0.9F), new PossibleFishingResult(new ItemStack(Items.LEATHER), 10), new PossibleFishingResult(new ItemStack(Items.BONE), 10), new PossibleFishingResult(new ItemStack(Items.POTION), 10), new PossibleFishingResult(new ItemStack(Items.STRING), 5), (new PossibleFishingResult(new ItemStack(Items.FISHING_ROD), 2)).a(0.9F), new PossibleFishingResult(new ItemStack(Items.BOWL), 10), new PossibleFishingResult(new ItemStack(Items.STICK), 5), new PossibleFishingResult(new ItemStack(Items.INK_SACK, 10, 0), 1), new PossibleFishingResult(new ItemStack(Blocks.TRIPWIRE_SOURCE), 10), new PossibleFishingResult(new ItemStack(Items.ROTTEN_FLESH), 10)});
-@@ -315,7 +317,7 @@ public class EntityFishingHook extends Entity {
+@@ -315,7 +315,8 @@ public class EntityFishingHook extends Entity {
                                  this.az = MathHelper.nextInt(this.random, 20, 80);
                              }
                          } else {
 -                            this.ay = MathHelper.nextInt(this.random, 100, 900);
-+                            this.ay = MathHelper.nextInt(this.random, PaperSpigotWorldConfig.fishingMinTicks, PaperSpigotWorldConfig.fishingMaxTicks); // PaperSpigot - configurable fishing time range
++                            // PaperSpigot - Configurable fishing tick range
++                            this.ay = MathHelper.nextInt(this.random, this.world.paperSpigotConfig.fishingMinTicks, this.world.paperSpigotConfig.fishingMaxTicks);
                              this.ay -= EnchantmentManager.getLureEnchantmentLevel(this.owner) * 20 * 5;
                          }
                      }
 diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-index c219cab..554e74a 100644
+index 9cd9c6d..1d01f89 100644
 --- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
 +++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-@@ -116,4 +116,12 @@ public class PaperSpigotWorldConfig
-         InvertedDaylightDetectors = getBoolean( "inverted-daylight-detectors", false );
-         log( "Inverted Redstone Lamps: " + InvertedDaylightDetectors );
+@@ -113,4 +113,12 @@ public class PaperSpigotWorldConfig
+         invertedDaylightDetectors = getBoolean( "inverted-daylight-detectors", false );
+         log( "Inverted Redstone Lamps: " + invertedDaylightDetectors );
      }
 +
-+    public static int fishingMinTicks = 100;
-+    public static int fishingMaxTicks = 900;
++    public int fishingMinTicks;
++    public int fishingMaxTicks;
 +    private void fishingTickRange()
 +    {
-+        fishingMinTicks = getInt( "fishing-time-range.MinimumTicks", fishingMinTicks );
-+        fishingMaxTicks = getInt( "fishing-time-range.MaximumTicks", fishingMaxTicks );
++        fishingMinTicks = getInt( "fishing-time-range.MinimumTicks", 100 );
++        fishingMaxTicks = getInt( "fishing-time-range.MaximumTicks", 900 );
 +    }
  }
 -- 
