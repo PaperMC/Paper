@@ -107,11 +107,10 @@
      private static final int OVERLOADED_TICKS_THRESHOLD = 20;
      private static final long OVERLOADED_WARNING_INTERVAL_NANOS = 10L * TimeUtil.NANOSECONDS_PER_SECOND;
      private static final int OVERLOADED_TICKS_WARNING_INTERVAL = 100;
-@@ -276,6 +301,19 @@
-     private static final AtomicReference<RuntimeException> fatalException = new AtomicReference();
+@@ -277,6 +302,19 @@
      private final SuppressedExceptionCollector suppressedExceptions;
      private final DiscontinuousFrame tickFrame;
-+
+ 
 +    // CraftBukkit start
 +    public final WorldLoader.DataLoadContext worldLoader;
 +    public org.bukkit.craftbukkit.CraftServer server;
@@ -124,9 +123,10 @@
 +    public Commands vanillaCommandDispatcher;
 +    private boolean forceTicks;
 +    // CraftBukkit end
- 
++
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
+         Thread thread = new Thread(() -> {
 @@ -290,14 +328,14 @@
              thread.setPriority(8);
          }
@@ -620,11 +620,10 @@
          if (flush) {
              Iterator iterator1 = this.getAllLevels().iterator();
  
-@@ -626,20 +890,42 @@
-     @Override
+@@ -627,19 +891,41 @@
      public void close() {
          this.stopServer();
-+    }
+     }
 +
 +    // CraftBukkit start
 +    private boolean hasStopped = false;
@@ -633,7 +632,7 @@
 +        synchronized (this.stopLock) {
 +            return this.hasStopped;
 +        }
-     }
++    }
 +    // CraftBukkit end
  
      public void stopServer() {
@@ -688,10 +687,11 @@
                  this.nextTickTimeNanos += i;
  
                  try {
-@@ -830,6 +1118,12 @@
+@@ -830,6 +1118,13 @@
                      this.services.profileCache().clearExecutor();
                  }
  
++                org.spigotmc.WatchdogThread.doStop(); // Spigot
 +                // CraftBukkit start - Restore terminal to original settings
 +                try {
 +                    this.reader.getTerminal().restore();
@@ -701,7 +701,7 @@
                  this.onServerExit();
              }
  
-@@ -889,9 +1183,16 @@
+@@ -889,9 +1184,16 @@
      }
  
      private boolean haveTime() {
@@ -719,7 +719,7 @@
      public static boolean throwIfFatalException() {
          RuntimeException runtimeexception = (RuntimeException) MinecraftServer.fatalException.get();
  
-@@ -903,7 +1204,7 @@
+@@ -903,7 +1205,7 @@
      }
  
      public static void setFatalException(RuntimeException exception) {
@@ -728,7 +728,7 @@
      }
  
      @Override
-@@ -977,7 +1278,7 @@
+@@ -977,7 +1279,7 @@
          }
      }
  
@@ -737,7 +737,15 @@
          Profiler.get().incrementCounter("runTask");
          super.doRunTask(ticktask);
      }
-@@ -1041,11 +1342,13 @@
+@@ -1025,6 +1327,7 @@
+     }
+ 
+     public void tickServer(BooleanSupplier shouldKeepTicking) {
++        org.spigotmc.WatchdogThread.tick(); // Spigot
+         long i = Util.getNanos();
+         int j = this.pauseWhileEmptySeconds() * 20;
+ 
+@@ -1041,11 +1344,13 @@
                      this.autoSave();
                  }
  
@@ -751,7 +759,7 @@
          ++this.tickCount;
          this.tickRateManager.tick();
          this.tickChildren(shouldKeepTicking);
-@@ -1055,7 +1358,7 @@
+@@ -1055,7 +1360,7 @@
          }
  
          --this.ticksUntilAutosave;
@@ -760,7 +768,7 @@
              this.autoSave();
          }
  
-@@ -1071,10 +1374,13 @@
+@@ -1071,10 +1376,13 @@
          this.smoothedTickTimeMillis = this.smoothedTickTimeMillis * 0.8F + (float) k / (float) TimeUtil.NANOSECONDS_PER_MILLISECOND * 0.19999999F;
          this.logTickMethodTime(i);
          gameprofilerfiller.pop();
@@ -775,7 +783,7 @@
          MinecraftServer.LOGGER.debug("Autosave started");
          ProfilerFiller gameprofilerfiller = Profiler.get();
  
-@@ -1082,6 +1388,7 @@
+@@ -1082,6 +1390,7 @@
          this.saveEverything(true, false, false);
          gameprofilerfiller.pop();
          MinecraftServer.LOGGER.debug("Autosave finished");
@@ -783,7 +791,7 @@
      }
  
      private void logTickMethodTime(long tickStartTime) {
-@@ -1154,11 +1461,34 @@
+@@ -1154,11 +1463,34 @@
          this.getPlayerList().getPlayers().forEach((entityplayer) -> {
              entityplayer.connection.suspendFlushing();
          });
@@ -796,7 +804,7 @@
 +        SpigotTimings.commandFunctionsTimer.stopTiming(); // Spigot
          gameprofilerfiller.popPush("levels");
          Iterator iterator = this.getAllLevels().iterator();
- 
++
 +        // CraftBukkit start
 +        // Run tasks that are waiting on processing
 +        SpigotTimings.processQueueTimer.startTiming(); // Spigot
@@ -804,7 +812,7 @@
 +            this.processQueue.remove().run();
 +        }
 +        SpigotTimings.processQueueTimer.stopTiming(); // Spigot
-+
+ 
 +        SpigotTimings.timeUpdateTimer.startTiming(); // Spigot
 +        // Send time updates to everyone, it will get the right time from the world the player is in.
 +        if (this.tickCount % 20 == 0) {
@@ -818,7 +826,7 @@
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
  
-@@ -1167,16 +1497,20 @@
+@@ -1167,16 +1499,20 @@
  
                  return s + " " + String.valueOf(worldserver.dimension().location());
              });
@@ -839,7 +847,7 @@
              } catch (Throwable throwable) {
                  CrashReport crashreport = CrashReport.forThrowable(throwable, "Exception ticking world");
  
-@@ -1189,18 +1523,24 @@
+@@ -1189,18 +1525,24 @@
          }
  
          gameprofilerfiller.popPush("connection");
@@ -864,7 +872,7 @@
  
          gameprofilerfiller.popPush("send chunks");
          iterator = this.playerList.getPlayers().iterator();
-@@ -1265,7 +1605,23 @@
+@@ -1265,7 +1607,23 @@
      @Nullable
      public ServerLevel getLevel(ResourceKey<Level> key) {
          return (ServerLevel) this.levels.get(key);
@@ -888,7 +896,7 @@
  
      public Set<ResourceKey<Level>> levelKeys() {
          return this.levels.keySet();
-@@ -1296,7 +1652,7 @@
+@@ -1296,7 +1654,7 @@
  
      @DontObfuscate
      public String getServerModName() {
@@ -897,7 +905,7 @@
      }
  
      public SystemReport fillSystemReport(SystemReport details) {
-@@ -1634,11 +1990,11 @@
+@@ -1634,11 +1992,11 @@
  
      public CompletableFuture<Void> reloadResources(Collection<String> dataPacks) {
          CompletableFuture<Void> completablefuture = CompletableFuture.supplyAsync(() -> {
@@ -911,7 +919,7 @@
          }, this).thenCompose((immutablelist) -> {
              MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
              List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess());
-@@ -1654,6 +2010,7 @@
+@@ -1654,6 +2012,7 @@
          }).thenAcceptAsync((minecraftserver_reloadableresources) -> {
              this.resources.close();
              this.resources = minecraftserver_reloadableresources;
@@ -919,7 +927,7 @@
              this.packRepository.setSelected(dataPacks);
              WorldDataConfiguration worlddataconfiguration = new WorldDataConfiguration(MinecraftServer.getSelectedPacks(this.packRepository, true), this.worldData.enabledFeatures());
  
-@@ -1952,7 +2309,7 @@
+@@ -1952,7 +2311,7 @@
              final List<String> list = Lists.newArrayList();
              final GameRules gamerules = this.getGameRules();
  
@@ -928,7 +936,7 @@
                  @Override
                  public <T extends GameRules.Value<T>> void visit(GameRules.Key<T> key, GameRules.Type<T> type) {
                      list.add(String.format(Locale.ROOT, "%s=%s\n", key.getId(), gamerules.getRule(key)));
-@@ -2058,7 +2415,7 @@
+@@ -2058,7 +2417,7 @@
              try {
                  label51:
                  {
@@ -937,7 +945,7 @@
  
                      try {
                          arraylist = Lists.newArrayList(NativeModuleLister.listModules());
-@@ -2108,6 +2465,22 @@
+@@ -2108,6 +2467,22 @@
  
      }
  
@@ -960,7 +968,7 @@
      private ProfilerFiller createProfiler() {
          if (this.willStartRecordingMetrics) {
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(Util.timeSource, this.isDedicatedServer()), Util.timeSource, Util.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -2234,6 +2607,11 @@
+@@ -2234,6 +2609,11 @@
          }
  
      }

@@ -200,4 +200,18 @@ public class SpigotConfig
         SpigotConfig.outdatedClientMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.outdated-client", SpigotConfig.outdatedClientMessage ) );
         SpigotConfig.outdatedServerMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.outdated-server", SpigotConfig.outdatedServerMessage ) );
     }
+
+    public static int timeoutTime = 60;
+    public static boolean restartOnCrash = true;
+    public static String restartScript = "./start.sh";
+    public static String restartMessage;
+    private static void watchdog()
+    {
+        SpigotConfig.timeoutTime = SpigotConfig.getInt( "settings.timeout-time", SpigotConfig.timeoutTime );
+        SpigotConfig.restartOnCrash = SpigotConfig.getBoolean( "settings.restart-on-crash", SpigotConfig.restartOnCrash );
+        SpigotConfig.restartScript = SpigotConfig.getString( "settings.restart-script", SpigotConfig.restartScript );
+        SpigotConfig.restartMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.restart", "Server is restarting" ) );
+        SpigotConfig.commands.put( "restart", new RestartCommand( "restart" ) );
+        WatchdogThread.doStart( SpigotConfig.timeoutTime, SpigotConfig.restartOnCrash );
+    }
 }
