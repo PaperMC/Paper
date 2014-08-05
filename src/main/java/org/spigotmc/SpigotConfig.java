@@ -200,4 +200,18 @@ public class SpigotConfig
         outdatedClientMessage = transform( getString( "messages.outdated-client", outdatedClientMessage ) );
         outdatedServerMessage = transform( getString( "messages.outdated-server", outdatedServerMessage ) );
     }
+
+    public static int timeoutTime = 60;
+    public static boolean restartOnCrash = true;
+    public static String restartScript = "./start.sh";
+    public static String restartMessage;
+    private static void watchdog()
+    {
+        timeoutTime = getInt( "settings.timeout-time", timeoutTime );
+        restartOnCrash = getBoolean( "settings.restart-on-crash", restartOnCrash );
+        restartScript = getString( "settings.restart-script", restartScript );
+        restartMessage = transform( getString( "messages.restart", "Server is restarting" ) );
+        commands.put( "restart", new RestartCommand( "restart" ) );
+        WatchdogThread.doStart( timeoutTime, restartOnCrash );
+    }
 }
