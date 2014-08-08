@@ -29,7 +29,7 @@ public abstract class BukkitRunnable implements Runnable {
      */
     public synchronized BukkitTask runTask(Plugin plugin) throws IllegalArgumentException, IllegalStateException {
         checkState();
-        return setupId(Bukkit.getScheduler().runTask(plugin, this));
+        return setupId(Bukkit.getScheduler().runTask(plugin, (Runnable) this));
     }
 
     /**
@@ -46,7 +46,7 @@ public abstract class BukkitRunnable implements Runnable {
      */
     public synchronized BukkitTask runTaskAsynchronously(Plugin plugin) throws IllegalArgumentException, IllegalStateException  {
         checkState();
-        return setupId(Bukkit.getScheduler().runTaskAsynchronously(plugin, this));
+        return setupId(Bukkit.getScheduler().runTaskAsynchronously(plugin, (Runnable) this));
     }
 
     /**
@@ -61,7 +61,7 @@ public abstract class BukkitRunnable implements Runnable {
      */
     public synchronized BukkitTask runTaskLater(Plugin plugin, long delay) throws IllegalArgumentException, IllegalStateException  {
         checkState();
-        return setupId(Bukkit.getScheduler().runTaskLater(plugin, this, delay));
+        return setupId(Bukkit.getScheduler().runTaskLater(plugin, (Runnable) this, delay));
     }
 
     /**
@@ -80,7 +80,7 @@ public abstract class BukkitRunnable implements Runnable {
      */
     public synchronized BukkitTask runTaskLaterAsynchronously(Plugin plugin, long delay) throws IllegalArgumentException, IllegalStateException  {
         checkState();
-        return setupId(Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, this, delay));
+        return setupId(Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, (Runnable) this, delay));
     }
 
     /**
@@ -97,7 +97,7 @@ public abstract class BukkitRunnable implements Runnable {
      */
     public synchronized BukkitTask runTaskTimer(Plugin plugin, long delay, long period) throws IllegalArgumentException, IllegalStateException  {
         checkState();
-        return setupId(Bukkit.getScheduler().runTaskTimer(plugin, this, delay, period));
+        return setupId(Bukkit.getScheduler().runTaskTimer(plugin, (Runnable) this, delay, period));
     }
 
     /**
@@ -119,7 +119,7 @@ public abstract class BukkitRunnable implements Runnable {
      */
     public synchronized BukkitTask runTaskTimerAsynchronously(Plugin plugin, long delay, long period) throws IllegalArgumentException, IllegalStateException  {
         checkState();
-        return setupId(Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this, delay, period));
+        return setupId(Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, (Runnable) this, delay, period));
     }
 
     /**
