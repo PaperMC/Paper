@@ -347,12 +347,12 @@
 +                    ((ServerPlayer) this.players.get(idx)).setPlayerWeather((!flag ? WeatherType.DOWNFALL : WeatherType.CLEAR), false);
 +                }
 +            }
-         }
++        }
 +        for (int idx = 0; idx < this.players.size(); ++idx) {
 +            if (((ServerPlayer) this.players.get(idx)).level() == this) {
 +                ((ServerPlayer) this.players.get(idx)).updateWeather(this.oRainLevel, this.rainLevel, this.oThunderLevel, this.thunderLevel);
 +            }
-+        }
+         }
 +        // CraftBukkit end
  
      }
@@ -457,18 +457,19 @@
 +        return this.addFreshEntity(entity, CreatureSpawnEvent.SpawnReason.DEFAULT);
      }
  
+-    public boolean addWithUUID(Entity entity) {
+-        return this.addEntity(entity);
 +    @Override
 +    public boolean addFreshEntity(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
 +        return this.addEntity(entity, reason);
 +        // CraftBukkit end
-+    }
-+
-     public boolean addWithUUID(Entity entity) {
--        return this.addEntity(entity);
-+        // CraftBukkit start
-+        return this.addWithUUID(entity, CreatureSpawnEvent.SpawnReason.DEFAULT);
      }
  
++    public boolean addWithUUID(Entity entity) {
++        // CraftBukkit start
++        return this.addWithUUID(entity, CreatureSpawnEvent.SpawnReason.DEFAULT);
++    }
++
 +    public boolean addWithUUID(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
 +        return this.addEntity(entity, reason);
 +        // CraftBukkit end
@@ -799,7 +800,7 @@
              ServerLevel.this.getChunkSource().addEntity(entity);
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.add(entityplayer);
-@@ -1864,9 +2109,19 @@
+@@ -1864,9 +2109,42 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -809,6 +810,29 @@
  
          public void onTrackingEnd(Entity entity) {
 +            org.spigotmc.AsyncCatcher.catchOp("entity unregister"); // Spigot
++            // Spigot start
++            if ( entity instanceof Player )
++            {
++                com.google.common.collect.Streams.stream( ServerLevel.this.getServer().getAllLevels() ).map( ServerLevel::getDataStorage ).forEach( (worldData) ->
++                {
++                    for (Object o : worldData.cache.values() )
++                    {
++                        if ( o instanceof MapItemSavedData )
++                        {
++                            MapItemSavedData map = (MapItemSavedData) o;
++                            map.carriedByPlayers.remove( (Player) entity );
++                            for ( Iterator<MapItemSavedData.HoldingPlayer> iter = (Iterator<MapItemSavedData.HoldingPlayer>) map.carriedBy.iterator(); iter.hasNext(); )
++                            {
++                                if ( iter.next().player == entity )
++                                {
++                                    iter.remove();
++                                }
++                            }
++                        }
++                    }
++                } );
++            }
++            // Spigot end
 +            // Spigot Start
 +            if (entity.getBukkitEntity() instanceof org.bukkit.inventory.InventoryHolder && (!(entity instanceof ServerPlayer) || entity.getRemovalReason() != Entity.RemovalReason.KILLED)) { // SPIGOT-6876: closeInventory clears death message
 +                for (org.bukkit.entity.HumanEntity h : Lists.newArrayList(((org.bukkit.inventory.InventoryHolder) entity.getBukkitEntity()).getInventory().getViewers())) {
@@ -819,7 +843,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.remove(entityplayer);
-@@ -1895,6 +2150,14 @@
+@@ -1895,6 +2173,14 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
