@@ -17,6 +17,7 @@ import java.util.logging.Level;
 import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scheduler.BukkitWorker;
@@ -88,6 +89,7 @@ public class CraftScheduler implements BukkitScheduler {
         return runTaskLater(plugin, runnable, 0l);
     }
 
+    @Deprecated
     public int scheduleAsyncDelayedTask(final Plugin plugin, final Runnable task) {
         return this.scheduleAsyncDelayedTask(plugin, task, 0l);
     }
@@ -104,6 +106,7 @@ public class CraftScheduler implements BukkitScheduler {
         return runTaskTimer(plugin, runnable, delay, -1l);
     }
 
+    @Deprecated
     public int scheduleAsyncDelayedTask(final Plugin plugin, final Runnable task, final long delay) {
         return this.scheduleAsyncRepeatingTask(plugin, task, delay, -1l);
     }
@@ -129,6 +132,7 @@ public class CraftScheduler implements BukkitScheduler {
         return handle(new CraftTask(plugin, runnable, nextId(), period), delay);
     }
 
+    @Deprecated
     public int scheduleAsyncRepeatingTask(final Plugin plugin, final Runnable runnable, long delay, long period) {
         return runTaskTimerAsynchronously(plugin, runnable, delay, period).getTaskId();
     }
@@ -430,5 +434,59 @@ public class CraftScheduler implements BukkitScheduler {
         StringBuilder string = new StringBuilder("Recent tasks from ").append(debugTick - RECENT_TICKS).append('-').append(debugTick).append('{');
         debugHead.debugTo(string);
         return string.append('}').toString();
+    }
+
+    @Deprecated
+    @Override
+    public int scheduleSyncDelayedTask(Plugin plugin, BukkitRunnable task, long delay) {
+        return scheduleSyncDelayedTask(plugin, (Runnable) task, delay);
+    }
+
+    @Deprecated
+    @Override
+    public int scheduleSyncDelayedTask(Plugin plugin, BukkitRunnable task) {
+        return scheduleSyncDelayedTask(plugin, (Runnable) task);
+    }
+
+    @Deprecated
+    @Override
+    public int scheduleSyncRepeatingTask(Plugin plugin, BukkitRunnable task, long delay, long period) {
+        return scheduleSyncRepeatingTask(plugin, (Runnable) task, delay, period);
+    }
+
+    @Deprecated
+    @Override
+    public BukkitTask runTask(Plugin plugin, BukkitRunnable task) throws IllegalArgumentException {
+        return runTask(plugin, (Runnable) task);
+    }
+
+    @Deprecated
+    @Override
+    public BukkitTask runTaskAsynchronously(Plugin plugin, BukkitRunnable task) throws IllegalArgumentException {
+        return runTaskAsynchronously(plugin, (Runnable) task);
+    }
+
+    @Deprecated
+    @Override
+    public BukkitTask runTaskLater(Plugin plugin, BukkitRunnable task, long delay) throws IllegalArgumentException {
+        return runTaskLater(plugin, (Runnable) task, delay);
+    }
+
+    @Deprecated
+    @Override
+    public BukkitTask runTaskLaterAsynchronously(Plugin plugin, BukkitRunnable task, long delay) throws IllegalArgumentException {
+        return runTaskLaterAsynchronously(plugin, (Runnable) task, delay);
+    }
+
+    @Deprecated
+    @Override
+    public BukkitTask runTaskTimer(Plugin plugin, BukkitRunnable task, long delay, long period) throws IllegalArgumentException {
+        return runTaskTimer(plugin, (Runnable) task, delay, period);
+    }
+
+    @Deprecated
+    @Override
+    public BukkitTask runTaskTimerAsynchronously(Plugin plugin, BukkitRunnable task, long delay, long period) throws IllegalArgumentException {
+        return runTaskTimerAsynchronously(plugin, (Runnable) task, delay, period);
     }
 }
