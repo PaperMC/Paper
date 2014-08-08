@@ -1018,6 +1018,29 @@ public class WorldServer extends World implements GeneratorAccessSeed {
 
     public void unregisterEntity(Entity entity) {
         org.spigotmc.AsyncCatcher.catchOp("entity unregister"); // Spigot
+        // Spigot start
+        if ( entity instanceof EntityHuman )
+        {
+            this.getMinecraftServer().worldServer.values().stream().map( WorldServer::getWorldPersistentData ).forEach( (worldData) ->
+            {
+                for (Object o : worldData.data.values() )
+                {
+                    if ( o instanceof WorldMap )
+                    {
+                        WorldMap map = (WorldMap) o;
+                        map.humans.remove( (EntityHuman) entity );
+                        for ( Iterator<WorldMap.WorldMapHumanTracker> iter = (Iterator<WorldMap.WorldMapHumanTracker>) map.i.iterator(); iter.hasNext(); )
+                        {
+                            if ( iter.next().trackee == entity )
+                            {
+                                iter.remove();
+                            }
+                        }
+                    }
+                }
+            } );
+        }
+        // Spigot end
         // Spigot Start
         if (entity.getBukkitEntity() instanceof org.bukkit.inventory.InventoryHolder) {
             for (org.bukkit.entity.HumanEntity h : Lists.newArrayList(((org.bukkit.inventory.InventoryHolder) entity.getBukkitEntity()).getInventory().getViewers())) {
