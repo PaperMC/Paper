@@ -344,4 +344,10 @@ public class SpigotWorldConfig
         maxTntTicksPerTick = getInt( "max-tnt-per-tick", 100 );
         log( "Max TNT Explosions: " + maxTntTicksPerTick );
     }
+
+    public int hangingTickFrequency;
+    private void hangingTickFrequency()
+    {
+        hangingTickFrequency = getInt( "hanging-tick-frequency", 100 );
+    }
 }

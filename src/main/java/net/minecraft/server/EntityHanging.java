@@ -98,7 +98,7 @@ public abstract class EntityHanging extends Entity {
                 this.am();
             }
 
-            if (this.e++ == 100) {
+            if (this.e++ == this.world.spigotConfig.hangingTickFrequency) { // Spigot
                 this.e = 0;
                 if (!this.dead && !this.survives()) {
                     // CraftBukkit start - fire break events
