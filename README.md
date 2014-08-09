@@ -1,4 +1,4 @@
-PaperSpigot [![CI Status](http://ci.destroystokyo.com/buildStatus/icon?job=PaperSpigot)](http://ci.destroystokyo.com/job/PaperSpigot/) [![Travis Status](https://travis-ci.org/PaperSpigot/Spigot.svg?branch=master)](https://travis-ci.org/PaperSpigot/Spigot)
+PaperSpigot [![CI Status](http://ci.destroystokyo.com/buildStatus/icon?job=PaperSpigot)](http://ci.destroystokyo.com/job/PaperSpigot/) [![Travis Status](https://travis-ci.org/PaperSpigot/PaperSpigot.svg?branch=master)](https://travis-ci.org/PaperSpigot/PaperSpigot)
 ===========
 
 High performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.
