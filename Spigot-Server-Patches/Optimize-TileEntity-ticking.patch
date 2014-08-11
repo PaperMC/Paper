@@ -1,0 +1,231 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 11 Aug 2014 16:03:05 -0500
+Subject: [PATCH] Optimize TileEntity ticking
+
+Re-organizes the servers TileEntity Tick List to be bucketed by type.
+
+This allows the server to skip buckets of Tile Entities that is known to
+not have any tick function (half of them), skipping time spent iterating
+them and checking if they are valid and in a loaded chunk. In other words,
+a lot of "meta" time wasted on tile entities that would never do anything anyways.
+
+This change also adds control into the interval of every TileEntity, giving
+the server owner control on how fast a TileEntity ticks, slowing it down if they must
+(Such as chest), to improve performance.
+
+diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/TileEntity.java
++++ b/src/main/java/net/minecraft/server/TileEntity.java
+@@ -0,0 +0,0 @@ public class TileEntity {
+     private static final Logger a = LogManager.getLogger();
+     private static Map i = new HashMap();
+     private static Map j = new HashMap();
++    public boolean isAdded = false; // PaperSpigot - optimize contains checks
++    public static Map<String, Class> getTileEntityMap() { return i;} // PaperSpigot - reference <String, Class> TE map
+     protected World world;
+     public int x;
+     public int y;
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+     };
+     // Spigot end
+     protected List f = new ArrayList();
+-    public Set tileEntityList = new HashSet(); // CraftBukkit - ArrayList -> HashSet
++    public Set tileEntityList = new org.github.paperspigot.WorldTileEntityList(this); // PaperSpigot // CraftBukkit - ArrayList -> HashSet
+     private List a = new ArrayList();
+     private List b = new ArrayList();
+     public List players = new ArrayList();
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+@@ -0,0 +0,0 @@
+ package org.github.paperspigot;
+ 
++import java.util.HashMap;
+ import java.util.List;
++import java.util.Map;
++
++import com.google.common.collect.Maps;
++import net.minecraft.server.TileEntity;
+ import org.bukkit.Bukkit;
+ import org.bukkit.configuration.file.YamlConfiguration;
+ 
+@@ -0,0 +0,0 @@ public class PaperSpigotWorldConfig
+         hangingTickFrequency = getInt( "hanging-tick-frequency", 100);
+         log( "Hanging entities tick frequency: " + hangingTickFrequency);
+     }
++
++    public final Map<Class,Integer> tileEntityTickIntervals = Maps.newHashMap();
++    private static final Map<String,Integer> defaultTileEntityTickIntervals = new HashMap<String, Integer>() {{
++        // Use 0 for no ticking
++        // does findPlayer lookup, so this helps performance to slow down
++        put("chest", 10);
++        put("enderchest", 10);
++        put("enchanttable", 10);
++
++        // These TE's have empty tick methods, doing nothing. Never bother ticking them.
++        put("recordplayer", 0);
++        put("trap", 0); // Dispenser
++        put("dropper", 0);
++        put("sign", 0);
++        put("music", 0);
++        put("airportal", 0);  // Ender Portal
++        put("control", 0); // Command Block
++        put("skull", 0);
++        put("comparator", 0);
++        put("flowerpot", 0);
++
++        // Slow things down that players won't notice due to craftbukkit "wall time" patches.
++        put("furnace", 4);
++        put("cauldron", 4);
++
++        // Vanilla controlled values - These are checks already done in vanilla, so don't tick on ticks we know
++        // won't do anything anyways
++        put("beacon", 80);
++        put("dldetector", 20);
++    }};
++    private void tileEntityTickIntervals() {
++        final Map<String, Class> tileEntityMap = TileEntity.getTileEntityMap();
++        for (Map.Entry<String, Class> entry : tileEntityMap.entrySet()) {
++            String key = entry.getKey().toLowerCase();
++            Class cls = entry.getValue();
++            Integer def = defaultTileEntityTickIntervals.get(key);
++            if (def == null) {
++                def = 1;
++            }
++            Integer tickInterval = getInt("tile-entity-tick-intervals." + key, def);
++            if (!tickInterval.equals(def)) {
++                log("TileEntity - " + entry.getKey() +" - Tick Interval: " + tickInterval);
++            }
++            tileEntityTickIntervals.put(cls, tickInterval);
++        }
++    }
++
+ }
+diff --git a/src/main/java/org/github/paperspigot/WorldTileEntityList.java b/src/main/java/org/github/paperspigot/WorldTileEntityList.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/org/github/paperspigot/WorldTileEntityList.java
+@@ -0,0 +0,0 @@
++package org.github.paperspigot;
++
++import com.google.common.collect.Lists;
++import com.google.common.collect.Maps;
++import net.minecraft.server.TileEntity;
++import net.minecraft.server.World;
++
++import java.util.HashSet;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++public class WorldTileEntityList extends HashSet {
++    final Map<Class, List<TileEntity>> tickList = Maps.newHashMap();
++
++    private final World world;
++
++    public WorldTileEntityList(World world) {
++        this.world = world;
++    }
++
++    @Override
++    public boolean add(Object o) {
++        if (getInterval(o.getClass()) != 0) {
++            add((TileEntity) o);
++        }
++        return true;
++    }
++
++    public void add(TileEntity entity) {
++        if (entity.isAdded) {
++            return;
++        }
++        Class cls = entity.getClass();
++        List<TileEntity> list = tickList.get(cls);
++        if (list == null) {
++            list = Lists.newArrayList();
++            tickList.put(cls, list);
++        }
++        list.add(entity);
++        entity.isAdded = true;
++    }
++
++    @Override
++    public boolean remove(Object o) {
++        final Class cls = o.getClass();
++        final List<TileEntity> list = tickList.get(cls);
++        if (list != null) {
++            list.remove(o);
++            ((TileEntity) o).isAdded = false;
++        }
++        return true;
++    }
++
++    @Override
++    public Iterator iterator() {
++        return new Iterator() {
++            Iterator<Map.Entry<Class, List<TileEntity>>> typeIterator;
++            Map.Entry<Class, List<TileEntity>> curType = null;
++            Iterator<TileEntity> listIterator = null;
++            {
++                typeIterator = tickList.entrySet().iterator();
++                nextType();
++            }
++
++            private boolean nextType() {
++                if (typeIterator.hasNext()) {
++                    curType = typeIterator.next();
++                    final Integer interval = getInterval(curType.getKey());
++                    if (world.getTime() % interval != 0) {
++                        listIterator = curType.getValue().iterator();
++                    } else {
++                        listIterator = null;
++                    }
++                    return true;
++                } else {
++                    curType = null;
++                    listIterator = null;
++                    return false;
++                }
++            }
++
++            @Override
++            public boolean hasNext() {
++                do {
++                    if (listIterator != null && listIterator.hasNext()) {
++                        return true;
++                    }
++                } while (nextType());
++                return false;
++            }
++
++            @Override
++            public Object next() {
++                return listIterator.next();
++            }
++
++            @Override
++            public void remove() {
++                listIterator.remove();
++            }
++        };
++    }
++
++    @Override
++    public boolean contains(Object o) {
++        return ((TileEntity) o).isAdded;
++    }
++    public Integer getInterval(Class cls) {
++        Integer tickInterval = world.paperSpigotConfig.tileEntityTickIntervals.get(cls);
++        return tickInterval != null ? tickInterval : 1;
++    }
++}
+\ No newline at end of file
+--
