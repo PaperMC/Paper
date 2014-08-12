@@ -1,4 +1,4 @@
-From 60ae5659d6d9a7a11949a3dbe2ec9ea0f8fa05a1 Mon Sep 17 00:00:00 2001
+From 280e4f94a1b0fc4a599baaeaa854ee2321990e9f Mon Sep 17 00:00:00 2001
 From: Zach Brown <Zbob750@live.com>
 Date: Mon, 11 Aug 2014 19:30:19 -0500
 Subject: [PATCH] Move sound handling out of the chest tick loop
@@ -7,7 +7,7 @@ This allows us to disable ticking chests and enderchests without any
 noticeable difference to players
 
 diff --git a/src/main/java/net/minecraft/server/TileEntityChest.java b/src/main/java/net/minecraft/server/TileEntityChest.java
-index c900caf..d2dfa8a 100644
+index e27716b..69ffd30 100644
 --- a/src/main/java/net/minecraft/server/TileEntityChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityChest.java
 @@ -275,6 +275,9 @@ public class TileEntityChest extends TileEntity implements IInventory {
@@ -84,7 +84,7 @@ index c900caf..d2dfa8a 100644
              if (this.q() == Blocks.TRAPPED_CHEST) {
                  int newPower = Math.max(0, Math.min(15, this.o));
 diff --git a/src/main/java/net/minecraft/server/TileEntityEnderChest.java b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
-index b205ab7..a4df9cb 100644
+index d76a2b2..339e133 100644
 --- a/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 @@ -16,6 +16,9 @@ public class TileEntityEnderChest extends TileEntity {
@@ -146,29 +146,28 @@ index b205ab7..a4df9cb 100644
      }
  
      public boolean a(EntityHuman entityhuman) {
-diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-index 4eeb865..d02ce68 100644
---- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-+++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-@@ -180,8 +180,6 @@ public class PaperSpigotWorldConfig
-     private static final Map<String,Integer> defaultTileEntityTickIntervals = new HashMap<String, Integer>() {{
-         // Use 0 for no ticking
-         // does findPlayer lookup, so this helps performance to slow down
--        put("chest", 10);
--        put("enderchest", 10);
-         put("enchanttable", 10);
+diff --git a/src/main/java/org/github/paperspigot/ChunkTileEntityList.java b/src/main/java/org/github/paperspigot/ChunkTileEntityList.java
+index e673ba9..dac6463 100644
+--- a/src/main/java/org/github/paperspigot/ChunkTileEntityList.java
++++ b/src/main/java/org/github/paperspigot/ChunkTileEntityList.java
+@@ -25,14 +25,14 @@ public class ChunkTileEntityList {
+                 TileEntityCommand.class,
+                 TileEntitySkull.class,
+                 TileEntityComparator.class,
+-                TileEntityFlowerPot.class
++                TileEntityFlowerPot.class,
++                TileEntityChest.class,
++                TileEntityEnderChest.class
+         }) {
+             put(ignored, 0);
+         }
  
-         // These TE's have empty tick methods, doing nothing. Never bother ticking them.
-@@ -195,6 +193,9 @@ public class PaperSpigotWorldConfig
-         put("skull", 0);
-         put("comparator", 0);
-         put("flowerpot", 0);
-+        // PaperSpigot - We moved the chest sound handling out of the tick loop, so it's safe to not tick them
-+        put("chest", 0);
-+        put("enderchest", 0);
+         // does findPlayer lookup, so this helps performance to slow down
+-        put(TileEntityChest.class, 20);
+-        put(TileEntityEnderChest.class, 20);
+         put(TileEntityEnchantTable.class, 20);
  
          // Slow things down that players won't notice due to craftbukkit "wall time" patches.
-         put("furnace", 4);
 -- 
 1.9.1
 
