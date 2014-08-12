@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
-Date: Mon, 11 Aug 2014 21:46:33 -0500
+Date: Mon, 11 Aug 2014 23:00:13 -0500
 Subject: [PATCH] Optimize TileEntity ticking
 
 Re-organizes the servers TileEntity Tick List to be bucketed by type.
@@ -39,7 +39,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // Spigot End
  
 -            this.world.a(tileentity);
-+            // this.world.a(tileentity); // Handled by Improved Tick List (Only loaded chunks iterate)
++            // this.world.a(tileentity); // PaperSpigot - Handled by Improved Tick List (Only loaded chunks iterate)
          }
  
          for (int i = 0; i < this.entitySlices.length; ++i) {
@@ -48,13 +48,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
 @@ -0,0 +0,0 @@ public class TileEntity {
+     }
+     // Spigot end
  
-     public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getTileEntityTimings(this); // Spigot
-     private static final Logger a = LogManager.getLogger();
-+    public boolean isAdded = false; // PaperSpigot - optimize contains checks
-     private static Map i = new HashMap();
-     private static Map j = new HashMap();
-     protected World world;
++    // PaperSpigot start - Optimized TileEntity Tick changes
++    private static int tileEntityCounter = 0;
++    public boolean isAdded = false;
++    public int tileId = tileEntityCounter++;
++    //PaperSpigot end
++
+     public TileEntity() {}
+ 
+     private static void a(Class oclass, String s) {
 diff --git a/src/main/java/net/minecraft/server/TileEntityBeacon.java b/src/main/java/net/minecraft/server/TileEntityBeacon.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/TileEntityBeacon.java
@@ -94,7 +99,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void h() {
          super.h();
 -        if (++this.k % 20 * 4 == 0) {
-+        if (++this.k % 4 == 0) { // PaperSpigot Reduced (20 * 4) -> 4 interval due to reduced tick rate from Improved Tick Handling
++        if (++this.k % 4 == 0) {  // PaperSpigot Reduced (20 * 4) -> 4 interval due to reduced tick rate from Improved Tick Handling
              this.world.playBlockAction(this.x, this.y, this.z, Blocks.ENDER_CHEST, 1, this.j);
          }
  
@@ -120,10 +125,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Spigot end
      protected List f = new ArrayList();
 -    public Set tileEntityList = new HashSet(); // CraftBukkit - ArrayList -> HashSet
-+    public Set tileEntityList = new org.github.paperspigot.WorldTileEntityList(this); // CraftBukkit - ArrayList -> HashSet // PaperSpigot
++    public Set tileEntityList = new org.github.paperspigot.WorldTileEntityList(this); // PaperSpigot // CraftBukkit - ArrayList -> HashSet
      private List a = new ArrayList();
      private List b = new ArrayList();
      public List players = new ArrayList();
+@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+             }
+             // Spigot end
+ 
+-            if (!tileentity.r() && tileentity.o() && this.isLoaded(tileentity.x, tileentity.y, tileentity.z)) {
++            if (!tileentity.r() && tileentity.o() /*&& this.isLoaded(tileentity.x, tileentity.y, tileentity.z)*/) { // PaperSpigot - remove isLoaded check - done by the iterator per chunk
+                 try {
+                     tileentity.tickTimer.startTiming(); // Spigot
+                     tileentity.h();
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
  
              if (tileentity.r()) {
@@ -150,50 +164,52 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.google.common.collect.ArrayListMultimap;
 +import com.google.common.collect.ListMultimap;
++import com.google.common.collect.Maps;
 +import net.minecraft.server.*;
 +import net.minecraft.util.gnu.trove.map.hash.TObjectIntHashMap;
 +
-+import java.util.Collection;
 +import java.util.Iterator;
++import java.util.List;
 +import java.util.Map;
 +
 +public class ChunkTileEntityList {
-+    final ListMultimap<Class, TileEntity> tickList = ArrayListMultimap.create();
++    final Map<Class<? extends TileEntity>, ListMultimap<Integer, TileEntity>> tickList = Maps.newHashMap();
 +
-+    private static final TObjectIntHashMap<Class> tileEntityTickIntervals = new TObjectIntHashMap<Class>() {{
-+        // Use 0 for no ticking
-+        // These TE's have empty tick methods, doing nothing. Never bother ticking them.
-+        for (Class<? extends TileEntity> ignored : new Class[]{
-+                TileEntityRecordPlayer.class,
-+                TileEntityDispenser.class,
-+                TileEntityDropper.class,
-+                TileEntitySign.class,
-+                TileEntityNote.class,
-+                TileEntityEnderPortal.class,
-+                TileEntityCommand.class,
-+                TileEntitySkull.class,
-+                TileEntityComparator.class,
-+                TileEntityFlowerPot.class
-+        }) {
-+            put(ignored, 0);
-+        }
++    private static final TObjectIntHashMap<Class<? extends TileEntity>> tileEntityTickIntervals =
++            new TObjectIntHashMap<Class<? extends TileEntity>>() {{
++                // Use 0 for no ticking
++                // These TE's have empty tick methods, doing nothing. Never bother ticking them.
++                for (Class<? extends TileEntity> ignored : new Class[]{
++                        TileEntityRecordPlayer.class,
++                        TileEntityDispenser.class,
++                        TileEntityDropper.class,
++                        TileEntitySign.class,
++                        TileEntityNote.class,
++                        TileEntityEnderPortal.class,
++                        TileEntityCommand.class,
++                        TileEntitySkull.class,
++                        TileEntityComparator.class,
++                        TileEntityFlowerPot.class
++                }) {
++                    put(ignored, 0);
++                }
 +
-+        // does findPlayer lookup, so this helps performance to slow down
-+        put(TileEntityChest.class, 20);
-+        put(TileEntityEnderChest.class, 20);
-+        put(TileEntityEnchantTable.class, 20);
++                // does findPlayer lookup, so this helps performance to slow down
++                put(TileEntityChest.class, 20);
++                put(TileEntityEnderChest.class, 20);
++                put(TileEntityEnchantTable.class, 20);
 +
-+        // Slow things down that players won't notice due to craftbukkit "wall time" patches.
-+        put(TileEntityFurnace.class, 10);
-+        put(TileEntityBrewingStand.class, 10);
++                // Slow things down that players won't notice due to craftbukkit "wall time" patches.
++                put(TileEntityFurnace.class, 10);
++                put(TileEntityBrewingStand.class, 10);
 +
-+        // Vanilla controlled values - These are checks already done in vanilla, so don't tick on ticks we know
-+        // won't do anything anyways
-+        put(TileEntityBeacon.class, 80);
-+        put(TileEntityLightDetector.class, 20);
-+    }};
++                // Vanilla controlled values - These are checks already done in vanilla, so don't tick on ticks we know
++                // won't do anything anyways
++                put(TileEntityBeacon.class, 80);
++                put(TileEntityLightDetector.class, 20);
++            }};
 +
-+    public static Integer getInterval(Class cls) {
++    public static Integer getInterval(Class<? extends TileEntity> cls) {
 +        Integer tickInterval = tileEntityTickIntervals.get(cls);
 +        return tickInterval != null ? tickInterval : 1;
 +    }
@@ -208,33 +224,63 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return new ChunkTileEntityIterator();
 +    }
 +
-+
 +    public boolean add(TileEntity entity) {
 +        entity.isAdded = true;
-+        return tickList.put(entity.getClass(), entity);
++        int bucket = getBucketId(entity);
++        ListMultimap<Integer, TileEntity> typeBucket = getBucket(entity);
++        return typeBucket.put(bucket, entity);
 +    }
 +
 +    public boolean remove(TileEntity entity) {
++        if (!entity.isAdded) {
++            return false;
++        }
 +        entity.isAdded = false;
-+        return tickList.remove(entity.getClass(), entity);
++        int bucket = getBucketId(entity);
++        ListMultimap<Integer, TileEntity> typeBucket = getBucket(entity);
++        return typeBucket.remove(bucket, entity);
++    }
++
++    private ListMultimap<Integer, TileEntity> getBucket(TileEntity entity) {
++        final Class<? extends TileEntity> cls = entity.getClass();
++
++        ListMultimap<Integer, TileEntity> typeBucket = tickList.get(cls);
++        if (typeBucket == null) {
++            typeBucket = ArrayListMultimap.create();
++            tickList.put(cls, typeBucket);
++        }
++        return typeBucket;
++    }
++
++    private static int getBucketId(TileEntity entity) {
++        Integer interval = getInterval(entity.getClass());
++        if (interval < 1) {
++            interval = 1; // Prevent divide by zero errors.
++        }
++        return entity.tileId % interval;
 +    }
 +
 +    private class ChunkTileEntityIterator implements Iterator {
-+        Iterator<Map.Entry<Class, Collection<TileEntity>>> typeIterator;
-+        Map.Entry<Class, Collection<TileEntity>> curType = null;
++        Iterator<Map.Entry<Class<? extends TileEntity>, ListMultimap<Integer, TileEntity>>> typeIterator;
++        Map.Entry<Class <? extends TileEntity>, ListMultimap<Integer, TileEntity>> curType = null;
 +        Iterator<TileEntity> listIterator = null;
 +
 +        {
-+            typeIterator = tickList.asMap().entrySet().iterator();
++            typeIterator = tickList.entrySet().iterator();
 +            nextType();
 +        }
 +
 +        private boolean nextType() {
 +            if (typeIterator.hasNext()) {
 +                curType = typeIterator.next();
-+                final Integer interval = ChunkTileEntityList.getInterval(curType.getKey());
-+                if (world.getTime() % interval != 0) {
-+                    listIterator = curType.getValue().iterator();
++
++                final ListMultimap<Integer, TileEntity> buckets = curType.getValue();
++
++                final Integer interval = getInterval(curType.getKey());
++                int bucket = (int) (world.getTime() % interval);
++                final List<TileEntity> tileList = buckets.get(bucket);
++                if (tileList != null && !tileList.isEmpty()) {
++                    listIterator = tileList.iterator();
 +                } else {
 +                    listIterator = null;
 +                }
@@ -267,7 +313,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +}
-\ No newline at end of file
 diff --git a/src/main/java/org/github/paperspigot/WorldTileEntityList.java b/src/main/java/org/github/paperspigot/WorldTileEntityList.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -299,7 +344,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    @Override
 +    public boolean add(Object o) {
-+        return o instanceof TileEntity && ChunkTileEntityList.getInterval(o.getClass()) > 0 && add((TileEntity) o);
++        return o instanceof TileEntity && ChunkTileEntityList.getInterval(((TileEntity)o).getClass()) > 0 && add((TileEntity) o);
 +    }
 +
 +    private boolean add(TileEntity entity) {
@@ -380,5 +425,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +}
-\ No newline at end of file
 --
