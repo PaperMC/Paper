@@ -307,4 +307,30 @@ public class SpigotWorldConfig
         log( "Custom Map Seeds:  Village: " + villageSeed + " Desert: " + desertSeed + " Igloo: " + iglooSeed + " Jungle: " + jungleSeed + " Swamp: " + swampSeed + " Monument: " + monumentSeed +
                 " Ocean: " + oceanSeed + " Shipwreck: " + shipwreckSeed + " End City: " + endCitySeed + " Slime: " + slimeSeed + " Bastion: " + bastionSeed + " Fortress: " + fortressSeed + " Mansion: " + mansionSeed + " Fossil: " + fossilSeed + " Portal: " + portalSeed );
     }
+
+    public float jumpWalkExhaustion;
+    public float jumpSprintExhaustion;
+    public float combatExhaustion;
+    public float regenExhaustion;
+    public float swimMultiplier;
+    public float sprintMultiplier;
+    public float otherMultiplier;
+    private void initHunger()
+    {
+        if ( SpigotConfig.version < 10 )
+        {
+            set( "hunger.walk-exhaustion", null );
+            set( "hunger.sprint-exhaustion", null );
+            set( "hunger.combat-exhaustion", 0.1 );
+            set( "hunger.regen-exhaustion", 6.0 );
+        }
+
+        jumpWalkExhaustion = (float) getDouble( "hunger.jump-walk-exhaustion", 0.05 );
+        jumpSprintExhaustion = (float) getDouble( "hunger.jump-sprint-exhaustion", 0.2 );
+        combatExhaustion = (float) getDouble( "hunger.combat-exhaustion", 0.1 );
+        regenExhaustion = (float) getDouble( "hunger.regen-exhaustion", 6.0 );
+        swimMultiplier =  (float) getDouble( "hunger.swim-multiplier", 0.01 );
+        sprintMultiplier = (float) getDouble( "hunger.sprint-multiplier", 0.1 );
+        otherMultiplier = (float) getDouble( "hunger.other-multiplier", 0.0 );
+    }
 }
