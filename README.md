@@ -5,7 +5,7 @@ High performance Spigot fork that aims to fix gameplay and mechanics inconsisten
 
 [IRC Support and Project Discussion](http://irc.spi.gt/iris/?channels=PaperSpigot)
 
-[Compiled Builds](http://ci.destroystokyo.com)
+[Compiled Builds](http://ci.destroystokyo.com/job/PaperSpigot)
 
 [Documentation and wiki](https://github.com/PaperSpigot/PaperSpigot/wiki)
 
