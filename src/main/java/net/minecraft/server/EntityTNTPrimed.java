@@ -48,6 +48,7 @@ public class EntityTNTPrimed extends Entity {
 
     @Override
     public void tick() {
+        if (world.spigotConfig.currentPrimedTnt++ > world.spigotConfig.maxTntTicksPerTick) { return; } // Spigot
         if (!this.isNoGravity()) {
             this.setMot(this.getMot().add(0.0D, -0.04D, 0.0D));
         }

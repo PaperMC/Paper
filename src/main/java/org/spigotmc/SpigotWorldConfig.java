@@ -333,4 +333,15 @@ public class SpigotWorldConfig
         sprintMultiplier = (float) getDouble( "hunger.sprint-multiplier", 0.1 );
         otherMultiplier = (float) getDouble( "hunger.other-multiplier", 0.0 );
     }
+
+    public int currentPrimedTnt = 0;
+    public int maxTntTicksPerTick;
+    private void maxTntPerTick() {
+        if ( SpigotConfig.version < 7 )
+        {
+            set( "max-tnt-per-tick", 100 );
+        }
+        maxTntTicksPerTick = getInt( "max-tnt-per-tick", 100 );
+        log( "Max TNT Explosions: " + maxTntTicksPerTick );
+    }
 }
