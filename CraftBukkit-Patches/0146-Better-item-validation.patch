@@ -1,9 +1,53 @@
-From 9fb3a495d25e376af9ecfaac0843ba6e339cc7d8 Mon Sep 17 00:00:00 2001
+From 79e19a02fa34f4ad5f2e2d9446ca55fd8720bbed Mon Sep 17 00:00:00 2001
 From: Thinkofdeath <thinkofdeath@spigotmc.org>
 Date: Wed, 2 Jul 2014 23:35:51 +0100
 Subject: [PATCH] Better item validation
 
 
+diff --git a/src/main/java/net/minecraft/server/DataWatcher.java b/src/main/java/net/minecraft/server/DataWatcher.java
+index e368514..395d054 100644
+--- a/src/main/java/net/minecraft/server/DataWatcher.java
++++ b/src/main/java/net/minecraft/server/DataWatcher.java
+@@ -149,6 +149,17 @@ public class DataWatcher {
+                         arraylist = new ArrayList();
+                     }
+ 
++                    // Spigot start - copy ItemStacks to prevent ConcurrentModificationExceptions
++                    if ( watchableobject.b() instanceof ItemStack )
++                    {
++                        watchableobject = new WatchableObject(
++                                watchableobject.c(),
++                                watchableobject.a(),
++                                ( (ItemStack) watchableobject.b() ).cloneItemStack()
++                        );
++                    }
++                    // Spigot end
++
+                     arraylist.add(watchableobject);
+                 }
+             }
+@@ -180,6 +191,21 @@ public class DataWatcher {
+         this.f.readLock().lock();
+ 
+         arraylist.addAll(this.dataValues.valueCollection()); // Spigot
++        // Spigot start - copy ItemStacks to prevent ConcurrentModificationExceptions
++        for ( int i = 0; i < arraylist.size(); i++ )
++        {
++            WatchableObject watchableobject = (WatchableObject) arraylist.get( i );
++            if ( watchableobject.b() instanceof ItemStack )
++            {
++                watchableobject = new WatchableObject(
++                        watchableobject.c(),
++                        watchableobject.a(),
++                        ( (ItemStack) watchableobject.b() ).cloneItemStack()
++                );
++                arraylist.set( i, watchableobject );
++            }
++        }
++        // Spigot end
+ 
+         this.f.readLock().unlock();
+         return arraylist;
 diff --git a/src/main/java/net/minecraft/server/PacketDataSerializer.java b/src/main/java/net/minecraft/server/PacketDataSerializer.java
 index a5be533..e4df5b3 100644
 --- a/src/main/java/net/minecraft/server/PacketDataSerializer.java
@@ -58,7 +102,7 @@ index 1cf8fce..bdc6364 100644
              }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index c9738c4..ec37524 100644
+index 32d4a67..53c3f6c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -36,6 +36,10 @@ import com.google.common.base.Strings;

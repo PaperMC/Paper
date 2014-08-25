@@ -1,4 +1,4 @@
-From 8436d82f19ccc283c93fa2a2a2df7621437dd5ae Mon Sep 17 00:00:00 2001
+From ab1bf3d9c222ecff67093988fa4c00009986f871 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 2 Jun 2013 10:42:57 +1000
 Subject: [PATCH] Spigot Timings
@@ -8,7 +8,7 @@ Adds performance tracking timings all around the Minecraft Server, and improves 
 Plugins can track their own timings with CustomTimingsHandler
 
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 1eaf92d..7b25817 100644
+index 1eaf92d..cc071c6 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
 @@ -301,6 +301,7 @@ public final class Bukkit {
@@ -19,6 +19,36 @@ index 1eaf92d..7b25817 100644
      }
  
      /**
+@@ -747,4 +748,9 @@ public final class Bukkit {
+     public static UnsafeValues getUnsafe() {
+         return server.getUnsafe();
+     }
++
++    public static Server.Spigot spigot()
++    {
++        return server.spigot();
++    }
+ }
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index e14e9f1..573b33b 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -916,4 +916,15 @@ public interface Server extends PluginMessageRecipient {
+      */
+     @Deprecated
+     UnsafeValues getUnsafe();
++
++    public class Spigot
++    {
++
++        public org.bukkit.configuration.file.YamlConfiguration getConfig()
++        {
++            throw new UnsupportedOperationException( "Not supported yet." );
++        }
++    }
++
++    Spigot spigot();
+ }
 diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
 index 87c33d9..31e4f66 100644
 --- a/src/main/java/org/bukkit/command/Command.java
@@ -68,10 +98,10 @@ index d75380c..f15b95d 100644
          }
  
 diff --git a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java b/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
-index 05cfcb0..22926d6 100644
+index 05cfcb0..7907021 100644
 --- a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
-@@ -19,23 +19,97 @@ import org.bukkit.util.StringUtil;
+@@ -19,23 +19,101 @@ import org.bukkit.util.StringUtil;
  
  import com.google.common.collect.ImmutableList;
  
@@ -142,6 +172,10 @@ index 05cfcb0..22926d6 100644
 +                CustomTimingsHandler.printTimings(fileTimings);
 +                fileTimings.println( "Sample time " + sampleTime + " (" + sampleTime / 1E9 + "s)" );
 +
++                fileTimings.println( "<spigotConfig>" );
++                fileTimings.println( Bukkit.spigot().getConfig().saveToString() );
++                fileTimings.println( "</spigotConfig>" );
++
 +                if ( paste )
 +                {
 +                    new PasteThread( sender, bout ).start();
@@ -173,7 +207,7 @@ index 05cfcb0..22926d6 100644
          if (!sender.getServer().getPluginManager().useTimings()) {
              sender.sendMessage("Please enable timings by setting \"settings.plugin-profiling\" to true in bukkit.yml");
              return true;
-@@ -118,4 +192,55 @@ public class TimingsCommand extends BukkitCommand {
+@@ -118,4 +196,55 @@ public class TimingsCommand extends BukkitCommand {
          }
          return ImmutableList.of();
      }
