@@ -4,6 +4,50 @@ Date: Wed, 2 Jul 2014 23:35:51 +0100
 Subject: [PATCH] Better item validation
 
 
+diff --git a/src/main/java/net/minecraft/server/DataWatcher.java b/src/main/java/net/minecraft/server/DataWatcher.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/DataWatcher.java
++++ b/src/main/java/net/minecraft/server/DataWatcher.java
+@@ -0,0 +0,0 @@ public class DataWatcher {
+                         arraylist = new ArrayList();
+                     }
+ 
++                    // Spigot start - copy ItemStacks to prevent ConcurrentModificationExceptions
++                    if ( watchableobject.b() instanceof ItemStack )
++                    {
++                        watchableobject = new WatchableObject(
++                                watchableobject.c(),
++                                watchableobject.a(),
++                                ( (ItemStack) watchableobject.b() ).cloneItemStack()
++                        );
++                    }
++                    // Spigot end
++
+                     arraylist.add(watchableobject);
+                 }
+             }
+@@ -0,0 +0,0 @@ public class DataWatcher {
+         this.f.readLock().lock();
+ 
+         arraylist.addAll(this.dataValues.valueCollection()); // Spigot
++        // Spigot start - copy ItemStacks to prevent ConcurrentModificationExceptions
++        for ( int i = 0; i < arraylist.size(); i++ )
++        {
++            WatchableObject watchableobject = (WatchableObject) arraylist.get( i );
++            if ( watchableobject.b() instanceof ItemStack )
++            {
++                watchableobject = new WatchableObject(
++                        watchableobject.c(),
++                        watchableobject.a(),
++                        ( (ItemStack) watchableobject.b() ).cloneItemStack()
++                );
++                arraylist.set( i, watchableobject );
++            }
++        }
++        // Spigot end
+ 
+         this.f.readLock().unlock();
+         return arraylist;
 diff --git a/src/main/java/net/minecraft/server/PacketDataSerializer.java b/src/main/java/net/minecraft/server/PacketDataSerializer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PacketDataSerializer.java
