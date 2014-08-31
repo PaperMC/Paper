@@ -38,6 +38,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final Proxy proxy;
 +    private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 +    private ByteArrayInputStream inputStream;
++    private InputStream errorStream;
 +    private boolean outClosed = false;
 +
 +    private static final Cache<String, String> cache = CacheBuilder.newBuilder()
@@ -95,34 +96,54 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                            .append( "," );
 +                }
 +            }
-+            missingUsers.deleteCharAt( missingUsers.length() - 1 ).append( "]" );
-+            HttpURLConnection connection;
-+            if ( proxy == null )
++            if ( missingUsers.length() > 1 )
 +            {
-+                connection = (HttpURLConnection) cachedStreamHandler.getDefaultConnection( url );
++                missingUsers.deleteCharAt( missingUsers.length() - 1 ).append( "]" );
++            }
++            if ( missingUsers.length() > 2 )
++            {
++                HttpURLConnection connection;
++                if ( proxy == null )
++                {
++                    connection = (HttpURLConnection) cachedStreamHandler.getDefaultConnection( url );
++                } else
++                {
++                    connection = (HttpURLConnection) cachedStreamHandler.getDefaultConnection( url, proxy );
++                }
++                connection.setRequestMethod( "POST" );
++                connection.setRequestProperty( "Content-Type", "application/json" );
++                connection.setDoInput( true );
++                connection.setDoOutput( true );
++                OutputStream out = connection.getOutputStream();
++                out.write( missingUsers.toString().getBytes( Charsets.UTF_8 ) );
++                out.flush();
++                out.close();
++                JsonArray newUsers = new JsonParser().parse( new InputStreamReader( connection.getInputStream(), Charsets.UTF_8 ) ).getAsJsonArray();
++                for ( JsonElement user : newUsers )
++                {
++                    JsonObject u = user.getAsJsonObject();
++                    cache.put( u.get( "name" ).getAsString(), u.toString() );
++                    reply.append( u.toString() ).append( "," );
++                }
++                responseCode = connection.getResponseCode();
++                errorStream = connection.getErrorStream();
 +            } else
 +            {
-+                connection = (HttpURLConnection) cachedStreamHandler.getDefaultConnection( url, proxy );
++                responseCode = HTTP_OK;
 +            }
-+            connection.setRequestMethod( "POST" );
-+            connection.setRequestProperty( "Content-Type", "application/json" );
-+            connection.setDoInput( true );
-+            connection.setDoOutput( true );
-+            OutputStream out = connection.getOutputStream();
-+            out.write( missingUsers.toString().getBytes( Charsets.UTF_8 ) );
-+            out.flush();
-+            out.close();
-+            JsonArray newUsers = new JsonParser().parse( new InputStreamReader( connection.getInputStream(), Charsets.UTF_8 ) ).getAsJsonArray();
-+            for ( JsonElement user : newUsers )
++            if ( reply.length() > 1 )
 +            {
-+                JsonObject u = user.getAsJsonObject();
-+                cache.put( u.get( "name" ).getAsString(), u.toString() );
-+                reply.append( u.toString() ).append( "," );
++                reply.deleteCharAt( reply.length() - 1 );
 +            }
-+            reply.deleteCharAt( reply.length() - 1 );
 +            inputStream = new ByteArrayInputStream( reply.append( "]" ).toString().getBytes( Charsets.UTF_8 ) );
 +        }
 +        return inputStream;
++    }
++
++    @Override
++    public InputStream getErrorStream()
++    {
++        return errorStream;
 +    }
 +
 +    @Override
@@ -154,6 +175,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +public class CachedStreamHandlerFactory implements URLStreamHandlerFactory
 +{
++    public static boolean isSet = false;
++
 +    @Override
 +    public URLStreamHandler createURLStreamHandler(String protocol)
 +    {
@@ -275,10 +298,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private static void globalAPICache()
 +    {
-+        if ( getBoolean( "settings.global-api-cache", false ) )
++        if ( getBoolean( "settings.global-api-cache", false ) && !CachedStreamHandlerFactory.isSet )
 +        {
 +            Bukkit.getLogger().info( "Global API cache enabled - All requests to Mojang's API will be " +
 +                    "handled by Spigot" );
++            CachedStreamHandlerFactory.isSet = true;
 +            URL.setURLStreamHandlerFactory(new CachedStreamHandlerFactory());
 +        }
 +    }
