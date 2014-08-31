@@ -1,4 +1,4 @@
-From 1ef83f75c9811df154608bc23f6110e80a6220b6 Mon Sep 17 00:00:00 2001
+From 0621027e2d6a556270557c294fc039a79c9d05de Mon Sep 17 00:00:00 2001
 From: Thinkofdeath <thinkofdeath@spigotmc.org>
 Date: Mon, 28 Jul 2014 11:42:11 +0100
 Subject: [PATCH] Add an option for a global cache for any request on Mojang's
@@ -7,10 +7,10 @@ Subject: [PATCH] Add an option for a global cache for any request on Mojang's
 
 diff --git a/src/main/java/org/spigotmc/CachedMojangAPIConnection.java b/src/main/java/org/spigotmc/CachedMojangAPIConnection.java
 new file mode 100644
-index 0000000..9911438
+index 0000000..42edeba
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/CachedMojangAPIConnection.java
-@@ -0,0 +1,124 @@
+@@ -0,0 +1,145 @@
 +package org.spigotmc;
 +
 +import com.google.common.base.Charsets;
@@ -38,6 +38,7 @@ index 0000000..9911438
 +    private final Proxy proxy;
 +    private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 +    private ByteArrayInputStream inputStream;
++    private InputStream errorStream;
 +    private boolean outClosed = false;
 +
 +    private static final Cache<String, String> cache = CacheBuilder.newBuilder()
@@ -95,34 +96,54 @@ index 0000000..9911438
 +                            .append( "," );
 +                }
 +            }
-+            missingUsers.deleteCharAt( missingUsers.length() - 1 ).append( "]" );
-+            HttpURLConnection connection;
-+            if ( proxy == null )
++            if ( missingUsers.length() > 1 )
 +            {
-+                connection = (HttpURLConnection) cachedStreamHandler.getDefaultConnection( url );
++                missingUsers.deleteCharAt( missingUsers.length() - 1 ).append( "]" );
++            }
++            if ( missingUsers.length() > 2 )
++            {
++                HttpURLConnection connection;
++                if ( proxy == null )
++                {
++                    connection = (HttpURLConnection) cachedStreamHandler.getDefaultConnection( url );
++                } else
++                {
++                    connection = (HttpURLConnection) cachedStreamHandler.getDefaultConnection( url, proxy );
++                }
++                connection.setRequestMethod( "POST" );
++                connection.setRequestProperty( "Content-Type", "application/json" );
++                connection.setDoInput( true );
++                connection.setDoOutput( true );
++                OutputStream out = connection.getOutputStream();
++                out.write( missingUsers.toString().getBytes( Charsets.UTF_8 ) );
++                out.flush();
++                out.close();
++                JsonArray newUsers = new JsonParser().parse( new InputStreamReader( connection.getInputStream(), Charsets.UTF_8 ) ).getAsJsonArray();
++                for ( JsonElement user : newUsers )
++                {
++                    JsonObject u = user.getAsJsonObject();
++                    cache.put( u.get( "name" ).getAsString(), u.toString() );
++                    reply.append( u.toString() ).append( "," );
++                }
++                responseCode = connection.getResponseCode();
++                errorStream = connection.getErrorStream();
 +            } else
 +            {
-+                connection = (HttpURLConnection) cachedStreamHandler.getDefaultConnection( url, proxy );
++                responseCode = HTTP_OK;
 +            }
-+            connection.setRequestMethod( "POST" );
-+            connection.setRequestProperty( "Content-Type", "application/json" );
-+            connection.setDoInput( true );
-+            connection.setDoOutput( true );
-+            OutputStream out = connection.getOutputStream();
-+            out.write( missingUsers.toString().getBytes( Charsets.UTF_8 ) );
-+            out.flush();
-+            out.close();
-+            JsonArray newUsers = new JsonParser().parse( new InputStreamReader( connection.getInputStream(), Charsets.UTF_8 ) ).getAsJsonArray();
-+            for ( JsonElement user : newUsers )
++            if ( reply.length() > 1 )
 +            {
-+                JsonObject u = user.getAsJsonObject();
-+                cache.put( u.get( "name" ).getAsString(), u.toString() );
-+                reply.append( u.toString() ).append( "," );
++                reply.deleteCharAt( reply.length() - 1 );
 +            }
-+            reply.deleteCharAt( reply.length() - 1 );
 +            inputStream = new ByteArrayInputStream( reply.append( "]" ).toString().getBytes( Charsets.UTF_8 ) );
 +        }
 +        return inputStream;
++    }
++
++    @Override
++    public InputStream getErrorStream()
++    {
++        return errorStream;
 +    }
 +
 +    @Override
@@ -137,10 +158,10 @@ index 0000000..9911438
 +}
 diff --git a/src/main/java/org/spigotmc/CachedStreamHandlerFactory.java b/src/main/java/org/spigotmc/CachedStreamHandlerFactory.java
 new file mode 100644
-index 0000000..02a5fe7
+index 0000000..b9a8736
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/CachedStreamHandlerFactory.java
-@@ -0,0 +1,115 @@
+@@ -0,0 +1,117 @@
 +package org.spigotmc;
 +
 +import java.io.IOException;
@@ -154,6 +175,8 @@ index 0000000..02a5fe7
 +
 +public class CachedStreamHandlerFactory implements URLStreamHandlerFactory
 +{
++    public static boolean isSet = false;
++
 +    @Override
 +    public URLStreamHandler createURLStreamHandler(String protocol)
 +    {
@@ -257,7 +280,7 @@ index 0000000..02a5fe7
 +    }
 +}
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index 4ceeab6..9d2dfe9 100644
+index 06377b3..6baa678 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -6,6 +6,7 @@ import java.io.IOException;
@@ -268,17 +291,18 @@ index 4ceeab6..9d2dfe9 100644
  import java.util.Arrays;
  import java.util.HashMap;
  import java.util.HashSet;
-@@ -360,4 +361,14 @@ public class SpigotConfig
+@@ -360,4 +361,15 @@ public class SpigotConfig
          attackDamage = getDouble( "settings.attribute.attackDamage.max", attackDamage );
          ( (AttributeRanged) GenericAttributes.e ).b = attackDamage;
      }
 +
 +    private static void globalAPICache()
 +    {
-+        if ( getBoolean( "settings.global-api-cache", false ) )
++        if ( getBoolean( "settings.global-api-cache", false ) && !CachedStreamHandlerFactory.isSet )
 +        {
 +            Bukkit.getLogger().info( "Global API cache enabled - All requests to Mojang's API will be " +
 +                    "handled by Spigot" );
++            CachedStreamHandlerFactory.isSet = true;
 +            URL.setURLStreamHandlerFactory(new CachedStreamHandlerFactory());
 +        }
 +    }
