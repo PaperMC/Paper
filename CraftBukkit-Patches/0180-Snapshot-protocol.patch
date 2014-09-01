@@ -508,6 +508,39 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 +++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 @@ -0,0 +0,0 @@ public class EntityTrackerEntry {
+                 if (this.m > 0 || this.tracker instanceof EntityArrow) {
+                     if (j1 >= -128 && j1 < 128 && k1 >= -128 && k1 < 128 && l1 >= -128 && l1 < 128 && this.v <= 400 && !this.x) {
+                         if (flag && flag1) {
+-                            object = new PacketPlayOutRelEntityMoveLook(this.tracker.getId(), (byte) j1, (byte) k1, (byte) l1, (byte) l, (byte) i1);
++                            object = new PacketPlayOutRelEntityMoveLook(this.tracker.getId(), (byte) j1, (byte) k1, (byte) l1, (byte) l, (byte) i1, tracker.onGround); // Spigot - protocol patch
+                         } else if (flag) {
+-                            object = new PacketPlayOutRelEntityMove(this.tracker.getId(), (byte) j1, (byte) k1, (byte) l1);
++                            object = new PacketPlayOutRelEntityMove(this.tracker.getId(), (byte) j1, (byte) k1, (byte) l1, tracker.onGround); // Spigot - protocol patch
+                         } else if (flag1) {
+-                            object = new PacketPlayOutEntityLook(this.tracker.getId(), (byte) l, (byte) i1);
++                            object = new PacketPlayOutEntityLook(this.tracker.getId(), (byte) l, (byte) i1, tracker.onGround); // Spigot - protocol patch
+                         }
+                     } else {
+                         this.v = 0;
+@@ -0,0 +0,0 @@ public class EntityTrackerEntry {
+                             this.scanPlayers(new java.util.ArrayList(this.trackedPlayers));
+                         }
+                         // CraftBukkit end
+-                        object = new PacketPlayOutEntityTeleport(this.tracker.getId(), i, j, k, (byte) l, (byte) i1);
++                        object = new PacketPlayOutEntityTeleport(this.tracker.getId(), i, j, k, (byte) l, (byte) i1, tracker.onGround); // Spigot - protocol patch
+                     }
+                 }
+ 
+@@ -0,0 +0,0 @@ public class EntityTrackerEntry {
+                 boolean flag2 = Math.abs(i - this.yRot) >= 4 || Math.abs(j - this.xRot) >= 4;
+ 
+                 if (flag2) {
+-                    this.broadcast(new PacketPlayOutEntityLook(this.tracker.getId(), (byte) i, (byte) j));
++                    this.broadcast(new PacketPlayOutEntityLook(this.tracker.getId(), (byte) i, (byte) j, tracker.onGround)); // Spigot - protocol patch
+                     this.yRot = i;
+                     this.xRot = j;
+                 }
+@@ -0,0 +0,0 @@ public class EntityTrackerEntry {
                      this.trackedPlayers.add(entityplayer);
                      Packet packet = this.c();
  
@@ -1578,6 +1611,26 @@ diff --git a/src/main/java/net/minecraft/server/PacketPlayOutEntityLook.java b/s
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutEntityLook.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutEntityLook.java
+@@ -0,0 +0,0 @@ package net.minecraft.server;
+ 
+ public class PacketPlayOutEntityLook extends PacketPlayOutEntity {
+ 
++    private boolean onGround; // Spigot - protocol patch
++
+     public PacketPlayOutEntityLook() {
+         this.g = true;
+     }
+ 
+-    public PacketPlayOutEntityLook(int i, byte b0, byte b1) {
++    public PacketPlayOutEntityLook(int i, byte b0, byte b1, boolean onGround) { // Spigot - protocol patch
+         super(i);
+         this.e = b0;
+         this.f = b1;
+         this.g = true;
++        this.onGround = onGround; // Spigot - protocol patch
+     }
+ 
+     public void a(PacketDataSerializer packetdataserializer) {
 @@ -0,0 +0,0 @@ public class PacketPlayOutEntityLook extends PacketPlayOutEntity {
          super.b(packetdataserializer);
          packetdataserializer.writeByte(this.e);
@@ -1585,7 +1638,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Spigot start - protocol patch
 +        if ( packetdataserializer.version >= 22 )
 +        {
-+            packetdataserializer.writeBoolean( true );
++            packetdataserializer.writeBoolean( onGround );
 +        }
 +        // Spigot end
      }
@@ -1619,6 +1672,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/PacketPlayOutEntityTeleport.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutEntityTeleport.java
 @@ -0,0 +0,0 @@ public class PacketPlayOutEntityTeleport extends Packet {
+     private int d;
+     private byte e;
+     private byte f;
++    private boolean onGround; // Spigot - protocol patch
+ 
+     public PacketPlayOutEntityTeleport() {}
+ 
+@@ -0,0 +0,0 @@ public class PacketPlayOutEntityTeleport extends Packet {
+         this.f = (byte) ((int) (entity.pitch * 256.0F / 360.0F));
+     }
+ 
+-    public PacketPlayOutEntityTeleport(int i, int j, int k, int l, byte b0, byte b1) {
++    public PacketPlayOutEntityTeleport(int i, int j, int k, int l, byte b0, byte b1, boolean onGround) { // Spigot - protocol patch
+         this.a = i;
+         this.b = j;
+         this.c = k;
+         this.d = l;
+         this.e = b0;
+         this.f = b1;
++        this.onGround = onGround; // Spigot - protocol patch
+     }
+ 
+     public void a(PacketDataSerializer packetdataserializer) {
+@@ -0,0 +0,0 @@ public class PacketPlayOutEntityTeleport extends Packet {
      }
  
      public void b(PacketDataSerializer packetdataserializer) {
@@ -1640,7 +1717,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Spigot start - protocol patch
 +        if ( packetdataserializer.version >= 22 )
 +        {
-+            packetdataserializer.writeBoolean( true );
++            packetdataserializer.writeBoolean( onGround );
 +        }
 +        // Spigot end
      }
@@ -2342,7 +2419,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public static PacketPlayOutPlayerInfo updateGamemode(EntityPlayer player) {
 +        PacketPlayOutPlayerInfo packet = new PacketPlayOutPlayerInfo();
-+        packet.action = UPDATE_LATENCY;
++        packet.action = UPDATE_GAMEMODE;
 +        packet.username = player.listName;
 +        packet.player = player.getProfile();
 +        packet.gamemode = player.playerInteractManager.getGameMode().getId();
@@ -2467,6 +2544,24 @@ diff --git a/src/main/java/net/minecraft/server/PacketPlayOutRelEntityMove.java 
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutRelEntityMove.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutRelEntityMove.java
+@@ -0,0 +0,0 @@ package net.minecraft.server;
+ 
+ public class PacketPlayOutRelEntityMove extends PacketPlayOutEntity {
+ 
++    private boolean onGround; // Spigot - protocol patch
++
+     public PacketPlayOutRelEntityMove() {}
+ 
+-    public PacketPlayOutRelEntityMove(int i, byte b0, byte b1, byte b2) {
++    public PacketPlayOutRelEntityMove(int i, byte b0, byte b1, byte b2, boolean onGround) { // Spigot - protocol patch
+         super(i);
+         this.b = b0;
+         this.c = b1;
+         this.d = b2;
++        this.onGround = onGround; // Spigot - protocol patch
+     }
+ 
+     public void a(PacketDataSerializer packetdataserializer) {
 @@ -0,0 +0,0 @@ public class PacketPlayOutRelEntityMove extends PacketPlayOutEntity {
          packetdataserializer.writeByte(this.b);
          packetdataserializer.writeByte(this.c);
@@ -2474,7 +2569,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Spigot start - protocol patch
 +        if ( packetdataserializer.version >= 22 )
 +        {
-+            packetdataserializer.writeBoolean( true );
++            packetdataserializer.writeBoolean( onGround );
 +        }
 +        // Spigot end
      }
@@ -2484,6 +2579,29 @@ diff --git a/src/main/java/net/minecraft/server/PacketPlayOutRelEntityMoveLook.j
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutRelEntityMoveLook.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutRelEntityMoveLook.java
+@@ -0,0 +0,0 @@ package net.minecraft.server;
+ 
+ public class PacketPlayOutRelEntityMoveLook extends PacketPlayOutEntity {
+ 
++    private boolean onGround; // Spigot - protocol patch
++
+     public PacketPlayOutRelEntityMoveLook() {
+         this.g = true;
+     }
+ 
+-    public PacketPlayOutRelEntityMoveLook(int i, byte b0, byte b1, byte b2, byte b3, byte b4) {
++    public PacketPlayOutRelEntityMoveLook(int i, byte b0, byte b1, byte b2, byte b3, byte b4, boolean onGround) { // Spigot - protocol patch
+         super(i);
+         this.b = b0;
+         this.c = b1;
+@@ -0,0 +0,0 @@ public class PacketPlayOutRelEntityMoveLook extends PacketPlayOutEntity {
+         this.e = b3;
+         this.f = b4;
+         this.g = true;
++        this.onGround = onGround; // Spigot - protocol patch
+     }
+ 
+     public void a(PacketDataSerializer packetdataserializer) {
 @@ -0,0 +0,0 @@ public class PacketPlayOutRelEntityMoveLook extends PacketPlayOutEntity {
          packetdataserializer.writeByte(this.d);
          packetdataserializer.writeByte(this.e);
@@ -2491,7 +2609,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Spigot start - protocol patch
 +        if ( packetdataserializer.version >= 22 )
 +        {
-+            packetdataserializer.writeBoolean( true );
++            packetdataserializer.writeBoolean( onGround );
 +        }
 +        // Spigot end
      }
@@ -3890,6 +4008,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static int getCorrectedData(int id, int data)
 +    {
 +        if ( id > 197 ) return data;
++        if ( id == 175 && data > 8 )
++        {
++            data = 8;
++        }
 +        if ( validBlocks[ ( id << 4 ) | data ] )
 +        {
 +            return data;
