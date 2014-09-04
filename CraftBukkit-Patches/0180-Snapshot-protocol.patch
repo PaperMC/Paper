@@ -1,4 +1,4 @@
-From 9974f935f8f2ccbc7f264791ef96fe4bd39ebdad Mon Sep 17 00:00:00 2001
+From 9c66dfb14a3824b06707afff337f81484ca53ecf Mon Sep 17 00:00:00 2001
 From: Thinkofdeath <thinkofdeath@spigotmc.org>
 Date: Mon, 1 Sep 2014 16:47:48 +1000
 Subject: [PATCH] Snapshot protocol
@@ -1857,7 +1857,7 @@ index 49e0ff5..9ebf9b5 100644
  
      public void a(PacketPlayOutListener packetplayoutlistener) {
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMap.java b/src/main/java/net/minecraft/server/PacketPlayOutMap.java
-index 5980c2d..1c69026 100644
+index 5980c2d..b45a9ce 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMap.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMap.java
 @@ -1,13 +1,19 @@
@@ -1911,7 +1911,7 @@ index 5980c2d..1c69026 100644
 +                packetdataserializer.writeByte( rows );
 +                packetdataserializer.writeByte( b[1] );
 +                packetdataserializer.writeByte( b[2] );
-+                a( packetdataserializer, Arrays.copyOfRange(b, 3, rows) );
++                a( packetdataserializer, Arrays.copyOfRange(b, 3, b.length) );
 +            } else {
 +                packetdataserializer.writeByte( 0 );
 +            }
@@ -2700,7 +2700,7 @@ index 9041f82..f2c38c5 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutScoreboardObjective.java b/src/main/java/net/minecraft/server/PacketPlayOutScoreboardObjective.java
-index 7403dbd..a976436 100644
+index 7403dbd..700e94e 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutScoreboardObjective.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutScoreboardObjective.java
 @@ -23,9 +23,22 @@ public class PacketPlayOutScoreboardObjective extends Packet {
@@ -2722,7 +2722,7 @@ index 7403dbd..a976436 100644
 +            packetdataserializer.writeByte( c );
 +            if ( c == 0 || c == 2 ) {
 +                packetdataserializer.a( b );
-+                packetdataserializer.a( "hearts" );
++                packetdataserializer.a( "integer" );
 +            }
 +        }
 +        // Spigot end
@@ -3110,7 +3110,7 @@ index f1001c6..a9577b8 100644
          packetdataserializer.writeBoolean(this.f);
      }
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutWorldParticles.java b/src/main/java/net/minecraft/server/PacketPlayOutWorldParticles.java
-index 29f0c99..d708000 100644
+index 29f0c99..07b564f 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutWorldParticles.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutWorldParticles.java
 @@ -1,6 +1,7 @@
@@ -3174,7 +3174,7 @@ index 29f0c99..d708000 100644
  
      public void a(PacketPlayOutListener packetplayoutlistener) {
          packetplayoutlistener.a(this);
-@@ -59,4 +95,79 @@ public class PacketPlayOutWorldParticles extends Packet {
+@@ -59,4 +95,80 @@ public class PacketPlayOutWorldParticles extends Packet {
      public void handle(PacketListener packetlistener) {
          this.a((PacketPlayOutListener) packetlistener);
      }
@@ -3218,11 +3218,12 @@ index 29f0c99..d708000 100644
 +        SLIME( "slime" ),
 +        HEART( "heart" ),
 +        BARRIER( "barrier" ),
-+        ICON_CRACK( "iconcrack", 1 ),
++        ICON_CRACK( "iconcrack", 2 ),
 +        BLOCK_CRACK( "blockcrack", 1 ),
-+        BLOCK_DUST( "blockdust", 2 ),
++        BLOCK_DUST( "blockdust", 1 ),
 +        WATER_DROP( "droplet" ),
-+        ITEM_TAKE( "take" );
++        ITEM_TAKE( "take" ),
++        MOB_APPEARANCE( "mobappearance" );
 +
 +        public final String name;
 +        public final int extra;
@@ -3882,13 +3883,15 @@ index 0000000..ff93cbe
 +}
 diff --git a/src/main/java/org/spigotmc/ProtocolInjector.java b/src/main/java/org/spigotmc/ProtocolInjector.java
 new file mode 100644
-index 0000000..0e30463
+index 0000000..3b2df91
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/ProtocolInjector.java
-@@ -0,0 +1,129 @@
+@@ -0,0 +1,253 @@
 +package org.spigotmc;
 +
++import net.minecraft.server.ChatSerializer;
 +import net.minecraft.server.EnumProtocol;
++import net.minecraft.server.IChatBaseComponent;
 +import net.minecraft.server.Packet;
 +import net.minecraft.server.PacketDataSerializer;
 +import net.minecraft.server.PacketListener;
@@ -3906,6 +3909,8 @@ index 0000000..0e30463
 +        {
 +            addPacket( EnumProtocol.LOGIN, true, 0x3, PacketLoginCompression.class );
 +
++            addPacket( EnumProtocol.PLAY, true, 0x45, PacketTitle.class );
++            addPacket( EnumProtocol.PLAY, true, 0x47, PacketTabHeader.class );
 +            addPacket( EnumProtocol.PLAY, true, 0x48, PacketPlayResourcePackSend.class );
 +            addPacket( EnumProtocol.PLAY, false, 0x19, PacketPlayResourcePackStatus.class );
 +        } catch ( NoSuchFieldException e )
@@ -4012,6 +4017,126 @@ index 0000000..0e30463
 +        public void handle(PacketListener packetlistener)
 +        {
 +
++        }
++    }
++
++    public static class PacketTabHeader extends Packet
++    {
++
++        private IChatBaseComponent header;
++        private IChatBaseComponent footer;
++
++        public PacketTabHeader()
++        {
++        }
++
++        public PacketTabHeader(IChatBaseComponent header, IChatBaseComponent footer)
++        {
++            this.header = header;
++            this.footer = footer;
++        }
++
++        @Override
++        public void a(PacketDataSerializer packetdataserializer) throws IOException
++        {
++            this.header = ChatSerializer.a( packetdataserializer.c( 32767 ) );
++            this.footer = ChatSerializer.a( packetdataserializer.c( 32767 ) );
++        }
++
++        @Override
++        public void b(PacketDataSerializer packetdataserializer) throws IOException
++        {
++            packetdataserializer.a( ChatSerializer.a( this.header ) );
++            packetdataserializer.a( ChatSerializer.a( this.footer ) );
++        }
++
++        @Override
++        public void handle(PacketListener packetlistener)
++        {
++        }
++    }
++
++    public static class PacketTitle extends Packet
++    {
++        private Action action;
++
++        // TITLE & SUBTITLE
++        private IChatBaseComponent text;
++
++        // TIMES
++        private int fadeIn = -1;
++        private int stay = -1;
++        private int fadeOut = -1;
++
++        public PacketTitle() {}
++
++        public PacketTitle(Action action)
++        {
++            this.action = action;
++        }
++
++        public PacketTitle(Action action, IChatBaseComponent text)
++        {
++            this( action );
++            this.text = text;
++        }
++
++        public PacketTitle(Action action, int fadeIn, int stay, int fadeOut)
++        {
++            this( action );
++            this.fadeIn = fadeIn;
++            this.stay = stay;
++            this.fadeOut = fadeOut;
++        }
++
++
++        @Override
++        public void a(PacketDataSerializer packetdataserializer) throws IOException
++        {
++            this.action = Action.values()[packetdataserializer.a()];
++            switch ( action )
++            {
++                case TITLE:
++                case SUBTITLE:
++                    this.text = ChatSerializer.a( packetdataserializer.c(32767) );
++                    break;
++                case TIMES:
++                    this.fadeIn = packetdataserializer.readInt();
++                    this.stay = packetdataserializer.readInt();
++                    this.fadeOut = packetdataserializer.readInt();
++                    break;
++            }
++        }
++
++        @Override
++        public void b(PacketDataSerializer packetdataserializer) throws IOException
++        {
++            packetdataserializer.b( action.ordinal() );
++            switch ( action )
++            {
++                case TITLE:
++                case SUBTITLE:
++                    packetdataserializer.a( ChatSerializer.a( this.text ) );
++                    break;
++                case TIMES:
++                    packetdataserializer.writeInt( this.fadeIn );
++                    packetdataserializer.writeInt( this.stay );
++                    packetdataserializer.writeInt( this.fadeOut );
++                    break;
++            }
++        }
++
++        @Override
++        public void handle(PacketListener packetlistener)
++        {
++        }
++
++        public static enum Action {
++            TITLE,
++            SUBTITLE,
++            TIMES,
++            CLEAR,
++            RESET
 +        }
 +    }
 +}
