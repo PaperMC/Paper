@@ -1,0 +1,78 @@
+From 086f11f8a45ecfd90d16709d4fe20739df317cc5 Mon Sep 17 00:00:00 2001
+From: Zach Brown <Zbob750@live.com>
+Date: Mon, 8 Sep 2014 23:25:48 -0500
+Subject: [PATCH] Add SportBukkit fix for certain visually offset entities
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+index 46c4fb8..0c7b6f8 100644
+--- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+@@ -147,7 +147,8 @@ public class EntityTrackerEntry {
+                             this.scanPlayers(new java.util.ArrayList(this.trackedPlayers));
+                         }
+                         // CraftBukkit end
+-                        object = new PacketPlayOutEntityTeleport(this.tracker.getId(), i, j, k, (byte) l, (byte) i1, tracker.onGround); // Spigot - protocol patch
++                        // PaperSpigot - Fix visual offset of falling block entities in proto patch
++                        object = new PacketPlayOutEntityTeleport(this.tracker.getId(), i, j, k, (byte) l, (byte) i1, tracker.onGround, tracker instanceof EntityFallingBlock || tracker instanceof EntityTNTPrimed); // Spigot - protocol patch
+                     }
+                 }
+ 
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutEntityTeleport.java b/src/main/java/net/minecraft/server/PacketPlayOutEntityTeleport.java
+index 87260d5..1906e38 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutEntityTeleport.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutEntityTeleport.java
+@@ -9,6 +9,7 @@ public class PacketPlayOutEntityTeleport extends Packet {
+     private byte e;
+     private byte f;
+     private boolean onGround; // Spigot - protocol patch
++    private boolean heightCorrection; // PaperSpigot - Fix visual offset of falling block entities in proto patch
+ 
+     public PacketPlayOutEntityTeleport() {}
+ 
+@@ -21,7 +22,7 @@ public class PacketPlayOutEntityTeleport extends Packet {
+         this.f = (byte) ((int) (entity.pitch * 256.0F / 360.0F));
+     }
+ 
+-    public PacketPlayOutEntityTeleport(int i, int j, int k, int l, byte b0, byte b1, boolean onGround) { // Spigot - protocol patch
++    public PacketPlayOutEntityTeleport(int i, int j, int k, int l, byte b0, byte b1, boolean onGround, boolean heightCorrection) { // Spigot - protocol patch
+         this.a = i;
+         this.b = j;
+         this.c = k;
+@@ -29,6 +30,7 @@ public class PacketPlayOutEntityTeleport extends Packet {
+         this.e = b0;
+         this.f = b1;
+         this.onGround = onGround; // Spigot - protocol patch
++        this.heightCorrection = heightCorrection; // PaperSpigot - Fix visual offset of falling block entities in proto patch
+     }
+ 
+     public void a(PacketDataSerializer packetdataserializer) {
+@@ -51,7 +53,8 @@ public class PacketPlayOutEntityTeleport extends Packet {
+         }
+         // Spigot end
+         packetdataserializer.writeInt(this.b);
+-        packetdataserializer.writeInt(this.c);
++        // PaperSpigot - Fix visual offset of falling block entities in proto patch
++        packetdataserializer.writeInt(packetdataserializer.version >= 16 && this.heightCorrection ? this.c - 16 : this.c); // Spigot - protocol patch
+         packetdataserializer.writeInt(this.d);
+         packetdataserializer.writeByte(this.e);
+         packetdataserializer.writeByte(this.f);
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutSpawnEntity.java b/src/main/java/net/minecraft/server/PacketPlayOutSpawnEntity.java
+index dcf1204..a137db4 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutSpawnEntity.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutSpawnEntity.java
+@@ -116,6 +116,11 @@ public class PacketPlayOutSpawnEntity extends Packet {
+             int data = k >> 16;
+             k = id | ( data << 12 );
+         }
++        // PaperSpigot start - Fix visual offset of falling block entities on proto patch
++        if ((j == 50 || j == 70 || j == 74) && packetdataserializer.version >= 16) { // TNTPrimed, FallingSand, DragonEgg
++            this.c -= 16;
++        }
++        // PaperSpigot end
+         // Spigot end
+         packetdataserializer.writeInt(this.b);
+         packetdataserializer.writeInt(this.c);
+-- 
+1.9.1
+
