@@ -605,6 +605,14 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         this.forceTicks = true;
         // CraftBukkit end
 
+        // Paper start - configurable spawn reason
+        int radiusBlocks = worldserver.paperConfig.keepLoadedRange;
+        int radiusChunks = radiusBlocks / 16 + ((radiusBlocks & 15) != 0 ? 1 : 0);
+        int totalChunks = ((radiusChunks) * 2 + 1);
+        totalChunks *= totalChunks;
+        worldloadlistener.setChunkRadius(radiusBlocks / 16);
+        // Paper end
+
         MinecraftServer.LOGGER.info("Preparing start region for dimension {}", worldserver.getDimensionKey().a());
         BlockPosition blockposition = worldserver.getSpawn();
 
@@ -613,14 +621,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
 
         chunkproviderserver.getLightEngine().a(500);
         this.nextTick = SystemUtils.getMonotonicMillis();
-        chunkproviderserver.addTicket(TicketType.START, new ChunkCoordIntPair(blockposition), 11, Unit.INSTANCE);
-
-        while (chunkproviderserver.b() != 441) {
-            // CraftBukkit start
-            // this.nextTick = SystemUtils.getMonotonicMillis() + 10L;
-            this.executeModerately();
-            // CraftBukkit end
+        // Paper start - Configurable spawn radius
+        if (worldserver.keepSpawnInMemory) {
+            worldserver.addTicketsForSpawn(radiusBlocks, blockposition);
         }
+        // Paper end
+        LOGGER.info("Loaded " + chunkproviderserver.b() + " spawn chunks for world " + worldserver.getWorld().getName()); // Paper
 
         // CraftBukkit start
         // this.nextTick = SystemUtils.getMonotonicMillis() + 10L;

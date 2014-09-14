@@ -7,16 +7,24 @@ import org.apache.logging.log4j.Logger;
 public class WorldLoadListenerLogger implements WorldLoadListener {
 
     private static final Logger LOGGER = LogManager.getLogger();
-    private final int b;
+    private int b; // Paper - remove final
     private int c;
     private long d;
     private long e = Long.MAX_VALUE;
 
     public WorldLoadListenerLogger(int i) {
-        int j = i * 2 + 1;
+        // Paper start - Allow changing radius later for configurable spawn patch
+        this.setChunkRadius(i); // Move to method
+    }
+
+    @Override
+    public void setChunkRadius(int radius) {
+        // Paper - copied from above
+        int j = radius * 2 + 1;
 
         this.b = j * j;
     }
+    // Paper end
 
     @Override
     public void a(ChunkCoordIntPair chunkcoordintpair) {

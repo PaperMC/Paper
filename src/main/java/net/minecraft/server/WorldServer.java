@@ -1546,12 +1546,88 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         return ((PersistentIdCounts) this.getMinecraftServer().E().getWorldPersistentData().a(PersistentIdCounts::new, "idcounts")).a();
     }
 
+    // Paper start - helper function for configurable spawn radius
+    public void addTicketsForSpawn(int radiusInBlocks, BlockPosition spawn) {
+        // In order to respect vanilla behavior, which is ensuring everything but the spawn border can tick, we add tickets
+        // with level 31 for the non-border spawn chunks
+        ChunkProviderServer chunkproviderserver = this.getChunkProvider();
+        int tickRadius = radiusInBlocks - 16;
+
+        // add ticking chunks
+        for (int x = -tickRadius; x <= tickRadius; x += 16) {
+            for (int z = -tickRadius; z <= tickRadius; z += 16) {
+                // radius of 2 will have the current chunk be level 31
+                chunkproviderserver.addTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(x, 0, z)), 2, Unit.INSTANCE);
+            }
+        }
+
+        // add border chunks
+
+        // add border along x axis (including corner chunks)
+        for (int x = -radiusInBlocks; x <= radiusInBlocks; x += 16) {
+            // top
+            chunkproviderserver.addTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(x, 0, radiusInBlocks)), 1, Unit.INSTANCE); // level 32
+            // bottom
+            chunkproviderserver.addTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(x, 0, -radiusInBlocks)), 1, Unit.INSTANCE); // level 32
+        }
+
+        // add border along z axis (excluding corner chunks)
+        for (int z = -radiusInBlocks + 16; z < radiusInBlocks; z += 16) {
+            // right
+            chunkproviderserver.addTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(radiusInBlocks, 0, z)), 1, Unit.INSTANCE); // level 32
+            // left
+            chunkproviderserver.addTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(-radiusInBlocks, 0, z)), 1, Unit.INSTANCE); // level 32
+        }
+
+        MCUtil.getSpiralOutChunks(spawn, radiusInBlocks >> 4).forEach(pair -> {
+            getChunkProvider().getChunkAtMainThread(pair.x, pair.z);
+        });
+    }
+    public void removeTicketsForSpawn(int radiusInBlocks, BlockPosition spawn) {
+        // In order to respect vanilla behavior, which is ensuring everything but the spawn border can tick, we added tickets
+        // with level 31 for the non-border spawn chunks
+        ChunkProviderServer chunkproviderserver = this.getChunkProvider();
+        int tickRadius = radiusInBlocks - 16;
+
+        // remove ticking chunks
+        for (int x = -tickRadius; x <= tickRadius; x += 16) {
+            for (int z = -tickRadius; z <= tickRadius; z += 16) {
+                // radius of 2 will have the current chunk be level 31
+                chunkproviderserver.removeTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(x, 0, z)), 2, Unit.INSTANCE);
+            }
+        }
+
+        // remove border chunks
+
+        // remove border along x axis (including corner chunks)
+        for (int x = -radiusInBlocks; x <= radiusInBlocks; x += 16) {
+            // top
+            chunkproviderserver.removeTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(x, 0, radiusInBlocks)), 1, Unit.INSTANCE); // level 32
+            // bottom
+            chunkproviderserver.removeTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(x, 0, -radiusInBlocks)), 1, Unit.INSTANCE); // level 32
+        }
+
+        // remove border along z axis (excluding corner chunks)
+        for (int z = -radiusInBlocks + 16; z < radiusInBlocks; z += 16) {
+            // right
+            chunkproviderserver.removeTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(radiusInBlocks, 0, z)), 1, Unit.INSTANCE); // level 32
+            // left
+            chunkproviderserver.removeTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(-radiusInBlocks, 0, z)), 1, Unit.INSTANCE); // level 32
+        }
+    }
+    // Paper end
+
     public void a(BlockPosition blockposition, float f) {
-        ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(new BlockPosition(this.worldData.a(), 0, this.worldData.c()));
+        // Paper - configurable spawn radius
+        BlockPosition prevSpawn = this.getSpawn();
+        //ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(new BlockPosition(this.worldData.a(), 0, this.worldData.c()));
 
         this.worldData.setSpawn(blockposition, f);
-        this.getChunkProvider().removeTicket(TicketType.START, chunkcoordintpair, 11, Unit.INSTANCE);
-        this.getChunkProvider().addTicket(TicketType.START, new ChunkCoordIntPair(blockposition), 11, Unit.INSTANCE);
+        if (this.keepSpawnInMemory) {
+            // if this keepSpawnInMemory is false a plugin has already removed our tickets, do not re-add
+            this.removeTicketsForSpawn(this.paperConfig.keepLoadedRange, prevSpawn);
+            this.addTicketsForSpawn(this.paperConfig.keepLoadedRange, blockposition);
+        }
         this.getMinecraftServer().getPlayerList().sendAll(new PacketPlayOutSpawnPosition(blockposition, f));
     }
 

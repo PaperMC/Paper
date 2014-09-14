@@ -9,4 +9,6 @@ public interface WorldLoadListener {
     void a(ChunkCoordIntPair chunkcoordintpair, @Nullable ChunkStatus chunkstatus);
 
     void b();
+
+    void setChunkRadius(int radius); // Paper - allow changing chunk radius
 }
