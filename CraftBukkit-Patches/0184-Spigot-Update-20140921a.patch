@@ -1,0 +1,973 @@
+From dd9186f3ff7054b05e2b5379badb7204718bc50d Mon Sep 17 00:00:00 2001
+From: md_5 <git@md-5.net>
+Date: Sun, 21 Sep 2014 18:11:43 -0700
+Subject: [PATCH] Spigot Update - 20140921a
+
+
+diff --git a/src/main/java/net/minecraft/server/EnchantmentManager.java b/src/main/java/net/minecraft/server/EnchantmentManager.java
+new file mode 100644
+index 0000000..deda472
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/EnchantmentManager.java
+@@ -0,0 +1,364 @@
++package net.minecraft.server;
++
++import java.util.ArrayList;
++import java.util.HashMap;
++import java.util.Iterator;
++import java.util.LinkedHashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.Random;
++
++public class EnchantmentManager {
++
++    private static final Random random = new Random();
++    private static final EnchantmentModifierProtection b = new EnchantmentModifierProtection((EmptyClass) null);
++    private static final EnchantmentModifierDamage c = new EnchantmentModifierDamage((EmptyClass) null);
++    private static final EnchantmentModifierThorns d = new EnchantmentModifierThorns((EmptyClass) null);
++    private static final EnchantmentModifierArthropods e = new EnchantmentModifierArthropods((EmptyClass) null);
++
++    public static int getEnchantmentLevel(int i, ItemStack itemstack) {
++        if (itemstack == null) {
++            return 0;
++        } else {
++            NBTTagList nbttaglist = itemstack.getEnchantments();
++
++            if (nbttaglist == null) {
++                return 0;
++            } else {
++                for (int j = 0; j < nbttaglist.size(); ++j) {
++                    short short1 = nbttaglist.get(j).getShort("id");
++                    short short2 = nbttaglist.get(j).getShort("lvl");
++
++                    if (short1 == i) {
++                        return short2;
++                    }
++                }
++
++                return 0;
++            }
++        }
++    }
++
++    public static Map a(ItemStack itemstack) {
++        LinkedHashMap linkedhashmap = new LinkedHashMap();
++        NBTTagList nbttaglist = itemstack.getItem() == Items.ENCHANTED_BOOK ? Items.ENCHANTED_BOOK.g(itemstack) : itemstack.getEnchantments();
++
++        if (nbttaglist != null) {
++            for (int i = 0; i < nbttaglist.size(); ++i) {
++                short short1 = nbttaglist.get(i).getShort("id");
++                short short2 = nbttaglist.get(i).getShort("lvl");
++
++                linkedhashmap.put(Integer.valueOf(short1), Integer.valueOf(short2));
++            }
++        }
++
++        return linkedhashmap;
++    }
++
++    public static void a(Map map, ItemStack itemstack) {
++        NBTTagList nbttaglist = new NBTTagList();
++        Iterator iterator = map.keySet().iterator();
++
++        while (iterator.hasNext()) {
++            int i = ((Integer) iterator.next()).intValue();
++            NBTTagCompound nbttagcompound = new NBTTagCompound();
++
++            nbttagcompound.setShort("id", (short) i);
++            nbttagcompound.setShort("lvl", (short) ((Integer) map.get(Integer.valueOf(i))).intValue());
++            nbttaglist.add(nbttagcompound);
++            if (itemstack.getItem() == Items.ENCHANTED_BOOK) {
++                Items.ENCHANTED_BOOK.a(itemstack, new EnchantmentInstance(i, ((Integer) map.get(Integer.valueOf(i))).intValue()));
++            }
++        }
++
++        if (nbttaglist.size() > 0) {
++            if (itemstack.getItem() != Items.ENCHANTED_BOOK) {
++                itemstack.a("ench", (NBTBase) nbttaglist);
++            }
++        } else if (itemstack.hasTag()) {
++            itemstack.getTag().remove("ench");
++        }
++    }
++
++    public static int getEnchantmentLevel(int i, ItemStack[] aitemstack) {
++        if (aitemstack == null) {
++            return 0;
++        } else {
++            int j = 0;
++            ItemStack[] aitemstack1 = aitemstack;
++            int k = aitemstack.length;
++
++            for (int l = 0; l < k; ++l) {
++                ItemStack itemstack = aitemstack1[l];
++                int i1 = getEnchantmentLevel(i, itemstack);
++
++                if (i1 > j) {
++                    j = i1;
++                }
++            }
++
++            return j;
++        }
++    }
++
++    private static void a(EnchantmentModifier enchantmentmodifier, ItemStack itemstack) {
++        if (itemstack != null) {
++            NBTTagList nbttaglist = itemstack.getEnchantments();
++
++            if (nbttaglist != null) {
++                for (int i = 0; i < nbttaglist.size(); ++i) {
++                    short short1 = nbttaglist.get(i).getShort("id");
++                    short short2 = nbttaglist.get(i).getShort("lvl");
++
++                    if (Enchantment.byId[short1] != null) {
++                        enchantmentmodifier.a(Enchantment.byId[short1], short2);
++                    }
++                }
++            }
++        }
++    }
++
++    private static void a(EnchantmentModifier enchantmentmodifier, ItemStack[] aitemstack) {
++        ItemStack[] aitemstack1 = aitemstack;
++        int i = aitemstack.length;
++
++        for (int j = 0; j < i; ++j) {
++            ItemStack itemstack = aitemstack1[j];
++
++            a(enchantmentmodifier, itemstack);
++        }
++    }
++
++    public static int a(ItemStack[] aitemstack, DamageSource damagesource) {
++        b.a = 0;
++        b.b = damagesource;
++        a((EnchantmentModifier) b, aitemstack);
++        if (b.a > 25) {
++            b.a = 25;
++        }
++
++        return (b.a + 1 >> 1) + random.nextInt((b.a >> 1) + 1);
++    }
++
++    public static float a(EntityLiving entityliving, EntityLiving entityliving1) {
++        return a(entityliving.be(), entityliving1.getMonsterType());
++    }
++
++    public static float a(ItemStack itemstack, EnumMonsterType enummonstertype) {
++        c.a = 0.0F;
++        c.b = enummonstertype;
++        a((EnchantmentModifier) c, itemstack);
++        return c.a;
++    }
++
++    public static void a(EntityLiving entityliving, Entity entity) {
++        d.b = entity;
++        d.a = entityliving;
++        a((EnchantmentModifier) d, entityliving.getEquipment());
++        if (entity instanceof EntityHuman) {
++            a((EnchantmentModifier) d, entityliving.be());
++        }
++        d.b = null;
++        d.a = null;
++    }
++
++    public static void b(EntityLiving entityliving, Entity entity) {
++        e.a = entityliving;
++        e.b = entity;
++        a((EnchantmentModifier) e, entityliving.getEquipment());
++        if (entityliving instanceof EntityHuman) {
++            a((EnchantmentModifier) e, entityliving.be());
++        }
++        e.a = null;
++        e.b = null;
++    }
++
++    public static int getKnockbackEnchantmentLevel(EntityLiving entityliving, EntityLiving entityliving1) {
++        return getEnchantmentLevel(Enchantment.KNOCKBACK.id, entityliving.be());
++    }
++
++    public static int getFireAspectEnchantmentLevel(EntityLiving entityliving) {
++        return getEnchantmentLevel(Enchantment.FIRE_ASPECT.id, entityliving.be());
++    }
++
++    public static int getOxygenEnchantmentLevel(EntityLiving entityliving) {
++        return getEnchantmentLevel(Enchantment.OXYGEN.id, entityliving.getEquipment());
++    }
++
++    public static int getDigSpeedEnchantmentLevel(EntityLiving entityliving) {
++        return getEnchantmentLevel(Enchantment.DIG_SPEED.id, entityliving.be());
++    }
++
++    public static boolean hasSilkTouchEnchantment(EntityLiving entityliving) {
++        return getEnchantmentLevel(Enchantment.SILK_TOUCH.id, entityliving.be()) > 0;
++    }
++
++    public static int getBonusBlockLootEnchantmentLevel(EntityLiving entityliving) {
++        return getEnchantmentLevel(Enchantment.LOOT_BONUS_BLOCKS.id, entityliving.be());
++    }
++
++    public static int getLuckEnchantmentLevel(EntityLiving entityliving) {
++        return getEnchantmentLevel(Enchantment.LUCK.id, entityliving.be());
++    }
++
++    public static int getLureEnchantmentLevel(EntityLiving entityliving) {
++        return getEnchantmentLevel(Enchantment.LURE.id, entityliving.be());
++    }
++
++    public static int getBonusMonsterLootEnchantmentLevel(EntityLiving entityliving) {
++        return getEnchantmentLevel(Enchantment.LOOT_BONUS_MOBS.id, entityliving.be());
++    }
++
++    public static boolean hasWaterWorkerEnchantment(EntityLiving entityliving) {
++        return getEnchantmentLevel(Enchantment.WATER_WORKER.id, entityliving.getEquipment()) > 0;
++    }
++
++    public static ItemStack a(Enchantment enchantment, EntityLiving entityliving) {
++        ItemStack[] aitemstack = entityliving.getEquipment();
++        int i = aitemstack.length;
++
++        for (int j = 0; j < i; ++j) {
++            ItemStack itemstack = aitemstack[j];
++
++            if (itemstack != null && getEnchantmentLevel(enchantment.id, itemstack) > 0) {
++                return itemstack;
++            }
++        }
++
++        return null;
++    }
++
++    public static int a(Random random, int i, int j, ItemStack itemstack) {
++        Item item = itemstack.getItem();
++        int k = item.c();
++
++        if (k <= 0) {
++            return 0;
++        } else {
++            if (j > 15) {
++                j = 15;
++            }
++
++            int l = random.nextInt(8) + 1 + (j >> 1) + random.nextInt(j + 1);
++
++            return i == 0 ? Math.max(l / 3, 1) : (i == 1 ? l * 2 / 3 + 1 : Math.max(l, j * 2));
++        }
++    }
++
++    public static ItemStack a(Random random, ItemStack itemstack, int i) {
++        List list = b(random, itemstack, i);
++        boolean flag = itemstack.getItem() == Items.BOOK;
++
++        if (flag) {
++            itemstack.setItem(Items.ENCHANTED_BOOK);
++        }
++
++        if (list != null) {
++            Iterator iterator = list.iterator();
++
++            while (iterator.hasNext()) {
++                EnchantmentInstance enchantmentinstance = (EnchantmentInstance) iterator.next();
++
++                if (flag) {
++                    Items.ENCHANTED_BOOK.a(itemstack, enchantmentinstance);
++                } else {
++                    itemstack.addEnchantment(enchantmentinstance.enchantment, enchantmentinstance.level);
++                }
++            }
++        }
++
++        return itemstack;
++    }
++
++    public static List b(Random random, ItemStack itemstack, int i) {
++        Item item = itemstack.getItem();
++        int j = item.c();
++
++        if (j <= 0) {
++            return null;
++        } else {
++            j /= 2;
++            j = 1 + random.nextInt((j >> 1) + 1) + random.nextInt((j >> 1) + 1);
++            int k = j + i;
++            float f = (random.nextFloat() + random.nextFloat() - 1.0F) * 0.15F;
++            int l = (int) ((float) k * (1.0F + f) + 0.5F);
++
++            if (l < 1) {
++                l = 1;
++            }
++
++            ArrayList arraylist = null;
++            Map map = b(l, itemstack);
++
++            if (map != null && !map.isEmpty()) {
++                EnchantmentInstance enchantmentinstance = (EnchantmentInstance) WeightedRandom.a(random, map.values());
++
++                if (enchantmentinstance != null) {
++                    arraylist = new ArrayList();
++                    arraylist.add(enchantmentinstance);
++
++                    for (int i1 = l; random.nextInt(50) <= i1; i1 >>= 1) {
++                        Iterator iterator = map.keySet().iterator();
++
++                        while (iterator.hasNext()) {
++                            Integer integer = (Integer) iterator.next();
++                            boolean flag = true;
++                            Iterator iterator1 = arraylist.iterator();
++
++                            while (true) {
++                                if (iterator1.hasNext()) {
++                                    EnchantmentInstance enchantmentinstance1 = (EnchantmentInstance) iterator1.next();
++
++                                    if (enchantmentinstance1.enchantment.a(Enchantment.byId[integer.intValue()])) {
++                                        continue;
++                                    }
++
++                                    flag = false;
++                                }
++
++                                if (!flag) {
++                                    iterator.remove();
++                                }
++                                break;
++                            }
++                        }
++
++                        if (!map.isEmpty()) {
++                            EnchantmentInstance enchantmentinstance2 = (EnchantmentInstance) WeightedRandom.a(random, map.values());
++
++                            arraylist.add(enchantmentinstance2);
++                        }
++                    }
++                }
++            }
++
++            return arraylist;
++        }
++    }
++
++    public static Map b(int i, ItemStack itemstack) {
++        Item item = itemstack.getItem();
++        HashMap hashmap = null;
++        boolean flag = itemstack.getItem() == Items.BOOK;
++        Enchantment[] aenchantment = Enchantment.byId;
++        int j = aenchantment.length;
++
++        for (int k = 0; k < j; ++k) {
++            Enchantment enchantment = aenchantment[k];
++
++            if (enchantment != null && (enchantment.slot.canEnchant(item) || flag)) {
++                for (int l = enchantment.getStartLevel(); l <= enchantment.getMaxLevel(); ++l) {
++                    if (i >= enchantment.a(l) && i <= enchantment.b(l)) {
++                        if (hashmap == null) {
++                            hashmap = new HashMap();
++                        }
++
++                        hashmap.put(Integer.valueOf(enchantment.id), new EnchantmentInstance(enchantment, l));
++                    }
++                }
++            }
++        }
++
++        return hashmap;
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/EnchantmentModifierArthropods.java b/src/main/java/net/minecraft/server/EnchantmentModifierArthropods.java
+new file mode 100644
+index 0000000..c8e11db
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/EnchantmentModifierArthropods.java
+@@ -0,0 +1,17 @@
++package net.minecraft.server;
++
++final class EnchantmentModifierArthropods implements EnchantmentModifier {
++
++    public EntityLiving a;
++    public Entity b;
++
++    private EnchantmentModifierArthropods() {}
++
++    public void a(Enchantment enchantment, int i) {
++        enchantment.a(this.a, this.b, i);
++    }
++
++    EnchantmentModifierArthropods(EmptyClass emptyclass) {
++        this();
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/EnchantmentModifierDamage.java b/src/main/java/net/minecraft/server/EnchantmentModifierDamage.java
+new file mode 100644
+index 0000000..8610c7a
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/EnchantmentModifierDamage.java
+@@ -0,0 +1,17 @@
++package net.minecraft.server;
++
++final class EnchantmentModifierDamage implements EnchantmentModifier {
++
++    public float a;
++    public EnumMonsterType b;
++
++    private EnchantmentModifierDamage() {}
++
++    public void a(Enchantment enchantment, int i) {
++        this.a += enchantment.a(i, this.b);
++    }
++
++    EnchantmentModifierDamage(EmptyClass emptyclass) {
++        this();
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/EnchantmentModifierProtection.java b/src/main/java/net/minecraft/server/EnchantmentModifierProtection.java
+new file mode 100644
+index 0000000..8c03320
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/EnchantmentModifierProtection.java
+@@ -0,0 +1,17 @@
++package net.minecraft.server;
++
++final class EnchantmentModifierProtection implements EnchantmentModifier {
++
++    public int a;
++    public DamageSource b;
++
++    private EnchantmentModifierProtection() {}
++
++    public void a(Enchantment enchantment, int i) {
++        this.a += enchantment.a(i, this.b);
++    }
++
++    EnchantmentModifierProtection(EmptyClass emptyclass) {
++        this();
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/EnchantmentModifierThorns.java b/src/main/java/net/minecraft/server/EnchantmentModifierThorns.java
+new file mode 100644
+index 0000000..41993e0
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/EnchantmentModifierThorns.java
+@@ -0,0 +1,17 @@
++package net.minecraft.server;
++
++final class EnchantmentModifierThorns implements EnchantmentModifier {
++
++    public EntityLiving a;
++    public Entity b;
++
++    private EnchantmentModifierThorns() {}
++
++    public void a(Enchantment enchantment, int i) {
++        enchantment.b(this.a, this.b, i);
++    }
++
++    EnchantmentModifierThorns(EmptyClass emptyclass) {
++        this();
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/EnchantmentThorns.java b/src/main/java/net/minecraft/server/EnchantmentThorns.java
+new file mode 100644
+index 0000000..6841259
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/EnchantmentThorns.java
+@@ -0,0 +1,54 @@
++package net.minecraft.server;
++
++import java.util.Random;
++
++public class EnchantmentThorns extends Enchantment {
++
++    public EnchantmentThorns(int i, int j) {
++        super(i, j, EnchantmentSlotType.ARMOR_TORSO);
++        this.b("thorns");
++    }
++
++    public int a(int n) {
++        return 10 + 20 * (n - 1);
++    }
++
++    public int b(int i) {
++        return super.a(i) + 50;
++    }
++
++    public int getMaxLevel() {
++        return 3;
++    }
++
++    public boolean canEnchant(ItemStack itemstack) {
++        return itemstack.getItem() instanceof ItemArmor ? true : super.canEnchant(itemstack);
++    }
++
++    public void b(EntityLiving entityliving, Entity entity, int n) {
++        Random ai = entityliving.aI();
++        ItemStack a = EnchantmentManager.a(Enchantment.THORNS, entityliving);
++
++        if (a(n, ai)) {
++            entity.damageEntity(DamageSource.a(entityliving), b(n, ai));
++            entity.makeSound("damage.thorns", 0.5F, 1.0F);
++            if (a != null) {
++                a.damage(3, entityliving);
++            }
++        } else if (a != null) {
++            a.damage(1, entityliving);
++        }
++    }
++
++    public static boolean a(int n, Random random) {
++        return n > 0 && random.nextFloat() < 0.15f * n;
++    }
++
++    public static int b(int n, Random random) {
++        if (n > 10) {
++            return n - 10;
++        }
++
++        return 1 + random.nextInt(4);
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
+index 617f7d4..cf0c38f 100644
+--- a/src/main/java/net/minecraft/server/EntityInsentient.java
++++ b/src/main/java/net/minecraft/server/EntityInsentient.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server;
+ 
++import java.lang.ref.WeakReference;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.UUID;
+@@ -21,7 +22,7 @@ public abstract class EntityInsentient extends EntityLiving {
+     private Navigation navigation;
+     protected final PathfinderGoalSelector goalSelector;
+     protected final PathfinderGoalSelector targetSelector;
+-    private EntityLiving goalTarget;
++    private WeakReference<EntityLiving> goalTarget = new WeakReference<EntityLiving>(null); // Spigot Update - 20140921a
+     private EntitySenses bq;
+     private ItemStack[] equipment = new ItemStack[5];
+     public float[] dropChances = new float[5]; // CraftBukkit - protected -> public
+@@ -76,11 +77,11 @@ public abstract class EntityInsentient extends EntityLiving {
+     }
+ 
+     public EntityLiving getGoalTarget() {
+-        return this.goalTarget;
++        return this.goalTarget.get();
+     }
+ 
+     public void setGoalTarget(EntityLiving entityliving) {
+-        this.goalTarget = entityliving;
++        this.goalTarget = new WeakReference<EntityLiving>(entityliving);
+     }
+ 
+     public boolean a(Class oclass) {
+diff --git a/src/main/java/net/minecraft/server/ItemEnchantedBook.java b/src/main/java/net/minecraft/server/ItemEnchantedBook.java
+new file mode 100644
+index 0000000..0829e4c
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/ItemEnchantedBook.java
+@@ -0,0 +1,72 @@
++package net.minecraft.server;
++
++import java.util.Random;
++
++public class ItemEnchantedBook extends Item {
++
++    public ItemEnchantedBook() {}
++
++    public boolean e_(ItemStack itemStack) {
++        return false;
++    }
++
++    public EnumItemRarity f(ItemStack itemstack) {
++        if (this.g(itemstack).size() > 0) {
++            return EnumItemRarity.UNCOMMON;
++        }
++        return super.f(itemstack);
++    }
++
++    public NBTTagList g(ItemStack itemStack) {
++        if (itemStack.tag == null || !itemStack.tag.hasKeyOfType("StoredEnchantments", 9)) {
++            return new NBTTagList();
++        }
++        return (NBTTagList)itemStack.tag.get("StoredEnchantments");
++    }
++
++    public void a(ItemStack itemStack, EnchantmentInstance enchantmentInstance) {
++        NBTTagList g = this.g(itemStack);
++        boolean b = true;
++        for (int i = 0; i < g.size(); ++i) {
++            NBTTagCompound value = g.get(i);
++            if (value.getShort("id") == enchantmentInstance.enchantment.id) {
++                if (value.getShort("lvl") < enchantmentInstance.level) {
++                    value.setShort("lvl", (short)enchantmentInstance.level);
++                }
++
++                b = false;
++                break;
++            }
++        }
++
++        if (b) {
++            NBTTagCompound nbtTagCompound = new NBTTagCompound();
++            nbtTagCompound.setShort("id", (short)enchantmentInstance.enchantment.id);
++            nbtTagCompound.setShort("lvl", (short)enchantmentInstance.level);
++            g.add(nbtTagCompound);
++        }
++
++        if (!itemStack.hasTag()) {
++            itemStack.setTag(new NBTTagCompound());
++        }
++
++        itemStack.getTag().set("StoredEnchantments", g);
++    }
++
++    public ItemStack a(EnchantmentInstance enchantmentInstance) {
++        ItemStack itemStack = new ItemStack(this);
++        this.a(itemStack, enchantmentInstance);
++        return itemStack;
++    }
++
++    public StructurePieceTreasure b(Random random) {
++        return this.a(random, 1, 1, 1);
++    }
++
++    public StructurePieceTreasure a(final Random random, final int n, final int n2, final int n3) {
++        ItemStack itemstack = new ItemStack(Items.BOOK, 1, 0);
++
++        EnchantmentManager.a(random, itemstack, 30);
++        return new StructurePieceTreasure(itemstack, n, n2, n3);
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
+index 0cae021..76a5403 100644
+--- a/src/main/java/net/minecraft/server/NetworkManager.java
++++ b/src/main/java/net/minecraft/server/NetworkManager.java
+@@ -199,6 +199,8 @@ public class NetworkManager extends SimpleChannelInboundHandler {
+     public void close(IChatBaseComponent ichatbasecomponent) {
+         // Spigot Start
+         this.preparing = false;
++        this.k.clear(); // Spigot Update - 20140921a
++        this.l.clear(); // Spigot Update - 20140921a
+         // Spigot End
+         if (this.m.isOpen()) {
+             this.m.close();
+diff --git a/src/main/java/net/minecraft/server/PathfinderGoalNearestAttackableTarget.java b/src/main/java/net/minecraft/server/PathfinderGoalNearestAttackableTarget.java
+new file mode 100644
+index 0000000..30a05c6
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/PathfinderGoalNearestAttackableTarget.java
+@@ -0,0 +1,54 @@
++package net.minecraft.server;
++
++import java.lang.ref.WeakReference;
++import java.util.Collections;
++import java.util.List;
++
++public class PathfinderGoalNearestAttackableTarget extends PathfinderGoalTarget {
++
++    private final Class a;
++    private final int b;
++    private final DistanceComparator e;
++    private final IEntitySelector f;
++    private WeakReference<EntityLiving> g; // Spigot Update - 20140921a
++
++    public PathfinderGoalNearestAttackableTarget(EntityCreature entitycreature, Class oclass, int i, boolean flag) {
++        this(entitycreature, oclass, i, flag, false);
++    }
++
++    public PathfinderGoalNearestAttackableTarget(EntityCreature entitycreature, Class oclass, int i, boolean flag, boolean flag1) {
++        this(entitycreature, oclass, i, flag, flag1, (IEntitySelector) null);
++    }
++
++    public PathfinderGoalNearestAttackableTarget(EntityCreature entitycreature, Class oclass, int i, boolean flag, boolean flag1, IEntitySelector ientityselector) {
++        super(entitycreature, flag, flag1);
++        this.g = new WeakReference<EntityLiving>(null);
++        this.a = oclass;
++        this.b = i;
++        this.e = new DistanceComparator(entitycreature);
++        this.a(1);
++        this.f = new EntitySelectorNearestAttackableTarget(this, ientityselector);
++    }
++
++    public boolean a() {
++        if (this.b > 0 && this.c.aI().nextInt(this.b) != 0) {
++            return false;
++        } else {
++            double d0 = this.f();
++            List list = this.c.world.a(this.a, this.c.boundingBox.grow(d0, 4.0D, d0), this.f);
++
++            Collections.sort(list, this.e);
++            if (list.isEmpty()) {
++                return false;
++            } else {
++                this.g = new WeakReference<EntityLiving>((EntityLiving) list.get(0));
++                return true;
++            }
++        }
++    }
++
++    public void c() {
++        this.c.setGoalTarget(this.g.get());
++        super.c();
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/PathfinderGoalSwell.java b/src/main/java/net/minecraft/server/PathfinderGoalSwell.java
+new file mode 100644
+index 0000000..9a31d82
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/PathfinderGoalSwell.java
+@@ -0,0 +1,36 @@
++package net.minecraft.server;
++
++public class PathfinderGoalSwell extends PathfinderGoal {
++
++    EntityCreeper a;
++
++    public PathfinderGoalSwell(EntityCreeper entitycreeper) {
++        this.a = entitycreeper;
++        this.a(1);
++    }
++
++    public boolean a() {
++        EntityLiving entityliving = this.a.getGoalTarget();
++
++        return this.a.cb() > 0 || entityliving != null && this.a.f(entityliving) < 9.0D;
++    }
++
++    public void c() {
++        this.a.getNavigation().h();
++    }
++
++    public void d() {}
++
++    public void e() {
++        EntityLiving b = this.a.getGoalTarget(); // Spigot Update - 20140921a
++        if (b == null) {
++            this.a.a(-1);
++        } else if (this.a.f(b) > 49.0D) {
++            this.a.a(-1);
++        } else if (!this.a.getEntitySenses().canSee(b)) {
++            this.a.a(-1);
++        } else {
++            this.a.a(1);
++        }
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/LongHash.java b/src/main/java/org/bukkit/craftbukkit/util/LongHash.java
+index 9d54472..1765c79 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/LongHash.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/LongHash.java
+@@ -10,6 +10,6 @@ public class LongHash {
+     }
+ 
+     public static int lsw(long l) {
+-        return (int) (l) + Integer.MIN_VALUE; // Spigot - remove redundant &
++        return (int) (l & -1L) + Integer.MIN_VALUE; // Spigot - remove redundant & // Spigot Update - 20140921a
+     }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/LongHashSet.java b/src/main/java/org/bukkit/craftbukkit/util/LongHashSet.java
+index 7f659b7..22c96c5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/LongHashSet.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/LongHashSet.java
+@@ -31,7 +31,6 @@ public class LongHashSet {
+     private int elements;
+     private long[] values;
+     private int modCount;
+-    private org.spigotmc.FlatMap<Boolean> flat = new org.spigotmc.FlatMap<Boolean>(); // Spigot
+ 
+     public LongHashSet() {
+         this(INITIAL_SIZE);
+@@ -57,30 +56,10 @@ public class LongHashSet {
+     }
+ 
+     public boolean contains(int msw, int lsw) {
+-        // Spigot start
+-        if ( elements == 0 )
+-        {
+-            return false;
+-        }
+-        if ( flat.contains( msw, lsw ) )
+-        {
+-            return true;
+-        }
+-        // Spigot end
+         return contains(LongHash.toLong(msw, lsw));
+     }
+ 
+     public boolean contains(long value) {
+-        // Spigot start
+-        if ( elements == 0 )
+-        {
+-            return false;
+-        }
+-        if ( flat.contains( value ) )
+-        {
+-            return true;
+-        }
+-        // Spigot end
+         int hash = hash(value);
+         int index = (hash & 0x7FFFFFFF) % values.length;
+         int offset = 1;
+@@ -103,7 +82,6 @@ public class LongHashSet {
+     }
+ 
+     public boolean add(long value) {
+-        flat.put( value, Boolean.TRUE ); // Spigot
+         int hash = hash(value);
+         int index = (hash & 0x7FFFFFFF) % values.length;
+         int offset = 1;
+@@ -147,18 +125,10 @@ public class LongHashSet {
+     }
+ 
+     public void remove(int msw, int lsw) {
+-        // Spigot start
+-        flat.remove(msw, lsw);
+-        remove0(LongHash.toLong(msw, lsw));
++        remove(LongHash.toLong(msw, lsw));
+     }
+ 
+     public boolean remove(long value) {
+-        flat.remove(value);
+-        return remove0(value);
+-    }
+-
+-    private boolean remove0(long value) {
+-        // Spigot end
+         int hash = hash(value);
+         int index = (hash & 0x7FFFFFFF) % values.length;
+         int offset = 1;
+@@ -191,7 +161,6 @@ public class LongHashSet {
+ 
+         freeEntries = values.length;
+         modCount++;
+-        flat = new org.spigotmc.FlatMap<Boolean>();
+     }
+ 
+     public long[] toArray() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/LongObjectHashMap.java b/src/main/java/org/bukkit/craftbukkit/util/LongObjectHashMap.java
+index 2e5b436..01861cc 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/LongObjectHashMap.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/LongObjectHashMap.java
+@@ -28,7 +28,6 @@ public class LongObjectHashMap<V> implements Cloneable, Serializable {
+     private transient V[][]    values;
+     private transient int      modCount;
+     private transient int      size;
+-    private transient org.spigotmc.FlatMap<V> flat = new org.spigotmc.FlatMap<V>(); // Spigot
+ 
+     public LongObjectHashMap() {
+         initialize();
+@@ -62,17 +61,6 @@ public class LongObjectHashMap<V> implements Cloneable, Serializable {
+     }
+ 
+     public V get(long key) {
+-        // Spigot start
+-        if ( size == 0 )
+-        {
+-            return null;
+-        }
+-        V val = flat.get( key );
+-        if ( val != null )
+-        {
+-            return val;
+-        }
+-        // Spigot end
+         int index = (int) (keyIndex(key) & (BUCKET_SIZE - 1));
+         long[] inner = keys[index];
+         if (inner == null) return null;
+@@ -90,7 +78,6 @@ public class LongObjectHashMap<V> implements Cloneable, Serializable {
+     }
+ 
+     public V put(long key, V value) {
+-        flat.put(key, value); // Spigot
+         int index = (int) (keyIndex(key) & (BUCKET_SIZE - 1));
+         long[] innerKeys = keys[index];
+         V[] innerValues = values[index];
+@@ -137,7 +124,6 @@ public class LongObjectHashMap<V> implements Cloneable, Serializable {
+     }
+ 
+     public V remove(long key) {
+-        flat.remove(key); // Spigot
+         int index = (int) (keyIndex(key) & (BUCKET_SIZE - 1));
+         long[] inner = keys[index];
+         if (inner == null) {
+@@ -188,7 +174,6 @@ public class LongObjectHashMap<V> implements Cloneable, Serializable {
+         size = 0;
+         Arrays.fill(keys, null);
+         Arrays.fill(values, null);
+-        flat = new org.spigotmc.FlatMap<V>();
+     }
+ 
+     public Set<Long> keySet() {
+diff --git a/src/main/java/org/spigotmc/FlatMap.java b/src/main/java/org/spigotmc/FlatMap.java
+deleted file mode 100644
+index 9416f6e..0000000
+--- a/src/main/java/org/spigotmc/FlatMap.java
++++ /dev/null
+@@ -1,64 +0,0 @@
+-package org.spigotmc;
+-
+-import org.bukkit.craftbukkit.util.LongHash;
+-
+-public class FlatMap<V>
+-{
+-
+-    private static final int FLAT_LOOKUP_SIZE = 512;
+-    private final Object[][] flatLookup = new Object[ FLAT_LOOKUP_SIZE * 2 ][ FLAT_LOOKUP_SIZE * 2 ];
+-
+-    public void put(long msw, long lsw, V value)
+-    {
+-        long acx = Math.abs( msw );
+-        long acz = Math.abs( lsw );
+-        if ( acx < FLAT_LOOKUP_SIZE && acz < FLAT_LOOKUP_SIZE )
+-        {
+-            flatLookup[(int) ( msw + FLAT_LOOKUP_SIZE )][(int) ( lsw + FLAT_LOOKUP_SIZE )] = value;
+-        }
+-    }
+-
+-    public void put(long key, V value)
+-    {
+-        put( LongHash.msw( key ), LongHash.lsw( key ), value );
+-
+-    }
+-
+-    public void remove(long key)
+-    {
+-        put( key, null );
+-    }
+-
+-    public void remove(long msw, long lsw)
+-    {
+-        put( msw, lsw, null );
+-    }
+-
+-    public boolean contains(long msw, long lsw)
+-    {
+-        return get( msw, lsw ) != null;
+-    }
+-
+-    public boolean contains(long key)
+-    {
+-        return get( key ) != null;
+-    }
+-
+-    public V get(long msw, long lsw)
+-    {
+-        long acx = Math.abs( msw );
+-        long acz = Math.abs( lsw );
+-        if ( acx < FLAT_LOOKUP_SIZE && acz < FLAT_LOOKUP_SIZE )
+-        {
+-            return (V) flatLookup[(int) ( msw + FLAT_LOOKUP_SIZE )][(int) ( lsw + FLAT_LOOKUP_SIZE )];
+-        } else
+-        {
+-            return null;
+-        }
+-    }
+-
+-    public V get(long key)
+-    {
+-        return get( LongHash.msw( key ), LongHash.lsw( key ) );
+-    }
+-}
+-- 
+1.9.4.msysgit.0
+
