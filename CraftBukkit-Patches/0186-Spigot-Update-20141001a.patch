@@ -1,0 +1,224 @@
+From cd9384eed6798cc8638659fa40d161f0ad56b8b6 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Wed, 1 Oct 2014 03:00:09 -0700
+Subject: [PATCH] Spigot Update - 20141001a
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+index 78e0965..886feed 100644
+--- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+@@ -325,7 +325,7 @@ public class EntityTrackerEntry {
+                     {
+                         entityplayer.playerConnection.sendPacket( PacketPlayOutPlayerInfo.addPlayer( (EntityPlayer) tracker ) );
+
+-                        if ( entityplayer.playerConnection.networkManager.getVersion() > 28 ) { // Spigot Update - 20140927a
++                        if ( !entityplayer.getName().equals( entityplayer.listName ) && entityplayer.playerConnection.networkManager.getVersion() > 28 ) { // Spigot Update - 20140927a // Spigot Update - 20141001a
+                             entityplayer.playerConnection.sendPacket( PacketPlayOutPlayerInfo.updateDisplayName( (EntityPlayer) this.tracker ) );
+                         }
+                     }
+diff --git a/src/main/java/net/minecraft/server/ItemDoor.java b/src/main/java/net/minecraft/server/ItemDoor.java
+new file mode 100644
+index 0000000..3fa6e11
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/ItemDoor.java
+@@ -0,0 +1,79 @@
++package net.minecraft.server;
++
++public class ItemDoor extends Item {
++
++    private Material a;
++
++    public ItemDoor(Material material) {
++        this.a = material;
++        this.maxStackSize = 1;
++        this.a(CreativeModeTab.d);
++    }
++
++    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
++        if (l != 1) {
++            return false;
++        } else {
++            ++j;
++            Block block;
++
++            if (this.a == Material.WOOD) {
++                block = Blocks.WOODEN_DOOR;
++            } else {
++                block = Blocks.IRON_DOOR_BLOCK;
++            }
++
++            if (entityhuman.a(i, j, k, l, itemstack) && entityhuman.a(i, j + 1, k, l, itemstack)) {
++                if (!block.canPlace(world, i, j, k)) {
++                    return false;
++                } else {
++                    int i1 = MathHelper.floor((double) ((entityhuman.yaw + 180.0F) * 4.0F / 360.0F) - 0.5D) & 3;
++
++                    place(world, i, j, k, i1, block);
++                    --itemstack.count;
++                    return true;
++                }
++            } else {
++                return false;
++            }
++        }
++    }
++
++    public static void place(World world, int i, int j, int k, int l, Block block) {
++        byte b0 = 0;
++        byte b1 = 0;
++
++        if (l == 0) {
++            b1 = 1;
++        }
++
++        if (l == 1) {
++            b0 = -1;
++        }
++
++        if (l == 2) {
++            b1 = -1;
++        }
++
++        if (l == 3) {
++            b0 = 1;
++        }
++
++        int i1 = (world.getType(i - b0, j, k - b1).r() ? 1 : 0) + (world.getType(i - b0, j + 1, k - b1).r() ? 1 : 0);
++        int j1 = (world.getType(i + b0, j, k + b1).r() ? 1 : 0) + (world.getType(i + b0, j + 1, k + b1).r() ? 1 : 0);
++        boolean flag = world.getType(i - b0, j, k - b1) == block || world.getType(i - b0, j + 1, k - b1) == block;
++        boolean flag1 = world.getType(i + b0, j, k + b1) == block || world.getType(i + b0, j + 1, k + b1) == block;
++        boolean flag2 = false;
++
++        if (flag && !flag1) {
++            flag2 = true;
++        } else if (j1 > i1) {
++            flag2 = true;
++        }
++
++        world.setTypeAndData(i, j, k, block, l, 3); // Spigot Update - 20141001a
++        world.setTypeAndData(i, j + 1, k, block, 8 | (flag2 ? 1 : 0), 3); // Spigot Update - 20141001a
++        //world.applyPhysics(i, j, k, block); // Spigot Update - 20141001a
++        //world.applyPhysics(i, j + 1, k, block); // Spigot Update - 20141001a
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutChat.java b/src/main/java/net/minecraft/server/PacketPlayOutChat.java
+index 27c34f6..05edc52 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutChat.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutChat.java
+@@ -10,6 +10,7 @@ public class PacketPlayOutChat extends Packet {
+     private IChatBaseComponent a;
+     public BaseComponent[] components; // Spigot - Update 20140909b
+     private boolean b;
++    private int pos; // Spigot - Update 20141001a
+
+     public PacketPlayOutChat() {
+         this.b = true;
+@@ -19,10 +20,19 @@ public class PacketPlayOutChat extends Packet {
+         this(ichatbasecomponent, true);
+     }
+
++    public PacketPlayOutChat(IChatBaseComponent ichatbasecomponent, int pos) {
++        this(ichatbasecomponent, pos, true);
++    }
++
+     public PacketPlayOutChat(IChatBaseComponent ichatbasecomponent, boolean flag) {
++        this(ichatbasecomponent, 0, flag);
++    }
++
++    public PacketPlayOutChat(IChatBaseComponent ichatbasecomponent, int pos, boolean flag) {
+         this.b = true;
+         this.a = ichatbasecomponent;
+         this.b = flag;
++        this.pos = pos;
+     }
+
+     public void a(PacketDataSerializer packetdataserializer) throws IOException {
+@@ -43,7 +53,7 @@ public class PacketPlayOutChat extends Packet {
+         // Spigot start - protocol patch
+         if ( packetdataserializer.version >= 16 )
+         {
+-            packetdataserializer.writeByte(0);
++            packetdataserializer.writeByte( this.pos );
+         }
+         // Spigot end
+     }
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutPosition.java b/src/main/java/net/minecraft/server/PacketPlayOutPosition.java
+index b3c0ccf..7520af8 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutPosition.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutPosition.java
+@@ -8,16 +8,22 @@ public class PacketPlayOutPosition extends Packet {
+     private float d;
+     private float e;
+     private boolean f;
++    private byte relativeBitMask; // Spigot Update - 20141001a
+
+     public PacketPlayOutPosition() {}
+
+     public PacketPlayOutPosition(double d0, double d1, double d2, float f, float f1, boolean flag) {
++        this(d0, d1, d2, f, f1, flag, (byte)0);
++    }
++
++    public PacketPlayOutPosition(double d0, double d1, double d2, float f, float f1, boolean flag, byte relativeBitMask) {
+         this.a = d0;
+         this.b = d1;
+         this.c = d2;
+         this.d = f;
+         this.e = f1;
+         this.f = flag;
++        this.relativeBitMask = relativeBitMask;
+     }
+
+     public void a(PacketDataSerializer packetdataserializer) {
+@@ -41,7 +47,7 @@ public class PacketPlayOutPosition extends Packet {
+             packetdataserializer.writeBoolean( this.f );
+         } else
+         {
+-            packetdataserializer.writeByte( 0 );
++            packetdataserializer.writeByte( this.relativeBitMask );
+         }
+         // Spigot end
+     }
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 86b0343..bc10c4e 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -291,8 +291,8 @@ public abstract class PlayerList {
+
+             if (entityplayer1.getBukkitEntity().canSee(entityplayer.getBukkitEntity())) {
+                 entityplayer1.playerConnection.sendPacket(packet);
+-                // Spigot start - Update 20140927a
+-                if ( entityplayer1.playerConnection.networkManager.getVersion() > 28 ) {
++                // Spigot start - Update 20140927a // Update - 20141001a
++                if ( !entityplayer.getName().equals( entityplayer.listName ) && entityplayer1.playerConnection.networkManager.getVersion() > 28 ) {
+                     entityplayer1.playerConnection.sendPacket( displayPacket );
+                 }
+                 // Spigot end
+@@ -309,8 +309,8 @@ public abstract class PlayerList {
+             }
+             // .name -> .listName
+             entityplayer.playerConnection.sendPacket(PacketPlayOutPlayerInfo.addPlayer( entityplayer1 )); // Spigot - protocol patch
+-            // Spigot start - Update 20140927a
+-            if ( entityplayer.playerConnection.networkManager.getVersion() > 28 ) {
++            // Spigot start - Update 20140927a // Update - 20141001a
++            if ( !entityplayer.getName().equals( entityplayer.listName ) && entityplayer.playerConnection.networkManager.getVersion() > 28 ) {
+                 entityplayer.playerConnection.sendPacket( PacketPlayOutPlayerInfo.updateDisplayName( entityplayer1 ) );
+             }
+             // Spigot end
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index d452df7..0d025bc 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -844,6 +844,9 @@ public class CraftEventFactory {
+     }
+
+     public static void handleInventoryCloseEvent(EntityHuman human) {
++        if (human.activeContainer == human.defaultContainer) { // Spigot Update - 20141001a
++            return;
++        }
+         InventoryCloseEvent event = new InventoryCloseEvent(human.activeContainer.getBukkitView());
+         human.world.getServer().getPluginManager().callEvent(event);
+         human.activeContainer.transferTo(human.defaultContainer, human.getBukkitEntity());
+--
+1.9.4.msysgit.0
+

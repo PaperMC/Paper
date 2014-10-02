@@ -1,0 +1,58 @@
+From feaaf50a42e83b918d3a2c9f36e24ef7a4c6d8a7 Mon Sep 17 00:00:00 2001
+From: md_5 <git@md-5.net>
+Date: Wed, 1 Oct 2014 00:27:39 -0700
+Subject: [PATCH] Spigot Update - 20140927a
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+index 8dad7ca..78e0965 100644
+--- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+@@ -324,6 +324,10 @@ public class EntityTrackerEntry {
+                     if ( tracker instanceof EntityPlayer )
+                     {
+                         entityplayer.playerConnection.sendPacket( PacketPlayOutPlayerInfo.addPlayer( (EntityPlayer) tracker ) );
++
++                        if ( entityplayer.playerConnection.networkManager.getVersion() > 28 ) { // Spigot Update - 20140927a
++                            entityplayer.playerConnection.sendPacket( PacketPlayOutPlayerInfo.updateDisplayName( (EntityPlayer) this.tracker ) );
++                        }
+                     }
+                     // Spigot end
+
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 0359cb3..86b0343 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -285,11 +285,17 @@ public abstract class PlayerList {
+
+         // CraftBukkit start - sendAll above replaced with this loop
+         PacketPlayOutPlayerInfo packet = PacketPlayOutPlayerInfo.addPlayer( entityplayer ); // Spigot - protocol patch
++        PacketPlayOutPlayerInfo displayPacket = PacketPlayOutPlayerInfo.updateDisplayName( entityplayer ); // Spigot Update - 20140927a
+         for (int i = 0; i < this.players.size(); ++i) {
+             EntityPlayer entityplayer1 = (EntityPlayer) this.players.get(i);
+
+             if (entityplayer1.getBukkitEntity().canSee(entityplayer.getBukkitEntity())) {
+                 entityplayer1.playerConnection.sendPacket(packet);
++                // Spigot start - Update 20140927a
++                if ( entityplayer1.playerConnection.networkManager.getVersion() > 28 ) {
++                    entityplayer1.playerConnection.sendPacket( displayPacket );
++                }
++                // Spigot end
+             }
+         }
+         // CraftBukkit end
+@@ -303,6 +309,11 @@ public abstract class PlayerList {
+             }
+             // .name -> .listName
+             entityplayer.playerConnection.sendPacket(PacketPlayOutPlayerInfo.addPlayer( entityplayer1 )); // Spigot - protocol patch
++            // Spigot start - Update 20140927a
++            if ( entityplayer.playerConnection.networkManager.getVersion() > 28 ) {
++                entityplayer.playerConnection.sendPacket( PacketPlayOutPlayerInfo.updateDisplayName( entityplayer1 ) );
++            }
++            // Spigot end
+             // CraftBukkit end
+         }
+     }
+--
+1.9.4.msysgit.0
+
