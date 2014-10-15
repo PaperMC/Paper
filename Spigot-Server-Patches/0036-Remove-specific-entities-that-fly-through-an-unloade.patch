@@ -1,4 +1,4 @@
-From f03f0657b4a23ca294d819637b7307ae89d676de Mon Sep 17 00:00:00 2001
+From e9abda4da1c1e4c264b6f7e9ae5e861e5006a6e9 Mon Sep 17 00:00:00 2001
 From: Iceee <andrew@opticgaming.tv>
 Date: Fri, 29 Aug 2014 20:33:52 -0500
 Subject: [PATCH] Remove specific entities that fly through an unloaded chunk
@@ -67,7 +67,7 @@ index 1f98f8d..5ce67f5 100644
          this.motY *= 0.9800000190734863D;
          this.motZ *= 0.9800000190734863D;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 3bf2af0..9204a58 100644
+index 3bf2af0..1977c6c 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1245,6 +1245,7 @@ public abstract class World implements IBlockAccess {
@@ -78,12 +78,14 @@ index 3bf2af0..9204a58 100644
                      continue;
                  }
                  int cz = chunkz << 4;
-@@ -1607,6 +1608,12 @@ public abstract class World implements IBlockAccess {
+@@ -1607,6 +1608,14 @@ public abstract class World implements IBlockAccess {
          if (!org.spigotmc.ActivationRange.checkIfActive(entity)) {
              entity.ticksLived++;
              entity.inactiveTick();
 +            // PaperSpigot start - Remove entities in unloaded chunks
-+            if (entity instanceof EntityEnderPearl) {
++            if (entity instanceof EntityEnderPearl || (!this.isChunkLoaded(i, j) &&
++                    (entity instanceof EntityFallingBlock && this.paperSpigotConfig.removeUnloadedFallingBlocks) ||
++                    (entity instanceof EntityTNTPrimed && this.paperSpigotConfig.removeUnloadedTNTEntities))) {
 +                entity.inUnloadedChunk = true;
 +                entity.die();
 +            }
