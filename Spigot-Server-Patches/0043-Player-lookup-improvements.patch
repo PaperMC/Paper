@@ -1,0 +1,187 @@
+From 6011f2fe47906285314092df74e56b75b73722a7 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 19 Oct 2014 16:26:55 -0500
+Subject: [PATCH] Player lookup improvements
+
+Minecraft and CraftBukkit both use Arrays to store online players,
+and any time a player needs to be looked up by name or UUID,
+the system iterates all online players and does a name or UUID comparison.
+
+This is very ineffecient and can reduce performance on servers with high player count.
+
+By using a map based approach for player lookups, player lookup should
+be consistent in performance regardless of how many players are online.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 79fc999..c6dca57 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -49,6 +49,39 @@ public abstract class PlayerList {
+     private static final SimpleDateFormat h = new SimpleDateFormat("yyyy-MM-dd \'at\' HH:mm:ss z");
+     private final MinecraftServer server;
+     public final List players = new java.util.concurrent.CopyOnWriteArrayList(); // CraftBukkit - ArrayList -> CopyOnWriteArrayList: Iterator safety
++    // PaperSpigot start - Player lookup improvements
++    public final Map<String, EntityPlayer> playerMap = new java.util.HashMap<String, EntityPlayer>() {
++        @Override
++        public EntityPlayer put(String key, EntityPlayer value) {
++            return super.put(key.toLowerCase(), value);
++        }
++
++        @Override
++        public EntityPlayer get(Object key) {
++            // put the .playerConnection check done in other places here
++            EntityPlayer player = super.get(key instanceof String ? ((String)key).toLowerCase() : key);
++            return (player != null && player.playerConnection != null) ? player : null;
++        }
++
++        @Override
++        public boolean containsKey(Object key) {
++            return get(key) != null;
++        }
++
++        @Override
++        public EntityPlayer remove(Object key) {
++            return super.remove(key instanceof String ? ((String)key).toLowerCase() : key);
++        }
++    };
++    public final Map<UUID, EntityPlayer> uuidMap = new java.util.HashMap<UUID, EntityPlayer>() {
++        @Override
++        public EntityPlayer get(Object key) {
++            // put the .playerConnection check done in other places here
++            EntityPlayer player = super.get(key instanceof String ? ((String)key).toLowerCase() : key);
++            return (player != null && player.playerConnection != null) ? player : null;
++        }
++    };
++    // PaperSpigot end
+     private final GameProfileBanList j;
+     private final IpBanList k;
+     private final OpList operators;
+@@ -258,6 +291,8 @@ public abstract class PlayerList {
+         cserver.detectListNameConflict(entityplayer); // CraftBukkit
+         // this.sendAll(new PacketPlayOutPlayerInfo(entityplayer.getName(), true, 1000)); // CraftBukkit - replaced with loop below
+         this.players.add(entityplayer);
++        this.playerMap.put(entityplayer.getName(), entityplayer); // PaperSpigot
++        this.uuidMap.put(entityplayer.getUniqueID(), entityplayer); // PaperSpigot
+         WorldServer worldserver = this.server.getWorldServer(entityplayer.dimension);
+ 
+         // CraftBukkit start
+@@ -344,6 +379,8 @@ public abstract class PlayerList {
+         worldserver.kill(entityplayer);
+         worldserver.getPlayerChunkMap().removePlayer(entityplayer);
+         this.players.remove(entityplayer);
++        this.uuidMap.remove(entityplayer.getUniqueID()); // PaperSpigot
++        this.playerMap.remove(entityplayer.getName()); // PaperSpigot
+         this.n.remove(entityplayer.getUniqueID());
+         ChunkIOExecutor.adjustPoolSize(this.getPlayerCount()); // CraftBukkit
+ 
+@@ -424,6 +461,7 @@ public abstract class PlayerList {
+ 
+         EntityPlayer entityplayer;
+ 
++        /* // PaperSpigot start - Use exact lookup below
+         for (int i = 0; i < this.players.size(); ++i) {
+             entityplayer = (EntityPlayer) this.players.get(i);
+             if (entityplayer.getUniqueID().equals(uuid)) {
+@@ -435,6 +473,9 @@ public abstract class PlayerList {
+ 
+         while (iterator.hasNext()) {
+             entityplayer = (EntityPlayer) iterator.next();
++        */
++        if ((entityplayer = uuidMap.get(uuid)) != null) {
++            // PaperSpigot end
+             entityplayer.playerConnection.disconnect("You logged in from another location");
+         }
+ 
+@@ -952,6 +993,7 @@ public abstract class PlayerList {
+     }
+ 
+     public EntityPlayer getPlayer(String s) {
++        if (true) { return playerMap.get(s); } // PaperSpigot
+         Iterator iterator = this.players.iterator();
+ 
+         EntityPlayer entityplayer;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
+index 1328c17..f1fa713 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
+@@ -144,14 +144,10 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
+     }
+ 
+     public Player getPlayer() {
+-        for (Object obj : server.getHandle().players) {
+-            EntityPlayer player = (EntityPlayer) obj;
+-            if (player.getUniqueID().equals(getUniqueId())) {
+-                return (player.playerConnection != null) ? player.playerConnection.getPlayer() : null;
+-            }
+-        }
+-
+-        return null;
++        // PaperSpigot - Improved player lookup, replace entire method
++        final EntityPlayer playerEntity = server.getHandle().uuidMap.get(getUniqueId());
++        return playerEntity != null ? playerEntity.getBukkitEntity() : null;
++        // PaperSpigot end
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index ed5bb2e..87eab98 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -522,7 +522,12 @@ public final class CraftServer implements Server {
+     public Player getPlayer(final String name) {
+         Validate.notNull(name, "Name cannot be null");
+ 
+-        Player found = null;
++        // PaperSpigot start - Improved player lookup changes
++        Player found = getPlayerExact(name);
++        if (found != null) {
++            return found;
++        }
++        // PaperSpigot end
+         String lowerName = name.toLowerCase();
+         int delta = Integer.MAX_VALUE;
+         for (Player player : getOnlinePlayers()) {
+@@ -541,17 +546,10 @@ public final class CraftServer implements Server {
+     @Override
+     @Deprecated
+     public Player getPlayerExact(String name) {
+-        Validate.notNull(name, "Name cannot be null");
+-
+-        String lname = name.toLowerCase();
+-
+-        for (Player player : getOnlinePlayers()) {
+-            if (player.getName().equalsIgnoreCase(lname)) {
+-                return player;
+-            }
+-        }
+-
+-        return null;
++        // PaperSpigot start - Improved player lookup, replace whole method
++        EntityPlayer player = playerList.playerMap.get(name);
++        return player != null ? player.getBukkitEntity() : null;
++        // PaperSpigot end
+     }
+ 
+     // TODO: In 1.8+ this should use the server's UUID->EntityPlayer map
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 73ec0f7..52760c0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -102,13 +102,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+ 
+     public boolean isOnline() {
+-        for (Object obj : server.getHandle().players) {
+-            EntityPlayer player = (EntityPlayer) obj;
+-            if (player.getName().equalsIgnoreCase(getName())) {
+-                return true;
+-            }
+-        }
+-        return false;
++        return server.getHandle().uuidMap.get(getUniqueId()) != null; // PaperSpigot  - replace whole method
+     }
+ 
+     public InetSocketAddress getAddress() {
+-- 
+1.9.1
+

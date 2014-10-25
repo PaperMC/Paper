@@ -1,0 +1,174 @@
+From e6ea911ae0a814b801ce8c2b0b011963893686f3 Mon Sep 17 00:00:00 2001
+From: gsand <gsandowns@gmail.com>
+Date: Fri, 24 Oct 2014 22:09:58 -0500
+Subject: [PATCH] Configurable game mechanics changes
+
+
+diff --git a/src/main/java/net/minecraft/server/BlockMinecartTrackAbstract.java b/src/main/java/net/minecraft/server/BlockMinecartTrackAbstract.java
+index b6b4146..a0b960a 100644
+--- a/src/main/java/net/minecraft/server/BlockMinecartTrackAbstract.java
++++ b/src/main/java/net/minecraft/server/BlockMinecartTrackAbstract.java
+@@ -61,7 +61,7 @@ public abstract class BlockMinecartTrackAbstract extends Block {
+     }
+ 
+     public boolean canPlace(World world, int i, int j, int k) {
+-        return World.a((IBlockAccess) world, i, j - 1, k);
++        return checkPlace(world, i, j, k); // PaperSpigot - Moved, pass it all along
+     }
+ 
+     public void onPlace(World world, int i, int j, int k) {
+@@ -84,25 +84,27 @@ public abstract class BlockMinecartTrackAbstract extends Block {
+ 
+             boolean flag = false;
+ 
+-            if (!World.a((IBlockAccess) world, i, j - 1, k)) {
++            // PaperSpigot start - Replace !World.a with our own check - Less picky rails
++            if (!checkPlace(world, i, j, k)) {
+                 flag = true;
+             }
+ 
+-            if (i1 == 2 && !World.a((IBlockAccess) world, i + 1, j, k)) {
++            if (i1 == 2 && !checkPlace(world, i, j, k)) {
+                 flag = true;
+             }
+ 
+-            if (i1 == 3 && !World.a((IBlockAccess) world, i - 1, j, k)) {
++            if (i1 == 3 && !checkPlace(world, i, j, k)) {
+                 flag = true;
+             }
+ 
+-            if (i1 == 4 && !World.a((IBlockAccess) world, i, j, k - 1)) {
++            if (i1 == 4 && !checkPlace(world, i, j, k)) {
+                 flag = true;
+             }
+ 
+-            if (i1 == 5 && !World.a((IBlockAccess) world, i, j, k + 1)) {
++            if (i1 == 5 && !checkPlace(world, i, j, k)) {
+                 flag = true;
+             }
++            // PaperSpigot end
+ 
+             if (flag) {
+                 // PaperSpigot start - Rails dupe workaround
+@@ -146,4 +148,18 @@ public abstract class BlockMinecartTrackAbstract extends Block {
+             world.applyPhysics(i, j - 1, k, block);
+         }
+     }
++
++    /**
++     * PaperSpigot - Customizable rail placement on extra blocks
++     */
++    private boolean checkPlace(World world, int i, int j, int k) {
++        Block block = World.getBlock(world, i, j - 1, k);
++        if (world.paperSpigotConfig.lessPickyRails) {
++            if (block instanceof BlockFence) {
++                return true;
++            }
++        }
++
++        return World.canPlace(world, block, i, j - 1, k);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityBoat.java b/src/main/java/net/minecraft/server/EntityBoat.java
+index c9f2b13..7c4c303 100644
+--- a/src/main/java/net/minecraft/server/EntityBoat.java
++++ b/src/main/java/net/minecraft/server/EntityBoat.java
+@@ -337,13 +337,7 @@ public class EntityBoat extends Entity {
+                     if (!destroyEvent.isCancelled()) {
+                         this.die();
+ 
+-                        for (k = 0; k < 3; ++k) {
+-                            this.a(Item.getItemOf(Blocks.WOOD), 1, 0.0F);
+-                        }
+-
+-                        for (k = 0; k < 2; ++k) {
+-                            this.a(Items.STICK, 1, 0.0F);
+-                        }
++                        breakNaturally(); // PaperSpigot - Customizable boat drops
+                     }
+                     // CraftBukkit end
+                 }
+@@ -452,15 +446,7 @@ public class EntityBoat extends Entity {
+                     if (!destroyEvent.isCancelled()) {
+                         this.die();
+ 
+-                        int l;
+-
+-                        for (l = 0; l < 3; ++l) {
+-                            this.a(Item.getItemOf(Blocks.WOOD), 1, 0.0F);
+-                        }
+-
+-                        for (l = 0; l < 2; ++l) {
+-                            this.a(Items.STICK, 1, 0.0F);
+-                        }
++                        breakNaturally(); // PaperSpigot - Customizable boat drops
+                     }
+                     // CraftBukkit end
+                 }
+@@ -495,4 +481,21 @@ public class EntityBoat extends Entity {
+     public int i() {
+         return this.datawatcher.getInt(18);
+     }
++
++    /**
++     * PaperSpigot - Handles boat drops depending on the user's config setting
++     */
++    public void breakNaturally() {
++        if (this.world.paperSpigotConfig.boatsDropBoats) {
++            this.a(Items.BOAT, 1, 0.0F);
++        } else {
++            for (int k = 0; k < 3; ++k) {
++                this.a(Item.getItemOf(Blocks.WOOD), 1, 0.0F);
++            }
++
++            for (int k = 0; k < 2; ++k) {
++                this.a(Items.STICK, 1, 0.0F);
++            }
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 1977c6c..db41b8b 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -3155,4 +3155,20 @@ public abstract class World implements IBlockAccess {
+             iworldaccess.b();
+         }
+     }
++
++    /**
++     * PaperSpigot - Gets block at location
++     */
++    public static Block getBlock(IBlockAccess iblockaccess, int i, int j, int k) {
++        return iblockaccess.getType(i, j, k);
++    }
++
++    /**
++     * PaperSpigot - Checks if block placement is allowed (used in BlockMinecartTrackAbstract and similar)
++     */
++    public static boolean canPlace(IBlockAccess iblockaccess, Block block, int i, int j, int k) {
++        int l = iblockaccess.getData(i, j, k);
++
++        return block.getMaterial().k() && block.d() ? true : (block instanceof BlockStairs ? (l & 4) == 4 : (block instanceof BlockStepAbstract ? (l & 8) == 8 : (block instanceof BlockHopper ? true : (block instanceof BlockSnow ? (l & 7) == 7 : false))));
++    }
+ }
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+index a59fd42..6b9e127 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+@@ -188,4 +188,12 @@ public class PaperSpigotWorldConfig
+         removeUnloadedTNTEntities = getBoolean("remove-unloaded.tnt-entities", true);
+         removeUnloadedFallingBlocks = getBoolean("remove-unloaded.falling-blocks", true);
+     }
++
++    public boolean boatsDropBoats;
++    public boolean lessPickyRails;
++    private void mechanicsChanges()
++    {
++        boatsDropBoats = getBoolean( "game-mechanics.boats-drop-boats", false );
++        lessPickyRails = getBoolean( "game-mechanics.less-picky-rail-placement", false );
++    }
+ }
+-- 
+1.9.1
+

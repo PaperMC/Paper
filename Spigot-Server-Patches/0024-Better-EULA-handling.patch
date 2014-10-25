@@ -1,0 +1,70 @@
+From 55cca3b8a7074e826b20d9cd004400ad6aced9d6 Mon Sep 17 00:00:00 2001
+From: Zach Brown <Zbob750@live.com>
+Date: Tue, 8 Jul 2014 22:39:41 -0500
+Subject: [PATCH] Better EULA handling
+
+
+diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+index e9a1a67..38b76ba 100644
+--- a/src/main/java/net/minecraft/server/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -9,6 +9,7 @@ import java.util.Collections;
+ import java.util.List;
+ import java.util.Random;
+ import java.util.concurrent.Callable;
++import java.util.concurrent.TimeUnit; // PaperSpigot
+ 
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+@@ -76,7 +77,8 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+ 
+         i.info("Loading properties");
+         this.propertyManager = new PropertyManager(this.options); // CraftBukkit - CLI argument support
+-        this.n = new EULA(new File("eula.txt"));
++        // PaperSpigot start - Display a EULA warning then continue
++        File EULALock = new File( ".eula-lock");
+         // Spigot Start
+         boolean eulaAgreed = Boolean.getBoolean( "com.mojang.eula.agree" );
+         if ( eulaAgreed )
+@@ -84,13 +86,24 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+             System.err.println( "You have used the Spigot command line EULA agreement flag." );
+             System.err.println( "By using this setting you are indicating your agreement to Mojang's EULA (https://account.mojang.com/documents/minecraft_eula)." );
+             System.err.println( "If you do not agree to the above EULA please stop your server and remove this flag immediately." );
+-        }
+-        // Spigot End
+-        if (!this.n.a() && !eulaAgreed) {
+-            i.info("You need to agree to the EULA in order to run the server. Go to eula.txt for more info.");
+-            this.n.b();
+-            return false;
++            // Spigot End
+         } else {
++            if (!EULALock.exists()) {
++                System.err.println("WARNING: By using this server you are indicating your agreement to Mojang's EULA (https://account.mojang.com/documents/minecraft_eula)");
++                System.err.println("If you do not agree to the above EULA please stop this server and remove it from your system immediately.");
++                System.err.println("The server will start in 10 seconds, you will only see this message and have to wait this one time.");
++                try {
++                    EULALock.createNewFile();
++                } catch (IOException e1) {
++                    System.err.println("Unable to create EULA lock file");
++                    e1.printStackTrace();
++                }
++                try {
++                    Thread.sleep(TimeUnit.SECONDS.toMillis(10));
++                } catch (InterruptedException ex) {
++                }
++            }
++                // PaperSpigot end
+             if (this.N()) {
+                 this.c("127.0.0.1");
+             } else {
+@@ -252,6 +265,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+                 return true;
+             }
+         }
++        return true; // PaperSpigot
+     }
+ 
+     // CraftBukkit start
+-- 
+1.9.1
+
