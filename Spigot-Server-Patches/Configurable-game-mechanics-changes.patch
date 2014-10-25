@@ -4,71 +4,20 @@ Date: Fri, 24 Oct 2014 22:09:58 -0500
 Subject: [PATCH] Configurable game mechanics changes
 
 
-diff --git a/src/main/java/net/minecraft/server/BlockMinecartTrackAbstract.java b/src/main/java/net/minecraft/server/BlockMinecartTrackAbstract.java
+diff --git a/src/main/java/net/minecraft/server/BlockTorch.java b/src/main/java/net/minecraft/server/BlockTorch.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/BlockMinecartTrackAbstract.java
-+++ b/src/main/java/net/minecraft/server/BlockMinecartTrackAbstract.java
-@@ -0,0 +0,0 @@ public abstract class BlockMinecartTrackAbstract extends Block {
-     }
+--- a/src/main/java/net/minecraft/server/BlockTorch.java
++++ b/src/main/java/net/minecraft/server/BlockTorch.java
+@@ -0,0 +0,0 @@ public class BlockTorch extends Block {
+         } else {
+             Block block = world.getType(i, j, k);
  
-     public boolean canPlace(World world, int i, int j, int k) {
--        return World.a((IBlockAccess) world, i, j - 1, k);
-+        return checkPlace(world, i, j, k); // PaperSpigot - Moved, pass it all along
-     }
- 
-     public void onPlace(World world, int i, int j, int k) {
-@@ -0,0 +0,0 @@ public abstract class BlockMinecartTrackAbstract extends Block {
- 
-             boolean flag = false;
- 
--            if (!World.a((IBlockAccess) world, i, j - 1, k)) {
-+            // PaperSpigot start - Replace !World.a with our own check - Less picky rails
-+            if (!checkPlace(world, i, j, k)) {
-                 flag = true;
-             }
- 
--            if (i1 == 2 && !World.a((IBlockAccess) world, i + 1, j, k)) {
-+            if (i1 == 2 && !checkPlace(world, i, j, k)) {
-                 flag = true;
-             }
- 
--            if (i1 == 3 && !World.a((IBlockAccess) world, i - 1, j, k)) {
-+            if (i1 == 3 && !checkPlace(world, i, j, k)) {
-                 flag = true;
-             }
- 
--            if (i1 == 4 && !World.a((IBlockAccess) world, i, j, k - 1)) {
-+            if (i1 == 4 && !checkPlace(world, i, j, k)) {
-                 flag = true;
-             }
- 
--            if (i1 == 5 && !World.a((IBlockAccess) world, i, j, k + 1)) {
-+            if (i1 == 5 && !checkPlace(world, i, j, k)) {
-                 flag = true;
-             }
-+            // PaperSpigot end
- 
-             if (flag) {
-                 // PaperSpigot start - Rails dupe workaround
-@@ -0,0 +0,0 @@ public abstract class BlockMinecartTrackAbstract extends Block {
-             world.applyPhysics(i, j - 1, k, block);
+-            return block == Blocks.FENCE || block == Blocks.NETHER_FENCE || block == Blocks.GLASS || block == Blocks.COBBLE_WALL;
++            // PaperSpigot - Allow torch placement on stained glass as well
++            return world.paperSpigotConfig.lessPickyTorches ? block == Blocks.FENCE || block == Blocks.NETHER_FENCE || block == Blocks.GLASS || block == Blocks.STAINED_GLASS || block == Blocks.COBBLE_WALL : block == Blocks.FENCE || block == Blocks.NETHER_FENCE || block == Blocks.GLASS || block == Blocks.COBBLE_WALL;
          }
      }
-+
-+    /**
-+     * PaperSpigot - Customizable rail placement on extra blocks
-+     */
-+    private boolean checkPlace(World world, int i, int j, int k) {
-+        Block block = World.getBlock(world, i, j - 1, k);
-+        if (world.paperSpigotConfig.lessPickyRails) {
-+            if (block instanceof BlockFence) {
-+                return true;
-+            }
-+        }
-+
-+        return World.canPlace(world, block, i, j - 1, k);
-+    }
- }
+ 
 diff --git a/src/main/java/net/minecraft/server/EntityBoat.java b/src/main/java/net/minecraft/server/EntityBoat.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityBoat.java
@@ -127,46 +76,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
  }
-diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/World.java
-+++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-             iworldaccess.b();
-         }
-     }
-+
-+    /**
-+     * PaperSpigot - Gets block at location
-+     */
-+    public static Block getBlock(IBlockAccess iblockaccess, int i, int j, int k) {
-+        return iblockaccess.getType(i, j, k);
-+    }
-+
-+    /**
-+     * PaperSpigot - Checks if block placement is allowed (used in BlockMinecartTrackAbstract and similar)
-+     */
-+    public static boolean canPlace(IBlockAccess iblockaccess, Block block, int i, int j, int k) {
-+        int l = iblockaccess.getData(i, j, k);
-+
-+        return block.getMaterial().k() && block.d() ? true : (block instanceof BlockStairs ? (l & 4) == 4 : (block instanceof BlockStepAbstract ? (l & 8) == 8 : (block instanceof BlockHopper ? true : (block instanceof BlockSnow ? (l & 7) == 7 : false))));
-+    }
- }
 diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
 +++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperSpigotWorldConfig
-         removeUnloadedTNTEntities = getBoolean("remove-unloaded.tnt-entities", true);
-         removeUnloadedFallingBlocks = getBoolean("remove-unloaded.falling-blocks", true);
+         removeUnloadedTNTEntities = getBoolean( "remove-unloaded.tnt-entities", true );
+         removeUnloadedFallingBlocks = getBoolean( "remove-unloaded.falling-blocks", true );
      }
 +
 +    public boolean boatsDropBoats;
-+    public boolean lessPickyRails;
++    public boolean lessPickyTorches;
 +    private void mechanicsChanges()
 +    {
 +        boatsDropBoats = getBoolean( "game-mechanics.boats-drop-boats", false );
-+        lessPickyRails = getBoolean( "game-mechanics.less-picky-rail-placement", false );
++        lessPickyTorches = getBoolean ( "game-mechanics.less-picky-torch-placement", false );
 +    }
  }
 --
