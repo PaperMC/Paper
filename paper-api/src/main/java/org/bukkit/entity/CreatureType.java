@@ -26,6 +26,8 @@ public enum CreatureType {
     BLAZE("Blaze", Blaze.class, 61),
     MAGMA_CUBE("LavaSlime", MagmaCube.class, 62),
     ENDER_DRAGON("EnderDragon", EnderDragon.class, 63),
+    ENDERMITE("Endermite", Endermite.class, 67),
+    GUARDIAN("Guardian", Guardian.class, 68),
     PIG("Pig", Pig.class, 90),
     SHEEP("Sheep", Sheep.class, 91),
     COW("Cow", Cow.class, 92),
@@ -34,6 +36,7 @@ public enum CreatureType {
     WOLF("Wolf", Wolf.class, 95),
     MUSHROOM_COW("MushroomCow", MushroomCow.class, 96),
     SNOWMAN("SnowMan", Snowman.class, 97),
+    RABBIT("Rabbit", Rabbit.class, 101),
     VILLAGER("Villager", Villager.class, 120);
 
     private String name;

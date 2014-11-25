@@ -14,6 +14,7 @@ public enum PotionType {
     INSTANT_DAMAGE(12, PotionEffectType.HARM, 2),
     WATER_BREATHING(13, PotionEffectType.WATER_BREATHING, 1),
     INVISIBILITY(14, PotionEffectType.INVISIBILITY, 1),
+    JUMP(15, PotionEffectType.JUMP, 2)
     ;
 
     private final int damageValue, maxLevel;

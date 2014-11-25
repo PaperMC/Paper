@@ -27,12 +27,17 @@ public enum Statistic {
     BOAT_ONE_CM,
     PIG_ONE_CM,
     HORSE_ONE_CM,
+    SPRINT_ONE_CM,
+    CROUCH_ONE_CM,
     MINE_BLOCK(Type.BLOCK),
     USE_ITEM(Type.ITEM),
     BREAK_ITEM(Type.ITEM),
     CRAFT_ITEM(Type.ITEM),
     KILL_ENTITY(Type.ENTITY),
-    ENTITY_KILLED_BY(Type.ENTITY);
+    ENTITY_KILLED_BY(Type.ENTITY),
+    TIME_SINCE_DEATH,
+    TALKED_TO_VILLAGER,
+    TRADED_WITH_VILLAGER;
 
     private final Type type;
 

@@ -232,11 +232,12 @@ public final class JavaPluginLoader implements PluginLoader {
         Set<Method> methods;
         try {
             Method[] publicMethods = listener.getClass().getMethods();
-            methods = new HashSet<Method>(publicMethods.length, Float.MAX_VALUE);
+            Method[] privateMethods = listener.getClass().getDeclaredMethods();
+            methods = new HashSet<Method>(publicMethods.length + privateMethods.length, 1.0f);
             for (Method method : publicMethods) {
                 methods.add(method);
             }
-            for (Method method : listener.getClass().getDeclaredMethods()) {
+            for (Method method : privateMethods) {
                 methods.add(method);
             }
         } catch (NoClassDefFoundError e) {

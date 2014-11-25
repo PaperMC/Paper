@@ -15,7 +15,7 @@ import org.bukkit.util.StringUtil;
 import com.google.common.collect.ImmutableList;
 
 public class GameModeCommand extends VanillaCommand {
-    private static final List<String> GAMEMODE_NAMES = ImmutableList.of("adventure", "creative", "survival");
+    private static final List<String> GAMEMODE_NAMES = ImmutableList.of("adventure", "creative", "survival", "spectator");
 
     public GameModeCommand() {
         super("gamemode");
@@ -55,6 +55,8 @@ public class GameModeCommand extends VanillaCommand {
                     mode = GameMode.CREATIVE;
                 } else if (modeArg.equalsIgnoreCase("adventure") || modeArg.equalsIgnoreCase("a")) {
                     mode = GameMode.ADVENTURE;
+                } else if (modeArg.equalsIgnoreCase("spectator") || modeArg.equalsIgnoreCase("sp")) {
+                    mode = GameMode.SPECTATOR;
                 } else {
                     mode = GameMode.SURVIVAL;
                 }

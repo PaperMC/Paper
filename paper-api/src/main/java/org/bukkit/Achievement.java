@@ -37,6 +37,7 @@ public enum Achievement {
     FULL_BEACON (KILL_WITHER),
     BREED_COW (KILL_COW),
     DIAMONDS_TO_YOU (GET_DIAMONDS),
+    OVERPOWERED (BUILD_BETTER_PICKAXE)
     ;
 
     private final Achievement parent;

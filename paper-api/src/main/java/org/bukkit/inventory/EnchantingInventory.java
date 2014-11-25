@@ -18,4 +18,18 @@ public interface EnchantingInventory extends Inventory {
      * @return The current item.
      */
     ItemStack getItem();
+
+    /**
+     * Set the secondary item being used for the enchant.
+     *
+     * @param item The new item
+     */
+    void setSecondary(ItemStack item);
+
+    /**
+     * Get the secondary item being used for the enchant.
+     *
+     * @return The second item
+     */
+    ItemStack getSecondary();
 }

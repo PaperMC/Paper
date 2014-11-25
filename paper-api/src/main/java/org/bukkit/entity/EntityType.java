@@ -81,6 +81,7 @@ public enum EntityType {
      */
     FALLING_BLOCK("FallingSand", FallingBlock.class, 21, false),
     FIREWORK("FireworksRocketEntity", Firework.class, 22, false),
+    ARMOR_STAND("ArmorStand", ArmorStand.class, 30, false),
     /**
      * @see CommandMinecart
      */
@@ -130,6 +131,8 @@ public enum EntityType {
     WITHER("WitherBoss", Wither.class, 64),
     BAT("Bat", Bat.class, 65),
     WITCH("Witch", Witch.class, 66),
+    ENDERMITE("Endermite", Endermite.class, 67),
+    GUARDIAN("Guardian", Guardian.class, 68),
     PIG("Pig", Pig.class, 90),
     SHEEP("Sheep", Sheep.class, 91),
     COW("Cow", Cow.class, 92),
@@ -141,6 +144,7 @@ public enum EntityType {
     OCELOT("Ozelot", Ocelot.class, 98),
     IRON_GOLEM("VillagerGolem", IronGolem.class, 99),
     HORSE("EntityHorse", Horse.class, 100),
+    RABBIT("Rabbit", Rabbit.class, 101),
     VILLAGER("Villager", Villager.class, 120),
     ENDER_CRYSTAL("EnderCrystal", EnderCrystal.class, 200),
     // These don't have an entity ID in nms.EntityTypes.

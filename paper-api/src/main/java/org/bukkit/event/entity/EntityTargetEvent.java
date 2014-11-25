@@ -136,6 +136,15 @@ public class EntityTargetEvent extends EntityEvent implements Cancellable {
         /**
          * For custom calls to the event.
          */
-        CUSTOM
+        CUSTOM,
+        /**
+         * When the entity doesn't have a target, so it attacks the nearest
+         * entity
+         */
+        CLOSEST_ENTITY,
+        /**
+         * A currently unknown reason for the entity changing target.
+         */
+        UNKNOWN;
     }
 }

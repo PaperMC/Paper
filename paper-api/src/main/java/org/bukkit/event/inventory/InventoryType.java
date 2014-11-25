@@ -30,10 +30,10 @@ public enum InventoryType {
      */
     CRAFTING(5,"Crafting"),
     /**
-     * An enchantment table inventory, with one CRAFTING slot and three
+     * An enchantment table inventory, with two CRAFTING slots and three
      * enchanting buttons.
      */
-    ENCHANTING(1,"Enchanting"),
+    ENCHANTING(2,"Enchanting"),
     /**
      * A brewing stand inventory, with one FUEL slot and three CRAFTING slots.
      */
