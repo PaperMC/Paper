@@ -1,9 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.server.BlockJukeBox;
-import net.minecraft.server.Blocks;
-import net.minecraft.server.ItemStack;
-import net.minecraft.server.TileEntityRecordPlayer;
+import net.minecraft.server.*;
 import org.bukkit.Effect;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -41,9 +38,13 @@ public class CraftJukebox extends CraftBlockState implements Jukebox {
         }
         jukebox.update();
         if (record == Material.AIR) {
-            world.getHandle().setData(getX(), getY(), getZ(), 0, 3);
+            world.getHandle().setTypeAndData(new BlockPosition(getX(), getY(), getZ()),
+                Blocks.JUKEBOX.getBlockData()
+                    .set(BlockJukeBox.HAS_RECORD, false), 3);
         } else {
-            world.getHandle().setData(getX(), getY(), getZ(), 1, 3);
+            world.getHandle().setTypeAndData(new BlockPosition(getX(), getY(), getZ()),
+                Blocks.JUKEBOX.getBlockData()
+                    .set(BlockJukeBox.HAS_RECORD, true), 3);
         }
         world.playEffect(getLocation(), Effect.RECORD_PLAY, record.getId());
     }
@@ -54,7 +55,7 @@ public class CraftJukebox extends CraftBlockState implements Jukebox {
 
     public boolean eject() {
         boolean result = isPlaying();
-        ((BlockJukeBox) Blocks.JUKEBOX).dropRecord(world.getHandle(), getX(), getY(), getZ());
+        ((BlockJukeBox) Blocks.JUKEBOX).dropRecord(world.getHandle(), new BlockPosition(getX(), getY(), getZ()), null);
         return result;
     }
 }

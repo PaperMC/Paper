@@ -42,7 +42,7 @@ public class CraftInventory implements Inventory {
     }
 
     public String getName() {
-        return getInventory().getInventoryName();
+        return getInventory().getName();
     }
 
     public ItemStack getItem(int index) {
@@ -58,7 +58,6 @@ public class CraftInventory implements Inventory {
         for (int i = 0; i < size; i++) {
             items[i] = mcItems[i] == null ? null : CraftItemStack.asCraftMirror(mcItems[i]);
         }
-
         return items;
     }
 
@@ -421,7 +420,7 @@ public class CraftInventory implements Inventory {
     }
 
     public String getTitle() {
-        return inventory.getInventoryName();
+        return inventory.getName();
     }
 
     public InventoryType getType() {
@@ -437,7 +436,7 @@ public class CraftInventory implements Inventory {
         } else if (inventory instanceof TileEntityFurnace) {
             return InventoryType.FURNACE;
         } else if (inventory instanceof ContainerEnchantTableInventory) {
-            return InventoryType.ENCHANTING;
+           return InventoryType.ENCHANTING;
         } else if (inventory instanceof TileEntityBrewingStand) {
             return InventoryType.BREWING;
         } else if (inventory instanceof CraftInventoryCustom.MinecraftInventory) {
@@ -449,7 +448,7 @@ public class CraftInventory implements Inventory {
         } else if (inventory instanceof TileEntityBeacon) {
             return InventoryType.BEACON;
         } else if (inventory instanceof ContainerAnvilInventory) {
-            return InventoryType.ANVIL;
+           return InventoryType.ANVIL;
         } else if (inventory instanceof IHopper) {
             return InventoryType.HOPPER;
         } else {

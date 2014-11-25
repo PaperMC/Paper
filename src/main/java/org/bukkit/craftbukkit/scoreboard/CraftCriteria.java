@@ -17,9 +17,6 @@ final class CraftCriteria {
         for (Map.Entry<?, ?> entry : ((Map<?,?> ) IScoreboardCriteria.criteria).entrySet()) {
             String name = entry.getKey().toString();
             IScoreboardCriteria criteria = (IScoreboardCriteria) entry.getValue();
-            if (!criteria.getName().equals(name)) {
-                throw new AssertionError("Unexpected entry " + name + " to criteria " + criteria + "(" + criteria.getName() + ")");
-            }
 
             defaults.put(name, new CraftCriteria(criteria));
         }

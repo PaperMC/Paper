@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
+import net.minecraft.server.ChatComponentText;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
@@ -76,7 +77,7 @@ public class CraftContainer extends Container {
         cachedTitle = view.getTitle();
         if (view.getPlayer() instanceof CraftPlayer) {
             CraftPlayer player = (CraftPlayer) view.getPlayer();
-            int type = getNotchInventoryType(cachedType);
+            String type = getNotchInventoryType(cachedType);
             IInventory top = ((CraftInventory)view.getTopInventory()).getInventory();
             IInventory bottom = ((CraftInventory)view.getBottomInventory()).getInventory();
             this.b.clear();
@@ -85,44 +86,33 @@ public class CraftContainer extends Container {
                 setupSlots(top, bottom);
             }
             int size = getSize();
-            player.getHandle().playerConnection.sendPacket(new PacketPlayOutOpenWindow(this.windowId, type, cachedTitle, size, true));
+            player.getHandle().playerConnection.sendPacket(new PacketPlayOutOpenWindow(this.windowId, type, new ChatComponentText(cachedTitle), size));
             player.updateInventory();
         }
         return true;
     }
 
-    public static int getNotchInventoryType(InventoryType type) {
-        int typeID;
+    public static String getNotchInventoryType(InventoryType type) {
         switch(type) {
         case WORKBENCH:
-            typeID = 1;
-            break;
+            return "minecraft:crafting_table";
         case FURNACE:
-            typeID = 2;
-            break;
+            return "minecraft:furnace";
         case DISPENSER:
-            typeID = 3;
-            break;
+            return "minecraft:dispenser";
         case ENCHANTING:
-            typeID = 4;
-            break;
+            return "minecraft:enchanting_table";
         case BREWING:
-            typeID = 5;
-            break;
+            return "minecraft:brewing_stand";
         case BEACON:
-            typeID = 7;
-            break;
+            return "minecraft:beacon";
         case ANVIL:
-            typeID = 8;
-            break;
+            return "minecraft:anvil";
         case HOPPER:
-            typeID = 9;
-            break;
+            return "minecraft:hopper";
         default:
-            typeID = 0;
-            break;
+            return "minecraft:chest";
         }
-        return typeID;
     }
 
     private void setupSlots(IInventory top, IInventory bottom) {

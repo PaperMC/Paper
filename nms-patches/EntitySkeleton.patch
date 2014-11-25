@@ -1,0 +1,60 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/EntitySkeleton.java	2014-11-27 08:59:46.725421741 +1100
++++ src/main/java/net/minecraft/server/EntitySkeleton.java	2014-11-27 08:42:10.136850942 +1100
+@@ -2,6 +2,8 @@
+ 
+ import java.util.Calendar;
+ 
++import org.bukkit.event.entity.EntityCombustEvent; // CraftBukkit
++
+ public class EntitySkeleton extends EntityMonster implements IRangedEntity {
+ 
+     private PathfinderGoalArrowAttack b = new PathfinderGoalArrowAttack(this, 1.0D, 20, 60, 15.0F);
+@@ -90,7 +92,14 @@
+                 }
+ 
+                 if (flag) {
+-                    this.setOnFire(8);
++                    // CraftBukkit start
++                    EntityCombustEvent event = new EntityCombustEvent(this.getBukkitEntity(), 8);
++                    this.world.getServer().getPluginManager().callEvent(event);
++
++                    if (!event.isCancelled()) {
++                        this.setOnFire(event.getDuration());
++                    }
++                    // CraftBukkit end
+                 }
+             }
+         }
+@@ -225,11 +234,30 @@
+         }
+ 
+         if (EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_FIRE.id, this.bz()) > 0 || this.getSkeletonType() == 1) {
+-            entityarrow.setOnFire(100);
++            // CraftBukkit start - call EntityCombustEvent
++            EntityCombustEvent event = new EntityCombustEvent(entityarrow.getBukkitEntity(), 100);
++            this.world.getServer().getPluginManager().callEvent(event);
++
++            if (!event.isCancelled()) {
++                entityarrow.setOnFire(event.getDuration());
++            }
++            // CraftBukkit end
++        }
++
++        // CraftBukkit start
++        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.bz(), entityarrow, 0.8F);
++        if (event.isCancelled()) {
++            event.getProjectile().remove();
++            return;
++        }
++
++        if (event.getProjectile() == entityarrow.getBukkitEntity()) {
++            world.addEntity(entityarrow);
+         }
++        // CraftBukkit end
+ 
+         this.makeSound("random.bow", 1.0F, 1.0F / (this.bb().nextFloat() * 0.4F + 0.8F));
+-        this.world.addEntity(entityarrow);
++        // this.world.addEntity(entityarrow); // CraftBukkit - moved up
+     }
+ 
+     public int getSkeletonType() {

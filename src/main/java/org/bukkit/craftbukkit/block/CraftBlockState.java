@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
+import net.minecraft.server.BlockPosition;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.Chunk;
@@ -147,7 +148,7 @@ public class CraftBlockState implements BlockState {
         }
 
         block.setData(getRawData(), applyPhysics);
-        world.getHandle().notify(x, y, z);
+        world.getHandle().notify(new BlockPosition(x, y, z));
 
         return true;
     }

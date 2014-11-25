@@ -1,0 +1,440 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/EntityLiving.java	2014-11-27 08:59:46.705421829 +1100
++++ src/main/java/net/minecraft/server/EntityLiving.java	2014-11-27 08:42:10.160850895 +1100
+@@ -8,6 +8,15 @@
+ import java.util.Random;
+ import java.util.UUID;
+ 
++// CraftBukkit start
++import java.util.ArrayList;
++import com.google.common.base.Function;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityDamageEvent;
++import org.bukkit.event.entity.EntityDamageEvent.DamageModifier;
++import org.bukkit.event.entity.EntityRegainHealthEvent;
++// CraftBukkit end
++
+ public abstract class EntityLiving extends Entity {
+ 
+     private static final UUID a = UUID.fromString("662A6B8D-DA3E-4C1C-8813-96EA6097278D");
+@@ -67,6 +76,11 @@
+     private float bk;
+     private int bl;
+     private float bm;
++    // CraftBukkit start
++    public int expToDrop;
++    public int maxAirTicks = 300;
++    ArrayList<org.bukkit.inventory.ItemStack> drops = null;
++    // CraftBukkit end
+ 
+     public void G() {
+         this.damageEntity(DamageSource.OUT_OF_WORLD, Float.MAX_VALUE);
+@@ -75,7 +89,8 @@
+     public EntityLiving(World world) {
+         super(world);
+         this.aW();
+-        this.setHealth(this.getMaxHealth());
++        // CraftBukkit - setHealth(getMaxHealth()) inlined and simplified to skip the instanceof check for EntityPlayer, as getBukkitEntity() is not initialized in constructor
++        this.datawatcher.watch(6, (float) this.getAttributeInstance(GenericAttributes.maxHealth).getValue());
+         this.k = true;
+         this.aF = (float) ((Math.random() + 1.0D) * 0.009999999776482582D);
+         this.setPosition(this.locX, this.locY, this.locZ);
+@@ -116,8 +131,14 @@
+                 }
+ 
+                 int i = (int) (150.0D * d1);
+-
+-                ((WorldServer) this.world).a(EnumParticle.BLOCK_DUST, this.locX, this.locY, this.locZ, i, 0.0D, 0.0D, 0.0D, 0.15000000596046448D, new int[] { Block.getCombinedId(iblockdata)});
++                
++                // CraftBukkit start - visiblity api
++                if (this instanceof EntityPlayer) {
++                    ((WorldServer) this.world).sendParticles((EntityPlayer) this, EnumParticle.BLOCK_DUST, false, this.locX, this.locY, this.locZ, i, 0.0D, 0.0D, 0.0D, 0.15000000596046448D, new int[] { Block.getCombinedId(iblockdata)});
++                } else {
++                    ((WorldServer) this.world).a(EnumParticle.BLOCK_DUST, this.locX, this.locY, this.locZ, i, 0.0D, 0.0D, 0.0D, 0.15000000596046448D, new int[] { Block.getCombinedId(iblockdata)}); 
++                }
++                // CraftBukkit end
+             }
+         }
+ 
+@@ -174,7 +195,11 @@
+                 this.mount((Entity) null);
+             }
+         } else {
+-            this.setAirTicks(300);
++            // CraftBukkit start - Only set if needed to work around a DataWatcher inefficiency
++            if (this.getAirTicks() != 300) {
++                this.setAirTicks(maxAirTicks);
++            }
++            // CraftBukkit end
+         }
+ 
+         if (this.isAlive() && this.U()) {
+@@ -220,6 +245,18 @@
+         this.lastPitch = this.pitch;
+         this.world.methodProfiler.b();
+     }
++    
++    // CraftBukkit start
++    public int getExpReward() {
++        int exp = this.getExpValue(this.killer);
++
++        if (!this.world.isStatic && (this.lastDamageByPlayerTime > 0 || this.alwaysGivesExp()) && this.aZ() && this.world.getGameRules().getBoolean("doMobLoot")) {
++            return exp;
++        } else {
++            return 0;
++        }
++    }
++    // CraftBukkit end    
+ 
+     public boolean isBaby() {
+         return false;
+@@ -227,19 +264,18 @@
+ 
+     protected void aY() {
+         ++this.deathTicks;
+-        if (this.deathTicks == 20) {
++        if (this.deathTicks >= 20 && !this.dead) { // CraftBukkit - (this.deathTicks == 20) -> (this.deathTicks >= 20 && !this.dead)
+             int i;
+ 
+-            if (!this.world.isStatic && (this.lastDamageByPlayerTime > 0 || this.alwaysGivesExp()) && this.aZ() && this.world.getGameRules().getBoolean("doMobLoot")) {
+-                i = this.getExpValue(this.killer);
+-
+-                while (i > 0) {
+-                    int j = EntityExperienceOrb.getOrbValue(i);
+-
+-                    i -= j;
+-                    this.world.addEntity(new EntityExperienceOrb(this.world, this.locX, this.locY, this.locZ, j));
+-                }
++            // CraftBukkit start - Update getExpReward() above if the removed if() changes!
++            i = this.expToDrop;
++            while (i > 0) {
++                int j = EntityExperienceOrb.getOrbValue(i);
++                i -= j;
++                this.world.addEntity(new EntityExperienceOrb(this.world, this.locX, this.locY, this.locZ, j));
+             }
++            this.expToDrop = 0;
++            // CraftBukkit end
+ 
+             this.die();
+ 
+@@ -375,6 +411,17 @@
+                 }
+             }
+         }
++        
++        // CraftBukkit start
++        if (nbttagcompound.hasKey("Bukkit.MaxHealth")) {
++            NBTBase nbtbase = nbttagcompound.get("Bukkit.MaxHealth");
++            if (nbtbase.getTypeId() == 5) {
++                this.getAttributeInstance(GenericAttributes.maxHealth).setValue((double) ((NBTTagFloat) nbtbase).c());
++            } else if (nbtbase.getTypeId() == 3) {
++                this.getAttributeInstance(GenericAttributes.maxHealth).setValue((double) ((NBTTagInt) nbtbase).d());
++            }
++        }
++        // CraftBukkit end
+ 
+         if (nbttagcompound.hasKeyOfType("HealF", 99)) {
+             this.setHealth(nbttagcompound.getFloat("HealF"));
+@@ -486,7 +533,8 @@
+     }
+ 
+     public boolean hasEffect(int i) {
+-        return this.effects.containsKey(Integer.valueOf(i));
++        // CraftBukkit - Add size check for efficiency
++        return this.effects.size() != 0 && this.effects.containsKey(Integer.valueOf(i));
+     }
+ 
+     public boolean hasEffect(MobEffectList mobeffectlist) {
+@@ -560,20 +608,52 @@
+ 
+     }
+ 
++    // CraftBukkit start - Delegate so we can handle providing a reason for health being regained
+     public void heal(float f) {
++        heal(f, EntityRegainHealthEvent.RegainReason.CUSTOM);
++    }
++        
++    public void heal(float f, EntityRegainHealthEvent.RegainReason regainReason) {
+         float f1 = this.getHealth();
+ 
+         if (f1 > 0.0F) {
+-            this.setHealth(f1 + f);
++            EntityRegainHealthEvent event = new EntityRegainHealthEvent(this.getBukkitEntity(), f, regainReason);
++            this.world.getServer().getPluginManager().callEvent(event);
++
++            if (!event.isCancelled()) {
++                this.setHealth((float) (this.getHealth() + event.getAmount()));
++            }
++            // CraftBukkit end
+         }
+ 
+     }
+ 
+     public final float getHealth() {
++        // CraftBukkit start - Use unscaled health
++        if (this instanceof EntityPlayer) {
++            return (float) ((EntityPlayer) this).getBukkitEntity().getHealth();
++        }
++        // CraftBukkit end
+         return this.datawatcher.getFloat(6);
+     }
+ 
+     public void setHealth(float f) {
++        // CraftBukkit start - Handle scaled health
++        if (this instanceof EntityPlayer) {
++            org.bukkit.craftbukkit.entity.CraftPlayer player = ((EntityPlayer) this).getBukkitEntity();
++            // Squeeze
++            if (f < 0.0F) {
++                player.setRealHealth(0.0D);
++            } else if (f > player.getMaxHealth()) {
++                player.setRealHealth(player.getMaxHealth());
++            } else {
++                player.setRealHealth(f);
++            }
++
++            this.datawatcher.watch(6, Float.valueOf(player.getScaledHealth()));
++            return;
++        }
++        // CraftBukkit end
+         this.datawatcher.watch(6, Float.valueOf(MathHelper.a(f, 0.0F, this.getMaxHealth())));
+     }
+ 
+@@ -589,7 +669,8 @@
+             } else if (damagesource.o() && this.hasEffect(MobEffectList.FIRE_RESISTANCE)) {
+                 return false;
+             } else {
+-                if ((damagesource == DamageSource.ANVIL || damagesource == DamageSource.FALLING_BLOCK) && this.getEquipment(4) != null) {
++                // CraftBukkit - Moved into d(DamageSource, float)
++                if (false && (damagesource == DamageSource.ANVIL || damagesource == DamageSource.FALLING_BLOCK) && this.getEquipment(4) != null) {
+                     this.getEquipment(4).damage((int) (f * 4.0F + this.random.nextFloat() * f * 2.0F), this);
+                     f *= 0.75F;
+                 }
+@@ -602,13 +683,22 @@
+                         return false;
+                     }
+ 
+-                    this.d(damagesource, f - this.lastDamage);
++                    // CraftBukkit start
++                    if (!this.d(damagesource, f - this.lastDamage)) {
++                        return false;
++                    }
++                    // CraftBukkit end
+                     this.lastDamage = f;
+                     flag = false;
+                 } else {
++                    // CraftBukkit start
++                    float previousHealth = this.getHealth();
++                    if (!this.d(damagesource, f)) {
++                        return false;
++                    }
+                     this.lastDamage = f;
+                     this.noDamageTicks = this.maxNoDamageTicks;
+-                    this.d(damagesource, f);
++                    // CraftBukkit end
+                     this.hurtTicks = this.at = 10;
+                 }
+ 
+@@ -717,11 +807,19 @@
+             }
+ 
+             if (this.aZ() && this.world.getGameRules().getBoolean("doMobLoot")) {
++                this.drops = new ArrayList<org.bukkit.inventory.ItemStack>(); // CraftBukkit - Setup drop capture
++                 
+                 this.dropDeathLoot(this.lastDamageByPlayerTime > 0, i);
+                 this.dropEquipment(this.lastDamageByPlayerTime > 0, i);
+                 if (this.lastDamageByPlayerTime > 0 && this.random.nextFloat() < 0.025F + (float) i * 0.01F) {
+                     this.getRareDrop();
+-                }
++                } 
++                // CraftBukkit start - Call death event
++                CraftEventFactory.callEntityDeathEvent(this, this.drops);
++                this.drops = null;
++            } else {
++                CraftEventFactory.callEntityDeathEvent(this);
++                // CraftBukkit end
+             }
+         }
+ 
+@@ -781,8 +879,13 @@
+         int i = MathHelper.f((f - 3.0F - f2) * f1);
+ 
+         if (i > 0) {
++            // CraftBukkit start
++            if (!this.damageEntity(DamageSource.FALL, (float) i)) {
++                return;
++            }
++            // CraftBukkit end
+             this.makeSound(this.n(i), 1.0F, 1.0F);
+-            this.damageEntity(DamageSource.FALL, (float) i);
++            // this.damageEntity(DamageSource.FALL, (float) i); // CraftBukkit - moved up
+             int j = MathHelper.floor(this.locX);
+             int k = MathHelper.floor(this.locY - 0.20000000298023224D);
+             int l = MathHelper.floor(this.locZ);
+@@ -826,7 +929,7 @@
+             int i = 25 - this.bq();
+             float f1 = f * (float) i;
+ 
+-            this.damageArmor(f);
++            // this.damageArmor(f); // CraftBukkit - Moved into d(DamageSource, float)
+             f = f1 / 25.0F;
+         }
+ 
+@@ -840,8 +943,9 @@
+             int i;
+             int j;
+             float f1;
+-
+-            if (this.hasEffect(MobEffectList.RESISTANCE) && damagesource != DamageSource.OUT_OF_WORLD) {
++               
++            // CraftBukkit - Moved to d(DamageSource, float)
++            if (false && this.hasEffect(MobEffectList.RESISTANCE) && damagesource != DamageSource.OUT_OF_WORLD) {
+                 i = (this.getEffect(MobEffectList.RESISTANCE).getAmplifier() + 1) * 5;
+                 j = 25 - i;
+                 f1 = f * (float) j;
+@@ -867,22 +971,117 @@
+         }
+     }
+ 
+-    protected void d(DamageSource damagesource, float f) {
++    // CraftBukkit start
++    protected boolean d(final DamageSource damagesource, float f) { // void -> boolean, add final
+         if (!this.isInvulnerable(damagesource)) {
+-            f = this.applyArmorModifier(damagesource, f);
+-            f = this.applyMagicModifier(damagesource, f);
+-            float f1 = f;
++            final boolean human = this instanceof EntityHuman;
++            float originalDamage = f;
++            Function<Double, Double> hardHat = new Function<Double, Double>() {
++                @Override
++                public Double apply(Double f) {
++                    if ((damagesource == DamageSource.ANVIL || damagesource == DamageSource.FALLING_BLOCK) && EntityLiving.this.getEquipment(4) != null) {
++                        return -(f - (f * 0.75F));
++                    }
++                    return -0.0;
++                }
++            };
++            float hardHatModifier = hardHat.apply((double) f).floatValue();
++            f += hardHatModifier;
++
++            Function<Double, Double> blocking = new Function<Double, Double>() {
++                @Override
++                public Double apply(Double f) {
++                    if (human) {
++                        if (!damagesource.ignoresArmor() && ((EntityHuman) EntityLiving.this).isBlocking() && f > 0.0F) {
++                            return -(f - ((1.0F + f) * 0.5F));
++                        }
++                    }
++                    return -0.0;
++                }
++            };
++            float blockingModifier = blocking.apply((double) f).floatValue();
++            f += blockingModifier;
++
++            Function<Double, Double> armor = new Function<Double, Double>() {
++                @Override
++                public Double apply(Double f) {
++                    return -(f - EntityLiving.this.applyArmorModifier(damagesource, f.floatValue()));
++                }
++            };
++            float armorModifier = armor.apply((double) f).floatValue();
++            f += armorModifier;
++
++            Function<Double, Double> resistance = new Function<Double, Double>() {
++                @Override
++                public Double apply(Double f) {
++                    if (!damagesource.isStarvation() && EntityLiving.this.hasEffect(MobEffectList.RESISTANCE) && damagesource != DamageSource.OUT_OF_WORLD) {
++                        int i = (EntityLiving.this.getEffect(MobEffectList.RESISTANCE).getAmplifier() + 1) * 5;
++                        int j = 25 - i;
++                        float f1 = f.floatValue() * (float) j;
++                        return -(f - (f1 / 25.0F));
++                    }
++                    return -0.0;
++                }
++            };
++            float resistanceModifier = resistance.apply((double) f).floatValue();
++            f += resistanceModifier;
++
++            Function<Double, Double> magic = new Function<Double, Double>() {
++                @Override
++                public Double apply(Double f) {
++                    return -(f - EntityLiving.this.applyMagicModifier(damagesource, f.floatValue()));
++                }
++            };
++            float magicModifier = magic.apply((double) f).floatValue();
++            f += magicModifier;
++
++            Function<Double, Double> absorption = new Function<Double, Double>() {
++                @Override
++                public Double apply(Double f) {
++                    return -(Math.max(f - Math.max(f - EntityLiving.this.getAbsorptionHearts(), 0.0F), 0.0F));
++                }
++            };
++            float absorptionModifier = absorption.apply((double) f).floatValue();
++
++            EntityDamageEvent event = CraftEventFactory.handleLivingEntityDamageEvent(this, damagesource, originalDamage, hardHatModifier, blockingModifier, armorModifier, resistanceModifier, magicModifier, absorptionModifier, hardHat, blocking, armor, resistance, magic, absorption);
++            if (event.isCancelled()) {
++                return false;
++            }
++
++            f = (float) event.getFinalDamage();
+ 
+-            f = Math.max(f - this.getAbsorptionHearts(), 0.0F);
+-            this.setAbsorptionHearts(this.getAbsorptionHearts() - (f1 - f));
++            // Apply damage to helmet
++            if ((damagesource == DamageSource.ANVIL || damagesource == DamageSource.FALLING_BLOCK) && this.getEquipment(4) != null) {
++                this.getEquipment(4).damage((int) (event.getDamage() * 4.0F + this.random.nextFloat() * event.getDamage() * 2.0F), this);
++            }
++            
++            // Apply damage to armor
++            if (!damagesource.ignoresArmor()) {
++                float armorDamage = (float) (event.getDamage() + event.getDamage(DamageModifier.BLOCKING) + event.getDamage(DamageModifier.HARD_HAT));
++                this.damageArmor(armorDamage);
++            }
++
++            absorptionModifier = (float) -event.getDamage(DamageModifier.ABSORPTION);
++            this.setAbsorptionHearts(Math.max(this.getAbsorptionHearts() - absorptionModifier, 0.0F));
+             if (f != 0.0F) {
++                if (human) {
++                    ((EntityHuman) this).applyExhaustion(damagesource.getExhaustionCost());
++                }
++                // CraftBukkit end
+                 float f2 = this.getHealth();
+ 
+                 this.setHealth(f2 - f);
+                 this.br().a(damagesource, f2, f);
++                // CraftBukkit start
++                if (human) {
++                    return true;
++                }
++                // CraftBukkit end
+                 this.setAbsorptionHearts(this.getAbsorptionHearts() - f);
+             }
++            return true; // CraftBukkit
+         }
++        return false; // CraftBukkit
+     }
+ 
+     public CombatTracker br() {
+@@ -1236,7 +1435,8 @@
+         if (f > 0.0025000002F) {
+             f3 = 1.0F;
+             f2 = (float) Math.sqrt((double) f) * 3.0F;
+-            f1 = (float) Math.atan2(d1, d0) * 180.0F / 3.1415927F - 90.0F;
++            // CraftBukkit - Math -> TrigMath
++            f1 = (float) org.bukkit.craftbukkit.TrigMath.atan2(d1, d0) * 180.0F / 3.1415927F - 90.0F;
+         }
+ 
+         if (this.ax > 0.0F) {
+@@ -1400,6 +1600,13 @@
+         if (list != null && !list.isEmpty()) {
+             for (int i = 0; i < list.size(); ++i) {
+                 Entity entity = (Entity) list.get(i);
++                
++                // TODO better check now?
++                // CraftBukkit start - Only handle mob (non-player) collisions every other tick
++                if (entity instanceof EntityLiving && !(this instanceof EntityPlayer) && this.ticksLived % 2 == 0) {
++                    continue;
++                }
++                // CraftBukkit end
+ 
+                 if (entity.ae()) {
+                     this.s(entity);

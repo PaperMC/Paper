@@ -1,0 +1,43 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/BlockDoor.java	2014-11-27 08:59:46.521422639 +1100
++++ src/main/java/net/minecraft/server/BlockDoor.java	2014-11-27 08:42:10.156850903 +1100
+@@ -3,6 +3,8 @@
+ import com.google.common.base.Predicate;
+ import java.util.Random;
+ 
++import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
++
+ public class BlockDoor extends Block {
+ 
+     public static final BlockStateDirection FACING = BlockStateDirection.of("facing", (Predicate) EnumDirectionLimit.HORIZONTAL);
+@@ -151,9 +153,21 @@
+                     this.b(world, blockposition, iblockdata, 0);
+                 }
+             } else {
+-                boolean flag1 = world.isBlockIndirectlyPowered(blockposition) || world.isBlockIndirectlyPowered(blockposition2);
++                // CraftBukkit start
++                org.bukkit.World bworld = world.getWorld();
++                org.bukkit.block.Block bukkitBlock = bworld.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++                org.bukkit.block.Block blockTop = bworld.getBlockAt(blockposition2.getX(), blockposition2.getY(), blockposition2.getZ());
++
++                int power = bukkitBlock.getBlockPower();
++                int powerTop = blockTop.getBlockPower();
++                if (powerTop > power) power = powerTop;
++                int oldPower = (Boolean)iblockdata2.get(POWERED) ? 15 : 0;
++
++                if (oldPower == 0 ^ power == 0) {
++                    BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bukkitBlock, oldPower, power);
++                    world.getServer().getPluginManager().callEvent(eventRedstone);
+ 
+-                if ((flag1 || block.isPowerSource()) && block != this && flag1 != ((Boolean) iblockdata2.get(BlockDoor.POWERED)).booleanValue()) {
++                    boolean flag1 = eventRedstone.getNewCurrent() > 0;
+                     world.setTypeAndData(blockposition2, iblockdata2.set(BlockDoor.POWERED, Boolean.valueOf(flag1)), 2);
+                     if (flag1 != ((Boolean) iblockdata.get(BlockDoor.OPEN)).booleanValue()) {
+                         world.setTypeAndData(blockposition, iblockdata.set(BlockDoor.OPEN, Boolean.valueOf(flag1)), 2);
+@@ -161,6 +175,7 @@
+                         world.a((EntityHuman) null, flag1 ? 1003 : 1006, blockposition, 0);
+                     }
+                 }
++                // CraftBukkit end
+             }
+         }
+ 

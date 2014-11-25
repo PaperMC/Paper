@@ -3,16 +3,7 @@ package org.bukkit.craftbukkit.generator;
 import java.util.List;
 import java.util.Random;
 
-import net.minecraft.server.BiomeBase;
-import net.minecraft.server.Chunk;
-import net.minecraft.server.ChunkPosition;
-import net.minecraft.server.ChunkSection;
-import net.minecraft.server.EnumCreatureType;
-import net.minecraft.server.IChunkProvider;
-import net.minecraft.server.IProgressUpdate;
-import net.minecraft.server.World;
-import net.minecraft.server.WorldGenStronghold;
-import net.minecraft.server.WorldServer;
+import net.minecraft.server.*;
 
 import org.bukkit.block.Biome;
 import org.bukkit.generator.BlockPopulator;
@@ -71,27 +62,14 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                 if (xbtypes[sec] == null) {
                     continue;
                 }
-                byte[] secBlkID = new byte[4096]; // Allocate blk ID bytes
-                byte[] secExtBlkID = null; // Delay getting extended ID nibbles
+                char[] secBlkID = new char[4096]; // Allocate blk ID bytes
                 short[] bdata = xbtypes[sec];
                 // Loop through data, 2 blocks at a time
-                for (int i = 0, j = 0; i < bdata.length; i += 2, j++) {
-                    short b1 = bdata[i];
-                    short b2 = bdata[i + 1];
-                    byte extb = (byte) ((b1 >> 8) | ((b2 >> 4) & 0xF0));
-
-                    secBlkID[i] = (byte) b1;
-                    secBlkID[(i + 1)] = (byte) b2;
-
-                    if (extb != 0) { // If extended block ID data
-                        if (secExtBlkID == null) { // Allocate if needed
-                            secExtBlkID = new byte[2048];
-                        }
-                        secExtBlkID[j] = extb;
-                    }
+                for (int i = 0; i < bdata.length; i++) {
+                    secBlkID[i] = (char) ((int)bdata[i] << 4);
                 }
                 // Build chunk section
-                csect[sec] = new ChunkSection(sec << 4, true, secBlkID, secExtBlkID);
+                csect[sec] = new ChunkSection(sec << 4, true, secBlkID);
             }
         }
         else { // Else check for byte-per-block section data
@@ -107,7 +85,12 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                     if (btypes[sec] == null) {
                         continue;
                     }
-                    csect[sec] = new ChunkSection(sec << 4, true, btypes[sec], null);
+                    
+                    char[] secBlkID = new char[4096]; // Allocate block ID bytes
+                    for (int i = 0; i < secBlkID.length; i++) {
+                        secBlkID[i] = (char)(((int) btypes[sec][i]) << 4);
+                    }
+                    csect[sec] = new ChunkSection(sec << 4, true, secBlkID);
                 }
             }
             else { // Else, fall back to pre 1.2 method
@@ -124,7 +107,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                 // Loop through sections
                 for (int sec = 0; sec < scnt; sec++) {
                     ChunkSection cs = null; // Add sections when needed
-                    byte[] csbytes = null;
+                    char[] csbytes = null;
 
                     for (int cy = 0; cy < 16; cy++) {
                         int cyoff = cy | (sec << 4);
@@ -140,7 +123,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                                         cs = csect[sec] = new ChunkSection(sec << 4, true);
                                         csbytes = cs.getIdArray();
                                     }
-                                    csbytes[(cy << 8) | (cz << 4) | cx] = blk;
+                                    csbytes[(cy << 8) | (cz << 4) | cx] = (char)((int)blk << 4);
                                 }
                             }
                         }
@@ -153,7 +136,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
             }
         }
         // Set biome grid
-        byte[] biomeIndex = chunk.m();
+        byte[] biomeIndex = chunk.getBiomeIndex();
         for (int i = 0; i < biomeIndex.length; i++) {
             biomeIndex[i] = (byte) (biomegrid.biome[i].id & 0xFF);
         }
@@ -163,8 +146,18 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
         return chunk;
     }
 
+    @Override
+    public Chunk getChunkAt(BlockPosition blockPosition) {
+        return getChunkAt(blockPosition.getX() >> 4, blockPosition.getZ() >> 4);
+    }
+
     public void getChunkAt(IChunkProvider icp, int i, int i1) {
         // Nothing!
+    }
+
+    @Override
+    public boolean a(IChunkProvider iChunkProvider, Chunk chunk, int i, int i1) {
+        return false;
     }
 
     public boolean saveChunks(boolean bln, IProgressUpdate ipu) {
@@ -206,20 +199,27 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
         return generator.getDefaultPopulators(world);
     }
 
-    public List<?> getMobsFor(EnumCreatureType type, int x, int y, int z) {
-        BiomeBase biomebase = world.getBiome(x, z);
+    @Override
+    public List<?> getMobsFor(EnumCreatureType type, BlockPosition position) {
+        BiomeBase biomebase = world.getBiome(position);
 
         return biomebase == null ? null : biomebase.getMobs(type);
     }
 
-    public ChunkPosition findNearestMapFeature(World world, String type, int x, int y, int z) {
-        return "Stronghold".equals(type) && this.strongholdGen != null ? this.strongholdGen.getNearestGeneratedFeature(world, x, y, z) : null;
+    @Override
+    public BlockPosition findNearestMapFeature(World world, String type, BlockPosition position) {
+        return "Stronghold".equals(type) && this.strongholdGen != null ? this.strongholdGen.getNearestGeneratedFeature(world, position) : null;
     }
 
     public void recreateStructures(int i, int j) {}
 
     public int getLoadedChunks() {
         return 0;
+    }
+
+    @Override
+    public void recreateStructures(Chunk chunk, int i, int i1) {
+
     }
 
     public String getName() {

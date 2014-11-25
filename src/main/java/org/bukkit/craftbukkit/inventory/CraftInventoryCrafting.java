@@ -55,7 +55,7 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
         for (int j = 0; j < mcItems.length; j++) {
             items[i + j] = CraftItemStack.asCraftMirror(mcItems[j]);
         }
-
+        
         return items;
     }
 

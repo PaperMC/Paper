@@ -54,7 +54,7 @@ public class CraftTameableAnimal extends CraftAnimals implements Tameable, Creat
     public void setOwner(AnimalTamer tamer) {
         if (tamer != null) {
             setTamed(true);
-            getHandle().setPathEntity(null);
+            getHandle().setGoalTarget(null, null, false);
             setOwnerUUID(tamer.getUniqueId());
         } else {
             setTamed(false);

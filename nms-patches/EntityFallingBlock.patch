@@ -1,0 +1,44 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/EntityFallingBlock.java	2014-11-27 08:59:46.673421970 +1100
++++ src/main/java/net/minecraft/server/EntityFallingBlock.java	2014-11-27 08:42:10.132850949 +1100
+@@ -4,6 +4,8 @@
+ import java.util.ArrayList;
+ import java.util.Iterator;
+ 
++import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
++
+ public class EntityFallingBlock extends Entity {
+ 
+     public IBlockData block;
+@@ -56,7 +58,7 @@
+ 
+             if (this.ticksLived++ == 0) {
+                 blockposition = new BlockPosition(this);
+-                if (this.world.getType(blockposition).getBlock() == block) {
++                if (this.world.getType(blockposition).getBlock() == block && !CraftEventFactory.callEntityChangeBlockEvent(this, blockposition.getX(), blockposition.getY(), blockposition.getZ(), Blocks.AIR, 0).isCancelled()) {
+                     this.world.setAir(blockposition);
+                 } else if (!this.world.isStatic) {
+                     this.die();
+@@ -77,7 +79,12 @@
+                     this.motY *= -0.5D;
+                     if (this.world.getType(blockposition).getBlock() != Blocks.PISTON_EXTENSION) {
+                         this.die();
+-                        if (!this.e && this.world.a(block, blockposition, true, EnumDirection.UP, (Entity) null, (ItemStack) null) && !BlockFalling.canFall(this.world, blockposition.down()) && this.world.setTypeAndData(blockposition, this.block, 3)) {
++                        if (!this.e && this.world.a(block, blockposition, true, EnumDirection.UP, (Entity) null, (ItemStack) null) && !BlockFalling.canFall(this.world, blockposition.down()) /* mimic the false conditions of setTypeIdAndData */ && blockposition.getX() >= -30000000 && blockposition.getZ() >= -30000000 && blockposition.getX() < 30000000 && blockposition.getZ() < 30000000 && blockposition.getY() >= 0 && blockposition.getY() < 256 && this.world.getType(blockposition) != this.block) {
++                            if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this.block.getBlock(), this.block.getBlock().toLegacyData(this.block)).isCancelled()) {
++                                return;
++                            }
++                            this.world.setTypeAndData(blockposition, this.block, 3);
++                            // CraftBukkit end
+                             if (block instanceof BlockFalling) {
+                                 ((BlockFalling) block).a_(this.world, blockposition);
+                             }
+@@ -135,7 +142,9 @@
+                 while (iterator.hasNext()) {
+                     Entity entity = (Entity) iterator.next();
+ 
++                    CraftEventFactory.entityDamage = this; // CraftBukkit
+                     entity.damageEntity(damagesource, (float) Math.min(MathHelper.d((float) i * this.fallHurtAmount), this.fallHurtMax));
++                    CraftEventFactory.entityDamage = null; // CraftBukkit
+                 }
+ 
+                 if (flag && (double) this.random.nextFloat() < 0.05000000074505806D + (double) i * 0.05D) {

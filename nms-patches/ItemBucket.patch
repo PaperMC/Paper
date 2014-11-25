@@ -1,0 +1,102 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/ItemBucket.java	2014-11-27 08:59:46.777421512 +1100
++++ src/main/java/net/minecraft/server/ItemBucket.java	2014-11-27 08:42:10.156850903 +1100
+@@ -1,5 +1,12 @@
+ package net.minecraft.server;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.player.PlayerBucketEmptyEvent;
++import org.bukkit.event.player.PlayerBucketFillEvent;
++// CraftBukkit end
++
+ public class ItemBucket extends Item {
+ 
+     private Block a;
+@@ -33,19 +40,41 @@
+                     Material material = iblockdata.getBlock().getMaterial();
+ 
+                     if (material == Material.WATER && ((Integer) iblockdata.get(BlockFluids.LEVEL)).intValue() == 0) {
++                        // CraftBukkit start
++                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, blockposition.getX(), blockposition.getY(), blockposition.getZ(), null, itemstack, Items.WATER_BUCKET);
++
++                        if (event.isCancelled()) {
++                            return itemstack;
++                        }
++                        // CraftBukkit end
+                         world.setAir(blockposition);
+                         entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this)]);
+-                        return this.a(itemstack, entityhuman, Items.WATER_BUCKET);
++                        return this.a(itemstack, entityhuman, Items.WATER_BUCKET, event.getItemStack()); // CraftBukkit - added Event stack
+                     }
+ 
+                     if (material == Material.LAVA && ((Integer) iblockdata.get(BlockFluids.LEVEL)).intValue() == 0) {
++                        // CraftBukkit start
++                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, blockposition.getX(), blockposition.getY(), blockposition.getZ(), null, itemstack, Items.LAVA_BUCKET);
++
++                        if (event.isCancelled()) {
++                            return itemstack;
++                        }
++                        // CraftBukkit end
+                         world.setAir(blockposition);
+                         entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this)]);
+-                        return this.a(itemstack, entityhuman, Items.LAVA_BUCKET);
++                        return this.a(itemstack, entityhuman, Items.LAVA_BUCKET, event.getItemStack()); // CraftBukkit - added Event stack
+                     }
+                 } else {
+                     if (this.a == Blocks.AIR) {
+-                        return new ItemStack(Items.BUCKET);
++                        // CraftBukkit start
++                        PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, blockposition.getX(), blockposition.getY(), blockposition.getZ(), movingobjectposition.direction, itemstack);
++
++                        if (event.isCancelled()) {
++                            return itemstack;
++                        }
++
++                        return CraftItemStack.asNMSCopy(event.getItemStack());
++                        // CraftBukkit end
+                     }
+ 
+                     BlockPosition blockposition1 = blockposition.shift(movingobjectposition.direction);
+@@ -53,10 +82,18 @@
+                     if (!entityhuman.a(blockposition1, movingobjectposition.direction, itemstack)) {
+                         return itemstack;
+                     }
++ 
++                    // CraftBukkit start
++                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, blockposition.getX(), blockposition.getY(), blockposition.getZ(), movingobjectposition.direction, itemstack);
++
++                    if (event.isCancelled()) {
++                        return itemstack;
++                    }
++                    // CraftBukkit end
+ 
+                     if (this.a(world, blockposition1) && !entityhuman.abilities.canInstantlyBuild) {
+                         entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this)]);
+-                        return new ItemStack(Items.BUCKET);
++                        return CraftItemStack.asNMSCopy(event.getItemStack()); // CraftBukkit
+                     }
+                 }
+             }
+@@ -64,15 +101,16 @@
+             return itemstack;
+         }
+     }
+-
+-    private ItemStack a(ItemStack itemstack, EntityHuman entityhuman, Item item) {
++    
++    // CraftBukkit - added ob.ItemStack result - TODO: Is this... the right way to handle this?
++    private ItemStack a(ItemStack itemstack, EntityHuman entityhuman, Item item, org.bukkit.inventory.ItemStack result) {
+         if (entityhuman.abilities.canInstantlyBuild) {
+             return itemstack;
+         } else if (--itemstack.count <= 0) {
+-            return new ItemStack(item);
++            return CraftItemStack.asNMSCopy(result); // CraftBukkit
+         } else {
+-            if (!entityhuman.inventory.pickup(new ItemStack(item))) {
+-                entityhuman.drop(new ItemStack(item, 1, 0), false);
++            if (!entityhuman.inventory.pickup(CraftItemStack.asNMSCopy(result))) {
++                entityhuman.drop(CraftItemStack.asNMSCopy(result), false);
+             }
+ 
+             return itemstack;

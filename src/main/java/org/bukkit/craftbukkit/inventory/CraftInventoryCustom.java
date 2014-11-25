@@ -2,7 +2,9 @@ package org.bukkit.craftbukkit.inventory;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.server.ChatComponentText;
 
+import net.minecraft.server.IChatBaseComponent;
 import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
@@ -106,10 +108,6 @@ public class CraftInventoryCustom extends CraftInventory {
             }
         }
 
-        public String getInventoryName() {
-            return title;
-        }
-
         public int getMaxStackSize() {
             return maxStack;
         }
@@ -143,21 +141,58 @@ public class CraftInventoryCustom extends CraftInventory {
         public InventoryType getType() {
             return type;
         }
-
-        public void closeContainer() {}
-
+        
         public InventoryHolder getOwner() {
             return owner;
         }
 
-        public void startOpen() {}
-
-        public boolean k_() {
-            return false;
-        }
-
         public boolean b(int i, ItemStack itemstack) {
             return true;
+        }
+
+        @Override
+        public void startOpen(EntityHuman entityHuman) {
+
+        }
+
+        @Override
+        public void closeContainer(EntityHuman entityHuman) {
+
+        }
+
+        @Override
+        public int getProperty(int i) {
+            return 0;
+        }
+
+        @Override
+        public void b(int i, int i1) {
+
+        }
+
+        @Override
+        public int g() {
+            return 0;
+        }
+
+        @Override
+        public void l() {
+
+        }
+
+        @Override
+        public String getName() {
+            return title;
+        }
+
+        @Override
+        public boolean hasCustomName() {
+            return title != null;
+        }
+
+        @Override
+        public IChatBaseComponent getScoreboardDisplayName() {
+            return new ChatComponentText(title);
         }
     }
 }

@@ -1,0 +1,102 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/PortalCreator.java	2014-11-27 08:59:46.865421124 +1100
++++ src/main/java/net/minecraft/server/PortalCreator.java	2014-11-27 08:42:10.132850949 +1100
+@@ -1,5 +1,7 @@
+ package net.minecraft.server;
+ 
++import org.bukkit.event.world.PortalCreateEvent; // CraftBukkit
++
+ public class PortalCreator {
+ 
+     private final World a;
+@@ -10,6 +12,7 @@
+     private BlockPosition f;
+     private int g;
+     private int h;
++    java.util.Collection<org.bukkit.block.Block> blocks = new java.util.HashSet<org.bukkit.block.Block>(); // CraftBukkit - add field
+ 
+     public PortalCreator(World world, BlockPosition blockposition, EnumAxis enumaxis) {
+         this.a = world;
+@@ -60,6 +63,10 @@
+     }
+ 
+     protected int a() {
++        // CraftBukkit start
++        this.blocks.clear();
++        org.bukkit.World bworld = this.a.getWorld();
++        // CraftBukkit end
+         int i;
+ 
+         label56:
+@@ -80,11 +87,21 @@
+                     block = this.a.getType(blockposition.shift(this.d)).getBlock();
+                     if (block != Blocks.OBSIDIAN) {
+                         break label56;
++                        // CraftBukkit start - add the block to our list
++                    } else {
++                        BlockPosition pos = blockposition.shift(this.d);
++                        blocks.add(bworld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()));
++                        // CraftBukkit end
+                     }
+                 } else if (i == this.h - 1) {
+                     block = this.a.getType(blockposition.shift(this.c)).getBlock();
+                     if (block != Blocks.OBSIDIAN) {
+                         break label56;
++                        // CraftBukkit start - add the block to our list
++                    } else {
++                        BlockPosition pos = blockposition.shift(this.c);
++                        blocks.add(bworld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()));
++                        // CraftBukkit end
+                     }
+                 }
+             }
+@@ -94,6 +111,11 @@
+             if (this.a.getType(this.f.shift(this.c, i).up(this.g)).getBlock() != Blocks.OBSIDIAN) {
+                 this.g = 0;
+                 break;
++                // CraftBukkit start - add the block to our list
++            } else {
++                BlockPosition pos = this.f.shift(this.c, i).up(this.g);
++                blocks.add(bworld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()));
++                // CraftBukkit end
+             }
+         }
+ 
+@@ -115,15 +137,36 @@
+         return this.f != null && this.h >= 2 && this.h <= 21 && this.g >= 3 && this.g <= 21;
+     }
+ 
+-    public void c() {
++    // CraftBukkit start - return boolean
++    public boolean c() {
++        org.bukkit.World bworld = this.a.getWorld();
++
++        // Copy below for loop
+         for (int i = 0; i < this.h; ++i) {
+             BlockPosition blockposition = this.f.shift(this.c, i);
+ 
+             for (int j = 0; j < this.g; ++j) {
+-                this.a.setTypeAndData(blockposition.up(j), Blocks.PORTAL.getBlockData().set(BlockPortal.AXIS, this.b), 2);
++                BlockPosition pos = blockposition.up(j);
++                blocks.add(bworld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()));
+             }
+         }
+ 
++        PortalCreateEvent event = new PortalCreateEvent(blocks, bworld, PortalCreateEvent.CreateReason.FIRE);
++        this.a.getServer().getPluginManager().callEvent(event);
++
++        if (event.isCancelled()) {
++            return false;
++        }
++        // CraftBukkit end
++        for (int i = 0; i < this.h; ++i) {
++            BlockPosition blockposition = this.f.shift(this.c, i);
++
++            for (int j = 0; j < this.g; ++j) {
++                this.a.setTypeAndData(blockposition.up(j), Blocks.PORTAL.getBlockData().set(BlockPortal.AXIS, this.b), 2);
++            }
++        }
++        
++        return true; // Craft Bukkit
+     }
+ 
+     public static int a(PortalCreator portalcreator) {

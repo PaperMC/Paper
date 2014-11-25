@@ -1,0 +1,69 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/HandshakeListener.java	2014-11-27 08:59:46.757421600 +1100
++++ src/main/java/net/minecraft/server/HandshakeListener.java	2014-11-27 08:42:10.100851012 +1100
+@@ -1,6 +1,16 @@
+ package net.minecraft.server;
+ 
++// CraftBukkit start
++import java.net.InetAddress;
++import java.util.HashMap;
++// CraftBukkit end
++
+ public class HandshakeListener implements PacketHandshakingInListener {
++     
++    // CraftBukkit start - add fields
++    private static final HashMap<InetAddress, Long> throttleTracker = new HashMap<InetAddress, Long>();
++    private static int throttleCounter = 0;
++    // CraftBukkit end
+ 
+     private final MinecraftServer a;
+     private final NetworkManager b;
+@@ -15,6 +25,41 @@
+         case 1:
+             this.b.a(EnumProtocol.LOGIN);
+             ChatComponentText chatcomponenttext;
++ 
++            // CraftBukkit start - Connection throttle
++            try {
++                long currentTime = System.currentTimeMillis();
++                long connectionThrottle = MinecraftServer.getServer().server.getConnectionThrottle();
++                InetAddress address = ((java.net.InetSocketAddress) this.b.getSocketAddress()).getAddress();
++
++                synchronized (throttleTracker) {
++                    if (throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - throttleTracker.get(address) < connectionThrottle) {
++                        throttleTracker.put(address, currentTime);
++                        chatcomponenttext = new ChatComponentText("Connection throttled! Please wait before reconnecting.");
++                        this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext));
++                        this.b.close(chatcomponenttext);
++                        return;
++                    }
++
++                    throttleTracker.put(address, currentTime);
++                    throttleCounter++;
++                    if (throttleCounter > 200) {
++                        throttleCounter = 0;
++
++                        // Cleanup stale entries
++                        java.util.Iterator iter = throttleTracker.entrySet().iterator();
++                        while (iter.hasNext()) {
++                            java.util.Map.Entry<InetAddress, Long> entry = (java.util.Map.Entry) iter.next();
++                            if (entry.getValue() > connectionThrottle) {
++                                iter.remove();
++                            }
++                        }
++                    }
++                }
++            } catch (Throwable t) {
++                org.apache.logging.log4j.LogManager.getLogger().debug("Failed to check connection throttle", t);
++            }
++            // CraftBukkit end
+ 
+             if (packethandshakinginsetprotocol.b() > 47) {
+                 chatcomponenttext = new ChatComponentText("Outdated server! I\'m still on 1.8");
+@@ -26,6 +71,7 @@
+                 this.b.close(chatcomponenttext);
+             } else {
+                 this.b.a((PacketListener) (new LoginListener(this.a, this.b)));
++                ((LoginListener) this.b.getPacketListener()).hostname = packethandshakinginsetprotocol.b + ":" + packethandshakinginsetprotocol.c; // CraftBukkit - set hostname
+             }
+             break;
+ 

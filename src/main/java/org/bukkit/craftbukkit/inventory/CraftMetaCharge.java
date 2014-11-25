@@ -31,7 +31,7 @@ class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
 
         setEffect(SerializableMeta.getObject(FireworkEffect.class, map, EXPLOSION.BUKKIT, true));
     }
-
+    
     CraftMetaCharge(NBTTagCompound tag) {
         super(tag);
 
@@ -40,14 +40,17 @@ class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
         }
     }
 
+    @Override
     public void setEffect(FireworkEffect effect) {
         this.effect = effect;
     }
 
+    @Override
     public boolean hasEffect() {
         return effect != null;
     }
 
+    @Override
     public FireworkEffect getEffect() {
         return effect;
     }

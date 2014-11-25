@@ -197,11 +197,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             reason = DamageSource.mobAttack(((CraftLivingEntity) source).getHandle());
         }
 
-        if (entity instanceof EntityEnderDragon) {
-            ((EntityEnderDragon) entity).dealDamage(reason, (float) amount);
-        } else {
-            entity.damageEntity(reason, (float) amount);
-        }
+        entity.damageEntity(reason, (float) amount);
     }
 
     public Location getEyeLocation() {
@@ -263,7 +259,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             }
             removePotionEffect(effect.getType());
         }
-        getHandle().addEffect(new MobEffect(effect.getType().getId(), effect.getDuration(), effect.getAmplifier(), effect.isAmbient()));
+        getHandle().addEffect(new MobEffect(effect.getType().getId(), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), true));
         return true;
     }
 
@@ -382,47 +378,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         }
 
         return super.teleport(location, cause);
-    }
-
-    public void setCustomName(String name) {
-        if (!(getHandle() instanceof EntityInsentient)) {
-            return;
-        }
-
-        if (name == null) {
-            name = "";
-        }
-
-        // Names cannot be more than 64 characters due to DataWatcher limitations
-        if (name.length() > 64) {
-            name = name.substring(0, 64);
-        }
-
-        ((EntityInsentient) getHandle()).setCustomName(name);
-    }
-
-    public String getCustomName() {
-        if (!(getHandle() instanceof EntityInsentient)) {
-            return null;
-        }
-
-        String name = ((EntityInsentient) getHandle()).getCustomName();
-
-        if (name == null || name.length() == 0) {
-            return null;
-        }
-
-        return name;
-    }
-
-    public void setCustomNameVisible(boolean flag) {
-        if (getHandle() instanceof EntityInsentient) {
-            ((EntityInsentient) getHandle()).setCustomNameVisible(flag);
-        }
-    }
-
-    public boolean isCustomNameVisible() {
-        return getHandle() instanceof EntityInsentient && ((EntityInsentient) getHandle()).getCustomNameVisible();
     }
 
     public boolean isLeashed() {

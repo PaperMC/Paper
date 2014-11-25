@@ -1,0 +1,127 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/Explosion.java	2014-11-27 08:59:46.753421618 +1100
++++ src/main/java/net/minecraft/server/Explosion.java	2014-11-27 08:42:10.160850895 +1100
+@@ -8,6 +8,12 @@
+ import java.util.List;
+ import java.util.Map;
+ import java.util.Random;
++ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityExplodeEvent;
++import org.bukkit.Location;
++// CraftBukkit end
+ 
+ public class Explosion {
+ 
+@@ -22,11 +28,12 @@
+     private final float size;
+     private final List blocks = Lists.newArrayList();
+     private final Map k = Maps.newHashMap();
++    public boolean wasCanceled = false; // CraftBukkit - add field
+ 
+     public Explosion(World world, Entity entity, double d0, double d1, double d2, float f, boolean flag, boolean flag1) {
+         this.world = world;
+         this.source = entity;
+-        this.size = f;
++        this.size = (float) Math.max(f, 0.0); // CraftBukkit - clamp bad values
+         this.posX = d0;
+         this.posY = d1;
+         this.posZ = d2;
+@@ -35,6 +42,12 @@
+     }
+ 
+     public void a() {
++        // CraftBukkit start
++        if (this.size < 0.1F) {
++            return;
++        }
++        // CraftBukkit end
++        
+         HashSet hashset = Sets.newHashSet();
+         boolean flag = true;
+ 
+@@ -68,7 +81,7 @@
+                                 f -= (f2 + 0.3F) * 0.3F;
+                             }
+ 
+-                            if (f > 0.0F && (this.source == null || this.source.a(this, this.world, blockposition, iblockdata, f))) {
++                            if (f > 0.0F && (this.source == null || this.source.a(this, this.world, blockposition, iblockdata, f)) && blockposition.getY() < 256 && blockposition.getY() >= 0) { // CraftBukkit - don't wrap explosions
+                                 hashset.add(blockposition);
+                             }
+ 
+@@ -112,7 +125,14 @@
+                         double d12 = (double) this.world.a(vec3d, entity.getBoundingBox());
+                         double d13 = (1.0D - d7) * d12;
+ 
++                        // entity.damageEntity(DamageSource.explosion(this), (float) ((int) ((d13 * d13 + d13) / 2.0D * 8.0D * (double) f3 + 1.0D)));
++                        
++                        // CraftBukkit start
++                        CraftEventFactory.entityDamage = source;
+                         entity.damageEntity(DamageSource.explosion(this), (float) ((int) ((d13 * d13 + d13) / 2.0D * 8.0D * (double) f3 + 1.0D)));
++                        CraftEventFactory.entityDamage = null;
++                        // CraftBukkit end
++
+                         double d14 = EnchantmentProtection.a(entity, d13);
+ 
+                         entity.motX += d8 * d14;
+@@ -140,6 +160,35 @@
+         BlockPosition blockposition;
+ 
+         if (this.b) {
++            // CraftBukkit start
++            org.bukkit.World bworld = this.world.getWorld();
++            org.bukkit.entity.Entity explode = this.source == null ? null : this.source.getBukkitEntity();
++            Location location = new Location(bworld, this.posX, this.posY, this.posZ);
++
++            List<org.bukkit.block.Block> blockList = Lists.newArrayList();
++            for (int i1 = this.blocks.size() - 1; i1 >= 0; i1--) {
++                BlockPosition cpos = (BlockPosition) this.blocks.get(i1);
++                org.bukkit.block.Block bblock = bworld.getBlockAt(cpos.getX(), cpos.getY(), cpos.getZ());
++                if (bblock.getType() != org.bukkit.Material.AIR) {
++                    blockList.add(bblock);
++                }
++            }
++
++            EntityExplodeEvent event = new EntityExplodeEvent(explode, location, blockList, 0.3F);
++            this.world.getServer().getPluginManager().callEvent(event);
++
++            this.blocks.clear();
++
++            for (org.bukkit.block.Block bblock : event.blockList()) {
++                BlockPosition coords = new BlockPosition(bblock.getX(), bblock.getY(), bblock.getZ());
++                blocks.add(coords);
++            }
++
++            if (event.isCancelled()) {
++                this.wasCanceled = true;
++                return;
++            }
++            // CraftBukkit end
+             iterator = this.blocks.iterator();
+ 
+             while (iterator.hasNext()) {
+@@ -170,7 +219,8 @@
+ 
+                 if (block.getMaterial() != Material.AIR) {
+                     if (block.a(this)) {
+-                        block.dropNaturally(this.world, blockposition, this.world.getType(blockposition), 1.0F / this.size, 0);
++                        // CraftBukkit - add yield
++                        block.dropNaturally(this.world, blockposition, this.world.getType(blockposition), event.getYield(), 0);
+                     }
+ 
+                     this.world.setTypeAndData(blockposition, Blocks.AIR.getBlockData(), 3);
+@@ -184,8 +234,12 @@
+ 
+             while (iterator.hasNext()) {
+                 blockposition = (BlockPosition) iterator.next();
+-                if (this.world.getType(blockposition).getBlock().getMaterial() == Material.AIR && this.world.getType(blockposition.down()).getBlock().m() && this.c.nextInt(3) == 0) {
+-                    this.world.setTypeUpdate(blockposition, Blocks.FIRE.getBlockData());
++                if (this.world.getType(blockposition).getBlock().getMaterial() == Material.AIR && this.world.getType(blockposition.down()).getBlock().m() && this.c.nextInt(3) == 0) {                    
++                    // CraftBukkit start - Ignition by explosion
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this).isCancelled()) {
++                        this.world.setTypeUpdate(blockposition, Blocks.FIRE.getBlockData());
++                    }
++                    // CraftBukkit end
+                 }
+             }
+         }

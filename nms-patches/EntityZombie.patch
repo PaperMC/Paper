@@ -1,0 +1,108 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/EntityZombie.java	2014-11-27 08:59:46.749421635 +1100
++++ src/main/java/net/minecraft/server/EntityZombie.java	2014-11-27 08:42:10.144850927 +1100
+@@ -4,6 +4,14 @@
+ import java.util.List;
+ import java.util.UUID;
+ 
++//CraftBukkit start
++import org.bukkit.craftbukkit.entity.CraftLivingEntity;
++import org.bukkit.event.entity.CreatureSpawnEvent;
++import org.bukkit.event.entity.EntityCombustByEntityEvent;
++import org.bukkit.event.entity.EntityCombustEvent;
++import org.bukkit.event.entity.EntityTargetEvent;
++//CraftBukkit end
++
+ public class EntityZombie extends EntityMonster {
+ 
+     protected static final IAttribute b = (new AttributeRanged((IAttribute) null, "zombie.spawnReinforcements", 0.0D, 0.0D, 1.0D)).a("Spawn Reinforcements Chance");
+@@ -14,6 +22,7 @@
+     private boolean bn = false;
+     private float bo = -1.0F;
+     private float bp;
++    private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
+ 
+     public EntityZombie(World world) {
+         super(world);
+@@ -136,7 +145,14 @@
+                 }
+ 
+                 if (flag) {
+-                    this.setOnFire(8);
++                    // CraftBukkit start
++                    EntityCombustEvent event = new EntityCombustEvent(this.getBukkitEntity(), 8);
++                    this.world.getServer().getPluginManager().callEvent(event);
++
++                    if (!event.isCancelled()) {
++                        this.setOnFire(event.getDuration());
++                    }
++                    // CraftBukkit end
+                 }
+             }
+         }
+@@ -170,8 +186,8 @@
+                     if (World.a((IBlockAccess) this.world, new BlockPosition(i1, j1 - 1, k1)) && this.world.getLightLevel(new BlockPosition(i1, j1, k1)) < 10) {
+                         entityzombie.setPosition((double) i1, (double) j1, (double) k1);
+                         if (!this.world.isPlayerNearby((double) i1, (double) j1, (double) k1, 7.0D) && this.world.a(entityzombie.getBoundingBox(), (Entity) entityzombie) && this.world.getCubes(entityzombie, entityzombie.getBoundingBox()).isEmpty() && !this.world.containsLiquid(entityzombie.getBoundingBox())) {
+-                            this.world.addEntity(entityzombie);
+-                            entityzombie.setGoalTarget(entityliving);
++                            this.world.addEntity(entityzombie, CreatureSpawnEvent.SpawnReason.REINFORCEMENTS); // CraftBukkit
++                            entityzombie.setGoalTarget(entityliving, EntityTargetEvent.TargetReason.REINFORCEMENT_TARGET, true);
+                             entityzombie.prepare(this.world.E(new BlockPosition(entityzombie)), (GroupDataEntity) null);
+                             this.getAttributeInstance(EntityZombie.b).b(new AttributeModifier("Zombie reinforcement caller charge", -0.05000000074505806D, 0));
+                             entityzombie.getAttributeInstance(EntityZombie.b).b(new AttributeModifier("Zombie reinforcement callee charge", -0.05000000074505806D, 0));
+@@ -190,6 +206,12 @@
+     public void s_() {
+         if (!this.world.isStatic && this.cn()) {
+             int i = this.cp();
++ 
++            // CraftBukkit start - Use wall time instead of ticks for villager conversion
++            int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
++            this.lastTick = MinecraftServer.currentTick;
++            i *= elapsedTicks;
++            // CraftBukkit end
+ 
+             this.bm -= i;
+             if (this.bm <= 0) {
+@@ -207,7 +229,14 @@
+             int i = this.world.getDifficulty().a();
+ 
+             if (this.bz() == null && this.isBurning() && this.random.nextFloat() < (float) i * 0.3F) {
+-                entity.setOnFire(2 * i);
++                // CraftBukkit start
++                EntityCombustByEntityEvent event = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 2 * i);
++                this.world.getServer().getPluginManager().callEvent(event);
++
++                if (!event.isCancelled()) {
++                    entity.setOnFire(event.getDuration());
++                }
++                // CraftBukkit end
+             }
+         }
+ 
+@@ -316,7 +345,7 @@
+                 entityzombie.setBaby(true);
+             }
+ 
+-            this.world.addEntity(entityzombie);
++            this.world.addEntity(entityzombie, CreatureSpawnEvent.SpawnReason.INFECTION); // CraftBukkit - add SpawnReason
+             this.world.a((EntityHuman) null, 1016, new BlockPosition((int) this.locX, (int) this.locY, (int) this.locZ), 0);
+         }
+ 
+@@ -369,7 +398,7 @@
+                     entitychicken1.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, 0.0F);
+                     entitychicken1.prepare(difficultydamagescaler, (GroupDataEntity) null);
+                     entitychicken1.l(true);
+-                    this.world.addEntity(entitychicken1);
++                    this.world.addEntity(entitychicken1, CreatureSpawnEvent.SpawnReason.MOUNT);
+                     this.mount(entitychicken1);
+                 }
+             }
+@@ -452,7 +481,7 @@
+         }
+ 
+         this.world.kill(this);
+-        this.world.addEntity(entityvillager);
++        this.world.addEntity(entityvillager, CreatureSpawnEvent.SpawnReason.CURED); // CraftBukkit - add SpawnReason
+         entityvillager.addEffect(new MobEffect(MobEffectList.CONFUSION.id, 200, 0));
+         this.world.a((EntityHuman) null, 1017, new BlockPosition((int) this.locX, (int) this.locY, (int) this.locZ), 0);
+     }

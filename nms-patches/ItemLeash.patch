@@ -1,0 +1,35 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/ItemLeash.java	2014-11-27 08:59:46.785421476 +1100
++++ src/main/java/net/minecraft/server/ItemLeash.java	2014-11-27 08:42:10.084851043 +1100
+@@ -3,6 +3,8 @@
+ import java.util.Iterator;
+ import java.util.List;
+ 
++import org.bukkit.event.hanging.HangingPlaceEvent; // CraftBukkit
++
+ public class ItemLeash extends Item {
+ 
+     public ItemLeash() {
+@@ -40,7 +42,23 @@
+             if (entityinsentient.cb() && entityinsentient.getLeashHolder() == entityhuman) {
+                 if (entityleash == null) {
+                     entityleash = EntityLeash.a(world, blockposition);
++
++                    // CraftBukkit start - fire HangingPlaceEvent
++                    HangingPlaceEvent event = new HangingPlaceEvent((org.bukkit.entity.Hanging) entityleash.getBukkitEntity(), entityhuman != null ? (org.bukkit.entity.Player) entityhuman.getBukkitEntity() : null, world.getWorld().getBlockAt(i, j, k), org.bukkit.block.BlockFace.SELF);
++                    world.getServer().getPluginManager().callEvent(event);
++
++                    if (event.isCancelled()) {
++                        entityleash.die();
++                        return false;
++                    }
++                    // CraftBukkit end
++                }
++
++                // CraftBukkit start
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerLeashEntityEvent(entityinsentient, entityleash, entityhuman).isCancelled()) {
++                    continue;
+                 }
++                // CraftBukkit end
+ 
+                 entityinsentient.setLeashHolder(entityleash, true);
+                 flag = true;

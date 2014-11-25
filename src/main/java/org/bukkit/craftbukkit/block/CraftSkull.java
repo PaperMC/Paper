@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.block;
 
+import com.mojang.authlib.GameProfile;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TileEntitySkull;
-import net.minecraft.util.com.mojang.authlib.GameProfile;
 
 import org.bukkit.SkullType;
 import org.bukkit.block.Block;
@@ -24,7 +24,7 @@ public class CraftSkull extends CraftBlockState implements Skull {
         skull = (TileEntitySkull) world.getTileEntityAt(getX(), getY(), getZ());
         profile = skull.getGameProfile();
         skullType = getSkullType(skull.getSkullType());
-        rotation = (byte) skull.getRotation();
+        rotation = (byte) skull.rotation;
     }
 
     static SkullType getSkullType(int id) {

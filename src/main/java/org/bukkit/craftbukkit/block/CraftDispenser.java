@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.BlockDispenser;
+import net.minecraft.server.BlockPosition;
 import net.minecraft.server.Blocks;
 import net.minecraft.server.TileEntityDispenser;
 
@@ -44,7 +45,7 @@ public class CraftDispenser extends CraftBlockState implements Dispenser {
         if (block.getType() == Material.DISPENSER) {
             BlockDispenser dispense = (BlockDispenser) Blocks.DISPENSER;
 
-            dispense.dispense(world.getHandle(), getX(), getY(), getZ());
+            dispense.dispense(world.getHandle(), new BlockPosition(getX(), getY(), getZ()));
             return true;
         } else {
             return false;

@@ -23,16 +23,18 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import com.google.common.collect.Lists;
+import java.util.Map;
+import net.minecraft.server.Block;
 import net.minecraft.server.Blocks;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 
 @RunWith(Parameterized.class)
 public class PerMaterialTest extends AbstractTestingBase {
-    private static int[] fireValues;
+    private static Map<Block, Integer> fireValues;
 
     @BeforeClass
     public static void getFireValues() {
-        fireValues = Util.getInternalState(BlockFire.class, Blocks.FIRE, "a");
+        fireValues = Util.getInternalState(BlockFire.class, Blocks.FIRE, "S");
     }
 
     @Parameters(name= "{index}: {0}")
@@ -120,7 +122,8 @@ public class PerMaterialTest extends AbstractTestingBase {
     @Test
     public void isBurnable() {
         if (material.isBlock()) {
-            assertThat(material.isBurnable(), is(fireValues[material.getId()] > 0));
+            Block block = CraftMagicNumbers.getBlock(material);
+            assertThat(material.isBurnable(), is(fireValues.containsKey(block) && fireValues.get(block) > 0));
         } else {
             assertFalse(material.isBurnable());
         }
@@ -129,7 +132,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @Test
     public void isOccluding() {
         if (material.isBlock()) {
-            assertThat(material.isOccluding(), is(CraftMagicNumbers.getBlock(material).r()));
+            assertThat(material.isOccluding(), is(CraftMagicNumbers.getBlock(material).isOccluding()));
         } else {
             assertFalse(material.isOccluding());
         }

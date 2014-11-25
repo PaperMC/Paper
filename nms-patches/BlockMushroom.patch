@@ -1,0 +1,57 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/BlockMushroom.java	2014-11-27 08:59:46.545422534 +1100
++++ src/main/java/net/minecraft/server/BlockMushroom.java	2014-11-27 08:42:10.100851012 +1100
+@@ -3,6 +3,12 @@
+ import java.util.Iterator;
+ import java.util.Random;
+ 
++// CraftBukkit start
++import org.bukkit.TreeType;
++import org.bukkit.block.BlockState;
++import org.bukkit.event.block.BlockSpreadEvent;
++// CraftBukkit end
++
+ public class BlockMushroom extends BlockPlant implements IBlockFragilePlantElement {
+ 
+     protected BlockMushroom() {
+@@ -13,6 +19,7 @@
+     }
+ 
+     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
++        final int sourceX = blockposition.getX(), sourceY = blockposition.getY(), sourceZ = blockposition.getZ(); // CraftBukkit
+         if (random.nextInt(25) == 0) {
+             int i = 5;
+             boolean flag = true;
+@@ -39,8 +46,20 @@
+                 blockposition2 = blockposition.a(random.nextInt(3) - 1, random.nextInt(2) - random.nextInt(2), random.nextInt(3) - 1);
+             }
+ 
+-            if (world.isEmpty(blockposition2) && this.f(world, blockposition2, this.getBlockData())) {
+-                world.setTypeAndData(blockposition2, this.getBlockData(), 2);
++            if (world.isEmpty(blockposition2) && this.f(world, blockposition2, this.getBlockData())) {             
++                // CraftBukkit start
++                // world.setTypeAndData(blockposition2, this.getBlockData(), 2);
++                org.bukkit.World bworld = world.getWorld();
++                BlockState blockState = bworld.getBlockAt(blockposition2.getX(), blockposition2.getY(), blockposition2.getZ()).getState();
++                blockState.setType(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(this)); // nms: this.id, 0, 2
++
++                BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(sourceX, sourceY, sourceZ), blockState);
++                world.getServer().getPluginManager().callEvent(event);
++
++                if (!event.isCancelled()) {
++                    blockState.update(true);
++                }
++                // CraftBukkit end
+             }
+         }
+ 
+@@ -69,8 +88,10 @@
+         WorldGenHugeMushroom worldgenhugemushroom = null;
+ 
+         if (this == Blocks.BROWN_MUSHROOM) {
++            BlockSapling.treeType = TreeType.BROWN_MUSHROOM; // CraftBukkit
+             worldgenhugemushroom = new WorldGenHugeMushroom(0);
+         } else if (this == Blocks.RED_MUSHROOM) {
++            BlockSapling.treeType = TreeType.RED_MUSHROOM; // CraftBukkit
+             worldgenhugemushroom = new WorldGenHugeMushroom(1);
+         }
+ 

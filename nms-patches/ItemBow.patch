@@ -1,0 +1,49 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/ItemBow.java	2014-11-27 08:59:46.773421530 +1100
++++ src/main/java/net/minecraft/server/ItemBow.java	2014-11-27 08:42:10.140850934 +1100
+@@ -1,5 +1,7 @@
+ package net.minecraft.server;
+ 
++import org.bukkit.event.entity.EntityCombustEvent; // CraftBukkit
++
+ public class ItemBow extends Item {
+ 
+     public static final String[] a = new String[] { "pulling_0", "pulling_1", "pulling_2"};
+@@ -45,9 +47,28 @@
+             }
+ 
+             if (EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_FIRE.id, itemstack) > 0) {
+-                entityarrow.setOnFire(100);
++                // CraftBukkit start - call EntityCombustEvent
++                EntityCombustEvent event = new EntityCombustEvent(entityarrow.getBukkitEntity(), 100);
++                entityarrow.world.getServer().getPluginManager().callEvent(event);
++
++                if (!event.isCancelled()) {
++                    entityarrow.setOnFire(event.getDuration());
++                }
++                // CraftBukkit end
++            }
++
++            // CraftBukkit start
++            org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(entityhuman, itemstack, entityarrow, f);
++            if (event.isCancelled()) {
++                event.getProjectile().remove();
++                return;
+             }
+ 
++            if (event.getProjectile() == entityarrow.getBukkitEntity()) {
++                world.addEntity(entityarrow);
++            }
++            // CraftBukkit end
++
+             itemstack.damage(1, entityhuman);
+             world.makeSound(entityhuman, "random.bow", 1.0F, 1.0F / (ItemBow.g.nextFloat() * 0.4F + 1.2F) + f * 0.5F);
+             if (flag) {
+@@ -58,7 +79,7 @@
+ 
+             entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this)]);
+             if (!world.isStatic) {
+-                world.addEntity(entityarrow);
++                // world.addEntity(entityarrow); // CraftBukkit - moved up
+             }
+         }
+ 

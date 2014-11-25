@@ -1,0 +1,58 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/BlockMycel.java	2014-11-27 08:59:46.549422516 +1100
++++ src/main/java/net/minecraft/server/BlockMycel.java	2014-11-27 08:42:10.172850872 +1100
+@@ -2,6 +2,13 @@
+ 
+ import java.util.Random;
+ 
++// CraftBukkit start
++import org.bukkit.block.BlockState;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
++import org.bukkit.event.block.BlockFadeEvent;
++import org.bukkit.event.block.BlockSpreadEvent;
++// CraftBukkit end
++
+ public class BlockMycel extends Block {
+ 
+     public static final BlockStateBoolean SNOWY = BlockStateBoolean.of("snowy");
+@@ -22,7 +29,19 @@
+     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
+         if (!world.isStatic) {
+             if (world.getLightLevel(blockposition.up()) < 4 && world.getType(blockposition.up()).getBlock().n() > 2) {
+-                world.setTypeUpdate(blockposition, Blocks.DIRT.getBlockData().set(BlockDirt.VARIANT, EnumDirtVariant.DIRT));
++                // CraftBukkit start
++                // world.setTypeUpdate(blockposition, Blocks.DIRT.getBlockData().set(BlockDirt.VARIANT, EnumDirtVariant.DIRT));                
++                org.bukkit.World bworld = world.getWorld();
++                BlockState blockState = bworld.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()).getState();
++                blockState.setType(CraftMagicNumbers.getMaterial(Blocks.DIRT));
++
++                BlockFadeEvent event = new BlockFadeEvent(blockState.getBlock(), blockState);
++                world.getServer().getPluginManager().callEvent(event);
++
++                if (!event.isCancelled()) {
++                    blockState.update(true);
++                }
++                // CraftBukkit end
+             } else {
+                 if (world.getLightLevel(blockposition.up()) >= 9) {
+                     for (int i = 0; i < 4; ++i) {
+@@ -31,7 +50,19 @@
+                         Block block = world.getType(blockposition1.up()).getBlock();
+ 
+                         if (iblockdata1.getBlock() == Blocks.DIRT && iblockdata1.get(BlockDirt.VARIANT) == EnumDirtVariant.DIRT && world.getLightLevel(blockposition1.up()) >= 4 && block.n() <= 2) {
+-                            world.setTypeUpdate(blockposition1, this.getBlockData());
++                            // CraftBukkit start
++                            // world.setTypeUpdate(blockposition1, this.getBlockData());
++                            org.bukkit.World bworld = world.getWorld();
++                            BlockState blockState = bworld.getBlockAt(blockposition1.getX(), blockposition1.getY(), blockposition1.getZ()).getState();
++                            blockState.setType(CraftMagicNumbers.getMaterial(this));
++
++                            BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), blockState);
++                            world.getServer().getPluginManager().callEvent(event);
++
++                            if (!event.isCancelled()) {
++                                blockState.update(true);
++                            }
++                            // CraftBukkit end
+                         }
+                     }
+                 }

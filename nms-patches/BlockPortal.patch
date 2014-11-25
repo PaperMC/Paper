@@ -1,0 +1,53 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/BlockPortal.java	2014-11-27 08:59:46.553422499 +1100
++++ src/main/java/net/minecraft/server/BlockPortal.java	2014-11-27 08:42:10.172850872 +1100
+@@ -2,6 +2,8 @@
+ 
+ import java.util.Random;
+ 
++import org.bukkit.event.entity.EntityPortalEnterEvent; // CraftBukkit
++
+ public class BlockPortal extends BlockHalfTransparent {
+ 
+     public static final BlockStateEnum AXIS = BlockStateEnum.of("axis", EnumAxis.class, new EnumAxis[] { EnumAxis.X, EnumAxis.Z});
+@@ -24,7 +26,8 @@
+             }
+ 
+             if (i > 0 && !world.getType(blockposition1.up()).getBlock().isOccluding()) {
+-                Entity entity = ItemMonsterEgg.a(world, 57, (double) blockposition1.getX() + 0.5D, (double) blockposition1.getY() + 1.1D, (double) blockposition1.getZ() + 0.5D);
++                // CraftBukkit - set spawn reason to NETHER_PORTAL
++                Entity entity = ItemMonsterEgg.spawnCreature(world, 57, (double) blockposition1.getX() + 0.5D, (double) blockposition1.getY() + 1.1D, (double) blockposition1.getZ() + 0.5D, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NETHER_PORTAL);
+ 
+                 if (entity != null) {
+                     entity.portalCooldown = entity.ar();
+@@ -66,14 +69,16 @@
+         PortalCreator portalcreator = new PortalCreator(world, blockposition, EnumAxis.X);
+ 
+         if (portalcreator.b() && PortalCreator.a(portalcreator) == 0) {
+-            portalcreator.c();
+-            return true;
++            // CraftBukkit start - return portalcreator
++            return portalcreator.c();
++            // return true;
+         } else {
+             PortalCreator portalcreator1 = new PortalCreator(world, blockposition, EnumAxis.Z);
+ 
+             if (portalcreator1.b() && PortalCreator.a(portalcreator1) == 0) {
+-                portalcreator1.c();
+-                return true;
++                return portalcreator1.c();
++                // return true;
++                // CraftBukkit end
+             } else {
+                 return false;
+             }
+@@ -104,6 +109,10 @@
+ 
+     public void a(World world, BlockPosition blockposition, IBlockData iblockdata, Entity entity) {
+         if (entity.vehicle == null && entity.passenger == null) {
++            // CraftBukkit start - Entity in portal
++            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ()));
++            world.getServer().getPluginManager().callEvent(event);
++            // CraftBukkit end
+             entity.aq();
+         }
+ 

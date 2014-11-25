@@ -1,0 +1,115 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/EntityItem.java	2014-11-27 08:59:46.693421882 +1100
++++ src/main/java/net/minecraft/server/EntityItem.java	2014-11-27 08:42:10.104851005 +1100
+@@ -4,6 +4,8 @@
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
++import org.bukkit.event.player.PlayerPickupItemEvent; // CraftBukkit
++
+ public class EntityItem extends Entity {
+ 
+     private static final Logger b = LogManager.getLogger();
+@@ -13,6 +15,7 @@
+     private String f;
+     private String g;
+     public float a;
++    private int lastTick = MinecraftServer.currentTick; // CraftBukkit
+ 
+     public EntityItem(World world, double d0, double d1, double d2) {
+         super(world);
+@@ -28,6 +31,11 @@
+ 
+     public EntityItem(World world, double d0, double d1, double d2, ItemStack itemstack) {
+         this(world, d0, d1, d2);
++        // CraftBukkit start - Can't set null items in the datawatcher
++        if (itemstack == null || itemstack.getItem() == null) {
++            return;
++        }
++        // CraftBukkit end
+         this.setItemStack(itemstack);
+     }
+ 
+@@ -52,9 +60,12 @@
+             this.die();
+         } else {
+             super.s_();
+-            if (this.pickupDelay > 0 && this.pickupDelay != 32767) {
+-                --this.pickupDelay;
+-            }
++            // CraftBukkit start - Use wall time for pickup and despawn timers
++            int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
++            this.pickupDelay -= elapsedTicks;
++            this.age += elapsedTicks;
++            this.lastTick = MinecraftServer.currentTick;
++            // CraftBukkit end
+ 
+             this.lastX = this.locX;
+             this.lastY = this.locY;
+@@ -90,12 +101,20 @@
+                 this.motY *= -0.5D;
+             }
+ 
++            /* Craftbukkit start - moved up
+             if (this.age != -32768) {
+                 ++this.age;
+             }
++            // Craftbukkit end */
+ 
+             this.W();
+             if (!this.world.isStatic && this.age >= 6000) {
++                // CraftBukkit start - fire ItemDespawnEvent
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
++                    this.age = 0;
++                    return;
++                }
++                // CraftBukkit end
+                 this.die();
+             }
+ 
+@@ -228,7 +247,18 @@
+ 
+         NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("Item");
+ 
+-        this.setItemStack(ItemStack.createStack(nbttagcompound1));
++        // CraftBukkit start - Handle missing "Item" compounds
++        if (nbttagcompound1 != null) {
++            ItemStack itemstack = ItemStack.createStack(nbttagcompound1);
++            if (itemstack != null) {
++                this.setItemStack(itemstack);
++            } else {
++                this.die();
++            }
++        } else {
++            this.die();
++        }
++        // CraftBukkit end
+         if (this.getItemStack() == null) {
+             this.die();
+         }
+@@ -239,6 +269,26 @@
+         if (!this.world.isStatic) {
+             ItemStack itemstack = this.getItemStack();
+             int i = itemstack.count;
++ 
++            // CraftBukkit start - fire PlayerPickupItemEvent
++            int canHold = entityhuman.inventory.canHold(itemstack);
++            int remaining = itemstack.count - canHold;
++
++            if (this.pickupDelay <= 0 && canHold > 0) {
++                itemstack.count = canHold;
++                PlayerPickupItemEvent event = new PlayerPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
++                // event.setCancelled(!entityhuman.canPickUpLoot); TODO
++                this.world.getServer().getPluginManager().callEvent(event);
++                itemstack.count = canHold + remaining;
++
++                if (event.isCancelled()) {
++                    return;
++                }
++
++                // Possibly < 0; fix here so we do not have to modify code below
++                this.pickupDelay = 0;
++            }
++            // CraftBukkit end
+ 
+             if (this.pickupDelay == 0 && (this.g == null || 6000 - this.age <= 200 || this.g.equals(entityhuman.getName())) && entityhuman.inventory.pickup(itemstack)) {
+                 if (itemstack.getItem() == Item.getItemOf(Blocks.LOG)) {

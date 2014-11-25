@@ -37,6 +37,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                 if (entity instanceof EntityPlayer) { return new CraftPlayer(server, (EntityPlayer) entity); }
                 else { return new CraftHumanEntity(server, (EntityHuman) entity); }
             }
+            // Water Animals
+            else if (entity instanceof EntityWaterAnimal) {
+                if (entity instanceof EntitySquid) { return new CraftSquid(server, (EntitySquid) entity); }
+                else { return new CraftWaterMob(server, (EntityWaterAnimal) entity); }
+            }
             else if (entity instanceof EntityCreature) {
                 // Animals
                 if (entity instanceof EntityAnimal) {
@@ -52,6 +57,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                     }
                     else if (entity instanceof EntitySheep) { return new CraftSheep(server, (EntitySheep) entity); }
                     else if (entity instanceof EntityHorse) { return new CraftHorse(server, (EntityHorse) entity); }
+                    else if (entity instanceof EntityRabbit) { return new CraftRabbit(server, (EntityRabbit) entity); }
                     else  { return new CraftAnimals(server, (EntityAnimal) entity); }
                 }
                 // Monsters
@@ -72,13 +78,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                         if (entity instanceof EntityCaveSpider) { return new CraftCaveSpider(server, (EntityCaveSpider) entity); }
                         else { return new CraftSpider(server, (EntitySpider) entity); }
                     }
+                    else if (entity instanceof EntityEndermite) { return new CraftEndermite(server, (EntityEndermite) entity); }
+                    else if (entity instanceof EntityGuardian) { return new CraftGuardian(server, (EntityGuardian) entity); }
 
                     else  { return new CraftMonster(server, (EntityMonster) entity); }
-                }
-                // Water Animals
-                else if (entity instanceof EntityWaterAnimal) {
-                    if (entity instanceof EntitySquid) { return new CraftSquid(server, (EntitySquid) entity); }
-                    else { return new CraftWaterMob(server, (EntityWaterAnimal) entity); }
                 }
                 else if (entity instanceof EntityGolem) {
                     if (entity instanceof EntitySnowman) { return new CraftSnowman(server, (EntitySnowman) entity); }
@@ -105,6 +108,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                 if (entity instanceof EntityBat) { return new CraftBat(server, (EntityBat) entity); }
                 else { return new CraftAmbient(server, (EntityAmbient) entity); }
             }
+            else if (entity instanceof EntityArmorStand) { return new CraftArmorStand(server, (EntityArmorStand) entity); }
             else  { return new CraftLivingEntity(server, (EntityLiving) entity); }
         }
         else if (entity instanceof EntityComplexPart) {
@@ -154,7 +158,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         else if (entity instanceof EntityTNTPrimed) { return new CraftTNTPrimed(server, (EntityTNTPrimed) entity); }
         else if (entity instanceof EntityFireworks) { return new CraftFirework(server, (EntityFireworks) entity); }
 
-        throw new AssertionError("Unknown entity " + entity == null ? null : entity.getClass());
+        throw new AssertionError("Unknown entity " + (entity == null ? null : entity.getClass()));
     }
 
     public Location getLocation() {
@@ -224,7 +228,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     public List<org.bukkit.entity.Entity> getNearbyEntities(double x, double y, double z) {
         @SuppressWarnings("unchecked")
-        List<Entity> notchEntityList = entity.world.getEntities(entity, entity.boundingBox.grow(x, y, z));
+        List<Entity> notchEntityList = entity.world.getEntities(entity, entity.getBoundingBox().grow(x, y, z));
         List<org.bukkit.entity.Entity> bukkitEntityList = new java.util.ArrayList<org.bukkit.entity.Entity>(notchEntityList.size());
 
         for (Entity e : notchEntityList) {
@@ -316,7 +320,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public UUID getUniqueId() {
-        return getHandle().uniqueID;
+        return getHandle().getUniqueID();
     }
 
     public int getTicksLived() {
@@ -401,5 +405,35 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
 
         return getHandle().vehicle.getBukkitEntity();
+    }
+
+    @Override
+    public void setCustomName(String name) {
+        if (name == null) {
+            name = "";
+        }
+
+        getHandle().setCustomName(name);
+    }
+
+    @Override
+    public String getCustomName() {
+        String name = getHandle().getCustomName();
+
+        if (name == null || name.length() == 0) {
+            return null;
+        }
+
+        return name;
+    }
+
+    @Override
+    public void setCustomNameVisible(boolean flag) {
+        getHandle().setCustomNameVisible(flag);
+    }
+
+    @Override
+    public boolean isCustomNameVisible() {
+        return getHandle().getCustomNameVisible();
     }
 }

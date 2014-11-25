@@ -5,7 +5,7 @@ import java.io.OutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jline.console.ConsoleReader;
-import net.minecraft.util.com.mojang.util.QueueLogAppender;
+import com.mojang.util.QueueLogAppender;
 import org.bukkit.craftbukkit.Main;
 
 public class TerminalConsoleWriterThread implements Runnable {

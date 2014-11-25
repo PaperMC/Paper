@@ -1,0 +1,111 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/EntityLightning.java	2014-11-27 08:59:46.701421847 +1100
++++ src/main/java/net/minecraft/server/EntityLightning.java	2014-11-27 08:42:10.116850981 +1100
+@@ -2,30 +2,54 @@
+ 
+ import java.util.List;
+ 
++import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
++
+ public class EntityLightning extends EntityWeather {
+ 
+     private int lifeTicks;
+     public long a;
+     private int c;
++ 
++    // CraftBukkit start
++    public boolean isEffect = false;
+ 
+     public EntityLightning(World world, double d0, double d1, double d2) {
++        this(world, d0, d1, d2, false);
++    }
++
++    public EntityLightning(World world, double d0, double d1, double d2, boolean isEffect) {
++        // CraftBukkit end
++
+         super(world);
++
++        // CraftBukkit - Set isEffect
++        this.isEffect = isEffect;
++        
+         this.setPositionRotation(d0, d1, d2, 0.0F, 0.0F);
+         this.lifeTicks = 2;
+         this.a = this.random.nextLong();
+         this.c = this.random.nextInt(3) + 1;
+-        if (!world.isStatic && world.getGameRules().getBoolean("doFireTick") && (world.getDifficulty() == EnumDifficulty.NORMAL || world.getDifficulty() == EnumDifficulty.HARD) && world.areChunksLoaded(new BlockPosition(this), 10)) {
++        // CraftBukkit - add "!isEffect"
++        if (!isEffect && !world.isStatic && world.getGameRules().getBoolean("doFireTick") && (world.getDifficulty() == EnumDifficulty.NORMAL || world.getDifficulty() == EnumDifficulty.HARD) && world.areChunksLoaded(new BlockPosition(this), 10)) {
+             BlockPosition blockposition = new BlockPosition(this);
+ 
+-            if (world.getType(blockposition).getBlock().getMaterial() == Material.AIR && Blocks.FIRE.canPlace(world, blockposition)) {
+-                world.setTypeUpdate(blockposition, Blocks.FIRE.getBlockData());
++            if (world.getType(blockposition).getBlock().getMaterial() == Material.AIR && Blocks.FIRE.canPlace(world, blockposition)) {               
++                // CraftBukkit start
++                if (!CraftEventFactory.callBlockIgniteEvent(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this).isCancelled()) {
++                    world.setTypeUpdate(blockposition, Blocks.FIRE.getBlockData());
++                }
++                // CraftBukkit end
+             }
+ 
+             for (int i = 0; i < 4; ++i) {
+                 BlockPosition blockposition1 = blockposition.a(this.random.nextInt(3) - 1, this.random.nextInt(3) - 1, this.random.nextInt(3) - 1);
+ 
+-                if (world.getType(blockposition1).getBlock().getMaterial() == Material.AIR && Blocks.FIRE.canPlace(world, blockposition1)) {
+-                    world.setTypeUpdate(blockposition1, Blocks.FIRE.getBlockData());
++                if (world.getType(blockposition1).getBlock().getMaterial() == Material.AIR && Blocks.FIRE.canPlace(world, blockposition1)) {                    
++                    // CraftBukkit start
++                    if (!CraftEventFactory.callBlockIgniteEvent(world, blockposition1.getX(), blockposition1.getY(), blockposition1.getZ(), this).isCancelled()) {
++                        world.setTypeUpdate(blockposition1, Blocks.FIRE.getBlockData());
++                    }
++                    // CraftBukkit end
+                 }
+             }
+         }
+@@ -35,7 +59,24 @@
+     public void s_() {
+         super.s_();
+         if (this.lifeTicks == 2) {
+-            this.world.makeSound(this.locX, this.locY, this.locZ, "ambient.weather.thunder", 10000.0F, 0.8F + this.random.nextFloat() * 0.2F);
++            // CraftBukkit start - Use relative location for far away sounds
++            //this.world.makeSound(this.locX, this.locY, this.locZ, "ambient.weather.thunder", 10000.0F, 0.8F + this.random.nextFloat() * 0.2F);
++            float pitch = 0.8F + this.random.nextFloat() * 0.2F;
++            int viewDistance = ((WorldServer) this.world).getServer().getViewDistance() * 16;
++            for (EntityPlayer player : (List<EntityPlayer>) this.world.players) {
++                double deltaX = this.locX - player.locX;
++                double deltaZ = this.locZ - player.locZ;
++                double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
++                if (distanceSquared > viewDistance * viewDistance) {
++                    double deltaLength = Math.sqrt(distanceSquared);
++                    double relativeX = player.locX + (deltaX / deltaLength) * viewDistance;
++                    double relativeZ = player.locZ + (deltaZ / deltaLength) * viewDistance;
++                    player.playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect("ambient.weather.thunder", relativeX, this.locY, relativeZ, 10000.0F, pitch));
++                } else {
++                    player.playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect("ambient.weather.thunder", this.locX, this.locY, this.locZ, 10000.0F, pitch));
++                }
++            }
++            // CraftBukkit end
+             this.world.makeSound(this.locX, this.locY, this.locZ, "random.explode", 2.0F, 0.5F + this.random.nextFloat() * 0.2F);
+         }
+ 
+@@ -48,14 +89,18 @@
+                 this.lifeTicks = 1;
+                 this.a = this.random.nextLong();
+                 BlockPosition blockposition = new BlockPosition(this);
+-
+-                if (!this.world.isStatic && this.world.getGameRules().getBoolean("doFireTick") && this.world.areChunksLoaded(blockposition, 10) && this.world.getType(blockposition).getBlock().getMaterial() == Material.AIR && Blocks.FIRE.canPlace(this.world, blockposition)) {
+-                    this.world.setTypeUpdate(blockposition, Blocks.FIRE.getBlockData());
++                // CraftBukkit - add "!isEffect"
++                if (!isEffect && !this.world.isStatic && this.world.getGameRules().getBoolean("doFireTick") && this.world.areChunksLoaded(blockposition, 10) && this.world.getType(blockposition).getBlock().getMaterial() == Material.AIR && Blocks.FIRE.canPlace(this.world, blockposition)) {                    
++                    // CraftBukkit start
++                    if (!CraftEventFactory.callBlockIgniteEvent(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this).isCancelled()) {
++                        this.world.setTypeUpdate(blockposition, Blocks.FIRE.getBlockData());
++                    }
++                    // CraftBukkit end
+                 }
+             }
+         }
+ 
+-        if (this.lifeTicks >= 0) {
++        if (this.lifeTicks >= 0 && !this.isEffect) { // CraftBukkit - add !this.isEffect
+             if (this.world.isStatic) {
+                 this.world.c(2);
+             } else {

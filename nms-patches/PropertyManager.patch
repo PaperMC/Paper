@@ -1,0 +1,94 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/PropertyManager.java	2014-11-27 08:59:46.869421107 +1100
++++ src/main/java/net/minecraft/server/PropertyManager.java	2014-11-27 08:42:10.100851012 +1100
+@@ -8,6 +8,8 @@
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
++import joptsimple.OptionSet; // CraftBukkit
++
+ public class PropertyManager {
+ 
+     private static final Logger a = LogManager.getLogger();
+@@ -39,8 +41,25 @@
+             PropertyManager.a.warn(file + " does not exist");
+             this.a();
+         }
++    }
++
++    // CraftBukkit start
++    private OptionSet options = null;
++
++    public PropertyManager(final OptionSet options) {
++        this((File) options.valueOf("config"));
++
++        this.options = options;
++    }
++
++    private <T> T getOverride(String name, T value) {
++        if ((this.options != null) && (this.options.has(name))) {
++            return (T) this.options.valueOf(name);
++        }
+ 
++        return value;
+     }
++    // CraftBukkit end
+ 
+     public void a() {
+         PropertyManager.a.info("Generating new properties file");
+@@ -51,6 +70,12 @@
+         FileOutputStream fileoutputstream = null;
+ 
+         try {
++            // CraftBukkit start - Don't attempt writing to file if it's read only
++            if (this.file.exists() && !this.file.canWrite()) {
++                return;
++            }
++            // CraftBukkit end
++
+             fileoutputstream = new FileOutputStream(this.file);
+             this.properties.store(fileoutputstream, "Minecraft server properties");
+         } catch (Exception exception) {
+@@ -80,36 +105,36 @@
+             this.savePropertiesFile();
+         }
+ 
+-        return this.properties.getProperty(s, s1);
++        return getOverride(s, this.properties.getProperty(s, s1)); // CraftBukkit
+     }
+ 
+     public int getInt(String s, int i) {
+         try {
+-            return Integer.parseInt(this.getString(s, "" + i));
++            return getOverride(s, Integer.parseInt(this.getString(s, "" + i))); // CraftBukkit
+         } catch (Exception exception) {
+             this.properties.setProperty(s, "" + i);
+             this.savePropertiesFile();
+-            return i;
++            return getOverride(s, i); // CraftBukkit
+         }
+     }
+ 
+     public long getLong(String s, long i) {
+         try {
+-            return Long.parseLong(this.getString(s, "" + i));
++            return getOverride(s, Long.parseLong(this.getString(s, "" + i))); // CraftBukkit
+         } catch (Exception exception) {
+             this.properties.setProperty(s, "" + i);
+             this.savePropertiesFile();
+-            return i;
++            return getOverride(s ,i); // CraftBukkit
+         }
+     }
+ 
+     public boolean getBoolean(String s, boolean flag) {
+         try {
+-            return Boolean.parseBoolean(this.getString(s, "" + flag));
++            return getOverride(s, Boolean.parseBoolean(this.getString(s, "" + flag))); // CraftBukkit
+         } catch (Exception exception) {
+             this.properties.setProperty(s, "" + flag);
+             this.savePropertiesFile();
+-            return flag;
++            return getOverride(s, flag); // CraftBukkit
+         }
+     }
+ 
