@@ -107,7 +107,7 @@ public class CraftHorse extends CraftAnimals implements Horse {
     public void setOwner(AnimalTamer owner) {
         if (owner != null) {
             setTamed(true);
-            getHandle().setPathEntity(null);
+            getHandle().setGoalTarget(null, null, false);
             setOwnerUUID(owner.getUniqueId());
         } else {
             setTamed(false);

@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
+import net.minecraft.server.ITileEntityContainer;
+import net.minecraft.server.ITileInventory;
 import org.bukkit.block.DoubleChest;
 import org.bukkit.inventory.DoubleChestInventory;
 import org.bukkit.inventory.Inventory;
@@ -12,7 +14,7 @@ public class CraftInventoryDoubleChest extends CraftInventory implements DoubleC
     private final CraftInventory right;
 
     public CraftInventoryDoubleChest(CraftInventory left, CraftInventory right) {
-        super(new InventoryLargeChest("Large chest", left.getInventory(), right.getInventory()));
+        super(new InventoryLargeChest("Large chest", (ITileInventory) left.getInventory(), (ITileInventory) right.getInventory()));
         this.left = left;
         this.right = right;
     }

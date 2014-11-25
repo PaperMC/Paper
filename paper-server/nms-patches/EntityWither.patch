@@ -1,0 +1,78 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/EntityWither.java	2014-11-27 08:59:46.745421653 +1100
++++ src/main/java/net/minecraft/server/EntityWither.java	2014-11-27 08:42:10.156850903 +1100
+@@ -5,6 +5,12 @@
+ import java.util.Iterator;
+ import java.util.List;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityRegainHealthEvent;
++import org.bukkit.event.entity.ExplosionPrimeEvent;
++// CraftBukkit end
++
+ public class EntityWither extends EntityMonster implements IRangedEntity {
+ 
+     private float[] b = new float[2];
+@@ -160,13 +166,38 @@
+         if (this.cj() > 0) {
+             i = this.cj() - 1;
+             if (i <= 0) {
+-                this.world.createExplosion(this, this.locX, this.locY + (double) this.getHeadHeight(), this.locZ, 7.0F, false, this.world.getGameRules().getBoolean("mobGriefing"));
+-                this.world.a(1013, new BlockPosition(this), 0);
++                // CraftBukkit start
++                // this.world.createExplosion(this, this.locX, this.locY + (double) this.getHeadHeight(), this.locZ, 7.0F, false, this.world.getGameRules().getBoolean("mobGriefing"));
++                ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), 7.0F, false);
++                this.world.getServer().getPluginManager().callEvent(event);
++
++                if (!event.isCancelled()) {
++                    this.world.createExplosion(this, this.locX, this.locY + (double) this.getHeadHeight(), this.locZ, event.getRadius(), event.getFire(), this.world.getGameRules().getBoolean("mobGriefing"));
++                }
++                // CraftBukkit end
++                
++                // CraftBukkit start - Use relative location for far away sounds
++                // this.world.a(1013, new BlockPosition(this), 0);
++                int viewDistance = ((WorldServer) this.world).getServer().getViewDistance() * 16;
++                for (EntityPlayer player : (List<EntityPlayer>) this.world.players) {
++                    double deltaX = this.locX - player.locX;
++                    double deltaZ = this.locZ - player.locZ;
++                    double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
++                    if (distanceSquared > viewDistance * viewDistance) {
++                        double deltaLength = Math.sqrt(distanceSquared);
++                        double relativeX = player.locX + (deltaX / deltaLength) * viewDistance;
++                        double relativeZ = player.locZ + (deltaZ / deltaLength) * viewDistance;
++                        player.playerConnection.sendPacket(new PacketPlayOutWorldEvent(1013, new BlockPosition((int) relativeX, (int) this.locY, (int) relativeZ), 0, true));
++                    } else {
++                        player.playerConnection.sendPacket(new PacketPlayOutWorldEvent(1013, new BlockPosition((int) this.locX, (int) this.locY, (int) this.locZ), 0, true));
++                    }
++                }
++                // CraftBukkit end
+             }
+ 
+             this.r(i);
+             if (this.ticksLived % 10 == 0) {
+-                this.heal(10.0F);
++                this.heal(10.0F, EntityRegainHealthEvent.RegainReason.WITHER_SPAWN); // CraftBukkit
+             }
+ 
+         } else {
+@@ -251,6 +282,11 @@
+                                 Block block = this.world.getType(new BlockPosition(j2, k2, l2)).getBlock();
+ 
+                                 if (block.getMaterial() != Material.AIR && block != Blocks.BEDROCK && block != Blocks.END_PORTAL && block != Blocks.END_PORTAL_FRAME && block != Blocks.COMMAND_BLOCK && block != Blocks.BARRIER) {
++                                    // CraftBukkit start
++                                    if (CraftEventFactory.callEntityChangeBlockEvent(this, j2, k2, l2, Blocks.AIR, 0).isCancelled()) {
++                                        continue;
++                                    }
++                                    // CraftBukkit end
+                                     flag = this.world.setAir(new BlockPosition(j2, k2, l2), true) || flag;
+                                 }
+                             }
+@@ -264,7 +300,7 @@
+             }
+ 
+             if (this.ticksLived % 20 == 0) {
+-                this.heal(1.0F);
++                this.heal(1.0F, EntityRegainHealthEvent.RegainReason.REGEN); // CraftBukkit
+             }
+ 
+         }

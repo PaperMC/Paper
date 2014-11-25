@@ -8,12 +8,12 @@ import net.minecraft.server.GameProfileBanEntry;
 import net.minecraft.server.GameProfileBanList;
 import net.minecraft.server.JsonListEntry;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.com.mojang.authlib.GameProfile;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 
 import com.google.common.collect.ImmutableSet;
+import com.mojang.authlib.GameProfile;
 
 public class CraftProfileBanList implements org.bukkit.BanList {
     private final GameProfileBanList list;

@@ -1,0 +1,39 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/EntitySmallFireball.java	2014-11-27 08:59:46.729421723 +1100
++++ src/main/java/net/minecraft/server/EntitySmallFireball.java	2014-11-27 08:42:10.152850911 +1100
+@@ -1,5 +1,7 @@
+ package net.minecraft.server;
+ 
++import org.bukkit.event.entity.EntityCombustByEntityEvent; // CraftBukkit
++
+ public class EntitySmallFireball extends EntityFireball {
+ 
+     public EntitySmallFireball(World world) {
+@@ -26,7 +28,14 @@
+                 if (flag) {
+                     this.a(this.shooter, movingobjectposition.entity);
+                     if (!movingobjectposition.entity.isFireProof()) {
+-                        movingobjectposition.entity.setOnFire(5);
++                        // CraftBukkit start - Entity damage by entity event + combust event
++                        EntityCombustByEntityEvent event = new EntityCombustByEntityEvent((org.bukkit.entity.Projectile) this.getBukkitEntity(), movingobjectposition.entity.getBukkitEntity(), 5);
++                        movingobjectposition.entity.world.getServer().getPluginManager().callEvent(event);
++
++                        if (!event.isCancelled()) {
++                            movingobjectposition.entity.setOnFire(event.getDuration());
++                        }
++                        // CraftBukkit end
+                     }
+                 }
+             } else {
+@@ -39,7 +48,11 @@
+                     BlockPosition blockposition = movingobjectposition.a().shift(movingobjectposition.direction);
+ 
+                     if (this.world.isEmpty(blockposition)) {
+-                        this.world.setTypeUpdate(blockposition, Blocks.FIRE.getBlockData());
++                        // CraftBukkit start
++                        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this).isCancelled()) {                            
++                            this.world.setTypeUpdate(blockposition, Blocks.FIRE.getBlockData());
++                        }
++                        // CraftBukkit end
+                     }
+                 }
+             }

@@ -1,0 +1,43 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/EntityEnderCrystal.java	2014-11-27 08:59:46.665422005 +1100
++++ src/main/java/net/minecraft/server/EntityEnderCrystal.java	2014-11-27 08:42:10.172850872 +1100
+@@ -1,5 +1,10 @@
+ package net.minecraft.server;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.ExplosionPrimeEvent;
++// CraftBukkit end
++
+ public class EntityEnderCrystal extends Entity {
+ 
+     public int a;
+@@ -32,7 +37,11 @@
+         int k = MathHelper.floor(this.locZ);
+ 
+         if (this.world.worldProvider instanceof WorldProviderTheEnd && this.world.getType(new BlockPosition(i, j, k)).getBlock() != Blocks.FIRE) {
+-            this.world.setTypeUpdate(new BlockPosition(i, j, k), Blocks.FIRE.getBlockData());
++            // CraftBukkit start
++            if (!CraftEventFactory.callBlockIgniteEvent(this.world, i, j, k, this).isCancelled()) {
++                this.world.setTypeUpdate(new BlockPosition(i, j, k), Blocks.FIRE.getBlockData());
++            }
++            // CraftBukkit end
+         }
+ 
+     }
+@@ -54,7 +63,15 @@
+                 if (this.b <= 0) {
+                     this.die();
+                     if (!this.world.isStatic) {
+-                        this.world.explode((Entity) null, this.locX, this.locY, this.locZ, 6.0F, true);
++                        // CraftBukkit start
++                        ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), 6.0F, false);
++                        this.world.getServer().getPluginManager().callEvent(event);
++                        if (event.isCancelled()) {
++                            this.dead = false;
++                            return false;
++                        }
++                        this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire(), true);
++                        // CraftBukkit end
+                     }
+                 }
+             }

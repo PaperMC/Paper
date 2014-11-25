@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
+import net.minecraft.server.BlockPosition;
 import net.minecraft.server.TileEntityChest;
 
 import org.bukkit.Material;
@@ -41,19 +42,19 @@ public class CraftChest extends CraftBlockState implements Chest {
         }
 
         if (world.getBlockTypeIdAt(x - 1, y, z) == id) {
-            CraftInventory left = new CraftInventory((TileEntityChest)world.getHandle().getTileEntity(x - 1, y, z));
+            CraftInventory left = new CraftInventory((TileEntityChest)world.getHandle().getTileEntity(new BlockPosition(x - 1, y, z)));
             inventory = new CraftInventoryDoubleChest(left, inventory);
         }
         if (world.getBlockTypeIdAt(x + 1, y, z) == id) {
-            CraftInventory right = new CraftInventory((TileEntityChest) world.getHandle().getTileEntity(x + 1, y, z));
+            CraftInventory right = new CraftInventory((TileEntityChest) world.getHandle().getTileEntity(new BlockPosition(x + 1, y, z)));
             inventory = new CraftInventoryDoubleChest(inventory, right);
         }
         if (world.getBlockTypeIdAt(x, y, z - 1) == id) {
-            CraftInventory left = new CraftInventory((TileEntityChest) world.getHandle().getTileEntity(x, y, z - 1));
+            CraftInventory left = new CraftInventory((TileEntityChest) world.getHandle().getTileEntity(new BlockPosition(x, y, z - 1)));
             inventory = new CraftInventoryDoubleChest(left, inventory);
         }
         if (world.getBlockTypeIdAt(x, y, z + 1) == id) {
-            CraftInventory right = new CraftInventory((TileEntityChest) world.getHandle().getTileEntity(x, y, z + 1));
+            CraftInventory right = new CraftInventory((TileEntityChest) world.getHandle().getTileEntity(new BlockPosition(x, y, z + 1)));
             inventory = new CraftInventoryDoubleChest(inventory, right);
         }
         return inventory;

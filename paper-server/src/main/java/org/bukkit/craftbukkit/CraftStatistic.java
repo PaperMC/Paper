@@ -13,6 +13,9 @@ import com.google.common.base.CaseFormat;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableMap;
+import net.minecraft.server.Block;
+import net.minecraft.server.Item;
+import net.minecraft.server.MinecraftKey;
 
 public class CraftStatistic {
     private static final BiMap<String, org.bukkit.Statistic> statistics;
@@ -131,12 +134,19 @@ public class CraftStatistic {
 
     public static Material getMaterialFromStatistic(net.minecraft.server.Statistic statistic) {
         String statisticString = statistic.name;
-        int id;
+        String val = statisticString.substring(statisticString.lastIndexOf(".") + 1);
+        Item item = (Item) Item.REGISTRY.get(new MinecraftKey(val));
+        if (item != null) {
+            return Material.getMaterial(Item.getId(item));
+        }
+        Block block = (Block) Block.REGISTRY.get(new MinecraftKey(val));
+        if (block != null) {
+            return Material.getMaterial(Block.getId(block));
+        }
         try {
-            id = Integer.valueOf(statisticString.substring(statisticString.lastIndexOf(".") + 1));
+            return Material.getMaterial(Integer.parseInt(val));
         } catch (NumberFormatException e) {
             return null;
         }
-        return Material.getMaterial(id);
     }
 }

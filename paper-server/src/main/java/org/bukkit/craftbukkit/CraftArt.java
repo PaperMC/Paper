@@ -11,7 +11,7 @@ public class CraftArt {
             case KEBAB: return Art.KEBAB;
             case AZTEC: return Art.AZTEC;
             case ALBAN: return Art.ALBAN;
-            case AZTEC2: return Art.AZTEC2;
+            case AZTEC_2: return Art.AZTEC2;
             case BOMB: return Art.BOMB;
             case PLANT: return Art.PLANT;
             case WASTELAND: return Art.WASTELAND;
@@ -30,9 +30,9 @@ public class CraftArt {
             case FIGHTERS: return Art.FIGHTERS;
             case POINTER: return Art.POINTER;
             case PIGSCENE: return Art.PIGSCENE;
-            case BURNINGSKULL: return Art.BURNINGSKULL;
+            case BURNING_SKULL: return Art.BURNINGSKULL;
             case SKELETON: return Art.SKELETON;
-            case DONKEYKONG: return Art.DONKEYKONG;
+            case DONKEY_KONG: return Art.DONKEYKONG;
             case WITHER: return Art.WITHER;
             default:
                 throw new AssertionError(art);
@@ -44,7 +44,7 @@ public class CraftArt {
             case KEBAB: return EnumArt.KEBAB;
             case AZTEC: return EnumArt.AZTEC;
             case ALBAN: return EnumArt.ALBAN;
-            case AZTEC2: return EnumArt.AZTEC2;
+            case AZTEC2: return EnumArt.AZTEC_2;
             case BOMB: return EnumArt.BOMB;
             case PLANT: return EnumArt.PLANT;
             case WASTELAND: return EnumArt.WASTELAND;
@@ -63,9 +63,9 @@ public class CraftArt {
             case FIGHTERS: return EnumArt.FIGHTERS;
             case POINTER: return EnumArt.POINTER;
             case PIGSCENE: return EnumArt.PIGSCENE;
-            case BURNINGSKULL: return EnumArt.BURNINGSKULL;
+            case BURNINGSKULL: return EnumArt.BURNING_SKULL;
             case SKELETON: return EnumArt.SKELETON;
-            case DONKEYKONG: return EnumArt.DONKEYKONG;
+            case DONKEYKONG: return EnumArt.DONKEY_KONG;
             case WITHER: return EnumArt.WITHER;
             default:
                 throw new AssertionError(art);

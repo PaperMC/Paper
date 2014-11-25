@@ -1,0 +1,94 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/TileEntityBrewingStand.java	2014-11-27 08:59:46.901420966 +1100
++++ src/main/java/net/minecraft/server/TileEntityBrewingStand.java	2014-11-27 08:42:10.132850949 +1100
+@@ -3,6 +3,12 @@
+ import java.util.Arrays;
+ import java.util.List;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.entity.CraftHumanEntity;
++import org.bukkit.entity.HumanEntity;
++import org.bukkit.event.inventory.BrewEvent;
++// CraftBukkit end
++
+ public class TileEntityBrewingStand extends TileEntityContainer implements IUpdatePlayerListBox, IWorldInventory {
+ 
+     private static final int[] a = new int[] { 3};
+@@ -12,8 +18,35 @@
+     private boolean[] i;
+     private Item j;
+     private String k;
++    private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
+ 
+     public TileEntityBrewingStand() {}
++    
++    
++    // CraftBukkit start - add fields and methods
++    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
++    private int maxStack = 64;
++
++    public void onOpen(CraftHumanEntity who) {
++        transaction.add(who);
++    }
++
++    public void onClose(CraftHumanEntity who) {
++        transaction.remove(who);
++    }
++
++    public List<HumanEntity> getViewers() {
++        return transaction;
++    }
++
++    public ItemStack[] getContents() {
++        return this.items;
++    }
++
++    public void setMaxStackSize(int size) {
++        maxStack = size;
++    }
++    // CraftBukkit end
+ 
+     public String getName() {
+         return this.hasCustomName() ? this.k : "container.brewing";
+@@ -32,9 +65,14 @@
+     }
+ 
+     public void c() {
++        // CraftBukkit start - Use wall time instead of ticks for brewing
++        int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
++        this.lastTick = MinecraftServer.currentTick;
++
+         if (this.brewTime > 0) {
+-            --this.brewTime;
+-            if (this.brewTime == 0) {
++            this.brewTime -= elapsedTicks;
++            if (this.brewTime <= 0) { // == -> <=
++                // CraftBukkit end
+                 this.o();
+                 this.update();
+             } else if (!this.n()) {
+@@ -109,6 +147,16 @@
+     private void o() {
+         if (this.n()) {
+             ItemStack itemstack = this.items[3];
++            
++            // CraftBukkit start
++            if (getOwner() != null) {
++                BrewEvent event = new BrewEvent(world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()), (org.bukkit.inventory.BrewerInventory) this.getOwner().getInventory());
++                org.bukkit.Bukkit.getPluginManager().callEvent(event);
++                if (event.isCancelled()) {
++                    return;
++                }
++            }
++            // CraftBukkit end
+ 
+             for (int i = 0; i < 3; ++i) {
+                 if (this.items[i] != null && this.items[i].getItem() == Items.POTION) {
+@@ -221,7 +269,7 @@
+     }
+ 
+     public int getMaxStackSize() {
+-        return 64;
++        return this.maxStack; // CraftBukkit
+     }
+ 
+     public boolean a(EntityHuman entityhuman) {

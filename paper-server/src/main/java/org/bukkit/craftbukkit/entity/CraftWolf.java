@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityWolf;
+import net.minecraft.server.EnumColor;
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
@@ -30,10 +31,10 @@ public class CraftWolf extends CraftTameableAnimal implements Wolf {
     }
 
     public DyeColor getCollarColor() {
-        return DyeColor.getByWoolData((byte) getHandle().getCollarColor());
+        return DyeColor.getByWoolData((byte) getHandle().getCollarColor().getColorIndex());
     }
 
     public void setCollarColor(DyeColor color) {
-        getHandle().setCollarColor(color.getWoolData());
+        getHandle().setCollarColor(EnumColor.fromColorIndex(color.getWoolData()));
     }
 }

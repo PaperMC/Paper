@@ -1,0 +1,52 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/BlockSoil.java	2014-11-27 08:59:46.577422392 +1100
++++ src/main/java/net/minecraft/server/BlockSoil.java	2014-11-27 08:42:10.168850880 +1100
+@@ -3,6 +3,11 @@
+ import java.util.Iterator;
+ import java.util.Random;
+ 
++// CraftBukkit start
++import org.bukkit.event.entity.EntityInteractEvent;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++// CraftBukkit end
++
+ public class BlockSoil extends Block {
+ 
+     public static final BlockStateInteger MOISTURE = BlockStateInteger.of("moisture", 0, 7);
+@@ -34,6 +39,12 @@
+             if (i > 0) {
+                 world.setTypeAndData(blockposition, iblockdata.set(BlockSoil.MOISTURE, Integer.valueOf(i - 1)), 2);
+             } else if (!this.d(world, blockposition)) {
++                // CraftBukkit start
++                org.bukkit.block.Block block = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++                if (CraftEventFactory.callBlockFadeEvent(block, Blocks.DIRT).isCancelled()) {
++                    return;
++                }
++                // CraftBukkit end
+                 world.setTypeUpdate(blockposition, Blocks.DIRT.getBlockData());
+             }
+         } else if (i < 7) {
+@@ -49,6 +60,24 @@
+                     return;
+                 }
+ 
++                // CraftBukkit start - Interact soil
++                org.bukkit.event.Cancellable cancellable;
++                if (entity instanceof EntityHuman) {
++                    cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, blockposition, null, null);
++                } else {
++                    cancellable = new EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
++                    world.getServer().getPluginManager().callEvent((EntityInteractEvent) cancellable);
++                }
++
++                if (cancellable.isCancelled()) {
++                    return;
++                }
++
++                if (CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition.getX(), blockposition.getY(), blockposition.getZ(), Blocks.DIRT, 0).isCancelled()) {
++                    return;
++                }
++                // CraftBukkit end
++
+                 world.setTypeUpdate(blockposition, Blocks.DIRT.getBlockData());
+             }
+ 

@@ -1,0 +1,87 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/EntityWolf.java	2014-11-27 08:59:46.749421635 +1100
++++ src/main/java/net/minecraft/server/EntityWolf.java	2014-11-27 08:42:10.160850895 +1100
+@@ -1,5 +1,10 @@
+ package net.minecraft.server;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
++// CraftBukkit end
++
+ public class EntityWolf extends EntityTameableAnimal {
+ 
+     private float bm;
+@@ -51,8 +56,19 @@
+         } else if (!this.isTamed()) {
+             this.setAngry(true);
+         }
++    }
+ 
++    // CraftBukkit - add overriden version
++    @Override
++    public void setGoalTarget(EntityLiving entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason reason, boolean fire) {
++        super.setGoalTarget(entityliving, reason, fire);
++        if (entityliving == null) {
++            this.setAngry(false);
++        } else if (!this.isTamed()) {
++            this.setAngry(true);
++        }
+     }
++    // CraftBukkit end
+ 
+     protected void E() {
+         this.datawatcher.watch(18, Float.valueOf(this.getHealth()));
+@@ -85,7 +101,8 @@
+     }
+ 
+     protected String z() {
+-        return this.isAngry() ? "mob.wolf.growl" : (this.random.nextInt(3) == 0 ? (this.isTamed() && this.datawatcher.getFloat(18) < 10.0F ? "mob.wolf.whine" : "mob.wolf.panting") : "mob.wolf.bark");
++        // CraftBukkit - (getFloat(18) < 10) -> (getFloat(18) < this.getMaxHealth() / 2)
++        return this.isAngry() ? "mob.wolf.growl" : (this.random.nextInt(3) == 0 ? (this.isTamed() && this.datawatcher.getFloat(18) < this.getMaxHealth() / 2 ? "mob.wolf.whine" : "mob.wolf.panting") : "mob.wolf.bark");
+     }
+ 
+     protected String bn() {
+@@ -219,7 +236,7 @@
+                             --itemstack.count;
+                         }
+ 
+-                        this.heal((float) itemfood.getNutrition(itemstack));
++                        this.heal((float) itemfood.getNutrition(itemstack), org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // CraftBukkit
+                         if (itemstack.count <= 0) {
+                             entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, (ItemStack) null);
+                         }
+@@ -244,7 +261,7 @@
+                 this.bk.setSitting(!this.isSitting());
+                 this.aW = false;
+                 this.navigation.n();
+-                this.setGoalTarget((EntityLiving) null);
++                this.setGoalTarget((EntityLiving) null, TargetReason.FORGOT_TARGET, true); // CraftBukkit - reason
+             }
+         } else if (itemstack != null && itemstack.getItem() == Items.BONE && !this.isAngry()) {
+             if (!entityhuman.abilities.canInstantlyBuild) {
+@@ -256,12 +273,13 @@
+             }
+ 
+             if (!this.world.isStatic) {
+-                if (this.random.nextInt(3) == 0) {
++                // CraftBukkit - added event call and isCancelled check.
++                if (this.random.nextInt(3) == 0 && !CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) {
+                     this.setTamed(true);
+                     this.navigation.n();
+-                    this.setGoalTarget((EntityLiving) null);
++                    this.setGoalTarget((EntityLiving) null, TargetReason.FORGOT_TARGET, true);
+                     this.bk.setSitting(true);
+-                    this.setHealth(20.0F);
++                    this.setHealth(this.getMaxHealth()); // CraftBukkit - 20.0 -> getMaxHealth()
+                     this.setOwnerUUID(entityhuman.getUniqueID().toString());
+                     this.l(true);
+                     this.world.broadcastEntityEffect(this, (byte) 7);
+@@ -348,7 +366,7 @@
+     }
+ 
+     protected boolean isTypeNotPersistent() {
+-        return !this.isTamed() && this.ticksLived > 2400;
++        return !this.isTamed() /*&& this.ticksLived > 2400*/; // CraftBukkit
+     }
+ 
+     public boolean a(EntityLiving entityliving, EntityLiving entityliving1) {

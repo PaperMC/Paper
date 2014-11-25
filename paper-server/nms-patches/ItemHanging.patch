@@ -1,0 +1,41 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/ItemHanging.java	2014-11-27 08:59:46.785421476 +1100
++++ src/main/java/net/minecraft/server/ItemHanging.java	2014-11-27 08:42:10.144850927 +1100
+@@ -1,5 +1,11 @@
+ package net.minecraft.server;
+ 
++// CraftBukkit start
++import org.bukkit.entity.Player;
++import org.bukkit.event.hanging.HangingPlaceEvent;
++import org.bukkit.event.painting.PaintingPlaceEvent;
++// CraftBukkit end
++
+ public class ItemHanging extends Item {
+ 
+     private final Class a;
+@@ -24,6 +30,26 @@
+ 
+                 if (entityhanging != null && entityhanging.survives()) {
+                     if (!world.isStatic) {
++                        // CraftBukkit start - fire HangingPlaceEvent
++                        Player who = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
++                        org.bukkit.block.Block blockClicked = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++                        org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(enumdirection);
++
++                        HangingPlaceEvent event = new HangingPlaceEvent((org.bukkit.entity.Hanging) entityhanging.getBukkitEntity(), who, blockClicked, blockFace);
++                        world.getServer().getPluginManager().callEvent(event);
++
++                        PaintingPlaceEvent paintingEvent = null;
++                        if (entityhanging instanceof EntityPainting) {
++                            // Fire old painting event until it can be removed
++                            paintingEvent = new PaintingPlaceEvent((org.bukkit.entity.Painting) entityhanging.getBukkitEntity(), who, blockClicked, blockFace);
++                            paintingEvent.setCancelled(event.isCancelled());
++                            world.getServer().getPluginManager().callEvent(paintingEvent);
++                        }
++
++                        if (event.isCancelled() || (paintingEvent != null && paintingEvent.isCancelled())) {
++                            return false;
++                        }
++                        // CraftBukkit end
+                         world.addEntity(entityhanging);
+                     }
+ 

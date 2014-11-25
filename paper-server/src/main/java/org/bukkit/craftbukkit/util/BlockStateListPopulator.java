@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.server.Block;
+import net.minecraft.server.BlockPosition;
+import net.minecraft.server.IBlockData;
 
 import org.bukkit.World;
 import org.bukkit.block.BlockState;
@@ -35,6 +37,11 @@ public class BlockStateListPopulator {
 
     public void setTypeUpdate(int x, int y, int z, Block block) {
         this.setType(x, y, z, block);
+    }    
+    
+    public void setTypeUpdate(BlockPosition position, IBlockData data) { 
+        setTypeAndData(position.getX(), position.getY(), position.getZ(), data.getBlock(), data.getBlock().toLegacyData(data), 0);
+        
     }
 
     public void setType(int x, int y, int z, Block block) {

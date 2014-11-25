@@ -1,0 +1,550 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/WorldServer.java	2014-11-27 08:59:46.945420772 +1100
++++ src/main/java/net/minecraft/server/WorldServer.java	2014-11-27 08:42:10.140850934 +1100
+@@ -16,6 +16,20 @@
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
++// CraftBukkit start
++import java.util.*;
++import java.util.logging.Level;
++
++import org.bukkit.WeatherType;
++import org.bukkit.block.BlockState;
++import org.bukkit.craftbukkit.util.LongHash;
++
++import org.bukkit.event.block.BlockFormEvent;
++import org.bukkit.event.weather.LightningStrikeEvent;
++import org.bukkit.event.weather.ThunderChangeEvent;
++import org.bukkit.event.weather.WeatherChangeEvent;
++// CraftBukkit end
++
+ public class WorldServer extends World implements IAsyncTaskHandler {
+ 
+     private static final Logger a = LogManager.getLogger();
+@@ -37,14 +51,21 @@
+     private static final List U = Lists.newArrayList(new StructurePieceTreasure[] { new StructurePieceTreasure(Items.STICK, 0, 1, 3, 10), new StructurePieceTreasure(Item.getItemOf(Blocks.PLANKS), 0, 1, 3, 10), new StructurePieceTreasure(Item.getItemOf(Blocks.LOG), 0, 1, 3, 10), new StructurePieceTreasure(Items.STONE_AXE, 0, 1, 1, 3), new StructurePieceTreasure(Items.WOODEN_AXE, 0, 1, 1, 5), new StructurePieceTreasure(Items.STONE_PICKAXE, 0, 1, 1, 3), new StructurePieceTreasure(Items.WOODEN_PICKAXE, 0, 1, 1, 5), new StructurePieceTreasure(Items.APPLE, 0, 2, 3, 5), new StructurePieceTreasure(Items.BREAD, 0, 2, 3, 3), new StructurePieceTreasure(Item.getItemOf(Blocks.LOG2), 0, 1, 3, 10)});
+     private List V = Lists.newArrayList();
+ 
+-    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, WorldData worlddata, int i, MethodProfiler methodprofiler) {
+-        super(idatamanager, worlddata, WorldProvider.byDimension(i), methodprofiler, false);
++    // CraftBukkit start 
++    public final int dimension;
++
++    // Add env and gen to constructor
++    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, WorldData worlddata, int i, MethodProfiler methodprofiler,  org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
++        super(idatamanager, worlddata, WorldProvider.byDimension(env.getId()), methodprofiler, false, gen, env);
++        this.dimension = i;
++        this.pvpMode = minecraftserver.getPVP();
++        // CraftBukkit end
+         this.server = minecraftserver;
+         this.tracker = new EntityTracker(this);
+         this.manager = new PlayerChunkMap(this);
+         this.worldProvider.a(this);
+         this.chunkProvider = this.k();
+-        this.Q = new PortalTravelAgent(this);
++        this.Q = new org.bukkit.craftbukkit.CraftTravelAgent(this); // CraftBukkit
+         this.B();
+         this.C();
+         this.af().a(minecraftserver.aG());
+@@ -86,6 +107,89 @@
+ 
+         return this;
+     }
++    
++    // CraftBukkit start
++    @Override
++    public TileEntity getTileEntity(BlockPosition pos) {
++        TileEntity result = super.getTileEntity(pos);
++        Block type = getType(pos).getBlock();
++
++        if (type == Blocks.CHEST) {
++            if (!(result instanceof TileEntityChest)) {
++                result = fixTileEntity(pos, type, result);
++            }
++        } else if (type == Blocks.FURNACE) {
++            if (!(result instanceof TileEntityFurnace)) {
++                result = fixTileEntity(pos, type, result);
++            }
++        } else if (type == Blocks.DROPPER) {
++            if (!(result instanceof TileEntityDropper)) {
++                result = fixTileEntity(pos, type, result);
++            }
++        } else if (type == Blocks.DISPENSER) {
++            if (!(result instanceof TileEntityDispenser)) {
++                result = fixTileEntity(pos, type, result);
++            }
++        } else if (type == Blocks.JUKEBOX) {
++            if (!(result instanceof TileEntityRecordPlayer)) {
++                result = fixTileEntity(pos, type, result);
++            }
++        } else if (type == Blocks.NOTEBLOCK) {
++            if (!(result instanceof TileEntityNote)) {
++                result = fixTileEntity(pos, type, result);
++            }
++        } else if (type == Blocks.MOB_SPAWNER) {
++            if (!(result instanceof TileEntityMobSpawner)) {
++                result = fixTileEntity(pos, type, result);
++            }
++        } else if ((type == Blocks.STANDING_SIGN) || (type == Blocks.WALL_SIGN)) {
++            if (!(result instanceof TileEntitySign)) {
++                result = fixTileEntity(pos, type, result);
++            }
++        } else if (type == Blocks.ENDER_CHEST) {
++            if (!(result instanceof TileEntityEnderChest)) {
++                result = fixTileEntity(pos, type, result);
++            }
++        } else if (type == Blocks.BREWING_STAND) {
++            if (!(result instanceof TileEntityBrewingStand)) {
++                result = fixTileEntity(pos, type, result);
++            }
++        } else if (type == Blocks.BEACON) {
++            if (!(result instanceof TileEntityBeacon)) {
++                result = fixTileEntity(pos, type, result);
++            }
++        } else if (type == Blocks.HOPPER) {
++            if (!(result instanceof TileEntityHopper)) {
++                result = fixTileEntity(pos, type, result);
++            }
++        }
++
++        return result;
++    }
++
++    private TileEntity fixTileEntity(BlockPosition pos, Block type, TileEntity found) {
++        this.getServer().getLogger().log(Level.SEVERE, "Block at {0},{1},{2} is {3} but has {4}" + ". "
++                + "Bukkit will attempt to fix this, but there may be additional damage that we cannot recover.", new Object[]{pos.getX(), pos.getY(), pos.getZ(), org.bukkit.Material.getMaterial(Block.getId(type)).toString(), found});
++
++        if (type instanceof IContainer) {
++            TileEntity replacement = ((IContainer) type).a(this, type.toLegacyData(this.getType(pos)));
++            replacement.world = this;
++            this.setTileEntity(pos, replacement);
++            return replacement;
++        } else {
++            this.getServer().getLogger().severe("Don't know how to fix for this type... Can't do anything! :(");
++            return found;
++        }
++    }
++
++    private boolean canSpawn(int x, int z) {
++        if (this.generator != null) {
++            return this.generator.canSpawn(this.getWorld(), x, z);
++        } else {
++            return this.worldProvider.canSpawn(x, z);
++        }
++    }
++    // CraftBukkit end
+ 
+     public void doTick() {
+         super.doTick();
+@@ -105,8 +209,11 @@
+         }
+ 
+         this.methodProfiler.a("mobSpawner");
+-        if (this.getGameRules().getBoolean("doMobSpawning") && this.worldData.getType() != WorldType.DEBUG_ALL_BLOCK_STATES) {
+-            this.R.a(this, this.allowMonsters, this.allowAnimals, this.worldData.getTime() % 400L == 0L);
++        // CraftBukkit start - Only call spawner if we have players online and the world allows for mobs or animals
++        long time = this.worldData.getTime();
++        if (this.getGameRules().getBoolean("doMobSpawning") && this.worldData.getType() != WorldType.DEBUG_ALL_BLOCK_STATES && (this.allowMonsters || this.allowAnimals) && (this instanceof WorldServer && this.players.size() > 0)) {
++            this.R.a(this, this.allowMonsters && (this.ticksPerMonsterSpawns != 0 && time % this.ticksPerMonsterSpawns == 0L), this.allowAnimals && (this.ticksPerAnimalSpawns != 0 && time % this.ticksPerAnimalSpawns == 0L), this.worldData.getTime() % 400L == 0L);
++            // CraftBukkit end
+         }
+ 
+         this.methodProfiler.c("chunkSource");
+@@ -135,6 +242,8 @@
+         this.Q.a(this.getTime());
+         this.methodProfiler.b();
+         this.ak();
++        
++        this.getWorld().processChunkGC(); // CraftBukkit
+     }
+ 
+     public BiomeMeta a(EnumCreatureType enumcreaturetype, BlockPosition blockposition) {
+@@ -161,7 +270,7 @@
+ 
+                 if (entityhuman.v()) {
+                     ++i;
+-                } else if (entityhuman.isSleeping()) {
++                } else if (entityhuman.isSleeping() || entityhuman.fauxSleeping) { // CraftBukkit
+                     ++j;
+                 }
+             }
+@@ -187,26 +296,45 @@
+     }
+ 
+     private void ag() {
+-        this.worldData.setWeatherDuration(0);
+-        this.worldData.setStorm(false);
+-        this.worldData.setThunderDuration(0);
+-        this.worldData.setThundering(false);
++        // CraftBukkit start
++        WeatherChangeEvent weather = new WeatherChangeEvent(this.getWorld(), false);
++        this.getServer().getPluginManager().callEvent(weather);
++
++        ThunderChangeEvent thunder = new ThunderChangeEvent(this.getWorld(), false);
++        this.getServer().getPluginManager().callEvent(thunder);
++        if (!weather.isCancelled()) {
++            this.worldData.setWeatherDuration(0);
++            this.worldData.setStorm(false);
++        }
++        if (!thunder.isCancelled()) {
++            this.worldData.setThunderDuration(0);
++            this.worldData.setThundering(false);
++        }
++        // CraftBukkit end
+     }
+ 
+     public boolean everyoneDeeplySleeping() {
+         if (this.O && !this.isStatic) {
+             Iterator iterator = this.players.iterator();
+ 
++            // CraftBukkit - This allows us to assume that some people are in bed but not really, allowing time to pass in spite of AFKers
++            boolean foundActualSleepers = false;
++            
+             EntityHuman entityhuman;
+ 
+             do {
+                 if (!iterator.hasNext()) {
+-                    return true;
++                    return foundActualSleepers;
+                 }
+ 
+                 entityhuman = (EntityHuman) iterator.next();
+-            } while (!entityhuman.v() && entityhuman.isDeeplySleeping());
+-
++                // CraftBukkit start
++                if (entityhuman.isDeeplySleeping()) {
++                    foundActualSleepers = true;
++                }
++            } while (!entityhuman.v() && (entityhuman.isDeeplySleeping() || entityhuman.fauxSleeping));
++            // CraftBukkit end
++            
+             return false;
+         } else {
+             return false;
+@@ -227,15 +355,22 @@
+         } else {
+             int i = 0;
+             int j = 0;
+-
+-            for (Iterator iterator1 = this.chunkTickList.iterator(); iterator1.hasNext(); this.methodProfiler.b()) {
+-                ChunkCoordIntPair chunkcoordintpair1 = (ChunkCoordIntPair) iterator1.next();
+-                int k = chunkcoordintpair1.x * 16;
+-                int l = chunkcoordintpair1.z * 16;
+-
++            
++            // CraftBukkit start
++            //for (Iterator iterator1 = this.chunkTickList.iterator(); iterator1.hasNext(); this.methodProfiler.b()) {
++            //    ChunkCoordIntPair chunkcoordintpair1 = (ChunkCoordIntPair) iterator1.next();
++            //    int k = chunkcoordintpair1.x * 16;
++            //    int l = chunkcoordintpair1.z * 16;
++            for (long chunkCoord : chunkTickList.popAll()) {
++                int chunkX = LongHash.msw(chunkCoord);
++                int chunkZ = LongHash.lsw(chunkCoord);
++                int k = chunkX * 16;
++                int l = chunkZ * 16;
++                
+                 this.methodProfiler.a("getChunk");
+-                Chunk chunk = this.getChunkAt(chunkcoordintpair1.x, chunkcoordintpair1.z);
+-
++                Chunk chunk = this.getChunkAt(chunkX, chunkZ);
++                // CraftBukkit end
++                
+                 this.a(k, l, chunk);
+                 this.methodProfiler.c("tickChunk");
+                 chunk.b(false);
+@@ -260,11 +395,29 @@
+                     BlockPosition blockposition1 = blockposition.down();
+ 
+                     if (this.w(blockposition1)) {
+-                        this.setTypeUpdate(blockposition1, Blocks.ICE.getBlockData());
++                        // CraftBukkit start
++                        BlockState blockState = this.getWorld().getBlockAt(blockposition1.getX(), blockposition1.getY(), blockposition1.getZ()).getState();
++                        blockState.setTypeId(Block.getId(Blocks.ICE));
++
++                        BlockFormEvent iceBlockForm = new BlockFormEvent(blockState.getBlock(), blockState);
++                        this.getServer().getPluginManager().callEvent(iceBlockForm);
++                        if (!iceBlockForm.isCancelled()) {
++                            blockState.update(true);
++                        }
++                        // CraftBukkit end
+                     }
+ 
+                     if (this.S() && this.f(blockposition, true)) {
+-                        this.setTypeUpdate(blockposition, Blocks.SNOW_LAYER.getBlockData());
++                        // CraftBukkit start
++                        BlockState blockState = this.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()).getState();
++                        blockState.setTypeId(Block.getId(Blocks.SNOW_LAYER));
++
++                        BlockFormEvent snow = new BlockFormEvent(blockState.getBlock(), blockState);
++                        this.getServer().getPluginManager().callEvent(snow);
++                        if (!snow.isCancelled()) {
++                            blockState.update(true);
++                        }
++                        // CraftBukkit end
+                     }
+ 
+                     if (this.S() && this.getBiome(blockposition1).e()) {
+@@ -376,7 +529,7 @@
+     }
+ 
+     public void tickEntities() {
+-        if (this.players.isEmpty()) {
++        if (false && this.players.isEmpty()) {  // CraftBukkit - this prevents entity cleanup, other issues on servers with no players
+             if (this.emptyTime++ >= 1200) {
+                 return;
+             }
+@@ -401,7 +554,13 @@
+                 throw new IllegalStateException("TickNextTick list out of synch");
+             } else {
+                 if (i > 1000) {
+-                    i = 1000;
++                    // CraftBukkit start - If the server has too much to process over time, try to alleviate that
++                    if (i > 20 * 1000) {
++                        i = i / 20;
++                    } else {
++                        i = 1000;
++                    }
++                    // CraftBukkit end                    
+                 }
+ 
+                 this.methodProfiler.a("cleaning");
+@@ -501,6 +660,7 @@
+         return arraylist;
+     }
+ 
++    /* CraftBukkit start - We prevent spawning in general, so this butchering is not needed
+     public void entityJoinedWorld(Entity entity, boolean flag) {
+         if (!this.getSpawnAnimals() && (entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal)) {
+             entity.die();
+@@ -511,7 +671,9 @@
+         }
+ 
+         super.entityJoinedWorld(entity, flag);
++
+     }
++    // CraftBukkit end */
+ 
+     private boolean getSpawnNPCs() {
+         return this.server.getSpawnNPCs();
+@@ -523,14 +685,44 @@
+ 
+     protected IChunkProvider k() {
+         IChunkLoader ichunkloader = this.dataManager.createChunkLoader(this.worldProvider);
++        
++        // CraftBukkit start
++        org.bukkit.craftbukkit.generator.InternalChunkGenerator gen;
++
++        if (this.generator != null) {
++            gen = new org.bukkit.craftbukkit.generator.CustomChunkGenerator(this, this.getSeed(), this.generator);
++        } else if (this.worldProvider instanceof WorldProviderHell) {
++            gen = new org.bukkit.craftbukkit.generator.NetherChunkGenerator(this, this.getSeed());
++        } else if (this.worldProvider instanceof WorldProviderTheEnd) {
++            gen = new org.bukkit.craftbukkit.generator.SkyLandsChunkGenerator(this, this.getSeed());
++        } else {
++            gen = new org.bukkit.craftbukkit.generator.NormalChunkGenerator(this, this.getSeed());
++        }
+ 
+-        this.chunkProviderServer = new ChunkProviderServer(this, ichunkloader, this.worldProvider.getChunkProvider());
++        this.chunkProviderServer = new ChunkProviderServer(this, ichunkloader, gen);
++        // CraftBukkit end
+         return this.chunkProviderServer;
+     }
+ 
+     public List getTileEntities(int i, int j, int k, int l, int i1, int j1) {
+         ArrayList arraylist = Lists.newArrayList();
+-
++        
++        // CraftBukkit start - Get tile entities from chunks instead of world
++        for (int chunkX = (i >> 4); chunkX <= ((l - 1) >> 4); chunkX++) {
++            for (int chunkZ = (k >> 4); chunkZ <= ((j1 - 1) >> 4); chunkZ++) {
++                Chunk chunk = getChunkAt(chunkX, chunkZ);
++                if (chunk == null) {
++                    continue;
++                }
++                for (Object te : chunk.tileEntities.values()) {
++                    TileEntity tileentity = (TileEntity) te;
++                    if ((tileentity.position.getX() >= i) && (tileentity.position.getY() >= j) && (tileentity.position.getZ() >= k) && (tileentity.position.getX() < l) && (tileentity.position.getY() < i1) && (tileentity.position.getZ() < j1)) {
++                        arraylist.add(tileentity);
++                    }
++                }
++            }
++        }
++        /*
+         for (int k1 = 0; k1 < this.h.size(); ++k1) {
+             TileEntity tileentity = (TileEntity) this.h.get(k1);
+             BlockPosition blockposition = tileentity.getPosition();
+@@ -539,6 +731,8 @@
+                 arraylist.add(tileentity);
+             }
+         }
++        */
++        // CraftBukkit end
+ 
+         return arraylist;
+     }
+@@ -601,6 +795,23 @@
+             int i = 0;
+             int j = this.worldProvider.getSeaLevel();
+             int k = 0;
++            
++            // CraftBukkit start
++            if (this.generator != null) {
++                Random rand = new Random(this.getSeed());
++                org.bukkit.Location spawn = this.generator.getFixedSpawnLocation(((WorldServer) this).getWorld(), rand);
++
++                if (spawn != null) {
++                    if (spawn.getWorld() != ((WorldServer) this).getWorld()) {
++                        throw new IllegalStateException("Cannot set spawn point for " + this.worldData.getName() + " to be in another world (" + spawn.getWorld().getName() + ")");
++                    } else {
++                        this.worldData.setSpawn(new BlockPosition(spawn.getBlockX(), spawn.getBlockY(), spawn.getBlockZ()));
++                        this.isLoading = false;
++                        return;
++                    }
++                }
++            }
++            // CraftBukkit end            
+ 
+             if (blockposition != null) {
+                 i = blockposition.getX();
+@@ -611,7 +822,7 @@
+ 
+             int l = 0;
+ 
+-            while (!this.worldProvider.canSpawn(i, k)) {
++            while (!this.canSpawn(i, k)) { // CraftBukkit - use our own canSpawn
+                 i += random.nextInt(64) - random.nextInt(64);
+                 k += random.nextInt(64) - random.nextInt(64);
+                 ++l;
+@@ -648,7 +859,7 @@
+         return this.worldProvider.h();
+     }
+ 
+-    public void save(boolean flag, IProgressUpdate iprogressupdate) {
++    public void save(boolean flag, IProgressUpdate iprogressupdate) throws ExceptionWorldConflict { // CraftBukkit - added throws
+         if (this.chunkProvider.canSave()) {
+             if (iprogressupdate != null) {
+                 iprogressupdate.a("Saving level");
+@@ -660,7 +871,8 @@
+             }
+ 
+             this.chunkProvider.saveChunks(flag, iprogressupdate);
+-            List list = this.chunkProviderServer.a();
++            // CraftBukkit - ArrayList -> Collection
++            Collection list = this.chunkProviderServer.a();
+             Iterator iterator = list.iterator();
+ 
+             while (iterator.hasNext()) {
+@@ -680,7 +892,7 @@
+         }
+     }
+ 
+-    protected void a() {
++    protected void a() throws ExceptionWorldConflict { // CraftBukkit - added throws
+         this.checkSession();
+         this.worldData.a(this.af().h());
+         this.worldData.d(this.af().f());
+@@ -692,7 +904,11 @@
+         this.worldData.b(this.af().j());
+         this.worldData.e(this.af().i());
+         this.dataManager.saveWorldData(this.worldData, this.server.getPlayerList().u());
+-        this.worldMaps.a();
++        // CraftBukkit start - save worldMaps once, rather than once per shared world
++        if (!(this instanceof SecondaryWorldServer)) {
++            this.worldMaps.a();
++        }
++        // CraftBukkit end
+     }
+ 
+     protected void a(Entity entity) {
+@@ -724,8 +940,16 @@
+     }
+ 
+     public boolean strikeLightning(Entity entity) {
++        // CraftBukkit start
++        LightningStrikeEvent lightning = new LightningStrikeEvent(this.getWorld(), (org.bukkit.entity.LightningStrike) entity.getBukkitEntity());
++        this.getServer().getPluginManager().callEvent(lightning);
++
++        if (lightning.isCancelled()) {
++            return false;
++        }
+         if (super.strikeLightning(entity)) {
+-            this.server.getPlayerList().sendPacketNearby(entity.locX, entity.locY, entity.locZ, 512.0D, this.worldProvider.getDimension(), new PacketPlayOutSpawnEntityWeather(entity));
++            this.server.getPlayerList().sendPacketNearby(entity.locX, entity.locY, entity.locZ, 512.0D, this.dimension, new PacketPlayOutSpawnEntityWeather(entity));
++            // CraftBukkit end
+             return true;
+         } else {
+             return false;
+@@ -737,10 +961,20 @@
+     }
+ 
+     public Explosion createExplosion(Entity entity, double d0, double d1, double d2, float f, boolean flag, boolean flag1) {
++        // CraftBukkit start
++        Explosion explosion = super.createExplosion(entity, d0, d1, d2, f, flag, flag1);
++
++        if (explosion.wasCanceled) {
++            return explosion;
++        }
++ 
++        /* Remove
+         Explosion explosion = new Explosion(this, entity, d0, d1, d2, f, flag, flag1);
+ 
+         explosion.a();
+         explosion.a(false);
++        */
++        // CraftBukkit end - TODO: Check if explosions are still properly implemented
+         if (!flag1) {
+             explosion.clearBlocks();
+         }
+@@ -786,7 +1020,8 @@
+                 BlockActionData blockactiondata = (BlockActionData) iterator.next();
+ 
+                 if (this.a(blockactiondata)) {
+-                    this.server.getPlayerList().sendPacketNearby((double) blockactiondata.a().getX(), (double) blockactiondata.a().getY(), (double) blockactiondata.a().getZ(), 64.0D, this.worldProvider.getDimension(), new PacketPlayOutBlockAction(blockactiondata.a(), blockactiondata.d(), blockactiondata.b(), blockactiondata.c()));
++                    // CraftBukkit - this.worldProvider.dimension -> this.dimension
++                    this.server.getPlayerList().sendPacketNearby((double) blockactiondata.a().getX(), (double) blockactiondata.a().getY(), (double) blockactiondata.a().getZ(), 64.0D, this.dimension, new PacketPlayOutBlockAction(blockactiondata.a(), blockactiondata.d(), blockactiondata.b(), blockactiondata.c()));
+                 }
+             }
+ 
+@@ -809,6 +1044,7 @@
+         boolean flag = this.S();
+ 
+         super.p();
++        /* CraftBukkit start
+         if (this.o != this.p) {
+             this.server.getPlayerList().a(new PacketPlayOutGameStateChange(7, this.p), this.worldProvider.getDimension());
+         }
+@@ -827,6 +1063,16 @@
+             this.server.getPlayerList().sendAll(new PacketPlayOutGameStateChange(7, this.p));
+             this.server.getPlayerList().sendAll(new PacketPlayOutGameStateChange(8, this.r));
+         }
++        // */
++        if (flag != this.S()) {
++            // Only send weather packets to those affected
++            for (int i = 0; i < this.players.size(); ++i) {
++                if (((EntityPlayer) this.players.get(i)).world == this) {
++                    ((EntityPlayer) this.players.get(i)).setPlayerWeather((!flag ? WeatherType.DOWNFALL : WeatherType.CLEAR), false);
++                }
++            }
++            // CraftBukkit end
++        }
+ 
+     }
+ 
+@@ -855,10 +1101,17 @@
+     }
+ 
+     public void a(EnumParticle enumparticle, boolean flag, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6, int... aint) {
++        // CraftBukkit - visibility api support
++        sendParticles(null, enumparticle, flag, d0, d1, d2, i, d3, d4, d5, d6, aint);
++    }
++    
++    public void sendParticles(EntityPlayer sender, EnumParticle enumparticle, boolean flag, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6, int... aint) {
++        // CraftBukkit end
+         PacketPlayOutWorldParticles packetplayoutworldparticles = new PacketPlayOutWorldParticles(enumparticle, flag, (float) d0, (float) d1, (float) d2, (float) d3, (float) d4, (float) d5, (float) d6, i, aint);
+ 
+         for (int j = 0; j < this.players.size(); ++j) {
+             EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
++            if (sender != null && !sender.getBukkitEntity().canSee(entityplayer.getBukkitEntity())) continue; // CraftBukkit
+             BlockPosition blockposition = entityplayer.getChunkCoordinates();
+             double d7 = blockposition.c(d0, d1, d2);
+ 

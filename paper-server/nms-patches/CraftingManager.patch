@@ -1,0 +1,57 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/CraftingManager.java	2014-11-27 08:59:46.625422182 +1100
++++ src/main/java/net/minecraft/server/CraftingManager.java	2014-11-27 08:42:10.112850989 +1100
+@@ -8,10 +8,16 @@
+ import java.util.Iterator;
+ import java.util.List;
+ 
++import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
++
+ public class CraftingManager {
+ 
+     private static final CraftingManager a = new CraftingManager();
+     public List recipes = Lists.newArrayList();
++    // CraftBukkit start
++    public IRecipe lastRecipe;
++    public org.bukkit.inventory.InventoryView lastCraftView;
++    // CraftBukkit end
+ 
+     public static CraftingManager getInstance() {
+         return CraftingManager.a;
+@@ -166,8 +172,15 @@
+         this.registerShapedRecipe(new ItemStack(Blocks.DAYLIGHT_DETECTOR), new Object[] { "GGG", "QQQ", "WWW", Character.valueOf('G'), Blocks.GLASS, Character.valueOf('Q'), Items.QUARTZ, Character.valueOf('W'), Blocks.WOODEN_SLAB});
+         this.registerShapedRecipe(new ItemStack(Blocks.HOPPER), new Object[] { "I I", "ICI", " I ", Character.valueOf('I'), Items.IRON_INGOT, Character.valueOf('C'), Blocks.CHEST});
+         this.registerShapedRecipe(new ItemStack(Items.ARMOR_STAND, 1), new Object[] { "///", " / ", "/_/", Character.valueOf('/'), Items.STICK, Character.valueOf('_'), new ItemStack(Blocks.STONE_SLAB, 1, EnumStoneSlabVariant.STONE.a())});
++        // Collections.sort(this.recipes, new RecipeSorter(this));  // CraftBukkit - moved below
++        sort();
++    }
++    
++    // CraftBukkit start
++    public void sort() {
+         Collections.sort(this.recipes, new RecipeSorter(this));
+     }
++    // CraftBukkit end
+ 
+     public ShapedRecipes registerShapedRecipe(ItemStack itemstack, Object... aobject) {
+         String s = "";
+@@ -265,13 +278,18 @@
+ 
+         do {
+             if (!iterator.hasNext()) {
++                inventorycrafting.currentRecipe = null; // CraftBukkit - Clear recipe when no recipe is found
+                 return null;
+             }
+ 
+             irecipe = (IRecipe) iterator.next();
+-        } while (!irecipe.a(inventorycrafting, world));
+-
+-        return irecipe.a(inventorycrafting);
++        } while (!irecipe.a(inventorycrafting, world));        
++        
++        // CraftBukkit start - INVENTORY_PRE_CRAFT event
++        inventorycrafting.currentRecipe = irecipe;
++        ItemStack result = irecipe.a(inventorycrafting);
++        return CraftEventFactory.callPreCraftEvent(inventorycrafting, result, lastCraftView, false);
++        // CraftBukkit end
+     }
+ 
+     public ItemStack[] b(InventoryCrafting inventorycrafting, World world) {

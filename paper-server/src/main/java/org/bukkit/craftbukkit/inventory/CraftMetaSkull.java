@@ -3,9 +3,7 @@ package org.bukkit.craftbukkit.inventory;
 import java.util.Map;
 
 import net.minecraft.server.GameProfileSerializer;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.NBTTagCompound;
-import net.minecraft.util.com.mojang.authlib.GameProfile;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
@@ -13,6 +11,7 @@ import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
 import com.google.common.collect.ImmutableMap.Builder;
+import com.mojang.authlib.GameProfile;
 
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaSkull extends CraftMetaItem implements SkullMeta {

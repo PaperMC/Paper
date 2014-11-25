@@ -1,0 +1,104 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/EntityCreeper.java	2014-11-27 08:59:46.661422023 +1100
++++ src/main/java/net/minecraft/server/EntityCreeper.java	2014-11-27 08:42:10.168850880 +1100
+@@ -1,5 +1,10 @@
+ package net.minecraft.server;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.ExplosionPrimeEvent;
++// CraftBukkit end
++
+ public class EntityCreeper extends EntityMonster {
+ 
+     private int b;
+@@ -7,6 +12,7 @@
+     private int maxFuseTicks = 30;
+     private int explosionRadius = 3;
+     private int bm = 0;
++    private int record = -1; // CraftBukkit
+ 
+     public EntityCreeper(World world) {
+         super(world);
+@@ -111,19 +117,36 @@
+     }
+ 
+     public void die(DamageSource damagesource) {
+-        super.die(damagesource);
++        // super.die(damagesource); // CraftBukkit - Moved to end
+         if (damagesource.getEntity() instanceof EntitySkeleton) {
+             int i = Item.getId(Items.RECORD_13);
+             int j = Item.getId(Items.RECORD_WAIT);
+             int k = i + this.random.nextInt(j - i + 1);
+ 
+-            this.a(Item.getById(k), 1);
++            // CraftBukkit start - Store record for now, drop in dropDeathLoot
++            // this.a(Item.getById(k), 1);
++            this.record = k;
++            // CraftBukkit end
+         } else if (damagesource.getEntity() instanceof EntityCreeper && damagesource.getEntity() != this && ((EntityCreeper) damagesource.getEntity()).isPowered() && ((EntityCreeper) damagesource.getEntity()).cn()) {
+             ((EntityCreeper) damagesource.getEntity()).co();
+             this.a(new ItemStack(Items.SKULL, 1, 4), 0.0F);
+         }
+-
++        
++        super.die(damagesource); // CraftBukkit - Moved from above
++    }
++ 
++    // CraftBukkit start - Whole method
++    @Override
++    protected void dropDeathLoot(boolean flag, int i) {
++        super.dropDeathLoot(flag, i);
++
++        // Drop a music disc?
++        if (this.record != -1) {
++            this.a(Item.getById(this.record), 1);
++            this.record = -1;
++        }
+     }
++    // CraftBukkit end
+ 
+     public boolean r(Entity entity) {
+         return true;
+@@ -147,7 +170,21 @@
+ 
+     public void onLightningStrike(EntityLightning entitylightning) {
+         super.onLightningStrike(entitylightning);
+-        this.datawatcher.watch(17, Byte.valueOf((byte) 1));
++        // CraftBukkit start
++        if (CraftEventFactory.callCreeperPowerEvent(this, entitylightning, org.bukkit.event.entity.CreeperPowerEvent.PowerCause.LIGHTNING).isCancelled()) {
++            return;
++        }
++
++        this.setPowered(true);
++    }
++
++    public void setPowered(boolean powered) {
++        if (!powered) {
++            this.datawatcher.watch(17, Byte.valueOf((byte) 0));
++        } else {
++            this.datawatcher.watch(17, Byte.valueOf((byte) 1));
++        }
++        // CraftBukkit end
+     }
+ 
+     protected boolean a(EntityHuman entityhuman) {
+@@ -170,9 +207,16 @@
+         if (!this.world.isStatic) {
+             boolean flag = this.world.getGameRules().getBoolean("mobGriefing");
+             float f = this.isPowered() ? 2.0F : 1.0F;
+-
+-            this.world.explode(this, this.locX, this.locY, this.locZ, (float) this.explosionRadius * f, flag);
+-            this.die();
++            
++            ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), this.explosionRadius * f, false);
++            this.world.getServer().getPluginManager().callEvent(event);
++            if (!event.isCancelled()) {
++                this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire(), flag);
++                this.die();
++            } else {
++                fuseTicks = 0;
++            }
++            // CraftBukkit end
+         }
+ 
+     }

@@ -1,0 +1,79 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/ContainerWorkbench.java	2014-11-27 08:59:46.621422199 +1100
++++ src/main/java/net/minecraft/server/ContainerWorkbench.java	2014-11-27 08:42:10.156850903 +1100
+@@ -1,13 +1,28 @@
+ package net.minecraft.server;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
++import org.bukkit.craftbukkit.inventory.CraftInventoryView;
++// CraftBukkit end
++
+ public class ContainerWorkbench extends Container {
+ 
+-    public InventoryCrafting craftInventory = new InventoryCrafting(this, 3, 3);
+-    public IInventory resultInventory = new InventoryCraftResult();
++    public InventoryCrafting craftInventory; // CraftBukkit - move initialization into constructor
++    public IInventory resultInventory; // CraftBukkit - move initialization into constructor
+     private World g;
+     private BlockPosition h;
++    // CraftBukkit start
++    private CraftInventoryView bukkitEntity = null;
++    private PlayerInventory player;
++    // CraftBukkit end
+ 
+     public ContainerWorkbench(PlayerInventory playerinventory, World world, BlockPosition blockposition) {
++        // CraftBukkit start - Switched order of IInventory construction and stored player
++        this.resultInventory = new InventoryCraftResult();
++        this.craftInventory = new InventoryCrafting(this, 3, 3, playerinventory.player); // CraftBukkit - pass player
++        this.craftInventory.resultInventory = this.resultInventory;
++        this.player = playerinventory;
++        // CraftBukkit end
+         this.g = world;
+         this.h = blockposition;
+         this.a((Slot) (new SlotResult(playerinventory.player, this.craftInventory, this.resultInventory, 0, 124, 35)));
+@@ -35,7 +50,18 @@
+     }
+ 
+     public void a(IInventory iinventory) {
+-        this.resultInventory.setItem(0, CraftingManager.getInstance().craft(this.craftInventory, this.g));
++        // this.resultInventory.setItem(0, CraftingManager.getInstance().craft(this.craftInventory, this.g));
++        // CraftBukkit start
++        CraftingManager.getInstance().lastCraftView = getBukkitView();
++        ItemStack craftResult = CraftingManager.getInstance().craft(this.craftInventory, this.g);
++        this.resultInventory.setItem(0, craftResult);
++        if (super.listeners.size() < 1) {
++            return;
++        }
++
++        EntityPlayer player = (EntityPlayer) super.listeners.get(0); // TODO: Is this _always_ correct? Seems like it.
++        player.playerConnection.sendPacket(new PacketPlayOutSetSlot(player.activeContainer.windowId, 0, craftResult));
++        // CraftBukkit end
+     }
+ 
+     public void b(EntityHuman entityhuman) {
+@@ -53,6 +79,7 @@
+     }
+ 
+     public boolean a(EntityHuman entityhuman) {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return this.g.getType(this.h).getBlock() != Blocks.CRAFTING_TABLE ? false : entityhuman.e((double) this.h.getX() + 0.5D, (double) this.h.getY() + 0.5D, (double) this.h.getZ() + 0.5D) <= 64.0D;
+     }
+ 
+@@ -101,4 +128,17 @@
+     public boolean a(ItemStack itemstack, Slot slot) {
+         return slot.inventory != this.resultInventory && super.a(itemstack, slot);
+     }
++
++    // CraftBukkit start
++    @Override
++    public CraftInventoryView getBukkitView() {
++        if (bukkitEntity != null) {
++            return bukkitEntity;
++        }
++
++        CraftInventoryCrafting inventory = new CraftInventoryCrafting(this.craftInventory, this.resultInventory);
++        bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
++        return bukkitEntity;
++    }
++    // CraftBukkit end
+ }

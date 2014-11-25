@@ -1,0 +1,31 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/BlockTrapdoor.java	2014-11-27 08:59:46.581422375 +1100
++++ src/main/java/net/minecraft/server/BlockTrapdoor.java	2014-11-27 08:42:10.124850965 +1100
+@@ -2,6 +2,8 @@
+ 
+ import com.google.common.base.Predicate;
+ 
++import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
++
+ public class BlockTrapdoor extends Block {
+ 
+     public static final BlockStateDirection FACING = BlockStateDirection.of("facing", (Predicate) EnumDirectionLimit.HORIZONTAL);
+@@ -101,6 +103,19 @@
+                 boolean flag = world.isBlockIndirectlyPowered(blockposition);
+ 
+                 if (flag || block.isPowerSource()) {
++                    // CraftBukkit start
++                    org.bukkit.World bworld = world.getWorld();
++                    org.bukkit.block.Block bblock = bworld.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++
++                    int power = bblock.getBlockPower();
++                    int oldPower = (Boolean) iblockdata.get(OPEN) ? 15 : 0;
++
++                    if (oldPower == 0 ^ power == 0 || block.isPowerSource()) {
++                        BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bblock, oldPower, power);
++                        world.getServer().getPluginManager().callEvent(eventRedstone);
++                        flag = eventRedstone.getNewCurrent() > 0;
++                    }
++                    // CraftBukkit end
+                     boolean flag1 = ((Boolean) iblockdata.get(BlockTrapdoor.OPEN)).booleanValue();
+ 
+                     if (flag1 != flag) {

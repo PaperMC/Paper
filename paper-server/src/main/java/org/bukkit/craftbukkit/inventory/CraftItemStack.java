@@ -185,7 +185,7 @@ public final class CraftItemStack extends ItemStack {
         NBTTagList list = getEnchantmentList(handle);
         if (list == null) {
             list = new NBTTagList();
-            handle.tag.set(ENCHANTMENTS.NBT, list);
+            handle.getTag().set(ENCHANTMENTS.NBT, list);
         }
         int size = list.size();
 
@@ -208,7 +208,7 @@ public final class CraftItemStack extends ItemStack {
             return false;
         }
 
-        if (item.tag == null) {
+        if (item.getTag() == null) {
             item.setTag(new NBTTagCompound());
         }
 
@@ -255,9 +255,9 @@ public final class CraftItemStack extends ItemStack {
             return 0;
         }
         if (size == 1) {
-            handle.tag.remove(ENCHANTMENTS.NBT);
-            if (handle.tag.isEmpty()) {
-                handle.tag = null;
+            handle.getTag().remove(ENCHANTMENTS.NBT);
+            if (handle.getTag().isEmpty()) {
+                handle.setTag(null);
             }
             return level;
         }
@@ -269,7 +269,7 @@ public final class CraftItemStack extends ItemStack {
                 listCopy.add(list.get(i));
             }
         }
-        handle.tag.set(ENCHANTMENTS.NBT, listCopy);
+        handle.getTag().set(ENCHANTMENTS.NBT, listCopy);
 
         return level;
     }
@@ -323,26 +323,28 @@ public final class CraftItemStack extends ItemStack {
         switch (getType(item)) {
             case WRITTEN_BOOK:
             case BOOK_AND_QUILL:
-                return new CraftMetaBook(item.tag);
+                return new CraftMetaBook(item.getTag());
             case SKULL_ITEM:
-                return new CraftMetaSkull(item.tag);
+                return new CraftMetaSkull(item.getTag());
             case LEATHER_HELMET:
             case LEATHER_CHESTPLATE:
             case LEATHER_LEGGINGS:
             case LEATHER_BOOTS:
-                return new CraftMetaLeatherArmor(item.tag);
+                return new CraftMetaLeatherArmor(item.getTag());
             case POTION:
-                return new CraftMetaPotion(item.tag);
+                return new CraftMetaPotion(item.getTag());
             case MAP:
-                return new CraftMetaMap(item.tag);
+                return new CraftMetaMap(item.getTag());
             case FIREWORK:
-                return new CraftMetaFirework(item.tag);
+                return new CraftMetaFirework(item.getTag());
             case FIREWORK_CHARGE:
-                return new CraftMetaCharge(item.tag);
+                return new CraftMetaCharge(item.getTag());
             case ENCHANTED_BOOK:
-                return new CraftMetaEnchantedBook(item.tag);
+                return new CraftMetaEnchantedBook(item.getTag());
+            case BANNER:
+                return new CraftMetaBanner(item.getTag());
             default:
-                return new CraftMetaItem(item.tag);
+                return new CraftMetaItem(item.getTag());
         }
     }
 
@@ -361,7 +363,7 @@ public final class CraftItemStack extends ItemStack {
             return false;
         }
         if (CraftItemFactory.instance().equals(itemMeta, null)) {
-            item.tag = null;
+            item.setTag(null);
             return true;
         }
         if (!CraftItemFactory.instance().isApplicable(itemMeta, getType(item))) {
@@ -397,7 +399,7 @@ public final class CraftItemStack extends ItemStack {
         if (!(that.getTypeId() == getTypeId() && getDurability() == that.getDurability())) {
             return false;
         }
-        return hasItemMeta() ? that.hasItemMeta() && handle.tag.equals(that.handle.tag) : !that.hasItemMeta();
+        return hasItemMeta() ? that.hasItemMeta() && handle.getTag().equals(that.handle.getTag()) : !that.hasItemMeta();
     }
 
     @Override
@@ -406,6 +408,6 @@ public final class CraftItemStack extends ItemStack {
     }
 
     static boolean hasItemMeta(net.minecraft.server.ItemStack item) {
-        return !(item == null || item.tag == null || item.tag.isEmpty());
+        return !(item == null || item.getTag() == null || item.getTag().isEmpty());
     }
 }

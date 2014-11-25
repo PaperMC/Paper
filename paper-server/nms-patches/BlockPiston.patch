@@ -1,0 +1,76 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/BlockPiston.java	2014-11-27 08:59:46.553422499 +1100
++++ src/main/java/net/minecraft/server/BlockPiston.java	2014-11-27 08:42:10.168850880 +1100
+@@ -1,6 +1,16 @@
+ package net.minecraft.server;
+ 
++import java.util.AbstractList;
++import java.util.Collection;
++import java.util.Iterator;
+ import java.util.List;
++import java.util.ListIterator;
++
++// CraftBukkit start
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.event.block.BlockPistonRetractEvent;
++import org.bukkit.event.block.BlockPistonExtendEvent;
++// CraftBukkit end
+ 
+ public class BlockPiston extends Block {
+ 
+@@ -52,10 +62,19 @@
+         boolean flag = this.b(world, blockposition, enumdirection);
+ 
+         if (flag && !((Boolean) iblockdata.get(BlockPiston.EXTENDED)).booleanValue()) {
+-            if ((new PistonExtendsChecker(world, blockposition, enumdirection, true)).a()) {
++            if ((new PistonExtendsChecker(world, blockposition, enumdirection, true)).a()) { 
+                 world.playBlockAction(blockposition, this, 0, enumdirection.a());
+             }
+         } else if (!flag && ((Boolean) iblockdata.get(BlockPiston.EXTENDED)).booleanValue()) {
++            // CraftBukkit start
++            org.bukkit.block.Block block = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++            BlockPistonRetractEvent event = new BlockPistonRetractEvent(block, CraftBlock.notchToBlockFace(enumdirection));
++            world.getServer().getPluginManager().callEvent(event);
++
++            if (event.isCancelled()) {
++                return;
++            }
++            // CraftBukkit end
+             world.setTypeAndData(blockposition, iblockdata.set(BlockPiston.EXTENDED, Boolean.valueOf(false)), 2);
+             world.playBlockAction(blockposition, this, 1, enumdirection.a());
+         }
+@@ -286,6 +305,35 @@
+         if (!pistonextendschecker.a()) {
+             return false;
+         } else {
++            final org.bukkit.block.Block bblock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++
++            final List moved = pistonextendschecker.getMovedBlocks();
++            final List broken = pistonextendschecker.getBrokenBlocks();
++
++            List<org.bukkit.block.Block> blocks = new AbstractList<org.bukkit.block.Block>() {
++
++                @Override
++                public int size() {
++                    return moved.size() + broken.size();
++                }
++
++                @Override
++                public org.bukkit.block.Block get(int index) {
++                    if (index >= size() || index < 0) {
++                        throw new ArrayIndexOutOfBoundsException(index);
++                    }
++                    BlockPosition pos = (BlockPosition) (index < moved.size() ? moved.get(index) : broken.get(index - moved.size()));
++                    return bblock.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++                }
++            };
++
++            BlockPistonExtendEvent event = new BlockPistonExtendEvent(bblock, blocks, CraftBlock.notchToBlockFace(enumdirection));
++            world.getServer().getPluginManager().callEvent(event);
++
++            if (event.isCancelled()) {
++                return false;
++            }
++            // CraftBukkit end
+             int i = list.size() + list1.size();
+             Block[] ablock = new Block[i];
+             EnumDirection enumdirection1 = flag ? enumdirection : enumdirection.opposite();

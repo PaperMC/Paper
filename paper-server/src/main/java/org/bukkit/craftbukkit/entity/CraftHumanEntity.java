@@ -2,16 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import java.util.Set;
 
-import net.minecraft.server.Container;
-import net.minecraft.server.EntityHuman;
-import net.minecraft.server.EntityMinecartHopper;
-import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.PacketPlayInCloseWindow;
-import net.minecraft.server.PacketPlayOutOpenWindow;
-import net.minecraft.server.TileEntityBrewingStand;
-import net.minecraft.server.TileEntityDispenser;
-import net.minecraft.server.TileEntityFurnace;
-import net.minecraft.server.TileEntityHopper;
+import net.minecraft.server.*;
 
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -194,38 +185,38 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             break;
         case DISPENSER:
             if (craftinv.getInventory() instanceof TileEntityDispenser) {
-                getHandle().openDispenser((TileEntityDispenser) craftinv.getInventory());
+                getHandle().openTileEntity((TileEntityDispenser) craftinv.getInventory());
             } else {
-                openCustomInventory(inventory, player, 3);
+                openCustomInventory(inventory, player, "minecraft:dispenser");
             }
             break;
         case FURNACE:
             if (craftinv.getInventory() instanceof TileEntityFurnace) {
-                getHandle().openFurnace((TileEntityFurnace) craftinv.getInventory());
+                getHandle().openTileEntity((TileEntityFurnace) craftinv.getInventory());
             } else {
-                openCustomInventory(inventory, player, 2);
+                openCustomInventory(inventory, player, "minecraft:furnace");
             }
             break;
         case WORKBENCH:
-            openCustomInventory(inventory, player, 1);
+            openCustomInventory(inventory, player, "minecraft:crafting_table");
             break;
         case BREWING:
             if (craftinv.getInventory() instanceof TileEntityBrewingStand) {
-                getHandle().openBrewingStand((TileEntityBrewingStand) craftinv.getInventory());
+                getHandle().openTileEntity((TileEntityBrewingStand) craftinv.getInventory());
             } else {
-                openCustomInventory(inventory, player, 5);
+                openCustomInventory(inventory, player, "minecraft:brewing_stand");
             }
             break;
         case ENCHANTING:
-            openCustomInventory(inventory, player, 4);
+            openCustomInventory(inventory, player, "minecraft:enchanting_table");
             break;
         case HOPPER:
             if (craftinv.getInventory() instanceof TileEntityHopper) {
-                getHandle().openHopper((TileEntityHopper) craftinv.getInventory());
+                getHandle().openTileEntity((TileEntityHopper) craftinv.getInventory());
             } else if (craftinv.getInventory() instanceof EntityMinecartHopper) {
-                getHandle().openMinecartHopper((EntityMinecartHopper) craftinv.getInventory());
+                getHandle().openTileEntity((EntityMinecartHopper) craftinv.getInventory());
             } else {
-                openCustomInventory(inventory, player, 9);
+                openCustomInventory(inventory, player, "minecraft:hopper");
             }
             break;
         case CREATIVE:
@@ -239,7 +230,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return getHandle().activeContainer.getBukkitView();
     }
 
-    private void openCustomInventory(Inventory inventory, EntityPlayer player, int windowType) {
+    private void openCustomInventory(Inventory inventory, EntityPlayer player, String windowType) {
         if (player.playerConnection == null) return;
         Container container = new CraftContainer(inventory, this, player.nextContainerCounter());
 
@@ -249,7 +240,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         String title = container.getBukkitView().getTitle();
         int size = container.getBukkitView().getTopInventory().getSize();
 
-        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, title, size, true));
+        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title), size));
         getHandle().activeContainer = container;
         getHandle().activeContainer.addSlotListener(player);
     }
@@ -264,7 +255,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (location == null) {
             location = getLocation();
         }
-        getHandle().startCrafting(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        getHandle().openTileEntity(new TileEntityContainerWorkbench(getHandle().world, new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ())));
         if (force) {
             getHandle().activeContainer.checkReachable = false;
         }
@@ -281,7 +272,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (location == null) {
             location = getLocation();
         }
-        getHandle().startEnchanting(location.getBlockX(), location.getBlockY(), location.getBlockZ(), null);
+        getHandle().openTileEntity((ITileEntityContainer) getHandle().world.getTileEntity(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ())));
         if (force) {
             getHandle().activeContainer.checkReachable = false;
         }
@@ -311,10 +302,10 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         // Now open the window
         InventoryType type = inventory.getType();
-        int windowType = CraftContainer.getNotchInventoryType(type);
+        String windowType = CraftContainer.getNotchInventoryType(type);
         String title = inventory.getTitle();
         int size = inventory.getTopInventory().getSize();
-        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, title, size, false));
+        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title), size));
         player.activeContainer = container;
         player.activeContainer.addSlotListener(player);
     }

@@ -1,0 +1,273 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/PortalTravelAgent.java	2014-11-27 08:59:46.869421107 +1100
++++ src/main/java/net/minecraft/server/PortalTravelAgent.java	2014-11-27 08:42:10.096851020 +1100
+@@ -5,6 +5,12 @@
+ import java.util.List;
+ import java.util.Random;
+ 
++// CraftBukkit start
++import org.bukkit.Location;
++import org.bukkit.event.entity.EntityPortalExitEvent;
++import org.bukkit.util.Vector;
++// CraftBukkit end
++
+ public class PortalTravelAgent {
+ 
+     private final WorldServer a;
+@@ -27,8 +33,21 @@
+             int i = MathHelper.floor(entity.locX);
+             int j = MathHelper.floor(entity.locY) - 1;
+             int k = MathHelper.floor(entity.locZ);
++            // CraftBukkit start - Modularize end portal creation
++            BlockPosition created = this.createEndPortal(entity.locX, entity.locY, entity.locZ);
++            entity.setPositionRotation((double) created.getX(), (double) created.getY(), (double) created.getZ(), entity.yaw, 0.0F);
++            entity.motX = entity.motY = entity.motZ = 0.0D;
++        }
++    }
++
++    // Split out from original a(Entity, double, double, double, float) method in order to enable being called from createPortal
++    private BlockPosition createEndPortal(double x, double y, double z) {
++            int i = MathHelper.floor(x);
++            int j = MathHelper.floor(y) - 1;
++            int k = MathHelper.floor(z);
+             byte b0 = 1;
+             byte b1 = 0;
++            // CraftBukkit end
+ 
+             for (int l = -2; l <= 2; ++l) {
+                 for (int i1 = -2; i1 <= 2; ++i1) {
+@@ -43,16 +62,63 @@
+                 }
+             }
+ 
+-            entity.setPositionRotation((double) i, (double) j, (double) k, entity.yaw, 0.0F);
+-            entity.motX = entity.motY = entity.motZ = 0.0D;
++        // CraftBukkit start
++        return new BlockPosition(i, k, k);
++    }
++
++    // use logic based on creation to verify end portal
++    private BlockPosition findEndPortal(BlockPosition portal) {
++        int i = portal.getX();
++        int j = portal.getY() - 1;
++        int k = portal.getZ();
++        byte b0 = 1;
++        byte b1 = 0;
++
++        for (int l = -2; l <= 2; ++l) {
++            for (int i1 = -2; i1 <= 2; ++i1) {
++                for (int j1 = -1; j1 < 3; ++j1) {
++                    int k1 = i + i1 * b0 + l * b1;
++                    int l1 = j + j1;
++                    int i2 = k + i1 * b1 - l * b0;
++                    boolean flag = j1 < 0;
++
++                    if (this.a.getType(new BlockPosition(k1, l1, i2)).getBlock() != (flag ? Blocks.OBSIDIAN : Blocks.AIR)) {
++                        return null;
++                    }
++                }
++            }
+         }
++        return new BlockPosition(i, j, k);
+     }
++    // CraftBukkit end
+ 
+     public boolean b(Entity entity, float f) {
+-        boolean flag = true;
++        // CraftBukkit start - Modularize portal search process and entity teleportation
++        BlockPosition found = this.findPortal(entity.locX, entity.locY, entity.locZ, 128);
++        if (found == null) {
++            return false;
++        }
++
++        Location exit = new Location(this.a.getWorld(), found.getX(), found.getY(), found.getZ(), f, entity.pitch);
++        Vector velocity = entity.getBukkitEntity().getVelocity();
++        this.adjustExit(entity, exit, velocity);
++        entity.setPositionRotation(exit.getX(), exit.getY(), exit.getZ(), exit.getYaw(), exit.getPitch());
++        if (entity.motX != velocity.getX() || entity.motY != velocity.getY() || entity.motZ != velocity.getZ()) {
++            entity.getBukkitEntity().setVelocity(velocity);
++        }
++        return true;
++    }
++
++    public BlockPosition findPortal(double x, double y, double z, int short1) {
++        if (this.a.getWorld().getEnvironment() == org.bukkit.World.Environment.THE_END) {
++            return this.findEndPortal(this.a.worldProvider.h());
++        }
++        // CraftBukkit end
+         double d0 = -1.0D;
+-        int i = MathHelper.floor(entity.locX);
+-        int j = MathHelper.floor(entity.locZ);
++        // CraftBukkit start
++        int i = MathHelper.floor(x);
++        int j = MathHelper.floor(z);
++        // CraftBukkit end
+         boolean flag1 = true;
+         Object object = BlockPosition.ZERO;
+         long k = ChunkCoordIntPair.a(i, j);
+@@ -65,7 +131,7 @@
+             chunkcoordinatesportal.b = this.a.getTime();
+             flag1 = false;
+         } else {
+-            BlockPosition blockposition = new BlockPosition(entity);
++            BlockPosition blockposition = new BlockPosition(x, y, z);
+ 
+             for (int l = -128; l <= 128; ++l) {
+                 BlockPosition blockposition1;
+@@ -95,7 +161,29 @@
+                 this.c.put(k, new ChunkCoordinatesPortal(this, (BlockPosition) object, this.a.getTime()));
+                 this.d.add(Long.valueOf(k));
+             }
++            // CraftBukkit start - Move entity teleportation logic into exit
++            return (BlockPosition) object;
++        } else {
++            return null;
++        }
++    }
+ 
++    // Entity repositioning logic split out from original b method and combined with repositioning logic for The End from original a method
++    public void adjustExit(Entity entity, Location position, Vector velocity) {
++        Location from = position.clone();
++        Vector before = velocity.clone();
++        BlockPosition object = new BlockPosition(position.getBlockX(), position.getBlockY(), position.getBlockZ());
++        float f = position.getYaw();
++
++        if (this.a.getWorld().getEnvironment() == org.bukkit.World.Environment.THE_END) {
++            // entity.setPositionRotation((double) i, (double) j, (double) k, entity.yaw, 0.0F);
++            // entity.motX = entity.motY = entity.motZ = 0.0D;
++            position.setPitch(0.0F);
++            velocity.setX(0);
++            velocity.setY(0);
++            velocity.setZ(0);
++        } else {
++            // CraftBukkit end
+             double d2 = (double) ((BlockPosition) object).getX() + 0.5D;
+             double d3 = (double) ((BlockPosition) object).getY() + 0.5D;
+             double d4 = (double) ((BlockPosition) object).getZ() + 0.5D;
+@@ -170,21 +258,46 @@
+                     f6 = 1.0F;
+                 }
+ 
+-                double d5 = entity.motX;
+-                double d6 = entity.motZ;
+-
+-                entity.motX = d5 * (double) f3 + d6 * (double) f6;
+-                entity.motZ = d5 * (double) f5 + d6 * (double) f4;
+-                entity.yaw = f - (float) (enumdirection1.b() * 90) + (float) (enumdirection.b() * 90);
++                // CraftBukkit start
++                double d5 = velocity.getX();
++                double d6 = velocity.getZ();
++                // CraftBukkit end
++
++                // CraftBukkit start - Adjust position and velocity instances instead of entity
++                velocity.setX(d5 * (double) f3 + d6 * (double) f6);
++                velocity.setZ(d5 * (double) f5 + d6 * (double) f4);
++                f = f - (float) (enumdirection1.b() * 90) + (float) (enumdirection.b() * 90);
+             } else {
+-                entity.motX = entity.motY = entity.motZ = 0.0D;
++                velocity.setX(0);
++                velocity.setY(0);
++                velocity.setZ(0);
+             }
+ 
+-            entity.setPositionRotation(d2, d3, d4, entity.yaw, entity.pitch);
+-            return true;
++            // entity.setPositionRotation(d2, d3, d4, entity.yaw, entity.pitch);
++            position.setX(d2);
++            position.setY(d3);
++            position.setZ(d4);
++            position.setYaw(f);
++        }
++        EntityPortalExitEvent event = new EntityPortalExitEvent(entity.getBukkitEntity(), from, position, before, velocity);
++        this.a.getServer().getPluginManager().callEvent(event);
++        Location to = event.getTo();
++        if (event.isCancelled() || to == null || !entity.isAlive()) {
++            position.setX(from.getX());
++            position.setY(from.getY());
++            position.setZ(from.getZ());
++            position.setYaw(from.getYaw());
++            position.setPitch(from.getPitch());
++            velocity.copy(before);
+         } else {
+-            return false;
++            position.setX(to.getX());
++            position.setY(to.getY());
++            position.setZ(to.getZ());
++            position.setYaw(to.getYaw());
++            position.setPitch(to.getPitch());
++            velocity.copy(event.getAfter()); // event.getAfter() will never be null, as setAfter() will cause an NPE if null is passed in
+         }
++        // CraftBukkit end
+     }
+ 
+     private boolean a(BlockPosition blockposition) {
+@@ -192,11 +305,22 @@
+     }
+ 
+     public boolean a(Entity entity) {
+-        byte b0 = 16;
++        // CraftBukkit start - Allow for portal creation to be based on coordinates instead of entity
++        return this.createPortal(entity.locX, entity.locY, entity.locZ, 16);
++    }
++
++    public boolean createPortal(double x, double y, double z, int b0) {
++        if (this.a.getWorld().getEnvironment() == org.bukkit.World.Environment.THE_END) {
++            createEndPortal(x, y, z);
++            return true;
++        }
++        // CraftBukkit end
+         double d0 = -1.0D;
+-        int i = MathHelper.floor(entity.locX);
+-        int j = MathHelper.floor(entity.locY);
+-        int k = MathHelper.floor(entity.locZ);
++        // CraftBukkit start
++        int i = MathHelper.floor(x);
++        int j = MathHelper.floor(y);
++        int k = MathHelper.floor(z);
++        // CraftBukkit end
+         int l = i;
+         int i1 = j;
+         int j1 = k;
+@@ -220,10 +344,10 @@
+         double d4;
+ 
+         for (i2 = i - b0; i2 <= i + b0; ++i2) {
+-            d1 = (double) i2 + 0.5D - entity.locX;
++            d1 = (double) i2 + 0.5D - x; // CraftBukkit
+ 
+             for (j2 = k - b0; j2 <= k + b0; ++j2) {
+-                d2 = (double) j2 + 0.5D - entity.locZ;
++                d2 = (double) j2 + 0.5D - z; // CraftBukkit
+ 
+                 label271:
+                 for (k2 = this.a.V() - 1; k2 >= 0; --k2) {
+@@ -254,7 +378,7 @@
+                                 }
+                             }
+ 
+-                            d3 = (double) k2 + 0.5D - entity.locY;
++                            d3 = (double) k2 + 0.5D - y; // CraftBukkit
+                             d4 = d1 * d1 + d3 * d3 + d2 * d2;
+                             if (d0 < 0.0D || d4 < d0) {
+                                 d0 = d4;
+@@ -271,10 +395,10 @@
+ 
+         if (d0 < 0.0D) {
+             for (i2 = i - b0; i2 <= i + b0; ++i2) {
+-                d1 = (double) i2 + 0.5D - entity.locX;
++                d1 = (double) i2 + 0.5D - x; // CraftBukkit
+ 
+                 for (j2 = k - b0; j2 <= k + b0; ++j2) {
+-                    d2 = (double) j2 + 0.5D - entity.locZ;
++                    d2 = (double) j2 + 0.5D - z; // CraftBukkit
+ 
+                     label219:
+                     for (k2 = this.a.V() - 1; k2 >= 0; --k2) {
+@@ -298,7 +422,7 @@
+                                     }
+                                 }
+ 
+-                                d3 = (double) k2 + 0.5D - entity.locY;
++                                d3 = (double) k2 + 0.5D - y; // CraftBukkit
+                                 d4 = d1 * d1 + d3 * d3 + d2 * d2;
+                                 if (d0 < 0.0D || d4 < d0) {
+                                     d0 = d4;

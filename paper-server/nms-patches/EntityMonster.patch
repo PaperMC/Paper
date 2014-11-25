@@ -1,0 +1,26 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/EntityMonster.java	2014-11-27 08:59:46.709421812 +1100
++++ src/main/java/net/minecraft/server/EntityMonster.java	2014-11-27 08:42:10.164850887 +1100
+@@ -1,5 +1,7 @@
+ package net.minecraft.server;
+ 
++import org.bukkit.event.entity.EntityCombustByEntityEvent; // CraftBukkit
++
+ public abstract class EntityMonster extends EntityCreature implements IMonster {
+ 
+     protected final PathfinderGoal a = new PathfinderGoalAvoidTarget(this, new EntitySelectorExplodingCreeper(this), 4.0F, 1.0D, 2.0D);
+@@ -81,7 +83,14 @@
+             int j = EnchantmentManager.getFireAspectEnchantmentLevel(this);
+ 
+             if (j > 0) {
+-                entity.setOnFire(j * 4);
++                // CraftBukkit start - Call a combust event when somebody hits with a fire enchanted item
++                EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), j * 4);
++                org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
++
++                if (!combustEvent.isCancelled()) {
++                    entity.setOnFire(combustEvent.getDuration());
++                }
++                // CraftBukkit end
+             }
+ 
+             this.a((EntityLiving) this, entity);

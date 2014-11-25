@@ -8,15 +8,19 @@ import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
+import org.bukkit.DyeColor;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Material;
 import org.bukkit.FireworkEffect.Type;
+import org.bukkit.block.banner.Pattern;
+import org.bukkit.block.banner.PatternType;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.StackProvider;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.StackWrapper;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.BukkitWrapper;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.CraftWrapper;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
@@ -25,7 +29,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.inventory.meta.PotionMeta;
-import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;
@@ -189,6 +192,15 @@ public class ItemMetaTest extends AbstractTestingBase {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final FireworkEffectMeta meta = (FireworkEffectMeta) cleanStack.getItemMeta();
                     meta.setEffect(FireworkEffect.builder().withColor(Color.MAROON, Color.BLACK).with(Type.CREEPER).withFlicker().build());
+                    cleanStack.setItemMeta(meta);
+                    return cleanStack;
+                }
+            },
+            new StackProvider(Material.BANNER) {                    
+                @Override ItemStack operate(ItemStack cleanStack) {
+                    final BannerMeta meta = (BannerMeta) cleanStack.getItemMeta();
+                    meta.setBaseColor(DyeColor.CYAN);
+                    meta.addPattern(new Pattern(DyeColor.WHITE, PatternType.BRICKS));
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }

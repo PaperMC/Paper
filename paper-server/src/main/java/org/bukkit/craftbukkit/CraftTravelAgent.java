@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit;
 
-import net.minecraft.server.ChunkCoordinates;
+import net.minecraft.server.BlockPosition;
 import net.minecraft.server.PortalTravelAgent;
 import net.minecraft.server.WorldServer;
 
@@ -22,6 +22,7 @@ public class CraftTravelAgent extends PortalTravelAgent implements TravelAgent {
         }
     }
 
+    @Override
     public Location findOrCreate(Location target) {
         WorldServer worldServer = ((CraftWorld) target.getWorld()).getHandle();
         boolean before = worldServer.chunkProviderServer.forceChunkLoad;
@@ -40,39 +41,47 @@ public class CraftTravelAgent extends PortalTravelAgent implements TravelAgent {
         return found;
     }
 
+    @Override
     public Location findPortal(Location location) {
         PortalTravelAgent pta = ((CraftWorld) location.getWorld()).getHandle().getTravelAgent();
-        ChunkCoordinates found = pta.findPortal(location.getX(), location.getY(), location.getZ(), this.getSearchRadius());
-        return found != null ? new Location(location.getWorld(), found.x, found.y, found.z, location.getYaw(), location.getPitch()) : null;
+        BlockPosition found = pta.findPortal(location.getX(), location.getY(), location.getZ(), this.getSearchRadius());
+        return found != null ? new Location(location.getWorld(), found.getX(), found.getY(), found.getZ(), location.getYaw(), location.getPitch()) : null;
     }
 
+    @Override
     public boolean createPortal(Location location) {
         PortalTravelAgent pta = ((CraftWorld) location.getWorld()).getHandle().getTravelAgent();
         return pta.createPortal(location.getX(), location.getY(), location.getZ(), this.getCreationRadius());
     }
 
+    @Override
     public TravelAgent setSearchRadius(int radius) {
         this.searchRadius = radius;
         return this;
     }
 
+    @Override
     public int getSearchRadius() {
         return this.searchRadius;
     }
 
+    @Override
     public TravelAgent setCreationRadius(int radius) {
         this.creationRadius = radius < 2 ? 0 : radius;
         return this;
     }
 
+    @Override
     public int getCreationRadius() {
         return this.creationRadius;
     }
 
+    @Override
     public boolean getCanCreatePortal() {
         return this.canCreatePortal;
     }
 
+    @Override
     public void setCanCreatePortal(boolean create) {
         this.canCreatePortal = create;
     }

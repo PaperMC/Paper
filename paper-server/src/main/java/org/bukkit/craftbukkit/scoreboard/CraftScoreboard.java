@@ -97,13 +97,17 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     public void resetScores(OfflinePlayer player) throws IllegalArgumentException {
         Validate.notNull(player, "OfflinePlayer cannot be null");
 
-        board.resetPlayerScores(player.getName());
+        for (CraftObjective objective : objectives.values()) {
+            board.resetPlayerScores(player.getName(), objective.getHandle()); // PAIL: check me
+        }
     }
 
     public void resetScores(String entry) throws IllegalArgumentException {
         Validate.notNull(entry, "Entry cannot be null");
 
-        board.resetPlayerScores(entry);
+        for (CraftObjective objective : objectives.values()) {
+            board.resetPlayerScores(entry, objective.getHandle()); // PAIL: check me
+        }
     }
 
     public Team getPlayerTeam(OfflinePlayer player) throws IllegalArgumentException {

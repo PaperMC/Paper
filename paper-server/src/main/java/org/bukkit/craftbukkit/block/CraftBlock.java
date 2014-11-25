@@ -5,15 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import net.minecraft.server.BiomeBase;
-import net.minecraft.server.BlockCocoa;
-import net.minecraft.server.BlockRedstoneWire;
-import net.minecraft.server.Blocks;
-import net.minecraft.server.EnumSkyBlock;
-import net.minecraft.server.GameProfileSerializer;
-import net.minecraft.server.Item;
-import net.minecraft.server.NBTTagCompound;
-import net.minecraft.server.TileEntitySkull;
+import net.minecraft.server.*;
 
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -97,19 +89,27 @@ public class CraftBlock implements Block {
     }
 
     public void setData(final byte data) {
-        chunk.getHandle().world.setData(x, y, z, data, 3);
+        setData(data, 3);
     }
 
     public void setData(final byte data, boolean applyPhysics) {
         if (applyPhysics) {
-            chunk.getHandle().world.setData(x, y, z, data, 3);
+            setData(data, 3);
         } else {
-            chunk.getHandle().world.setData(x, y, z, data, 2);
+            setData(data, 2);
         }
     }
 
+    private void setData(final byte data, int flag) {
+        net.minecraft.server.World world = chunk.getHandle().getWorld();
+        BlockPosition position = new BlockPosition(x, y, z);
+        IBlockData blockData = world.getType(position);
+        world.setTypeAndData(position, blockData.getBlock().fromLegacyData(data), flag);
+    }
+
     public byte getData() {
-        return (byte) chunk.getHandle().getData(this.x & 0xF, this.y & 0xFF, this.z & 0xF);
+        IBlockData blockData = chunk.getHandle().getBlockData(new BlockPosition(x, y, z));
+        return (byte) blockData.getBlock().toLegacyData(blockData);
     }
 
     public void setType(final Material type) {
@@ -125,12 +125,14 @@ public class CraftBlock implements Block {
     }
 
     public boolean setTypeIdAndData(final int type, final byte data, final boolean applyPhysics) {
+        IBlockData blockData = getNMSBlock(type).fromLegacyData(data);
+        BlockPosition position = new BlockPosition(x, y, z);
         if (applyPhysics) {
-            return chunk.getHandle().world.setTypeAndData(x, y, z, getNMSBlock(type), data, 3);
+            return chunk.getHandle().getWorld().setTypeAndData(position, blockData, 3);
         } else {
-            boolean success = chunk.getHandle().world.setTypeAndData(x, y, z, getNMSBlock(type), data, 2);
+            boolean success = chunk.getHandle().getWorld().setTypeAndData(position, blockData, 2);
             if (success) {
-                chunk.getHandle().world.notify(x, y, z);
+                chunk.getHandle().getWorld().notify(position);
             }
             return success;
         }
@@ -143,19 +145,19 @@ public class CraftBlock implements Block {
     @Deprecated
     @Override
     public int getTypeId() {
-        return CraftMagicNumbers.getId(chunk.getHandle().getType(this.x & 0xF, this.y & 0xFF, this.z & 0xF));
+        return CraftMagicNumbers.getId(chunk.getHandle().getType(new BlockPosition(this.x, this.y, this.z)));
     }
 
     public byte getLightLevel() {
-        return (byte) chunk.getHandle().world.getLightLevel(this.x, this.y, this.z);
+        return (byte) chunk.getHandle().getWorld().getLightLevel(new BlockPosition(this.x, this.y, this.z));
     }
 
     public byte getLightFromSky() {
-        return (byte) chunk.getHandle().getBrightness(EnumSkyBlock.SKY, this.x & 0xF, this.y & 0xFF, this.z & 0xF);
+        return (byte) chunk.getHandle().getBrightness(EnumSkyBlock.SKY, new BlockPosition(this.x, this.y, this.z));
     }
 
     public byte getLightFromBlocks() {
-        return (byte) chunk.getHandle().getBrightness(EnumSkyBlock.BLOCK, this.x & 0xF, this.y & 0xFF, this.z & 0xF);
+        return (byte) chunk.getHandle().getBrightness(EnumSkyBlock.BLOCK, new BlockPosition(this.x, this.y, this.z));
     }
 
 
@@ -199,47 +201,42 @@ public class CraftBlock implements Block {
         return "CraftBlock{" + "chunk=" + chunk + ",x=" + x + ",y=" + y + ",z=" + z + ",type=" + getType() + ",data=" + getData() + '}';
     }
 
-    /**
-     * Notch uses a 0-5 to mean DOWN, UP, NORTH, SOUTH, WEST, EAST
-     * in that order all over. This method is convenience to convert for us.
-     *
-     * @return BlockFace the BlockFace represented by this number
-     */
-    public static BlockFace notchToBlockFace(int notch) {
+    public static BlockFace notchToBlockFace(EnumDirection notch) {
+        if (notch == null) return BlockFace.SELF;
         switch (notch) {
-        case 0:
+        case DOWN:
             return BlockFace.DOWN;
-        case 1:
+        case UP:
             return BlockFace.UP;
-        case 2:
+        case NORTH:
             return BlockFace.NORTH;
-        case 3:
+        case SOUTH:
             return BlockFace.SOUTH;
-        case 4:
+        case WEST:
             return BlockFace.WEST;
-        case 5:
+        case EAST:
             return BlockFace.EAST;
         default:
             return BlockFace.SELF;
         }
     }
 
-    public static int blockFaceToNotch(BlockFace face) {
+    public static EnumDirection blockFaceToNotch(BlockFace face) {
         switch (face) {
         case DOWN:
-            return 0;
+            return EnumDirection.DOWN;
         case UP:
-            return 1;
+            return EnumDirection.UP;
         case NORTH:
-            return 2;
+            return EnumDirection.NORTH;
         case SOUTH:
-            return 3;
+            return EnumDirection.SOUTH;
         case WEST:
-            return 4;
+            return EnumDirection.WEST;
         case EAST:
-            return 5;
+            return EnumDirection.EAST;
         default:
-            return 7; // Good as anything here, but technically invalid
+            return null;
         }
     }
 
@@ -277,6 +274,9 @@ public class CraftBlock implements Block {
             return new CraftCommandBlock(this);
         case BEACON:
             return new CraftBeacon(this);
+        case BANNER:
+        case WALL_BANNER:
+            return new CraftBanner(this);
         default:
             return new CraftBlockState(this);
         }
@@ -314,11 +314,11 @@ public class CraftBlock implements Block {
     }
 
     public boolean isBlockPowered() {
-        return chunk.getHandle().world.getBlockPower(x, y, z) > 0;
+        return chunk.getHandle().getWorld().getBlockPower(new BlockPosition(x, y, z)) > 0;
     }
 
     public boolean isBlockIndirectlyPowered() {
-        return chunk.getHandle().world.isBlockIndirectlyPowered(x, y, z);
+        return chunk.getHandle().getWorld().isBlockIndirectlyPowered(new BlockPosition(x, y, z));
     }
 
     @Override
@@ -336,11 +336,11 @@ public class CraftBlock implements Block {
     }
 
     public boolean isBlockFacePowered(BlockFace face) {
-        return chunk.getHandle().world.isBlockFacePowered(x, y, z, blockFaceToNotch(face));
+        return chunk.getHandle().getWorld().isBlockFacePowered(new BlockPosition(x, y, z), blockFaceToNotch(face));
     }
 
     public boolean isBlockFaceIndirectlyPowered(BlockFace face) {
-        int power = chunk.getHandle().world.getBlockFacePower(x, y, z, blockFaceToNotch(face));
+        int power = chunk.getHandle().getWorld().getBlockFacePower(new BlockPosition(x, y, z), blockFaceToNotch(face));
 
         Block relative = getRelative(face);
         if (relative.getType() == Material.REDSTONE_WIRE) {
@@ -353,13 +353,13 @@ public class CraftBlock implements Block {
     public int getBlockPower(BlockFace face) {
         int power = 0;
         BlockRedstoneWire wire = Blocks.REDSTONE_WIRE;
-        net.minecraft.server.World world = chunk.getHandle().world;
-        if ((face == BlockFace.DOWN || face == BlockFace.SELF) && world.isBlockFacePowered(x, y - 1, z, 0)) power = wire.getPower(world, x, y - 1, z, power);
-        if ((face == BlockFace.UP || face == BlockFace.SELF) && world.isBlockFacePowered(x, y + 1, z, 1)) power = wire.getPower(world, x, y + 1, z, power);
-        if ((face == BlockFace.EAST || face == BlockFace.SELF) && world.isBlockFacePowered(x + 1, y, z, 2)) power = wire.getPower(world, x + 1, y, z, power);
-        if ((face == BlockFace.WEST || face == BlockFace.SELF) && world.isBlockFacePowered(x - 1, y, z, 3)) power = wire.getPower(world, x - 1, y, z, power);
-        if ((face == BlockFace.NORTH || face == BlockFace.SELF) && world.isBlockFacePowered(x, y, z - 1, 4)) power = wire.getPower(world, x, y, z - 1, power);
-        if ((face == BlockFace.SOUTH || face == BlockFace.SELF) && world.isBlockFacePowered(x, y, z + 1, 5)) power = wire.getPower(world, x, y, z - 1, power);
+        net.minecraft.server.World world = chunk.getHandle().getWorld();
+        if ((face == BlockFace.DOWN || face == BlockFace.SELF) && world.isBlockFacePowered(new BlockPosition(x, y - 1, z), EnumDirection.DOWN)) power = wire.getPower(world, new BlockPosition(x, y - 1, z), power);
+        if ((face == BlockFace.UP || face == BlockFace.SELF) && world.isBlockFacePowered(new BlockPosition(x, y + 1, z), EnumDirection.UP)) power = wire.getPower(world, new BlockPosition(x, y + 1, z), power);
+        if ((face == BlockFace.EAST || face == BlockFace.SELF) && world.isBlockFacePowered(new BlockPosition(x + 1, y, z), EnumDirection.EAST)) power = wire.getPower(world, new BlockPosition(x + 1, y, z), power);
+        if ((face == BlockFace.WEST || face == BlockFace.SELF) && world.isBlockFacePowered(new BlockPosition(x - 1, y, z), EnumDirection.WEST)) power = wire.getPower(world, new BlockPosition(x - 1, y, z), power);
+        if ((face == BlockFace.NORTH || face == BlockFace.SELF) && world.isBlockFacePowered(new BlockPosition(x, y, z - 1), EnumDirection.NORTH)) power = wire.getPower(world, new BlockPosition(x, y, z - 1), power);
+        if ((face == BlockFace.SOUTH || face == BlockFace.SELF) && world.isBlockFacePowered(new BlockPosition(x, y, z + 1), EnumDirection.SOUTH)) power = wire.getPower(world, new BlockPosition(x, y, z - 1), power);
         return power > 0 ? power : (face == BlockFace.SELF ? isBlockIndirectlyPowered() : isBlockFaceIndirectlyPowered(face)) ? 15 : 0;
     }
 
@@ -392,7 +392,7 @@ public class CraftBlock implements Block {
         boolean result = false;
 
         if (block != null && block != Blocks.AIR) {
-            block.dropNaturally(chunk.getHandle().world, x, y, z, data, 1.0F, 0);
+            block.dropNaturally(chunk.getHandle().getWorld(), new BlockPosition(x, y, z), block.fromLegacyData(data), 1.0F, 0);
             result = true;
         }
 
@@ -415,14 +415,14 @@ public class CraftBlock implements Block {
         if (block != Blocks.AIR) {
             byte data = getData();
             // based on nms.Block.dropNaturally
-            int count = block.getDropCount(0, chunk.getHandle().world.random);
+            int count = block.getDropCount(0, chunk.getHandle().getWorld().random);
             for (int i = 0; i < count; ++i) {
-                Item item = block.getDropType(data, chunk.getHandle().world.random, 0);
+                Item item = block.getDropType(block.fromLegacyData(data), chunk.getHandle().getWorld().random, 0);
                 if (item != null) {
                     // Skulls are special, their data is based on the tile entity
                     if (Blocks.SKULL == block) {
-                        net.minecraft.server.ItemStack nmsStack = new net.minecraft.server.ItemStack(item, 1, block.getDropData(chunk.getHandle().world, x, y, z));
-                        TileEntitySkull tileentityskull = (TileEntitySkull) chunk.getHandle().world.getTileEntity(x, y, z);
+                        net.minecraft.server.ItemStack nmsStack = new net.minecraft.server.ItemStack(item, 1, block.getDropData(chunk.getHandle().getWorld(), new BlockPosition(x, y, z)));
+                        TileEntitySkull tileentityskull = (TileEntitySkull) chunk.getHandle().getWorld().getTileEntity(new BlockPosition(x, y, z));
 
                         if (tileentityskull.getSkullType() == 3 && tileentityskull.getGameProfile() != null) {
                             nmsStack.setTag(new NBTTagCompound());
@@ -435,12 +435,13 @@ public class CraftBlock implements Block {
                         drops.add(CraftItemStack.asBukkitCopy(nmsStack));
                         // We don't want to drop cocoa blocks, we want to drop cocoa beans.
                     } else if (Blocks.COCOA == block) {
-                        int dropAmount = (BlockCocoa.c(data) >= 2 ? 3 : 1);
+                        int age = (Integer) block.fromLegacyData(data).get(BlockCocoa.AGE);
+                        int dropAmount = (age >= 2 ? 3 : 1);
                         for (int j = 0; j < dropAmount; ++j) {
                             drops.add(new ItemStack(Material.INK_SACK, 1, (short) 3));
                         }
                     } else {
-                        drops.add(new ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(item), 1, (short) block.getDropData(data)));
+                        drops.add(new ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(item), 1, (short) block.getDropData(block.fromLegacyData(data))));
                     }
                 }
             }

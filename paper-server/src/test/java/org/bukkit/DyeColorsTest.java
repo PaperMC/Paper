@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.server.EntitySheep;
+import net.minecraft.server.EnumColor;
 import net.minecraft.server.ItemDye;
 
 import org.bukkit.support.AbstractTestingBase;
@@ -33,7 +34,7 @@ public class DyeColorsTest extends AbstractTestingBase {
     @Test
     public void checkColor() {
         Color color = dye.getColor();
-        float[] nmsColorArray = EntitySheep.bp[dye.getWoolData()];
+        float[] nmsColorArray = EntitySheep.a(EnumColor.fromColorIndex(dye.getWoolData()));
         Color nmsColor = Color.fromRGB((int) (nmsColorArray[0] * 255), (int) (nmsColorArray[1] * 255), (int) (nmsColorArray[2] * 255));
         assertThat(color, is(nmsColor));
     }
@@ -41,7 +42,7 @@ public class DyeColorsTest extends AbstractTestingBase {
     @Test
     public void checkFireworkColor() {
         Color color = dye.getFireworkColor();
-        int nmsColor = ItemDye.c[dye.getDyeData()];
+        int nmsColor = ItemDye.a[dye.getDyeData()];
         assertThat(color, is(Color.fromRGB(nmsColor)));
     }
 }

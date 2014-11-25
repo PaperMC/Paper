@@ -1,0 +1,49 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/RecipesFurnace.java	2014-11-27 08:59:46.881421054 +1100
++++ src/main/java/net/minecraft/server/RecipesFurnace.java	2014-11-27 08:42:10.132850949 +1100
+@@ -10,6 +10,7 @@
+     private static final RecipesFurnace a = new RecipesFurnace();
+     public Map recipes = Maps.newHashMap();
+     private Map c = Maps.newHashMap();
++    public Map customRecipes = Maps.newHashMap(); // CraftBukkit - add field
+ 
+     public static RecipesFurnace getInstance() {
+         return RecipesFurnace.a;
+@@ -52,6 +53,12 @@
+         this.registerRecipe(Blocks.LAPIS_ORE, new ItemStack(Items.DYE, 1, EnumColor.BLUE.getInvColorIndex()), 0.2F);
+         this.registerRecipe(Blocks.QUARTZ_ORE, new ItemStack(Items.QUARTZ), 0.2F);
+     }
++ 
++    // CraftBukkit start - add method
++    public void registerRecipe(ItemStack itemstack, ItemStack itemstack1) {
++        this.customRecipes.put(itemstack, itemstack1);
++    }
++    // CraftBukkit end
+ 
+     public void registerRecipe(Block block, ItemStack itemstack, float f) {
+         this.a(Item.getItemOf(block), itemstack, f);
+@@ -67,13 +74,23 @@
+     }
+ 
+     public ItemStack getResult(ItemStack itemstack) {
+-        Iterator iterator = this.recipes.entrySet().iterator();
++        // CraftBukkit start - initialize to customRecipes
++        boolean vanilla = false;
++        Iterator iterator = this.customRecipes.entrySet().iterator();
++        // CraftBukkit end
+ 
+         Entry entry;
+ 
+         do {
+             if (!iterator.hasNext()) {
+-                return null;
++                // CraftBukkit start - fall back to vanilla recipes
++                if (!vanilla && !recipes.isEmpty()) {
++                    iterator = this.recipes.entrySet().iterator();
++                    vanilla = true;
++                } else {
++                    return null;
++                }
++                // CraftBukkit end
+             }
+ 
+             entry = (Entry) iterator.next();

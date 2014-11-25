@@ -1,0 +1,31 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/PathfinderGoalTame.java	2014-11-27 08:59:46.845421213 +1100
++++ src/main/java/net/minecraft/server/PathfinderGoalTame.java	2014-11-27 08:42:10.152850911 +1100
+@@ -45,7 +45,8 @@
+                 int i = this.entity.getTemper();
+                 int j = this.entity.getMaxDomestication();
+ 
+-                if (j > 0 && this.entity.bb().nextInt(j) < i) {
++                // CraftBukkit - fire EntityTameEvent
++                if (j > 0 && this.entity.bb().nextInt(j) < i && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this.entity, (EntityHuman) this.entity.passenger).isCancelled() && this.entity.passenger instanceof EntityHuman) {
+                     this.entity.h((EntityHuman) this.entity.passenger);
+                     this.entity.world.broadcastEntityEffect(this.entity, (byte) 7);
+                     return;
+@@ -54,8 +55,16 @@
+                 this.entity.u(5);
+             }
+ 
+-            this.entity.passenger.mount((Entity) null);
+-            this.entity.passenger = null;
++            // CraftBukkit start - Handle dismounting to account for VehicleExitEvent being fired.
++            if (this.entity.passenger != null) {
++                this.entity.passenger.mount((Entity) null);
++                // If the entity still has a passenger, then a plugin cancelled the event.
++                if (this.entity.passenger != null) {
++                    return;
++                }
++            }
++            // this.entity.passenger = null;
++            // CraftBukkit end
+             this.entity.cU();
+             this.entity.world.broadcastEntityEffect(this.entity, (byte) 6);
+         }

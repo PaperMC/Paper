@@ -1,0 +1,40 @@
+--- ../work/decompile-bb26c12b/net/minecraft/server/EntitySlime.java	2014-11-27 08:59:46.729421723 +1100
++++ src/main/java/net/minecraft/server/EntitySlime.java	2014-11-27 08:42:10.100851012 +1100
+@@ -1,5 +1,9 @@
+ package net.minecraft.server;
+ 
++// CraftBukkit start
++import org.bukkit.event.entity.SlimeSplitEvent;
++// CraftBukkit end
++
+ public class EntitySlime extends EntityInsentient implements IMonster {
+ 
+     public float a;
+@@ -132,6 +136,18 @@
+ 
+         if (!this.world.isStatic && i > 1 && this.getHealth() <= 0.0F) {
+             int j = 2 + this.random.nextInt(3);
++ 
++            // CraftBukkit start
++            SlimeSplitEvent event = new SlimeSplitEvent((org.bukkit.entity.Slime) this.getBukkitEntity(), j);
++            this.world.getServer().getPluginManager().callEvent(event);
++
++            if (!event.isCancelled() && event.getCount() > 0) {
++                j = event.getCount();
++            } else {
++                super.die();
++                return;
++            }
++            // CraftBukkit end
+ 
+             for (int k = 0; k < j; ++k) {
+                 float f = ((float) (k % 2) - 0.5F) * (float) i / 4.0F;
+@@ -148,7 +164,7 @@
+ 
+                 entityslime.setSize(i / 2);
+                 entityslime.setPositionRotation(this.locX + (double) f, this.locY + 0.5D, this.locZ + (double) f1, this.random.nextFloat() * 360.0F, 0.0F);
+-                this.world.addEntity(entityslime);
++                this.world.addEntity(entityslime, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SLIME_SPLIT); // CraftBukkit - SpawnReason
+             }
+         }
+ 
