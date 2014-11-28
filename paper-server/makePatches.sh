@@ -10,5 +10,12 @@ for file in $(ls src/main/java/net/minecraft/server)
 do
 	echo "Diffing $file"
 	dos2unix -q $1/net/minecraft/server/$file $1/net/minecraft/server/$file
-    diff -u $1/net/minecraft/server/$file src/main/java/net/minecraft/server/$file | tail -n +3 > nms-patches/"$(echo $file | cut -d. -f1)".patch
+        outName=$(echo nms-patches/"$(echo $file | cut -d. -f1)".patch)
+        patchNew=$(diff -u $1/net/minecraft/server/$file src/main/java/net/minecraft/server/$file)
+        patchCut=$(echo "$patchNew" | tail -n +3)
+        patchOld=$(cat "$outName" | tail -n +3)
+        if [ "$patchCut" != "$patchOld" ] ; then
+            echo "$outName changed"
+            echo "$patchNew" > "$outName"
+        fi
 done
