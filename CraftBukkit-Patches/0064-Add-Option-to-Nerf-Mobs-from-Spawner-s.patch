@@ -1,0 +1,84 @@
+From f636b5da615846f11fff67c168a28a5ef34a6b9a Mon Sep 17 00:00:00 2001
+From: md_5 <git@md-5.net>
+Date: Sun, 2 Feb 2014 16:55:46 +0000
+Subject: [PATCH] Add Option to Nerf Mobs from Spawner's
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 1755da2..fd7c615 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -118,6 +118,7 @@ public abstract class Entity implements ICommandListener {
+     public final byte activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
+     public final boolean defaultActivationState;
+     public long activatedTick = 0;
++    public boolean fromMobSpawner;
+     public void inactiveTick() { }
+     // Spigot end
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
+index a8801f1..02eed74 100644
+--- a/src/main/java/net/minecraft/server/EntityInsentient.java
++++ b/src/main/java/net/minecraft/server/EntityInsentient.java
+@@ -450,6 +450,12 @@ public abstract class EntityInsentient extends EntityLiving {
+         this.world.methodProfiler.a("checkDespawn");
+         this.D();
+         this.world.methodProfiler.b();
++        // Spigot Start
++        if ( this.fromMobSpawner )
++        {
++            return;
++        }
++        // Spigot End
+         this.world.methodProfiler.a("sensing");
+         this.bi.a();
+         this.world.methodProfiler.b();
+diff --git a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+index 13c7d58..4ff4ece 100644
+--- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
++++ b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+@@ -139,6 +139,12 @@ public abstract class MobSpawnerAbstract {
+                 SpawnerSpawnEvent event = CraftEventFactory.callSpawnerSpawnEvent(entity, this.b().getX(), this.b().getY(), this.b().getZ());
+                 if (!event.isCancelled()) {
+                     entity.world.addEntity(entity, CreatureSpawnEvent.SpawnReason.SPAWNER); // CraftBukkit
++                    // Spigot Start
++                    if ( entity.world.spigotConfig.nerfSpawnerMobs )
++                    {
++                        entity.fromMobSpawner = true;
++                    }
++                    // Spigot End
+                 }
+                 // CraftBukkit end
+             }
+@@ -184,6 +190,12 @@ public abstract class MobSpawnerAbstract {
+             SpawnerSpawnEvent event = CraftEventFactory.callSpawnerSpawnEvent(entity, this.b().getX(), this.b().getY(), this.b().getZ());
+             if (!event.isCancelled()) {
+                 entity.world.addEntity(entity, CreatureSpawnEvent.SpawnReason.SPAWNER); // CraftBukkit
++                // Spigot Start
++                if ( entity.world.spigotConfig.nerfSpawnerMobs )
++                {
++                    entity.fromMobSpawner = true;
++                }
++                // Spigot End
+             }
+             // Spigot end
+         }
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index b8e144d..d7766bb 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -252,4 +252,11 @@ public class SpigotWorldConfig
+         zombieAggressiveTowardsVillager = getBoolean( "zombie-aggressive-towards-villager", true );
+         log( "Zombie Aggressive Towards Villager: " + zombieAggressiveTowardsVillager );
+     }
++
++    public boolean nerfSpawnerMobs;
++    private void nerfSpawnerMobs()
++    {
++        nerfSpawnerMobs = getBoolean( "nerf-spawner-mobs", false );
++        log( "Nerfing mobs spawned from spawners: " + nerfSpawnerMobs );
++    }
+ }
+-- 
+2.1.0
+

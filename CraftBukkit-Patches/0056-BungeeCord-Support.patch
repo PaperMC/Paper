@@ -1,0 +1,191 @@
+From ee8fda0b3febdea34a3d61d004269bdf7e718d15 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Sun, 1 Dec 2013 18:18:41 +1100
+Subject: [PATCH] BungeeCord Support
+
+Provides support for IP forwarding via BungeeCord.
+
+diff --git a/src/main/java/net/minecraft/server/HandshakeListener.java b/src/main/java/net/minecraft/server/HandshakeListener.java
+index e036bc6..c9a7839 100644
+--- a/src/main/java/net/minecraft/server/HandshakeListener.java
++++ b/src/main/java/net/minecraft/server/HandshakeListener.java
+@@ -6,7 +6,8 @@ import java.util.HashMap;
+ // CraftBukkit end
+ 
+ public class HandshakeListener implements PacketHandshakingInListener {
+-     
++
++    private static final com.google.gson.Gson gson = new com.google.gson.Gson(); // Spigot
+     // CraftBukkit start - add fields
+     private static final HashMap<InetAddress, Long> throttleTracker = new HashMap<InetAddress, Long>();
+     private static int throttleCounter = 0;
+@@ -71,6 +72,26 @@ public class HandshakeListener implements PacketHandshakingInListener {
+                 this.b.close(chatcomponenttext);
+             } else {
+                 this.b.a((PacketListener) (new LoginListener(this.a, this.b)));
++                // Spigot Start
++                if (org.spigotmc.SpigotConfig.bungee) {
++                    String[] split = packethandshakinginsetprotocol.b.split("\00");
++                    if ( split.length == 3 || split.length == 4 ) {
++                        packethandshakinginsetprotocol.b = split[0];
++                        b.j = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) b.getSocketAddress()).getPort());
++                        b.spoofedUUID = com.mojang.util.UUIDTypeAdapter.fromString( split[2] );
++                    } else
++                    {
++                        chatcomponenttext = new ChatComponentText("If you wish to use IP forwarding, please enable it in your BungeeCord config as well!");
++                        this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext));
++                        this.b.close(chatcomponenttext);
++                        return;
++                    }
++                    if ( split.length == 4 )
++                    {
++                        b.spoofedProfile = gson.fromJson(split[3], com.mojang.authlib.properties.Property[].class);
++                    }
++                }
++                // Spigot End
+                 ((LoginListener) this.b.getPacketListener()).hostname = packethandshakinginsetprotocol.b + ":" + packethandshakinginsetprotocol.c; // CraftBukkit - set hostname
+             }
+             break;
+diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
+index a59ea80..df651d5 100644
+--- a/src/main/java/net/minecraft/server/LoginListener.java
++++ b/src/main/java/net/minecraft/server/LoginListener.java
+@@ -63,9 +63,24 @@ public class LoginListener implements PacketLoginInListener, IUpdatePlayerListBo
+     // Spigot start
+     public void initUUID()
+     {
+-        UUID uuid = UUID.nameUUIDFromBytes( ( "OfflinePlayer:" + this.i.getName() ).getBytes( Charsets.UTF_8 ) );
++        UUID uuid;
++        if ( networkManager.spoofedUUID != null )
++        {
++            uuid = networkManager.spoofedUUID;
++        } else
++        {
++            uuid = UUID.nameUUIDFromBytes( ( "OfflinePlayer:" + this.i.getName() ).getBytes( Charsets.UTF_8 ) );
++        }
+ 
+         this.i = new GameProfile( uuid, this.i.getName() );
++
++        if (networkManager.spoofedProfile != null)
++        {
++            for ( com.mojang.authlib.properties.Property property : networkManager.spoofedProfile )
++            {
++                this.i.getProperties().put( property.getName(), property );
++            }
++        }
+     }
+     // Spigot end
+ 
+diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
+index 33166a3..78d5949 100644
+--- a/src/main/java/net/minecraft/server/NetworkManager.java
++++ b/src/main/java/net/minecraft/server/NetworkManager.java
+@@ -31,7 +31,11 @@ public class NetworkManager extends SimpleChannelInboundHandler {
+     private final EnumProtocolDirection g;
+     private final Queue h = Queues.newConcurrentLinkedQueue();
+     private Channel i;
+-    private SocketAddress j;
++    // Spigot Start
++    public SocketAddress j;
++    public java.util.UUID spoofedUUID;
++    public com.mojang.authlib.properties.Property[] spoofedProfile;
++    // Spigot End
+     private PacketListener k;
+     private IChatBaseComponent l;
+     private boolean m;
+@@ -239,4 +243,11 @@ public class NetworkManager extends SimpleChannelInboundHandler {
+     static Channel a(NetworkManager networkmanager) {
+         return networkmanager.i;
+     }
++
++    // Spigot Start
++    public SocketAddress getRawAddress()
++    {
++        return this.i.remoteAddress();
++    }
++    // Spigot End
+ }
+diff --git a/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java b/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
+index 97920b0..0b86011 100644
+--- a/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
++++ b/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
+@@ -11,7 +11,7 @@ public class PacketHandshakingInSetProtocol implements Packet {
+ 
+     public void a(PacketDataSerializer packetdataserializer) {
+         this.a = packetdataserializer.e();
+-        this.b = packetdataserializer.c(255);
++        this.b = packetdataserializer.c(Short.MAX_VALUE); // Spigot
+         this.c = packetdataserializer.readUnsignedShort();
+         this.d = EnumProtocol.a(packetdataserializer.e());
+     }
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index fe4121f..1d3d00f 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -342,7 +342,7 @@ public abstract class PlayerList {
+ 
+         EntityPlayer entity = new EntityPlayer(server, server.getWorldServer(0), gameprofile, new PlayerInteractManager(server.getWorldServer(0)));
+         Player player = entity.getBukkitEntity();
+-        PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, ((java.net.InetSocketAddress) socketaddress).getAddress());
++        PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, ((java.net.InetSocketAddress) socketaddress).getAddress(), ((java.net.InetSocketAddress) loginlistener.networkManager.getRawAddress()).getAddress());
+         String s;
+ 
+         if (getProfileBans().isBanned(gameprofile) && !getProfileBans().get(gameprofile).hasExpired()) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 0741d7b..69fa301 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -559,7 +559,13 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public long getConnectionThrottle() {
+-        return this.configuration.getInt("settings.connection-throttle");
++        // Spigot Start - Automatically set connection throttle for bungee configurations
++        if (org.spigotmc.SpigotConfig.bungee) {
++            return -1;
++        } else {
++            return this.configuration.getInt("settings.connection-throttle");
++        }
++        // Spigot End
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 494c0bc..37b8287 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1316,6 +1316,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     {
+ 
+         @Override
++        public InetSocketAddress getRawAddress()
++        {
++            return (InetSocketAddress) getHandle().playerConnection.networkManager.getRawAddress();
++        }
++
++        @Override
+         public boolean getCollidesWithEntities()
+         {
+             return getHandle().collidesWithEntities;
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index c071421..47ab82f 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -210,4 +210,14 @@ public class SpigotConfig
+         commands.put( "restart", new RestartCommand( "restart" ) );
+         WatchdogThread.doStart( timeoutTime, restartOnCrash );
+     }
++
++    public static boolean bungee;
++    private static void bungee() {
++        if ( version < 4 )
++        {
++            set( "settings.bungeecord", false );
++            System.out.println( "Oudated config, disabling BungeeCord support!" );
++        }
++        bungee = getBoolean( "settings.bungeecord", false );
++    }
+ }
+-- 
+2.1.0
+

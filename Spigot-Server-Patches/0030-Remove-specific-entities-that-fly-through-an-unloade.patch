@@ -1,0 +1,120 @@
+From 35c03515abddae64498a2d966183bf1ca0c497b2 Mon Sep 17 00:00:00 2001
+From: Iceee <andrew@opticgaming.tv>
+Date: Fri, 28 Nov 2014 12:11:03 -0600
+Subject: [PATCH] Remove specific entities that fly through an unloaded chunk
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 1e5f057..bf9dfbf 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -119,6 +119,7 @@ public abstract class Entity implements ICommandListener {
+     private final CommandObjectiveExecutor as;
+     public boolean valid; // CraftBukkit
+     public org.bukkit.projectiles.ProjectileSource projectileSource; // CraftBukkit - For projectiles only
++    public boolean inUnloadedChunk = false; // PaperSpigot - Remove entities in unloaded chunks
+ 
+     // Spigot start
+     public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getEntityTimings(this); // Spigot
+diff --git a/src/main/java/net/minecraft/server/EntityEnderPearl.java b/src/main/java/net/minecraft/server/EntityEnderPearl.java
+index 1658cb0..63d88e6 100644
+--- a/src/main/java/net/minecraft/server/EntityEnderPearl.java
++++ b/src/main/java/net/minecraft/server/EntityEnderPearl.java
+@@ -19,6 +19,12 @@ public class EntityEnderPearl extends EntityProjectile {
+             movingobjectposition.entity.damageEntity(DamageSource.projectile(this, entityliving), 0.0F);
+         }
+ 
++        // PaperSpigot start - Remove entities in unloaded chunks
++        if (inUnloadedChunk && world.paperSpigotConfig.removeUnloadedEnderPearls) {
++            die();
++        }
++        // PaperSpigot end
++
+         for (int i = 0; i < 32; ++i) {
+             this.world.addParticle(EnumParticle.PORTAL, this.locX, this.locY + this.random.nextDouble() * 2.0D, this.locZ, this.random.nextGaussian(), 0.0D, this.random.nextGaussian(), new int[0]);
+         }
+diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+index 81a5dc9..336e575 100644
+--- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
++++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+@@ -70,6 +70,12 @@ public class EntityFallingBlock extends Entity {
+             this.motY -= 0.03999999910593033D;
+             this.move(this.motX, this.motY, this.motZ);
+ 
++            // PaperSpigot start - Remove entities in unloaded chunks
++            if (this.inUnloadedChunk && world.paperSpigotConfig.removeUnloadedFallingBlocks) {
++                this.die();
++            }
++            // PaperSpigot end
++
+             // PaperSpigot start - Drop falling blocks above the specified height
+             if (this.world.paperSpigotConfig.fallingBlockHeightNerf != 0 && this.locY > this.world.paperSpigotConfig.fallingBlockHeightNerf) {
+                 if (this.dropItem) {
+diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+index 4823698..7b856ef 100644
+--- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
++++ b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+@@ -47,6 +47,14 @@ public class EntityTNTPrimed extends Entity {
+         this.lastZ = this.locZ;
+         this.motY -= 0.03999999910593033D;
+         this.move(this.motX, this.motY, this.motZ);
++
++        // PaperSpigot start - Remove entities in unloaded chunks
++        if (this.inUnloadedChunk && world.paperSpigotConfig.removeUnloadedTNTEntities) {
++            this.die();
++            this.fuseTicks = 2;
++        }
++        // PaperSpigot end
++
+         this.motX *= 0.9800000190734863D;
+         this.motY *= 0.9800000190734863D;
+         this.motZ *= 0.9800000190734863D;
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 13a6169..c217a91 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1138,6 +1138,7 @@ public abstract class World implements IBlockAccess {
+             {
+                 if ( !this.isChunkLoaded( chunkx, chunkz, true ) )
+                 {
++                    entity.inUnloadedChunk = true; // PaperSpigot - Remove entities in unloaded chunks
+                     continue;
+                 }
+                 int cz = chunkz << 4;
+@@ -1555,6 +1556,14 @@ public abstract class World implements IBlockAccess {
+         if (!org.spigotmc.ActivationRange.checkIfActive(entity)) {
+             entity.ticksLived++;
+             entity.inactiveTick();
++            // PaperSpigot start - Remove entities in unloaded chunks
++            if (entity instanceof EntityEnderPearl || (!this.isChunkLoaded(i, j, true) &&
++                    (entity instanceof EntityFallingBlock && this.paperSpigotConfig.removeUnloadedFallingBlocks) ||
++                    (entity instanceof EntityTNTPrimed && this.paperSpigotConfig.removeUnloadedTNTEntities))) {
++                 entity.inUnloadedChunk = true;
++                entity.die();
++            }
++            // PaperSpigot end
+         } else {
+             entity.tickTimer.startTiming(); // Spigot
+             // CraftBukkit end
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+index 0642f12..9507ab5 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+@@ -170,4 +170,14 @@ public class PaperSpigotWorldConfig
+         removeInvalidMobSpawnerTEs = getBoolean( "remove-invalid-mob-spawner-tile-entities", true );
+         log( "Remove invalid mob spawner tile entities: " + removeInvalidMobSpawnerTEs );
+     }
++
++    public boolean removeUnloadedEnderPearls;
++    public boolean removeUnloadedTNTEntities;
++    public boolean removeUnloadedFallingBlocks;
++    private void removeUnloaded()
++    {
++        removeUnloadedEnderPearls = getBoolean( "remove-unloaded.enderpearls", true );
++        removeUnloadedTNTEntities = getBoolean( "remove-unloaded.tnt-entities", true );
++        removeUnloadedFallingBlocks = getBoolean( "remove-unloaded.falling-blocks", true );
++    }
+ }
+-- 
+1.9.1
+

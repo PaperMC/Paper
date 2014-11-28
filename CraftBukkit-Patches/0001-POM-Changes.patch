@@ -1,4 +1,4 @@
-From 191d925c165b18ef460bb2956e4084602f676bf6 Mon Sep 17 00:00:00 2001
+From 02a078677cd7891bda112d4df03b4ae357c5e58c Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 2 Jul 2013 13:07:39 +1000
 Subject: [PATCH] POM Changes
@@ -6,7 +6,7 @@ Subject: [PATCH] POM Changes
 Basic changes to the build system which mark the artifact as Spigot, and the necessary code changes to ensure proper functionality. Also disables the auto updater provided by CraftBukkit as it is useless to us.
 
 diff --git a/pom.xml b/pom.xml
-index 8dc82eb..6aeffa8 100644
+index e2d4c7d..64600fb 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -1,12 +1,12 @@
@@ -18,7 +18,7 @@ index 8dc82eb..6aeffa8 100644
 +  <groupId>org.spigotmc</groupId>
 +  <artifactId>spigot</artifactId>
    <packaging>jar</packaging>
-   <version>1.7.10-R0.1-SNAPSHOT</version>
+   <version>1.8-R0.1-SNAPSHOT</version>
 -  <name>CraftBukkit</name>
 -  <url>http://www.bukkit.org</url>
 +  <name>Spigot</name>
@@ -26,38 +26,21 @@ index 8dc82eb..6aeffa8 100644
  
    <properties>
      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-@@ -18,24 +18,12 @@
+@@ -18,6 +18,13 @@
      <buildtag.suffix></buildtag.suffix>
    </properties>
  
--  <scm>
--    <connection>scm:git:git://github.com/Bukkit/CraftBukkit.git</connection>
--    <developerConnection>scm:git:ssh://git@github.com/Bukkit/CraftBukkit.git</developerConnection>
--    <url>https://github.com/Bukkit/CraftBukkit</url>
--  </scm>
--
--  <distributionManagement>
--    <repository>
--      <id>repobo-rel</id>
--      <name>repo.bukkit.org Releases</name>
--      <url>http://repo.bukkit.org/content/repositories/releases/</url>
--    </repository>
--    <snapshotRepository>
--      <id>repobo-snap</id>
--      <name>repo.bukkit.org Snapshots</name>
--      <url>http://repo.bukkit.org/content/repositories/snapshots/</url>
--    </snapshotRepository>
--  </distributionManagement>
 +  <parent>
 +    <groupId>org.spigotmc</groupId>
 +    <artifactId>spigot-parent</artifactId>
 +    <version>dev-SNAPSHOT</version>
 +    <relativePath>../pom.xml</relativePath>
 +  </parent>
- 
++
    <repositories>
      <repository>
-@@ -53,16 +41,16 @@
+       <id>repobo-snap</id>
+@@ -34,8 +41,8 @@
  
    <dependencies>
      <dependency>
@@ -68,51 +51,7 @@ index 8dc82eb..6aeffa8 100644
        <version>${project.version}</version>
        <type>jar</type>
        <scope>compile</scope>
-     </dependency>
-     <dependency>
--      <groupId>org.bukkit</groupId>
-+      <groupId>org.spigotmc</groupId>
-       <artifactId>minecraft-server</artifactId>
--      <version>${minecraft.version}</version>
-+      <version>${minecraft.version}-SNAPSHOT</version>
-       <type>jar</type>
-       <scope>compile</scope>
-     </dependency>
-@@ -107,33 +95,6 @@
-       <artifactId>gson</artifactId>
-       <version>2.1</version>
-     </dependency>
--    <dependency>
--      <groupId>org.avaje</groupId>
--      <artifactId>ebean</artifactId>
--      <version>2.7.3</version>
--      <type>jar</type>
--      <scope>provided</scope>
--    </dependency>
--    <dependency>
--      <groupId>org.yaml</groupId>
--      <artifactId>snakeyaml</artifactId>
--      <version>1.9</version>
--      <type>jar</type>
--      <scope>provided</scope>
--    </dependency>
--    <dependency>
--      <groupId>com.google.guava</groupId>
--      <artifactId>guava</artifactId>
--      <version>10.0</version>
--      <type>jar</type>
--      <scope>provided</scope>
--    </dependency>
--    <dependency>
--        <groupId>commons-lang</groupId>
--        <artifactId>commons-lang</artifactId>
--        <version>2.3</version>
--        <scope>provided</scope>
--    </dependency>
-     <!-- testing -->
-     <dependency>
-       <groupId>junit</groupId>
-@@ -151,15 +112,15 @@
+@@ -132,15 +139,15 @@
  
    <!-- This builds a completely 'ready to start' jar with all dependencies inside -->
    <build>
@@ -131,7 +70,7 @@ index 8dc82eb..6aeffa8 100644
          </configuration>
          <executions>
            <execution>
-@@ -212,7 +173,7 @@
+@@ -193,7 +200,7 @@
        <plugin>
          <groupId>org.apache.maven.plugins</groupId>
          <artifactId>maven-shade-plugin</artifactId>
@@ -140,19 +79,6 @@ index 8dc82eb..6aeffa8 100644
          <executions>
            <execution>
              <phase>package</phase>
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index a666131..eb0b342 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -317,7 +317,7 @@ public final class CraftServer implements Server {
-         loadIcon();
- 
-         updater = new AutoUpdater(new BukkitDLUpdaterService(configuration.getString("auto-updater.host")), getLogger(), configuration.getString("auto-updater.preferred-channel"));
--        updater.setEnabled(configuration.getBoolean("auto-updater.enabled"));
-+        updater.setEnabled(false); // Spigot
-         updater.setSuggestChannels(configuration.getBoolean("auto-updater.suggest-channels"));
-         updater.getOnBroken().addAll(configuration.getStringList("auto-updater.on-broken"));
-         updater.getOnUpdate().addAll(configuration.getStringList("auto-updater.on-update"));
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
 index f905d17..9304637 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
@@ -167,5 +93,5 @@ index f905d17..9304637 100644
  
          if (stream != null) {
 -- 
-1.9.1
+2.1.0
 

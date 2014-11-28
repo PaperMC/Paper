@@ -1,0 +1,501 @@
+From c9c4e4ee3d6001e4e4978dd4bbb3ab2b0822d192 Mon Sep 17 00:00:00 2001
+From: "Evan A. Haskell" <eah2119@gmail.com>
+Date: Sat, 19 Apr 2014 16:58:26 -0400
+Subject: [PATCH] Alternative Hopper Ticking
+
+
+diff --git a/src/main/java/net/minecraft/server/BlockHopper.java b/src/main/java/net/minecraft/server/BlockHopper.java
+index cc3e340..9a6ecbb 100644
+--- a/src/main/java/net/minecraft/server/BlockHopper.java
++++ b/src/main/java/net/minecraft/server/BlockHopper.java
+@@ -88,6 +88,17 @@ public class BlockHopper extends BlockContainer {
+ 
+         if (flag != ((Boolean) iblockdata.get(BlockHopper.ENABLED)).booleanValue()) {
+             world.setTypeAndData(blockposition, iblockdata.set(BlockHopper.ENABLED, Boolean.valueOf(flag)), 4);
++            // Spigot start - When this hopper becomes unpowered, make it active.
++            // Called when this block's power level changes. flag1 is the current
++            // isNotPowered from metadata. flag is the recalculated isNotPowered.
++            if (world.spigotConfig.altHopperTicking) {
++            	// e returns the TileEntityHopper associated with this BlockHopper.
++                TileEntityHopper hopper = (TileEntityHopper) world.getTileEntity(blockposition);
++                if (flag && hopper != null) {
++                    hopper.makeTick();
++                }
++            }
++            // Spigot end
+         }
+ 
+     }
+@@ -149,4 +160,17 @@ public class BlockHopper extends BlockContainer {
+     protected BlockStateList getStateList() {
+         return new BlockStateList(this, new IBlockState[] { BlockHopper.FACING, BlockHopper.ENABLED});
+     }
++
++    // Spigot start - Use random block updates to make hoppers active.
++    @Override
++    public void a(World world, BlockPosition blockposition, IBlockData iblockdata, java.util.Random random) {
++        if (world.spigotConfig.altHopperTicking) {
++        	// e returns the TileEntityHopper associated with this BlockHopper.
++            TileEntityHopper hopper = (TileEntityHopper) world.getTileEntity(blockposition);
++            if (hopper != null) {
++                hopper.makeTick();
++            }
++        }
++    }
++    // Spigot end
+ }
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index e664e55..858e12c 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -763,6 +763,11 @@ public class Chunk {
+ 
+             tileentity.D();
+             this.tileEntities.put(blockposition, tileentity);
++            // Spigot start - The tile entity has a world, now hoppers can be born ticking.
++            if (this.world.spigotConfig.altHopperTicking) {
++                this.world.triggerHoppersList.add(tileentity);
++            }
++            // Spigot end
+             // CraftBukkit start
+         } else {
+             System.out.println("Attempted to place a tile entity (" + tileentity + ") at " + tileentity.position.getX() + "," + tileentity.position.getY() + "," + tileentity.position.getZ()
+diff --git a/src/main/java/net/minecraft/server/EntityItem.java b/src/main/java/net/minecraft/server/EntityItem.java
+index e35f78f..fc34447 100644
+--- a/src/main/java/net/minecraft/server/EntityItem.java
++++ b/src/main/java/net/minecraft/server/EntityItem.java
+@@ -100,6 +100,27 @@ public class EntityItem extends Entity {
+             if (this.onGround) {
+                 this.motY *= -0.5D;
+             }
++            // Spigot start - Make the hopper(s) below this item active.
++            // Called each tick on each item entity.
++            if (this.world.spigotConfig.altHopperTicking) {
++                int xi = MathHelper.floor(this.getBoundingBox().a);
++                int yi = MathHelper.floor(this.getBoundingBox().b) - 1;
++                int zi = MathHelper.floor(this.getBoundingBox().c);
++                int xf = MathHelper.floor(this.getBoundingBox().d);
++                int yf = MathHelper.floor(this.getBoundingBox().e) - 1;
++                int zf = MathHelper.floor(this.getBoundingBox().f);
++                for (int a = xi; a <= xf; a++) {
++                    for (int c = zi; c <= zf; c++) {
++                        for (int b = yi; b <= yf; b++) {
++                            TileEntity tileEntity = this.world.getTileEntity(new BlockPosition(a, b, c));
++                            if (tileEntity instanceof TileEntityHopper) {
++                                ((TileEntityHopper) tileEntity).makeTick();
++                            }
++                        }
++                    }
++                }
++            }
++            // Spigot end
+ 
+             /* Craftbukkit start - moved up
+             if (this.age != -32768) {
+diff --git a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
+index ee24008..ffc5ccb 100644
+--- a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
++++ b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
+@@ -337,6 +337,28 @@ public abstract class EntityMinecartAbstract extends Entity implements INamableT
+                 this.passenger = null;
+             }
+ 
++            // Spigot start - Make hoppers around this container minecart active.
++            // Called each tick on each minecart.
++            if (this.world.spigotConfig.altHopperTicking && this instanceof EntityMinecartContainer) {
++                int xi = MathHelper.floor(this.getBoundingBox().a) - 1;
++                int yi = MathHelper.floor(this.getBoundingBox().b) - 1;
++                int zi = MathHelper.floor(this.getBoundingBox().c) - 1;
++                int xf = MathHelper.floor(this.getBoundingBox().d) + 1;
++                int yf = MathHelper.floor(this.getBoundingBox().e) + 1;
++                int zf = MathHelper.floor(this.getBoundingBox().f) + 1;
++                for (int a = xi; a <= xf; a++) {
++                    for (int b = yi; b <= yf; b++) {
++                        for (int c = zi; c <= zf; c++) {
++                            TileEntity tileEntity = this.world.getTileEntity(new BlockPosition(a, b, c));
++                            if (tileEntity instanceof TileEntityHopper) {
++                                ((TileEntityHopper) tileEntity).makeTick();
++                            }
++                        }
++                    }
++                }
++            }
++            // Spigot end
++
+             this.W();
+         }
+     }
+diff --git a/src/main/java/net/minecraft/server/EntityOcelot.java b/src/main/java/net/minecraft/server/EntityOcelot.java
+index 7ae68bb..2627745 100644
+--- a/src/main/java/net/minecraft/server/EntityOcelot.java
++++ b/src/main/java/net/minecraft/server/EntityOcelot.java
+@@ -30,6 +30,31 @@ public class EntityOcelot extends EntityTameableAnimal {
+         this.datawatcher.a(18, Byte.valueOf((byte) 0));
+     }
+ 
++    // Spigot start - When this ocelot begins standing, chests below this ocelot must be
++    // updated as if its contents have changed. We update chests if this ocelot is sitting
++    // knowing that it may be dead, gone, or standing after this method returns.
++    // Called each tick on each ocelot.
++    @Override
++    public void s_() {
++        if (this.world.spigotConfig.altHopperTicking && this.isSitting()) {
++            int xi = MathHelper.floor(this.getBoundingBox().a);
++            int yi = MathHelper.floor(this.getBoundingBox().b) - 1;
++            int zi = MathHelper.floor(this.getBoundingBox().c);
++            int xf = MathHelper.floor(this.getBoundingBox().d);
++            int yf = MathHelper.floor(this.getBoundingBox().e) - 1;
++            int zf = MathHelper.floor(this.getBoundingBox().f);
++            for (int a = xi; a <= xf; a++) {
++                for (int c = zi; c <= zf; c++) {
++                    for (int b = yi; b <= yf; b++) {
++                        this.world.updateChestAndHoppers(new BlockPosition(a, b, c));
++                    }
++                }
++            }
++        }
++        super.s_();
++    }
++    // Spigot end
++
+     public void E() {
+         if (this.getControllerMove().a()) {
+             double d0 = this.getControllerMove().b();
+diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
+index 80c7937..7cf38ea 100644
+--- a/src/main/java/net/minecraft/server/TileEntity.java
++++ b/src/main/java/net/minecraft/server/TileEntity.java
+@@ -21,6 +21,41 @@ public abstract class TileEntity {
+     private int h;
+     protected Block e;
+ 
++    // Spigot start
++    // Helper method for scheduleTicks. If the hopper at x0, y0, z0 is pointed
++    // at this tile entity, then make it active.
++    private void scheduleTick(BlockPosition blockposition) {
++        TileEntity tileEntity = this.world.getTileEntity(blockposition);
++        if (tileEntity instanceof TileEntityHopper && tileEntity.world != null) {
++            // i is the metadeta assoiated with the direction the hopper faces.
++            EnumDirection dir = BlockHopper.b(tileEntity.u());
++            
++            // Facing class provides arrays for direction offset.
++            if (tileEntity.position.shift(dir).equals(position)) {
++                ((TileEntityHopper) tileEntity).makeTick();
++            }
++        }
++    }
++    
++    // Called from update when the contents have changed, so hoppers need updates.
++    // Check all 6 faces.
++    public void scheduleTicks() {
++        if (this.world != null && this.world.spigotConfig.altHopperTicking) {
++            // Check the top
++            this.scheduleTick(position.up());
++            // Check the sides
++            for (int i = 2; i < 6; i++) {
++                this.scheduleTick(position.shift(EnumDirection.fromType1(i)));
++            }
++            // Check the bottom.
++            TileEntity tileEntity = this.world.getTileEntity(position.down());
++            if (tileEntity instanceof TileEntityHopper && tileEntity.world != null) {
++                ((TileEntityHopper) tileEntity).makeTick();
++            }
++        }
++    }
++    // Spigot end
++
+     public TileEntity() {
+         this.position = BlockPosition.ZERO;
+         this.h = -1;
+@@ -105,6 +140,10 @@ public abstract class TileEntity {
+             if (this.w() != Blocks.AIR) {
+                 this.world.updateAdjacentComparators(this.position, this.w());
+             }
++            // Spigot start - Called when the contents have changed, so hoppers around this
++            // tile need updating.
++            this.scheduleTicks();
++            // Spigot end
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
+index 280d64f..5355532 100644
+--- a/src/main/java/net/minecraft/server/TileEntityHopper.java
++++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
+@@ -16,6 +16,43 @@ public class TileEntityHopper extends TileEntityContainer implements IHopper, IU
+     private ItemStack[] items = new ItemStack[5];
+     private String f;
+     private int g = -1;
++
++    // Spigot start
++    private long nextTick = -1; // Next tick this hopper will be ticked.
++    private long lastTick = -1; // Last tick this hopper was polled.
++    
++    // If this hopper is not cooling down, assaign a visible tick for next time.
++    public void makeTick() {
++        if (!this.n()) {
++            this.d(0);
++        }
++    }
++    
++    // Contents changed, so make this hopper active.
++    public void scheduleHopperTick() {
++        if (this.world != null && this.world.spigotConfig.altHopperTicking) {
++            this.makeTick();
++        }
++    }
++    
++	// Called after this hopper is assaigned a world or when altHopperTicking is turned
++	// on from reload.
++    public void convertToScheduling() {
++    	// j is the cooldown in ticks
++        this.d(this.g);
++    }
++    
++    // Called when alt hopper ticking is turned off from the reload command
++    public void convertToPolling() {
++        long cooldownDiff;
++        if (this.lastTick == this.world.getTime()) {
++            cooldownDiff = this.nextTick - this.world.getTime();
++        } else {
++            cooldownDiff = this.nextTick - this.world.getTime() + 1;
++        }
++        this.d((int) Math.max(0, Math.min(cooldownDiff, Integer.MAX_VALUE)));
++    }
++    // Spigot end
+     
+     // CraftBukkit start - add fields and methods
+     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
+@@ -81,7 +118,20 @@ public class TileEntityHopper extends TileEntityContainer implements IHopper, IU
+         }
+ 
+         nbttagcompound.set("Items", nbttaglist);
+-        nbttagcompound.setInt("TransferCooldown", this.g);
++        // Spigot start - Need to write the correct cooldown to disk. We convert from long to int on saving.
++        if (this.world != null && this.world.spigotConfig.altHopperTicking) {
++            long cooldownDiff;
++            if (this.lastTick == this.world.getTime()) {
++                cooldownDiff = this.nextTick - this.world.getTime();
++            } else {
++                cooldownDiff = this.nextTick - this.world.getTime() + 1;
++            }
++            nbttagcompound.setInt("TransferCooldown", (int) Math.max(0, Math.min(cooldownDiff, Integer.MAX_VALUE)));
++        } else {
++        	// g is the cooldown in ticks.
++            nbttagcompound.setInt("TransferCooldown", this.g);
++        }
++        // Spigot end
+         if (this.hasCustomName()) {
+             nbttagcompound.setString("CustomName", this.f);
+         }
+@@ -90,6 +140,9 @@ public class TileEntityHopper extends TileEntityContainer implements IHopper, IU
+ 
+     public void update() {
+         super.update();
++        // Spigot start - The contents have changed, so make this hopper active.
++        this.scheduleHopperTick();
++        // Spigot end
+     }
+ 
+     public int getSize() {
+@@ -170,10 +223,19 @@ public class TileEntityHopper extends TileEntityContainer implements IHopper, IU
+ 
+     public void c() {
+         if (this.world != null && !this.world.isStatic) {
+-            --this.g;
+-            if (!this.n()) {
+-                this.d(0);
+-                this.m();
++            // Spigot start
++            if (this.world.spigotConfig.altHopperTicking) {
++                this.lastTick = this.world.getTime();
++                if (this.nextTick == this.world.getTime()) {
++                	// Method that does the pushing and pulling.
++                    this.m();
++                }
++            } else {
++                --this.g;
++                if (!this.n()) {
++                    this.d(0);
++                    this.m();
++                }
+             }
+ 
+         }
+@@ -200,7 +262,7 @@ public class TileEntityHopper extends TileEntityContainer implements IHopper, IU
+             }
+ 
+             // Spigot start
+-            if ( !this.n() )
++            if ( !world.spigotConfig.altHopperTicking && !this.n() )
+             {
+                 this.d( world.spigotConfig.hopperCheck );
+             }
+@@ -597,11 +659,35 @@ public class TileEntityHopper extends TileEntityContainer implements IHopper, IU
+     }
+ 
+     public void d(int i) {
+-        this.g = i;
++        // Spigot start - i is the delay for which this hopper will be ticked next.
++        // i of 1 or below implies a tick next tick.
++        if (this.world != null && this.world.spigotConfig.altHopperTicking) {
++            if (i <= 0) {
++                i = 1;
++            }
++            if (this.lastTick == this.world.getTime()) {
++                this.nextTick = this.world.getTime() + i;
++            } else {
++                this.nextTick = this.world.getTime() + i - 1;
++            }
++        } else {
++            this.g = i;
++        }
++        // Spigot end
+     }
+ 
+     public boolean n() {
+-        return this.g > 0;
++        // Spigot start - Return whether this hopper is cooling down.
++        if (this.world != null && this.world.spigotConfig.altHopperTicking) {
++            if (this.lastTick == this.world.getTime()) {
++                return this.nextTick > this.world.getTime();
++            } else {
++                return this.nextTick >= this.world.getTime();
++            }
++        } else {
++            return this.g > 0;
++        }
++        // Spigot end
+     }
+ 
+     public boolean o() {
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 2f79c83..296206f 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -120,6 +120,7 @@ public abstract class World implements IBlockAccess {
+     private final byte chunkTickRadius;
+     public static boolean haveWeSilencedAPhysicsCrash;
+     public static String blockLocation;
++    public List<TileEntity> triggerHoppersList = new ArrayList<TileEntity>(); // Spigot, When altHopperTicking, tile entities being added go through here.
+ 
+     public static long chunkToKey(int x, int z)
+     {
+@@ -137,6 +138,43 @@ public abstract class World implements IBlockAccess {
+     {
+         return (int) ( ( ( k >> 32 ) & 0xFFFF0000L ) | ( ( k >> 16 ) & 0x0000FFFF ) );
+     }
++
++    // Spigot Start - Hoppers need to be born ticking.
++    private void initializeHoppers() {
++        if (this.spigotConfig.altHopperTicking) {
++            for (TileEntity o : this.triggerHoppersList) {
++                o.scheduleTicks();
++                if (o instanceof TileEntityHopper) {
++                    ((TileEntityHopper) o).convertToScheduling();
++                    ((TileEntityHopper) o).scheduleHopperTick();
++                }
++            }
++        }
++        triggerHoppersList.clear();
++    }
++    
++    // Helper method for altHopperTicking. Updates chests at the specified location,
++    // accounting for double chests. Updating the chest will update adjacent hoppers.
++    public void updateChestAndHoppers(BlockPosition blockposition) {
++        Block block = this.getType(blockposition).getBlock();
++        if (block instanceof BlockChest) {
++            TileEntity tile = this.getTileEntity(blockposition);
++            if (tile instanceof TileEntityChest) {
++                tile.scheduleTicks();
++            }
++            for (int i = 2; i < 6; i++) {
++            	// Facing class provides arrays for direction offset.
++                BlockPosition pos = blockposition.shift(EnumDirection.fromType1(i));
++                if (this.getType(pos) == block) {
++                    tile = this.getTileEntity(pos);
++                    if (tile instanceof TileEntityChest) {
++                        tile.scheduleTicks();
++                    }
++                    break;
++                }
++            }
++        }
++    }
+     // Spigot end
+ 
+     public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
+@@ -372,6 +410,14 @@ public abstract class World implements IBlockAccess {
+                     // Modularize client and physic updates
+                     notifyAndUpdatePhysics(blockposition, chunk, block1, block, i);
+                 }
++                // Spigot start - If this block is changing to that which a chest beneath it
++                // becomes able to be opened, then the chest must be updated.
++                // block1 is the old block. block is the new block. r returns true if the block type
++                // prevents access to a chest.
++                if (this.spigotConfig.altHopperTicking && block1 != null && block1.isOccluding()&& !block.isOccluding()) {
++                    this.updateChestAndHoppers(blockposition.down());
++                }
++                // Spigot end
+                 // CraftBukkit end
+ 
+                 return true;
+@@ -1372,6 +1418,7 @@ public abstract class World implements IBlockAccess {
+         }
+         // CraftBukkit end
+ 
++        this.initializeHoppers(); // Spigot - Initializes hoppers which have been added recently.
+         Iterator iterator = this.tileEntityList.iterator();
+ 
+         while (iterator.hasNext()) {
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index df43af5..c3a2d01 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -166,11 +166,35 @@ public class SpigotWorldConfig
+         log( "Entity Tracking Range: Pl " + playerTrackingRange + " / An " + animalTrackingRange + " / Mo " + monsterTrackingRange + " / Mi " + miscTrackingRange + " / Other " + otherTrackingRange );
+     }
+ 
++    public boolean altHopperTicking;
+     public int hopperTransfer;
+     public int hopperCheck;
+     public int hopperAmount;
+     private void hoppers()
+     {
++        // Alternate ticking method. Uses inventory changes, redstone updates etc.
++        // to update hoppers. Hopper-check is disabled when this is true.
++        boolean prev = altHopperTicking;
++        altHopperTicking = getBoolean( "hopper-alt-ticking", false );
++        // Necessary for the reload command
++        if (prev != altHopperTicking) {
++            net.minecraft.server.World world = (net.minecraft.server.World) Bukkit.getWorld(this.worldName);
++            if (world != null) {
++                if (altHopperTicking) {
++                    for (Object o : world.tileEntityList) {
++                        if (o instanceof net.minecraft.server.TileEntityHopper) {
++                            ((net.minecraft.server.TileEntityHopper) o).convertToScheduling();
++                        }
++                    }
++                } else {
++                    for (Object o : world.tileEntityList) {
++                        if (o instanceof net.minecraft.server.TileEntityHopper) {
++                            ((net.minecraft.server.TileEntityHopper) o).convertToPolling();
++                        }
++                    }
++                }
++            }
++        }
+         // Set the tick delay between hopper item movements
+         hopperTransfer = getInt( "ticks-per.hopper-transfer", 8 );
+         // Set the tick delay between checking for items after the associated
+@@ -178,6 +202,7 @@ public class SpigotWorldConfig
+         // hopper sorting machines from becoming out of sync.
+         hopperCheck = getInt( "ticks-per.hopper-check", hopperTransfer );
+         hopperAmount = getInt( "hopper-amount", 1 );
++        log( "Alternative Hopper Ticking: " + altHopperTicking );
+         log( "Hopper Transfer: " + hopperTransfer + " Hopper Check: " + hopperCheck + " Hopper Amount: " + hopperAmount );
+     }
+ 
+-- 
+2.1.0
+

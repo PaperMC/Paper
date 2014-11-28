@@ -1,0 +1,115 @@
+From df4e9d4de428744c6d4813512e5e1b784ddc7231 Mon Sep 17 00:00:00 2001
+From: md_5 <git@md-5.net>
+Date: Thu, 17 Apr 2014 19:22:22 +1000
+Subject: [PATCH] Expand team API to allow arbitrary strings.
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
+index e38d109..a1864a5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
+@@ -102,6 +102,19 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+         return players.build();
+     }
+ 
++    // Spigot start
++    @Override
++    public Set<String> getEntries() throws IllegalStateException {
++        CraftScoreboard scoreboard = checkState();
++        
++        ImmutableSet.Builder<String> entries = ImmutableSet.builder();
++        for (Object o : team.getPlayerNameSet()){
++            entries.add(o.toString());
++        }
++        return entries.build();
++    }
++    // Spigot end
++
+     public int getSize() throws IllegalStateException {
+         CraftScoreboard scoreboard = checkState();
+ 
+@@ -110,28 +123,50 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+ 
+     public void addPlayer(OfflinePlayer player) throws IllegalStateException, IllegalArgumentException {
+         Validate.notNull(player, "OfflinePlayer cannot be null");
++        // Spigot Start
++        addEntry(player.getName());
++    }
++    
++    public void addEntry(String entry) throws IllegalStateException, IllegalArgumentException {
++        Validate.notNull(entry, "Entry cannot be null");
+         CraftScoreboard scoreboard = checkState();
+ 
+-        scoreboard.board.addPlayerToTeam(player.getName(), team.getName());
++        scoreboard.board.addPlayerToTeam(entry, team.getName());
++        // Spigot end
+     }
+ 
+     public boolean removePlayer(OfflinePlayer player) throws IllegalStateException, IllegalArgumentException {
+         Validate.notNull(player, "OfflinePlayer cannot be null");
++        // Spigot start
++        return removeEntry(player.getName());
++    }
++    
++    public boolean removeEntry(String entry) throws IllegalStateException, IllegalArgumentException {
++        Validate.notNull(entry, "Entry cannot be null");
+         CraftScoreboard scoreboard = checkState();
+ 
+-        if (!team.getPlayerNameSet().contains(player.getName())) {
++        if (!team.getPlayerNameSet().contains(entry)) {
+             return false;
+         }
+ 
+-        scoreboard.board.removePlayerFromTeam(player.getName(), team);
++        scoreboard.board.removePlayerFromTeam(entry, team);
++        // Spigot end
+         return true;
+     }
+ 
+     public boolean hasPlayer(OfflinePlayer player) throws IllegalArgumentException, IllegalStateException {
+         Validate.notNull(player, "OfflinePlayer cannot be null");
++        // Spigot start
++        return hasEntry(player.getName());
++    }
++
++    public boolean hasEntry(String entry) throws IllegalArgumentException, IllegalStateException {
++        Validate.notNull("Entry cannot be null");
++
+         CraftScoreboard scoreboard = checkState();
+ 
+-        return team.getPlayerNameSet().contains(player.getName());
++        return team.getPlayerNameSet().contains(entry);
++        // Spigot end
+     }
+ 
+     @Override
+@@ -142,26 +177,4 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+         scoreboard.teams.remove(team.getName());
+         setUnregistered();
+     }
+-
+-    // Spigot start
+-    @Override
+-    public Set<String> getEntries() throws IllegalStateException {
+-        throw new UnsupportedOperationException("Not supported yet.");
+-    }
+-
+-    @Override
+-    public void addEntry(String entry) throws IllegalStateException, IllegalArgumentException {
+-        throw new UnsupportedOperationException("Not supported yet.");
+-    }
+-
+-    @Override
+-    public boolean removeEntry(String entry) throws IllegalStateException, IllegalArgumentException {
+-        throw new UnsupportedOperationException("Not supported yet.");
+-    }
+-
+-    @Override
+-    public boolean hasEntry(String entry) throws IllegalArgumentException, IllegalStateException {
+-        throw new UnsupportedOperationException("Not supported yet.");
+-    }
+-    // Spigot end
+ }
+-- 
+2.1.0
+

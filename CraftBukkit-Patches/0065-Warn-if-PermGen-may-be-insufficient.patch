@@ -1,0 +1,36 @@
+From ba3cb8a97f86170714630163965e420dd7e3dee9 Mon Sep 17 00:00:00 2001
+From: md_5 <git@md-5.net>
+Date: Mon, 23 Dec 2013 14:07:41 +1100
+Subject: [PATCH] Warn if PermGen may be insufficient
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index 8d127fb..008e037 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -155,6 +155,22 @@ public class Main {
+                     useConsole = false;
+                 }
+ 
++                // Spigot Start
++                int maxPermGen = 0; // In kb
++                for ( String s : java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments() )
++                {
++                    if ( s.startsWith( "-XX:MaxPermSize" ) )
++                    {
++                        maxPermGen = Integer.parseInt( s.replaceAll( "[^\\d]", "" ) );
++                        maxPermGen <<= 10 * ("kmg".indexOf( Character.toLowerCase( s.charAt( s.length() - 1 ) ) ) );
++                    }
++                }
++                if ( Float.parseFloat( System.getProperty( "java.class.version" ) ) < 52 && maxPermGen < ( 128 << 10 ) ) // 128mb
++                {
++                    System.out.println( "Warning, your max perm gen size is not set or less than 128mb. It is recommended you restart Java with the following argument: -XX:MaxPermSize=128M" );
++                    System.out.println( "Please see http://www.spigotmc.org/wiki/changing-permgen-size/ for more details and more in-depth instructions." );
++                }
++                // Spigot End
+                 System.out.println("Loading libraries, please wait...");
+                 MinecraftServer.main(options);
+             } catch (Throwable t) {
+-- 
+2.1.0
+

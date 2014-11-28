@@ -1,0 +1,67 @@
+From 0b06e1bd0bdc7889c5a52391b410b338d3e44e9f Mon Sep 17 00:00:00 2001
+From: Minecrell <dev@minecrell.net>
+Date: Sun, 17 Aug 2014 12:42:53 +0200
+Subject: [PATCH] Make debug logging togglable.
+
+
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index d3abf1f..a8140a5 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -18,6 +18,9 @@ import gnu.trove.map.hash.TObjectIntHashMap;
+ import net.minecraft.server.AttributeRanged;
+ import net.minecraft.server.GenericAttributes;
+ import net.minecraft.server.MinecraftServer;
++import org.apache.logging.log4j.LogManager;
++import org.apache.logging.log4j.core.LoggerContext;
++import org.apache.logging.log4j.core.config.Configuration;
+ import org.bukkit.Bukkit;
+ import org.bukkit.ChatColor;
+ import org.bukkit.command.Command;
+@@ -372,4 +375,27 @@ public class SpigotConfig
+             URL.setURLStreamHandlerFactory(new CachedStreamHandlerFactory());
+         }
+     }
++
++    public static boolean debug;
++    private static void debug()
++    {
++        debug = getBoolean( "settings.debug", false );
++
++        if ( debug && !LogManager.getRootLogger().isTraceEnabled() )
++        {
++            // Enable debug logging
++            LoggerContext ctx = (LoggerContext) LogManager.getContext( false );
++            Configuration conf = ctx.getConfiguration();
++            conf.getLoggerConfig( LogManager.ROOT_LOGGER_NAME ).setLevel( org.apache.logging.log4j.Level.ALL );
++            ctx.updateLoggers( conf );
++        }
++
++        if ( LogManager.getRootLogger().isTraceEnabled() )
++        {
++            Bukkit.getLogger().info( "Debug logging is enabled" );
++        } else
++        {
++            Bukkit.getLogger().info( "Debug logging is disabled" );
++        }
++    }
+ }
+diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
+index 08d68aa..f37d1c2 100644
+--- a/src/main/resources/log4j2.xml
++++ b/src/main/resources/log4j2.xml
+@@ -18,9 +18,9 @@
+             <filters>
+                 <MarkerFilter marker="NETWORK_PACKETS" onMatch="DENY" onMismatch="NEUTRAL" />
+             </filters>
+-            <AppenderRef ref="WINDOWS_COMPAT"/>
++            <AppenderRef ref="WINDOWS_COMPAT" level="info"/>
+             <AppenderRef ref="File"/>
+-            <AppenderRef ref="TerminalConsole"/>
++            <AppenderRef ref="TerminalConsole" level="info"/>
+         </Root>
+     </Loggers>
+ </Configuration>
+-- 
+2.1.0
+

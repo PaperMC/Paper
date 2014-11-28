@@ -1,0 +1,41 @@
+From 21fba8d7f5b9b5384f1168dd7d9bb4276de80c81 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Thu, 5 Dec 2013 13:55:53 +1100
+Subject: [PATCH] Fix Broken Async Chat
+
+
+diff --git a/src/main/java/net/minecraft/server/PacketPlayInChat.java b/src/main/java/net/minecraft/server/PacketPlayInChat.java
+index 8e1740d..cb614ef 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayInChat.java
++++ b/src/main/java/net/minecraft/server/PacketPlayInChat.java
+@@ -30,7 +30,26 @@ public class PacketPlayInChat implements Packet {
+         return this.a;
+     }
+ 
+-    public void a(PacketListener packetlistener) {
++    // Spigot Start
++    private static final java.util.concurrent.ExecutorService executors = java.util.concurrent.Executors.newCachedThreadPool(
++            new com.google.common.util.concurrent.ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "Async Chat Thread - #%d" ).build() );
++    @Override
++    public void a(final PacketListener packetlistener)
++    {
++        if ( !a.startsWith("/") )
++        {
++            executors.submit( new Runnable()
++            {
++
++                @Override
++                public void run()
++                {
++                    PacketPlayInChat.this.a( (PacketListenerPlayIn) packetlistener );
++                }
++            } );
++            return;
++        }
++        // Spigot End
+         this.a((PacketListenerPlayIn) packetlistener);
+     }
+ }
+-- 
+2.1.0
+

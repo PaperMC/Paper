@@ -1,16 +1,16 @@
-From 2b64890ac075c7e7125b05ca2eb164c6736ad347 Mon Sep 17 00:00:00 2001
+From 7772412950502bba4c4f2b0ddb765ff274b554b6 Mon Sep 17 00:00:00 2001
 From: Zach Brown <Zbob750@live.com>
-Date: Mon, 21 Jul 2014 18:46:53 -0500
+Date: Fri, 28 Nov 2014 00:35:56 -0600
 Subject: [PATCH] Invisible players don't have rights
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityArrow.java b/src/main/java/net/minecraft/server/EntityArrow.java
-index de8dda7..dbb420b 100644
+index 7d1727d..d1c588a 100644
 --- a/src/main/java/net/minecraft/server/EntityArrow.java
 +++ b/src/main/java/net/minecraft/server/EntityArrow.java
-@@ -220,6 +220,14 @@ public class EntityArrow extends Entity implements IProjectile {
-             float f2;
+@@ -221,6 +221,14 @@ public class EntityArrow extends Entity implements IProjectile {
              float f3;
+             float f4;
  
 +            // PaperSpigot start - Allow arrows to fly through players
 +            if (movingobjectposition != null && movingobjectposition.entity instanceof EntityPlayer && shooter != null && shooter instanceof EntityPlayer) {
@@ -22,12 +22,12 @@ index de8dda7..dbb420b 100644
 +
              if (movingobjectposition != null) {
                  org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this); // CraftBukkit - Call event
- 
+                 
 diff --git a/src/main/java/net/minecraft/server/EntityProjectile.java b/src/main/java/net/minecraft/server/EntityProjectile.java
-index 7f8a33b..73f52ac 100644
+index ce3e628..7fc9abe 100644
 --- a/src/main/java/net/minecraft/server/EntityProjectile.java
 +++ b/src/main/java/net/minecraft/server/EntityProjectile.java
-@@ -148,6 +148,14 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+@@ -146,6 +146,14 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
              }
          }
  
@@ -40,16 +40,16 @@ index 7f8a33b..73f52ac 100644
 +        // PaperSpigot end
 +
          if (movingobjectposition != null) {
-             if (movingobjectposition.type == EnumMovingObjectType.BLOCK && this.world.getType(movingobjectposition.b, movingobjectposition.c, movingobjectposition.d) == Blocks.PORTAL) {
-                 this.ah();
+             if (movingobjectposition.type == EnumMovingObjectType.BLOCK && this.world.getType(movingobjectposition.a()).getBlock() == Blocks.PORTAL) {
+                 this.aq();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index a6ef3b6..7281b59 100644
+index 516447e..1537d76 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1683,6 +1683,13 @@ public abstract class World implements IBlockAccess {
- 
+@@ -1641,6 +1641,14 @@ public abstract class World implements IBlockAccess {
          for (int i = 0; i < list.size(); ++i) {
              Entity entity1 = (Entity) list.get(i);
+ 
 +            // PaperSpigot start - Allow block placement if the placer cannot see the blocker
 +            if (entity instanceof EntityPlayer && entity1 instanceof EntityPlayer) {
 +                if (!((EntityPlayer) entity).getBukkitEntity().canSee(((EntityPlayer) entity1).getBukkitEntity())) {
@@ -57,9 +57,10 @@ index a6ef3b6..7281b59 100644
 +                }
 +            }
 +            // PaperSpigot end
- 
-             if (!entity1.dead && entity1.k && entity1 != entity) {
++
+             if (!entity1.dead && entity1.k && entity1 != entity && (entity == null || entity.vehicle != entity1 && entity.passenger != entity1)) {
                  return false;
+             }
 -- 
 1.9.1
 

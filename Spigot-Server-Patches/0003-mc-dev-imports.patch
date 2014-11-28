@@ -1,29 +1,29 @@
-From cbbd2417d3fda9052696daf507161a57a90c8465 Mon Sep 17 00:00:00 2001
+From 49b5ab870fb9264549c00c2ecda33ac7affdfb13 Mon Sep 17 00:00:00 2001
 From: Zach Brown <Zbob750@live.com>
-Date: Tue, 22 Jul 2014 21:05:53 -0500
+Date: Thu, 27 Nov 2014 23:53:56 -0600
 Subject: [PATCH] mc-dev imports
 
 
 diff --git a/src/main/java/net/minecraft/server/BlockMinecartTrackAbstract.java b/src/main/java/net/minecraft/server/BlockMinecartTrackAbstract.java
 new file mode 100644
-index 0000000..d36aacb
+index 0000000..063177d
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/BlockMinecartTrackAbstract.java
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,120 @@
 +package net.minecraft.server;
-+
-+import java.util.Random;
 +
 +public abstract class BlockMinecartTrackAbstract extends Block {
 +
 +    protected final boolean a;
 +
-+    public static final boolean b_(World world, int i, int j, int k) {
-+        return a(world.getType(i, j, k));
++    public static boolean d(World world, BlockPosition blockposition) {
++        return d(world.getType(blockposition));
 +    }
 +
-+    public static final boolean a(Block block) {
-+        return block == Blocks.RAILS || block == Blocks.GOLDEN_RAIL || block == Blocks.DETECTOR_RAIL || block == Blocks.ACTIVATOR_RAIL;
++    public static boolean d(IBlockData iblockdata) {
++        Block block = iblockdata.getBlock();
++
++        return block == Blocks.RAIL || block == Blocks.GOLDEN_RAIL || block == Blocks.DETECTOR_RAIL || block == Blocks.ACTIVATOR_RAIL;
 +    }
 +
 +    protected BlockMinecartTrackAbstract(boolean flag) {
@@ -33,11 +33,7 @@ index 0000000..d36aacb
 +        this.a(CreativeModeTab.e);
 +    }
 +
-+    public boolean e() {
-+        return this.a;
-+    }
-+
-+    public AxisAlignedBB a(World world, int i, int j, int k) {
++    public AxisAlignedBB a(World world, BlockPosition blockposition, IBlockData iblockdata) {
 +        return null;
 +    }
 +
@@ -45,292 +41,98 @@ index 0000000..d36aacb
 +        return false;
 +    }
 +
-+    public MovingObjectPosition a(World world, int i, int j, int k, Vec3D vec3d, Vec3D vec3d1) {
-+        this.updateShape(world, i, j, k);
-+        return super.a(world, i, j, k, vec3d, vec3d1);
++    public MovingObjectPosition a(World world, BlockPosition blockposition, Vec3D vec3d, Vec3D vec3d1) {
++        this.updateShape(world, blockposition);
++        return super.a(world, blockposition, vec3d, vec3d1);
 +    }
 +
-+    public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
-+        int l = iblockaccess.getData(i, j, k);
++    public void updateShape(IBlockAccess iblockaccess, BlockPosition blockposition) {
++        IBlockData iblockdata = iblockaccess.getType(blockposition);
++        EnumTrackPosition enumtrackposition = iblockdata.getBlock() == this ? (EnumTrackPosition) iblockdata.get(this.l()) : null;
 +
-+        if (l >= 2 && l <= 5) {
++        if (enumtrackposition != null && enumtrackposition.c()) {
 +            this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.625F, 1.0F);
 +        } else {
 +            this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.125F, 1.0F);
 +        }
++
 +    }
 +
 +    public boolean d() {
 +        return false;
 +    }
 +
-+    public int b() {
-+        return 9;
++    public boolean canPlace(World world, BlockPosition blockposition) {
++        return World.a((IBlockAccess) world, blockposition.down());
 +    }
 +
-+    public int a(Random random) {
-+        return 1;
-+    }
-+
-+    public boolean canPlace(World world, int i, int j, int k) {
-+        return World.a((IBlockAccess) world, i, j - 1, k);
-+    }
-+
-+    public void onPlace(World world, int i, int j, int k) {
++    public void onPlace(World world, BlockPosition blockposition, IBlockData iblockdata) {
 +        if (!world.isStatic) {
-+            this.a(world, i, j, k, true);
++            iblockdata = this.a(world, blockposition, iblockdata, true);
 +            if (this.a) {
-+                this.doPhysics(world, i, j, k, this);
++                this.doPhysics(world, blockposition, iblockdata, this);
 +            }
 +        }
++
 +    }
 +
-+    public void doPhysics(World world, int i, int j, int k, Block block) {
++    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
 +        if (!world.isStatic) {
-+            int l = world.getData(i, j, k);
-+            int i1 = l;
-+
-+            if (this.a) {
-+                i1 = l & 7;
-+            }
-+
++            EnumTrackPosition enumtrackposition = (EnumTrackPosition) iblockdata.get(this.l());
 +            boolean flag = false;
 +
-+            if (!World.a((IBlockAccess) world, i, j - 1, k)) {
++            if (!World.a((IBlockAccess) world, blockposition.down())) {
 +                flag = true;
 +            }
 +
-+            if (i1 == 2 && !World.a((IBlockAccess) world, i + 1, j, k)) {
++            if (enumtrackposition == EnumTrackPosition.ASCENDING_EAST && !World.a((IBlockAccess) world, blockposition.east())) {
 +                flag = true;
-+            }
-+
-+            if (i1 == 3 && !World.a((IBlockAccess) world, i - 1, j, k)) {
++            } else if (enumtrackposition == EnumTrackPosition.ASCENDING_WEST && !World.a((IBlockAccess) world, blockposition.west())) {
 +                flag = true;
-+            }
-+
-+            if (i1 == 4 && !World.a((IBlockAccess) world, i, j, k - 1)) {
++            } else if (enumtrackposition == EnumTrackPosition.ASCENDING_NORTH && !World.a((IBlockAccess) world, blockposition.north())) {
 +                flag = true;
-+            }
-+
-+            if (i1 == 5 && !World.a((IBlockAccess) world, i, j, k + 1)) {
++            } else if (enumtrackposition == EnumTrackPosition.ASCENDING_SOUTH && !World.a((IBlockAccess) world, blockposition.south())) {
 +                flag = true;
 +            }
 +
 +            if (flag) {
-+                this.b(world, i, j, k, world.getData(i, j, k), 0);
-+                world.setAir(i, j, k);
++                this.b(world, blockposition, iblockdata, 0);
++                world.setAir(blockposition);
 +            } else {
-+                this.a(world, i, j, k, l, i1, block);
++                this.b(world, blockposition, iblockdata, block);
 +            }
++
 +        }
 +    }
 +
-+    protected void a(World world, int i, int j, int k, int l, int i1, Block block) {}
++    protected void b(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {}
 +
-+    protected void a(World world, int i, int j, int k, boolean flag) {
-+        if (!world.isStatic) {
-+            (new MinecartTrackLogic(this, world, i, j, k)).a(world.isBlockIndirectlyPowered(i, j, k), flag);
-+        }
++    protected IBlockData a(World world, BlockPosition blockposition, IBlockData iblockdata, boolean flag) {
++        return world.isStatic ? iblockdata : (new MinecartTrackLogic(this, world, blockposition, iblockdata)).a(world.isBlockIndirectlyPowered(blockposition), flag).b();
 +    }
 +
-+    public int h() {
++    public int i() {
 +        return 0;
 +    }
 +
-+    public void remove(World world, int i, int j, int k, Block block, int l) {
-+        int i1 = l;
-+
-+        if (this.a) {
-+            i1 = l & 7;
-+        }
-+
-+        super.remove(world, i, j, k, block, l);
-+        if (i1 == 2 || i1 == 3 || i1 == 4 || i1 == 5) {
-+            world.applyPhysics(i, j + 1, k, block);
++    public void remove(World world, BlockPosition blockposition, IBlockData iblockdata) {
++        super.remove(world, blockposition, iblockdata);
++        if (((EnumTrackPosition) iblockdata.get(this.l())).c()) {
++            world.applyPhysics(blockposition.up(), this);
 +        }
 +
 +        if (this.a) {
-+            world.applyPhysics(i, j, k, block);
-+            world.applyPhysics(i, j - 1, k, block);
-+        }
-+    }
-+}
-diff --git a/src/main/java/net/minecraft/server/BlockTorch.java b/src/main/java/net/minecraft/server/BlockTorch.java
-new file mode 100644
-index 0000000..d95aff2
---- /dev/null
-+++ b/src/main/java/net/minecraft/server/BlockTorch.java
-@@ -0,0 +1,167 @@
-+package net.minecraft.server;
-+
-+import java.util.Random;
-+
-+public class BlockTorch extends Block {
-+
-+    protected BlockTorch() {
-+        super(Material.ORIENTABLE);
-+        this.a(true);
-+        this.a(CreativeModeTab.c);
-+    }
-+
-+    public AxisAlignedBB a(World world, int i, int j, int k) {
-+        return null;
-+    }
-+
-+    public boolean c() {
-+        return false;
-+    }
-+
-+    public boolean d() {
-+        return false;
-+    }
-+
-+    public int b() {
-+        return 2;
-+    }
-+
-+    private boolean m(World world, int i, int j, int k) {
-+        if (World.a((IBlockAccess) world, i, j, k)) {
-+            return true;
-+        } else {
-+            Block block = world.getType(i, j, k);
-+
-+            return block == Blocks.FENCE || block == Blocks.NETHER_FENCE || block == Blocks.GLASS || block == Blocks.COBBLE_WALL;
-+        }
-+    }
-+
-+    public boolean canPlace(World world, int i, int j, int k) {
-+        return world.c(i - 1, j, k, true) ? true : (world.c(i + 1, j, k, true) ? true : (world.c(i, j, k - 1, true) ? true : (world.c(i, j, k + 1, true) ? true : this.m(world, i, j - 1, k))));
-+    }
-+
-+    public int getPlacedData(World world, int i, int j, int k, int l, float f, float f1, float f2, int i1) {
-+        int j1 = i1;
-+
-+        if (l == 1 && this.m(world, i, j - 1, k)) {
-+            j1 = 5;
++            world.applyPhysics(blockposition, this);
++            world.applyPhysics(blockposition.down(), this);
 +        }
 +
-+        if (l == 2 && world.c(i, j, k + 1, true)) {
-+            j1 = 4;
-+        }
-+
-+        if (l == 3 && world.c(i, j, k - 1, true)) {
-+            j1 = 3;
-+        }
-+
-+        if (l == 4 && world.c(i + 1, j, k, true)) {
-+            j1 = 2;
-+        }
-+
-+        if (l == 5 && world.c(i - 1, j, k, true)) {
-+            j1 = 1;
-+        }
-+
-+        return j1;
 +    }
 +
-+    public void a(World world, int i, int j, int k, Random random) {
-+        super.a(world, i, j, k, random);
-+        if (world.getData(i, j, k) == 0) {
-+            this.onPlace(world, i, j, k);
-+        }
-+    }
-+
-+    public void onPlace(World world, int i, int j, int k) {
-+        if (world.getData(i, j, k) == 0) {
-+            if (world.c(i - 1, j, k, true)) {
-+                world.setData(i, j, k, 1, 2);
-+            } else if (world.c(i + 1, j, k, true)) {
-+                world.setData(i, j, k, 2, 2);
-+            } else if (world.c(i, j, k - 1, true)) {
-+                world.setData(i, j, k, 3, 2);
-+            } else if (world.c(i, j, k + 1, true)) {
-+                world.setData(i, j, k, 4, 2);
-+            } else if (this.m(world, i, j - 1, k)) {
-+                world.setData(i, j, k, 5, 2);
-+            }
-+        }
-+
-+        this.e(world, i, j, k);
-+    }
-+
-+    public void doPhysics(World world, int i, int j, int k, Block block) {
-+        this.b(world, i, j, k, block);
-+    }
-+
-+    protected boolean b(World world, int i, int j, int k, Block block) {
-+        if (this.e(world, i, j, k)) {
-+            int l = world.getData(i, j, k);
-+            boolean flag = false;
-+
-+            if (!world.c(i - 1, j, k, true) && l == 1) {
-+                flag = true;
-+            }
-+
-+            if (!world.c(i + 1, j, k, true) && l == 2) {
-+                flag = true;
-+            }
-+
-+            if (!world.c(i, j, k - 1, true) && l == 3) {
-+                flag = true;
-+            }
-+
-+            if (!world.c(i, j, k + 1, true) && l == 4) {
-+                flag = true;
-+            }
-+
-+            if (!this.m(world, i, j - 1, k) && l == 5) {
-+                flag = true;
-+            }
-+
-+            if (flag) {
-+                this.b(world, i, j, k, world.getData(i, j, k), 0);
-+                world.setAir(i, j, k);
-+                return true;
-+            } else {
-+                return false;
-+            }
-+        } else {
-+            return true;
-+        }
-+    }
-+
-+    protected boolean e(World world, int i, int j, int k) {
-+        if (!this.canPlace(world, i, j, k)) {
-+            if (world.getType(i, j, k) == this) {
-+                this.b(world, i, j, k, world.getData(i, j, k), 0);
-+                world.setAir(i, j, k);
-+            }
-+
-+            return false;
-+        } else {
-+            return true;
-+        }
-+    }
-+
-+    public MovingObjectPosition a(World world, int i, int j, int k, Vec3D vec3d, Vec3D vec3d1) {
-+        int l = world.getData(i, j, k) & 7;
-+        float f = 0.15F;
-+
-+        if (l == 1) {
-+            this.a(0.0F, 0.2F, 0.5F - f, f * 2.0F, 0.8F, 0.5F + f);
-+        } else if (l == 2) {
-+            this.a(1.0F - f * 2.0F, 0.2F, 0.5F - f, 1.0F, 0.8F, 0.5F + f);
-+        } else if (l == 3) {
-+            this.a(0.5F - f, 0.2F, 0.0F, 0.5F + f, 0.8F, f * 2.0F);
-+        } else if (l == 4) {
-+            this.a(0.5F - f, 0.2F, 1.0F - f * 2.0F, 0.5F + f, 0.8F, 1.0F);
-+        } else {
-+            f = 0.1F;
-+            this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.6F, 0.5F + f);
-+        }
-+
-+        return super.a(world, i, j, k, vec3d, vec3d1);
-+    }
++    public abstract IBlockState l();
 +}
 diff --git a/src/main/java/net/minecraft/server/MobEffectAttackDamage.java b/src/main/java/net/minecraft/server/MobEffectAttackDamage.java
 new file mode 100644
-index 0000000..3eb029d
+index 0000000..620685a
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/MobEffectAttackDamage.java
 @@ -0,0 +1,12 @@
@@ -338,132 +140,54 @@ index 0000000..3eb029d
 +
 +public class MobEffectAttackDamage extends MobEffectList {
 +
-+    protected MobEffectAttackDamage(int i, boolean flag, int j) {
-+        super(i, flag, j);
++    protected MobEffectAttackDamage(int i, MinecraftKey minecraftkey, boolean flag, int j) {
++        super(i, minecraftkey, flag, j);
 +    }
 +
 +    public double a(int i, AttributeModifier attributemodifier) {
 +        return this.id == MobEffectList.WEAKNESS.id ? (double) (-0.5F * (float) (i + 1)) : 1.3D * (double) (i + 1);
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/server/RandomPositionGenerator.java b/src/main/java/net/minecraft/server/RandomPositionGenerator.java
-new file mode 100644
-index 0000000..9342a3f
---- /dev/null
-+++ b/src/main/java/net/minecraft/server/RandomPositionGenerator.java
-@@ -0,0 +1,74 @@
-+package net.minecraft.server;
-+
-+import java.util.Random;
-+
-+public class RandomPositionGenerator {
-+
-+    private static Vec3D a = Vec3D.a(0.0D, 0.0D, 0.0D);
-+
-+    public static Vec3D a(EntityCreature entitycreature, int i, int j) {
-+        return c(entitycreature, i, j, (Vec3D) null);
-+    }
-+
-+    public static Vec3D a(EntityCreature entitycreature, int i, int j, Vec3D vec3d) {
-+        a.a = vec3d.a - entitycreature.locX;
-+        a.b = vec3d.b - entitycreature.locY;
-+        a.c = vec3d.c - entitycreature.locZ;
-+        return c(entitycreature, i, j, a);
-+    }
-+
-+    public static Vec3D b(EntityCreature entitycreature, int i, int j, Vec3D vec3d) {
-+        a.a = entitycreature.locX - vec3d.a;
-+        a.b = entitycreature.locY - vec3d.b;
-+        a.c = entitycreature.locZ - vec3d.c;
-+        return c(entitycreature, i, j, a);
-+    }
-+
-+    private static Vec3D c(EntityCreature entitycreature, int i, int j, Vec3D vec3d) {
-+        Random random = entitycreature.aI();
-+        boolean flag = false;
-+        int k = 0;
-+        int l = 0;
-+        int i1 = 0;
-+        float f = -99999.0F;
-+        boolean flag1;
-+
-+        if (entitycreature.bY()) {
-+            double d0 = (double) (entitycreature.bV().e(MathHelper.floor(entitycreature.locX), MathHelper.floor(entitycreature.locY), MathHelper.floor(entitycreature.locZ)) + 4.0F);
-+            double d1 = (double) (entitycreature.bW() + (float) i);
-+
-+            flag1 = d0 < d1 * d1;
-+        } else {
-+            flag1 = false;
-+        }
-+
-+        for (int j1 = 0; j1 < 10; ++j1) {
-+            int k1 = random.nextInt(2 * i) - i;
-+            int l1 = random.nextInt(2 * j) - j;
-+            int i2 = random.nextInt(2 * i) - i;
-+
-+            if (vec3d == null || (double) k1 * vec3d.a + (double) i2 * vec3d.c >= 0.0D) {
-+                k1 += MathHelper.floor(entitycreature.locX);
-+                l1 += MathHelper.floor(entitycreature.locY);
-+                i2 += MathHelper.floor(entitycreature.locZ);
-+                if (!flag1 || entitycreature.b(k1, l1, i2)) {
-+                    float f1 = entitycreature.a(k1, l1, i2);
-+
-+                    if (f1 > f) {
-+                        f = f1;
-+                        k = k1;
-+                        l = l1;
-+                        i1 = i2;
-+                        flag = true;
-+                    }
-+                }
-+            }
-+        }
-+
-+        if (flag) {
-+            return Vec3D.a((double) k, (double) l, (double) i1);
-+        } else {
-+            return null;
-+        }
-+    }
-+}
 diff --git a/src/main/java/net/minecraft/server/TileEntityEnderChest.java b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 new file mode 100644
-index 0000000..b205ab7
+index 0000000..794cdc8
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
-@@ -0,0 +1,84 @@
+@@ -0,0 +1,87 @@
 +package net.minecraft.server;
 +
-+public class TileEntityEnderChest extends TileEntity {
++public class TileEntityEnderChest extends TileEntity implements IUpdatePlayerListBox {
 +
 +    public float a;
-+    public float i;
-+    public int j;
-+    private int k;
++    public float f;
++    public int g;
++    private int h;
 +
 +    public TileEntityEnderChest() {}
 +
-+    public void h() {
-+        super.h();
-+        if (++this.k % 20 * 4 == 0) {
-+            this.world.playBlockAction(this.x, this.y, this.z, Blocks.ENDER_CHEST, 1, this.j);
++    public void c() {
++        if (++this.h % 20 * 4 == 0) {
++            this.world.playBlockAction(this.position, Blocks.ENDER_CHEST, 1, this.g);
 +        }
 +
-+        this.i = this.a;
++        this.f = this.a;
++        int i = this.position.getX();
++        int j = this.position.getY();
++        int k = this.position.getZ();
 +        float f = 0.1F;
 +        double d0;
 +
-+        if (this.j > 0 && this.a == 0.0F) {
-+            double d1 = (double) this.x + 0.5D;
++        if (this.g > 0 && this.a == 0.0F) {
++            double d1 = (double) i + 0.5D;
 +
-+            d0 = (double) this.z + 0.5D;
-+            this.world.makeSound(d1, (double) this.y + 0.5D, d0, "random.chestopen", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
++            d0 = (double) k + 0.5D;
++            this.world.makeSound(d1, (double) j + 0.5D, d0, "random.chestopen", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
 +        }
 +
-+        if (this.j == 0 && this.a > 0.0F || this.j > 0 && this.a < 1.0F) {
++        if (this.g == 0 && this.a > 0.0F || this.g > 0 && this.a < 1.0F) {
 +            float f1 = this.a;
 +
-+            if (this.j > 0) {
++            if (this.g > 0) {
 +                this.a += f;
 +            } else {
 +                this.a -= f;
@@ -476,65 +200,67 @@ index 0000000..b205ab7
 +            float f2 = 0.5F;
 +
 +            if (this.a < f2 && f1 >= f2) {
-+                d0 = (double) this.x + 0.5D;
-+                double d2 = (double) this.z + 0.5D;
++                d0 = (double) i + 0.5D;
++                double d2 = (double) k + 0.5D;
 +
-+                this.world.makeSound(d0, (double) this.y + 0.5D, d2, "random.chestclosed", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
++                this.world.makeSound(d0, (double) j + 0.5D, d2, "random.chestclosed", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
 +            }
 +
 +            if (this.a < 0.0F) {
 +                this.a = 0.0F;
 +            }
 +        }
++
 +    }
 +
 +    public boolean c(int i, int j) {
 +        if (i == 1) {
-+            this.j = j;
++            this.g = j;
 +            return true;
 +        } else {
 +            return super.c(i, j);
 +        }
 +    }
 +
-+    public void s() {
-+        this.u();
-+        super.s();
-+    }
-+
-+    public void a() {
-+        ++this.j;
-+        this.world.playBlockAction(this.x, this.y, this.z, Blocks.ENDER_CHEST, 1, this.j);
++    public void y() {
++        this.E();
++        super.y();
 +    }
 +
 +    public void b() {
-+        --this.j;
-+        this.world.playBlockAction(this.x, this.y, this.z, Blocks.ENDER_CHEST, 1, this.j);
++        ++this.g;
++        this.world.playBlockAction(this.position, Blocks.ENDER_CHEST, 1, this.g);
++    }
++
++    public void d() {
++        --this.g;
++        this.world.playBlockAction(this.position, Blocks.ENDER_CHEST, 1, this.g);
 +    }
 +
 +    public boolean a(EntityHuman entityhuman) {
-+        return this.world.getTileEntity(this.x, this.y, this.z) != this ? false : entityhuman.e((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D) <= 64.0D;
++        return this.world.getTileEntity(this.position) != this ? false : entityhuman.e((double) this.position.getX() + 0.5D, (double) this.position.getY() + 0.5D, (double) this.position.getZ() + 0.5D) <= 64.0D;
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/TileEntityLightDetector.java b/src/main/java/net/minecraft/server/TileEntityLightDetector.java
 new file mode 100644
-index 0000000..143cffb
+index 0000000..7b6f8ae
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/TileEntityLightDetector.java
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,16 @@
 +package net.minecraft.server;
 +
-+public class TileEntityLightDetector extends TileEntity {
++public class TileEntityLightDetector extends TileEntity implements IUpdatePlayerListBox {
 +
 +    public TileEntityLightDetector() {}
 +
-+    public void h() {
++    public void c() {
 +        if (this.world != null && !this.world.isStatic && this.world.getTime() % 20L == 0L) {
-+            this.h = this.q();
-+            if (this.h instanceof BlockDaylightDetector) {
-+                ((BlockDaylightDetector) this.h).e(this.world, this.x, this.y, this.z);
++            this.e = this.w();
++            if (this.e instanceof BlockDaylightDetector) {
++                ((BlockDaylightDetector) this.e).d(this.world, this.position);
 +            }
 +        }
++
 +    }
 +}
 -- 

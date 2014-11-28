@@ -1,4 +1,4 @@
-From 97b423f6d3b88ae933e6005d8b00a32096a047f8 Mon Sep 17 00:00:00 2001
+From 5fbdb53b2c7e4ed1a2eebbeaeb9f4b28d34f23a8 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sat, 23 Mar 2013 09:46:33 +1100
 Subject: [PATCH] Merge tweaks and configuration
@@ -6,45 +6,45 @@ Subject: [PATCH] Merge tweaks and configuration
 This allows the merging of Experience orbs, as well as the configuration of the merge radius of items. Additionally it refactors the merge algorithm to be a better experience for players.
 
 diff --git a/src/main/java/net/minecraft/server/EntityItem.java b/src/main/java/net/minecraft/server/EntityItem.java
-index 394bfbf..c8c0d6a 100644
+index e2c0712..7f16401 100644
 --- a/src/main/java/net/minecraft/server/EntityItem.java
 +++ b/src/main/java/net/minecraft/server/EntityItem.java
-@@ -117,7 +117,10 @@ public class EntityItem extends Entity {
+@@ -122,7 +122,10 @@ public class EntityItem extends Entity {
      }
  
-     private void k() {
--        Iterator iterator = this.world.a(EntityItem.class, this.boundingBox.grow(0.5D, 0.0D, 0.5D)).iterator();
+     private void w() {
+-        Iterator iterator = this.world.a(EntityItem.class, this.getBoundingBox().grow(0.5D, 0.0D, 0.5D)).iterator();
 +        // Spigot start
 +        double radius = world.spigotConfig.itemMerge;
-+        Iterator iterator = this.world.a(EntityItem.class, this.boundingBox.grow(radius, radius, radius)).iterator();
++        Iterator iterator = this.world.a(EntityItem.class, this.getBoundingBox().grow(radius, radius, radius)).iterator();
 +        // Spigot end
  
          while (iterator.hasNext()) {
              EntityItem entityitem = (EntityItem) iterator.next();
-@@ -148,11 +151,13 @@ public class EntityItem extends Entity {
-             } else if (itemstack1.count + itemstack.count > itemstack1.getMaxStackSize()) {
-                 return false;
-             } else {
--                itemstack1.count += itemstack.count;
--                entityitem.pickupDelay = Math.max(entityitem.pickupDelay, this.pickupDelay);
--                entityitem.age = Math.min(entityitem.age, this.age);
--                entityitem.setItemStack(itemstack1);
--                this.die();
-+                // Spigot start
-+                itemstack.count += itemstack1.count;
-+                this.pickupDelay = Math.max(entityitem.pickupDelay, this.pickupDelay);
-+                this.age = Math.min(entityitem.age, this.age);
-+                this.setItemStack(itemstack);
-+                entityitem.die();
-+                // Spigot end
-                 return true;
-             }
-         } else {
+@@ -156,11 +159,13 @@ public class EntityItem extends Entity {
+                     } else if (itemstack1.count + itemstack.count > itemstack1.getMaxStackSize()) {
+                         return false;
+                     } else {
+-                        itemstack1.count += itemstack.count;
+-                        entityitem.pickupDelay = Math.max(entityitem.pickupDelay, this.pickupDelay);
+-                        entityitem.age = Math.min(entityitem.age, this.age);
+-                        entityitem.setItemStack(itemstack1);
+-                        this.die();
++                        // Spigot start
++                        itemstack.count += itemstack1.count;
++                        this.pickupDelay = Math.max(entityitem.pickupDelay, this.pickupDelay);
++                        this.age = Math.min(entityitem.age, this.age);
++                        this.setItemStack(itemstack);
++                        entityitem.die();
++                        // Spigot end
+                         return true;
+                     }
+                 } else {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 7ecd668..dcc87e8 100644
+index 4d630b1..18f0311 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1010,6 +1010,23 @@ public abstract class World implements IBlockAccess {
+@@ -908,6 +908,23 @@ public abstract class World implements IBlockAccess {
              // Not all projectiles extend EntityProjectile, so check for Bukkit interface instead
              event = CraftEventFactory.callProjectileLaunchEvent(entity);
          }
@@ -53,7 +53,7 @@ index 7ecd668..dcc87e8 100644
 +            EntityExperienceOrb xp = (EntityExperienceOrb) entity;
 +            double radius = spigotConfig.expMerge;
 +            if (radius > 0) {
-+                List<Entity> entities = this.getEntities(entity, entity.boundingBox.grow(radius, radius, radius));
++                List<Entity> entities = this.getEntities(entity, entity.getBoundingBox().grow(radius, radius, radius));
 +                for (Entity e : entities) {
 +                    if (e instanceof EntityExperienceOrb) {
 +                        EntityExperienceOrb loopItem = (EntityExperienceOrb) e;
@@ -92,5 +92,5 @@ index 7e79ba5..1545a61 100644
 +    }
  }
 -- 
-1.9.1
+2.1.0
 
