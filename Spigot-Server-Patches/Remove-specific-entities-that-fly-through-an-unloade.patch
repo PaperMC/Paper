@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Iceee <andrew@opticgaming.tv>
-Date: Fri, 29 Aug 2014 20:33:52 -0500
+Date: Fri, 28 Nov 2014 12:11:03 -0600
 Subject: [PATCH] Remove specific entities that fly through an unloaded chunk
 
 
@@ -8,8 +8,8 @@ diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity {
-     public EnumEntitySize as;
+@@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
+     private final CommandObjectiveExecutor as;
      public boolean valid; // CraftBukkit
      public org.bukkit.projectiles.ProjectileSource projectileSource; // CraftBukkit - For projectiles only
 +    public boolean inUnloadedChunk = false; // PaperSpigot - Remove entities in unloaded chunks
@@ -21,7 +21,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/EntityEnderPearl.java
 +++ b/src/main/java/net/minecraft/server/EntityEnderPearl.java
 @@ -0,0 +0,0 @@ public class EntityEnderPearl extends EntityProjectile {
-             movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.getShooter()), 0.0F);
+             movingobjectposition.entity.damageEntity(DamageSource.projectile(this, entityliving), 0.0F);
          }
  
 +        // PaperSpigot start - Remove entities in unloaded chunks
@@ -31,24 +31,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // PaperSpigot end
 +
          for (int i = 0; i < 32; ++i) {
-             this.world.addParticle("portal", this.locX, this.locY + this.random.nextDouble() * 2.0D, this.locZ, this.random.nextGaussian(), 0.0D, this.random.nextGaussian());
+             this.world.addParticle(EnumParticle.PORTAL, this.locX, this.locY + this.random.nextDouble() * 2.0D, this.locZ, this.random.nextGaussian(), 0.0D, this.random.nextGaussian(), new int[0]);
          }
 diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
 +++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
 @@ -0,0 +0,0 @@ public class EntityFallingBlock extends Entity {
-             ++this.ticksLived;
              this.motY -= 0.03999999910593033D;
              this.move(this.motX, this.motY, this.motZ);
+ 
 +            // PaperSpigot start - Remove entities in unloaded chunks
 +            if (this.inUnloadedChunk && world.paperSpigotConfig.removeUnloadedFallingBlocks) {
 +                this.die();
 +            }
 +            // PaperSpigot end
- 
++
              // PaperSpigot start - Drop falling blocks above the specified height
              if (this.world.paperSpigotConfig.fallingBlockHeightNerf != 0 && this.locY > this.world.paperSpigotConfig.fallingBlockHeightNerf) {
+                 if (this.dropItem) {
 diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
@@ -57,12 +58,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.lastZ = this.locZ;
          this.motY -= 0.03999999910593033D;
          this.move(this.motX, this.motY, this.motZ);
++
 +        // PaperSpigot start - Remove entities in unloaded chunks
 +        if (this.inUnloadedChunk && world.paperSpigotConfig.removeUnloadedTNTEntities) {
 +            this.die();
 +            this.fuseTicks = 2;
 +        }
 +        // PaperSpigot end
++
          this.motX *= 0.9800000190734863D;
          this.motY *= 0.9800000190734863D;
          this.motZ *= 0.9800000190734863D;
@@ -72,7 +75,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
              {
-                 if ( !this.isChunkLoaded( chunkx, chunkz ) )
+                 if ( !this.isChunkLoaded( chunkx, chunkz, true ) )
                  {
 +                    entity.inUnloadedChunk = true; // PaperSpigot - Remove entities in unloaded chunks
                      continue;
@@ -83,10 +86,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              entity.ticksLived++;
              entity.inactiveTick();
 +            // PaperSpigot start - Remove entities in unloaded chunks
-+            if (entity instanceof EntityEnderPearl || (!this.isChunkLoaded(i, j) &&
++            if (entity instanceof EntityEnderPearl || (!this.isChunkLoaded(i, j, true) &&
 +                    (entity instanceof EntityFallingBlock && this.paperSpigotConfig.removeUnloadedFallingBlocks) ||
 +                    (entity instanceof EntityTNTPrimed && this.paperSpigotConfig.removeUnloadedTNTEntities))) {
-+                entity.inUnloadedChunk = true;
++                 entity.inUnloadedChunk = true;
 +                entity.die();
 +            }
 +            // PaperSpigot end

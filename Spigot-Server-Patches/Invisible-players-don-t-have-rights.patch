@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Zach Brown <1254957+zachbr@users.noreply.github.com>
-Date: Mon, 21 Jul 2014 18:46:53 -0500
+Date: Fri, 28 Nov 2014 00:35:56 -0600
 Subject: [PATCH] Invisible players don't have rights
 
 
@@ -9,8 +9,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/EntityArrow.java
 +++ b/src/main/java/net/minecraft/server/EntityArrow.java
 @@ -0,0 +0,0 @@ public class EntityArrow extends Entity implements IProjectile {
-             float f2;
              float f3;
+             float f4;
  
 +            // PaperSpigot start - Allow arrows to fly through players
 +            if (movingobjectposition != null && movingobjectposition.entity instanceof EntityPlayer && shooter != null && shooter instanceof EntityPlayer) {
@@ -22,7 +22,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
              if (movingobjectposition != null) {
                  org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this); // CraftBukkit - Call event
- 
+                 
 diff --git a/src/main/java/net/minecraft/server/EntityProjectile.java b/src/main/java/net/minecraft/server/EntityProjectile.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityProjectile.java
@@ -40,16 +40,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // PaperSpigot end
 +
          if (movingobjectposition != null) {
-             if (movingobjectposition.type == EnumMovingObjectType.BLOCK && this.world.getType(movingobjectposition.b, movingobjectposition.c, movingobjectposition.d) == Blocks.PORTAL) {
-                 this.ah();
+             if (movingobjectposition.type == EnumMovingObjectType.BLOCK && this.world.getType(movingobjectposition.a()).getBlock() == Blocks.PORTAL) {
+                 this.aq();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
- 
          for (int i = 0; i < list.size(); ++i) {
              Entity entity1 = (Entity) list.get(i);
+ 
 +            // PaperSpigot start - Allow block placement if the placer cannot see the blocker
 +            if (entity instanceof EntityPlayer && entity1 instanceof EntityPlayer) {
 +                if (!((EntityPlayer) entity).getBukkitEntity().canSee(((EntityPlayer) entity1).getBukkitEntity())) {
@@ -57,7 +57,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +            }
 +            // PaperSpigot end
- 
-             if (!entity1.dead && entity1.k && entity1 != entity) {
++
+             if (!entity1.dead && entity1.k && entity1 != entity && (entity == null || entity.vehicle != entity1 && entity.passenger != entity1)) {
                  return false;
+             }
 --

@@ -1,119 +1,119 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
-Date: Sun, 24 Aug 2014 21:35:11 -0400
+Date: Fri, 28 Nov 2014 04:14:14 -0600
 Subject: [PATCH] Optimize TileEntity Ticking
 
-Re-organizes the servers TileEntity Tick List to be bucketed based on their tick interval.
-
-We now will not even store a Tile Entity that is known to not have any tick function
-(half of them), skipping time spent iterating them and checking if they are valid
-and in a loaded chunk. In other words, a lot of "meta" time wasted on tile entities
-that would never do anything anyways.
-
-Then by reducing chests to 1 in 20 ticks, we cut out 95% of isLoaded checks and findPlayer
-calls on chests, and 100% of the checks for Signs, the 2 most popular Tile Entities.
-
-This cuts out a massive amount of checks revolving around TileEntity ticking.
-Servers with large amounts of TileEntities should see significant improvement.
-
-Finally, this then spreads out the ticking of reduced-rate TileEntities so that they
-do not all tick on the same tick, distributing the load of some TileEntities like Chest.
 
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
-@@ -0,0 +0,0 @@ public class TileEntity {
-             }
-         }
+@@ -0,0 +0,0 @@ public abstract class TileEntity {
      }
-+
-+    // Optimized TileEntity Tick changes
+     // Spigot end
+ 
++    // PaperSpigot start - Optimized TileEntity Tick changes
 +    private static int tileEntityCounter = 0;
 +    public boolean isAdded = false;
 +    public int tileId = tileEntityCounter++;
++    // PaperSpigot end
 +
-     // Spigot end
- 
-     public TileEntity() {}
+     public TileEntity() {
+         this.position = BlockPosition.ZERO;
+         this.h = -1;
 diff --git a/src/main/java/net/minecraft/server/TileEntityBeacon.java b/src/main/java/net/minecraft/server/TileEntityBeacon.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/TileEntityBeacon.java
 +++ b/src/main/java/net/minecraft/server/TileEntityBeacon.java
-@@ -0,0 +0,0 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
+@@ -0,0 +0,0 @@ public class TileEntityBeacon extends TileEntityContainer implements IUpdatePlay
      public TileEntityBeacon() {}
  
-     public void h() {
+     public void c() {
 -        if (this.world.getTime() % 80L == 0L) {
-+        if (true || this.world.getTime() % 80L == 0L) { // PaperSpigot - controlled by Improved Tick handling
-             this.y();
-             this.x();
++        if (true || this.world.getTime() % 80L == 0L) { // PaperSpigot - controlled by Improved Tick Handling
+             this.m();
          }
+ 
 diff --git a/src/main/java/net/minecraft/server/TileEntityChest.java b/src/main/java/net/minecraft/server/TileEntityChest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/TileEntityChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityChest.java
-@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntity implements IInventory {
-         ++this.ticks;
+@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
+         ++this.n;
          float f;
  
--        if (!this.world.isStatic && this.o != 0 && (this.ticks + this.x + this.y + this.z) % 200 == 0) {
-+        if (!this.world.isStatic && this.o != 0 && (this.ticks + this.x + this.y + this.z) % 10 == 0) { // PaperSpigot Reduced 200 -> 10 interval due to reduced tick rate from Improved Tick Handling
-             this.o = 0;
+-        if (!this.world.isStatic && this.l != 0 && (this.n + i + j + k) % 200 == 0) {
++        if (!this.world.isStatic && this.l != 0 && (this.n + i + j + k) % 10 == 0) { // PaperSpigot Reduced 200 -> 10 interval due to reduced tick rate from Improved Tick Handling
+             this.l = 0;
              f = 5.0F;
-             List list = this.world.a(EntityHuman.class, AxisAlignedBB.a((double) ((float) this.x - f), (double) ((float) this.y - f), (double) ((float) this.z - f), (double) ((float) (this.x + 1) + f), (double) ((float) (this.y + 1) + f), (double) ((float) (this.z + 1) + f)));
+             List list = this.world.a(EntityHuman.class, new AxisAlignedBB((double) ((float) i - f), (double) ((float) j - f), (double) ((float) k - f), (double) ((float) (i + 1) + f), (double) ((float) (j + 1) + f), (double) ((float) (k + 1) + f)));
 diff --git a/src/main/java/net/minecraft/server/TileEntityEnderChest.java b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
-@@ -0,0 +0,0 @@ public class TileEntityEnderChest extends TileEntity {
+@@ -0,0 +0,0 @@ public class TileEntityEnderChest extends TileEntity implements IUpdatePlayerLis
+     public TileEntityEnderChest() {}
  
-     public void h() {
-         super.h();
--        if (++this.k % 20 * 4 == 0) {
-+        if (++this.k % 4 == 0) { // PaperSpigot Reduced (20 * 4) -> 4 interval due to reduced tick rate from Improved Tick Handling
-             this.world.playBlockAction(this.x, this.y, this.z, Blocks.ENDER_CHEST, 1, this.j);
+     public void c() {
+-        if (++this.h % 20 * 4 == 0) {
++        if (++this.h % 4 == 0) { // PaperSpigot Reduced (20 * 4) -> 4 interval due to reduced tick rate from Improved Tick Handling
+             this.world.playBlockAction(this.position, Blocks.ENDER_CHEST, 1, this.g);
          }
  
 diff --git a/src/main/java/net/minecraft/server/TileEntityLightDetector.java b/src/main/java/net/minecraft/server/TileEntityLightDetector.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/TileEntityLightDetector.java
 +++ b/src/main/java/net/minecraft/server/TileEntityLightDetector.java
-@@ -0,0 +0,0 @@ public class TileEntityLightDetector extends TileEntity {
+@@ -0,0 +0,0 @@ public class TileEntityLightDetector extends TileEntity implements IUpdatePlayer
      public TileEntityLightDetector() {}
  
-     public void h() {
+     public void c() {
 -        if (this.world != null && !this.world.isStatic && this.world.getTime() % 20L == 0L) {
 +        if (this.world != null && !this.world.isStatic /*&& this.world.getTime() % 20L == 0L*/) { // PaperSpigot - interval controlled by Improved Tick Handling
-             this.h = this.q();
-             if (this.h instanceof BlockDaylightDetector) {
-                 ((BlockDaylightDetector) this.h).e(this.world, this.x, this.y, this.z);
+             this.e = this.w();
+             if (this.e instanceof BlockDaylightDetector) {
+                 ((BlockDaylightDetector) this.e).d(this.world, this.position);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
+@@ -0,0 +0,0 @@ package net.minecraft.server;
+ import com.google.common.base.Predicate;
+ import com.google.common.collect.Lists;
+ 
+-import java.util.ArrayList;
+-import java.util.Calendar;
+-import java.util.Collection;
+-import java.util.Iterator;
+-import java.util.List;
+-import java.util.Random;
+-import java.util.UUID;
++import java.util.*;
+ import java.util.concurrent.Callable;
+ 
+ // CraftBukkit start
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-     };
      // Spigot end
-     protected List f = new ArrayList();
--    public Set tileEntityList = new HashSet(); // CraftBukkit - ArrayList -> HashSet
-+    public Set tileEntityList = new org.spigotmc.WorldTileEntityList(this); // CraftBukkit - ArrayList -> HashSet
-     private List a = new ArrayList();
-     private List b = new ArrayList();
-     public List players = new ArrayList();
-diff --git a/src/main/java/org/spigotmc/WorldTileEntityList.java b/src/main/java/org/spigotmc/WorldTileEntityList.java
+     protected final List g = Lists.newArrayList();
+     public final List h = Lists.newArrayList();
+-    public final List tileEntityList = Lists.newArrayList();
++    public final Set tileEntityList = new org.github.paperspigot.WorldTileEntityList(this); // PaperSpigot
+     private final List a = Lists.newArrayList();
+     private final List b = Lists.newArrayList();
+     public final List players = Lists.newArrayList();
+diff --git a/src/main/java/org/github/paperspigot/WorldTileEntityList.java b/src/main/java/org/github/paperspigot/WorldTileEntityList.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/WorldTileEntityList.java
++++ b/src/main/java/org/github/paperspigot/WorldTileEntityList.java
 @@ -0,0 +0,0 @@
-+package org.spigotmc;
++package org.github.paperspigot;
 +
 +import com.google.common.collect.ArrayListMultimap;
 +import com.google.common.collect.Maps;
 +import com.google.common.collect.Multimap;
 +import net.minecraft.server.*;
-+import net.minecraft.util.gnu.trove.map.hash.TObjectIntHashMap;
++import gnu.trove.map.hash.TObjectIntHashMap;
 +
 +import java.util.Collection;
 +import java.util.HashSet;
@@ -122,39 +122,40 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +public class WorldTileEntityList extends HashSet<TileEntity> {
 +    private static final TObjectIntHashMap<Class<? extends TileEntity>> tileEntityTickIntervals =
-+        new TObjectIntHashMap<Class<? extends TileEntity>>() {{
-+            // Use -1 for no ticking
-+            // These TE's have empty tick methods, doing nothing. Never bother ticking them.
-+            for (Class<? extends TileEntity> ignored : new Class[]{
-+                TileEntityChest.class, // PaperSpigot - Don't tick chests either
-+                TileEntityEnderChest.class, // PaperSpigot - Don't tick chests either
-+                TileEntityRecordPlayer.class,
-+                TileEntityDispenser.class,
-+                TileEntityDropper.class,
-+                TileEntitySign.class,
-+                TileEntityNote.class,
-+                TileEntityEnderPortal.class,
-+                TileEntityCommand.class,
-+                TileEntitySkull.class,
-+                TileEntityComparator.class,
-+                TileEntityFlowerPot.class
-+            }) {
-+                put(ignored, -1);
-+            }
++            new TObjectIntHashMap<Class<? extends TileEntity>>() {{
++                // Use -1 for no ticking
++                // These TE's have empty tick methods, doing nothing. Never bother ticking them.
++                for (Class<? extends TileEntity> ignored : new Class[]{
++                        TileEntityChest.class, // PaperSpigot - Don't tick chests either
++                        TileEntityEnderChest.class, // PaperSpigot - Don't tick chests either
++                        TileEntityRecordPlayer.class,
++                        TileEntityDispenser.class,
++                        TileEntityDropper.class,
++                        TileEntitySign.class,
++                        TileEntityNote.class,
++                        TileEntityEnderPortal.class,
++                        TileEntityCommand.class,
++                        TileEntitySkull.class,
++                        TileEntityComparator.class,
++                        TileEntityFlowerPot.class
++                }) {
++                    put(ignored, -1);
++                }
 +
-+            // does findPlayer lookup, so this helps performance to slow down
-+            put(TileEntityEnchantTable.class, 20);
++                // does findPlayer lookup, so this helps performance to slow down
++                put(TileEntityEnchantTable.class, 20);
 +
-+            // Slow things down that players won't notice due to craftbukkit "wall time" patches.
-+            // These need to be investigated further before they can be safely used here
-+            //put(TileEntityFurnace.class, 20);
-+            //put(TileEntityBrewingStand.class, 10);
++                // Slow things down that players won't notice due to craftbukkit "wall time" patches.
++                // These need to be investigated further before they can be safely used here
++                //put(TileEntityFurnace.class, 20);
++                //put(TileEntityBrewingStand.class, 10);
 +
-+            // Vanilla controlled values - These are checks already done in vanilla, so don't tick on ticks we know
-+            // won't do anything anyways
-+            put(TileEntityBeacon.class, 80);
-+            put(TileEntityLightDetector.class, 20);
-+        }};
++                // Vanilla controlled values - These are checks already done in vanilla, so don't tick on ticks we know
++                // won't do anything anyways
++                put(TileEntityBeacon.class, 80);
++                put(TileEntityLightDetector.class, 20);
++            }};
++
 +    private static int getInterval(Class<? extends TileEntity> cls) {
 +        int tickInterval = tileEntityTickIntervals.get(cls);
 +        return tickInterval != 0 ? tickInterval : 1;
@@ -281,4 +282,5 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +}
+\ No newline at end of file
 --

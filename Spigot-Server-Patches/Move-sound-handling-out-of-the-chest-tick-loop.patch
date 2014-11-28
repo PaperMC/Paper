@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Iceee <andrew@opticgaming.tv>
-Date: Mon, 11 Aug 2014 23:03:47 -0500
+Date: Fri, 28 Nov 2014 11:56:55 -0600
 Subject: [PATCH] Move sound handling out of the chest tick loop
 
 This allows us to disable ticking chests and enderchests without any
@@ -10,140 +10,207 @@ diff --git a/src/main/java/net/minecraft/server/TileEntityChest.java b/src/main/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/TileEntityChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityChest.java
-@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntity implements IInventory {
-         }
+@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
  
-         this.n = this.m;
-+
-+        // PaperSpigot start - Move chest sound handling out of the tick loop
+     private ItemStack[] items = new ItemStack[27];
+     public boolean a;
+-    public TileEntityChest f;
+-    public TileEntityChest g;
+-    public TileEntityChest h;
+-    public TileEntityChest i;
+-    public float j;
++    public TileEntityChest f; // PaperSpigot - adjacentChestZNeg
++    public TileEntityChest g; // PaperSpigot - adjacentChestXPos
++    public TileEntityChest h; // PaperSpigot - adjacentChestXNeg
++    public TileEntityChest i; // PaperSpigot - adjacentChestZPos
++    public float j; // PaperSpigot - lidAngle
+     public float k;
+-    public int l;
++    public int l; // PaperSpigot - playersUsing
+     private int n;
+     private int o = -1;
+     private String p;
+@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
+     }
+ 
+     public void c() {
++        // PaperSpigot start - Move chest sounds out of tick loop - TileEntity Tick Improvements
 +        /*
-         f = 0.1F;
-         double d0;
- 
-@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntity implements IInventory {
-                 this.m = 0.0F;
+         this.m();
+         int i = this.position.getX();
+         int j = this.position.getY();
+@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
+                 this.j = 0.0F;
              }
          }
 +        */
 +        // PaperSpigot end
+ 
      }
  
-     public boolean c(int i, int j) {
-@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntity implements IInventory {
-         if (this.world == null) return; // CraftBukkit
-         this.world.playBlockAction(this.x, this.y, this.z, this.q(), 1, this.o);
+@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
  
-+        // PaperSpigot start - Move chest open sound handling down to here
-+        this.i();
-+        double d0;
-+
-+        if (this.o > 0 && this.m == 0.0F && this.i == null && this.k == null) {
-+            double d1 = (double) this.x + 0.5D;
-+
-+            d0 = (double) this.z + 0.5D;
-+            if (this.l != null) {
-+                d0 += 0.5D;
-+            }
-+
-+            if (this.j != null) {
-+                d1 += 0.5D;
-+            }
-+
-+            this.world.makeSound(d1, (double) this.y + 0.5D, d0, "random.chestopen", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
-+        }
-+        // PaperSpigot end
-+
-         // CraftBukkit start - Call redstone event
-         if (this.q() == Blocks.TRAPPED_CHEST) {
-             int newPower = Math.max(0, Math.min(15, this.o));
-@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntity implements IInventory {
+             ++this.l;
              if (this.world == null) return; // CraftBukkit
-             this.world.playBlockAction(this.x, this.y, this.z, this.q(), 1, this.o);
- 
-+            // PaperSpigot start - Move chest close sound handling down to here
-+            this.i();
-+            double d0;
 +
-+            if (this.o == 0 && this.i == null && this.k == null) {
-+                d0 = (double) this.x + 0.5D;
-+                double d2 = (double) this.z + 0.5D;
++            // PaperSpigot - Move chest open sound out of the tick loop
++            if (this.l > 1 && this.j == 0.0F && this.f == null && this.h == null) {
++                int locX = this.position.getX();
++                int locY = this.position.getY();
++                int locZ = this.position.getZ();
 +
-+                if (this.l != null) {
-+                    d2 += 0.5D;
-+                }
++                double d0 = (double) locZ + 0.5D;
++                double d1 = (double) locX + 0.5D;
 +
-+                if (this.j != null) {
++                if (this.i != null) {
 +                    d0 += 0.5D;
 +                }
 +
-+                this.world.makeSound(d0, (double) this.y + 0.5D, d2, "random.chestclosed", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
++                if (this.g != null) {
++                    d1 += 0.5D;
++                }
++
++                this.world.makeSound(d1, (double) locY + 0.5D, d0, "random.chestopen", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
++            }
++
+             this.world.playBlockAction(this.position, this.w(), 1, this.l);
+ 
+             // CraftBukkit start - Call redstone event
+@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
+             
+             --this.l;
+             if (this.world == null) return; // CraftBukkit
++
++            // PaperSpigot start - Move chest close sound handling out of the tick loop
++            if (this.l == 0 && this.j > 0.0F || this.l > 0 && this.j < 1.0F) {
++                int locX = this.position.getX();
++                int locY = this.position.getY();
++                int locZ = this.position.getZ();
++                float f1 = this.j;
++
++                float f = 0.1F;
++
++                if (this.l > 0) {
++                    this.j += f;
++                } else {
++                    this.j -= f;
++                }
++
++                double d0 = (double) locX + 0.5D;
++                double d2 = (double) locZ + 0.5D;
++
++                if (this.i != null) {
++                    d2 += 0.5D;
++                }
++
++                if (this.g != null) {
++                    d0 += 0.5D;
++                }
++
++                this.world.makeSound(d0, (double) locY + 0.5D, d2, "random.chestclosed", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
++
++                if (this.j < 0.0F) {
++                    this.j = 0.0F;
++                }
 +            }
 +            // PaperSpigot end
 +
+             this.world.playBlockAction(this.position, this.w(), 1, this.l);
+             
              // CraftBukkit start - Call redstone event
-             if (this.q() == Blocks.TRAPPED_CHEST) {
-                 int newPower = Math.max(0, Math.min(15, this.o));
 diff --git a/src/main/java/net/minecraft/server/TileEntityEnderChest.java b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
-@@ -0,0 +0,0 @@ public class TileEntityEnderChest extends TileEntity {
-         }
+@@ -0,0 +0,0 @@ package net.minecraft.server;
  
-         this.i = this.a;
-+
-+        // PaperSpigot start - Move chest sound handling out of the tick loop
+ public class TileEntityEnderChest extends TileEntity implements IUpdatePlayerListBox {
+ 
+-    public float a;
++    public float a; // PaperSpigot - lidAngle
+     public float f;
+-    public int g;
++    public int g; // PaperSpigot - numPlayersUsing
+     private int h;
+ 
+     public TileEntityEnderChest() {}
+ 
+     public void c() {
++        // PaperSpigot - Move enderchest sound handling out of the tick loop
 +        /*
-         float f = 0.1F;
-         double d0;
- 
-@@ -0,0 +0,0 @@ public class TileEntityEnderChest extends TileEntity {
+         if (++this.h % 4 == 0) { // PaperSpigot Reduced (20 * 4) -> 4 interval due to reduced tick rate from Improved Tick Handling
+             this.world.playBlockAction(this.position, Blocks.ENDER_CHEST, 1, this.g);
+         }
+@@ -0,0 +0,0 @@ public class TileEntityEnderChest extends TileEntity implements IUpdatePlayerLis
                  this.a = 0.0F;
              }
          }
 +        */
 +        // PaperSpigot end
+ 
      }
  
-     public boolean c(int i, int j) {
-@@ -0,0 +0,0 @@ public class TileEntityEnderChest extends TileEntity {
-     public void a() {
-         ++this.j;
-         this.world.playBlockAction(this.x, this.y, this.z, Blocks.ENDER_CHEST, 1, this.j);
-+
-+        // PaperSpigot start - Move chest open sound handling down to here
-+        double d0;
-+
-+        if (this.j > 0 && this.a == 0.0F) {
-+            double d1 = (double) this.x + 0.5D;
-+
-+            d0 = (double) this.z + 0.5D;
-+            this.world.makeSound(d1, (double) this.y + 0.5D, d0, "random.chestopen", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
-+        }
-+        // PaperSpigot end
-     }
+@@ -0,0 +0,0 @@ public class TileEntityEnderChest extends TileEntity implements IUpdatePlayerLis
  
      public void b() {
-         --this.j;
-         this.world.playBlockAction(this.x, this.y, this.z, Blocks.ENDER_CHEST, 1, this.j);
+         ++this.g;
 +
-+        // PaperSpigot start - Move chest close sound handling down to here
-+        float f = 0.1F;
-+        double d0;
++        // PaperSpigot start - Move enderchest open sounds out of the tick loop
++        if (this.g > 0 && this.a == 0.0F) {
++            int locX = this.position.getX();
++            int locY = this.position.getY();
++            int locZ = this.position.getZ();
 +
-+        if (this.j == 0 && this.a == 0.0F || this.j > 0 && this.a < 1.0F) {
++            double d1 = (double) locX + 0.5D;
++            double d0 = (double) locZ + 0.5D;
++
++            this.world.makeSound(d1, (double) locY + 0.5D, d0, "random.chestopen", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
++
++            this.a = 0.7F;
++        }
++        // PaperSpigot end
++
+         this.world.playBlockAction(this.position, Blocks.ENDER_CHEST, 1, this.g);
+     }
+ 
+     public void d() {
+         --this.g;
++
++        // PaperSpigot start - Move enderchest close sounds out of the tick loop
++        if (this.g == 0 && this.a > 0.0F || this.g > 0 && this.a < 1.0F) {
++            int locX = this.position.getX();
++            int locY = this.position.getY();
++            int locZ = this.position.getZ();
++
++            float f = 0.1F;
++
++            if (this.g > 0) {
++                this.a += f;
++            } else {
++                this.a -= f;
++            }
++
++            if (this.a > 1.0F) {
++                this.a = 1.0F;
++            }
++
 +            float f1 = this.a;
-+            d0 = (double) this.x + 0.5D;
-+            double d2 = (double) this.z + 0.5D;
++            float f2 = 0.5F;
 +
-+            this.world.makeSound(d0, (double) this.y + 0.5D, d2, "random.chestclosed", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
++            if (this.a < f2 && f1 >= f2) {
++                double d0 = (double) locX + 0.5D;
++                double d2 = (double) locZ + 0.5D;
++
++                this.world.makeSound(d0, (double) locY + 0.5D, d2, "random.chestclosed", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
++            }
 +
 +            if (this.a < 0.0F) {
 +                this.a = 0.0F;
 +            }
 +        }
 +        // PaperSpigot end
++
+         this.world.playBlockAction(this.position, Blocks.ENDER_CHEST, 1, this.g);
      }
  
-     public boolean a(EntityHuman entityhuman) {
 --

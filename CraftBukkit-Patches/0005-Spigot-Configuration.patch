@@ -10,7 +10,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-             if (this.L() < 0) {
+             if (this.Q() < 0) {
                  this.setPort(this.propertyManager.getInt("server-port", 25565));
              }
 +            // Spigot start
@@ -19,7 +19,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            org.spigotmc.SpigotConfig.registerCommands();
 +            // Spigot end
  
-             i.info("Generating keypair");
+             DedicatedServer.LOGGER.info("Generating keypair");
              this.a(MinecraftEncryption.b());
 @@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
                  return false;
@@ -33,24 +33,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Spigot End
  
              if (!this.getOnlineMode()) {
-                 i.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
+                 DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-     public boolean pvpMode;
-     public boolean keepSpawnInMemory = true;
-     public ChunkGenerator generator;
+     public long ticksPerMonsterSpawns;
+     public boolean populating;
+     private int tickPosition;
 +    public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
  
      public CraftWorld getWorld() {
          return this.world;
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+     }
  
-     // Changed signature - added gen and env
-     public World(IDataManager idatamanager, String s, WorldSettings worldsettings, WorldProvider worldprovider, MethodProfiler methodprofiler, ChunkGenerator gen, org.bukkit.World.Environment env) {
-+        this.spigotConfig = new org.spigotmc.SpigotWorldConfig( s ); // Spigot
+     protected World(IDataManager idatamanager, WorldData worlddata, WorldProvider worldprovider, MethodProfiler methodprofiler, boolean flag, ChunkGenerator gen, org.bukkit.World.Environment env) {
++        this.spigotConfig = new org.spigotmc.SpigotWorldConfig( worlddata.getName() ); // Spigot
          this.generator = gen;
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
@@ -59,8 +59,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
-         updater.getOnUpdate().addAll(configuration.getStringList("auto-updater.on-update"));
-         updater.check(serverVersion);
+         chunkGCLoadThresh = configuration.getInt("chunk-gc.load-threshold");
+         loadIcon();
  
 -        loadPlugins();
 -        enablePlugins(PluginLoadOrder.STARTUP);
@@ -77,7 +77,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +        org.spigotmc.SpigotConfig.init(); // Spigot
          for (WorldServer world : console.worlds) {
-             world.difficulty = difficulty;
+             world.worldData.setDifficulty(difficulty);
              world.setSpawnFlags(monsters, animals);
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
              } else {
@@ -158,8 +158,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        commands = new HashMap<String, Command>();
 +
-+        version = getInt( "config-version", 7 );
-+        set( "config-version", 7 );
++        version = getInt( "config-version", 8 );
++        set( "config-version", 8 );
 +        readConfig( SpigotConfig.class, null );
 +    }
 +
