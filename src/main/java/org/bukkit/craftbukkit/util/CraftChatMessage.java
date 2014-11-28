@@ -154,7 +154,7 @@ public final class CraftChatMessage {
             }
             out.append(c.getText());
         }
-        return out.toString();
+        return out.toString().replaceFirst("^(§0)*", "");
     }
 
     private CraftChatMessage() {
