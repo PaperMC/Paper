@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/MinecraftServer.java	2014-11-29 00:53:37.929134938 +0000
-+++ src/main/java/net/minecraft/server/MinecraftServer.java	2014-11-29 00:52:46.133136087 +0000
+--- ../work/decompile-8eb82bde//net/minecraft/server/MinecraftServer.java	Sat Nov 29 19:31:45 2014
++++ src/main/java/net/minecraft/server/MinecraftServer.java	Sat Nov 29 19:27:57 2014
 @@ -37,6 +37,18 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -98,7 +98,7 @@
          this.h = new long[this.worldServer.length][100];
          IDataManager idatamanager = this.convertable.a(s, true);
  
-@@ -152,37 +207,110 @@
+@@ -152,37 +207,112 @@
              worlddata.a(s1);
              worldsettings = new WorldSettings(worlddata);
          }
@@ -142,6 +142,7 @@
 +                if (worlddata == null) {
 +                    worlddata = new WorldData(worldsettings, s1);
 +                }
++                worlddata.checkName(s1); // CraftBukkit - Migration did not rewrite the level.dat; This forces 1.8 to take the last loaded world as respawn (in this case the end)
                  if (this.W()) {
 -                    this.worldServer[j] = (WorldServer) (new DemoWorldServer(this, idatamanager, worlddata, b0, this.methodProfiler)).b();
 +                    world = (WorldServer) (new DemoWorldServer(this, idatamanager, worlddata, dimension, this.methodProfiler)).b();
@@ -195,6 +196,7 @@
 +                if (worlddata == null) {
 +                    worlddata = new WorldData(worldsettings, name);
 +                }
++                worlddata.checkName(name); // CraftBukkit - Migration did not rewrite the level.dat; This forces 1.8 to take the last loaded world as respawn (in this case the end)
 +                world = (WorldServer) new SecondaryWorldServer(this, idatamanager, dimension, this.worlds.get(0), this.methodProfiler, worlddata, org.bukkit.World.Environment.getEnvironment(dimension), gen).b();
 +            }
 +
@@ -220,7 +222,7 @@
          this.a(this.getDifficulty());
          this.k();
      }
-@@ -197,25 +325,38 @@
+@@ -197,25 +327,38 @@
          this.b("menu.generatingTerrain");
          byte b0 = 0;
  
@@ -274,7 +276,7 @@
          this.q();
      }
  
-@@ -247,35 +388,42 @@
+@@ -247,35 +390,42 @@
      protected void q() {
          this.e = null;
          this.f = 0;
@@ -329,7 +331,7 @@
              if (this.ao() != null) {
                  this.ao().b();
              }
-@@ -290,11 +438,13 @@
+@@ -290,11 +440,13 @@
                  MinecraftServer.LOGGER.info("Saving worlds");
                  this.saveChunks(false);
  
@@ -343,7 +345,7 @@
              }
  
              if (this.m.d()) {
-@@ -335,6 +485,7 @@
+@@ -335,6 +487,7 @@
                      long k = j - this.ab;
  
                      if (k > 2000L && this.ab - this.R >= 15000L) {
@@ -351,7 +353,7 @@
                          MinecraftServer.LOGGER.warn("Can\'t keep up! Did the system time change, or is the server overloaded? Running {}ms behind, skipping {} tick(s)", new Object[] { Long.valueOf(k), Long.valueOf(k / 50L)});
                          k = 2000L;
                          this.R = this.ab;
-@@ -347,11 +498,12 @@
+@@ -347,11 +500,12 @@
  
                      i += k;
                      this.ab = j;
@@ -365,7 +367,7 @@
                              i -= 50L;
                              this.y();
                          }
-@@ -389,6 +541,12 @@
+@@ -389,6 +543,12 @@
              } catch (Throwable throwable1) {
                  MinecraftServer.LOGGER.error("Exception stopping the server", throwable1);
              } finally {
@@ -378,7 +380,7 @@
                  this.x();
              }
  
-@@ -428,7 +586,7 @@
+@@ -428,7 +588,7 @@
  
      protected void x() {}
  
@@ -387,7 +389,7 @@
          long i = System.nanoTime();
  
          ++this.ticks;
-@@ -454,7 +612,7 @@
+@@ -454,7 +614,7 @@
              this.r.b().a(agameprofile);
          }
  
@@ -396,7 +398,7 @@
              this.methodProfiler.a("save");
              this.v.savePlayers();
              this.saveChunks(true);
-@@ -493,20 +651,40 @@
+@@ -493,20 +653,40 @@
  
          this.methodProfiler.c("levels");
  
@@ -440,7 +442,7 @@
  
                  this.methodProfiler.a("tick");
  
-@@ -533,9 +711,9 @@
+@@ -533,9 +713,9 @@
                  worldserver.getTracker().updatePlayers();
                  this.methodProfiler.b();
                  this.methodProfiler.b();
@@ -452,7 +454,7 @@
          }
  
          this.methodProfiler.c("connection");
-@@ -559,10 +737,11 @@
+@@ -559,10 +739,11 @@
          this.o.add(iupdateplayerlistbox);
      }
  
@@ -465,7 +467,7 @@
              boolean flag = true;
              String s = null;
              String s1 = ".";
-@@ -636,6 +815,27 @@
+@@ -636,6 +817,27 @@
  
              dedicatedserver.B();
              Runtime.getRuntime().addShutdownHook(new ThreadShutdown("Server Shutdown Thread", dedicatedserver));
@@ -493,7 +495,7 @@
          } catch (Exception exception) {
              MinecraftServer.LOGGER.fatal("Failed to start the minecraft server", exception);
          }
-@@ -643,8 +843,10 @@
+@@ -643,8 +845,10 @@
      }
  
      public void B() {
@@ -504,7 +506,7 @@
      }
  
      public File d(String s) {
-@@ -660,7 +862,14 @@
+@@ -660,7 +864,14 @@
      }
  
      public WorldServer getWorldServer(int i) {
@@ -520,7 +522,7 @@
      }
  
      public String C() {
-@@ -696,17 +905,62 @@
+@@ -696,17 +907,62 @@
      }
  
      public String getPlugins() {
@@ -590,7 +592,7 @@
      }
  
      public void h(String s) {
-@@ -721,7 +975,7 @@
+@@ -721,7 +977,7 @@
      }
  
      public String getServerModName() {
@@ -599,7 +601,7 @@
      }
  
      public CrashReport b(CrashReport crashreport) {
-@@ -734,6 +988,7 @@
+@@ -734,6 +990,7 @@
      }
  
      public List tabCompleteCommand(ICommandListener icommandlistener, String s, BlockPosition blockposition) {
@@ -607,7 +609,7 @@
          ArrayList arraylist = Lists.newArrayList();
  
          if (s.startsWith("/")) {
-@@ -772,6 +1027,9 @@
+@@ -772,6 +1029,9 @@
  
              return arraylist;
          }
@@ -617,7 +619,7 @@
      }
  
      public static MinecraftServer getServer() {
-@@ -779,7 +1037,7 @@
+@@ -779,7 +1039,7 @@
      }
  
      public boolean N() {
@@ -626,7 +628,7 @@
      }
  
      public String getName() {
-@@ -835,8 +1093,10 @@
+@@ -835,8 +1095,10 @@
      }
  
      public void a(EnumDifficulty enumdifficulty) {
@@ -639,7 +641,7 @@
  
              if (worldserver != null) {
                  if (worldserver.getWorldData().isHardcore()) {
-@@ -878,15 +1138,17 @@
+@@ -878,15 +1140,17 @@
          this.N = true;
          this.getConvertable().d();
  
@@ -660,7 +662,7 @@
          this.safeShutdown();
      }
  
-@@ -919,9 +1181,11 @@
+@@ -919,9 +1183,11 @@
          int i = 0;
  
          if (this.worldServer != null) {
@@ -675,7 +677,7 @@
                      WorldData worlddata = worldserver.getWorldData();
  
                      mojangstatisticsgenerator.a("world[" + i + "][dimension]", Integer.valueOf(worldserver.worldProvider.getDimension()));
-@@ -954,7 +1218,7 @@
+@@ -954,7 +1220,7 @@
      public abstract boolean ad();
  
      public boolean getOnlineMode() {
@@ -684,7 +686,7 @@
      }
  
      public void setOnlineMode(boolean flag) {
-@@ -1024,8 +1288,10 @@
+@@ -1024,8 +1290,10 @@
      }
  
      public void setGamemode(EnumGamemode enumgamemode) {
@@ -697,7 +699,7 @@
          }
  
      }
-@@ -1057,7 +1323,7 @@
+@@ -1057,7 +1325,7 @@
      }
  
      public World getWorld() {
@@ -706,7 +708,7 @@
      }
  
      public Entity f() {
-@@ -1125,11 +1391,10 @@
+@@ -1125,11 +1393,10 @@
      }
  
      public Entity a(UUID uuid) {
@@ -722,7 +724,7 @@
  
              if (worldserver != null) {
                  Entity entity = worldserver.getEntity(uuid);
-@@ -1144,7 +1409,7 @@
+@@ -1144,7 +1411,7 @@
      }
  
      public boolean getSendCommandFeedback() {
