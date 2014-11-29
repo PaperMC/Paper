@@ -6,6 +6,8 @@ High performance Spigot fork that aims to fix gameplay and mechanics inconsisten
 [IRC Support and Project Discussion](http://irc.spi.gt/iris/?channels=PaperSpigot)
 
 
+
+
 How To
 ------
 Download a copy of PaperTools.jar from our buildserver here:
@@ -14,6 +16,10 @@ https://hub.spigotmc.org/stash/projects/PAPER/repos/papertools/browse
 Place PaperTools.jar into an empty directory and run it with `java -jar PaperTools.jar` from Git-Bash/Bash
 
 It requires you have git installed on your local system as well as JDK 7 or above.
+
+
+
+
 
 
 How To (Advanced & Legacy Users)
