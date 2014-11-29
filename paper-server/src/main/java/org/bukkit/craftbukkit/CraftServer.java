@@ -114,11 +114,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
 import com.mojang.authlib.GameProfile;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.base64.Base64;
-
 import jline.console.ConsoleReader;
 
 public final class CraftServer implements Server {
@@ -844,8 +844,12 @@ public final class CraftServer implements Server {
         } while(used);
         boolean hardcore = false;
 
-        WorldData worlddata = new WorldData(new WorldSettings(creator.seed(), EnumGamemode.getById(getDefaultGameMode().getValue()), generateStructures, hardcore, type), name);
-        WorldServer internal = (WorldServer) new WorldServer(console, new ServerNBTManager(getWorldContainer(), name, true), worlddata, dimension, console.methodProfiler, creator.environment(), generator).b();
+        IDataManager sdm = new ServerNBTManager(getWorldContainer(), name, true);
+        WorldData worlddata = sdm.getWorldData();
+        if (worlddata == null) {
+            worlddata = new WorldData(new WorldSettings(creator.seed(), EnumGamemode.getById(getDefaultGameMode().getValue()), generateStructures, hardcore, type), name);
+        }
+        WorldServer internal = (WorldServer) new WorldServer(console, sdm, worlddata, dimension, console.methodProfiler, creator.environment(), generator).b();
 
         if (!(worlds.containsKey(name.toLowerCase()))) {
             return null;
