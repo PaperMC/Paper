@@ -170,6 +170,7 @@ public class CraftChunk implements Chunk {
                 for (int j = 0; j < 4096; j++) {
                     if (baseids[j] == 0) continue;
                     IBlockData blockData = (IBlockData) net.minecraft.server.Block.d.a(baseids[j]);
+                    if (blockData == null) continue;
                     blockids[j] = (short) net.minecraft.server.Block.getId(blockData.getBlock());
                     int data = blockData.getBlock().toLegacyData(blockData);
                     int jj = j >> 1;
