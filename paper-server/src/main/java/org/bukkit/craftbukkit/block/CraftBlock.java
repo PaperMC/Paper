@@ -276,6 +276,7 @@ public class CraftBlock implements Block {
             return new CraftBeacon(this);
         case BANNER:
         case WALL_BANNER:
+        case STANDING_BANNER:
             return new CraftBanner(this);
         default:
             return new CraftBlockState(this);
