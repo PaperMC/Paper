@@ -2,9 +2,11 @@ package org.bukkit.craftbukkit.scoreboard;
 
 import java.util.Set;
 
+import net.minecraft.server.EnumNameTagVisibility;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.scoreboard.NameTagVisibility;
 import org.bukkit.scoreboard.Team;
 
 import com.google.common.collect.ImmutableSet;
@@ -92,6 +94,20 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         team.setCanSeeFriendlyInvisibles(enabled);
     }
 
+    public NameTagVisibility getNameTagVisibility() throws IllegalArgumentException {
+        CraftScoreboard scoreboard = checkState();
+
+        // PAIL: Rename
+        return notchToBukkit(team.i()); // i is sent in PacketPlayOutScoreboardTeam, cannot see a use of j
+    }
+
+    public void setNameTagVisibility(NameTagVisibility visibility) throws IllegalArgumentException {
+        CraftScoreboard scoreboard = checkState();
+
+        // PAIL: Rename
+        team.a(bukkitToNotch(visibility)); // i is sent in PacketPlayOutScoreboardTeam, cannot see a use of j
+    }
+
     public Set<OfflinePlayer> getPlayers() throws IllegalStateException {
         CraftScoreboard scoreboard = checkState();
 
@@ -141,5 +157,35 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         scoreboard.board.removeTeam(team);
         scoreboard.teams.remove(team.getName());
         setUnregistered();
+    }
+
+    public static EnumNameTagVisibility bukkitToNotch(NameTagVisibility visibility) {
+        switch (visibility) {
+            case ALWAYS:
+                return EnumNameTagVisibility.ALWAYS;
+            case NEVER:
+                return EnumNameTagVisibility.NEVER;
+            case HIDE_FOR_OTHER_TEAMS:
+                return EnumNameTagVisibility.HIDE_FOR_OTHER_TEAMS;
+            case HIDE_FOR_OWN_TEAM:
+                return EnumNameTagVisibility.HIDE_FOR_OWN_TEAM;
+            default:
+                throw new IllegalArgumentException("Unknown visibility level " + visibility);
+        }
+    }
+
+    public static NameTagVisibility notchToBukkit(EnumNameTagVisibility visibility) {
+        switch (visibility) {
+            case ALWAYS:
+                return NameTagVisibility.ALWAYS;
+            case NEVER:
+                return NameTagVisibility.NEVER;
+            case HIDE_FOR_OTHER_TEAMS:
+                return NameTagVisibility.HIDE_FOR_OTHER_TEAMS;
+            case HIDE_FOR_OWN_TEAM:
+                return NameTagVisibility.HIDE_FOR_OWN_TEAM;
+            default:
+                throw new IllegalArgumentException("Unknown visibility level " + visibility);
+        }
     }
 }
