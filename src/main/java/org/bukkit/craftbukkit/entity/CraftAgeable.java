@@ -15,7 +15,7 @@ public class CraftAgeable extends CraftCreature implements Ageable {
     }
 
     public void setAge(int age) {
-        getHandle().setAge(age);
+        getHandle().setAgeRaw(age);
     }
 
     public void setAgeLock(boolean lock) {
