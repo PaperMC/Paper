@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/ChunkRegionLoader.java	2014-11-28 17:43:42.985707437 +0000
-+++ src/main/java/net/minecraft/server/ChunkRegionLoader.java	2014-11-28 17:38:17.000000000 +0000
+--- ../work/decompile-8eb82bde//net/minecraft/server/ChunkRegionLoader.java	2014-11-29 17:31:14.897318138 +0000
++++ src/main/java/net/minecraft/server/ChunkRegionLoader.java	2014-11-29 17:31:08.453318281 +0000
 @@ -23,8 +23,40 @@
      public ChunkRegionLoader(File file) {
          this.e = file;
@@ -8,7 +8,7 @@
 +    // CraftBukkit start
 +    public boolean chunkExists(World world, int i, int j) {
 +        ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
-+
+ 
 +        synchronized (this.d) {
 +            if (this.c.contains(chunkcoordintpair)) {
 +                for (int k = 0; k < this.b.size(); ++k) {
@@ -22,7 +22,7 @@
 +        return RegionFileCache.a(this.e, i, j).chunkExists(i & 31, j & 31);
 +    }
 +    // CraftBukkit end
- 
++
 +    // CraftBukkit start - Add async variant, provide compatibility
      public Chunk a(World world, int i, int j) {
 +        Object[] data = loadChunk(world, i, j);
@@ -107,7 +107,33 @@
          DataOutputStream dataoutputstream = RegionFileCache.d(this.e, pendingchunktosave.a.x, pendingchunktosave.a.z);
  
          NBTCompressedStreamTools.a(pendingchunktosave.b, (DataOutput) dataoutputstream);
-@@ -320,7 +376,13 @@
+@@ -302,8 +358,23 @@
+                 int j1 = l >> 8 & 15;
+                 int k1 = l >> 4 & 15;
+                 int l1 = nibblearray1 != null ? nibblearray1.a(i1, j1, k1) : 0;
+-
+-                achar[l] = (char) (l1 << 12 | (abyte[l] & 255) << 4 | nibblearray.a(i1, j1, k1));
++                
++                // CraftBukkit start - fix broken blocks
++                // achar[l] = (char) (l1 << 12 | (abyte[l] & 255) << 4 | nibblearray.a(i1, j1, k1));
++                
++                int ex =  l1;
++                int id = (abyte[l] & 255);
++                int data = nibblearray.a(i1, j1, k1);
++                int packed = ex << 12 | id << 4 | data;
++                if (Block.d.a(packed) == null) {
++                    Block block = Block.getById(ex << 8 | id);
++                    if (block != null) {
++                        data = block.toLegacyData(block.fromLegacyData(data));
++                        packed = ex << 12 | id << 4 | data;
++                    }
++                }
++                achar[l] = (char) packed;
++                // CraftBukkit end
+             }
+ 
+             chunksection.a(achar);
+@@ -320,7 +391,13 @@
          if (nbttagcompound.hasKeyOfType("Biomes", 7)) {
              chunk.a(nbttagcompound.getByteArray("Biomes"));
          }
@@ -121,7 +147,7 @@
          NBTTagList nbttaglist1 = nbttagcompound.getList("Entities", 10);
  
          if (nbttaglist1 != null) {
-@@ -379,6 +441,6 @@
+@@ -379,6 +456,6 @@
              }
          }
  
