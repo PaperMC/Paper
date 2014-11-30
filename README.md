@@ -11,7 +11,7 @@ High performance Spigot fork that aims to fix gameplay and mechanics inconsisten
 How To
 ------
 Download a copy of PaperTools.jar from our buildserver here:
-https://hub.spigotmc.org/stash/projects/PAPER/repos/papertools/browse
+https://ci.destroystokyo.com/job/PaperSpigot-BuildTools/
 
 Place PaperTools.jar into an empty directory and run it with `java -jar PaperTools.jar` from Git-Bash/Bash
 
