@@ -1,0 +1,43 @@
+--- ../work/decompile-8eb82bde//net/minecraft/server/TileEntitySign.java	2014-11-30 11:23:30.317220028 +0000
++++ src/main/java/net/minecraft/server/TileEntitySign.java	2014-11-30 11:22:37.521221199 +0000
+@@ -20,6 +20,12 @@
+ 
+             nbttagcompound.setString("Text" + (i + 1), s);
+         }
++        
++        // CraftBukkit start
++        if (Boolean.getBoolean("convertLegacySigns")) {
++            nbttagcompound.setBoolean("Bukkit.isConverted", true);
++        }
++        // CraftBukkit end
+ 
+         this.i.b(nbttagcompound);
+     }
+@@ -29,14 +35,27 @@
+         super.a(nbttagcompound);
+         TileEntitySignCommandListener tileentitysigncommandlistener = new TileEntitySignCommandListener(this);
+ 
++        // CraftBukkit start - Add an option to convert signs correctly
++        // This is done with a flag instead of all the time because
++        // we have no way to tell whether a sign is from 1.7.10 or 1.8
++        
++        boolean oldSign = Boolean.getBoolean("convertLegacySigns") && !nbttagcompound.getBoolean("Bukkit.isConverted");
++        
+         for (int i = 0; i < 4; ++i) {
+             String s = nbttagcompound.getString("Text" + (i + 1));
++            
++            if (oldSign) {
++                lines[i] = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(s)[0];
++                continue;
++            }
++            // CraftBukkit end
+ 
+             try {
+                 IChatBaseComponent ichatbasecomponent = ChatSerializer.a(s);
+ 
+                 try {
+                     this.lines[i] = ChatComponentUtils.filterForDisplay(tileentitysigncommandlistener, ichatbasecomponent, (Entity) null);
++                    if (false) throw new CommandException(null, null); // CraftBukkit - fix decompile error
+                 } catch (CommandException commandexception) {
+                     this.lines[i] = ichatbasecomponent;
+                 }
