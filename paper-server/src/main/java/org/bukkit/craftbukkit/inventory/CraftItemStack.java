@@ -20,6 +20,10 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import com.google.common.collect.ImmutableMap;
+import net.minecraft.server.ChatSerializer;
+import net.minecraft.server.Items;
+import net.minecraft.server.NBTTagString;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 @DelegateDeserialization(ItemStack.class)
 public final class CraftItemStack extends ItemStack {
@@ -374,6 +378,42 @@ public final class CraftItemStack extends ItemStack {
         item.setTag(tag);
 
         ((CraftMetaItem) itemMeta).applyToItem(tag);
+
+        // Hacky fix for books
+        // TODO: Not use a hacky fix for books
+        if (tag.getBoolean(CraftMetaBook.RESOLVED.NBT) && item.getItem() == Items.WRITABLE_BOOK) {
+            if (tag.hasKey(CraftMetaBook.BOOK_PAGES.NBT)) {
+                NBTTagList pages = tag.getList(CraftMetaBook.BOOK_PAGES.NBT, 8);
+
+                for (int i = 0; i < pages.size(); i++) {
+                    String page = pages.getString(i);
+                    page = CraftChatMessage.fromComponent(ChatSerializer.a(page));
+                    pages.a(i, new NBTTagString(page));
+                }
+                tag.set(CraftMetaBook.BOOK_PAGES.NBT, pages);
+            }
+            tag.setBoolean(CraftMetaBook.RESOLVED.NBT, false);
+        } else if (!tag.getBoolean(CraftMetaBook.RESOLVED.NBT) && item.getItem() == Items.WRITTEN_BOOK) {
+            if (tag.hasKey(CraftMetaBook.BOOK_PAGES.NBT)) {
+                NBTTagList pages = tag.getList(CraftMetaBook.BOOK_PAGES.NBT, 8);
+
+                for (int i = 0; i < pages.size(); i++) {
+                    String page = pages.getString(i);
+                    page = ChatSerializer.a(CraftChatMessage.fromString(page, true)[0]);
+                    pages.a(i, new NBTTagString(page));
+                }
+                tag.set(CraftMetaBook.BOOK_PAGES.NBT, pages);
+            }
+
+            tag.setBoolean(CraftMetaBook.RESOLVED.NBT, true);
+            if (!tag.hasKey(CraftMetaBook.BOOK_TITLE.NBT)) {
+                tag.setString(CraftMetaBook.BOOK_TITLE.NBT, "");
+            }
+            if (!tag.hasKey(CraftMetaBook.BOOK_AUTHOR.NBT)) {
+                tag.setString(CraftMetaBook.BOOK_AUTHOR.NBT, "");
+            }
+        }
+
         return true;
     }
 
