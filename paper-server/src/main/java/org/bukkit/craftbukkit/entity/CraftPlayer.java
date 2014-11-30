@@ -899,12 +899,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         EntityTracker tracker = ((WorldServer) entity.world).tracker;
         EntityPlayer other = ((CraftPlayer) player).getHandle();
+
+        getHandle().playerConnection.sendPacket(new PacketPlayOutPlayerInfo(EnumPlayerInfoAction.ADD_PLAYER, other));
+
         EntityTrackerEntry entry = (EntityTrackerEntry) tracker.trackedEntities.get(other.getId());
         if (entry != null && !entry.trackedPlayers.contains(getHandle())) {
             entry.updatePlayer(getHandle());
         }
-
-        getHandle().playerConnection.sendPacket(new PacketPlayOutPlayerInfo(EnumPlayerInfoAction.ADD_PLAYER, other));
     }
 
     public void removeDisconnectingPlayer(Player player) {
