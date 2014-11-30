@@ -14,7 +14,7 @@ import org.bukkit.inventory.ItemStack;
  * <p>
  * This interface is unsupported and only for internal use.
  *
- * @deprecated Unsupported & internal use only
+ * @deprecated Unsupported {@literal &} internal use only
  */
 @Deprecated
 public interface UnsafeValues {

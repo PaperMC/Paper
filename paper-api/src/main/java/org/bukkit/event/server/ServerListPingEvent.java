@@ -32,6 +32,10 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * This constructor is intended for implementations that provide the
      * {@link #iterator()} method, thus provided the {@link #getNumPlayers()}
      * count.
+     * 
+     * @param address the address of the pinger
+     * @param motd the message of the day
+     * @param maxPlayers the max number of players
      */
     protected ServerListPingEvent(final InetAddress address, final String motd, final int maxPlayers) {
         this.numPlayers = MAGIC_PLAYER_COUNT;

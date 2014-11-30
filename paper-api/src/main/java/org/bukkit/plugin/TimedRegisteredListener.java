@@ -76,7 +76,7 @@ public class TimedRegisteredListener extends RegisteredListener {
      * returned, such that for any event this listener has handled,
      * <code>this.getEventClass().isAssignableFrom(event.getClass())</code>
      * and no class <code>this.getEventClass().isAssignableFrom(clazz)
-     * && this.getEventClass() != clazz &&
+     * {@literal && this.getEventClass() != clazz &&}
      * event.getClass().isAssignableFrom(clazz)</code> for all handled events.
      *
      * @return the event class handled by this RegisteredListener

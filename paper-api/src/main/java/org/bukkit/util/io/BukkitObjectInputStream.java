@@ -21,8 +21,7 @@ public class BukkitObjectInputStream extends ObjectInputStream {
     /**
      * Constructor provided to mirror super functionality.
      *
-     * @throws IOException
-     * @throws SecurityException
+     * @throws IOException if an I/O error occurs while reading stream heade
      * @see ObjectInputStream#ObjectInputStream()
      */
     protected BukkitObjectInputStream() throws IOException, SecurityException {
@@ -33,8 +32,8 @@ public class BukkitObjectInputStream extends ObjectInputStream {
     /**
      * Object input stream decoration constructor.
      *
-     * @param in
-     * @throws IOException
+     * @param in the input stream to wrap
+     * @throws IOException if an I/O error occurs while reading stream header
      * @see ObjectInputStream#ObjectInputStream(InputStream)
      */
     public BukkitObjectInputStream(InputStream in) throws IOException {

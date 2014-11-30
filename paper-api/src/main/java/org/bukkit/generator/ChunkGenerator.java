@@ -89,7 +89,7 @@ public abstract class ChunkGenerator {
      * <pre>
      *     short[][] result = new short[world-height / 16][];
      * </pre>
-     * Each section (sectionID = (Y>>4)) that has blocks needs to be allocated
+     * Each section {@code (sectionID = (Y>>4))} that has blocks needs to be allocated
      * space for the 4096 blocks in that section:
      * <pre>
      *     result[sectionID] = new short[4096];
@@ -100,20 +100,20 @@ public abstract class ChunkGenerator {
      * following mapping function:
      * <pre>
      *    void setBlock(short[][] result, int x, int y, int z, short blkid) {
-     *        if (result[y >> 4] == null) {
-     *            result[y >> 4] = new short[4096];
+     *        {@code if (result[y >> 4] == null) {}
+     *            {@code result[y >> 4] = new short[4096];}
      *        }
-     *        result[y >> 4][((y & 0xF) << 8) | (z << 4) | x] = blkid;
+     *        {@code result[y >> 4][((y & 0xF) << 8) | (z << 4) | x] = blkid;}
      *    }
      * </pre>
      * while reading a block ID can be done with the following mapping
      * function:
      * <pre>
      *    short getBlock(short[][] result, int x, int y, int z) {
-     *        if (result[y >> 4] == null) {
+     *        {@code if (result[y >> 4] == null) {}
      *            return (short)0;
      *        }
-     *        return result[y >> 4][((y & 0xF) << 8) | (z << 4) | x];
+     *        {@code return result[y >> 4][((y & 0xF) << 8) | (z << 4) | x];}
      *    }
      * </pre>
      * while sections that are not populated can be left null.
@@ -122,20 +122,20 @@ public abstract class ChunkGenerator {
      * following mapping function:
      * <pre>
      *    void setBlock(short[][] result, int x, int y, int z, short blkid) {
-     *        if (result[y >> 4) == null) {
-     *            result[y >> 4] = new short[4096];
+     *        {@code if (result[y >> 4) == null) {}
+     *            {@code result[y >> 4] = new short[4096];}
      *        }
-     *        result[y >> 4][((y & 0xF) << 8) | (z << 4) | x] = blkid;
+     *        {@code result[y >> 4][((y & 0xF) << 8) | (z << 4) | x] = blkid;}
      *    }
      * </pre>
      * while reading a block ID can be done with the following mapping
      * function:
      * <pre>
      *    short getBlock(short[][] result, int x, int y, int z) {
-     *        if (result[y >> 4) == null) {
+     *        {@code if (result[y >> 4) == null) {}
      *            return (short)0;
      *        }
-     *        return result[y >> 4][((y & 0xF) << 8) | (z << 4) | x];
+     *        {@code return result[y >> 4][((y & 0xF) << 8) | (z << 4) | x];}
      *    }
      * </pre>
      * <p>
@@ -173,7 +173,7 @@ public abstract class ChunkGenerator {
      * <pre>
      *     byte[][] result = new byte[world-height / 16][];
      * </pre>
-     * Each section (sectionID = (Y>>4)) that has blocks needs to be allocated
+     * Each section {@code (sectionID = (Y>>4))} that has blocks needs to be allocated
      * space for the 4096 blocks in that section:
      * <pre>
      *     result[sectionID] = new byte[4096];
@@ -184,20 +184,20 @@ public abstract class ChunkGenerator {
      * following mapping function:
      * <pre>
      *    void setBlock(byte[][] result, int x, int y, int z, byte blkid) {
-     *        if (result[y >> 4) == null) {
-     *            result[y >> 4] = new byte[4096];
+     *        {@code if (result[y >> 4) == null) {}
+     *            {@code result[y >> 4] = new byte[4096];}
      *        }
-     *        result[y >> 4][((y & 0xF) << 8) | (z << 4) | x] = blkid;
+     *        {@code result[y >> 4][((y & 0xF) << 8) | (z << 4) | x] = blkid;}
      *    }
      * </pre>
      * while reading a block ID can be done with the following mapping
      * function:
      * <pre>
      *    byte getBlock(byte[][] result, int x, int y, int z) {
-     *        if (result[y >> 4) == null) {
+     *        {@code if (result[y >> 4) == null) {}
      *            return (byte)0;
      *        }
-     *        return result[y >> 4][((y & 0xF) << 8) | (z << 4) | x];
+     *        {@code return result[y >> 4][((y & 0xF) << 8) | (z << 4) | x];}
      *    }
      * </pre>
      *

@@ -12,7 +12,7 @@ public class Button extends SimpleAttachableMaterialData implements Redstone {
     }
 
     /**
-     *
+     * @param type the type
      * @deprecated Magic value
      */
     @Deprecated
@@ -25,7 +25,8 @@ public class Button extends SimpleAttachableMaterialData implements Redstone {
     }
 
     /**
-     *
+     * @param type the raw type id
+     * @param data the raw data value
      * @deprecated Magic value
      */
     @Deprecated
@@ -34,7 +35,8 @@ public class Button extends SimpleAttachableMaterialData implements Redstone {
     }
 
     /**
-     *
+     * @param type the type
+     * @param data the raw data value
      * @deprecated Magic value
      */
     @Deprecated

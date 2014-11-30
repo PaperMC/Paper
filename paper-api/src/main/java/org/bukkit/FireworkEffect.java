@@ -351,6 +351,8 @@ public final class FireworkEffect implements ConfigurationSerializable {
 
     /**
      * @see ConfigurationSerializable
+     * @param map the map to deserialize
+     * @return the resulting serializable
      */
     public static ConfigurationSerializable deserialize(Map<String, Object> map) {
         Type type = Type.valueOf((String) map.get(TYPE));
@@ -367,6 +369,7 @@ public final class FireworkEffect implements ConfigurationSerializable {
             .build();
     }
 
+    @Override
     public Map<String, Object> serialize() {
         return ImmutableMap.<String, Object>of(
             FLICKER, flicker,

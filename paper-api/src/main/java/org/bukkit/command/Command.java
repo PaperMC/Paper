@@ -57,7 +57,14 @@ public abstract class Command {
     public abstract boolean execute(CommandSender sender, String commandLabel, String[] args);
 
     /**
+     * Executed on tab completion for this command, returning a list of
+     * options the player can tab through.
+     *
      * @deprecated This method is not supported and returns null
+     * @param sender Source object which is executing this command
+     * @param args All arguments passed to the command, split via ' '
+     * @return a list of tab-completions for the specified arguments. This
+     *     will never be null. List may be immutable.
      */
     @Deprecated
     public List<String> tabComplete(CommandSender sender, String[] args) {

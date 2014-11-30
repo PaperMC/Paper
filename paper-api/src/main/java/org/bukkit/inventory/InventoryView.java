@@ -62,6 +62,7 @@ public abstract class InventoryView {
 
         /**
          *
+         * @return the id of this view
          * @deprecated Magic value
          */
         @Deprecated

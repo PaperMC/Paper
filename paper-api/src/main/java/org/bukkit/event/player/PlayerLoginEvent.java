@@ -17,6 +17,7 @@ public class PlayerLoginEvent extends PlayerEvent {
 
     /**
      * @deprecated Address should be provided in other constructor
+     * @param player The {@link Player} for this event
      */
     @Deprecated
     public PlayerLoginEvent(final Player player) {
@@ -25,6 +26,8 @@ public class PlayerLoginEvent extends PlayerEvent {
 
     /**
      * @deprecated Address should be provided in other constructor
+     * @param player The {@link Player} for this event
+     * @param hostname The hostname that was used to connect to the server
      */
     @Deprecated
     public PlayerLoginEvent(final Player player, final String hostname) {
@@ -49,6 +52,9 @@ public class PlayerLoginEvent extends PlayerEvent {
     /**
      * @deprecated Address and hostname should be provided in other
      *     constructor
+     * @param player The {@link Player} for this event
+     * @param result The result status for this event
+     * @param message The message to be displayed if result denies login
      */
     @Deprecated
     public PlayerLoginEvent(final Player player, final Result result, final String message) {

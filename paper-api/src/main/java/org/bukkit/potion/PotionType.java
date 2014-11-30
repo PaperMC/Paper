@@ -32,6 +32,7 @@ public enum PotionType {
 
     /**
      *
+     * @return the damage value
      * @deprecated Magic value
      */
     @Deprecated
@@ -49,6 +50,8 @@ public enum PotionType {
 
     /**
      *
+     * @param damage the damage value
+     * @return the matching potion type or null
      * @deprecated Magic value
      */
     @Deprecated

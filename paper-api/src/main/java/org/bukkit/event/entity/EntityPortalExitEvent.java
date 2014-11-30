@@ -26,7 +26,7 @@ public class EntityPortalExitEvent extends EntityTeleportEvent {
      * Gets a copy of the velocity that the entity has before entering the
      * portal.
      *
-     * @return velocity of entity before entering portal
+     * @return velocity of entity before entering the portal
      */
     public Vector getBefore() {
         return this.before.clone();
@@ -36,7 +36,7 @@ public class EntityPortalExitEvent extends EntityTeleportEvent {
      * Gets a copy of the velocity that the entity will have after exiting the
      * portal.
      *
-     * @return velocity of entity after exiting portal
+     * @return velocity of entity after exiting the portal
      */
     public Vector getAfter() {
         return this.after.clone();
@@ -44,6 +44,8 @@ public class EntityPortalExitEvent extends EntityTeleportEvent {
 
     /**
      * Sets the velocity that the entity will have after exiting the portal.
+     * 
+     * @param after the velocity after exiting the portal
      */
     public void setAfter(Vector after) {
         this.after = after.clone();

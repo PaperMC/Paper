@@ -22,7 +22,7 @@ public class MonsterEggs extends TexturedMaterial {
     }
 
     /**
-     *
+     * @param type the raw type id
      * @deprecated Magic value
      */
     @Deprecated
@@ -38,7 +38,8 @@ public class MonsterEggs extends TexturedMaterial {
     }
 
     /**
-     *
+     * @param type the raw type id
+     * @param data the raw data value
      * @deprecated Magic value
      */
     @Deprecated
@@ -47,7 +48,8 @@ public class MonsterEggs extends TexturedMaterial {
     }
 
     /**
-     *
+     * @param type the type
+     * @param data the raw data value
      * @deprecated Magic value
      */
     @Deprecated

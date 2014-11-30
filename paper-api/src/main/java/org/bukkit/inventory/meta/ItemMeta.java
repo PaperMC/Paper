@@ -87,7 +87,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
     int getEnchantLevel(Enchantment ench);
 
     /**
-     * Returns a copy the enchantments in this ItemMeta.<br />
+     * Returns a copy the enchantments in this ItemMeta. <br> 
      * Returns an empty map if none.
      *
      * @return An immutable copy of the enchantments

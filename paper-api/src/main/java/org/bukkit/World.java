@@ -402,6 +402,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * Get a collection of all entities in this World matching the given
      * class/interface
      *
+     * @param <T> an entity subclass
      * @param classes The classes representing the types of entity to match
      * @return A List of all Entities currently residing in this world that
      *     match the given class/interface
@@ -412,7 +413,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Get a collection of all entities in this World matching the given
      * class/interface
-     *
+     * 
+     * @param <T> an entity subclass
      * @param cls The class representing the type of entity to match
      * @return A List of all Entities currently residing in this world that
      *     match the given class/interface
@@ -746,6 +748,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * Plays an effect to all players within a default radius around a given
      * location.
      *
+     * @param <T> data dependant on the type of effect
      * @param location the {@link Location} around which players must be to
      *     hear the sound
      * @param effect the {@link Effect}
@@ -756,6 +759,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Plays an effect to all players within a given radius around a location.
      *
+     * @param <T> data dependant on the type of effect
      * @param location the {@link Location} around which players must be to
      *     hear the effect
      * @param effect the {@link Effect}
@@ -1050,6 +1054,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
      * server-wide spawn limit instead.
+     * 
+     * @param limit the new mob limit
      */
     void setMonsterSpawnLimit(int limit);
 
@@ -1067,6 +1073,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
      * server-wide spawn limit instead.
+     * 
+     * @param limit the new mob limit
      */
     void setAnimalSpawnLimit(int limit);
 
@@ -1084,6 +1092,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
      * server-wide spawn limit instead.
+     * 
+     * @param limit the new mob limit
      */
     void setWaterAnimalSpawnLimit(int limit);
 
@@ -1101,6 +1111,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
      * server-wide spawn limit instead.
+     * 
+     * @param limit the new mob limit
      */
     void setAmbientSpawnLimit(int limit);
 

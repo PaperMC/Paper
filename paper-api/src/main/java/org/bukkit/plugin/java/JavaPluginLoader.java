@@ -52,6 +52,8 @@ public final class JavaPluginLoader implements PluginLoader {
 
     /**
      * This class was not meant to be constructed explicitly
+     * 
+     * @param instance the server instance
      */
     @Deprecated
     public JavaPluginLoader(Server instance) {

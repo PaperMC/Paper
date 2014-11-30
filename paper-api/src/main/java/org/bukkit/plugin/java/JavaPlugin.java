@@ -72,6 +72,11 @@ public abstract class JavaPlugin extends PluginBase {
      *     PluginDescriptionFile, File, File) constructor} cannot be used.
      *     <p>
      *     Its existence may be temporary.
+     * @param loader the plugin loader
+     * @param server the server instance
+     * @param description the plugin's description
+     * @param dataFolder the plugin's data folder
+     * @param file the location of the plugin
      */
     @Deprecated
     protected JavaPlugin(final PluginLoader loader, final Server server, final PluginDescriptionFile description, final File dataFolder, final File file) {
@@ -321,6 +326,12 @@ public abstract class JavaPlugin extends PluginBase {
     }
 
     /**
+     * @param loader the plugin loader
+     * @param server the server instance
+     * @param description the plugin's description
+     * @param dataFolder the plugin's data folder
+     * @param file the location of the plugin
+     * @param classLoader the class loader
      * @deprecated This method is legacy and will be removed - it must be
      *     replaced by the specially provided constructor(s).
      */
@@ -492,6 +503,7 @@ public abstract class JavaPlugin extends PluginBase {
      * does not extend the class, where the intended plugin would have
      * resided in a different jar / classloader.
      *
+     * @param <T> a class that extends JavaPlugin
      * @param clazz the class desired
      * @return the plugin that provides and implements said class
      * @throws IllegalArgumentException if clazz is null
@@ -525,6 +537,8 @@ public abstract class JavaPlugin extends PluginBase {
      * This method provides fast access to the plugin that has provided the
      * given class.
      *
+     * @param clazz a class belonging to a plugin
+     * @return the plugin that provided the class
      * @throws IllegalArgumentException if the class is not provided by a
      *     JavaPlugin
      * @throws IllegalArgumentException if class is null

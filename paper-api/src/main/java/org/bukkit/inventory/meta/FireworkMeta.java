@@ -57,7 +57,7 @@ public interface FireworkMeta extends ItemMeta {
      * Remove an effect from this firework.
      *
      * @param index The index of the effect to remove
-     * @throws IndexOutOfBoundsException If index < 0 or index > {@link
+     * @throws IndexOutOfBoundsException If index {@literal < 0 or index >} {@link
      *     #getEffectsSize()}
      */
     void removeEffect(int index) throws IndexOutOfBoundsException;
@@ -86,7 +86,7 @@ public interface FireworkMeta extends ItemMeta {
      * a second of flight time.
      *
      * @param power the power of the firework, from 0-128
-     * @throws IllegalArgumentException if height<0 or height>128
+     * @throws IllegalArgumentException if {@literal height<0 or height>128}
      */
     void setPower(int power) throws IllegalArgumentException;
 

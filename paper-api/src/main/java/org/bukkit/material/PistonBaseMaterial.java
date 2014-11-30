@@ -7,8 +7,11 @@ import org.bukkit.block.BlockFace;
  * Material data for the piston base block
  */
 public class PistonBaseMaterial extends MaterialData implements Directional, Redstone {
+    
     /**
-     *
+     * Constructs a PistonBaseMaterial
+     * 
+     * @param type the raw type id
      * @deprecated Magic value
      */
     @Deprecated
@@ -21,7 +24,10 @@ public class PistonBaseMaterial extends MaterialData implements Directional, Red
     }
 
     /**
-     *
+     * Constructs a PistonBaseMaterial.
+     * 
+     * @param type the raw type id
+     * @param data the raw data value
      * @deprecated Magic value
      */
     @Deprecated
@@ -30,7 +36,10 @@ public class PistonBaseMaterial extends MaterialData implements Directional, Red
     }
 
     /**
-     *
+     * Constructs a PistonBaseMaterial.
+     * 
+     * @param type the material type to use
+     * @param data the raw data value 
      * @deprecated Magic value
      */
     @Deprecated
@@ -38,6 +47,7 @@ public class PistonBaseMaterial extends MaterialData implements Directional, Red
         super(type, data);
     }
 
+    @Override
     public void setFacingDirection(BlockFace face) {
         byte data = (byte) (getData() & 0x8);
 
@@ -61,6 +71,7 @@ public class PistonBaseMaterial extends MaterialData implements Directional, Red
         setData(data);
     }
 
+    @Override
     public BlockFace getFacing() {
         byte dir = (byte) (getData() & 7);
 
@@ -82,6 +93,7 @@ public class PistonBaseMaterial extends MaterialData implements Directional, Red
         }
     }
 
+    @Override
     public boolean isPowered() {
         return (getData() & 0x8) == 0x8;
     }
@@ -89,7 +101,7 @@ public class PistonBaseMaterial extends MaterialData implements Directional, Red
     /**
      * Sets the current state of this piston
      *
-     * @param powered true if the piston is extended & powered, or false
+     * @param powered true if the piston is extended {@literal &} powered, or false
      */
     public void setPowered(boolean powered) {
         setData((byte) (powered ? (getData() | 0x8) : (getData() & ~0x8)));

@@ -17,7 +17,7 @@ public enum EntityEffect {
     /**
      * When a mob dies.
      * <p>
-     * <b>This will cause client-glitches!
+     * <b>This will cause client-glitches!</b>
      */
     DEATH(3),
 

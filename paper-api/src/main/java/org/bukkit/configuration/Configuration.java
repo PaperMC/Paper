@@ -29,7 +29,7 @@ public interface Configuration extends ConfigurationSection {
      * collection, then a new {@link MemoryConfiguration} will be created to
      * hold the new default values.
      *
-     * @param defaults A map of Path->Values to add to defaults.
+     * @param defaults A map of Path{@literal ->}Values to add to defaults.
      * @throws IllegalArgumentException Thrown if defaults is null.
      */
     public void addDefaults(Map<String, Object> defaults);

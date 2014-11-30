@@ -27,7 +27,8 @@ public class Mushroom extends MaterialData {
     }
 
     /**
-     *
+     * @param shroom the type
+     * @param data the raw data value
      * @deprecated Magic value
      */
     @Deprecated
@@ -37,7 +38,8 @@ public class Mushroom extends MaterialData {
     }
 
     /**
-     *
+     * @param type the raw type id
+     * @param data the raw data value
      * @deprecated Magic value
      */
     @Deprecated

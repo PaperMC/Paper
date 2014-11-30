@@ -11,6 +11,8 @@ public interface Projectile extends Entity {
      * This method exists for legacy reasons to provide backwards
      * compatibility. It will not exist at runtime and should not be used
      * under any circumstances.
+     *
+     * @return the {@link LivingEntity} that shot this projectile
      */
     @Deprecated
     public LivingEntity _INVALID_getShooter();
@@ -26,6 +28,8 @@ public interface Projectile extends Entity {
      * This method exists for legacy reasons to provide backwards
      * compatibility. It will not exist at runtime and should not be used
      * under any circumstances.
+     *
+     * @param shooter the {@link LivingEntity} that shot this projectile
      */
     @Deprecated
     public void _INVALID_setShooter(LivingEntity shooter);

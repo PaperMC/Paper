@@ -8,7 +8,7 @@ import org.bukkit.block.BlockFace;
  */
 public class DirectionalContainer extends MaterialData implements Directional {
     /**
-     *
+     * @param type the raw type id
      * @deprecated Magic value
      */
     @Deprecated
@@ -21,7 +21,8 @@ public class DirectionalContainer extends MaterialData implements Directional {
     }
 
     /**
-     *
+     * @param type the raw type id
+     * @param data the raw data value
      * @deprecated Magic value
      */
     @Deprecated
@@ -30,7 +31,8 @@ public class DirectionalContainer extends MaterialData implements Directional {
     }
 
     /**
-     *
+     * @param type the type
+     * @param data the raw data value
      * @deprecated Magic value
      */
     @Deprecated

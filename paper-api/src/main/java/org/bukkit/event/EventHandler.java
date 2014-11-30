@@ -24,6 +24,8 @@ public @interface EventHandler {
      * <li>HIGHEST
      * <li>MONITOR
      * </ol>
+     * 
+     * @return the priority
      */
     EventPriority priority() default EventPriority.NORMAL;
 
@@ -32,6 +34,8 @@ public @interface EventHandler {
      * <p>
      * If ignoreCancelled is true and the event is cancelled, the method is
      * not called. Otherwise, the method is always called.
+     * 
+     * @return whether cancelled events should be ignored
      */
     boolean ignoreCancelled() default false;
 }

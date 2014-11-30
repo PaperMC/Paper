@@ -21,7 +21,8 @@ public class Vine extends MaterialData {
     }
 
     /**
-     *
+     * @param type the raw type id
+     * @param data the raw data value
      * @deprecated Magic value
      */
     @Deprecated
@@ -30,7 +31,7 @@ public class Vine extends MaterialData {
     }
 
     /**
-     *
+     * @param data the raw data value
      * @deprecated Magic value
      */
     @Deprecated

@@ -71,6 +71,7 @@ public enum CreatureType {
 
     /**
      *
+     * @return the raw type id
      * @deprecated Magic value
      */
     @Deprecated
@@ -84,6 +85,8 @@ public enum CreatureType {
 
     /**
      *
+     * @param id the raw type id
+     * @return the matching CreatureType or null
      * @deprecated Magic value
      */
     @Deprecated

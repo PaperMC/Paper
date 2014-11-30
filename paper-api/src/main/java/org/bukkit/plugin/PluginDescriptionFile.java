@@ -11,7 +11,6 @@ import java.util.Set;
 
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.PluginCommand;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
@@ -51,6 +50,7 @@ import com.google.common.collect.ImmutableSet;
  * This is a list of the possible yaml keys, with specific details included in
  * the respective method documentations:
  * <table border=1>
+ * <caption>The description of the plugin.yml layout</caption>
  * <tr>
  *     <th>Node</th>
  *     <th>Method</th>
@@ -400,7 +400,7 @@ public final class PluginDescriptionFile {
      *- feildmaster
      *- amaranth</pre></blockquote>
      * Is equivilant to this example:
-     * <blockquote><pre>authors: [Grum, feildmaster, aramanth]<pre></blockquote>
+     * <pre>authors: [Grum, feildmaster, aramanth]</pre>
      *
      * @return an immutable list of the plugin's authors
      */
@@ -560,6 +560,7 @@ public final class PluginDescriptionFile {
      * aliases</i>, can be defined at runtime using methods in {@link
      * PluginCommand} and are defined here only as a convenience.
      * <table border=1>
+     * <caption>The command section's description</caption>
      * <tr>
      *     <th>Node</th>
      *     <th>Method</th>
@@ -683,6 +684,7 @@ public final class PluginDescriptionFile {
      * <p>
      * A list of optional properties for permissions:
      * <table border=1>
+     * <caption>The permission section's description</caption>
      * <tr>
      *     <th>Node</th>
      *     <th>Description</th>
@@ -776,6 +778,8 @@ public final class PluginDescriptionFile {
      *</pre></blockquote>
      * Another example, with nested definitions, can be found <a
      * href="doc-files/permissions-example_plugin.yml">here</a>.
+     * 
+     * @return the permissions this plugin will register
      */
     public List<Permission> getPermissions() {
         if (permissions == null) {
@@ -817,7 +821,7 @@ public final class PluginDescriptionFile {
      * not included in the API. Any unrecognized
      * awareness (one unsupported or in a future version) will cause a dummy
      * object to be created instead of failing.
-     * <p>
+     * 
      * <ul>
      * <li>Currently only supports the enumerated values in {@link
      *     PluginAwareness.Flags}.
@@ -861,6 +865,7 @@ public final class PluginDescriptionFile {
     }
 
     /**
+     * @return unused
      * @deprecated unused
      */
     @Deprecated
@@ -1101,6 +1106,7 @@ public final class PluginDescriptionFile {
     }
 
     /**
+     * @return internal use
      * @deprecated Internal use
      */
     @Deprecated

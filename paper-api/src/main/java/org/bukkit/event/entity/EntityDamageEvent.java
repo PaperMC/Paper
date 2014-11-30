@@ -63,6 +63,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      * event's construction.
      *
      * @param type the modifier
+     * @return the original damage
      * @throws IllegalArgumentException if type is null
      */
     public double getOriginalDamage(DamageModifier type) throws IllegalArgumentException {
@@ -79,6 +80,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
     /**
      * Sets the damage for the specified modifier.
      *
+     * @param type the damage modifier
      * @param damage the scalar value of the damage's modifier
      * @see #getFinalDamage()
      * @throws IllegalArgumentException if type is null
@@ -96,6 +98,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
     /**
      * Gets the damage change for some modifier
      *
+     * @param type the damage modifier
      * @return The raw amount of damage caused by the event
      * @throws IllegalArgumentException if type is null
      * @see DamageModifier#BASE
@@ -150,6 +153,8 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      * This method exists for legacy reasons to provide backwards
      * compatibility. It will not exist at runtime and should not be used
      * under any circumstances.
+     * 
+     * @return the (rounded) damage
      */
     @Deprecated
     public int _INVALID_getDamage() {
@@ -197,6 +202,8 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      * This method exists for legacy reasons to provide backwards
      * compatibility. It will not exist at runtime and should not be used
      * under any circumstances.
+     * 
+     * @param damage the new damage value
      */
     @Deprecated
     public void _INVALID_setDamage(int damage) {

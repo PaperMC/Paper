@@ -16,6 +16,8 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
     /**
      *
      * @deprecated Magic value
+     * @param block the block involved in this event
+     * @param changed the changed block's type id
      */
     @Deprecated
     public BlockPhysicsEvent(final Block block, final int changed) {

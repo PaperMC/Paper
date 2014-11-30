@@ -11,7 +11,7 @@ public class MaterialData implements Cloneable {
     private byte data = 0;
 
     /**
-     *
+     * @param type the raw type id
      * @deprecated Magic value
      */
     @Deprecated
@@ -24,7 +24,8 @@ public class MaterialData implements Cloneable {
     }
 
     /**
-     *
+     * @param type the raw type id
+     * @param data the raw data value
      * @deprecated Magic value
      */
     @Deprecated
@@ -34,7 +35,8 @@ public class MaterialData implements Cloneable {
     }
 
     /**
-     *
+     * @param type the type
+     * @param data the raw data value
      * @deprecated Magic value
      */
     @Deprecated

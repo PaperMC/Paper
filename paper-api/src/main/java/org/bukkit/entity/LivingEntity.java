@@ -173,6 +173,8 @@ public interface LivingEntity extends Entity, Damageable, ProjectileSource {
      * This method exists for legacy reasons to provide backwards
      * compatibility. It will not exist at runtime and should not be used
      * under any circumstances.
+     * 
+     * @return damage taken since the last no damage ticks time period
      */
     @Deprecated
     public int _INVALID_getLastDamage();
@@ -188,6 +190,8 @@ public interface LivingEntity extends Entity, Damageable, ProjectileSource {
      * This method exists for legacy reasons to provide backwards
      * compatibility. It will not exist at runtime and should not be used
      * under any circumstances.
+     * 
+     * @param damage amount of damage
      */
     @Deprecated
     public void _INVALID_setLastDamage(int damage);

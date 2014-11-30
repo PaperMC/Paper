@@ -113,7 +113,7 @@ public final class Color implements ConfigurationSerializable {
      * @param green integer from 0-255
      * @param blue integer from 0-255
      * @return a new Color object for the red, green, blue
-     * @throws IllegalArgumentException if any value is strictly >255 or <0
+     * @throws IllegalArgumentException if any value is strictly {@literal >255 or <0}
      */
     public static Color fromRGB(int red, int green, int blue) throws IllegalArgumentException {
         return new Color(red, green, blue);
@@ -126,7 +126,7 @@ public final class Color implements ConfigurationSerializable {
      * @param green integer from 0-255
      * @param red integer from 0-255
      * @return a new Color object for the red, green, blue
-     * @throws IllegalArgumentException if any value is strictly >255 or <0
+     * @throws IllegalArgumentException if any value is strictly {@literal >255 or <0}
      */
     public static Color fromBGR(int blue, int green, int red) throws IllegalArgumentException {
         return new Color(red, green, blue);

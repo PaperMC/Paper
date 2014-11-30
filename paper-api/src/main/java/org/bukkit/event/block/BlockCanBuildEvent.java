@@ -29,6 +29,9 @@ public class BlockCanBuildEvent extends BlockEvent {
     /**
      *
      * @deprecated Magic value
+     * @param block the block involved in this event
+     * @param id the id of the block to place
+     * @param canBuild whether we can build 
      */
     @Deprecated
     public BlockCanBuildEvent(final Block block, final int id, final boolean canBuild) {

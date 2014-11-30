@@ -166,6 +166,7 @@ public final class MapCursor {
 
         /**
          *
+         * @return the value 
          * @deprecated Magic value
          */
         @Deprecated
@@ -175,6 +176,8 @@ public final class MapCursor {
 
         /**
          *
+         * @param value the value
+         * @return the matching type
          * @deprecated Magic value
          */
         @Deprecated

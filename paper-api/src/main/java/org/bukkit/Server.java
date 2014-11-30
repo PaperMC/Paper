@@ -91,7 +91,7 @@ public interface Server extends PluginMessageRecipient {
      * compatibility. It will not exist at runtime and should not be used
      * under any circumstances.
      *
-     * @Deprecated superseded by {@link #getOnlinePlayers()}
+     * @deprecated superseded by {@link #getOnlinePlayers()}
      * @return an array of Players that are currently online
      */
     @Deprecated
@@ -735,7 +735,7 @@ public interface Server extends PluginMessageRecipient {
     /**
      * Creates an empty inventory with the specified type and title. If the type
      * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
-     * otherwise the new inventory has the normal size for its type.<br />
+     * otherwise the new inventory has the normal size for its type.<br>
      * It should be noted that some inventory types do not support titles and
      * may not render with said titles on the Minecraft client.
      *
@@ -913,6 +913,7 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * @see UnsafeValues
+     * @return the unsafe values instance
      */
     @Deprecated
     UnsafeValues getUnsafe();

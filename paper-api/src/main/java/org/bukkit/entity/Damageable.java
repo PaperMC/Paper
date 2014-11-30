@@ -15,6 +15,8 @@ public interface Damageable extends Entity {
      * This method exists for legacy reasons to provide backwards
      * compatibility. It will not exist at runtime and should not be used
      * under any circumstances.
+     * 
+     * @param amount Amount of damage to deal
      */
     @Deprecated
     void _INVALID_damage(int amount);
@@ -32,6 +34,9 @@ public interface Damageable extends Entity {
      * This method exists for legacy reasons to provide backwards
      * compatibility. It will not exist at runtime and should not be used
      * under any circumstances.
+     *
+     * @param amount Amount of damage to deal
+     * @param source Entity which to attribute this damage from
      */
     @Deprecated
     void _INVALID_damage(int amount, Entity source);
@@ -47,6 +52,8 @@ public interface Damageable extends Entity {
      * This method exists for legacy reasons to provide backwards
      * compatibility. It will not exist at runtime and should not be used
      * under any circumstances.
+     * 
+     * @return Health represented from 0 to max
      */
     @Deprecated
     int _INVALID_getHealth();
@@ -56,7 +63,7 @@ public interface Damageable extends Entity {
      * dead.
      *
      * @param health New health represented from 0 to max
-     * @throws IllegalArgumentException Thrown if the health is < 0 or >
+     * @throws IllegalArgumentException Thrown if the health is {@literal < 0 or >}
      *     {@link #getMaxHealth()}
      */
     void setHealth(double health);
@@ -65,6 +72,10 @@ public interface Damageable extends Entity {
      * This method exists for legacy reasons to provide backwards
      * compatibility. It will not exist at runtime and should not be used
      * under any circumstances.
+     *
+     * @param health New health represented from 0 to max
+     * @throws IllegalArgumentException Thrown if the health is {@literal < 0 or >}
+     *     {@link #getMaxHealth()}
      */
     @Deprecated
     void _INVALID_setHealth(int health);
@@ -80,6 +91,8 @@ public interface Damageable extends Entity {
      * This method exists for legacy reasons to provide backwards
      * compatibility. It will not exist at runtime and should not be used
      * under any circumstances.
+     * 
+     * @return Maximum health
      */
     @Deprecated
     int _INVALID_getMaxHealth();
@@ -101,6 +114,8 @@ public interface Damageable extends Entity {
      * This method exists for legacy reasons to provide backwards
      * compatibility. It will not exist at runtime and should not be used
      * under any circumstances.
+     *
+     * @param health amount of health to set the maximum to
      */
     @Deprecated
     void _INVALID_setMaxHealth(int health);

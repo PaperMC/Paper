@@ -38,6 +38,8 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
      * This method exists for legacy reasons to provide backwards
      * compatibility. It will not exist at runtime and should not be used
      * under any circumstances.
+     * 
+     * @return the (rounded) amount regained
      */
     @Deprecated
     public int _INVALID_getAmount() {
@@ -57,16 +59,20 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
      * This method exists for legacy reasons to provide backwards
      * compatibility. It will not exist at runtime and should not be used
      * under any circumstances.
+     * 
+     * @param amount the amount that will be regained
      */
     @Deprecated
     public void _INVALID_setAmount(int amount) {
         setAmount(amount);
     }
 
+    @Override
     public boolean isCancelled() {
         return cancelled;
     }
 
+    @Override
     public void setCancelled(boolean cancel) {
         cancelled = cancel;
     }

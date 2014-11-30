@@ -8,6 +8,7 @@ import java.util.Date;
  * <p>
  * Ban entries include the following properties:
  * <table border=1>
+ * <caption>Property information</caption>
  * <tr>
  *     <th>Property</th>
  *     <th>Description</th>

@@ -9,6 +9,7 @@ public class StringUtil {
      * Copies all elements from the iterable collection of originals to the
      * collection provided.
      *
+     * @param <T> the collection of strings
      * @param token String to search for
      * @param originals An iterable collection of strings to filter.
      * @param collection The collection to add matches to
