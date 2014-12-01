@@ -219,6 +219,20 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
                 openCustomInventory(inventory, player, "minecraft:hopper");
             }
             break;
+        case BEACON:
+            if (craftinv.getInventory() instanceof TileEntityBeacon) {
+                getHandle().openTileEntity((TileEntityBeacon) craftinv.getInventory());
+            } else {
+                openCustomInventory(inventory, player, "minecraft:beacon");
+            }
+            break;
+        case ANVIL:
+            if (craftinv.getInventory() instanceof TileEntityContainerAnvil) {
+                getHandle().openTileEntity((TileEntityContainerAnvil) craftinv.getInventory());
+            } else {
+                openCustomInventory(inventory, player, "minecraft:anvil");
+            }
+            break;
         case CREATIVE:
         case CRAFTING:
             throw new IllegalArgumentException("Can't open a " + type + " inventory!");
@@ -239,6 +253,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         String title = container.getBukkitView().getTitle();
         int size = container.getBukkitView().getTopInventory().getSize();
+
+        // Special cases
+        if (windowType.equals("minecraft:crafting_table") 
+                || windowType.equals("minecraft:anvil")
+                || windowType.equals("minecraft:enchanting_table")
+                ) {
+            size = 0;
+        }
 
         player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title), size));
         getHandle().activeContainer = container;
