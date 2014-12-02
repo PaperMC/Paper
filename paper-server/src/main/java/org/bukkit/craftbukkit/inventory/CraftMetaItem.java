@@ -96,6 +96,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
         static {
             classMap = ImmutableMap.<Class<? extends CraftMetaItem>, String>builder()
+                    .put(CraftMetaBanner.class, "BANNER")
                     .put(CraftMetaBook.class, "BOOK")
                     .put(CraftMetaSkull.class, "SKULL")
                     .put(CraftMetaLeatherArmor.class, "LEATHER_ARMOR")
