@@ -121,7 +121,8 @@ public class CraftBlock implements Block {
     }
 
     public boolean setTypeId(final int type, final boolean applyPhysics) {
-        return setTypeIdAndData(type, getData(), applyPhysics);
+        net.minecraft.server.Block block = getNMSBlock(type);
+        return setTypeIdAndData(type, (byte) block.toLegacyData(block.getBlockData()), applyPhysics);
     }
 
     public boolean setTypeIdAndData(final int type, final byte data, final boolean applyPhysics) {
