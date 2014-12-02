@@ -140,14 +140,12 @@ public class CraftBlockState implements BlockState {
         Block block = getBlock();
 
         if (block.getType() != getType()) {
-            if (force) {
-                block.setTypeId(getTypeId(), applyPhysics);
-            } else {
+            if (!force) {
                 return false;
             }
         }
 
-        block.setData(getRawData(), applyPhysics);
+        block.setTypeIdAndData(getTypeId(), getRawData(), applyPhysics);
         world.getHandle().notify(new BlockPosition(x, y, z));
 
         return true;
