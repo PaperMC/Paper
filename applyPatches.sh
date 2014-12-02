@@ -7,9 +7,10 @@ echo "Rebuilding Forked projects.... "
 function applyPatch {
     what=$1
     target=$2
+    branch=$3
     cd "$basedir/$what"
     git fetch
-    git reset --hard origin/patched
+    git reset --hard "$branch"
     git branch -f upstream >/dev/null
 
     cd "$basedir"
@@ -39,7 +40,7 @@ function applyPatch {
 echo
 echo "Applying SpigotMC patches to CraftBukkit and Bukkit"
 echo
-applyPatch Bukkit Spigot-API && applyPatch CraftBukkit Spigot-Server
+applyPatch Bukkit Spigot-API origin/master && applyPatch CraftBukkit Spigot-Server origin/patched
 echo
 echo "Applying PaperSpigot patches to Spigot-Server and Spigot-API"
 echo
