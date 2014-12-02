@@ -145,8 +145,13 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
     ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
         super.serialize(builder);
         
-        builder.put(BASE.BUKKIT, base);        
-        builder.put(PATTERNS.BUKKIT, ImmutableList.copyOf(patterns));
+        if(base != null){
+            builder.put(BASE.BUKKIT, base);
+        }
+
+        if(!patterns.isEmpty()){
+            builder.put(PATTERNS.BUKKIT, ImmutableList.copyOf(patterns));
+        }
 
         return builder;
     }
