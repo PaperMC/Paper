@@ -52,11 +52,19 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
         case 0:
             return Rotation.NONE;
         case 1:
-            return Rotation.CLOCKWISE;
+            return Rotation.CLOCKWISE_45;
         case 2:
-            return Rotation.FLIPPED;
+            return Rotation.CLOCKWISE;
         case 3:
+            return Rotation.CLOCKWISE_135;
+        case 4:
+            return Rotation.FLIPPED;
+        case 5:
+            return Rotation.FLIPPED_45;
+        case 6:
             return Rotation.COUNTER_CLOCKWISE;
+        case 7:
+            return Rotation.COUNTER_CLOCKWISE_45;
         default:
             throw new AssertionError("Unknown rotation " + value + " for " + getHandle());
         }
@@ -72,12 +80,20 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
         switch (rotation) {
         case NONE:
             return 0;
-        case CLOCKWISE:
+        case CLOCKWISE_45:
             return 1;
-        case FLIPPED:
+        case CLOCKWISE:
             return 2;
-        case COUNTER_CLOCKWISE:
+        case CLOCKWISE_135:
             return 3;
+        case FLIPPED:
+            return 4;
+        case FLIPPED_45:
+            return 5;
+        case COUNTER_CLOCKWISE:
+            return 6;
+        case COUNTER_CLOCKWISE_45:
+            return 7;
         default:
             throw new IllegalArgumentException(rotation + " is not applicable to an ItemFrame");
         }
