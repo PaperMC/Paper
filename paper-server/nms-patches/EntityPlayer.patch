@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/EntityPlayer.java	Sun Nov 30 12:33:51 2014
-+++ src/main/java/net/minecraft/server/EntityPlayer.java	Sun Nov 30 12:31:53 2014
+--- ../work/decompile-8eb82bde//net/minecraft/server/EntityPlayer.java	2014-12-02 15:12:17.558036243 +0000
++++ src/main/java/net/minecraft/server/EntityPlayer.java	2014-12-02 15:08:46.878040919 +0000
 @@ -13,6 +13,17 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -50,7 +50,7 @@
      }
  
      public void a(NBTTagCompound nbttagcompound) {
-@@ -81,13 +108,39 @@
+@@ -81,14 +108,40 @@
                  this.playerInteractManager.setGameMode(EnumGamemode.getById(nbttagcompound.getInt("playerGameType")));
              }
          }
@@ -62,8 +62,8 @@
          super.b(nbttagcompound);
          nbttagcompound.setInt("playerGameType", this.playerInteractManager.getGameMode().getId());
 +        this.getBukkitEntity().setExtraData(nbttagcompound); // CraftBukkit
-+    }
-+
+     }
+ 
 +    // CraftBukkit start - World fallback code, either respawn location or global spawn
 +    public void spawnIn(World world) {
 +        super.spawnIn(world);
@@ -86,11 +86,12 @@
 +        }
 +        this.dimension = ((WorldServer) this.world).dimension;
 +        this.playerInteractManager.a((WorldServer) world);
-     }
++    }
 +    // CraftBukkit end
- 
++
      public void levelDown(int i) {
          super.levelDown(i);
+         this.lastSentExp = -1;
 @@ -114,6 +167,11 @@
      }
  
@@ -174,7 +175,12 @@
 +        if (this.dead) {
 +            return;
 +        }
-+
+ 
+-            if (scoreboardteambase != null && scoreboardteambase.j() != EnumNameTagVisibility.ALWAYS) {
+-                if (scoreboardteambase.j() == EnumNameTagVisibility.HIDE_FOR_OTHER_TEAMS) {
+-                    this.server.getPlayerList().a((EntityHuman) this, this.br().b());
+-                } else if (scoreboardteambase.j() == EnumNameTagVisibility.HIDE_FOR_OWN_TEAM) {
+-                    this.server.getPlayerList().b((EntityHuman) this, this.br().b());
 +        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
 +        boolean keepInventory = this.world.getGameRules().getBoolean("keepInventory");
 +
@@ -182,18 +188,13 @@
 +            for (int i = 0; i < this.inventory.items.length; ++i) {
 +                if (this.inventory.items[i] != null) {
 +                    loot.add(CraftItemStack.asCraftMirror(this.inventory.items[i]));
-+                }
+                 }
 +            }
- 
--            if (scoreboardteambase != null && scoreboardteambase.j() != EnumNameTagVisibility.ALWAYS) {
--                if (scoreboardteambase.j() == EnumNameTagVisibility.HIDE_FOR_OTHER_TEAMS) {
--                    this.server.getPlayerList().a((EntityHuman) this, this.br().b());
--                } else if (scoreboardteambase.j() == EnumNameTagVisibility.HIDE_FOR_OWN_TEAM) {
--                    this.server.getPlayerList().b((EntityHuman) this, this.br().b());
++
 +            for (int i = 0; i < this.inventory.armor.length; ++i) {
 +                if (this.inventory.armor[i] != null) {
 +                    loot.add(CraftItemStack.asCraftMirror(this.inventory.armor[i]));
-                 }
++                }
 +            }
 +        }
 +
@@ -433,19 +434,19 @@
      public void triggerHealthUpdate() {
          this.bK = -1.0E8F;
 +        this.lastSentExp = -1; // CraftBukkit - Added to reset
-+    }
+     }
 +    
 +    // CraftBukkit start - Support multi-line messages
 +    public void sendMessage(IChatBaseComponent[] ichatbasecomponent) {
 +        for (IChatBaseComponent component : ichatbasecomponent) {
 +            this.sendMessage(component);
 +        }
-     }
++    }
 +    // CraftBukkit end
  
      public void b(IChatBaseComponent ichatbasecomponent) {
          this.playerConnection.sendPacket(new PacketPlayOutChat(ichatbasecomponent));
-@@ -867,6 +1035,93 @@
+@@ -867,6 +1035,129 @@
      }
  
      public IChatBaseComponent getPlayerListName() {
@@ -484,11 +485,47 @@
 +
 +        if (type == WeatherType.DOWNFALL) {
 +            this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(2, 0));
-+            // this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(7, this.world.j(1.0F)));
-+            // this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(8, this.world.h(1.0F)));
 +        } else {
 +            this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(1, 0));
 +        }
++    }
++    
++    private float pluginRainPosition;
++    private float pluginRainPositionPrevious;
++    
++    public void updateWeather(float oldRain, float newRain, float oldThunder, float newThunder) {
++        if (this.weather == null) {
++            // Vanilla
++            if (oldRain != newRain) {
++                this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(7, newRain));
++            }            
++        } else {
++            // Plugin
++            if (pluginRainPositionPrevious != pluginRainPosition) {
++                this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(7, pluginRainPosition));
++            }   
++        }
++
++        if (oldThunder != newThunder) {
++            if (weather == WeatherType.DOWNFALL || weather == null) {
++                this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(8, newThunder));
++            } else {
++                this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(8, 0));
++            }
++        }
++    }
++    
++    public void tickWeather() {
++        if (this.weather == null) return;
++
++        pluginRainPositionPrevious = pluginRainPosition;
++        if (weather == WeatherType.DOWNFALL) {
++            pluginRainPosition += 0.01;
++        } else {
++            pluginRainPosition -= 0.01;
++        }
++
++        pluginRainPosition = MathHelper.a(pluginRainPosition, 0.0F, 1.0F);
 +    }
 +
 +    public void resetPlayerWeather() {
