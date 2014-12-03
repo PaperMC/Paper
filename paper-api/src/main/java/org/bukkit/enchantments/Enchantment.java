@@ -51,6 +51,11 @@ public abstract class Enchantment {
     public static final Enchantment THORNS = new EnchantmentWrapper(7);
 
     /**
+     * Increases walking speed while in water
+     */
+    public static final Enchantment DEPTH_STRIDER = new EnchantmentWrapper(8);
+
+    /**
      * Increases damage against all targets
      */
     public static final Enchantment DAMAGE_ALL = new EnchantmentWrapper(16);
