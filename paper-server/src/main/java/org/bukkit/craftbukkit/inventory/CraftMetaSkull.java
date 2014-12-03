@@ -34,7 +34,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
         if (tag.hasKeyOfType(SKULL_OWNER.NBT, 10)) {
             profile = GameProfileSerializer.deserialize(tag.getCompound(SKULL_OWNER.NBT));
-        } else if (tag.hasKeyOfType(SKULL_OWNER.NBT, 8)) {
+        } else if (tag.hasKeyOfType(SKULL_OWNER.NBT, 8) && !tag.getString(SKULL_OWNER.NBT).isEmpty()) {
             profile = new GameProfile(null, tag.getString(SKULL_OWNER.NBT));
         }
     }
