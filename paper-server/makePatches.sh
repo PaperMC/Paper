@@ -5,13 +5,15 @@ then
     echo "Please run this script again with the clean decompile sources as an argument. In most cases this will be ../work/decompile-XXXX"
     exit
 fi
+cb=src/main/java/net/minecraft/server
+nms="$1/net/minecraft/server"
 
-for file in $(ls src/main/java/net/minecraft/server)
+for file in $(/bin/ls $cb)
 do
     echo "Diffing $file"
-    dos2unix -q $1/net/minecraft/server/$file $1/net/minecraft/server/$file
+    sed -i 's/\r//' "$nms/$file"
     outName=$(echo nms-patches/"$(echo $file | cut -d. -f1)".patch)
-    patchNew=$(diff -u $1/net/minecraft/server/$file src/main/java/net/minecraft/server/$file)
+    patchNew=$(diff -u "$nms/$file" "$cb/$file")
     if [ -f "$outName" ]
     then
         patchCut=$(echo "$patchNew" | tail -n +3)
