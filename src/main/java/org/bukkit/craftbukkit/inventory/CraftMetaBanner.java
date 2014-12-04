@@ -60,7 +60,10 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
     CraftMetaBanner(Map<String, Object> map) {
         super(map);
         
-        base = SerializableMeta.getObject(DyeColor.class, map, BASE.BUKKIT, true);
+        String baseStr = SerializableMeta.getString(map, BASE.BUKKIT, true);
+        if (baseStr != null) {
+            base = DyeColor.valueOf(baseStr);
+        }
         
         Iterable<?> rawPatternList = SerializableMeta.getObject(Iterable.class, map, PATTERNS.BUKKIT, true);
         if (rawPatternList == null) {
@@ -146,7 +149,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
         super.serialize(builder);
         
         if(base != null){
-            builder.put(BASE.BUKKIT, base);
+            builder.put(BASE.BUKKIT, base.toString());
         }
 
         if(!patterns.isEmpty()){
