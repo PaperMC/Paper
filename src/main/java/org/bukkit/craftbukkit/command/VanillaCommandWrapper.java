@@ -70,7 +70,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
         return (List<String>) vanillaCommand.tabComplete(getListener(sender), args, new BlockPosition(0, 0, 0));
     }
 
-    public final int dispatchVanillaCommandBlock(CommandBlockListenerAbstract icommandlistener, String s) {
+    public final int dispatchVanillaCommandBlock(ICommandListener icommandlistener, String s) {
         // Copied from net.minecraft.server.CommandHandler
         s = s.trim();
         if (s.startsWith("/")) {
