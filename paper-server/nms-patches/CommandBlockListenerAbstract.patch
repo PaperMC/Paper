@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/CommandBlockListenerAbstract.java	2014-12-02 20:23:51.921621335 +0000
-+++ src/main/java/net/minecraft/server/CommandBlockListenerAbstract.java	2014-12-02 20:23:10.809622247 +0000
+--- ../work/decompile-8eb82bde//net/minecraft/server/CommandBlockListenerAbstract.java	2014-12-05 23:10:24.921614234 +0000
++++ src/main/java/net/minecraft/server/CommandBlockListenerAbstract.java	2014-12-05 23:04:53.325621594 +0000
 @@ -4,6 +4,13 @@
  import java.util.Date;
  import java.util.concurrent.Callable;
@@ -22,132 +22,128 @@
  
      public CommandBlockListenerAbstract() {}
  
-@@ -79,7 +87,110 @@
+@@ -79,7 +87,10 @@
  
              try {
                  this.d = null;
 -                this.b = icommandhandler.a(this, this.e);
 +                // this.b = icommandhandler.a(this, this.e);
 +                // CraftBukkit start - Handle command block commands using Bukkit dispatcher
-+                org.bukkit.command.SimpleCommandMap commandMap = minecraftserver.server.getCommandMap();
-+                Joiner joiner = Joiner.on(" ");
-+                String command = this.e;
-+                if (this.e.startsWith("/")) {
-+                    command = this.e.substring(1);
-+                }
-+                String[] args = command.split(" ");
-+                ArrayList<String[]> commands = new ArrayList<String[]>();
-+
-+                // Block disallowed commands
-+                if (args[0].equalsIgnoreCase("stop") || args[0].equalsIgnoreCase("kick") || args[0].equalsIgnoreCase("op") ||
-+                        args[0].equalsIgnoreCase("deop") || args[0].equalsIgnoreCase("ban") || args[0].equalsIgnoreCase("ban-ip") ||
-+                        args[0].equalsIgnoreCase("pardon") || args[0].equalsIgnoreCase("pardon-ip") || args[0].equalsIgnoreCase("reload")) {
-+                    this.b = 0;
-+                    return;
-+                }
-+
-+                // If the world has no players don't run
-+                if (this.getWorld().players.isEmpty()) {
-+                    this.b = 0;
-+                    return;
-+                }
-+
-+                // Handle vanilla commands;
-+                org.bukkit.command.Command commandBlockCommand = commandMap.getCommand(args[0]);
-+                if (minecraftserver.server.getCommandBlockOverride(args[0])) {
-+                    commandBlockCommand = commandMap.getCommand("minecraft:" + args[0]);
-+                }
-+                if (commandBlockCommand instanceof VanillaCommandWrapper) {
-+                    this.b = ((VanillaCommandWrapper) commandBlockCommand).dispatchVanillaCommandBlock(this, this.e);
-+                    return;
-+                }
-+
-+                // Make sure this is a valid command
-+                if (commandMap.getCommand(args[0]) == null) {
-+                    this.b = 0;
-+                    return;
-+                }
-+
-+                // testfor command requires special handling
-+                if (args[0].equalsIgnoreCase("testfor")) {
-+                    if (args.length < 2) {
-+                        this.b = 0;
-+                        return;
-+                    }
-+
-+                    EntityPlayer[] players = ((java.util.List<EntityPlayer>)PlayerSelector.getPlayers(this, args[1], EntityPlayer.class)).toArray(new EntityPlayer[0]);
-+
-+                    if (players != null && players.length > 0) {
-+                        this.b = players.length;
-+                        return;
-+                    } else {
-+                        EntityPlayer player = MinecraftServer.getServer().getPlayerList().getPlayer(args[1]);
-+                        if (player == null) {
-+                            this.b = 0;
-+                            return;
-+                        } else {
-+                            this.b = 1;
-+                            return;
-+                        }
-+                    }
-+                }
-+
-+                commands.add(args);
-+
-+                // Find positions of command block syntax, if any
-+                ArrayList<String[]> newCommands = new ArrayList<String[]>();
-+                for (int i = 0; i < args.length; i++) {
-+                    if (PlayerSelector.isPattern(args[i])) {
-+                        for (int j = 0; j < commands.size(); j++) {
-+                            newCommands.addAll(this.buildCommands(commands.get(j), i));
-+                        }
-+                        ArrayList<String[]> temp = commands;
-+                        commands = newCommands;
-+                        newCommands = temp;
-+                        newCommands.clear();
-+                    }
-+                }
-+
-+                int completed = 0;
-+
-+                // Now dispatch all of the commands we ended up with
-+                for (int i = 0; i < commands.size(); i++) {
-+                    try {
-+                        if (commandMap.dispatch(sender, joiner.join(java.util.Arrays.asList(commands.get(i))))) {
-+                            completed++;
-+                        }
-+                    } catch (Throwable exception) {
-+                        if(this instanceof TileEntityCommandListener) {
-+                            TileEntityCommandListener listener = (TileEntityCommandListener) this;
-+                            MinecraftServer.getLogger().log(Level.WARN, String.format("CommandBlock at (%d,%d,%d) failed to handle command", listener.getChunkCoordinates().getX(), listener.getChunkCoordinates().getY(), listener.getChunkCoordinates().getZ()), exception);
-+                        } else if (this instanceof EntityMinecartCommandBlockListener) {
-+                            EntityMinecartCommandBlockListener listener = (EntityMinecartCommandBlockListener) this;
-+                            MinecraftServer.getLogger().log(Level.WARN, String.format("MinecartCommandBlock at (%d,%d,%d) failed to handle command", listener.getChunkCoordinates().getX(), listener.getChunkCoordinates().getY(), listener.getChunkCoordinates().getZ()), exception);
-+                        } else {
-+                            MinecraftServer.getLogger().log(Level.WARN, String.format("Unknown CommandBlock failed to handle command"), exception);
-+                        }
-+                    }
-+                }
-+
-+                this.b = completed;
++                this.b= executeCommand(this, sender, this.e);
 +                // CraftBukkit end
              } catch (Throwable throwable) {
                  CrashReport crashreport = CrashReport.a(throwable, "Executing command block");
                  CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Command to be executed");
-@@ -91,8 +202,27 @@
+@@ -91,8 +102,123 @@
          } else {
              this.b = 0;
          }
 +    }
 + 
 +    // CraftBukkit start
-+    private ArrayList<String[]> buildCommands(String[] args, int pos) {
++    
++    public static int executeCommand(ICommandListener sender, org.bukkit.command.CommandSender bSender, String command) {
++        org.bukkit.command.SimpleCommandMap commandMap = sender.getWorld().getServer().getCommandMap();
++        Joiner joiner = Joiner.on(" ");
++        if (command.startsWith("/")) {
++            command = command.substring(1);
++        }
++        String[] args = command.split(" ");
 +        ArrayList<String[]> commands = new ArrayList<String[]>();
-+        java.util.List<EntityPlayer> players = (java.util.List<EntityPlayer>)PlayerSelector.getPlayers(this, args[pos], EntityPlayer.class);
++
++        // Block disallowed commands
++        if (args[0].equalsIgnoreCase("stop") || args[0].equalsIgnoreCase("kick") || args[0].equalsIgnoreCase("op")
++                || args[0].equalsIgnoreCase("deop") || args[0].equalsIgnoreCase("ban") || args[0].equalsIgnoreCase("ban-ip")
++                || args[0].equalsIgnoreCase("pardon") || args[0].equalsIgnoreCase("pardon-ip") || args[0].equalsIgnoreCase("reload")) {
++            return 0;
++        }
++
++        // If the world has no players don't run
++        if (sender.getWorld().players.isEmpty()) {
++            return 0;
++        }
++
++        // Handle vanilla commands;
++        org.bukkit.command.Command commandBlockCommand = commandMap.getCommand(args[0]);
++        if (sender.getWorld().getServer().getCommandBlockOverride(args[0])) {
++            commandBlockCommand = commandMap.getCommand("minecraft:" + args[0]);
++        }
++        if (commandBlockCommand instanceof VanillaCommandWrapper) {
++            return ((VanillaCommandWrapper) commandBlockCommand).dispatchVanillaCommandBlock(sender, command);
++        }
++
++        // Make sure this is a valid command
++        if (commandMap.getCommand(args[0]) == null) {
++            return 0;
++        }
++
++        // testfor command requires special handling
++        if (args[0].equalsIgnoreCase("testfor")) {
++            if (args.length < 2) {
++                return 0;
++            }
++
++            EntityPlayer[] players = ((java.util.List<EntityPlayer>) PlayerSelector.getPlayers(sender, args[1], EntityPlayer.class)).toArray(new EntityPlayer[0]);
++
++            if (players != null && players.length > 0) {
++                return players.length;
++            } else {
++                EntityPlayer player = MinecraftServer.getServer().getPlayerList().getPlayer(args[1]);
++                if (player == null) {
++                    return 0;
++                } else {
++                    return 1;
++                }
++            }
++        }
++
++        commands.add(args);
++
++        // Find positions of command block syntax, if any
++        ArrayList<String[]> newCommands = new ArrayList<String[]>();
++        for (int i = 0; i < args.length; i++) {
++            if (PlayerSelector.isPattern(args[i])) {
++                for (int j = 0; j < commands.size(); j++) {
++                    newCommands.addAll(buildCommands(sender, commands.get(j), i));
++                }
++                ArrayList<String[]> temp = commands;
++                commands = newCommands;
++                newCommands = temp;
++                newCommands.clear();
++            }
++        }
++
++        int completed = 0;
++
++        // Now dispatch all of the commands we ended up with
++        for (int i = 0; i < commands.size(); i++) {
++            try {
++                if (commandMap.dispatch(bSender, joiner.join(java.util.Arrays.asList(commands.get(i))))) {
++                    completed++;
++                }
++            } catch (Throwable exception) {
++                if (sender instanceof TileEntityCommandListener) {
++                    TileEntityCommandListener listener = (TileEntityCommandListener) sender;
++                    MinecraftServer.getLogger().log(Level.WARN, String.format("CommandBlock at (%d,%d,%d) failed to handle command", listener.getChunkCoordinates().getX(), listener.getChunkCoordinates().getY(), listener.getChunkCoordinates().getZ()), exception);
++                } else if (sender instanceof EntityMinecartCommandBlockListener) {
++                    EntityMinecartCommandBlockListener listener = (EntityMinecartCommandBlockListener) sender;
++                    MinecraftServer.getLogger().log(Level.WARN, String.format("MinecartCommandBlock at (%d,%d,%d) failed to handle command", listener.getChunkCoordinates().getX(), listener.getChunkCoordinates().getY(), listener.getChunkCoordinates().getZ()), exception);
++                } else {
++                    MinecraftServer.getLogger().log(Level.WARN, String.format("Unknown CommandBlock failed to handle command"), exception);
++                }
++            }
++        }
++
++        return completed;
++    }
++    
++    private static ArrayList<String[]> buildCommands(ICommandListener sender, String[] args, int pos) {
++        ArrayList<String[]> commands = new ArrayList<String[]>();
++        java.util.List<EntityPlayer> players = (java.util.List<EntityPlayer>)PlayerSelector.getPlayers(sender, args[pos], EntityPlayer.class);
 +        
 +        if (players != null) {
 +            for (EntityPlayer player : players) {
-+                if (player.world != this.getWorld()) {
++                if (player.world != sender.getWorld()) {
 +                    continue;
 +                }
 +                String[] command = args.clone();
