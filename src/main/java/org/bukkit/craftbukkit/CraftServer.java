@@ -415,13 +415,12 @@ public final class CraftServer implements Server {
         return null;
     }
 
-    // TODO: In 1.8+ this should use the server's UUID->EntityPlayer map
     @Override
     public Player getPlayer(UUID id) {
-        for (Player player : getOnlinePlayers()) {
-            if (player.getUniqueId().equals(id)) {
-                return player;
-            }
+        EntityPlayer player = playerList.a(id);
+
+        if (player != null) {
+            return player.getBukkitEntity();
         }
 
         return null;
