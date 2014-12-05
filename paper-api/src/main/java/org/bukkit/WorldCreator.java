@@ -15,6 +15,7 @@ public class WorldCreator {
     private ChunkGenerator generator = null;
     private WorldType type = WorldType.NORMAL;
     private boolean generateStructures = true;
+    private String generatorSettings = "";
 
     /**
      * Creates an empty WorldCreationOptions for the given world name
@@ -203,6 +204,27 @@ public class WorldCreator {
         this.generator = getGeneratorForName(name, generator, output);
 
         return this;
+    }
+
+    /**
+     * Sets the generator settings of the world that will be created or loaded
+     *
+     * @param generatorSettings The settings that should be used by the generator
+     * @return This object, for chaining
+     */
+    public WorldCreator generatorSettings(String generatorSettings) {
+        this.generatorSettings = generatorSettings;
+
+        return this;
+    }
+
+    /**
+     * Gets the generator settings of the world that will be created or loaded
+     *
+     * @return The settings that should be used by the generator
+     */
+    public String generatorSettings() {
+        return generatorSettings;
     }
 
     /**
