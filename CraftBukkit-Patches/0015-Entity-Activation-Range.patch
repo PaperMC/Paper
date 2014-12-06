@@ -1,4 +1,4 @@
-From d0ed5eb0f50dda5d850e23ce84f79817e4f817d8 Mon Sep 17 00:00:00 2001
+From f7ebeca13ae1e54ffcc844911f14e4a037f14f1f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 3 Feb 2013 05:10:21 -0500
 Subject: [PATCH] Entity Activation Range
@@ -9,10 +9,10 @@ This will drastically cut down on tick timings for entities that are not in rang
 This change can have dramatic impact on gameplay if configured too low. Balance according to your servers desired gameplay.
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index e2f3456..10e99d1 100644
+index 59473f5..cffe530 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -89,7 +89,7 @@ public abstract class Entity implements ICommandListener {
+@@ -89,14 +89,14 @@ public abstract class Entity implements ICommandListener {
      public int ticksLived;
      public int maxFireTicks;
      public int fireTicks;
@@ -21,6 +21,14 @@ index e2f3456..10e99d1 100644
      public int noDamageTicks;
      protected boolean justCreated;
      protected boolean fireProof;
+     protected DataWatcher datawatcher;
+     private double ap;
+     private double aq;
+-    public boolean ad;
++    public boolean ad;public boolean isAddedToChunk() { return ad; } // Spigot
+     public int ae;
+     public int af;
+     public int ag;
 @@ -113,7 +113,13 @@ public abstract class Entity implements ICommandListener {
      public boolean valid; // CraftBukkit
      public org.bukkit.projectiles.ProjectileSource projectileSource; // CraftBukkit - For projectiles only
@@ -155,7 +163,7 @@ index 803b5df..86474de 100644
      public void G() {
          this.damageEntity(DamageSource.OUT_OF_WORLD, Float.MAX_VALUE);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 9cb7ab8..aa6d407 100644
+index 0584909..e5da9db 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1256,6 +1256,7 @@ public abstract class World implements IBlockAccess {
@@ -197,10 +205,10 @@ index 558574f..41d2d87 100644
      public static final HashMap<String, CustomTimingsHandler> pluginTaskTimingMap = new HashMap<String, CustomTimingsHandler>();
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
 new file mode 100644
-index 0000000..8ca6e20
+index 0000000..3505475
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
-@@ -0,0 +1,278 @@
+@@ -0,0 +1,283 @@
 +package org.spigotmc;
 +
 +import java.util.ArrayList;
@@ -447,6 +455,11 @@ index 0000000..8ca6e20
 +    public static boolean checkIfActive(Entity entity)
 +    {
 +        SpigotTimings.checkIfActiveTimer.startTiming();
++        if ( !entity.isAddedToChunk() ) {
++            SpigotTimings.checkIfActiveTimer.stopTiming();
++            return true;
++        }
++
 +        boolean isActive = entity.activatedTick >= MinecraftServer.currentTick || entity.defaultActivationState;
 +
 +        // Should this entity tick?
@@ -500,5 +513,5 @@ index 46249d7..ed2836a 100644
 +    }
  }
 -- 
-2.1.0
+1.9.1
 
