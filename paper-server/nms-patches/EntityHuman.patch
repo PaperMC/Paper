@@ -1,6 +1,6 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/EntityHuman.java	2014-11-30 16:35:27.792804607 +0000
-+++ src/main/java/net/minecraft/server/EntityHuman.java	2014-11-30 16:34:50.780805428 +0000
-@@ -8,13 +8,25 @@
+--- ../work/decompile-8eb82bde//net/minecraft/server/EntityHuman.java	Sat Dec  6 21:26:20 2014
++++ src/main/java/net/minecraft/server/EntityHuman.java	Sat Dec  6 21:26:07 2014
+@@ -8,13 +8,27 @@
  import java.util.List;
  import java.util.UUID;
  
@@ -14,6 +14,8 @@
 +import org.bukkit.event.player.PlayerBedLeaveEvent;
 +import org.bukkit.event.player.PlayerDropItemEvent;
 +import org.bukkit.event.player.PlayerItemConsumeEvent;
++import org.bukkit.event.player.PlayerVelocityEvent;
++import org.bukkit.util.Vector;
 +// CraftBukkit end
 +
  public abstract class EntityHuman extends EntityLiving {
@@ -27,7 +29,7 @@
      protected int bk;
      public float bl;
      public float bm;
-@@ -34,6 +46,7 @@
+@@ -34,6 +48,7 @@
      private boolean d;
      private BlockPosition e;
      public PlayerAbilities abilities = new PlayerAbilities();
@@ -35,7 +37,7 @@
      public int expLevel;
      public int expTotal;
      public float exp;
-@@ -46,6 +59,16 @@
+@@ -46,6 +61,16 @@
      private final GameProfile bF;
      private boolean bG = false;
      public EntityFishingHook hookedFish;
@@ -52,7 +54,7 @@
  
      public EntityHuman(World world, GameProfile gameprofile) {
          super(world);
-@@ -265,6 +288,32 @@
+@@ -265,6 +290,32 @@
          if (this.g != null) {
              this.b(this.g, 16);
              int i = this.g.count;
@@ -85,7 +87,7 @@
              ItemStack itemstack = this.g.b(this.world, this);
  
              if (itemstack != this.g || itemstack != null && itemstack.count != i) {
-@@ -324,7 +373,8 @@
+@@ -324,7 +375,8 @@
  
          if (this.world.getDifficulty() == EnumDifficulty.PEACEFUL && this.world.getGameRules().getBoolean("naturalRegeneration")) {
              if (this.getHealth() < this.getMaxHealth() && this.ticksLived % 20 == 0) {
@@ -95,7 +97,7 @@
              }
  
              if (this.foodData.c() && this.ticksLived % 10 == 0) {
-@@ -348,7 +398,7 @@
+@@ -348,7 +400,7 @@
  
          this.j((float) attributeinstance.getValue());
          float f = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
@@ -104,7 +106,7 @@
  
          if (f > 0.1F) {
              f = 0.1F;
-@@ -438,11 +488,14 @@
+@@ -438,11 +490,14 @@
  
      public void b(Entity entity, int i) {
          this.addScore(i);
@@ -121,7 +123,7 @@
              collection.addAll(this.e(entity));
          } else {
              this.b(StatisticList.z);
-@@ -451,8 +504,7 @@
+@@ -451,8 +506,7 @@
          Iterator iterator = collection.iterator();
  
          while (iterator.hasNext()) {
@@ -131,7 +133,7 @@
  
              scoreboardscore.incrementScore();
          }
-@@ -491,6 +543,7 @@
+@@ -491,6 +545,7 @@
      }
  
      public EntityItem a(boolean flag) {
@@ -139,7 +141,7 @@
          return this.a(this.inventory.splitStack(this.inventory.itemInHandIndex, flag && this.inventory.getItemInHand() != null ? this.inventory.getItemInHand().count : 1), false, true);
      }
  
-@@ -532,6 +585,30 @@
+@@ -532,6 +587,30 @@
                  entityitem.motY += (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F);
                  entityitem.motZ += Math.sin((double) f1) * (double) f;
              }
@@ -170,7 +172,7 @@
  
              this.a(entityitem);
              if (flag1) {
-@@ -623,10 +700,18 @@
+@@ -623,10 +702,18 @@
              this.bv = new BlockPosition(this);
              this.a(true, true, false);
          }
@@ -189,7 +191,7 @@
          }
  
          this.foodData.a(nbttagcompound);
-@@ -684,7 +769,7 @@
+@@ -684,7 +771,7 @@
  
                  if (damagesource.r()) {
                      if (this.world.getDifficulty() == EnumDifficulty.PEACEFUL) {
@@ -198,7 +200,7 @@
                      }
  
                      if (this.world.getDifficulty() == EnumDifficulty.EASY) {
-@@ -696,7 +781,7 @@
+@@ -696,7 +783,7 @@
                      }
                  }
  
@@ -207,7 +209,7 @@
                      return false;
                  } else {
                      Entity entity = damagesource.getEntity();
-@@ -712,10 +797,29 @@
+@@ -712,10 +799,29 @@
      }
  
      public boolean a(EntityHuman entityhuman) {
@@ -240,7 +242,7 @@
      }
  
      protected void damageArmor(float f) {
-@@ -742,7 +846,12 @@
+@@ -742,7 +848,12 @@
          return (float) i / (float) this.inventory.armor.length;
      }
  
@@ -254,7 +256,7 @@
          if (!this.isInvulnerable(damagesource)) {
              if (!damagesource.ignoresArmor() && this.isBlocking() && f > 0.0F) {
                  f = (1.0F + f) * 0.5F;
-@@ -766,6 +875,7 @@
+@@ -766,6 +877,7 @@
  
              }
          }
@@ -262,7 +264,7 @@
      }
  
      public void openSign(TileEntitySign tileentitysign) {}
-@@ -800,7 +910,8 @@
+@@ -800,7 +912,8 @@
                      }
  
                      if (itemstack.a(this, (EntityLiving) entity)) {
@@ -272,7 +274,7 @@
                              this.bZ();
                          }
  
-@@ -866,8 +977,15 @@
+@@ -866,8 +979,15 @@
                      int j = EnchantmentManager.getFireAspectEnchantmentLevel(this);
  
                      if (entity instanceof EntityLiving && j > 0 && !entity.isBurning()) {
@@ -290,7 +292,41 @@
                      }
  
                      double d0 = entity.motX;
-@@ -922,7 +1040,8 @@
+@@ -884,11 +1004,28 @@
+                         }
+ 
+                         if (entity instanceof EntityPlayer && entity.velocityChanged) {
+-                            ((EntityPlayer) entity).playerConnection.sendPacket(new PacketPlayOutEntityVelocity(entity));
+-                            entity.velocityChanged = false;
+-                            entity.motX = d0;
+-                            entity.motY = d1;
+-                            entity.motZ = d2;
++                            // CraftBukkit start - Add Velocity Event
++                            boolean cancelled = false;
++                            Player player = (Player) entity.getBukkitEntity();
++                            org.bukkit.util.Vector velocity = new Vector( d0, d1, d2 );
++
++                            PlayerVelocityEvent event = new PlayerVelocityEvent(player, velocity);
++                            world.getServer().getPluginManager().callEvent(event);
++
++                            if (event.isCancelled()) {
++                                cancelled = true;
++                            } else if (!velocity.equals(event.getVelocity())) {
++                                player.setVelocity(velocity);
++                            }
++
++                            if (!cancelled) {
++                                ( (EntityPlayer) entity ).playerConnection.sendPacket( new PacketPlayOutEntityVelocity( entity ) );
++                                entity.velocityChanged = false;
++                                entity.motX = d0;
++                                entity.motY = d1;
++                                entity.motZ = d2;
++                            }
++                            // CraftBukkit end
+                         }
+ 
+                         if (flag) {
+@@ -922,7 +1059,8 @@
  
                          if (itemstack != null && object instanceof EntityLiving) {
                              itemstack.a((EntityLiving) object, this);
@@ -300,7 +336,7 @@
                                  this.bZ();
                              }
                          }
-@@ -930,7 +1049,14 @@
+@@ -930,7 +1068,14 @@
                          if (entity instanceof EntityLiving) {
                              this.a(StatisticList.w, Math.round(f * 10.0F));
                              if (j > 0) {
@@ -316,7 +352,7 @@
                              }
                          }
  
-@@ -995,6 +1121,20 @@
+@@ -995,6 +1140,20 @@
          if (this.av()) {
              this.mount((Entity) null);
          }
@@ -337,7 +373,7 @@
  
          this.a(0.2F, 0.2F);
          if (this.world.isLoaded(blockposition)) {
-@@ -1077,6 +1217,23 @@
+@@ -1077,6 +1236,23 @@
          if (!this.world.isStatic && flag1) {
              this.world.everyoneSleeping();
          }
@@ -361,7 +397,7 @@
  
          this.sleepTicks = flag ? 0 : 100;
          if (flag2) {
-@@ -1090,6 +1247,7 @@
+@@ -1090,6 +1266,7 @@
      }
  
      public static BlockPosition getBed(World world, BlockPosition blockposition, boolean flag) {
@@ -369,7 +405,7 @@
          if (world.getType(blockposition).getBlock() != Blocks.BED) {
              if (!flag) {
                  return null;
-@@ -1128,9 +1286,11 @@
+@@ -1128,9 +1305,11 @@
          if (blockposition != null) {
              this.c = blockposition;
              this.d = flag;
@@ -381,7 +417,7 @@
          }
  
      }
-@@ -1477,6 +1637,7 @@
+@@ -1477,6 +1656,7 @@
      }
  
      public IChatBaseComponent getScoreboardDisplayName() {
