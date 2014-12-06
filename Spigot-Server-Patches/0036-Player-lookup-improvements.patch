@@ -1,4 +1,4 @@
-From 0d9f4bc43cd3f638de483f1c7b9139896c888bba Mon Sep 17 00:00:00 2001
+From 7195c33c775f1a8e89e96a70f00cea5aa5e3f68d Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 28 Nov 2014 13:43:11 -0600
 Subject: [PATCH] Player lookup improvements
@@ -13,7 +13,7 @@ By using a map based approach for player lookups, player lookup should
 be consistent in performance regardless of how many players are online.
 
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 04d9be9..9595b54 100644
+index fc7b7f0..69585aa 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -48,6 +48,39 @@ public abstract class PlayerList {
@@ -83,16 +83,17 @@ index 04d9be9..9595b54 100644
          for (int i = 0; i < this.players.size(); ++i) {
              entityplayer = (EntityPlayer) this.players.get(i);
              if (entityplayer.getUniqueID().equals(uuid)) {
-@@ -414,6 +453,8 @@ public abstract class PlayerList {
+@@ -414,6 +453,9 @@ public abstract class PlayerList {
  
          while (iterator.hasNext()) {
              entityplayer = (EntityPlayer) iterator.next();
-+        */
++            */
 +        if ((entityplayer = uuidMap.get(uuid)) != null) {
++        // PaperSpigot end
              entityplayer.playerConnection.disconnect("You logged in from another location");
          }
  
-@@ -924,6 +965,7 @@ public abstract class PlayerList {
+@@ -924,6 +966,7 @@ public abstract class PlayerList {
      }
  
      public EntityPlayer getPlayer(String s) {
@@ -124,7 +125,7 @@ index 8be0698..1dc9fb3 100644
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index dca6f17..2845152 100644
+index 590fe28..127947f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -397,7 +397,12 @@ public final class CraftServer implements Server {
@@ -141,7 +142,7 @@ index dca6f17..2845152 100644
          String lowerName = name.toLowerCase();
          int delta = Integer.MAX_VALUE;
          for (Player player : getOnlinePlayers()) {
-@@ -418,27 +423,19 @@ public final class CraftServer implements Server {
+@@ -418,15 +423,10 @@ public final class CraftServer implements Server {
      public Player getPlayerExact(String name) {
          Validate.notNull(name, "Name cannot be null");
  
@@ -157,28 +158,12 @@ index dca6f17..2845152 100644
 +        // PaperSpigot start - Improved player lookup, replace whole method
 +        EntityPlayer player = playerList.playerMap.get(name);
 +        return player != null ? player.getBukkitEntity() : null;
-+         // PaperSpigot end
-     }
- 
-     // TODO: In 1.8+ this should use the server's UUID->EntityPlayer map
-     @Override
-     public Player getPlayer(UUID id) {
--        for (Player player : getOnlinePlayers()) {
--            if (player.getUniqueId().equals(id)) {
--                return player;
--            }
--        }
--
--        return null;
-+        // PaperSpigot start - Improved player lookup, replace whole method
-+        EntityPlayer player = playerList.uuidMap.get(id);
-+        return player != null ? player.getBukkitEntity() : null;
 +        // PaperSpigot end
      }
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 6da3b32..7f55310 100644
+index b8a37b6..405ec6a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -103,13 +103,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
