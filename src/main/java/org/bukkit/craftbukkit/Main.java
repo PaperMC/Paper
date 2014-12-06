@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import net.minecraft.server.MinecraftServer;
+import org.fusesource.jansi.AnsiConsole;
 
 public class Main {
     public static boolean useJline = true;
@@ -145,7 +146,9 @@ public class Main {
                     useJline = false;
                 }
 
-                if (!useJline) {
+                if (useJline) {
+                    AnsiConsole.systemInstall();
+                } else {
                     // This ensures the terminal literal will always match the jline implementation
                     System.setProperty(jline.TerminalFactory.JLINE_TERMINAL, jline.UnsupportedTerminal.class.getName());
                 }
