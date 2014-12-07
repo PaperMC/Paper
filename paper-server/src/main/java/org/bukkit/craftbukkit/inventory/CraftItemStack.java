@@ -347,6 +347,19 @@ public final class CraftItemStack extends ItemStack {
                 return new CraftMetaEnchantedBook(item.getTag());
             case BANNER:
                 return new CraftMetaBanner(item.getTag());
+            case COMMAND:
+            case CHEST:
+            case TRAPPED_CHEST:
+            case FURNACE:
+            case HOPPER:
+            case MOB_SPAWNER:
+            case SIGN:
+            case BREWING_STAND_ITEM:
+            case JUKEBOX:
+            case FLOWER_POT_ITEM:
+            case DISPENSER:
+            case DROPPER:
+                return new CraftMetaTileEntity(item.getTag(), CraftMagicNumbers.getMaterial(item.getItem()));                
             default:
                 return new CraftMetaItem(item.getTag());
         }

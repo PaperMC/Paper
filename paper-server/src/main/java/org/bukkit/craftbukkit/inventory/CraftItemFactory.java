@@ -83,6 +83,26 @@ public final class CraftItemFactory implements ItemFactory {
             return meta instanceof CraftMetaEnchantedBook ? meta : new CraftMetaEnchantedBook(meta);
         case BANNER:
             return meta instanceof CraftMetaBanner ? meta : new CraftMetaBanner(meta);
+        case COMMAND:
+        case CHEST:
+        case TRAPPED_CHEST:
+        case FURNACE:
+        case HOPPER:
+        case MOB_SPAWNER:
+        case SIGN:
+        case BREWING_STAND_ITEM:
+        case JUKEBOX:
+        case FLOWER_POT_ITEM:
+        case DISPENSER:
+        case DROPPER:
+            if (meta instanceof CraftMetaTileEntity) {
+                CraftMetaTileEntity te = (CraftMetaTileEntity) meta;
+                if (te.material != material) {
+                    return new CraftMetaTileEntity((CraftMetaTileEntity) null, material);
+                }
+                return meta;
+            }
+            return new CraftMetaTileEntity(meta, material);
         default:
             return new CraftMetaItem(meta);
         }
