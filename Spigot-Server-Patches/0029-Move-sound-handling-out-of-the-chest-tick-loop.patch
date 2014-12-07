@@ -1,4 +1,4 @@
-From bd1c3a3d30ceff9067f09560e487f5d0613b9974 Mon Sep 17 00:00:00 2001
+From 177e07b2410353cc0085387554ed7204d76ba9e6 Mon Sep 17 00:00:00 2001
 From: Iceee <andrew@opticgaming.tv>
 Date: Fri, 28 Nov 2014 11:56:55 -0600
 Subject: [PATCH] Move sound handling out of the chest tick loop
@@ -7,7 +7,7 @@ This allows us to disable ticking chests and enderchests without any
 noticeable difference to players
 
 diff --git a/src/main/java/net/minecraft/server/TileEntityChest.java b/src/main/java/net/minecraft/server/TileEntityChest.java
-index 0f29365..135f2f7 100644
+index 0f29365..e8f7aeb 100644
 --- a/src/main/java/net/minecraft/server/TileEntityChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityChest.java
 @@ -12,13 +12,13 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
@@ -26,7 +26,7 @@ index 0f29365..135f2f7 100644
 +    public float j; // PaperSpigot - lidAngle
      public float k;
 -    public int l;
-+    public int l; // PaperSpigot - playersUsing
++    public int l; // PaperSpigot - numPlayersUsing
      private int n;
      private int o = -1;
      private String p;
@@ -48,13 +48,17 @@ index 0f29365..135f2f7 100644
  
      }
  
-@@ -340,6 +344,27 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
+@@ -340,6 +344,31 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
  
              ++this.l;
              if (this.world == null) return; // CraftBukkit
 +
 +            // PaperSpigot - Move chest open sound out of the tick loop
-+            if (this.l > 1 && this.j == 0.0F && this.f == null && this.h == null) {
++            this.m();
++
++            if (this.l > 0 && this.j == 0.0F && this.f == null && this.h == null) {
++                this.j = 0.7F;
++
 +                int locX = this.position.getX();
 +                int locY = this.position.getY();
 +                int locZ = this.position.getZ();
@@ -76,7 +80,7 @@ index 0f29365..135f2f7 100644
              this.world.playBlockAction(this.position, this.w(), 1, this.l);
  
              // CraftBukkit start - Call redstone event
-@@ -363,6 +388,41 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
+@@ -363,6 +392,39 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
              
              --this.l;
              if (this.world == null) return; // CraftBukkit
@@ -109,9 +113,7 @@ index 0f29365..135f2f7 100644
 +
 +                this.world.makeSound(d0, (double) locY + 0.5D, d2, "random.chestclosed", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
 +
-+                if (this.j < 0.0F) {
-+                    this.j = 0.0F;
-+                }
++                this.j = 0.0F;
 +            }
 +            // PaperSpigot end
 +
@@ -119,7 +121,7 @@ index 0f29365..135f2f7 100644
              
              // CraftBukkit start - Call redstone event
 diff --git a/src/main/java/net/minecraft/server/TileEntityEnderChest.java b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
-index 218b801..2a202b7 100644
+index 218b801..15600ca 100644
 --- a/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 @@ -2,14 +2,16 @@ package net.minecraft.server;
@@ -150,13 +152,15 @@ index 218b801..2a202b7 100644
  
      }
  
-@@ -73,11 +77,62 @@ public class TileEntityEnderChest extends TileEntity implements IUpdatePlayerLis
+@@ -73,11 +77,43 @@ public class TileEntityEnderChest extends TileEntity implements IUpdatePlayerLis
  
      public void b() {
          ++this.g;
 +
 +        // PaperSpigot start - Move enderchest open sounds out of the tick loop
 +        if (this.g > 0 && this.a == 0.0F) {
++            this.a = 0.7F;
++
 +            int locX = this.position.getX();
 +            int locY = this.position.getY();
 +            int locZ = this.position.getZ();
@@ -165,8 +169,6 @@ index 218b801..2a202b7 100644
 +            double d0 = (double) locZ + 0.5D;
 +
 +            this.world.makeSound(d1, (double) locY + 0.5D, d0, "random.chestopen", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
-+
-+            this.a = 0.7F;
 +        }
 +        // PaperSpigot end
 +
@@ -182,31 +184,12 @@ index 218b801..2a202b7 100644
 +            int locY = this.position.getY();
 +            int locZ = this.position.getZ();
 +
-+            float f = 0.1F;
++            double d0 = (double) locX + 0.5D;
++            double d2 = (double) locZ + 0.5D;
 +
-+            if (this.g > 0) {
-+                this.a += f;
-+            } else {
-+                this.a -= f;
-+            }
++            this.world.makeSound(d0, (double) locY + 0.5D, d2, "random.chestclosed", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
 +
-+            if (this.a > 1.0F) {
-+                this.a = 1.0F;
-+            }
-+
-+            float f1 = this.a;
-+            float f2 = 0.5F;
-+
-+            if (this.a < f2 && f1 >= f2) {
-+                double d0 = (double) locX + 0.5D;
-+                double d2 = (double) locZ + 0.5D;
-+
-+                this.world.makeSound(d0, (double) locY + 0.5D, d2, "random.chestclosed", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
-+            }
-+
-+            if (this.a < 0.0F) {
-+                this.a = 0.0F;
-+            }
++            this.a = 0.0F;
 +        }
 +        // PaperSpigot end
 +
