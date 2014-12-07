@@ -225,7 +225,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
         this.repairCost = meta.repairCost;
         this.attributes = meta.attributes;
-        blockEntityTag = meta.blockEntityTag;
+        this.blockEntityTag = meta.blockEntityTag;
     }
 
     CraftMetaItem(NBTTagCompound tag) {
