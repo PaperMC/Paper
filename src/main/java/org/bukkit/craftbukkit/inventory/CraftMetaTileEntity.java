@@ -97,19 +97,26 @@ public class CraftMetaTileEntity extends CraftMetaItem {
 
     @Override
     boolean applicableTo(Material type) {
-        switch(type){            
-            case COMMAND:
+        switch(type){         
+            case FURNACE:
             case CHEST:
             case TRAPPED_CHEST:
-            case FURNACE:
-            case HOPPER:
-            case MOB_SPAWNER:
-            case SIGN:
-            case BREWING_STAND_ITEM:
             case JUKEBOX:
-            case FLOWER_POT_ITEM:
             case DISPENSER:
             case DROPPER:
+            case SIGN:
+            case MOB_SPAWNER:
+            case NOTE_BLOCK:
+            case PISTON_BASE:
+            case BREWING_STAND_ITEM:
+            case ENCHANTMENT_TABLE:
+            case COMMAND:
+            case BEACON:
+            case DAYLIGHT_DETECTOR:
+            case DAYLIGHT_DETECTOR_INVERTED:
+            case HOPPER:
+            case REDSTONE_COMPARATOR:
+            case FLOWER_POT_ITEM:
                 return true;
         }
         return false;
