@@ -27,6 +27,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
 
     CraftMetaBanner(CraftMetaItem meta) {
         super(meta);
+        blockEntityTag = null; 
 
         if (!(meta instanceof CraftMetaBanner)) {
             return;
@@ -39,6 +40,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
 
     CraftMetaBanner(NBTTagCompound tag) {
         super(tag);
+        blockEntityTag = null; 
         
         if (!tag.hasKey("BlockEntityTag")) {
             return;
@@ -59,6 +61,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
 
     CraftMetaBanner(Map<String, Object> map) {
         super(map);
+        blockEntityTag = null; 
         
         String baseStr = SerializableMeta.getString(map, BASE.BUKKIT, true);
         if (baseStr != null) {
