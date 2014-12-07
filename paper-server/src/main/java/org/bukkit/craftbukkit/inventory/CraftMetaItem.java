@@ -204,7 +204,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
     private Map<Enchantment, Integer> enchantments;
     private int repairCost;
     private final NBTTagList attributes;
-    private final NBTTagCompound blockEntityTag;
+    protected NBTTagCompound blockEntityTag;
 
     CraftMetaItem(CraftMetaItem meta) {
         if (meta == null) {
@@ -556,7 +556,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
                 && (this.hasLore() ? that.hasLore() && this.lore.equals(that.lore) : !that.hasLore())
                 && (this.hasAttributes() ? that.hasAttributes() && this.attributes.equals(that.attributes) : !that.hasAttributes())
                 && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost())
-                && (this.blockEntityTag != null ? that.blockEntityTag != null && this.blockEntityTag.equals(this.blockEntityTag) : that.blockEntityTag == null);
+                && (this.blockEntityTag != null ? that.blockEntityTag != null && this.blockEntityTag.equals(that.blockEntityTag) : that.blockEntityTag == null);
     }
 
     /**
