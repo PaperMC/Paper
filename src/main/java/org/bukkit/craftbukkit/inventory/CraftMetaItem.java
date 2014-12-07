@@ -97,6 +97,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
         static {
             classMap = ImmutableMap.<Class<? extends CraftMetaItem>, String>builder()
                     .put(CraftMetaBanner.class, "BANNER")
+                    .put(CraftMetaTileEntity.class, "TILE_ENTITY")
                     .put(CraftMetaBook.class, "BOOK")
                     .put(CraftMetaSkull.class, "SKULL")
                     .put(CraftMetaLeatherArmor.class, "LEATHER_ARMOR")
@@ -196,20 +197,16 @@ class CraftMetaItem implements ItemMeta, Repairable {
     static final ItemMetaKey ATTRIBUTES_UUID_HIGH = new ItemMetaKey("UUIDMost");
     @Specific(Specific.To.NBT)
     static final ItemMetaKey ATTRIBUTES_UUID_LOW = new ItemMetaKey("UUIDLeast");
-    @Specific(Specific.To.NBT)
-    static final ItemMetaKey BLOCK_ENTITY_TAG = new ItemMetaKey("BlockEntityTag");
 
     private String displayName;
     private List<String> lore;
     private Map<Enchantment, Integer> enchantments;
     private int repairCost;
     private final NBTTagList attributes;
-    protected NBTTagCompound blockEntityTag;
 
     CraftMetaItem(CraftMetaItem meta) {
         if (meta == null) {
             attributes = null;
-            blockEntityTag = null;
             return;
         }
 
@@ -225,7 +222,6 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
         this.repairCost = meta.repairCost;
         this.attributes = meta.attributes;
-        this.blockEntityTag = meta.blockEntityTag;
     }
 
     CraftMetaItem(NBTTagCompound tag) {
@@ -301,12 +297,6 @@ class CraftMetaItem implements ItemMeta, Repairable {
         } else {
             attributes = null;
         }
-        
-        if (tag.hasKeyOfType(BLOCK_ENTITY_TAG.NBT, 10)) {
-            blockEntityTag = tag.getCompound(BLOCK_ENTITY_TAG.NBT);
-        } else {
-            blockEntityTag = null;
-        }
     }
 
     static Map<Enchantment, Integer> buildEnchantments(NBTTagCompound tag, ItemMetaKey key) {
@@ -343,7 +333,6 @@ class CraftMetaItem implements ItemMeta, Repairable {
         }
 
         attributes = null;
-        blockEntityTag = null;
     }
 
     static Map<Enchantment, Integer> buildEnchantments(Map<String, Object> map, ItemMetaKey key) {
@@ -382,10 +371,6 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
         if (attributes != null) {
             itemTag.set(ATTRIBUTES.NBT, attributes);
-        }
-        
-        if (blockEntityTag != null) {
-            itemTag.set(BLOCK_ENTITY_TAG.NBT, blockEntityTag);
         }
     }
 
@@ -438,7 +423,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
     @Overridden
     boolean isEmpty() {
-        return !(hasDisplayName() || hasEnchants() || hasLore() || hasAttributes() || hasRepairCost() || blockEntityTag != null);
+        return !(hasDisplayName() || hasEnchants() || hasLore() || hasAttributes() || hasRepairCost());
     }
 
     public String getDisplayName() {
@@ -555,8 +540,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
                 && (this.hasEnchants() ? that.hasEnchants() && this.enchantments.equals(that.enchantments) : !that.hasEnchants())
                 && (this.hasLore() ? that.hasLore() && this.lore.equals(that.lore) : !that.hasLore())
                 && (this.hasAttributes() ? that.hasAttributes() && this.attributes.equals(that.attributes) : !that.hasAttributes())
-                && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost())
-                && (this.blockEntityTag != null ? that.blockEntityTag != null && this.blockEntityTag.equals(that.blockEntityTag) : that.blockEntityTag == null);
+                && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost());
     }
 
     /**
@@ -582,7 +566,6 @@ class CraftMetaItem implements ItemMeta, Repairable {
         hash = 61 * hash + (hasEnchants() ? this.enchantments.hashCode() : 0);
         hash = 61 * hash + (hasAttributes() ? this.attributes.hashCode() : 0);
         hash = 61 * hash + (hasRepairCost() ? this.repairCost : 0);
-        hash = 61 * hash + (blockEntityTag != null ? this.blockEntityTag.hashCode() : 0);
         return hash;
     }
 
