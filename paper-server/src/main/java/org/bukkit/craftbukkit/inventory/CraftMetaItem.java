@@ -438,7 +438,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
     @Overridden
     boolean isEmpty() {
-        return !(hasDisplayName() || hasEnchants() || hasLore() || hasAttributes() || hasRepairCost());
+        return !(hasDisplayName() || hasEnchants() || hasLore() || hasAttributes() || hasRepairCost() || blockEntityTag != null);
     }
 
     public String getDisplayName() {
@@ -582,6 +582,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
         hash = 61 * hash + (hasEnchants() ? this.enchantments.hashCode() : 0);
         hash = 61 * hash + (hasAttributes() ? this.attributes.hashCode() : 0);
         hash = 61 * hash + (hasRepairCost() ? this.repairCost : 0);
+        hash = 61 * hash + (blockEntityTag != null ? this.blockEntityTag.hashCode() : 0);
         return hash;
     }
 
