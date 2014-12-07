@@ -41,8 +41,8 @@ public class TimingsCommand extends BukkitCommand {
             return true;
         }
 
-        boolean separate = "separate".equals(args[0]);
-        if ("reset".equals(args[0])) {
+        boolean separate = "separate".equalsIgnoreCase(args[0]);
+        if ("reset".equalsIgnoreCase(args[0])) {
             for (HandlerList handlerList : HandlerList.getHandlerLists()) {
                 for (RegisteredListener listener : handlerList.getRegisteredListeners()) {
                     if (listener instanceof TimedRegisteredListener) {
@@ -51,7 +51,7 @@ public class TimingsCommand extends BukkitCommand {
                 }
             }
             sender.sendMessage("Timings reset");
-        } else if ("merged".equals(args[0]) || separate) {
+        } else if ("merged".equalsIgnoreCase(args[0]) || separate) {
 
             int index = 0;
             int pluginIdx = 0;
@@ -103,6 +103,9 @@ public class TimingsCommand extends BukkitCommand {
                     fileNames.close();
                 }
             }
+        } else {
+            sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
+            return false;
         }
         return true;
     }
