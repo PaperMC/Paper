@@ -83,18 +83,25 @@ public final class CraftItemFactory implements ItemFactory {
             return meta instanceof CraftMetaEnchantedBook ? meta : new CraftMetaEnchantedBook(meta);
         case BANNER:
             return meta instanceof CraftMetaBanner ? meta : new CraftMetaBanner(meta);
-        case COMMAND:
+        case FURNACE:
         case CHEST:
         case TRAPPED_CHEST:
-        case FURNACE:
-        case HOPPER:
-        case MOB_SPAWNER:
-        case SIGN:
-        case BREWING_STAND_ITEM:
         case JUKEBOX:
-        case FLOWER_POT_ITEM:
         case DISPENSER:
         case DROPPER:
+        case SIGN:
+        case MOB_SPAWNER:
+        case NOTE_BLOCK:
+        case PISTON_BASE:
+        case BREWING_STAND_ITEM:
+        case ENCHANTMENT_TABLE:
+        case COMMAND:
+        case BEACON:
+        case DAYLIGHT_DETECTOR:
+        case DAYLIGHT_DETECTOR_INVERTED:
+        case HOPPER:
+        case REDSTONE_COMPARATOR:
+        case FLOWER_POT_ITEM:
             if (meta instanceof CraftMetaTileEntity) {
                 CraftMetaTileEntity te = (CraftMetaTileEntity) meta;
                 if (te.material != material) {
