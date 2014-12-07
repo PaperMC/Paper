@@ -44,14 +44,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return super.remove(key instanceof String ? ((String) key).toLowerCase() : key);
 +        }
 +    };
-+    public final Map<UUID, EntityPlayer> uuidMap = new java.util.HashMap<UUID, EntityPlayer>() {
-+        @Override
-+        public EntityPlayer get(Object key) {
-+            // put the .playerConnection check done in other places here
-+            EntityPlayer player = super.get(key instanceof String ? ((String) key).toLowerCase() : key);
-+            return (player != null && player.playerConnection != null) ? player : null;
-+        }
-+    };
 +    // PaperSpigot end
      public final Map f = Maps.newHashMap();
      private final GameProfileBanList k;
@@ -61,7 +53,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void onPlayerJoin(EntityPlayer entityplayer) {
          this.players.add(entityplayer);
 +        this.playerMap.put(entityplayer.getName(), entityplayer); // PaperSpigot
-+        this.uuidMap.put(entityplayer.getUniqueID(), entityplayer); // PaperSpigot
          this.f.put(entityplayer.getUniqueID(), entityplayer);
          // this.sendAll(new PacketPlayOutPlayerInfo(EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[] { entityplayer})); // CraftBukkit - replaced with loop below
          WorldServer worldserver = this.server.getWorldServer(entityplayer.dimension);
@@ -69,7 +60,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          worldserver.kill(entityplayer);
          worldserver.getPlayerChunkMap().removePlayer(entityplayer);
          this.players.remove(entityplayer);
-+        this.uuidMap.remove(entityplayer.getUniqueID()); // PaperSpigot
 +        this.playerMap.remove(entityplayer.getName()); // PaperSpigot
          this.f.remove(entityplayer.getUniqueID());
          this.o.remove(entityplayer.getUniqueID());
@@ -87,12 +77,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          while (iterator.hasNext()) {
              entityplayer = (EntityPlayer) iterator.next();
-+            */
-+        if ((entityplayer = uuidMap.get(uuid)) != null) {
-+        // PaperSpigot end
++        */
++        if ((entityplayer = this.a(uuid)) != null) {
+             savePlayerFile(entityplayer); // CraftBukkit - Force the player's inventory to be saved
              entityplayer.playerConnection.disconnect("You logged in from another location");
          }
- 
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
      }
  
@@ -118,7 +107,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -
 -        return null;
 +        // PaperSpigot - Improved player lookup, replace entire method
-+        final EntityPlayer playerEntity = server.getHandle().uuidMap.get(getUniqueId());
++        final EntityPlayer playerEntity = server.getHandle().a(getUniqueId());
 +        return playerEntity != null ? playerEntity.getBukkitEntity() : null;
 +        // PaperSpigot end
      }
@@ -158,7 +147,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // PaperSpigot start - Improved player lookup, replace whole method
 +        EntityPlayer player = playerList.playerMap.get(name);
 +        return player != null ? player.getBukkitEntity() : null;
-+        // PaperSpigot end
++         // PaperSpigot end
      }
  
      @Override
@@ -177,8 +166,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            }
 -        }
 -        return false;
-+        return server.getHandle().uuidMap.get(getUniqueId()) != null; // PaperSpigot  - replace whole method
++        return server.getHandle().a(getUniqueId()) != null; // PaperSpigot - replace whole method
      }
  
      public InetSocketAddress getAddress() {
---
+-- 
+1.9.4.msysgit.2
