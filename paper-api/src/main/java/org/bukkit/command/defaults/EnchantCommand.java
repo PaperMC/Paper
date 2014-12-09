@@ -19,6 +19,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.StringUtil;
 
+@Deprecated
 public class EnchantCommand extends VanillaCommand {
     private static final List<String> ENCHANTMENT_NAMES = new ArrayList<String>();
 

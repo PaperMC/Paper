@@ -15,6 +15,7 @@ import org.bukkit.util.StringUtil;
 
 import com.google.common.collect.ImmutableList;
 
+@Deprecated
 public class OpCommand extends VanillaCommand {
     public OpCommand() {
         super("op");

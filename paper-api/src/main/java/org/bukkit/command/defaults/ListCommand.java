@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 
 import com.google.common.collect.ImmutableList;
 
+@Deprecated
 public class ListCommand extends VanillaCommand {
     public ListCommand() {
         super("list");

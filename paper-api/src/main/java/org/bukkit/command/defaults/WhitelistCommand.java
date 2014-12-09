@@ -13,6 +13,7 @@ import org.bukkit.util.StringUtil;
 
 import com.google.common.collect.ImmutableList;
 
+@Deprecated
 public class WhitelistCommand extends VanillaCommand {
     private static final List<String> WHITELIST_SUBCOMMANDS = ImmutableList.of("add", "remove", "on", "off", "list", "reload");
 

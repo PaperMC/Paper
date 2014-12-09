@@ -12,6 +12,7 @@ import org.bukkit.Difficulty;
 import java.util.ArrayList;
 import java.util.List;
 
+@Deprecated
 public class DifficultyCommand extends VanillaCommand {
     private static final List<String> DIFFICULTY_NAMES = ImmutableList.of("peaceful", "easy", "normal", "hard");
 

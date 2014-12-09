@@ -14,6 +14,7 @@ import org.bukkit.util.StringUtil;
 
 import com.google.common.collect.ImmutableList;
 
+@Deprecated
 public class DeopCommand extends VanillaCommand {
     public DeopCommand() {
         super("deop");

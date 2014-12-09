@@ -14,6 +14,7 @@ import org.bukkit.util.StringUtil;
 
 import com.google.common.collect.ImmutableList;
 
+@Deprecated
 public class PardonCommand extends VanillaCommand {
     public PardonCommand() {
         super("pardon");

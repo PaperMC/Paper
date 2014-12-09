@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 
 import com.google.common.collect.ImmutableList;
 
+@Deprecated
 public class ExpCommand extends VanillaCommand {
     public ExpCommand() {
         super("xp");

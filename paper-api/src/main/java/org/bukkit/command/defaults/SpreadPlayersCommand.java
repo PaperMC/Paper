@@ -16,6 +16,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Team;
 
+@Deprecated
 public class SpreadPlayersCommand extends VanillaCommand {
     private static final Random random = new Random();
 

@@ -15,6 +15,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.HumanEntity;
 
+@Deprecated
 public class GameRuleCommand extends VanillaCommand {
     private static final List<String> GAMERULE_STATES = ImmutableList.of("true", "false");
 

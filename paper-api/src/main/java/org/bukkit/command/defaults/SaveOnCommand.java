@@ -10,6 +10,7 @@ import org.bukkit.command.CommandSender;
 
 import com.google.common.collect.ImmutableList;
 
+@Deprecated
 public class SaveOnCommand extends VanillaCommand {
     public SaveOnCommand() {
         super("save-on");

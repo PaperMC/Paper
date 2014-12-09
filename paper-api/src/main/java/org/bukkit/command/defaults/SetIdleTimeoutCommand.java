@@ -10,6 +10,7 @@ import org.bukkit.command.CommandSender;
 
 import java.util.List;
 
+@Deprecated
 public class SetIdleTimeoutCommand extends VanillaCommand {
 
     public SetIdleTimeoutCommand() {

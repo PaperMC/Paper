@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 
 import com.google.common.collect.ImmutableList;
 
+@Deprecated
 public class StopCommand extends VanillaCommand {
     public StopCommand() {
         super("stop");

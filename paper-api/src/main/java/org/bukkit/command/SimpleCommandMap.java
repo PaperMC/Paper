@@ -28,10 +28,6 @@ public class SimpleCommandMap implements CommandMap {
     }
 
     private void setDefaultCommands() {
-        register("bukkit", new SaveCommand());
-        register("bukkit", new SaveOnCommand());
-        register("bukkit", new SaveOffCommand());
-        register("bukkit", new StopCommand());
         register("bukkit", new VersionCommand("version"));
         register("bukkit", new ReloadCommand("reload"));
         register("bukkit", new PluginsCommand("plugins"));
@@ -39,43 +35,7 @@ public class SimpleCommandMap implements CommandMap {
     }
 
     public void setFallbackCommands() {
-        register("bukkit", new ListCommand());
-        register("bukkit", new OpCommand());
-        register("bukkit", new DeopCommand());
-        register("bukkit", new BanIpCommand());
-        register("bukkit", new PardonIpCommand());
-        register("bukkit", new BanCommand());
-        register("bukkit", new PardonCommand());
-        register("bukkit", new KickCommand());
-        register("bukkit", new TeleportCommand());
-        register("bukkit", new GiveCommand());
-        register("bukkit", new TimeCommand());
-        register("bukkit", new SayCommand());
-        register("bukkit", new WhitelistCommand());
-        register("bukkit", new TellCommand());
-        register("bukkit", new MeCommand());
-        register("bukkit", new KillCommand());
-        register("bukkit", new GameModeCommand());
         register("bukkit", new HelpCommand());
-        register("bukkit", new ExpCommand());
-        register("bukkit", new ToggleDownfallCommand());
-        register("bukkit", new BanListCommand());
-        register("bukkit", new DefaultGameModeCommand());
-        register("bukkit", new SeedCommand());
-        register("bukkit", new DifficultyCommand());
-        register("bukkit", new WeatherCommand());
-        register("bukkit", new SpawnpointCommand());
-        register("bukkit", new ClearCommand());
-        register("bukkit", new GameRuleCommand());
-        register("bukkit", new EnchantCommand());
-        register("bukkit", new TestForCommand());
-        register("bukkit", new EffectCommand());
-        register("bukkit", new ScoreboardCommand());
-        register("bukkit", new PlaySoundCommand());
-        register("bukkit", new SpreadPlayersCommand());
-        register("bukkit", new SetWorldSpawnCommand());
-        register("bukkit", new SetIdleTimeoutCommand());
-        register("bukkit", new AchievementCommand());
     }
 
     /**

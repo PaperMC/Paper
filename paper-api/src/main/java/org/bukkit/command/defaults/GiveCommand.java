@@ -18,6 +18,7 @@ import org.bukkit.util.StringUtil;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 
+@Deprecated
 public class GiveCommand extends VanillaCommand {
     private static List<String> materials;
     static {

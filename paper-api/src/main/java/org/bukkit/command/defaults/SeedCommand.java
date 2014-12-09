@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 
 import com.google.common.collect.ImmutableList;
 
+@Deprecated
 public class SeedCommand extends VanillaCommand {
     public SeedCommand() {
         super("seed");

@@ -20,6 +20,7 @@ import org.bukkit.event.player.PlayerStatisticIncrementEvent;
 
 import com.google.common.collect.ImmutableList;
 
+@Deprecated
 public class AchievementCommand extends VanillaCommand {
     public AchievementCommand() {
         super("achievement");
