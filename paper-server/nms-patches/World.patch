@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/World.java	2014-12-05 11:17:35.806563463 +0000
-+++ src/main/java/net/minecraft/server/World.java	2014-12-05 11:16:59.838564261 +0000
+--- ../work/decompile-8eb82bde/net/minecraft/server/World.java	2014-12-10 19:16:20.916465384 +0000
++++ src/main/java/net/minecraft/server/World.java	2014-12-10 19:11:37.648468459 +0000
 @@ -13,6 +13,22 @@
  import java.util.UUID;
  import java.util.concurrent.Callable;
@@ -87,16 +87,18 @@
          this.K = this.random.nextInt(12000);
          this.allowMonsters = true;
          this.allowAnimals = true;
-@@ -66,6 +128,8 @@
+@@ -66,6 +128,10 @@
          this.worldProvider = worldprovider;
          this.isStatic = flag;
          this.M = worldprovider.getWorldBorder();
++        this.M.world = (WorldServer) this; // CraftBukkit
++        this.M.a(new WorldBorderListener(((WorldServer) this).getServer().getHandle())); // CraftBukkit
 +
 +        this.getServer().addWorld(this.world); // CraftBukkit
      }
  
      public World b() {
-@@ -184,6 +248,27 @@
+@@ -184,6 +250,27 @@
      }
  
      public boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) {
@@ -124,7 +126,7 @@
          if (!this.isValidLocation(blockposition)) {
              return false;
          } else if (!this.isStatic && this.worldData.getType() == WorldType.DEBUG_ALL_BLOCK_STATES) {
-@@ -191,9 +276,23 @@
+@@ -191,9 +278,23 @@
          } else {
              Chunk chunk = this.getChunkAtWorldCoords(blockposition);
              Block block = iblockdata.getBlock();
@@ -148,7 +150,7 @@
                  return false;
              } else {
                  Block block1 = iblockdata1.getBlock();
-@@ -204,6 +303,7 @@
+@@ -204,6 +305,7 @@
                      this.methodProfiler.b();
                  }
  
@@ -156,7 +158,7 @@
                  if ((i & 2) != 0 && (!this.isStatic || (i & 4) == 0) && chunk.isReady()) {
                      this.notify(blockposition);
                  }
-@@ -214,12 +314,35 @@
+@@ -214,12 +316,35 @@
                          this.updateAdjacentComparators(blockposition, block);
                      }
                  }
@@ -192,7 +194,7 @@
      public boolean setAir(BlockPosition blockposition) {
          return this.setTypeAndData(blockposition, Blocks.AIR.getBlockData(), 3);
      }
-@@ -253,6 +376,11 @@
+@@ -253,6 +378,11 @@
  
      public void update(BlockPosition blockposition, Block block) {
          if (this.worldData.getType() != WorldType.DEBUG_ALL_BLOCK_STATES) {
@@ -204,7 +206,7 @@
              this.applyPhysics(blockposition, block);
          }
  
-@@ -328,6 +456,17 @@
+@@ -328,6 +458,17 @@
              IBlockData iblockdata = this.getType(blockposition);
  
              try {
@@ -222,7 +224,7 @@
                  iblockdata.getBlock().doPhysics(this, blockposition, iblockdata, block);
              } catch (Throwable throwable) {
                  CrashReport crashreport = CrashReport.a(throwable, "Exception while updating neighbours");
-@@ -497,6 +636,17 @@
+@@ -497,6 +638,17 @@
      }
  
      public IBlockData getType(BlockPosition blockposition) {
@@ -240,7 +242,7 @@
          if (!this.isValidLocation(blockposition)) {
              return Blocks.AIR.getBlockData();
          } else {
-@@ -704,6 +854,13 @@
+@@ -704,6 +856,13 @@
      }
  
      public boolean addEntity(Entity entity) {
@@ -254,7 +256,7 @@
          int i = MathHelper.floor(entity.locX / 16.0D);
          int j = MathHelper.floor(entity.locZ / 16.0D);
          boolean flag = entity.attachedToPlayer;
-@@ -712,7 +869,35 @@
+@@ -712,7 +871,35 @@
              flag = true;
          }
  
@@ -290,7 +292,7 @@
              return false;
          } else {
              if (entity instanceof EntityHuman) {
-@@ -734,6 +919,7 @@
+@@ -734,6 +921,7 @@
              ((IWorldAccess) this.u.get(i)).a(entity);
          }
  
@@ -298,7 +300,7 @@
      }
  
      protected void b(Entity entity) {
-@@ -741,6 +927,7 @@
+@@ -741,6 +929,7 @@
              ((IWorldAccess) this.u.get(i)).b(entity);
          }
  
@@ -306,7 +308,7 @@
      }
  
      public void kill(Entity entity) {
-@@ -775,7 +962,15 @@
+@@ -775,7 +964,15 @@
              this.getChunkAt(i, j).b(entity);
          }
  
@@ -323,7 +325,7 @@
          this.b(entity);
      }
  
-@@ -958,6 +1153,11 @@
+@@ -958,6 +1155,11 @@
  
          for (i = 0; i < this.k.size(); ++i) {
              entity = (Entity) this.k.get(i);
@@ -335,7 +337,7 @@
  
              try {
                  ++entity.ticksLived;
-@@ -1001,8 +1201,10 @@
+@@ -1001,8 +1203,10 @@
          this.g.clear();
          this.methodProfiler.c("regular");
  
@@ -348,7 +350,7 @@
              if (entity.vehicle != null) {
                  if (!entity.vehicle.dead && entity.vehicle.passenger == entity) {
                      continue;
-@@ -1033,7 +1235,7 @@
+@@ -1033,7 +1237,7 @@
                      this.getChunkAt(j, k).b(entity);
                  }
  
@@ -357,7 +359,7 @@
                  this.b(entity);
              }
  
-@@ -1042,6 +1244,14 @@
+@@ -1042,6 +1246,14 @@
  
          this.methodProfiler.c("blockEntities");
          this.L = true;
@@ -372,7 +374,7 @@
          Iterator iterator = this.tileEntityList.iterator();
  
          while (iterator.hasNext()) {
-@@ -1073,11 +1283,13 @@
+@@ -1073,11 +1285,13 @@
          }
  
          this.L = false;
@@ -386,7 +388,7 @@
  
          this.methodProfiler.c("pendingBlockEntities");
          if (!this.a.isEmpty()) {
-@@ -1085,9 +1297,11 @@
+@@ -1085,9 +1299,11 @@
                  TileEntity tileentity1 = (TileEntity) this.a.get(l);
  
                  if (!tileentity1.x()) {
@@ -398,7 +400,7 @@
  
                      if (this.isLoaded(tileentity1.getPosition())) {
                          this.getChunkAtWorldCoords(tileentity1.getPosition()).a(tileentity1.getPosition(), tileentity1);
-@@ -1141,7 +1355,10 @@
+@@ -1141,7 +1357,10 @@
          int j = MathHelper.floor(entity.locZ);
          byte b0 = 32;
  
@@ -410,7 +412,7 @@
              entity.P = entity.locX;
              entity.Q = entity.locY;
              entity.R = entity.locZ;
-@@ -1615,7 +1832,13 @@
+@@ -1615,7 +1834,13 @@
                      --j;
                      this.worldData.setThunderDuration(j);
                      if (j <= 0) {
@@ -425,7 +427,7 @@
                      }
                  }
  
-@@ -1639,7 +1862,14 @@
+@@ -1639,7 +1864,14 @@
                      --k;
                      this.worldData.setWeatherDuration(k);
                      if (k <= 0) {
@@ -441,7 +443,7 @@
                      }
                  }
  
-@@ -1651,12 +1881,18 @@
+@@ -1651,12 +1883,18 @@
                  }
  
                  this.p = MathHelper.a(this.p, 0.0F, 1.0F);
@@ -461,7 +463,7 @@
          this.methodProfiler.a("buildList");
  
          int i;
-@@ -1673,7 +1909,7 @@
+@@ -1673,7 +1911,7 @@
  
              for (int i1 = -l; i1 <= l; ++i1) {
                  for (int j1 = -l; j1 <= l; ++j1) {
@@ -470,7 +472,7 @@
                  }
              }
          }
-@@ -1851,7 +2087,10 @@
+@@ -1851,7 +2089,10 @@
      }
  
      public boolean c(EnumSkyBlock enumskyblock, BlockPosition blockposition) {
@@ -482,7 +484,7 @@
              return false;
          } else {
              int i = 0;
-@@ -2095,8 +2334,17 @@
+@@ -2095,8 +2336,17 @@
  
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
@@ -501,7 +503,7 @@
                  ++i;
              }
          }
-@@ -2105,12 +2353,17 @@
+@@ -2105,12 +2355,17 @@
      }
  
      public void b(Collection collection) {
@@ -521,7 +523,7 @@
              this.a(entity);
          }
  
-@@ -2124,7 +2377,13 @@
+@@ -2124,7 +2379,13 @@
          Block block1 = this.getType(blockposition).getBlock();
          AxisAlignedBB axisalignedbb = flag ? null : block.a(this, blockposition, block.getBlockData());
  
@@ -536,7 +538,7 @@
      }
  
      public int getBlockPower(BlockPosition blockposition, EnumDirection enumdirection) {
-@@ -2215,6 +2474,11 @@
+@@ -2215,6 +2476,11 @@
  
          for (int i = 0; i < this.players.size(); ++i) {
              EntityHuman entityhuman1 = (EntityHuman) this.players.get(i);
@@ -548,7 +550,7 @@
  
              if (IEntitySelector.d.apply(entityhuman1)) {
                  double d5 = entityhuman1.e(d0, d1, d2);
-@@ -2269,7 +2533,7 @@
+@@ -2269,7 +2535,7 @@
          return null;
      }
  
@@ -557,7 +559,7 @@
          this.dataManager.checkSession();
      }
  
-@@ -2331,6 +2595,16 @@
+@@ -2331,6 +2597,16 @@
  
      public void everyoneSleeping() {}
  
@@ -574,7 +576,7 @@
      public float h(float f) {
          return (this.q + (this.r - this.q) * f) * this.j(f);
      }
-@@ -2538,6 +2812,6 @@
+@@ -2538,6 +2814,6 @@
          int l = j * 16 + 8 - blockposition.getZ();
          short short0 = 128;
  
