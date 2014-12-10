@@ -1,9 +1,14 @@
 package org.bukkit.craftbukkit.entity;
 
+import net.minecraft.server.Blocks;
 import net.minecraft.server.EntityMinecartAbstract;
 
+import net.minecraft.server.IBlockData;
+import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.Minecart;
+import org.bukkit.material.MaterialData;
 import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
 
@@ -67,5 +72,29 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
     @Deprecated
     public int _INVALID_getDamage() {
         return NumberConversions.ceil(getDamage());
+    }
+
+    public void setDisplayBlock(MaterialData material) {
+        if(material != null) {
+            IBlockData block = CraftMagicNumbers.getBlock(material.getItemTypeId()).fromLegacyData(material.getData());
+            this.getHandle().a(block);
+        } else {
+            // Set block to air (default) and set the flag to not have a display block.
+            this.getHandle().a(Blocks.AIR.getBlockData());
+            this.getHandle().a(false);
+        }
+    }
+
+    public MaterialData getDisplayBlock() {
+        IBlockData blockData = getHandle().t(); // PAIL: Rename
+        return CraftMagicNumbers.getMaterial(blockData.getBlock()).getNewData((byte) blockData.getBlock().toLegacyData(blockData));
+    }
+
+    public void setDisplayBlockOffset(int offset) {
+        getHandle().l(offset); // PAIL: Rename
+    }
+
+    public int getDisplayBlockOffset() {
+        return getHandle().v(); // PAIL: Rename
     }
 }
