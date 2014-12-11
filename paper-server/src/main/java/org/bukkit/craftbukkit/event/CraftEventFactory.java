@@ -826,10 +826,10 @@ public class CraftEventFactory {
         // If they've got the same item in their hand, it'll need to be updated.
         if (itemInHand != null && itemInHand.getItem() == Items.WRITABLE_BOOK) {
             if (!editBookEvent.isCancelled()) {
-                CraftItemStack.setItemMeta(itemInHand, editBookEvent.getNewBookMeta());
                 if (editBookEvent.isSigning()) {
                     itemInHand.setItem(Items.WRITTEN_BOOK);
                 }
+                CraftItemStack.setItemMeta(itemInHand, editBookEvent.getNewBookMeta());
             }
 
             // Client will have updated its idea of the book item; we need to overwrite that

@@ -138,6 +138,16 @@ public class ItemMetaTest extends AbstractTestingBase {
                     return cleanStack;
                 }
             },
+            new StackProvider(Material.WRITTEN_BOOK) {
+                @Override ItemStack operate(final ItemStack cleanStack) {
+                    final BookMeta meta = (BookMeta) cleanStack.getItemMeta();
+                    meta.setAuthor("Some author");
+                    meta.setPages("Page 1", "Page 2");
+                    meta.setTitle("A title");
+                    cleanStack.setItemMeta(meta);
+                    return cleanStack;
+                }
+            },
             /* Skulls rely on a running server instance
             new StackProvider(Material.SKULL_ITEM) {
                 @Override ItemStack operate(final ItemStack cleanStack) {

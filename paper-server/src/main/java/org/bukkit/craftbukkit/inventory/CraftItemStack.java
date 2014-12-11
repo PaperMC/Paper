@@ -326,6 +326,7 @@ public final class CraftItemStack extends ItemStack {
         }
         switch (getType(item)) {
             case WRITTEN_BOOK:
+                return new CraftMetaBookSigned(item.getTag());
             case BOOK_AND_QUILL:
                 return new CraftMetaBook(item.getTag());
             case SKULL_ITEM:
@@ -394,45 +395,13 @@ public final class CraftItemStack extends ItemStack {
             return false;
         }
 
+        itemMeta = CraftItemFactory.instance().asMetaFor(itemMeta, getType(item));
+        if (itemMeta == null) return true;
+
         NBTTagCompound tag = new NBTTagCompound();
         item.setTag(tag);
 
         ((CraftMetaItem) itemMeta).applyToItem(tag);
-
-        // Hacky fix for books
-        // TODO: Not use a hacky fix for books
-        if (tag.getBoolean(CraftMetaBook.RESOLVED.NBT) && item.getItem() == Items.WRITABLE_BOOK) {
-            if (tag.hasKey(CraftMetaBook.BOOK_PAGES.NBT)) {
-                NBTTagList pages = tag.getList(CraftMetaBook.BOOK_PAGES.NBT, 8);
-
-                for (int i = 0; i < pages.size(); i++) {
-                    String page = pages.getString(i);
-                    page = CraftChatMessage.fromComponent(ChatSerializer.a(page));
-                    pages.a(i, new NBTTagString(page));
-                }
-                tag.set(CraftMetaBook.BOOK_PAGES.NBT, pages);
-            }
-            tag.setBoolean(CraftMetaBook.RESOLVED.NBT, false);
-        } else if (!tag.getBoolean(CraftMetaBook.RESOLVED.NBT) && item.getItem() == Items.WRITTEN_BOOK) {
-            if (tag.hasKey(CraftMetaBook.BOOK_PAGES.NBT)) {
-                NBTTagList pages = tag.getList(CraftMetaBook.BOOK_PAGES.NBT, 8);
-
-                for (int i = 0; i < pages.size(); i++) {
-                    String page = pages.getString(i);
-                    page = ChatSerializer.a(CraftChatMessage.fromString(page, true)[0]);
-                    pages.a(i, new NBTTagString(page));
-                }
-                tag.set(CraftMetaBook.BOOK_PAGES.NBT, pages);
-            }
-
-            tag.setBoolean(CraftMetaBook.RESOLVED.NBT, true);
-            if (!tag.hasKey(CraftMetaBook.BOOK_TITLE.NBT)) {
-                tag.setString(CraftMetaBook.BOOK_TITLE.NBT, "");
-            }
-            if (!tag.hasKey(CraftMetaBook.BOOK_AUTHOR.NBT)) {
-                tag.setString(CraftMetaBook.BOOK_AUTHOR.NBT, "");
-            }
-        }
 
         return true;
     }

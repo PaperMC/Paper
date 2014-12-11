@@ -99,6 +99,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
                     .put(CraftMetaBanner.class, "BANNER")
                     .put(CraftMetaTileEntity.class, "TILE_ENTITY")
                     .put(CraftMetaBook.class, "BOOK")
+                    .put(CraftMetaBookSigned.class, "BOOK_SIGNED")
                     .put(CraftMetaSkull.class, "SKULL")
                     .put(CraftMetaLeatherArmor.class, "LEATHER_ARMOR")
                     .put(CraftMetaMap.class, "MAP")
