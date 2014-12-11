@@ -62,8 +62,9 @@ public final class CraftItemFactory implements ItemFactory {
         case AIR:
             return null;
         case WRITTEN_BOOK:
+            return meta instanceof CraftMetaBookSigned ? meta : new CraftMetaBookSigned(meta);
         case BOOK_AND_QUILL:
-            return meta instanceof CraftMetaBook ? meta : new CraftMetaBook(meta);
+            return meta != null && meta.getClass().equals(CraftMetaBook.class) ? meta : new CraftMetaBook(meta);
         case SKULL_ITEM:
             return meta instanceof CraftMetaSkull ? meta : new CraftMetaSkull(meta);
         case LEATHER_HELMET:
