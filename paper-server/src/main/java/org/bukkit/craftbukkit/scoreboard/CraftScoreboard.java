@@ -98,7 +98,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
         Validate.notNull(player, "OfflinePlayer cannot be null");
 
         for (CraftObjective objective : objectives.values()) {
-            board.resetPlayerScores(player.getName(), objective.getHandle()); // PAIL: check me
+            board.resetPlayerScores(player.getName(), objective.getHandle());
         }
     }
 
@@ -106,7 +106,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
         Validate.notNull(entry, "Entry cannot be null");
 
         for (CraftObjective objective : objectives.values()) {
-            board.resetPlayerScores(entry, objective.getHandle()); // PAIL: check me
+            board.resetPlayerScores(entry, objective.getHandle());
         }
     }
 
