@@ -45,9 +45,6 @@ public final class VanillaCommandWrapper extends VanillaCommand {
         MinecraftServer.getServer().worldServer = new WorldServer[]{(WorldServer) icommandlistener.getWorld()};
         try {
             vanillaCommand.execute(icommandlistener, args);
-            // PAIL fake throws
-            if (false) throw new ExceptionUsage(null, null);
-            if (false) throw new CommandException(null, null);
         } catch (ExceptionUsage exceptionusage) {
             ChatMessage chatmessage = new ChatMessage("commands.generic.usage", new Object[] {new ChatMessage(exceptionusage.getMessage(), exceptionusage.getArgs())});
             chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
@@ -100,9 +97,6 @@ public final class VanillaCommandWrapper extends VanillaCommand {
                             as[i] = entity.getUniqueID().toString();
                             vanillaCommand.execute(icommandlistener, as);
                             j++;
-                            // PAIL fake throws
-                            if (false) throw new ExceptionUsage(null, null);
-                            if (false) throw new CommandException(null, null);
                         } catch (ExceptionUsage exceptionusage) {
                             ChatMessage chatmessage = new ChatMessage("commands.generic.usage", new Object[] { new ChatMessage(exceptionusage.getMessage(), exceptionusage.getArgs())});
                             chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
@@ -124,10 +118,6 @@ public final class VanillaCommandWrapper extends VanillaCommand {
                 chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
                 icommandlistener.sendMessage(chatmessage);
             }
-            // PAIL start: fix compile error
-            if (false) throw new ExceptionUsage(null, null);
-            if (false) throw new CommandException(null, null);
-            // PAIL end
         } catch (ExceptionUsage exceptionusage) {
             ChatMessage chatmessage1 = new ChatMessage("commands.generic.usage", new Object[] { new ChatMessage(exceptionusage.getMessage(), exceptionusage.getArgs()) });
             chatmessage1.getChatModifier().setColor(EnumChatFormat.RED);
