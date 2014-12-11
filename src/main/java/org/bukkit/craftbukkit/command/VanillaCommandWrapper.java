@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.command;
 
+import com.google.common.base.Joiner;
 import java.util.Iterator;
 import java.util.List;
 
@@ -39,23 +40,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
         if (!testPermission(sender)) return true;
 
         ICommandListener icommandlistener = getListener(sender);
-        // Some commands use the worldserver variable but we leave it full of null values,
-        // so we must temporarily populate it with the world of the commandsender
-        WorldServer[] prev = MinecraftServer.getServer().worldServer;
-        MinecraftServer.getServer().worldServer = new WorldServer[]{(WorldServer) icommandlistener.getWorld()};
-        try {
-            vanillaCommand.execute(icommandlistener, args);
-        } catch (ExceptionUsage exceptionusage) {
-            ChatMessage chatmessage = new ChatMessage("commands.generic.usage", new Object[] {new ChatMessage(exceptionusage.getMessage(), exceptionusage.getArgs())});
-            chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
-            icommandlistener.sendMessage(chatmessage);
-        } catch (CommandException commandexception) {
-            ChatMessage chatmessage = new ChatMessage(commandexception.getMessage(), commandexception.getArgs());
-            chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
-            icommandlistener.sendMessage(chatmessage);
-        } finally {
-            MinecraftServer.getServer().worldServer = prev;
-        }
+        dispatchVanillaCommand(icommandlistener, args);
         return true;
     }
 
@@ -67,14 +52,8 @@ public final class VanillaCommandWrapper extends VanillaCommand {
         return (List<String>) vanillaCommand.tabComplete(getListener(sender), args, new BlockPosition(0, 0, 0));
     }
 
-    public final int dispatchVanillaCommandBlock(ICommandListener icommandlistener, String s) {
+    public final int dispatchVanillaCommand(ICommandListener icommandlistener, String[] as) {
         // Copied from net.minecraft.server.CommandHandler
-        s = s.trim();
-        if (s.startsWith("/")) {
-            s = s.substring(1);
-        }
-        String as[] = s.split(" ");
-        as = dropFirstArgument(as);
         int i = getPlayerListSize(as);
         int j = 0;
         // Some commands use the worldserver variable but we leave it full of null values,
@@ -174,7 +153,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
         return -1;
     }
 
-    private String[] dropFirstArgument(String as[]) {
+    public static String[] dropFirstArgument(String as[]) {
         String as1[] = new String[as.length - 1];
         for (int i = 1; i < as.length; i++) {
             as1[i - 1] = as[i];
