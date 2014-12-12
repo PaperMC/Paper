@@ -22,6 +22,7 @@ import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.TreeType;
 import org.bukkit.World;
+import org.bukkit.WorldBorder;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -56,6 +57,7 @@ public class CraftWorld implements World {
     public static final int CUSTOM_DIMENSION_OFFSET = 10;
 
     private final WorldServer world;
+    private WorldBorder worldBorder;
     private Environment environment;
     private final CraftServer server = (CraftServer) Bukkit.getServer();
     private final ChunkGenerator generator;
@@ -1280,6 +1282,15 @@ public class CraftWorld implements World {
 
     public boolean isGameRule(String rule) {
         return getHandle().getGameRules().contains(rule);
+    }
+
+    @Override
+    public WorldBorder getWorldBorder() {
+        if (this.worldBorder == null) {
+            this.worldBorder = new CraftWorldBorder(this);
+        }
+
+        return this.worldBorder;
     }
 
     public void processChunkGC() {
