@@ -1,0 +1,46 @@
+--- ../work/decompile-8eb82bde/net/minecraft/server/CommandTp.java	2014-12-13 09:54:39.438309447 +1100
++++ src/main/java/net/minecraft/server/CommandTp.java	2014-12-13 09:54:37.990309246 +1100
+@@ -19,7 +19,7 @@
+         return "commands.tp.usage";
+     }
+ 
+-    public void execute(ICommandListener icommandlistener, String[] astring) {
++    public void execute(ICommandListener icommandlistener, String[] astring) throws CommandException { // CraftBukkit - add throws
+         if (astring.length < 1) {
+             throw new ExceptionUsage("commands.tp.usage", new Object[0]);
+         } else {
+@@ -105,17 +105,11 @@
+             } else {
+                 Entity entity = b(icommandlistener, astring[astring.length - 1]);
+ 
+-                if (entity.world != ((Entity) object).world) {
+-                    throw new CommandException("commands.tp.notSameDimension", new Object[0]);
+-                } else {
+-                    ((Entity) object).mount((Entity) null);
+-                    if (object instanceof EntityPlayer) {
+-                        ((EntityPlayer) object).playerConnection.a(entity.locX, entity.locY, entity.locZ, entity.yaw, entity.pitch);
+-                    } else {
+-                        ((Entity) object).setPositionRotation(entity.locX, entity.locY, entity.locZ, entity.yaw, entity.pitch);
+-                    }
+-
+-                    a(icommandlistener, this, "commands.tp.success", new Object[] { ((Entity) object).getName(), entity.getName()});
++                // CraftBukkit Start
++                // Use Bukkit teleport method in all cases. It has cross dimensional handling, events
++                if (((Entity) object).getBukkitEntity().teleport(entity.getBukkitEntity(), org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.COMMAND)) {
++                    a(icommandlistener, this, "commands.tp.success", new Object[]{((Entity) object).getName(), entity.getName()});
++                    // CraftBukkit End
+                 }
+             }
+         }
+@@ -128,4 +122,11 @@
+     public boolean isListStart(String[] astring, int i) {
+         return i == 0;
+     }
++
++    // CraftBukkit start - fix decompile error
++    @Override
++    public int compareTo(Object o) {
++        return a((ICommand) o);
++    }
++    // CraftBukkit end
+ }
