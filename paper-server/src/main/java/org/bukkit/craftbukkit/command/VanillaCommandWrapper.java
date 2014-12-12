@@ -127,7 +127,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
 
     private ICommandListener getListener(CommandSender sender) {
         if (sender instanceof Player) {
-            return ((CraftPlayer) sender).getHandle();
+            return new ListenerWrapper(((CraftPlayer) sender).getHandle());
         }
         if (sender instanceof BlockCommandSender) {
             return ((CraftBlockCommandSender) sender).getTileEntity();
