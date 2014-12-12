@@ -1168,6 +1168,13 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public boolean isGameRule(String rule);
 
     /**
+     * Gets the world border for this world.
+     *
+     * @return The world border for this world.
+     */
+    public WorldBorder getWorldBorder();
+
+    /**
      * Represents various map environment types that a world may be
      */
     public enum Environment {
