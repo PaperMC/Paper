@@ -78,7 +78,11 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
             for (int i = 0; i < pages.size(); i++) {
                 String page = pages.getString(i);
                 if (resolved) {
-                    page = CraftChatMessage.fromComponent(ChatSerializer.a(page));
+                    try {
+                        page = CraftChatMessage.fromComponent(ChatSerializer.a(page));
+                    } catch (Exception e) {
+                        // Ignore and treat as an old book
+                    }
                 }
                 pageArray[i] = page;
             }
