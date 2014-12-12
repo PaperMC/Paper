@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.command;
 
-import com.google.common.base.Joiner;
 import java.util.Iterator;
 import java.util.List;
 
@@ -127,7 +126,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
 
     private ICommandListener getListener(CommandSender sender) {
         if (sender instanceof Player) {
-            return new ListenerWrapper(((CraftPlayer) sender).getHandle());
+            return ((CraftPlayer) sender).getHandle();
         }
         if (sender instanceof BlockCommandSender) {
             return ((CraftBlockCommandSender) sender).getTileEntity();
