@@ -20,6 +20,9 @@ import org.bukkit.inventory.meta.BookMeta;
 
 // Spigot start
 import static org.spigotmc.ValidateUtils.*;
+import java.util.AbstractList;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.chat.ComponentSerializer;
 // Spigot end
 
 @DelegateDeserialization(SerializableMeta.class)
@@ -362,6 +365,69 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
     // Spigot start
     private BookMeta.Spigot spigot = new SpigotMeta();
     private class SpigotMeta extends BookMeta.Spigot {
+
+        @Override
+        public BaseComponent[] getPage(final int page) {
+            Validate.isTrue(isValidPage(page), "Invalid page number");
+            return ComponentSerializer.parse(IChatBaseComponent.ChatSerializer.a(pages.get(page - 1)));
+        }
+
+        @Override
+        public void setPage(final int page, final BaseComponent... text) {
+            if (!isValidPage(page)) {
+                throw new IllegalArgumentException("Invalid page number " + page + "/" + pages.size());
+            }
+
+            BaseComponent[] newText = text == null ? new BaseComponent[0] : text;
+            CraftMetaBook.this.pages.set(page - 1, IChatBaseComponent.ChatSerializer.a(ComponentSerializer.toString(newText)));
+        }
+
+        @Override
+        public void setPages(final BaseComponent[]... pages) {
+            CraftMetaBook.this.pages.clear();
+
+            addPage(pages);
+        }
+
+        @Override
+        public void addPage(final BaseComponent[]... pages) {
+            for (BaseComponent[] page : pages) {
+                if (CraftMetaBook.this.pages.size() >= MAX_PAGES) {
+                    return;
+                }
+
+                if (page == null) {
+                    page = new BaseComponent[0];
+                }
+
+                CraftMetaBook.this.pages.add(IChatBaseComponent.ChatSerializer.a(ComponentSerializer.toString(page)));
+            }
+        }
+
+        @Override
+        public List<BaseComponent[]> getPages() {
+            final List<IChatBaseComponent> copy = ImmutableList.copyOf(CraftMetaBook.this.pages);
+            return new AbstractList<BaseComponent[]>() {
+
+                @Override
+                public BaseComponent[] get(int index) {
+                    return ComponentSerializer.parse(IChatBaseComponent.ChatSerializer.a(copy.get(index)));
+                }
+
+                @Override
+                public int size() {
+                    return copy.size();
+                }
+            };
+        }
+
+        @Override
+        public void setPages(List<BaseComponent[]> pages) {
+            CraftMetaBook.this.pages.clear();
+            for (BaseComponent[] page : pages) {
+                addPage(page);
+            }
+        }
     };
 
     @Override

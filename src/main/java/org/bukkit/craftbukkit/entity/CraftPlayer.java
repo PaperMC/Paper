@@ -122,6 +122,8 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.StandardMessenger;
 import org.bukkit.scoreboard.Scoreboard;
 
+import net.md_5.bungee.api.chat.BaseComponent; // Spigot
+
 @DelegateDeserialization(CraftOfflinePlayer.class)
 public class CraftPlayer extends CraftHumanEntity implements Player {
     private long firstPlayed = 0;
@@ -1743,6 +1745,34 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             }
 
             return java.util.Collections.unmodifiableSet( ret );
+        }
+
+        @Override
+        public void sendMessage(BaseComponent component) {
+          sendMessage( new BaseComponent[] { component } );
+        }
+
+        @Override
+        public void sendMessage(BaseComponent... components) {
+           if ( getHandle().playerConnection == null ) return;
+
+            PacketPlayOutChat packet = new PacketPlayOutChat(null, net.minecraft.server.ChatMessageType.SYSTEM, SystemUtils.b);
+            packet.components = components;
+            getHandle().playerConnection.sendPacket(packet);
+        }
+
+        @Override
+        public void sendMessage(net.md_5.bungee.api.ChatMessageType position, BaseComponent component) {
+            sendMessage( position, new BaseComponent[] { component } );
+        }
+
+        @Override
+        public void sendMessage(net.md_5.bungee.api.ChatMessageType position, BaseComponent... components) {
+            if ( getHandle().playerConnection == null ) return;
+
+            PacketPlayOutChat packet = new PacketPlayOutChat(null, net.minecraft.server.ChatMessageType.a((byte) position.ordinal()), SystemUtils.b);
+            packet.components = components;
+            getHandle().playerConnection.sendPacket(packet);
         }
     };
 
