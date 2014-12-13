@@ -1018,32 +1018,18 @@ public class CraftWorld implements World {
         } else if (Hanging.class.isAssignableFrom(clazz)) {
             Block block = getBlockAt(location);
             BlockFace face = BlockFace.SELF;
-            if (block.getRelative(BlockFace.EAST).getTypeId() == 0) {
-                face = BlockFace.EAST;
-            } else if (block.getRelative(BlockFace.NORTH).getTypeId() == 0) {
-                face = BlockFace.NORTH;
-            } else if (block.getRelative(BlockFace.WEST).getTypeId() == 0) {
-                face = BlockFace.WEST;
-            } else if (block.getRelative(BlockFace.SOUTH).getTypeId() == 0) {
-                face = BlockFace.SOUTH;
-            }
-            EnumDirection dir;
-            switch (face) {
-            case SOUTH:
-            default:
-                dir = EnumDirection.SOUTH;
-                break;
-            case WEST:
-                dir = EnumDirection.WEST;
-                break;
-            case NORTH:
-                dir = EnumDirection.NORTH;
-                break;
-            case EAST:
-                dir = EnumDirection.EAST;
-                break;
+
+            BlockFace[] faces = new BlockFace[]{BlockFace.EAST,BlockFace.NORTH,BlockFace.WEST,BlockFace.SOUTH};
+            for(BlockFace dir : faces){
+                net.minecraft.server.Block nmsBlock = CraftMagicNumbers.getBlock(block.getRelative(dir));
+                if(nmsBlock.getMaterial().isBuildable() || BlockDiodeAbstract.d(nmsBlock)) {
+                    face = dir;
+                    break;
+                }
             }
 
+            EnumDirection dir = CraftBlock.blockFaceToNotch(face).opposite();
+            
             if (Painting.class.isAssignableFrom(clazz)) {
                 entity = new EntityPainting(world, new BlockPosition((int) x, (int) y, (int) z), dir);
             } else if (ItemFrame.class.isAssignableFrom(clazz)) {
