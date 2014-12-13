@@ -12,6 +12,7 @@ for file in $(/bin/ls $cb)
 do
     echo "Diffing $file"
     sed -i 's/\r//' "$nms/$file"
+	sed -i 's/\r//' "$cb/$file"
     outName=$(echo nms-patches/"$(echo $file | cut -d. -f1)".patch)
     patchNew=$(diff -u "$nms/$file" "$cb/$file")
     if [ -f "$outName" ]
