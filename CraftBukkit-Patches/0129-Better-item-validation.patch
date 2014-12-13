@@ -1,4 +1,4 @@
-From e4ab8d61ad019d2cfd1021d342d5e367fd8bc51e Mon Sep 17 00:00:00 2001
+From ef07b1f5de9476274a7a491bd59ac0a21948fd24 Mon Sep 17 00:00:00 2001
 From: Thinkofdeath <thinkofdeath@spigotmc.org>
 Date: Wed, 2 Jul 2014 23:35:51 +0100
 Subject: [PATCH] Better item validation
@@ -64,7 +64,7 @@ index 8b7dc17..5227007 100644
              }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
-index 9a24d2e..d3b5002 100644
+index 0c69a3e..6843fac 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 @@ -20,6 +20,10 @@ import net.minecraft.server.ChatSerializer;
@@ -78,7 +78,7 @@ index 9a24d2e..d3b5002 100644
  @DelegateDeserialization(SerializableMeta.class)
  class CraftMetaBook extends CraftMetaItem implements BookMeta {
      static final ItemMetaKey BOOK_TITLE = new ItemMetaKey("title");
-@@ -54,11 +58,11 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
+@@ -55,11 +59,11 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
          super(tag);
  
          if (tag.hasKey(BOOK_TITLE.NBT)) {
@@ -90,11 +90,11 @@ index 9a24d2e..d3b5002 100644
 -            this.author = tag.getString(BOOK_AUTHOR.NBT);
 +            this.author = limit( tag.getString(BOOK_AUTHOR.NBT), 1024 ); // Spigot
          }
-         
-         if (tag.hasKey(RESOLVED.NBT)) {
-@@ -78,7 +82,7 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
-                 if (resolved != null && resolved) {
-                     page = CraftChatMessage.fromComponent(ChatSerializer.a(page));
+ 
+         boolean resolved = false;
+@@ -84,7 +88,7 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
+                         // Ignore and treat as an old book
+                     }
                  }
 -                pageArray[i] = page;
 +                pageArray[i] = limit( page, 2048 ); // Spigot
@@ -102,7 +102,7 @@ index 9a24d2e..d3b5002 100644
  
              addPage(pageArray);
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 92a6270..8d754d8 100644
+index fabaecf..cb6857c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -36,6 +36,10 @@ import com.google.common.base.Strings;
@@ -116,7 +116,7 @@ index 92a6270..8d754d8 100644
  /**
   * Children must include the following:
   *
-@@ -229,7 +233,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
+@@ -230,7 +234,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
              NBTTagCompound display = tag.getCompound(DISPLAY.NBT);
  
              if (display.hasKey(NAME.NBT)) {
@@ -125,7 +125,7 @@ index 92a6270..8d754d8 100644
              }
  
              if (display.hasKey(LORE.NBT)) {
-@@ -237,7 +241,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
+@@ -238,7 +242,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
                  lore = new ArrayList<String>(list.size());
  
                  for (int index = 0; index < list.size(); index++) {
