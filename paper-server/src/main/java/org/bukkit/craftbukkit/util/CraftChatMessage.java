@@ -15,11 +15,14 @@ import net.minecraft.server.IChatBaseComponent;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+import net.minecraft.server.ChatMessage;
 
 public final class CraftChatMessage {
+    
+    private static final Pattern LINK_PATTERN = Pattern.compile("((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " \\n]|$))))");
     private static class StringMessage {
         private static final Map<Character, EnumChatFormat> formatMap;
-        private static final Pattern INCREMENTAL_PATTERN = Pattern.compile("(" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + "[0-9a-fk-or])|(\\n)|(?:(https?://[^ ][^ ]*?)(?=[\\.\\?!,;:]?(?:[ \\n]|$)))", Pattern.CASE_INSENSITIVE);
+        private static final Pattern INCREMENTAL_PATTERN = Pattern.compile("(" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + "[0-9a-fk-or])|(\\n)|((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " \\n]|$))))", Pattern.CASE_INSENSITIVE);
 
         static {
             Builder<Character, EnumChatFormat> builder = ImmutableMap.builder();
@@ -89,6 +92,9 @@ public final class CraftChatMessage {
                     }
                     break;
                 case 3:
+                    if ( !( match.startsWith( "http://" ) || match.startsWith( "https://" ) ) ) {
+                        match = "http://" + match;
+                    }
                     modifier.setChatClickable(new ChatClickable(EnumClickAction.OPEN_URL, match));
                     appendNewComponent(matcher.end(groupId));
                     modifier.setChatClickable((ChatClickable) null);
@@ -100,7 +106,7 @@ public final class CraftChatMessage {
                 appendNewComponent(message.length());
             }
 
-            output = list.toArray(new IChatBaseComponent[0]);
+            output = list.toArray(new IChatBaseComponent[list.size()]);
         }
 
         private void appendNewComponent(int index) {
@@ -159,6 +165,82 @@ public final class CraftChatMessage {
             out.append(c.getText());
         }
         return out.toString().replaceFirst("^(" + defaultColor + ")*", "");
+    }
+
+    public static IChatBaseComponent fixComponent(IChatBaseComponent component) {
+        Matcher matcher = LINK_PATTERN.matcher("");
+        return fixComponent(component, matcher);
+    }
+
+    private static IChatBaseComponent fixComponent(IChatBaseComponent component, Matcher matcher) {
+        if (component instanceof ChatComponentText) {
+            ChatComponentText text = ((ChatComponentText) component);
+            String msg = text.g();
+            if (matcher.reset(msg).find()) {
+                matcher.reset();
+
+                ChatModifier modifier = text.getChatModifier() != null ?
+                        text.getChatModifier() : new ChatModifier();
+                List<IChatBaseComponent> extras = new ArrayList<IChatBaseComponent>();
+                List<IChatBaseComponent> extrasOld = new ArrayList<IChatBaseComponent>(text.a());
+                component = text = new ChatComponentText("");
+
+                int pos = 0;
+                while (matcher.find()) {
+                    String match = matcher.group();
+
+                    if ( !( match.startsWith( "http://" ) || match.startsWith( "https://" ) ) ) {
+                        match = "http://" + match;
+                    }
+
+                    ChatComponentText prev = new ChatComponentText(msg.substring(pos, matcher.start()));
+                    prev.setChatModifier(modifier);
+                    extras.add(prev);
+
+                    ChatComponentText link = new ChatComponentText(matcher.group());
+                    ChatModifier linkModi = modifier.clone();
+                    linkModi.setChatClickable(new ChatClickable(EnumClickAction.OPEN_URL, match));
+                    link.setChatModifier(linkModi);
+                    extras.add(link);
+
+                    pos = matcher.end();
+                }
+
+                ChatComponentText prev = new ChatComponentText(msg.substring(pos));
+                prev.setChatModifier(modifier);
+                extras.add(prev);
+                extras.addAll(extrasOld);
+
+                for (IChatBaseComponent c : extras) {
+                    text.addSibling(c);
+                }
+            }
+        }
+
+        List extras = component.a();
+        for (int i = 0; i < extras.size(); i++) {
+            IChatBaseComponent comp = (IChatBaseComponent) extras.get(i);
+            if (comp.getChatModifier() != null && comp.getChatModifier().h() == null) {
+                extras.set(i, fixComponent(comp, matcher));
+            }
+        }
+
+        if (component instanceof ChatMessage) {
+            Object[] subs = ((ChatMessage) component).j();
+            for (int i = 0; i < subs.length; i++) {
+                Object comp = subs[i];
+                if (comp instanceof IChatBaseComponent) {
+                    IChatBaseComponent c = (IChatBaseComponent) comp;
+                    if (c.getChatModifier() != null && c.getChatModifier().h() == null) {
+                        subs[i] = fixComponent(c, matcher);
+                    }
+                } else if (comp instanceof String && matcher.reset((String)comp).find()) {
+                    subs[i] = fixComponent(new ChatComponentText((String) comp), matcher);
+                }
+            }
+        }
+
+        return component;
     }
 
     private CraftChatMessage() {
