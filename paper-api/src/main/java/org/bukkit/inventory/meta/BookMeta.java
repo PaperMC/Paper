@@ -1,5 +1,7 @@
 package org.bukkit.inventory.meta;
 
+import java.util.List;
+import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Material;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -117,6 +119,70 @@ public interface BookMeta extends WritableBookMeta {
     // Spigot start
     public class Spigot {
 
+        /**
+         * Gets the specified page in the book. The given page must exist.
+         *
+         * @param page the page number to get
+         * @return the page from the book
+         */
+        @NotNull
+        public BaseComponent[] getPage(int page) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        /**
+         * Sets the specified page in the book. Pages of the book must be
+         * contiguous.
+         * <p>
+         * The data can be up to 256 characters in length, additional characters
+         * are truncated.
+         *
+         * @param page the page number to set
+         * @param data the data to set for that page
+         */
+        public void setPage(int page, @Nullable BaseComponent... data) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        /**
+         * Gets all the pages in the book.
+         *
+         * @return list of all the pages in the book
+         */
+        @NotNull
+        public List<BaseComponent[]> getPages() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        /**
+         * Clears the existing book pages, and sets the book to use the provided
+         * pages. Maximum 50 pages with 256 characters per page.
+         *
+         * @param pages A list of pages to set the book to use
+         */
+        public void setPages(@NotNull List<BaseComponent[]> pages) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        /**
+         * Clears the existing book pages, and sets the book to use the provided
+         * pages. Maximum 50 pages with 256 characters per page.
+         *
+         * @param pages A list of component arrays, each being a page
+         */
+        public void setPages(@NotNull BaseComponent[]... pages) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        /**
+         * Adds new pages to the end of the book. Up to a maximum of 50 pages
+         * with 256 characters per page.
+         *
+         * @param pages A list of component arrays, each being a page
+         */
+        public void addPage(@NotNull BaseComponent[]... pages) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     }
 
     @NotNull

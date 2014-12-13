@@ -57,6 +57,43 @@ public interface CommandSender extends Permissible {
     // Spigot start
     public class Spigot {
 
+        /**
+         * Sends this sender a chat component.
+         *
+         * @param component the components to send
+         */
+        public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        /**
+         * Sends an array of components as a single message to the sender.
+         *
+         * @param components the components to send
+         */
+        public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        /**
+         * Sends this sender a chat component.
+         *
+         * @param component the components to send
+         * @param sender the sender of the message
+         */
+        public void sendMessage(@Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        /**
+         * Sends an array of components as a single message to the sender.
+         *
+         * @param components the components to send
+         * @param sender the sender of the message
+         */
+        public void sendMessage(@Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     }
 
     @NotNull

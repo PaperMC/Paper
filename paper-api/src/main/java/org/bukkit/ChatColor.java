@@ -15,91 +15,223 @@ public enum ChatColor {
     /**
      * Represents black
      */
-    BLACK('0', 0x00),
+    BLACK('0', 0x00) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.BLACK;
+        }
+    },
     /**
      * Represents dark blue
      */
-    DARK_BLUE('1', 0x1),
+    DARK_BLUE('1', 0x1) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.DARK_BLUE;
+        }
+    },
     /**
      * Represents dark green
      */
-    DARK_GREEN('2', 0x2),
+    DARK_GREEN('2', 0x2) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.DARK_GREEN;
+        }
+    },
     /**
      * Represents dark blue (aqua)
      */
-    DARK_AQUA('3', 0x3),
+    DARK_AQUA('3', 0x3) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.DARK_AQUA;
+        }
+    },
     /**
      * Represents dark red
      */
-    DARK_RED('4', 0x4),
+    DARK_RED('4', 0x4) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.DARK_RED;
+        }
+    },
     /**
      * Represents dark purple
      */
-    DARK_PURPLE('5', 0x5),
+    DARK_PURPLE('5', 0x5) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.DARK_PURPLE;
+        }
+    },
     /**
      * Represents gold
      */
-    GOLD('6', 0x6),
+    GOLD('6', 0x6) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.GOLD;
+        }
+    },
     /**
      * Represents gray
      */
-    GRAY('7', 0x7),
+    GRAY('7', 0x7) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.GRAY;
+        }
+    },
     /**
      * Represents dark gray
      */
-    DARK_GRAY('8', 0x8),
+    DARK_GRAY('8', 0x8) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.DARK_GRAY;
+        }
+    },
     /**
      * Represents blue
      */
-    BLUE('9', 0x9),
+    BLUE('9', 0x9) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.BLUE;
+        }
+    },
     /**
      * Represents green
      */
-    GREEN('a', 0xA),
+    GREEN('a', 0xA) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.GREEN;
+        }
+    },
     /**
      * Represents aqua
      */
-    AQUA('b', 0xB),
+    AQUA('b', 0xB) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.AQUA;
+        }
+    },
     /**
      * Represents red
      */
-    RED('c', 0xC),
+    RED('c', 0xC) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.RED;
+        }
+    },
     /**
      * Represents light purple
      */
-    LIGHT_PURPLE('d', 0xD),
+    LIGHT_PURPLE('d', 0xD) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.LIGHT_PURPLE;
+        }
+    },
     /**
      * Represents yellow
      */
-    YELLOW('e', 0xE),
+    YELLOW('e', 0xE) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.YELLOW;
+        }
+    },
     /**
      * Represents white
      */
-    WHITE('f', 0xF),
+    WHITE('f', 0xF) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.WHITE;
+        }
+    },
     /**
      * Represents magical characters that change around randomly
      */
-    MAGIC('k', 0x10, true),
+    MAGIC('k', 0x10, true) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.MAGIC;
+        }
+    },
     /**
      * Makes the text bold.
      */
-    BOLD('l', 0x11, true),
+    BOLD('l', 0x11, true) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.BOLD;
+        }
+    },
     /**
      * Makes a line appear through the text.
      */
-    STRIKETHROUGH('m', 0x12, true),
+    STRIKETHROUGH('m', 0x12, true) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.STRIKETHROUGH;
+        }
+    },
     /**
      * Makes the text appear underlined.
      */
-    UNDERLINE('n', 0x13, true),
+    UNDERLINE('n', 0x13, true) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.UNDERLINE;
+        }
+    },
     /**
      * Makes the text italic.
      */
-    ITALIC('o', 0x14, true),
+    ITALIC('o', 0x14, true) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.ITALIC;
+        }
+    },
     /**
      * Resets all previous chat colors or formats.
      */
-    RESET('r', 0x15);
+    RESET('r', 0x15) {
+        @NotNull
+        @Override
+        public net.md_5.bungee.api.ChatColor asBungee() {
+            return net.md_5.bungee.api.ChatColor.RESET;
+        }
+    };
 
     /**
      * The special character which prefixes all chat colour codes. Use this if
@@ -125,6 +257,11 @@ public enum ChatColor {
         this.isFormat = isFormat;
         this.toString = new String(new char[] {COLOR_CHAR, code});
     }
+
+    @NotNull
+    public net.md_5.bungee.api.ChatColor asBungee() {
+        return net.md_5.bungee.api.ChatColor.RESET;
+    };
 
     /**
      * Gets the char value associated with this color
