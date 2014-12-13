@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/EntityFireball.java	2014-11-28 17:43:43.093707435 +0000
-+++ src/main/java/net/minecraft/server/EntityFireball.java	2014-11-28 17:38:24.000000000 +0000
+--- ../work/decompile-8eb82bde/net/minecraft/server/EntityFireball.java	2014-12-13 12:33:58.972937612 +0000
++++ src/main/java/net/minecraft/server/EntityFireball.java	2014-12-13 12:33:51.392937694 +0000
 @@ -2,6 +2,8 @@
  
  import java.util.List;
@@ -58,26 +58,20 @@
              }
  
              this.locX += this.motX;
-@@ -181,7 +198,8 @@
+@@ -181,6 +198,8 @@
  
          nbttagcompound.setString("inTile", minecraftkey == null ? "" : minecraftkey.toString());
          nbttagcompound.setByte("inGround", (byte) (this.i ? 1 : 0));
--        nbttagcompound.set("direction", this.a(new double[] { this.motX, this.motY, this.motZ}));
 +        // CraftBukkit - Fix direction being mismapped to invalid variables
 +        nbttagcompound.set("power", this.a(new double[] { this.dirX, this.dirY, this.dirZ}));
+         nbttagcompound.set("direction", this.a(new double[] { this.motX, this.motY, this.motZ}));
      }
  
-     public void a(NBTTagCompound nbttagcompound) {
-@@ -195,12 +213,14 @@
+@@ -195,12 +214,20 @@
          }
  
          this.i = nbttagcompound.getByte("inGround") == 1;
 -        if (nbttagcompound.hasKeyOfType("direction", 9)) {
--            NBTTagList nbttaglist = nbttagcompound.getList("direction", 6);
--
--            this.motX = nbttaglist.d(0);
--            this.motY = nbttaglist.d(1);
--            this.motZ = nbttaglist.d(2);
 +        // CraftBukkit start - direction -> power
 +        if (nbttagcompound.hasKeyOfType("power", 9)) {
 +            NBTTagList nbttaglist = nbttagcompound.getList("power", 6);
@@ -85,11 +79,17 @@
 +            this.dirX = nbttaglist.d(0);
 +            this.dirY = nbttaglist.d(1);
 +            this.dirZ = nbttaglist.d(2);
-+            // CraftBukkit end
++        } else if (nbttagcompound.hasKeyOfType("direction", 9)) { 
+             NBTTagList nbttaglist = nbttagcompound.getList("direction", 6);
+ 
+             this.motX = nbttaglist.d(0);
+             this.motY = nbttaglist.d(1);
+             this.motZ = nbttaglist.d(2);
++        // CraftBukkit end
          } else {
              this.die();
          }
-@@ -221,6 +241,11 @@
+@@ -221,6 +248,11 @@
          } else {
              this.ac();
              if (damagesource.getEntity() != null) {
@@ -101,7 +101,7 @@
                  Vec3D vec3d = damagesource.getEntity().ap();
  
                  if (vec3d != null) {
-@@ -234,6 +259,7 @@
+@@ -234,6 +266,7 @@
  
                  if (damagesource.getEntity() instanceof EntityLiving) {
                      this.shooter = (EntityLiving) damagesource.getEntity();
