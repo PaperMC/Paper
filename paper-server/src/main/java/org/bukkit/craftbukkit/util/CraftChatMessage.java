@@ -131,12 +131,16 @@ public final class CraftChatMessage {
     }
     
     public static String fromComponent(IChatBaseComponent component) {
+        return fromComponent(component, EnumChatFormat.BLACK);
+    }
+
+    public static String fromComponent(IChatBaseComponent component, EnumChatFormat defaultColor) {
         if (component == null) return "";
         StringBuilder out = new StringBuilder();
         
         for (IChatBaseComponent c : (Iterable<IChatBaseComponent>) component) {
             ChatModifier modi = c.getChatModifier();
-            out.append(modi.getColor() == null ? EnumChatFormat.BLACK : modi.getColor());
+            out.append(modi.getColor() == null ? defaultColor : modi.getColor());
             if (modi.isBold()) {
                 out.append(EnumChatFormat.BOLD);
             }
@@ -154,7 +158,7 @@ public final class CraftChatMessage {
             }
             out.append(c.getText());
         }
-        return out.toString().replaceFirst("^(§0)*", "");
+        return out.toString().replaceFirst("^(" + defaultColor + ")*", "");
     }
 
     private CraftChatMessage() {
