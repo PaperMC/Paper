@@ -130,12 +130,14 @@ public interface Minecart extends Vehicle {
 
     /**
      * Sets the offset of the display block.
-     * @return the current block offset for this minecart.
+     *
+     * @param offset the block offset to set for this minecart.
      */
     public void setDisplayBlockOffset(int offset);
 
     /**
      * Gets the offset of the display block.
+     * 
      * @return the current block offset for this minecart.
      */
     public int getDisplayBlockOffset();
