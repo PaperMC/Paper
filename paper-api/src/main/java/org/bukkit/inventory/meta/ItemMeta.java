@@ -2,9 +2,11 @@ package org.bukkit.inventory.meta;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.ItemFlag;
 
 /**
  * This type represents the storage mechanism for auxiliary item data.
@@ -123,6 +125,35 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
     * @return true if the enchantment conflicts, false otherwise
     */
     boolean hasConflictingEnchant(Enchantment ench);
+
+    /**
+     * Set itemflags which should be ignored when rendering a ItemStack in the Client. This Method does silently ignore double set itemFlags.
+     *
+     * @param itemFlags The hideflags which shouldn't be rendered
+     */
+    void addItemFlags(ItemFlag... itemFlags);
+
+    /**
+     * Remove specific set of itemFlags. This tells the Client it should render it again. This Method does silently ignore double removed itemFlags.
+     *
+     * @param itemFlags Hideflags which should be removed
+     */
+    void removeItemFlags(ItemFlag... itemFlags);
+
+    /**
+     * Get current set itemFlags. The collection returned is unmodifiable.
+     *
+     * @return A set of all itemFlags set
+     */
+    Set<ItemFlag> getItemFlags();
+
+    /**
+     * Check if the specified flag is present on this item.
+     *
+     * @param flag the flag to check
+     * @return if it is present
+     */
+    boolean hasItemFlag(ItemFlag flag);
 
     @SuppressWarnings("javadoc")
     ItemMeta clone();
