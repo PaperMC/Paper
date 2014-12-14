@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -1023,12 +1024,36 @@ public class CraftWorld implements World {
             Block block = getBlockAt(location);
             BlockFace face = BlockFace.SELF;
 
+            int width = 16; // 1 full block, also painting smallest size.
+            int height = 16; // 1 full block, also painting smallest size.
+
+            if (ItemFrame.class.isAssignableFrom(clazz)) {
+                width = 12;
+                height = 12;
+            } else if (LeashHitch.class.isAssignableFrom(clazz)) {
+                width = 9;
+                height = 9;
+            }
+
             BlockFace[] faces = new BlockFace[]{BlockFace.EAST,BlockFace.NORTH,BlockFace.WEST,BlockFace.SOUTH};
-            for(BlockFace dir : faces){
+            final BlockPosition pos = new BlockPosition((int) x, (int) y, (int) z);
+            for (BlockFace dir : faces) {
                 net.minecraft.server.Block nmsBlock = CraftMagicNumbers.getBlock(block.getRelative(dir));
-                if(nmsBlock.getMaterial().isBuildable() || BlockDiodeAbstract.d(nmsBlock)) {
-                    face = dir;
-                    break;
+                if (nmsBlock.getMaterial().isBuildable() || BlockDiodeAbstract.d(nmsBlock)) {
+                    boolean taken = false;
+                    AxisAlignedBB bb = EntityHanging.calculateBoundingBox(pos,CraftBlock.blockFaceToNotch(dir).opposite(),width,height);
+                    List<net.minecraft.server.Entity> list = (List<net.minecraft.server.Entity>) world.getEntities(null, bb);
+                    for (Iterator<net.minecraft.server.Entity> it = list.iterator(); !taken && it.hasNext();) {
+                        net.minecraft.server.Entity e = it.next();
+                        if (e instanceof EntityHanging) {
+                            taken = true; // Hanging entities do not like hanging entities which intersect them.
+                        }
+                    }
+
+                    if (!taken) {
+                        face = dir;
+                        break;
+                    }
                 }
             }
 
