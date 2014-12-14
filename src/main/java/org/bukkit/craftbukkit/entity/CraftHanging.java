@@ -23,11 +23,8 @@ public class CraftHanging extends CraftEntity implements Hanging {
     }
 
     public boolean setFacingDirection(BlockFace face, boolean force) {
-        Block block = getLocation().getBlock().getRelative(getAttachedFace()).getRelative(face.getOppositeFace()).getRelative(getFacing());
         EntityHanging hanging = getHandle();
-        BlockPosition old = hanging.getBlockPosition();
         EnumDirection dir = hanging.direction;
-        hanging.blockPosition = new BlockPosition(block.getX(), block.getY(), block.getZ());
         switch (face) {
             case SOUTH:
             default:
@@ -45,7 +42,6 @@ public class CraftHanging extends CraftEntity implements Hanging {
         }
         if (!force && !hanging.survives()) {
             // Revert since it doesn't fit
-            hanging.blockPosition = old;
             hanging.setDirection(dir);
             return false;
         }

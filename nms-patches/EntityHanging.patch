@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/EntityHanging.java	2014-11-28 17:43:43.097707435 +0000
-+++ src/main/java/net/minecraft/server/EntityHanging.java	2014-11-28 17:38:18.000000000 +0000
+--- ../work/decompile-8eb82bde//net/minecraft/server/EntityHanging.java	Mon Dec 15 15:33:27 2014
++++ src/main/java/net/minecraft/server/EntityHanging.java	Mon Dec 15 15:33:27 2014
 @@ -4,6 +4,13 @@
  import java.util.List;
  import org.apache.commons.lang3.Validate;
@@ -14,7 +14,82 @@
  public abstract class EntityHanging extends Entity {
  
      private int c;
-@@ -77,6 +84,33 @@
+@@ -30,30 +37,35 @@
+         this.o();
+     }
+ 
+-    private void o() {
+-        if (this.direction != null) {
+-            double d0 = (double) this.blockPosition.getX() + 0.5D;
+-            double d1 = (double) this.blockPosition.getY() + 0.5D;
+-            double d2 = (double) this.blockPosition.getZ() + 0.5D;
++    /* CraftBukkit start - bounding box calculation made static (for spawn usage)
++
++        l is from function l()
++        m is from function m()
++
++        Placing here as it's more likely to be noticed as something which needs to be updated
++        then something in a CraftBukkit file.
++     */
++    public static AxisAlignedBB calculateBoundingBox(BlockPosition blockPosition, EnumDirection direction, int width, int height) {
++            double d0 = (double) blockPosition.getX() + 0.5D;
++            double d1 = (double) blockPosition.getY() + 0.5D;
++            double d2 = (double) blockPosition.getZ() + 0.5D;
+             double d3 = 0.46875D;
+-            double d4 = this.a(this.l());
+-            double d5 = this.a(this.m());
++            double d4 = width % 32 == 0 ? 0.5D : 0.0D;
++            double d5 = height % 32 == 0 ? 0.5D : 0.0D;
+ 
+-            d0 -= (double) this.direction.getAdjacentX() * 0.46875D;
+-            d2 -= (double) this.direction.getAdjacentZ() * 0.46875D;
++            d0 -= (double) direction.getAdjacentX() * 0.46875D;
++            d2 -= (double) direction.getAdjacentZ() * 0.46875D;
+             d1 += d5;
+-            EnumDirection enumdirection = this.direction.f();
++            EnumDirection enumdirection = direction.f();
+ 
+             d0 += d4 * (double) enumdirection.getAdjacentX();
+             d2 += d4 * (double) enumdirection.getAdjacentZ();
+-            this.locX = d0;
+-            this.locY = d1;
+-            this.locZ = d2;
+-            double d6 = (double) this.l();
+-            double d7 = (double) this.m();
+-            double d8 = (double) this.l();
+ 
+-            if (this.direction.k() == EnumAxis.Z) {
++            double d6 = (double) width;
++            double d7 = (double) height;
++            double d8 = (double) width;
++
++            if (direction.k() == EnumAxis.Z) {
+                 d8 = 1.0D;
+             } else {
+                 d6 = 1.0D;
+@@ -62,7 +74,20 @@
+             d6 /= 32.0D;
+             d7 /= 32.0D;
+             d8 /= 32.0D;
+-            this.a(new AxisAlignedBB(d0 - d6, d1 - d7, d2 - d8, d0 + d6, d1 + d7, d2 + d8));
++            return new AxisAlignedBB(d0 - d6, d1 - d7, d2 - d8, d0 + d6, d1 + d7, d2 + d8);
++    }
++    // CraftBukkit end
++
++    // PAIL: rename
++    private void o() {
++        if (this.direction != null) {
++            // CraftBukkit start code moved in to calculateBoundingBox
++            AxisAlignedBB bb = calculateBoundingBox(this.blockPosition,this.direction,this.l(),this.m());
++            this.locX = (bb.a + bb.d) / 2.0D;
++            this.locY = (bb.b + bb.e) / 2.0D;
++            this.locZ = (bb.c + bb.f) / 2.0D;
++            this.a(bb);
++            // CraftBukkit end
+         }
+     }
+ 
+@@ -77,6 +102,33 @@
          if (this.c++ == 100 && !this.world.isStatic) {
              this.c = 0;
              if (!this.dead && !this.survives()) {
@@ -48,7 +123,7 @@
                  this.die();
                  this.b((Entity) null);
              }
-@@ -138,6 +172,32 @@
+@@ -138,6 +190,32 @@
              return false;
          } else {
              if (!this.dead && !this.world.isStatic) {
@@ -81,7 +156,7 @@
                  this.die();
                  this.ac();
                  this.b(damagesource.getEntity());
-@@ -149,6 +209,18 @@
+@@ -149,6 +227,18 @@
  
      public void move(double d0, double d1, double d2) {
          if (!this.world.isStatic && !this.dead && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
@@ -100,7 +175,7 @@
              this.die();
              this.b((Entity) null);
          }
-@@ -156,7 +228,7 @@
+@@ -156,7 +246,7 @@
      }
  
      public void g(double d0, double d1, double d2) {
