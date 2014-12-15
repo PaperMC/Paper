@@ -35,6 +35,9 @@ import org.bukkit.inventory.meta.Repairable;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
+import java.util.Arrays;
+import java.util.Set;
 
 /**
  * Children must include the following:
@@ -205,6 +208,10 @@ class CraftMetaItem implements ItemMeta, Repairable {
     private int repairCost;
     private final NBTTagList attributes;
 
+    private static final Set<String> HANDLED_TAGS = Sets.newHashSet();
+
+    private final Map<String, NBTBase> unhandledTags = new HashMap<String, NBTBase>();
+
     CraftMetaItem(CraftMetaItem meta) {
         if (meta == null) {
             attributes = null;
@@ -223,6 +230,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
         this.repairCost = meta.repairCost;
         this.attributes = meta.attributes;
+        this.unhandledTags.putAll(meta.unhandledTags);
     }
 
     CraftMetaItem(NBTTagCompound tag) {
@@ -297,6 +305,13 @@ class CraftMetaItem implements ItemMeta, Repairable {
             attributes = save;
         } else {
             attributes = null;
+        }
+
+        Set<String> keys = tag.c();
+        for (String key : keys) {
+            if (!getHandledTags().contains(key)) {
+                unhandledTags.put(key, tag.get(key));
+            }
         }
     }
 
@@ -373,6 +388,10 @@ class CraftMetaItem implements ItemMeta, Repairable {
         if (attributes != null) {
             itemTag.set(ATTRIBUTES.NBT, attributes);
         }
+
+        for (Map.Entry<String, NBTBase> e : unhandledTags.entrySet()) {
+            itemTag.set(e.getKey(), e.getValue());
+        }
     }
 
     static NBTTagList createStringList(List<String> list) {
@@ -424,7 +443,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
     @Overridden
     boolean isEmpty() {
-        return !(hasDisplayName() || hasEnchants() || hasLore() || hasAttributes() || hasRepairCost());
+        return !(hasDisplayName() || hasEnchants() || hasLore() || hasAttributes() || hasRepairCost() || !unhandledTags.isEmpty());
     }
 
     public String getDisplayName() {
@@ -541,7 +560,8 @@ class CraftMetaItem implements ItemMeta, Repairable {
                 && (this.hasEnchants() ? that.hasEnchants() && this.enchantments.equals(that.enchantments) : !that.hasEnchants())
                 && (this.hasLore() ? that.hasLore() && this.lore.equals(that.lore) : !that.hasLore())
                 && (this.hasAttributes() ? that.hasAttributes() && this.attributes.equals(that.attributes) : !that.hasAttributes())
-                && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost());
+                && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost())
+                && (this.unhandledTags.equals(that.unhandledTags));
     }
 
     /**
@@ -567,6 +587,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
         hash = 61 * hash + (hasEnchants() ? this.enchantments.hashCode() : 0);
         hash = 61 * hash + (hasAttributes() ? this.attributes.hashCode() : 0);
         hash = 61 * hash + (hasRepairCost() ? this.repairCost : 0);
+        hash = 61 * hash + unhandledTags.hashCode();
         return hash;
     }
 
@@ -667,5 +688,29 @@ class CraftMetaItem implements ItemMeta, Repairable {
     @Override
     public final String toString() {
         return SerializableMeta.classMap.get(getClass()) + "_META:" + serialize(); // TODO: cry
+    }
+
+    public static Set<String> getHandledTags() {
+        if (HANDLED_TAGS.isEmpty()) {
+            HANDLED_TAGS.addAll(Arrays.asList(
+                DISPLAY.NBT,
+                REPAIR.NBT,
+                ATTRIBUTES.NBT,
+                ENCHANTMENTS.NBT,
+                CraftMetaMap.MAP_SCALING.NBT,
+                CraftMetaPotion.POTION_EFFECTS.NBT,
+                CraftMetaSkull.SKULL_OWNER.NBT,
+                CraftMetaTileEntity.BLOCK_ENTITY_TAG.NBT,
+                CraftMetaBook.BOOK_TITLE.NBT,
+                CraftMetaBook.BOOK_AUTHOR.NBT,
+                CraftMetaBook.BOOK_PAGES.NBT,
+                CraftMetaBook.RESOLVED.NBT,
+                CraftMetaBook.GENERATION.NBT,
+                CraftMetaFirework.FIREWORKS.NBT,
+                CraftMetaEnchantedBook.STORED_ENCHANTMENTS.NBT,
+                CraftMetaCharge.EXPLOSION.NBT
+            ));
+        }
+        return HANDLED_TAGS;
     }
 }
