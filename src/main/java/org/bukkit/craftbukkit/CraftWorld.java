@@ -258,27 +258,29 @@ public class CraftWorld implements World {
         return chunk != null;
     }
 
-    private void chunkLoadPostProcess(net.minecraft.server.Chunk chunk, int x, int z) {
+    private void chunkLoadPostProcess(net.minecraft.server.Chunk chunk, int cx, int cz) {
         if (chunk != null) {
-            world.chunkProviderServer.chunks.put(LongHash.toLong(x, z), chunk);
+            world.chunkProviderServer.chunks.put(LongHash.toLong(cx, cz), chunk);
 
             chunk.addEntities();
 
-            if (!chunk.done && world.chunkProviderServer.isChunkLoaded(x + 1, z + 1) && world.chunkProviderServer.isChunkLoaded(x, z + 1) && world.chunkProviderServer.isChunkLoaded(x + 1, z)) {
-                world.chunkProviderServer.getChunkAt(world.chunkProviderServer, x, z);
-            }
+            // Update neighbor counts
+            for (int x = -2; x < 3; x++) {
+                for (int z = -2; z < 3; z++) {
+                    if (x == 0 && z == 0) {
+                        continue;
+                    }
 
-            if (world.chunkProviderServer.isChunkLoaded(x - 1, z) && !world.chunkProviderServer.getOrCreateChunk(x - 1, z).done && world.chunkProviderServer.isChunkLoaded(x - 1, z + 1) && world.chunkProviderServer.isChunkLoaded(x, z + 1) && world.chunkProviderServer.isChunkLoaded(x - 1, z)) {
-                world.chunkProviderServer.getChunkAt(world.chunkProviderServer, x - 1, z);
+                    net.minecraft.server.Chunk neighbor = world.chunkProviderServer.getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
+                    if (neighbor != null) {
+                        neighbor.setNeighborLoaded(-x, -z);
+                        chunk.setNeighborLoaded(x, z);
+                    }
+                }
             }
+            // CraftBukkit end
 
-            if (world.chunkProviderServer.isChunkLoaded(x, z - 1) && !world.chunkProviderServer.getOrCreateChunk(x, z - 1).done && world.chunkProviderServer.isChunkLoaded(x + 1, z - 1) && world.chunkProviderServer.isChunkLoaded(x, z - 1) && world.chunkProviderServer.isChunkLoaded(x + 1, z)) {
-                world.chunkProviderServer.getChunkAt(world.chunkProviderServer, x, z - 1);
-            }
-
-            if (world.chunkProviderServer.isChunkLoaded(x - 1, z - 1) && !world.chunkProviderServer.getOrCreateChunk(x - 1, z - 1).done && world.chunkProviderServer.isChunkLoaded(x - 1, z - 1) && world.chunkProviderServer.isChunkLoaded(x, z - 1) && world.chunkProviderServer.isChunkLoaded(x - 1, z)) {
-                world.chunkProviderServer.getChunkAt(world.chunkProviderServer, x - 1, z - 1);
-            }
+            chunk.loadNearby(world.chunkProviderServer, world.chunkProviderServer, cx, cz);
         }
     }
 
