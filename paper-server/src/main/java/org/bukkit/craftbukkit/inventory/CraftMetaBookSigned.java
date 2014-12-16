@@ -54,15 +54,6 @@ class CraftMetaBookSigned extends CraftMetaBook implements BookMeta {
 
     CraftMetaBookSigned(Map<String, Object> map) {
         super(map);
-
-        setAuthor(SerializableMeta.getString(map, BOOK_AUTHOR.BUKKIT, true));
-
-        setTitle(SerializableMeta.getString(map, BOOK_TITLE.BUKKIT, true));
-
-        Iterable<?> pages = SerializableMeta.getObject(Iterable.class, map, BOOK_PAGES.BUKKIT, true);
-        CraftMetaItem.safelyAdd(pages, this.pages, MAX_PAGE_LENGTH);
-        
-        generation = SerializableMeta.getObject(Integer.class, map, GENERATION.BUKKIT, true);
     }
 
     @Override
