@@ -266,7 +266,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             instrumentName = "bassattack";
             break;
         }
-        getHandle().playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect("note."+instrumentName, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, note));
+
+        float f = (float) Math.pow(2.0D, (note - 12.0D) / 12.0D);
+        getHandle().playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect("note."+instrumentName, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f));
     }
 
     @Override
@@ -291,7 +293,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 instrumentName = "bassattack";
                 break;
         }
-        getHandle().playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect("note."+instrumentName, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, note.getId()));
+        float f = (float) Math.pow(2.0D, (note.getId() - 12.0D) / 12.0D);
+        getHandle().playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect("note."+instrumentName, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f));
     }
 
     @Override
