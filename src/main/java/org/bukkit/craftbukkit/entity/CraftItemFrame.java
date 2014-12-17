@@ -1,6 +1,9 @@
 package org.bukkit.craftbukkit.entity;
 
+import net.minecraft.server.BlockPosition;
 import net.minecraft.server.EntityItemFrame;
+import net.minecraft.server.EnumDirection;
+import net.minecraft.server.ItemStack;
 import net.minecraft.server.WorldServer;
 
 import org.apache.commons.lang.Validate;
@@ -23,16 +26,31 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
             return false;
         }
 
-        WorldServer world = ((CraftWorld) this.getWorld()).getHandle();
-        world.getTracker().untrackEntity(this.getHandle());
-        world.getTracker().track(this.getHandle());
+        update();
+
         return true;
     }
 
+    private void update() {
+        EntityItemFrame old = this.getHandle();
+
+        WorldServer world = ((CraftWorld) getWorld()).getHandle();
+        BlockPosition position = old.getBlockPosition();
+        EnumDirection direction = old.getDirection();
+        ItemStack item = old.getItem() != null ? old.getItem().cloneItemStack() : null;
+
+        old.die();
+
+        EntityItemFrame frame = new EntityItemFrame(world,position,direction);
+        frame.setItem(item);
+        world.addEntity(frame);
+        this.entity = frame;
+    }
+
+
     public void setItem(org.bukkit.inventory.ItemStack item) {
         if (item == null || item.getTypeId() == 0) {
-            getHandle().getDataWatcher().add(2, 5);
-            getHandle().getDataWatcher().update(2);
+            getHandle().setItem(null);
         } else {
             getHandle().setItem(CraftItemStack.asNMSCopy(item));
         }
