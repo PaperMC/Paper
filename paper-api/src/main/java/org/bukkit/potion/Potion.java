@@ -395,7 +395,7 @@ public class Potion {
     public static Potion fromDamage(int damage) {
         PotionType type = PotionType.getByDamageValue(damage & POTION_BIT);
         Potion potion;
-        if (type == null || (type == PotionType.WATER && damage != 0)) {
+        if (type == null || type == PotionType.WATER) {
             potion = new Potion(damage & NAME_BIT);
         } else {
             int level = (damage & TIER_BIT) >> TIER_SHIFT;
