@@ -64,9 +64,9 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                 }
                 char[] secBlkID = new char[4096]; // Allocate blk ID bytes
                 short[] bdata = xbtypes[sec];
-                // Loop through data, 2 blocks at a time
                 for (int i = 0; i < bdata.length; i++) {
-                    secBlkID[i] = (char) ((int)bdata[i] << 4);
+                    Block b = Block.getById(bdata[i]);
+                    secBlkID[i] = (char) Block.d.b(b.getBlockData());
                 }
                 // Build chunk section
                 csect[sec] = new ChunkSection(sec << 4, true, secBlkID);
@@ -88,7 +88,8 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                     
                     char[] secBlkID = new char[4096]; // Allocate block ID bytes
                     for (int i = 0; i < secBlkID.length; i++) {
-                        secBlkID[i] = (char)(((int) btypes[sec][i]) << 4);
+                        Block b = Block.getById(btypes[sec][i]);
+                        secBlkID[i] = (char) Block.d.b(b.getBlockData());
                     }
                     csect[sec] = new ChunkSection(sec << 4, true, secBlkID);
                 }
@@ -123,7 +124,9 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                                         cs = csect[sec] = new ChunkSection(sec << 4, true);
                                         csbytes = cs.getIdArray();
                                     }
-                                    csbytes[(cy << 8) | (cz << 4) | cx] = (char)((int)blk << 4);
+
+                                    Block b = Block.getById(blk);
+                                    csbytes[(cy << 8) | (cz << 4) | cx] = (char) Block.d.b(b.getBlockData());
                                 }
                             }
                         }
