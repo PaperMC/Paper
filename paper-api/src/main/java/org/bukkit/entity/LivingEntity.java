@@ -3,8 +3,10 @@ package org.bukkit.entity;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.potion.PotionEffect;
@@ -57,6 +59,21 @@ public interface LivingEntity extends Entity, Damageable, ProjectileSource {
     public List<Block> getLineOfSight(HashSet<Byte> transparent, int maxDistance);
 
     /**
+     * Gets all blocks along the living entity's line of sight.
+     * <p>
+     * This list contains all blocks from the living entity's eye position to
+     * target inclusive.
+     *
+     * @param transparent HashSet containing all transparent block Materials (set to
+     *     null for only air)
+     * @param maxDistance this is the maximum distance to scan (may be limited
+     *     by server by at least 100 blocks, no less)
+     * @return list containing all blocks along the living entity's line of
+     *     sight
+     */
+    public List<Block> getLineOfSight(Set<Material> transparent, int maxDistance);
+
+    /**
      * Gets the block that the living entity has targeted.
      *
      * @param transparent HashSet containing all transparent block IDs (set to
@@ -68,6 +85,17 @@ public interface LivingEntity extends Entity, Damageable, ProjectileSource {
      */
     @Deprecated
     public Block getTargetBlock(HashSet<Byte> transparent, int maxDistance);
+
+    /**
+     * Gets the block that the living entity has targeted.
+     *
+     * @param transparent HashSet containing all transparent block Materials (set to
+     *     null for only air)
+     * @param maxDistance this is the maximum distance to scan (may be limited
+     *     by server by at least 100 blocks, no less)
+     * @return block that the living entity has targeted
+     */
+    public Block getTargetBlock(Set<Material> transparent, int maxDistance);
 
     /**
      * Gets the last two blocks along the living entity's line of sight.
@@ -84,6 +112,20 @@ public interface LivingEntity extends Entity, Damageable, ProjectileSource {
      */
     @Deprecated
     public List<Block> getLastTwoTargetBlocks(HashSet<Byte> transparent, int maxDistance);
+
+    /**
+     * Gets the last two blocks along the living entity's line of sight.
+     * <p>
+     * The target block will be the last block in the list.
+     *
+     * @param transparent HashSet containing all transparent block Materials (set to
+     *     null for only air)
+     * @param maxDistance this is the maximum distance to scan. This may be
+     *     further limited by the server, but never to less than 100 blocks
+     * @return list containing the last 2 blocks along the living entity's
+     *     line of sight
+     */
+    public List<Block> getLastTwoTargetBlocks(Set<Material> transparent, int maxDistance);
 
     /**
      * Throws an egg from the living entity.
