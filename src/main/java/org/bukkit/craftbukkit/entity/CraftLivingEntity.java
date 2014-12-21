@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import net.minecraft.server.DamageSource;
+import net.minecraft.server.EntityArmorStand;
 import net.minecraft.server.EntityArrow;
 import net.minecraft.server.EntityEgg;
 import net.minecraft.server.EntityEnderDragon;
@@ -67,7 +68,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public CraftLivingEntity(final CraftServer server, final EntityLiving entity) {
         super(server, entity);
 
-        if (entity instanceof EntityInsentient) {
+        if (entity instanceof EntityInsentient || entity instanceof EntityArmorStand) {
             equipment = new CraftEntityEquipment(this);
         }
     }

@@ -3,19 +3,12 @@ package org.bukkit.craftbukkit.entity;
 import net.minecraft.server.EntityArmorStand;
 import net.minecraft.server.Vector3f;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.EulerAngle;
 
 public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
-
-    private static final int HAND = 0;
-    private static final int FEET = 1;
-    private static final int LEGS = 2;
-    private static final int CHEST = 3;
-    private static final int HEAD = 4;
 
     public CraftArmorStand(CraftServer server, EntityArmorStand entity) {
         super(server, entity);
@@ -38,52 +31,52 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
 
     @Override
     public ItemStack getItemInHand() {
-        return CraftItemStack.asBukkitCopy(getHandle().getEquipment(HAND));
+        return getEquipment().getItemInHand();
     }
 
     @Override
     public void setItemInHand(ItemStack item) {
-        getHandle().setEquipment(HAND, CraftItemStack.asNMSCopy(item));
+        getEquipment().setItemInHand(item);
     }
 
     @Override
     public ItemStack getBoots() {
-        return CraftItemStack.asBukkitCopy(getHandle().getEquipment(FEET));
+        return getEquipment().getBoots();
     }
 
     @Override
     public void setBoots(ItemStack item) {
-        getHandle().setEquipment(FEET, CraftItemStack.asNMSCopy(item));
+        getEquipment().setBoots(item);
     }
 
     @Override
     public ItemStack getLeggings() {
-        return CraftItemStack.asBukkitCopy(getHandle().getEquipment(LEGS));
+        return getEquipment().getLeggings();
     }
 
     @Override
     public void setLeggings(ItemStack item) {
-        getHandle().setEquipment(LEGS, CraftItemStack.asNMSCopy(item));
+        getEquipment().setLeggings(item);
     }
 
     @Override
     public ItemStack getChestplate() {
-        return CraftItemStack.asBukkitCopy(getHandle().getEquipment(CHEST));
+        return getEquipment().getChestplate();
     }
 
     @Override
     public void setChestplate(ItemStack item) {
-        getHandle().setEquipment(CHEST, CraftItemStack.asNMSCopy(item));
+        getEquipment().setChestplate(item);
     }
 
     @Override
     public ItemStack getHelmet() {
-        return CraftItemStack.asBukkitCopy(getHandle().getEquipment(HEAD));
+        return getEquipment().getHelmet();
     }
 
     @Override
     public void setHelmet(ItemStack item) {
-        getHandle().setEquipment(HEAD, CraftItemStack.asNMSCopy(item));
+        getEquipment().setHelmet(item);
     }
 
     @Override
