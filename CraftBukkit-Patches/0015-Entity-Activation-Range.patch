@@ -1,4 +1,4 @@
-From aec15dc9337123932c26d8a07f73209517a6a5c1 Mon Sep 17 00:00:00 2001
+From 65adc99054ba4baa0c77b63e75de3b2698eecf90 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 3 Feb 2013 05:10:21 -0500
 Subject: [PATCH] Entity Activation Range
@@ -9,7 +9,7 @@ This will drastically cut down on tick timings for entities that are not in rang
 This change can have dramatic impact on gameplay if configured too low. Balance according to your servers desired gameplay.
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 59473f5..cffe530 100644
+index 5441e8b..c4cf603 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -89,14 +89,14 @@ public abstract class Entity implements ICommandListener {
@@ -37,7 +37,7 @@ index 59473f5..cffe530 100644
      public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getEntityTimings(this); // Spigot
 +    public final byte activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
 +    public final boolean defaultActivationState;
-+    public long activatedTick = 0;
++    public long activatedTick = Integer.MIN_VALUE;
 +    public void inactiveTick() { }
 +    // Spigot end
  
@@ -57,7 +57,7 @@ index 59473f5..cffe530 100644
          this.datawatcher = new DataWatcher(this);
          this.datawatcher.a(0, Byte.valueOf((byte) 0));
 diff --git a/src/main/java/net/minecraft/server/EntityAgeable.java b/src/main/java/net/minecraft/server/EntityAgeable.java
-index 3303d19..035d719 100644
+index 2adcc19..23091bd 100644
 --- a/src/main/java/net/minecraft/server/EntityAgeable.java
 +++ b/src/main/java/net/minecraft/server/EntityAgeable.java
 @@ -9,6 +9,31 @@ public abstract class EntityAgeable extends EntityCreature {
@@ -205,10 +205,10 @@ index 558574f..41d2d87 100644
      public static final HashMap<String, CustomTimingsHandler> pluginTaskTimingMap = new HashMap<String, CustomTimingsHandler>();
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
 new file mode 100644
-index 0000000..cfabc25
+index 0000000..d3f4af1
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
-@@ -0,0 +1,283 @@
+@@ -0,0 +1,284 @@
 +package org.spigotmc;
 +
 +import java.util.ArrayList;
@@ -455,7 +455,8 @@ index 0000000..cfabc25
 +    public static boolean checkIfActive(Entity entity)
 +    {
 +        SpigotTimings.checkIfActiveTimer.startTiming();
-+        if ( !entity.isAddedToChunk() ) {
++        // Never safe to skip fireworks or entities not yet added to chunk
++        if ( !entity.isAddedToChunk() || entity instanceof EntityFireworks ) {
 +            SpigotTimings.checkIfActiveTimer.stopTiming();
 +            return true;
 +        }
