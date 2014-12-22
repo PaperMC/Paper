@@ -113,7 +113,12 @@ public class CraftBlock implements Block {
     }
 
     public void setType(final Material type) {
-        setTypeId(type.getId());
+        setType(type, true);
+    }
+
+    @Override
+    public void setType(Material type, boolean applyPhysics) {
+        setTypeId(type.getId(), applyPhysics);
     }
 
     public boolean setTypeId(final int type) {
