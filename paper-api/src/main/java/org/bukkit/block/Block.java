@@ -187,6 +187,14 @@ public interface Block extends Metadatable {
     void setType(Material type);
 
     /**
+     * Sets the type of this block
+     *
+     * @param type Material to change this block to
+     * @param applyPhysics False to cancel physics on the changed block.
+     */
+    void setType(Material type, boolean applyPhysics);
+
+    /**
      * Sets the type-id of this block
      *
      * @param type Type-Id to change this block to
