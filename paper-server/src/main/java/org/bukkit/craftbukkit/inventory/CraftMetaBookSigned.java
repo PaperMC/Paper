@@ -14,6 +14,7 @@ import org.bukkit.inventory.meta.BookMeta;
 
 import com.google.common.collect.ImmutableMap.Builder;
 import net.minecraft.server.ChatSerializer;
+import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.NBTTagString;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 
@@ -34,21 +35,19 @@ class CraftMetaBookSigned extends CraftMetaBook implements BookMeta {
 
         if (tag.hasKey(BOOK_PAGES.NBT)) {
             NBTTagList pages = tag.getList(BOOK_PAGES.NBT, 8);
-            String[] pageArray = new String[pages.size()];
 
             for (int i = 0; i < pages.size(); i++) {
                 String page = pages.getString(i);
                 if (resolved) {
                     try {
-                        page = CraftChatMessage.fromComponent(ChatSerializer.a(page));
+                        this.pages.add(ChatSerializer.a(page));
+                        continue;
                     } catch (Exception e) {
                         // Ignore and treat as an old book
                     }
                 }
-                pageArray[i] = page;
+                addPage(page);
             }
-
-            addPage(pageArray);
         }
     }
 
@@ -74,9 +73,9 @@ class CraftMetaBookSigned extends CraftMetaBook implements BookMeta {
 
         if (hasPages()) {
             NBTTagList list = new NBTTagList();
-            for (String page : pages) {                   
+            for (IChatBaseComponent page : pages) {
                 list.add(new NBTTagString(
-                    ChatSerializer.a(CraftChatMessage.fromString(page, true)[0])
+                    ChatSerializer.a(page)
                 ));
             }
             itemData.set(BOOK_PAGES.NBT, list);

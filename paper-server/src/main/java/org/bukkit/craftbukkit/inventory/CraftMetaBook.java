@@ -16,7 +16,9 @@ import org.bukkit.inventory.meta.BookMeta;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap.Builder;
+import java.util.AbstractList;
 import net.minecraft.server.ChatSerializer;
+import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.NBTTagString;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 
@@ -27,12 +29,12 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
     static final ItemMetaKey BOOK_PAGES = new ItemMetaKey("pages");
     static final ItemMetaKey RESOLVED = new ItemMetaKey("resolved");
     static final ItemMetaKey GENERATION = new ItemMetaKey("generation");
-    static final int MAX_PAGE_LENGTH = 256;
+    static final int MAX_PAGE_LENGTH = Short.MAX_VALUE; // TODO: Check me
     static final int MAX_TITLE_LENGTH = 0xffff;
 
     protected String title;
     protected String author;
-    protected List<String> pages = new ArrayList<String>();
+    protected List<IChatBaseComponent> pages = new ArrayList<IChatBaseComponent>();
     protected Integer generation;
 
     CraftMetaBook(CraftMetaItem meta) {
@@ -73,21 +75,19 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
 
         if (tag.hasKey(BOOK_PAGES.NBT) && handlePages) {
             NBTTagList pages = tag.getList(BOOK_PAGES.NBT, 8);
-            String[] pageArray = new String[pages.size()];
 
             for (int i = 0; i < pages.size(); i++) {
                 String page = pages.getString(i);
                 if (resolved) {
                     try {
-                        page = CraftChatMessage.fromComponent(ChatSerializer.a(page));
+                        this.pages.add(ChatSerializer.a(page));
+                        continue;
                     } catch (Exception e) {
                         // Ignore and treat as an old book
                     }
                 }
-                pageArray[i] = page;
+                addPage(page);
             }
-
-            addPage(pageArray);
         }
     }
 
@@ -99,7 +99,11 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
         setTitle(SerializableMeta.getString(map, BOOK_TITLE.BUKKIT, true));
 
         Iterable<?> pages = SerializableMeta.getObject(Iterable.class, map, BOOK_PAGES.BUKKIT, true);
-        CraftMetaItem.safelyAdd(pages, this.pages, MAX_PAGE_LENGTH);
+        for (Object page : pages) {
+            if (page instanceof String) {
+                addPage((String) page);
+            }
+        }
         
         generation = SerializableMeta.getObject(Integer.class, map, GENERATION.BUKKIT, true);
     }
@@ -123,8 +127,8 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
         if (handlePages) {
             if (hasPages()) {
                 NBTTagList list = new NBTTagList();
-                for (String page : pages) {
-                    list.add(new NBTTagString(page));
+                for (IChatBaseComponent page : pages) {
+                    list.add(new NBTTagString(CraftChatMessage.fromComponent(page)));
                 }
                 itemData.set(BOOK_PAGES.NBT, list);
             }
@@ -195,7 +199,7 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
 
     public String getPage(final int page) {
         Validate.isTrue(isValidPage(page), "Invalid page number");
-        return pages.get(page - 1);
+        return CraftChatMessage.fromComponent(pages.get(page - 1));
     }
 
     public void setPage(final int page, final String text) {
@@ -203,7 +207,8 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
             throw new IllegalArgumentException("Invalid page number " + page + "/" + pages.size());
         }
 
-        pages.set(page - 1, text == null ? "" : text.length() > MAX_PAGE_LENGTH ? text.substring(0, MAX_PAGE_LENGTH) : text);
+        String newText = text == null ? "" : text.length() > MAX_PAGE_LENGTH ? text.substring(0, MAX_PAGE_LENGTH) : text;
+        pages.set(page - 1, CraftChatMessage.fromString(newText, true)[0]);
     }
 
     public void setPages(final String... pages) {
@@ -220,7 +225,7 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
                 page = page.substring(0, MAX_PAGE_LENGTH);
             }
 
-            this.pages.add(page);
+            this.pages.add(CraftChatMessage.fromString(page, true)[0]);
         }
     }
 
@@ -229,12 +234,26 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
     }
 
     public List<String> getPages() {
-        return ImmutableList.copyOf(pages);
+        final List<IChatBaseComponent> copy = ImmutableList.copyOf(pages);
+        return new AbstractList<String>() {
+
+            @Override
+            public String get(int index) {
+                return CraftChatMessage.fromComponent(copy.get(index));
+            }
+
+            @Override
+            public int size() {
+                return copy.size();
+            }
+        };
     }
 
     public void setPages(List<String> pages) {
         this.pages.clear();
-        CraftMetaItem.safelyAdd(pages, this.pages, MAX_PAGE_LENGTH);
+        for (String page : pages) {
+            addPage(page);
+        }
     }
 
     private boolean isValidPage(int page) {
@@ -244,7 +263,7 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
     @Override
     public CraftMetaBook clone() {
         CraftMetaBook meta = (CraftMetaBook) super.clone();
-        meta.pages = new ArrayList<String>(pages);
+        meta.pages = new ArrayList<IChatBaseComponent>(pages);
         return meta;
     }
 
