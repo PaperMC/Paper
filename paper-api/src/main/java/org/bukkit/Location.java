@@ -1,13 +1,17 @@
 package org.bukkit;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.bukkit.block.Block;
+import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
 
 /**
  * Represents a 3-dimensional position in a world
  */
-public class Location implements Cloneable {
+public class Location implements Cloneable, ConfigurationSerializable {
     private World world;
     private double x;
     private double y;
@@ -560,4 +564,36 @@ public class Location implements Cloneable {
     public static int locToBlock(double loc) {
         return NumberConversions.floor(loc);
     }
+
+	@Utility
+	public Map<String, Object> serialize() {
+		Map<String, Object> data = new HashMap<String, Object>();
+		data.put("world", this.world.getName());
+
+		data.put("x", this.x);
+		data.put("y", this.y);
+		data.put("z", this.z);
+
+		data.put("yaw", this.yaw);
+		data.put("pitch", this.pitch);
+
+		return data;
+	}
+	
+	 /**
+     * Required method for deserialization
+     *
+     * @param args map to deserialize
+     * @return deserialized location
+     * @throws IllegalArgumentException if the world don't exists
+     * @see ConfigurationSerializable
+     */
+	public static Location deserialize(Map<String, Object> args) {
+		World world = Bukkit.getWorld((String) args.get("world"));
+		if (world == null) {
+			throw new IllegalArgumentException("unknown world");
+		}
+
+		return new Location(world, NumberConversions.toDouble(args.get("x")), NumberConversions.toDouble(args.get("y")), NumberConversions.toDouble(args.get("z")), NumberConversions.toFloat(args.get("yaw")), NumberConversions.toFloat(args.get("pitch")));
+	}
 }
