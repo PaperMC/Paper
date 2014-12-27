@@ -316,7 +316,11 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
         }
 
         if (hasPages()) {
-            builder.put(BOOK_PAGES.BUKKIT, pages);
+            List<String> pagesString = new ArrayList<String>();
+            for (IChatBaseComponent comp : pages) {
+                pagesString.add(CraftChatMessage.fromComponent(comp));
+            }
+            builder.put(BOOK_PAGES.BUKKIT, pagesString);
         }
         
         if (generation != null) {
