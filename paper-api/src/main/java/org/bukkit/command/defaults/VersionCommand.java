@@ -185,17 +185,18 @@ public class VersionCommand extends BukkitCommand {
     private void obtainVersion() {
         String version = Bukkit.getVersion();
         if (version == null) version = "Custom";
+        version = "git-Spigot-5ffe41c-89ebcc2";
         if (version.startsWith("git-Spigot-")) {
             String[] parts = version.substring("git-Spigot-".length()).split("-");
-            int cbVersions = getDistance("craftbukkit", parts[0]);
-            int spigotVersions = getDistance("spigot", parts[1]);
+            int cbVersions = getDistance("craftbukkit", parts[1]);
+            int spigotVersions = getDistance("spigot", parts[0]);
             if (cbVersions == -1 || spigotVersions == -1) {
                 setVersionMessage("Error obtaining version information");
             } else {
-                if (cbVersions != 0 && spigotVersions != 0) {
+                if (cbVersions == 0 && spigotVersions == 0) {
                     setVersionMessage("You are running the latest version");
                 } else {
-                    setVersionMessage("You are " + (cbVersions + spigotVersions) + " behind");
+                    setVersionMessage("You are " + (cbVersions + spigotVersions) + " version(s) behind");
                 }
             }
 
@@ -204,10 +205,10 @@ public class VersionCommand extends BukkitCommand {
             if (cbVersions == -1) {
                 setVersionMessage("Error obtaining version information");
             } else {
-                if (cbVersions != 0) {
+                if (cbVersions == 0) {
                     setVersionMessage("You are running the latest version");
                 } else {
-                    setVersionMessage("You are " + cbVersions + " behind");
+                    setVersionMessage("You are " + cbVersions + " version(s) behind");
                 }
             }
         } else {
