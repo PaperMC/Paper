@@ -185,7 +185,6 @@ public class VersionCommand extends BukkitCommand {
     private void obtainVersion() {
         String version = Bukkit.getVersion();
         if (version == null) version = "Custom";
-        version = "git-Spigot-5ffe41c-89ebcc2";
         if (version.startsWith("git-Spigot-")) {
             String[] parts = version.substring("git-Spigot-".length()).split("-");
             int cbVersions = getDistance("craftbukkit", parts[1]);
