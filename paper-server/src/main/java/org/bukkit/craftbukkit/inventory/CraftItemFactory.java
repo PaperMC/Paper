@@ -103,13 +103,6 @@ public final class CraftItemFactory implements ItemFactory {
         case HOPPER:
         case REDSTONE_COMPARATOR:
         case FLOWER_POT_ITEM:
-            if (meta instanceof CraftMetaTileEntity) {
-                CraftMetaTileEntity te = (CraftMetaTileEntity) meta;
-                if (te.material != material) {
-                    return new CraftMetaTileEntity((CraftMetaTileEntity) null, material);
-                }
-                return meta;
-            }
             return new CraftMetaTileEntity(meta, material);
         default:
             return new CraftMetaItem(meta);
