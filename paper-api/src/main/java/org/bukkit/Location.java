@@ -42,12 +42,12 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @param pitch The absolute rotation on the y-plane, in degrees
      */
     public Location(final World world, final double x, final double y, final double z, final float yaw, final float pitch) {
-        this.world = world;
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        this.pitch = pitch;
-        this.yaw = yaw;
+        setWorld(world);
+        setX(x);
+        setY(y);
+        setZ(z);
+        setPitch(pitch);
+        setYaw(yaw);
     }
 
     /**
@@ -92,6 +92,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @param x X-coordinate
      */
     public void setX(double x) {
+        checkFinite(x, "x must be finite");
         this.x = x;
     }
 
@@ -120,6 +121,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @param y y-coordinate
      */
     public void setY(double y) {
+        checkFinite(y, "y must be finite");
         this.y = y;
     }
 
@@ -148,6 +150,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @param z z-coordinate
      */
     public void setZ(double z) {
+        checkFinite(z, "z must be finite");
         this.z = z;
     }
 
@@ -185,6 +188,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @param yaw new rotation's yaw
      */
     public void setYaw(float yaw) {
+        checkFiniteFloat(yaw, "yaw must be finite");
         this.yaw = yaw;
     }
 
@@ -219,6 +223,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @param pitch new incline's pitch
      */
     public void setPitch(float pitch) {
+        checkFiniteFloat(pitch, "pitch must be finite");
         this.pitch = pitch;
     }
 
@@ -282,17 +287,17 @@ public class Location implements Cloneable, ConfigurationSerializable {
         final double z = vector.getZ();
 
         if (x == 0 && z == 0) {
-            pitch = vector.getY() > 0 ? -90 : 90;
+            setPitch(vector.getY() > 0 ? -90 : 90);
             return this;
         }
 
         double theta = Math.atan2(-x, z);
-        yaw = (float) Math.toDegrees((theta + _2PI) % _2PI);
+        setYaw((float) Math.toDegrees((theta + _2PI) % _2PI));
 
         double x2 = NumberConversions.square(x);
         double z2 = NumberConversions.square(z);
         double xz = Math.sqrt(x2 + z2);
-        pitch = (float) Math.toDegrees(Math.atan(-vector.getY() / xz));
+        setPitch((float) Math.toDegrees(Math.atan(-vector.getY() / xz)));
 
         return this;
     }
@@ -310,9 +315,9 @@ public class Location implements Cloneable, ConfigurationSerializable {
             throw new IllegalArgumentException("Cannot add Locations of differing worlds");
         }
 
-        x += vec.x;
-        y += vec.y;
-        z += vec.z;
+        setX(getX() + vec.getX());
+        setY(getY() + vec.getY());
+        setZ(getZ() + vec.getZ());
         return this;
     }
 
@@ -324,9 +329,9 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @return the same location
      */
     public Location add(Vector vec) {
-        this.x += vec.getX();
-        this.y += vec.getY();
-        this.z += vec.getZ();
+        setX(getX() + vec.getX());
+        setY(getY() + vec.getY());
+        setZ(getZ() + vec.getZ());
         return this;
     }
 
@@ -340,9 +345,9 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @return the same location
      */
     public Location add(double x, double y, double z) {
-        this.x += x;
-        this.y += y;
-        this.z += z;
+        setX(getX() + x);
+        setY(getY() + y);
+        setZ(getZ() + z);
         return this;
     }
 
@@ -359,9 +364,9 @@ public class Location implements Cloneable, ConfigurationSerializable {
             throw new IllegalArgumentException("Cannot add Locations of differing worlds");
         }
 
-        x -= vec.x;
-        y -= vec.y;
-        z -= vec.z;
+        setX(getX() - vec.getX());
+        setY(getY() - vec.getY());
+        setZ(getZ() - vec.getZ());
         return this;
     }
 
@@ -373,9 +378,9 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @return the same location
      */
     public Location subtract(Vector vec) {
-        this.x -= vec.getX();
-        this.y -= vec.getY();
-        this.z -= vec.getZ();
+        setX(getX() - vec.getX());
+        setY(getY() - vec.getY());
+        setZ(getZ() - vec.getZ());
         return this;
     }
 
@@ -390,9 +395,9 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @return the same location
      */
     public Location subtract(double x, double y, double z) {
-        this.x -= x;
-        this.y -= y;
-        this.z -= z;
+        setX(getX() - x);
+        setY(getY() - y);
+        setZ(getZ() - z);
         return this;
     }
 
@@ -467,9 +472,9 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @return the same location
      */
     public Location multiply(double m) {
-        x *= m;
-        y *= m;
-        z *= m;
+        setX(getX() * m);
+        setY(getY() * m);
+        setZ(getZ() * m);
         return this;
     }
 
@@ -480,9 +485,9 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @return the same location
      */
     public Location zero() {
-        x = 0;
-        y = 0;
-        z = 0;
+        setX(0D);
+        setY(0D);
+        setZ(0D);
         return this;
     }
 
@@ -596,4 +601,16 @@ public class Location implements Cloneable, ConfigurationSerializable {
 
 		return new Location(world, NumberConversions.toDouble(args.get("x")), NumberConversions.toDouble(args.get("y")), NumberConversions.toDouble(args.get("z")), NumberConversions.toFloat(args.get("yaw")), NumberConversions.toFloat(args.get("pitch")));
 	}
+
+    private static void checkFinite(double d, String message) {
+        if (Double.isNaN(d) || Double.isInfinite(d)) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    private static void checkFiniteFloat(float d, String message) {
+        if (Float.isNaN(d) || Float.isInfinite(d)) {
+            throw new IllegalArgumentException(message);
+        }
+    }
 }

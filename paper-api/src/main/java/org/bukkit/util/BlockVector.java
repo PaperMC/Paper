@@ -16,9 +16,7 @@ public class BlockVector extends Vector {
      * Construct the vector with all components as 0.
      */
     public BlockVector() {
-        this.x = 0;
-        this.y = 0;
-        this.z = 0;
+        super();
     }
 
     /**
@@ -27,9 +25,7 @@ public class BlockVector extends Vector {
      * @param vec The other vector.
      */
     public BlockVector(Vector vec) {
-        this.x = vec.getX();
-        this.y = vec.getY();
-        this.z = vec.getZ();
+        this(vec.getX(), vec.getY(), vec.getZ());
     }
 
     /**
@@ -40,9 +36,7 @@ public class BlockVector extends Vector {
      * @param z Z component
      */
     public BlockVector(int x, int y, int z) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
+        super(x, y, z);
     }
 
     /**
@@ -53,9 +47,7 @@ public class BlockVector extends Vector {
      * @param z Z component
      */
     public BlockVector(double x, double y, double z) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
+        super(x, y, z);
     }
 
     /**
@@ -66,9 +58,7 @@ public class BlockVector extends Vector {
      * @param z Z component
      */
     public BlockVector(float x, float y, float z) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
+        super(x, y, z);
     }
 
     /**

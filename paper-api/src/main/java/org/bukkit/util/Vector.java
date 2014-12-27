@@ -33,9 +33,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * Construct the vector with all components as 0.
      */
     public Vector() {
-        this.x = 0;
-        this.y = 0;
-        this.z = 0;
+        this(0, 0, 0);
     }
 
     /**
@@ -46,9 +44,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @param z Z component
      */
     public Vector(int x, int y, int z) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
+        this((double) x, (double) y, (double) z);
     }
 
     /**
@@ -59,9 +55,10 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @param z Z component
      */
     public Vector(double x, double y, double z) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
+        // use setters for range checks
+        setX(x);
+        setY(y);
+        setZ(z);
     }
 
     /**
@@ -72,9 +69,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @param z Z component
      */
     public Vector(float x, float y, float z) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
+        this((double) x, (double) y, (double) z);
     }
 
     /**
@@ -84,9 +79,9 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return the same vector
      */
     public Vector add(Vector vec) {
-        x += vec.x;
-        y += vec.y;
-        z += vec.z;
+        setX(getX() + vec.getX());
+        setY(getY() + vec.getY());
+        setZ(getZ() + vec.getZ());
         return this;
     }
 
@@ -97,9 +92,9 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return the same vector
      */
     public Vector subtract(Vector vec) {
-        x -= vec.x;
-        y -= vec.y;
-        z -= vec.z;
+        setX(getX() - vec.getX());
+        setY(getY() - vec.getY());
+        setZ(getZ() - vec.getZ());
         return this;
     }
 
@@ -110,9 +105,9 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return the same vector
      */
     public Vector multiply(Vector vec) {
-        x *= vec.x;
-        y *= vec.y;
-        z *= vec.z;
+        setX(getX() * vec.getX());
+        setY(getY() * vec.getY());
+        setZ(getZ() * vec.getZ());
         return this;
     }
 
@@ -123,9 +118,9 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return the same vector
      */
     public Vector divide(Vector vec) {
-        x /= vec.x;
-        y /= vec.y;
-        z /= vec.z;
+        setX(getX() / vec.getX());
+        setY(getY() / vec.getY());
+        setZ(getZ() / vec.getZ());
         return this;
     }
 
@@ -136,9 +131,9 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return the same vector
      */
     public Vector copy(Vector vec) {
-        x = vec.x;
-        y = vec.y;
-        z = vec.z;
+        setX(vec.getX());
+        setY(vec.getY());
+        setZ(vec.getZ());
         return this;
     }
 
@@ -207,9 +202,9 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return this same vector (now a midpoint)
      */
     public Vector midpoint(Vector other) {
-        x = (x + other.x) / 2;
-        y = (y + other.y) / 2;
-        z = (z + other.z) / 2;
+        setX((getX() + other.getX()) / 2);
+        setY((getY() + other.getY()) / 2);
+        setZ((getZ() + other.getZ()) / 2);
         return this;
     }
 
@@ -234,10 +229,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return the same vector
      */
     public Vector multiply(int m) {
-        x *= m;
-        y *= m;
-        z *= m;
-        return this;
+        return multiply((double) m);
     }
 
     /**
@@ -248,9 +240,9 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return the same vector
      */
     public Vector multiply(double m) {
-        x *= m;
-        y *= m;
-        z *= m;
+        setX(getX() * m);
+        setY(getY() * m);
+        setZ(getZ() * m);
         return this;
     }
 
@@ -262,10 +254,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return the same vector
      */
     public Vector multiply(float m) {
-        x *= m;
-        y *= m;
-        z *= m;
-        return this;
+        return multiply((double) m);
     }
 
     /**
@@ -292,13 +281,13 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return the same vector
      */
     public Vector crossProduct(Vector o) {
-        double newX = y * o.z - o.y * z;
-        double newY = z * o.x - o.z * x;
-        double newZ = x * o.y - o.x * y;
+        double newX = getY() * o.getZ() - o.getY() * getZ();
+        double newY = getZ() * o.getX() - o.getZ() * getX();
+        double newZ = getX() * o.getY() - o.getX() * getY();
 
-        x = newX;
-        y = newY;
-        z = newZ;
+        setX(newX);
+        setY(newY);
+        setZ(newZ);
         return this;
     }
 
@@ -310,11 +299,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
     public Vector normalize() {
         double length = length();
 
-        x /= length;
-        y /= length;
-        z /= length;
-
-        return this;
+        return multiply(1 / length);
     }
 
     /**
@@ -323,9 +308,9 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return the same vector
      */
     public Vector zero() {
-        x = 0;
-        y = 0;
-        z = 0;
+        setX(0D);
+        setY(0D);
+        setZ(0D);
         return this;
     }
 
@@ -418,8 +403,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return This vector.
      */
     public Vector setX(int x) {
-        this.x = x;
-        return this;
+        return setX((double) x);
     }
 
     /**
@@ -429,6 +413,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return This vector.
      */
     public Vector setX(double x) {
+        checkFinite(x, "x must be finite");
         this.x = x;
         return this;
     }
@@ -440,8 +425,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return This vector.
      */
     public Vector setX(float x) {
-        this.x = x;
-        return this;
+        return setX((double) x);
     }
 
     /**
@@ -451,8 +435,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return This vector.
      */
     public Vector setY(int y) {
-        this.y = y;
-        return this;
+        return setY((double) y);
     }
 
     /**
@@ -462,6 +445,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return This vector.
      */
     public Vector setY(double y) {
+        checkFinite(y, "y must be finite");
         this.y = y;
         return this;
     }
@@ -473,8 +457,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return This vector.
      */
     public Vector setY(float y) {
-        this.y = y;
-        return this;
+        return setY((double) y);
     }
 
     /**
@@ -484,8 +467,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return This vector.
      */
     public Vector setZ(int z) {
-        this.z = z;
-        return this;
+        return setZ((double) z);
     }
 
     /**
@@ -495,6 +477,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return This vector.
      */
     public Vector setZ(double z) {
+        checkFinite(z, "z must be finite");
         this.z = z;
         return this;
     }
@@ -506,8 +489,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return This vector.
      */
     public Vector setZ(float z) {
-        this.z = z;
-        return this;
+        return setZ((double) z);
     }
 
     /**
@@ -663,5 +645,11 @@ public class Vector implements Cloneable, ConfigurationSerializable {
         }
 
         return new Vector(x, y, z);
+    }
+
+    private static void checkFinite(double d, String message) {
+        if (Double.isNaN(d) || Double.isInfinite(d)) {
+            throw new IllegalArgumentException(message);
+        }
     }
 }
