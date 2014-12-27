@@ -20,7 +20,7 @@ public class CraftMetaTileEntity extends CraftMetaItem {
         super(meta);
         this.material = material;
 
-        if (!(meta instanceof CraftMetaTileEntity)) {
+        if (!(meta instanceof CraftMetaTileEntity) || ((CraftMetaTileEntity) meta).material != material) {
             blockEntityTag = null;
             return;
         }
