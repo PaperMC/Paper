@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde/net/minecraft/server/EntityPlayer.java	2014-12-15 14:13:24.430966154 +0000
-+++ src/main/java/net/minecraft/server/EntityPlayer.java	2014-12-15 14:13:24.434966154 +0000
+--- ../work/decompile-8eb82bde//net/minecraft/server/EntityPlayer.java	2014-12-28 15:14:13.016406534 +0000
++++ src/main/java/net/minecraft/server/EntityPlayer.java	2014-12-28 15:14:13.016406534 +0000
 @@ -13,6 +13,17 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -50,7 +50,7 @@
      }
  
      public void a(NBTTagCompound nbttagcompound) {
-@@ -81,14 +108,40 @@
+@@ -81,13 +108,39 @@
                  this.playerInteractManager.setGameMode(EnumGamemode.getById(nbttagcompound.getInt("playerGameType")));
              }
          }
@@ -62,8 +62,8 @@
          super.b(nbttagcompound);
          nbttagcompound.setInt("playerGameType", this.playerInteractManager.getGameMode().getId());
 +        this.getBukkitEntity().setExtraData(nbttagcompound); // CraftBukkit
-     }
- 
++    }
++
 +    // CraftBukkit start - World fallback code, either respawn location or global spawn
 +    public void spawnIn(World world) {
 +        super.spawnIn(world);
@@ -86,12 +86,11 @@
 +        }
 +        this.dimension = ((WorldServer) this.world).dimension;
 +        this.playerInteractManager.a((WorldServer) world);
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      public void levelDown(int i) {
          super.levelDown(i);
-         this.lastSentExp = -1;
 @@ -114,6 +167,11 @@
      }
  
@@ -302,11 +301,11 @@
 +        // mount(null) doesn't really fly for overloaded methods,
 +        // so this method is needed
 +        Entity currentVehicle = this.vehicle;
-+
-+        super.setPassengerOf(entity);
  
 -        super.mount(entity);
 -        if (entity != entity1) {
++        super.setPassengerOf(entity);
++
 +        // Check if the vehicle actually changed.
 +        if (currentVehicle != this.vehicle) {
              this.playerConnection.sendPacket(new PacketPlayOutAttachEntity(0, this, this.vehicle));
@@ -317,7 +316,7 @@
      }
  
      protected void a(double d0, boolean flag, Block block, BlockPosition blockposition) {}
-@@ -490,19 +611,38 @@
+@@ -490,19 +611,46 @@
          this.playerConnection.sendPacket(new PacketPlayOutOpenSignEditor(tileentitysign.getPosition()));
      }
  
@@ -344,21 +343,38 @@
  
      public void openContainer(IInventory iinventory) {
 +        // CraftBukkit start - Inventory open hook
++        // Copied from below
++
++        boolean cancelled = false;
++        if (iinventory instanceof ITileInventory) {
++            ITileInventory itileinventory = (ITileInventory) iinventory;
++            cancelled = itileinventory.q_() && !this.a(itileinventory.i()) && !this.v();
++        }
++
 +        Container container;
 +        if (iinventory instanceof ITileEntityContainer) {
 +            container = ((ITileEntityContainer)iinventory).createContainer(this.inventory, this);
 +        } else {
 +            container = new ContainerChest(this.inventory, iinventory, this);
 +        }
-+        container = CraftEventFactory.callInventoryOpenEvent(this, container);
-+        if (container == null) {
++        container = CraftEventFactory.callInventoryOpenEvent(this, container, cancelled);
++        if (container == null && !cancelled) { // Let pre-cancelled events fall through
 +            return;
 +        }
 +        // CraftBukkit end
          if (this.activeContainer != this.defaultContainer) {
              this.closeInventory();
          }
-@@ -520,10 +660,10 @@
+@@ -510,7 +658,7 @@
+         if (iinventory instanceof ITileInventory) {
+             ITileInventory itileinventory = (ITileInventory) iinventory;
+ 
+-            if (itileinventory.q_() && !this.a(itileinventory.i()) && !this.v()) {
++            if (itileinventory.q_() && !this.a(itileinventory.i()) && !this.v() && container == null) { // CraftBukkit - allow plugins to uncancel the lock
+                 this.playerConnection.sendPacket(new PacketPlayOutChat(new ChatMessage("container.isLocked", new Object[] { iinventory.getScoreboardDisplayName()}), (byte) 2));
+                 this.playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect("random.door_close", this.locX, this.locY, this.locZ, 1.0F, 1.0F));
+                 return;
+@@ -520,10 +668,10 @@
          this.nextContainerCounter();
          if (iinventory instanceof ITileEntityContainer) {
              this.playerConnection.sendPacket(new PacketPlayOutOpenWindow(this.containerCounter, ((ITileEntityContainer) iinventory).getContainerName(), iinventory.getScoreboardDisplayName(), iinventory.getSize()));
@@ -371,7 +387,7 @@
          }
  
          this.activeContainer.windowId = this.containerCounter;
-@@ -531,8 +671,14 @@
+@@ -531,8 +679,14 @@
      }
  
      public void openTrade(IMerchant imerchant) {
@@ -387,7 +403,7 @@
          this.activeContainer.windowId = this.containerCounter;
          this.activeContainer.addSlotListener(this);
          InventoryMerchant inventorymerchant = ((ContainerMerchant) this.activeContainer).e();
-@@ -552,13 +698,20 @@
+@@ -552,13 +706,20 @@
      }
  
      public void openHorseInventory(EntityHorse entityhorse, IInventory iinventory) {
@@ -409,7 +425,7 @@
          this.activeContainer.windowId = this.containerCounter;
          this.activeContainer.addSlotListener(this);
      }
-@@ -587,6 +740,11 @@
+@@ -587,6 +748,11 @@
      public void a(Container container, List list) {
          this.playerConnection.sendPacket(new PacketPlayOutWindowItems(container.windowId, list));
          this.playerConnection.sendPacket(new PacketPlayOutSetSlot(-1, -1, this.inventory.getCarried()));
@@ -421,7 +437,7 @@
      }
  
      public void setContainerData(Container container, int i, int j) {
-@@ -601,6 +759,7 @@
+@@ -601,6 +767,7 @@
      }
  
      public void closeInventory() {
@@ -429,7 +445,7 @@
          this.playerConnection.sendPacket(new PacketPlayOutCloseWindow(this.activeContainer.windowId));
          this.p();
      }
-@@ -681,7 +840,16 @@
+@@ -681,7 +848,16 @@
  
      public void triggerHealthUpdate() {
          this.bK = -1.0E8F;
@@ -446,7 +462,7 @@
  
      public void b(IChatBaseComponent ichatbasecomponent) {
          this.playerConnection.sendPacket(new PacketPlayOutChat(ichatbasecomponent));
-@@ -747,6 +915,8 @@
+@@ -747,6 +923,8 @@
      }
  
      public void a(EnumGamemode enumgamemode) {
@@ -455,7 +471,7 @@
          this.playerInteractManager.setGameMode(enumgamemode);
          this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(3, (float) enumgamemode.getId()));
          if (enumgamemode == EnumGamemode.SPECTATOR) {
-@@ -757,6 +927,7 @@
+@@ -757,6 +935,7 @@
  
          this.updateAbilities();
          this.bO();
@@ -463,7 +479,7 @@
      }
  
      public boolean v() {
-@@ -768,6 +939,7 @@
+@@ -768,6 +947,7 @@
      }
  
      public boolean a(int i, String s) {
@@ -471,7 +487,7 @@
          if ("seed".equals(s) && !this.server.ad()) {
              return true;
          } else if (!"tell".equals(s) && !"help".equals(s) && !"me".equals(s) && !"trigger".equals(s)) {
-@@ -781,6 +953,9 @@
+@@ -781,6 +961,9 @@
          } else {
              return true;
          }
@@ -481,7 +497,7 @@
      }
  
      public String w() {
-@@ -867,6 +1042,129 @@
+@@ -867,6 +1050,129 @@
      }
  
      public IChatBaseComponent getPlayerListName() {

@@ -680,6 +680,10 @@ public class CraftEventFactory {
     }
 
     public static Container callInventoryOpenEvent(EntityPlayer player, Container container) {
+        return callInventoryOpenEvent(player, container, false);
+    }
+
+    public static Container callInventoryOpenEvent(EntityPlayer player, Container container, boolean cancelled) {
         if (player.activeContainer != player.defaultContainer) { // fire INVENTORY_CLOSE if one already open
             player.playerConnection.a(new PacketPlayInCloseWindow(player.activeContainer.windowId));
         }
@@ -689,6 +693,7 @@ public class CraftEventFactory {
         player.activeContainer.transferTo(container, craftPlayer);
 
         InventoryOpenEvent event = new InventoryOpenEvent(container.getBukkitView());
+        event.setCancelled(cancelled);
         server.getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {
