@@ -187,7 +187,7 @@ public class VersionCommand extends BukkitCommand {
         if (version == null) version = "Custom";
         if (version.startsWith("git-Spigot-")) {
             String[] parts = version.substring("git-Spigot-".length()).split("-");
-            int cbVersions = getDistance("craftbukkit", parts[1]);
+            int cbVersions = getDistance("craftbukkit", parts[1].substring(0, parts[1].indexOf(' ')));
             int spigotVersions = getDistance("spigot", parts[0]);
             if (cbVersions == -1 || spigotVersions == -1) {
                 setVersionMessage("Error obtaining version information");
@@ -200,7 +200,8 @@ public class VersionCommand extends BukkitCommand {
             }
 
         } else if (version.startsWith("git-Bukkit-")) {
-            int cbVersions = getDistance("craftbukkit", version.substring("git-Bukkit-".length()));
+            version = version.substring("git-Bukkit-".length());
+            int cbVersions = getDistance("craftbukkit", version.substring(0, version.indexOf(' ')));
             if (cbVersions == -1) {
                 setVersionMessage("Error obtaining version information");
             } else {
