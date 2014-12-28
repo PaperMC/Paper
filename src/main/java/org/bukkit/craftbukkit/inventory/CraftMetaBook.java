@@ -99,9 +99,11 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
         setTitle(SerializableMeta.getString(map, BOOK_TITLE.BUKKIT, true));
 
         Iterable<?> pages = SerializableMeta.getObject(Iterable.class, map, BOOK_PAGES.BUKKIT, true);
-        for (Object page : pages) {
-            if (page instanceof String) {
-                addPage((String) page);
+        if(pages != null) {
+            for (Object page : pages) {
+                if (page instanceof String) {
+                    addPage((String) page);
+                }
             }
         }
         
