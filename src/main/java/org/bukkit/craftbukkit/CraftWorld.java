@@ -309,14 +309,39 @@ public class CraftWorld implements World {
         return new CraftItem(world.getServer(), entity);
     }
 
+    private static void randomLocationWithinBlock(Location loc, double xs, double ys, double zs) {
+        double prevX = loc.getX();
+        double prevY = loc.getY();
+        double prevZ = loc.getZ();
+        loc.add(xs, ys, zs);
+        if (loc.getX() < Math.floor(prevX)) {
+            loc.setX(Math.floor(prevX));
+        }
+        if (loc.getX() >= Math.ceil(prevX)) {
+            loc.setX(Math.ceil(prevX - 0.01));
+        }
+        if (loc.getY() < Math.floor(prevY)) {
+            loc.setY(Math.floor(prevY));
+        }
+        if (loc.getY() >= Math.ceil(prevY)) {
+            loc.setY(Math.ceil(prevY - 0.01));
+        }
+        if (loc.getZ() < Math.floor(prevZ)) {
+            loc.setZ(Math.floor(prevZ));
+        }
+        if (loc.getZ() >= Math.ceil(prevZ)) {
+            loc.setZ(Math.ceil(prevZ - 0.01));
+        }
+    }
+
     public org.bukkit.entity.Item dropItemNaturally(Location loc, ItemStack item) {
-        double xs = world.random.nextFloat() * 0.7F + (1.0F - 0.7F) * 0.5D;
-        double ys = world.random.nextFloat() * 0.7F + (1.0F - 0.7F) * 0.5D;
-        double zs = world.random.nextFloat() * 0.7F + (1.0F - 0.7F) * 0.5D;
+        double xs = world.random.nextFloat() * 0.7F - 0.35D;
+        double ys = world.random.nextFloat() * 0.7F - 0.35D;
+        double zs = world.random.nextFloat() * 0.7F - 0.35D;
         loc = loc.clone();
-        loc.setX(loc.getX() + xs);
-        loc.setY(loc.getY() + ys);
-        loc.setZ(loc.getZ() + zs);
+        // Makes sure the new item is created within the block the location points to.
+        // This prevents item spill in 1-block wide farms.
+        randomLocationWithinBlock(loc, xs, ys, zs);
         return dropItem(loc, item);
     }
 
