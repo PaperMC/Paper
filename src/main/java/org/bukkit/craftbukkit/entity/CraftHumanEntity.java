@@ -294,7 +294,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (location == null) {
             location = getLocation();
         }
-        getHandle().openTileEntity((ITileEntityContainer) getHandle().world.getTileEntity(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ())));
+
+        // If there isn't an enchant table we can force create one, won't be very useful though.
+        TileEntity container = getHandle().world.getTileEntity(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+        if (container == null && force) {
+            container = new TileEntityEnchantTable();
+        }
+        getHandle().openTileEntity((ITileEntityContainer) container);
+
         if (force) {
             getHandle().activeContainer.checkReachable = false;
         }
