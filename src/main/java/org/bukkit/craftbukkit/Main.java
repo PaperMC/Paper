@@ -137,7 +137,8 @@ public class Main {
             // Do you love Java using + and ! as string based identifiers? I sure do!
             String path = new File(".").getAbsolutePath();
             if (path.contains("!") || path.contains("+")) {
-                System.err.println("Cannot run server in a directory with ! or + in the pathname. Please rename the affected folders and try again,");
+                System.err.println("Cannot run server in a directory with ! or + in the pathname. Please rename the affected folders and try again.");
+                return;
             }
 
             try {
