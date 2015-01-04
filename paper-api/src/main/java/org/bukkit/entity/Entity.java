@@ -10,12 +10,13 @@ import org.bukkit.util.Vector;
 
 import java.util.List;
 import java.util.UUID;
+import org.bukkit.command.CommandSender;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 
 /**
  * Represents a base entity in the world
  */
-public interface Entity extends Metadatable {
+public interface Entity extends Metadatable, CommandSender {
 
     /**
      * Gets the entity's current position
