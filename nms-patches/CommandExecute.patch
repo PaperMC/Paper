@@ -1,0 +1,62 @@
+--- ../work/decompile-8eb82bde//net/minecraft/server/CommandExecute.java	2015-01-04 23:24:40.781538505 +0000
++++ src/main/java/net/minecraft/server/CommandExecute.java	2015-01-04 23:24:40.781538505 +0000
+@@ -2,6 +2,7 @@
+ 
+ import java.util.Collection;
+ import java.util.List;
++import org.bukkit.craftbukkit.command.ProxiedNativeCommandSender;
+ 
+ public class CommandExecute extends CommandAbstract {
+ 
+@@ -19,7 +20,7 @@
+         return "commands.execute.usage";
+     }
+ 
+-    public void execute(ICommandListener icommandlistener, String[] astring) {
++    public void execute(ICommandListener icommandlistener, String[] astring) throws ExceptionUsage, CommandException { // CraftBukkit - added throws
+         if (astring.length < 5) {
+             throw new ExceptionUsage("commands.execute.usage", new Object[0]);
+         } else {
+@@ -52,12 +53,28 @@
+             ICommandHandler icommandhandler = MinecraftServer.getServer().getCommandHandler();
+ 
+             try {
+-                int j = icommandhandler.a(commandlistenerentity, s);
+-
++                // CraftBukkit start
++                org.bukkit.command.CommandSender sender = null;
++                if (icommandlistener.f() != null) {
++                    sender = icommandlistener.f().getBukkitEntity();
++                } else if (icommandlistener instanceof DedicatedServer) {
++                    sender = MinecraftServer.getServer().server.getConsoleSender();
++                } else if (icommandlistener instanceof TileEntityCommandListener) {
++                    sender = ((TileEntityCommandListener) icommandlistener).sender;
++                } else {
++                    throw new CommandException("Unhandled executor " + icommandlistener.getClass().getSimpleName(), new Object[0]);
++                }
++                int j = CommandBlockListenerAbstract.executeCommand(commandlistenerentity, new ProxiedNativeCommandSender(commandlistenerentity, sender, entity.getBukkitEntity()), s); // icommandhandler.a(commandlistenerentity, s);
++                // CraftBukkit end
+                 if (j < 1) {
+                     throw new CommandException("commands.execute.allInvocationsFailed", new Object[] { s});
+                 }
+             } catch (Throwable throwable) {
++                // CraftBukkit start
++                if (throwable instanceof CommandException) {
++                    throw (CommandException) throwable;
++                }
++                // CraftBukkit end
+                 throw new CommandException("commands.execute.failed", new Object[] { s, entity.getName()});
+             }
+         }
+@@ -70,4 +87,11 @@
+     public boolean isListStart(String[] astring, int i) {
+         return i == 0;
+     }
++
++    // CraftBukkit start - fix decompiler error
++    @Override
++    public int compareTo(Object o) {
++        return a((ICommand) o);
++    }
++    // CraftBukkit end
+ }
