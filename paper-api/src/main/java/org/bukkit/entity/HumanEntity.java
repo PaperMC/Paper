@@ -82,11 +82,25 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
      *
      * @param location The location to attach it to. If null, the player's
      *     location is used.
+     * @return The newly opened inventory view, or null if it could not be
+     *     opened.
+     * @deprecated You cannot force open an enchanting table.
+     */
+    public InventoryView openEnchanting(Location location);
+
+    /**
+     * Opens an empty enchanting inventory window with the player's inventory
+     * on the bottom.
+     *
+     * @param location The location to attach it to. If null, the player's
+     *     location is used.
      * @param force If false, and there is no enchanting table at the
      *     location, no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
+     * @deprecated You cannot force open an enchanting table.
      */
+    @Deprecated
     public InventoryView openEnchanting(Location location, boolean force);
 
     /**
