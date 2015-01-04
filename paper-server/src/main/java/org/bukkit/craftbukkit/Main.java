@@ -134,6 +134,12 @@ public class Main {
         } else if (options.has("v")) {
             System.out.println(CraftServer.class.getPackage().getImplementationVersion());
         } else {
+            // Do you love Java using + and ! as string based identifiers? I sure do!
+            String path = new File(".").getAbsolutePath();
+            if (path.contains("!") || path.contains("+")) {
+                System.err.println("Cannot run server in a directory with ! or + in the pathname. Please rename the affected folders and try again,");
+            }
+
             try {
                 // This trick bypasses Maven Shade's clever rewriting of our getProperty call when using String literals
                 String jline_UnsupportedTerminal = new String(new char[] {'j','l','i','n','e','.','U','n','s','u','p','p','o','r','t','e','d','T','e','r','m','i','n','a','l'});
