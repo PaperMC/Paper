@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.entity;
 
-import com.google.common.base.Preconditions;
 import java.util.Set;
 
 import net.minecraft.server.*;
@@ -285,15 +284,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return getHandle().activeContainer.getBukkitView();
     }
 
-    @Override
-    public InventoryView openEnchanting(Location location) {
-        return openEnchanting(location, false);
-    }
-
-    @Override
     public InventoryView openEnchanting(Location location, boolean force) {
-        Preconditions.checkArgument(!force, "Cannot force open enchanting tables!");
-
         if (!force) {
             Block block = location.getBlock();
             if (block.getType() != Material.ENCHANTMENT_TABLE) {
