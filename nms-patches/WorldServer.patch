@@ -1,6 +1,6 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/WorldServer.java	2015-01-04 19:54:26.537675427 +0000
-+++ src/main/java/net/minecraft/server/WorldServer.java	2015-01-04 19:54:26.541675427 +0000
-@@ -16,6 +16,20 @@
+--- ../work/decompile-8eb82bde/net/minecraft/server/WorldServer.java	2015-01-05 09:50:02.053188213 +1100
++++ src/main/java/net/minecraft/server/WorldServer.java	2015-01-05 09:50:02.057188206 +1100
+@@ -16,6 +16,18 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -14,14 +14,12 @@
 +
 +import org.bukkit.event.block.BlockFormEvent;
 +import org.bukkit.event.weather.LightningStrikeEvent;
-+import org.bukkit.event.weather.ThunderChangeEvent;
-+import org.bukkit.event.weather.WeatherChangeEvent;
 +// CraftBukkit end
 +
  public class WorldServer extends World implements IAsyncTaskHandler {
  
      private static final Logger a = LogManager.getLogger();
-@@ -37,14 +51,21 @@
+@@ -37,14 +49,21 @@
      private static final List U = Lists.newArrayList(new StructurePieceTreasure[] { new StructurePieceTreasure(Items.STICK, 0, 1, 3, 10), new StructurePieceTreasure(Item.getItemOf(Blocks.PLANKS), 0, 1, 3, 10), new StructurePieceTreasure(Item.getItemOf(Blocks.LOG), 0, 1, 3, 10), new StructurePieceTreasure(Items.STONE_AXE, 0, 1, 1, 3), new StructurePieceTreasure(Items.WOODEN_AXE, 0, 1, 1, 5), new StructurePieceTreasure(Items.STONE_PICKAXE, 0, 1, 1, 3), new StructurePieceTreasure(Items.WOODEN_PICKAXE, 0, 1, 1, 5), new StructurePieceTreasure(Items.APPLE, 0, 2, 3, 5), new StructurePieceTreasure(Items.BREAD, 0, 2, 3, 3), new StructurePieceTreasure(Item.getItemOf(Blocks.LOG2), 0, 1, 3, 10)});
      private List V = Lists.newArrayList();
  
@@ -46,7 +44,7 @@
          this.B();
          this.C();
          this.af().a(minecraftserver.aG());
-@@ -86,6 +107,89 @@
+@@ -86,6 +105,89 @@
  
          return this;
      }
@@ -136,7 +134,7 @@
  
      public void doTick() {
          super.doTick();
-@@ -105,8 +209,11 @@
+@@ -105,8 +207,11 @@
          }
  
          this.methodProfiler.a("mobSpawner");
@@ -150,7 +148,7 @@
          }
  
          this.methodProfiler.c("chunkSource");
-@@ -135,6 +242,8 @@
+@@ -135,6 +240,8 @@
          this.Q.a(this.getTime());
          this.methodProfiler.b();
          this.ak();
@@ -159,7 +157,7 @@
      }
  
      public BiomeMeta a(EnumCreatureType enumcreaturetype, BlockPosition blockposition) {
-@@ -161,7 +270,7 @@
+@@ -161,7 +268,7 @@
  
                  if (entityhuman.v()) {
                      ++i;
@@ -168,27 +166,26 @@
                      ++j;
                  }
              }
-@@ -187,26 +296,45 @@
+@@ -187,26 +294,46 @@
      }
  
      private void ag() {
 -        this.worldData.setWeatherDuration(0);
--        this.worldData.setStorm(false);
+         this.worldData.setStorm(false);
 -        this.worldData.setThunderDuration(0);
--        this.worldData.setThundering(false);
 +        // CraftBukkit start
-+        WeatherChangeEvent weather = new WeatherChangeEvent(this.getWorld(), false);
-+        this.getServer().getPluginManager().callEvent(weather);
-+
-+        ThunderChangeEvent thunder = new ThunderChangeEvent(this.getWorld(), false);
-+        this.getServer().getPluginManager().callEvent(thunder);
-+        if (!weather.isCancelled()) {
++        // If we stop due to everyone sleeping we should reset the weather duration to some other random value.
++        // Not that everyone ever manages to get the whole server to sleep at the same time....
++        if (!this.worldData.hasStorm()) {
 +            this.worldData.setWeatherDuration(0);
-+            this.worldData.setStorm(false);
 +        }
-+        if (!thunder.isCancelled()) {
++        // CraftBukkit end
+         this.worldData.setThundering(false);
++        // CraftBukkit start
++        // If we stop due to everyone sleeping we should reset the weather duration to some other random value.
++        // Not that everyone ever manages to get the whole server to sleep at the same time....
++        if (!this.worldData.isThundering()) {
 +            this.worldData.setThunderDuration(0);
-+            this.worldData.setThundering(false);
 +        }
 +        // CraftBukkit end
      }
@@ -221,7 +218,7 @@
              return false;
          } else {
              return false;
-@@ -227,15 +355,22 @@
+@@ -227,15 +354,22 @@
          } else {
              int i = 0;
              int j = 0;
@@ -252,7 +249,7 @@
                  this.a(k, l, chunk);
                  this.methodProfiler.c("tickChunk");
                  chunk.b(false);
-@@ -260,11 +395,29 @@
+@@ -260,11 +394,29 @@
                      BlockPosition blockposition1 = blockposition.down();
  
                      if (this.w(blockposition1)) {
@@ -284,7 +281,7 @@
                      }
  
                      if (this.S() && this.getBiome(blockposition1).e()) {
-@@ -376,7 +529,7 @@
+@@ -376,7 +528,7 @@
      }
  
      public void tickEntities() {
@@ -293,7 +290,7 @@
              if (this.emptyTime++ >= 1200) {
                  return;
              }
-@@ -401,7 +554,13 @@
+@@ -401,7 +553,13 @@
                  throw new IllegalStateException("TickNextTick list out of synch");
              } else {
                  if (i > 1000) {
@@ -308,7 +305,7 @@
                  }
  
                  this.methodProfiler.a("cleaning");
-@@ -501,6 +660,7 @@
+@@ -501,6 +659,7 @@
          return arraylist;
      }
  
@@ -316,7 +313,7 @@
      public void entityJoinedWorld(Entity entity, boolean flag) {
          if (!this.getSpawnAnimals() && (entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal)) {
              entity.die();
-@@ -511,7 +671,9 @@
+@@ -511,7 +670,9 @@
          }
  
          super.entityJoinedWorld(entity, flag);
@@ -326,7 +323,7 @@
  
      private boolean getSpawnNPCs() {
          return this.server.getSpawnNPCs();
-@@ -523,14 +685,44 @@
+@@ -523,14 +684,44 @@
  
      protected IChunkProvider k() {
          IChunkLoader ichunkloader = this.dataManager.createChunkLoader(this.worldProvider);
@@ -373,7 +370,7 @@
          for (int k1 = 0; k1 < this.h.size(); ++k1) {
              TileEntity tileentity = (TileEntity) this.h.get(k1);
              BlockPosition blockposition = tileentity.getPosition();
-@@ -539,6 +731,8 @@
+@@ -539,6 +730,8 @@
                  arraylist.add(tileentity);
              }
          }
@@ -382,7 +379,7 @@
  
          return arraylist;
      }
-@@ -601,6 +795,23 @@
+@@ -601,6 +794,23 @@
              int i = 0;
              int j = this.worldProvider.getSeaLevel();
              int k = 0;
@@ -406,7 +403,7 @@
  
              if (blockposition != null) {
                  i = blockposition.getX();
-@@ -611,7 +822,7 @@
+@@ -611,7 +821,7 @@
  
              int l = 0;
  
@@ -415,7 +412,7 @@
                  i += random.nextInt(64) - random.nextInt(64);
                  k += random.nextInt(64) - random.nextInt(64);
                  ++l;
-@@ -648,8 +859,9 @@
+@@ -648,8 +858,9 @@
          return this.worldProvider.h();
      }
  
@@ -426,7 +423,7 @@
              if (iprogressupdate != null) {
                  iprogressupdate.a("Saving level");
              }
-@@ -660,7 +872,8 @@
+@@ -660,7 +871,8 @@
              }
  
              this.chunkProvider.saveChunks(flag, iprogressupdate);
@@ -436,7 +433,7 @@
              Iterator iterator = list.iterator();
  
              while (iterator.hasNext()) {
-@@ -680,7 +893,7 @@
+@@ -680,7 +892,7 @@
          }
      }
  
@@ -445,7 +442,7 @@
          this.checkSession();
          this.worldData.a(this.af().h());
          this.worldData.d(this.af().f());
-@@ -691,8 +904,12 @@
+@@ -691,8 +903,12 @@
          this.worldData.k(this.af().p());
          this.worldData.b(this.af().j());
          this.worldData.e(this.af().i());
@@ -459,7 +456,7 @@
      }
  
      protected void a(Entity entity) {
-@@ -724,8 +941,16 @@
+@@ -724,8 +940,16 @@
      }
  
      public boolean strikeLightning(Entity entity) {
@@ -477,7 +474,7 @@
              return true;
          } else {
              return false;
-@@ -737,10 +962,20 @@
+@@ -737,10 +961,20 @@
      }
  
      public Explosion createExplosion(Entity entity, double d0, double d1, double d2, float f, boolean flag, boolean flag1) {
@@ -498,7 +495,7 @@
          if (!flag1) {
              explosion.clearBlocks();
          }
-@@ -786,7 +1021,8 @@
+@@ -786,7 +1020,8 @@
                  BlockActionData blockactiondata = (BlockActionData) iterator.next();
  
                  if (this.a(blockactiondata)) {
@@ -508,7 +505,7 @@
                  }
              }
  
-@@ -809,6 +1045,7 @@
+@@ -809,6 +1044,7 @@
          boolean flag = this.S();
  
          super.p();
@@ -516,7 +513,7 @@
          if (this.o != this.p) {
              this.server.getPlayerList().a(new PacketPlayOutGameStateChange(7, this.p), this.worldProvider.getDimension());
          }
-@@ -827,7 +1064,21 @@
+@@ -827,7 +1063,21 @@
              this.server.getPlayerList().sendAll(new PacketPlayOutGameStateChange(7, this.p));
              this.server.getPlayerList().sendAll(new PacketPlayOutGameStateChange(8, this.r));
          }
@@ -539,7 +536,7 @@
      }
  
      protected int q() {
-@@ -855,10 +1106,17 @@
+@@ -855,10 +1105,17 @@
      }
  
      public void a(EnumParticle enumparticle, boolean flag, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6, int... aint) {
