@@ -56,6 +56,11 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
          */
         END_PORTAL,
         /**
+         * Indicates the teleportation was caused by a player teleporting to a
+         * Entity/Player via the specatator menu
+         */
+        SPECTATE,
+        /**
          * Indicates the teleportation was caused by an event not covered by
          * this enum
          */
