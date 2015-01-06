@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/PlayerConnection.java	2015-01-04 20:23:44.409656346 +0000
-+++ src/main/java/net/minecraft/server/PlayerConnection.java	2015-01-04 20:23:44.413656346 +0000
+--- ../work/decompile-8eb82bde//net/minecraft/server/PlayerConnection.java	2015-01-06 20:20:56.507791620 +0000
++++ src/main/java/net/minecraft/server/PlayerConnection.java	2015-01-06 20:20:56.507791620 +0000
 @@ -16,6 +16,48 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -68,15 +68,15 @@
  
      public PlayerConnection(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer) {
          this.minecraftServer = minecraftserver;
-@@ -43,7 +89,31 @@
+@@ -43,8 +89,32 @@
          networkmanager.a((PacketListener) this);
          this.player = entityplayer;
          entityplayer.playerConnection = this;
 +
 +        // CraftBukkit start - add fields and methods
 +        this.server = minecraftserver.server;
-+    }
-+
+     }
+ 
 +    private final org.bukkit.craftbukkit.CraftServer server;
 +    private int lastTick = MinecraftServer.currentTick;
 +    private int lastDropTick = MinecraftServer.currentTick;
@@ -94,12 +94,13 @@
 +
 +    public CraftPlayer getPlayer() {
 +        return (this.player == null) ? null : (CraftPlayer) this.player.getBukkitEntity();
-     }
++    }
 +    private final static HashSet<Integer> invalidItems = new HashSet<Integer>(java.util.Arrays.asList(8, 9, 10, 11, 26, 34, 36, 43, 51, 52, 55, 59, 60, 62, 63, 64, 68, 71, 74, 75, 83, 90, 92, 93, 94, 104, 105, 115, 117, 118, 119, 125, 127, 132, 140, 141, 142, 144)); // TODO: Check after every update.
 +    // CraftBukkit end
- 
++
      public void c() {
          this.h = false;
+         ++this.e;
 @@ -57,9 +127,14 @@
          }
  
@@ -486,24 +487,29 @@
  
                  if (worldserver != null) {
                      entity = packetplayinspectate.a(worldserver);
-@@ -455,6 +748,7 @@
+@@ -451,10 +744,11 @@
+             if (entity != null) {
+                 this.player.e((Entity) this.player);
+                 this.player.mount((Entity) null);
++
++                /* CraftBukkit start - replace with bukkit handling for multi-world
+                 if (entity.world != this.player.world) {
                      WorldServer worldserver1 = this.player.u();
                      WorldServer worldserver2 = (WorldServer) entity.world;
- 
-+                    /* CraftBukkit start - replace with bukkit handling for multi-world
+-
                      this.player.dimension = entity.dimension;
                      this.sendPacket(new PacketPlayOutRespawn(this.player.dimension, worldserver1.getDifficulty(), worldserver1.getWorldData().getType(), this.player.playerInteractManager.getGameMode()));
                      worldserver1.removeEntity(this.player);
-@@ -472,6 +766,9 @@
-                     this.player.playerInteractManager.a(worldserver2);
-                     this.minecraftServer.getPlayerList().b(this.player, worldserver2);
-                     this.minecraftServer.getPlayerList().updateClient(this.player);
-+                    */
-+                    this.player.getBukkitEntity().teleport(entity.getBukkitEntity());
-+                    // CraftBukkit end
+@@ -475,6 +769,9 @@
                  } else {
                      this.player.enderTeleportTo(entity.locX, entity.locY, entity.locZ);
                  }
++                */
++                this.player.getBukkitEntity().teleport(entity.getBukkitEntity(), PlayerTeleportEvent.TeleportCause.SPECTATE);
++                // CraftBukkit end
+             }
+         }
+ 
 @@ -483,14 +780,29 @@
      public void a(PacketPlayInResourcePackStatus packetplayinresourcepackstatus) {}
  
