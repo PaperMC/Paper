@@ -302,7 +302,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     public boolean setPassenger(org.bukkit.entity.Entity passenger) {
         if (passenger instanceof CraftEntity) {
-            ((CraftEntity) passenger).getHandle().setPassengerOf(getHandle());
+            ((CraftEntity) passenger).getHandle().mount(getHandle());
             return true;
         } else {
             return false;
@@ -318,7 +318,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             return false;
         }
 
-        getHandle().passenger.setPassengerOf(null);
+        getHandle().passenger.mount(null);
         return true;
     }
 
@@ -414,7 +414,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             return false;
         }
 
-        getHandle().setPassengerOf(null);
+        getHandle().mount(null);
         return true;
     }
 
