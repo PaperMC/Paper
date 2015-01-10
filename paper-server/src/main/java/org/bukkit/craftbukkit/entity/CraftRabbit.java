@@ -31,7 +31,7 @@ public class CraftRabbit extends CraftAnimals implements Rabbit {
 
     @Override
     public Type getRabbitType() {
-        int type = getHandle().cl();
+        int type = getHandle().cl(); // PAIL: Rename
         return CraftMagicMapping.fromMagic(type);
     }
 
@@ -72,7 +72,7 @@ public class CraftRabbit extends CraftAnimals implements Rabbit {
         }
 
         public static Type fromMagic(int magic) {
-            if (magic > 0 && magic < reverse.length) {
+            if (magic >= 0 && magic < reverse.length) {
                 return reverse[magic];
             } else if (magic == 99) {
                 return Type.THE_KILLER_BUNNY;
