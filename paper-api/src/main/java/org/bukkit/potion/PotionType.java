@@ -11,10 +11,10 @@ public enum PotionType {
     WEAKNESS(8, PotionEffectType.WEAKNESS, 1),
     STRENGTH(9, PotionEffectType.INCREASE_DAMAGE, 2),
     SLOWNESS(10, PotionEffectType.SLOW, 1),
+    JUMP(11, PotionEffectType.JUMP, 2),
     INSTANT_DAMAGE(12, PotionEffectType.HARM, 2),
     WATER_BREATHING(13, PotionEffectType.WATER_BREATHING, 1),
     INVISIBILITY(14, PotionEffectType.INVISIBILITY, 1),
-    JUMP(15, PotionEffectType.JUMP, 2)
     ;
 
     private final int damageValue, maxLevel;
