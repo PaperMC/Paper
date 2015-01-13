@@ -763,7 +763,7 @@ public class CraftWorld implements World {
     }
 
     public boolean isThundering() {
-        return hasStorm() && world.worldData.isThundering();
+        return world.worldData.isThundering();
     }
 
     public void setThundering(boolean thundering) {
