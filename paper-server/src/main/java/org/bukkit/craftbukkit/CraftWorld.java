@@ -751,20 +751,7 @@ public class CraftWorld implements World {
     }
 
     public void setStorm(boolean hasStorm) {
-        CraftServer server = world.getServer();
-
-        WeatherChangeEvent weather = new WeatherChangeEvent(this, hasStorm);
-        server.getPluginManager().callEvent(weather);
-        if (!weather.isCancelled()) {
-            world.worldData.setStorm(hasStorm);
-
-            // These numbers are from Minecraft
-            if (hasStorm) {
-                setWeatherDuration(rand.nextInt(12000) + 12000);
-            } else {
-                setWeatherDuration(rand.nextInt(168000) + 12000);
-            }
-        }
+        world.worldData.setStorm(hasStorm);
     }
 
     public int getWeatherDuration() {
@@ -780,21 +767,7 @@ public class CraftWorld implements World {
     }
 
     public void setThundering(boolean thundering) {
-        if (thundering && !hasStorm()) setStorm(true);
-        CraftServer server = world.getServer();
-
-        ThunderChangeEvent thunder = new ThunderChangeEvent(this, thundering);
-        server.getPluginManager().callEvent(thunder);
-        if (!thunder.isCancelled()) {
-            world.worldData.setThundering(thundering);
-
-            // These numbers are from Minecraft
-            if (thundering) {
-                setThunderDuration(rand.nextInt(12000) + 3600);
-            } else {
-                setThunderDuration(rand.nextInt(168000) + 12000);
-            }
-        }
+        world.worldData.setThundering(thundering);
     }
 
     public int getThunderDuration() {
