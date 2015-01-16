@@ -19,7 +19,6 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     CraftTeam(CraftScoreboard scoreboard, ScoreboardTeam team) {
         super(scoreboard);
         this.team = team;
-        scoreboard.teams.put(team.getName(), this);
     }
 
     public String getName() throws IllegalStateException {
@@ -155,8 +154,6 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         CraftScoreboard scoreboard = checkState();
 
         scoreboard.board.removeTeam(team);
-        scoreboard.teams.remove(team.getName());
-        setUnregistered();
     }
 
     public static EnumNameTagVisibility bukkitToNotch(NameTagVisibility visibility) {
@@ -187,5 +184,14 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
             default:
                 throw new IllegalArgumentException("Unknown visibility level " + visibility);
         }
+    }
+
+    @Override
+    CraftScoreboard checkState() throws IllegalStateException {
+        if (getScoreboard().board.getTeam(team.getName()) == null) {
+            throw new IllegalStateException("Unregistered scoreboard component");
+        }
+
+        return getScoreboard();
     }
 }

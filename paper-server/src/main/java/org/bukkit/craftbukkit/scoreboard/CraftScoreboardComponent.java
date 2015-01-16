@@ -7,21 +7,11 @@ abstract class CraftScoreboardComponent {
         this.scoreboard = scoreboard;
     }
 
-    CraftScoreboard checkState() throws IllegalStateException {
-        CraftScoreboard scoreboard = this.scoreboard;
-        if (scoreboard == null) {
-            throw new IllegalStateException("Unregistered scoreboard component");
-        }
-        return scoreboard;
-    }
+    abstract CraftScoreboard checkState() throws IllegalStateException;
 
     public CraftScoreboard getScoreboard() {
         return scoreboard;
     }
 
     abstract void unregister() throws IllegalStateException;
-
-    final void setUnregistered() {
-        scoreboard = null;
-    }
 }

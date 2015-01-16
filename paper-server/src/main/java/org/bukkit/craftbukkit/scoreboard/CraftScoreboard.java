@@ -1,8 +1,6 @@
 package org.bukkit.craftbukkit.scoreboard;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import net.minecraft.server.Scoreboard;
 import net.minecraft.server.ScoreboardObjective;
 import net.minecraft.server.ScoreboardTeam;
@@ -15,22 +13,15 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Team;
 
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 
 public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     final Scoreboard board;
-    final Map<String, CraftObjective> objectives = new HashMap<String, CraftObjective>();
-    final Map<String, CraftTeam> teams = new HashMap<String, CraftTeam>();
 
     CraftScoreboard(Scoreboard board) {
         this.board = board;
-
-        for (ScoreboardObjective objective : (Iterable<ScoreboardObjective>) board.getObjectives()) {
-            new CraftObjective(this, objective); // It adds itself to map
-        }
-        for (ScoreboardTeam team : (Iterable<ScoreboardTeam>) board.getTeams()) {
-            new CraftTeam(this, team); // It adds itself to map
-        }
     }
 
     public CraftObjective registerNewObjective(String name, String criteria) throws IllegalArgumentException {
@@ -46,14 +37,15 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
 
     public Objective getObjective(String name) throws IllegalArgumentException {
         Validate.notNull(name, "Name cannot be null");
-        return objectives.get(name);
+        return new CraftObjective(this, board.getObjective(name));
     }
 
     public ImmutableSet<Objective> getObjectivesByCriteria(String criteria) throws IllegalArgumentException {
         Validate.notNull(criteria, "Criteria cannot be null");
 
         ImmutableSet.Builder<Objective> objectives = ImmutableSet.builder();
-        for (CraftObjective objective : this.objectives.values()) {
+        for (ScoreboardObjective netObjective : (Collection<ScoreboardObjective>) this.board.getObjectives()) {
+            CraftObjective objective = new CraftObjective(this, netObjective);
             if (objective.getCriteria().equals(criteria)) {
                 objectives.add(objective);
             }
@@ -62,7 +54,13 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     }
 
     public ImmutableSet<Objective> getObjectives() {
-        return ImmutableSet.copyOf((Collection<? extends Objective>) objectives.values());
+        return ImmutableSet.copyOf(Iterables.transform((Collection<ScoreboardObjective>) this.board.getObjectives(), new Function<ScoreboardObjective, Objective>() {
+
+            @Override
+            public Objective apply(ScoreboardObjective input) {
+                return new CraftObjective(CraftScoreboard.this, input);
+            }
+        }));
     }
 
     public Objective getObjective(DisplaySlot slot) throws IllegalArgumentException {
@@ -71,25 +69,21 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
         if (objective == null) {
             return null;
         }
-        return this.objectives.get(objective.getName());
+        return new CraftObjective(this, objective);
     }
 
     public ImmutableSet<Score> getScores(OfflinePlayer player) throws IllegalArgumentException {
         Validate.notNull(player, "OfflinePlayer cannot be null");
 
-        ImmutableSet.Builder<Score> scores = ImmutableSet.builder();
-        for (CraftObjective objective : objectives.values()) {
-            scores.add(objective.getScore(player));
-        }
-        return scores.build();
+        return getScores(player.getName());
     }
 
     public ImmutableSet<Score> getScores(String entry) throws IllegalArgumentException {
         Validate.notNull(entry, "Entry cannot be null");
 
         ImmutableSet.Builder<Score> scores = ImmutableSet.builder();
-        for (CraftObjective objective : objectives.values()) {
-            scores.add(objective.getScore(entry));
+        for (ScoreboardObjective objective : (Collection<ScoreboardObjective>) this.board.getObjectives()) {
+            scores.add(new CraftScore(new CraftObjective(this, objective), entry));
         }
         return scores.build();
     }
@@ -97,34 +91,38 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     public void resetScores(OfflinePlayer player) throws IllegalArgumentException {
         Validate.notNull(player, "OfflinePlayer cannot be null");
 
-        for (CraftObjective objective : objectives.values()) {
-            board.resetPlayerScores(player.getName(), objective.getHandle());
-        }
+        resetScores(player.getName());
     }
 
     public void resetScores(String entry) throws IllegalArgumentException {
         Validate.notNull(entry, "Entry cannot be null");
 
-        for (CraftObjective objective : objectives.values()) {
-            board.resetPlayerScores(entry, objective.getHandle());
+        for (ScoreboardObjective objective : (Collection<ScoreboardObjective>) this.board.getObjectives()) {
+            board.resetPlayerScores(entry, objective);
         }
     }
 
     public Team getPlayerTeam(OfflinePlayer player) throws IllegalArgumentException {
         Validate.notNull(player, "OfflinePlayer cannot be null");
 
-        ScoreboardTeam team = board.getPlayerTeam(player.getName());
-        return team == null ? null : teams.get(team.getName());
+        return getTeam(player.getName());
     }
 
     public Team getTeam(String teamName) throws IllegalArgumentException {
         Validate.notNull(teamName, "Team name cannot be null");
 
-        return teams.get(teamName);
+        ScoreboardTeam team = board.getPlayerTeam(teamName);
+        return team == null ? null : new CraftTeam(this, team);
     }
 
     public ImmutableSet<Team> getTeams() {
-        return ImmutableSet.copyOf((Collection<? extends Team>) teams.values());
+        return ImmutableSet.copyOf(Iterables.transform((Collection<ScoreboardTeam>) this.board.getTeams(), new Function<ScoreboardTeam, Team>() {
+
+            @Override
+            public Team apply(ScoreboardTeam input) {
+                return new CraftTeam(CraftScoreboard.this, input);
+            }
+        }));
     }
 
     public Team registerNewTeam(String name) throws IllegalArgumentException {
