@@ -17,8 +17,6 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
         super(scoreboard);
         this.objective = objective;
         this.criteria = CraftCriteria.getFromNMS(objective);
-
-        scoreboard.objectives.put(objective.getName(), this);
     }
 
     ScoreboardObjective getHandle() {
@@ -104,8 +102,15 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     public void unregister() throws IllegalStateException {
         CraftScoreboard scoreboard = checkState();
 
-        scoreboard.objectives.remove(this.getName());
         scoreboard.board.unregisterObjective(objective);
-        setUnregistered();
+    }
+
+    @Override
+    CraftScoreboard checkState() throws IllegalStateException {
+        if (getScoreboard().board.getObjective(objective.getName()) == null) {
+            throw new IllegalStateException("Unregistered scoreboard component");
+        }
+        
+        return getScoreboard();
     }
 }
