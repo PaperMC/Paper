@@ -37,7 +37,8 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
 
     public Objective getObjective(String name) throws IllegalArgumentException {
         Validate.notNull(name, "Name cannot be null");
-        return new CraftObjective(this, board.getObjective(name));
+        ScoreboardObjective nms = board.getObjective(name);
+        return nms == null ? null : new CraftObjective(this, nms);
     }
 
     public ImmutableSet<Objective> getObjectivesByCriteria(String criteria) throws IllegalArgumentException {
