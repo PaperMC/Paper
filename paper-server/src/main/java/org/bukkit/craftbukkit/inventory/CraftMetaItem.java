@@ -691,26 +691,28 @@ class CraftMetaItem implements ItemMeta, Repairable {
     }
 
     public static Set<String> getHandledTags() {
-        if (HANDLED_TAGS.isEmpty()) {
-            HANDLED_TAGS.addAll(Arrays.asList(
-                DISPLAY.NBT,
-                REPAIR.NBT,
-                ATTRIBUTES.NBT,
-                ENCHANTMENTS.NBT,
-                CraftMetaMap.MAP_SCALING.NBT,
-                CraftMetaPotion.POTION_EFFECTS.NBT,
-                CraftMetaSkull.SKULL_OWNER.NBT,
-                CraftMetaTileEntity.BLOCK_ENTITY_TAG.NBT,
-                CraftMetaBook.BOOK_TITLE.NBT,
-                CraftMetaBook.BOOK_AUTHOR.NBT,
-                CraftMetaBook.BOOK_PAGES.NBT,
-                CraftMetaBook.RESOLVED.NBT,
-                CraftMetaBook.GENERATION.NBT,
-                CraftMetaFirework.FIREWORKS.NBT,
-                CraftMetaEnchantedBook.STORED_ENCHANTMENTS.NBT,
-                CraftMetaCharge.EXPLOSION.NBT
-            ));
+        synchronized (HANDLED_TAGS) {
+            if (HANDLED_TAGS.isEmpty()) {
+                HANDLED_TAGS.addAll(Arrays.asList(
+                    DISPLAY.NBT,
+                    REPAIR.NBT,
+                    ATTRIBUTES.NBT,
+                    ENCHANTMENTS.NBT,
+                    CraftMetaMap.MAP_SCALING.NBT,
+                    CraftMetaPotion.POTION_EFFECTS.NBT,
+                    CraftMetaSkull.SKULL_OWNER.NBT,
+                    CraftMetaTileEntity.BLOCK_ENTITY_TAG.NBT,
+                    CraftMetaBook.BOOK_TITLE.NBT,
+                    CraftMetaBook.BOOK_AUTHOR.NBT,
+                    CraftMetaBook.BOOK_PAGES.NBT,
+                    CraftMetaBook.RESOLVED.NBT,
+                    CraftMetaBook.GENERATION.NBT,
+                    CraftMetaFirework.FIREWORKS.NBT,
+                    CraftMetaEnchantedBook.STORED_ENCHANTMENTS.NBT,
+                    CraftMetaCharge.EXPLOSION.NBT
+                ));
+            }
+            return HANDLED_TAGS;
         }
-        return HANDLED_TAGS;
     }
 }
