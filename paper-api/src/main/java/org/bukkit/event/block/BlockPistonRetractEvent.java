@@ -1,5 +1,6 @@
 package org.bukkit.event.block;
 
+import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -10,7 +11,9 @@ import org.bukkit.event.HandlerList;
  */
 public class BlockPistonRetractEvent extends BlockPistonEvent {
     private static final HandlerList handlers = new HandlerList();
-    public BlockPistonRetractEvent(final Block block, final BlockFace direction) {
+    private List<Block> blocks;
+    
+    public BlockPistonRetractEvent(final Block block, final List<Block> blocks, final BlockFace direction) {
         super(block, direction);
     }
 
@@ -20,8 +23,19 @@ public class BlockPistonRetractEvent extends BlockPistonEvent {
      *
      * @return The possible location of the possibly moving block.
      */
+    @Deprecated
     public Location getRetractLocation() {
         return getBlock().getRelative(getDirection(), 2).getLocation();
+    }
+    
+    /**
+     * Get an immutable list of the blocks which will be moved by the
+     * extending.
+     *
+     * @return Immutable list of the moved blocks.
+     */
+    public List<Block> getBlocks() {
+        return blocks;
     }
 
     @Override
