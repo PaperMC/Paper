@@ -15,6 +15,8 @@ public class BlockPistonRetractEvent extends BlockPistonEvent {
     
     public BlockPistonRetractEvent(final Block block, final List<Block> blocks, final BlockFace direction) {
         super(block, direction);
+        
+        this.blocks = blocks;
     }
 
     /**
