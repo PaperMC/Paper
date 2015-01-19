@@ -1,6 +1,6 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/BlockPiston.java	2014-12-05 15:10:57.106252715 +0000
-+++ src/main/java/net/minecraft/server/BlockPiston.java	2014-12-05 15:10:54.834252765 +0000
-@@ -1,6 +1,16 @@
+--- ../work/decompile-8eb82bde//net/minecraft/server/BlockPiston.java	2015-01-19 23:27:22.252538854 +0000
++++ src/main/java/net/minecraft/server/BlockPiston.java	2015-01-19 23:27:22.252538854 +0000
+@@ -1,6 +1,17 @@
  package net.minecraft.server;
  
 +import java.util.AbstractList;
@@ -10,6 +10,7 @@
 +import java.util.ListIterator;
 +
 +// CraftBukkit start
++import com.google.common.collect.ImmutableList;
 +import org.bukkit.craftbukkit.block.CraftBlock;
 +import org.bukkit.event.block.BlockPistonRetractEvent;
 +import org.bukkit.event.block.BlockPistonExtendEvent;
@@ -17,7 +18,7 @@
  
  public class BlockPiston extends Block {
  
-@@ -52,10 +62,19 @@
+@@ -52,10 +63,21 @@
          boolean flag = this.b(world, blockposition, enumdirection);
  
          if (flag && !((Boolean) iblockdata.get(BlockPiston.EXTENDED)).booleanValue()) {
@@ -27,21 +28,33 @@
              }
          } else if (!flag && ((Boolean) iblockdata.get(BlockPiston.EXTENDED)).booleanValue()) {
 +            // CraftBukkit start
-+            org.bukkit.block.Block block = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-+            BlockPistonRetractEvent event = new BlockPistonRetractEvent(block, CraftBlock.notchToBlockFace(enumdirection));
-+            world.getServer().getPluginManager().callEvent(event);
++            if (!this.M) {
++                org.bukkit.block.Block block = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++                BlockPistonRetractEvent event = new BlockPistonRetractEvent(block, ImmutableList.<org.bukkit.block.Block>of(), CraftBlock.notchToBlockFace(enumdirection));
++                world.getServer().getPluginManager().callEvent(event);
 +
-+            if (event.isCancelled()) {
-+                return;
++                if (event.isCancelled()) {
++                    return;
++                }
 +            }
 +            // CraftBukkit end
              world.setTypeAndData(blockposition, iblockdata.set(BlockPiston.EXTENDED, Boolean.valueOf(false)), 2);
              world.playBlockAction(blockposition, this, 1, enumdirection.a());
          }
-@@ -286,10 +305,40 @@
+@@ -146,7 +168,7 @@
+                     }
+                 }
+ 
+-                if (!flag1 && block.getMaterial() != Material.AIR && a(block, world, blockposition1, enumdirection.opposite(), false) && (block.i() == 0 || block == Blocks.PISTON || block == Blocks.STICKY_PISTON)) {
++                if (!flag1 && a(block, world, blockposition1, enumdirection.opposite(), false) && (block.i() == 0 || block == Blocks.PISTON || block == Blocks.STICKY_PISTON)) { // CraftBukkit - remove 'block.getMaterial() != Material.AIR' condition
+                     this.a(world, blockposition, enumdirection, false);
+                 }
+             } else {
+@@ -286,10 +308,46 @@
          if (!pistonextendschecker.a()) {
              return false;
          } else {
++            // CraftBukkit start
 +            final org.bukkit.block.Block bblock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
 +
 +            final List moved = pistonextendschecker.getMovedBlocks();
@@ -68,7 +81,12 @@
              Block[] ablock = new Block[i];
              EnumDirection enumdirection1 = flag ? enumdirection : enumdirection.opposite();
  
-+            BlockPistonExtendEvent event = new BlockPistonExtendEvent(bblock, blocks, CraftBlock.notchToBlockFace(enumdirection1));
++            org.bukkit.event.block.BlockPistonEvent event;
++            if (flag) {
++                event = new BlockPistonExtendEvent(bblock, blocks, CraftBlock.notchToBlockFace(enumdirection1));
++            } else {
++                event = new BlockPistonRetractEvent(bblock, blocks, CraftBlock.notchToBlockFace(enumdirection1));
++            }
 +            world.getServer().getPluginManager().callEvent(event);
 +
 +            if (event.isCancelled()) {
