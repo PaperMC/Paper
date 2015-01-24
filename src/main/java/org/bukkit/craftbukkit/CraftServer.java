@@ -161,6 +161,7 @@ public final class CraftServer implements Server {
     private final Pattern validUserPattern = Pattern.compile("^[a-zA-Z0-9_]{2,16}$");
     private final UUID invalidUserUUID = UUID.nameUUIDFromBytes("InvalidUsername".getBytes(Charsets.UTF_8));
     private final List<CraftPlayer> playerView;
+    public int reloadCount;
 
     private final class BooleanWrapper {
         private boolean value = true;
@@ -636,6 +637,7 @@ public final class CraftServer implements Server {
 
     @Override
     public void reload() {
+        reloadCount++;
         configuration = YamlConfiguration.loadConfiguration(getConfigFile());
         commandsConfiguration = YamlConfiguration.loadConfiguration(getCommandsConfigFile());
         PropertyManager config = new PropertyManager(console.options);
