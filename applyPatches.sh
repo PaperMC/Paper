@@ -40,7 +40,10 @@ function applyPatch {
 echo
 echo "Applying SpigotMC patches to CraftBukkit and Bukkit"
 echo
-applyPatch Bukkit Spigot-API origin/master && applyPatch CraftBukkit Spigot-Server origin/patched
+cd ../Bukkit
+hash=$(git rev-parse HEAD)
+git branch -f spigot "$hash"
+applyPatch Bukkit Spigot-API origin/spigot && applyPatch CraftBukkit Spigot-Server origin/patched
 echo
 echo "Applying PaperSpigot patches to Spigot-Server and Spigot-API"
 echo
