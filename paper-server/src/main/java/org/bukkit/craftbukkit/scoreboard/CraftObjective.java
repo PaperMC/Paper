@@ -113,4 +113,25 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
         
         return getScoreboard();
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 31 * hash + (this.objective != null ? this.objective.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final CraftObjective other = (CraftObjective) obj;
+        return !(this.objective != other.objective && (this.objective == null || !this.objective.equals(other.objective)));
+    }
+
+
 }

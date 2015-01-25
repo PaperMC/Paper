@@ -194,4 +194,25 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
 
         return getScoreboard();
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 43 * hash + (this.team != null ? this.team.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final CraftTeam other = (CraftTeam) obj;
+        return !(this.team != other.team && (this.team == null || !this.team.equals(other.team)));
+    }
+
+
 }
