@@ -845,6 +845,14 @@ public enum Material {
             case JUNGLE_FENCE:
             case DARK_OAK_FENCE:
             case ACACIA_FENCE:
+            case STANDING_BANNER:
+            case WALL_BANNER:
+            case DAYLIGHT_DETECTOR_INVERTED:
+            case SPRUCE_DOOR:
+            case BIRCH_DOOR:
+            case JUNGLE_DOOR:
+            case ACACIA_DOOR:
+            case DARK_OAK_DOOR:
                 return true;
             default:
                 return false;
@@ -905,7 +913,6 @@ public enum Material {
             case ACTIVATOR_RAIL:
             case CARPET:
             case DOUBLE_PLANT:
-            case DAYLIGHT_DETECTOR_INVERTED:
                 return true;
             default:
                 return false;
@@ -969,6 +976,14 @@ public enum Material {
             case JUNGLE_FENCE:
             case DARK_OAK_FENCE:
             case ACACIA_FENCE:
+            case STANDING_BANNER:
+            case WALL_BANNER:
+            case DAYLIGHT_DETECTOR_INVERTED:
+            case SPRUCE_DOOR:
+            case BIRCH_DOOR:
+            case JUNGLE_DOOR:
+            case ACACIA_DOOR:
+            case DARK_OAK_DOOR:
                 return true;
             default:
                 return false;
@@ -1105,6 +1120,7 @@ public enum Material {
             case BARRIER:
             case PRISMARINE:
             case RED_SANDSTONE:
+            case DOUBLE_STONE_SLAB2:
                 return true;
             default:
                 return false;
