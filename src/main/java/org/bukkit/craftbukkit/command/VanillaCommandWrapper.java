@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Level;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.command.ProxiedCommandSender;
 import org.bukkit.command.RemoteConsoleCommandSender;
 import org.bukkit.command.defaults.*;
 import org.bukkit.craftbukkit.CraftServer;
@@ -39,7 +40,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
         if (!testPermission(sender)) return true;
 
         ICommandListener icommandlistener = getListener(sender);
-        dispatchVanillaCommand(icommandlistener, args);
+        dispatchVanillaCommand(sender, icommandlistener, args);
         return true;
     }
 
@@ -51,7 +52,9 @@ public final class VanillaCommandWrapper extends VanillaCommand {
         return (List<String>) vanillaCommand.tabComplete(getListener(sender), args, new BlockPosition(0, 0, 0));
     }
 
-    public final int dispatchVanillaCommand(ICommandListener icommandlistener, String[] as) {
+    public static CommandSender lastSender = null; // Nasty :(
+
+    public final int dispatchVanillaCommand(CommandSender bSender, ICommandListener icommandlistener, String[] as) {
         // Copied from net.minecraft.server.CommandHandler
         int i = getPlayerListSize(as);
         int j = 0;
@@ -71,6 +74,8 @@ public final class VanillaCommandWrapper extends VanillaCommand {
                     while (iterator.hasNext()) {
                         Entity entity = iterator.next();
 
+                        CommandSender oldSender = lastSender;
+                        lastSender = bSender;
                         try {
                             as[i] = entity.getUniqueID().toString();
                             vanillaCommand.execute(icommandlistener, as);
@@ -83,7 +88,9 @@ public final class VanillaCommandWrapper extends VanillaCommand {
                             ChatMessage chatmessage = new ChatMessage(commandexception.getMessage(), commandexception.getArgs());
                             chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
                             icommandlistener.sendMessage(chatmessage);
-                        } 
+                        } finally {
+                            lastSender = oldSender;
+                        }
                     }
                     as[i] = s2;
                 } else {
@@ -139,6 +146,9 @@ public final class VanillaCommandWrapper extends VanillaCommand {
         }
         if (sender instanceof ConsoleCommandSender) {
             return ((CraftServer) sender.getServer()).getServer();
+        }
+        if (sender instanceof ProxiedCommandSender) {
+            return ((ProxiedNativeCommandSender) sender).getHandle();
         }
         return null;
     }

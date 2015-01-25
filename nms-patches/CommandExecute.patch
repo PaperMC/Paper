@@ -1,14 +1,17 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/CommandExecute.java	2015-01-04 23:24:40.781538505 +0000
-+++ src/main/java/net/minecraft/server/CommandExecute.java	2015-01-04 23:24:40.781538505 +0000
-@@ -2,6 +2,7 @@
+--- ../work/decompile-8eb82bde//net/minecraft/server/CommandExecute.java	2015-01-25 15:16:56.720837314 +0000
++++ src/main/java/net/minecraft/server/CommandExecute.java	2015-01-25 15:16:56.720837314 +0000
+@@ -2,6 +2,10 @@
  
  import java.util.Collection;
  import java.util.List;
++// CraftBukkit start
 +import org.bukkit.craftbukkit.command.ProxiedNativeCommandSender;
++import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
++// CraftBukkit end
  
  public class CommandExecute extends CommandAbstract {
  
-@@ -19,7 +20,7 @@
+@@ -19,7 +23,7 @@
          return "commands.execute.usage";
      }
  
@@ -17,7 +20,7 @@
          if (astring.length < 5) {
              throw new ExceptionUsage("commands.execute.usage", new Object[0]);
          } else {
-@@ -52,12 +53,28 @@
+@@ -52,12 +56,30 @@
              ICommandHandler icommandhandler = MinecraftServer.getServer().getCommandHandler();
  
              try {
@@ -25,12 +28,14 @@
 -
 +                // CraftBukkit start
 +                org.bukkit.command.CommandSender sender = null;
-+                if (icommandlistener.f() != null) {
-+                    sender = icommandlistener.f().getBukkitEntity();
-+                } else if (icommandlistener instanceof DedicatedServer) {
++                if (icommandlistener instanceof DedicatedServer) {
 +                    sender = MinecraftServer.getServer().server.getConsoleSender();
 +                } else if (icommandlistener instanceof TileEntityCommandListener) {
 +                    sender = ((TileEntityCommandListener) icommandlistener).sender;
++                } else if (VanillaCommandWrapper.lastSender != null) {
++                    sender = VanillaCommandWrapper.lastSender;
++                }else if (icommandlistener.f() != null) {
++                    sender = icommandlistener.f().getBukkitEntity();
 +                } else {
 +                    throw new CommandException("Unhandled executor " + icommandlistener.getClass().getSimpleName(), new Object[0]);
 +                }
@@ -48,7 +53,7 @@
                  throw new CommandException("commands.execute.failed", new Object[] { s, entity.getName()});
              }
          }
-@@ -70,4 +87,11 @@
+@@ -70,4 +92,11 @@
      public boolean isListStart(String[] astring, int i) {
          return i == 0;
      }
