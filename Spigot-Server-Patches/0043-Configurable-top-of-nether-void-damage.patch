@@ -1,0 +1,51 @@
+From 5941b0e2bfb3d341eb6d07832a2443f6193c495b Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Thu, 29 Jan 2015 15:11:31 -0600
+Subject: [PATCH] Configurable top of nether void damage
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 4848e09..be59806 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -246,6 +246,13 @@ public abstract class Entity implements ICommandListener {
+         this.K();
+     }
+ 
++    /**
++     * PaperSpigot - Checks if the feature is enabled and the entity is above the nether world bedrock height
++     */
++    private boolean paperNetherCheck() {
++        return this.world.paperSpigotConfig.netherVoidTopDamage && this.world.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER && this.locY >= 128.0D;
++    }
++
+     public void K() {
+         this.world.methodProfiler.a("entityBaseTick");
+         if (this.vehicle != null && this.vehicle.dead) {
+@@ -322,7 +329,7 @@ public abstract class Entity implements ICommandListener {
+             this.fallDistance *= 0.5F;
+         }
+ 
+-        if (this.locY < -64.0D) {
++        if (this.locY < -64.0D || paperNetherCheck()) { // PaperSpigot - Configurable top-of-nether void damage
+             this.O();
+         }
+ 
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+index 74d1017..00a418b 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+@@ -192,4 +192,10 @@ public class PaperSpigotWorldConfig
+     {
+         tntMovesInWater = getBoolean("tnt-moves-in-water", true );
+     }
++
++    public boolean netherVoidTopDamage;
++    private void nethervoidTopDamage()
++    {
++        netherVoidTopDamage = getBoolean( "nether-ceiling-void-damage", false );
++    }
+ }
+-- 
+1.9.5.msysgit.0
+
