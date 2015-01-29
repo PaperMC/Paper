@@ -1,0 +1,51 @@
+From 523316f92cef57584b2bbb7eedc4ef05eafa13db Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Fri, 28 Nov 2014 02:03:43 -0600
+Subject: [PATCH] Drop falling block entities that are above the specified
+ height
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+index fd78677..81a5dc9 100644
+--- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
++++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+@@ -69,6 +69,17 @@ public class EntityFallingBlock extends Entity {
+ 
+             this.motY -= 0.03999999910593033D;
+             this.move(this.motX, this.motY, this.motZ);
++
++            // PaperSpigot start - Drop falling blocks above the specified height
++            if (this.world.paperSpigotConfig.fallingBlockHeightNerf != 0 && this.locY > this.world.paperSpigotConfig.fallingBlockHeightNerf) {
++                if (this.dropItem) {
++                    this.a(new ItemStack(block, 1, block.getDropData(this.block)), 0.0F);
++                }
++
++                this.die();
++            }
++            // PaperSpigot end
++
+             this.motX *= 0.9800000190734863D;
+             this.motY *= 0.9800000190734863D;
+             this.motZ *= 0.9800000190734863D;
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+index 00303dc..5306e9a 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+@@ -146,4 +146,14 @@ public class PaperSpigotWorldConfig
+         keepSpawnInMemory = getBoolean( "keep-spawn-loaded", true );
+         log( "Keep spawn chunk loaded: " + keepSpawnInMemory );
+     }
++
++    public double fallingBlockHeightNerf;
++    private void fallingBlockheightNerf()
++    {
++        // Technically a little disingenuous as it applies to all falling blocks but alas, backwards compat prevails!
++        fallingBlockHeightNerf = getDouble( "tnt-entity-height-nerf", 0 );
++        if (fallingBlockHeightNerf != 0) {
++            log( "TNT/Falling Block Height Limit set to Y: " + fallingBlockHeightNerf);
++        }
++    }
+ }
+-- 
+1.9.5.msysgit.0
+
