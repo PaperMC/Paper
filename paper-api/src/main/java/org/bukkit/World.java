@@ -283,7 +283,10 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param x X-coordinate of the chunk
      * @param z Z-coordinate of the chunk
      * @return Whether the chunk was actually refreshed
+     * 
+     * @deprecated This method is not guaranteed to work suitably across all client implementations.
      */
+    @Deprecated
     public boolean refreshChunk(int x, int z);
 
     /**
