@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/ItemStack.java	2014-11-29 21:16:43.705017876 +0000
-+++ src/main/java/net/minecraft/server/ItemStack.java	2014-11-29 21:16:36.581018034 +0000
+--- ../work/decompile-8eb82bde//net/minecraft/server/ItemStack.java	2015-02-02 21:55:14.596077817 +0000
++++ src/main/java/net/minecraft/server/ItemStack.java	2015-02-02 21:55:14.596077817 +0000
 @@ -5,6 +5,18 @@
  import java.text.DecimalFormat;
  import java.util.Random;
@@ -38,7 +38,7 @@
      }
  
      public static ItemStack createStack(NBTTagCompound nbttagcompound) {
-@@ -83,11 +97,96 @@
+@@ -83,11 +97,114 @@
      }
  
      public boolean placeItem(EntityHuman entityhuman, World world, BlockPosition blockposition, EnumDirection enumdirection, float f, float f1, float f2) {
@@ -128,6 +128,24 @@
 +
 +                    world.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block.getBlock(), updateFlag); // send null chunk as chunk.k() returns false by this point
 +                }
++
++                if (this.getItem() == Items.SKULL) { // Special case skulls to allow wither spawns to be cancelled
++                    BlockPosition bp = blockposition;
++                    if (!world.getType(blockposition).getBlock().f(world, blockposition)) {
++                        if (!world.getType(blockposition).getBlock().getMaterial().isBuildable()) {
++                            bp = null;
++                        } else {
++                            bp = bp.shift(enumdirection);
++                        }
++                    }
++                    if (bp != null) {
++                        TileEntity te = world.getTileEntity(bp);
++                        if (te instanceof TileEntitySkull) {
++                            Blocks.SKULL.a(world, bp, (TileEntitySkull) te);
++                        }
++                    }
++                }
++
 +                entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this.item)]);
 +            }
          }
@@ -136,7 +154,7 @@
  
          return flag;
      }
-@@ -111,7 +210,7 @@
+@@ -111,7 +228,7 @@
          nbttagcompound.setByte("Count", (byte) this.count);
          nbttagcompound.setShort("Damage", (short) this.damage);
          if (this.tag != null) {
@@ -145,7 +163,7 @@
          }
  
          return nbttagcompound;
-@@ -125,13 +224,18 @@
+@@ -125,13 +242,18 @@
          }
  
          this.count = nbttagcompound.getByte("Count");
@@ -165,7 +183,7 @@
              if (this.item != null) {
                  this.item.a(this.tag);
              }
-@@ -168,8 +272,29 @@
+@@ -168,8 +290,29 @@
      }
  
      public void setData(int i) {
@@ -196,7 +214,7 @@
              this.damage = 0;
          }
  
-@@ -222,6 +347,12 @@
+@@ -222,6 +365,12 @@
                      if (this.count < 0) {
                          this.count = 0;
                      }
@@ -209,7 +227,7 @@
  
                      this.damage = 0;
                  }
-@@ -489,6 +620,7 @@
+@@ -489,6 +638,7 @@
  
      public void setItem(Item item) {
          this.item = item;
