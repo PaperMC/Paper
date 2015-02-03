@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde/net/minecraft/server/PlayerList.java	2014-12-13 10:25:48.845021085 +0000
-+++ src/main/java/net/minecraft/server/PlayerList.java	2014-12-13 10:25:34.093021245 +0000
+--- ../work/decompile-8eb82bde//net/minecraft/server/PlayerList.java	2015-02-03 23:38:03.774687143 +0000
++++ src/main/java/net/minecraft/server/PlayerList.java	2015-02-03 23:38:03.794687143 +0000
 @@ -18,6 +18,26 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -70,25 +70,37 @@
          playerconnection.sendPacket(new PacketPlayOutCustomPayload("MC|Brand", (new PacketDataSerializer(Unpooled.buffer())).a(this.getServer().getServerModName())));
          playerconnection.sendPacket(new PacketPlayOutServerDifficulty(worlddata.y(), worlddata.z()));
          playerconnection.sendPacket(new PacketPlayOutSpawnPosition(blockposition));
-@@ -89,6 +119,7 @@
+@@ -89,17 +119,23 @@
          entityplayer.getStatisticManager().updateStatistics(entityplayer);
          this.sendScoreboard((ScoreboardServer) worldserver.getScoreboard(), entityplayer);
          this.server.aF();
-+        /* CraftBukkit start - login message is handled in the event
-         ChatMessage chatmessage;
+-        ChatMessage chatmessage;
++        // CraftBukkit start - login message is handled in the event
++        // ChatMessage chatmessage;
  
++        String joinMessage;
          if (!entityplayer.getName().equalsIgnoreCase(s)) {
-@@ -99,7 +130,9 @@
+-            chatmessage = new ChatMessage("multiplayer.player.joined.renamed", new Object[] { entityplayer.getScoreboardDisplayName(), s});
++            // chatmessage = new ChatMessage("multiplayer.player.joined.renamed", new Object[] { entityplayer.getScoreboardDisplayName(), s});
++            joinMessage = "\u00A7e" + LocaleI18n.a("multiplayer.player.joined.renamed", entityplayer.getName(), s);
+         } else {
+-            chatmessage = new ChatMessage("multiplayer.player.joined", new Object[] { entityplayer.getScoreboardDisplayName()});
++            // chatmessage = new ChatMessage("multiplayer.player.joined", new Object[] { entityplayer.getScoreboardDisplayName()});
++            joinMessage = "\u00A7e" + LocaleI18n.a("multiplayer.player.joined", entityplayer.getName());
+         }
  
-         chatmessage.getChatModifier().setColor(EnumChatFormat.YELLOW);
-         this.sendMessage(chatmessage);
-+        // CraftBukkit end */
-         this.onPlayerJoin(entityplayer);
+-        chatmessage.getChatModifier().setColor(EnumChatFormat.YELLOW);
+-        this.sendMessage(chatmessage);
+-        this.onPlayerJoin(entityplayer);
++        // chatmessage.getChatModifier().setColor(EnumChatFormat.YELLOW);
++        // this.sendMessage(chatmessage);
++        this.onPlayerJoin(entityplayer, joinMessage);
++        // CraftBukkit end
 +        worldserver = server.getWorldServer(entityplayer.dimension);  // CraftBukkit - Update in case join event changed it
          playerconnection.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
          this.b(entityplayer, worldserver);
          if (this.server.getResourcePack().length() > 0) {
-@@ -126,6 +159,8 @@
+@@ -126,6 +162,8 @@
              }
          }
  
@@ -97,7 +109,7 @@
      }
  
      public void sendScoreboard(ScoreboardServer scoreboardserver, EntityPlayer entityplayer) {
-@@ -158,6 +193,7 @@
+@@ -158,6 +196,7 @@
      }
  
      public void setPlayerFileData(WorldServer[] aworldserver) {
@@ -105,7 +117,7 @@
          this.playerFileData = aworldserver[0].getDataManager().getPlayerFileData();
          aworldserver[0].af().a((IWorldBorderListener) (new WorldBorderListener(this)));
      }
-@@ -178,7 +214,7 @@
+@@ -178,7 +217,7 @@
      }
  
      public NBTTagCompound a(EntityPlayer entityplayer) {
@@ -114,8 +126,12 @@
          NBTTagCompound nbttagcompound1;
  
          if (entityplayer.getName().equals(this.server.R()) && nbttagcompound != null) {
-@@ -205,30 +241,69 @@
-     public void onPlayerJoin(EntityPlayer entityplayer) {
+@@ -202,33 +241,72 @@
+ 
+     }
+ 
+-    public void onPlayerJoin(EntityPlayer entityplayer) {
++    public void onPlayerJoin(EntityPlayer entityplayer, String joinMessage) { // CraftBukkit added param
          this.players.add(entityplayer);
          this.f.put(entityplayer.getUniqueID(), entityplayer);
 -        this.sendAll(new PacketPlayOutPlayerInfo(EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[] { entityplayer}));
@@ -125,10 +141,10 @@
 -        worldserver.addEntity(entityplayer);
 -        this.a(entityplayer, (WorldServer) null);
 +        // CraftBukkit start
-+        PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.getName() + " joined the game.");
++        PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(cserver.getPlayer(entityplayer), joinMessage);
 +        cserver.getPluginManager().callEvent(playerJoinEvent);
 +
-+        String joinMessage = playerJoinEvent.getJoinMessage();
++        joinMessage = playerJoinEvent.getJoinMessage();
 +
 +        if (joinMessage != null && joinMessage.length() > 0) {
 +            for (IChatBaseComponent line : org.bukkit.craftbukkit.util.CraftChatMessage.fromString(joinMessage)) {
@@ -189,7 +205,7 @@
              worldserver.removeEntity(entityplayer.vehicle);
              PlayerList.h.debug("removing player mount");
          }
-@@ -238,13 +313,61 @@
+@@ -238,13 +316,61 @@
          this.players.remove(entityplayer);
          this.f.remove(entityplayer.getUniqueID());
          this.o.remove(entityplayer.getUniqueID());
@@ -254,7 +270,7 @@
              GameProfileBanEntry gameprofilebanentry = (GameProfileBanEntry) this.k.get(gameprofile);
  
              s = "You are banned from this server!\nReason: " + gameprofilebanentry.getReason();
-@@ -252,10 +375,12 @@
+@@ -252,10 +378,12 @@
                  s = s + "\nYour ban will be removed on " + PlayerList.i.format(gameprofilebanentry.getExpires());
              }
  
@@ -270,7 +286,7 @@
              IpBanEntry ipbanentry = this.l.get(socketaddress);
  
              s = "Your IP address is banned from this server!\nReason: " + ipbanentry.getReason();
-@@ -263,13 +388,25 @@
+@@ -263,13 +391,25 @@
                  s = s + "\nYour ban will be removed on " + PlayerList.i.format(ipbanentry.getExpires());
              }
  
@@ -299,7 +315,7 @@
          UUID uuid = EntityHuman.a(gameprofile);
          ArrayList arraylist = Lists.newArrayList();
  
-@@ -286,9 +423,12 @@
+@@ -286,9 +426,12 @@
  
          while (iterator.hasNext()) {
              entityplayer = (EntityPlayer) iterator.next();
@@ -312,7 +328,7 @@
          Object object;
  
          if (this.server.W()) {
-@@ -298,17 +438,25 @@
+@@ -298,17 +441,25 @@
          }
  
          return new EntityPlayer(this.server, this.server.getWorldServer(0), gameprofile, (PlayerInteractManager) object);
@@ -339,7 +355,7 @@
          entityplayer.dimension = i;
          Object object;
  
-@@ -319,80 +467,270 @@
+@@ -319,80 +470,270 @@
          }
  
          EntityPlayer entityplayer1 = new EntityPlayer(this.server, this.server.getWorldServer(entityplayer.dimension), entityplayer.getProfile(), (PlayerInteractManager) object);
@@ -646,7 +662,7 @@
          if (entity.dimension == -1) {
              d0 = MathHelper.a(d0 / d2, worldserver1.af().b() + 16.0D, worldserver1.af().d() - 16.0D);
              d1 = MathHelper.a(d1 / d2, worldserver1.af().c() + 16.0D, worldserver1.af().e() - 16.0D);
-@@ -411,6 +749,8 @@
+@@ -411,6 +752,8 @@
              BlockPosition blockposition;
  
              if (i == 1) {
@@ -655,7 +671,7 @@
                  blockposition = worldserver1.getSpawn();
              } else {
                  blockposition = worldserver1.getDimensionSpawn();
-@@ -424,15 +764,26 @@
+@@ -424,15 +767,26 @@
                  worldserver.entityJoinedWorld(entity, false);
              }
          }
@@ -684,7 +700,7 @@
                  worldserver1.addEntity(entity);
                  worldserver1.entityJoinedWorld(entity, false);
              }
-@@ -441,6 +792,7 @@
+@@ -441,6 +795,7 @@
          }
  
          entity.spawnIn(worldserver1);
@@ -692,7 +708,7 @@
      }
  
      public void tick() {
-@@ -458,6 +810,15 @@
+@@ -458,6 +813,15 @@
  
      }
  
@@ -708,7 +724,7 @@
      public void a(Packet packet, int i) {
          for (int j = 0; j < this.players.size(); ++j) {
              EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
-@@ -549,10 +910,24 @@
+@@ -549,10 +913,24 @@
  
      public void addOp(GameProfile gameprofile) {
          this.operators.add(new OpListEntry(gameprofile, this.server.p()));
@@ -733,7 +749,7 @@
      }
  
      public boolean isWhitelisted(GameProfile gameprofile) {
-@@ -560,7 +935,7 @@
+@@ -560,7 +938,7 @@
      }
  
      public boolean isOp(GameProfile gameprofile) {
@@ -742,7 +758,7 @@
      }
  
      public EntityPlayer getPlayer(String s) {
-@@ -587,6 +962,12 @@
+@@ -587,6 +965,12 @@
          for (int j = 0; j < this.players.size(); ++j) {
              EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
  
@@ -755,7 +771,7 @@
              if (entityplayer != entityhuman && entityplayer.dimension == i) {
                  double d4 = d0 - entityplayer.locX;
                  double d5 = d1 - entityplayer.locY;
-@@ -634,21 +1015,26 @@
+@@ -634,21 +1018,26 @@
      public void reloadWhitelist() {}
  
      public void b(EntityPlayer entityplayer, WorldServer worldserver) {
@@ -787,7 +803,7 @@
          entityplayer.playerConnection.sendPacket(new PacketPlayOutHeldItemSlot(entityplayer.inventory.itemInHandIndex));
      }
  
-@@ -661,7 +1047,7 @@
+@@ -661,7 +1050,7 @@
      }
  
      public String[] getSeenPlayers() {
@@ -796,7 +812,7 @@
      }
  
      public boolean getHasWhitelist() {
-@@ -711,16 +1097,25 @@
+@@ -711,16 +1100,25 @@
  
      public void v() {
          for (int i = 0; i < this.players.size(); ++i) {
@@ -824,7 +840,7 @@
      }
  
      public void sendMessage(IChatBaseComponent ichatbasecomponent) {
-@@ -754,11 +1149,10 @@
+@@ -754,11 +1152,10 @@
      public void a(int i) {
          this.r = i;
          if (this.server.worldServer != null) {
