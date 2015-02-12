@@ -11,6 +11,9 @@ import org.bukkit.event.block.Action;
 
 /**
  * Called when a player interacts with an object or air.
+ * <p>
+ * This event will fire as cancelled if the vanilla behavior
+ * is to do nothing (e.g interacting with air)
  */
 public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
