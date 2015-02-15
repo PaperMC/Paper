@@ -29,6 +29,7 @@ import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.craftbukkit.Overridden;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey.Specific;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.Repairable;
 
@@ -37,6 +38,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -201,11 +204,14 @@ class CraftMetaItem implements ItemMeta, Repairable {
     static final ItemMetaKey ATTRIBUTES_UUID_HIGH = new ItemMetaKey("UUIDMost");
     @Specific(Specific.To.NBT)
     static final ItemMetaKey ATTRIBUTES_UUID_LOW = new ItemMetaKey("UUIDLeast");
+    @Specific(Specific.To.NBT)
+    static final ItemMetaKey HIDEFLAGS = new ItemMetaKey("ItemFlags", "hideFlags");
 
     private String displayName;
     private List<String> lore;
     private Map<Enchantment, Integer> enchantments;
     private int repairCost;
+    private int hideFlag;
     private final NBTTagList attributes;
 
     private static final Set<String> HANDLED_TAGS = Sets.newHashSet();
@@ -230,6 +236,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
         this.repairCost = meta.repairCost;
         this.attributes = meta.attributes;
+        this.hideFlag = meta.hideFlag;
         this.unhandledTags.putAll(meta.unhandledTags);
     }
 
@@ -258,6 +265,9 @@ class CraftMetaItem implements ItemMeta, Repairable {
             repairCost = tag.getInt(REPAIR.NBT);
         }
 
+        if (tag.hasKey(HIDEFLAGS.NBT)) {
+            hideFlag = tag.getInt(HIDEFLAGS.NBT);
+        }
 
         if (tag.get(ATTRIBUTES.NBT) instanceof NBTTagList) {
             NBTTagList save = null;
@@ -349,6 +359,19 @@ class CraftMetaItem implements ItemMeta, Repairable {
         }
 
         attributes = null;
+
+        Set hideFlags = SerializableMeta.getObject(Set.class, map, HIDEFLAGS.BUKKIT, true);
+        if (hideFlags != null) {
+            for (Object hideFlagObject : hideFlags) {
+                String hideFlagString = (String) hideFlagObject;
+                try {
+                    ItemFlag hideFlatEnum = ItemFlag.valueOf(hideFlagString);
+                    addItemFlags(hideFlatEnum);
+                } catch (IllegalArgumentException ex) {
+                    // Ignore when we got a old String which does not map to a Enum value anymore
+                }
+            }
+        }
     }
 
     static Map<Enchantment, Integer> buildEnchantments(Map<String, Object> map, ItemMetaKey key) {
@@ -377,6 +400,10 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
         if (hasLore()) {
             setDisplayTag(itemTag, LORE.NBT, createStringList(lore));
+        }
+
+        if (hideFlag != 0) {
+            itemTag.setInt(HIDEFLAGS.NBT, hideFlag);
         }
 
         applyEnchantments(enchantments, itemTag, ENCHANTMENTS);
@@ -443,7 +470,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
     @Overridden
     boolean isEmpty() {
-        return !(hasDisplayName() || hasEnchants() || hasLore() || hasAttributes() || hasRepairCost() || !unhandledTags.isEmpty());
+        return !(hasDisplayName() || hasEnchants() || hasLore() || hasAttributes() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0);
     }
 
     public String getDisplayName() {
@@ -510,6 +537,43 @@ class CraftMetaItem implements ItemMeta, Repairable {
         return checkConflictingEnchants(enchantments, ench);
     }
 
+    @Override
+    public void addItemFlags(ItemFlag... hideFlags) {
+        for (ItemFlag f : hideFlags) {
+            this.hideFlag |= getBitModifier(f);
+        }
+    }
+
+    @Override
+    public void removeItemFlags(ItemFlag... hideFlags) {
+        for (ItemFlag f : hideFlags) {
+            this.hideFlag &= ~getBitModifier(f);
+        }
+    }
+
+    @Override
+    public Set<ItemFlag> getItemFlags() {
+        Set<ItemFlag> currentFlags = EnumSet.noneOf(ItemFlag.class);
+
+        for (ItemFlag f : ItemFlag.values()) {
+            if (hasItemFlag(f)) {
+                currentFlags.add(f);
+            }
+        }
+
+        return currentFlags;
+    }
+
+    @Override
+    public boolean hasItemFlag(ItemFlag flag) {
+        int bitModifier = getBitModifier(flag);
+        return (this.hideFlag & bitModifier) == bitModifier;
+    }
+
+    private byte getBitModifier(ItemFlag hideFlag) {
+        return (byte) (1 << hideFlag.ordinal());
+    }
+
     public List<String> getLore() {
         return this.lore == null ? null : new ArrayList<String>(this.lore);
     }
@@ -561,7 +625,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
                 && (this.hasLore() ? that.hasLore() && this.lore.equals(that.lore) : !that.hasLore())
                 && (this.hasAttributes() ? that.hasAttributes() && this.attributes.equals(that.attributes) : !that.hasAttributes())
                 && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost())
-                && (this.unhandledTags.equals(that.unhandledTags));
+                && (this.hideFlag == that.hideFlag);
     }
 
     /**
@@ -587,7 +651,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
         hash = 61 * hash + (hasEnchants() ? this.enchantments.hashCode() : 0);
         hash = 61 * hash + (hasAttributes() ? this.attributes.hashCode() : 0);
         hash = 61 * hash + (hasRepairCost() ? this.repairCost : 0);
-        hash = 61 * hash + unhandledTags.hashCode();
+        hash = 61 * hash + hideFlag;
         return hash;
     }
 
@@ -602,6 +666,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
             if (this.enchantments != null) {
                 clone.enchantments = new HashMap<Enchantment, Integer>(this.enchantments);
             }
+            clone.hideFlag = this.hideFlag;
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new Error(e);
@@ -629,6 +694,14 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
         if (hasRepairCost()) {
             builder.put(REPAIR.BUKKIT, repairCost);
+        }
+
+        Set<String> hideFlags = new HashSet<String>();
+        for (ItemFlag hideFlagEnum : getItemFlags()) {
+            hideFlags.add(hideFlagEnum.name());
+        }
+        if (!hideFlags.isEmpty()) {
+            builder.put(HIDEFLAGS.BUKKIT, hideFlags);
         }
 
         return builder;
@@ -711,7 +784,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
                     CraftMetaEnchantedBook.STORED_ENCHANTMENTS.NBT,
                     CraftMetaCharge.EXPLOSION.NBT
                 ));
-            }
+}
             return HANDLED_TAGS;
         }
     }
