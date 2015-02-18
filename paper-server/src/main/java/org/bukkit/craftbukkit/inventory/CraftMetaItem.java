@@ -205,7 +205,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
     @Specific(Specific.To.NBT)
     static final ItemMetaKey ATTRIBUTES_UUID_LOW = new ItemMetaKey("UUIDLeast");
     @Specific(Specific.To.NBT)
-    static final ItemMetaKey HIDEFLAGS = new ItemMetaKey("ItemFlags", "hideFlags");
+    static final ItemMetaKey HIDEFLAGS = new ItemMetaKey("HideFlags", "ItemFlags");
 
     private String displayName;
     private List<String> lore;
