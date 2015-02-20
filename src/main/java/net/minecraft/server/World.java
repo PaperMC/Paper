@@ -79,6 +79,9 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
 
     public final SpigotTimings.WorldTimingsHandler timings; // Spigot
     public static BlockPosition lastPhysicsProblem; // Spigot
+    private org.spigotmc.TickLimiter entityLimiter;
+    private org.spigotmc.TickLimiter tileLimiter;
+    private int tileTickPosition;
 
     public CraftWorld getWorld() {
         return this.world;
@@ -159,6 +162,8 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
         });
         // CraftBukkit end
         timings = new SpigotTimings.WorldTimingsHandler(this); // Spigot - code below can generate new world and access timings
+        this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
+        this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
     }
 
     @Override
@@ -608,14 +613,19 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
         }
 
         this.tickingTileEntities = true;
-        Iterator iterator = this.tileEntityListTick.iterator();
-
-        while (iterator.hasNext()) {
-            TileEntity tileentity = (TileEntity) iterator.next();
+        // Spigot start
+        // Iterator iterator = this.tileEntityListTick.iterator();
+        int tilesThisCycle = 0;
+        for (tileLimiter.initTick();
+                tilesThisCycle < tileEntityListTick.size() && (tilesThisCycle % 10 != 0 || tileLimiter.shouldContinue());
+                tileTickPosition++, tilesThisCycle++) {
+            tileTickPosition = (tileTickPosition < tileEntityListTick.size()) ? tileTickPosition : 0;
+            TileEntity tileentity = (TileEntity) this.tileEntityListTick.get(tileTickPosition);
             // Spigot start
             if (tileentity == null) {
                 getServer().getLogger().severe("Spigot has detected a null entity and has removed it, preventing a crash");
-                iterator.remove();
+                tilesThisCycle--;
+                this.tileEntityListTick.remove(tileTickPosition--);
                 continue;
             }
             // Spigot end
@@ -652,7 +662,10 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
             }
 
             if (tileentity.isRemoved()) {
-                iterator.remove();
+                // Spigot start
+                tilesThisCycle--;
+                this.tileEntityListTick.remove(tileTickPosition--);
+                // Spigot end
                 this.tileEntityList.remove(tileentity);
                 if (this.isLoaded(tileentity.getPosition())) {
                     this.getChunkAtWorldCoords(tileentity.getPosition()).removeTileEntity(tileentity.getPosition());
