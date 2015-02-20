@@ -591,11 +591,11 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                     chunk.setLoaded(true);
                     this.world.a(chunk.getTileEntities().values());
                     List<Entity> list = null;
-                    EntitySlice[] aentityslice = chunk.getEntitySlices();
+                    List<Entity>[] aentityslice = chunk.getEntitySlices(); // Spigot
                     int i = aentityslice.length;
 
                     for (int j = 0; j < i; ++j) {
-                        EntitySlice<Entity> entityslice = aentityslice[j];
+                        List<Entity> entityslice = aentityslice[j]; // Spigot
                         Iterator iterator = entityslice.iterator();
 
                         while (iterator.hasNext()) {
@@ -821,7 +821,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
 
             // CraftBukkit - decompile error
             csvwriter.a(chunkcoordintpair.x, chunkcoordintpair.z, playerchunk.getTicketLevel(), optional.isPresent(), optional.map(IChunkAccess::getChunkStatus).orElse(null), optional1.map(Chunk::getState).orElse(null), a(playerchunk.c()), a(playerchunk.a()), a(playerchunk.b()), this.chunkDistanceManager.c(entry.getLongKey()), !this.isOutsideOfRange(chunkcoordintpair), optional1.map((chunk) -> {
-                return Stream.of(chunk.getEntitySlices()).mapToInt(EntitySlice::size).sum();
+                return Stream.of(chunk.getEntitySlices()).mapToInt(List::size).sum(); // Spigot
             }).orElse(0), optional1.map((chunk) -> {
                 return chunk.getTileEntities().size();
             }).orElse(0));

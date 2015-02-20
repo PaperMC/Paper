@@ -1,6 +1,7 @@
 package org.spigotmc;
 
 import java.util.Collection;
+import java.util.List;
 import net.minecraft.server.AxisAlignedBB;
 import net.minecraft.server.Chunk;
 import net.minecraft.server.Entity;
@@ -157,7 +158,7 @@ public class ActivationRange
      */
     private static void activateChunkEntities(Chunk chunk)
     {
-        for ( EntitySlice slice : chunk.entitySlices )
+        for ( List<Entity> slice : chunk.entitySlices )
         {
             for ( Entity entity : (Collection<Entity>) slice )
             {

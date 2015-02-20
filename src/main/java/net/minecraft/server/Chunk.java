@@ -35,7 +35,7 @@ public class Chunk implements IChunkAccess {
     public final Map<HeightMap.Type, HeightMap> heightMap;
     private final ChunkConverter i;
     public final Map<BlockPosition, TileEntity> tileEntities;
-    public final EntitySlice<Entity>[] entitySlices;
+    public final List<Entity>[] entitySlices; // Spigot
     private final Map<StructureGenerator<?>, StructureStart<?>> l;
     private final Map<StructureGenerator<?>, LongSet> m;
     private final ShortList[] n;
@@ -64,7 +64,7 @@ public class Chunk implements IChunkAccess {
         this.l = Maps.newHashMap();
         this.m = Maps.newHashMap();
         this.n = new ShortList[16];
-        this.entitySlices = (EntitySlice[]) (new EntitySlice[16]);
+        this.entitySlices = (List[]) (new List[16]); // Spigot
         this.world = (WorldServer) world; // CraftBukkit - type
         this.loc = chunkcoordintpair;
         this.i = chunkconverter;
@@ -80,7 +80,7 @@ public class Chunk implements IChunkAccess {
         }
 
         for (int l = 0; l < this.entitySlices.length; ++l) {
-            this.entitySlices[l] = new EntitySlice<>(Entity.class);
+            this.entitySlices[l] = new org.bukkit.craftbukkit.util.UnsafeList(); // Spigot
         }
 
         this.d = biomestorage;
@@ -561,8 +561,8 @@ public class Chunk implements IChunkAccess {
         j = MathHelper.clamp(j, 0, this.entitySlices.length - 1);
 
         for (int k = i; k <= j; ++k) {
-            EntitySlice<Entity> entityslice = this.entitySlices[k];
-            List<Entity> list1 = entityslice.a();
+            List<Entity> entityslice = this.entitySlices[k]; // Spigot
+            List<Entity> list1 = entityslice; // Spigot
             int l = list1.size();
 
             for (int i1 = 0; i1 < l; ++i1) {
@@ -599,7 +599,7 @@ public class Chunk implements IChunkAccess {
         j = MathHelper.clamp(j, 0, this.entitySlices.length - 1);
 
         for (int k = i; k <= j; ++k) {
-            Iterator iterator = this.entitySlices[k].a(Entity.class).iterator();
+            Iterator iterator = this.entitySlices[k].iterator(); // Spigot
 
             while (iterator.hasNext()) {
                 T entity = (T) iterator.next(); // CraftBukkit - decompile error
@@ -620,12 +620,12 @@ public class Chunk implements IChunkAccess {
         j = MathHelper.clamp(j, 0, this.entitySlices.length - 1);
 
         for (int k = i; k <= j; ++k) {
-            Iterator iterator = this.entitySlices[k].a(oclass).iterator();
+            Iterator iterator = this.entitySlices[k].iterator(); // Spigot
 
             while (iterator.hasNext()) {
                 T t0 = (T) iterator.next(); // CraftBukkit - decompile error
 
-                if (t0.getBoundingBox().c(axisalignedbb) && (predicate == null || predicate.test(t0))) {
+                if (oclass.isInstance(t0) && t0.getBoundingBox().c(axisalignedbb) && (predicate == null || predicate.test(t0))) { // Spigot - instance check
                     list.add(t0);
                 }
             }
@@ -664,7 +664,7 @@ public class Chunk implements IChunkAccess {
         return this.tileEntities;
     }
 
-    public EntitySlice<Entity>[] getEntitySlices() {
+    public List<Entity>[] getEntitySlices() { // Spigot
         return this.entitySlices;
     }
 
