@@ -101,6 +101,62 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final List a = Lists.newArrayList();
      private final List b = Lists.newArrayList();
      public final List players = Lists.newArrayList();
+@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+     public static String blockLocation;
+     public List<TileEntity> triggerHoppersList = new ArrayList<TileEntity>(); // Spigot, When altHopperTicking, tile entities being added go through here.
+     private org.spigotmc.TickLimiter entityLimiter;
+-    private org.spigotmc.TickLimiter tileLimiter;
+-    private int tileTickPosition;
++    //private org.spigotmc.TickLimiter tileLimiter; // PaperSpigot - Disable Spigot's TE handling in favor of our own
++    //private int tileTickPosition; // PaperSpigot - Disable Spigot's TE handling in favor of our own
+ 
+     public static long chunkToKey(int x, int z)
+     {
+@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+         this.getServer().addWorld(this.world); // CraftBukkit
+         timings = new SpigotTimings.WorldTimingsHandler(this); // Spigot - code below can generate new world and access timings
+         this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
+-        this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
++        //this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime); // PaperSpigot - Disable Spigot's TE handling in favor of our own
+     }
+ 
+     public World b() {
+@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+         // CraftBukkit end
+ 
+         this.initializeHoppers(); // Spigot - Initializes hoppers which have been added recently.
++        // PaperSpigot Start - Return to previous behavior, theoretically tile entity ticks should no longer be long enough for this to be an issue
++        Iterator iterator = this.tileEntityList.iterator();
+ 
++        while (iterator.hasNext()) {
++            TileEntity tileentity = (TileEntity) iterator.next();
++        /*
+         // Spigot start
+         int tilesThisCycle = 0;
+         for (tileLimiter.initTick();
+@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+                 tileTickPosition++, tilesThisCycle++) {
+             tileTickPosition = (tileTickPosition < tileEntityList.size()) ? tileTickPosition : 0;
+             TileEntity tileentity = (TileEntity) this.tileEntityList.get(tileTickPosition);
++            */
++            // PaperSpigot end
+             // Spigot start
+             if (tileentity == null) {
+                 getServer().getLogger().severe("Spigot has detected a null entity and has removed it, preventing a crash");
+-                this.tileEntityList.remove(tileTickPosition--);
++                iterator.remove(); // PaperSpigot - Remove Spigot's TE handling in favor of our own
+                 continue;
+             }
+             // Spigot end
+@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+             }
+ 
+             if (tileentity.x()) {
+-                this.tileEntityList.remove(tileTickPosition--);
++                iterator.remove(); // PaperSpigot - Remove Spigot's TE handling in favor of our own
+                 this.h.remove(tileentity);
+                 if (this.isLoaded(tileentity.getPosition())) {
+                     this.getChunkAtWorldCoords(tileentity.getPosition()).e(tileentity.getPosition());
 diff --git a/src/main/java/org/github/paperspigot/WorldTileEntityList.java b/src/main/java/org/github/paperspigot/WorldTileEntityList.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
