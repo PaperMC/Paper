@@ -1,4 +1,4 @@
-From f3f9681b466aa0d0682a67e293c06ba928ffad9f Mon Sep 17 00:00:00 2001
+From f239a7099cb973e65d130657977527269e7d3d32 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 28 Nov 2014 04:14:14 -0600
 Subject: [PATCH] Optimize TileEntity Ticking
@@ -74,7 +74,7 @@ index 7b6f8ae..c6b593f 100644
              if (this.e instanceof BlockDaylightDetector) {
                  ((BlockDaylightDetector) this.e).d(this.world, this.position);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index fa68938..7507580 100644
+index a105351..b59e88a 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -3,13 +3,7 @@ package net.minecraft.server;
@@ -101,6 +101,62 @@ index fa68938..7507580 100644
      private final List a = Lists.newArrayList();
      private final List b = Lists.newArrayList();
      public final List players = Lists.newArrayList();
+@@ -133,8 +127,8 @@ public abstract class World implements IBlockAccess {
+     public static String blockLocation;
+     public List<TileEntity> triggerHoppersList = new ArrayList<TileEntity>(); // Spigot, When altHopperTicking, tile entities being added go through here.
+     private org.spigotmc.TickLimiter entityLimiter;
+-    private org.spigotmc.TickLimiter tileLimiter;
+-    private int tileTickPosition;
++    //private org.spigotmc.TickLimiter tileLimiter; // PaperSpigot - Disable Spigot's TE handling in favor of our own
++    //private int tileTickPosition; // PaperSpigot - Disable Spigot's TE handling in favor of our own
+ 
+     public static long chunkToKey(int x, int z)
+     {
+@@ -240,7 +234,7 @@ public abstract class World implements IBlockAccess {
+         this.getServer().addWorld(this.world); // CraftBukkit
+         timings = new SpigotTimings.WorldTimingsHandler(this); // Spigot - code below can generate new world and access timings
+         this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
+-        this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
++        //this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime); // PaperSpigot - Disable Spigot's TE handling in favor of our own
+     }
+ 
+     public World b() {
+@@ -1462,7 +1456,12 @@ public abstract class World implements IBlockAccess {
+         // CraftBukkit end
+ 
+         this.initializeHoppers(); // Spigot - Initializes hoppers which have been added recently.
++        // PaperSpigot Start - Return to previous behavior, theoretically tile entity ticks should no longer be long enough for this to be an issue
++        Iterator iterator = this.tileEntityList.iterator();
+ 
++        while (iterator.hasNext()) {
++            TileEntity tileentity = (TileEntity) iterator.next();
++        /*
+         // Spigot start
+         int tilesThisCycle = 0;
+         for (tileLimiter.initTick();
+@@ -1470,10 +1469,12 @@ public abstract class World implements IBlockAccess {
+                 tileTickPosition++, tilesThisCycle++) {
+             tileTickPosition = (tileTickPosition < tileEntityList.size()) ? tileTickPosition : 0;
+             TileEntity tileentity = (TileEntity) this.tileEntityList.get(tileTickPosition);
++            */
++            // PaperSpigot end
+             // Spigot start
+             if (tileentity == null) {
+                 getServer().getLogger().severe("Spigot has detected a null entity and has removed it, preventing a crash");
+-                this.tileEntityList.remove(tileTickPosition--);
++                iterator.remove(); // PaperSpigot - Remove Spigot's TE handling in favor of our own
+                 continue;
+             }
+             // Spigot end
+@@ -1501,7 +1502,7 @@ public abstract class World implements IBlockAccess {
+             }
+ 
+             if (tileentity.x()) {
+-                this.tileEntityList.remove(tileTickPosition--);
++                iterator.remove(); // PaperSpigot - Remove Spigot's TE handling in favor of our own
+                 this.h.remove(tileentity);
+                 if (this.isLoaded(tileentity.getPosition())) {
+                     this.getChunkAtWorldCoords(tileentity.getPosition()).e(tileentity.getPosition());
 diff --git a/src/main/java/org/github/paperspigot/WorldTileEntityList.java b/src/main/java/org/github/paperspigot/WorldTileEntityList.java
 new file mode 100644
 index 0000000..1a53e94
