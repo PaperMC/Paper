@@ -5,11 +5,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import net.minecraft.server.Block;
 import net.minecraft.server.Blocks;
 import net.minecraft.server.Item;
 import net.minecraft.server.MinecraftKey;
+import net.minecraft.server.MojangsonParseException;
 import net.minecraft.server.MojangsonParser;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.StatisticList;
@@ -107,7 +110,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public ItemStack modifyItemStack(ItemStack stack, String arguments) {
         net.minecraft.server.ItemStack nmsStack = CraftItemStack.asNMSCopy(stack);
 
-        nmsStack.setTag((NBTTagCompound) MojangsonParser.parse(arguments));
+        try {
+            nmsStack.setTag((NBTTagCompound) MojangsonParser.parse(arguments));
+        } catch (MojangsonParseException ex) {
+            Logger.getLogger(CraftMagicNumbers.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
         stack.setItemMeta(CraftItemStack.getItemMeta(nmsStack));
 

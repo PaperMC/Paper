@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/EntityZombie.java	Thu Dec 11 13:57:17 2014
-+++ src/main/java/net/minecraft/server/EntityZombie.java	Thu Dec 11 13:56:17 2014
+--- /home/matt/mc-dev-private//net/minecraft/server/EntityZombie.java	2015-02-26 22:40:22.739608138 +0000
++++ src/main/java/net/minecraft/server/EntityZombie.java	2015-02-26 22:40:22.739608138 +0000
 @@ -4,6 +4,14 @@
  import java.util.List;
  import java.util.UUID;
@@ -14,16 +14,16 @@
 +
  public class EntityZombie extends EntityMonster {
  
-     protected static final IAttribute b = (new AttributeRanged((IAttribute) null, "zombie.spawnReinforcements", 0.0D, 0.0D, 1.0D)).a("Spawn Reinforcements Chance");
+     protected static final IAttribute a = (new AttributeRanged((IAttribute) null, "zombie.spawnReinforcements", 0.0D, 0.0D, 1.0D)).a("Spawn Reinforcements Chance");
 @@ -14,6 +22,7 @@
-     private boolean bn = false;
-     private float bo = -1.0F;
-     private float bp;
+     private boolean bo = false;
+     private float bp = -1.0F;
+     private float bq;
 +    private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
  
      public EntityZombie(World world) {
          super(world);
-@@ -136,7 +145,14 @@
+@@ -135,7 +144,14 @@
                  }
  
                  if (flag) {
@@ -39,7 +39,7 @@
                  }
              }
          }
-@@ -170,8 +186,8 @@
+@@ -169,8 +185,8 @@
                      if (World.a((IBlockAccess) this.world, new BlockPosition(i1, j1 - 1, k1)) && this.world.getLightLevel(new BlockPosition(i1, j1, k1)) < 10) {
                          entityzombie.setPosition((double) i1, (double) j1, (double) k1);
                          if (!this.world.isPlayerNearby((double) i1, (double) j1, (double) k1, 7.0D) && this.world.a(entityzombie.getBoundingBox(), (Entity) entityzombie) && this.world.getCubes(entityzombie, entityzombie.getBoundingBox()).isEmpty() && !this.world.containsLiquid(entityzombie.getBoundingBox())) {
@@ -48,25 +48,25 @@
 +                            this.world.addEntity(entityzombie, CreatureSpawnEvent.SpawnReason.REINFORCEMENTS); // CraftBukkit
 +                            entityzombie.setGoalTarget(entityliving, EntityTargetEvent.TargetReason.REINFORCEMENT_TARGET, true);
                              entityzombie.prepare(this.world.E(new BlockPosition(entityzombie)), (GroupDataEntity) null);
-                             this.getAttributeInstance(EntityZombie.b).b(new AttributeModifier("Zombie reinforcement caller charge", -0.05000000074505806D, 0));
-                             entityzombie.getAttributeInstance(EntityZombie.b).b(new AttributeModifier("Zombie reinforcement callee charge", -0.05000000074505806D, 0));
+                             this.getAttributeInstance(EntityZombie.a).b(new AttributeModifier("Zombie reinforcement caller charge", -0.05000000074505806D, 0));
+                             entityzombie.getAttributeInstance(EntityZombie.a).b(new AttributeModifier("Zombie reinforcement callee charge", -0.05000000074505806D, 0));
 @@ -190,6 +206,12 @@
-     public void s_() {
-         if (!this.world.isStatic && this.cn()) {
-             int i = this.cp();
-+ 
+         if (!this.world.isClientSide && this.cp()) {
+             int i = this.cr();
+ 
 +            // CraftBukkit start - Use wall time instead of ticks for villager conversion
 +            int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
 +            this.lastTick = MinecraftServer.currentTick;
 +            i *= elapsedTicks;
 +            // CraftBukkit end
- 
-             this.bm -= i;
-             if (this.bm <= 0) {
-@@ -207,7 +229,14 @@
++
+             this.bn -= i;
+             if (this.bn <= 0) {
+                 this.cq();
+@@ -206,7 +228,14 @@
              int i = this.world.getDifficulty().a();
  
-             if (this.bz() == null && this.isBurning() && this.random.nextFloat() < (float) i * 0.3F) {
+             if (this.bA() == null && this.isBurning() && this.random.nextFloat() < (float) i * 0.3F) {
 -                entity.setOnFire(2 * i);
 +                // CraftBukkit start
 +                EntityCombustByEntityEvent event = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 2 * i);
@@ -79,8 +79,8 @@
              }
          }
  
-@@ -316,7 +345,7 @@
-                 entityzombie.setBaby(true);
+@@ -322,7 +351,7 @@
+                 entityzombie.setCustomNameVisible(entityinsentient.getCustomNameVisible());
              }
  
 -            this.world.addEntity(entityzombie);
@@ -88,7 +88,7 @@
              this.world.a((EntityHuman) null, 1016, new BlockPosition((int) this.locX, (int) this.locY, (int) this.locZ), 0);
          }
  
-@@ -369,7 +398,7 @@
+@@ -375,7 +404,7 @@
                      entitychicken1.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, 0.0F);
                      entitychicken1.prepare(difficultydamagescaler, (GroupDataEntity) null);
                      entitychicken1.l(true);
@@ -97,22 +97,21 @@
                      this.mount(entitychicken1);
                  }
              }
-@@ -452,7 +481,7 @@
+@@ -464,7 +493,7 @@
+             entityvillager.setCustomNameVisible(this.getCustomNameVisible());
          }
  
-         this.world.kill(this);
 -        this.world.addEntity(entityvillager);
 +        this.world.addEntity(entityvillager, CreatureSpawnEvent.SpawnReason.CURED); // CraftBukkit - add SpawnReason
          entityvillager.addEffect(new MobEffect(MobEffectList.CONFUSION.id, 200, 0));
          this.world.a((EntityHuman) null, 1017, new BlockPosition((int) this.locX, (int) this.locY, (int) this.locZ), 0);
      }
-@@ -487,7 +516,8 @@
+@@ -500,7 +529,7 @@
          this.a(flag ? 0.5F : 1.0F);
      }
  
--    protected final void a(float f, float f1) {
-+    // PAIL: Access + rename please
-+    public final void a(float f, float f1) { // CraftBukkit - protected to public
-         boolean flag = this.bo > 0.0F && this.bp > 0.0F;
+-    protected final void setSize(float f, float f1) {
++    public final void setSize(float f, float f1) { // CraftBukkit - public
+         boolean flag = this.bp > 0.0F && this.bq > 0.0F;
  
-         this.bo = f;
+         this.bp = f;

@@ -8,7 +8,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-import net.minecraft.server.EnumArt;
+import net.minecraft.server.EntityPainting.EnumArt;
 
 import org.bukkit.craftbukkit.CraftArt;
 import org.junit.Test;

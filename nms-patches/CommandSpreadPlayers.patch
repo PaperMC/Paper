@@ -1,0 +1,47 @@
+--- /home/matt/mc-dev-private//net/minecraft/server/CommandSpreadPlayers.java	2015-02-26 22:40:22.367608142 +0000
++++ src/main/java/net/minecraft/server/CommandSpreadPlayers.java	2015-02-26 22:40:22.367608142 +0000
+@@ -237,6 +237,13 @@
+         return astring.length >= 1 && astring.length <= 2 ? b(astring, 0, blockposition) : null;
+     }
+ 
++    // CraftBukkit start - fix decompile error
++    @Override
++    public int compareTo(ICommand o) {
++        return a(o);
++    }
++    // CraftBukkit end
++
+     static class Location2D {
+ 
+         double a;
+@@ -303,7 +310,7 @@
+                 }
+ 
+                 blockposition = blockposition.down();
+-            } while (world.getType(blockposition).getBlock().getMaterial() == Material.AIR);
++            } while (getType(world, blockposition).getBlock().getMaterial() == Material.AIR); // CraftBukkit
+ 
+             return blockposition.getY() + 1;
+         }
+@@ -319,7 +326,7 @@
+                 }
+ 
+                 blockposition = blockposition.down();
+-                material = world.getType(blockposition).getBlock().getMaterial();
++                material = getType(world, blockposition).getBlock().getMaterial(); // CraftBukkit
+             } while (material == Material.AIR);
+ 
+             return !material.isLiquid() && material != Material.FIRE;
+@@ -329,5 +336,12 @@
+             this.a = MathHelper.a(random, d0, d2);
+             this.b = MathHelper.a(random, d1, d3);
+         }
++
++        // CraftBukkit start - add a version of getType which force loads chunks
++        private static IBlockData getType(World world, BlockPosition position) {
++            ((ChunkProviderServer) world.chunkProvider).getChunkAt(position.getX() >> 4, position.getZ() >> 4);
++            return world.getType(position);
++        }
++        // CraftBukkit end
+     }
+ }

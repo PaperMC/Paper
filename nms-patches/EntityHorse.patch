@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/EntityHorse.java	2014-12-02 17:52:23.625823043 +0000
-+++ src/main/java/net/minecraft/server/EntityHorse.java	2014-12-02 17:51:30.837824215 +0000
+--- /home/matt/mc-dev-private//net/minecraft/server/EntityHorse.java	2015-02-26 22:40:22.559608140 +0000
++++ src/main/java/net/minecraft/server/EntityHorse.java	2015-02-26 22:40:22.563608140 +0000
 @@ -4,6 +4,8 @@
  import java.util.Iterator;
  import java.util.List;
@@ -8,32 +8,51 @@
 +
  public class EntityHorse extends EntityAnimal implements IInventoryListener {
  
-     private static final Predicate bq = new EntitySelectorHorse();
-@@ -36,6 +38,7 @@
-     private String bM;
-     private String[] bN = new String[3];
-     private boolean bO = false;
+     private static final Predicate<Entity> bs = new Predicate() {
+@@ -15,7 +17,7 @@
+             return this.a((Entity) object);
+         }
+     };
+-    private static final IAttribute attributeJumpStrength = (new AttributeRanged((IAttribute) null, "horse.jumpStrength", 0.7D, 0.0D, 2.0D)).a("Jump Strength").a(true);
++    public static final IAttribute attributeJumpStrength = (new AttributeRanged((IAttribute) null, "horse.jumpStrength", 0.7D, 0.0D, 2.0D)).a("Jump Strength").a(true); // CraftBukkit - public
+     private static final String[] bu = new String[] { null, "textures/entity/horse/armor/horse_armor_iron.png", "textures/entity/horse/armor/horse_armor_gold.png", "textures/entity/horse/armor/horse_armor_diamond.png"};
+     private static final String[] bv = new String[] { "", "meo", "goo", "dio"};
+     private static final int[] bw = new int[] { 0, 5, 7, 11};
+@@ -29,7 +31,7 @@
+     public int bm;
+     public int bo;
+     protected boolean bp;
+-    private InventoryHorseChest inventoryChest;
++    public InventoryHorseChest inventoryChest; // CraftBukkit - public
+     private boolean bF;
+     protected int bq;
+     protected float br;
+@@ -44,6 +46,7 @@
+     private String bO;
+     private String[] bP = new String[3];
+     private boolean bQ = false;
 +    public int maxDomestication = 100; // CraftBukkit - store max domestication value
  
      public EntityHorse(World world) {
          super(world);
-@@ -314,13 +317,13 @@
-     private int cX() {
+@@ -320,13 +323,13 @@
+     private int cZ() {
          int i = this.getType();
  
 -        return this.hasChest() && (i == 1 || i == 2) ? 17 : 2;
 +        return this.hasChest() /* && (i == 1 || i == 2) */ ? 17 : 2; // CraftBukkit - Remove type check
      }
  
-     public void loadChest() {
+-    private void loadChest() {
++    public void loadChest() { // CraftBukkit - public
          InventoryHorseChest inventoryhorsechest = this.inventoryChest;
  
--        this.inventoryChest = new InventoryHorseChest("HorseChest", this.cX());
-+        this.inventoryChest = new InventoryHorseChest("HorseChest", this.cX(), this); // CraftBukkit - add this horse
+-        this.inventoryChest = new InventoryHorseChest("HorseChest", this.cZ());
++        this.inventoryChest = new InventoryHorseChest("HorseChest", this.cZ(), this); // CraftBukkit - add this horse
          this.inventoryChest.a(this.getName());
          if (inventoryhorsechest != null) {
              inventoryhorsechest.b(this);
-@@ -485,7 +488,7 @@
+@@ -491,7 +494,7 @@
      }
  
      public int getMaxDomestication() {
@@ -41,8 +60,8 @@
 +        return this.maxDomestication; // CraftBukkit - return stored max domestication instead of 100
      }
  
-     protected float bA() {
-@@ -585,7 +588,7 @@
+     protected float bB() {
+@@ -591,7 +594,7 @@
                      }
  
                      if (this.getHealth() < this.getMaxHealth() && f > 0.0F) {
@@ -51,12 +70,12 @@
                          flag = true;
                      }
  
-@@ -692,11 +695,24 @@
+@@ -698,11 +701,24 @@
  
      public void die(DamageSource damagesource) {
          super.die(damagesource);
 +        /* CraftBukkit start - Handle chest dropping in dropDeathLoot below
-         if (!this.world.isStatic) {
+         if (!this.world.isClientSide) {
              this.dropChest();
          }
 +        // CraftBukkit end */
@@ -68,7 +87,7 @@
 +        super.dropDeathLoot(flag, i);
 +
 +        // Moved from die method above
-+        if (!this.world.isStatic) {
++        if (!this.world.isClientSide) {
 +            this.dropChest();
 +        }
      }
@@ -76,16 +95,16 @@
  
      public void m() {
          if (this.random.nextInt(200) == 0) {
-@@ -706,7 +722,7 @@
+@@ -712,7 +728,7 @@
          super.m();
-         if (!this.world.isStatic) {
+         if (!this.world.isClientSide) {
              if (this.random.nextInt(900) == 0 && this.deathTicks == 0) {
 -                this.heal(1.0F);
 +                this.heal(1.0F, RegainReason.REGEN); // CraftBukkit
              }
  
-             if (!this.cw() && this.passenger == null && this.random.nextInt(300) == 0 && this.world.getType(new BlockPosition(MathHelper.floor(this.locX), MathHelper.floor(this.locY) - 1, MathHelper.floor(this.locZ))).getBlock() == Blocks.GRASS) {
-@@ -949,6 +965,7 @@
+             if (!this.cy() && this.passenger == null && this.random.nextInt(300) == 0 && this.world.getType(new BlockPosition(MathHelper.floor(this.locX), MathHelper.floor(this.locY) - 1, MathHelper.floor(this.locZ))).getBlock() == Blocks.GRASS) {
+@@ -955,6 +971,7 @@
          nbttagcompound.setInt("Temper", this.getTemper());
          nbttagcompound.setBoolean("Tame", this.isTame());
          nbttagcompound.setString("OwnerUUID", this.getOwnerUUID());
@@ -93,7 +112,7 @@
          if (this.hasChest()) {
              NBTTagList nbttaglist = new NBTTagList();
  
-@@ -1001,6 +1018,12 @@
+@@ -1007,6 +1024,12 @@
              this.setOwnerUUID(s);
          }
  
@@ -106,35 +125,34 @@
          AttributeInstance attributeinstance = this.getAttributeMap().a("Speed");
  
          if (attributeinstance != null) {
-@@ -1166,18 +1189,25 @@
+@@ -1172,18 +1195,25 @@
  
      public void v(int i) {
-         if (this.cE()) {
+         if (this.cG()) {
 +            // CraftBukkit start - fire HorseJumpEvent, use event power
              if (i < 0) {
                  i = 0;
 -            } else {
--                this.bE = true;
--                this.df();
+-                this.bG = true;
+-                this.dh();
              }
--
-+            
+ 
 +            float power;
              if (i >= 90) {
--                this.bp = 1.0F;
+-                this.br = 1.0F;
 +                power = 1.0F;
              } else {
--                this.bp = 0.4F + 0.4F * (float) i / 90.0F;
+-                this.br = 0.4F + 0.4F * (float) i / 90.0F;
 +                power = 0.4F + 0.4F * (float) i / 90.0F;
 +            }
-+            
++
 +            org.bukkit.event.entity.HorseJumpEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callHorseJumpEvent(this, power);
-+            if (!event.isCancelled()) {                
-+                this.bE = true;
-+                this.df();
-+                this.bp = power;
++            if (!event.isCancelled()) {
++                this.bG = true;
++                this.dh();
++                this.br = power;
              }
-+             // CraftBukkit end
++            // CraftBukkit end
          }
  
      }

@@ -31,7 +31,7 @@ public class CraftRabbit extends CraftAnimals implements Rabbit {
 
     @Override
     public Type getRabbitType() {
-        int type = getHandle().cl(); // PAIL: Rename
+        int type = getHandle().getRabbitType(); 
         return CraftMagicMapping.fromMagic(type);
     }
 
@@ -46,7 +46,7 @@ public class CraftRabbit extends CraftAnimals implements Rabbit {
             entity.initializePathFinderGoals();
         }
 
-        entity.r(CraftMagicMapping.toMagic(type)); // PAIL: Rename
+        entity.setRabbitType(CraftMagicMapping.toMagic(type)); 
     }
 
     private static class CraftMagicMapping {

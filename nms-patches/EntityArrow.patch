@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/EntityArrow.java	2014-11-28 17:43:43.061707436 +0000
-+++ src/main/java/net/minecraft/server/EntityArrow.java	2014-11-28 17:38:20.000000000 +0000
+--- /home/matt/mc-dev-private//net/minecraft/server/EntityArrow.java	2015-02-26 22:40:22.479608141 +0000
++++ src/main/java/net/minecraft/server/EntityArrow.java	2015-02-26 22:40:22.483608141 +0000
 @@ -2,6 +2,12 @@
  
  import java.util.List;
@@ -13,6 +13,15 @@
  public class EntityArrow extends Entity implements IProjectile {
  
      private int d = -1;
+@@ -16,7 +22,7 @@
+     private int ar;
+     private int as;
+     private double damage = 2.0D;
+-    private int knockbackStrength;
++    public int knockbackStrength; // CraftBukkit - public
+ 
+     public EntityArrow(World world) {
+         super(world);
 @@ -35,6 +41,7 @@
          super(world);
          this.j = 10.0D;
@@ -29,37 +38,25 @@
          if (entityliving instanceof EntityHuman) {
              this.fromPlayer = 1;
          }
-@@ -175,7 +183,7 @@
-                     MovingObjectPosition movingobjectposition1 = axisalignedbb1.a(vec3d, vec3d1);
- 
-                     if (movingobjectposition1 != null) {
--                        double d1 = vec3d.f(movingobjectposition1.pos);
-+                        double d1 = vec3d.distanceSquared(movingobjectposition1.pos); // CraftBukkit
- 
-                         if (d1 < d0 || d0 == 0.0D) {
-                             entity = entity1;
-@@ -202,6 +210,8 @@
-             float f4;
+@@ -201,6 +209,7 @@
+             float f3;
  
              if (movingobjectposition != null) {
 +                org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this); // CraftBukkit - Call event
-+                
                  if (movingobjectposition.entity != null) {
                      f2 = MathHelper.sqrt(this.motX * this.motX + this.motY * this.motY + this.motZ * this.motZ);
                      int k = MathHelper.f((double) f2 * this.damage);
-@@ -217,12 +227,20 @@
-                     } else {
+@@ -217,11 +226,18 @@
                          damagesource = DamageSource.arrow(this, this.shooter);
                      }
-+                    
+ 
+-                    if (this.isBurning() && !(movingobjectposition.entity instanceof EntityEnderman)) {
+-                        movingobjectposition.entity.setOnFire(5);
 +                    // CraftBukkit start - Moved damage call
 +                    if (movingobjectposition.entity.damageEntity(damagesource, (float) k)) {
 +                    if (this.isBurning() && !(movingobjectposition.entity instanceof EntityEnderman) && (!(movingobjectposition.entity instanceof EntityPlayer) || !(this.shooter instanceof EntityPlayer) || this.world.pvpMode)) { // CraftBukkit - abide by pvp setting if destination is a player
 +                        EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 5);
 +                        org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
- 
--                    if (this.isBurning() && !(movingobjectposition.entity instanceof EntityEnderman)) {
--                        movingobjectposition.entity.setOnFire(5);
 +                        if (!combustEvent.isCancelled()) {
 +                            movingobjectposition.entity.setOnFire(combustEvent.getDuration());
 +                        }
@@ -71,10 +68,10 @@
                          if (movingobjectposition.entity instanceof EntityLiving) {
                              EntityLiving entityliving = (EntityLiving) movingobjectposition.entity;
  
-@@ -382,6 +400,21 @@
+@@ -383,6 +399,20 @@
  
      public void d(EntityHuman entityhuman) {
-         if (!this.world.isStatic && this.inGround && this.shake <= 0) {
+         if (!this.world.isClientSide && this.inGround && this.shake <= 0) {
 +            // CraftBukkit start
 +            ItemStack itemstack = new ItemStack(Items.ARROW);
 +            if (this.fromPlayer == 1 && entityhuman.inventory.canHold(itemstack) > 0) {
@@ -89,11 +86,10 @@
 +                }
 +            }
 +            // CraftBukkit end
-+        
              boolean flag = this.fromPlayer == 1 || this.fromPlayer == 2 && entityhuman.abilities.canInstantlyBuild;
  
              if (this.fromPlayer == 1 && !entityhuman.inventory.pickup(new ItemStack(Items.ARROW, 1))) {
-@@ -433,4 +466,10 @@
+@@ -438,4 +468,10 @@
  
          return (b0 & 1) != 0;
      }

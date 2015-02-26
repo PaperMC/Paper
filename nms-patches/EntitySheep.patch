@@ -1,29 +1,43 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/EntitySheep.java	2014-11-28 17:43:43.153707434 +0000
-+++ src/main/java/net/minecraft/server/EntitySheep.java	2014-11-28 17:38:19.000000000 +0000
-@@ -4,6 +4,11 @@
+--- /home/matt/mc-dev-private//net/minecraft/server/EntitySheep.java	2015-02-26 22:40:22.675608138 +0000
++++ src/main/java/net/minecraft/server/EntitySheep.java	2015-02-26 22:40:22.679608138 +0000
+@@ -4,12 +4,25 @@
  import java.util.Map;
  import java.util.Random;
  
 +// CraftBukkit start
 +import org.bukkit.event.entity.SheepRegrowWoolEvent;
 +import org.bukkit.event.player.PlayerShearEntityEvent;
++import org.bukkit.inventory.InventoryView;
 +// CraftBukkit end
 +
  public class EntitySheep extends EntityAnimal {
  
-     private final InventoryCrafting bk = new InventoryCrafting(new ContainerSheepBreed(this), 2, 1);
-@@ -30,6 +35,7 @@
+     private final InventoryCrafting bm = new InventoryCrafting(new Container() {
+         public boolean a(EntityHuman entityhuman) {
+             return false;
+         }
++
++        // CraftBukkit start
++        @Override
++        public InventoryView getBukkitView() {
++            return null; // TODO: O.O
++        }
++        // CraftBukkit end
+     }, 2, 1);
+     private static final Map<EnumColor, float[]> bo = Maps.newEnumMap(EnumColor.class);
+     private int bp;
+@@ -34,6 +47,7 @@
          this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
-         this.bk.setItem(0, new ItemStack(Items.DYE, 1, 0));
-         this.bk.setItem(1, new ItemStack(Items.DYE, 1, 0));
-+        this.bk.resultInventory = new InventoryCraftResult(); // CraftBukkit - add result slot for event
+         this.bm.setItem(0, new ItemStack(Items.DYE, 1, 0));
+         this.bm.setItem(1, new ItemStack(Items.DYE, 1, 0));
++        this.bm.resultInventory = new InventoryCraftResult(); // CraftBukkit - add result slot for event
      }
  
      protected void E() {
-@@ -82,6 +88,15 @@
+@@ -86,6 +100,15 @@
  
          if (itemstack != null && itemstack.getItem() == Items.SHEARS && !this.isSheared() && !this.isBaby()) {
-             if (!this.world.isStatic) {
+             if (!this.world.isClientSide) {
 +                // CraftBukkit start
 +                PlayerShearEntityEvent event = new PlayerShearEntityEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), this.getBukkitEntity());
 +                this.world.getServer().getPluginManager().callEvent(event);
@@ -32,11 +46,11 @@
 +                    return false;
 +                }
 +                // CraftBukkit end
-+                
++
                  this.setSheared(true);
                  int i = 1 + this.random.nextInt(3);
  
-@@ -169,7 +184,14 @@
+@@ -173,7 +196,14 @@
      }
  
      public void v() {

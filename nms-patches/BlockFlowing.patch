@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/BlockFlowing.java	2014-11-28 17:43:42.905707439 +0000
-+++ src/main/java/net/minecraft/server/BlockFlowing.java	2014-11-28 17:38:21.000000000 +0000
+--- /home/matt/mc-dev-private//net/minecraft/server/BlockFlowing.java	2015-02-26 22:40:22.127608144 +0000
++++ src/main/java/net/minecraft/server/BlockFlowing.java	2015-02-26 22:40:22.127608144 +0000
 @@ -5,6 +5,11 @@
  import java.util.Random;
  import java.util.Set;
@@ -26,54 +26,39 @@
          byte b0 = 1;
  
          if (this.material == Material.LAVA && !world.worldProvider.n()) {
-@@ -88,17 +98,25 @@
+@@ -88,6 +98,12 @@
          IBlockData iblockdata2 = world.getType(blockposition.down());
  
          if (this.h(world, blockposition.down(), iblockdata2)) {
--            if (this.material == Material.LAVA && world.getType(blockposition.down()).getBlock().getMaterial() == Material.WATER) {
--                world.setTypeUpdate(blockposition.down(), Blocks.STONE.getBlockData());
--                this.fizz(world, blockposition.down());
--                return;
--            }
 +            // CraftBukkit start - Send "down" to the server
 +            BlockFromToEvent event = new BlockFromToEvent(source, BlockFace.DOWN);
 +            if (server != null) {
 +                server.getPluginManager().callEvent(event);
 +            }
 +            if (!event.isCancelled()) {
-+                if (this.material == Material.LAVA && world.getType(blockposition.down()).getBlock().getMaterial() == Material.WATER) {
-+                    world.setTypeUpdate(blockposition.down(), Blocks.STONE.getBlockData());
-+                    this.fizz(world, blockposition.down());
-+                    return;
-+                }
- 
--            if (i >= 8) {
--                this.flow(world, blockposition.down(), iblockdata2, i);
--            } else {
--                this.flow(world, blockposition.down(), iblockdata2, i + 8);
-+                if (i >= 8) {
-+                    this.flow(world, blockposition.down(), iblockdata2, i);
-+                } else {
-+                    this.flow(world, blockposition.down(), iblockdata2, i + 8);
-+                }
+             if (this.material == Material.LAVA && world.getType(blockposition.down()).getBlock().getMaterial() == Material.WATER) {
+                 world.setTypeUpdate(blockposition.down(), Blocks.STONE.getBlockData());
+                 this.fizz(world, blockposition.down());
+@@ -99,6 +115,8 @@
+             } else {
+                 this.flow(world, blockposition.down(), iblockdata2, i + 8);
              }
++            }
 +            // CraftBukkit end
          } else if (i >= 0 && (i == 0 || this.g(world, blockposition.down(), iblockdata2))) {
-             Set set = this.e(world, blockposition);
+             Set set = this.f(world, blockposition);
  
-@@ -115,8 +133,17 @@
- 
+@@ -116,7 +134,16 @@
              while (iterator1.hasNext()) {
                  EnumDirection enumdirection1 = (EnumDirection) iterator1.next();
--
+ 
 -                this.flow(world, blockposition.shift(enumdirection1), world.getType(blockposition.shift(enumdirection1)), k);
-+                
 +                // CraftBukkit start
 +                BlockFromToEvent event = new BlockFromToEvent(source, org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(enumdirection1));
 +                if (server != null) {
 +                    server.getPluginManager().callEvent(event);
 +                }
-+                   
++
 +                if (!event.isCancelled()) {
 +                    this.flow(world, blockposition.shift(enumdirection1), world.getType(blockposition.shift(enumdirection1)), k);
 +                }

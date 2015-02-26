@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.*;
+import net.minecraft.server.BlockJukeBox.TileEntityRecordPlayer;
 import org.bukkit.Effect;
 import org.bukkit.Material;
 import org.bukkit.block.Block;

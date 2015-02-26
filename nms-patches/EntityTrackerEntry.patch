@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/EntityTrackerEntry.java	2014-12-06 20:17:40.567361225 +0000
-+++ src/main/java/net/minecraft/server/EntityTrackerEntry.java	2014-12-06 20:17:33.983361371 +0000
+--- /home/matt/mc-dev-private//net/minecraft/server/EntityTrackerEntry.java	2015-02-26 22:40:22.711608138 +0000
++++ src/main/java/net/minecraft/server/EntityTrackerEntry.java	2015-02-26 22:40:22.715608138 +0000
 @@ -8,6 +8,11 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -22,18 +22,17 @@
              ItemStack itemstack = entityitemframe.getItem();
  
 -            if (itemstack != null && itemstack.getItem() instanceof ItemWorldMap) {
-+            if (this.m % 10 == 0 && itemstack != null && itemstack.getItem() instanceof ItemWorldMap) {  // CraftBukkit - Moved this.m % 10 logic here so item frames do not enter the other blocks
++            if (this.m % 10 == 0 && itemstack != null && itemstack.getItem() instanceof ItemWorldMap) { // CraftBukkit - Moved this.m % 10 logic here so item frames do not enter the other blocks
                  WorldMap worldmap = Items.FILLED_MAP.getSavedMap(itemstack, this.tracker.world);
 -                Iterator iterator = list.iterator();
 +                Iterator iterator = this.trackedPlayers.iterator(); // CraftBukkit
  
                  while (iterator.hasNext()) {
                      EntityHuman entityhuman = (EntityHuman) iterator.next();
-@@ -115,6 +120,19 @@
-                 Object object = null;
+@@ -116,6 +121,19 @@
                  boolean flag = Math.abs(j1) >= 4 || Math.abs(k1) >= 4 || Math.abs(l1) >= 4 || this.m % 60 == 0;
                  boolean flag1 = Math.abs(l - this.yRot) >= 4 || Math.abs(i1 - this.xRot) >= 4;
-+                
+ 
 +                // CraftBukkit start - Code moved from below
 +                if (flag) {
 +                    this.xLoc = i;
@@ -46,10 +45,11 @@
 +                    this.xRot = i1;
 +                }
 +                // CraftBukkit end
- 
++
                  if (this.m > 0 || this.tracker instanceof EntityArrow) {
                      if (j1 >= -128 && j1 < 128 && k1 >= -128 && k1 < 128 && l1 >= -128 && l1 < 128 && this.v <= 400 && !this.x && this.y == this.tracker.onGround) {
-@@ -128,6 +146,11 @@
+                         if ((!flag || !flag1) && !(this.tracker instanceof EntityArrow)) {
+@@ -130,6 +148,11 @@
                      } else {
                          this.y = this.tracker.onGround;
                          this.v = 0;
@@ -61,7 +61,7 @@
                          object = new PacketPlayOutEntityTeleport(this.tracker.getId(), i, j, k, (byte) l, (byte) i1, this.tracker.onGround);
                      }
                  }
-@@ -152,6 +175,7 @@
+@@ -154,6 +177,7 @@
                  }
  
                  this.b();
@@ -69,7 +69,7 @@
                  if (flag) {
                      this.xLoc = i;
                      this.yLoc = j;
-@@ -162,6 +186,7 @@
+@@ -164,6 +188,7 @@
                      this.yRot = l;
                      this.xRot = i1;
                  }
@@ -77,7 +77,7 @@
  
                  this.x = false;
              } else {
-@@ -193,7 +218,27 @@
+@@ -195,7 +220,27 @@
  
          ++this.m;
          if (this.tracker.velocityChanged) {
@@ -106,7 +106,7 @@
              this.tracker.velocityChanged = false;
          }
  
-@@ -211,6 +256,11 @@
+@@ -213,6 +258,11 @@
              Set set = attributemapserver.getAttributes();
  
              if (!set.isEmpty()) {
@@ -118,12 +118,10 @@
                  this.broadcastIncludingSelf(new PacketPlayOutUpdateAttributes(this.tracker.getId(), set));
              }
  
-@@ -260,7 +310,17 @@
-     public void updatePlayer(EntityPlayer entityplayer) {
+@@ -263,6 +313,16 @@
          if (entityplayer != this.tracker) {
              if (this.c(entityplayer)) {
--                if (!this.trackedPlayers.contains(entityplayer) && (this.e(entityplayer) || this.tracker.attachedToPlayer)) {
-+                if (!this.trackedPlayers.contains(entityplayer) && (this.e(entityplayer) || this.tracker.attachedToPlayer)) {                    
+                 if (!this.trackedPlayers.contains(entityplayer) && (this.e(entityplayer) || this.tracker.attachedToPlayer)) {
 +                    // CraftBukkit start - respect vanish API
 +                    if (this.tracker instanceof EntityPlayer) {
 +                        Player player = ((EntityPlayer) this.tracker).getBukkitEntity();
@@ -137,32 +135,32 @@
                      this.trackedPlayers.add(entityplayer);
                      Packet packet = this.c();
  
-@@ -278,6 +338,12 @@
-                     if (this.tracker instanceof EntityLiving) {
+@@ -281,6 +341,12 @@
                          AttributeMapServer attributemapserver = (AttributeMapServer) ((EntityLiving) this.tracker).getAttributeMap();
                          Collection collection = attributemapserver.c();
-+ 
+ 
 +                        // CraftBukkit start - If sending own attributes send scaled health instead of current maximum health
 +                        if (this.tracker.getId() == entityplayer.getId()) {
 +                            ((EntityPlayer) this.tracker).getBukkitEntity().injectScaledMaxHealth(collection, false);
 +                        }
 +                        // CraftBukkit end
- 
++
                          if (!collection.isEmpty()) {
                              entityplayer.playerConnection.sendPacket(new PacketPlayOutUpdateAttributes(this.tracker.getId(), collection));
-@@ -316,6 +382,11 @@
-                             entityplayer.playerConnection.sendPacket(new PacketPlayOutBed(entityhuman, new BlockPosition(this.tracker)));
+                         }
+@@ -319,6 +385,11 @@
                          }
                      }
-+ 
+ 
 +                    // CraftBukkit start - Fix for nonsensical head yaw
 +                    this.i = MathHelper.d(this.tracker.getHeadRotation() * 256.0F / 360.0F);
 +                    this.broadcast(new PacketPlayOutEntityHeadRotation(this.tracker, (byte) i));
 +                    // CraftBukkit end
- 
++
                      if (this.tracker instanceof EntityLiving) {
                          EntityLiving entityliving = (EntityLiving) this.tracker;
-@@ -337,8 +408,10 @@
+                         Iterator iterator = entityliving.getEffects().iterator();
+@@ -339,8 +410,10 @@
      }
  
      public boolean c(EntityPlayer entityplayer) {
@@ -175,7 +173,7 @@
  
          return d0 >= (double) (-this.b) && d0 <= (double) this.b && d1 >= (double) (-this.b) && d1 <= (double) this.b && this.tracker.a(entityplayer);
      }
-@@ -356,7 +429,10 @@
+@@ -358,7 +431,10 @@
  
      private Packet c() {
          if (this.tracker.dead) {

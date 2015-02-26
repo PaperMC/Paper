@@ -1,6 +1,6 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/CraftingManager.java	2014-11-28 17:43:43.029707436 +0000
-+++ src/main/java/net/minecraft/server/CraftingManager.java	2014-11-28 17:38:22.000000000 +0000
-@@ -8,10 +8,16 @@
+--- /home/matt/mc-dev-private//net/minecraft/server/CraftingManager.java	2015-02-26 22:40:22.431608141 +0000
++++ src/main/java/net/minecraft/server/CraftingManager.java	2015-02-26 22:40:22.435608141 +0000
+@@ -9,16 +9,22 @@
  import java.util.Iterator;
  import java.util.List;
  
@@ -9,7 +9,8 @@
  public class CraftingManager {
  
      private static final CraftingManager a = new CraftingManager();
-     public List recipes = Lists.newArrayList();
+-    private final List<IRecipe> recipes = Lists.newArrayList();
++    public List<IRecipe> recipes = Lists.newArrayList(); // CraftBukkit - public, removed final
 +    // CraftBukkit start
 +    public IRecipe lastRecipe;
 +    public org.bukkit.inventory.InventoryView lastCraftView;
@@ -17,23 +18,28 @@
  
      public static CraftingManager getInstance() {
          return CraftingManager.a;
-@@ -166,8 +172,15 @@
+     }
+ 
+-    private CraftingManager() {
++    public CraftingManager() { // CraftBukkit - public
+         (new RecipesTools()).a(this);
+         (new RecipesWeapons()).a(this);
+         (new RecipeIngots()).a(this);
+@@ -167,7 +173,12 @@
          this.registerShapedRecipe(new ItemStack(Blocks.DAYLIGHT_DETECTOR), new Object[] { "GGG", "QQQ", "WWW", Character.valueOf('G'), Blocks.GLASS, Character.valueOf('Q'), Items.QUARTZ, Character.valueOf('W'), Blocks.WOODEN_SLAB});
          this.registerShapedRecipe(new ItemStack(Blocks.HOPPER), new Object[] { "I I", "ICI", " I ", Character.valueOf('I'), Items.IRON_INGOT, Character.valueOf('C'), Blocks.CHEST});
-         this.registerShapedRecipe(new ItemStack(Items.ARMOR_STAND, 1), new Object[] { "///", " / ", "/_/", Character.valueOf('/'), Items.STICK, Character.valueOf('_'), new ItemStack(Blocks.STONE_SLAB, 1, EnumStoneSlabVariant.STONE.a())});
-+        // Collections.sort(this.recipes, new RecipeSorter(this));  // CraftBukkit - moved below
+         this.registerShapedRecipe(new ItemStack(Items.ARMOR_STAND, 1), new Object[] { "///", " / ", "/_/", Character.valueOf('/'), Items.STICK, Character.valueOf('_'), new ItemStack(Blocks.STONE_SLAB, 1, BlockDoubleStepAbstract.EnumStoneSlabVariant.STONE.a())});
+-        Collections.sort(this.recipes, new Comparator() {
 +        sort();
 +    }
-+    
++
 +    // CraftBukkit start
 +    public void sort() {
-         Collections.sort(this.recipes, new RecipeSorter(this));
-     }
-+    // CraftBukkit end
- 
-     public ShapedRecipes registerShapedRecipe(ItemStack itemstack, Object... aobject) {
-         String s = "";
-@@ -265,13 +278,18 @@
++       Collections.sort(this.recipes, new Comparator() {
+             public int a(IRecipe irecipe, IRecipe irecipe1) {
+                 return irecipe instanceof ShapelessRecipes && irecipe1 instanceof ShapedRecipes ? 1 : (irecipe1 instanceof ShapelessRecipes && irecipe instanceof ShapedRecipes ? -1 : (irecipe1.a() < irecipe.a() ? -1 : (irecipe1.a() > irecipe.a() ? 1 : 0)));
+             }
+@@ -274,13 +285,18 @@
  
          do {
              if (!iterator.hasNext()) {
@@ -42,11 +48,9 @@
              }
  
              irecipe = (IRecipe) iterator.next();
--        } while (!irecipe.a(inventorycrafting, world));
--
+         } while (!irecipe.a(inventorycrafting, world));
+ 
 -        return irecipe.a(inventorycrafting);
-+        } while (!irecipe.a(inventorycrafting, world));        
-+        
 +        // CraftBukkit start - INVENTORY_PRE_CRAFT event
 +        inventorycrafting.currentRecipe = irecipe;
 +        ItemStack result = irecipe.a(inventorycrafting);

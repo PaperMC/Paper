@@ -14,6 +14,8 @@ import org.apache.commons.lang.Validate;
 
 import com.google.common.collect.ImmutableSet;
 import com.mojang.authlib.GameProfile;
+import java.util.logging.Level;
+import org.bukkit.Bukkit;
 
 public class CraftProfileBanList implements org.bukkit.BanList {
     private final GameProfileBanList list;
@@ -57,7 +59,7 @@ public class CraftProfileBanList implements org.bukkit.BanList {
         try {
             list.save();
         } catch (IOException ex) {
-            MinecraftServer.getLogger().error("Failed to save banned-players.json, " + ex.getMessage());
+            Bukkit.getLogger().log(Level.SEVERE, "Failed to save banned-players.json, {0}", ex.getMessage());
         }
 
         return new CraftProfileBanEntry(profile, entry, list);
@@ -66,6 +68,7 @@ public class CraftProfileBanList implements org.bukkit.BanList {
     @Override
     public Set<org.bukkit.BanEntry> getBanEntries() {
         ImmutableSet.Builder<org.bukkit.BanEntry> builder = ImmutableSet.builder();
+        
         for (JsonListEntry entry : list.getValues()) {
             GameProfile profile = (GameProfile) entry.getKey();
             builder.add(new CraftProfileBanEntry(profile, (GameProfileBanEntry) entry, list));

@@ -6,6 +6,8 @@ import net.minecraft.server.MinecraftServer;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.logging.Level;
+import org.bukkit.Bukkit;
 
 public final class CraftIpBanEntry implements org.bukkit.BanEntry {
     private final IpBanList list;
@@ -80,7 +82,7 @@ public final class CraftIpBanEntry implements org.bukkit.BanEntry {
         try {
             this.list.save();
         } catch (IOException ex) {
-            MinecraftServer.getLogger().error("Failed to save banned-ips.json, " + ex.getMessage());
+            Bukkit.getLogger().log(Level.SEVERE, "Failed to save banned-ips.json, {0}", ex.getMessage());
         }
     }
 }

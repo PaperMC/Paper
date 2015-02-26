@@ -1,6 +1,6 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/EntityHanging.java	Mon Dec 15 15:33:27 2014
-+++ src/main/java/net/minecraft/server/EntityHanging.java	Mon Dec 15 15:33:27 2014
-@@ -4,6 +4,13 @@
+--- /home/matt/mc-dev-private//net/minecraft/server/EntityHanging.java	2015-02-26 22:40:22.555608140 +0000
++++ src/main/java/net/minecraft/server/EntityHanging.java	2015-02-26 22:40:22.555608140 +0000
+@@ -4,10 +4,17 @@
  import java.util.List;
  import org.apache.commons.lang3.Validate;
  
@@ -14,11 +14,25 @@
  public abstract class EntityHanging extends Entity {
  
      private int c;
-@@ -30,30 +37,35 @@
-         this.o();
+-    protected BlockPosition blockPosition;
++    public BlockPosition blockPosition; // CraftBukkit - public
+     public EnumDirection direction;
+ 
+     public EntityHanging(World world) {
+@@ -22,7 +29,7 @@
+ 
+     protected void h() {}
+ 
+-    protected void setDirection(EnumDirection enumdirection) {
++    public void setDirection(EnumDirection enumdirection) { // CraftBukkit - public
+         Validate.notNull(enumdirection);
+         Validate.isTrue(enumdirection.k().c());
+         this.direction = enumdirection;
+@@ -30,30 +37,34 @@
+         this.updateBoundingBox();
      }
  
--    private void o() {
+-    private void updateBoundingBox() {
 -        if (this.direction != null) {
 -            double d0 = (double) this.blockPosition.getX() + 0.5D;
 -            double d1 = (double) this.blockPosition.getY() + 0.5D;
@@ -57,30 +71,27 @@
 -            double d6 = (double) this.l();
 -            double d7 = (double) this.m();
 -            double d8 = (double) this.l();
- 
--            if (this.direction.k() == EnumAxis.Z) {
 +            double d6 = (double) width;
 +            double d7 = (double) height;
 +            double d8 = (double) width;
-+
-+            if (direction.k() == EnumAxis.Z) {
+ 
+-            if (this.direction.k() == EnumDirection.EnumAxis.Z) {
++            if (direction.k() == EnumDirection.EnumAxis.Z) {
                  d8 = 1.0D;
              } else {
                  d6 = 1.0D;
-@@ -62,7 +74,20 @@
+@@ -62,7 +73,18 @@
              d6 /= 32.0D;
              d7 /= 32.0D;
              d8 /= 32.0D;
 -            this.a(new AxisAlignedBB(d0 - d6, d1 - d7, d2 - d8, d0 + d6, d1 + d7, d2 + d8));
 +            return new AxisAlignedBB(d0 - d6, d1 - d7, d2 - d8, d0 + d6, d1 + d7, d2 + d8);
 +    }
-+    // CraftBukkit end
 +
-+    // PAIL: rename
-+    private void o() {
++    private void updateBoundingBox() {
 +        if (this.direction != null) {
 +            // CraftBukkit start code moved in to calculateBoundingBox
-+            AxisAlignedBB bb = calculateBoundingBox(this.blockPosition,this.direction,this.l(),this.m());
++            AxisAlignedBB bb = calculateBoundingBox(this.blockPosition, this.direction, this.l(), this.m());
 +            this.locX = (bb.a + bb.d) / 2.0D;
 +            this.locY = (bb.b + bb.e) / 2.0D;
 +            this.locZ = (bb.c + bb.f) / 2.0D;
@@ -89,8 +100,8 @@
          }
      }
  
-@@ -77,6 +102,33 @@
-         if (this.c++ == 100 && !this.world.isStatic) {
+@@ -77,6 +99,32 @@
+         if (this.c++ == 100 && !this.world.isClientSide) {
              this.c = 0;
              if (!this.dead && !this.survives()) {
 +                // CraftBukkit start - fire break events
@@ -119,14 +130,13 @@
 +                    return;
 +                }
 +                // CraftBukkit end
-+        
                  this.die();
                  this.b((Entity) null);
              }
-@@ -138,6 +190,32 @@
+@@ -138,6 +186,32 @@
              return false;
          } else {
-             if (!this.dead && !this.world.isStatic) {
+             if (!this.dead && !this.world.isClientSide) {
 +                // CraftBukkit start - fire break events
 +                HangingBreakEvent event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), HangingBreakEvent.RemoveCause.DEFAULT);
 +                PaintingBreakEvent paintingEvent = null;
@@ -156,10 +166,10 @@
                  this.die();
                  this.ac();
                  this.b(damagesource.getEntity());
-@@ -149,6 +227,18 @@
+@@ -149,6 +223,18 @@
  
      public void move(double d0, double d1, double d2) {
-         if (!this.world.isStatic && !this.dead && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
+         if (!this.world.isClientSide && !this.dead && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
 +            if (this.dead) return; // CraftBukkit
 +
 +            // CraftBukkit start - fire break events
@@ -171,16 +181,16 @@
 +                return;
 +            }
 +            // CraftBukkit end
-+            
++
              this.die();
              this.b((Entity) null);
          }
-@@ -156,7 +246,7 @@
+@@ -156,7 +242,7 @@
      }
  
      public void g(double d0, double d1, double d2) {
--        if (!this.world.isStatic && !this.dead && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
-+        if (false && !this.world.isStatic && !this.dead && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) { // CraftBukkit - not needed
+-        if (!this.world.isClientSide && !this.dead && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
++        if (false && !this.world.isClientSide && !this.dead && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) { // CraftBukkit - not needed
              this.die();
              this.b((Entity) null);
          }

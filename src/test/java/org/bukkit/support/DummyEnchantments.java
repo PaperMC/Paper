@@ -4,7 +4,7 @@ import net.minecraft.server.Enchantment;
 
 public class DummyEnchantments {
     static {
-        Enchantment.getNames();
+        Enchantment.getEffects();
         org.bukkit.enchantments.Enchantment.stopAcceptingRegistrations();
     }
 

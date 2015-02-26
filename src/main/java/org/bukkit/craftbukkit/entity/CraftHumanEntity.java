@@ -227,8 +227,8 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             }
             break;
         case ANVIL:
-            if (craftinv.getInventory() instanceof TileEntityContainerAnvil) {
-                getHandle().openTileEntity((TileEntityContainerAnvil) craftinv.getInventory());
+            if (craftinv.getInventory() instanceof BlockAnvil.TileEntityContainerAnvil) {
+                getHandle().openTileEntity((BlockAnvil.TileEntityContainerAnvil) craftinv.getInventory());
             } else {
                 openCustomInventory(inventory, player, "minecraft:anvil");
             }
@@ -277,7 +277,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (location == null) {
             location = getLocation();
         }
-        getHandle().openTileEntity(new TileEntityContainerWorkbench(getHandle().world, new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ())));
+        getHandle().openTileEntity(new BlockWorkbench.TileEntityContainerWorkbench(getHandle().world, new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ())));
         if (force) {
             getHandle().activeContainer.checkReachable = false;
         }

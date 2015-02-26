@@ -20,7 +20,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import com.google.common.collect.ImmutableMap;
-import net.minecraft.server.ChatSerializer;
+import net.minecraft.server.IChatBaseComponent.ChatSerializer;
 import net.minecraft.server.Items;
 import net.minecraft.server.NBTTagString;
 import org.bukkit.craftbukkit.util.CraftChatMessage;

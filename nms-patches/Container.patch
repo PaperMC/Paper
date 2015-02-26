@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/Container.java	2014-11-28 17:43:43.013707437 +0000
-+++ src/main/java/net/minecraft/server/Container.java	2014-11-28 17:38:22.000000000 +0000
+--- /home/matt/mc-dev-private//net/minecraft/server/Container.java	2015-02-26 22:40:22.415608141 +0000
++++ src/main/java/net/minecraft/server/Container.java	2015-02-26 22:40:22.419608141 +0000
 @@ -7,6 +7,17 @@
  import java.util.List;
  import java.util.Set;
@@ -17,12 +17,11 @@
 +
  public abstract class Container {
  
-     public List b = Lists.newArrayList();
-@@ -17,6 +28,18 @@
-     private final Set h = Sets.newHashSet();
-     protected List listeners = Lists.newArrayList();
-     private Set i = Sets.newHashSet();
-+    
+     public List<ItemStack> b = Lists.newArrayList();
+@@ -18,12 +29,24 @@
+     protected List<ICrafting> listeners = Lists.newArrayList();
+     private Set<EntityHuman> i = Sets.newHashSet();
+ 
 +    // CraftBukkit start
 +    public boolean checkReachable = true;
 +    public abstract InventoryView getBukkitView();
@@ -33,9 +32,17 @@
 +        ((CraftInventory) destination.getTopInventory()).getInventory().onOpen(player);
 +        ((CraftInventory) destination.getBottomInventory()).getInventory().onOpen(player);
 +    }
-+    // CraftBukkit end    
- 
++    // CraftBukkit end
++
      public Container() {}
+ 
+     protected Slot a(Slot slot) {
+         slot.rawSlotIndex = this.c.size();
+         this.c.add(slot);
+-        this.b.add((Object) null);
++        this.b.add(null); // CraftBukkit - fix decompile error
+         return slot;
+     }
  
 @@ -124,6 +147,7 @@
                      l = playerinventory.getCarried().count;
@@ -45,7 +52,7 @@
                      while (iterator.hasNext()) {
                          Slot slot1 = (Slot) iterator.next();
  
-@@ -141,16 +165,49 @@
+@@ -141,16 +165,48 @@
                              }
  
                              l -= itemstack2.count - j1;
@@ -54,7 +61,10 @@
 +                            draggedSlots.put(slot1.rawSlotIndex, itemstack2); // CraftBukkit - Put in map instead of setting
                          }
                      }
-+                    
+ 
+-                    itemstack1.count = l;
+-                    if (itemstack1.count <= 0) {
+-                        itemstack1 = null;
 +                    // CraftBukkit start - InventoryDragEvent
 +                    InventoryView view = getBukkitView();
 +                    org.bukkit.inventory.ItemStack newcursor = CraftItemStack.asCraftMirror(itemstack1);
@@ -63,7 +73,7 @@
 +                    for (Map.Entry<Integer, ItemStack> ditem : draggedSlots.entrySet()) {
 +                        eventmap.put(ditem.getKey(), CraftItemStack.asBukkitCopy(ditem.getValue()));
 +                    }
-+                    
++
 +                    // It's essential that we set the cursor to the new value here to prevent item duplication if a plugin closes the inventory.
 +                    ItemStack oldCursor = playerinventory.getCarried();
 +                    playerinventory.setCarried(CraftItemStack.asNMSCopy(newcursor));
@@ -83,10 +93,6 @@
 +                        if (playerinventory.getCarried() != null) {
 +                            playerinventory.setCarried(CraftItemStack.asNMSCopy(event.getCursor()));
 +                            needsUpdate = true;
- 
--                    itemstack1.count = l;
--                    if (itemstack1.count <= 0) {
--                        itemstack1 = null;
 +                        }
 +                    } else {
 +                        playerinventory.setCarried(oldCursor);
@@ -100,7 +106,7 @@
                  }
  
                  this.d();
-@@ -173,8 +230,14 @@
+@@ -173,8 +229,14 @@
                          }
  
                          if (j == 1) {
@@ -117,7 +123,7 @@
                                  playerinventory.setCarried((ItemStack) null);
                              }
                          }
-@@ -223,7 +286,11 @@
+@@ -223,7 +285,11 @@
  
                                  if (itemstack4.count == 0) {
                                      playerinventory.setCarried((ItemStack) null);
@@ -129,7 +135,7 @@
                              }
                          } else if (slot2.isAllowed(entityhuman)) {
                              if (itemstack4 == null) {
-@@ -249,7 +316,11 @@
+@@ -249,7 +315,11 @@
                                      itemstack4.a(k1);
                                      if (itemstack4.count == 0) {
                                          playerinventory.setCarried((ItemStack) null);
@@ -141,7 +147,7 @@
  
                                      itemstack1.count += k1;
                                  } else if (itemstack4.count <= slot2.getMaxStackSize(itemstack4)) {
-@@ -258,7 +329,9 @@
+@@ -258,7 +328,9 @@
                                  }
                              } else if (itemstack1.getItem() == itemstack4.getItem() && itemstack4.getMaxStackSize() > 1 && (!itemstack1.usesData() || itemstack1.getData() == itemstack4.getData()) && ItemStack.equals(itemstack1, itemstack4)) {
                                  k1 = itemstack1.count;
@@ -152,7 +158,7 @@
                                      itemstack4.count += k1;
                                      itemstack1 = slot2.a(k1);
                                      if (itemstack1.count == 0) {
-@@ -266,11 +339,24 @@
+@@ -266,11 +338,24 @@
                                      }
  
                                      slot2.a(entityhuman, playerinventory.getCarried());
@@ -173,11 +179,11 @@
 +                                ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutSetSlot(this.windowId, 0, this.getSlot(0).getItem()));
 +                            }
 +                        }
-+                        // CraftBukkit end                        
++                        // CraftBukkit end
                      }
                  }
              } else if (k == 2 && j >= 0 && j < 9) {
-@@ -411,17 +497,20 @@
+@@ -411,17 +496,20 @@
                  if (itemstack1 != null && itemstack1.getItem() == itemstack.getItem() && (!itemstack.usesData() || itemstack.getData() == itemstack1.getData()) && ItemStack.equals(itemstack, itemstack1)) {
                      int l = itemstack1.count + itemstack.count;
  

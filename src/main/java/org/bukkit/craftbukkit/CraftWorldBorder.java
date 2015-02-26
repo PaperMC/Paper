@@ -11,7 +11,7 @@ public class CraftWorldBorder implements WorldBorder {
 
     public CraftWorldBorder(CraftWorld world) {
         this.world = world;
-        this.handle = world.getHandle().af(); // PAIL: Rename
+        this.handle = world.getHandle().getWorldBorder();
     }
 
     @Override
@@ -26,7 +26,7 @@ public class CraftWorldBorder implements WorldBorder {
 
     @Override
     public double getSize() {
-        return this.handle.h(); // PAIL: Rename
+        return this.handle.getSize();
     }
 
     @Override
@@ -41,16 +41,16 @@ public class CraftWorldBorder implements WorldBorder {
         time = Math.min(9223372036854775L, Math.max(0L, time));
 
         if (time > 0L) {
-            this.handle.a(this.handle.h(), newSize, time * 1000L); // PAIL: Rename
+            this.handle.transitionSizeBetween(this.handle.getSize(), newSize, time * 1000L);
         } else {
-            this.handle.a(newSize); // PAIL: Rename
+            this.handle.setSize(newSize); 
         }
     }
 
     @Override
     public Location getCenter() {
-        double x = this.handle.f(); // PAIL: Rename
-        double z = this.handle.g(); // PAIL: Rename
+        double x = this.handle.getCenterX(); 
+        double z = this.handle.getCenterZ(); 
 
         return new Location(this.world, x, 0, z);
     }
@@ -61,7 +61,7 @@ public class CraftWorldBorder implements WorldBorder {
         x = Math.min(3.0E7D, Math.max(-3.0E7D, x));
         z = Math.min(3.0E7D, Math.max(-3.0E7D, z));
 
-        this.handle.c(x, z); // PAIL: Rename
+        this.handle.setCenter(x, z); 
     }
 
     @Override
@@ -71,41 +71,41 @@ public class CraftWorldBorder implements WorldBorder {
 
     @Override
     public double getDamageBuffer() {
-        return this.handle.m(); // PAIL: Rename
+        return this.handle.getDamageBuffer();
     }
 
     @Override
     public void setDamageBuffer(double blocks) {
-        this.handle.b(blocks); // PAIL: Rename
+        this.handle.setDamageBuffer(blocks);
     }
 
     @Override
     public double getDamageAmount() {
-        return this.handle.n(); // PAIL: Rename
+        return this.handle.getDamageAmount();
     }
 
     @Override
     public void setDamageAmount(double damage) {
-        this.handle.c(damage); // PAIL: Rename
+        this.handle.setDamageAmount(damage);
     }
 
     @Override
     public int getWarningTime() {
-        return this.handle.p(); // PAIL: Rename
+        return this.handle.getWarningTime();
     }
 
     @Override
     public void setWarningTime(int time) {
-        this.handle.b(time); // PAIL: Rename
+        this.handle.setWarningTime(time);
     }
 
     @Override
     public int getWarningDistance() {
-        return this.handle.q(); // PAIL: Rename
+        return this.handle.getWarningDistance();
     }
 
     @Override
     public void setWarningDistance(int distance) {
-        this.handle.c(distance); // PAIL: Rename
+        this.handle.setWarningDistance(distance); 
     }
 }

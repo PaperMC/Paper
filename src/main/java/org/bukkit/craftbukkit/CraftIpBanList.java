@@ -12,6 +12,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 
 import com.google.common.collect.ImmutableSet;
+import java.util.logging.Level;
+import org.bukkit.Bukkit;
 
 public class CraftIpBanList implements org.bukkit.BanList {
     private final IpBanList list;
@@ -45,7 +47,7 @@ public class CraftIpBanList implements org.bukkit.BanList {
         try {
             list.save();
         } catch (IOException ex) {
-            MinecraftServer.getLogger().error("Failed to save banned-ips.json, " + ex.getMessage());
+            Bukkit.getLogger().log(Level.SEVERE, "Failed to save banned-ips.json, {0}", ex.getMessage());
         }
 
         return new CraftIpBanEntry(target, entry, list);

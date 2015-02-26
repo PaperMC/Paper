@@ -203,7 +203,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
-    public List<?> getMobsFor(EnumCreatureType type, BlockPosition position) {
+    public List<BiomeBase.BiomeMeta> getMobsFor(EnumCreatureType type, BlockPosition position) {
         BiomeBase biomebase = world.getBiome(position);
 
         return biomebase == null ? null : biomebase.getMobs(type);

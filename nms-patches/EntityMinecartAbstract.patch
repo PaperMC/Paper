@@ -1,8 +1,8 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/EntityMinecartAbstract.java	2014-11-28 17:43:43.129707434 +0000
-+++ src/main/java/net/minecraft/server/EntityMinecartAbstract.java	2014-11-28 17:38:18.000000000 +0000
-@@ -2,6 +2,15 @@
- 
+--- /home/matt/mc-dev-private//net/minecraft/server/EntityMinecartAbstract.java	2015-02-26 22:40:22.623608139 +0000
++++ src/main/java/net/minecraft/server/EntityMinecartAbstract.java	2015-02-26 22:40:22.623608139 +0000
+@@ -4,6 +4,15 @@
  import java.util.Iterator;
+ import java.util.Map;
  
 +// CraftBukkit start
 +import org.bukkit.Location;
@@ -16,11 +16,10 @@
  public abstract class EntityMinecartAbstract extends Entity implements INamableTileEntity {
  
      private boolean a;
-@@ -13,6 +22,17 @@
-     private double g;
+@@ -16,10 +25,23 @@
      private double h;
      private double i;
-+ 
+ 
 +    // CraftBukkit start
 +    public boolean slowWhenEmpty = true;
 +    private double derailedX = 0.5;
@@ -31,19 +30,17 @@
 +    private double flyingZ = 0.95;
 +    public double maxSpeed = 0.4D;
 +    // CraftBukkit end
- 
++
      public EntityMinecartAbstract(World world) {
          super(world);
-@@ -79,6 +99,8 @@
-         this.lastX = d0;
-         this.lastY = d1;
-         this.lastZ = d2;
-+        
+         this.k = true;
+         this.setSize(0.98F, 0.7F);
++
 +        this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit
      }
  
-     public double an() {
-@@ -90,16 +112,39 @@
+     public static EntityMinecartAbstract a(World world, double d0, double d1, double d2, EntityMinecartAbstract.EnumMinecartType entityminecartabstract_enumminecarttype) {
+@@ -92,6 +114,19 @@
              if (this.isInvulnerable(damagesource)) {
                  return false;
              } else {
@@ -60,15 +57,10 @@
 +
 +                f = (float) event.getDamage();
 +                // CraftBukkit end
-+                
                  this.k(-this.r());
                  this.j(10);
                  this.ac();
-                 this.setDamage(this.getDamage() + f * 10.0F);
-                 boolean flag = damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).abilities.canInstantlyBuild;
- 
--                if (flag || this.getDamage() > 40.0F) {
-+                if (flag || this.getDamage() > 40.0F) {  // CraftBukkit - multi-world should still allow teleport even if default vanilla nether disabled
+@@ -102,6 +137,15 @@
                      if (this.passenger != null) {
                          this.passenger.mount((Entity) null);
                      }
@@ -84,10 +76,10 @@
  
                      if (flag && !this.hasCustomName()) {
                          this.die();
-@@ -135,6 +180,14 @@
+@@ -140,6 +184,14 @@
      }
  
-     public void s_() {
+     public void t_() {
 +        // CraftBukkit start
 +        double prevX = this.locX;
 +        double prevY = this.locY;
@@ -99,16 +91,16 @@
          if (this.getType() > 0) {
              this.j(this.getType() - 1);
          }
-@@ -155,7 +208,7 @@
+@@ -160,7 +212,7 @@
  
              i = this.L();
              if (this.ak) {
 -                if (minecraftserver.getAllowNether()) {
-+                if (true || minecraftserver.getAllowNether()) {
++                if (true || minecraftserver.getAllowNether()) { // CraftBukkit - multi-world should still allow teleport even if default vanilla nether disabled
                      if (this.vehicle == null && this.al++ >= i) {
                          this.al = i;
-                         this.portalCooldown = this.ar();
-@@ -252,6 +305,20 @@
+                         this.portalCooldown = this.aq();
+@@ -257,6 +309,20 @@
              }
  
              this.setYawPitch(this.yaw, this.pitch);
@@ -125,11 +117,11 @@
 +                this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleMoveEvent(vehicle, from, to));
 +            }
 +            // CraftBukkit end
-+            
++
              Iterator iterator = this.world.getEntities(this, this.getBoundingBox().grow(0.20000000298023224D, 0.0D, 0.20000000298023224D)).iterator();
  
              while (iterator.hasNext()) {
-@@ -275,7 +342,7 @@
+@@ -280,7 +346,7 @@
      }
  
      protected double m() {
@@ -138,7 +130,7 @@
      }
  
      public void a(int i, int j, int k, boolean flag) {}
-@@ -286,16 +353,20 @@
+@@ -291,16 +357,20 @@
          this.motX = MathHelper.a(this.motX, -d0, d0);
          this.motZ = MathHelper.a(this.motZ, -d0, d0);
          if (this.onGround) {
@@ -165,7 +157,7 @@
          }
  
      }
-@@ -483,7 +554,7 @@
+@@ -488,7 +558,7 @@
      }
  
      protected void o() {
@@ -174,9 +166,9 @@
              this.motX *= 0.996999979019165D;
              this.motY *= 0.0D;
              this.motZ *= 0.996999979019165D;
-@@ -611,6 +682,17 @@
-         if (!this.world.isStatic) {
-             if (!entity.T && !this.T) {
+@@ -616,6 +686,17 @@
+         if (!this.world.isClientSide) {
+             if (!entity.noclip && !this.noclip) {
                  if (entity != this.passenger) {
 +                    // CraftBukkit start
 +                    Vehicle vehicle = (Vehicle) this.getBukkitEntity();
@@ -189,10 +181,10 @@
 +                        return;
 +                    }
 +                    // CraftBukkit end
-                     if (entity instanceof EntityLiving && !(entity instanceof EntityHuman) && !(entity instanceof EntityIronGolem) && this.s() == EnumMinecartType.RIDEABLE && this.motX * this.motX + this.motZ * this.motZ > 0.01D && this.passenger == null && entity.vehicle == null) {
+                     if (entity instanceof EntityLiving && !(entity instanceof EntityHuman) && !(entity instanceof EntityIronGolem) && this.s() == EntityMinecartAbstract.EnumMinecartType.RIDEABLE && this.motX * this.motX + this.motZ * this.motZ > 0.01D && this.passenger == null && entity.vehicle == null) {
                          entity.mount(this);
                      }
-@@ -619,7 +701,8 @@
+@@ -624,7 +705,8 @@
                      double d1 = entity.locZ - this.locZ;
                      double d2 = d0 * d0 + d1 * d1;
  
@@ -202,8 +194,8 @@
                          d2 = (double) MathHelper.sqrt(d2);
                          d0 /= d2;
                          d1 /= d2;
-@@ -775,4 +858,26 @@
-             return chatmessage;
+@@ -891,4 +973,26 @@
+ 
          }
      }
 +

@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/SpawnerCreature.java	2014-11-28 17:43:43.377707429 +0000
-+++ src/main/java/net/minecraft/server/SpawnerCreature.java	2014-11-28 17:38:22.000000000 +0000
+--- /home/matt/mc-dev-private//net/minecraft/server/SpawnerCreature.java	2015-02-26 22:40:23.107608134 +0000
++++ src/main/java/net/minecraft/server/SpawnerCreature.java	2015-02-26 22:40:23.107608134 +0000
 @@ -6,10 +6,16 @@
  import java.util.Random;
  import java.util.Set;
@@ -13,27 +13,26 @@
  public final class SpawnerCreature {
  
      private static final int a = (int) Math.pow(17.0D, 2.0D);
--    private final Set b = Sets.newHashSet();
-+    private final LongHashSet b = new LongHashSet();
+-    private final Set<ChunkCoordIntPair> b = Sets.newHashSet();
++    private final LongHashSet b = new LongHashSet(); // CraftBukkit
  
      public SpawnerCreature() {}
  
-@@ -36,14 +42,18 @@
+@@ -36,14 +42,17 @@
                      for (int i1 = -b0; i1 <= b0; ++i1) {
                          for (k = -b0; k <= b0; ++k) {
                              boolean flag3 = i1 == -b0 || i1 == b0 || k == -b0 || k == b0;
 -                            ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i1 + l, k + j);
++                            // CraftBukkit start - use LongHash and LongHashSet
 +                            // ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i1 + l, k + j);
  
 -                            if (!this.b.contains(chunkcoordintpair)) {
-+                            // CraftBukkit start - use LongHash and LongHashSet
 +                            long chunkCoords = LongHash.toLong(i1 + l, k + j);
-+                            
 +                            if (!this.b.contains(chunkCoords)) {
                                  ++i;
--                                if (!flag3 && worldserver.af().isInBounds(chunkcoordintpair)) {
+-                                if (!flag3 && worldserver.getWorldBorder().isInBounds(chunkcoordintpair)) {
 -                                    this.b.add(chunkcoordintpair);
-+                                if (!flag3 && worldserver.af().isInBounds(chunkCoords)) {
++                                if (!flag3 && worldserver.getWorldBorder().isInBounds(i1 + l, k + j)) {
 +                                    this.b.add(chunkCoords);
                                  }
                              }
@@ -41,11 +40,10 @@
                          }
                      }
                  }
-@@ -57,18 +67,41 @@
- 
+@@ -58,17 +67,41 @@
              for (int k1 = 0; k1 < j; ++k1) {
                  EnumCreatureType enumcreaturetype = aenumcreaturetype[k1];
-+                
+ 
 +               // CraftBukkit start - Use per-world spawn limits
 +                int limit = enumcreaturetype.b();
 +                switch (enumcreaturetype) {
@@ -67,7 +65,7 @@
 +                    continue;
 +                }
 +                // CraftBukkit end
- 
++
                  if ((!enumcreaturetype.d() || flag1) && (enumcreaturetype.d() || flag) && (!enumcreaturetype.e() || flag2)) {
                      k = worldserver.a(enumcreaturetype.a());
 -                    int l1 = enumcreaturetype.b() * i / SpawnerCreature.a;
@@ -83,6 +81,7 @@
 +                            // CraftBukkit start = use LongHash and LongObjectHashMap
 +                            long key = ((Long) iterator1.next()).longValue();
 +                            BlockPosition blockposition1 = getRandomPosition(worldserver, LongHash.msw(key), LongHash.lsw(key));
++                            // CraftBukkit
                              int i2 = blockposition1.getX();
                              int j2 = blockposition1.getY();
                              int k2 = blockposition1.getZ();
@@ -94,7 +93,7 @@
 +                                                                worldserver.addEntity(entityinsentient, SpawnReason.NATURAL); // CraftBukkit - Added a reason for spawning this creature
                                                              }
  
-                                                             if (l2 >= entityinsentient.bU()) {
+                                                             if (l2 >= entityinsentient.bV()) {
 @@ -214,8 +247,10 @@
                              }
  

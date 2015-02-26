@@ -1,22 +1,27 @@
---- ../work/decompile-8eb82bde/net/minecraft/server/Explosion.java	2015-02-01 16:12:57.784236937 +1100
-+++ src/main/java/net/minecraft/server/Explosion.java	2015-02-01 16:12:57.788236936 +1100
-@@ -8,6 +8,12 @@
- import java.util.List;
+--- /home/matt/mc-dev-private//net/minecraft/server/Explosion.java	2015-02-26 22:40:22.747608138 +0000
++++ src/main/java/net/minecraft/server/Explosion.java	2015-02-26 22:40:22.747608138 +0000
+@@ -9,6 +9,12 @@
  import java.util.Map;
  import java.util.Random;
-+ 
+ 
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityExplodeEvent;
 +import org.bukkit.Location;
 +// CraftBukkit end
- 
++
  public class Explosion {
  
-@@ -22,11 +28,12 @@
+     private final boolean a;
+@@ -18,15 +24,16 @@
+     private final double posX;
+     private final double posY;
+     private final double posZ;
+-    private final Entity source;
++    public final Entity source; // CraftBukkit - public
      private final float size;
-     private final List blocks = Lists.newArrayList();
-     private final Map k = Maps.newHashMap();
+     private final List<BlockPosition> blocks = Lists.newArrayList();
+     private final Map<EntityHuman, Vec3D> k = Maps.newHashMap();
 +    public boolean wasCanceled = false; // CraftBukkit - add field
  
      public Explosion(World world, Entity entity, double d0, double d1, double d2, float f, boolean flag, boolean flag1) {
@@ -27,7 +32,7 @@
          this.posX = d0;
          this.posY = d1;
          this.posZ = d2;
-@@ -35,6 +42,12 @@
+@@ -35,6 +42,11 @@
      }
  
      public void a() {
@@ -36,11 +41,10 @@
 +            return;
 +        }
 +        // CraftBukkit end
-+        
          HashSet hashset = Sets.newHashSet();
          boolean flag = true;
  
-@@ -68,7 +81,7 @@
+@@ -68,7 +80,7 @@
                                  f -= (f2 + 0.3F) * 0.3F;
                              }
  
@@ -49,14 +53,12 @@
                                  hashset.add(blockposition);
                              }
  
-@@ -112,7 +125,17 @@
+@@ -112,7 +124,14 @@
                          double d12 = (double) this.world.a(vec3d, entity.getBoundingBox());
                          double d13 = (1.0D - d7) * d12;
  
 -                        entity.damageEntity(DamageSource.explosion(this), (float) ((int) ((d13 * d13 + d13) / 2.0D * 8.0D * (double) f3 + 1.0D)));
-+                        // entity.damageEntity(DamageSource.explosion(this), (float) ((int) ((d13 * d13 + d13) / 2.0D * 8.0D * (double) f3 + 1.0D)));
-+                        
-+                        // CraftBukkit start
++                        // entity.damageEntity(DamageSource.explosion(this), (float) ((int) ((d13 * d13 + d13) / 2.0D * 8.0D * (double) f3 + 1.0D)));+                        // CraftBukkit start
 +                        CraftEventFactory.entityDamage = source;
 +                        boolean wasDamaged = entity.damageEntity(DamageSource.explosion(this), (float) ((int) ((d13 * d13 + d13) / 2.0D * 8.0D * (double) f3 + 1.0D)));
 +                        CraftEventFactory.entityDamage = null;
@@ -64,11 +66,10 @@
 +                            continue;
 +                        }
 +                        // CraftBukkit end
-+
                          double d14 = EnchantmentProtection.a(entity, d13);
  
                          entity.motX += d8 * d14;
-@@ -140,6 +163,35 @@
+@@ -140,6 +159,35 @@
          BlockPosition blockposition;
  
          if (this.b) {
@@ -104,7 +105,7 @@
              iterator = this.blocks.iterator();
  
              while (iterator.hasNext()) {
-@@ -170,7 +222,8 @@
+@@ -170,7 +218,8 @@
  
                  if (block.getMaterial() != Material.AIR) {
                      if (block.a(this)) {
@@ -114,13 +115,11 @@
                      }
  
                      this.world.setTypeAndData(blockposition, Blocks.AIR.getBlockData(), 3);
-@@ -184,8 +237,12 @@
- 
+@@ -185,7 +234,11 @@
              while (iterator.hasNext()) {
                  blockposition = (BlockPosition) iterator.next();
--                if (this.world.getType(blockposition).getBlock().getMaterial() == Material.AIR && this.world.getType(blockposition.down()).getBlock().m() && this.c.nextInt(3) == 0) {
+                 if (this.world.getType(blockposition).getBlock().getMaterial() == Material.AIR && this.world.getType(blockposition.down()).getBlock().o() && this.c.nextInt(3) == 0) {
 -                    this.world.setTypeUpdate(blockposition, Blocks.FIRE.getBlockData());
-+                if (this.world.getType(blockposition).getBlock().getMaterial() == Material.AIR && this.world.getType(blockposition.down()).getBlock().m() && this.c.nextInt(3) == 0) {                    
 +                    // CraftBukkit start - Ignition by explosion
 +                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this).isCancelled()) {
 +                        this.world.setTypeUpdate(blockposition, Blocks.FIRE.getBlockData());

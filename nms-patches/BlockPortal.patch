@@ -1,15 +1,16 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/BlockPortal.java	2014-11-28 17:43:42.933707439 +0000
-+++ src/main/java/net/minecraft/server/BlockPortal.java	2014-11-28 17:38:18.000000000 +0000
-@@ -2,6 +2,8 @@
- 
+--- /home/matt/mc-dev-private//net/minecraft/server/BlockPortal.java	2015-02-26 22:40:22.207608144 +0000
++++ src/main/java/net/minecraft/server/BlockPortal.java	2015-02-26 22:40:22.207608144 +0000
+@@ -3,6 +3,9 @@
+ import com.google.common.cache.LoadingCache;
  import java.util.Random;
  
 +import org.bukkit.event.entity.EntityPortalEnterEvent; // CraftBukkit
++import org.bukkit.event.world.PortalCreateEvent; // CraftBukkit
 +
  public class BlockPortal extends BlockHalfTransparent {
  
-     public static final BlockStateEnum AXIS = BlockStateEnum.of("axis", EnumAxis.class, new EnumAxis[] { EnumAxis.X, EnumAxis.Z});
-@@ -24,7 +26,8 @@
+     public static final BlockStateEnum<EnumDirection.EnumAxis> AXIS = BlockStateEnum.of("axis", EnumDirection.EnumAxis.class, new EnumDirection.EnumAxis[] { EnumDirection.EnumAxis.X, EnumDirection.EnumAxis.Z});
+@@ -25,7 +28,8 @@
              }
  
              if (i > 0 && !world.getType(blockposition1.up()).getBlock().isOccluding()) {
@@ -18,29 +19,29 @@
 +                Entity entity = ItemMonsterEgg.spawnCreature(world, 57, (double) blockposition1.getX() + 0.5D, (double) blockposition1.getY() + 1.1D, (double) blockposition1.getZ() + 0.5D, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NETHER_PORTAL);
  
                  if (entity != null) {
-                     entity.portalCooldown = entity.ar();
-@@ -66,14 +69,16 @@
-         PortalCreator portalcreator = new PortalCreator(world, blockposition, EnumAxis.X);
+                     entity.portalCooldown = entity.aq();
+@@ -67,14 +71,16 @@
+         BlockPortal.Shape blockportal_shape = new BlockPortal.Shape(world, blockposition, EnumDirection.EnumAxis.X);
  
-         if (portalcreator.b() && PortalCreator.a(portalcreator) == 0) {
--            portalcreator.c();
+         if (blockportal_shape.d() && blockportal_shape.e == 0) {
+-            blockportal_shape.e();
 -            return true;
 +            // CraftBukkit start - return portalcreator
-+            return portalcreator.c();
++            return blockportal_shape.e();
 +            // return true;
          } else {
-             PortalCreator portalcreator1 = new PortalCreator(world, blockposition, EnumAxis.Z);
+             BlockPortal.Shape blockportal_shape1 = new BlockPortal.Shape(world, blockposition, EnumDirection.EnumAxis.Z);
  
-             if (portalcreator1.b() && PortalCreator.a(portalcreator1) == 0) {
--                portalcreator1.c();
+             if (blockportal_shape1.d() && blockportal_shape1.e == 0) {
+-                blockportal_shape1.e();
 -                return true;
-+                return portalcreator1.c();
++                return blockportal_shape1.e();
 +                // return true;
 +                // CraftBukkit end
              } else {
                  return false;
              }
-@@ -104,6 +109,10 @@
+@@ -105,6 +111,10 @@
  
      public void a(World world, BlockPosition blockposition, IBlockData iblockdata, Entity entity) {
          if (entity.vehicle == null && entity.passenger == null) {
@@ -48,6 +49,96 @@
 +            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ()));
 +            world.getServer().getPluginManager().callEvent(event);
 +            // CraftBukkit end
-             entity.aq();
+             entity.d(blockposition);
          }
  
+@@ -185,6 +195,7 @@
+         private BlockPosition f;
+         private int g;
+         private int h;
++        java.util.Collection<org.bukkit.block.Block> blocks = new java.util.HashSet<org.bukkit.block.Block>(); // CraftBukkit - add field
+ 
+         public Shape(World world, BlockPosition blockposition, EnumDirection.EnumAxis enumdirection_enumaxis) {
+             this.a = world;
+@@ -243,6 +254,10 @@
+         }
+ 
+         protected int c() {
++            // CraftBukkit start
++            this.blocks.clear();
++            org.bukkit.World bworld = this.a.getWorld();
++            // CraftBukkit end
+             int i;
+ 
+             label56:
+@@ -263,11 +278,21 @@
+                         block = this.a.getType(blockposition.shift(this.d)).getBlock();
+                         if (block != Blocks.OBSIDIAN) {
+                             break label56;
++                            // CraftBukkit start - add the block to our list
++                        } else {
++                            BlockPosition pos = blockposition.shift(this.d);
++                            blocks.add(bworld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()));
++                            // CraftBukkit end
+                         }
+                     } else if (i == this.h - 1) {
+                         block = this.a.getType(blockposition.shift(this.c)).getBlock();
+                         if (block != Blocks.OBSIDIAN) {
+                             break label56;
++                            // CraftBukkit start - add the block to our list
++                        } else {
++                            BlockPosition pos = blockposition.shift(this.c);
++                            blocks.add(bworld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()));
++                            // CraftBukkit end
+                         }
+                     }
+                 }
+@@ -277,6 +302,11 @@
+                 if (this.a.getType(this.f.shift(this.c, i).up(this.g)).getBlock() != Blocks.OBSIDIAN) {
+                     this.g = 0;
+                     break;
++                    // CraftBukkit start - add the block to our list
++                } else {
++                    BlockPosition pos = this.f.shift(this.c, i).up(this.g);
++                    blocks.add(bworld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()));
++                    // CraftBukkit end
+                 }
+             }
+ 
+@@ -298,7 +328,27 @@
+             return this.f != null && this.h >= 2 && this.h <= 21 && this.g >= 3 && this.g <= 21;
+         }
+ 
+-        public void e() {
++        // CraftBukkit start - return boolean
++        public boolean e() {
++            org.bukkit.World bworld = this.a.getWorld();
++
++            // Copy below for loop
++            for (int i = 0; i < this.h; ++i) {
++                BlockPosition blockposition = this.f.shift(this.c, i);
++
++                for (int j = 0; j < this.g; ++j) {
++                    BlockPosition pos = blockposition.up(j);
++                    blocks.add(bworld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()));
++                }
++            }
++
++            PortalCreateEvent event = new PortalCreateEvent(blocks, bworld, PortalCreateEvent.CreateReason.FIRE);
++            this.a.getServer().getPluginManager().callEvent(event);
++
++            if (event.isCancelled()) {
++                return false;
++            }
++            // CraftBukkit end
+             for (int i = 0; i < this.h; ++i) {
+                 BlockPosition blockposition = this.f.shift(this.c, i);
+ 
+@@ -307,6 +357,7 @@
+                 }
+             }
+ 
++            return true; // CraftBukkit
+         }
+     }
+ }
