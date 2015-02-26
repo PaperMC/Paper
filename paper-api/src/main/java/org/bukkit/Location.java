@@ -6,6 +6,7 @@ import java.util.Map;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.util.NumberConversions;
+import static org.bukkit.util.NumberConversions.checkFinite;
 import org.bukkit.util.Vector;
 
 /**
@@ -188,7 +189,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @param yaw new rotation's yaw
      */
     public void setYaw(float yaw) {
-        checkFiniteFloat(yaw, "yaw must be finite");
+        checkFinite(yaw, "yaw must be finite");
         this.yaw = yaw;
     }
 
@@ -223,7 +224,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @param pitch new incline's pitch
      */
     public void setPitch(float pitch) {
-        checkFiniteFloat(pitch, "pitch must be finite");
+        checkFinite(pitch, "pitch must be finite");
         this.pitch = pitch;
     }
 
@@ -601,16 +602,4 @@ public class Location implements Cloneable, ConfigurationSerializable {
 
 		return new Location(world, NumberConversions.toDouble(args.get("x")), NumberConversions.toDouble(args.get("y")), NumberConversions.toDouble(args.get("z")), NumberConversions.toFloat(args.get("yaw")), NumberConversions.toFloat(args.get("pitch")));
 	}
-
-    private static void checkFinite(double d, String message) {
-        if (Double.isNaN(d) || Double.isInfinite(d)) {
-            throw new IllegalArgumentException(message);
-        }
-    }
-
-    private static void checkFiniteFloat(float d, String message) {
-        if (Float.isNaN(d) || Float.isInfinite(d)) {
-            throw new IllegalArgumentException(message);
-        }
-    }
 }

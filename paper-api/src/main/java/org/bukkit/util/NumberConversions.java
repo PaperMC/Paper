@@ -101,4 +101,16 @@ public final class NumberConversions {
         }
         return 0;
     }
+
+    public static void checkFinite(double d, String message) {
+        if (Double.isNaN(d) || Double.isInfinite(d)) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    public static void checkFinite(float d, String message) {
+        if (Float.isNaN(d) || Float.isInfinite(d)) {
+            throw new IllegalArgumentException(message);
+        }
+    }
 }

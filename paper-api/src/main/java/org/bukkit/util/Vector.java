@@ -7,6 +7,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
+import static org.bukkit.util.NumberConversions.checkFinite;
 
 /**
  * Represents a mutable vector. Because the components of Vectors are mutable,
@@ -645,11 +646,5 @@ public class Vector implements Cloneable, ConfigurationSerializable {
         }
 
         return new Vector(x, y, z);
-    }
-
-    private static void checkFinite(double d, String message) {
-        if (Double.isNaN(d) || Double.isInfinite(d)) {
-            throw new IllegalArgumentException(message);
-        }
     }
 }
