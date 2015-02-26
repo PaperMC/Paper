@@ -831,7 +831,21 @@ public final class CraftServer implements Server {
         Convertable converter = new WorldLoaderServer(getWorldContainer());
         if (converter.isConvertable(name)) {
             getLogger().info("Converting world '" + name + "'");
-            converter.convert(name, new ConvertProgressUpdater(console));
+            converter.convert(name, new IProgressUpdate() {
+                private long b = System.currentTimeMillis();
+
+                public void a(String s) {}
+
+                public void a(int i) {
+                    if (System.currentTimeMillis() - this.b >= 1000L) {
+                        this.b = System.currentTimeMillis();
+                        MinecraftServer.LOGGER.info("Converting... " + i + "%");
+                    }
+
+                }
+
+                public void c(String s) {}
+            });
         }
 
         int dimension = CraftWorld.CUSTOM_DIMENSION_OFFSET + console.worlds.size();
@@ -850,7 +864,7 @@ public final class CraftServer implements Server {
         IDataManager sdm = new ServerNBTManager(getWorldContainer(), name, true);
         WorldData worlddata = sdm.getWorldData();
         if (worlddata == null) {
-            WorldSettings worldSettings = new WorldSettings(creator.seed(), EnumGamemode.getById(getDefaultGameMode().getValue()), generateStructures, hardcore, type);
+            WorldSettings worldSettings = new WorldSettings(creator.seed(), WorldSettings.EnumGamemode.getById(getDefaultGameMode().getValue()), generateStructures, hardcore, type);
             worldSettings.setGeneratorSettings(creator.generatorSettings());
             worlddata = new WorldData(worldSettings, name);
         }
@@ -1367,7 +1381,7 @@ public final class CraftServer implements Server {
         Validate.notNull(mode, "Mode cannot be null");
 
         for (World world : getWorlds()) {
-            ((CraftWorld) world).getHandle().worldData.setGameType(EnumGamemode.getById(mode.getValue()));
+            ((CraftWorld) world).getHandle().worldData.setGameType(WorldSettings.EnumGamemode.getById(mode.getValue()));
         }
     }
 

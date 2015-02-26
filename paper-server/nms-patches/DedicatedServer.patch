@@ -1,6 +1,6 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/DedicatedServer.java	2014-11-28 17:43:43.033707436 +0000
-+++ src/main/java/net/minecraft/server/DedicatedServer.java	2014-11-28 17:38:22.000000000 +0000
-@@ -13,6 +13,14 @@
+--- /home/matt/mc-dev-private//net/minecraft/server/DedicatedServer.java	2015-02-26 22:40:22.443608141 +0000
++++ src/main/java/net/minecraft/server/DedicatedServer.java	2015-02-26 22:40:22.443608141 +0000
+@@ -15,20 +15,32 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -10,31 +10,68 @@
 +
 +import org.bukkit.craftbukkit.LoggerOutputStream;
 +import org.bukkit.event.server.ServerCommandEvent;
++import org.bukkit.craftbukkit.util.Waitable;
++import org.bukkit.event.server.RemoteServerCommandEvent;
 +// CraftBukkit end
 +
  public class DedicatedServer extends MinecraftServer implements IMinecraftServer {
  
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -25,23 +33,48 @@
-     private EnumGamemode q;
-     private boolean r;
+-    private final List<ServerCommand> l = Collections.synchronizedList(Lists.newArrayList());
++    private final List<ServerCommand> l = Collections.synchronizedList(Lists.<ServerCommand>newArrayList()); // CraftBukkit - fix decompile error
+     private RemoteStatusListener m;
+     private RemoteControlListener n;
+-    private PropertyManager propertyManager;
++    public PropertyManager propertyManager; // CraftBukkit - public
+     private EULA p;
+     private boolean generateStructures;
+     private WorldSettings.EnumGamemode r;
+     private boolean s;
  
 -    public DedicatedServer(File file) {
 -        super(file, Proxy.NO_PROXY, DedicatedServer.a);
 +    // CraftBukkit start - Signature changed
 +    public DedicatedServer(joptsimple.OptionSet options) {
-+        super(options, Proxy.NO_PROXY, a);
-+        // super(file, Proxy.NO_PROXY, a);
++        super(options, Proxy.NO_PROXY, DedicatedServer.a);
 +        // CraftBukkit end
-         new ThreadSleepForever(this, "Server Infinisleeper");
-     }
+         Thread thread = new Thread("Server Infinisleeper") {
+             {
+                 this.setDaemon(true);
+@@ -50,13 +62,27 @@
+     protected boolean init() throws IOException {
+         Thread thread = new Thread("Server console handler") {
+             public void run() {
+-                BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(System.in));
++                // CraftBukkit start
++                if (!org.bukkit.craftbukkit.Main.useConsole) {
++                    return;
++                }
++                // CraftBukkit end
  
--    protected boolean init() {
-+    protected boolean init() throws java.net.UnknownHostException { // CraftBukkit - throws UnknownHostException
-         ThreadCommandReader threadcommandreader = new ThreadCommandReader(this, "Server console handler");
++                jline.console.ConsoleReader bufferedreader = reader; // CraftBukkit
+                 String s;
  
-         threadcommandreader.setDaemon(true);
-         threadcommandreader.start();
+                 try {
+-                    while (!DedicatedServer.this.isStopped() && DedicatedServer.this.isRunning() && (s = bufferedreader.readLine()) != null) {
+-                        DedicatedServer.this.issueCommand(s, DedicatedServer.this);
++                    // CraftBukkit start - JLine disabling compatibility
++                    while (!isStopped() && isRunning()) {
++                        if (org.bukkit.craftbukkit.Main.useJline) {
++                            s = bufferedreader.readLine(">", null);
++                        } else {
++                            s = bufferedreader.readLine();
++                        }
++                        if (s != null && s.trim().length() > 0) { // Trim to filter lines which are just spaces
++                            issueCommand(s, DedicatedServer.this);
++                        }
++                        // CraftBukkit end
+                     }
+                 } catch (IOException ioexception) {
+                     DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
+@@ -67,13 +93,35 @@
+ 
+         thread.setDaemon(true);
+         thread.start();
 +
 +        // CraftBukkit start - TODO: handle command-line logging arguments
 +        java.util.logging.Logger global = java.util.logging.Logger.getLogger("");
@@ -57,7 +94,7 @@
 +        System.setErr(new PrintStream(new LoggerOutputStream(logger, Level.WARN), true));
 +        // CraftBukkit end
 +
-         DedicatedServer.LOGGER.info("Starting minecraft server version 1.8");
+         DedicatedServer.LOGGER.info("Starting minecraft server version 1.8.3");
          if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
              DedicatedServer.LOGGER.warn("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
          }
@@ -65,18 +102,10 @@
          DedicatedServer.LOGGER.info("Loading properties");
 -        this.propertyManager = new PropertyManager(new File("server.properties"));
 +        this.propertyManager = new PropertyManager(this.options); // CraftBukkit - CLI argument support
-         this.o = new EULA(new File("eula.txt"));
-         if (!this.o.a()) {
+         this.p = new EULA(new File("eula.txt"));
+         if (!this.p.a()) {
              DedicatedServer.LOGGER.info("You need to agree to the EULA in order to run the server. Go to eula.txt for more info.");
-@@ -90,13 +123,15 @@
- 
-             try {
-                 this.ao().a(inetaddress, this.Q());
--            } catch (IOException ioexception) {
-+            } catch (Throwable ioexception) { // CraftBukkit - IOException -> Throwable
-                 DedicatedServer.LOGGER.warn("**** FAILED TO BIND TO PORT!");
-                 DedicatedServer.LOGGER.warn("The exception was: {}", new Object[] { ioexception.toString()});
-                 DedicatedServer.LOGGER.warn("Perhaps a server is already running on that port?");
+@@ -129,6 +177,8 @@
                  return false;
              }
  
@@ -85,23 +114,22 @@
              if (!this.getOnlineMode()) {
                  DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
                  DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
-@@ -111,7 +146,8 @@
+@@ -143,7 +193,7 @@
              if (!NameReferencingFileConverter.a(this.propertyManager)) {
                  return false;
              } else {
 -                this.a((PlayerList) (new DedicatedPlayerList(this)));
-+                // this.a((PlayerList) (new DedicatedPlayerList(this))); // CraftBukkit - moved up
 +                this.convertable = new WorldLoaderServer(server.getWorldContainer()); // CraftBukkit - moved from MinecraftServer constructor
                  long j = System.nanoTime();
  
                  if (this.T() == null) {
-@@ -166,7 +202,18 @@
+@@ -198,8 +248,19 @@
                      DedicatedServer.LOGGER.info("Starting remote control listener");
-                     this.m = new RemoteControlListener(this);
-                     this.m.a();
+                     this.n = new RemoteControlListener(this);
+                     this.n.a();
 +                    this.remoteConsole = new org.bukkit.craftbukkit.command.CraftRemoteConsoleCommandSender(); // CraftBukkit
-+                }
-+
+                 }
+ 
 +                // CraftBukkit start
 +                if (this.server.getBukkitSpawnRadius() > -1) {
 +                    DedicatedServer.LOGGER.info("'settings.spawn-radius' in bukkit.yml has been moved to 'spawn-protection' in server.properties. I will move your config for you.");
@@ -109,12 +137,13 @@
 +                    this.propertyManager.getInt("spawn-protection", this.server.getBukkitSpawnRadius());
 +                    this.server.removeBukkitSpawnRadius();
 +                    this.propertyManager.savePropertiesFile();
-                 }
++                }
 +                // CraftBukkit end
++
+                 if (this.aR() > 0L) {
+                     Thread thread1 = new Thread(new ThreadWatchdog(this));
  
-                 if (this.aQ() > 0L) {
-                     Thread thread = new Thread(new ThreadWatchdog(this));
-@@ -181,6 +228,12 @@
+@@ -213,6 +274,12 @@
          }
      }
  
@@ -124,29 +153,21 @@
 +    }
 +    // CraftBukkit end
 +
-     public void setGamemode(EnumGamemode enumgamemode) {
-         super.setGamemode(enumgamemode);
-         this.q = enumgamemode;
-@@ -203,6 +256,7 @@
+     public void setGamemode(WorldSettings.EnumGamemode worldsettings_enumgamemode) {
+         super.setGamemode(worldsettings_enumgamemode);
+         this.r = worldsettings_enumgamemode;
+@@ -265,7 +332,7 @@
+         System.exit(0);
      }
  
-     protected void a(CrashReport crashreport) {
-+        /* CraftBukkit start - not sure why you would want to continue running commands once the server crashed
-         while (this.isRunning()) {
-             this.aM();
- 
-@@ -212,7 +266,7 @@
-                 ;
-             }
-         }
--
-+        // CraftBukkit end */        
+-    protected void A() {
++    public void A() { // CraftBukkit - fix decompile error
+         super.A();
+         this.aN();
      }
- 
-     public CrashReport b(CrashReport crashreport) {
-@@ -257,7 +311,14 @@
-         while (!this.k.isEmpty()) {
-             ServerCommand servercommand = (ServerCommand) this.k.remove(0);
+@@ -296,7 +363,14 @@
+         while (!this.l.isEmpty()) {
+             ServerCommand servercommand = (ServerCommand) this.l.remove(0);
  
 -            this.getCommandHandler().a(servercommand.source, servercommand.command);
 +            // CraftBukkit start - ServerCommand for preprocessing
@@ -160,3 +181,67 @@
          }
  
      }
+@@ -487,13 +561,57 @@
+     }
+ 
+     public String getPlugins() {
+-        return "";
+-    }
++        // CraftBukkit start - Whole method
++        StringBuilder result = new StringBuilder();
++        org.bukkit.plugin.Plugin[] plugins = server.getPluginManager().getPlugins();
++
++        result.append(server.getName());
++        result.append(" on Bukkit ");
++        result.append(server.getBukkitVersion());
++
++        if (plugins.length > 0 && server.getQueryPlugins()) {
++            result.append(": ");
++
++            for (int i = 0; i < plugins.length; i++) {
++                if (i > 0) {
++                    result.append("; ");
++                }
+ 
+-    public String executeRemoteCommand(String s) {
+-        RemoteControlCommandListener.getInstance().i();
+-        this.b.a(RemoteControlCommandListener.getInstance(), s);
+-        return RemoteControlCommandListener.getInstance().j();
++                result.append(plugins[i].getDescription().getName());
++                result.append(" ");
++                result.append(plugins[i].getDescription().getVersion().replaceAll(";", ","));
++            }
++        }
++
++        return result.toString();
++        // CraftBukkit end
++    }
++
++    // CraftBukkit start - fire RemoteServerCommandEvent
++    public String executeRemoteCommand(final String s) {
++        Waitable<String> waitable = new Waitable<String>() {
++            @Override
++            protected String evaluate() {
++                RemoteControlCommandListener.getInstance().i();
++                // Event changes start
++                RemoteServerCommandEvent event = new RemoteServerCommandEvent(remoteConsole, s);
++                server.getPluginManager().callEvent(event);
++                // Event change end
++                ServerCommand serverCommand = new ServerCommand(event.getCommand(), RemoteControlCommandListener.getInstance());
++                server.dispatchServerCommand(remoteConsole, serverCommand);
++                return RemoteControlCommandListener.getInstance().j();
++            }
++        };
++        processQueue.add(waitable);
++        try {
++            return waitable.get();
++        } catch (java.util.concurrent.ExecutionException e) {
++            throw new RuntimeException("Exception processing rcon command " + s, e.getCause());
++        } catch (InterruptedException e) {
++            Thread.currentThread().interrupt(); // Maintain interrupted state
++            throw new RuntimeException("Interrupted processing rcon command " + s, e);
++        }
++        // CraftBukkit end
+     }
+ 
+     public PlayerList getPlayerList() {

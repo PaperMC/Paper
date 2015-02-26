@@ -1,9 +1,66 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/ItemMinecart.java	2014-11-28 17:43:43.237707432 +0000
-+++ src/main/java/net/minecraft/server/ItemMinecart.java	2014-11-28 17:38:22.000000000 +0000
-@@ -23,6 +23,13 @@
-                 if (enumtrackposition.c()) {
+--- /home/matt/mc-dev-private//net/minecraft/server/ItemMinecart.java	2015-02-26 22:40:22.839608137 +0000
++++ src/main/java/net/minecraft/server/ItemMinecart.java	2015-02-26 22:40:22.839608137 +0000
+@@ -1,5 +1,10 @@
+ package net.minecraft.server;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.block.BlockDispenseEvent;
++// CraftBukkit end
++
+ public class ItemMinecart extends Item {
+ 
+     private static final IDispenseBehavior a = new DispenseBehaviorItem() {
+@@ -37,14 +42,43 @@
+                 }
+             }
+ 
+-            EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.a(world, d0, d1 + d3, d2, ((ItemMinecart) itemstack.getItem()).b);
++            // CraftBukkit start
++            // EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.a(world, d0, d1 + d3, d2, ((ItemMinecart) itemstack.getItem()).b);
++            ItemStack itemstack1 = itemstack.a(1);
++            org.bukkit.block.Block block2 = world.getWorld().getBlockAt(isourceblock.getBlockPosition().getX(), isourceblock.getBlockPosition().getY(), isourceblock.getBlockPosition().getZ());
++            CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
++
++            BlockDispenseEvent event = new BlockDispenseEvent(block2, craftItem.clone(), new org.bukkit.util.Vector(d0, d1 + d3, d2));
++            if (!BlockDispenser.eventFired) {
++                world.getServer().getPluginManager().callEvent(event);
++            }
++
++            if (event.isCancelled()) {
++                itemstack.count++;
++                return itemstack;
++            }
++
++            if (!event.getItem().equals(craftItem)) {
++                itemstack.count++;
++                // Chain to handler for new item
++                ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
++                IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.N.get(eventStack.getItem());
++                if (idispensebehavior != IDispenseBehavior.a && idispensebehavior != this) {
++                    idispensebehavior.a(isourceblock, eventStack);
++                    return itemstack;
++                }
++            }
++
++            itemstack1 = CraftItemStack.asNMSCopy(event.getItem());
++            EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.a(world, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), ((ItemMinecart) itemstack1.getItem()).b);
+ 
+             if (itemstack.hasName()) {
+                 entityminecartabstract.setCustomName(itemstack.getName());
+             }
+ 
+             world.addEntity(entityminecartabstract);
+-            itemstack.a(1);
++            itemstack.a(1); // CraftBukkit - handled during event processing
++            // CraftBukkit end
+             return itemstack;
+         }
+ 
+@@ -73,6 +107,14 @@
                      d0 = 0.5D;
                  }
+ 
 +                // CraftBukkit start - Minecarts
 +                org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent(entityhuman, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, blockposition, enumdirection, itemstack);
 +
@@ -11,6 +68,7 @@
 +                    return false;
 +                }
 +                // CraftBukkit end
- 
++
                  EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.a(world, (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.0625D + d0, (double) blockposition.getZ() + 0.5D, this.b);
  
+                 if (itemstack.hasName()) {

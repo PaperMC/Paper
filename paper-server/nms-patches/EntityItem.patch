@@ -1,6 +1,6 @@
---- ../work/decompile-8eb82bde/net/minecraft/server/EntityItem.java	2015-01-07 09:58:20.976505660 +1100
-+++ src/main/java/net/minecraft/server/EntityItem.java	2015-01-07 09:58:20.976505660 +1100
-@@ -4,6 +4,8 @@
+--- /home/matt/mc-dev-private//net/minecraft/server/EntityItem.java	2015-02-26 22:40:22.587608139 +0000
++++ src/main/java/net/minecraft/server/EntityItem.java	2015-02-26 22:40:22.591608139 +0000
+@@ -4,15 +4,18 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -9,7 +9,10 @@
  public class EntityItem extends Entity {
  
      private static final Logger b = LogManager.getLogger();
-@@ -13,6 +15,7 @@
+     private int age;
+-    private int pickupDelay;
++    public int pickupDelay; // CraftBukkit - public
+     private int e;
      private String f;
      private String g;
      public float a;
@@ -32,20 +35,20 @@
 @@ -52,9 +60,12 @@
              this.die();
          } else {
-             super.s_();
+             super.t_();
 -            if (this.pickupDelay > 0 && this.pickupDelay != 32767) {
 -                --this.pickupDelay;
 -            }
 +            // CraftBukkit start - Use wall time for pickup and despawn timers
 +            int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
-+            this.pickupDelay -= elapsedTicks;
-+            this.age += elapsedTicks;
++            if (this.pickupDelay != 32767) this.pickupDelay -= elapsedTicks;
++            if (this.age != -32768) this.age += elapsedTicks;
 +            this.lastTick = MinecraftServer.currentTick;
 +            // CraftBukkit end
  
              this.lastX = this.locX;
              this.lastY = this.locY;
-@@ -90,12 +101,20 @@
+@@ -90,12 +101,21 @@
                  this.motY *= -0.5D;
              }
  
@@ -54,9 +57,10 @@
                  ++this.age;
              }
 +            // Craftbukkit end */
++
  
              this.W();
-             if (!this.world.isStatic && this.age >= 6000) {
+             if (!this.world.isClientSide && this.age >= 6000) {
 +                // CraftBukkit start - fire ItemDespawnEvent
 +                if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
 +                    this.age = 0;
@@ -66,7 +70,7 @@
                  this.die();
              }
  
-@@ -183,6 +202,11 @@
+@@ -183,6 +203,11 @@
          } else if (this.getItemStack() != null && this.getItemStack().getItem() == Items.NETHER_STAR && damagesource.isExplosion()) {
              return false;
          } else {
@@ -78,7 +82,7 @@
              this.ac();
              this.e = (int) ((float) this.e - f);
              if (this.e <= 0) {
-@@ -228,7 +252,18 @@
+@@ -228,7 +253,18 @@
  
          NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("Item");
  
@@ -98,11 +102,10 @@
          if (this.getItemStack() == null) {
              this.die();
          }
-@@ -239,6 +274,26 @@
-         if (!this.world.isStatic) {
+@@ -240,6 +276,26 @@
              ItemStack itemstack = this.getItemStack();
              int i = itemstack.count;
-+ 
+ 
 +            // CraftBukkit start - fire PlayerPickupItemEvent
 +            int canHold = entityhuman.inventory.canHold(itemstack);
 +            int remaining = itemstack.count - canHold;
@@ -122,6 +125,7 @@
 +                this.pickupDelay = 0;
 +            }
 +            // CraftBukkit end
- 
++
              if (this.pickupDelay == 0 && (this.g == null || 6000 - this.age <= 200 || this.g.equals(entityhuman.getName())) && entityhuman.inventory.pickup(itemstack)) {
                  if (itemstack.getItem() == Item.getItemOf(Blocks.LOG)) {
+                     entityhuman.b((Statistic) AchievementList.g);

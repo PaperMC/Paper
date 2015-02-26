@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/WorldMap.java	2014-11-28 17:43:43.441707427 +0000
-+++ src/main/java/net/minecraft/server/WorldMap.java	2014-11-28 17:38:21.000000000 +0000
+--- /home/matt/mc-dev-private//net/minecraft/server/WorldMap.java	2015-02-26 22:40:23.227608132 +0000
++++ src/main/java/net/minecraft/server/WorldMap.java	2015-02-26 22:40:23.231608132 +0000
 @@ -6,6 +6,14 @@
  import java.util.List;
  import java.util.Map;
@@ -15,17 +15,16 @@
  public class WorldMap extends PersistentBase {
  
      public int centerX;
-@@ -16,9 +24,19 @@
-     public List g = Lists.newArrayList();
-     private Map i = Maps.newHashMap();
-     public Map decorations = Maps.newLinkedHashMap();
-+ 
+@@ -17,8 +25,18 @@
+     private Map<EntityHuman, WorldMap.WorldMapHumanTracker> i = Maps.newHashMap();
+     public Map<String, MapIcon> decorations = Maps.newLinkedHashMap();
+ 
 +    // CraftBukkit start
 +    public final CraftMapView mapView;
 +    private CraftServer server;
 +    private UUID uniqueId = null;
 +    // CraftBukkit end
- 
++
      public WorldMap(String s) {
          super(s);
 +        // CraftBukkit start
@@ -93,3 +92,31 @@
          nbttagcompound.setByte("dimension", this.map);
          nbttagcompound.setInt("xCenter", this.centerX);
          nbttagcompound.setInt("zCenter", this.centerZ);
+@@ -212,12 +272,25 @@
+         }
+ 
+         public Packet a(ItemStack itemstack) {
++            // CraftBukkit start
++            org.bukkit.craftbukkit.map.RenderData render = WorldMap.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.trackee.getBukkitEntity()); // CraftBukkit
++
++            java.util.Collection<MapIcon> icons = new java.util.ArrayList<MapIcon>();
++
++            for ( org.bukkit.map.MapCursor cursor : render.cursors) {
++
++                if (cursor.isVisible()) {
++                    icons.add(new MapIcon(cursor.getRawType(), cursor.getX(), cursor.getY(), cursor.getDirection()));
++                }
++            }
++
+             if (this.d) {
+                 this.d = false;
+-                return new PacketPlayOutMap(itemstack.getData(), WorldMap.this.scale, WorldMap.this.decorations.values(), WorldMap.this.colors, this.e, this.f, this.g + 1 - this.e, this.h + 1 - this.f);
++                return new PacketPlayOutMap(itemstack.getData(), WorldMap.this.scale, icons, render.buffer, this.e, this.f, this.g + 1 - this.e, this.h + 1 - this.f);
+             } else {
+-                return this.i++ % 5 == 0 ? new PacketPlayOutMap(itemstack.getData(), WorldMap.this.scale, WorldMap.this.decorations.values(), WorldMap.this.colors, 0, 0, 0, 0) : null;
++                return this.i++ % 5 == 0 ? new PacketPlayOutMap(itemstack.getData(), WorldMap.this.scale, icons, render.buffer, 0, 0, 0, 0) : null;
+             }
++            // CraftBukkit end
+         }
+ 
+         public void a(int i, int j) {

@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 
-import net.minecraft.server.ContainerAnvilInventory;
-import net.minecraft.server.ContainerEnchantTableInventory;
 import net.minecraft.server.IHopper;
 import net.minecraft.server.IInventory;
 import net.minecraft.server.InventoryCrafting;
@@ -435,7 +433,7 @@ public class CraftInventory implements Inventory {
             return InventoryType.DISPENSER;
         } else if (inventory instanceof TileEntityFurnace) {
             return InventoryType.FURNACE;
-        } else if (inventory instanceof ContainerEnchantTableInventory) {
+        } else if (this instanceof CraftInventoryEnchanting) {
            return InventoryType.ENCHANTING;
         } else if (inventory instanceof TileEntityBrewingStand) {
             return InventoryType.BREWING;
@@ -447,7 +445,7 @@ public class CraftInventory implements Inventory {
             return InventoryType.MERCHANT;
         } else if (inventory instanceof TileEntityBeacon) {
             return InventoryType.BEACON;
-        } else if (inventory instanceof ContainerAnvilInventory) {
+        } else if (this instanceof CraftInventoryAnvil) {
            return InventoryType.ANVIL;
         } else if (inventory instanceof IHopper) {
             return InventoryType.HOPPER;

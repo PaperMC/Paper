@@ -1,34 +1,36 @@
---- ../work/decompile-8eb82bde/net/minecraft/server/Chunk.java	2014-12-21 17:32:05.580576417 +0000
-+++ src/main/java/net/minecraft/server/Chunk.java	2014-12-21 17:32:05.580576417 +0000
-@@ -1,6 +1,7 @@
- package net.minecraft.server;
- 
- import com.google.common.base.Predicate;
-+import com.google.common.collect.Lists; // CraftBukkit
- import com.google.common.collect.Maps;
- import com.google.common.collect.Queues;
- import java.util.Arrays;
-@@ -14,6 +15,8 @@
+--- /home/matt/mc-dev-private//net/minecraft/server/Chunk.java	2015-02-26 22:40:22.311608142 +0000
++++ src/main/java/net/minecraft/server/Chunk.java	2015-02-26 22:40:22.315608142 +0000
+@@ -14,6 +14,9 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
++import com.google.common.collect.Lists; // CraftBukkit
 +import org.bukkit.Bukkit; // CraftBukkit
 +
  public class Chunk {
  
      private static final Logger c = LogManager.getLogger();
-@@ -23,7 +26,7 @@
+@@ -22,13 +25,13 @@
+     private final int[] f;
      private final boolean[] g;
      private boolean h;
-     public final World world;
+-    private final World world;
 -    private final int[] heightMap;
-+    public final int[] heightMap; // CraftBukkit - make public
++    public final World world; // CraftBukkit - public
++    public final int[] heightMap; // CraftBukkit - public
      public final int locX;
      public final int locZ;
      private boolean k;
+-    private final Map<BlockPosition, TileEntity> tileEntities;
+-    private final EntitySlice<Entity>[] entitySlices;
++    public final Map<BlockPosition, TileEntity> tileEntities;
++    public final EntitySlice<Entity>[] entitySlices; // CraftBukkit - public
+     private boolean done;
+     private boolean lit;
+     private boolean p;
 @@ -40,6 +43,34 @@
      private int v;
-     private ConcurrentLinkedQueue w;
+     private ConcurrentLinkedQueue<BlockPosition> w;
  
 +    // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
 +    private int neighbors = 0x1 << 12;
@@ -79,17 +81,17 @@
      public Chunk(World world, ChunkSnapshot chunksnapshot, int i, int j) {
          this(world, i, j);
          short short0 = 256;
-@@ -505,7 +545,8 @@
+@@ -529,7 +569,8 @@
                      }
                  }
  
--                if (!this.world.isStatic && block1 != block) {
+-                if (!this.world.isClientSide && block1 != block) {
 +                // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled.
-+                if (!this.world.isStatic && block1 != block  && (!this.world.captureBlockStates || block instanceof BlockContainer)) {
++                if (!this.world.isClientSide && block1 != block  && (!this.world.captureBlockStates || block instanceof BlockContainer)) {
                      block.onPlace(this.world, blockposition, iblockdata);
                  }
  
-@@ -586,7 +627,11 @@
+@@ -610,7 +651,11 @@
          int j = MathHelper.floor(entity.locZ / 16.0D);
  
          if (i != this.locX || j != this.locZ) {
@@ -102,7 +104,7 @@
              entity.die();
          }
  
-@@ -673,6 +718,13 @@
+@@ -697,6 +742,13 @@
  
              tileentity.D();
              this.tileEntities.put(blockposition, tileentity);
@@ -116,7 +118,7 @@
          }
      }
  
-@@ -716,7 +768,21 @@
+@@ -740,7 +792,21 @@
          }
  
          for (int i = 0; i < this.entitySlices.length; ++i) {
@@ -139,3 +141,14 @@
          }
  
      }
+@@ -798,8 +864,8 @@
+             while (iterator.hasNext()) {
+                 Entity entity = (Entity) iterator.next();
+ 
+-                if (entity.getBoundingBox().b(axisalignedbb) && (predicate == null || predicate.apply(entity))) {
+-                    list.add(entity);
++                if (entity.getBoundingBox().b(axisalignedbb) && (predicate == null || predicate.apply((T) entity))) { // CraftBukkit - fix decompile error
++                    list.add((T) entity); // Fix decompile error
+                 }
+             }
+         }

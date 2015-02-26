@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/CommandExecute.java	2015-01-25 15:16:56.720837314 +0000
-+++ src/main/java/net/minecraft/server/CommandExecute.java	2015-01-25 15:16:56.720837314 +0000
+--- /home/matt/mc-dev-private//net/minecraft/server/CommandExecute.java	2015-02-26 22:40:22.343608142 +0000
++++ src/main/java/net/minecraft/server/CommandExecute.java	2015-02-26 22:40:22.343608142 +0000
 @@ -2,6 +2,10 @@
  
  import java.util.Collection;
@@ -11,27 +11,17 @@
  
  public class CommandExecute extends CommandAbstract {
  
-@@ -19,7 +23,7 @@
-         return "commands.execute.usage";
-     }
- 
--    public void execute(ICommandListener icommandlistener, String[] astring) {
-+    public void execute(ICommandListener icommandlistener, String[] astring) throws ExceptionUsage, CommandException { // CraftBukkit - added throws
-         if (astring.length < 5) {
-             throw new ExceptionUsage("commands.execute.usage", new Object[0]);
-         } else {
-@@ -52,12 +56,30 @@
+@@ -94,12 +98,31 @@
              ICommandHandler icommandhandler = MinecraftServer.getServer().getCommandHandler();
  
              try {
--                int j = icommandhandler.a(commandlistenerentity, s);
--
+-                int j = icommandhandler.a(icommandlistener1, s);
 +                // CraftBukkit start
 +                org.bukkit.command.CommandSender sender = null;
 +                if (icommandlistener instanceof DedicatedServer) {
 +                    sender = MinecraftServer.getServer().server.getConsoleSender();
-+                } else if (icommandlistener instanceof TileEntityCommandListener) {
-+                    sender = ((TileEntityCommandListener) icommandlistener).sender;
++                } else if (icommandlistener instanceof CommandBlockListenerAbstract) {
++                    sender = ((CommandBlockListenerAbstract) icommandlistener).sender;
 +                } else if (VanillaCommandWrapper.lastSender != null) {
 +                    sender = VanillaCommandWrapper.lastSender;
 +                }else if (icommandlistener.f() != null) {
@@ -39,8 +29,9 @@
 +                } else {
 +                    throw new CommandException("Unhandled executor " + icommandlistener.getClass().getSimpleName(), new Object[0]);
 +                }
-+                int j = CommandBlockListenerAbstract.executeCommand(commandlistenerentity, new ProxiedNativeCommandSender(commandlistenerentity, sender, entity.getBukkitEntity()), s); // icommandhandler.a(commandlistenerentity, s);
++                int j = CommandBlockListenerAbstract.executeCommand(icommandlistener1, new ProxiedNativeCommandSender(icommandlistener1, sender, entity.getBukkitEntity()), s); 
 +                // CraftBukkit end
+ 
                  if (j < 1) {
                      throw new CommandException("commands.execute.allInvocationsFailed", new Object[] { s});
                  }
@@ -53,14 +44,14 @@
                  throw new CommandException("commands.execute.failed", new Object[] { s, entity.getName()});
              }
          }
-@@ -70,4 +92,11 @@
+@@ -112,4 +135,11 @@
      public boolean isListStart(String[] astring, int i) {
          return i == 0;
      }
 +
 +    // CraftBukkit start - fix decompiler error
 +    @Override
-+    public int compareTo(Object o) {
++    public int compareTo(ICommand o) {
 +        return a((ICommand) o);
 +    }
 +    // CraftBukkit end

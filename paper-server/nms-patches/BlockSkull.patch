@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/BlockSkull.java	2015-02-02 21:55:13.808077826 +0000
-+++ src/main/java/net/minecraft/server/BlockSkull.java	2015-02-02 21:55:13.808077826 +0000
+--- /home/matt/mc-dev-private//net/minecraft/server/BlockSkull.java	2015-02-27 00:00:38.507555865 +0000
++++ src/main/java/net/minecraft/server/BlockSkull.java	2015-02-27 00:00:38.507555865 +0000
 @@ -4,6 +4,11 @@
  import java.util.Iterator;
  import java.util.Random;
@@ -12,12 +12,13 @@
  public class BlockSkull extends BlockContainer {
  
      public static final BlockStateDirection FACING = BlockStateDirection.of("facing");
-@@ -69,8 +74,25 @@
+@@ -81,8 +86,26 @@
  
          return tileentity instanceof TileEntitySkull ? ((TileEntitySkull) tileentity).getSkullType() : super.getDropData(world, blockposition);
      }
 +    
 +    // CraftBukkit start - Special case dropping so we can get info from the tile entity
++    @Override
 +    public void dropNaturally(World world, BlockPosition blockposition, IBlockData iblockdata, float f, int i) {
 +        if (world.random.nextFloat() < f) {
 +            ItemStack itemstack = new ItemStack(Items.SKULL, 1, this.getDropData(world, blockposition));
@@ -39,10 +40,10 @@
  
      public void a(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman) {
          if (entityhuman.abilities.canInstantlyBuild) {
-@@ -83,7 +105,10 @@
+@@ -95,7 +118,10 @@
  
      public void remove(World world, BlockPosition blockposition, IBlockData iblockdata) {
-         if (!world.isStatic) {
+         if (!world.isClientSide) {
 -            if (!((Boolean) iblockdata.get(BlockSkull.NODROP)).booleanValue()) {
 +            // CraftBukkit start - Drop item in code above, not here
 +            // if (!((Boolean) iblockdata.get(BlockSkull.NODROP)).booleanValue()) {
@@ -51,22 +52,22 @@
                  TileEntity tileentity = world.getTileEntity(blockposition);
  
                  if (tileentity instanceof TileEntitySkull) {
-@@ -115,24 +140,36 @@
+@@ -127,24 +153,36 @@
      }
  
      public void a(World world, BlockPosition blockposition, TileEntitySkull tileentityskull) {
 +        if (world.captureBlockStates) return; // CraftBukkit
-         if (tileentityskull.getSkullType() == 1 && blockposition.getY() >= 2 && world.getDifficulty() != EnumDifficulty.PEACEFUL && !world.isStatic) {
-             ShapeDetector shapedetector = this.l();
-             ShapeDetectorCollection shapedetectorcollection = shapedetector.a(world, blockposition);
+         if (tileentityskull.getSkullType() == 1 && blockposition.getY() >= 2 && world.getDifficulty() != EnumDifficulty.PEACEFUL && !world.isClientSide) {
+             ShapeDetector shapedetector = this.n();
+             ShapeDetector.ShapeDetectorCollection shapedetector_shapedetectorcollection = shapedetector.a(world, blockposition);
  
-             if (shapedetectorcollection != null) {
+             if (shapedetector_shapedetectorcollection != null) {
 +                // CraftBukkit start - Use BlockStateListPopulator
 +                BlockStateListPopulator blockList = new BlockStateListPopulator(world.getWorld());
                  int i;
  
                  for (i = 0; i < 3; ++i) {
-                     ShapeDetectorBlock shapedetectorblock = shapedetectorcollection.a(i, 0, 0);
+                     ShapeDetectorBlock shapedetectorblock = shapedetector_shapedetectorcollection.a(i, 0, 0);
  
 -                    world.setTypeAndData(shapedetectorblock.d(), shapedetectorblock.a().set(BlockSkull.NODROP, Boolean.valueOf(true)), 2);
 +                    // CraftBukkit start
@@ -79,7 +80,7 @@
  
                  for (i = 0; i < shapedetector.c(); ++i) {
                      for (int j = 0; j < shapedetector.b(); ++j) {
-                         ShapeDetectorBlock shapedetectorblock1 = shapedetectorcollection.a(i, j, 0);
+                         ShapeDetectorBlock shapedetectorblock1 = shapedetector_shapedetectorcollection.a(i, j, 0);
  
 -                        world.setTypeAndData(shapedetectorblock1.d(), Blocks.AIR.getBlockData(), 2);
 +                        // CraftBukkit start
@@ -90,50 +91,30 @@
                      }
                  }
  
-@@ -145,28 +182,31 @@
+@@ -157,14 +195,16 @@
                  entitywither.n();
                  Iterator iterator = world.a(EntityHuman.class, entitywither.getBoundingBox().grow(50.0D, 50.0D, 50.0D)).iterator();
  
--                while (iterator.hasNext()) {
--                    EntityHuman entityhuman = (EntityHuman) iterator.next();
 +                // CraftBukkit start
-+                if (world.addEntity(entitywither, SpawnReason.BUILD_WITHER)) {  
-+                    while (iterator.hasNext()) {
-+                        EntityHuman entityhuman = (EntityHuman) iterator.next();
- 
--                    entityhuman.b((Statistic) AchievementList.I);
--                }
--
--                world.addEntity(entitywither);
-+                        entityhuman.b((Statistic) AchievementList.I);
-+                    }
-+                    
++                if (world.addEntity(entitywither, SpawnReason.BUILD_WITHER)) {
 +                    blockList.updateList();
++                    
+                 while (iterator.hasNext()) {
+                     EntityHuman entityhuman = (EntityHuman) iterator.next();
  
--                int k;
-+                    int k;
+                     entityhuman.b((Statistic) AchievementList.I);
+                 }
  
--                for (k = 0; k < 120; ++k) {
--                    world.addParticle(EnumParticle.SNOWBALL, (double) blockposition1.getX() + world.random.nextDouble(), (double) (blockposition1.getY() - 2) + world.random.nextDouble() * 3.9D, (double) blockposition1.getZ() + world.random.nextDouble(), 0.0D, 0.0D, 0.0D, new int[0]);
--                }
-+                    for (k = 0; k < 120; ++k) {
-+                        world.addParticle(EnumParticle.SNOWBALL, (double) blockposition1.getX() + world.random.nextDouble(), (double) (blockposition1.getY() - 2) + world.random.nextDouble() * 3.9D, (double) blockposition1.getZ() + world.random.nextDouble(), 0.0D, 0.0D, 0.0D, new int[0]);
-+                    }
+-                world.addEntity(entitywither);
+-
+                 int k;
  
--                for (k = 0; k < shapedetector.c(); ++k) {
--                    for (int l = 0; l < shapedetector.b(); ++l) {
--                        ShapeDetectorBlock shapedetectorblock2 = shapedetectorcollection.a(k, l, 0);
-+                    for (k = 0; k < shapedetector.c(); ++k) {
-+                        for (int l = 0; l < shapedetector.b(); ++l) {
-+                            ShapeDetectorBlock shapedetectorblock2 = shapedetectorcollection.a(k, l, 0);
- 
--                        world.update(shapedetectorblock2.d(), Blocks.AIR);
-+                            world.update(shapedetectorblock2.d(), Blocks.AIR);
-+                        }
+                 for (k = 0; k < 120; ++k) {
+@@ -178,6 +218,7 @@
+                         world.update(shapedetectorblock2.d(), Blocks.AIR);
                      }
                  }
--
-+                // CraftBukkit end
++                } // CraftBukkit end
+ 
              }
          }
-     }

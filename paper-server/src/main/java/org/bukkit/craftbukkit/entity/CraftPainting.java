@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityPainting;
-import net.minecraft.server.EnumArt;
+import net.minecraft.server.EntityPainting.EnumArt;
 import net.minecraft.server.WorldServer;
 
 import org.bukkit.Art;

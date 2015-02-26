@@ -24,7 +24,7 @@ public class CraftGuardian extends CraftMonster implements Guardian {
 
     @Override
     public boolean isElder() {
-        return ((EntityGuardian)entity).cl();
+        return ((EntityGuardian)entity).cn();
     }
 
     @Override
@@ -37,7 +37,7 @@ public class CraftGuardian extends CraftMonster implements Guardian {
             entityGuardian.a( false );
 
             // Since minecraft does not reset the elder Guardian to a guardian we have to do that
-            entity.a(0.85F, 0.85F);
+            entity.setSize(0.85F, 0.85F);
 
             // Since aW() calls its supers it will try to re register attributes which is invalid
             // PAIL: rename and check these on update
@@ -47,10 +47,10 @@ public class CraftGuardian extends CraftMonster implements Guardian {
             entityGuardian.getAttributeInstance(GenericAttributes.maxHealth).setValue(30.0D);
 
             // Update pathfinding (random stroll back to 80)
-            entityGuardian.bq.b(80);
+            entityGuardian.br.b(80);
 
             // Tell minecraft that we need persistence since the guardian changed
-            entityGuardian.bW();
+            entityGuardian.initAttributes();
         }
     }
 }

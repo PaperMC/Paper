@@ -10,7 +10,7 @@ import net.minecraft.server.ChatClickable;
 import net.minecraft.server.ChatComponentText;
 import net.minecraft.server.ChatModifier;
 import net.minecraft.server.EnumChatFormat;
-import net.minecraft.server.EnumClickAction;
+import net.minecraft.server.ChatClickable.EnumClickAction;
 import net.minecraft.server.IChatBaseComponent;
 
 import com.google.common.collect.ImmutableMap;

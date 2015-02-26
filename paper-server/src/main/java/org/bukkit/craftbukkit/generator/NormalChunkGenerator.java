@@ -72,7 +72,7 @@ public class NormalChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
-    public List<?> getMobsFor(EnumCreatureType ect, BlockPosition position) {
+    public List<BiomeBase.BiomeMeta> getMobsFor(EnumCreatureType ect, BlockPosition position) {
         return provider.getMobsFor(ect, position);
     }
 

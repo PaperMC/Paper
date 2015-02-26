@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import net.minecraft.server.EntityTypes;
-import net.minecraft.server.MonsterEggInfo;
+import net.minecraft.server.EntityTypes.MonsterEggInfo;
 import net.minecraft.server.StatisticList;
 
 import org.bukkit.Achievement;

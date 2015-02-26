@@ -61,14 +61,26 @@ public final class VanillaCommandWrapper extends VanillaCommand {
         // Some commands use the worldserver variable but we leave it full of null values,
         // so we must temporarily populate it with the world of the commandsender
         WorldServer[] prev = MinecraftServer.getServer().worldServer;
-        MinecraftServer.getServer().worldServer = new WorldServer[]{(WorldServer) icommandlistener.getWorld()};
+        MinecraftServer server = MinecraftServer.getServer();
+        server.worldServer = new WorldServer[server.worlds.size()];
+        server.worldServer[0] = (WorldServer) icommandlistener.getWorld();
+        int bpos = 0;
+        for (int pos = 1; pos < server.worldServer.length; pos++) {
+            WorldServer world = server.worlds.get(bpos++);
+            if (server.worldServer[0] == world) {
+                pos--;
+                continue;
+            }
+            server.worldServer[pos] = world;
+        }
+
         try {
             if (vanillaCommand.canUse(icommandlistener)) {
                 if (i > -1) {
                     List<Entity> list = ((List<Entity>)PlayerSelector.getPlayers(icommandlistener, as[i], Entity.class));
                     String s2 = as[i];
                     
-                    icommandlistener.a(EnumCommandResult.AFFECTED_ENTITIES, list.size());
+                    icommandlistener.a(CommandObjectiveExecutor.EnumCommandResult.AFFECTED_ENTITIES, list.size());
                     Iterator<Entity> iterator = list.iterator();
 
                     while (iterator.hasNext()) {
@@ -94,7 +106,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
                     }
                     as[i] = s2;
                 } else {
-                    icommandlistener.a(EnumCommandResult.AFFECTED_ENTITIES, 1);
+                    icommandlistener.a(CommandObjectiveExecutor.EnumCommandResult.AFFECTED_ENTITIES, 1);
                     vanillaCommand.execute(icommandlistener, as);
                     j++;
                 }
@@ -115,19 +127,18 @@ public final class VanillaCommandWrapper extends VanillaCommand {
             ChatMessage chatmessage3 = new ChatMessage("commands.generic.exception", new Object[0]);
             chatmessage3.getChatModifier().setColor(EnumChatFormat.RED);
             icommandlistener.sendMessage(chatmessage3);
-            if(icommandlistener instanceof TileEntityCommandListener) {
-                TileEntityCommandListener listener = (TileEntityCommandListener) icommandlistener;
-                MinecraftServer.getLogger().log(Level.WARN, String.format("CommandBlock at (%d,%d,%d) failed to handle command", listener.getChunkCoordinates().getX(), listener.getChunkCoordinates().getY(), listener.getChunkCoordinates().getZ()), throwable);
-            } else if (icommandlistener instanceof EntityMinecartCommandBlockListener) {
-                EntityMinecartCommandBlockListener listener = (EntityMinecartCommandBlockListener) icommandlistener;
-                MinecraftServer.getLogger().log(Level.WARN, String.format("MinecartCommandBlock at (%d,%d,%d) failed to handle command", listener.getChunkCoordinates().getX(), listener.getChunkCoordinates().getY(), listener.getChunkCoordinates().getZ()), throwable);
+            if (icommandlistener.f() instanceof EntityMinecartCommandBlock) {
+                MinecraftServer.LOGGER.log(Level.WARN, String.format("MinecartCommandBlock at (%d,%d,%d) failed to handle command", icommandlistener.getChunkCoordinates().getX(), icommandlistener.getChunkCoordinates().getY(), icommandlistener.getChunkCoordinates().getZ()), throwable);
+            } else if(icommandlistener instanceof CommandBlockListenerAbstract) {
+                CommandBlockListenerAbstract listener = (CommandBlockListenerAbstract) icommandlistener;
+                MinecraftServer.LOGGER.log(Level.WARN, String.format("CommandBlock at (%d,%d,%d) failed to handle command", listener.getChunkCoordinates().getX(), listener.getChunkCoordinates().getY(), listener.getChunkCoordinates().getZ()), throwable);
             } else {
-                MinecraftServer.getLogger().log(Level.WARN, String.format("Unknown CommandBlock failed to handle command"), throwable);
+                MinecraftServer.LOGGER.log(Level.WARN, String.format("Unknown CommandBlock failed to handle command"), throwable);
             }
         } finally {
             MinecraftServer.getServer().worldServer = prev;
         }
-        icommandlistener.a(EnumCommandResult.SUCCESS_COUNT, j);
+        icommandlistener.a(CommandObjectiveExecutor.EnumCommandResult.SUCCESS_COUNT, j);
         return j;
     }
 

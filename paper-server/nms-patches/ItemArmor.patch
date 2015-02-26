@@ -1,0 +1,59 @@
+--- /home/matt/mc-dev-private//net/minecraft/server/ItemArmor.java	2015-02-26 22:40:22.791608137 +0000
++++ src/main/java/net/minecraft/server/ItemArmor.java	2015-02-26 22:40:22.791608137 +0000
+@@ -3,6 +3,11 @@
+ import com.google.common.base.Predicates;
+ import java.util.List;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.block.BlockDispenseEvent;
++// CraftBukkit end
++
+ public class ItemArmor extends Item {
+ 
+     private static final int[] k = new int[] { 11, 16, 15, 13};
+@@ -20,7 +25,34 @@
+                 EntityLiving entityliving = (EntityLiving) list.get(0);
+                 int l = entityliving instanceof EntityHuman ? 1 : 0;
+                 int i1 = EntityInsentient.c(itemstack);
+-                ItemStack itemstack1 = itemstack.cloneItemStack();
++
++                // CraftBukkit start
++                ItemStack itemstack1 = itemstack.a(1);
++                World world = isourceblock.i();
++                org.bukkit.block.Block block = world.getWorld().getBlockAt(isourceblock.getBlockPosition().getX(), isourceblock.getBlockPosition().getY(), isourceblock.getBlockPosition().getZ());
++                CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
++
++                BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
++                if (!BlockDispenser.eventFired) {
++                    world.getServer().getPluginManager().callEvent(event);
++                }
++
++                if (event.isCancelled()) {
++                    itemstack.count++;
++                    return itemstack;
++                }
++
++                if (!event.getItem().equals(craftItem)) {
++                    itemstack.count++;
++                    // Chain to handler for new item
++                    ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
++                    IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.N.get(eventStack.getItem());
++                    if (idispensebehavior != IDispenseBehavior.a && idispensebehavior != this) {
++                        idispensebehavior.a(isourceblock, eventStack);
++                        return itemstack;
++                    }
++                }
++                // CraftBukkit end
+ 
+                 itemstack1.count = 1;
+                 entityliving.setEquipment(i1 - l, itemstack1);
+@@ -28,7 +60,7 @@
+                     ((EntityInsentient) entityliving).a(i1, 2.0F);
+                 }
+ 
+-                --itemstack.count;
++                // --itemstack.count; // CraftBukkit - handled above
+                 return itemstack;
+             } else {
+                 return super.b(isourceblock, itemstack);

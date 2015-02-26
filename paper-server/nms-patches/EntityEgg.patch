@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/EntityEgg.java	2014-11-28 17:43:43.077707435 +0000
-+++ src/main/java/net/minecraft/server/EntityEgg.java	2014-11-28 17:38:18.000000000 +0000
+--- /home/matt/mc-dev-private//net/minecraft/server/EntityEgg.java	2015-02-26 22:40:22.507608140 +0000
++++ src/main/java/net/minecraft/server/EntityEgg.java	2015-02-26 22:40:22.507608140 +0000
 @@ -1,5 +1,12 @@
  package net.minecraft.server;
  
@@ -17,16 +17,28 @@
              movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.getShooter()), 0.0F);
          }
  
--        if (!this.world.isStatic && this.random.nextInt(8) == 0) {
+-        if (!this.world.isClientSide && this.random.nextInt(8) == 0) {
 -            byte b0 = 1;
 +        // CraftBukkit start - Fire PlayerEggThrowEvent
-+        boolean hatching = !this.world.isStatic && this.random.nextInt(8) == 0;
++        boolean hatching = !this.world.isClientSide && this.random.nextInt(8) == 0;
 +        int numHatching = (this.random.nextInt(32) == 0) ? 4 : 1;
 +        if (!hatching) {
 +            numHatching = 0;
 +        }
-+        
++
 +        EntityType hatchingType = EntityType.CHICKEN;
++
++        Entity shooter = this.getShooter();
++        if (shooter instanceof EntityPlayer) {
++            Player player = (shooter == null) ? null : (Player) shooter.getBukkitEntity();
++
++            PlayerEggThrowEvent event = new PlayerEggThrowEvent(player, (org.bukkit.entity.Egg) this.getBukkitEntity(), hatching, (byte) numHatching, hatchingType);
++            this.world.getServer().getPluginManager().callEvent(event);
++
++            hatching = event.isHatching();
++            numHatching = event.getNumHatches();
++            hatchingType = event.getHatchingType();
++        }
  
 -            if (this.random.nextInt(32) == 0) {
 -                b0 = 4;
@@ -39,18 +51,6 @@
 -                entitychicken.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, 0.0F);
 -                this.world.addEntity(entitychicken);
 -            }
-+        Entity shooter = this.getShooter();
-+        if (shooter instanceof EntityPlayer) {
-+            Player player = (shooter == null) ? null : (Player) shooter.getBukkitEntity();
-+
-+            PlayerEggThrowEvent event = new PlayerEggThrowEvent(player, (org.bukkit.entity.Egg) this.getBukkitEntity(), hatching, (byte) numHatching, hatchingType);
-+            this.world.getServer().getPluginManager().callEvent(event);
-+
-+            hatching = event.isHatching();
-+            numHatching = event.getNumHatches();
-+            hatchingType = event.getHatchingType();
-+        }
-+        
 +        if (hatching) {
 +            for (int k = 0; k < numHatching; k++) {
 +                org.bukkit.entity.Entity entity = world.getWorld().spawn(new org.bukkit.Location(world.getWorld(), this.locX, this.locY, this.locZ, this.yaw, 0.0F), hatchingType.getEntityClass(), org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG);

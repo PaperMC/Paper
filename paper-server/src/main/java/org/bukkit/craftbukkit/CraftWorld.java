@@ -399,22 +399,30 @@ public class CraftWorld implements World {
             gen = new WorldGenTaiga1();
             break;
         case JUNGLE:
-            gen = new WorldGenJungleTree(true, 10, 20, 3, 3); // Magic values as in BlockSapling
+            IBlockData iblockdata1 = Blocks.LOG.getBlockData().set(BlockLog1.VARIANT, BlockWood.EnumLogVariant.JUNGLE);
+            IBlockData iblockdata2 = Blocks.LEAVES.getBlockData().set(BlockLeaves1.VARIANT, BlockWood.EnumLogVariant.JUNGLE).set(BlockLeaves.CHECK_DECAY, Boolean.valueOf(false));
+            gen = new WorldGenJungleTree(true, 10, 20, iblockdata1, iblockdata2); // Magic values as in BlockSapling
             break;
         case SMALL_JUNGLE:
-            gen = new WorldGenTrees(true, 4 + rand.nextInt(7), 3, 3, false);
+            iblockdata1 = Blocks.LOG.getBlockData().set(BlockLog1.VARIANT, BlockWood.EnumLogVariant.JUNGLE);
+            iblockdata2 = Blocks.LEAVES.getBlockData().set(BlockLeaves1.VARIANT, BlockWood.EnumLogVariant.JUNGLE).set(BlockLeaves.CHECK_DECAY, Boolean.valueOf(false));
+            gen = new WorldGenTrees(true, 4 + rand.nextInt(7), iblockdata1, iblockdata2, false);
             break;
         case COCOA_TREE:
-            gen = new WorldGenTrees(true, 4 + rand.nextInt(7), 3, 3, true);
+            iblockdata1 = Blocks.LOG.getBlockData().set(BlockLog1.VARIANT, BlockWood.EnumLogVariant.JUNGLE);
+            iblockdata2 = Blocks.LEAVES.getBlockData().set(BlockLeaves1.VARIANT, BlockWood.EnumLogVariant.JUNGLE).set(BlockLeaves.CHECK_DECAY, Boolean.valueOf(false));
+            gen = new WorldGenTrees(true, 4 + rand.nextInt(7), iblockdata1, iblockdata2, true);
             break;
         case JUNGLE_BUSH:
-            gen = new WorldGenGroundBush(3, 0);
+            iblockdata1 = Blocks.LOG.getBlockData().set(BlockLog1.VARIANT, BlockWood.EnumLogVariant.JUNGLE);
+            iblockdata2 = Blocks.LEAVES.getBlockData().set(BlockLeaves1.VARIANT, BlockWood.EnumLogVariant.OAK).set(BlockLeaves.CHECK_DECAY, Boolean.valueOf(false));
+            gen = new WorldGenGroundBush(iblockdata1, iblockdata2);
             break;
         case RED_MUSHROOM:
-            gen = new WorldGenHugeMushroom(1);
+            gen = new WorldGenHugeMushroom(Blocks.RED_MUSHROOM_BLOCK);
             break;
         case BROWN_MUSHROOM:
-            gen = new WorldGenHugeMushroom(0);
+            gen = new WorldGenHugeMushroom(Blocks.BROWN_MUSHROOM_BLOCK);
             break;
         case SWAMP:
             gen = new WorldGenSwampTree();

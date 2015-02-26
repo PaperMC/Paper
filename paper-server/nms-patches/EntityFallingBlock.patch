@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/EntityFallingBlock.java	2014-11-28 17:43:43.089707435 +0000
-+++ src/main/java/net/minecraft/server/EntityFallingBlock.java	2014-11-28 17:38:20.000000000 +0000
+--- /home/matt/mc-dev-private//net/minecraft/server/EntityFallingBlock.java	2015-02-26 22:40:22.531608140 +0000
++++ src/main/java/net/minecraft/server/EntityFallingBlock.java	2015-02-26 22:40:22.531608140 +0000
 @@ -4,6 +4,8 @@
  import java.util.ArrayList;
  import java.util.Iterator;
@@ -8,7 +8,7 @@
 +
  public class EntityFallingBlock extends Entity {
  
-     public IBlockData block;
+     private IBlockData block;
 @@ -56,7 +58,7 @@
  
              if (this.ticksLived++ == 0) {
@@ -16,23 +16,23 @@
 -                if (this.world.getType(blockposition).getBlock() == block) {
 +                if (this.world.getType(blockposition).getBlock() == block && !CraftEventFactory.callEntityChangeBlockEvent(this, blockposition.getX(), blockposition.getY(), blockposition.getZ(), Blocks.AIR, 0).isCancelled()) {
                      this.world.setAir(blockposition);
-                 } else if (!this.world.isStatic) {
+                 } else if (!this.world.isClientSide) {
                      this.die();
-@@ -77,7 +79,12 @@
-                     this.motY *= -0.5D;
+@@ -78,7 +80,12 @@
                      if (this.world.getType(blockposition).getBlock() != Blocks.PISTON_EXTENSION) {
                          this.die();
--                        if (!this.e && this.world.a(block, blockposition, true, EnumDirection.UP, (Entity) null, (ItemStack) null) && !BlockFalling.canFall(this.world, blockposition.down()) && this.world.setTypeAndData(blockposition, this.block, 3)) {
-+                        if (!this.e && this.world.a(block, blockposition, true, EnumDirection.UP, (Entity) null, (ItemStack) null) && !BlockFalling.canFall(this.world, blockposition.down()) /* mimic the false conditions of setTypeIdAndData */ && blockposition.getX() >= -30000000 && blockposition.getZ() >= -30000000 && blockposition.getX() < 30000000 && blockposition.getZ() < 30000000 && blockposition.getY() >= 0 && blockposition.getY() < 256 && this.world.getType(blockposition) != this.block) {
-+                            if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this.block.getBlock(), this.block.getBlock().toLegacyData(this.block)).isCancelled()) {
-+                                return;
-+                            }
-+                            this.world.setTypeAndData(blockposition, this.block, 3);
-+                            // CraftBukkit end
-                             if (block instanceof BlockFalling) {
-                                 ((BlockFalling) block).a_(this.world, blockposition);
-                             }
-@@ -135,7 +142,9 @@
+                         if (!this.e) {
+-                            if (this.world.a(block, blockposition, true, EnumDirection.UP, (Entity) null, (ItemStack) null) && !BlockFalling.canFall(this.world, blockposition.down()) && this.world.setTypeAndData(blockposition, this.block, 3)) {
++                            if (this.world.a(block, blockposition, true, EnumDirection.UP, (Entity) null, (ItemStack) null) && !BlockFalling.canFall(this.world, blockposition.down()) /* mimic the false conditions of setTypeIdAndData */ && blockposition.getX() >= -30000000 && blockposition.getZ() >= -30000000 && blockposition.getX() < 30000000 && blockposition.getZ() < 30000000 && blockposition.getY() >= 0 && blockposition.getY() < 256 && this.world.getType(blockposition) != this.block) {
++                                if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this.block.getBlock(), this.block.getBlock().toLegacyData(this.block)).isCancelled()) {
++                                    return;
++                                }
++                                this.world.setTypeAndData(blockposition, this.block, 3);
++                                // CraftBukkit end
+                                 if (block instanceof BlockFalling) {
+                                     ((BlockFalling) block).a_(this.world, blockposition);
+                                 }
+@@ -137,7 +144,9 @@
                  while (iterator.hasNext()) {
                      Entity entity = (Entity) iterator.next();
  

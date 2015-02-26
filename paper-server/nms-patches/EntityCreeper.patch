@@ -1,5 +1,5 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/EntityCreeper.java	2014-11-28 17:43:43.073707436 +0000
-+++ src/main/java/net/minecraft/server/EntityCreeper.java	2014-11-28 17:38:20.000000000 +0000
+--- /home/matt/mc-dev-private//net/minecraft/server/EntityCreeper.java	2015-02-26 22:40:22.499608140 +0000
++++ src/main/java/net/minecraft/server/EntityCreeper.java	2015-02-26 22:40:22.499608140 +0000
 @@ -1,5 +1,10 @@
  package net.minecraft.server;
  
@@ -10,16 +10,16 @@
 +
  public class EntityCreeper extends EntityMonster {
  
-     private int b;
+     private int a;
 @@ -7,6 +12,7 @@
      private int maxFuseTicks = 30;
      private int explosionRadius = 3;
-     private int bm = 0;
+     private int bn = 0;
 +    private int record = -1; // CraftBukkit
  
      public EntityCreeper(World world) {
          super(world);
-@@ -111,19 +117,36 @@
+@@ -110,19 +116,36 @@
      }
  
      public void die(DamageSource damagesource) {
@@ -35,20 +35,19 @@
 +            // this.a(Item.getById(k), 1);
 +            this.record = k;
 +            // CraftBukkit end
-         } else if (damagesource.getEntity() instanceof EntityCreeper && damagesource.getEntity() != this && ((EntityCreeper) damagesource.getEntity()).isPowered() && ((EntityCreeper) damagesource.getEntity()).cn()) {
-             ((EntityCreeper) damagesource.getEntity()).co();
+         } else if (damagesource.getEntity() instanceof EntityCreeper && damagesource.getEntity() != this && ((EntityCreeper) damagesource.getEntity()).isPowered() && ((EntityCreeper) damagesource.getEntity()).cp()) {
+             ((EntityCreeper) damagesource.getEntity()).cq();
              this.a(new ItemStack(Items.SKULL, 1, 4), 0.0F);
          }
--
 +        
 +        super.die(damagesource); // CraftBukkit - Moved from above
 +    }
-+ 
++
 +    // CraftBukkit start - Whole method
 +    @Override
 +    protected void dropDeathLoot(boolean flag, int i) {
 +        super.dropDeathLoot(flag, i);
-+
+ 
 +        // Drop a music disc?
 +        if (this.record != -1) {
 +            this.a(Item.getById(this.record), 1);
@@ -59,7 +58,7 @@
  
      public boolean r(Entity entity) {
          return true;
-@@ -147,7 +170,21 @@
+@@ -146,7 +169,21 @@
  
      public void onLightningStrike(EntityLightning entitylightning) {
          super.onLightningStrike(entitylightning);
@@ -82,14 +81,12 @@
      }
  
      protected boolean a(EntityHuman entityhuman) {
-@@ -170,9 +207,16 @@
-         if (!this.world.isStatic) {
+@@ -170,8 +207,15 @@
              boolean flag = this.world.getGameRules().getBoolean("mobGriefing");
              float f = this.isPowered() ? 2.0F : 1.0F;
--
+ 
 -            this.world.explode(this, this.locX, this.locY, this.locZ, (float) this.explosionRadius * f, flag);
 -            this.die();
-+            
 +            ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), this.explosionRadius * f, false);
 +            this.world.getServer().getPluginManager().callEvent(event);
 +            if (!event.isCancelled()) {

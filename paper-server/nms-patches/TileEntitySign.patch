@@ -1,55 +1,61 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/TileEntitySign.java	2014-12-27 14:58:26.377254674 +0000
-+++ src/main/java/net/minecraft/server/TileEntitySign.java	2014-12-27 14:58:26.381254674 +0000
-@@ -20,6 +20,12 @@
+--- /home/matt/mc-dev-private//net/minecraft/server/TileEntitySign.java	2015-02-26 22:40:23.163608133 +0000
++++ src/main/java/net/minecraft/server/TileEntitySign.java	2015-02-26 22:40:23.167608133 +0000
+@@ -6,7 +6,7 @@
  
+     public final IChatBaseComponent[] lines = new IChatBaseComponent[] { new ChatComponentText(""), new ChatComponentText(""), new ChatComponentText(""), new ChatComponentText("")};
+     public int f = -1;
+-    private boolean isEditable = true;
++    public boolean isEditable = true; // CraftBukkit - public
+     private EntityHuman h;
+     private final CommandObjectiveExecutor i = new CommandObjectiveExecutor();
+ 
+@@ -21,6 +21,12 @@
              nbttagcompound.setString("Text" + (i + 1), s);
          }
-+        
+ 
 +        // CraftBukkit start
 +        if (Boolean.getBoolean("convertLegacySigns")) {
 +            nbttagcompound.setBoolean("Bukkit.isConverted", true);
 +        }
 +        // CraftBukkit end
- 
++
          this.i.b(nbttagcompound);
      }
-@@ -29,14 +35,27 @@
-         super.a(nbttagcompound);
-         TileEntitySignCommandListener tileentitysigncommandlistener = new TileEntitySignCommandListener(this);
+ 
+@@ -65,12 +71,24 @@
+             public void a(CommandObjectiveExecutor.EnumCommandResult commandobjectiveexecutor_enumcommandresult, int i) {}
+         };
  
 +        // CraftBukkit start - Add an option to convert signs correctly
 +        // This is done with a flag instead of all the time because
 +        // we have no way to tell whether a sign is from 1.7.10 or 1.8
-+        
++
 +        boolean oldSign = Boolean.getBoolean("convertLegacySigns") && !nbttagcompound.getBoolean("Bukkit.isConverted");
-+        
++
          for (int i = 0; i < 4; ++i) {
              String s = nbttagcompound.getString("Text" + (i + 1));
-+            
-+            if (oldSign) {
-+                lines[i] = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(s)[0];
-+                continue;
-+            }
-+            // CraftBukkit end
  
              try {
-                 IChatBaseComponent ichatbasecomponent = ChatSerializer.a(s);
+                 IChatBaseComponent ichatbasecomponent = IChatBaseComponent.ChatSerializer.a(s);
  
++                if (oldSign) {
++                    lines[i] = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(s)[0];
++                    continue;
++                }
++                // CraftBukkit end
++
                  try {
-                     this.lines[i] = ChatComponentUtils.filterForDisplay(tileentitysigncommandlistener, ichatbasecomponent, (Entity) null);
-+                    if (false) throw new CommandException(null, null); // CraftBukkit - fix decompile error
+                     this.lines[i] = ChatComponentUtils.filterForDisplay(icommandlistener, ichatbasecomponent, (Entity) null);
                  } catch (CommandException commandexception) {
-                     this.lines[i] = ichatbasecomponent;
-                 }
-@@ -77,7 +96,10 @@
+@@ -151,7 +169,10 @@
                  ChatClickable chatclickable = chatmodifier.h();
  
-                 if (chatclickable.a() == EnumClickAction.RUN_COMMAND) {
--                    MinecraftServer.getServer().getCommandHandler().a(tileentitysignplayerwrapper, chatclickable.b());
+                 if (chatclickable.a() == ChatClickable.EnumClickAction.RUN_COMMAND) {
+-                    MinecraftServer.getServer().getCommandHandler().a(icommandlistener, chatclickable.b());
 +                    // CraftBukkit start
 +                    // MinecraftServer.getServer().getCommandHandler().a(tileentitysignplayerwrapper, chatclickable.b());
 +                    CommandBlockListenerAbstract.executeCommand(entityhuman, (org.bukkit.entity.Player) entityhuman.getBukkitEntity(), chatclickable.b());
-+                    // CraftBukkit ebd
++                    // CraftBukkit end
                  }
              }
          }

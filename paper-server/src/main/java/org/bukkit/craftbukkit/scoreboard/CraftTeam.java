@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.scoreboard;
 
 import java.util.Set;
 
-import net.minecraft.server.EnumNameTagVisibility;
+import net.minecraft.server.ScoreboardTeamBase.EnumNameTagVisibility;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -96,15 +96,13 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     public NameTagVisibility getNameTagVisibility() throws IllegalArgumentException {
         CraftScoreboard scoreboard = checkState();
 
-        // PAIL: Rename
-        return notchToBukkit(team.i()); // i is sent in PacketPlayOutScoreboardTeam, cannot see a use of j
+        return notchToBukkit(team.getNameTagVisibility());
     }
 
     public void setNameTagVisibility(NameTagVisibility visibility) throws IllegalArgumentException {
         CraftScoreboard scoreboard = checkState();
 
-        // PAIL: Rename
-        team.a(bukkitToNotch(visibility)); // i is sent in PacketPlayOutScoreboardTeam, cannot see a use of j
+        team.setNameTagVisibility(bukkitToNotch(visibility)); 
     }
 
     public Set<OfflinePlayer> getPlayers() throws IllegalStateException {

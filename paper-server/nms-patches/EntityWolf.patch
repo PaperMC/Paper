@@ -1,7 +1,8 @@
---- ../work/decompile-8eb82bde/net/minecraft/server/EntityWolf.java	2014-12-10 18:34:37.316492559 +0000
-+++ src/main/java/net/minecraft/server/EntityWolf.java	2014-12-10 18:34:29.104492649 +0000
-@@ -1,5 +1,10 @@
- package net.minecraft.server;
+--- /home/matt/mc-dev-private//net/minecraft/server/EntityWolf.java	2015-02-26 22:40:22.735608138 +0000
++++ src/main/java/net/minecraft/server/EntityWolf.java	2015-02-26 22:40:22.735608138 +0000
+@@ -2,6 +2,11 @@
+ 
+ import com.google.common.base.Predicate;
  
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -10,12 +11,10 @@
 +
  public class EntityWolf extends EntityTameableAnimal {
  
-     private float bm;
-@@ -51,8 +56,19 @@
-         } else if (!this.isTamed()) {
-             this.setAngry(true);
-         }
-+    }
+     private float bo;
+@@ -64,6 +69,18 @@
+ 
+     }
  
 +    // CraftBukkit - add overriden version
 +    @Override
@@ -26,12 +25,13 @@
 +        } else if (!this.isTamed()) {
 +            this.setAngry(true);
 +        }
-     }
++    }
 +    // CraftBukkit end
- 
++
      protected void E() {
          this.datawatcher.watch(18, Float.valueOf(this.getHealth()));
-@@ -85,7 +101,8 @@
+     }
+@@ -95,7 +112,8 @@
      }
  
      protected String z() {
@@ -40,18 +40,18 @@
 +        return this.isAngry() ? "mob.wolf.growl" : (this.random.nextInt(3) == 0 ? (this.isTamed() && this.datawatcher.getFloat(18) < this.getMaxHealth() / 2 ? "mob.wolf.whine" : "mob.wolf.panting") : "mob.wolf.bark");
      }
  
-     protected String bn() {
-@@ -176,7 +193,8 @@
+     protected String bo() {
+@@ -186,7 +204,8 @@
          } else {
              Entity entity = damagesource.getEntity();
  
--            this.bk.setSitting(false);
+-            this.bm.setSitting(false);
 +            // CraftBukkit - moved into EntityLiving.d(DamageSource, float)
-+            // this.bk.setSitting(false);
++            // this.bm.setSitting(false);
              if (entity != null && !(entity instanceof EntityHuman) && !(entity instanceof EntityArrow)) {
                  f = (f + 1.0F) / 2.0F;
              }
-@@ -219,7 +237,7 @@
+@@ -229,7 +248,7 @@
                              --itemstack.count;
                          }
  
@@ -60,19 +60,19 @@
                          if (itemstack.count <= 0) {
                              entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, (ItemStack) null);
                          }
-@@ -244,7 +262,7 @@
-                 this.bk.setSitting(!this.isSitting());
-                 this.aW = false;
+@@ -254,7 +273,7 @@
+                 this.bm.setSitting(!this.isSitting());
+                 this.aY = false;
                  this.navigation.n();
 -                this.setGoalTarget((EntityLiving) null);
 +                this.setGoalTarget((EntityLiving) null, TargetReason.FORGOT_TARGET, true); // CraftBukkit - reason
              }
          } else if (itemstack != null && itemstack.getItem() == Items.BONE && !this.isAngry()) {
              if (!entityhuman.abilities.canInstantlyBuild) {
-@@ -256,12 +274,13 @@
+@@ -266,12 +285,13 @@
              }
  
-             if (!this.world.isStatic) {
+             if (!this.world.isClientSide) {
 -                if (this.random.nextInt(3) == 0) {
 +                // CraftBukkit - added event call and isCancelled check.
 +                if (this.random.nextInt(3) == 0 && !CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) {
@@ -80,13 +80,13 @@
                      this.navigation.n();
 -                    this.setGoalTarget((EntityLiving) null);
 +                    this.setGoalTarget((EntityLiving) null, TargetReason.FORGOT_TARGET, true);
-                     this.bk.setSitting(true);
+                     this.bm.setSitting(true);
 -                    this.setHealth(20.0F);
 +                    this.setHealth(this.getMaxHealth()); // CraftBukkit - 20.0 -> getMaxHealth()
                      this.setOwnerUUID(entityhuman.getUniqueID().toString());
                      this.l(true);
                      this.world.broadcastEntityEffect(this, (byte) 7);
-@@ -348,7 +367,7 @@
+@@ -358,7 +378,7 @@
      }
  
      protected boolean isTypeNotPersistent() {

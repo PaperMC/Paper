@@ -1,21 +1,21 @@
---- ../work/decompile-8eb82bde//net/minecraft/server/CommandBlockListenerAbstract.java	2015-01-25 15:16:21.156837700 +0000
-+++ src/main/java/net/minecraft/server/CommandBlockListenerAbstract.java	2015-01-25 15:16:21.156837700 +0000
+--- /home/matt/mc-dev-private//net/minecraft/server/CommandBlockListenerAbstract.java	2015-02-27 10:25:29.434446612 +0000
++++ src/main/java/net/minecraft/server/CommandBlockListenerAbstract.java	2015-02-27 10:25:29.434446612 +0000
 @@ -4,6 +4,13 @@
  import java.util.Date;
  import java.util.concurrent.Callable;
  
 +// CraftBukkit start
 +import java.util.ArrayList;
-+import org.apache.logging.log4j.Level;
 +import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 +import com.google.common.base.Joiner;
++import java.util.logging.Level;
 +// CraftBukkit end
 +
  public abstract class CommandBlockListenerAbstract implements ICommandListener {
  
      private static final SimpleDateFormat a = new SimpleDateFormat("HH:mm:ss");
 @@ -13,6 +20,7 @@
-     public String e = "";
+     private String e = "";
      private String f = "@";
      private final CommandObjectiveExecutor g = new CommandObjectiveExecutor();
 +    protected org.bukkit.command.CommandSender sender; // CraftBukkit - add sender
@@ -29,19 +29,16 @@
 -                this.b = icommandhandler.a(this, this.e);
 +                // this.b = icommandhandler.a(this, this.e);
 +                // CraftBukkit start - Handle command block commands using Bukkit dispatcher
-+                this.b= executeCommand(this, sender, this.e);
++                this.b = executeCommand(this, sender, this.e);
 +                // CraftBukkit end
              } catch (Throwable throwable) {
                  CrashReport crashreport = CrashReport.a(throwable, "Executing command block");
                  CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Command to be executed");
-@@ -91,8 +102,136 @@
-         } else {
-             this.b = 0;
-         }
-+    }
-+ 
+@@ -110,6 +121,130 @@
+ 
+     }
+ 
 +    // CraftBukkit start
-+    
 +    public static int executeCommand(ICommandListener sender, org.bukkit.command.CommandSender bSender, String command) {
 +        org.bukkit.command.SimpleCommandMap commandMap = sender.getWorld().getServer().getCommandMap();
 +        Joiner joiner = Joiner.on(" ");
@@ -90,40 +87,37 @@
 +            return 0;
 +        }
 +
-+        // testfor command requires special handling
-+        if (args[0].equalsIgnoreCase("testfor")) {
-+            if (args.length < 2) {
-+                return 0;
-+            }
-+
-+            EntityPlayer[] players = ((java.util.List<EntityPlayer>) PlayerSelector.getPlayers(sender, args[1], EntityPlayer.class)).toArray(new EntityPlayer[0]);
-+
-+            if (players != null && players.length > 0) {
-+                return players.length;
-+            } else {
-+                EntityPlayer player = MinecraftServer.getServer().getPlayerList().getPlayer(args[1]);
-+                if (player == null) {
-+                    return 0;
-+                } else {
-+                    return 1;
-+                }
-+            }
-+        }
-+
 +        commands.add(args);
 +
-+        // Find positions of command block syntax, if any
-+        ArrayList<String[]> newCommands = new ArrayList<String[]>();
-+        for (int i = 0; i < args.length; i++) {
-+            if (PlayerSelector.isPattern(args[i])) {
-+                for (int j = 0; j < commands.size(); j++) {
-+                    newCommands.addAll(buildCommands(sender, commands.get(j), i));
-+                }
-+                ArrayList<String[]> temp = commands;
-+                commands = newCommands;
-+                newCommands = temp;
-+                newCommands.clear();
++        // Find positions of command block syntax, if any        
++        WorldServer[] prev = MinecraftServer.getServer().worldServer;
++        MinecraftServer server = MinecraftServer.getServer();
++        server.worldServer = new WorldServer[server.worlds.size()];
++        server.worldServer[0] = (WorldServer) sender.getWorld();
++        int bpos = 0;
++        for (int pos = 1; pos < server.worldServer.length; pos++) {
++            WorldServer world = server.worlds.get(bpos++);
++            if (server.worldServer[0] == world) {
++                pos--;
++                continue;
 +            }
++            server.worldServer[pos] = world;
++        }
++        try {
++            ArrayList<String[]> newCommands = new ArrayList<String[]>();
++            for (int i = 0; i < args.length; i++) {
++                if (PlayerSelector.isPattern(args[i])) {
++                    for (int j = 0; j < commands.size(); j++) {
++                        newCommands.addAll(buildCommands(sender, commands.get(j), i));
++                    }
++                    ArrayList<String[]> temp = commands;
++                    commands = newCommands;
++                    newCommands = temp;
++                    newCommands.clear();
++                }
++            }
++        } finally {
++            MinecraftServer.getServer().worldServer = prev;
 +        }
 +
 +        int completed = 0;
@@ -135,25 +129,24 @@
 +                    completed++;
 +                }
 +            } catch (Throwable exception) {
-+                if (sender instanceof TileEntityCommandListener) {
-+                    TileEntityCommandListener listener = (TileEntityCommandListener) sender;
-+                    MinecraftServer.getLogger().log(Level.WARN, String.format("CommandBlock at (%d,%d,%d) failed to handle command", listener.getChunkCoordinates().getX(), listener.getChunkCoordinates().getY(), listener.getChunkCoordinates().getZ()), exception);
-+                } else if (sender instanceof EntityMinecartCommandBlockListener) {
-+                    EntityMinecartCommandBlockListener listener = (EntityMinecartCommandBlockListener) sender;
-+                    MinecraftServer.getLogger().log(Level.WARN, String.format("MinecartCommandBlock at (%d,%d,%d) failed to handle command", listener.getChunkCoordinates().getX(), listener.getChunkCoordinates().getY(), listener.getChunkCoordinates().getZ()), exception);
++                if (sender.f() instanceof EntityMinecartCommandBlock) {
++                    MinecraftServer.getServer().server.getLogger().log(Level.WARNING, String.format("MinecartCommandBlock at (%d,%d,%d) failed to handle command", sender.getChunkCoordinates().getX(), sender.getChunkCoordinates().getY(), sender.getChunkCoordinates().getZ()), exception);
++                } else if (sender instanceof CommandBlockListenerAbstract) {
++                    CommandBlockListenerAbstract listener = (CommandBlockListenerAbstract) sender;
++                    MinecraftServer.getServer().server.getLogger().log(Level.WARNING, String.format("CommandBlock at (%d,%d,%d) failed to handle command", listener.getChunkCoordinates().getX(), listener.getChunkCoordinates().getY(), listener.getChunkCoordinates().getZ()), exception);
 +                } else {
-+                    MinecraftServer.getLogger().log(Level.WARN, String.format("Unknown CommandBlock failed to handle command"), exception);
++                    MinecraftServer.getServer().server.getLogger().log(Level.WARNING, String.format("Unknown CommandBlock failed to handle command"), exception);
 +                }
 +            }
 +        }
 +
 +        return completed;
 +    }
-+    
++
 +    private static ArrayList<String[]> buildCommands(ICommandListener sender, String[] args, int pos) {
 +        ArrayList<String[]> commands = new ArrayList<String[]>();
 +        java.util.List<EntityPlayer> players = (java.util.List<EntityPlayer>)PlayerSelector.getPlayers(sender, args[pos], EntityPlayer.class);
-+        
++
 +        if (players != null) {
 +            for (EntityPlayer player : players) {
 +                if (player.world != sender.getWorld()) {
@@ -164,10 +157,11 @@
 +                commands.add(command);
 +            }
 +        }
- 
++
 +        return commands;
-     }
++    }
 +    // CraftBukkit end
- 
++
      public String getName() {
          return this.f;
+     }
