@@ -102,14 +102,22 @@ public final class NumberConversions {
         return 0;
     }
 
+    public static boolean isFinite(double d) {
+        return Math.abs(d) <= Double.MAX_VALUE;
+    }
+
+    public static boolean isFinite(float f) {
+        return Math.abs(f) <= Float.MAX_VALUE;
+    }
+
     public static void checkFinite(double d, String message) {
-        if (Double.isNaN(d) || Double.isInfinite(d)) {
+        if (!isFinite(d)) {
             throw new IllegalArgumentException(message);
         }
     }
 
     public static void checkFinite(float d, String message) {
-        if (Float.isNaN(d) || Float.isInfinite(d)) {
+        if (!isFinite(d)) {
             throw new IllegalArgumentException(message);
         }
     }
