@@ -10,11 +10,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/HandshakeListener.java
 +++ b/src/main/java/net/minecraft/server/HandshakeListener.java
 @@ -0,0 +0,0 @@ import java.util.HashMap;
- // CraftBukkit end
  
  public class HandshakeListener implements PacketHandshakingInListener {
--     
-+
+ 
 +    private static final com.google.gson.Gson gson = new com.google.gson.Gson(); // Spigot
      // CraftBukkit start - add fields
      private static final HashMap<InetAddress, Long> throttleTracker = new HashMap<InetAddress, Long>();
@@ -28,7 +26,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    String[] split = packethandshakinginsetprotocol.b.split("\00");
 +                    if ( split.length == 3 || split.length == 4 ) {
 +                        packethandshakinginsetprotocol.b = split[0];
-+                        b.j = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) b.getSocketAddress()).getPort());
++                        b.l = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) b.getSocketAddress()).getPort());
 +                        b.spoofedUUID = com.mojang.util.UUIDTypeAdapter.fromString( split[2] );
 +                    } else
 +                    {
@@ -80,28 +78,28 @@ diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/j
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
-@@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler {
-     private final EnumProtocolDirection g;
-     private final Queue h = Queues.newConcurrentLinkedQueue();
-     private Channel i;
--    private SocketAddress j;
+@@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
+     private final Queue<NetworkManager.QueuedPacket> i = Queues.newConcurrentLinkedQueue();
+     private final ReentrantReadWriteLock j = new ReentrantReadWriteLock();
+     public Channel k; // CraftBukkit - public, PAIL: rename
+-    private SocketAddress l;
 +    // Spigot Start
-+    public SocketAddress j;
++    public SocketAddress l;
 +    public java.util.UUID spoofedUUID;
 +    public com.mojang.authlib.properties.Property[] spoofedProfile;
 +    // Spigot End
-     private PacketListener k;
-     private IChatBaseComponent l;
-     private boolean m;
-@@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler {
-     static Channel a(NetworkManager networkmanager) {
-         return networkmanager.i;
+     private PacketListener m;
+     private IChatBaseComponent n;
+     private boolean o;
+@@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
+             this.b = agenericfuturelistener;
+         }
      }
 +
 +    // Spigot Start
 +    public SocketAddress getRawAddress()
 +    {
-+        return this.i.remoteAddress();
++        return this.k.remoteAddress();
 +    }
 +    // Spigot End
  }
@@ -109,9 +107,9 @@ diff --git a/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.j
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
 +++ b/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
-@@ -0,0 +0,0 @@ public class PacketHandshakingInSetProtocol implements Packet {
+@@ -0,0 +0,0 @@ public class PacketHandshakingInSetProtocol implements Packet<PacketHandshakingI
  
-     public void a(PacketDataSerializer packetdataserializer) {
+     public void a(PacketDataSerializer packetdataserializer) throws IOException {
          this.a = packetdataserializer.e();
 -        this.b = packetdataserializer.c(255);
 +        this.b = packetdataserializer.c(Short.MAX_VALUE); // Spigot

@@ -19,6 +19,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void a(PacketPlayInBlockPlace packetplayinblockplace) {
          PlayerConnectionUtils.ensureMainThread(packetplayinblockplace, this, this.player.u());
          WorldServer worldserver = this.minecraftServer.getWorldServer(this.player.dimension);
+-
 +        boolean throttled = false;
 +        if (lastPlace != -1 && packetplayinblockplace.timestamp - lastPlace < 30 && packets++ >= 4) {
 +            throttled = true;
@@ -28,14 +29,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            packets = 0;
 +        }
 +    // Spigot end
-         
++        
          // CraftBukkit start
          if (this.player.dead) return;
+ 
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, IUpdatePlayerList
  
              // CraftBukkit start
              int itemstackAmount = itemstack.count;
--            
+-
 +            // Spigot start - skip the event if throttled
 +            if (!throttled) {            
              // Raytrace to look for 'rogue armswings'
@@ -53,10 +55,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, IUpdatePlayerList
              }
  
-             if (this.checkMovement && this.player.e((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && !this.minecraftServer.a(worldserver, blockposition, this.player) && worldserver.af().a(blockposition)) {
+             if (this.checkMovement && this.player.e((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && !this.minecraftServer.a(worldserver, blockposition, this.player) && worldserver.getWorldBorder().a(blockposition)) {
 -                always = !this.player.playerInteractManager.interact(this.player, worldserver, itemstack, blockposition, enumdirection, packetplayinblockplace.d(), packetplayinblockplace.e(), packetplayinblockplace.f());
 +                always = throttled || !this.player.playerInteractManager.interact(this.player, worldserver, itemstack, blockposition, enumdirection, packetplayinblockplace.d(), packetplayinblockplace.e(), packetplayinblockplace.f());
              }
-             // CraftBukkit end
  
+             flag = true;
 --

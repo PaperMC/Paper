@@ -13,17 +13,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  if (this.world.getType(blockposition).getBlock() == block && !CraftEventFactory.callEntityChangeBlockEvent(this, blockposition.getX(), blockposition.getY(), blockposition.getZ(), Blocks.AIR, 0).isCancelled()) {
                      this.world.setAir(blockposition);
 +                    world.spigotConfig.antiXrayInstance.updateNearbyBlocks(world, blockposition); // Spigot
-                 } else if (!this.world.isStatic) {
+                 } else if (!this.world.isClientSide) {
                      this.die();
                      return;
 @@ -0,0 +0,0 @@ public class EntityFallingBlock extends Entity {
-                                 return;
-                             }
-                             this.world.setTypeAndData(blockposition, this.block, 3);
-+                            world.spigotConfig.antiXrayInstance.updateNearbyBlocks(world, blockposition); // Spigot
-                             // CraftBukkit end
-                             if (block instanceof BlockFalling) {
-                                 ((BlockFalling) block).a_(this.world, blockposition);
+                                     return;
+                                 }
+                                 this.world.setTypeAndData(blockposition, this.block, 3);
++                                world.spigotConfig.antiXrayInstance.updateNearbyBlocks(world, blockposition); // Spigot
+                                 // CraftBukkit end
+                                 if (block instanceof BlockFalling) {
+                                     ((BlockFalling) block).a_(this.world, blockposition);
 diff --git a/src/main/java/net/minecraft/server/Explosion.java b/src/main/java/net/minecraft/server/Explosion.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/Explosion.java
@@ -40,37 +40,37 @@ diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
-@@ -0,0 +0,0 @@ public class PacketPlayOutMapChunk implements Packet {
+@@ -0,0 +0,0 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
          this.b = chunk.locZ;
          this.d = flag;
          this.c = a(chunk, flag, !chunk.getWorld().worldProvider.o(), i);
 +        chunk.world.spigotConfig.antiXrayInstance.obfuscateSync(chunk.locX, chunk.locZ, c.b, c.a, chunk.world);
      }
  
-     public void a(PacketDataSerializer packetdataserializer) {
+     public void a(PacketDataSerializer packetdataserializer) throws IOException {
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
-@@ -0,0 +0,0 @@ public class PacketPlayOutMapChunkBulk implements Packet {
+@@ -0,0 +0,0 @@ public class PacketPlayOutMapChunkBulk implements Packet<PacketListenerPlayOut>
      private int[] b;
-     private ChunkMap[] c;
+     private PacketPlayOutMapChunk.ChunkMap[] c;
      private boolean d;
 +    private World world; // Spigot
  
      public PacketPlayOutMapChunkBulk() {}
  
-@@ -0,0 +0,0 @@ public class PacketPlayOutMapChunkBulk implements Packet {
+@@ -0,0 +0,0 @@ public class PacketPlayOutMapChunkBulk implements Packet<PacketListenerPlayOut>
              this.b[j] = chunk.locZ;
-             this.c[j] = chunkmap;
+             this.c[j] = packetplayoutmapchunk_chunkmap;
          }
 -
 +        
 +        world = ((Chunk) list.get(0)).getWorld(); // Spigot
      }
  
-     public void a(PacketDataSerializer packetdataserializer) {
-@@ -0,0 +0,0 @@ public class PacketPlayOutMapChunkBulk implements Packet {
+     public void a(PacketDataSerializer packetdataserializer) throws IOException {
+@@ -0,0 +0,0 @@ public class PacketPlayOutMapChunkBulk implements Packet<PacketListenerPlayOut>
          }
  
          for (i = 0; i < this.a.length; ++i) {

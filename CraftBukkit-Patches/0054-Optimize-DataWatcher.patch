@@ -13,14 +13,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      private final Entity a;
      private boolean b = true;
--    private static final Map c = Maps.newHashMap();
--    private final Map d = Maps.newHashMap();
+-    private static final Map<Class<?>, Integer> c = Maps.newHashMap();
+-    private final Map<Integer, DataWatcher.WatchableObject> d = Maps.newHashMap();
 +    // Spigot Start
 +    private static final gnu.trove.map.TObjectIntMap classToId = new gnu.trove.map.hash.TObjectIntHashMap( 10, 0.5f, -1 );
 +    private final gnu.trove.map.TIntObjectMap dataValues = new gnu.trove.map.hash.TIntObjectHashMap( 10, 0.5f, -1 );
 +    // These exist as an attempt at backwards compatability for (broken) NMS plugins
-+    private static final Map c = gnu.trove.TDecorators.wrap( classToId );
-+    private final Map d = gnu.trove.TDecorators.wrap( dataValues );
++    private static final Map<Class<?>, Integer> c = gnu.trove.TDecorators.wrap( classToId );
++    private final Map<Integer, DataWatcher.WatchableObject> d = gnu.trove.TDecorators.wrap( dataValues );
 +    // Spigot End
      private boolean e;
      private ReadWriteLock f = new ReentrantReadWriteLock();
@@ -28,43 +28,43 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class DataWatcher {
      }
  
-     public void a(int i, Object object) {
--        Integer integer = (Integer) DataWatcher.c.get(object.getClass());
-+        int integer = classToId.get(object.getClass()); // Spigot
+     public <T> void a(int i, T t0) {
+-        Integer integer = (Integer) DataWatcher.c.get(t0.getClass());
++        int integer = classToId.get(t0.getClass()); // Spigot
  
 -        if (integer == null) {
 +        if (integer == -1) { // Spigot
-             throw new IllegalArgumentException("Unknown data type: " + object.getClass());
+             throw new IllegalArgumentException("Unknown data type: " + t0.getClass());
          } else if (i > 31) {
              throw new IllegalArgumentException("Data value id is too big with " + i + "! (Max is " + 31 + ")");
 -        } else if (this.d.containsKey(Integer.valueOf(i))) {
 +        } else if (this.dataValues.containsKey(i)) { // Spigot
              throw new IllegalArgumentException("Duplicate id value for " + i + "!");
          } else {
--            WatchableObject watchableobject = new WatchableObject(integer.intValue(), i, object);
-+            WatchableObject watchableobject = new WatchableObject(integer, i, object); // Spigot
+-            DataWatcher.WatchableObject datawatcher_watchableobject = new DataWatcher.WatchableObject(integer.intValue(), i, t0);
++            DataWatcher.WatchableObject datawatcher_watchableobject = new DataWatcher.WatchableObject(integer, i, t0); // Spigot
  
              this.f.writeLock().lock();
--            this.d.put(Integer.valueOf(i), watchableobject);
-+            this.dataValues.put(i, watchableobject); // Spigot
+-            this.d.put(Integer.valueOf(i), datawatcher_watchableobject);
++            this.dataValues.put(i, datawatcher_watchableobject); // Spigot
              this.f.writeLock().unlock();
              this.b = false;
          }
 @@ -0,0 +0,0 @@ public class DataWatcher {
-         WatchableObject watchableobject = new WatchableObject(j, i, (Object) null);
+         DataWatcher.WatchableObject datawatcher_watchableobject = new DataWatcher.WatchableObject(j, i, (Object) null);
  
          this.f.writeLock().lock();
--        this.d.put(Integer.valueOf(i), watchableobject);
-+        this.dataValues.put(i, watchableobject); // Spigot
+-        this.d.put(Integer.valueOf(i), datawatcher_watchableobject);
++        this.dataValues.put(i, datawatcher_watchableobject); // Spigot
          this.f.writeLock().unlock();
          this.b = false;
      }
 @@ -0,0 +0,0 @@ public class DataWatcher {
-         WatchableObject watchableobject;
+         DataWatcher.WatchableObject datawatcher_watchableobject;
  
          try {
--            watchableobject = (WatchableObject) this.d.get(Integer.valueOf(i));
-+            watchableobject = (WatchableObject) this.dataValues.get(i); // Spigot
+-            datawatcher_watchableobject = (DataWatcher.WatchableObject) this.d.get(Integer.valueOf(i));
++            datawatcher_watchableobject = (DataWatcher.WatchableObject) this.dataValues.get(i); // Spigot
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.a(throwable, "Getting synched entity data");
              CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Synched entity data");
@@ -76,29 +76,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            Iterator iterator = this.dataValues.valueCollection().iterator(); // Spigot
  
              while (iterator.hasNext()) {
-                 WatchableObject watchableobject = (WatchableObject) iterator.next();
+                 DataWatcher.WatchableObject datawatcher_watchableobject = (DataWatcher.WatchableObject) iterator.next();
 @@ -0,0 +0,0 @@ public class DataWatcher {
  
-     public void a(PacketDataSerializer packetdataserializer) {
+     public void a(PacketDataSerializer packetdataserializer) throws IOException {
          this.f.readLock().lock();
 -        Iterator iterator = this.d.values().iterator();
 +        Iterator iterator = this.dataValues.valueCollection().iterator(); // Spigot
  
          while (iterator.hasNext()) {
-             WatchableObject watchableobject = (WatchableObject) iterator.next();
+             DataWatcher.WatchableObject datawatcher_watchableobject = (DataWatcher.WatchableObject) iterator.next();
 @@ -0,0 +0,0 @@ public class DataWatcher {
      }
  
-     public List c() {
+     public List<DataWatcher.WatchableObject> c() {
 -        ArrayList arraylist = null;
 +        ArrayList arraylist = Lists.newArrayList(); // Spigot
  
          this.f.readLock().lock();
  
--        WatchableObject watchableobject;
+-        DataWatcher.WatchableObject datawatcher_watchableobject;
 -
--        for (Iterator iterator = this.d.values().iterator(); iterator.hasNext(); arraylist.add(watchableobject)) {
--            watchableobject = (WatchableObject) iterator.next();
+-        for (Iterator iterator = this.d.values().iterator(); iterator.hasNext(); arraylist.add(datawatcher_watchableobject)) {
+-            datawatcher_watchableobject = (DataWatcher.WatchableObject) iterator.next();
 -            if (arraylist == null) {
 -                arraylist = Lists.newArrayList();
 -            }
@@ -130,5 +130,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        classToId.put(Vector3f.class, 7);
 +        // Spigot End
      }
- }
+ 
+     public static class WatchableObject {
 --
