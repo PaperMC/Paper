@@ -1,30 +1,29 @@
-From 253f5cf92dddb7284528dfbc34fbc9937311e90d Mon Sep 17 00:00:00 2001
+From 162e0a05ba706a962485f55cb36cd998a9446cd1 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 11 Jun 2013 12:17:37 +1000
 Subject: [PATCH] More Efficient GetCubes
 
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index f6b1dac..248f485 100644
+index a4fda33..974fe77 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1052,33 +1052,60 @@ public abstract class World implements IBlockAccess {
-         int i1 = MathHelper.floor(axisalignedbb.c);
-         int j1 = MathHelper.floor(axisalignedbb.f + 1.0D);
+@@ -1101,28 +1101,56 @@ public abstract class World implements IBlockAccess {
+         IBlockData iblockdata = Blocks.STONE.getBlockData();
+         BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
  
 -        for (int k1 = i; k1 < j; ++k1) {
 -            for (int l1 = i1; l1 < j1; ++l1) {
--                if (this.isLoaded(new BlockPosition(k1, 64, l1))) {
+-                if (this.isLoaded(blockposition_mutableblockposition.c(k1, 64, l1))) {
 -                    for (int i2 = k - 1; i2 < l; ++i2) {
--                        BlockPosition blockposition = new BlockPosition(k1, i2, l1);
--                        boolean flag = entity.aS();
--                        boolean flag1 = this.a(this.af(), entity);
--
+-                        blockposition_mutableblockposition.c(k1, i2, l1);
 -                        if (flag && flag1) {
 -                            entity.h(false);
 -                        } else if (!flag && !flag1) {
 -                            entity.h(true);
 -                        }
+-
+-                        IBlockData iblockdata1 = iblockdata;
 +        // Spigot start
 +        int ystart = ( ( k - 1 ) < 0 ) ? 0 : ( k - 1 );
 +        for ( int chunkx = ( i >> 4 ); chunkx <= ( ( j - 1 ) >> 4 ); chunkx++ )
@@ -51,8 +50,6 @@ index f6b1dac..248f485 100644
 +                        for ( int y = ystart; y < l; y++ )
 +                        {
 +                            BlockPosition blockposition = new BlockPosition( x, y, z );
-+                            boolean flag = entity.aS();
-+                            boolean flag1 = this.a(this.af(), entity);
 +
 +                            if (flag && flag1) {
 +                                entity.h(false);
@@ -60,15 +57,10 @@ index f6b1dac..248f485 100644
 +                                entity.h(true);
 +                            }
  
--                        IBlockData iblockdata;
-+                            IBlockData iblockdata;
- 
--                        if (!this.af().a(blockposition) && flag1) {
--                            iblockdata = Blocks.STONE.getBlockData();
--                        } else {
--                            iblockdata = this.getType(blockposition);
+-                        if (worldborder.a((BlockPosition) blockposition_mutableblockposition) || !flag1) {
+-                            iblockdata1 = this.getType(blockposition_mutableblockposition);
 +                            IBlockData block; 
-+                            if (!this.af().a(blockposition) && flag1) {
++                            if (!this.getWorldBorder().a(blockposition) && flag1) {
 +                                block = Blocks.STONE.getBlockData();
 +                            } else 
 +                            {
@@ -80,7 +72,7 @@ index f6b1dac..248f485 100644
 +                            }
                          }
 -
--                        iblockdata.getBlock().a(this, blockposition, iblockdata, axisalignedbb, arraylist, entity);
+-                        iblockdata1.getBlock().a(this, blockposition_mutableblockposition, iblockdata1, axisalignedbb, arraylist, entity);
                      }
                  }
              }

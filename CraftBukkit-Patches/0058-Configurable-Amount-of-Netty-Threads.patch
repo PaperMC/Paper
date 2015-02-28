@@ -1,4 +1,4 @@
-From 8a7194cd0bc661597b091020b8876bd5312d1a34 Mon Sep 17 00:00:00 2001
+From a52ed5af41b4f75024cbeba009eaa85aabc1e37b Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Fri, 13 Dec 2013 11:58:58 +1100
 Subject: [PATCH] Configurable Amount of Netty Threads
@@ -6,36 +6,36 @@ Subject: [PATCH] Configurable Amount of Netty Threads
 This brings back the option that the Spigot version of netty saw. By default Netty will try and use cores*2 threads, however if running multiple servers on the same machine, this can be too many threads. Additionally some people have 16 core servers. If 32 Netty threads are allowed in this setup, then the lock contention, and thus blocking between threads becomes much greater, leading to decreased performance.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 84f27a3..6ff18f0 100644
+index bcdd918..4c18e24 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -61,7 +61,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
-     private final List o = Lists.newArrayList();
-     private final ICommandHandler p;
+@@ -63,7 +63,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+     private final List<IUpdatePlayerListBox> p = Lists.newArrayList();
+     protected final ICommandHandler b;
      public final MethodProfiler methodProfiler = new MethodProfiler();
 -    private final ServerConnection q;
 +    private ServerConnection q; // Spigot
      private final ServerPing r = new ServerPing();
      private final Random s = new Random();
      private String serverIp;
-@@ -123,7 +123,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
-         this.d = proxy;
-         MinecraftServer.k = this;
+@@ -125,7 +125,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+         this.e = proxy;
+         MinecraftServer.l = this;
          // this.universe = file; // CraftBukkit
 -        this.q = new ServerConnection(this);
 +        // this.q = new ServerConnection(this); // Spigot
          this.Z = new UserCache(this, file1);
-         this.p = this.h();
+         this.b = this.h();
          // this.convertable = new WorldLoaderServer(file); // CraftBukkit - moved to DedicatedServer.init
-@@ -1344,7 +1344,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+@@ -1323,7 +1323,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
      }
      // Spigot End
-     public ServerConnection ao() {
+     public ServerConnection ap() {
 -        return this.q;
 +        return this.q == null ? this.q = new ServerConnection(this) : this.q; // Spigot
      }
  
-     public boolean aq() {
+     public boolean ar() {
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
 index 47ab82f..865a17f 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java

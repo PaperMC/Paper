@@ -1,4 +1,4 @@
-From c013f6381cd2c734afb9b84301b85cbeedad8315 Mon Sep 17 00:00:00 2001
+From 47268e1d09430b441ffbd123d6cab9b2da8c9bda Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 11 Jun 2013 12:56:02 +1000
 Subject: [PATCH] Better Chunk Tick Selection
@@ -6,19 +6,19 @@ Subject: [PATCH] Better Chunk Tick Selection
 An optimized chunk ticking algorithm which better selects chunks around players which are active on the server.
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 3c1ba5b..6d8a5e8 100644
+index 345ede9..bed457a 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -64,7 +64,7 @@ public abstract class World implements IBlockAccess {
-     public Scoreboard scoreboard = new Scoreboard();
-     public final boolean isStatic;
+@@ -65,7 +65,7 @@ public abstract class World implements IBlockAccess {
+     public Scoreboard scoreboard = new Scoreboard(); // CraftBukkit - public
+     public final boolean isClientSide;
      // CraftBukkit - longhashset
 -    protected LongHashSet chunkTickList = new LongHashSet();
 +    // protected LongHashSet chunkTickList = new LongHashSet(); // Spigot
-     private int K;
-     public boolean allowMonsters;
-     public boolean allowAnimals;
-@@ -98,6 +98,31 @@ public abstract class World implements IBlockAccess {
+     private int L;
+     public boolean allowMonsters; // CraftBukkit - public
+     public boolean allowAnimals; // CraftBukkit - public
+@@ -99,6 +99,31 @@ public abstract class World implements IBlockAccess {
      public long ticksPerMonsterSpawns;
      public boolean populating;
      private int tickPosition;
@@ -50,7 +50,7 @@ index 3c1ba5b..6d8a5e8 100644
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
  
      public CraftWorld getWorld() {
-@@ -119,6 +144,11 @@ public abstract class World implements IBlockAccess {
+@@ -120,6 +145,12 @@ public abstract class World implements IBlockAccess {
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
          this.ticksPerMonsterSpawns = this.getServer().getTicksPerMonsterSpawns(); // CraftBukkit
          // CraftBukkit end
@@ -59,10 +59,11 @@ index 3c1ba5b..6d8a5e8 100644
 +        this.chunkTickList = new gnu.trove.map.hash.TLongShortHashMap( spigotConfig.chunksPerTick * 5, 0.7f, Long.MIN_VALUE, Short.MIN_VALUE );
 +        this.chunkTickList.setAutoCompactionFactor( 0 );
 +        // Spigot end
- 
-         this.K = this.random.nextInt(12000);
++
+         this.L = this.random.nextInt(12000);
          this.allowMonsters = true;
-@@ -1892,17 +1922,44 @@ public abstract class World implements IBlockAccess {
+         this.allowAnimals = true;
+@@ -1945,17 +1976,44 @@ public abstract class World implements IBlockAccess {
          int k;
          int l;
  
@@ -111,7 +112,7 @@ index 3c1ba5b..6d8a5e8 100644
  
          this.methodProfiler.b();
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 80c464a..b81b1ff 100644
+index 32bf7ff..383a491 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -343,12 +343,15 @@ public class WorldServer extends World implements IAsyncTaskHandler {
@@ -157,8 +158,8 @@ index 80c464a..b81b1ff 100644
 +                // ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) iterator.next();
                  int k = chunkX * 16;
                  int l = chunkZ * 16;
-                 
-@@ -457,6 +472,12 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+ 
+@@ -456,6 +471,12 @@ public class WorldServer extends World implements IAsyncTaskHandler {
              }
  
          }

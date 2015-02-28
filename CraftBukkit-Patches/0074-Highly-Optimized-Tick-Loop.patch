@@ -1,14 +1,14 @@
-From 1b44d6ca241d06f64df228d26fac47641fe433ce Mon Sep 17 00:00:00 2001
+From fdcb23ae30c7e144baba75b1ea021186943d4bf6 Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Sat, 25 Jan 2014 14:08:35 +1100
 Subject: [PATCH] Highly Optimized Tick Loop
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index bc0c405..34fb946 100644
+index fbd9b4e..c831ce3 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -118,6 +118,12 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+@@ -120,6 +120,12 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
      // CraftBukkit end
@@ -20,8 +20,8 @@ index bc0c405..34fb946 100644
 +    // Spigot end
  
      public MinecraftServer(OptionSet options, Proxy proxy, File file1) {
-         this.d = proxy;
-@@ -480,6 +486,13 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+         this.e = proxy;
+@@ -501,6 +507,13 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
          this.isRunning = false;
      }
  
@@ -35,15 +35,15 @@ index bc0c405..34fb946 100644
      public void run() {
          try {
              if (this.init()) {
-@@ -490,38 +503,34 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
-                 this.r.setServerInfo(new ServerPingServerData("1.8", 47));
+@@ -511,38 +524,34 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+                 this.r.setServerInfo(new ServerPing.ServerData("1.8.3", 47));
                  this.a(this.r);
  
 +                // Spigot start
 +                Arrays.fill( recentTps, 20 );
 +                long lastTick = System.nanoTime(), catchupTime = 0, curTime, wait, tickSection = lastTick;
                  while (this.isRunning) {
--                    long j = ax();
+-                    long j = ay();
 -                    long k = j - this.ab;
 -
 -                    if (k > 2000L && this.ab - this.R >= 15000L) {
@@ -68,14 +68,14 @@ index bc0c405..34fb946 100644
  
 -                    i += k;
 -                    this.ab = j;
--                    if (this.worlds.get(0).everyoneDeeplySleeping()) { // CraftBukkit
--                        this.y();
+-                    if (this.worlds.get(0).everyoneDeeplySleeping()) {
+-                        this.z();
 -                        i = 0L;
 -                    } else {
 -                        while (i > 50L) {
 -                            MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
 -                            i -= 50L;
--                            this.y();
+-                            this.z();
 -                        }
 +                    if ( MinecraftServer.currentTick++ % SAMPLE_INTERVAL == 0 )
 +                    {
@@ -88,7 +88,7 @@ index bc0c405..34fb946 100644
 +                    lastTick = curTime;
  
 -                    Thread.sleep(Math.max(1L, 50L - i));
-+                    this.y();
++                    this.z();
                      this.Q = true;
                  }
 +                // Spigot end

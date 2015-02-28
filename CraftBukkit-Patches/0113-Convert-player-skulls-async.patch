@@ -1,14 +1,14 @@
-From edd4640a6e72b23c34c915bad412e2b5f0ff165d Mon Sep 17 00:00:00 2001
+From 1e48bf3d21be15e7bbad5aa649279266c667b870 Mon Sep 17 00:00:00 2001
 From: Thinkofdeath <thethinkofdeath@gmail.com>
 Date: Sun, 20 Apr 2014 13:18:55 +0100
 Subject: [PATCH] Convert player skulls async
 
 
 diff --git a/src/main/java/net/minecraft/server/ItemSkull.java b/src/main/java/net/minecraft/server/ItemSkull.java
-index 17e88b8..75763ab 100644
+index a46cfef..e710073 100644
 --- a/src/main/java/net/minecraft/server/ItemSkull.java
 +++ b/src/main/java/net/minecraft/server/ItemSkull.java
-@@ -109,17 +109,24 @@ public class ItemSkull extends Item {
+@@ -109,13 +109,21 @@ public class ItemSkull extends Item {
          return super.a(itemstack);
      }
  
@@ -33,15 +33,11 @@ index 17e88b8..75763ab 100644
              return true;
          } else {
              return false;
-         }
-     }
--
- }
 diff --git a/src/main/java/net/minecraft/server/TileEntitySkull.java b/src/main/java/net/minecraft/server/TileEntitySkull.java
-index 889ae50..6cc8738 100644
+index 20efee7..056e4e7 100644
 --- a/src/main/java/net/minecraft/server/TileEntitySkull.java
 +++ b/src/main/java/net/minecraft/server/TileEntitySkull.java
-@@ -5,11 +5,66 @@ import com.mojang.authlib.GameProfile;
+@@ -5,11 +5,78 @@ import com.mojang.authlib.GameProfile;
  import com.mojang.authlib.properties.Property;
  import java.util.UUID;
  
@@ -56,12 +52,13 @@ index 889ae50..6cc8738 100644
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
 +import com.mojang.authlib.Agent;
++import com.mojang.authlib.ProfileLookupCallback;
 +// Spigot end
 +
  public class TileEntitySkull extends TileEntity {
  
      private int a;
-     public int rotation;
+     private int rotation;
      private GameProfile g = null;
 +    // Spigot start
 +    public static final Executor executor = Executors.newFixedThreadPool(3,
@@ -77,8 +74,19 @@ index 889ae50..6cc8738 100644
 +                @Override
 +                public GameProfile load(String key) throws Exception
 +                {
-+                    GameProfile[] profiles = new GameProfile[1];
-+                    GameProfileLookup gameProfileLookup = new GameProfileLookup(profiles);
++                    final GameProfile[] profiles = new GameProfile[1];
++                    ProfileLookupCallback gameProfileLookup = new ProfileLookupCallback() {
++
++                        @Override
++                        public void onProfileLookupSucceeded(GameProfile gp) {
++                            profiles[0] = gp;
++                        }
++
++                        @Override
++                        public void onProfileLookupFailed(GameProfile gp, Exception excptn) {
++                            profiles[0] = gp;
++                        }
++                    };
 +
 +                    MinecraftServer.getServer().getGameProfileRepository().findProfilesByNames(new String[] { key }, Agent.MINECRAFT, gameProfileLookup);
 +
@@ -95,7 +103,7 @@ index 889ae50..6cc8738 100644
 +
 +                        if ( property == null )
 +                        {
-+                            profile = MinecraftServer.getServer().aB().fillProfileProperties( profile, true );
++                            profile = MinecraftServer.getServer().aC().fillProfileProperties( profile, true );
 +                        }
 +                    }
 +
@@ -108,7 +116,7 @@ index 889ae50..6cc8738 100644
  
      public TileEntitySkull() {}
  
-@@ -68,35 +123,60 @@ public class TileEntitySkull extends TileEntity {
+@@ -68,35 +135,66 @@ public class TileEntitySkull extends TileEntity {
      }
  
      private void e() {
@@ -153,10 +161,14 @@ index 889ae50..6cc8738 100644
 +                    callback.apply(profile);
                  } else {
 -                    Property property = (Property) Iterables.getFirst(gameprofile1.getProperties().get("textures"), (Object) null);
--
++                    Property property = (Property) Iterables.getFirst(profile.getProperties().get("textures"), (Object) null);
+ 
 -                    if (property == null) {
--                        gameprofile1 = MinecraftServer.getServer().aB().fillProfileProperties(gameprofile1, true);
--                    }
+-                        gameprofile1 = MinecraftServer.getServer().aC().fillProfileProperties(gameprofile1, true);
++                    if (property != null) {
++                        callback.apply(profile);
++                        return;
+                     }
 -
 -                    return gameprofile1;
 +                    executor.execute(new Runnable() {

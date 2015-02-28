@@ -1,4 +1,4 @@
-From f6c53d37393f337957319ad8b8d46e634e7fecab Mon Sep 17 00:00:00 2001
+From 3610083330f3022f069598e344801350f76fa74e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 20 Feb 2013 11:58:47 -0500
 Subject: [PATCH] Entity Tracking Ranges
@@ -12,17 +12,56 @@ This has multiple benefits:
 4) Less client lag - Not trying to render distant item frames and paintings and entities will reduce entity count on the client, which is major for shop/town worlds which may use tons of item frames.
 
 diff --git a/src/main/java/net/minecraft/server/EntityTracker.java b/src/main/java/net/minecraft/server/EntityTracker.java
-index 350f2f7..e3b2864 100644
+index de38e80..1f7dd1a 100644
 --- a/src/main/java/net/minecraft/server/EntityTracker.java
 +++ b/src/main/java/net/minecraft/server/EntityTracker.java
 @@ -95,6 +95,7 @@ public class EntityTracker {
  
-     public void addEntity(Entity entity, int i, int j, boolean flag) {
+     public void addEntity(Entity entity, int i, final int j, boolean flag) {
          org.spigotmc.AsyncCatcher.catchOp( "entity track"); // Spigot
 +        i = org.spigotmc.TrackingRange.getEntityTrackingRange(entity, i); // Spigot
          if (i > this.e) {
              i = this.e;
          }
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index d3f4af1..0143623 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -106,7 +106,7 @@ public class ActivationRange
+         maxRange = Math.max( maxRange, miscActivationRange );
+         maxRange = Math.min( ( world.spigotConfig.viewDistance << 4 ) - 8, maxRange );
+ 
+-        for ( Entity player : (List<Entity>) world.players )
++        for ( Entity player : (List<Entity>) (List) world.players )
+         {
+ 
+             player.activatedTick = MinecraftServer.currentTick;
+@@ -188,7 +188,7 @@ public class ActivationRange
+     public static boolean checkEntityImmunities(Entity entity)
+     {
+         // quick checks.
+-        if ( entity.inWater /* isInWater */ || entity.fireTicks > 0 )
++        if ( entity.inWater || entity.fireTicks > 0 )
+         {
+             return true;
+         }
+@@ -215,14 +215,14 @@ public class ActivationRange
+             {
+                 return true;
+             }
+-            if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).ck() /* Getter for first boolean */ )
++            if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).cm() /* Getter for first boolean */ )
+             {
+                 return true;
+             }
+             if ( entity instanceof EntityAnimal )
+             {
+                 EntityAnimal animal = (EntityAnimal) entity;
+-                if ( animal.isBaby() || animal.cp() /*love*/ )
++                if ( animal.isBaby() || animal.isInLove() )
+                 {
+                     return true;
+                 }
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 index ed2836a..6421bf2 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java

@@ -1,4 +1,4 @@
-From fc96fff109b53cafa5017dee69d65e8ed08ad022 Mon Sep 17 00:00:00 2001
+From 4bae06e72ab3132d8ae68b93f9616c7c7d12cc11 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 31 Jan 2014 11:18:34 -0500
 Subject: [PATCH] Cap Entity Collisions
@@ -7,39 +7,38 @@ Limit a single entity to colliding a max of configurable times per tick.
 This will alleviate issues where living entities are hoarded in 1x1 pens.
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index a1d51a8..25192f3 100644
+index b930c0d..82accf4 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -1059,6 +1059,7 @@ public abstract class Entity implements ICommandListener {
+@@ -1052,6 +1052,7 @@ public abstract class Entity implements ICommandListener {
  
      public void d(EntityHuman entityhuman) {}
  
 +    int numCollisions = 0; // Spigot
      public void collide(Entity entity) {
          if (entity.passenger != this && entity.vehicle != this) {
-             if (!entity.T && !this.T) {
+             if (!entity.noclip && !this.noclip) {
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 5edefa0..7c8f361 100644
+index ca0430d..c67f0ee 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
-@@ -1658,7 +1658,9 @@ public abstract class EntityLiving extends Entity {
-         List list = this.world.getEntities(this, this.getBoundingBox().grow(0.20000000298023224D, 0.0D, 0.20000000298023224D));
+@@ -1671,7 +1671,9 @@ public abstract class EntityLiving extends Entity {
+         }));
  
-         if (this.ad() && list != null && !list.isEmpty()) { // Spigot: Add this.ad() condition
+         if (this.ad() && !list.isEmpty()) { // Spigot: Add this.ad() condition
 +            numCollisions -= world.spigotConfig.maxCollisionsPerEntity; // Spigot
              for (int i = 0; i < list.size(); ++i) {
 +                if (numCollisions > world.spigotConfig.maxCollisionsPerEntity) { break; } // Spigot
                  Entity entity = (Entity) list.get(i);
-                 
+ 
                  // TODO better check now?
-@@ -1669,9 +1671,12 @@ public abstract class EntityLiving extends Entity {
+@@ -1681,8 +1683,11 @@ public abstract class EntityLiving extends Entity {
+                 }
                  // CraftBukkit end
  
-                 if (entity.ae()) {
-+                    entity.numCollisions++; // Spigot
-+                    numCollisions++; // Spigot
-                     this.s(entity);
-                 }
++                entity.numCollisions++; // Spigot
++                numCollisions++; // Spigot
+                 this.s(entity);
              }
 +            numCollisions = 0; // Spigot
          }

@@ -1,11 +1,11 @@
-From c58f0fe1ac9b081c3f140ea23bbde86dc31fe435 Mon Sep 17 00:00:00 2001
+From 178ba754758e09c17d82ac88d52f0f86591f7142 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Thu, 16 May 2013 18:51:05 +1000
 Subject: [PATCH] Orebfuscator
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
-index 22dc42d..fd78677 100644
+index 9e0d5ad..ce91553 100644
 --- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
 +++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
 @@ -60,6 +60,7 @@ public class EntityFallingBlock extends Entity {
@@ -13,22 +13,22 @@ index 22dc42d..fd78677 100644
                  if (this.world.getType(blockposition).getBlock() == block && !CraftEventFactory.callEntityChangeBlockEvent(this, blockposition.getX(), blockposition.getY(), blockposition.getZ(), Blocks.AIR, 0).isCancelled()) {
                      this.world.setAir(blockposition);
 +                    world.spigotConfig.antiXrayInstance.updateNearbyBlocks(world, blockposition); // Spigot
-                 } else if (!this.world.isStatic) {
+                 } else if (!this.world.isClientSide) {
                      this.die();
                      return;
-@@ -84,6 +85,7 @@ public class EntityFallingBlock extends Entity {
-                                 return;
-                             }
-                             this.world.setTypeAndData(blockposition, this.block, 3);
-+                            world.spigotConfig.antiXrayInstance.updateNearbyBlocks(world, blockposition); // Spigot
-                             // CraftBukkit end
-                             if (block instanceof BlockFalling) {
-                                 ((BlockFalling) block).a_(this.world, blockposition);
+@@ -85,6 +86,7 @@ public class EntityFallingBlock extends Entity {
+                                     return;
+                                 }
+                                 this.world.setTypeAndData(blockposition, this.block, 3);
++                                world.spigotConfig.antiXrayInstance.updateNearbyBlocks(world, blockposition); // Spigot
+                                 // CraftBukkit end
+                                 if (block instanceof BlockFalling) {
+                                     ((BlockFalling) block).a_(this.world, blockposition);
 diff --git a/src/main/java/net/minecraft/server/Explosion.java b/src/main/java/net/minecraft/server/Explosion.java
-index 85bd257..19759e8 100644
+index 71c78bd..4564877 100644
 --- a/src/main/java/net/minecraft/server/Explosion.java
 +++ b/src/main/java/net/minecraft/server/Explosion.java
-@@ -198,6 +198,7 @@ public class Explosion {
+@@ -194,6 +194,7 @@ public class Explosion {
                  blockposition = (BlockPosition) iterator.next();
                  Block block = this.world.getType(blockposition).getBlock();
  
@@ -37,40 +37,40 @@ index 85bd257..19759e8 100644
                      double d0 = (double) ((float) blockposition.getX() + this.world.random.nextFloat());
                      double d1 = (double) ((float) blockposition.getY() + this.world.random.nextFloat());
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
-index e24d3ae..e106a1f 100644
+index 6e368f5..58c0275 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
-@@ -18,6 +18,7 @@ public class PacketPlayOutMapChunk implements Packet {
+@@ -19,6 +19,7 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
          this.b = chunk.locZ;
          this.d = flag;
          this.c = a(chunk, flag, !chunk.getWorld().worldProvider.o(), i);
 +        chunk.world.spigotConfig.antiXrayInstance.obfuscateSync(chunk.locX, chunk.locZ, c.b, c.a, chunk.world);
      }
  
-     public void a(PacketDataSerializer packetdataserializer) {
+     public void a(PacketDataSerializer packetdataserializer) throws IOException {
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
-index 8af5e1f..9df0d53 100644
+index 63b90f7..10c0e34 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
-@@ -8,6 +8,7 @@ public class PacketPlayOutMapChunkBulk implements Packet {
+@@ -9,6 +9,7 @@ public class PacketPlayOutMapChunkBulk implements Packet<PacketListenerPlayOut>
      private int[] b;
-     private ChunkMap[] c;
+     private PacketPlayOutMapChunk.ChunkMap[] c;
      private boolean d;
 +    private World world; // Spigot
  
      public PacketPlayOutMapChunkBulk() {}
  
-@@ -27,7 +28,8 @@ public class PacketPlayOutMapChunkBulk implements Packet {
+@@ -28,7 +29,8 @@ public class PacketPlayOutMapChunkBulk implements Packet<PacketListenerPlayOut>
              this.b[j] = chunk.locZ;
-             this.c[j] = chunkmap;
+             this.c[j] = packetplayoutmapchunk_chunkmap;
          }
 -
 +        
 +        world = ((Chunk) list.get(0)).getWorld(); // Spigot
      }
  
-     public void a(PacketDataSerializer packetdataserializer) {
-@@ -67,6 +69,7 @@ public class PacketPlayOutMapChunkBulk implements Packet {
+     public void a(PacketDataSerializer packetdataserializer) throws IOException {
+@@ -68,6 +70,7 @@ public class PacketPlayOutMapChunkBulk implements Packet<PacketListenerPlayOut>
          }
  
          for (i = 0; i < this.a.length; ++i) {
@@ -79,7 +79,7 @@ index 8af5e1f..9df0d53 100644
          }
  
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-index b2431d9..7b469e1 100644
+index 0301fba..7a84a95 100644
 --- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
 +++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
 @@ -197,6 +197,7 @@ public class PlayerInteractManager {
@@ -91,10 +91,10 @@ index b2431d9..7b469e1 100644
  
      public void a(BlockPosition blockposition) {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index dad3d19..f6b1dac 100644
+index 8fc5c71..a4fda33 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -460,6 +460,7 @@ public abstract class World implements IBlockAccess {
+@@ -494,6 +494,7 @@ public abstract class World implements IBlockAccess {
          this.d(blockposition.up(), block);
          this.d(blockposition.north(), block);
          this.d(blockposition.south(), block);
@@ -102,7 +102,7 @@ index dad3d19..f6b1dac 100644
      }
  
      public void a(BlockPosition blockposition, Block block, EnumDirection enumdirection) {
-@@ -673,9 +674,16 @@ public abstract class World implements IBlockAccess {
+@@ -719,9 +720,16 @@ public abstract class World implements IBlockAccess {
          return this.worldProvider.p()[this.getLightLevel(blockposition)];
      }
  

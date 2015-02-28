@@ -1,4 +1,4 @@
-From c1863e84d7af9c8e328c2928f3db960ce2d7215a Mon Sep 17 00:00:00 2001
+From 13c622659e5b7767c3240d9ab5f260252a5226b6 Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Fri, 13 Dec 2013 11:45:47 +1100
 Subject: [PATCH] Optimize DataWatcher
@@ -6,69 +6,69 @@ Subject: [PATCH] Optimize DataWatcher
 Use primitive orientated collections, as well as more effective copies across collections.
 
 diff --git a/src/main/java/net/minecraft/server/DataWatcher.java b/src/main/java/net/minecraft/server/DataWatcher.java
-index e21e68d..966d737 100644
+index 2bf9196..aa46c28 100644
 --- a/src/main/java/net/minecraft/server/DataWatcher.java
 +++ b/src/main/java/net/minecraft/server/DataWatcher.java
-@@ -14,8 +14,13 @@ public class DataWatcher {
+@@ -15,8 +15,13 @@ public class DataWatcher {
  
      private final Entity a;
      private boolean b = true;
--    private static final Map c = Maps.newHashMap();
--    private final Map d = Maps.newHashMap();
+-    private static final Map<Class<?>, Integer> c = Maps.newHashMap();
+-    private final Map<Integer, DataWatcher.WatchableObject> d = Maps.newHashMap();
 +    // Spigot Start
 +    private static final gnu.trove.map.TObjectIntMap classToId = new gnu.trove.map.hash.TObjectIntHashMap( 10, 0.5f, -1 );
 +    private final gnu.trove.map.TIntObjectMap dataValues = new gnu.trove.map.hash.TIntObjectHashMap( 10, 0.5f, -1 );
 +    // These exist as an attempt at backwards compatability for (broken) NMS plugins
-+    private static final Map c = gnu.trove.TDecorators.wrap( classToId );
-+    private final Map d = gnu.trove.TDecorators.wrap( dataValues );
++    private static final Map<Class<?>, Integer> c = gnu.trove.TDecorators.wrap( classToId );
++    private final Map<Integer, DataWatcher.WatchableObject> d = gnu.trove.TDecorators.wrap( dataValues );
 +    // Spigot End
      private boolean e;
      private ReadWriteLock f = new ReentrantReadWriteLock();
  
-@@ -24,19 +29,19 @@ public class DataWatcher {
+@@ -25,19 +30,19 @@ public class DataWatcher {
      }
  
-     public void a(int i, Object object) {
--        Integer integer = (Integer) DataWatcher.c.get(object.getClass());
-+        int integer = classToId.get(object.getClass()); // Spigot
+     public <T> void a(int i, T t0) {
+-        Integer integer = (Integer) DataWatcher.c.get(t0.getClass());
++        int integer = classToId.get(t0.getClass()); // Spigot
  
 -        if (integer == null) {
 +        if (integer == -1) { // Spigot
-             throw new IllegalArgumentException("Unknown data type: " + object.getClass());
+             throw new IllegalArgumentException("Unknown data type: " + t0.getClass());
          } else if (i > 31) {
              throw new IllegalArgumentException("Data value id is too big with " + i + "! (Max is " + 31 + ")");
 -        } else if (this.d.containsKey(Integer.valueOf(i))) {
 +        } else if (this.dataValues.containsKey(i)) { // Spigot
              throw new IllegalArgumentException("Duplicate id value for " + i + "!");
          } else {
--            WatchableObject watchableobject = new WatchableObject(integer.intValue(), i, object);
-+            WatchableObject watchableobject = new WatchableObject(integer, i, object); // Spigot
+-            DataWatcher.WatchableObject datawatcher_watchableobject = new DataWatcher.WatchableObject(integer.intValue(), i, t0);
++            DataWatcher.WatchableObject datawatcher_watchableobject = new DataWatcher.WatchableObject(integer, i, t0); // Spigot
  
              this.f.writeLock().lock();
--            this.d.put(Integer.valueOf(i), watchableobject);
-+            this.dataValues.put(i, watchableobject); // Spigot
+-            this.d.put(Integer.valueOf(i), datawatcher_watchableobject);
++            this.dataValues.put(i, datawatcher_watchableobject); // Spigot
              this.f.writeLock().unlock();
              this.b = false;
          }
-@@ -46,7 +51,7 @@ public class DataWatcher {
-         WatchableObject watchableobject = new WatchableObject(j, i, (Object) null);
+@@ -47,7 +52,7 @@ public class DataWatcher {
+         DataWatcher.WatchableObject datawatcher_watchableobject = new DataWatcher.WatchableObject(j, i, (Object) null);
  
          this.f.writeLock().lock();
--        this.d.put(Integer.valueOf(i), watchableobject);
-+        this.dataValues.put(i, watchableobject); // Spigot
+-        this.d.put(Integer.valueOf(i), datawatcher_watchableobject);
++        this.dataValues.put(i, datawatcher_watchableobject); // Spigot
          this.f.writeLock().unlock();
          this.b = false;
      }
-@@ -81,7 +86,7 @@ public class DataWatcher {
-         WatchableObject watchableobject;
+@@ -82,7 +87,7 @@ public class DataWatcher {
+         DataWatcher.WatchableObject datawatcher_watchableobject;
  
          try {
--            watchableobject = (WatchableObject) this.d.get(Integer.valueOf(i));
-+            watchableobject = (WatchableObject) this.dataValues.get(i); // Spigot
+-            datawatcher_watchableobject = (DataWatcher.WatchableObject) this.d.get(Integer.valueOf(i));
++            datawatcher_watchableobject = (DataWatcher.WatchableObject) this.dataValues.get(i); // Spigot
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.a(throwable, "Getting synched entity data");
              CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Synched entity data");
-@@ -138,7 +143,7 @@ public class DataWatcher {
+@@ -139,7 +144,7 @@ public class DataWatcher {
  
          if (this.e) {
              this.f.readLock().lock();
@@ -76,29 +76,29 @@ index e21e68d..966d737 100644
 +            Iterator iterator = this.dataValues.valueCollection().iterator(); // Spigot
  
              while (iterator.hasNext()) {
-                 WatchableObject watchableobject = (WatchableObject) iterator.next();
-@@ -162,7 +167,7 @@ public class DataWatcher {
+                 DataWatcher.WatchableObject datawatcher_watchableobject = (DataWatcher.WatchableObject) iterator.next();
+@@ -163,7 +168,7 @@ public class DataWatcher {
  
-     public void a(PacketDataSerializer packetdataserializer) {
+     public void a(PacketDataSerializer packetdataserializer) throws IOException {
          this.f.readLock().lock();
 -        Iterator iterator = this.d.values().iterator();
 +        Iterator iterator = this.dataValues.valueCollection().iterator(); // Spigot
  
          while (iterator.hasNext()) {
-             WatchableObject watchableobject = (WatchableObject) iterator.next();
-@@ -175,18 +180,11 @@ public class DataWatcher {
+             DataWatcher.WatchableObject datawatcher_watchableobject = (DataWatcher.WatchableObject) iterator.next();
+@@ -176,18 +181,11 @@ public class DataWatcher {
      }
  
-     public List c() {
+     public List<DataWatcher.WatchableObject> c() {
 -        ArrayList arraylist = null;
 +        ArrayList arraylist = Lists.newArrayList(); // Spigot
  
          this.f.readLock().lock();
  
--        WatchableObject watchableobject;
+-        DataWatcher.WatchableObject datawatcher_watchableobject;
 -
--        for (Iterator iterator = this.d.values().iterator(); iterator.hasNext(); arraylist.add(watchableobject)) {
--            watchableobject = (WatchableObject) iterator.next();
+-        for (Iterator iterator = this.d.values().iterator(); iterator.hasNext(); arraylist.add(datawatcher_watchableobject)) {
+-            datawatcher_watchableobject = (DataWatcher.WatchableObject) iterator.next();
 -            if (arraylist == null) {
 -                arraylist = Lists.newArrayList();
 -            }
@@ -107,7 +107,7 @@ index e21e68d..966d737 100644
  
          this.f.readLock().unlock();
          return arraylist;
-@@ -309,13 +307,15 @@ public class DataWatcher {
+@@ -310,14 +308,16 @@ public class DataWatcher {
      }
  
      static {
@@ -130,7 +130,8 @@ index e21e68d..966d737 100644
 +        classToId.put(Vector3f.class, 7);
 +        // Spigot End
      }
- }
+ 
+     public static class WatchableObject {
 -- 
 2.1.0
 
