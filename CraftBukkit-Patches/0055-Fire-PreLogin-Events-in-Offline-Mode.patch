@@ -1,11 +1,11 @@
-From aefb2679c827a044b2b9d8522b6b0040de3f727f Mon Sep 17 00:00:00 2001
+From 70a5f335afc7120e0a0ef56dbeb97b90fd0805e8 Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Wed, 18 Dec 2013 13:32:10 +1100
 Subject: [PATCH] Fire PreLogin Events in Offline Mode
 
 
 diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
-index 50beec2..42905fd 100644
+index 50beec2..9bfb5a2 100644
 --- a/src/main/java/net/minecraft/server/LoginListener.java
 +++ b/src/main/java/net/minecraft/server/LoginListener.java
 @@ -13,6 +13,7 @@ import java.util.Arrays;
@@ -40,13 +40,14 @@ index 50beec2..42905fd 100644
  
          // CraftBukkit start - fire PlayerLoginEvent
          EntityPlayer s = this.server.getPlayerList().attemptLogin(this, this.i, hostname);
-@@ -133,7 +147,14 @@ public class LoginListener implements PacketLoginInListener, IUpdatePlayerListBo
+@@ -133,7 +147,15 @@ public class LoginListener implements PacketLoginInListener, IUpdatePlayerListBo
              this.g = LoginListener.EnumProtocolState.KEY;
              this.networkManager.handle(new PacketLoginOutEncryptionBegin(this.j, this.server.P().getPublic(), this.e));
          } else {
 -            this.g = LoginListener.EnumProtocolState.READY_TO_ACCEPT;
 +            // Spigot start
 +            try {
++                initUUID();
 +                new LoginHandler().fireEvents();
 +            } catch (Exception ex) {
 +                disconnect("Failed to verify username!");
@@ -56,7 +57,7 @@ index 50beec2..42905fd 100644
          }
  
      }
-@@ -162,6 +183,40 @@ public class LoginListener implements PacketLoginInListener, IUpdatePlayerListBo
+@@ -162,6 +184,40 @@ public class LoginListener implements PacketLoginInListener, IUpdatePlayerListBo
                                  return;
                              }
  
@@ -97,7 +98,7 @@ index 50beec2..42905fd 100644
                              String playerName = i.getName();
                              java.net.InetAddress address = ((java.net.InetSocketAddress) networkManager.getSocketAddress()).getAddress();
                              java.util.UUID uniqueId = i.getId();
-@@ -196,34 +251,9 @@ public class LoginListener implements PacketLoginInListener, IUpdatePlayerListBo
+@@ -196,34 +252,9 @@ public class LoginListener implements PacketLoginInListener, IUpdatePlayerListBo
                              // CraftBukkit end
                              LoginListener.c.info("UUID of player " + LoginListener.this.i.getName() + " is " + LoginListener.this.i.getId());
                              LoginListener.this.g = LoginListener.EnumProtocolState.READY_TO_ACCEPT;
