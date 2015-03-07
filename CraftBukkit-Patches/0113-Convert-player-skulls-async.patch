@@ -1,4 +1,4 @@
-From 1e48bf3d21be15e7bbad5aa649279266c667b870 Mon Sep 17 00:00:00 2001
+From 8b5f1370d8b8d7c5918edc9dfb3f0ea9d0458da3 Mon Sep 17 00:00:00 2001
 From: Thinkofdeath <thethinkofdeath@gmail.com>
 Date: Sun, 20 Apr 2014 13:18:55 +0100
 Subject: [PATCH] Convert player skulls async
@@ -34,7 +34,7 @@ index a46cfef..e710073 100644
          } else {
              return false;
 diff --git a/src/main/java/net/minecraft/server/TileEntitySkull.java b/src/main/java/net/minecraft/server/TileEntitySkull.java
-index 20efee7..056e4e7 100644
+index 20efee7..64a9898 100644
 --- a/src/main/java/net/minecraft/server/TileEntitySkull.java
 +++ b/src/main/java/net/minecraft/server/TileEntitySkull.java
 @@ -5,11 +5,78 @@ import com.mojang.authlib.GameProfile;
@@ -116,7 +116,7 @@ index 20efee7..056e4e7 100644
  
      public TileEntitySkull() {}
  
-@@ -68,35 +135,66 @@ public class TileEntitySkull extends TileEntity {
+@@ -68,35 +135,60 @@ public class TileEntitySkull extends TileEntity {
      }
  
      private void e() {
@@ -157,18 +157,14 @@ index 20efee7..056e4e7 100644
 -                if (gameprofile1 == null) {
 -                    return gameprofile;
 +                GameProfile profile = skinCache.getIfPresent(gameprofile.getName());
-+                if (profile != null) {
++                if (profile != null && Iterables.getFirst(profile.getProperties().get("textures"), (Object) null) != null) {
 +                    callback.apply(profile);
                  } else {
 -                    Property property = (Property) Iterables.getFirst(gameprofile1.getProperties().get("textures"), (Object) null);
-+                    Property property = (Property) Iterables.getFirst(profile.getProperties().get("textures"), (Object) null);
- 
+-
 -                    if (property == null) {
 -                        gameprofile1 = MinecraftServer.getServer().aC().fillProfileProperties(gameprofile1, true);
-+                    if (property != null) {
-+                        callback.apply(profile);
-+                        return;
-                     }
+-                    }
 -
 -                    return gameprofile1;
 +                    executor.execute(new Runnable() {
