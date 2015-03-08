@@ -130,6 +130,10 @@ public class PlayerDeathEvent extends EntityDeathEvent {
      * Sets if the Player should keep all EXP at respawn.
      * <p>
      * This overrides all other EXP settings
+     * <p>
+     * This doesn't prevent prevent the EXP from dropping.
+     * {@link #setDroppedExp(int)} should be used stop the
+     * EXP from dropping.
      *
      * @param keepLevel True to keep all current value levels
      */
