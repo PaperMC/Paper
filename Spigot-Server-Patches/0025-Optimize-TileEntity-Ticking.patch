@@ -1,18 +1,18 @@
-From 6592278669315ae213de6950d84a5adb7a01456f Mon Sep 17 00:00:00 2001
+From aa360f67f1544600d0efc94ae896e6e328abd1de Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
-Date: Fri, 28 Nov 2014 04:14:14 -0600
+Date: Sun, 8 Mar 2015 01:56:22 -0600
 Subject: [PATCH] Optimize TileEntity Ticking
 
 
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 7cf38ea..76cdc7e 100644
+index a829555..2118c08 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
-@@ -56,6 +56,12 @@ public abstract class TileEntity {
-     }
-     // Spigot end
+@@ -21,6 +21,12 @@ public abstract class TileEntity {
+     private int h;
+     protected Block e;
  
-+    // PaperSpigot start - Optimized TileEntity Tick changes
++    // PaperSpigot start - Optimized TileEntity tick changes
 +    private static int tileEntityCounter = 0;
 +    public boolean isAdded = false;
 +    public int tileId = tileEntityCounter++;
@@ -22,7 +22,7 @@ index 7cf38ea..76cdc7e 100644
          this.position = BlockPosition.ZERO;
          this.h = -1;
 diff --git a/src/main/java/net/minecraft/server/TileEntityBeacon.java b/src/main/java/net/minecraft/server/TileEntityBeacon.java
-index 6bfde41..35d82ab 100644
+index da43134..88e4fa9 100644
 --- a/src/main/java/net/minecraft/server/TileEntityBeacon.java
 +++ b/src/main/java/net/minecraft/server/TileEntityBeacon.java
 @@ -48,7 +48,7 @@ public class TileEntityBeacon extends TileEntityContainer implements IUpdatePlay
@@ -30,25 +30,25 @@ index 6bfde41..35d82ab 100644
  
      public void c() {
 -        if (this.world.getTime() % 80L == 0L) {
-+        if (true || this.world.getTime() % 80L == 0L) { // PaperSpigot - controlled by Improved Tick Handling
++        if (true || this.world.getTime() % 80L == 0L) { // PaperSpigot - Controlled by improved tick handling
              this.m();
          }
  
 diff --git a/src/main/java/net/minecraft/server/TileEntityChest.java b/src/main/java/net/minecraft/server/TileEntityChest.java
-index 7444f4f..0f29365 100644
+index a2bd9e1..8af9e32 100644
 --- a/src/main/java/net/minecraft/server/TileEntityChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityChest.java
 @@ -246,7 +246,7 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
          ++this.n;
          float f;
  
--        if (!this.world.isStatic && this.l != 0 && (this.n + i + j + k) % 200 == 0) {
-+        if (!this.world.isStatic && this.l != 0 && (this.n + i + j + k) % 10 == 0) { // PaperSpigot Reduced 200 -> 10 interval due to reduced tick rate from Improved Tick Handling
+-        if (!this.world.isClientSide && this.l != 0 && (this.n + i + j + k) % 200 == 0) {
++        if (!this.world.isClientSide && this.l != 0 && (this.n + i + j + k) % 10 == 0) { // PaperSpigot - Reduced 200 -> 10 due to reduced interval from improved tick handling
              this.l = 0;
              f = 5.0F;
              List list = this.world.a(EntityHuman.class, new AxisAlignedBB((double) ((float) i - f), (double) ((float) j - f), (double) ((float) k - f), (double) ((float) (i + 1) + f), (double) ((float) (j + 1) + f), (double) ((float) (k + 1) + f)));
 diff --git a/src/main/java/net/minecraft/server/TileEntityEnderChest.java b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
-index 794cdc8..218b801 100644
+index 794cdc8..f712885 100644
 --- a/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 @@ -10,7 +10,7 @@ public class TileEntityEnderChest extends TileEntity implements IUpdatePlayerLis
@@ -56,85 +56,72 @@ index 794cdc8..218b801 100644
  
      public void c() {
 -        if (++this.h % 20 * 4 == 0) {
-+        if (++this.h % 4 == 0) { // PaperSpigot Reduced (20 * 4) -> 4 interval due to reduced tick rate from Improved Tick Handling
++        if (++this.h % 4 == 0) { // PaperSpigot - Reduced (20 * 4) -> 4 interval due to reduced tick rate from improved tick handling
              this.world.playBlockAction(this.position, Blocks.ENDER_CHEST, 1, this.g);
          }
  
 diff --git a/src/main/java/net/minecraft/server/TileEntityLightDetector.java b/src/main/java/net/minecraft/server/TileEntityLightDetector.java
-index 7b6f8ae..c6b593f 100644
+index f75e2de..7119612 100644
 --- a/src/main/java/net/minecraft/server/TileEntityLightDetector.java
 +++ b/src/main/java/net/minecraft/server/TileEntityLightDetector.java
 @@ -5,7 +5,7 @@ public class TileEntityLightDetector extends TileEntity implements IUpdatePlayer
      public TileEntityLightDetector() {}
  
      public void c() {
--        if (this.world != null && !this.world.isStatic && this.world.getTime() % 20L == 0L) {
-+        if (this.world != null && !this.world.isStatic /*&& this.world.getTime() % 20L == 0L*/) { // PaperSpigot - interval controlled by Improved Tick Handling
+-        if (this.world != null && !this.world.isClientSide && this.world.getTime() % 20L == 0L) {
++        if (this.world != null && !this.world.isClientSide /*&& this.world.getTime() % 20L == 0L*/)  {  // PaperSpigot - interval controlled by improved tick handling
              this.e = this.w();
              if (this.e instanceof BlockDaylightDetector) {
-                 ((BlockDaylightDetector) this.e).d(this.world, this.position);
+                 ((BlockDaylightDetector) this.e).f(this.world, this.position);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 4e1d779..7622a92 100644
+index d8464b2..6fb32a2 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -3,13 +3,7 @@ package net.minecraft.server;
- import com.google.common.base.Predicate;
- import com.google.common.collect.Lists;
- 
--import java.util.ArrayList;
--import java.util.Calendar;
--import java.util.Collection;
--import java.util.Iterator;
--import java.util.List;
--import java.util.Random;
--import java.util.UUID;
-+import java.util.*;
- import java.util.concurrent.Callable;
- 
- // CraftBukkit start
-@@ -59,7 +53,7 @@ public abstract class World implements IBlockAccess {
+@@ -62,7 +62,7 @@ public abstract class World implements IBlockAccess {
      // Spigot end
-     protected final List g = Lists.newArrayList();
-     public final List h = Lists.newArrayList();
--    public final List tileEntityList = Lists.newArrayList();
-+    public final Set tileEntityList = new org.github.paperspigot.WorldTileEntityList(this); // PaperSpigot
-     private final List a = Lists.newArrayList();
-     private final List b = Lists.newArrayList();
-     public final List players = Lists.newArrayList();
-@@ -133,8 +127,8 @@ public abstract class World implements IBlockAccess {
+     protected final List<Entity> g = Lists.newArrayList();
+     public final List<TileEntity> h = Lists.newArrayList();
+-    public final List<TileEntity> tileEntityList = Lists.newArrayList();
++    public final Set<TileEntity> tileEntityList = new org.github.paperspigot.WorldTileEntityList(this); // PaperSpigot
+     private final List<TileEntity> b = Lists.newArrayList();
+     private final List<TileEntity> c = Lists.newArrayList();
+     public final List<EntityHuman> players = Lists.newArrayList();
+@@ -135,8 +135,10 @@ public abstract class World implements IBlockAccess {
+     public static boolean haveWeSilencedAPhysicsCrash;
      public static String blockLocation;
-     public List<TileEntity> triggerHoppersList = new ArrayList<TileEntity>(); // Spigot, When altHopperTicking, tile entities being added go through here.
      private org.spigotmc.TickLimiter entityLimiter;
 -    private org.spigotmc.TickLimiter tileLimiter;
 -    private int tileTickPosition;
-+    //private org.spigotmc.TickLimiter tileLimiter; // PaperSpigot - Disable Spigot's TE handling in favor of our own
-+    //private int tileTickPosition; // PaperSpigot - Disable Spigot's TE handling in favor of our own
++    // PaperSpigot start - Disable Spigot's TE handling in favor of our own
++    //private org.spigotmc.TickLimiter tileLimiter;
++    //private int tileTickPosition;
++    // PaperSpigot end
  
      public static long chunkToKey(int x, int z)
      {
-@@ -240,7 +234,7 @@ public abstract class World implements IBlockAccess {
-         this.getServer().addWorld(this.world); // CraftBukkit
-         timings = new SpigotTimings.WorldTimingsHandler(this); // Spigot - code below can generate new world and access timings
+@@ -233,7 +235,7 @@ public abstract class World implements IBlockAccess {
+         this.keepSpawnInMemory = this.paperSpigotConfig.keepSpawnInMemory; // PaperSpigot
+         timings = new SpigotTimings.WorldTimingsHandler(this); // Spigot - code below can generate new world and access timings 
          this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
 -        this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
 +        //this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime); // PaperSpigot - Disable Spigot's TE handling in favor of our own
      }
  
      public World b() {
-@@ -1463,7 +1457,12 @@ public abstract class World implements IBlockAccess {
+@@ -1467,6 +1469,12 @@ public abstract class World implements IBlockAccess {
+         }
          // CraftBukkit end
  
-         this.initializeHoppers(); // Spigot - Initializes hoppers which have been added recently.
-+        // PaperSpigot Start - Return to previous behavior, theoretically tile entity ticks should no longer be long enough for this to be an issue
++        // PaperSpigot start - Return to previous behavior, theoretically tile entity ticks should no longer be long enough for this to be an issue
 +        Iterator iterator = this.tileEntityList.iterator();
- 
++
 +        while (iterator.hasNext()) {
 +            TileEntity tileentity = (TileEntity) iterator.next();
 +        /*
          // Spigot start
          int tilesThisCycle = 0;
          for (tileLimiter.initTick();
-@@ -1471,10 +1470,12 @@ public abstract class World implements IBlockAccess {
+@@ -1474,10 +1482,12 @@ public abstract class World implements IBlockAccess {
                  tileTickPosition++, tilesThisCycle++) {
              tileTickPosition = (tileTickPosition < tileEntityList.size()) ? tileTickPosition : 0;
              TileEntity tileentity = (TileEntity) this.tileEntityList.get(tileTickPosition);
@@ -148,7 +135,7 @@ index 4e1d779..7622a92 100644
                  continue;
              }
              // Spigot end
-@@ -1502,7 +1503,7 @@ public abstract class World implements IBlockAccess {
+@@ -1505,7 +1515,7 @@ public abstract class World implements IBlockAccess {
              }
  
              if (tileentity.x()) {
@@ -159,10 +146,10 @@ index 4e1d779..7622a92 100644
                      this.getChunkAtWorldCoords(tileentity.getPosition()).e(tileentity.getPosition());
 diff --git a/src/main/java/org/github/paperspigot/WorldTileEntityList.java b/src/main/java/org/github/paperspigot/WorldTileEntityList.java
 new file mode 100644
-index 0000000..1a53e94
+index 0000000..5af5dcc
 --- /dev/null
 +++ b/src/main/java/org/github/paperspigot/WorldTileEntityList.java
-@@ -0,0 +1,175 @@
+@@ -0,0 +1,168 @@
 +package org.github.paperspigot;
 +
 +import com.google.common.collect.ArrayListMultimap;
@@ -182,9 +169,7 @@ index 0000000..1a53e94
 +                // Use -1 for no ticking
 +                // These TE's have empty tick methods, doing nothing. Never bother ticking them.
 +                for (Class<? extends TileEntity> ignored : new Class[]{
-+                        TileEntityChest.class, // PaperSpigot - Don't tick chests either
-+                        TileEntityEnderChest.class, // PaperSpigot - Don't tick chests either
-+                        TileEntityRecordPlayer.class,
++                        BlockJukeBox.TileEntityRecordPlayer.class,
 +                        TileEntityDispenser.class,
 +                        TileEntityDropper.class,
 +                        TileEntitySign.class,
@@ -200,11 +185,6 @@ index 0000000..1a53e94
 +
 +                // does findPlayer lookup, so this helps performance to slow down
 +                put(TileEntityEnchantTable.class, 20);
-+
-+                // Slow things down that players won't notice due to craftbukkit "wall time" patches.
-+                // These need to be investigated further before they can be safely used here
-+                //put(TileEntityFurnace.class, 20);
-+                //put(TileEntityBrewingStand.class, 10);
 +
 +                // Vanilla controlled values - These are checks already done in vanilla, so don't tick on ticks we know
 +                // won't do anything anyways
@@ -340,5 +320,5 @@ index 0000000..1a53e94
 +}
 \ No newline at end of file
 -- 
-1.9.5.msysgit.0
+1.9.1
 

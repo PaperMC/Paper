@@ -1,15 +1,15 @@
-From 9d9bcf820969779811228b510941018104dae591 Mon Sep 17 00:00:00 2001
+From 6442bb1cb89024243a3a5192ec4e93f4be114a81 Mon Sep 17 00:00:00 2001
 From: Iceee <andrew@opticgaming.tv>
-Date: Fri, 28 Nov 2014 12:11:03 -0600
-Subject: [PATCH] Remove specific entities that fly through an unloaded chunk
+Date: Sun, 8 Mar 2015 03:34:15 -0500
+Subject: [PATCH] Remove certain entities that fly through unloaded chunks
 
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index dfb4299..4848e09 100644
+index d6bef0b..1470c21 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -112,6 +112,7 @@ public abstract class Entity implements ICommandListener {
-     private final CommandObjectiveExecutor as;
+@@ -114,6 +114,7 @@ public abstract class Entity implements ICommandListener {
+     private final CommandObjectiveExecutor au;
      public boolean valid; // CraftBukkit
      public org.bukkit.projectiles.ProjectileSource projectileSource; // CraftBukkit - For projectiles only
 +    public boolean inUnloadedChunk = false; // PaperSpigot - Remove entities in unloaded chunks
@@ -17,16 +17,16 @@ index dfb4299..4848e09 100644
      // Spigot start
      public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getEntityTimings(this); // Spigot
 diff --git a/src/main/java/net/minecraft/server/EntityEnderPearl.java b/src/main/java/net/minecraft/server/EntityEnderPearl.java
-index 6fd43da..3c103c7 100644
+index 929a66e..4ebed9c 100644
 --- a/src/main/java/net/minecraft/server/EntityEnderPearl.java
 +++ b/src/main/java/net/minecraft/server/EntityEnderPearl.java
-@@ -26,6 +26,12 @@ public class EntityEnderPearl extends EntityProjectile {
+@@ -30,6 +30,12 @@ public class EntityEnderPearl extends EntityProjectile {
              movingobjectposition.entity.damageEntity(DamageSource.projectile(this, entityliving), 0.0F);
          }
  
 +        // PaperSpigot start - Remove entities in unloaded chunks
-+        if (inUnloadedChunk && world.paperSpigotConfig.removeUnloadedEnderPearls) {
-+            die();
++        if (this.inUnloadedChunk && world.paperSpigotConfig.removeUnloadedEnderPearls) {
++            this.die();
 +        }
 +        // PaperSpigot end
 +
@@ -34,7 +34,7 @@ index 6fd43da..3c103c7 100644
              this.world.addParticle(EnumParticle.PORTAL, this.locX, this.locY + this.random.nextDouble() * 2.0D, this.locZ, this.random.nextGaussian(), 0.0D, this.random.nextGaussian(), new int[0]);
          }
 diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
-index 81a5dc9..336e575 100644
+index ef93776..5931e1d 100644
 --- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
 +++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
 @@ -70,6 +70,12 @@ public class EntityFallingBlock extends Entity {
@@ -51,7 +51,7 @@ index 81a5dc9..336e575 100644
              if (this.world.paperSpigotConfig.fallingBlockHeightNerf != 0 && this.locY > this.world.paperSpigotConfig.fallingBlockHeightNerf) {
                  if (this.dropItem) {
 diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
-index 3621faf..287039c 100644
+index 2d22327..50423eb 100644
 --- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
 +++ b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
 @@ -47,6 +47,14 @@ public class EntityTNTPrimed extends Entity {
@@ -70,10 +70,10 @@ index 3621faf..287039c 100644
          this.motY *= 0.9800000190734863D;
          this.motZ *= 0.9800000190734863D;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 7622a92..e2988a0 100644
+index 6fb32a2..698e3d9 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1158,6 +1158,7 @@ public abstract class World implements IBlockAccess {
+@@ -1174,6 +1174,7 @@ public abstract class World implements IBlockAccess {
              {
                  if ( !this.isChunkLoaded( chunkx, chunkz, true ) )
                  {
@@ -81,7 +81,7 @@ index 7622a92..e2988a0 100644
                      continue;
                  }
                  int cz = chunkz << 4;
-@@ -1591,6 +1592,14 @@ public abstract class World implements IBlockAccess {
+@@ -1603,6 +1604,14 @@ public abstract class World implements IBlockAccess {
          if (!org.spigotmc.ActivationRange.checkIfActive(entity)) {
              entity.ticksLived++;
              entity.inactiveTick();
@@ -89,7 +89,7 @@ index 7622a92..e2988a0 100644
 +            if (entity instanceof EntityEnderPearl || (!this.isChunkLoaded(i, j, true) &&
 +                    (entity instanceof EntityFallingBlock && this.paperSpigotConfig.removeUnloadedFallingBlocks) ||
 +                    (entity instanceof EntityTNTPrimed && this.paperSpigotConfig.removeUnloadedTNTEntities))) {
-+                 entity.inUnloadedChunk = true;
++                entity.inUnloadedChunk = true;
 +                entity.die();
 +            }
 +            // PaperSpigot end
@@ -97,10 +97,10 @@ index 7622a92..e2988a0 100644
              entity.tickTimer.startTiming(); // Spigot
              // CraftBukkit end
 diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-index 59a9387..cffb145 100644
+index 31dedce..ac02b90 100644
 --- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
 +++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-@@ -169,4 +169,14 @@ public class PaperSpigotWorldConfig
+@@ -170,4 +170,14 @@ public class PaperSpigotWorldConfig
          removeInvalidMobSpawnerTEs = getBoolean( "remove-invalid-mob-spawner-tile-entities", true );
          log( "Remove invalid mob spawner tile entities: " + removeInvalidMobSpawnerTEs );
      }
@@ -116,5 +116,5 @@ index 59a9387..cffb145 100644
 +    }
  }
 -- 
-1.9.5.msysgit.0
+1.9.1
 

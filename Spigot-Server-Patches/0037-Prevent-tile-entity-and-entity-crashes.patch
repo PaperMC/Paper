@@ -1,33 +1,32 @@
-From bacdc44538b85985c04e459b6d83e2abfd62c80f Mon Sep 17 00:00:00 2001
+From ff2332b83eb0f24d8d2168026a1e6c32643831e7 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
-Date: Wed, 3 Jul 2013 08:29:26 -0400
+Date: Sun, 8 Mar 2015 04:37:23 -0500
 Subject: [PATCH] Prevent tile entity and entity crashes
 
 
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 76cdc7e..d976515 100644
+index 2118c08..bd8278a 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
-@@ -194,7 +194,13 @@ public abstract class TileEntity {
-     public void a(CrashReportSystemDetails crashreportsystemdetails) {
-         crashreportsystemdetails.a("Name", (Callable) (new CrashReportTileEntityName(this)));
+@@ -163,7 +163,12 @@ public abstract class TileEntity {
+             }
+         });
          if (this.world != null) {
 -            CrashReportSystemDetails.a(crashreportsystemdetails, this.position, this.w(), this.u());
 +            // PaperSpigot start - Prevent tile entity and entity crashes
 +            Block block = this.w();
-+            if ( block != null )
-+            {
++            if (block != null) {
 +                CrashReportSystemDetails.a(crashreportsystemdetails, this.position, this.w(), this.u());
 +            }
 +            // PaperSpigot end
-             crashreportsystemdetails.a("Actual block type", (Callable) (new CrashReportTileEntityType(this)));
-             crashreportsystemdetails.a("Actual block data value", (Callable) (new CrashReportTileEntityData(this)));
-         }
+             crashreportsystemdetails.a("Actual block type", new Callable() {
+                 public String a() throws Exception {
+                     int i = Block.getId(TileEntity.this.world.getType(TileEntity.this.position).getBlock());
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index e2988a0..3ea9c92 100644
+index 698e3d9..91998cc 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1419,10 +1419,13 @@ public abstract class World implements IBlockAccess {
+@@ -1432,10 +1432,13 @@ public abstract class World implements IBlockAccess {
                      this.g(entity);
                      SpigotTimings.tickEntityTimer.stopTiming(); // Spigot
                  } catch (Throwable throwable1) {
@@ -45,7 +44,7 @@ index e2988a0..3ea9c92 100644
                  }
              }
  
-@@ -1489,11 +1492,13 @@ public abstract class World implements IBlockAccess {
+@@ -1501,11 +1504,13 @@ public abstract class World implements IBlockAccess {
                          tileentity.tickTimer.startTiming(); // Spigot
                          ((IUpdatePlayerListBox) tileentity).c();
                      } catch (Throwable throwable2) {
@@ -65,5 +64,5 @@ index e2988a0..3ea9c92 100644
                      // Spigot start
                      finally {
 -- 
-1.9.5.msysgit.0
+1.9.1
 

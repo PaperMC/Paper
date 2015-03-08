@@ -1,6 +1,6 @@
-From a658e1ae5cb763266cc2e3edeaea49ba6082656e Mon Sep 17 00:00:00 2001
+From 8b952f990dc321b91a929ad3b421227b5da923e5 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
-Date: Fri, 28 Nov 2014 13:43:11 -0600
+Date: Sun, 8 Mar 2015 04:03:56 -0500
 Subject: [PATCH] Player lookup improvements
 
 Minecraft and CraftBukkit both use Arrays to store online players,
@@ -13,13 +13,13 @@ By using a map based approach for player lookups, player lookup should
 be consistent in performance regardless of how many players are online.
 
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 1693efc..d3f2dfe 100644
+index d93b00c..063cd81 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -49,6 +49,31 @@ public abstract class PlayerList {
-     private static final SimpleDateFormat i = new SimpleDateFormat("yyyy-MM-dd \'at\' HH:mm:ss z");
+     private static final SimpleDateFormat g = new SimpleDateFormat("yyyy-MM-dd \'at\' HH:mm:ss z");
      private final MinecraftServer server;
-     public final List players = new java.util.concurrent.CopyOnWriteArrayList(); // CraftBukkit - ArrayList -> CopyOnWriteArrayList: Iterator safety
+     public final List<EntityPlayer> players = new java.util.concurrent.CopyOnWriteArrayList(); // CraftBukkit - ArrayList -> CopyOnWriteArrayList: Iterator safety, public
 +    // PaperSpigot start - Player lookup improvements
 +    public final Map<String, EntityPlayer> playerMap = new java.util.HashMap<String, EntityPlayer>() {
 +        @Override
@@ -45,44 +45,45 @@ index 1693efc..d3f2dfe 100644
 +        }
 +    };
 +    // PaperSpigot end
-     public final Map f = Maps.newHashMap();
+     private final Map<UUID, EntityPlayer> j = Maps.newHashMap();
      private final GameProfileBanList k;
      private final IpBanList l;
-@@ -263,6 +288,7 @@ public abstract class PlayerList {
+@@ -287,6 +312,7 @@ public abstract class PlayerList {
  
      public void onPlayerJoin(EntityPlayer entityplayer, String joinMessage) { // CraftBukkit added param
          this.players.add(entityplayer);
 +        this.playerMap.put(entityplayer.getName(), entityplayer); // PaperSpigot
-         this.f.put(entityplayer.getUniqueID(), entityplayer);
-         // this.sendAll(new PacketPlayOutPlayerInfo(EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[] { entityplayer})); // CraftBukkit - replaced with loop below
+         this.j.put(entityplayer.getUniqueID(), entityplayer);
+         // this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[] { entityplayer})); // CraftBukkit - replaced with loop below
          WorldServer worldserver = this.server.getWorldServer(entityplayer.dimension);
-@@ -334,6 +360,7 @@ public abstract class PlayerList {
+@@ -358,6 +384,7 @@ public abstract class PlayerList {
          worldserver.kill(entityplayer);
          worldserver.getPlayerChunkMap().removePlayer(entityplayer);
          this.players.remove(entityplayer);
 +        this.playerMap.remove(entityplayer.getName()); // PaperSpigot
-         this.f.remove(entityplayer.getUniqueID());
-         this.o.remove(entityplayer.getUniqueID());
-         // CraftBukkit start
-@@ -365,6 +392,8 @@ public abstract class PlayerList {
+         UUID uuid = entityplayer.getUniqueID();
+         EntityPlayer entityplayer1 = (EntityPlayer) this.j.get(uuid);
+ 
+@@ -395,6 +422,8 @@ public abstract class PlayerList {
  
          EntityPlayer entityplayer;
  
-+        // PaperSpigot - Use exact lookup below
++        // PaperSpigot start - Use exact lookup below
 +        /*
          for (int i = 0; i < this.players.size(); ++i) {
              entityplayer = (EntityPlayer) this.players.get(i);
              if (entityplayer.getUniqueID().equals(uuid)) {
-@@ -376,6 +405,8 @@ public abstract class PlayerList {
+@@ -406,6 +435,9 @@ public abstract class PlayerList {
  
          while (iterator.hasNext()) {
              entityplayer = (EntityPlayer) iterator.next();
 +        */
 +        if ((entityplayer = this.a(uuid)) != null) {
++        // PaperSpigot end
              savePlayerFile(entityplayer); // CraftBukkit - Force the player's inventory to be saved
              entityplayer.playerConnection.disconnect("You logged in from another location");
          }
-@@ -966,6 +997,7 @@ public abstract class PlayerList {
+@@ -1004,6 +1036,7 @@ public abstract class PlayerList {
      }
  
      public EntityPlayer getPlayer(String s) {
@@ -114,7 +115,7 @@ index 8be0698..4a908c6 100644
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 885c51a..cf3b140 100644
+index 6aa57ae..6150255 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -401,7 +401,12 @@ public final class CraftServer implements Server {
@@ -147,12 +148,12 @@ index 885c51a..cf3b140 100644
 +        // PaperSpigot start - Improved player lookup, replace whole method
 +        EntityPlayer player = playerList.playerMap.get(name);
 +        return player != null ? player.getBukkitEntity() : null;
-+         // PaperSpigot end
++        // PaperSpigot end
      }
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 0c9f241..e7c61fd 100644
+index 53d7874..0e6d96c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -104,13 +104,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -171,5 +172,5 @@ index 0c9f241..e7c61fd 100644
  
      public InetSocketAddress getAddress() {
 -- 
-1.9.5.msysgit.0
+1.9.1
 

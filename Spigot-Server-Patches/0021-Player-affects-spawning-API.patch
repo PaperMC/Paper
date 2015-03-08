@@ -1,28 +1,28 @@
-From 2562f17c456e63f56623f6d936a4bc4cb762892f Mon Sep 17 00:00:00 2001
+From 531e69345a9a1546a0a517891ba5cf0df3ecd9c5 Mon Sep 17 00:00:00 2001
 From: Jedediah Smith <jedediah@silencegreys.com>
-Date: Fri, 28 Nov 2014 03:31:21 -0600
+Date: Sat, 7 Mar 2015 22:52:21 -0600
 Subject: [PATCH] Player affects spawning API
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index 2bc2ef6..0199856 100644
+index e7fd331..4aa8096 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
 @@ -61,6 +61,7 @@ public abstract class EntityHuman extends EntityLiving {
-     private final GameProfile bF;
-     private boolean bG = false;
+     private final GameProfile bH;
+     private boolean bI = false;
      public EntityFishingHook hookedFish;
 +    public boolean affectsSpawning = true; // PaperSpigot
-     
+ 
      // CraftBukkit start
      public boolean fauxSleeping;
 diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
-index 71d4249..438ec3b 100644
+index 4f49ed0..c0d1c13 100644
 --- a/src/main/java/net/minecraft/server/EntityInsentient.java
 +++ b/src/main/java/net/minecraft/server/EntityInsentient.java
 @@ -424,7 +424,7 @@ public abstract class EntityInsentient extends EntityLiving {
          if (this.persistent) {
-             this.aO = 0;
+             this.ticksFarFromPlayer = 0;
          } else {
 -            EntityHuman entityhuman = this.world.findNearbyPlayer(this, -1.0D);
 +            EntityHuman entityhuman = this.world.findNearbyPlayerWhoAffectsSpawning(this, -1.0D); // PaperSpigot - Affects Spawning API
@@ -30,21 +30,20 @@ index 71d4249..438ec3b 100644
              if (entityhuman != null) {
                  double d0 = entityhuman.locX - this.locX;
 diff --git a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
-index 67273f7..3571ead 100644
+index df71db5..00754cd 100644
 --- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
 +++ b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
-@@ -52,7 +52,8 @@ public abstract class MobSpawnerAbstract {
+@@ -52,7 +52,7 @@ public abstract class MobSpawnerAbstract {
      private boolean g() {
          BlockPosition blockposition = this.b();
  
 -        return this.a().isPlayerNearby((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, (double) this.requiredPlayerRange);
-+        // PaperSpigot - Affects Spawning API
-+        return this.a().isPlayerNearbyWhoAffectsSpawning((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, (double) this.requiredPlayerRange);
++        return this.a().isPlayerNearbyWhoAffectsSpawning((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, (double) this.requiredPlayerRange); // PaperSpigot - Affects Spawning API
      }
  
      public void c() {
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
-index 43954b3..932a572 100644
+index aeb0a44..7df5b84 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
 @@ -52,7 +52,7 @@ public final class SpawnerCreature {
@@ -56,49 +55,54 @@ index 43954b3..932a572 100644
                      int l = MathHelper.floor(entityhuman.locX / 16.0D);
  
                      j = MathHelper.floor(entityhuman.locZ / 16.0D);
-@@ -156,7 +156,8 @@ public final class SpawnerCreature {
+@@ -156,7 +156,7 @@ public final class SpawnerCreature {
                                                  float f = (float) j3 + 0.5F;
                                                  float f1 = (float) l3 + 0.5F;
  
 -                                                if (!worldserver.isPlayerNearby((double) f, (double) k3, (double) f1, 24.0D) && blockposition.c((double) f, (double) k3, (double) f1) >= 576.0D) {
-+                                                // PaperSpigot - Affects Spawning API
-+                                                if (!worldserver.isPlayerNearbyWhoAffectsSpawning((double) f, (double) k3, (double) f1, 24.0D) && blockposition.c((double) f, (double) k3, (double) f1) >= 576.0D) {
-                                                     if (biomemeta == null) {
-                                                         biomemeta = worldserver.a(enumcreaturetype, blockposition2);
-                                                         if (biomemeta == null) {
++                                                if (!worldserver.isPlayerNearbyWhoAffectsSpawning((double) f, (double) k3, (double) f1, 24.0D) && blockposition.c((double) f, (double) k3, (double) f1) >= 576.0D) { // PaperSpigot - Affects Spawning API
+                                                     if (biomebase_biomemeta == null) {
+                                                         biomebase_biomemeta = worldserver.a(enumcreaturetype, blockposition2);
+                                                         if (biomebase_biomemeta == null) {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 76da3e6..4e1d779 100644
+index 3523abf..d8464b2 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -2,14 +2,13 @@ package net.minecraft.server;
+@@ -3119,4 +3119,50 @@ public abstract class World implements IBlockAccess {
  
- import com.google.common.base.Predicate;
- import com.google.common.collect.Lists;
--import com.google.common.collect.Sets;
-+
- import java.util.ArrayList;
- import java.util.Calendar;
- import java.util.Collection;
- import java.util.Iterator;
- import java.util.List;
- import java.util.Random;
--import java.util.Set;
- import java.util.UUID;
- import java.util.concurrent.Callable;
- 
-@@ -17,7 +16,6 @@ import java.util.concurrent.Callable;
- import org.bukkit.Bukkit;
- import org.bukkit.block.BlockState;
- import org.bukkit.craftbukkit.util.CraftMagicNumbers;
--import org.bukkit.craftbukkit.util.LongHashSet;
- import org.bukkit.craftbukkit.SpigotTimings; // Spigot
- import org.bukkit.generator.ChunkGenerator;
- import org.bukkit.craftbukkit.CraftServer;
-@@ -2770,6 +2768,50 @@ public abstract class World implements IBlockAccess {
-         return false;
+         return k >= -short0 && k <= short0 && l >= -short0 && l <= short0 && this.keepSpawnInMemory; // CraftBukkit - Added 'this.keepSpawnInMemory'
      }
- 
-+    // PaperSpigot start - Affects spawning API
++
++    // PaperSpigot start - Modified methods for affects spawning
++    public EntityHuman findNearbyPlayerWhoAffectsSpawning(Entity entity, double d0) {
++        return this.findNearbyPlayerWhoAffectsSpawning(entity.locX, entity.locY, entity.locZ, d0);
++    }
++
++    public EntityHuman findNearbyPlayerWhoAffectsSpawning(double d0, double d1, double d2, double d3) {
++        double d4 = -1.0D;
++        EntityHuman entityhuman = null;
++
++        for (int i = 0; i < this.players.size(); ++i) {
++            EntityHuman entityhuman1 = (EntityHuman) this.players.get(i);
++            // CraftBukkit start - Fixed an NPE
++            if (entityhuman1 == null || entityhuman1.dead || !entityhuman1.affectsSpawning) {
++                continue;
++            }
++            // CraftBukkit end
++
++            if (IEntitySelector.d.apply(entityhuman1)) {
++                double d5 = entityhuman1.e(d0, d1, d2);
++
++                if ((d3 < 0.0D || d5 < d3 * d3) && (d4 == -1.0D || d5 < d4)) {
++                    d4 = d5;
++                    entityhuman = entityhuman1;
++                }
++            }
++        }
++
++        return entityhuman;
++    }
++
 +    public boolean isPlayerNearbyWhoAffectsSpawning(double d0, double d1, double d2, double d3) {
 +        for (int i = 0; i < this.players.size(); ++i) {
 +            EntityHuman entityhuman = (EntityHuman) this.players.get(i);
@@ -114,58 +118,30 @@ index 76da3e6..4e1d779 100644
 +
 +        return false;
 +    }
-+
-+    public EntityHuman findNearbyPlayerWhoAffectsSpawning(Entity entity, double radius) {
-+        return this.findNearbyPlayerWhoAffectsSpawning(entity.locX, entity.locY, entity.locZ, radius);
-+    }
-+
-+    public EntityHuman findNearbyPlayerWhoAffectsSpawning(double x, double y, double z, double radius) {
-+        double nearestRadius = - 1.0D;
-+        EntityHuman entityHuman = null;
-+
-+        for (int i = 0; i < this.players.size(); ++i) {
-+            EntityHuman nearestPlayer = (EntityHuman) this.players.get(i);
-+
-+            if (nearestPlayer == null || nearestPlayer.dead || !nearestPlayer.affectsSpawning) {
-+                continue;
-+            }
-+
-+            double distance = nearestPlayer.e(x, y, z);
-+
-+            if ((radius < 0.0D || distance < radius * radius) && (nearestRadius == -1.0D || distance < nearestRadius)) {
-+                nearestRadius = distance;
-+                entityHuman = nearestPlayer;
-+            }
-+        }
-+
-+        return entityHuman;
-+    }
-+    // PaperSpigot end
-+
-     public EntityHuman a(String s) {
-         for (int i = 0; i < this.players.size(); ++i) {
-             EntityHuman entityhuman = (EntityHuman) this.players.get(i);
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index c81d5d2..942a6ab 100644
+index 8091b4e..571e066 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1443,6 +1443,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1443,6 +1443,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
              packet.components = components;
              getHandle().playerConnection.sendPacket(packet);
          }
 +
-+        // PaperSpigot start - Add affects spawning API
-+        public void setAffectsSpawning(boolean affects) {
-+            getHandle().affectsSpawning = affects;
-+        }
-+
++        // PaperSpigot start - Implement affects spawning API
++        @Override
 +        public boolean getAffectsSpawning() {
 +            return getHandle().affectsSpawning;
++        }
++
++        @Override
++        public void setAffectsSpawning(boolean affects) {
++            getHandle().affectsSpawning = affects;
 +        }
 +        // PaperSpigot end
      };
  
      public Player.Spigot spigot()
 -- 
-1.9.5.msysgit.0
+1.9.1
 
