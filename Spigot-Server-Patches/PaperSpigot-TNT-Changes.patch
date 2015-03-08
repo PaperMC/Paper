@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Zach Brown <1254957+zachbr@users.noreply.github.com>
-Date: Mon, 23 Feb 2015 15:54:17 -0600
+Date: Sun, 8 Mar 2015 04:52:37 -0500
 Subject: [PATCH] PaperSpigot TNT Changes
 
 PaperSpigot communal TNT modification patch
@@ -62,44 +62,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * PaperSpigot - Configurable TNT water movement
 +     */
 +    @Override
-+    public boolean aK() {
++    public boolean aL() {
 +        return world.paperSpigotConfig.tntMovesInWater;
 +    }
  }
-diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/World.java
-+++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-         double d1 = 1.0D / ((axisalignedbb.e - axisalignedbb.b) * 2.0D + 1.0D);
-         double d2 = 1.0D / ((axisalignedbb.f - axisalignedbb.c) * 2.0D + 1.0D);
- 
-+        // PaperSpigot start - Fix TNT directional bias
-+        double xOffset = (1.0 - Math.floor(1.0 / d0) * d0) / 2.0;
-+        double zOffset = (1.0 - Math.floor(1.0 / d2) * d2) / 2.0;
-+        // PaperSpigot end
-+
-         if (d0 >= 0.0D && d1 >= 0.0D && d2 >= 0.0D) {
-             int i = 0;
-             int j = 0;
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-                         double d4 = axisalignedbb.b + (axisalignedbb.e - axisalignedbb.b) * (double) f1;
-                         double d5 = axisalignedbb.c + (axisalignedbb.f - axisalignedbb.c) * (double) f2;
- 
--                        if (this.rayTrace(new Vec3D(d3, d4, d5), vec3d) == null) {
-+                        // PaperSpigot start - Fix TNT directional bias
-+                        Vec3D vec3d1;
-+                        if (this.paperSpigotConfig.fixTNTDirectionBias) {
-+                            vec3d1 = new Vec3D(xOffset, d4, zOffset + d5);
-+                        } else {
-+                            vec3d1 = new Vec3D(d3, d4, d5);
-+                        }
-+
-+                        if (this.rayTrace(vec3d1, vec3d) == null) {
-+                        // PaperSpigot end
-                             ++i;
-                         }
- 
 diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
@@ -115,7 +81,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public int tntHeightLimit;
 +    private void tntChanges()
 +    {
-+        // Original Authors: Iceee <andrew@opticgaming.tv> and Jedediah Smith <jedediah@silencegreys.com>
++        // Original Authors: Iceee <andrew@opticgaming.tv>
 +        fixTNTDirectionBias = getBoolean( "tnt-gameplay.fix-directional-bias", false );
 +        // Original Author: Byteflux <byte@byteflux.net>
 +        tntMovesInWater = getBoolean( "tnt-gameplay.moves-in-water", true );
@@ -132,15 +98,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } else {
 +            log( "TNT height limit disabled" );
 +        }
-+
 +        if (PaperSpigotConfig.version < 7) {
 +            System.err.println( "==========================================" );
 +            System.err.println( "   Many TNT Related Settings Have Moved   " );
 +            System.err.println( "  Please check your config in paper.yml!  " );
 +            System.err.println( "==========================================" );
++            }
 +        }
-+    }
  }
--- 
-1.9.5.msysgit.0
-
+--
