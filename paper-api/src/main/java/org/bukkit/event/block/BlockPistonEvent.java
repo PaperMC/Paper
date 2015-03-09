@@ -31,7 +31,7 @@ public abstract class BlockPistonEvent extends BlockEvent implements Cancellable
      * @return stickiness of the piston
      */
     public boolean isSticky() {
-        return block.getType() == Material.PISTON_STICKY_BASE;
+        return block.getType() == Material.PISTON_STICKY_BASE || block.getType() == Material.PISTON_MOVING_PIECE;
     }
 
     /**
