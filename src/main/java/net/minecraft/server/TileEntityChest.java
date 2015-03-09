@@ -7,7 +7,7 @@ import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
 // CraftBukkit end
 
-public class TileEntityChest extends TileEntityLootable implements ITickable {
+public class TileEntityChest extends TileEntityLootable { // Paper - Remove ITickable
 
     private NonNullList<ItemStack> items;
     protected float a;
@@ -85,14 +85,20 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
         return nbttagcompound;
     }
 
-    @Override
     public void tick() {
         int i = this.position.getX();
         int j = this.position.getY();
         int k = this.position.getZ();
 
         ++this.j;
-        this.viewingCount = a(this.world, this, this.j, i, j, k, this.viewingCount);
+    }
+
+    public void doOpenLogic() {
+        int i = this.position.getX();
+        int j = this.position.getY();
+        int k = this.position.getZ();
+
+        //this.viewingCount = a(this.world, this, this.j, i, j, k, this.viewingCount); // Paper - check is faulty given our logic is called before active container set
         this.b = this.a;
         float f = 0.1F;
 
@@ -106,8 +112,11 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
         if (this.viewingCount > 0 && this.a == 0.0F) {
             this.playOpenSound(SoundEffects.BLOCK_CHEST_OPEN);
         }
+    }
 
-        if (this.viewingCount == 0 && this.a > 0.0F || this.viewingCount > 0 && this.a < 1.0F) {
+    public void doCloseLogic() {
+        if (this.viewingCount == 0 /* && this.a > 0.0F || this.viewingCount > 0 && this.a < 1.0F */) { // Paper - disable all but player count check
+            /* // Paper - disable animation stuff
             float f1 = this.a;
 
             if (this.viewingCount > 0) {
@@ -123,8 +132,11 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
             float f2 = 0.5F;
 
             if (this.a < 0.5F && f1 >= 0.5F) {
+            */
+            MCUtil.scheduleTask(10, () -> {
                 this.playOpenSound(SoundEffects.BLOCK_CHEST_CLOSE);
-            }
+                }, "Chest Sounds");
+            //} // Paper end
 
             if (this.a < 0.0F) {
                 this.a = 0.0F;
@@ -163,6 +175,7 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
     }
 
     public void playOpenSound(SoundEffect soundeffect) {
+        if (!this.getBlock().contains(BlockChest.CHEST_TYPE_PROPERTY)) { return; } // Paper - this can be delayed, double check exists - Fixes GH-2074
         BlockPropertyChestType blockpropertychesttype = (BlockPropertyChestType) this.getBlock().get(BlockChest.c);
 
         if (blockpropertychesttype != BlockPropertyChestType.LEFT) {
@@ -201,6 +214,7 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
 
             ++this.viewingCount;
             if (this.world == null) return; // CraftBukkit
+            doOpenLogic(); // Paper
 
             // CraftBukkit start - Call redstone event
             if (this.getBlock().getBlock() == Blocks.TRAPPED_CHEST) {
@@ -223,6 +237,7 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
             --this.viewingCount;
 
             // CraftBukkit start - Call redstone event
+            doCloseLogic(); // Paper
             if (this.getBlock().getBlock() == Blocks.TRAPPED_CHEST) {
                 int newPower = Math.max(0, Math.min(15, this.viewingCount));
 

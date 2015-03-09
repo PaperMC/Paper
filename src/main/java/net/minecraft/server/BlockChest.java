@@ -10,8 +10,8 @@ import javax.annotation.Nullable;
 public class BlockChest extends BlockChestAbstract<TileEntityChest> implements IBlockWaterlogged {
 
     public static final BlockStateDirection FACING = BlockFacingHorizontal.FACING;
-    public static final BlockStateEnum<BlockPropertyChestType> c = BlockProperties.aF;
-    public static final BlockStateBoolean d = BlockProperties.C;
+    public static final BlockStateEnum<BlockPropertyChestType> c = BlockProperties.aF; public static final BlockStateEnum<BlockPropertyChestType> CHEST_TYPE_PROPERTY = c; // Paper - OBFHELPER
+    public static final BlockStateBoolean d = BlockProperties.C; public static final BlockStateBoolean waterlogged() { return d; } // Paper OBFHELPER
     protected static final VoxelShape e = Block.a(1.0D, 0.0D, 0.0D, 15.0D, 14.0D, 15.0D);
     protected static final VoxelShape f = Block.a(1.0D, 0.0D, 1.0D, 15.0D, 14.0D, 16.0D);
     protected static final VoxelShape g = Block.a(0.0D, 0.0D, 1.0D, 15.0D, 14.0D, 15.0D);

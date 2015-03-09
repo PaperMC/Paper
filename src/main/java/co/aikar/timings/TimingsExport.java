@@ -109,7 +109,7 @@ public class TimingsExport extends Thread {
             pair("end", System.currentTimeMillis() / 1000),
             pair("online-mode", Bukkit.getServer().getOnlineMode()),
             pair("sampletime", (System.currentTimeMillis() - TimingsManager.timingStart) / 1000),
-            pair("datapacks", toArrayMapper(MinecraftServer.getServer().getResourcePackRepository().d(), pack -> {
+            pair("datapacks", toArrayMapper(MinecraftServer.getServer().getResourcePackRepository().e(), pack -> {
                 // Don't feel like obf helper'ing these, non fatal if its temp missed.
                 return ChatColor.stripColor(CraftChatMessage.fromComponent(pack.a(true)));
             }))
@@ -148,8 +148,8 @@ public class TimingsExport extends Thread {
         );
 
         parent.put("worlds", toObjectMapper(MinecraftServer.getServer().getWorlds(), world -> {
-            if (world.getWorldData().getName().equals("worldeditregentempworld")) return null;
-            return pair(world.getWorldData().getName(), createObject(
+            if (world.getWorld().getName().equals("worldeditregentempworld")) return null;
+            return pair(world.getWorld().getName(), createObject(
                 pair("gamerules", toObjectMapper(world.getWorld().getGameRules(), rule -> {
                     return pair(rule, world.getWorld().getGameRuleValue(rule));
                 })),

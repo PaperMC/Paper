@@ -83,6 +83,7 @@ public abstract class IBlockDataHolder<O, S> {
         return Collections.unmodifiableCollection(this.b.keySet());
     }
 
+    public <T extends Comparable<T>> boolean contains(IBlockState<T> iblockstate) { return this.b(iblockstate); } // Paper - OBFHELPER
     public <T extends Comparable<T>> boolean b(IBlockState<T> iblockstate) {
         return this.b.containsKey(iblockstate);
     }
