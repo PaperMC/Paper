@@ -158,8 +158,6 @@ public enum Material {
     CAKE_BLOCK(92, 64, Cake.class),
     DIODE_BLOCK_OFF(93, Diode.class),
     DIODE_BLOCK_ON(94, Diode.class),
-    @Deprecated
-    LOCKED_CHEST(95),
     STAINED_GLASS(95),
     TRAP_DOOR(96, TrapDoor.class),
     MONSTER_EGGS(97, MonsterEggs.class),
@@ -768,7 +766,6 @@ public enum Material {
             case GLOWSTONE:
             case JACK_O_LANTERN:
             case CAKE_BLOCK:
-            case LOCKED_CHEST:
             case STAINED_GLASS:
             case TRAP_DOOR:
             case MONSTER_EGGS:
