@@ -326,7 +326,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             if (!(raw instanceof MobEffect))
                 continue;
             MobEffect handle = (MobEffect) raw;
-            effects.add(new PotionEffect(PotionEffectType.getById(handle.getEffectId()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient()));
+            effects.add(new PotionEffect(PotionEffectType.getById(handle.getEffectId()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isShowParticles()));
         }
         return effects;
     }
