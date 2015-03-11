@@ -43,7 +43,6 @@ public abstract class AbstractTestingBase {
                     Material.DIODE_BLOCK_OFF,
                     Material.IRON_DOOR_BLOCK,
                     Material.WOODEN_DOOR,
-                    Material.LOCKED_CHEST,
                     Material.WATER,
                     Material.STATIONARY_WATER,
                     Material.LAVA,
