@@ -3,7 +3,6 @@ package org.bukkit.event.player;
 import org.bukkit.Location;
 import org.bukkit.TravelAgent;
 import org.bukkit.entity.Player;
-import org.bukkit.event.HandlerList;
 
 /**
  * Called when a player is about to teleport because it is in contact with a
@@ -12,7 +11,6 @@ import org.bukkit.event.HandlerList;
  * For other entities see {@link org.bukkit.event.entity.EntityPortalEvent}
  */
 public class PlayerPortalEvent extends PlayerTeleportEvent {
-    private static final HandlerList handlers = new HandlerList();
     protected boolean useTravelAgent = true;
     protected TravelAgent travelAgent;
 
@@ -74,14 +72,5 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
      */
     public void setPortalTravelAgent(TravelAgent travelAgent) {
         this.travelAgent = travelAgent;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return handlers;
-    }
-
-    public static HandlerList getHandlerList() {
-        return handlers;
     }
 }
