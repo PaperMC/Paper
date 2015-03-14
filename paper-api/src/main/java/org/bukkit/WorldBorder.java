@@ -8,23 +8,23 @@ public interface WorldBorder {
     public void reset();
 
     /**
-     * Gets the current border size.
+     * Gets the current side length of the border.
      *
-     * @return The current size of the border.
+     * @return The current side length of the border.
      */
     public double getSize();
 
     /**
-     * Sets the border to a square region with the specified size in blocks.
+     * Sets the border to a square region with the specified side length in blocks.
      *
      * @param newSize The new size of the border.
      */
     public void setSize(double newSize);
 
     /**
-     * Sets the border to a square region with the specified size in blocks.
+     * Sets the border to a square region with the specified side length in blocks.
      *
-     * @param newSize The new size of the border.
+     * @param newSize The new side length of the border.
      * @param seconds The time in seconds in which the border grows or shrinks from the previous size to that being set.
      */
     public void setSize(double newSize, long seconds);
