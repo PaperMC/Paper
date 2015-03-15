@@ -12,6 +12,8 @@ import org.bukkit.craftbukkit.util.LongHash;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.minecraft.server.Entity;
+import net.minecraft.server.EntitySlice;
 
 class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChunk, Chunk, Runnable, RuntimeException> {
     private final AtomicInteger threadNumber = new AtomicInteger(1);
@@ -39,6 +41,10 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
             // If the chunk loading failed just do it synchronously (may generate)
             queuedChunk.provider.originalGetChunkAt(queuedChunk.x, queuedChunk.z);
             return;
+        }
+        // moved from Chunk.<init>
+        for (int k = 0; k < chunk.entitySlices.length; ++k) {
+            chunk.entitySlices[k] = new EntitySlice(Entity.class);
         }
 
         queuedChunk.loader.loadEntities(chunk, queuedChunk.compound.getCompound("Level"), queuedChunk.world);
