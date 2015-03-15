@@ -1,11 +1,11 @@
-From 52f937dd4b3d4cfa5bd12c17bd4b38400459bcef Mon Sep 17 00:00:00 2001
+From 85a19c23ec2e95de28cb094814b9c24b9f44878e Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Fri, 20 Feb 2015 21:33:36 +1100
 Subject: [PATCH] Use Standard List for EntitySlices.
 
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index a59ff8e..5794345 100644
+index 109b657..d70f979 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -31,7 +31,7 @@ public class Chunk {
@@ -17,7 +17,7 @@ index a59ff8e..5794345 100644
      private boolean done;
      private boolean lit;
      private boolean p;
-@@ -80,14 +80,14 @@ public class Chunk {
+@@ -80,7 +80,7 @@ public class Chunk {
          this.tileEntities = Maps.newHashMap();
          this.v = 4096;
          this.w = Queues.newConcurrentLinkedQueue();
@@ -26,15 +26,16 @@ index a59ff8e..5794345 100644
          this.world = world;
          this.locX = i;
          this.locZ = j;
-         this.heightMap = new int[256];
+@@ -88,7 +88,7 @@ public class Chunk {
  
+         /* CraftBukkit start
          for (int k = 0; k < this.entitySlices.length; ++k) {
 -            this.entitySlices[k] = new EntitySlice(Entity.class);
 +            this.entitySlices[k] = new org.bukkit.craftbukkit.util.UnsafeList(); // Spigot
          }
+         // CraftBukkit end */
  
-         Arrays.fill(this.f, -999);
-@@ -916,12 +916,12 @@ public class Chunk {
+@@ -918,12 +918,12 @@ public class Chunk {
          j = MathHelper.clamp(j, 0, this.entitySlices.length - 1);
  
          for (int k = i; k <= j; ++k) {
@@ -49,7 +50,7 @@ index a59ff8e..5794345 100644
                      list.add((T) entity); // Fix decompile error
                  }
              }
-@@ -1301,7 +1301,7 @@ public class Chunk {
+@@ -1303,7 +1303,7 @@ public class Chunk {
          return this.tileEntities;
      }
  
@@ -58,6 +59,32 @@ index a59ff8e..5794345 100644
          return this.entitySlices;
      }
  
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index c143d01..4ac27d0 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -157,7 +157,7 @@ public class ChunkProviderServer implements IChunkProvider {
+             
+             // CraftBukkit start - moved from Chunk.<init>
+             for (int k = 0; k < chunk.entitySlices.length; ++k) {
+-                chunk.entitySlices[k] = new EntitySlice(Entity.class);
++                chunk.entitySlices[k] = new org.bukkit.craftbukkit.util.UnsafeList(); // Spigot
+             }
+             // CraftBukkit end
+             chunk.addEntities();
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
+index a43870a..f099976 100644
+--- a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
+@@ -44,7 +44,7 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
+         }
+         // moved from Chunk.<init>
+         for (int k = 0; k < chunk.entitySlices.length; ++k) {
+-            chunk.entitySlices[k] = new EntitySlice(Entity.class);
++            chunk.entitySlices[k] = new org.bukkit.craftbukkit.util.UnsafeList(); // Spigot
+         }
+ 
+         queuedChunk.loader.loadEntities(chunk, queuedChunk.compound.getCompound("Level"), queuedChunk.world);
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
 index 0143623..621a717 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
