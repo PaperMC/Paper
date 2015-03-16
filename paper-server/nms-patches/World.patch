@@ -1,10 +1,13 @@
---- /home/matt/mc-dev-private//net/minecraft/server/World.java	2015-03-11 10:15:29.115595382 +0000
-+++ src/main/java/net/minecraft/server/World.java	2015-03-11 10:15:29.119595382 +0000
-@@ -13,6 +13,22 @@
+--- /home/matt/mc-dev-private//net/minecraft/server/World.java	2015-03-16 09:47:41.491221758 +0000
++++ src/main/java/net/minecraft/server/World.java	2015-03-16 09:47:41.499221758 +0000
+@@ -13,6 +13,25 @@
  import java.util.UUID;
  import java.util.concurrent.Callable;
  
 +// CraftBukkit start
++import com.google.common.collect.Maps;
++import java.util.Map;
++
 +import org.bukkit.Bukkit;
 +import org.bukkit.block.BlockState;
 +import org.bukkit.craftbukkit.util.CraftMagicNumbers;
@@ -23,7 +26,7 @@
  public abstract class World implements IBlockAccess {
  
      private int a = 63;
-@@ -36,27 +52,72 @@
+@@ -36,27 +55,72 @@
      protected float r;
      private int J;
      public final Random random = new Random();
@@ -104,7 +107,7 @@
          this.L = this.random.nextInt(12000);
          this.allowMonsters = true;
          this.allowAnimals = true;
-@@ -67,6 +128,35 @@
+@@ -67,6 +131,35 @@
          this.worldProvider = worldprovider;
          this.isClientSide = flag;
          this.N = worldprovider.getWorldBorder();
@@ -140,7 +143,7 @@
      }
  
      public World b() {
-@@ -193,6 +283,27 @@
+@@ -193,6 +286,27 @@
      }
  
      public boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) {
@@ -168,7 +171,7 @@
          if (!this.isValidLocation(blockposition)) {
              return false;
          } else if (!this.isClientSide && this.worldData.getType() == WorldType.DEBUG_ALL_BLOCK_STATES) {
-@@ -200,9 +311,23 @@
+@@ -200,9 +314,23 @@
          } else {
              Chunk chunk = this.getChunkAtWorldCoords(blockposition);
              Block block = iblockdata.getBlock();
@@ -192,7 +195,7 @@
                  return false;
              } else {
                  Block block1 = iblockdata1.getBlock();
-@@ -213,6 +338,7 @@
+@@ -213,6 +341,7 @@
                      this.methodProfiler.b();
                  }
  
@@ -200,7 +203,7 @@
                  if ((i & 2) != 0 && (!this.isClientSide || (i & 4) == 0) && chunk.isReady()) {
                      this.notify(blockposition);
                  }
-@@ -223,12 +349,35 @@
+@@ -223,12 +352,35 @@
                          this.updateAdjacentComparators(blockposition, block);
                      }
                  }
@@ -236,7 +239,7 @@
      public boolean setAir(BlockPosition blockposition) {
          return this.setTypeAndData(blockposition, Blocks.AIR.getBlockData(), 3);
      }
-@@ -262,6 +411,11 @@
+@@ -262,6 +414,11 @@
  
      public void update(BlockPosition blockposition, Block block) {
          if (this.worldData.getType() != WorldType.DEBUG_ALL_BLOCK_STATES) {
@@ -248,7 +251,7 @@
              this.applyPhysics(blockposition, block);
          }
  
-@@ -337,6 +491,17 @@
+@@ -337,6 +494,17 @@
              IBlockData iblockdata = this.getType(blockposition);
  
              try {
@@ -266,7 +269,7 @@
                  iblockdata.getBlock().doPhysics(this, blockposition, iblockdata, block);
              } catch (Throwable throwable) {
                  CrashReport crashreport = CrashReport.a(throwable, "Exception while updating neighbours");
-@@ -518,6 +683,17 @@
+@@ -518,6 +686,17 @@
      }
  
      public IBlockData getType(BlockPosition blockposition) {
@@ -284,7 +287,7 @@
          if (!this.isValidLocation(blockposition)) {
              return Blocks.AIR.getBlockData();
          } else {
-@@ -723,6 +899,13 @@
+@@ -723,6 +902,13 @@
      }
  
      public boolean addEntity(Entity entity) {
@@ -298,7 +301,7 @@
          int i = MathHelper.floor(entity.locX / 16.0D);
          int j = MathHelper.floor(entity.locZ / 16.0D);
          boolean flag = entity.attachedToPlayer;
-@@ -731,7 +914,35 @@
+@@ -731,7 +917,35 @@
              flag = true;
          }
  
@@ -334,7 +337,7 @@
              return false;
          } else {
              if (entity instanceof EntityHuman) {
-@@ -753,6 +964,7 @@
+@@ -753,6 +967,7 @@
              ((IWorldAccess) this.u.get(i)).a(entity);
          }
  
@@ -342,7 +345,7 @@
      }
  
      protected void b(Entity entity) {
-@@ -760,6 +972,7 @@
+@@ -760,6 +975,7 @@
              ((IWorldAccess) this.u.get(i)).b(entity);
          }
  
@@ -350,7 +353,7 @@
      }
  
      public void kill(Entity entity) {
-@@ -794,7 +1007,15 @@
+@@ -794,7 +1010,15 @@
              this.getChunkAt(i, j).b(entity);
          }
  
@@ -367,7 +370,7 @@
          this.b(entity);
      }
  
-@@ -978,6 +1199,11 @@
+@@ -978,6 +1202,11 @@
  
          for (i = 0; i < this.k.size(); ++i) {
              entity = (Entity) this.k.get(i);
@@ -379,7 +382,7 @@
  
              try {
                  ++entity.ticksLived;
-@@ -1021,8 +1247,10 @@
+@@ -1021,8 +1250,10 @@
          this.g.clear();
          this.methodProfiler.c("regular");
  
@@ -392,7 +395,7 @@
              if (entity.vehicle != null) {
                  if (!entity.vehicle.dead && entity.vehicle.passenger == entity) {
                      continue;
-@@ -1053,7 +1281,7 @@
+@@ -1053,7 +1284,7 @@
                      this.getChunkAt(j, k).b(entity);
                  }
  
@@ -401,7 +404,7 @@
                  this.b(entity);
              }
  
-@@ -1062,6 +1290,13 @@
+@@ -1062,6 +1293,13 @@
  
          this.methodProfiler.c("blockEntities");
          this.M = true;
@@ -415,7 +418,7 @@
          Iterator iterator = this.tileEntityList.iterator();
  
          while (iterator.hasNext()) {
-@@ -1093,11 +1328,13 @@
+@@ -1093,11 +1331,13 @@
          }
  
          this.M = false;
@@ -429,7 +432,7 @@
  
          this.methodProfiler.c("pendingBlockEntities");
          if (!this.b.isEmpty()) {
-@@ -1105,9 +1342,11 @@
+@@ -1105,9 +1345,11 @@
                  TileEntity tileentity1 = (TileEntity) this.b.get(l);
  
                  if (!tileentity1.x()) {
@@ -441,7 +444,7 @@
  
                      if (this.isLoaded(tileentity1.getPosition())) {
                          this.getChunkAtWorldCoords(tileentity1.getPosition()).a(tileentity1.getPosition(), tileentity1);
-@@ -1161,7 +1400,10 @@
+@@ -1161,7 +1403,10 @@
          int j = MathHelper.floor(entity.locZ);
          byte b0 = 32;
  
@@ -453,7 +456,39 @@
              entity.P = entity.locX;
              entity.Q = entity.locY;
              entity.R = entity.locZ;
-@@ -1679,12 +1921,20 @@
+@@ -1479,10 +1724,18 @@
+         }
+     }
+ 
++    public Map<BlockPosition, TileEntity> capturedTileEntities = Maps.newHashMap();
++
+     public TileEntity getTileEntity(BlockPosition blockposition) {
+         if (!this.isValidLocation(blockposition)) {
+             return null;
+         } else {
++            // CraftBukkit start
++            if (captureBlockStates && capturedTileEntities.containsKey(blockposition)) {
++                return capturedTileEntities.get(blockposition);
++            }
++            // CraftBukkit end
++
+             TileEntity tileentity = null;
+             int i;
+             TileEntity tileentity1;
+@@ -1517,6 +1770,12 @@
+ 
+     public void setTileEntity(BlockPosition blockposition, TileEntity tileentity) {
+         if (tileentity != null && !tileentity.x()) {
++            // CraftBukkit start
++            if (captureBlockStates) {
++                capturedTileEntities.put(blockposition, tileentity);
++                return;
++            }
++            // CraftBukkit end
+             if (this.M) {
+                 tileentity.a(blockposition);
+                 Iterator iterator = this.b.iterator();
+@@ -1679,12 +1938,20 @@
                  }
  
                  this.p = MathHelper.a(this.p, 0.0F, 1.0F);
@@ -475,7 +510,7 @@
          this.methodProfiler.a("buildList");
  
          int i;
-@@ -1701,7 +1951,7 @@
+@@ -1701,7 +1968,7 @@
  
              for (int i1 = -l; i1 <= l; ++i1) {
                  for (int j1 = -l; j1 <= l; ++j1) {
@@ -484,7 +519,7 @@
                  }
              }
          }
-@@ -1879,7 +2129,10 @@
+@@ -1879,7 +2146,10 @@
      }
  
      public boolean c(EnumSkyBlock enumskyblock, BlockPosition blockposition) {
@@ -496,7 +531,7 @@
              return false;
          } else {
              int i = 0;
-@@ -2024,6 +2277,13 @@
+@@ -2024,6 +2294,13 @@
          int k = MathHelper.floor((axisalignedbb.c - 2.0D) / 16.0D);
          int l = MathHelper.floor((axisalignedbb.f + 2.0D) / 16.0D);
  
@@ -510,7 +545,7 @@
          for (int i1 = i; i1 <= j; ++i1) {
              for (int j1 = k; j1 <= l; ++j1) {
                  if (this.isChunkLoaded(i1, j1, true)) {
-@@ -2042,7 +2302,7 @@
+@@ -2042,7 +2319,7 @@
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
  
@@ -519,7 +554,7 @@
                  arraylist.add(entity);
              }
          }
-@@ -2057,7 +2317,7 @@
+@@ -2057,7 +2334,7 @@
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
  
@@ -528,7 +563,7 @@
                  arraylist.add(entity);
              }
          }
-@@ -2105,7 +2365,7 @@
+@@ -2105,7 +2382,7 @@
              }
          }
  
@@ -537,7 +572,7 @@
      }
  
      public Entity a(int i) {
-@@ -2125,8 +2385,17 @@
+@@ -2125,8 +2402,17 @@
  
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
@@ -557,7 +592,7 @@
                  ++i;
              }
          }
-@@ -2135,12 +2404,18 @@
+@@ -2135,12 +2421,18 @@
      }
  
      public void b(Collection<Entity> collection) {
@@ -577,7 +612,7 @@
              this.a(entity);
          }
  
-@@ -2154,7 +2429,13 @@
+@@ -2154,7 +2446,13 @@
          Block block1 = this.getType(blockposition).getBlock();
          AxisAlignedBB axisalignedbb = flag ? null : block.a(this, blockposition, block.getBlockData());
  
@@ -592,7 +627,7 @@
      }
  
      public int F() {
-@@ -2253,6 +2534,11 @@
+@@ -2253,6 +2551,11 @@
  
          for (int i = 0; i < this.players.size(); ++i) {
              EntityHuman entityhuman1 = (EntityHuman) this.players.get(i);
@@ -604,7 +639,7 @@
  
              if (IEntitySelector.d.apply(entityhuman1)) {
                  double d5 = entityhuman1.e(d0, d1, d2);
-@@ -2369,6 +2655,16 @@
+@@ -2369,6 +2672,16 @@
  
      public void everyoneSleeping() {}
  
@@ -621,7 +656,7 @@
      public float h(float f) {
          return (this.q + (this.r - this.q) * f) * this.j(f);
      }
-@@ -2592,6 +2888,6 @@
+@@ -2592,6 +2905,6 @@
          int l = j * 16 + 8 - blockposition.getZ();
          short short0 = 128;
  

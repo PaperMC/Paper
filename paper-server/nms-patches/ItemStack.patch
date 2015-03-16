@@ -1,11 +1,12 @@
---- /home/matt/mc-dev-private//net/minecraft/server/ItemStack.java	2015-02-26 22:40:22.847608137 +0000
-+++ src/main/java/net/minecraft/server/ItemStack.java	2015-02-26 22:40:22.847608137 +0000
-@@ -5,6 +5,18 @@
+--- /home/matt/mc-dev-private//net/minecraft/server/ItemStack.java	2015-03-16 09:47:03.755222168 +0000
++++ src/main/java/net/minecraft/server/ItemStack.java	2015-03-16 09:47:03.759222168 +0000
+@@ -5,6 +5,19 @@
  import java.text.DecimalFormat;
  import java.util.Random;
  
 +// CraftBukkit start
 +import java.util.List;
++import java.util.Map;
 +
 +import org.bukkit.Location;
 +import org.bukkit.TreeType;
@@ -19,7 +20,7 @@
  public final class ItemStack {
  
      public static final DecimalFormat a = new DecimalFormat("#.###");
-@@ -46,10 +58,14 @@
+@@ -46,10 +59,14 @@
          this.k = false;
          this.item = item;
          this.count = i;
@@ -38,7 +39,7 @@
  
      }
  
-@@ -83,11 +99,114 @@
+@@ -83,11 +100,119 @@
      }
  
      public boolean placeItem(EntityHuman entityhuman, World world, BlockPosition blockposition, EnumDirection enumdirection, float f, float f1, float f2) {
@@ -129,6 +130,10 @@
 +                    world.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block.getBlock(), updateFlag); // send null chunk as chunk.k() returns false by this point
 +                }
 +
++                for (Map.Entry<BlockPosition, TileEntity> e : world.capturedTileEntities.entrySet()) {
++                    world.setTileEntity(e.getKey(), e.getValue());
++                }
++
 +                if (this.getItem() == Items.SKULL) { // Special case skulls to allow wither spawns to be cancelled
 +                    BlockPosition bp = blockposition;
 +                    if (!world.getType(blockposition).getBlock().a(world, blockposition)) {
@@ -149,12 +154,13 @@
 +                entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this.item)]);
 +            }
          }
++        world.capturedTileEntities.clear();
 +        world.capturedBlockStates.clear();
 +        // CraftBukkit end
  
          return flag;
      }
-@@ -111,7 +230,7 @@
+@@ -111,7 +236,7 @@
          nbttagcompound.setByte("Count", (byte) this.count);
          nbttagcompound.setShort("Damage", (short) this.damage);
          if (this.tag != null) {
@@ -163,7 +169,7 @@
          }
  
          return nbttagcompound;
-@@ -125,13 +244,18 @@
+@@ -125,13 +250,18 @@
          }
  
          this.count = nbttagcompound.getByte("Count");
@@ -183,7 +189,7 @@
              if (this.item != null) {
                  this.item.a(this.tag);
              }
-@@ -168,8 +292,28 @@
+@@ -168,8 +298,28 @@
      }
  
      public void setData(int i) {
@@ -213,7 +219,7 @@
              this.damage = 0;
          }
  
-@@ -223,6 +367,12 @@
+@@ -223,6 +373,12 @@
                          this.count = 0;
                      }
  
@@ -226,7 +232,7 @@
                      this.damage = 0;
                  }
  
-@@ -489,6 +639,7 @@
+@@ -489,6 +645,7 @@
  
      public void setItem(Item item) {
          this.item = item;
