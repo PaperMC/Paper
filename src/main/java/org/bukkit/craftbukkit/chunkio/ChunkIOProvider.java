@@ -42,10 +42,6 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
             queuedChunk.provider.originalGetChunkAt(queuedChunk.x, queuedChunk.z);
             return;
         }
-        // moved from Chunk.<init>
-        for (int k = 0; k < chunk.entitySlices.length; ++k) {
-            chunk.entitySlices[k] = new EntitySlice(Entity.class);
-        }
 
         queuedChunk.loader.loadEntities(chunk, queuedChunk.compound.getCompound("Level"), queuedChunk.world);
         chunk.setLastSaved(queuedChunk.provider.world.getTime());
