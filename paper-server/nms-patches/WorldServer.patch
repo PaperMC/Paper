@@ -1,5 +1,5 @@
---- /home/matt/mc-dev-private//net/minecraft/server/WorldServer.java	2015-03-15 21:11:07.596380090 +0000
-+++ src/main/java/net/minecraft/server/WorldServer.java	2015-03-15 21:11:07.600380090 +0000
+--- /home/matt/mc-dev-private//net/minecraft/server/WorldServer.java	2015-03-16 11:32:47.247153312 +0000
++++ src/main/java/net/minecraft/server/WorldServer.java	2015-03-16 11:32:47.251153312 +0000
 @@ -16,11 +16,23 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -51,7 +51,27 @@
          this.B();
          this.C();
          this.getWorldBorder().a(minecraftserver.aH());
-@@ -84,9 +104,98 @@
+@@ -63,6 +83,7 @@
+             this.villages.a((World) this);
+         }
+ 
++        if (getServer().getScoreboardManager() == null) { // CraftBukkit
+         this.scoreboard = new ScoreboardServer(this.server);
+         PersistentScoreboard persistentscoreboard = (PersistentScoreboard) this.worldMaps.get(PersistentScoreboard.class, "scoreboard");
+ 
+@@ -73,6 +94,11 @@
+ 
+         persistentscoreboard.a(this.scoreboard);
+         ((ScoreboardServer) this.scoreboard).a(persistentscoreboard);
++        // CraftBukkit start
++        } else {
++            this.scoreboard = getServer().getScoreboardManager().getMainScoreboard().getHandle();
++        }
++        // CraftBukkit end
+         this.getWorldBorder().setCenter(this.worldData.C(), this.worldData.D());
+         this.getWorldBorder().setDamageAmount(this.worldData.I());
+         this.getWorldBorder().setDamageBuffer(this.worldData.H());
+@@ -84,9 +110,98 @@
              this.getWorldBorder().setSize(this.worldData.E());
          }
  
@@ -150,7 +170,7 @@
      public void doTick() {
          super.doTick();
          if (this.getWorldData().isHardcore() && this.getDifficulty() != EnumDifficulty.HARD) {
-@@ -104,9 +213,11 @@
+@@ -104,9 +219,11 @@
              this.e();
          }
  
@@ -165,7 +185,7 @@
          }
  
          this.methodProfiler.c("chunkSource");
-@@ -135,6 +246,8 @@
+@@ -135,6 +252,8 @@
          this.Q.a(this.getTime());
          this.methodProfiler.b();
          this.ak();
@@ -174,7 +194,7 @@
      }
  
      public BiomeBase.BiomeMeta a(EnumCreatureType enumcreaturetype, BlockPosition blockposition) {
-@@ -161,7 +274,7 @@
+@@ -161,7 +280,7 @@
  
                  if (entityhuman.v()) {
                      ++i;
@@ -183,7 +203,7 @@
                      ++j;
                  }
              }
-@@ -187,25 +300,46 @@
+@@ -187,25 +306,46 @@
      }
  
      private void ag() {
@@ -234,7 +254,7 @@
  
              return false;
          } else {
-@@ -228,13 +362,20 @@
+@@ -228,13 +368,20 @@
              int i = 0;
              int j = 0;
  
@@ -260,7 +280,7 @@
  
                  this.a(k, l, chunk);
                  this.methodProfiler.c("tickChunk");
-@@ -260,11 +401,29 @@
+@@ -260,11 +407,29 @@
                      BlockPosition blockposition1 = blockposition.down();
  
                      if (this.w(blockposition1)) {
@@ -292,7 +312,7 @@
                      }
  
                      if (this.S() && this.getBiome(blockposition1).e()) {
-@@ -383,7 +542,7 @@
+@@ -383,7 +548,7 @@
      }
  
      public void tickEntities() {
@@ -301,7 +321,7 @@
              if (this.emptyTime++ >= 1200) {
                  return;
              }
-@@ -408,7 +567,13 @@
+@@ -408,7 +573,13 @@
                  throw new IllegalStateException("TickNextTick list out of synch");
              } else {
                  if (i > 1000) {
@@ -316,7 +336,7 @@
                  }
  
                  this.methodProfiler.a("cleaning");
-@@ -477,7 +642,9 @@
+@@ -477,7 +648,9 @@
          for (int i = 0; i < 2; ++i) {
              Iterator iterator;
  
@@ -326,7 +346,7 @@
                  iterator = this.M.iterator();
              } else {
                  iterator = this.V.iterator();
-@@ -492,6 +659,7 @@
+@@ -492,6 +665,7 @@
  
                  if (blockposition.getX() >= structureboundingbox.a && blockposition.getX() < structureboundingbox.d && blockposition.getZ() >= structureboundingbox.c && blockposition.getZ() < structureboundingbox.f) {
                      if (flag) {
@@ -334,7 +354,7 @@
                          this.L.remove(nextticklistentry);
                          iterator.remove();
                      }
-@@ -508,6 +676,7 @@
+@@ -508,6 +682,7 @@
          return arraylist;
      }
  
@@ -342,7 +362,7 @@
      public void entityJoinedWorld(Entity entity, boolean flag) {
          if (!this.getSpawnAnimals() && (entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal)) {
              entity.die();
-@@ -519,6 +688,7 @@
+@@ -519,6 +694,7 @@
  
          super.entityJoinedWorld(entity, flag);
      }
@@ -350,7 +370,7 @@
  
      private boolean getSpawnNPCs() {
          return this.server.getSpawnNPCs();
-@@ -531,13 +701,43 @@
+@@ -531,13 +707,43 @@
      protected IChunkProvider k() {
          IChunkLoader ichunkloader = this.dataManager.createChunkLoader(this.worldProvider);
  
@@ -395,7 +415,7 @@
          for (int k1 = 0; k1 < this.h.size(); ++k1) {
              TileEntity tileentity = (TileEntity) this.h.get(k1);
              BlockPosition blockposition = tileentity.getPosition();
-@@ -546,6 +746,8 @@
+@@ -546,6 +752,8 @@
                  arraylist.add(tileentity);
              }
          }
@@ -404,7 +424,7 @@
  
          return arraylist;
      }
-@@ -609,6 +811,23 @@
+@@ -609,6 +817,23 @@
              int j = this.worldProvider.getSeaLevel();
              int k = 0;
  
@@ -428,7 +448,7 @@
              if (blockposition != null) {
                  i = blockposition.getX();
                  k = blockposition.getZ();
-@@ -618,7 +837,7 @@
+@@ -618,7 +843,7 @@
  
              int l = 0;
  
@@ -437,7 +457,7 @@
                  i += random.nextInt(64) - random.nextInt(64);
                  k += random.nextInt(64) - random.nextInt(64);
                  ++l;
-@@ -657,6 +876,7 @@
+@@ -657,6 +882,7 @@
  
      public void save(boolean flag, IProgressUpdate iprogressupdate) throws ExceptionWorldConflict {
          if (this.chunkProvider.canSave()) {
@@ -445,7 +465,7 @@
              if (iprogressupdate != null) {
                  iprogressupdate.a("Saving level");
              }
-@@ -667,7 +887,8 @@
+@@ -667,7 +893,8 @@
              }
  
              this.chunkProvider.saveChunks(flag, iprogressupdate);
@@ -455,7 +475,7 @@
              Iterator iterator = arraylist.iterator();
  
              while (iterator.hasNext()) {
-@@ -698,8 +919,12 @@
+@@ -698,8 +925,12 @@
          this.worldData.k(this.getWorldBorder().getWarningTime());
          this.worldData.b(this.getWorldBorder().j());
          this.worldData.e(this.getWorldBorder().i());
@@ -469,7 +489,7 @@
      }
  
      protected void a(Entity entity) {
-@@ -731,8 +956,16 @@
+@@ -731,8 +962,16 @@
      }
  
      public boolean strikeLightning(Entity entity) {
@@ -487,7 +507,7 @@
              return true;
          } else {
              return false;
-@@ -744,10 +977,20 @@
+@@ -744,10 +983,20 @@
      }
  
      public Explosion createExplosion(Entity entity, double d0, double d1, double d2, float f, boolean flag, boolean flag1) {
@@ -508,7 +528,7 @@
          if (!flag1) {
              explosion.clearBlocks();
          }
-@@ -793,7 +1036,8 @@
+@@ -793,7 +1042,8 @@
                  BlockActionData blockactiondata = (BlockActionData) iterator.next();
  
                  if (this.a(blockactiondata)) {
@@ -518,7 +538,7 @@
                  }
              }
  
-@@ -816,6 +1060,7 @@
+@@ -816,6 +1066,7 @@
          boolean flag = this.S();
  
          super.p();
@@ -526,7 +546,7 @@
          if (this.o != this.p) {
              this.server.getPlayerList().a(new PacketPlayOutGameStateChange(7, this.p), this.worldProvider.getDimension());
          }
-@@ -834,6 +1079,21 @@
+@@ -834,6 +1085,21 @@
              this.server.getPlayerList().sendAll(new PacketPlayOutGameStateChange(7, this.p));
              this.server.getPlayerList().sendAll(new PacketPlayOutGameStateChange(8, this.r));
          }
@@ -548,7 +568,7 @@
  
      }
  
-@@ -862,10 +1122,17 @@
+@@ -862,10 +1128,17 @@
      }
  
      public void a(EnumParticle enumparticle, boolean flag, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6, int... aint) {
