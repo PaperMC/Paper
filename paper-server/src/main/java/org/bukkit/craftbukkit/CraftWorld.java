@@ -261,6 +261,10 @@ public class CraftWorld implements World {
 
     private void chunkLoadPostProcess(net.minecraft.server.Chunk chunk, int cx, int cz) {
         if (chunk != null) {
+            // moved from Chunk.<init>
+            for (int k = 0; k < chunk.entitySlices.length; ++k) {
+                chunk.entitySlices[k] = new EntitySlice(net.minecraft.server.Entity.class);
+            }
             world.chunkProviderServer.chunks.put(LongHash.toLong(cx, cz), chunk);
 
             chunk.addEntities();
