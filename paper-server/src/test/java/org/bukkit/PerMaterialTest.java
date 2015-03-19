@@ -34,7 +34,7 @@ public class PerMaterialTest extends AbstractTestingBase {
 
     @BeforeClass
     public static void getFireValues() {
-        fireValues = Util.getInternalState(BlockFire.class, Blocks.FIRE, "T");
+        fireValues = Util.getInternalState(BlockFire.class, Blocks.FIRE, "T"); // PAIL: Rename flameChances
     }
 
     @Parameters(name= "{index}: {0}")
