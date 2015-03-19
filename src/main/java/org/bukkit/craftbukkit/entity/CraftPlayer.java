@@ -759,7 +759,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 return;
             }
             
-            getHandle().e((Entity) getHandle()); // RENAME
+            getHandle().e((Entity) getHandle()); // PAIL: Rename setSpectatorTarget
             getHandle().playerInteractManager.setGameMode(WorldSettings.EnumGamemode.getById(mode.getValue()));
             getHandle().fallDistance = 0;
             getHandle().playerConnection.sendPacket(new PacketPlayOutGameStateChange(3, mode.getValue()));
