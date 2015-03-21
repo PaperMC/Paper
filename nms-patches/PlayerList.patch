@@ -1,5 +1,5 @@
---- /home/matt/mc-dev-private//net/minecraft/server/PlayerList.java	2015-03-08 10:56:47.731557415 +0000
-+++ src/main/java/net/minecraft/server/PlayerList.java	2015-03-08 10:56:47.735557415 +0000
+--- /home/matt/mc-dev-private//net/minecraft/server/PlayerList.java	2015-03-21 20:36:24.932515542 +0000
++++ src/main/java/net/minecraft/server/PlayerList.java	2015-03-21 20:36:24.932515542 +0000
 @@ -18,6 +18,26 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -367,7 +367,7 @@
          entityplayer.dimension = i;
          Object object;
  
-@@ -355,80 +509,270 @@
+@@ -355,80 +509,276 @@
          }
  
          EntityPlayer entityplayer1 = new EntityPlayer(this.server, this.server.getWorldServer(entityplayer.dimension), entityplayer.getProfile(), (PlayerInteractManager) object);
@@ -496,9 +496,6 @@
 -    public void changeDimension(EntityPlayer entityplayer, int i) {
 -        int j = entityplayer.dimension;
 -        WorldServer worldserver = this.server.getWorldServer(entityplayer.dimension);
--
--        entityplayer.dimension = i;
--        WorldServer worldserver1 = this.server.getWorldServer(entityplayer.dimension);
 +    // CraftBukkit start - Replaced the standard handling of portals with a more customised method.
 +    public void changeDimension(EntityPlayer entityplayer, int i, TeleportCause cause) {
 +        WorldServer exitWorld = null;
@@ -511,16 +508,8 @@
 +            }
 +        }
  
--        entityplayer.playerConnection.sendPacket(new PacketPlayOutRespawn(entityplayer.dimension, entityplayer.world.getDifficulty(), entityplayer.world.getWorldData().getType(), entityplayer.playerInteractManager.getGameMode()));
--        worldserver.removeEntity(entityplayer);
--        entityplayer.dead = false;
--        this.changeWorld(entityplayer, j, worldserver, worldserver1);
--        this.a(entityplayer, worldserver);
--        entityplayer.playerConnection.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
--        entityplayer.playerInteractManager.a(worldserver1);
--        this.b(entityplayer, worldserver1);
--        this.updateClient(entityplayer);
--        Iterator iterator = entityplayer.getEffects().iterator();
+-        entityplayer.dimension = i;
+-        WorldServer worldserver1 = this.server.getWorldServer(entityplayer.dimension);
 +        Location enter = entityplayer.getBukkitEntity().getLocation();
 +        Location exit = null;
 +        boolean useTravelAgent = false; // don't use agent for custom worlds or return from THE_END
@@ -538,8 +527,16 @@
 +            }
 +        }
  
--        while (iterator.hasNext()) {
--            MobEffect mobeffect = (MobEffect) iterator.next();
+-        entityplayer.playerConnection.sendPacket(new PacketPlayOutRespawn(entityplayer.dimension, entityplayer.world.getDifficulty(), entityplayer.world.getWorldData().getType(), entityplayer.playerInteractManager.getGameMode()));
+-        worldserver.removeEntity(entityplayer);
+-        entityplayer.dead = false;
+-        this.changeWorld(entityplayer, j, worldserver, worldserver1);
+-        this.a(entityplayer, worldserver);
+-        entityplayer.playerConnection.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
+-        entityplayer.playerInteractManager.a(worldserver1);
+-        this.b(entityplayer, worldserver1);
+-        this.updateClient(entityplayer);
+-        Iterator iterator = entityplayer.getEffects().iterator();
 +        TravelAgent agent = exit != null ? (TravelAgent) ((CraftWorld) exit.getWorld()).getHandle().getTravelAgent() : org.bukkit.craftbukkit.CraftTravelAgent.DEFAULT; // return arbitrary TA to compensate for implementation dependent plugins
 +        PlayerPortalEvent event = new PlayerPortalEvent(entityplayer.getBukkitEntity(), enter, exit, agent, cause);
 +        event.useTravelAgent(useTravelAgent);
@@ -548,19 +545,27 @@
 +            return;
 +        }
  
--            entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityEffect(entityplayer.getId(), mobeffect));
+-        while (iterator.hasNext()) {
+-            MobEffect mobeffect = (MobEffect) iterator.next();
 +        exit = event.useTravelAgent() ? event.getPortalTravelAgent().findOrCreate(event.getTo()) : event.getTo();
 +        if (exit == null) {
 +            return;
-         }
++        }
 +        exitWorld = ((CraftWorld) exit.getWorld()).getHandle();
-+
+ 
+-            entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityEffect(entityplayer.getId(), mobeffect));
++        org.bukkit.event.player.PlayerTeleportEvent tpEvent = new org.bukkit.event.player.PlayerTeleportEvent(entityplayer.getBukkitEntity(), enter, exit, cause);
++        Bukkit.getServer().getPluginManager().callEvent(tpEvent);
++        if (tpEvent.isCancelled() || tpEvent.getTo() == null) {
++            return;
+         }
+ 
 +        Vector velocity = entityplayer.getBukkitEntity().getVelocity();
 +        boolean before = exitWorld.chunkProviderServer.forceChunkLoad;
 +        exitWorld.chunkProviderServer.forceChunkLoad = true;
 +        exitWorld.getTravelAgent().adjustExit(entityplayer, exit, velocity);
 +        exitWorld.chunkProviderServer.forceChunkLoad = before;
- 
++
 +        this.moveToWorld(entityplayer, exitWorld.dimension, true, exit, false); // Vanilla doesn't check for suffocation when handling portals, so neither should we
 +        if (entityplayer.motX != velocity.getX() || entityplayer.motY != velocity.getY() || entityplayer.motZ != velocity.getZ()) {
 +            entityplayer.getBukkitEntity().setVelocity(velocity);
@@ -676,7 +681,7 @@
          if (entity.dimension == -1) {
              d0 = MathHelper.a(d0 / d2, worldserver1.getWorldBorder().b() + 16.0D, worldserver1.getWorldBorder().d() - 16.0D);
              d1 = MathHelper.a(d1 / d2, worldserver1.getWorldBorder().c() + 16.0D, worldserver1.getWorldBorder().e() - 16.0D);
-@@ -447,6 +791,8 @@
+@@ -447,6 +797,8 @@
              BlockPosition blockposition;
  
              if (i == 1) {
@@ -685,7 +690,7 @@
                  blockposition = worldserver1.getSpawn();
              } else {
                  blockposition = worldserver1.getDimensionSpawn();
-@@ -460,15 +806,26 @@
+@@ -460,15 +812,26 @@
                  worldserver.entityJoinedWorld(entity, false);
              }
          }
@@ -714,7 +719,7 @@
                  worldserver1.addEntity(entity);
                  worldserver1.entityJoinedWorld(entity, false);
              }
-@@ -477,6 +834,7 @@
+@@ -477,6 +840,7 @@
          }
  
          entity.spawnIn(worldserver1);
@@ -722,7 +727,7 @@
      }
  
      public void tick() {
-@@ -494,6 +852,15 @@
+@@ -494,6 +858,15 @@
  
      }
  
@@ -738,7 +743,7 @@
      public void a(Packet packet, int i) {
          for (int j = 0; j < this.players.size(); ++j) {
              EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
-@@ -589,10 +956,24 @@
+@@ -589,10 +962,24 @@
  
      public void addOp(GameProfile gameprofile) {
          this.operators.add(new OpListEntry(gameprofile, this.server.p()));
@@ -763,7 +768,7 @@
      }
  
      public boolean isWhitelisted(GameProfile gameprofile) {
-@@ -600,7 +981,7 @@
+@@ -600,7 +987,7 @@
      }
  
      public boolean isOp(GameProfile gameprofile) {
@@ -772,7 +777,7 @@
      }
  
      public EntityPlayer getPlayer(String s) {
-@@ -627,6 +1008,12 @@
+@@ -627,6 +1014,12 @@
          for (int j = 0; j < this.players.size(); ++j) {
              EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
  
@@ -785,7 +790,7 @@
              if (entityplayer != entityhuman && entityplayer.dimension == i) {
                  double d4 = d0 - entityplayer.locX;
                  double d5 = d1 - entityplayer.locY;
-@@ -674,21 +1061,26 @@
+@@ -674,21 +1067,26 @@
      public void reloadWhitelist() {}
  
      public void b(EntityPlayer entityplayer, WorldServer worldserver) {
@@ -817,7 +822,7 @@
          entityplayer.playerConnection.sendPacket(new PacketPlayOutHeldItemSlot(entityplayer.inventory.itemInHandIndex));
      }
  
-@@ -701,7 +1093,7 @@
+@@ -701,7 +1099,7 @@
      }
  
      public String[] getSeenPlayers() {
@@ -826,7 +831,7 @@
      }
  
      public boolean getHasWhitelist() {
-@@ -751,16 +1143,26 @@
+@@ -751,16 +1149,26 @@
  
      public void u() {
          for (int i = 0; i < this.players.size(); ++i) {
@@ -855,7 +860,7 @@
      }
  
      public void sendMessage(IChatBaseComponent ichatbasecomponent) {
-@@ -797,8 +1199,10 @@
+@@ -797,8 +1205,10 @@
              WorldServer[] aworldserver = this.server.worldServer;
              int j = aworldserver.length;
  
