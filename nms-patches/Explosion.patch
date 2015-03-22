@@ -1,6 +1,6 @@
---- /home/matt/mc-dev-private//net/minecraft/server/Explosion.java	2015-02-26 22:40:22.747608138 +0000
-+++ src/main/java/net/minecraft/server/Explosion.java	2015-02-26 22:40:22.747608138 +0000
-@@ -9,6 +9,12 @@
+--- /home/matt/mc-dev-private//net/minecraft/server/Explosion.java	2015-03-22 19:42:34.893852628 +0000
++++ src/main/java/net/minecraft/server/Explosion.java	2015-03-22 19:42:34.893852628 +0000
+@@ -9,6 +9,13 @@
  import java.util.Map;
  import java.util.Random;
  
@@ -8,12 +8,13 @@
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityExplodeEvent;
 +import org.bukkit.Location;
++import org.bukkit.event.block.BlockExplodeEvent;
 +// CraftBukkit end
 +
  public class Explosion {
  
      private final boolean a;
-@@ -18,15 +24,16 @@
+@@ -18,15 +25,16 @@
      private final double posX;
      private final double posY;
      private final double posZ;
@@ -32,7 +33,7 @@
          this.posX = d0;
          this.posY = d1;
          this.posZ = d2;
-@@ -35,6 +42,11 @@
+@@ -35,6 +43,11 @@
      }
  
      public void a() {
@@ -44,7 +45,7 @@
          HashSet hashset = Sets.newHashSet();
          boolean flag = true;
  
-@@ -68,7 +80,7 @@
+@@ -68,7 +81,7 @@
                                  f -= (f2 + 0.3F) * 0.3F;
                              }
  
@@ -53,7 +54,7 @@
                                  hashset.add(blockposition);
                              }
  
-@@ -112,7 +124,14 @@
+@@ -112,7 +125,14 @@
                          double d12 = (double) this.world.a(vec3d, entity.getBoundingBox());
                          double d13 = (1.0D - d7) * d12;
  
@@ -69,7 +70,7 @@
                          double d14 = EnchantmentProtection.a(entity, d13);
  
                          entity.motX += d8 * d14;
-@@ -140,6 +159,35 @@
+@@ -140,6 +160,50 @@
          BlockPosition blockposition;
  
          if (this.b) {
@@ -87,17 +88,32 @@
 +                }
 +            }
 +
-+            EntityExplodeEvent event = new EntityExplodeEvent(explode, location, blockList, 0.3F);
-+            this.world.getServer().getPluginManager().callEvent(event);
++            boolean cancelled;
++            List<org.bukkit.block.Block> bukkitBlocks;
++            float yield;
++
++            if (explode != null) {
++                EntityExplodeEvent event = new EntityExplodeEvent(explode, location, blockList, 0.3F);
++                this.world.getServer().getPluginManager().callEvent(event);
++                cancelled = event.isCancelled();
++                bukkitBlocks = event.blockList();
++                yield = event.getYield();
++            } else {
++                BlockExplodeEvent event = new BlockExplodeEvent(location.getBlock(), blockList, 0.3F);
++                this.world.getServer().getPluginManager().callEvent(event);
++                cancelled = event.isCancelled();
++                bukkitBlocks = event.blockList();
++                yield = event.getYield();
++            }
 +
 +            this.blocks.clear();
 +
-+            for (org.bukkit.block.Block bblock : event.blockList()) {
++            for (org.bukkit.block.Block bblock : bukkitBlocks) {
 +                BlockPosition coords = new BlockPosition(bblock.getX(), bblock.getY(), bblock.getZ());
 +                blocks.add(coords);
 +            }
 +
-+            if (event.isCancelled()) {
++            if (cancelled) {
 +                this.wasCanceled = true;
 +                return;
 +            }
@@ -105,17 +121,17 @@
              iterator = this.blocks.iterator();
  
              while (iterator.hasNext()) {
-@@ -170,7 +218,8 @@
+@@ -170,7 +234,8 @@
  
                  if (block.getMaterial() != Material.AIR) {
                      if (block.a(this)) {
 -                        block.dropNaturally(this.world, blockposition, this.world.getType(blockposition), 1.0F / this.size, 0);
 +                        // CraftBukkit - add yield
-+                        block.dropNaturally(this.world, blockposition, this.world.getType(blockposition), event.getYield(), 0);
++                        block.dropNaturally(this.world, blockposition, this.world.getType(blockposition), yield, 0);
                      }
  
                      this.world.setTypeAndData(blockposition, Blocks.AIR.getBlockData(), 3);
-@@ -185,7 +234,11 @@
+@@ -185,7 +250,11 @@
              while (iterator.hasNext()) {
                  blockposition = (BlockPosition) iterator.next();
                  if (this.world.getType(blockposition).getBlock().getMaterial() == Material.AIR && this.world.getType(blockposition.down()).getBlock().o() && this.c.nextInt(3) == 0) {
