@@ -1,0 +1,58 @@
+From c42571ad2dde931065e837927349fa1d157f53e3 Mon Sep 17 00:00:00 2001
+From: Iceee <andrew@opticgaming.tv>
+Date: Sat, 7 Mar 2015 20:49:31 -0600
+Subject: [PATCH] Fix redstone lag issues
+
+
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index a599869..5d73d88 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -22,7 +22,6 @@ import java.util.logging.Level;
+ 
+ import org.bukkit.WeatherType;
+ import org.bukkit.block.BlockState;
+-import org.bukkit.craftbukkit.util.LongHash;
+ 
+ import org.bukkit.event.block.BlockFormEvent;
+ import org.bukkit.event.weather.LightningStrikeEvent;
+@@ -610,6 +609,8 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+             if (i != this.L.size()) {
+                 throw new IllegalStateException("TickNextTick list out of synch");
+             } else {
++                // PaperSpigot start - No, stop doing this, it affects things like redstone
++                /*
+                 if (i > 1000) {
+                     // CraftBukkit start - If the server has too much to process over time, try to alleviate that
+                     if (i > 20 * 1000) {
+@@ -618,7 +619,11 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+                         i = 1000;
+                     }
+                     // CraftBukkit end
++                */
++                if (i > paperSpigotConfig.tickNextTickCap) {
++                    i = paperSpigotConfig.tickNextTickCap;
+                 }
++                // PaperSpigot end
+ 
+                 this.methodProfiler.a("cleaning");
+ 
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+index 1915a7c..46412dd 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+@@ -223,4 +223,11 @@ public class PaperSpigotWorldConfig
+             System.err.println( "==========================================" );
+         }
+     }
++
++    public int tickNextTickCap;
++    private void tickNextTickCap()
++    {
++        tickNextTickCap = 10000; // Higher values will be friendlier to vanilla style mechanics but may hurt performance
++        log( "WorldServer TickNextTick cap set at " + tickNextTickCap );
++    }
+ }
+-- 
+1.9.1
+
