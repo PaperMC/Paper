@@ -23,6 +23,12 @@ public class CraftDropper extends CraftBlockState implements Dropper {
         dropper = (TileEntityDropper) world.getTileEntityAt(getX(), getY(), getZ());
     }
 
+    public CraftDropper(final Material material, TileEntityDropper te) {
+        super(material);
+        world = null;
+        dropper = te;
+    }
+
     public Inventory getInventory() {
         return new CraftInventory(dropper);
     }
@@ -46,5 +52,10 @@ public class CraftDropper extends CraftBlockState implements Dropper {
         }
 
         return result;
+    }
+
+    @Override
+    public TileEntityDropper getTileEntity() {
+        return dropper;
     }
 }

@@ -367,7 +367,7 @@ public final class CraftItemStack extends ItemStack {
             case HOPPER:
             case REDSTONE_COMPARATOR:
             case FLOWER_POT_ITEM:
-                return new CraftMetaTileEntity(item.getTag(), CraftMagicNumbers.getMaterial(item.getItem()));                
+                return new CraftMetaBlockState(item.getTag(), CraftMagicNumbers.getMaterial(item.getItem()));
             default:
                 return new CraftMetaItem(item.getTag());
         }

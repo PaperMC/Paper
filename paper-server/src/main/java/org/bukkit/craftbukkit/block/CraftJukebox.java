@@ -20,6 +20,12 @@ public class CraftJukebox extends CraftBlockState implements Jukebox {
         jukebox = (TileEntityRecordPlayer) world.getTileEntityAt(getX(), getY(), getZ());
     }
 
+    public CraftJukebox(final Material material, TileEntityRecordPlayer te) {
+        super(material);
+        world = null;
+        jukebox = te;
+    }
+
     @Override
     public Material getPlaying() {
         ItemStack record = jukebox.getRecord();
@@ -36,6 +42,9 @@ public class CraftJukebox extends CraftBlockState implements Jukebox {
             jukebox.setRecord(null);
         } else {
             jukebox.setRecord(new ItemStack(CraftMagicNumbers.getItem(record), 1));
+        }
+        if (!isPlaced()) {
+            return;
         }
         jukebox.update();
         if (record == Material.AIR) {
@@ -55,8 +64,14 @@ public class CraftJukebox extends CraftBlockState implements Jukebox {
     }
 
     public boolean eject() {
+        requirePlaced();
         boolean result = isPlaying();
         ((BlockJukeBox) Blocks.JUKEBOX).dropRecord(world.getHandle(), new BlockPosition(getX(), getY(), getZ()), null);
         return result;
+    }
+
+    @Override
+    public TileEntityRecordPlayer getTileEntity() {
+        return jukebox;
     }
 }

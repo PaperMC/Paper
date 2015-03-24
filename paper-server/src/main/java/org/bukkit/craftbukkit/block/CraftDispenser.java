@@ -25,6 +25,12 @@ public class CraftDispenser extends CraftBlockState implements Dispenser {
         dispenser = (TileEntityDispenser) world.getTileEntityAt(getX(), getY(), getZ());
     }
 
+    public CraftDispenser(final Material material, final TileEntityDispenser te) {
+        super(material);
+        world = null;
+        dispenser = te;
+    }
+
     public Inventory getInventory() {
         return new CraftInventory(dispenser);
     }
@@ -61,5 +67,10 @@ public class CraftDispenser extends CraftBlockState implements Dispenser {
         }
 
         return result;
+    }
+
+    @Override
+    public TileEntityDispenser getTileEntity() {
+        return dispenser;
     }
 }

@@ -6,6 +6,7 @@ import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.NBTTagList;
 import net.minecraft.server.TileEntityBanner;
 import org.bukkit.DyeColor;
+import org.bukkit.Material;
 import org.bukkit.block.Banner;
 import org.bukkit.block.Block;
 import org.bukkit.block.banner.Pattern;
@@ -23,6 +24,20 @@ public class CraftBanner extends CraftBlockState implements Banner {
 
         CraftWorld world = (CraftWorld) block.getWorld();
         banner = (TileEntityBanner) world.getTileEntityAt(getX(), getY(), getZ());
+
+        base = DyeColor.getByDyeData((byte) banner.color);
+
+        if (banner.patterns != null) {
+            for (int i = 0; i < banner.patterns.size(); i++) {
+                NBTTagCompound p = (NBTTagCompound) banner.patterns.get(i);
+                patterns.add(new Pattern(DyeColor.getByDyeData((byte) p.getInt("Color")), PatternType.getByIdentifier(p.getString("Pattern"))));
+            }
+        }
+    }
+
+    public CraftBanner(final Material material, final TileEntityBanner te) {
+        super(material);
+        banner = te;
 
         base = DyeColor.getByDyeData((byte) banner.color);
 

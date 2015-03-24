@@ -22,6 +22,12 @@ public class CraftChest extends CraftBlockState implements Chest {
         chest = (TileEntityChest) world.getTileEntityAt(getX(), getY(), getZ());
     }
 
+    public CraftChest(final Material material, final TileEntityChest te) {
+        super(material);
+        chest = te;
+        world = null;
+    }
+
     public Inventory getBlockInventory() {
         return new CraftInventory(chest);
     }
@@ -32,6 +38,9 @@ public class CraftChest extends CraftBlockState implements Chest {
         int z = getZ();
         // The logic here is basically identical to the logic in BlockChest.interact
         CraftInventory inventory = new CraftInventory(chest);
+        if (!isPlaced()) {
+            return inventory;
+        }
         int id;
         if (world.getBlockTypeIdAt(x, y, z) == Material.CHEST.getId()) {
             id = Material.CHEST.getId();
@@ -69,5 +78,10 @@ public class CraftChest extends CraftBlockState implements Chest {
         }
 
         return result;
+    }
+
+    @Override
+    public TileEntityChest getTileEntity() {
+        return chest;
     }
 }
