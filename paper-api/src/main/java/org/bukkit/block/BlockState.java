@@ -192,4 +192,15 @@ public interface BlockState extends Metadatable {
      */
     @Deprecated
     public void setRawData(byte data);
+
+    /**
+     * Returns whether this state is placed in the world.
+     *
+     * Some methods will not work if the blockState isn't
+     * placed in the world.
+     *
+     * @return whether the state is placed in the world
+     *         or 'virtual' (e.g. on an itemstack)
+     */
+    boolean isPlaced();
 }
