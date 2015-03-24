@@ -14,6 +14,7 @@ import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 
 import java.util.List;
+import net.minecraft.server.TileEntity;
 
 public class CraftBlockState implements BlockState {
     private final CraftWorld world;
@@ -44,6 +45,14 @@ public class CraftBlockState implements BlockState {
         this.flag = flag;
     }
 
+    public CraftBlockState(Material material) {
+        world = null;
+        type = material.getId();
+        light = 0;
+        chunk = null;
+        x = y = z = 0;
+    }
+
     public static CraftBlockState getBlockState(net.minecraft.server.World world, int x, int y, int z) {
         return new CraftBlockState(world.getWorld().getBlockAt(x, y, z));
     }
@@ -53,6 +62,7 @@ public class CraftBlockState implements BlockState {
     }
 
     public World getWorld() {
+        requirePlaced();
         return world;
     }
 
@@ -69,6 +79,7 @@ public class CraftBlockState implements BlockState {
     }
 
     public Chunk getChunk() {
+        requirePlaced();
         return chunk;
     }
 
@@ -125,6 +136,7 @@ public class CraftBlockState implements BlockState {
     }
 
     public Block getBlock() {
+        requirePlaced();
         return world.getBlockAt(x, y, z);
     }
 
@@ -137,6 +149,7 @@ public class CraftBlockState implements BlockState {
     }
 
     public boolean update(boolean force, boolean applyPhysics) {
+        requirePlaced();
         Block block = getBlock();
 
         if (block.getType() != getType()) {
@@ -227,19 +240,38 @@ public class CraftBlockState implements BlockState {
         return hash;
     }
 
+    public TileEntity getTileEntity() {
+        return null;
+    }
+
     public void setMetadata(String metadataKey, MetadataValue newMetadataValue) {
+        requirePlaced();
         chunk.getCraftWorld().getBlockMetadata().setMetadata(getBlock(), metadataKey, newMetadataValue);
     }
 
     public List<MetadataValue> getMetadata(String metadataKey) {
+        requirePlaced();
         return chunk.getCraftWorld().getBlockMetadata().getMetadata(getBlock(), metadataKey);
     }
 
     public boolean hasMetadata(String metadataKey) {
+        requirePlaced();
         return chunk.getCraftWorld().getBlockMetadata().hasMetadata(getBlock(), metadataKey);
     }
 
     public void removeMetadata(String metadataKey, Plugin owningPlugin) {
+        requirePlaced();
         chunk.getCraftWorld().getBlockMetadata().removeMetadata(getBlock(), metadataKey, owningPlugin);
+    }
+
+    @Override
+    public boolean isPlaced() {
+        return world != null;
+    }
+
+    protected void requirePlaced() {
+        if (!isPlaced()) {
+            throw new IllegalStateException("The blockState must be placed to call this method");
+        }
     }
 }

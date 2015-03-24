@@ -22,6 +22,12 @@ public class CraftNoteBlock extends CraftBlockState implements NoteBlock {
         note = (TileEntityNote) world.getTileEntityAt(getX(), getY(), getZ());
     }
 
+    public CraftNoteBlock(final Material material, final TileEntityNote te) {
+        super(material);
+        world = null;
+        note = te;
+    }
+
     public Note getNote() {
         return new Note(note.note);
     }
@@ -71,5 +77,10 @@ public class CraftNoteBlock extends CraftBlockState implements NoteBlock {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public TileEntityNote getTileEntity() {
+        return note;
     }
 }

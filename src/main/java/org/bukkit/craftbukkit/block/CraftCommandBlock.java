@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.TileEntityCommand;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.CommandBlock;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -15,6 +16,13 @@ public class CraftCommandBlock extends CraftBlockState implements CommandBlock {
 
         CraftWorld world = (CraftWorld) block.getWorld();
         commandBlock = (TileEntityCommand) world.getTileEntityAt(getX(), getY(), getZ());
+        command = commandBlock.getCommandBlock().getCommand();
+        name = commandBlock.getCommandBlock().getName();
+    }
+
+    public CraftCommandBlock(final Material material, final TileEntityCommand te) {
+        super(material);
+        commandBlock = te;
         command = commandBlock.getCommandBlock().getCommand();
         name = commandBlock.getCommandBlock().getName();
     }
@@ -44,5 +52,10 @@ public class CraftCommandBlock extends CraftBlockState implements CommandBlock {
         }
 
         return result;
+    }
+
+    @Override
+    public TileEntityCommand getTileEntity() {
+        return commandBlock;
     }
 }

@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.TileEntityMobSpawner;
+import org.bukkit.Material;
 
 import org.bukkit.block.Block;
 import org.bukkit.block.CreatureSpawner;
@@ -15,6 +16,11 @@ public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpa
         super(block);
 
         spawner = (TileEntityMobSpawner) ((CraftWorld) block.getWorld()).getTileEntityAt(getX(), getY(), getZ());
+    }
+
+    public CraftCreatureSpawner(final Material material, TileEntityMobSpawner te) {
+        super(material);
+        spawner = te;
     }
 
     @Deprecated
@@ -70,4 +76,8 @@ public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpa
         spawner.getSpawner().spawnDelay = delay;
     }
 
+    @Override
+    public TileEntityMobSpawner getTileEntity() {
+        return spawner;
+    }
 }

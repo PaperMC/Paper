@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
+import org.bukkit.block.BlockState;
 
 /**
  * Children must include the following:
@@ -103,7 +104,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
         static {
             classMap = ImmutableMap.<Class<? extends CraftMetaItem>, String>builder()
                     .put(CraftMetaBanner.class, "BANNER")
-                    .put(CraftMetaTileEntity.class, "TILE_ENTITY")
+                    .put(CraftMetaBlockState.class, "TILE_ENTITY")
                     .put(CraftMetaBook.class, "BOOK")
                     .put(CraftMetaBookSigned.class, "BOOK_SIGNED")
                     .put(CraftMetaSkull.class, "SKULL")
@@ -776,7 +777,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
                         CraftMetaMap.MAP_SCALING.NBT,
                         CraftMetaPotion.POTION_EFFECTS.NBT,
                         CraftMetaSkull.SKULL_OWNER.NBT,
-                        CraftMetaTileEntity.BLOCK_ENTITY_TAG.NBT,
+                        CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT,
                         CraftMetaBook.BOOK_TITLE.NBT,
                         CraftMetaBook.BOOK_AUTHOR.NBT,
                         CraftMetaBook.BOOK_PAGES.NBT,

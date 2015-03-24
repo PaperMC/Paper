@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.TileEntityHopper;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Hopper;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -16,6 +17,12 @@ public class CraftHopper extends CraftBlockState implements Hopper {
         hopper = (TileEntityHopper) ((CraftWorld) block.getWorld()).getTileEntityAt(getX(), getY(), getZ());
     }
 
+    public CraftHopper(final Material material, final TileEntityHopper te) {
+        super(material);
+
+        hopper = te;
+    }
+
     public Inventory getInventory() {
         return new CraftInventory(hopper);
     }
@@ -29,5 +36,10 @@ public class CraftHopper extends CraftBlockState implements Hopper {
         }
 
         return result;
+    }
+
+    @Override
+    public TileEntityHopper getTileEntity() {
+        return hopper;
     }
 }
