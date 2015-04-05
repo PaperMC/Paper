@@ -21,6 +21,16 @@ public class PlayerResourcePackStatusEvent extends PlayerEvent {
         this.status = resourcePackStatus;
     }
 
+    // Paper start - add hash (not used anymore)
+    /**
+     * @deprecated Hash does not seem to ever be set
+     */
+    @Deprecated(forRemoval = true)
+    public String getHash() {
+        return null;
+    }
+    // Paper end
+
     /**
      * Gets the unique ID of this pack.
      *
