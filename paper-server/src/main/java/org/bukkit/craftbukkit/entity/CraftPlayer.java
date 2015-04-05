@@ -213,6 +213,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     private double healthScale = 20;
     private CraftWorldBorder clientWorldBorder = null;
     private BorderChangeListener clientWorldBorderListener = this.createWorldBorderListener();
+    public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus; // Paper - more resource pack API
 
     public CraftPlayer(CraftServer server, ServerPlayer entity) {
         super(server, entity);
@@ -2120,6 +2121,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         this.getHandle().connection.send(new ClientboundResourcePackPopPacket(Optional.empty()));
     }
     // Paper end - adventure
+
+    // Paper start - more resource pack API
+    @Override
+    public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status getResourcePackStatus() {
+        return this.resourcePackStatus;
+    }
+    // Paper end - more resource pack API
 
     @Override
     public void removeResourcePack(UUID id) {

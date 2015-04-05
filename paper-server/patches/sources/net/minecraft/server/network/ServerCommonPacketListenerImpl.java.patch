@@ -174,7 +174,7 @@
      @Override
      public void handleResourcePackResponse(ServerboundResourcePackPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, (BlockableEventLoop) this.server);
-@@ -104,11 +202,30 @@
+@@ -104,11 +202,34 @@
              ServerCommonPacketListenerImpl.LOGGER.info("Disconnecting {} due to resource pack {} rejection", this.playerProfile().getName(), packet.id());
              this.disconnect((Component) Component.translatable("multiplayer.requiredTexturePrompt.disconnect"));
          }
@@ -190,7 +190,11 @@
 +            callback.packEventReceived(packet.id(), net.kyori.adventure.resource.ResourcePackStatus.valueOf(packet.action().name()), this.getCraftPlayer());
 +        }
 +        // Paper end
-+        this.cserver.getPluginManager().callEvent(new PlayerResourcePackStatusEvent(this.getCraftPlayer(), packet.id(), PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()])); // CraftBukkit
++        // Paper start - store last pack status
++        PlayerResourcePackStatusEvent.Status packStatus = PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()];
++        player.getBukkitEntity().resourcePackStatus = packStatus;
++        this.cserver.getPluginManager().callEvent(new PlayerResourcePackStatusEvent(this.getCraftPlayer(), packet.id(), packStatus)); // CraftBukkit
++        // Paper end - store last pack status
  
      }
  
@@ -205,7 +209,7 @@
          this.disconnect(ServerCommonPacketListenerImpl.DISCONNECT_UNEXPECTED_QUERY);
      }
  
-@@ -116,7 +233,7 @@
+@@ -116,7 +237,7 @@
          Profiler.get().push("keepAlive");
          long i = Util.getMillis();
  
@@ -214,7 +218,7 @@
              if (this.keepAlivePending) {
                  this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE);
              } else if (this.checkIfClosed(i)) {
-@@ -156,6 +273,14 @@
+@@ -156,6 +277,14 @@
      }
  
      public void send(Packet<?> packet, @Nullable PacketSendListener callbacks) {
@@ -229,7 +233,7 @@
          if (packet.isTerminal()) {
              this.close();
          }
-@@ -175,20 +300,72 @@
+@@ -175,20 +304,72 @@
          }
      }
  
