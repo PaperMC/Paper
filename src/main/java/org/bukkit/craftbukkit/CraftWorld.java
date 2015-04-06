@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Iterator;
@@ -701,6 +702,21 @@ public class CraftWorld implements World {
         }
 
         return list;
+    }
+
+    @Override
+    public Collection<Entity> getNearbyEntities(Location location, double x, double y, double z) {
+        if (location == null || !location.getWorld().equals(this)) {
+            return Collections.emptyList();
+        }
+
+        AxisAlignedBB bb = new AxisAlignedBB(location.getX() - x, location.getY() - y, location.getZ() - z, location.getX() + x, location.getY() + y, location.getZ() + z);
+        List<net.minecraft.server.Entity> entityList = getHandle().getEntities(null, bb);
+        List<Entity> bukkitEntityList = new ArrayList<org.bukkit.entity.Entity>(entityList.size());
+        for (Object entity : entityList) {
+            bukkitEntityList.add(((net.minecraft.server.Entity) entity).getBukkitEntity());
+        }
+        return bukkitEntityList;
     }
 
     public List<Player> getPlayers() {
