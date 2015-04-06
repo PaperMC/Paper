@@ -442,6 +442,19 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public List<Player> getPlayers();
 
     /**
+     * Returns a list of entities within a bounding box centered around a Location.
+     *
+     * Some implementations may impose artificial restrictions on the size of the search bounding box.
+     *
+     * @param location The center of the bounding box
+     * @param x 1/2 the size of the box along x axis
+     * @param y 1/2 the size of the box along y axis
+     * @param z 1/2 the size of the box along z axis
+     * @return the collection of entities near location. This will always be a non-null collection.
+     */
+    public Collection<Entity> getNearbyEntities(Location location, double x, double y, double z);
+
+    /**
      * Gets the unique name of this world
      *
      * @return Name of this world
