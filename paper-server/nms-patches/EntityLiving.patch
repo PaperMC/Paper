@@ -1,5 +1,5 @@
---- /home/matt/mc-dev-private//net/minecraft/server/EntityLiving.java	2015-02-26 22:40:22.615608139 +0000
-+++ src/main/java/net/minecraft/server/EntityLiving.java	2015-02-26 22:40:22.619608139 +0000
+--- ../work/decompile-73f3c166/net/minecraft/server/EntityLiving.java	2015-04-09 10:17:58.438387559 +1000
++++ src/main/java/net/minecraft/server/EntityLiving.java	2015-04-09 10:17:58.442387563 +1000
 @@ -10,13 +10,26 @@
  import java.util.Random;
  import java.util.UUID;
@@ -399,7 +399,7 @@
                  i = (this.getEffect(MobEffectList.RESISTANCE).getAmplifier() + 1) * 5;
                  j = 25 - i;
                  f1 = f * (float) j;
-@@ -871,22 +1016,117 @@
+@@ -871,22 +1016,121 @@
          }
      }
  
@@ -479,9 +479,7 @@
 +                }
 +            };
 +            float absorptionModifier = absorption.apply((double) f).floatValue();
- 
--            f = Math.max(f - this.getAbsorptionHearts(), 0.0F);
--            this.setAbsorptionHearts(this.getAbsorptionHearts() - (f1 - f));
++
 +            EntityDamageEvent event = CraftEventFactory.handleLivingEntityDamageEvent(this, damagesource, originalDamage, hardHatModifier, blockingModifier, armorModifier, resistanceModifier, magicModifier, absorptionModifier, hardHat, blocking, armor, resistance, magic, absorption);
 +            if (event.isCancelled()) {
 +                return false;
@@ -499,12 +497,18 @@
 +                float armorDamage = (float) (event.getDamage() + event.getDamage(DamageModifier.BLOCKING) + event.getDamage(DamageModifier.HARD_HAT));
 +                this.damageArmor(armorDamage);
 +            }
-+
+ 
+-            f = Math.max(f - this.getAbsorptionHearts(), 0.0F);
+-            this.setAbsorptionHearts(this.getAbsorptionHearts() - (f1 - f));
 +            absorptionModifier = (float) -event.getDamage(DamageModifier.ABSORPTION);
 +            this.setAbsorptionHearts(Math.max(this.getAbsorptionHearts() - absorptionModifier, 0.0F));
              if (f != 0.0F) {
 +                if (human) {
++                    // PAIL: Be sure to drag all this code from the EntityHuman subclass each update.
 +                    ((EntityHuman) this).applyExhaustion(damagesource.getExhaustionCost());
++                    if (f < 3.4028235E37F) {
++                        ((EntityHuman) this).a(StatisticList.x, Math.round(f * 10.0F));
++                    }
 +                }
 +                // CraftBukkit end
                  float f2 = this.getHealth();
@@ -524,7 +528,7 @@
      }
  
      public CombatTracker bs() {
-@@ -1240,7 +1480,8 @@
+@@ -1240,7 +1484,8 @@
          if (f > 0.0025000002F) {
              f3 = 1.0F;
              f2 = (float) Math.sqrt((double) f) * 3.0F;
@@ -534,7 +538,7 @@
          }
  
          if (this.az > 0.0F) {
-@@ -1413,6 +1654,13 @@
+@@ -1413,6 +1658,13 @@
              for (int i = 0; i < list.size(); ++i) {
                  Entity entity = (Entity) list.get(i);
  
@@ -548,7 +552,7 @@
                  this.s(entity);
              }
          }
-@@ -1425,6 +1673,18 @@
+@@ -1425,6 +1677,18 @@
  
      public void mount(Entity entity) {
          if (this.vehicle != null && entity == null) {
