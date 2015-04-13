@@ -161,7 +161,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
         if (sender instanceof ProxiedCommandSender) {
             return ((ProxiedNativeCommandSender) sender).getHandle();
         }
-        return null;
+        throw new IllegalArgumentException("Cannot make " + sender + " a vanilla command listener");
     }
 
     private int getPlayerListSize(String as[]) {
