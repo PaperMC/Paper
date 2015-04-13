@@ -2,9 +2,11 @@ package org.bukkit.craftbukkit.command;
 
 import net.minecraft.server.ICommandListener;
 import net.minecraft.server.CommandBlockListenerAbstract;
+import net.minecraft.server.IChatBaseComponent;
 
 import org.bukkit.block.Block;
 import org.bukkit.command.BlockCommandSender;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 /**
  * Represents input from a command block
@@ -22,9 +24,15 @@ public class CraftBlockCommandSender extends ServerCommandSender implements Bloc
     }
 
     public void sendMessage(String message) {
+        for (IChatBaseComponent component : CraftChatMessage.fromString(message)) {
+            commandBlock.sendMessage(component);
+        }
     }
 
     public void sendMessage(String[] messages) {
+        for (String message : messages) {
+            sendMessage(message);
+        }
     }
 
     public String getName() {
