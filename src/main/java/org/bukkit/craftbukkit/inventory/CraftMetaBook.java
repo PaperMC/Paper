@@ -23,7 +23,7 @@ import net.minecraft.server.NBTTagString;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 @DelegateDeserialization(SerializableMeta.class)
-class CraftMetaBook extends CraftMetaItem implements BookMeta {
+public class CraftMetaBook extends CraftMetaItem implements BookMeta {
     static final ItemMetaKey BOOK_TITLE = new ItemMetaKey("title");
     static final ItemMetaKey BOOK_AUTHOR = new ItemMetaKey("author");
     static final ItemMetaKey BOOK_PAGES = new ItemMetaKey("pages");
@@ -34,7 +34,7 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
 
     protected String title;
     protected String author;
-    protected List<IChatBaseComponent> pages = new ArrayList<IChatBaseComponent>();
+    public List<IChatBaseComponent> pages = new ArrayList<IChatBaseComponent>();
     protected Integer generation;
 
     CraftMetaBook(CraftMetaItem meta) {
