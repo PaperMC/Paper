@@ -47,18 +47,16 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
         if (tag.hasKey(POTION_EFFECTS.NBT)) {
             NBTTagList list = tag.getList(POTION_EFFECTS.NBT, 10);
             int length = list.size();
-            if (length > 0) {
-                customEffects = new ArrayList<PotionEffect>(length);
+            customEffects = new ArrayList<PotionEffect>(length);
 
-                for (int i = 0; i < length; i++) {
-                    NBTTagCompound effect = list.get(i);
-                    PotionEffectType type = PotionEffectType.getById(effect.getByte(ID.NBT));
-                    int amp = effect.getByte(AMPLIFIER.NBT);
-                    int duration = effect.getInt(DURATION.NBT);
-                    boolean ambient = effect.getBoolean(AMBIENT.NBT);
-                    boolean particles = effect.getBoolean(SHOW_PARTICLES.NBT);
-                    customEffects.add(new PotionEffect(type, duration, amp, ambient, particles));
-                }
+            for (int i = 0; i < length; i++) {
+                NBTTagCompound effect = list.get(i);
+                PotionEffectType type = PotionEffectType.getById(effect.getByte(ID.NBT));
+                int amp = effect.getByte(AMPLIFIER.NBT);
+                int duration = effect.getInt(DURATION.NBT);
+                boolean ambient = effect.getBoolean(AMBIENT.NBT);
+                boolean particles = effect.getBoolean(SHOW_PARTICLES.NBT);
+                customEffects.add(new PotionEffect(type, duration, amp, ambient, particles));
             }
         }
     }
@@ -82,7 +80,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     @Override
     void applyToItem(NBTTagCompound tag) {
         super.applyToItem(tag);
-        if (hasCustomEffects()) {
+        if (customEffects != null) {
             NBTTagList effectList = new NBTTagList();
             tag.set(POTION_EFFECTS.NBT, effectList);
 
@@ -127,7 +125,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     }
 
     public boolean hasCustomEffects() {
-        return !(customEffects == null || customEffects.isEmpty());
+        return customEffects != null;
     }
 
     public List<PotionEffect> getCustomEffects() {
@@ -176,6 +174,9 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
                 iterator.remove();
                 changed = true;
             }
+        }
+        if (customEffects.isEmpty()) {
+            customEffects = null;
         }
         return changed;
     }
