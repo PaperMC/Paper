@@ -4,6 +4,7 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import net.minecraft.server.BlockJukeBox;
+import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.TileEntity;
 import net.minecraft.server.TileEntityBanner;
@@ -93,6 +94,20 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         
         if (blockEntityTag != null) {
             tag.set(BLOCK_ENTITY_TAG.NBT, blockEntityTag);
+        }
+    }
+
+    @Override
+    void deserializeInternal(NBTTagCompound tag) {
+        if (tag.hasKeyOfType(BLOCK_ENTITY_TAG.NBT, 10)) {
+            blockEntityTag = tag.getCompound(BLOCK_ENTITY_TAG.NBT);
+        }
+    }
+
+    @Override
+    void serializeInternal(final Map<String, NBTBase> internalTags) {
+        if (blockEntityTag != null) {
+            internalTags.put(BLOCK_ENTITY_TAG.NBT, blockEntityTag);
         }
     }
 

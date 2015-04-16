@@ -376,21 +376,20 @@ class CraftMetaItem implements ItemMeta, Repairable {
             ByteArrayInputStream buf = new ByteArrayInputStream(Base64.decodeBase64(internal));
             try {
                 NBTTagCompound tag = NBTCompressedStreamTools.a(buf);
+                deserializeInternal(tag);
                 Set<String> keys = tag.c();
                 for (String key : keys) {
                     if (!getHandledTags().contains(key)) {
                         unhandledTags.put(key, tag.get(key));
-                    }
-                    if (key.equals(CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT) && this instanceof CraftMetaBlockState) {
-                        if (tag.hasKeyOfType(key, 10)) {
-                            ((CraftMetaBlockState) this).blockEntityTag = tag.getCompound(key);
-                        }
                     }
                 }
             } catch (IOException ex) {
                 Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+    }
+
+    void deserializeInternal(NBTTagCompound tag) {
     }
 
     static Map<Enchantment, Integer> buildEnchantments(Map<String, Object> map, ItemMetaKey key) {
@@ -715,16 +714,12 @@ class CraftMetaItem implements ItemMeta, Repairable {
             builder.put(HIDEFLAGS.BUKKIT, hideFlags);
         }
 
-        if (!unhandledTags.isEmpty() || this instanceof CraftMetaBlockState) {
+        final Map<String, NBTBase> internalTags = new HashMap<String, NBTBase>(unhandledTags);
+        serializeInternal(internalTags);
+        if (!internalTags.isEmpty()) {
             NBTTagCompound internal = new NBTTagCompound();
-            for (Map.Entry<String, NBTBase> e : unhandledTags.entrySet()) {
+            for (Map.Entry<String, NBTBase> e : internalTags.entrySet()) {
                 internal.set(e.getKey(), e.getValue());
-            }
-            if (this instanceof CraftMetaBlockState) {
-                CraftMetaBlockState bs = ((CraftMetaBlockState) this);
-                if (bs.blockEntityTag != null) {
-                    internal.set(CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT, bs.blockEntityTag);
-                }
             }
             try {
                 ByteArrayOutputStream buf = new ByteArrayOutputStream();
@@ -736,6 +731,9 @@ class CraftMetaItem implements ItemMeta, Repairable {
         }
 
         return builder;
+    }
+
+    void serializeInternal(final Map<String, NBTBase> unhandledTags) {
     }
 
     static void serializeEnchantments(Map<Enchantment, Integer> enchantments, ImmutableMap.Builder<String, Object> builder, ItemMetaKey key) {
@@ -804,6 +802,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
                         CraftMetaMap.MAP_SCALING.NBT,
                         CraftMetaPotion.POTION_EFFECTS.NBT,
                         CraftMetaSkull.SKULL_OWNER.NBT,
+                        CraftMetaSkull.SKULL_PROFILE.NBT,
                         CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT,
                         CraftMetaBook.BOOK_TITLE.NBT,
                         CraftMetaBook.BOOK_AUTHOR.NBT,
