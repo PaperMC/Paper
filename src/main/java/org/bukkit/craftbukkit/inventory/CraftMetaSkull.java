@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.inventory;
 import java.util.Map;
 
 import net.minecraft.server.GameProfileSerializer;
+import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
 
 import org.bukkit.Material;
@@ -15,6 +16,10 @@ import com.mojang.authlib.GameProfile;
 
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+
+    @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
+    static final ItemMetaKey SKULL_PROFILE = new ItemMetaKey("SkullProfile");
+
     static final ItemMetaKey SKULL_OWNER = new ItemMetaKey("SkullOwner", "skull-owner");
     static final int MAX_OWNER_LENGTH = 16;
 
@@ -41,7 +46,25 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
     CraftMetaSkull(Map<String, Object> map) {
         super(map);
-        setOwner(SerializableMeta.getString(map, SKULL_OWNER.BUKKIT, true));
+        if (profile == null) {
+            setOwner(SerializableMeta.getString(map, SKULL_OWNER.BUKKIT, true));
+        }
+    }
+
+    @Override
+    void deserializeInternal(NBTTagCompound tag) {
+        if (tag.hasKeyOfType(SKULL_PROFILE.NBT, 10)) {
+            profile = GameProfileSerializer.deserialize(tag.getCompound(SKULL_PROFILE.NBT));
+        }
+    }
+
+    @Override
+    void serializeInternal(final Map<String, NBTBase> internalTags) {
+        if (profile != null) {
+            NBTTagCompound nbtData = new NBTTagCompound();
+            GameProfileSerializer.serialize(nbtData, profile);
+            internalTags.put(SKULL_PROFILE.NBT, nbtData);
+        }
     }
 
     @Override
