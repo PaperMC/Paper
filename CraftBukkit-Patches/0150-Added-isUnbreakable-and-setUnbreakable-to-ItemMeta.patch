@@ -1,14 +1,14 @@
-From 512e4b36486898479e6803216a58eb934b188b2b Mon Sep 17 00:00:00 2001
+From 8886c689b97e063543858d545c60af9368702699 Mon Sep 17 00:00:00 2001
 From: libraryaddict <redwarfare@live.com>
 Date: Fri, 22 Aug 2014 05:35:16 -0400
 Subject: [PATCH] Added isUnbreakable and setUnbreakable to ItemMeta
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 9b1ab44..bef5ff2 100644
+index 74cb365..5580404 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -213,6 +213,8 @@ class CraftMetaItem implements ItemMeta, Repairable {
+@@ -217,6 +217,8 @@ class CraftMetaItem implements ItemMeta, Repairable {
      static final ItemMetaKey ATTRIBUTES_UUID_LOW = new ItemMetaKey("UUIDLeast");
      @Specific(Specific.To.NBT)
      static final ItemMetaKey HIDEFLAGS = new ItemMetaKey("HideFlags", "ItemFlags");
@@ -17,15 +17,15 @@ index 9b1ab44..bef5ff2 100644
  
      private String displayName;
      private List<String> lore;
-@@ -245,6 +247,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
-         this.attributes = meta.attributes;
+@@ -246,6 +248,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
+         this.repairCost = meta.repairCost;
          this.hideFlag = meta.hideFlag;
          this.unhandledTags.putAll(meta.unhandledTags);
 +        spigot.setUnbreakable( meta.spigot.isUnbreakable() ); // Spigot
      }
  
      CraftMetaItem(NBTTagCompound tag) {
-@@ -447,6 +450,12 @@ class CraftMetaItem implements ItemMeta, Repairable {
+@@ -446,6 +449,12 @@ class CraftMetaItem implements ItemMeta, Repairable {
                  unhandledTags.put(key, tag.get(key));
              }
          }
@@ -38,11 +38,10 @@ index 9b1ab44..bef5ff2 100644
      }
  
      static Map<Enchantment, Integer> buildEnchantments(NBTTagCompound tag, ItemMetaKey key) {
-@@ -500,6 +509,14 @@ class CraftMetaItem implements ItemMeta, Repairable {
-                 }
+@@ -498,6 +507,14 @@ class CraftMetaItem implements ItemMeta, Repairable {
              }
          }
-+
+ 
 +        // Spigot start
 +        Boolean unbreakable = SerializableMeta.getObject( Boolean.class, map, UNBREAKABLE.BUKKIT, true );
 +        if ( unbreakable != null )
@@ -50,10 +49,11 @@ index 9b1ab44..bef5ff2 100644
 +            spigot.setUnbreakable( unbreakable );
 +        }
 +        // Spigot end
-     }
- 
-     static Map<Enchantment, Integer> buildEnchantments(Map<String, Object> map, ItemMetaKey key) {
-@@ -535,6 +552,14 @@ class CraftMetaItem implements ItemMeta, Repairable {
++
+         String internal = SerializableMeta.getString(map, "internal", true);
+         if (internal != null) {
+             ByteArrayInputStream buf = new ByteArrayInputStream(Base64.decodeBase64(internal));
+@@ -553,6 +570,14 @@ class CraftMetaItem implements ItemMeta, Repairable {
          }
  
          applyEnchantments(enchantments, itemTag, ENCHANTMENTS);
@@ -68,17 +68,17 @@ index 9b1ab44..bef5ff2 100644
  
          if (hasRepairCost()) {
              itemTag.setInt(REPAIR.NBT, repairCost);
-@@ -598,7 +623,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
+@@ -612,7 +637,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
  
      @Overridden
      boolean isEmpty() {
--        return !(hasDisplayName() || hasEnchants() || hasLore() || hasAttributes() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0);
-+        return !(hasDisplayName() || hasEnchants() || hasLore() || hasAttributes() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0 || spigot.isUnbreakable()); // Spigot
+-        return !(hasDisplayName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0);
++        return !(hasDisplayName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0 || spigot.isUnbreakable()); // Spigot
      }
  
      public String getDisplayName() {
-@@ -761,7 +786,8 @@ class CraftMetaItem implements ItemMeta, Repairable {
-                 && (this.hasAttributes() ? that.hasAttributes() && this.attributes.equals(that.attributes) : !that.hasAttributes())
+@@ -770,7 +795,8 @@ class CraftMetaItem implements ItemMeta, Repairable {
+                 && (this.hasLore() ? that.hasLore() && this.lore.equals(that.lore) : !that.hasLore())
                  && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost())
                  && (this.unhandledTags.equals(that.unhandledTags))
 -                && (this.hideFlag == that.hideFlag);
@@ -87,7 +87,7 @@ index 9b1ab44..bef5ff2 100644
      }
  
      /**
-@@ -789,6 +815,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
+@@ -797,6 +823,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
          hash = 61 * hash + (hasRepairCost() ? this.repairCost : 0);
          hash = 61 * hash + unhandledTags.hashCode();
          hash = 61 * hash + hideFlag;
@@ -95,7 +95,7 @@ index 9b1ab44..bef5ff2 100644
          return hash;
      }
  
-@@ -832,6 +859,14 @@ class CraftMetaItem implements ItemMeta, Repairable {
+@@ -840,6 +867,14 @@ class CraftMetaItem implements ItemMeta, Repairable {
          if (hasRepairCost()) {
              builder.put(REPAIR.BUKKIT, repairCost);
          }
@@ -110,15 +110,15 @@ index 9b1ab44..bef5ff2 100644
  
          Set<String> hideFlags = new HashSet<String>();
          for (ItemFlag hideFlagEnum : getItemFlags()) {
-@@ -904,6 +939,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
+@@ -932,6 +967,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
          synchronized (HANDLED_TAGS) {
              if (HANDLED_TAGS.isEmpty()) {
                  HANDLED_TAGS.addAll(Arrays.asList(
 +                        UNBREAKABLE.NBT, // Spigot
                          DISPLAY.NBT,
                          REPAIR.NBT,
-                         ATTRIBUTES.NBT,
-@@ -929,6 +965,19 @@ class CraftMetaItem implements ItemMeta, Repairable {
+                         ENCHANTMENTS.NBT,
+@@ -957,6 +993,19 @@ class CraftMetaItem implements ItemMeta, Repairable {
      // Spigot start
      private final Spigot spigot = new Spigot()
      {
