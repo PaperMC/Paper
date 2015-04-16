@@ -18,7 +18,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private String displayName;
      private List<String> lore;
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Repairable {
-         this.attributes = meta.attributes;
+         this.repairCost = meta.repairCost;
          this.hideFlag = meta.hideFlag;
          this.unhandledTags.putAll(meta.unhandledTags);
 +        spigot.setUnbreakable( meta.spigot.isUnbreakable() ); // Spigot
@@ -39,10 +39,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      static Map<Enchantment, Integer> buildEnchantments(NBTTagCompound tag, ItemMetaKey key) {
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Repairable {
-                 }
              }
          }
-+
+ 
 +        // Spigot start
 +        Boolean unbreakable = SerializableMeta.getObject( Boolean.class, map, UNBREAKABLE.BUKKIT, true );
 +        if ( unbreakable != null )
@@ -50,9 +49,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            spigot.setUnbreakable( unbreakable );
 +        }
 +        // Spigot end
-     }
- 
-     static Map<Enchantment, Integer> buildEnchantments(Map<String, Object> map, ItemMetaKey key) {
++
+         String internal = SerializableMeta.getString(map, "internal", true);
+         if (internal != null) {
+             ByteArrayInputStream buf = new ByteArrayInputStream(Base64.decodeBase64(internal));
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Repairable {
          }
  
@@ -72,13 +72,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Overridden
      boolean isEmpty() {
--        return !(hasDisplayName() || hasEnchants() || hasLore() || hasAttributes() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0);
-+        return !(hasDisplayName() || hasEnchants() || hasLore() || hasAttributes() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0 || spigot.isUnbreakable()); // Spigot
+-        return !(hasDisplayName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0);
++        return !(hasDisplayName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0 || spigot.isUnbreakable()); // Spigot
      }
  
      public String getDisplayName() {
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Repairable {
-                 && (this.hasAttributes() ? that.hasAttributes() && this.attributes.equals(that.attributes) : !that.hasAttributes())
+                 && (this.hasLore() ? that.hasLore() && this.lore.equals(that.lore) : !that.hasLore())
                  && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost())
                  && (this.unhandledTags.equals(that.unhandledTags))
 -                && (this.hideFlag == that.hideFlag);
@@ -117,7 +117,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        UNBREAKABLE.NBT, // Spigot
                          DISPLAY.NBT,
                          REPAIR.NBT,
-                         ATTRIBUTES.NBT,
+                         ENCHANTMENTS.NBT,
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Repairable {
      // Spigot start
      private final Spigot spigot = new Spigot()
