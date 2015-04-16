@@ -47,7 +47,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
     static final ItemMetaKey BLOCK_ENTITY_TAG = new ItemMetaKey("BlockEntityTag");
     
     final Material material;
-    private NBTTagCompound blockEntityTag;
+    NBTTagCompound blockEntityTag;
 
     CraftMetaBlockState(CraftMetaItem meta, Material material) {
         super(meta);
@@ -78,9 +78,13 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
 
     CraftMetaBlockState(Map<String, Object> map) {
         super(map);
-        material = Material.AIR; // TODO
-        
-        blockEntityTag = null;
+        String matName = SerializableMeta.getString(map, "blockMaterial", true);
+        Material m = Material.getMaterial(matName);
+        if (m != null) {
+            material = m;
+        } else {
+            material = Material.AIR;
+        }
     }
 
     @Override
@@ -95,6 +99,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
     @Override
     ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
         super.serialize(builder);
+        builder.put("blockMaterial", material.name());
         return builder;
     }
 
