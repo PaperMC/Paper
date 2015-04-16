@@ -15,10 +15,7 @@ import java.util.NoSuchElementException;
 
 import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
-import net.minecraft.server.NBTTagDouble;
-import net.minecraft.server.NBTTagInt;
 import net.minecraft.server.NBTTagList;
-import net.minecraft.server.NBTTagLong;
 import net.minecraft.server.NBTTagString;
 
 import org.apache.commons.lang.Validate;
@@ -37,11 +34,18 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
-import org.bukkit.block.BlockState;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import net.minecraft.server.NBTCompressedStreamTools;
+import org.apache.commons.codec.binary.Base64;
 
 /**
  * Children must include the following:
@@ -213,7 +217,6 @@ class CraftMetaItem implements ItemMeta, Repairable {
     private Map<Enchantment, Integer> enchantments;
     private int repairCost;
     private int hideFlag;
-    private final NBTTagList attributes;
 
     private static final Set<String> HANDLED_TAGS = Sets.newHashSet();
 
@@ -221,7 +224,6 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
     CraftMetaItem(CraftMetaItem meta) {
         if (meta == null) {
-            attributes = null;
             return;
         }
 
@@ -236,7 +238,6 @@ class CraftMetaItem implements ItemMeta, Repairable {
         }
 
         this.repairCost = meta.repairCost;
-        this.attributes = meta.attributes;
         this.hideFlag = meta.hideFlag;
         this.unhandledTags.putAll(meta.unhandledTags);
     }
@@ -313,9 +314,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
                 save.add(entry);
             }
 
-            attributes = save;
-        } else {
-            attributes = null;
+            unhandledTags.put(ATTRIBUTES.NBT, save);
         }
 
         Set<String> keys = tag.c();
@@ -359,8 +358,6 @@ class CraftMetaItem implements ItemMeta, Repairable {
             setRepairCost(repairCost);
         }
 
-        attributes = null;
-
         Set hideFlags = SerializableMeta.getObject(Set.class, map, HIDEFLAGS.BUKKIT, true);
         if (hideFlags != null) {
             for (Object hideFlagObject : hideFlags) {
@@ -371,6 +368,27 @@ class CraftMetaItem implements ItemMeta, Repairable {
                 } catch (IllegalArgumentException ex) {
                     // Ignore when we got a old String which does not map to a Enum value anymore
                 }
+            }
+        }
+
+        String internal = SerializableMeta.getString(map, "internal", true);
+        if (internal != null) {
+            ByteArrayInputStream buf = new ByteArrayInputStream(Base64.decodeBase64(internal));
+            try {
+                NBTTagCompound tag = NBTCompressedStreamTools.a(buf);
+                Set<String> keys = tag.c();
+                for (String key : keys) {
+                    if (!getHandledTags().contains(key)) {
+                        unhandledTags.put(key, tag.get(key));
+                    }
+                    if (key.equals(CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT) && this instanceof CraftMetaBlockState) {
+                        if (tag.hasKeyOfType(key, 10)) {
+                            ((CraftMetaBlockState) this).blockEntityTag = tag.getCompound(key);
+                        }
+                    }
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
@@ -411,10 +429,6 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
         if (hasRepairCost()) {
             itemTag.setInt(REPAIR.NBT, repairCost);
-        }
-
-        if (attributes != null) {
-            itemTag.set(ATTRIBUTES.NBT, attributes);
         }
 
         for (Map.Entry<String, NBTBase> e : unhandledTags.entrySet()) {
@@ -471,7 +485,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
     @Overridden
     boolean isEmpty() {
-        return !(hasDisplayName() || hasEnchants() || hasLore() || hasAttributes() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0);
+        return !(hasDisplayName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0);
     }
 
     public String getDisplayName() {
@@ -488,10 +502,6 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
     public boolean hasLore() {
         return this.lore != null && !this.lore.isEmpty();
-    }
-
-    public boolean hasAttributes() {
-        return this.attributes != null;
     }
 
     public boolean hasRepairCost() {
@@ -624,7 +634,6 @@ class CraftMetaItem implements ItemMeta, Repairable {
         return ((this.hasDisplayName() ? that.hasDisplayName() && this.displayName.equals(that.displayName) : !that.hasDisplayName()))
                 && (this.hasEnchants() ? that.hasEnchants() && this.enchantments.equals(that.enchantments) : !that.hasEnchants())
                 && (this.hasLore() ? that.hasLore() && this.lore.equals(that.lore) : !that.hasLore())
-                && (this.hasAttributes() ? that.hasAttributes() && this.attributes.equals(that.attributes) : !that.hasAttributes())
                 && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost())
                 && (this.unhandledTags.equals(that.unhandledTags))
                 && (this.hideFlag == that.hideFlag);
@@ -651,7 +660,6 @@ class CraftMetaItem implements ItemMeta, Repairable {
         hash = 61 * hash + (hasDisplayName() ? this.displayName.hashCode() : 0);
         hash = 61 * hash + (hasLore() ? this.lore.hashCode() : 0);
         hash = 61 * hash + (hasEnchants() ? this.enchantments.hashCode() : 0);
-        hash = 61 * hash + (hasAttributes() ? this.attributes.hashCode() : 0);
         hash = 61 * hash + (hasRepairCost() ? this.repairCost : 0);
         hash = 61 * hash + unhandledTags.hashCode();
         hash = 61 * hash + hideFlag;
@@ -705,6 +713,26 @@ class CraftMetaItem implements ItemMeta, Repairable {
         }
         if (!hideFlags.isEmpty()) {
             builder.put(HIDEFLAGS.BUKKIT, hideFlags);
+        }
+
+        if (!unhandledTags.isEmpty() || this instanceof CraftMetaBlockState) {
+            NBTTagCompound internal = new NBTTagCompound();
+            for (Map.Entry<String, NBTBase> e : unhandledTags.entrySet()) {
+                internal.set(e.getKey(), e.getValue());
+            }
+            if (this instanceof CraftMetaBlockState) {
+                CraftMetaBlockState bs = ((CraftMetaBlockState) this);
+                if (bs.blockEntityTag != null) {
+                    internal.set(CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT, bs.blockEntityTag);
+                }
+            }
+            try {
+                ByteArrayOutputStream buf = new ByteArrayOutputStream();
+                NBTCompressedStreamTools.a(internal, buf);
+                builder.put("internal", Base64.encodeBase64String(buf.toByteArray()));
+            } catch (IOException ex) {
+                Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
 
         return builder;
@@ -772,7 +800,6 @@ class CraftMetaItem implements ItemMeta, Repairable {
                 HANDLED_TAGS.addAll(Arrays.asList(
                         DISPLAY.NBT,
                         REPAIR.NBT,
-                        ATTRIBUTES.NBT,
                         ENCHANTMENTS.NBT,
                         CraftMetaMap.MAP_SCALING.NBT,
                         CraftMetaPotion.POTION_EFFECTS.NBT,
@@ -785,7 +812,8 @@ class CraftMetaItem implements ItemMeta, Repairable {
                         CraftMetaBook.GENERATION.NBT,
                         CraftMetaFirework.FIREWORKS.NBT,
                         CraftMetaEnchantedBook.STORED_ENCHANTMENTS.NBT,
-                        CraftMetaCharge.EXPLOSION.NBT
+                        CraftMetaCharge.EXPLOSION.NBT,
+                        CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT
                 ));
             }
             return HANDLED_TAGS;
