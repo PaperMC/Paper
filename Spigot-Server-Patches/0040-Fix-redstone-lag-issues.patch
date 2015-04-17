@@ -1,11 +1,11 @@
-From 19fab5f746af8326b585e65c5357955896a345f4 Mon Sep 17 00:00:00 2001
+From 59b13d78be0e48c6a1bb232cf1c2791e24ed41ce Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Mon, 13 Apr 2015 15:47:15 -0500
 Subject: [PATCH] Fix redstone lag issues
 
 
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 261c86c..e34e7fd 100644
+index 261c86c..f766467 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -611,6 +611,8 @@ public class WorldServer extends World implements IAsyncTaskHandler {
@@ -29,22 +29,49 @@ index 261c86c..e34e7fd 100644
  
                  this.methodProfiler.a("cleaning");
  
+@@ -636,6 +642,23 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+                     this.V.add(nextticklistentry);
+                 }
+ 
++                // PaperSpigot start - Allow redstone ticks to bypass the tickNextTickListCap
++                if (paperSpigotConfig.tickNextTickListCapIgnoresRedstone) {
++                    Iterator<NextTickListEntry> iterator = this.M.iterator();
++                    while (iterator.hasNext()) {
++                        NextTickListEntry next = iterator.next();
++                        if (!flag && next.b > this.worldData.getTime()) {
++                            break;
++                        }
++
++                        if (next.a().isPowerSource() || next.a() instanceof IContainer) {
++                            iterator.remove();
++                            this.V.add(next);
++                        }
++                    }
++                }
++                // PaperSpigot end
++
+                 this.methodProfiler.b();
+                 this.methodProfiler.a("ticking");
+                 Iterator iterator = this.V.iterator();
 diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-index 1915a7c..fa4a7d7 100644
+index 1915a7c..e00581c 100644
 --- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
 +++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-@@ -223,4 +223,11 @@ public class PaperSpigotWorldConfig
+@@ -223,4 +223,14 @@ public class PaperSpigotWorldConfig
              System.err.println( "==========================================" );
          }
      }
 +
 +    public int tickNextTickCap;
++    public boolean tickNextTickListCapIgnoresRedstone;
 +    private void tickNextTickCap()
 +    {
 +        tickNextTickCap = getInt( "tick-next-tick-list-cap", 10000 ); // Higher values will be friendlier to vanilla style mechanics (to a point) but may hurt performance
++        tickNextTickListCapIgnoresRedstone = getBoolean( "tick-next-tick-list-cap-ignores-redstone", false ); // Redstone TickNextTicks will always bypass the preceding cap.
 +        log( "WorldServer TickNextTick cap set at " + tickNextTickCap );
++        log( "WorldServer TickNextTickList cap always processes redstone: " + tickNextTickListCapIgnoresRedstone );
 +    }
  }
 -- 
-2.3.5
+1.9.4.msysgit.2
 
