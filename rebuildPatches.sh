@@ -12,7 +12,12 @@ function cleanupPatches {
 
         testver=$(echo "$diffs" | tail -n 2 | grep -ve "^$" | tail -n 1 | grep "$gitver")
         if [ "x$testver" != "x" ]; then
-            diffs=$(echo "$diffs" | head -n -2)
+            mingw=$(uname -s | grep "MINGW")
+            if [ "x$mingw" != "x" ]; then
+                diffs=$(echo "$diffs" | head -n $(($(echo "$diffs" | wc -l | sed -r 's/^ +//' | cut -d ' ' -f 1) - 2)))
+            else
+                diffs=$(echo "$diffs" | head -n -2)
+            fi
         fi
         
 
