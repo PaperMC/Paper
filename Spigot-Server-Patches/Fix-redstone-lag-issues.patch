@@ -29,6 +29,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                  this.methodProfiler.a("cleaning");
  
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+                     this.V.add(nextticklistentry);
+                 }
+ 
++                // PaperSpigot start - Allow redstone ticks to bypass the tickNextTickListCap
++                if (paperSpigotConfig.tickNextTickListCapIgnoresRedstone) {
++                    Iterator<NextTickListEntry> iterator = this.M.iterator();
++                    while (iterator.hasNext()) {
++                        NextTickListEntry next = iterator.next();
++                        if (!flag && next.b > this.worldData.getTime()) {
++                            break;
++                        }
++
++                        if (next.a().isPowerSource() || next.a() instanceof IContainer) {
++                            iterator.remove();
++                            this.V.add(next);
++                        }
++                    }
++                }
++                // PaperSpigot end
++
+                 this.methodProfiler.b();
+                 this.methodProfiler.a("ticking");
+                 Iterator iterator = this.V.iterator();
 diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
@@ -39,10 +63,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
 +
 +    public int tickNextTickCap;
++    public boolean tickNextTickListCapIgnoresRedstone;
 +    private void tickNextTickCap()
 +    {
 +        tickNextTickCap = getInt( "tick-next-tick-list-cap", 10000 ); // Higher values will be friendlier to vanilla style mechanics (to a point) but may hurt performance
++        tickNextTickListCapIgnoresRedstone = getBoolean( "tick-next-tick-list-cap-ignores-redstone", false ); // Redstone TickNextTicks will always bypass the preceding cap.
 +        log( "WorldServer TickNextTick cap set at " + tickNextTickCap );
++        log( "WorldServer TickNextTickList cap always processes redstone: " + tickNextTickListCapIgnoresRedstone );
 +    }
  }
---
+-- 
+1.9.4.msysgit.2
+
