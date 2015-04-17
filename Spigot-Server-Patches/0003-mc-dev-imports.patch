@@ -1,9 +1,90 @@
-From 3ac4aa5507b3eb96cbd4ce5d01a25c391475f834 Mon Sep 17 00:00:00 2001
+From 87f7b6f12d357afe2d1cffc42baaa726e3fbd95d Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Sat, 7 Mar 2015 19:44:29 -0600
 Subject: [PATCH] mc-dev imports
 
 
+diff --git a/src/main/java/net/minecraft/server/BlockFalling.java b/src/main/java/net/minecraft/server/BlockFalling.java
+new file mode 100644
+index 0000000..29f8554
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/BlockFalling.java
+@@ -0,0 +1,75 @@
++package net.minecraft.server;
++
++import java.util.Random;
++
++public class BlockFalling extends Block {
++
++    public static boolean instaFall;
++
++    public BlockFalling() {
++        super(Material.SAND);
++        this.a(CreativeModeTab.b);
++    }
++
++    public BlockFalling(Material material) {
++        super(material);
++    }
++
++    public void onPlace(World world, BlockPosition blockposition, IBlockData iblockdata) {
++        world.a(blockposition, (Block) this, this.a(world));
++    }
++
++    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
++        world.a(blockposition, (Block) this, this.a(world));
++    }
++
++    public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
++        if (!world.isClientSide) {
++            this.f(world, blockposition);
++        }
++
++    }
++
++    private void f(World world, BlockPosition blockposition) {
++        if (canFall(world, blockposition.down()) && blockposition.getY() >= 0) {
++            byte b0 = 32;
++
++            if (!BlockFalling.instaFall && world.areChunksLoadedBetween(blockposition.a(-b0, -b0, -b0), blockposition.a(b0, b0, b0))) {
++                if (!world.isClientSide) {
++                    EntityFallingBlock entityfallingblock = new EntityFallingBlock(world, (double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D, world.getType(blockposition));
++
++                    this.a(entityfallingblock);
++                    world.addEntity(entityfallingblock);
++                }
++            } else {
++                world.setAir(blockposition);
++
++                BlockPosition blockposition1;
++
++                for (blockposition1 = blockposition.down(); canFall(world, blockposition1) && blockposition1.getY() > 0; blockposition1 = blockposition1.down()) {
++                    ;
++                }
++
++                if (blockposition1.getY() > 0) {
++                    world.setTypeUpdate(blockposition1.up(), this.getBlockData());
++                }
++            }
++
++        }
++    }
++
++    protected void a(EntityFallingBlock entityfallingblock) {}
++
++    public int a(World world) {
++        return 2;
++    }
++
++    public static boolean canFall(World world, BlockPosition blockposition) {
++        Block block = world.getType(blockposition).getBlock();
++        Material material = block.material;
++
++        return block == Blocks.FIRE || material == Material.AIR || material == Material.WATER || material == Material.LAVA;
++    }
++
++    public void a_(World world, BlockPosition blockposition) {}
++}
 diff --git a/src/main/java/net/minecraft/server/BlockMinecartTrackAbstract.java b/src/main/java/net/minecraft/server/BlockMinecartTrackAbstract.java
 new file mode 100644
 index 0000000..0d108eb
@@ -837,5 +918,5 @@ index 0000000..f75e2de
 +    }
 +}
 -- 
-1.9.1
+1.9.4.msysgit.2
 
