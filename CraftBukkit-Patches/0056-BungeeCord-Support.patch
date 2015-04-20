@@ -1,4 +1,4 @@
-From 17f500b0a9b0cf7dcb4f15f72417a1865b5a2c93 Mon Sep 17 00:00:00 2001
+From db76c7bec6fa44a8942311a28fba5132a5baee28 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 1 Dec 2013 18:18:41 +1100
 Subject: [PATCH] BungeeCord Support
@@ -45,7 +45,7 @@ index 8f421f3..727948a 100644
              }
              break;
 diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
-index 9bfb5a2..7410718 100644
+index 9bfb5a2..5980e91 100644
 --- a/src/main/java/net/minecraft/server/LoginListener.java
 +++ b/src/main/java/net/minecraft/server/LoginListener.java
 @@ -84,9 +84,24 @@ public class LoginListener implements PacketLoginInListener, IUpdatePlayerListBo
@@ -73,6 +73,33 @@ index 9bfb5a2..7410718 100644
 +        }
      }
      // Spigot end
+ 
+@@ -148,13 +163,19 @@ public class LoginListener implements PacketLoginInListener, IUpdatePlayerListBo
+             this.networkManager.handle(new PacketLoginOutEncryptionBegin(this.j, this.server.P().getPublic(), this.e));
+         } else {
+             // Spigot start
+-            try {
+-                initUUID();
+-                new LoginHandler().fireEvents();
+-            } catch (Exception ex) {
+-                disconnect("Failed to verify username!");
+-                server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + i.getName(), ex);
+-            }
++            initUUID();
++            new Thread(new Runnable() {
++
++                @Override
++                public void run() {
++                    try{
++                        new LoginHandler().fireEvents();
++                    } catch (Exception ex) {
++                        disconnect("Failed to verify username!");
++                        server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + i.getName(), ex);
++                    }
++                }
++            }).start();
+             // Spigot end
+         }
  
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
 index 89d0bc5..6bd1847 100644
