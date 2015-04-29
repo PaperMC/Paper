@@ -16,6 +16,7 @@
 
 package org.bukkit.craftbukkit.util;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.ConcurrentModificationException;
 import java.util.NoSuchElementException;
@@ -165,7 +166,7 @@ public class LongHashSet {
 
     public long[] toArray() {
         long[] result = new long[elements];
-        long[] values = Java15Compat.Arrays_copyOf(this.values, this.values.length);
+        long[] values = Arrays.copyOf(this.values, this.values.length);
         int pos = 0;
 
         for (long value : values) {

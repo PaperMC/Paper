@@ -15,8 +15,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import static org.bukkit.craftbukkit.util.Java15Compat.Arrays_copyOf;
-
 @SuppressWarnings("unchecked")
 public class LongObjectHashMap<V> implements Cloneable, Serializable {
     static final long serialVersionUID = 2841537710170573815L;
@@ -112,9 +110,9 @@ public class LongObjectHashMap<V> implements Cloneable, Serializable {
             }
 
             // chain is full, resize it and add our new entry
-            keys[index] = innerKeys = Arrays_copyOf(innerKeys, i << 1);
+            keys[index] = innerKeys = Arrays.copyOf(innerKeys, i << 1);
             Arrays.fill(innerKeys, i, innerKeys.length, EMPTY_KEY);
-            values[index] = innerValues = Arrays_copyOf(innerValues, i << 1);
+            values[index] = innerValues = Arrays.copyOf(innerValues, i << 1);
             innerKeys[i] = key;
             innerValues[i] = value;
             size++;
