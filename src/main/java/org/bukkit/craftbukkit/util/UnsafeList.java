@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.AbstractList;
+import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.List;
@@ -129,7 +130,7 @@ public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAcc
         int old = data.length;
         int rounded = Integer.highestOneBit(size - 1) << 1;
         if (rounded < old) {
-            data = Java15Compat.Arrays_copyOf(data, rounded);
+            data = Arrays.copyOf(data, rounded);
         }
     }
 
@@ -143,7 +144,7 @@ public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAcc
 
     public Object clone() throws CloneNotSupportedException {
         UnsafeList<E> copy = (UnsafeList<E>) super.clone();
-        copy.data = Java15Compat.Arrays_copyOf(data, size);
+        copy.data = Arrays.copyOf(data, size);
         copy.size = size;
         copy.initialCapacity = initialCapacity;
         copy.iterPool = new Iterator[1];
