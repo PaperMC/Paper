@@ -1,24 +1,20 @@
---- /home/matt/mc-dev-private//net/minecraft/server/ChunkRegionLoader.java	2015-03-22 19:01:20.065879491 +0000
-+++ src/main/java/net/minecraft/server/ChunkRegionLoader.java	2015-03-22 19:01:20.065879491 +0000
-@@ -25,7 +25,39 @@
-         this.e = file;
+--- /home/matt/mc-dev-private//net/minecraft/server/ChunkRegionLoader.java	2015-05-05 21:41:20.236645254 +0100
++++ src/main/java/net/minecraft/server/ChunkRegionLoader.java	2015-05-05 21:41:20.236645254 +0100
+@@ -25,7 +25,35 @@
+         this.d = file;
      }
  
 +    // CraftBukkit start
 +    public boolean chunkExists(World world, int i, int j) {
 +        ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
 +
-+        synchronized (this.d) {
-+            if (this.c.contains(chunkcoordintpair)) {
-+                for (int k = 0; k < this.b.size(); ++k) {
-+                    if (((PendingChunkToSave) this.b.get(k)).a.equals(chunkcoordintpair)) {
-+                        return true;
-+                    }
-+                }
++        if (this.c.contains(chunkcoordintpair)) {
++            if (this.b.containsKey(chunkcoordintpair)) {
++                return true;
 +            }
 +        }
 +
-+        return RegionFileCache.a(this.e, i, j).chunkExists(i & 31, j & 31);
++        return RegionFileCache.a(this.d, i, j).chunkExists(i & 31, j & 31);
 +    }
 +    // CraftBukkit end
 +
@@ -37,10 +33,10 @@
 +
 +    public Object[] loadChunk(World world, int i, int j) throws IOException {
 +        // CraftBukkit end
-         NBTTagCompound nbttagcompound = null;
          ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
-         Object object = this.d;
-@@ -54,7 +86,7 @@
+         NBTTagCompound nbttagcompound = (NBTTagCompound) this.b.get(chunkcoordintpair);
+ 
+@@ -42,7 +70,7 @@
          return this.a(world, i, j, nbttagcompound);
      }
  
@@ -49,7 +45,7 @@
          if (!nbttagcompound.hasKeyOfType("Level", 10)) {
              ChunkRegionLoader.a.error("Chunk file at " + i + "," + j + " is missing level data, skipping");
              return null;
-@@ -71,10 +103,28 @@
+@@ -59,10 +87,28 @@
                      ChunkRegionLoader.a.error("Chunk file at " + i + "," + j + " is in the wrong location; relocating. (Expected " + i + ", " + j + ", got " + chunk.locX + ", " + chunk.locZ + ")");
                      nbttagcompound1.setInt("xPos", i);
                      nbttagcompound1.setInt("zPos", j);
@@ -79,7 +75,7 @@
              }
          }
      }
-@@ -308,7 +358,26 @@
+@@ -290,7 +336,26 @@
                  int k1 = l >> 4 & 15;
                  int l1 = nibblearray1 != null ? nibblearray1.a(i1, j1, k1) : 0;
  
@@ -107,7 +103,7 @@
              }
  
              chunksection.a(achar);
-@@ -326,6 +395,13 @@
+@@ -308,6 +373,13 @@
              chunk.a(nbttagcompound.getByteArray("Biomes"));
          }
  
@@ -121,12 +117,11 @@
          NBTTagList nbttaglist1 = nbttagcompound.getList("Entities", 10);
  
          if (nbttaglist1 != null) {
-@@ -384,7 +460,7 @@
+@@ -366,6 +438,6 @@
              }
          }
  
 -        return chunk;
 +        // return chunk; // CraftBukkit
      }
- 
-     static class PendingChunkToSave {
+ }

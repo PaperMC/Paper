@@ -1,5 +1,5 @@
---- /home/matt/mc-dev-private//net/minecraft/server/PlayerList.java	2015-03-21 20:36:24.932515542 +0000
-+++ src/main/java/net/minecraft/server/PlayerList.java	2015-03-21 20:36:24.932515542 +0000
+--- /home/matt/mc-dev-private//net/minecraft/server/PlayerList.java	2015-05-05 21:53:39.729102395 +0100
++++ src/main/java/net/minecraft/server/PlayerList.java	2015-05-05 21:53:39.729102395 +0100
 @@ -18,6 +18,26 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -89,12 +89,12 @@
          playerconnection.sendPacket(new PacketPlayOutLogin(entityplayer.getId(), entityplayer.playerInteractManager.getGameMode(), worlddata.isHardcore(), worldserver.worldProvider.getDimension(), worldserver.getDifficulty(), this.getMaxPlayers(), worlddata.getType(), worldserver.getGameRules().getBoolean("reducedDebugInfo")));
 +        entityplayer.getBukkitEntity().sendSupportedChannels(); // CraftBukkit
          playerconnection.sendPacket(new PacketPlayOutCustomPayload("MC|Brand", (new PacketDataSerializer(Unpooled.buffer())).a(this.getServer().getServerModName())));
-         playerconnection.sendPacket(new PacketPlayOutServerDifficulty(worlddata.y(), worlddata.z()));
+         playerconnection.sendPacket(new PacketPlayOutServerDifficulty(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
          playerconnection.sendPacket(new PacketPlayOutSpawnPosition(blockposition));
 @@ -89,17 +125,23 @@
          entityplayer.getStatisticManager().updateStatistics(entityplayer);
          this.sendScoreboard((ScoreboardServer) worldserver.getScoreboard(), entityplayer);
-         this.server.aG();
+         this.server.aH();
 -        ChatMessage chatmessage;
 +        // CraftBukkit start - login message is handled in the event
 +        // ChatMessage chatmessage;
@@ -150,7 +150,7 @@
 +        NBTTagCompound nbttagcompound = this.server.worlds.get(0).getWorldData().i(); // CraftBukkit
          NBTTagCompound nbttagcompound1;
  
-         if (entityplayer.getName().equals(this.server.R()) && nbttagcompound != null) {
+         if (entityplayer.getName().equals(this.server.S()) && nbttagcompound != null) {
 @@ -226,33 +271,72 @@
  
      }
@@ -319,9 +319,9 @@
 +            // return s;
 +            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, s);
          } else {
--            return this.players.size() >= this.maxPlayers ? "The server is full!" : null;
-+            // return this.players.size() >= this.maxPlayers ? "The server is full!" : null;
-+            if (this.players.size() >= this.maxPlayers) {
+-            return this.players.size() >= this.maxPlayers && !this.f(gameprofile) ? "The server is full!" : null;
++            // return this.players.size() >= this.maxPlayers && !this.f(gameprofile) ? "The server is full!" : null;
++            if (this.players.size() >= this.maxPlayers && !this.f(gameprofile)) {
 +                event.disallow(PlayerLoginEvent.Result.KICK_FULL, "The server is full");
 +            }
          }
@@ -746,12 +746,12 @@
 @@ -589,10 +962,24 @@
  
      public void addOp(GameProfile gameprofile) {
-         this.operators.add(new OpListEntry(gameprofile, this.server.p()));
+         this.operators.add(new OpListEntry(gameprofile, this.server.p(), this.operators.b(gameprofile)));
 +
 +        // CraftBukkit start
 +        Player player = server.server.getPlayer(gameprofile.getId());
 +        if (player != null) {
-+            player.recalculatePermissions();
++           player.recalculatePermissions();
 +        }
 +        // CraftBukkit end
      }
@@ -772,8 +772,8 @@
      }
  
      public boolean isOp(GameProfile gameprofile) {
--        return this.operators.d(gameprofile) || this.server.S() && this.server.worldServer[0].getWorldData().v() && this.server.R().equalsIgnoreCase(gameprofile.getName()) || this.t;
-+        return this.operators.d(gameprofile) || this.server.S() && this.server.worlds.get(0).getWorldData().v() && this.server.R().equalsIgnoreCase(gameprofile.getName()) || this.t; // CraftBukkit
+-        return this.operators.d(gameprofile) || this.server.T() && this.server.worldServer[0].getWorldData().v() && this.server.S().equalsIgnoreCase(gameprofile.getName()) || this.t;
++        return this.operators.d(gameprofile) || this.server.T() && this.server.worlds.get(0).getWorldData().v() && this.server.S().equalsIgnoreCase(gameprofile.getName()) || this.t; // CraftBukkit
      }
  
      public EntityPlayer getPlayer(String s) {
