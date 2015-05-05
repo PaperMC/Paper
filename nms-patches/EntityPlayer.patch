@@ -1,5 +1,5 @@
---- /home/matt/mc-dev-private//net/minecraft/server/EntityPlayer.java	2015-02-26 22:40:22.655608139 +0000
-+++ src/main/java/net/minecraft/server/EntityPlayer.java	2015-02-26 22:40:22.659608139 +0000
+--- /home/matt/mc-dev-private//net/minecraft/server/EntityPlayer.java	2015-05-05 21:53:39.197110943 +0100
++++ src/main/java/net/minecraft/server/EntityPlayer.java	2015-05-05 21:53:39.201110879 +0100
 @@ -13,6 +13,17 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -235,7 +235,7 @@
  
 -        Collection collection = this.world.getScoreboard().getObjectivesForCriteria(IScoreboardCriteria.d);
 +        this.closeInventory();
-+        this.e((Entity) this); // Remove spectated target
++        this.setSpectatorTarget(this); // Remove spectated target
 +        // CraftBukkit end
 +
 +        // CraftBukkit - Get our scores instead
@@ -334,7 +334,7 @@
 +        boolean cancelled = false;
 +        if (iinventory instanceof ITileInventory) {
 +            ITileInventory itileinventory = (ITileInventory) iinventory;
-+            cancelled = itileinventory.r_() && !this.a(itileinventory.i()) && !this.v();
++            cancelled = itileinventory.r_() && !this.a(itileinventory.i()) && !this.isSpectator();
 +        }
 +
 +        Container container;
@@ -356,8 +356,8 @@
          if (iinventory instanceof ITileInventory) {
              ITileInventory itileinventory = (ITileInventory) iinventory;
  
--            if (itileinventory.r_() && !this.a(itileinventory.i()) && !this.v()) {
-+            if (itileinventory.r_() && !this.a(itileinventory.i()) && !this.v() && container == null) { // CraftBukkit - allow plugins to uncancel the lock
+-            if (itileinventory.r_() && !this.a(itileinventory.i()) && !this.isSpectator()) {
++            if (itileinventory.r_() && !this.a(itileinventory.i()) && !this.isSpectator() && container == null) { // CraftBukkit - allow plugins to uncancel the lock
                  this.playerConnection.sendPacket(new PacketPlayOutChat(new ChatMessage("container.isLocked", new Object[] { iinventory.getScoreboardDisplayName()}), (byte) 2));
                  this.playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect("random.door_close", this.locX, this.locY, this.locZ, 1.0F, 1.0F));
 +
@@ -470,15 +470,17 @@
 +        // CraftBukkit end */
      }
  
-     public boolean v() {
-@@ -768,6 +949,7 @@
+     public boolean isSpectator() {
+@@ -768,7 +949,8 @@
      }
  
      public boolean a(int i, String s) {
+-        if ("seed".equals(s) && !this.server.ae()) {
 +        /* CraftBukkit start
-         if ("seed".equals(s) && !this.server.ad()) {
++        if ("seed".equals(s) && !this.server.ad()) {
              return true;
          } else if (!"tell".equals(s) && !"help".equals(s) && !"me".equals(s) && !"trigger".equals(s)) {
+             if (this.server.getPlayerList().isOp(this.getProfile())) {
 @@ -781,6 +963,9 @@
          } else {
              return true;
