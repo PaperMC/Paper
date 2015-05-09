@@ -1,0 +1,125 @@
+From 3ed10d5c7954889a72db5cf893bd75f9f6ecf196 Mon Sep 17 00:00:00 2001
+From: erocs <github@erocs.org>
+Date: Sun, 8 Sep 2013 12:06:15 -0700
+Subject: [PATCH] Hopper Customisations
+
+Allows editing hopper cooldowns and amount transferred per tick.
+
+diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
+index 72d067a..8e0d254 100644
+--- a/src/main/java/net/minecraft/server/TileEntityHopper.java
++++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
+@@ -194,12 +194,11 @@ public class TileEntityHopper extends TileEntityContainer implements IHopper, IU
+                 }
+ 
+                 if (flag) {
+-                    this.d(8);
++                    this.d(world.spigotConfig.hopperTransfer); // Spigot
+                     this.update();
+                     return true;
+                 }
+             }
+-
+             return false;
+         } else {
+             return false;
+@@ -253,7 +252,7 @@ public class TileEntityHopper extends TileEntityContainer implements IHopper, IU
+                         // ItemStack itemstack1 = addItem(iinventory, this.splitStack(i, 1), enumdirection);
+ 
+                         // CraftBukkit start - Call event when pushing items into other inventories
+-                        CraftItemStack oitemstack = CraftItemStack.asCraftMirror(this.splitStack(i, 1));
++                        CraftItemStack oitemstack = CraftItemStack.asCraftMirror(this.splitStack(i, world.spigotConfig.hopperAmount)); // Spigot
+ 
+                         Inventory destinationInventory;
+                         // Have to special case large chests as they work oddly
+@@ -267,9 +266,10 @@ public class TileEntityHopper extends TileEntityContainer implements IHopper, IU
+                         this.getWorld().getServer().getPluginManager().callEvent(event);
+                         if (event.isCancelled()) {
+                             this.setItem(i, itemstack);
+-                            this.d(8); // Delay hopper checks
++                            this.d(world.spigotConfig.hopperTransfer); // Spigot
+                             return false;
+                         }
++                        int origCount = event.getItem().getAmount(); // Spigot
+                         ItemStack itemstack1 = addItem(iinventory, CraftItemStack.asNMSCopy(event.getItem()), enumdirection);
+ 
+                         if (itemstack1 == null || itemstack1.count == 0) {
+@@ -281,7 +281,7 @@ public class TileEntityHopper extends TileEntityContainer implements IHopper, IU
+                             // CraftBukkit end
+                             return true;
+                         }
+-
++                        itemstack.count -= origCount - itemstack1.count; // Spigot
+                         this.setItem(i, itemstack);
+                     }
+                 }
+@@ -391,7 +391,7 @@ public class TileEntityHopper extends TileEntityContainer implements IHopper, IU
+             ItemStack itemstack1 = itemstack.cloneItemStack();
+             // ItemStack itemstack2 = addItem(ihopper, iinventory.splitStack(i, 1), (EnumDirection) null);
+             // CraftBukkit start - Call event on collection of items from inventories into the hopper
+-            CraftItemStack oitemstack = CraftItemStack.asCraftMirror(iinventory.splitStack(i, 1));
++            CraftItemStack oitemstack = CraftItemStack.asCraftMirror(iinventory.splitStack(i, ihopper.getWorld().spigotConfig.hopperAmount)); // Spigot
+ 
+             Inventory sourceInventory;
+             // Have to special case large chests as they work oddly
+@@ -408,13 +408,13 @@ public class TileEntityHopper extends TileEntityContainer implements IHopper, IU
+                 iinventory.setItem(i, itemstack1);
+ 
+                 if (ihopper instanceof TileEntityHopper) {
+-                    ((TileEntityHopper) ihopper).d(8); // Delay hopper checks
++                    ((TileEntityHopper) ihopper).d(ihopper.getWorld().spigotConfig.hopperTransfer); // Spigot
+                 } else if (ihopper instanceof EntityMinecartHopper) {
+-                    ((EntityMinecartHopper) ihopper).m(4); // Delay hopper minecart checks
++                    ((EntityMinecartHopper) ihopper).m(ihopper.getWorld().spigotConfig.hopperTransfer / 2); // Spigot
+                 }
+-
+                 return false;
+             }
++            int origCount = event.getItem().getAmount(); // Spigot
+             ItemStack itemstack2 = addItem(ihopper, CraftItemStack.asNMSCopy(event.getItem()), null);
+ 
+             if (itemstack2 == null || itemstack2.count == 0) {
+@@ -426,6 +426,7 @@ public class TileEntityHopper extends TileEntityContainer implements IHopper, IU
+                 // CraftBukkit end
+                 return true;
+             }
++            itemstack1.count -= origCount - itemstack2.count; // Spigot
+ 
+             iinventory.setItem(i, itemstack1);
+         }
+@@ -515,7 +516,7 @@ public class TileEntityHopper extends TileEntityContainer implements IHopper, IU
+                     TileEntityHopper tileentityhopper = (TileEntityHopper) iinventory;
+ 
+                     if (tileentityhopper.o()) {
+-                        tileentityhopper.d(8);
++                        tileentityhopper.d(tileentityhopper.world.spigotConfig.hopperTransfer); // Spigot
+                     }
+ 
+                     iinventory.update();
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index 6421bf2..956c628 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -164,4 +164,19 @@ public class SpigotWorldConfig
+         otherTrackingRange = getInt( "entity-tracking-range.other", otherTrackingRange );
+         log( "Entity Tracking Range: Pl " + playerTrackingRange + " / An " + animalTrackingRange + " / Mo " + monsterTrackingRange + " / Mi " + miscTrackingRange + " / Other " + otherTrackingRange );
+     }
++
++    public int hopperTransfer;
++    public int hopperCheck;
++    public int hopperAmount;
++    private void hoppers()
++    {
++        // Set the tick delay between hopper item movements
++        hopperTransfer = getInt( "ticks-per.hopper-transfer", 8 );
++        // Set the tick delay between checking for items after the associated
++        // container is empty. Default to the hopperTransfer value to prevent
++        // hopper sorting machines from becoming out of sync.
++        hopperCheck = getInt( "ticks-per.hopper-check", hopperTransfer );
++        hopperAmount = getInt( "hopper-amount", 1 );
++        log( "Hopper Transfer: " + hopperTransfer + " Hopper Check: " + hopperCheck + " Hopper Amount: " + hopperAmount );
++    }
+ }
+-- 
+2.1.4
+

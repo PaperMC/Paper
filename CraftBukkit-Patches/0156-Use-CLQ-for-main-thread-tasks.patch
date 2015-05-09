@@ -1,0 +1,56 @@
+From fbac64f81dab23bd878125a77e249a6cda0ea99a Mon Sep 17 00:00:00 2001
+From: md_5 <git@md-5.net>
+Date: Sun, 19 Apr 2015 09:19:39 +1000
+Subject: [PATCH] Use CLQ for main thread tasks.
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 517c4c2..7580b47 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -104,7 +104,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+     private long X = 0L;
+     private final GameProfileRepository Y;
+     private final UserCache Z;
+-    protected final Queue<FutureTask<?>> j = Queues.newArrayDeque();
++    protected final Queue<FutureTask<?>> j = new java.util.concurrent.ConcurrentLinkedQueue<FutureTask<?>>(); // Spigot, PAIL: Rename
+     private Thread serverThread;
+     private long ab = az();
+ 
+@@ -711,11 +711,13 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+         this.methodProfiler.a("jobs");
+         Queue queue = this.j;
+ 
+-        synchronized (this.j) {
+-            while (!this.j.isEmpty()) {
+-                SystemUtils.a((FutureTask) this.j.poll(), MinecraftServer.LOGGER);
+-            }
+-        }
++        // Spigot start
++        FutureTask<?> entry;
++        int count = this.j.size();
++        while (count-- > 0 && (entry = this.j.poll()) != null) {
++            SystemUtils.a(entry, MinecraftServer.LOGGER);
++         }
++        // Spigot end
+ 
+         this.methodProfiler.c("levels");
+ 
+@@ -1499,10 +1501,10 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+             ListenableFutureTask listenablefuturetask = ListenableFutureTask.create(callable);
+             Queue queue = this.j;
+ 
+-            synchronized (this.j) {
+-                this.j.add(listenablefuturetask);
+-                return listenablefuturetask;
+-            }
++            // Spigot start
++            this.j.add(listenablefuturetask);
++            return listenablefuturetask;
++            // Spigot end
+         } else {
+             try {
+                 return Futures.immediateFuture(callable.call());
+-- 
+2.1.4
+

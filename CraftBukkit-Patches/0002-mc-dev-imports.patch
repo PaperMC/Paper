@@ -1,4 +1,4 @@
-From 20f805a73e32f1fb0ce46928b921685fbf92661a Mon Sep 17 00:00:00 2001
+From cf7c6c8710b54f1a7451163c6aab72baf7865e42 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 1 Dec 2013 15:10:48 +1100
 Subject: [PATCH] mc-dev imports
@@ -1000,10 +1000,10 @@ index 0000000..f15b199
 +}
 diff --git a/src/main/java/net/minecraft/server/CommandDispatcher.java b/src/main/java/net/minecraft/server/CommandDispatcher.java
 new file mode 100644
-index 0000000..54133a7
+index 0000000..81289b7
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/CommandDispatcher.java
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,118 @@
 +package net.minecraft.server;
 +
 +import java.util.Iterator;
@@ -1054,7 +1054,7 @@ index 0000000..54133a7
 +        this.a((ICommand) (new CommandWorldBorder()));
 +        this.a((ICommand) (new CommandTitle()));
 +        this.a((ICommand) (new CommandEntityData()));
-+        if (MinecraftServer.getServer().ad()) {
++        if (MinecraftServer.getServer().ae()) {
 +            this.a((ICommand) (new CommandOp()));
 +            this.a((ICommand) (new CommandDeop()));
 +            this.a((ICommand) (new CommandStop()));
@@ -1095,8 +1095,13 @@ index 0000000..54133a7
 +            while (iterator.hasNext()) {
 +                EntityHuman entityhuman = (EntityHuman) iterator.next();
 +
-+                if (entityhuman != icommandlistener && minecraftserver.getPlayerList().isOp(entityhuman.getProfile()) && icommand.canUse(icommandlistener) && (!(icommandlistener instanceof RemoteControlCommandListener) || MinecraftServer.getServer().q())) {
-+                    entityhuman.sendMessage(chatmessage);
++                if (entityhuman != icommandlistener && minecraftserver.getPlayerList().isOp(entityhuman.getProfile()) && icommand.canUse(icommandlistener)) {
++                    boolean flag1 = icommandlistener instanceof MinecraftServer && MinecraftServer.getServer().r();
++                    boolean flag2 = icommandlistener instanceof RemoteControlCommandListener && MinecraftServer.getServer().q();
++
++                    if (flag1 || flag2 || !(icommandlistener instanceof RemoteControlCommandListener) && !(icommandlistener instanceof MinecraftServer)) {
++                        entityhuman.sendMessage(chatmessage);
++                    }
 +                }
 +            }
 +        }
@@ -1105,13 +1110,13 @@ index 0000000..54133a7
 +            minecraftserver.sendMessage(chatmessage);
 +        }
 +
-+        boolean flag1 = minecraftserver.worldServer[0].getGameRules().getBoolean("sendCommandFeedback");
++        boolean flag3 = minecraftserver.worldServer[0].getGameRules().getBoolean("sendCommandFeedback");
 +
 +        if (icommandlistener instanceof CommandBlockListenerAbstract) {
-+            flag1 = ((CommandBlockListenerAbstract) icommandlistener).m();
++            flag3 = ((CommandBlockListenerAbstract) icommandlistener).m();
 +        }
 +
-+        if ((i & 1) != 1 && flag1) {
++        if ((i & 1) != 1 && flag3 || icommandlistener instanceof MinecraftServer) {
 +            icommandlistener.sendMessage(new ChatMessage(s, aobject));
 +        }
 +
@@ -1995,7 +2000,7 @@ index 0000000..27ce9d9
 +}
 diff --git a/src/main/java/net/minecraft/server/GenericAttributes.java b/src/main/java/net/minecraft/server/GenericAttributes.java
 new file mode 100644
-index 0000000..871859f
+index 0000000..59b06c4
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/GenericAttributes.java
 @@ -0,0 +1,114 @@
@@ -2011,10 +2016,10 @@ index 0000000..871859f
 +
 +    private static final Logger f = LogManager.getLogger();
 +    public static final IAttribute maxHealth = (new AttributeRanged((IAttribute) null, "generic.maxHealth", 20.0D, 0.0D, Double.MAX_VALUE)).a("Max Health").a(true);
-+    public static final IAttribute b = (new AttributeRanged((IAttribute) null, "generic.followRange", 32.0D, 0.0D, 2048.0D)).a("Follow Range");
++    public static final IAttribute FOLLOW_RANGE = (new AttributeRanged((IAttribute) null, "generic.followRange", 32.0D, 0.0D, 2048.0D)).a("Follow Range");
 +    public static final IAttribute c = (new AttributeRanged((IAttribute) null, "generic.knockbackResistance", 0.0D, 0.0D, 1.0D)).a("Knockback Resistance");
-+    public static final IAttribute d = (new AttributeRanged((IAttribute) null, "generic.movementSpeed", 0.699999988079071D, 0.0D, Double.MAX_VALUE)).a("Movement Speed").a(true);
-+    public static final IAttribute e = new AttributeRanged((IAttribute) null, "generic.attackDamage", 2.0D, 0.0D, Double.MAX_VALUE);
++    public static final IAttribute MOVEMENT_SPEED = (new AttributeRanged((IAttribute) null, "generic.movementSpeed", 0.699999988079071D, 0.0D, Double.MAX_VALUE)).a("Movement Speed").a(true);
++    public static final IAttribute ATTACK_DAMAGE = new AttributeRanged((IAttribute) null, "generic.attackDamage", 2.0D, 0.0D, Double.MAX_VALUE);
 +
 +    public static NBTTagList a(AttributeMapBase attributemapbase) {
 +        NBTTagList nbttaglist = new NBTTagList();
@@ -2582,10 +2587,10 @@ index 0000000..2a04b86
 +}
 diff --git a/src/main/java/net/minecraft/server/NBTTagByteArray.java b/src/main/java/net/minecraft/server/NBTTagByteArray.java
 new file mode 100644
-index 0000000..3eeed3e
+index 0000000..c6b5f70
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/NBTTagByteArray.java
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,58 @@
 +package net.minecraft.server;
 +
 +import java.io.DataInput;
@@ -2609,6 +2614,7 @@ index 0000000..3eeed3e
 +    }
 +
 +    void load(DataInput datainput, int i, NBTReadLimiter nbtreadlimiter) throws IOException {
++        nbtreadlimiter.a(192L);
 +        int j = datainput.readInt();
 +
 +        nbtreadlimiter.a((long) (8 * j));
@@ -2645,10 +2651,10 @@ index 0000000..3eeed3e
 +}
 diff --git a/src/main/java/net/minecraft/server/NBTTagIntArray.java b/src/main/java/net/minecraft/server/NBTTagIntArray.java
 new file mode 100644
-index 0000000..63c3bf9
+index 0000000..5f17034
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/NBTTagIntArray.java
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,76 @@
 +package net.minecraft.server;
 +
 +import java.io.DataInput;
@@ -2676,6 +2682,7 @@ index 0000000..63c3bf9
 +    }
 +
 +    void load(DataInput datainput, int i, NBTReadLimiter nbtreadlimiter) throws IOException {
++        nbtreadlimiter.a(192L);
 +        int j = datainput.readInt();
 +
 +        nbtreadlimiter.a((long) (32 * j));
@@ -3645,7 +3652,7 @@ index 0000000..b07e7d5
 +}
 diff --git a/src/main/java/net/minecraft/server/ServerConnection.java b/src/main/java/net/minecraft/server/ServerConnection.java
 new file mode 100644
-index 0000000..42188fa
+index 0000000..86b1f37
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/ServerConnection.java
 @@ -0,0 +1,175 @@
@@ -3725,7 +3732,7 @@ index 0000000..42188fa
 +            Class oclass;
 +            LazyInitVar lazyinitvar;
 +
-+            if (Epoll.isAvailable() && this.f.ah()) {
++            if (Epoll.isAvailable() && this.f.ai()) {
 +                oclass = EpollServerSocketChannel.class;
 +                lazyinitvar = ServerConnection.b;
 +                ServerConnection.e.info("Using epoll channel type");
@@ -3806,8 +3813,8 @@ index 0000000..42188fa
 +                            ServerConnection.e.warn("Failed to handle packet for " + networkmanager.getSocketAddress(), exception);
 +                            final ChatComponentText chatcomponenttext = new ChatComponentText("Internal server error");
 +
-+                            networkmanager.a(new PacketPlayOutKickDisconnect(chatcomponenttext), new GenericFutureListener<Future<Void>>() {
-+                                public void operationComplete(Future<Void> future) throws Exception {
++                            networkmanager.a(new PacketPlayOutKickDisconnect(chatcomponenttext), new GenericFutureListener() {
++                                public void operationComplete(Future future) throws Exception {
 +                                    networkmanager.close(chatcomponenttext);
 +                                }
 +                            }, new GenericFutureListener[0]);
@@ -3826,7 +3833,7 @@ index 0000000..42188fa
 +}
 diff --git a/src/main/java/net/minecraft/server/ServerStatisticManager.java b/src/main/java/net/minecraft/server/ServerStatisticManager.java
 new file mode 100644
-index 0000000..97c3e79
+index 0000000..46845cd
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/ServerStatisticManager.java
 @@ -0,0 +1,212 @@
@@ -3895,14 +3902,14 @@ index 0000000..97c3e79
 +        this.e.add(statistic);
 +        if (statistic.d() && j == 0 && i > 0) {
 +            this.g = true;
-+            if (this.c.aA()) {
++            if (this.c.aB()) {
 +                this.c.getPlayerList().sendMessage(new ChatMessage("chat.type.achievement", new Object[] { entityhuman.getScoreboardDisplayName(), statistic.j()}));
 +            }
 +        }
 +
 +        if (statistic.d() && j > 0 && i == 0) {
 +            this.g = true;
-+            if (this.c.aA()) {
++            if (this.c.aB()) {
 +                this.c.getPlayerList().sendMessage(new ChatMessage("chat.type.achievement.taken", new Object[] { entityhuman.getScoreboardDisplayName(), statistic.j()}));
 +            }
 +        }
@@ -4005,7 +4012,7 @@ index 0000000..97c3e79
 +    }
 +
 +    public void a(EntityPlayer entityplayer) {
-+        int i = this.c.as();
++        int i = this.c.at();
 +        HashMap hashmap = Maps.newHashMap();
 +
 +        if (this.g || i - this.f > 300) {
@@ -4287,10 +4294,10 @@ index 0000000..0bced98
 +}
 diff --git a/src/main/java/net/minecraft/server/UserCache.java b/src/main/java/net/minecraft/server/UserCache.java
 new file mode 100644
-index 0000000..f053f4e
+index 0000000..78f1f57
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/UserCache.java
-@@ -0,0 +1,346 @@
+@@ -0,0 +1,338 @@
 +package net.minecraft.server;
 +
 +import com.google.common.base.Charsets;
@@ -4408,14 +4415,13 @@ index 0000000..f053f4e
 +            UserCache.UserCacheEntry usercache_usercacheentry1 = (UserCache.UserCacheEntry) this.d.get(uuid);
 +
 +            this.c.remove(usercache_usercacheentry1.a().getName().toLowerCase(Locale.ROOT));
-+            this.c.put(gameprofile.getName().toLowerCase(Locale.ROOT), usercache_usercacheentry);
 +            this.e.remove(gameprofile);
-+        } else {
-+            this.d.put(uuid, usercache_usercacheentry);
-+            this.c.put(s, usercache_usercacheentry);
 +        }
 +
++        this.c.put(gameprofile.getName().toLowerCase(Locale.ROOT), usercache_usercacheentry);
++        this.d.put(uuid, usercache_usercacheentry);
 +        this.e.addFirst(gameprofile);
++        this.c();
 +    }
 +
 +    public GameProfile getProfile(String s) {
@@ -4473,29 +4479,16 @@ index 0000000..f053f4e
 +    }
 +
 +    public void b() {
-+        List list = null;
 +        BufferedReader bufferedreader = null;
 +
-+        label64: {
-+            try {
-+                bufferedreader = Files.newReader(this.g, Charsets.UTF_8);
-+                list = (List) this.b.fromJson(bufferedreader, UserCache.h);
-+                break label64;
-+            } catch (FileNotFoundException filenotfoundexception) {
-+                ;
-+            } finally {
-+                IOUtils.closeQuietly(bufferedreader);
-+            }
++        try {
++            bufferedreader = Files.newReader(this.g, Charsets.UTF_8);
++            List list = (List) this.b.fromJson(bufferedreader, UserCache.h);
 +
-+            return;
-+        }
-+
-+        if (list != null) {
 +            this.c.clear();
 +            this.d.clear();
 +            this.e.clear();
-+            list = Lists.reverse(list);
-+            Iterator iterator = list.iterator();
++            Iterator iterator = Lists.reverse(list).iterator();
 +
 +            while (iterator.hasNext()) {
 +                UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) iterator.next();
@@ -4504,6 +4497,12 @@ index 0000000..f053f4e
 +                    this.a(usercache_usercacheentry.a(), usercache_usercacheentry.b());
 +                }
 +            }
++        } catch (FileNotFoundException filenotfoundexception) {
++            ;
++        } catch (JsonParseException jsonparseexception) {
++            ;
++        } finally {
++            IOUtils.closeQuietly(bufferedreader);
 +        }
 +
 +    }
@@ -5230,5 +5229,5 @@ index 0000000..31fc0a9
 +    }
 +}
 -- 
-2.1.0
+2.1.4
 
