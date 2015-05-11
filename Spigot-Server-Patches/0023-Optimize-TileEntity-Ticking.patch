@@ -1,4 +1,4 @@
-From 0ed1de26c7933ca520548d35cefc535b278aff93 Mon Sep 17 00:00:00 2001
+From 1ed5764045977352072c7a6d34aee8c824d3fae8 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 8 Mar 2015 01:56:22 -0600
 Subject: [PATCH] Optimize TileEntity Ticking
@@ -74,7 +74,7 @@ index f75e2de..7119612 100644
              if (this.e instanceof BlockDaylightDetector) {
                  ((BlockDaylightDetector) this.e).f(this.world, this.position);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index c563d62..15fe976 100644
+index cf4bf4e..15fe976 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -65,7 +65,7 @@ public abstract class World implements IBlockAccess {
@@ -121,7 +121,7 @@ index c563d62..15fe976 100644
          // Spigot start
          int tilesThisCycle = 0;
          for (tileLimiter.initTick();
-@@ -1474,10 +1482,12 @@ public abstract class World implements IBlockAccess {
+@@ -1474,11 +1482,12 @@ public abstract class World implements IBlockAccess {
                  tileTickPosition++, tilesThisCycle++) {
              tileTickPosition = (tileTickPosition < tileEntityList.size()) ? tileTickPosition : 0;
              TileEntity tileentity = (TileEntity) this.tileEntityList.get(tileTickPosition);
@@ -130,15 +130,17 @@ index c563d62..15fe976 100644
              // Spigot start
              if (tileentity == null) {
                  getServer().getLogger().severe("Spigot has detected a null entity and has removed it, preventing a crash");
+-                tilesThisCycle--;
 -                this.tileEntityList.remove(tileTickPosition--);
 +                iterator.remove(); // PaperSpigot - Remove Spigot's TE handling in favor of our own
                  continue;
              }
              // Spigot end
-@@ -1505,7 +1515,7 @@ public abstract class World implements IBlockAccess {
+@@ -1506,8 +1515,7 @@ public abstract class World implements IBlockAccess {
              }
  
              if (tileentity.x()) {
+-                tilesThisCycle--;
 -                this.tileEntityList.remove(tileTickPosition--);
 +                iterator.remove(); // PaperSpigot - Remove Spigot's TE handling in favor of our own
                  this.h.remove(tileentity);
@@ -320,5 +322,5 @@ index 0000000..5af5dcc
 +}
 \ No newline at end of file
 -- 
-1.9.1
+2.4.0.windows.2
 
