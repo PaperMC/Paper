@@ -8,8 +8,8 @@ diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/m
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ import java.util.Set;
- import java.util.UUID;
+@@ -0,0 +0,0 @@ import org.bukkit.generator.ChunkGenerator;
+ import java.util.*;
  import java.util.concurrent.Callable;
  
 +// PaperSpigot start
@@ -19,27 +19,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +// PaperSpigot end
 +
  // CraftBukkit start
- import com.google.common.collect.Maps;
- import java.util.Map;
+ // CraftBukkit end
+ 
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
              blockposition = new BlockPosition(blockposition.getX(), 0, blockposition.getZ());
          }
  
-+        // PaperSpigot start - Configurable async light updates
++        // PaperSpigot start - configurable async light updates
          if (!this.isValidLocation(blockposition)) {
              return enumskyblock.c;
 -        } else if (!this.isLoaded(blockposition)) {
 +        }
 +
 +        Chunk chunk = this.getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4);
-+        if (chunk == null) {
++        if (chunk != null) {
              return enumskyblock.c;
          } else {
 -            Chunk chunk = this.getChunkAtWorldCoords(blockposition);
 -
++        // PaperSpigot end
              return chunk.getBrightness(enumskyblock, blockposition);
          }
-+        // PaperSpigot end
      }
  
      public void a(EnumSkyBlock enumskyblock, BlockPosition blockposition, int i) {
@@ -59,8 +59,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      private int a(BlockPosition blockposition, EnumSkyBlock enumskyblock) {
 -        if (enumskyblock == EnumSkyBlock.SKY && this.i(blockposition)) {
-+        Chunk chunk = this.getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4); // PaperSpigot - Configurable async light updates
++        // PaperSpigot start - Configurable async light updates
++        Chunk chunk = this.getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 +        if (chunk == null || (enumskyblock == EnumSkyBlock.SKY && chunk.d(blockposition))) {
++        // PaperSpigot end
              return 15;
          } else {
 -            Block block = this.getType(blockposition).getBlock();
@@ -139,7 +141,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public boolean c(final EnumSkyBlock enumskyblock, final BlockPosition blockposition) {
 +        Callable<Boolean> callable = new Callable<Boolean>() {
 +            @Override
-+            public Boolean call() {
++            public Boolean call() throws Exception {
 +                // CraftBukkit start - Use neighbor cache instead of looking up
 +                Chunk chunk = World.this.getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 +                if (chunk == null || !chunk.areNeighborsLoaded(1) /*!this.areChunksLoaded(blockposition, 17, false)*/) {
