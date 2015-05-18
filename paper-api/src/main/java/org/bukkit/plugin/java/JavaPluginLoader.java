@@ -250,6 +250,11 @@ public final class JavaPluginLoader implements PluginLoader {
         for (final Method method : methods) {
             final EventHandler eh = method.getAnnotation(EventHandler.class);
             if (eh == null) continue;
+            // Do not register bridge or synthetic methods to avoid event duplication
+            // Fixes SPIGOT-893
+            if (method.isBridge() || method.isSynthetic()) {
+                continue;
+            }
             final Class<?> checkClass;
             if (method.getParameterTypes().length != 1 || !Event.class.isAssignableFrom(checkClass = method.getParameterTypes()[0])) {
                 plugin.getLogger().severe(plugin.getDescription().getFullName() + " attempted to register an invalid EventHandler method signature \"" + method.toGenericString() + "\" in " + listener.getClass());
