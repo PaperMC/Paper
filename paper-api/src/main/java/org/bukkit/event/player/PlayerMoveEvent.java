@@ -1,5 +1,6 @@
 package org.bukkit.event.player;
 
+import com.google.common.base.Preconditions;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -63,6 +64,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      * @param from New location to mark as the players previous location
      */
     public void setFrom(Location from) {
+        validateLocation(to);
         this.from = from;
     }
 
@@ -81,7 +83,12 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      * @param to New Location this player will move to
      */
     public void setTo(Location to) {
+        validateLocation(to);
         this.to = to;
+    }
+
+    private void validateLocation(Location loc) {
+        Preconditions.checkArgument(loc != null, "Cannot use location with null world!");
     }
 
     @Override
