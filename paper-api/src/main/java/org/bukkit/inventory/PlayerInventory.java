@@ -43,6 +43,30 @@ public interface PlayerInventory extends Inventory {
     public ItemStack getBoots();
 
     /**
+     * Stores the ItemStack at the given index of the inventory.
+     * <p>
+     * Indexes 0 through 8 refer to the hotbar. 9 through 35 refer to the main inventory, counting up from 9 at the top
+     * left corner of the inventory, moving to the right, and moving to the row below it back on the left side when it
+     * reaches the end of the row. It follows the same path in the inventory like you would read a book.
+     * <p>
+     * Indexes 36 through 39 refer to the armor slots. Though you can set armor with this method using these indexes,
+     * you are encouraged to use the provided methods for those slots.
+     * <p>
+     * If you attempt to use this method with an index less than 0 or greater than 39, an ArrayIndexOutOfBounds
+     * exception will be thrown.
+     *
+     * @param index The index where to put the ItemStack
+     * @param item The ItemStack to set
+     * @throws ArrayIndexOutOfBoundsException when index < 0 || index > 39
+     * @see #setBoots(ItemStack)
+     * @see #setChestplate(ItemStack)
+     * @see #setHelmet(ItemStack)
+     * @see #setLeggings(ItemStack)
+     */
+    @Override
+    public void setItem(int index, ItemStack item);
+
+    /**
      * Put the given ItemStacks into the armor slots
      *
      * @param items The ItemStacks to use as armour
