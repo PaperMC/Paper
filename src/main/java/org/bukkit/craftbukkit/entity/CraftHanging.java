@@ -49,7 +49,9 @@ public class CraftHanging extends CraftEntity implements Hanging {
     }
 
     public BlockFace getFacing() {
-        switch (this.getHandle().direction) {
+        EnumDirection direction = this.getHandle().direction;
+        if (direction == null) return BlockFace.SELF;
+        switch (direction) {
             case SOUTH:
             default:
                 return BlockFace.SOUTH;
