@@ -185,14 +185,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             break;
         case DISPENSER:
             if (craftinv.getInventory() instanceof TileEntityDispenser) {
-                getHandle().openTileEntity((TileEntityDispenser) craftinv.getInventory());
+                getHandle().openContainer((TileEntityDispenser) craftinv.getInventory());
             } else {
                 openCustomInventory(inventory, player, "minecraft:dispenser");
             }
             break;
         case FURNACE:
             if (craftinv.getInventory() instanceof TileEntityFurnace) {
-                getHandle().openTileEntity((TileEntityFurnace) craftinv.getInventory());
+                getHandle().openContainer((TileEntityFurnace) craftinv.getInventory());
             } else {
                 openCustomInventory(inventory, player, "minecraft:furnace");
             }
@@ -202,7 +202,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             break;
         case BREWING:
             if (craftinv.getInventory() instanceof TileEntityBrewingStand) {
-                getHandle().openTileEntity((TileEntityBrewingStand) craftinv.getInventory());
+                getHandle().openContainer((TileEntityBrewingStand) craftinv.getInventory());
             } else {
                 openCustomInventory(inventory, player, "minecraft:brewing_stand");
             }
@@ -212,16 +212,16 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             break;
         case HOPPER:
             if (craftinv.getInventory() instanceof TileEntityHopper) {
-                getHandle().openTileEntity((TileEntityHopper) craftinv.getInventory());
+                getHandle().openContainer((TileEntityHopper) craftinv.getInventory());
             } else if (craftinv.getInventory() instanceof EntityMinecartHopper) {
-                getHandle().openTileEntity((EntityMinecartHopper) craftinv.getInventory());
+                getHandle().openContainer((EntityMinecartHopper) craftinv.getInventory());
             } else {
                 openCustomInventory(inventory, player, "minecraft:hopper");
             }
             break;
         case BEACON:
             if (craftinv.getInventory() instanceof TileEntityBeacon) {
-                getHandle().openTileEntity((TileEntityBeacon) craftinv.getInventory());
+                getHandle().openContainer((TileEntityBeacon) craftinv.getInventory());
             } else {
                 openCustomInventory(inventory, player, "minecraft:beacon");
             }
