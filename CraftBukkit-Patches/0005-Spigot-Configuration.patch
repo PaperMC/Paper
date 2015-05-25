@@ -15,7 +15,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
 +            // Spigot start
 +            this.a((PlayerList) (new DedicatedPlayerList(this)));
-+            org.spigotmc.SpigotConfig.init();
++            org.spigotmc.SpigotConfig.init((File) options.valueOf("spigot-settings"));
 +            org.spigotmc.SpigotConfig.registerCommands();
 +            // Spigot end
  
@@ -75,7 +75,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              logger.log(Level.WARNING, "Failed to load banned-players.json, " + ex.getMessage());
          }
  
-+        org.spigotmc.SpigotConfig.init(); // Spigot
++        org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
          for (WorldServer world : console.worlds) {
              world.worldData.setDifficulty(difficulty);
              world.setSpawnFlags(monsters, animals);
@@ -94,6 +94,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
  
          int pollCount = 0;
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -0,0 +0,0 @@ public class Main {
+                 acceptsAll(asList("v", "version"), "Show the CraftBukkit Version");
+ 
+                 acceptsAll(asList("demo"), "Demo mode");
++
++                // Spigot Start
++                acceptsAll(asList("S", "spigot-settings"), "File for spigot settings")
++                        .withRequiredArg()
++                        .ofType(File.class)
++                        .defaultsTo(new File("spigot.yml"))
++                        .describedAs("Yml file");
++                // Spigot End
+             }
+         };
+ 
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -121,7 +140,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +public class SpigotConfig
 +{
 +
-+    private static final File CONFIG_FILE = new File( "spigot.yml" );
++    private static File CONFIG_FILE;
 +    private static final String HEADER = "This is the main configuration file for Spigot.\n"
 +            + "As you can see, there's tons to configure. Some options may impact gameplay, so use\n"
 +            + "with caution, and make sure you know what each option does before configuring.\n"
@@ -139,8 +158,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    static Map<String, Command> commands;
 +    /*========================================================================*/
 +
-+    public static void init()
++    public static void init(File configFile)
 +    {
++        CONFIG_FILE = configFile;
 +        config = new YamlConfiguration();
 +        try
 +        {
@@ -315,4 +335,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return config.getString( "world-settings." + worldName + "." + path, config.getString( "world-settings.default." + path ) );
 +    }
 +}
---
+-- 
+1.9.0.msysgit.0
+
