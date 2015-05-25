@@ -14,7 +14,7 @@ do
     sed -i 's/\r//' "$nms/$file"
 	sed -i 's/\r//' "$cb/$file"
     outName=$(echo nms-patches/"$(echo $file | cut -d. -f1)".patch)
-    patchNew=$(diff -u "$nms/$file" "$cb/$file")
+    patchNew=$(diff -u --label a/net/minecraft/server/$file "$nms/$file" --label b/net/minecraft/server/$file "$cb/$file")
     if [ -f "$outName" ]
     then
         patchCut=$(echo "$patchNew" | tail -n +3)
