@@ -20,5 +20,5 @@ do
     sed -i 's/\r//' "$nms/$file" > /dev/null
 
     cp "$nms/$file" "$cb/$file"
-    patch -d src/main/java/ "net/minecraft/server/$file" < "$patchFile" > /dev/null
+    patch -d src/main/java/ "net/minecraft/server/$file" < "$patchFile"
 done
