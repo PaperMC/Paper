@@ -1,4 +1,4 @@
-From 7aa8f30d33ee7c3805cd69598a52f256e19159a0 Mon Sep 17 00:00:00 2001
+From f1ff282a5e14c496d23852d8358ff153684cc6a9 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 7 Jul 2013 09:32:53 +1000
 Subject: [PATCH] Spigot Configuration
@@ -6,7 +6,7 @@ Subject: [PATCH] Spigot Configuration
 Provides the basic infrastructure to load and save the Spigot configuration file, spigot.yml
 
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 1094be8..7e440b0 100644
+index 1094be8..24ecbd2 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -162,6 +162,11 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
@@ -15,7 +15,7 @@ index 1094be8..7e440b0 100644
              }
 +            // Spigot start
 +            this.a((PlayerList) (new DedicatedPlayerList(this)));
-+            org.spigotmc.SpigotConfig.init();
++            org.spigotmc.SpigotConfig.init((File) options.valueOf("spigot-settings"));
 +            org.spigotmc.SpigotConfig.registerCommands();
 +            // Spigot end
  
@@ -55,7 +55,7 @@ index d83842a..0356d9e 100644
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 4b3fcac..2aceeb4 100644
+index 4b3fcac..8668686 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -247,8 +247,10 @@ public final class CraftServer implements Server {
@@ -75,7 +75,7 @@ index 4b3fcac..2aceeb4 100644
              logger.log(Level.WARNING, "Failed to load banned-players.json, " + ex.getMessage());
          }
  
-+        org.spigotmc.SpigotConfig.init(); // Spigot
++        org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
          for (WorldServer world : console.worlds) {
              world.worldData.setDifficulty(difficulty);
              world.setSpawnFlags(monsters, animals);
@@ -94,12 +94,31 @@ index 4b3fcac..2aceeb4 100644
          overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
  
          int pollCount = 0;
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index 4e642b7..aca0d97 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -114,6 +114,14 @@ public class Main {
+                 acceptsAll(asList("v", "version"), "Show the CraftBukkit Version");
+ 
+                 acceptsAll(asList("demo"), "Demo mode");
++
++                // Spigot Start
++                acceptsAll(asList("S", "spigot-settings"), "File for spigot settings")
++                        .withRequiredArg()
++                        .ofType(File.class)
++                        .defaultsTo(new File("spigot.yml"))
++                        .describedAs("Yml file");
++                // Spigot End
+             }
+         };
+ 
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
 new file mode 100644
-index 0000000..6837305
+index 0000000..cb88089
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
-@@ -0,0 +1,138 @@
+@@ -0,0 +1,139 @@
 +package org.spigotmc;
 +
 +import com.google.common.base.Throwables;
@@ -121,7 +140,7 @@ index 0000000..6837305
 +public class SpigotConfig
 +{
 +
-+    private static final File CONFIG_FILE = new File( "spigot.yml" );
++    private static File CONFIG_FILE;
 +    private static final String HEADER = "This is the main configuration file for Spigot.\n"
 +            + "As you can see, there's tons to configure. Some options may impact gameplay, so use\n"
 +            + "with caution, and make sure you know what each option does before configuring.\n"
@@ -139,8 +158,9 @@ index 0000000..6837305
 +    static Map<String, Command> commands;
 +    /*========================================================================*/
 +
-+    public static void init()
++    public static void init(File configFile)
 +    {
++        CONFIG_FILE = configFile;
 +        config = new YamlConfiguration();
 +        try
 +        {
@@ -316,5 +336,5 @@ index 0000000..961ddb4
 +    }
 +}
 -- 
-2.1.4
+1.9.0.msysgit.0
 
