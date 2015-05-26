@@ -1,4 +1,4 @@
-From b9e008279870787a67daf990e60c5c3c71f95223 Mon Sep 17 00:00:00 2001
+From e78adc4dd3cd3cc942950f5ada5d889ed631faf9 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Fri, 21 Jun 2013 17:17:20 +1000
 Subject: [PATCH] Crop Growth Rates
@@ -26,27 +26,6 @@ index 4923f8b..6b02059 100644
 +    }
 +    // Spigot end
  }
-diff --git a/src/main/java/net/minecraft/server/BlockNetherWart.java b/src/main/java/net/minecraft/server/BlockNetherWart.java
-index 1bb8015..98ebd2b 100644
---- a/src/main/java/net/minecraft/server/BlockNetherWart.java
-+++ b/src/main/java/net/minecraft/server/BlockNetherWart.java
-@@ -27,10 +27,12 @@ public class BlockNetherWart extends BlockPlant {
-     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
-         int i = ((Integer) iblockdata.get(BlockNetherWart.AGE)).intValue();
-
--        if (i < 3 && random.nextInt(10) == 0) {
--            iblockdata = iblockdata.set(BlockNetherWart.AGE, Integer.valueOf(i + 1));
--            // world.setTypeAndData(blockposition, iblockdata, 2); // CraftBukkit
--            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this, toLegacyData(iblockdata)); // CraftBukkit
-+        if (i >= (byte) range(3, (world.growthOdds / world.spigotConfig.wartModifier * 15) + 0.5F, 15)) { // Spigot
-+            if (i < 3 && random.nextInt(10) == 0) {
-+                iblockdata = iblockdata.set(BlockNetherWart.AGE, Integer.valueOf(i + 1));
-+                // world.setTypeAndData(blockposition, iblockdata, 2); // CraftBukkit
-+                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this, toLegacyData(iblockdata)); // CraftBukkit
-+            }
-         }
-
-         super.b(world, blockposition, iblockdata, random);
 diff --git a/src/main/java/net/minecraft/server/BlockCactus.java b/src/main/java/net/minecraft/server/BlockCactus.java
 index 7f5e5ca..488e5c2 100644
 --- a/src/main/java/net/minecraft/server/BlockCactus.java
@@ -113,6 +92,19 @@ index 70405d5..d2bd4dd 100644
                          BlockPosition blockposition1 = blockposition.a(random.nextInt(3) - 1, random.nextInt(5) - 3, random.nextInt(3) - 1);
                          IBlockData iblockdata1 = world.getType(blockposition1);
                          Block block = world.getType(blockposition1.up()).getBlock();
+diff --git a/src/main/java/net/minecraft/server/BlockNetherWart.java b/src/main/java/net/minecraft/server/BlockNetherWart.java
+index 1bb8015..374f06c 100644
+--- a/src/main/java/net/minecraft/server/BlockNetherWart.java
++++ b/src/main/java/net/minecraft/server/BlockNetherWart.java
+@@ -27,7 +27,7 @@ public class BlockNetherWart extends BlockPlant {
+     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
+         int i = ((Integer) iblockdata.get(BlockNetherWart.AGE)).intValue();
+ 
+-        if (i < 3 && random.nextInt(10) == 0) {
++        if (i < 3 && random.nextInt(Math.max(1, (int) world.growthOdds / world.spigotConfig.wartModifier * 10)) == 0) { // Spigot
+             iblockdata = iblockdata.set(BlockNetherWart.AGE, Integer.valueOf(i + 1));
+             // world.setTypeAndData(blockposition, iblockdata, 2); // CraftBukkit
+             org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this, toLegacyData(iblockdata)); // CraftBukkit
 diff --git a/src/main/java/net/minecraft/server/BlockReed.java b/src/main/java/net/minecraft/server/BlockReed.java
 index fae75fa..d00067d 100644
 --- a/src/main/java/net/minecraft/server/BlockReed.java
@@ -153,10 +145,10 @@ index 2ff1a6b..2618c40 100644
  
                  if (i < 7) {
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 90a227f..7e79ba5 100644
+index 90a227f..5749a45 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-@@ -79,4 +79,35 @@ public class SpigotWorldConfig
+@@ -79,4 +79,37 @@ public class SpigotWorldConfig
          clearChunksOnTick = getBoolean( "clear-tick-list", false );
          log( "Clear tick list: " + clearChunksOnTick );
      }
@@ -170,7 +162,6 @@ index 90a227f..7e79ba5 100644
 +    public int saplingModifier;
 +    public int wheatModifier;
 +    public int wartModifier;
-+
 +    private int getAndValidateGrowth(String crop)
 +    {
 +        int modifier = getInt( "growth." + crop.toLowerCase() + "-modifier", 100 );
