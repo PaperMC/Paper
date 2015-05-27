@@ -70,7 +70,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
             index = index + 36;
         else if (index > 35)
             index = 8 - (index - 36);
-        player.playerConnection.sendPacket(new PacketPlayOutSetSlot(player.activeContainer.windowId, index, CraftItemStack.asNMSCopy(item)));
+        player.playerConnection.sendPacket(new PacketPlayOutSetSlot(player.defaultContainer.windowId, index, CraftItemStack.asNMSCopy(item)));
     }
 
     public int getHeldItemSlot() {
