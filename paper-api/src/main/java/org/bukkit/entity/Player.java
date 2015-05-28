@@ -236,9 +236,7 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * @param sound the internal sound name to play
      * @param volume the volume of the sound
      * @param pitch the pitch of the sound
-     * @deprecated Magic value
      */
-    @Deprecated
     public void playSound(Location location, String sound, float volume, float pitch);
 
     /**
