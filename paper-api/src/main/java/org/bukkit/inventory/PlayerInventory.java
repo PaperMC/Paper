@@ -57,7 +57,7 @@ public interface PlayerInventory extends Inventory {
      *
      * @param index The index where to put the ItemStack
      * @param item The ItemStack to set
-     * @throws ArrayIndexOutOfBoundsException when index < 0 || index > 39
+     * @throws ArrayIndexOutOfBoundsException when index &lt; 0 || index &gt; 39
      * @see #setBoots(ItemStack)
      * @see #setChestplate(ItemStack)
      * @see #setHelmet(ItemStack)
