@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Zach Brown <1254957+zachbr@users.noreply.github.com>
-Date: Sat, 12 Jul 2014 19:32:01 -0500
+Date: Thu, 28 May 2015 00:08:15 -0500
 Subject: [PATCH] PaperSpigot config files
 
 
@@ -9,11 +9,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-             org.spigotmc.SpigotConfig.init();
+             org.spigotmc.SpigotConfig.init((File) options.valueOf("spigot-settings"));
              org.spigotmc.SpigotConfig.registerCommands();
              // Spigot end
 +            // PaperSpigot start
-+            org.github.paperspigot.PaperSpigotConfig.init();
++            org.github.paperspigot.PaperSpigotConfig.init((File) options.valueOf("paper-settings"));
 +            org.github.paperspigot.PaperSpigotConfig.registerCommands();
 +            // PaperSpigot end
  
@@ -47,8 +47,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
          }
  
-         org.spigotmc.SpigotConfig.init(); // Spigot
-+        org.github.paperspigot.PaperSpigotConfig.init(); // PaperSpigot
+         org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
++        org.github.paperspigot.PaperSpigotConfig.init((File) console.options.valueOf("paper-settings")); // PaperSpigot
          for (WorldServer world : console.worlds) {
              world.worldData.setDifficulty(difficulty);
              world.setSpawnFlags(monsters, animals);
@@ -66,6 +66,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        org.github.paperspigot.PaperSpigotConfig.registerCommands(); // PaperSpigot
  
          overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -0,0 +0,0 @@ public class Main {
+                         .defaultsTo(new File("spigot.yml"))
+                         .describedAs("Yml file");
+                 // Spigot End
++
++                // PaperSpigot Start
++                acceptsAll(asList("paper", "paper-settings"), "File for paperspigot settings")
++                        .withRequiredArg()
++                        .ofType(File.class)
++                        .defaultsTo(new File("paper.yml"))
++                        .describedAs("Yml file");
++                // PaperSpigot End
+             }
+         };
  
 diff --git a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
 new file mode 100644
@@ -94,7 +113,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +public class PaperSpigotConfig
 +{
 +
-+    private static final File CONFIG_FILE = new File( "paper.yml" );
++    private static File CONFIG_FILE;
 +    private static final String HEADER = "This is the main configuration file for PaperSpigot.\n"
 +            + "As you can see, there's tons to configure. Some options may impact gameplay, so use\n"
 +            + "with caution, and make sure you know what each option does before configuring.\n"
@@ -109,8 +128,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    static Map<String, Command> commands;
 +    /*========================================================================*/
 +
-+    public static void init()
++    public static void init(File configFile)
 +    {
++        CONFIG_FILE = configFile;
 +        config = new YamlConfiguration();
 +        try
 +        {
