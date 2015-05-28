@@ -1,19 +1,19 @@
-From edaf8e2dbbeb2e4d9b4e467dba0b7f5e57f40102 Mon Sep 17 00:00:00 2001
+From e025f6bcd4c2a4211b4c72eeaf18af8d319f38ca Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
-Date: Sat, 12 Jul 2014 19:32:01 -0500
+Date: Thu, 28 May 2015 00:08:15 -0500
 Subject: [PATCH] PaperSpigot config files
 
 
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index ebb18c6..4698590 100644
+index 15d161d..8170343 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -177,6 +177,10 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-             org.spigotmc.SpigotConfig.init();
+             org.spigotmc.SpigotConfig.init((File) options.valueOf("spigot-settings"));
              org.spigotmc.SpigotConfig.registerCommands();
              // Spigot end
 +            // PaperSpigot start
-+            org.github.paperspigot.PaperSpigotConfig.init();
++            org.github.paperspigot.PaperSpigotConfig.init((File) options.valueOf("paper-settings"));
 +            org.github.paperspigot.PaperSpigotConfig.registerCommands();
 +            // PaperSpigot end
  
@@ -41,14 +41,14 @@ index 6de5ba5..117d44c 100644
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 6174417..b5bf0ec 100644
+index 15aa1b7..4ddb088 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -693,6 +693,7 @@ public final class CraftServer implements Server {
          }
  
-         org.spigotmc.SpigotConfig.init(); // Spigot
-+        org.github.paperspigot.PaperSpigotConfig.init(); // PaperSpigot
+         org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
++        org.github.paperspigot.PaperSpigotConfig.init((File) console.options.valueOf("paper-settings")); // PaperSpigot
          for (WorldServer world : console.worlds) {
              world.worldData.setDifficulty(difficulty);
              world.setSpawnFlags(monsters, animals);
@@ -67,12 +67,31 @@ index 6174417..b5bf0ec 100644
  
          overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
  
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index 337aa29..c936219 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -122,6 +122,14 @@ public class Main {
+                         .defaultsTo(new File("spigot.yml"))
+                         .describedAs("Yml file");
+                 // Spigot End
++
++                // PaperSpigot Start
++                acceptsAll(asList("paper", "paper-settings"), "File for paperspigot settings")
++                        .withRequiredArg()
++                        .ofType(File.class)
++                        .defaultsTo(new File("paper.yml"))
++                        .describedAs("Yml file");
++                // PaperSpigot End
+             }
+         };
+ 
 diff --git a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
 new file mode 100644
-index 0000000..fa41614
+index 0000000..eef9722
 --- /dev/null
 +++ b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,141 @@
 +package org.github.paperspigot;
 +
 +import com.google.common.base.Throwables;
@@ -94,7 +113,7 @@ index 0000000..fa41614
 +public class PaperSpigotConfig
 +{
 +
-+    private static final File CONFIG_FILE = new File( "paper.yml" );
++    private static File CONFIG_FILE;
 +    private static final String HEADER = "This is the main configuration file for PaperSpigot.\n"
 +            + "As you can see, there's tons to configure. Some options may impact gameplay, so use\n"
 +            + "with caution, and make sure you know what each option does before configuring.\n"
@@ -109,8 +128,9 @@ index 0000000..fa41614
 +    static Map<String, Command> commands;
 +    /*========================================================================*/
 +
-+    public static void init()
++    public static void init(File configFile)
 +    {
++        CONFIG_FILE = configFile;
 +        config = new YamlConfiguration();
 +        try
 +        {
