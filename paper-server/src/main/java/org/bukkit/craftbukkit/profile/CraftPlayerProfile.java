@@ -40,6 +40,17 @@ public final class CraftPlayerProfile implements PlayerProfile {
         boolean isValidSkullProfile = (gameProfile.getName() != null)
                 || gameProfile.getProperties().containsKey(CraftPlayerTextures.PROPERTY_NAME);
         Preconditions.checkArgument(isValidSkullProfile, "The skull profile is missing a name or textures!");
+        // Paper start - Validate
+        Preconditions.checkArgument(gameProfile.getName().length() <= 16, "The name of the profile is longer than 16 characters");
+        Preconditions.checkArgument(net.minecraft.util.StringUtil.isValidPlayerName(gameProfile.getName()), "The name of the profile contains invalid characters: %s", gameProfile.getName());
+        final PropertyMap properties = gameProfile.getProperties();
+        Preconditions.checkArgument(properties.size() <= 16, "The profile contains more than 16 properties");
+        for (final Property property : properties.values()) {
+            Preconditions.checkArgument(property.name().length() <= 64, "The name of a property is longer than 64 characters");
+            Preconditions.checkArgument(property.value().length() <= Short.MAX_VALUE, "The value of a property is longer than 32767 characters");
+            Preconditions.checkArgument(property.signature() == null || property.signature().length() <= 1024, "The signature of a property is longer than 1024 characters");
+        }
+        // Paper end - Validate
         return gameProfile;
     }
 
@@ -67,6 +78,8 @@ public final class CraftPlayerProfile implements PlayerProfile {
         if (applyPreconditions) {
             Preconditions.checkArgument((uniqueId != null) || !StringUtils.isBlank(name), "uniqueId is null or name is blank");
         }
+        Preconditions.checkArgument(name == null || name.length() <= 16, "The name of the profile is longer than 16 characters"); // Paper - Validate
+        Preconditions.checkArgument(name == null || net.minecraft.util.StringUtil.isValidPlayerName(name), "The name of the profile contains invalid characters: %s", name); // Paper - Validate
         this.uniqueId = uniqueId;
         this.name = name;
     }
@@ -114,6 +127,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
         // Assert: (property == null) || property.getName().equals(propertyName)
         this.removeProperty(propertyName);
         if (property != null) {
+            Preconditions.checkArgument(this.properties.size() < 16, "The profile contains more than 16 properties"); // Paper - Validate
             this.properties.put(property.name(), property);
         }
     }
