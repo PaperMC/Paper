@@ -28,6 +28,7 @@ public final class CommandPermissions {
         DefaultPermissions.registerPermission(PREFIX + "defaultgamemode", "Allows the user to change the default gamemode of the server", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(PREFIX + "seed", "Allows the user to view the seed of the world", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(PREFIX + "effect", "Allows the user to add/remove effects on players", PermissionDefault.OP, commands);
+        DefaultPermissions.registerPermission(PREFIX + "selector", "Allows the use of selectors", PermissionDefault.OP, commands);
 
         commands.recalculatePermissibles();
         return commands;
