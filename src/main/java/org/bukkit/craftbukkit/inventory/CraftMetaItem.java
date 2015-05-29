@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.ImmutableSortedMap; // Paper
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
@@ -23,6 +24,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator; // Paper
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -32,6 +34,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.TreeMap; // Paper
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
@@ -271,7 +274,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     private List<IChatBaseComponent> lore;
     private Integer customModelData;
     private NBTTagCompound blockData;
-    private Map<Enchantment, Integer> enchantments;
+    private EnchantmentMap enchantments; // Paper
     private Multimap<Attribute, AttributeModifier> attributeModifiers;
     private int repairCost;
     private int hideFlag;
@@ -282,7 +285,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
 
     private NBTTagCompound internalTag;
-    private final Map<String, NBTBase> unhandledTags = new HashMap<String, NBTBase>();
+    private final Map<String, NBTBase> unhandledTags = new TreeMap<>(); // Paper
     private CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
 
     private int version = CraftMagicNumbers.INSTANCE.getDataVersion(); // Internal use only
@@ -303,7 +306,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         this.blockData = meta.blockData;
 
         if (meta.enchantments != null) { // Spigot
-            this.enchantments = new LinkedHashMap<Enchantment, Integer>(meta.enchantments);
+            this.enchantments = new EnchantmentMap(meta.enchantments); // Paper
         }
 
         if (meta.hasAttributeModifiers()) {
@@ -399,13 +402,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
     }
 
-    static Map<Enchantment, Integer> buildEnchantments(NBTTagCompound tag, ItemMetaKey key) {
+    static EnchantmentMap buildEnchantments(NBTTagCompound tag, ItemMetaKey key) { // Paper
         if (!tag.hasKey(key.NBT)) {
             return null;
         }
 
         NBTTagList ench = tag.getList(key.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND);
-        Map<Enchantment, Integer> enchantments = new LinkedHashMap<Enchantment, Integer>(ench.size());
+        EnchantmentMap enchantments = new EnchantmentMap(); // Paper
 
         for (int i = 0; i < ench.size(); i++) {
             String id = ((NBTTagCompound) ench.get(i)).getString(ENCHANTMENTS_ID.NBT);
@@ -557,13 +560,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
     }
 
-    static Map<Enchantment, Integer> buildEnchantments(Map<String, Object> map, ItemMetaKey key) {
+    static EnchantmentMap buildEnchantments(Map<String, Object> map, ItemMetaKey key) { // Paper
         Map<?, ?> ench = SerializableMeta.getObject(Map.class, map, key.BUKKIT, true);
         if (ench == null) {
             return null;
         }
 
-        Map<Enchantment, Integer> enchantments = new LinkedHashMap<Enchantment, Integer>(ench.size());
+        EnchantmentMap enchantments = new EnchantmentMap(); // Paper
         for (Map.Entry<?, ?> entry : ench.entrySet()) {
             // Doctor older enchants
             String enchantKey = entry.getKey().toString();
@@ -815,14 +818,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public Map<Enchantment, Integer> getEnchants() {
-        return hasEnchants() ? ImmutableMap.copyOf(enchantments) : ImmutableMap.<Enchantment, Integer>of();
+        return hasEnchants() ? ImmutableSortedMap.copyOfSorted(enchantments) : ImmutableMap.<Enchantment, Integer>of(); // Paper
     }
 
     @Override
     public boolean addEnchant(Enchantment ench, int level, boolean ignoreRestrictions) {
         Validate.notNull(ench, "Enchantment cannot be null");
         if (enchantments == null) {
-            enchantments = new LinkedHashMap<Enchantment, Integer>(4);
+            enchantments = new EnchantmentMap(); // Paper
         }
 
         if (ignoreRestrictions || level >= ench.getStartLevel() && level <= ench.getMaxLevel()) {
@@ -1203,7 +1206,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             clone.customModelData = this.customModelData;
             clone.blockData = this.blockData;
             if (this.enchantments != null) {
-                clone.enchantments = new LinkedHashMap<Enchantment, Integer>(this.enchantments);
+                clone.enchantments = new EnchantmentMap(this.enchantments); // Paper
             }
             if (this.hasAttributeModifiers()) {
                 clone.attributeModifiers = LinkedHashMultimap.create(this.attributeModifiers);
@@ -1435,4 +1438,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             return HANDLED_TAGS;
         }
     }
+
+    // Paper start
+    private static class EnchantmentMap extends TreeMap<Enchantment, Integer> {
+        private EnchantmentMap(Map<Enchantment, Integer> enchantments) {
+            this();
+            putAll(enchantments);
+        }
+
+        private EnchantmentMap() {
+            super(Comparator.comparing(o -> o.getKey().toString()));
+        }
+
+        public EnchantmentMap clone() {
+            return (EnchantmentMap) super.clone();
+        }
+    }
+    // Paper end
+
 }

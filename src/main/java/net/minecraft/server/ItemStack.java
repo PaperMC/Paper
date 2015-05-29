@@ -9,6 +9,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -66,6 +68,23 @@ public final class ItemStack {
     private ShapeDetectorBlock n;
     private boolean o;
 
+    // Paper start
+    private static final java.util.Comparator<? super NBTTagCompound> enchantSorter = java.util.Comparator.comparing(o -> o.getString("id"));
+    private void processEnchantOrder(NBTTagCompound tag) {
+        if (tag == null || !tag.hasKeyOfType("Enchantments", 9)) {
+            return;
+        }
+        NBTTagList list = tag.getList("Enchantments", 10);
+        if (list.size() < 2) {
+            return;
+        }
+        try {
+            //noinspection unchecked
+            list.sort((Comparator<? super NBTBase>) enchantSorter); // Paper
+        } catch (Exception ignored) {}
+    }
+    // Paper end
+
     public ItemStack(IMaterial imaterial) {
         this(imaterial, 1);
     }
@@ -108,6 +127,7 @@ public final class ItemStack {
         if (nbttagcompound.hasKeyOfType("tag", 10)) {
             // CraftBukkit start - make defensive copy as this data may be coming from the save thread
             this.tag = (NBTTagCompound) nbttagcompound.getCompound("tag").clone();
+            processEnchantOrder(this.tag); // Paper
             this.getItem().b(this.tag);
             // CraftBukkit end
         }
@@ -626,6 +646,7 @@ public final class ItemStack {
     // Paper end
     public void setTag(@Nullable NBTTagCompound nbttagcompound) {
         this.tag = nbttagcompound;
+        processEnchantOrder(this.tag); // Paper
         if (this.getItem().usesDurability()) {
             this.setDamage(this.getDamage());
         }
@@ -716,6 +737,7 @@ public final class ItemStack {
         nbttagcompound.setString("id", String.valueOf(IRegistry.ENCHANTMENT.getKey(enchantment)));
         nbttagcompound.setShort("lvl", (short) ((byte) i));
         nbttaglist.add(nbttagcompound);
+        processEnchantOrder(nbttagcompound); // Paper
     }
 
     public boolean hasEnchantments() {
