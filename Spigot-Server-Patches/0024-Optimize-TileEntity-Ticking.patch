@@ -1,11 +1,11 @@
-From 3f4d3ad27f80c5b292f11e816613384de6ff640a Mon Sep 17 00:00:00 2001
+From 4104e547b01f6511a1c7a87a5eef7322e4a83878 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 8 Mar 2015 01:56:22 -0600
 Subject: [PATCH] Optimize TileEntity Ticking
 
 
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 0de85da..0a21872 100644
+index c268a40..1971941 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
 @@ -21,6 +21,12 @@ public abstract class TileEntity {
@@ -22,7 +22,7 @@ index 0de85da..0a21872 100644
          this.position = BlockPosition.ZERO;
          this.h = -1;
 diff --git a/src/main/java/net/minecraft/server/TileEntityBeacon.java b/src/main/java/net/minecraft/server/TileEntityBeacon.java
-index da43134..88e4fa9 100644
+index 4f280dd..3ea1b62 100644
 --- a/src/main/java/net/minecraft/server/TileEntityBeacon.java
 +++ b/src/main/java/net/minecraft/server/TileEntityBeacon.java
 @@ -48,7 +48,7 @@ public class TileEntityBeacon extends TileEntityContainer implements IUpdatePlay
@@ -74,7 +74,7 @@ index f75e2de..7119612 100644
              if (this.e instanceof BlockDaylightDetector) {
                  ((BlockDaylightDetector) this.e).f(this.world, this.position);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index d30b406..dcfceed 100644
+index bdf4896..67c739e 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -53,7 +53,7 @@ public abstract class World implements IBlockAccess {
@@ -86,66 +86,6 @@ index d30b406..dcfceed 100644
      private final List<TileEntity> b = Lists.newArrayList();
      private final List<TileEntity> c = Lists.newArrayList();
      public final List<EntityHuman> players = Lists.newArrayList();
-@@ -126,8 +126,10 @@ public abstract class World implements IBlockAccess {
-     public static boolean haveWeSilencedAPhysicsCrash;
-     public static String blockLocation;
-     private org.spigotmc.TickLimiter entityLimiter;
--    private org.spigotmc.TickLimiter tileLimiter;
--    private int tileTickPosition;
-+    // PaperSpigot start - Disable Spigot's TE handling in favor of our own
-+    //private org.spigotmc.TickLimiter tileLimiter;
-+    //private int tileTickPosition;
-+    // PaperSpigot end
- 
-     public static long chunkToKey(int x, int z)
-     {
-@@ -221,7 +223,7 @@ public abstract class World implements IBlockAccess {
-         this.keepSpawnInMemory = this.paperSpigotConfig.keepSpawnInMemory; // PaperSpigot
-         timings = new SpigotTimings.WorldTimingsHandler(this); // Spigot - code below can generate new world and access timings 
-         this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
--        this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
-+        //this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime); // PaperSpigot - Disable Spigot's TE handling in favor of our own
-     }
- 
-     public World b() {
-@@ -1455,6 +1457,12 @@ public abstract class World implements IBlockAccess {
-         }
-         // CraftBukkit end
- 
-+        // PaperSpigot start - Return to previous behavior, theoretically tile entity ticks should no longer be long enough for this to be an issue
-+        Iterator iterator = this.tileEntityList.iterator();
-+
-+        while (iterator.hasNext()) {
-+            TileEntity tileentity = (TileEntity) iterator.next();
-+        /*
-         // Spigot start
-         int tilesThisCycle = 0;
-         for (tileLimiter.initTick();
-@@ -1462,11 +1470,12 @@ public abstract class World implements IBlockAccess {
-                 tileTickPosition++, tilesThisCycle++) {
-             tileTickPosition = (tileTickPosition < tileEntityList.size()) ? tileTickPosition : 0;
-             TileEntity tileentity = (TileEntity) this.tileEntityList.get(tileTickPosition);
-+            */
-+            // PaperSpigot end
-             // Spigot start
-             if (tileentity == null) {
-                 getServer().getLogger().severe("Spigot has detected a null entity and has removed it, preventing a crash");
--                tilesThisCycle--;
--                this.tileEntityList.remove(tileTickPosition--);
-+                iterator.remove(); // PaperSpigot - Remove Spigot's TE handling in favor of our own
-                 continue;
-             }
-             // Spigot end
-@@ -1494,8 +1503,7 @@ public abstract class World implements IBlockAccess {
-             }
- 
-             if (tileentity.x()) {
--                tilesThisCycle--;
--                this.tileEntityList.remove(tileTickPosition--);
-+                iterator.remove(); // PaperSpigot - Remove Spigot's TE handling in favor of our own
-                 this.h.remove(tileentity);
-                 if (this.isLoaded(tileentity.getPosition())) {
-                     this.getChunkAtWorldCoords(tileentity.getPosition()).e(tileentity.getPosition());
 diff --git a/src/main/java/org/github/paperspigot/WorldTileEntityList.java b/src/main/java/org/github/paperspigot/WorldTileEntityList.java
 new file mode 100644
 index 0000000..5af5dcc
