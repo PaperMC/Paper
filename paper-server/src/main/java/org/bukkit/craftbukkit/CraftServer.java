@@ -553,10 +553,6 @@ public final class CraftServer implements Server {
         return new File((File) console.options.valueOf("plugins"), this.configuration.getString("settings.update-folder", "update"));
     }
 
-    public int getPingPacketLimit() {
-        return this.configuration.getInt("settings.ping-packet-limit", 100);
-    }
-
     @Override
     public long getConnectionThrottle() {
         return this.configuration.getInt("settings.connection-throttle");
