@@ -703,7 +703,10 @@ public final class Bukkit {
      *
      * @return true if exact location locations are used for spawning, false
      *     for vanilla collision detection or otherwise
+     *
+     * @deprecated non standard and unused feature.
      */
+    @Deprecated
     public static boolean useExactLoginLocation() {
         return server.useExactLoginLocation();
     }

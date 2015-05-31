@@ -575,7 +575,10 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return true if exact location locations are used for spawning, false
      *     for vanilla collision detection or otherwise
+     *
+     * @deprecated non standard and unused feature.
      */
+    @Deprecated
     public boolean useExactLoginLocation();
 
     /**
