@@ -582,7 +582,7 @@ public final class SimplePluginManager implements PluginManager {
                     && Event.class.isAssignableFrom(clazz.getSuperclass())) {
                 return getRegistrationClass(clazz.getSuperclass().asSubclass(Event.class));
             } else {
-                throw new IllegalPluginAccessException("Unable to find handler list for event " + clazz.getName());
+                throw new IllegalPluginAccessException("Unable to find handler list for event " + clazz.getName() + ". Static getHandlerList method required!");
             }
         }
     }
