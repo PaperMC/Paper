@@ -1,4 +1,4 @@
-From 433014e997da1ba1f03bfa2cfda97558e18ace8d Mon Sep 17 00:00:00 2001
+From fc11bf525b271e692201fea7e805e53f3ad5900f Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 11 Jun 2013 12:56:02 +1000
 Subject: [PATCH] Better Chunk Tick Selection
@@ -6,7 +6,7 @@ Subject: [PATCH] Better Chunk Tick Selection
 An optimized chunk ticking algorithm which better selects chunks around players which are active on the server.
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 0356d9e..c81f673 100644
+index 0356d9e..11e072b 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -68,7 +68,7 @@ public abstract class World implements IBlockAccess {
@@ -63,17 +63,14 @@ index 0356d9e..c81f673 100644
          this.L = this.random.nextInt(12000);
          this.allowMonsters = true;
          this.allowAnimals = true;
-@@ -1964,17 +1995,44 @@ public abstract class World implements IBlockAccess {
+@@ -1964,18 +1995,43 @@ public abstract class World implements IBlockAccess {
          int k;
          int l;
  
 +        // Spigot start
 +        int optimalChunks = spigotConfig.chunksPerTick;
 +        // Quick conditions to allow us to exist early
-+        if ( optimalChunks <= 0 || players.isEmpty() )
-+        {
-+            return;
-+        }
++        if ( optimalChunks > 0  ) {
 +        // Keep chunks with growth inside of the optimal chunk range
 +        int chunksPerPlayer = Math.min( 200, Math.max( 1, (int) ( ( ( optimalChunks - players.size() ) / (double) players.size() ) + 0.5 ) ) );
 +        int randRange = 3 + chunksPerPlayer / 30;
@@ -107,10 +104,12 @@ index 0356d9e..c81f673 100644
 +                    chunkTickList.put( hash, (short) -1 ); // no players
                  }
              }
-+            // Spigot End
          }
++            // Spigot End
++        }
  
          this.methodProfiler.b();
+         if (this.L > 0) {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
 index 5faefba..03cac6e 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
