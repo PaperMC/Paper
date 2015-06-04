@@ -1,4 +1,4 @@
-From a7954c623d317f72957411ec5d1338fa76a94d7f Mon Sep 17 00:00:00 2001
+From 8a9a9c387f3eef8338ed3d8e9d89dfc0b10a7349 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Thu, 28 May 2015 22:01:25 -0500
 Subject: [PATCH] Force load chunks for specific entities that fly through
@@ -57,10 +57,10 @@ index 44219cd..a0452ac 100644
              this.lastY = this.locY;
              this.lastZ = this.locZ;
 diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
-index dd1ad68..c272060 100644
+index 1daba4e..db33c98 100644
 --- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
 +++ b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
-@@ -56,6 +56,21 @@ public class EntityTNTPrimed extends Entity {
+@@ -50,6 +50,21 @@ public class EntityTNTPrimed extends Entity {
  
      public void t_() {
          if (world.spigotConfig.currentPrimedTnt++ > world.spigotConfig.maxTntTicksPerTick) { return; } // Spigot
@@ -82,26 +82,27 @@ index dd1ad68..c272060 100644
          this.lastX = this.locX;
          this.lastY = this.locY;
          this.lastZ = this.locZ;
-@@ -116,7 +131,18 @@ public class EntityTNTPrimed extends Entity {
-                 locY += this.length / 2.0F;
-             }
+@@ -97,7 +112,19 @@ public class EntityTNTPrimed extends Entity {
+         server.getPluginManager().callEvent(event);
  
--            this.world.createExplosion(this, this.locX, locY, this.locZ, event.getRadius(), event.getFire(), true);
+         if (!event.isCancelled()) {
+-            this.world.createExplosion(this, this.locX, this.locY + (double) (this.length / 2.0F), this.locZ, event.getRadius(), event.getFire(), true);
 +            // PaperSpigot start - Force load chunks for specific entities that fly through
 +            if (world.paperSpigotConfig.loadUnloadedTNTEntities) {
 +                ChunkProviderServer chunkProvider = (ChunkProviderServer) world.chunkProvider;
 +                boolean before = chunkProvider.forceChunkLoad;
 +                chunkProvider.forceChunkLoad = true;
 +
-+                this.world.createExplosion(this, this.locX, locY, this.locZ, event.getRadius(), event.getFire(), true);
++                this.world.createExplosion(this, this.locX, this.locY + (double) (this.length / 2.0F), this.locZ, event.getRadius(), event.getFire(), true);
 +
 +                chunkProvider.forceChunkLoad = before;
 +            } else {
-+                this.world.createExplosion(this, this.locX, locY, this.locZ, event.getRadius(), event.getFire(), true);
++                this.world.createExplosion(this, this.locX, this.locY + (double) (this.length / 2.0F), this.locZ, event.getRadius(), event.getFire(), true);
 +            }
-             // PaperSpigot end
++            // PaperSpigot end
          }
          // CraftBukkit end
+     }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 86913f4..385d742 100644
 --- a/src/main/java/net/minecraft/server/World.java
@@ -125,10 +126,10 @@ index 86913f4..385d742 100644
                      entity.ad = false;
                  }
 diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-index 6a690ee..557561c 100644
+index 4d16fa7..fd2174a 100644
 --- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
 +++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-@@ -254,4 +254,14 @@ public class PaperSpigotWorldConfig
+@@ -223,4 +223,14 @@ public class PaperSpigotWorldConfig
      {
          disableEndCredits = getBoolean( "game-mechanics.disable-end-credits", false );
      }
@@ -168,5 +169,5 @@ index 7ca1b24..dcab40c 100644
              return true;
          }
 -- 
-2.4.1.windows.1
+1.9.5.msysgit.1
 
