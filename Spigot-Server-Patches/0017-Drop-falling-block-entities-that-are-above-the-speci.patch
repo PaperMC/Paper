@@ -1,4 +1,4 @@
-From c9860a2e12193e696b71bdab28696fd08e55ccce Mon Sep 17 00:00:00 2001
+From 996541c984eb8ce498be51cbc5fec44fe62c897d Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Sat, 7 Mar 2015 22:03:47 -0600
 Subject: [PATCH] Drop falling block entities that are above the specified
@@ -28,10 +28,10 @@ index ce91553..ef93776 100644
              this.motY *= 0.9800000190734863D;
              this.motZ *= 0.9800000190734863D;
 diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-index 8d707f7..ebe0a4f 100644
+index 8d707f7..8cdd858 100644
 --- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
 +++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-@@ -146,4 +146,14 @@ public class PaperSpigotWorldConfig
+@@ -146,4 +146,56 @@ public class PaperSpigotWorldConfig
          keepSpawnInMemory = getBoolean( "keep-spawn-loaded", true );
          log( "Keep spawn chunk loaded: " + keepSpawnInMemory );
      }
@@ -39,6 +39,48 @@ index 8d707f7..ebe0a4f 100644
 +    public int fallingBlockHeightNerf;
 +    private void fallingBlockheightNerf()
 +    {
++        // TODO: Remove migrations after most users have upgraded.
++        if ( PaperSpigotConfig.version < 8 )
++        {
++            // Migrate default value
++
++            int heightNerf = config.getInt( "world-settings.default.falling-block-height-nerf", 0 );
++            if ( heightNerf == 0 ) heightNerf = config.getInt( "world-settings.default.tnt-entity-height-nerf", 0 );
++            if ( heightNerf == 0 ) heightNerf = config.getInt( "world-settings.default.tnt-gameplay.tnt-entity-height-limit", 0 );
++            if ( heightNerf != 0 ) config.set( "world-settings.default.falling-block-height-nerf", heightNerf );
++
++            if ( config.contains( "world-settings.default.tnt-entity-height-nerf" ) )
++            {
++                config.getDefaults().set( "world-settings.default.tnt-entity-height-nerf", null );
++                config.set( "world-settings.default.tnt-entity-height-nerf", null );
++            }
++
++            if ( config.contains( "world-settings.default.tnt-gameplay.tnt-entity-height-limit" ) )
++            {
++                config.getDefaults().set( "world-settings.default.tnt-gameplay.tnt-entity-height-limit", null );
++                config.set( "world-settings.default.tnt-gameplay.tnt-entity-height-limit", null );
++            }
++
++            // Migrate world setting
++
++            heightNerf = config.getInt( "world-settings." + worldName + ".falling-block-height-nerf" );
++            if ( heightNerf == 0 ) heightNerf = config.getInt( "world-settings." + worldName + ".tnt-entity-height-nerf", 0 );
++            if ( heightNerf == 0 ) heightNerf = config.getInt( "world-settings." + worldName + ".tnt-gameplay.tnt-entity-height-limit", 0 );
++            if ( heightNerf != 0 ) config.set( "world-settings." + worldName + ".falling-block-height-nerf", heightNerf );
++
++            if ( config.contains( "world-settings." + worldName + ".tnt-entity-height-nerf" ) )
++            {
++                config.getDefaults().set( "world-settings." + worldName + ".tnt-entity-height-nerf", null );
++                config.set( "world-settings." + worldName + ".tnt-entity-height-nerf", null);
++            }
++
++            if ( config.contains( "world-settings." + worldName + ".tnt-gameplay.tnt-entity-height-limit" ) )
++            {
++                config.getDefaults().set( "world-settings." + worldName + ".tnt-gameplay.tnt-entity-height-limit", null );
++                config.set( "world-settings." + worldName + ".tnt-gameplay.tnt-entity-height-limit", null );
++            }
++        }
++
 +        fallingBlockHeightNerf = getInt( "falling-block-height-nerf", 0 );
 +        if ( fallingBlockHeightNerf != 0 )
 +        {
@@ -47,5 +89,5 @@ index 8d707f7..ebe0a4f 100644
 +    }
  }
 -- 
-1.9.1
+1.9.5.msysgit.1
 
