@@ -64,7 +64,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      * @param from New location to mark as the players previous location
      */
     public void setFrom(Location from) {
-        validateLocation(to);
+        validateLocation(from);
         this.from = from;
     }
 
@@ -88,7 +88,8 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
     }
 
     private void validateLocation(Location loc) {
-        Preconditions.checkArgument(loc != null, "Cannot use location with null world!");
+        Preconditions.checkArgument(loc != null, "Cannot use null location!");
+        Preconditions.checkArgument(loc.getWorld() != null, "Cannot use null location with null world!");
     }
 
     @Override
