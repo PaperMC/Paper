@@ -5,6 +5,7 @@ import java.net.InetSocketAddress;
 import org.bukkit.Achievement;
 import org.bukkit.ChatColor;
 import org.bukkit.Effect;
+import org.bukkit.GameMode;
 import org.bukkit.Instrument;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -1035,4 +1036,14 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * @see Player#setHealthScaled(boolean)
      */
     public double getHealthScale();
+
+    /**
+     * Sets the entity which is followed by the camera when in
+     * {@link GameMode#SPECTATOR}.
+     *
+     * @param entity the entity to follow or null to reset
+     * @throws IllegalStateException if the player is not in
+     * {@link GameMode#SPECTATOR}
+     */
+    public void setSpectatorTarget(Entity entity);
 }
