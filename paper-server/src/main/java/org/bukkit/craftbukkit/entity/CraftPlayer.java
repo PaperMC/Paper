@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.authlib.GameProfile;
 import io.netty.buffer.Unpooled;
@@ -1312,5 +1313,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             }
         }
         collection.add(new AttributeModifiable(getHandle().getAttributeMap(), (new AttributeRanged(null, "generic.maxHealth", scaledHealth ? healthScale : getMaxHealth(), 0.0D, Float.MAX_VALUE)).a("Max Health").a(true)));
+    }
+
+    @Override
+    public void setSpectatorTarget(org.bukkit.entity.Entity entity) {
+        Preconditions.checkArgument(getGameMode() == GameMode.SPECTATOR, "Player must be in spectator mode");
+        getHandle().setSpectatorTarget((entity == null) ? null : ((CraftEntity) entity).getHandle());
     }
 }
