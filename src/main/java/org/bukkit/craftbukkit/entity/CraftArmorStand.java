@@ -204,4 +204,16 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
             (float) Math.toDegrees(old.getZ())
         );
     }
+
+    @Override
+    public boolean isMarker() {
+        // PAIL
+        return getHandle().s();
+    }
+
+    @Override
+    public void setMarker(boolean marker) {
+        // PAIL
+        getHandle().n(marker);
+    }
 }
