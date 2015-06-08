@@ -258,4 +258,20 @@ public interface ArmorStand extends LivingEntity {
      * @param small whether this is scaled down
      */
     void setSmall(boolean small);
+
+    /**
+     * Returns whether this armor stand is a marker,
+     * meaning it has a very small collision box
+     *
+     * @return whether this is a marker
+     */
+    boolean isMarker();
+
+    /**
+     * Sets whether this armor stand is a marker,
+     * meaning it has a very small collision box
+     *
+     * @param marker whether this is a marker
+     */
+    void setMarker(boolean marker);
 }
