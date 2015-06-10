@@ -38,6 +38,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     public void setItem(int index, ItemStack item) {
         super.setItem(index, item);
         EntityPlayer player = ((CraftPlayer) this.getHolder()).getHandle();
+        if (player.playerConnection == null) return;
         // PacketPlayOutSetSlot places the items differently than setItem()
         //
         // Between, and including, index 9 (the first index outside of the hotbar) and index 35 (the last index before
