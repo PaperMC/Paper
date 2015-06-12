@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit;
 
+import com.google.common.base.Preconditions;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -882,7 +883,7 @@ public class CraftWorld implements World {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends Entity> T spawn(Location location, Class<T> clazz, SpawnReason reason) throws IllegalArgumentException {
+    public net.minecraft.server.Entity createEntity(Location location, Class<? extends Entity> clazz) throws IllegalArgumentException {
         if (location == null || clazz == null) {
             throw new IllegalArgumentException("Location or entity class cannot be null");
         }
@@ -1108,15 +1109,28 @@ public class CraftWorld implements World {
         }
 
         if (entity != null) {
-            if (entity instanceof EntityInsentient) {
-                ((EntityInsentient) entity).prepare(getHandle().E(new BlockPosition(entity)), (GroupDataEntity) null);
-            }
-
-            world.addEntity(entity, reason);
-            return (T) entity.getBukkitEntity();
+            return entity;
         }
 
         throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName());
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Entity> T addEntity(net.minecraft.server.Entity entity, SpawnReason reason) throws IllegalArgumentException {
+        Preconditions.checkArgument(entity != null, "Cannot spawn null entity");
+
+        if (entity instanceof EntityInsentient) {
+            ((EntityInsentient) entity).prepare(getHandle().E(new BlockPosition(entity)), (GroupDataEntity) null);
+        }
+
+        world.addEntity(entity, reason);
+        return (T) entity.getBukkitEntity();
+    }
+
+    public <T extends Entity> T spawn(Location location, Class<T> clazz, SpawnReason reason) throws IllegalArgumentException {
+        net.minecraft.server.Entity entity = createEntity(location, clazz);
+
+        return addEntity(entity, reason);
     }
 
     public ChunkSnapshot getEmptyChunkSnapshot(int x, int z, boolean includeBiome, boolean includeBiomeTempRain) {
