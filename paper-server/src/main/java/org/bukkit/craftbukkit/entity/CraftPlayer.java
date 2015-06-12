@@ -1316,6 +1316,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
+    public org.bukkit.entity.Entity getSpectatorTarget() {
+        Entity followed = getHandle().C(); // PAIL
+        return followed == getHandle() ? null : followed.getBukkitEntity();
+    }
+
+    @Override
     public void setSpectatorTarget(org.bukkit.entity.Entity entity) {
         Preconditions.checkArgument(getGameMode() == GameMode.SPECTATOR, "Player must be in spectator mode");
         getHandle().setSpectatorTarget((entity == null) ? null : ((CraftEntity) entity).getHandle());
