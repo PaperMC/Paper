@@ -38,6 +38,7 @@ public class CraftSkull extends CraftBlockState implements Skull {
 
     static SkullType getSkullType(int id) {
         switch (id) {
+            default:
             case 0:
                 return SkullType.SKELETON;
             case 1:
@@ -48,13 +49,12 @@ public class CraftSkull extends CraftBlockState implements Skull {
                 return SkullType.PLAYER;
             case 4:
                 return SkullType.CREEPER;
-            default:
-                throw new AssertionError(id);
         }
     }
 
     static int getSkullType(SkullType type) {
         switch(type) {
+            default:
             case SKELETON:
                 return 0;
             case WITHER:
@@ -65,8 +65,6 @@ public class CraftSkull extends CraftBlockState implements Skull {
                 return 3;
             case CREEPER:
                 return 4;
-            default:
-                throw new AssertionError(type);
         }
     }
 
