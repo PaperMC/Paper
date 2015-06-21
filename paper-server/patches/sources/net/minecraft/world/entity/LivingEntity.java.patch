@@ -17,10 +17,11 @@
  import net.minecraft.world.entity.projectile.AbstractArrow;
  import net.minecraft.world.entity.projectile.Projectile;
  import net.minecraft.world.item.AxeItem;
-@@ -136,6 +137,30 @@
+@@ -135,6 +136,30 @@
+ import net.minecraft.world.scores.PlayerTeam;
  import net.minecraft.world.scores.Scoreboard;
  import org.slf4j.Logger;
- 
++
 +// CraftBukkit start
 +import java.util.ArrayList;
 +import java.util.HashSet;
@@ -44,10 +45,9 @@
 +import org.bukkit.event.entity.EntityTeleportEvent;
 +import org.bukkit.event.player.PlayerItemConsumeEvent;
 +// CraftBukkit end
-+
+ 
  public abstract class LivingEntity extends Entity implements Attackable {
  
-     private static final Logger LOGGER = LogUtils.getLogger();
 @@ -174,7 +199,7 @@
      public static final float DEFAULT_BABY_SCALE = 0.5F;
      public static final String ATTRIBUTES_FIELD = "attributes";
@@ -910,7 +910,7 @@
 +        };
 +        float freezingModifier = freezing.apply((double) f).floatValue();
 +        f += freezingModifier;
-+
+ 
 +        com.google.common.base.Function<Double, Double> hardHat = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
@@ -931,7 +931,7 @@
 +        };
 +        float blockingModifier = blocking.apply((double) f).floatValue();
 +        f += blockingModifier;
- 
++
 +        com.google.common.base.Function<Double, Double> armor = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
@@ -1246,17 +1246,18 @@
      public float getYHeadRot() {
          return this.yHeadRot;
      }
-@@ -3483,8 +3988,31 @@
+@@ -3483,13 +3988,48 @@
                  this.releaseUsingItem();
              } else {
                  if (!this.useItem.isEmpty() && this.isUsingItem()) {
 -                    ItemStack itemstack = this.useItem.finishUsingItem(this.level(), this);
 +                    // CraftBukkit start - fire PlayerItemConsumeEvent
 +                    ItemStack itemstack;
++                    PlayerItemConsumeEvent event = null; // Paper
 +                    if (this instanceof ServerPlayer entityPlayer) {
 +                        org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.useItem);
 +                        org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(enumhand);
-+                        PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem, hand);
++                        event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem, hand); // Paper
 +                        this.level().getCraftServer().getPluginManager().callEvent(event);
  
 +                        if (event.isCancelled()) {
@@ -1274,12 +1275,28 @@
 +                    } else {
 +                        itemstack = this.useItem.finishUsingItem(this.level(), this);
 +                    }
++                    // Paper start - save the default replacement item and change it if necessary
++                    final ItemStack defaultReplacement = itemstack;
++                    if (event != null && event.getReplacement() != null) {
++                        itemstack = CraftItemStack.asNMSCopy(event.getReplacement());
++                    }
++                    // Paper end
 +                    // CraftBukkit end
 +
                      if (itemstack != this.useItem) {
                          this.setItemInHand(enumhand, itemstack);
                      }
-@@ -3568,12 +4096,18 @@
+ 
+                     this.stopUsingItem();
++                    // Paper start - if the replacement is anything but the default, update the client inventory
++                    if (this instanceof ServerPlayer && !com.google.common.base.Objects.equal(defaultReplacement, itemstack)) {
++                        ((ServerPlayer) this).getBukkitEntity().updateInventory();
++                    }
++                    // Paper end
+                 }
+ 
+             }
+@@ -3568,12 +4108,18 @@
      }
  
      public boolean randomTeleport(double x, double y, double z, boolean particleEffects) {
@@ -1300,7 +1317,7 @@
          Level world = this.level();
  
          if (world.hasChunkAt(blockposition)) {
-@@ -3592,18 +4126,43 @@
+@@ -3592,18 +4138,43 @@
              }
  
              if (flag2) {
@@ -1312,7 +1329,7 @@
 +                this.setPos(d0, d6, d2);
                  if (world.noCollision((Entity) this) && !world.containsAnyLiquid(this.getBoundingBox())) {
                      flag1 = true;
-                 }
++                }
 +                // now revert and call event if the teleport place is valid
 +                this.setPos(d3, d4, d5);
 +
@@ -1332,7 +1349,7 @@
 +                            return Optional.empty();
 +                        }
 +                    }
-+                }
+                 }
 +                // CraftBukkit end
              }
          }
@@ -1348,7 +1365,7 @@
                  world.broadcastEntityEvent(this, (byte) 46);
              }
  
-@@ -3613,7 +4172,7 @@
+@@ -3613,7 +4184,7 @@
                  entitycreature.getNavigation().stop();
              }
  
@@ -1357,7 +1374,7 @@
          }
      }
  
-@@ -3706,7 +4265,7 @@
+@@ -3706,7 +4277,7 @@
      }
  
      public void stopSleeping() {
@@ -1366,7 +1383,7 @@
          Level world = this.level();
  
          java.util.Objects.requireNonNull(world);
-@@ -3718,9 +4277,9 @@
+@@ -3718,9 +4289,9 @@
  
                  this.level().setBlock(blockposition, (BlockState) iblockdata.setValue(BedBlock.OCCUPIED, false), 3);
                  Vec3 vec3d = (Vec3) BedBlock.findStandUpPosition(this.getType(), this.level(), blockposition, enumdirection, this.getYRot()).orElseGet(() -> {
@@ -1378,7 +1395,7 @@
                  });
                  Vec3 vec3d1 = Vec3.atBottomCenterOf(blockposition).subtract(vec3d).normalize();
                  float f = (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
-@@ -3740,7 +4299,7 @@
+@@ -3740,7 +4311,7 @@
  
      @Nullable
      public Direction getBedOrientation() {
@@ -1387,7 +1404,7 @@
  
          return blockposition != null ? BedBlock.getBedOrientation(this.level(), blockposition) : null;
      }
-@@ -3905,7 +4464,7 @@
+@@ -3905,7 +4476,7 @@
      public float maxUpStep() {
          float f = (float) this.getAttributeValue(Attributes.STEP_HEIGHT);
  
