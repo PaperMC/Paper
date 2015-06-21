@@ -3093,9 +3093,10 @@ public abstract class EntityLiving extends Entity {
                 this.b(this.activeItem, 16);
                 // CraftBukkit start - fire PlayerItemConsumeEvent
                 ItemStack itemstack;
+                PlayerItemConsumeEvent event = null; // Paper
                 if (this instanceof EntityPlayer) {
                     org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.activeItem);
-                    PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem);
+                    event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem); // Paper
                     world.getServer().getPluginManager().callEvent(event);
 
                     if (event.isCancelled()) {
@@ -3109,6 +3110,13 @@ public abstract class EntityLiving extends Entity {
                 } else {
                     itemstack = this.activeItem.a(this.world, this);
                 }
+
+                // Paper start - save the default replacement item and change it if necessary
+                final ItemStack defaultReplacement = itemstack;
+                if (event != null && event.getReplacement() != null) {
+                    itemstack = CraftItemStack.asNMSCopy(event.getReplacement());
+                }
+                // Paper end
                 // CraftBukkit end
 
                 if (itemstack != this.activeItem) {
@@ -3116,6 +3124,11 @@ public abstract class EntityLiving extends Entity {
                 }
 
                 this.clearActiveItem();
+                // Paper start - if the replacement is anything but the default, update the client inventory
+                if (this instanceof EntityPlayer && !com.google.common.base.Objects.equal(defaultReplacement, itemstack)) {
+                    ((EntityPlayer) this).getBukkitEntity().updateInventory();
+                }
+                // Paper end
             }
 
         }
