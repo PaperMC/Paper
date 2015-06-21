@@ -24,6 +24,7 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
     private boolean isCancelled = false;
     private ItemStack item;
     private final EquipmentSlot hand;
+    @Nullable private ItemStack replacement; // Paper
 
     /**
      * @param player the player consuming
@@ -81,6 +82,29 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
     public EquipmentSlot getHand() {
         return hand;
     }
+
+    // Paper start
+    /**
+     * Return the custom item stack that will replace the consumed item, or null if no
+     * custom replacement has been set (which means the default replacement will be used).
+     *
+     * @return The custom item stack that will replace the consumed item or null
+     */
+    @Nullable
+    public ItemStack getReplacement() {
+        return this.replacement;
+    }
+
+    /**
+     * Set a custom item stack to replace the consumed item. Pass null to clear any custom
+     * stack that has been set and use the default replacement.
+     *
+     * @param replacement Replacement item to set, null to clear any custom stack and use default
+     */
+    public void setReplacement(@Nullable ItemStack replacement) {
+        this.replacement = replacement;
+    }
+    // Paper end
 
     @Override
     public boolean isCancelled() {
