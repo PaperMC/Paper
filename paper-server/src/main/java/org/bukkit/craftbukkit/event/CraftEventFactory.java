@@ -301,6 +301,19 @@ public class CraftEventFactory {
     }
 
     /**
+     * ItemMergeEvent
+     */
+    public static ItemMergeEvent callItemMergeEvent(EntityItem merging, EntityItem mergingWith) {
+        org.bukkit.entity.Item entityMerging = (org.bukkit.entity.Item) merging.getBukkitEntity();
+        org.bukkit.entity.Item entityMergingWith = (org.bukkit.entity.Item) mergingWith.getBukkitEntity();
+
+        ItemMergeEvent event = new ItemMergeEvent(entityMerging, entityMergingWith);
+
+        Bukkit.getPluginManager().callEvent(event);
+        return event;
+    }
+
+    /**
      * PotionSplashEvent
      */
     public static PotionSplashEvent callPotionSplashEvent(EntityPotion potion, Map<LivingEntity, Double> affectedEntities) {
