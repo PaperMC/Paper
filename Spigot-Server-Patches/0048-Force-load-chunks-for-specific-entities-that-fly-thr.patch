@@ -1,129 +1,153 @@
-From f31bdc80c4a037f804480ccab8cd3d990faff65f Mon Sep 17 00:00:00 2001
-From: Zach Brown <zach.brown@destroystokyo.com>
-Date: Thu, 28 May 2015 22:01:25 -0500
+From 5044c22415ac2f084b90a5c0e5cdad1ffa7cec63 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Tue, 30 Jun 2015 20:45:24 -0700
 Subject: [PATCH] Force load chunks for specific entities that fly through
 
 
-diff --git a/src/main/java/net/minecraft/server/EntityEnderPearl.java b/src/main/java/net/minecraft/server/EntityEnderPearl.java
-index f4b5032..a7190fa 100644
---- a/src/main/java/net/minecraft/server/EntityEnderPearl.java
-+++ b/src/main/java/net/minecraft/server/EntityEnderPearl.java
-@@ -86,8 +86,20 @@ public class EntityEnderPearl extends EntityProjectile {
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 975d666..f2e13ad 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -53,6 +53,18 @@ public class ChunkProviderServer implements IChunkProvider {
      }
  
-     public void t_() {
--        EntityLiving entityliving = this.getShooter();
-+        // PaperSpigot start - Force load chunks for specific entities that fly through
-+        if (world.paperSpigotConfig.loadUnloadedEnderPearls) {
-+            ChunkProviderServer chunkProvider = (ChunkProviderServer) world.chunkProvider;
-+            boolean before = chunkProvider.forceChunkLoad;
-+            chunkProvider.forceChunkLoad = true;
-+            for (int cx = (int) locX >> 4; cx <= (int) (locX + motX) >> 4; ++cx) {
-+                for (int cz = (int) locZ >> 4; cz <= (int) (locZ + motZ) >> 4; ++cz) {
-+                    world.getChunkAt(cx, cz);
-+                }
-+            }
-+            chunkProvider.forceChunkLoad = before;
-+        }
- 
-+        EntityLiving entityliving = this.getShooter();
-         if (entityliving != null && entityliving instanceof EntityHuman && !entityliving.isAlive()) {
-             this.die();
-         } else {
-diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
-index 44219cd..a0452ac 100644
---- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
-+++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
-@@ -60,6 +60,21 @@ public class EntityFallingBlock extends Entity {
-         if (block.getMaterial() == Material.AIR) {
-             this.die();
-         } else {
-+            // PaperSpigot start - Force load chunks for specific entities that fly through
-+            if (world.paperSpigotConfig.loadUnloadedFallingBlocks) {
-+                ChunkProviderServer chunkProvider = (ChunkProviderServer) world.chunkProvider;
-+                boolean before = chunkProvider.forceChunkLoad;
-+                chunkProvider.forceChunkLoad = true;
-+
-+                for (int cx = (int) locX >> 4; cx <= (int) (locX + motX) >> 4; ++cx) {
-+                    for (int cz = (int) locZ >> 4; cz <= (int) (locZ + motZ) >> 4; ++cz) {
-+                        world.getChunkAt(cx, cz);
+     public void queueUnload(int i, int j) {
++        // PaperSpigot start - Don't unload chunk if it contains an entity that loads chunks
++        Chunk chunk = chunks.get(LongHash.toLong(i, j));
++        if (chunk != null) {
++            for (List<Entity> entities : chunk.entitySlices) {
++                for (Entity entity : entities) {
++                    if (entity.loadChunks) {
++                        return;
 +                    }
 +                }
-+
-+                chunkProvider.forceChunkLoad = before;
 +            }
-+            // PaperSpigot end
-             this.lastX = this.locX;
-             this.lastY = this.locY;
-             this.lastZ = this.locZ;
-diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
-index 1daba4e..db33c98 100644
---- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
-+++ b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
-@@ -50,6 +50,21 @@ public class EntityTNTPrimed extends Entity {
- 
-     public void t_() {
-         if (world.spigotConfig.currentPrimedTnt++ > world.spigotConfig.maxTntTicksPerTick) { return; } // Spigot
-+        // PaperSpigot start - Force load chunks for specific entities that fly through
-+        if (world.paperSpigotConfig.loadUnloadedTNTEntities) {
-+            ChunkProviderServer chunkProvider = (ChunkProviderServer) world.chunkProvider;
-+            boolean before = chunkProvider.forceChunkLoad;
-+            chunkProvider.forceChunkLoad = true;
-+
-+            for (int cx = (int) locX >> 4; cx <= (int) (locX + motX) >> 4; ++cx) {
-+                for (int cz = (int) locZ >> 4; cz <= (int) (locZ + motZ) >> 4; ++cz) {
-+                    world.getChunkAt(cx, cz);
-+                }
-+            }
-+
-+            chunkProvider.forceChunkLoad = before;
 +        }
 +        // PaperSpigot end
-         this.lastX = this.locX;
-         this.lastY = this.locY;
-         this.lastZ = this.locZ;
-@@ -97,7 +112,19 @@ public class EntityTNTPrimed extends Entity {
-         server.getPluginManager().callEvent(event);
+         if (this.world.worldProvider.e()) {
+             if (!this.world.c(i, j)) {
+                 // CraftBukkit start
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 2611007..f76c67d 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -115,6 +115,7 @@ public abstract class Entity implements ICommandListener {
+     public boolean valid; // CraftBukkit
+     public org.bukkit.projectiles.ProjectileSource projectileSource; // CraftBukkit - For projectiles only
+     public boolean inUnloadedChunk = false; // PaperSpigot - Remove entities in unloaded chunks
++    public boolean loadChunks = false; // PaperSpigot - Entities can load chunks they move through and keep them loaded
  
-         if (!event.isCancelled()) {
--            this.world.createExplosion(this, this.locX, this.locY + (double) (this.length / 2.0F), this.locZ, event.getRadius(), event.getFire(), true);
-+            // PaperSpigot start - Force load chunks for specific entities that fly through
-+            if (world.paperSpigotConfig.loadUnloadedTNTEntities) {
-+                ChunkProviderServer chunkProvider = (ChunkProviderServer) world.chunkProvider;
-+                boolean before = chunkProvider.forceChunkLoad;
-+                chunkProvider.forceChunkLoad = true;
-+
-+                this.world.createExplosion(this, this.locX, this.locY + (double) (this.length / 2.0F), this.locZ, event.getRadius(), event.getFire(), true);
-+
-+                chunkProvider.forceChunkLoad = before;
-+            } else {
-+                this.world.createExplosion(this, this.locX, this.locY + (double) (this.length / 2.0F), this.locZ, event.getRadius(), event.getFire(), true);
+     // Spigot start
+     public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getEntityTimings(this); // Spigot
+@@ -402,8 +403,20 @@ public abstract class Entity implements ICommandListener {
+         return this.world.getCubes(this, axisalignedbb).isEmpty() && !this.world.containsLiquid(axisalignedbb);
+     }
+ 
++    /**
++     * PaperSpigot - Load surrounding chunks the entity is moving through
++     */
++    public void loadChunks() {
++        for (int cx = (int) locX >> 4; cx <= (int) (locX + motX) >> 4; ++cx) {
++            for (int cz = (int) locZ >> 4; cz <= (int) (locZ + motZ) >> 4; ++cz) {
++                ((ChunkProviderServer) world.chunkProvider).getChunkAt(cx, cz);
 +            }
-+            // PaperSpigot end
++        }
++    }
++
+     public void move(double d0, double d1, double d2) {
+         org.bukkit.craftbukkit.SpigotTimings.entityMoveTimer.startTiming(); // Spigot
++        if (this.loadChunks) loadChunks(); // PaperSpigot - Load chunks
+         if (this.noclip) {
+             this.a(this.getBoundingBox().c(d0, d1, d2));
+             this.recalcPosition();
+diff --git a/src/main/java/net/minecraft/server/EntityEnderPearl.java b/src/main/java/net/minecraft/server/EntityEnderPearl.java
+index f4b5032..319c0bc 100644
+--- a/src/main/java/net/minecraft/server/EntityEnderPearl.java
++++ b/src/main/java/net/minecraft/server/EntityEnderPearl.java
+@@ -12,11 +12,13 @@ public class EntityEnderPearl extends EntityProjectile {
+ 
+     public EntityEnderPearl(World world) {
+         super(world);
++        this.loadChunks = world.paperSpigotConfig.loadUnloadedEnderPearls; // PaperSpigot
+     }
+ 
+     public EntityEnderPearl(World world, EntityLiving entityliving) {
+         super(world, entityliving);
+         this.c = entityliving;
++        this.loadChunks = world.paperSpigotConfig.loadUnloadedEnderPearls; // PaperSpigot
+     }
+ 
+     protected void a(MovingObjectPosition movingobjectposition) {
+diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+index 44219cd..34627c6 100644
+--- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
++++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+@@ -26,6 +26,7 @@ public class EntityFallingBlock extends Entity {
+     public EntityFallingBlock(org.bukkit.Location loc, World world) {
+         super(world);
+         sourceLoc = loc;
++        this.loadChunks = world.paperSpigotConfig.loadUnloadedFallingBlocks; // PaperSpigot
+     }
+ 
+     public EntityFallingBlock(org.bukkit.Location loc, World world, double d0, double d1, double d2, IBlockData iblockdata) {
+@@ -42,6 +43,7 @@ public class EntityFallingBlock extends Entity {
+         this.lastX = d0;
+         this.lastY = d1;
+         this.lastZ = d2;
++        this.loadChunks = world.paperSpigotConfig.loadUnloadedFallingBlocks; // PaperSpigot
+     }
+ 
+     protected boolean s_() {
+diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+index 1daba4e..3e16472 100644
+--- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
++++ b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+@@ -21,6 +21,7 @@ public class EntityTNTPrimed extends Entity {
+     // PaperSpigot end
+         this.k = true;
+         this.setSize(0.98F, 0.98F);
++        this.loadChunks = world.paperSpigotConfig.loadUnloadedTNTEntities; // PaperSpigot
+     }
+ 
+     public EntityTNTPrimed(org.bukkit.Location loc, World world, double d0, double d1, double d2, EntityLiving entityliving) {
+@@ -90,7 +91,13 @@ public class EntityTNTPrimed extends Entity {
+     private void explode() {
+         // CraftBukkit start
+         // float f = 4.0F;
+-        
++        // PaperSpigot start - Force load chunks during TNT explosions
++        ChunkProviderServer chunkProviderServer = ((ChunkProviderServer) world.chunkProvider);
++        boolean forceChunkLoad = chunkProviderServer.forceChunkLoad;
++        if (world.paperSpigotConfig.loadUnloadedTNTEntities) {
++            chunkProviderServer.forceChunkLoad = true;
++        }
++        // PaperSpigot end
+         org.bukkit.craftbukkit.CraftServer server = this.world.getServer();
+ 
+         ExplosionPrimeEvent event = new ExplosionPrimeEvent((org.bukkit.entity.Explosive) org.bukkit.craftbukkit.entity.CraftEntity.getEntity(server, this));
+@@ -100,6 +107,11 @@ public class EntityTNTPrimed extends Entity {
+             this.world.createExplosion(this, this.locX, this.locY + (double) (this.length / 2.0F), this.locZ, event.getRadius(), event.getFire(), true);
          }
          // CraftBukkit end
++        // PaperSpigot start - Force load chunks during TNT explosions
++        if (world.paperSpigotConfig.loadUnloadedTNTEntities) {
++            chunkProviderServer.forceChunkLoad = forceChunkLoad;
++        }
++        // PaperSpigot end
      }
+ 
+     protected void b(NBTTagCompound nbttagcompound) {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index f507134..aec39a8 100644
+index f507134..a7b5062 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1641,6 +1641,17 @@ public abstract class World implements IBlockAccess {
-                 if (this.isChunkLoaded(k, i1, true)) {
-                     entity.ad = true;
-                     this.getChunkAt(k, i1).a(entity);
-+                // PaperSpigot start - Force load chunks for specific entities that fly through
-+                } else if ((entity instanceof EntityEnderPearl && entity.world.paperSpigotConfig.loadUnloadedEnderPearls) ||
-+                        (entity instanceof EntityTNTPrimed && entity.world.paperSpigotConfig.loadUnloadedTNTEntities) ||
-+                        (entity instanceof EntityFallingBlock && entity.world.paperSpigotConfig.loadUnloadedFallingBlocks)) {
-+                    ChunkProviderServer chunkProvider = (ChunkProviderServer) this.chunkProvider;
-+                    boolean before = chunkProvider.forceChunkLoad;
-+                    chunkProvider.forceChunkLoad = true;
-+                    entity.ad = true;
-+                    this.getChunkAt(k, i1).a(entity);
-+                    chunkProvider.forceChunkLoad = before;
-+                // PaperSpigot end
-                 } else {
-                     entity.ad = false;
+@@ -1634,6 +1634,7 @@ public abstract class World implements IBlockAccess {
+             int i1 = MathHelper.floor(entity.locZ / 16.0D);
+ 
+             if (!entity.ad || entity.ae != k || entity.af != l || entity.ag != i1) {
++                if (entity.loadChunks) entity.loadChunks(); // PaperSpigot - Force load chunks
+                 if (entity.ad && this.isChunkLoaded(entity.ae, entity.ag, true)) {
+                     this.getChunkAt(entity.ae, entity.ag).a(entity, entity.af);
                  }
 diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
 index 6de509c..e6ecaff 100644
@@ -145,26 +169,15 @@ index 6de509c..e6ecaff 100644
 +    }
  }
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index 7ca1b24..dcab40c 100644
+index 7ca1b24..6cf26ff 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
-@@ -13,6 +13,7 @@ import net.minecraft.server.EntityComplexPart;
- import net.minecraft.server.EntityCreature;
- import net.minecraft.server.EntityEnderCrystal;
- import net.minecraft.server.EntityEnderDragon;
-+import net.minecraft.server.EntityEnderPearl; // PaperSpigot
- import net.minecraft.server.EntityFallingBlock;
- import net.minecraft.server.EntityFireball;
- import net.minecraft.server.EntityFireworks;
-@@ -247,7 +248,10 @@ public class ActivationRange
+@@ -247,7 +247,7 @@ public class ActivationRange
      {
          SpigotTimings.checkIfActiveTimer.startTiming();
          // Never safe to skip fireworks or entities not yet added to chunk
 -        if ( !entity.isAddedToChunk() || entity instanceof EntityFireworks ) {
-+        // PaperSpigot - Changes for loading chunks for entities that fly through them
-+        if ( !entity.isAddedToChunk() || entity instanceof EntityFireworks || entity instanceof EntityFallingBlock ||
-+                ( entity instanceof EntityEnderPearl && entity.world.paperSpigotConfig.loadUnloadedEnderPearls ) ||
-+                ( entity instanceof EntityTNTPrimed && entity.world.paperSpigotConfig.loadUnloadedTNTEntities ) ) {
++        if ( !entity.isAddedToChunk() || entity instanceof EntityFireworks || entity.loadChunks ) {
              SpigotTimings.checkIfActiveTimer.stopTiming();
              return true;
          }
