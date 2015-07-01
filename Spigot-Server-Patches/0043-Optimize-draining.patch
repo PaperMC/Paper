@@ -1,48 +1,29 @@
-From ed48841ba8e3f699ca3b15f36b15030882e1f012 Mon Sep 17 00:00:00 2001
+From d565e087226347aaebf3a1322b0fc9c64e5f706a Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Fri, 10 Apr 2015 02:24:20 -0700
 Subject: [PATCH] Optimize draining
 
 
 diff --git a/src/main/java/net/minecraft/server/BlockFlowing.java b/src/main/java/net/minecraft/server/BlockFlowing.java
-index de1dddb..d8de1fc 100644
+index de1dddb..ff18f63 100644
 --- a/src/main/java/net/minecraft/server/BlockFlowing.java
 +++ b/src/main/java/net/minecraft/server/BlockFlowing.java
-@@ -88,7 +88,18 @@ public class BlockFlowing extends BlockFluids {
+@@ -88,7 +88,14 @@ public class BlockFlowing extends BlockFluids {
                      iblockdata = iblockdata.set(BlockFlowing.LEVEL, Integer.valueOf(i1));
                      world.setTypeAndData(blockposition, iblockdata, 2);
                      world.a(blockposition, (Block) this, j);
 -                    world.applyPhysics(blockposition, this);
 +                    // PaperSpigot start - Optimize draining
-+                    if (world.paperSpigotConfig.optimizeDraining) {
-+                        world.d(blockposition.west(), this);
-+                        world.d(blockposition.east(), this);
-+                        world.d(blockposition.up(), this);
-+                        world.d(blockposition.north(), this);
-+                        world.d(blockposition.south(), this);
-+                        world.spigotConfig.antiXrayInstance.updateNearbyBlocks(world, blockposition); // Spigot
-+                    } else {
-+                        world.applyPhysics(blockposition, this);
-+                    }
++                    world.d(blockposition.west(), this);
++                    world.d(blockposition.east(), this);
++                    world.d(blockposition.up(), this);
++                    world.d(blockposition.north(), this);
++                    world.d(blockposition.south(), this);
++                    world.spigotConfig.antiXrayInstance.updateNearbyBlocks(world, blockposition); // Spigot
 +                    // PaperSpigot end
                  }
              }
          } else {
-diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-index fa9ae6c..f11ca71 100644
---- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-+++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-@@ -251,4 +251,10 @@ public class PaperSpigotWorldConfig
-         useAsyncLighting = getBoolean( "use-async-lighting", false );
-         log( "World async lighting: " + useAsyncLighting );
-     }
-+
-+    public boolean optimizeDraining;
-+    private void optimizeDraining()
-+    {
-+        optimizeDraining = getBoolean( "optimize-draining", false );
-+    }
- }
 -- 
 1.9.5.msysgit.1
 
