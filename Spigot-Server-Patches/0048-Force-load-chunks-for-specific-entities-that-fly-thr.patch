@@ -1,4 +1,4 @@
-From bd0b3dc6c20a561d4ad962f80153766bcca49032 Mon Sep 17 00:00:00 2001
+From 072da6782e7b7f003a4895afbbfd9d17dc73fe55 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Tue, 30 Jun 2015 20:45:24 -0700
 Subject: [PATCH] Force load chunks for specific entities that fly through
@@ -137,10 +137,27 @@ index 1daba4e..3e16472 100644
  
      protected void b(NBTTagCompound nbttagcompound) {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 8ee0cec..6712fbf 100644
+index 8ee0cec..d8e3d87 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1631,6 +1631,7 @@ public abstract class World implements IBlockAccess {
+@@ -1163,8 +1163,14 @@ public abstract class World implements IBlockAccess {
+             {
+                 if ( !this.isChunkLoaded( chunkx, chunkz, true ) )
+                 {
+-                    entity.inUnloadedChunk = true; // PaperSpigot - Remove entities in unloaded chunks
+-                    continue;
++                    // PaperSpigot start
++                    if (entity.loadChunks) {
++                        ((ChunkProviderServer) entity.world.chunkProvider).getChunkAt(chunkx, chunkz);
++                    } else {
++                        entity.inUnloadedChunk = true; // PaperSpigot - Remove entities in unloaded chunks
++                        continue;
++                    }
++                    // PaperSpigot end
+                 }
+                 int cz = chunkz << 4;
+                 Chunk chunk = this.getChunkAt( chunkx, chunkz );
+@@ -1631,6 +1637,7 @@ public abstract class World implements IBlockAccess {
              int i1 = MathHelper.floor(entity.locZ / 16.0D);
  
              if (!entity.ad || entity.ae != k || entity.af != l || entity.ag != i1) {
