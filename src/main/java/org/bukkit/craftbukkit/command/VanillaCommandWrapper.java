@@ -97,9 +97,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
                             chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
                             icommandlistener.sendMessage(chatmessage);
                         } catch (CommandException commandexception) {
-                            ChatMessage chatmessage = new ChatMessage(commandexception.getMessage(), commandexception.getArgs());
-                            chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
-                            icommandlistener.sendMessage(chatmessage);
+                            CommandAbstract.a(icommandlistener, vanillaCommand, 1, commandexception.getMessage(), commandexception.getArgs());
                         } finally {
                             lastSender = oldSender;
                         }
@@ -120,9 +118,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
             chatmessage1.getChatModifier().setColor(EnumChatFormat.RED);
             icommandlistener.sendMessage(chatmessage1);
         } catch (CommandException commandexception) {
-            ChatMessage chatmessage2 = new ChatMessage(commandexception.getMessage(), commandexception.getArgs());
-            chatmessage2.getChatModifier().setColor(EnumChatFormat.RED);
-            icommandlistener.sendMessage(chatmessage2);
+            CommandAbstract.a(icommandlistener, vanillaCommand, 1, commandexception.getMessage(), commandexception.getArgs());
         } catch (Throwable throwable) {
             ChatMessage chatmessage3 = new ChatMessage("commands.generic.exception", new Object[0]);
             chatmessage3.getChatModifier().setColor(EnumChatFormat.RED);
