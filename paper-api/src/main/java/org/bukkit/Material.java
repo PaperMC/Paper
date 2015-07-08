@@ -255,7 +255,7 @@ public enum Material {
     BIRCH_FENCE(189),
     JUNGLE_FENCE(190),
     DARK_OAK_FENCE(191),
-    ACACIA_FENCE(192, Door.class),
+    ACACIA_FENCE(192),
     SPRUCE_DOOR(193, Door.class),
     BIRCH_DOOR(194, Door.class),
     JUNGLE_DOOR(195, Door.class),
