@@ -1055,4 +1055,25 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * {@link GameMode#SPECTATOR}
      */
     public void setSpectatorTarget(Entity entity);
+
+    /**
+     * Sends a title and a subtitle message to the player. If either of these
+     * values are null, they will not be sent and the display will remain
+     * unchanged. If they are empty strings, the display will be updated as
+     * such. If the strings contain a new line, only the first line will be
+     * sent.
+     *
+     * @param title Title text
+     * @param subtitle Subtitle text
+     * @deprecated API subject to change
+     */
+    @Deprecated
+    public void sendTitle(String title, String subtitle);
+
+    /**
+     * Resets the title displayed to the player.
+     * @deprecated API subject to change.
+     */
+    @Deprecated
+    public void resetTitle();
 }
