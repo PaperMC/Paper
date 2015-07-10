@@ -21,6 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.minecraft.server.*;
+import net.minecraft.server.PacketPlayOutTitle.EnumTitleAction;
 
 import org.apache.commons.lang.Validate;
 import org.apache.commons.lang.NotImplementedException;
@@ -1325,5 +1326,24 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void setSpectatorTarget(org.bukkit.entity.Entity entity) {
         Preconditions.checkArgument(getGameMode() == GameMode.SPECTATOR, "Player must be in spectator mode");
         getHandle().setSpectatorTarget((entity == null) ? null : ((CraftEntity) entity).getHandle());
+    }
+
+    @Override
+    public void sendTitle(String title, String subtitle) {
+        if (title != null) {
+            PacketPlayOutTitle packetTitle = new PacketPlayOutTitle(EnumTitleAction.TITLE, CraftChatMessage.fromString(title)[0]);
+            getHandle().playerConnection.sendPacket(packetTitle);
+        }
+
+        if (subtitle != null) {
+            PacketPlayOutTitle packetSubtitle = new PacketPlayOutTitle(EnumTitleAction.SUBTITLE, CraftChatMessage.fromString(subtitle)[0]);
+            getHandle().playerConnection.sendPacket(packetSubtitle);
+        }
+    }
+
+    @Override
+    public void resetTitle() {
+        PacketPlayOutTitle packetReset = new PacketPlayOutTitle(EnumTitleAction.RESET, null);
+        getHandle().playerConnection.sendPacket(packetReset);
     }
 }
