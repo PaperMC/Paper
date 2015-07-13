@@ -73,6 +73,7 @@ public abstract class PlayerList {
 
     // CraftBukkit start
     private CraftServer cserver;
+    private final Map<String,EntityPlayer> playersByName = new java.util.HashMap<>();
 
     public PlayerList(MinecraftServer minecraftserver, IRegistryCustom.Dimension iregistrycustom_dimension, WorldNBTStorage worldnbtstorage, int i) {
         this.cserver = minecraftserver.server = new CraftServer((DedicatedServer) minecraftserver, this);
@@ -190,6 +191,7 @@ public abstract class PlayerList {
 
         playerconnection.a(entityplayer.locX(), entityplayer.locY(), entityplayer.locZ(), entityplayer.yaw, entityplayer.pitch);
         this.players.add(entityplayer);
+        this.playersByName.put(entityplayer.getName().toLowerCase(java.util.Locale.ROOT), entityplayer); // Spigot
         this.j.put(entityplayer.getUniqueID(), entityplayer);
         // this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[]{entityplayer})); // CraftBukkit - replaced with loop below
 
@@ -446,6 +448,7 @@ public abstract class PlayerList {
         worldserver.removePlayer(entityplayer);
         entityplayer.getAdvancementData().a();
         this.players.remove(entityplayer);
+        this.playersByName.remove(entityplayer.getName().toLowerCase(java.util.Locale.ROOT)); // Spigot
         this.server.getBossBattleCustomData().b(entityplayer);
         UUID uuid = entityplayer.getUniqueID();
         EntityPlayer entityplayer1 = (EntityPlayer) this.j.get(uuid);
@@ -599,6 +602,7 @@ public abstract class PlayerList {
     public EntityPlayer moveToWorld(EntityPlayer entityplayer, WorldServer worldserver, boolean flag, Location location, boolean avoidSuffocation) {
         entityplayer.stopRiding(); // CraftBukkit
         this.players.remove(entityplayer);
+        this.playersByName.remove(entityplayer.getName().toLowerCase(java.util.Locale.ROOT)); // Spigot
         entityplayer.getWorldServer().removePlayer(entityplayer);
         BlockPosition blockposition = entityplayer.getSpawn();
         float f = entityplayer.getSpawnAngle();
@@ -725,6 +729,7 @@ public abstract class PlayerList {
         if (!entityplayer.playerConnection.isDisconnected()) {
             worldserver1.addPlayerRespawn(entityplayer1);
             this.players.add(entityplayer1);
+            this.playersByName.put(entityplayer1.getName().toLowerCase(java.util.Locale.ROOT), entityplayer1); // Spigot
             this.j.put(entityplayer1.getUniqueID(), entityplayer1);
         }
         // entityplayer1.syncInventory();
@@ -923,19 +928,7 @@ public abstract class PlayerList {
 
     @Nullable
     public EntityPlayer getPlayer(String s) {
-        Iterator iterator = this.players.iterator();
-
-        EntityPlayer entityplayer;
-
-        do {
-            if (!iterator.hasNext()) {
-                return null;
-            }
-
-            entityplayer = (EntityPlayer) iterator.next();
-        } while (!entityplayer.getProfile().getName().equalsIgnoreCase(s));
-
-        return entityplayer;
+        return this.playersByName.get(s.toLowerCase(java.util.Locale.ROOT)); // Spigot
     }
 
     public void sendPacketNearby(@Nullable EntityHuman entityhuman, double d0, double d1, double d2, double d3, ResourceKey<World> resourcekey, Packet<?> packet) {
