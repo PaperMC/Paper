@@ -386,7 +386,12 @@ public final class CraftServer implements Server {
     public Player getPlayer(final String name) {
         Validate.notNull(name, "Name cannot be null");
 
-        Player found = null;
+        Player found = getPlayerExact(name);
+        // Try for an exact match first.
+        if (found != null) {
+            return found;
+        }
+
         String lowerName = name.toLowerCase();
         int delta = Integer.MAX_VALUE;
         for (Player player : getOnlinePlayers()) {
@@ -407,15 +412,8 @@ public final class CraftServer implements Server {
     public Player getPlayerExact(String name) {
         Validate.notNull(name, "Name cannot be null");
 
-        String lname = name.toLowerCase();
-
-        for (Player player : getOnlinePlayers()) {
-            if (player.getName().equalsIgnoreCase(lname)) {
-                return player;
-            }
-        }
-
-        return null;
+        EntityPlayer player = playerList.getPlayer(name);
+        return (player != null) ? player.getBukkitEntity() : null;
     }
 
     @Override
