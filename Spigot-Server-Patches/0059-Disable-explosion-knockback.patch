@@ -1,0 +1,71 @@
+From 8fa94297f64a5c59b5b323bb17b3272a24676438 Mon Sep 17 00:00:00 2001
+From: Sudzzy <originmc@outlook.com>
+Date: Tue, 14 Jul 2015 09:20:44 -0700
+Subject: [PATCH] Disable explosion knockback
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 8090a0c..b2484a7 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -778,7 +778,10 @@ public abstract class EntityLiving extends Entity {
+                     }
+                 }
+ 
+-                if (flag) {
++                // PaperSpigot start - Disable explosion knockback
++                boolean knockbackCancelled = false;
++                if (flag && !(knockbackCancelled = world.paperSpigotConfig.disableExplosionKnockback && damagesource.isExplosion() && this instanceof EntityHuman)) {
++                // PaperSpigot end
+                     this.world.broadcastEntityEffect(this, (byte) 2);
+                     if (damagesource != DamageSource.DROWN) {
+                         this.ac();
+@@ -800,6 +803,8 @@ public abstract class EntityLiving extends Entity {
+                     }
+                 }
+ 
++                if (knockbackCancelled) this.world.broadcastEntityEffect(this, (byte) 2); // PaperSpigot
++
+                 String s;
+ 
+                 if (this.getHealth() <= 0.0F) {
+diff --git a/src/main/java/net/minecraft/server/Explosion.java b/src/main/java/net/minecraft/server/Explosion.java
+index 4afb8d7..f23245e 100644
+--- a/src/main/java/net/minecraft/server/Explosion.java
++++ b/src/main/java/net/minecraft/server/Explosion.java
+@@ -140,7 +140,7 @@ public class Explosion {
+                             continue;
+                         }
+                         // CraftBukkit end
+-                        double d14 = EnchantmentProtection.a(entity, d13);
++                        double d14 = entity instanceof EntityHuman && world.paperSpigotConfig.disableExplosionKnockback ? 0 : EnchantmentProtection.a(entity, d13); // PaperSpigot
+ 
+                         // PaperSpigot start - Fix cannons
+                         /*
+@@ -152,7 +152,7 @@ public class Explosion {
+                         entity.g(d8 * d14, d9 * d14, d10 * d14);
+                         // PaperSpigot end
+ 
+-                        if (entity instanceof EntityHuman && !((EntityHuman) entity).abilities.isInvulnerable) {
++                        if (entity instanceof EntityHuman && !((EntityHuman) entity).abilities.isInvulnerable && !world.paperSpigotConfig.disableExplosionKnockback) { // PaperSpigot
+                             this.k.put((EntityHuman) entity, new Vec3D(d8 * d13, d9 * d13, d10 * d13));
+                         }
+                     }
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+index 20cf3ce..178f251 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+@@ -360,4 +360,10 @@ public class PaperSpigotWorldConfig
+         lavaFlowSpeedNormal = getInt( "lava-flow-speed.normal", 30 );
+         lavaFlowSpeedNether = getInt( "lava-flow-speed.nether", 10 );
+     }
++
++    public boolean disableExplosionKnockback;
++    private void disableExplosionKnockback()
++    {
++        disableExplosionKnockback = getBoolean( "disable-explosion-knockback", false );
++    }
+ }
+-- 
+1.9.5.msysgit.1
+
