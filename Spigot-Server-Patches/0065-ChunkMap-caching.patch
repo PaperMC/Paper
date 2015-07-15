@@ -1,51 +1,89 @@
-From 4d0cd6ef93096ca05ab8cb768574839fc2223abc Mon Sep 17 00:00:00 2001
+From 5cf461979b07c8b31867b7e64c36fa6bc4a2e8fa Mon Sep 17 00:00:00 2001
 From: Iceee <andrew@opticgaming.tv>
 Date: Wed, 15 Jul 2015 02:41:12 -0700
 Subject: [PATCH] ChunkMap caching
 
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index ab4de94..d528e91 100644
+index ab4de94..2b70bf4 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -50,6 +50,29 @@ public class Chunk {
+@@ -50,6 +50,39 @@ public class Chunk {
      public long lightUpdateTime;
      // PaperSpigot end
  
 +    // PaperSpigot start - ChunkMap caching
-+    private final Object chunkMapLock = new Object();
 +    private PacketPlayOutMapChunk.ChunkMap chunkMap;
-+    private boolean chunkMapDirty = true;
-+
-+    public void setDirty() {
-+        synchronized (chunkMapLock) {
-+            chunkMapDirty = true;
-+        }
-+    }
++    private int emptySectionBits;
 +
 +    public PacketPlayOutMapChunk.ChunkMap getChunkMap() {
-+        synchronized (chunkMapLock) {
-+            if (chunkMapDirty || chunkMap == null) {
-+                chunkMapDirty = false;
-+                chunkMap = PacketPlayOutMapChunk.a(this, true, !world.worldProvider.o(), '\uffff');
++        boolean isDirty = false;
++        for (int i = 0; i < sections.length; ++i) {
++            ChunkSection section = sections[i];
++            if (section == null) {
++                if ((emptySectionBits & (1 << i)) == 0) {
++                    isDirty = true;
++                    emptySectionBits |= (1 << i);
++                }
++            } else {
++                if ((emptySectionBits & (1 << i)) == 1) {
++                    isDirty = true;
++                    emptySectionBits &= ~(1 << i);
++                    section.isDirty = false;
++                } else if (section.isDirty) {
++                    isDirty = true;
++                    section.isDirty = false;
++                }
 +            }
-+
-+            return chunkMap;
 +        }
++
++        if (isDirty || chunkMap == null) {
++            chunkMap = PacketPlayOutMapChunk.a(this, true, !world.worldProvider.o(), '\uffff');
++        }
++
++        return chunkMap;
 +    }
 +    // PaperSpigot end
 +
      // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
      private int neighbors = 0x1 << 12;
  
-@@ -507,6 +530,7 @@ public class Chunk {
+diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
+index f734ab0..907c57b 100644
+--- a/src/main/java/net/minecraft/server/ChunkSection.java
++++ b/src/main/java/net/minecraft/server/ChunkSection.java
+@@ -8,6 +8,7 @@ public class ChunkSection {
+     private char[] blockIds;
+     private NibbleArray emittedLight;
+     private NibbleArray skyLight;
++    boolean isDirty; // PaperSpigot
+ 
+     public ChunkSection(int i, boolean flag) {
+         this.yPos = i;
+@@ -57,6 +58,7 @@ public class ChunkSection {
+         }
+ 
+         this.blockIds[j << 8 | k << 4 | i] = (char) Block.d.b(iblockdata);
++        isDirty = true; // PaperSpigot
      }
  
-     public IBlockData a(BlockPosition blockposition, IBlockData iblockdata) {
-+        setDirty(); // PaperSpigot
-         int i = blockposition.getX() & 15;
-         int j = blockposition.getY();
-         int k = blockposition.getZ() & 15;
+     public Block b(int i, int j, int k) {
+@@ -83,6 +85,7 @@ public class ChunkSection {
+ 
+     public void a(int i, int j, int k, int l) {
+         this.skyLight.a(i, j, k, l);
++        isDirty = true; // PaperSpigot
+     }
+ 
+     public int d(int i, int j, int k) {
+@@ -91,6 +94,7 @@ public class ChunkSection {
+ 
+     public void b(int i, int j, int k, int l) {
+         this.emittedLight.a(i, j, k, l);
++        isDirty = true; // PaperSpigot
+     }
+ 
+     public int e(int i, int j, int k) {
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 index 58c0275..91ceb81 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
@@ -59,18 +97,19 @@ index 58c0275..91ceb81 100644
          chunk.world.spigotConfig.antiXrayInstance.obfuscateSync(chunk.locX, chunk.locZ, c.b, c.a, chunk.world);
      }
  
-diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 99473d1..5bb6ac1 100644
---- a/src/main/java/net/minecraft/server/World.java
-+++ b/src/main/java/net/minecraft/server/World.java
-@@ -2505,6 +2505,7 @@ public abstract class World implements IBlockAccess {
-                 }
-             }
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
+index 10c0e34..f7e8ab3 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
+@@ -23,7 +23,7 @@ public class PacketPlayOutMapChunkBulk implements Packet<PacketListenerPlayOut>
  
-+            chunk.setDirty(); // PaperSpigot
-             // PaperSpigot start - Asynchronous light updates
-             if (chunk.world.paperSpigotConfig.useAsyncLighting) {
-                 chunk.pendingLightUpdates.decrementAndGet();
+         for (int j = 0; j < i; ++j) {
+             Chunk chunk = (Chunk) list.get(j);
+-            PacketPlayOutMapChunk.ChunkMap packetplayoutmapchunk_chunkmap = PacketPlayOutMapChunk.a(chunk, true, this.d, '\uffff');
++            PacketPlayOutMapChunk.ChunkMap packetplayoutmapchunk_chunkmap = chunk.getChunkMap(); // PaperSpigot
+ 
+             this.a[j] = chunk.locX;
+             this.b[j] = chunk.locZ;
 -- 
 1.9.5.msysgit.1
 
