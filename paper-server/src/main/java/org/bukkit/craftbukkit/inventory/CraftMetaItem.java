@@ -799,6 +799,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
                         DISPLAY.NBT,
                         REPAIR.NBT,
                         ENCHANTMENTS.NBT,
+                        HIDEFLAGS.NBT,
                         CraftMetaMap.MAP_SCALING.NBT,
                         CraftMetaPotion.POTION_EFFECTS.NBT,
                         CraftMetaSkull.SKULL_OWNER.NBT,
