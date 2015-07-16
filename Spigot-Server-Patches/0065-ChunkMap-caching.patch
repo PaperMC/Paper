@@ -1,14 +1,14 @@
-From 7511cc6c50a7351c6359daa9425d119947cb4338 Mon Sep 17 00:00:00 2001
+From f3941c39661065a2384905328005c8699efbb9f9 Mon Sep 17 00:00:00 2001
 From: Iceee <andrew@opticgaming.tv>
 Date: Wed, 15 Jul 2015 02:41:12 -0700
 Subject: [PATCH] ChunkMap caching
 
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index ab4de94..c9885ca 100644
+index ab4de94..d5f13c0 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -50,6 +50,43 @@ public class Chunk {
+@@ -50,6 +50,49 @@ public class Chunk {
      public long lightUpdateTime;
      // PaperSpigot end
  
@@ -16,9 +16,15 @@ index ab4de94..c9885ca 100644
 +    private PacketPlayOutMapChunk.ChunkMap chunkMap;
 +    private int emptySectionBits;
 +
-+    public PacketPlayOutMapChunk.ChunkMap getChunkMap() {
-+        if (!world.paperSpigotConfig.cacheChunkMaps) {
-+            return PacketPlayOutMapChunk.a(this, true, !world.worldProvider.o(), '\uffff');
++    public PacketPlayOutMapChunk.ChunkMap getChunkMap(boolean groundUpContinuous, int primaryBitMask) {
++        if (!world.paperSpigotConfig.cacheChunkMaps || !groundUpContinuous || (primaryBitMask != 0 && primaryBitMask != '\uffff')) {
++            return PacketPlayOutMapChunk.a(this, groundUpContinuous, !world.worldProvider.o(), primaryBitMask);
++        }
++
++        if (primaryBitMask == 0) {
++            PacketPlayOutMapChunk.ChunkMap chunkMap = new PacketPlayOutMapChunk.ChunkMap();
++            chunkMap.a = new byte[0];
++            return chunkMap;
 +        }
 +
 +        boolean isDirty = false;
@@ -89,7 +95,7 @@ index f734ab0..907c57b 100644
  
      public int e(int i, int j, int k) {
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
-index 58c0275..91ceb81 100644
+index 58c0275..a0021fb 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 @@ -18,7 +18,7 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
@@ -97,12 +103,12 @@ index 58c0275..91ceb81 100644
          this.b = chunk.locZ;
          this.d = flag;
 -        this.c = a(chunk, flag, !chunk.getWorld().worldProvider.o(), i);
-+        this.c = chunk.getChunkMap(); // PaperSpigot
++        this.c = chunk.getChunkMap(flag, i); // PaperSpigot
          chunk.world.spigotConfig.antiXrayInstance.obfuscateSync(chunk.locX, chunk.locZ, c.b, c.a, chunk.world);
      }
  
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
-index 10c0e34..f7e8ab3 100644
+index 10c0e34..00c0538 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunkBulk.java
 @@ -23,7 +23,7 @@ public class PacketPlayOutMapChunkBulk implements Packet<PacketListenerPlayOut>
@@ -110,7 +116,7 @@ index 10c0e34..f7e8ab3 100644
          for (int j = 0; j < i; ++j) {
              Chunk chunk = (Chunk) list.get(j);
 -            PacketPlayOutMapChunk.ChunkMap packetplayoutmapchunk_chunkmap = PacketPlayOutMapChunk.a(chunk, true, this.d, '\uffff');
-+            PacketPlayOutMapChunk.ChunkMap packetplayoutmapchunk_chunkmap = chunk.getChunkMap(); // PaperSpigot
++            PacketPlayOutMapChunk.ChunkMap packetplayoutmapchunk_chunkmap = chunk.getChunkMap(true, '\uffff'); // PaperSpigot
  
              this.a[j] = chunk.locX;
              this.b[j] = chunk.locZ;
