@@ -37,6 +37,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     @Override
     public void setItem(int index, ItemStack item) {
         super.setItem(index, item);
+        if (this.getHolder() == null) return;
         EntityPlayer player = ((CraftPlayer) this.getHolder()).getHandle();
         if (player.playerConnection == null) return;
         // PacketPlayOutSetSlot places the items differently than setItem()
