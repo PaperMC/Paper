@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -301,6 +302,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public boolean setPassenger(org.bukkit.entity.Entity passenger) {
+        Preconditions.checkArgument(!this.equals(passenger), "Entity cannot ride itself.");
         if (passenger instanceof CraftEntity) {
             ((CraftEntity) passenger).getHandle().mount(getHandle());
             return true;
