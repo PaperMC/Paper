@@ -1,6 +1,9 @@
 package org.bukkit.command;
 
 import java.util.ArrayList;
+import java.util.regex.Matcher; // Paper
+import java.util.regex.Pattern; // Paper
+
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,7 +22,7 @@ public class FormattedCommandAlias extends Command {
         ArrayList<String> commands = new ArrayList<String>();
         for (String formatString : formatStrings) {
             try {
-                commands.add(buildCommand(formatString, args));
+                commands.add(buildCommand(sender, formatString, args)); // Paper
             } catch (Throwable throwable) {
                 if (throwable instanceof IllegalArgumentException) {
                     sender.sendMessage(throwable.getMessage());
@@ -37,7 +40,10 @@ public class FormattedCommandAlias extends Command {
         return result;
     }
 
-    private String buildCommand(@NotNull String formatString, @NotNull String[] args) {
+    private String buildCommand(@NotNull CommandSender sender, @NotNull String formatString, @NotNull String[] args) { // Paper
+        if (formatString.contains("$sender")) { // Paper
+            formatString = formatString.replaceAll(Pattern.quote("$sender"), Matcher.quoteReplacement(sender.getName())); // Paper
+        } // Paper
         int index = formatString.indexOf('$');
         while (index != -1) {
             int start = index;
