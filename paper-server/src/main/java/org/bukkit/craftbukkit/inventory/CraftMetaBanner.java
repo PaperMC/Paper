@@ -50,8 +50,8 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
 
         if (entityTag.hasKey(PATTERNS.NBT)) {
             NBTTagList patterns = entityTag.getList(PATTERNS.NBT, 10);
-            for (int i = 0; i < patterns.size(); i++) {
-                NBTTagCompound p = (NBTTagCompound) patterns.get(i);
+            for (int i = 0; i < Math.min(patterns.size(), 20); i++) {
+                NBTTagCompound p = patterns.get(i);
                 this.patterns.add(new Pattern(DyeColor.getByDyeData((byte) p.getInt(COLOR.NBT)), PatternType.getByIdentifier(p.getString(PATTERN.NBT))));
             }
         }
