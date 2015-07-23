@@ -405,7 +405,7 @@ public class Potion {
         if ((damage & SPLASH_BIT) > 0) {
             potion = potion.splash();
         }
-        if ((!type.equals(PotionType.INSTANT_DAMAGE) || type.equals(PotionType.FIRE_RESISTANCE)) && (damage & EXTENDED_BIT) > 0) {
+        if ((type == null || !type.isInstant()) && (damage & EXTENDED_BIT) > 0) {
             potion = potion.extend();
         }
         return potion;
