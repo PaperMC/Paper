@@ -6,9 +6,47 @@ import static org.hamcrest.Matchers.is;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class PotionTest {
+
+    @BeforeClass
+    public static void setup() {
+        PotionEffectType.registerPotionEffectType(new PotionEffectType(19){
+            @Override
+            public double getDurationModifier() {
+                return 1;
+            }
+
+            @Override
+            public String getName() {
+                return "Poison";
+            }
+
+            @Override
+            public boolean isInstant() {
+                return false;
+            }
+        });
+        PotionEffectType.registerPotionEffectType(new PotionEffectType(6){
+            @Override
+            public double getDurationModifier() {
+                return 1;
+            }
+
+            @Override
+            public String getName() {
+                return "Heal";
+            }
+
+            @Override
+            public boolean isInstant() {
+                return false;
+            }
+        });
+    }
+
     @Test
     public void applyToItemStack() {
         Potion potion = new Potion(PotionType.POISON);
@@ -44,22 +82,6 @@ public class PotionTest {
 
     @Test
     public void setExtended() {
-        PotionEffectType.registerPotionEffectType(new PotionEffectType(19){
-            @Override
-            public double getDurationModifier() {
-                return 1;
-            }
-
-            @Override
-            public String getName() {
-                return "Poison";
-            }
-
-            @Override
-            public boolean isInstant() {
-                return false;
-            }
-        });
         Potion potion = new Potion(PotionType.POISON);
         assertFalse(potion.hasExtendedDuration());
         potion.setHasExtendedDuration(true);
