@@ -51,6 +51,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public final RollingAverage tps1 = new RollingAverage(60);
 +    public final RollingAverage tps5 = new RollingAverage(60 * 5);
 +    public final RollingAverage tps15 = new RollingAverage(60 * 15);
++    public double[] recentTps = new double[ 3 ]; // PaperSpigot - Fine have your darn compat with bad plugins
 +
 +    public static class RollingAverage {
 +        private final int size;
@@ -97,10 +98,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  this.a(this.r);
  
                  // Spigot start
--                Arrays.fill( recentTps, 20 );
--                long lastTick = System.nanoTime(), catchupTime = 0, curTime, wait, tickSection = lastTick;
 +                // PaperSpigot start - Further improve tick loop
-+                //Arrays.fill( recentTps, 20 );
+                 Arrays.fill( recentTps, 20 );
+-                long lastTick = System.nanoTime(), catchupTime = 0, curTime, wait, tickSection = lastTick;
 +                //long lastTick = System.nanoTime(), catchupTime = 0, curTime, wait, tickSection = lastTick;
 +                long start = System.nanoTime(), lastTick = start - TICK_TIME, catchupTime = 0, curTime, wait, tickSection = start;
 +                // PaperSpigot end
@@ -144,6 +144,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        tps1.add(currentTps, diff);
 +                        tps5.add(currentTps, diff);
 +                        tps15.add(currentTps, diff);
++                        // Backwards compat with bad plugins
++                        recentTps[0] = tps1.getAverage();
++                        recentTps[1] = tps5.getAverage();
++                        recentTps[2] = tps15.getAverage();
                          tickSection = curTime;
 +                        // PaperSpigot end
                      }
@@ -211,6 +215,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      {
          return ( ( tps > 18.0 ) ? ChatColor.GREEN : ( tps > 16.0 ) ? ChatColor.YELLOW : ChatColor.RED ).toString()
                  + ( ( tps > 20.0 ) ? "*" : "" ) + Math.min( Math.round( tps * 100.0 ) / 100.0, 20.0 );
--- 
-1.9.5.msysgit.1
-
+--
