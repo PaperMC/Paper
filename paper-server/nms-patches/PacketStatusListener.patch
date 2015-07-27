@@ -16,8 +16,8 @@
 +
  public class PacketStatusListener implements PacketStatusInListener {
  
-     private final MinecraftServer minecraftServer;
-@@ -12,11 +23,116 @@
+     private static final IChatBaseComponent a = new ChatComponentText("Status request has been handled.");
+@@ -14,17 +25,116 @@
  
      public void a(IChatBaseComponent ichatbasecomponent) {}
  
@@ -29,13 +29,16 @@
 +    // CraftBukkit end
 +
      public void a(PacketStatusInStart packetstatusinstart) {
--        this.networkManager.handle(new PacketStatusOutServerInfo(this.minecraftServer.aG()));
+-        if (this.d) {
 +        // this.networkManager.handle(new PacketStatusOutServerInfo(this.minecraftServer.aG()));
 +        // CraftBukkit start - fire ping event
-+        if (state != WAITING) {
-+            networkManager.close(null);
++        if (this.state != WAITING) {
+             this.networkManager.close(PacketStatusListener.a);
+-        } else {
+-            this.d = true;
+-            this.networkManager.handle(new PacketStatusOutServerInfo(this.minecraftServer.aG()));
 +            return;
-+        }
+         }
 +        state = PING;
 +        final Object[] players = minecraftServer.getPlayerList().players.toArray();
 +        class ServerListPingEvent extends org.bukkit.event.server.ServerListPingEvent {
@@ -126,9 +129,10 @@
  
      public void a(PacketStatusInPing packetstatusinping) {
 -        this.networkManager.handle(new PacketStatusOutPong(packetstatusinping.a()));
+-        this.networkManager.close(PacketStatusListener.a);
 +        // CraftBukkit start
 +        if (state != PING) {
-+            networkManager.close(null);
++            this.networkManager.close(PacketStatusListener.a);
 +            return;
 +        }
 +        state = DONE;
