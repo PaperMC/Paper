@@ -48,6 +48,7 @@ import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.conversations.Conversable;
 import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.generator.CraftChunkData;
 import org.bukkit.craftbukkit.help.SimpleHelpMap;
 import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCustom;
@@ -1629,6 +1630,11 @@ public final class CraftServer implements Server {
     @Override
     public int getIdleTimeout() {
         return console.getIdleTimeout();
+    }
+
+    @Override
+    public ChunkGenerator.ChunkData createChunkData(World world) {
+        return new CraftChunkData(world);
     }
 
     @Deprecated
