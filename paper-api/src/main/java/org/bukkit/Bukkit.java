@@ -37,6 +37,7 @@ import org.bukkit.util.CachedServerIcon;
 
 import com.avaje.ebean.config.ServerConfig;
 import com.google.common.collect.ImmutableList;
+import org.bukkit.generator.ChunkGenerator;
 
 import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -1114,6 +1115,19 @@ public final class Bukkit {
      */
     public static int getIdleTimeout() {
         return server.getIdleTimeout();
+    }
+
+    /**
+     * Create a ChunkData for use in a generator.
+     * 
+     * See {@link ChunkGenerator#generateChunkData(org.bukkit.World, java.util.Random, int, int, org.bukkit.generator.ChunkGenerator.BiomeGrid)}
+     * 
+     * @param world the world to create the ChunkData for
+     * @return a new ChunkData for the world
+     * 
+     */
+    public static ChunkGenerator.ChunkData createChunkData(World world) {
+        return server.createChunkData(world);
     }
 
     /**
