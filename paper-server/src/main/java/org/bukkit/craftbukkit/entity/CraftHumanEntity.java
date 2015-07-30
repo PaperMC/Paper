@@ -175,67 +175,68 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         EntityPlayer player = (EntityPlayer) getHandle();
         InventoryType type = inventory.getType();
         Container formerContainer = getHandle().activeContainer;
-        // TODO: Should we check that it really IS a CraftInventory first?
-        CraftInventory craftinv = (CraftInventory) inventory;
-        switch(type) {
-        case PLAYER:
-        case CHEST:
-        case ENDER_CHEST:
-            getHandle().openContainer(craftinv.getInventory());
-            break;
-        case DISPENSER:
-            if (craftinv.getInventory() instanceof TileEntityDispenser) {
-                getHandle().openContainer((TileEntityDispenser) craftinv.getInventory());
-            } else {
-                openCustomInventory(inventory, player, "minecraft:dispenser");
-            }
-            break;
-        case FURNACE:
-            if (craftinv.getInventory() instanceof TileEntityFurnace) {
-                getHandle().openContainer((TileEntityFurnace) craftinv.getInventory());
-            } else {
-                openCustomInventory(inventory, player, "minecraft:furnace");
-            }
-            break;
-        case WORKBENCH:
-            openCustomInventory(inventory, player, "minecraft:crafting_table");
-            break;
-        case BREWING:
-            if (craftinv.getInventory() instanceof TileEntityBrewingStand) {
-                getHandle().openContainer((TileEntityBrewingStand) craftinv.getInventory());
-            } else {
-                openCustomInventory(inventory, player, "minecraft:brewing_stand");
-            }
-            break;
-        case ENCHANTING:
-            openCustomInventory(inventory, player, "minecraft:enchanting_table");
-            break;
-        case HOPPER:
-            if (craftinv.getInventory() instanceof TileEntityHopper) {
-                getHandle().openContainer((TileEntityHopper) craftinv.getInventory());
-            } else if (craftinv.getInventory() instanceof EntityMinecartHopper) {
-                getHandle().openContainer((EntityMinecartHopper) craftinv.getInventory());
-            } else {
-                openCustomInventory(inventory, player, "minecraft:hopper");
-            }
-            break;
-        case BEACON:
-            if (craftinv.getInventory() instanceof TileEntityBeacon) {
-                getHandle().openContainer((TileEntityBeacon) craftinv.getInventory());
-            } else {
-                openCustomInventory(inventory, player, "minecraft:beacon");
-            }
-            break;
-        case ANVIL:
-            if (craftinv.getInventory() instanceof BlockAnvil.TileEntityContainerAnvil) {
-                getHandle().openTileEntity((BlockAnvil.TileEntityContainerAnvil) craftinv.getInventory());
-            } else {
-                openCustomInventory(inventory, player, "minecraft:anvil");
-            }
-            break;
-        case CREATIVE:
-        case CRAFTING:
-            throw new IllegalArgumentException("Can't open a " + type + " inventory!");
+
+        IInventory iinventory = (inventory instanceof CraftInventory) ? ((CraftInventory) inventory).getInventory() : new org.bukkit.craftbukkit.inventory.InventoryWrapper(inventory);
+
+        switch (type) {
+            case PLAYER:
+            case CHEST:
+            case ENDER_CHEST:
+                getHandle().openContainer(iinventory);
+                break;
+            case DISPENSER:
+                if (iinventory instanceof TileEntityDispenser) {
+                    getHandle().openContainer((TileEntityDispenser) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:dispenser");
+                }
+                break;
+            case FURNACE:
+                if (iinventory instanceof TileEntityFurnace) {
+                    getHandle().openContainer((TileEntityFurnace) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:furnace");
+                }
+                break;
+            case WORKBENCH:
+                openCustomInventory(inventory, player, "minecraft:crafting_table");
+                break;
+            case BREWING:
+                if (iinventory instanceof TileEntityBrewingStand) {
+                    getHandle().openContainer((TileEntityBrewingStand) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:brewing_stand");
+                }
+                break;
+            case ENCHANTING:
+                openCustomInventory(inventory, player, "minecraft:enchanting_table");
+                break;
+            case HOPPER:
+                if (iinventory instanceof TileEntityHopper) {
+                    getHandle().openContainer((TileEntityHopper) iinventory);
+                } else if (iinventory instanceof EntityMinecartHopper) {
+                    getHandle().openContainer((EntityMinecartHopper) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:hopper");
+                }
+                break;
+            case BEACON:
+                if (iinventory instanceof TileEntityBeacon) {
+                    getHandle().openContainer((TileEntityBeacon) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:beacon");
+                }
+                break;
+            case ANVIL:
+                if (iinventory instanceof BlockAnvil.TileEntityContainerAnvil) {
+                    getHandle().openTileEntity((BlockAnvil.TileEntityContainerAnvil) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:anvil");
+                }
+                break;
+            case CREATIVE:
+            case CRAFTING:
+                throw new IllegalArgumentException("Can't open a " + type + " inventory!");
         }
         if (getHandle().activeContainer == formerContainer) {
             return null;
