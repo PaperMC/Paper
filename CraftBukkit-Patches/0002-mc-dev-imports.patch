@@ -1,4 +1,4 @@
-From f11a143d3addb06ea169772e070441fabd20114d Mon Sep 17 00:00:00 2001
+From e3594bfb2e702b31dfb5ed0e2b1c00d58036449c Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 1 Dec 2013 15:10:48 +1100
 Subject: [PATCH] mc-dev imports
@@ -892,7 +892,7 @@ index 0000000..9f9b45d
 +}
 diff --git a/src/main/java/net/minecraft/server/BlockTNT.java b/src/main/java/net/minecraft/server/BlockTNT.java
 new file mode 100644
-index 0000000..f15b199
+index 0000000..de2d648
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/BlockTNT.java
 @@ -0,0 +1,102 @@
@@ -927,7 +927,7 @@ index 0000000..f15b199
 +
 +    public void wasExploded(World world, BlockPosition blockposition, Explosion explosion) {
 +        if (!world.isClientSide) {
-+            EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F), explosion.c());
++            EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F), explosion.getSource());
 +
 +            entitytntprimed.fuseTicks = world.random.nextInt(entitytntprimed.fuseTicks / 4) + entitytntprimed.fuseTicks / 8;
 +            world.addEntity(entitytntprimed);
@@ -2000,7 +2000,7 @@ index 0000000..27ce9d9
 +}
 diff --git a/src/main/java/net/minecraft/server/GenericAttributes.java b/src/main/java/net/minecraft/server/GenericAttributes.java
 new file mode 100644
-index 0000000..59b06c4
+index 0000000..3ed721a
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/GenericAttributes.java
 @@ -0,0 +1,114 @@
@@ -2015,11 +2015,11 @@ index 0000000..59b06c4
 +public class GenericAttributes {
 +
 +    private static final Logger f = LogManager.getLogger();
-+    public static final IAttribute maxHealth = (new AttributeRanged((IAttribute) null, "generic.maxHealth", 20.0D, 0.0D, Double.MAX_VALUE)).a("Max Health").a(true);
++    public static final IAttribute maxHealth = (new AttributeRanged((IAttribute) null, "generic.maxHealth", 20.0D, 0.0D, 1024.0D)).a("Max Health").a(true);
 +    public static final IAttribute FOLLOW_RANGE = (new AttributeRanged((IAttribute) null, "generic.followRange", 32.0D, 0.0D, 2048.0D)).a("Follow Range");
 +    public static final IAttribute c = (new AttributeRanged((IAttribute) null, "generic.knockbackResistance", 0.0D, 0.0D, 1.0D)).a("Knockback Resistance");
-+    public static final IAttribute MOVEMENT_SPEED = (new AttributeRanged((IAttribute) null, "generic.movementSpeed", 0.699999988079071D, 0.0D, Double.MAX_VALUE)).a("Movement Speed").a(true);
-+    public static final IAttribute ATTACK_DAMAGE = new AttributeRanged((IAttribute) null, "generic.attackDamage", 2.0D, 0.0D, Double.MAX_VALUE);
++    public static final IAttribute MOVEMENT_SPEED = (new AttributeRanged((IAttribute) null, "generic.movementSpeed", 0.699999988079071D, 0.0D, 1024.0D)).a("Movement Speed").a(true);
++    public static final IAttribute ATTACK_DAMAGE = new AttributeRanged((IAttribute) null, "generic.attackDamage", 2.0D, 0.0D, 2048.0D);
 +
 +    public static NBTTagList a(AttributeMapBase attributemapbase) {
 +        NBTTagList nbttaglist = new NBTTagList();
@@ -3006,6 +3006,51 @@ index 0000000..670d626
 +            this.k = i;
 +            this.l = j;
 +        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java b/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
+new file mode 100644
+index 0000000..9c7b691
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
+@@ -0,0 +1,39 @@
++package net.minecraft.server;
++
++import java.io.IOException;
++
++public class PacketHandshakingInSetProtocol implements Packet<PacketHandshakingInListener> {
++
++    private int a;
++    public String hostname;
++    public int port;
++    private EnumProtocol d;
++
++    public PacketHandshakingInSetProtocol() {}
++
++    public void a(PacketDataSerializer packetdataserializer) throws IOException {
++        this.a = packetdataserializer.e();
++        this.hostname = packetdataserializer.c(255);
++        this.port = packetdataserializer.readUnsignedShort();
++        this.d = EnumProtocol.a(packetdataserializer.e());
++    }
++
++    public void b(PacketDataSerializer packetdataserializer) throws IOException {
++        packetdataserializer.b(this.a);
++        packetdataserializer.a(this.hostname);
++        packetdataserializer.writeShort(this.port);
++        packetdataserializer.b(this.d.a());
++    }
++
++    public void a(PacketHandshakingInListener packethandshakinginlistener) {
++        packethandshakinginlistener.a(this);
++    }
++
++    public EnumProtocol a() {
++        return this.d;
++    }
++
++    public int b() {
++        return this.a;
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/PacketPlayInArmAnimation.java b/src/main/java/net/minecraft/server/PacketPlayInArmAnimation.java

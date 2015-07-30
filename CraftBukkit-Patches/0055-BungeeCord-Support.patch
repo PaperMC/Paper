@@ -1,4 +1,4 @@
-From 23a90b4cf1ac5f80a05667740682f33132c9942a Mon Sep 17 00:00:00 2001
+From 64df9839b2e8d17ad823bf8141192f40fe10e073 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 1 Dec 2013 18:18:41 +1100
 Subject: [PATCH] BungeeCord Support
@@ -6,7 +6,7 @@ Subject: [PATCH] BungeeCord Support
 Provides support for IP forwarding via BungeeCord.
 
 diff --git a/src/main/java/net/minecraft/server/HandshakeListener.java b/src/main/java/net/minecraft/server/HandshakeListener.java
-index e122df9..36af75a 100644
+index 53823c6..64f6a9b 100644
 --- a/src/main/java/net/minecraft/server/HandshakeListener.java
 +++ b/src/main/java/net/minecraft/server/HandshakeListener.java
 @@ -7,6 +7,7 @@ import java.util.HashMap;
@@ -23,9 +23,9 @@ index e122df9..36af75a 100644
                  this.b.a((PacketListener) (new LoginListener(this.a, this.b)));
 +                // Spigot Start
 +                if (org.spigotmc.SpigotConfig.bungee) {
-+                    String[] split = packethandshakinginsetprotocol.b.split("\00");
++                    String[] split = packethandshakinginsetprotocol.hostname.split("\00");
 +                    if ( split.length == 3 || split.length == 4 ) {
-+                        packethandshakinginsetprotocol.b = split[0];
++                        packethandshakinginsetprotocol.hostname = split[0];
 +                        b.l = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) b.getSocketAddress()).getPort());
 +                        b.spoofedUUID = com.mojang.util.UUIDTypeAdapter.fromString( split[2] );
 +                    } else
@@ -41,7 +41,7 @@ index e122df9..36af75a 100644
 +                    }
 +                }
 +                // Spigot End
-                 ((LoginListener) this.b.getPacketListener()).hostname = packethandshakinginsetprotocol.b + ":" + packethandshakinginsetprotocol.c; // CraftBukkit - set hostname
+                 ((LoginListener) this.b.getPacketListener()).hostname = packethandshakinginsetprotocol.hostname + ":" + packethandshakinginsetprotocol.port; // CraftBukkit - set hostname
              }
              break;
 diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
@@ -131,16 +131,16 @@ index 7623b42..7959242 100644
 +    // Spigot End
  }
 diff --git a/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java b/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
-index a1c5869..c91a695 100644
+index 9c7b691..fba8bba 100644
 --- a/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
 +++ b/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
 @@ -13,7 +13,7 @@ public class PacketHandshakingInSetProtocol implements Packet<PacketHandshakingI
  
      public void a(PacketDataSerializer packetdataserializer) throws IOException {
          this.a = packetdataserializer.e();
--        this.b = packetdataserializer.c(255);
-+        this.b = packetdataserializer.c(Short.MAX_VALUE); // Spigot
-         this.c = packetdataserializer.readUnsignedShort();
+-        this.hostname = packetdataserializer.c(255);
++        this.hostname = packetdataserializer.c(Short.MAX_VALUE); // Spigot
+         this.port = packetdataserializer.readUnsignedShort();
          this.d = EnumProtocol.a(packetdataserializer.e());
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
