@@ -927,7 +927,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public void wasExploded(World world, BlockPosition blockposition, Explosion explosion) {
 +        if (!world.isClientSide) {
-+            EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F), explosion.c());
++            EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F), explosion.getSource());
 +
 +            entitytntprimed.fuseTicks = world.random.nextInt(entitytntprimed.fuseTicks / 4) + entitytntprimed.fuseTicks / 8;
 +            world.addEntity(entitytntprimed);
@@ -2015,11 +2015,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +public class GenericAttributes {
 +
 +    private static final Logger f = LogManager.getLogger();
-+    public static final IAttribute maxHealth = (new AttributeRanged((IAttribute) null, "generic.maxHealth", 20.0D, 0.0D, Double.MAX_VALUE)).a("Max Health").a(true);
++    public static final IAttribute maxHealth = (new AttributeRanged((IAttribute) null, "generic.maxHealth", 20.0D, 0.0D, 1024.0D)).a("Max Health").a(true);
 +    public static final IAttribute FOLLOW_RANGE = (new AttributeRanged((IAttribute) null, "generic.followRange", 32.0D, 0.0D, 2048.0D)).a("Follow Range");
 +    public static final IAttribute c = (new AttributeRanged((IAttribute) null, "generic.knockbackResistance", 0.0D, 0.0D, 1.0D)).a("Knockback Resistance");
-+    public static final IAttribute MOVEMENT_SPEED = (new AttributeRanged((IAttribute) null, "generic.movementSpeed", 0.699999988079071D, 0.0D, Double.MAX_VALUE)).a("Movement Speed").a(true);
-+    public static final IAttribute ATTACK_DAMAGE = new AttributeRanged((IAttribute) null, "generic.attackDamage", 2.0D, 0.0D, Double.MAX_VALUE);
++    public static final IAttribute MOVEMENT_SPEED = (new AttributeRanged((IAttribute) null, "generic.movementSpeed", 0.699999988079071D, 0.0D, 1024.0D)).a("Movement Speed").a(true);
++    public static final IAttribute ATTACK_DAMAGE = new AttributeRanged((IAttribute) null, "generic.attackDamage", 2.0D, 0.0D, 2048.0D);
 +
 +    public static NBTTagList a(AttributeMapBase attributemapbase) {
 +        NBTTagList nbttaglist = new NBTTagList();
@@ -3006,6 +3006,51 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.k = i;
 +            this.l = j;
 +        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java b/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
+@@ -0,0 +0,0 @@
++package net.minecraft.server;
++
++import java.io.IOException;
++
++public class PacketHandshakingInSetProtocol implements Packet<PacketHandshakingInListener> {
++
++    private int a;
++    public String hostname;
++    public int port;
++    private EnumProtocol d;
++
++    public PacketHandshakingInSetProtocol() {}
++
++    public void a(PacketDataSerializer packetdataserializer) throws IOException {
++        this.a = packetdataserializer.e();
++        this.hostname = packetdataserializer.c(255);
++        this.port = packetdataserializer.readUnsignedShort();
++        this.d = EnumProtocol.a(packetdataserializer.e());
++    }
++
++    public void b(PacketDataSerializer packetdataserializer) throws IOException {
++        packetdataserializer.b(this.a);
++        packetdataserializer.a(this.hostname);
++        packetdataserializer.writeShort(this.port);
++        packetdataserializer.b(this.d.a());
++    }
++
++    public void a(PacketHandshakingInListener packethandshakinginlistener) {
++        packethandshakinginlistener.a(this);
++    }
++
++    public EnumProtocol a() {
++        return this.d;
++    }
++
++    public int b() {
++        return this.a;
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/PacketPlayInArmAnimation.java b/src/main/java/net/minecraft/server/PacketPlayInArmAnimation.java
