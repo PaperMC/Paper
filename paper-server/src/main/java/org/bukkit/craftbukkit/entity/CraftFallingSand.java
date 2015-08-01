@@ -47,4 +47,14 @@ public class CraftFallingSand extends CraftEntity implements FallingSand {
     public void setDropItem(boolean drop) {
         getHandle().dropItem = drop;
     }
+
+    @Override
+    public boolean canHurtEntities() {
+        return getHandle().hurtEntities;
+    }
+
+    @Override
+    public void setHurtEntities(boolean hurtEntities) {
+        getHandle().hurtEntities = hurtEntities;
+    }
 }
