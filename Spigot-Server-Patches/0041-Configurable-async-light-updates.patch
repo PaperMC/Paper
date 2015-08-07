@@ -1,4 +1,4 @@
-From 91555b67e652b6e5797f45ddc4090b0f01f81371 Mon Sep 17 00:00:00 2001
+From 8c3d7a7362a12d51282681fb5db2e24c2faedce7 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Wed, 1 Jul 2015 00:18:10 -0700
 Subject: [PATCH] Configurable async light updates
@@ -88,7 +88,7 @@ index 975d666..ae0f276 100644
              if (!this.world.c(i, j)) {
                  // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 915a02d..ed0b63d 100644
+index 915a02d..1779a5b 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -18,6 +18,12 @@ import org.bukkit.generator.ChunkGenerator;
@@ -108,7 +108,7 @@ index 915a02d..ed0b63d 100644
      public static boolean haveWeSilencedAPhysicsCrash;
      public static String blockLocation;
      private int tileTickPosition;
-+    public ExecutorService lightingExecutor; // PaperSpigot - Asynchronous lighting updates
++    public ExecutorService lightingExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("PaperSpigot - Lighting Thread").build()); // PaperSpigot - Asynchronous lighting updates
  
      public static long chunkToKey(int x, int z)
      {
@@ -148,7 +148,7 @@ index 915a02d..ed0b63d 100644
              // CraftBukkit end
              return false;
          } else {
-@@ -2479,11 +2486,70 @@ public abstract class World implements IBlockAccess {
+@@ -2479,11 +2486,66 @@ public abstract class World implements IBlockAccess {
                  }
              }
  
@@ -180,10 +180,6 @@ index 915a02d..ed0b63d 100644
 +
 +        if (!chunk.world.paperSpigotConfig.useAsyncLighting) {
 +            return this.c(enumskyblock, position, chunk, null);
-+        }
-+
-+        if (lightingExecutor == null) {
-+            lightingExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("PaperSpigot - Lighting Thread").build());
 +        }
 +
 +        chunk.pendingLightUpdates.incrementAndGet();
@@ -220,7 +216,7 @@ index 915a02d..ed0b63d 100644
          return false;
      }
 diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-index bcd8b65..fa9ae6c 100644
+index 8421e3b..fa5066b 100644
 --- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
 +++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
 @@ -244,4 +244,11 @@ public class PaperSpigotWorldConfig
