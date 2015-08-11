@@ -57,6 +57,7 @@ public class DyeColorTest {
     @Test
     public void getDyeDyeColor() {
         testColorable(new Dye(Material.INK_SACK, dye.getDyeData()));
+        testColorable(new Dye(dye));
     }
 
     @Test

@@ -45,6 +45,13 @@ public class Dye extends MaterialData implements Colorable {
     }
 
     /**
+     * @param color color of the dye
+     */
+    public Dye(final DyeColor color) {
+        super(Material.INK_SACK, color.getDyeData());
+    }
+
+    /**
      * Gets the current color of this dye
      *
      * @return DyeColor of this dye
