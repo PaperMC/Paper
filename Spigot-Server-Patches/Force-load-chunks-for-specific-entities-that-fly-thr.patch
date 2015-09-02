@@ -31,8 +31,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
-     public boolean valid; // CraftBukkit
      public org.bukkit.projectiles.ProjectileSource projectileSource; // CraftBukkit - For projectiles only
+     public boolean forceExplosionKnockback; // CraftBukkit - SPIGOT-949
      public boolean inUnloadedChunk = false; // PaperSpigot - Remove entities in unloaded chunks
 +    public boolean loadChunks = false; // PaperSpigot - Entities can load chunks they move through and keep them loaded
  
@@ -52,6 +52,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        }
 +    }
++
 +
      public void move(double d0, double d1, double d2) {
          org.bukkit.craftbukkit.SpigotTimings.entityMoveTimer.startTiming(); // Spigot
@@ -114,6 +115,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // CraftBukkit start
          // float f = 4.0F;
 -        
++
 +        // PaperSpigot start - Force load chunks during TNT explosions
 +        ChunkProviderServer chunkProviderServer = ((ChunkProviderServer) world.chunkProvider);
 +        boolean forceChunkLoad = chunkProviderServer.forceChunkLoad;
@@ -121,6 +123,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            chunkProviderServer.forceChunkLoad = true;
 +        }
 +        // PaperSpigot end
++
          org.bukkit.craftbukkit.CraftServer server = this.world.getServer();
  
          ExplosionPrimeEvent event = new ExplosionPrimeEvent((org.bukkit.entity.Explosive) org.bukkit.craftbukkit.entity.CraftEntity.getEntity(server, this));
@@ -128,6 +131,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.world.createExplosion(this, this.locX, this.locY + (double) (this.length / 2.0F), this.locZ, event.getRadius(), event.getFire(), true);
          }
          // CraftBukkit end
++
 +        // PaperSpigot start - Force load chunks during TNT explosions
 +        if (world.paperSpigotConfig.loadUnloadedTNTEntities) {
 +            chunkProviderServer.forceChunkLoad = forceChunkLoad;
@@ -193,10 +197,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          SpigotTimings.checkIfActiveTimer.startTiming();
          // Never safe to skip fireworks or entities not yet added to chunk
 -        if ( !entity.isAddedToChunk() || entity instanceof EntityFireworks ) {
-+        if ( !entity.isAddedToChunk() || entity instanceof EntityFireworks || entity.loadChunks ) {
++        if ( !entity.isAddedToChunk() || entity instanceof EntityFireworks || entity.loadChunks ) { // PaperSpigot
              SpigotTimings.checkIfActiveTimer.stopTiming();
              return true;
          }
--- 
-1.9.5.msysgit.1
-
+--
