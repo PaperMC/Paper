@@ -1,4 +1,4 @@
-From 0693755e94548a13ac3ffadc3830dc0a7fa240fe Mon Sep 17 00:00:00 2001
+From 2f171ca378d3e21e98af7b0c15209d882a64af2d Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Tue, 30 Jun 2015 20:45:24 -0700
 Subject: [PATCH] Force load chunks for specific entities that fly through
@@ -27,18 +27,18 @@ index ae0f276..0e6a37f 100644
              if (!this.world.c(i, j)) {
                  // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 2611007..f76c67d 100644
+index a3b4cdb..68126c4 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -115,6 +115,7 @@ public abstract class Entity implements ICommandListener {
-     public boolean valid; // CraftBukkit
+@@ -116,6 +116,7 @@ public abstract class Entity implements ICommandListener {
      public org.bukkit.projectiles.ProjectileSource projectileSource; // CraftBukkit - For projectiles only
+     public boolean forceExplosionKnockback; // CraftBukkit - SPIGOT-949
      public boolean inUnloadedChunk = false; // PaperSpigot - Remove entities in unloaded chunks
 +    public boolean loadChunks = false; // PaperSpigot - Entities can load chunks they move through and keep them loaded
  
      // Spigot start
      public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getEntityTimings(this); // Spigot
-@@ -402,8 +403,20 @@ public abstract class Entity implements ICommandListener {
+@@ -403,8 +404,21 @@ public abstract class Entity implements ICommandListener {
          return this.world.getCubes(this, axisalignedbb).isEmpty() && !this.world.containsLiquid(axisalignedbb);
      }
  
@@ -52,6 +52,7 @@ index 2611007..f76c67d 100644
 +            }
 +        }
 +    }
++
 +
      public void move(double d0, double d1, double d2) {
          org.bukkit.craftbukkit.SpigotTimings.entityMoveTimer.startTiming(); // Spigot
@@ -98,7 +99,7 @@ index 44219cd..34627c6 100644
  
      protected boolean s_() {
 diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
-index 1daba4e..3e16472 100644
+index 1daba4e..3a7c4fa 100644
 --- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
 +++ b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
 @@ -21,6 +21,7 @@ public class EntityTNTPrimed extends Entity {
@@ -109,11 +110,12 @@ index 1daba4e..3e16472 100644
      }
  
      public EntityTNTPrimed(org.bukkit.Location loc, World world, double d0, double d1, double d2, EntityLiving entityliving) {
-@@ -90,7 +91,13 @@ public class EntityTNTPrimed extends Entity {
+@@ -90,7 +91,15 @@ public class EntityTNTPrimed extends Entity {
      private void explode() {
          // CraftBukkit start
          // float f = 4.0F;
 -        
++
 +        // PaperSpigot start - Force load chunks during TNT explosions
 +        ChunkProviderServer chunkProviderServer = ((ChunkProviderServer) world.chunkProvider);
 +        boolean forceChunkLoad = chunkProviderServer.forceChunkLoad;
@@ -121,13 +123,15 @@ index 1daba4e..3e16472 100644
 +            chunkProviderServer.forceChunkLoad = true;
 +        }
 +        // PaperSpigot end
++
          org.bukkit.craftbukkit.CraftServer server = this.world.getServer();
  
          ExplosionPrimeEvent event = new ExplosionPrimeEvent((org.bukkit.entity.Explosive) org.bukkit.craftbukkit.entity.CraftEntity.getEntity(server, this));
-@@ -100,6 +107,11 @@ public class EntityTNTPrimed extends Entity {
+@@ -100,6 +109,12 @@ public class EntityTNTPrimed extends Entity {
              this.world.createExplosion(this, this.locX, this.locY + (double) (this.length / 2.0F), this.locZ, event.getRadius(), event.getFire(), true);
          }
          // CraftBukkit end
++
 +        // PaperSpigot start - Force load chunks during TNT explosions
 +        if (world.paperSpigotConfig.loadUnloadedTNTEntities) {
 +            chunkProviderServer.forceChunkLoad = forceChunkLoad;
@@ -137,7 +141,7 @@ index 1daba4e..3e16472 100644
  
      protected void b(NBTTagCompound nbttagcompound) {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index b66dd81..baedb39 100644
+index 1779a5b..27cb4ed 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1163,8 +1163,14 @@ public abstract class World implements IBlockAccess {
@@ -166,7 +170,7 @@ index b66dd81..baedb39 100644
                      this.getChunkAt(entity.ae, entity.ag).a(entity, entity.af);
                  }
 diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-index 6de509c..e6ecaff 100644
+index 36e0948..a78d748 100644
 --- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
 +++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
 @@ -259,4 +259,14 @@ public class PaperSpigotWorldConfig
@@ -185,7 +189,7 @@ index 6de509c..e6ecaff 100644
 +    }
  }
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index 7ca1b24..6cf26ff 100644
+index 7ca1b24..6f3734b 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -247,7 +247,7 @@ public class ActivationRange
@@ -193,10 +197,10 @@ index 7ca1b24..6cf26ff 100644
          SpigotTimings.checkIfActiveTimer.startTiming();
          // Never safe to skip fireworks or entities not yet added to chunk
 -        if ( !entity.isAddedToChunk() || entity instanceof EntityFireworks ) {
-+        if ( !entity.isAddedToChunk() || entity instanceof EntityFireworks || entity.loadChunks ) {
++        if ( !entity.isAddedToChunk() || entity instanceof EntityFireworks || entity.loadChunks ) { // PaperSpigot
              SpigotTimings.checkIfActiveTimer.stopTiming();
              return true;
          }
 -- 
-1.9.5.msysgit.1
+2.5.1
 
