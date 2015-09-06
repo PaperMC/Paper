@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -247,14 +249,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public List<org.bukkit.entity.Entity> getNearbyEntities(double x, double y, double z) {
-        @SuppressWarnings("unchecked")
-        List<Entity> notchEntityList = entity.world.getEntities(entity, entity.getBoundingBox().grow(x, y, z));
-        List<org.bukkit.entity.Entity> bukkitEntityList = new java.util.ArrayList<org.bukkit.entity.Entity>(notchEntityList.size());
-
-        for (Entity e : notchEntityList) {
-            bukkitEntityList.add(e.getBukkitEntity());
-        }
-        return bukkitEntityList;
+        return new ArrayList<org.bukkit.entity.Entity>(getHandle().getWorld().getWorld().getNearbyEntities(getLocation(), x, y, z));
     }
 
     public int getEntityId() {
