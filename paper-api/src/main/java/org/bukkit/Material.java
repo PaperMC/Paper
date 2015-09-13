@@ -209,7 +209,7 @@ public enum Material {
     WOOD_BUTTON(143, Button.class),
     SKULL(144, Skull.class),
     ANVIL(145),
-    TRAPPED_CHEST(146),
+    TRAPPED_CHEST(146, Chest.class),
     GOLD_PLATE(147),
     IRON_PLATE(148),
     REDSTONE_COMPARATOR_OFF(149),
