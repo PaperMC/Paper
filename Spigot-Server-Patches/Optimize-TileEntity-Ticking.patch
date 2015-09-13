@@ -78,6 +78,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+     // Spigot start - guard entity list from removals
+     public final List<Entity> entityList = new java.util.ArrayList<Entity>()
+     {
++        // PaperSpigot start - move always activated entities to top of tick list
++        @Override
++        public boolean add(Entity e)
++        {
++            if (e.defaultActivationState) {
++                super.add(0, e);
++                return true;
++            } else {
++                return super.add(e);
++            }
++        }
++        // PaperSpigot end
++
+         @Override
+         public Entity remove(int index)
+         {
+@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
      // Spigot end
      protected final List<Entity> g = Lists.newArrayList();
      public final List<TileEntity> h = Lists.newArrayList();
@@ -86,6 +106,72 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final List<TileEntity> b = Lists.newArrayList();
      private final List<TileEntity> c = Lists.newArrayList();
      public final List<EntityHuman> players = Lists.newArrayList();
+@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+         this.getServer().addWorld(this.world); 
+         // CraftBukkit end
+         this.keepSpawnInMemory = this.paperSpigotConfig.keepSpawnInMemory; // PaperSpigot
+-        timings = new SpigotTimings.WorldTimingsHandler(this); // Spigot - code below can generate new world and access timings 
++        timings = new SpigotTimings.WorldTimingsHandler(this); // Spigot - code below can generate new world and access timings
+         this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
+         this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
+     }
+@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+         guardEntityList = true; // Spigot
+         // CraftBukkit start - Use field for loop variable
+         int entitiesThisCycle = 0;
++
++        // PaperSpigot start - Compute minimum tick index
++        int minTickIndex = -1;
++        ListIterator<Entity> e = entityList.listIterator();
++        while (e.hasNext()) {
++            if (!e.next().defaultActivationState) {
++                minTickIndex = e.previousIndex();
++                break;
++            }
++        }
++        // PaperSpigot end
++
+         if (tickPosition < 0) tickPosition = 0;
+         for (entityLimiter.initTick();
+-                entitiesThisCycle < entityList.size() && (entitiesThisCycle % 10 == 0 || entityLimiter.shouldContinue());
++                entitiesThisCycle < entityList.size() && (tickPosition <= minTickIndex || entitiesThisCycle % 10 == 0 || entityLimiter.shouldContinue()); // PaperSpigot
+                 tickPosition++, entitiesThisCycle++) {
+             tickPosition = (tickPosition < entityList.size()) ? tickPosition : 0;
+             entity = (Entity) this.entityList.get(this.tickPosition);
+@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+             this.c.clear();
+         }
+         // CraftBukkit end
++        Iterator iterator = this.tileEntityList.iterator();
+ 
+-        // Spigot start
+-        int tilesThisCycle = 0;
+-        for (tileLimiter.initTick();
+-                tilesThisCycle < tileEntityList.size() && (tilesThisCycle % 10 == 0 || tileLimiter.shouldContinue());
+-                tileTickPosition++, tilesThisCycle++) {
+-            tileTickPosition = (tileTickPosition < tileEntityList.size()) ? tileTickPosition : 0;
+-            TileEntity tileentity = (TileEntity) this.tileEntityList.get(tileTickPosition);
+-            // Spigot start
++        while (iterator.hasNext()) {
++            TileEntity tileentity = (TileEntity) iterator.next();
+             if (tileentity == null) {
+                 getServer().getLogger().severe("Spigot has detected a null entity and has removed it, preventing a crash");
+-                tilesThisCycle--;
+-                this.tileEntityList.remove(tileTickPosition--);
++                iterator.remove();
+                 continue;
+             }
+             // Spigot end
+@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+             }
+ 
+             if (tileentity.x()) {
+-                tilesThisCycle--;
+-                this.tileEntityList.remove(tileTickPosition--);
++                iterator.remove();
+                 this.h.remove(tileentity);
+                 if (this.isLoaded(tileentity.getPosition())) {
+                     this.getChunkAtWorldCoords(tileentity.getPosition()).e(tileentity.getPosition());
 diff --git a/src/main/java/org/github/paperspigot/WorldTileEntityList.java b/src/main/java/org/github/paperspigot/WorldTileEntityList.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -260,5 +346,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +}
-\ No newline at end of file
 --
