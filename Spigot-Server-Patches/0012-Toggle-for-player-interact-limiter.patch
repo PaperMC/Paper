@@ -1,0 +1,42 @@
+From 0c1371c36a93de12180683ee8c33bb9fb8d61cec Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sat, 7 Mar 2015 21:07:10 -0600
+Subject: [PATCH] Toggle for player interact limiter
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 68358e9..7ea74c0 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -661,7 +661,8 @@ public class PlayerConnection implements PacketListenerPlayIn, IUpdatePlayerList
+         PlayerConnectionUtils.ensureMainThread(packetplayinblockplace, this, this.player.u());
+         WorldServer worldserver = this.minecraftServer.getWorldServer(this.player.dimension);
+         boolean throttled = false;
+-        if (lastPlace != -1 && packetplayinblockplace.timestamp - lastPlace < 30 && packets++ >= 4) {
++        // PaperSpigot - Allow disabling the player interaction limiter
++        if (org.github.paperspigot.PaperSpigotConfig.interactLimitEnabled && lastPlace != -1 && packetplayinblockplace.timestamp - lastPlace < 30 && packets++ >= 4) {
+             throttled = true;
+         } else if ( packetplayinblockplace.timestamp - lastPlace >= 30 || lastPlace == -1 )
+         {
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
+index 85ee51b..b0dd5b0 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
+@@ -144,4 +144,14 @@ public class PaperSpigotConfig
+     {
+         babyZombieMovementSpeed = getDouble( "settings.baby-zombie-movement-speed", 0.5D ); // Player moves at 0.1F, for reference
+     }
++
++    public static boolean interactLimitEnabled;
++    private static void interactLimitEnabled()
++    {
++        interactLimitEnabled = getBoolean( "settings.limit-player-interactions", true );
++        if ( !interactLimitEnabled )
++        {
++            Bukkit.getLogger().log( Level.INFO, "Disabling player interaction limiter, your server may be more vulnerable to malicious users" );
++        }
++    }
+ }
+-- 
+2.5.1
+

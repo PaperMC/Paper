@@ -1,0 +1,41 @@
+From e53f4135434c8a9b344c5bb03e9f7c963bbb7833 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Sun, 8 Mar 2015 01:06:14 -0600
+Subject: [PATCH] Remove invalid mob spawner tile entities
+
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 022ba31..7242d45 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -784,6 +784,11 @@ public class Chunk {
+             tileentity.D();
+             this.tileEntities.put(blockposition, tileentity);
+             // CraftBukkit start
++            // PaperSpigot start - Remove invalid mob spawner tile entities
++        } else if (this.world.paperSpigotConfig.removeInvalidMobSpawnerTEs && tileentity instanceof TileEntityMobSpawner &&
++                org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(getType(blockposition)) != org.bukkit.Material.MOB_SPAWNER) {
++            this.tileEntities.remove(blockposition);
++            // PaperSpigot end
+         } else {
+             System.out.println("Attempted to place a tile entity (" + tileentity + ") at " + tileentity.position.getX() + "," + tileentity.position.getY() + "," + tileentity.position.getZ()
+                 + " (" + org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(getType(blockposition)) + ") where there was no entity tile!");
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+index d0a97b6..5aa368f 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+@@ -205,4 +205,11 @@ public class PaperSpigotWorldConfig
+         waterOverLavaFlowSpeed = getInt( "water-over-lava-flow-speed", 5 );
+         log( "Water over lava flow speed: " + waterOverLavaFlowSpeed );
+     }
++
++    public boolean removeInvalidMobSpawnerTEs;
++    private void removeInvalidMobSpawnerTEs()
++    {
++        removeInvalidMobSpawnerTEs = getBoolean( "remove-invalid-mob-spawner-tile-entities", true );
++        log( "Remove invalid mob spawner tile entities: " + removeInvalidMobSpawnerTEs );
++    }
+ }
+-- 
+2.5.1
+

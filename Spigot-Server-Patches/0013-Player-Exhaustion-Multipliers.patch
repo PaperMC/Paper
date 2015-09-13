@@ -1,0 +1,59 @@
+From fbdc8216d9f45a2c13cdf26343f5306ccc73664b Mon Sep 17 00:00:00 2001
+From: gsand <gsandowns@gmail.com>
+Date: Sat, 7 Mar 2015 21:35:14 -0600
+Subject: [PATCH] Player Exhaustion Multipliers
+
+
+diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
+index 5e91e82..c26975a 100644
+--- a/src/main/java/net/minecraft/server/Block.java
++++ b/src/main/java/net/minecraft/server/Block.java
+@@ -566,7 +566,7 @@ public class Block {
+ 
+     public void a(World world, EntityHuman entityhuman, BlockPosition blockposition, IBlockData iblockdata, TileEntity tileentity) {
+         entityhuman.b(StatisticList.MINE_BLOCK_COUNT[getId(this)]);
+-        entityhuman.applyExhaustion(0.025F);
++        entityhuman.applyExhaustion(world.paperSpigotConfig.blockBreakExhaustion); // PaperSpigot - Configurable block break exhaustion
+         if (this.I() && EnchantmentManager.hasSilkTouchEnchantment(entityhuman)) {
+             ItemStack itemstack = this.i(iblockdata);
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index e705b86..ae2c44e 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -1370,13 +1370,13 @@ public abstract class EntityHuman extends EntityLiving {
+                 i = Math.round(MathHelper.sqrt(d0 * d0 + d1 * d1 + d2 * d2) * 100.0F);
+                 if (i > 0) {
+                     this.a(StatisticList.p, i);
+-                    this.applyExhaustion(0.015F * (float) i * 0.01F);
++                    this.applyExhaustion(world.paperSpigotConfig.playerSwimmingExhaustion * (float) i * 0.01F); // PaperSpigot - Configurable swimming exhaustion
+                 }
+             } else if (this.V()) {
+                 i = Math.round(MathHelper.sqrt(d0 * d0 + d2 * d2) * 100.0F);
+                 if (i > 0) {
+                     this.a(StatisticList.l, i);
+-                    this.applyExhaustion(0.015F * (float) i * 0.01F);
++                    this.applyExhaustion(world.paperSpigotConfig.playerSwimmingExhaustion * (float) i * 0.01F); // PaperSpigot - Configurable swimming (diving) exhaustion
+                 }
+             } else if (this.k_()) {
+                 if (d1 > 0.0D) {
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+index 5ae9afb..23a2a96 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+@@ -114,4 +114,12 @@ public class PaperSpigotWorldConfig
+         fishingMinTicks = getInt( "fishing-time-range.MinimumTicks", 100 );
+         fishingMaxTicks = getInt( "fishing-time-range.MaximumTicks", 900 );
+     }
++
++    public float blockBreakExhaustion;
++    public float playerSwimmingExhaustion;
++    private void exhaustionValues()
++    {
++        blockBreakExhaustion = getFloat( "player-exhaustion.block-break", 0.025F );
++        playerSwimmingExhaustion = getFloat( "player-exhaustion.swimming", 0.015F );
++    }
+ }
+-- 
+2.5.1
+
