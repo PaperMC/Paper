@@ -197,6 +197,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
                 } else {
                     openCustomInventory(inventory, player, "minecraft:dropper");
                 }
+                break;
             case FURNACE:
                 if (iinventory instanceof TileEntityFurnace) {
                     getHandle().openContainer((TileEntityFurnace) iinventory);
