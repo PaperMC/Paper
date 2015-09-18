@@ -52,6 +52,7 @@ public class Permission {
     }
 
     public Permission(String name, String description, PermissionDefault defaultValue, Map<String, Boolean> children) {
+        Validate.notNull(name, "Name cannot be null");
         this.name = name;
         this.description = (description == null) ? "" : description;
 

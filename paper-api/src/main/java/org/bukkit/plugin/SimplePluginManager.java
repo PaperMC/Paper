@@ -615,7 +615,7 @@ public final class SimplePluginManager implements PluginManager {
     }
 
     public void recalculatePermissionDefaults(Permission perm) {
-        if (permissions.containsValue(perm)) {
+        if (perm != null && permissions.containsKey(perm.getName().toLowerCase())) {
             defaultPerms.get(true).remove(perm);
             defaultPerms.get(false).remove(perm);
 
