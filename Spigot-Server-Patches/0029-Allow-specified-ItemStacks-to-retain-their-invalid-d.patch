@@ -1,0 +1,68 @@
+From 6a96486151df3e2561efe99e284926b68531aef0 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Sun, 30 Nov 2014 18:58:07 -0600
+Subject: [PATCH] Allow specified ItemStacks to retain their invalid data
+
+
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index 5496805..015ce28 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -18,6 +18,8 @@ import org.bukkit.entity.Player;
+ import org.bukkit.event.world.StructureGrowEvent;
+ // CraftBukkit end
+ 
++import org.github.paperspigot.PaperSpigotConfig; // PaperSpigot
++
+ public final class ItemStack {
+ 
+     public static final DecimalFormat a = new DecimalFormat("#.###");
+@@ -321,9 +323,13 @@ public final class ItemStack {
+         }
+ 
+         // Is this a block?
+-        if (CraftMagicNumbers.getBlock(CraftMagicNumbers.getId(this.getItem())) != Blocks.AIR) {
++        // PaperSpigot start - Allow specific blocks to retain their data values
++        int id = CraftMagicNumbers.getId(this.getItem());
++        if (CraftMagicNumbers.getBlock(id) != Blocks.AIR) {
+             // If vanilla doesn't use data on it don't allow any
+-            if (!(this.usesData() || this.getItem().usesDurability())) {
++            if ((PaperSpigotConfig.dataValueAllowedItems == null || !PaperSpigotConfig.dataValueAllowedItems.contains(id)) &&
++                    (!(this.usesData() || this.getItem().usesDurability()))) {
++            // PaperSpigot end
+                 i = 0;
+             }
+         }
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
+index 5df90f9..744773d 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
+@@ -6,11 +6,10 @@ import java.io.IOException;
+ import java.lang.reflect.InvocationTargetException;
+ import java.lang.reflect.Method;
+ import java.lang.reflect.Modifier;
+-import java.util.HashMap;
+-import java.util.List;
+-import java.util.Map;
++import java.util.*;
+ import java.util.logging.Level;
+ import net.minecraft.server.MinecraftServer;
++import org.apache.commons.lang.StringUtils;
+ import org.bukkit.Bukkit;
+ import org.bukkit.command.Command;
+ import org.bukkit.configuration.InvalidConfigurationException;
+@@ -162,4 +161,11 @@ public class PaperSpigotConfig
+         strengthEffectModifier = getDouble( "effect-modifiers.strength", 1.3D );
+         weaknessEffectModifier = getDouble( "effect-modifiers.weakness", -0.5D );
+     }
++
++    public static Set<Integer> dataValueAllowedItems;
++    private static void dataValueAllowedItems()
++    {
++        dataValueAllowedItems = new HashSet<Integer>( getList( "data-value-allowed-items", Collections.emptyList() ) );
++        Bukkit.getLogger().info( "Data value allowed items: " + StringUtils.join(dataValueAllowedItems, ", ") );
++    }
+ }
+-- 
+2.5.2
+

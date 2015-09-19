@@ -1,0 +1,45 @@
+From 3652d4118b8ce9662aff38f6c0f91afb578aea7c Mon Sep 17 00:00:00 2001
+From: Isaac Moore <rmsy@me.com>
+Date: Mon, 27 Apr 2015 21:41:39 -0500
+Subject: [PATCH] Add PlayerLocaleChangeEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 3810f86..be50b55 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -995,7 +995,13 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     }
+ 
+     public void a(PacketPlayInSettings packetplayinsettings) {
++        // PaperSpigot start - Add PlayerLocaleChangeEvent
++        String oldLocale = this.locale;
+         this.locale = packetplayinsettings.a();
++        if (!this.locale.equals(oldLocale)) {
++            CraftEventFactory.callPlayerLocaleChangeEvent(this, oldLocale, this.locale);
++        }
++        // PaperSpigot end
+         this.bR = packetplayinsettings.c();
+         this.bS = packetplayinsettings.d();
+         this.getDataWatcher().watch(10, Byte.valueOf((byte) packetplayinsettings.e()));
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index d1bd480..2dd8508 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -963,4 +963,13 @@ public class CraftEventFactory {
+         entityHuman.world.getServer().getPluginManager().callEvent(event);
+         return (Cancellable) event;
+     }
++
++    // PaperSpigot start - Add PlayerLocaleChangeEvent
++    public static PlayerLocaleChangeEvent callPlayerLocaleChangeEvent(EntityHuman who, String oldLocale, String newLocale) {
++        Player player = (Player) who.getBukkitEntity();
++        PlayerLocaleChangeEvent event = new PlayerLocaleChangeEvent(player, oldLocale, newLocale);
++        Bukkit.getPluginManager().callEvent(event);
++        return event;
++    }
++    // PaperSpigot end
+ }
+-- 
+2.5.2
+

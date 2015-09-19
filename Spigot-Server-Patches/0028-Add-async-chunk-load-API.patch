@@ -1,0 +1,38 @@
+From 33a53bb028aadbb40a503e0f4087cb6718bfc420 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 6 Nov 2014 18:29:20 -0600
+Subject: [PATCH] Add async chunk load API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 17f2c0a..552f5c3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -122,6 +122,24 @@ public class CraftWorld implements World {
+         }
+     }
+ 
++    // PaperSpigot start - Async chunk load API
++    public void getChunkAtAsync(final int x, final int z, final ChunkLoadCallback callback) {
++        final ChunkProviderServer cps = this.world.chunkProviderServer;
++        cps.getChunkAt(x, z, new Runnable() {
++            @Override
++            public void run() {
++                callback.onLoad(cps.getChunkAt(x, z).bukkitChunk);
++            }
++        });
++    }
++    public void getChunkAtAsync(Block block, ChunkLoadCallback callback) {
++        getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, callback);
++    }
++    public void getChunkAtAsync(Location location, ChunkLoadCallback callback) {
++        getChunkAtAsync(location.getBlockX() >> 4, location.getBlockZ() >> 4, callback);
++    }
++    // PaperSpigot end
++
+     public Chunk getChunkAt(int x, int z) {
+         return this.world.chunkProviderServer.getChunkAt(x, z).bukkitChunk;
+     }
+-- 
+2.5.2
+
