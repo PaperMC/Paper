@@ -17,29 +17,18 @@
  public class PacketStatusListener implements PacketStatusInListener {
  
      private static final IChatBaseComponent a = new ChatComponentText("Status request has been handled.");
-@@ -14,17 +25,116 @@
- 
-     public void a(IChatBaseComponent ichatbasecomponent) {}
- 
-+    // CraftBukkit start
-+    private static final int WAITING = 0;
-+    private static final int PING = 1;
-+    private static final int DONE = 2;
-+    private int state = WAITING;
-+    // CraftBukkit end
-+
+@@ -17,10 +28,96 @@
      public void a(PacketStatusInStart packetstatusinstart) {
--        if (this.d) {
-+        // this.networkManager.handle(new PacketStatusOutServerInfo(this.minecraftServer.aG()));
-+        // CraftBukkit start - fire ping event
-+        if (this.state != WAITING) {
+         if (this.d) {
              this.networkManager.close(PacketStatusListener.a);
 -        } else {
 -            this.d = true;
 -            this.networkManager.handle(new PacketStatusOutServerInfo(this.minecraftServer.aG()));
++            // CraftBukkit start - fire ping event
 +            return;
-         }
-+        state = PING;
++        }
++        this.d = true;
++        // this.networkManager.handle(new PacketStatusOutServerInfo(this.minecraftServer.aG()));
 +        final Object[] players = minecraftServer.getPlayerList().players.toArray();
 +        class ServerListPingEvent extends org.bukkit.event.server.ServerListPingEvent {
 +            CraftIconCache icon = minecraftServer.server.getServerIcon();
@@ -112,7 +101,7 @@
 +            if (player != null) {
 +                profiles.add(((EntityPlayer) player).getProfile());
 +            }
-+        }
+         }
 +
 +        ServerPing.ServerPingPlayerSample playerSample = new ServerPing.ServerPingPlayerSample(event.getMaxPlayers(), profiles.size());
 +        playerSample.a(profiles.toArray(new GameProfile[profiles.size()]));
@@ -128,15 +117,3 @@
      }
  
      public void a(PacketStatusInPing packetstatusinping) {
--        this.networkManager.handle(new PacketStatusOutPong(packetstatusinping.a()));
--        this.networkManager.close(PacketStatusListener.a);
-+        // CraftBukkit start
-+        if (state != PING) {
-+            this.networkManager.close(PacketStatusListener.a);
-+            return;
-+        }
-+        state = DONE;
-+        this.networkManager.a(new PacketStatusOutPong(packetstatusinping.a()), ChannelFutureListener.CLOSE); // Close on completion
-+        // CraftBukkit end
-     }
- }
