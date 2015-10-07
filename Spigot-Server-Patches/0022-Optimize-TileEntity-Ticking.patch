@@ -1,4 +1,4 @@
-From f86213eb2c1cef2e9cc2ccabf338ebd388c12dcb Mon Sep 17 00:00:00 2001
+From fe6d356b654fa7db3d8af58223ee4fb0ab50698a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 8 Mar 2015 22:55:25 -0600
 Subject: [PATCH] Optimize TileEntity Ticking
@@ -186,7 +186,7 @@ index 794cdc8..00fceda 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 641db2a..8a2d2c0 100644
+index 641db2a..53438b1 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -28,6 +28,18 @@ public abstract class World implements IBlockAccess {
@@ -208,6 +208,15 @@ index 641db2a..8a2d2c0 100644
          @Override
          public Entity remove(int index)
          {
+@@ -52,7 +64,7 @@ public abstract class World implements IBlockAccess {
+     };
+     // Spigot end
+     protected final List<Entity> g = Lists.newArrayList();
+-    public final List<TileEntity> h = Lists.newArrayList();
++    //public final List<TileEntity> h = Lists.newArrayList(); // PaperSpigot - Remove unused list
+     public final List<TileEntity> tileEntityList = Lists.newArrayList();
+     private final List<TileEntity> b = Lists.newArrayList();
+     private final List<TileEntity> c = Lists.newArrayList();
 @@ -1394,10 +1406,22 @@ public abstract class World implements IBlockAccess {
          guardEntityList = true; // Spigot
          // CraftBukkit start - Use field for loop variable
@@ -233,6 +242,51 @@ index 641db2a..8a2d2c0 100644
              tickPosition = (tickPosition < entityList.size()) ? tickPosition : 0;
              entity = (Entity) this.entityList.get(this.tickPosition);
              // CraftBukkit end
+@@ -1450,7 +1474,7 @@ public abstract class World implements IBlockAccess {
+         // CraftBukkit start - From below, clean up tile entities before ticking them
+         if (!this.c.isEmpty()) {
+             this.tileEntityList.removeAll(this.c);
+-            this.h.removeAll(this.c);
++            //this.h.removeAll(this.c); // PaperSpigot - Remove unused list
+             this.c.clear();
+         }
+         // CraftBukkit end
+@@ -1496,7 +1520,7 @@ public abstract class World implements IBlockAccess {
+             if (tileentity.x()) {
+                 tilesThisCycle--;
+                 this.tileEntityList.remove(tileTickPosition--);
+-                this.h.remove(tileentity);
++                //this.h.remove(tileentity); // PaperSpigot - Remove unused list
+                 if (this.isLoaded(tileentity.getPosition())) {
+                     this.getChunkAtWorldCoords(tileentity.getPosition()).e(tileentity.getPosition());
+                 }
+@@ -1543,7 +1567,7 @@ public abstract class World implements IBlockAccess {
+     }
+ 
+     public boolean a(TileEntity tileentity) {
+-        boolean flag = this.h.add(tileentity);
++        boolean flag = true; // PaperSpigot - Remove unused list
+ 
+         if (flag && tileentity instanceof IUpdatePlayerListBox) {
+             this.tileEntityList.add(tileentity);
+@@ -1561,7 +1585,7 @@ public abstract class World implements IBlockAccess {
+             while (iterator.hasNext()) {
+                 TileEntity tileentity = (TileEntity) iterator.next();
+ 
+-                this.h.add(tileentity);
++                //this.h.add(tileentity); // PaperSpigot - Remove unused list
+                 if (tileentity instanceof IUpdatePlayerListBox) {
+                     this.tileEntityList.add(tileentity);
+                 }
+@@ -1997,7 +2021,7 @@ public abstract class World implements IBlockAccess {
+         } else {
+             if (tileentity != null) {
+                 this.b.remove(tileentity);
+-                this.h.remove(tileentity);
++                //this.h.remove(tileentity); // PaperSpigot - Remove unused list
+                 this.tileEntityList.remove(tileentity);
+             }
+ 
 -- 
-2.6.0
+2.6.1.windows.1
 
