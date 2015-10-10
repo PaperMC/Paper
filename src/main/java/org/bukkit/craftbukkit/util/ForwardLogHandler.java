@@ -24,7 +24,7 @@ public class ForwardLogHandler extends ConsoleHandler {
 
     @Override
     public void publish(LogRecord record) {
-        Logger logger = getLogger(record.getLoggerName());
+        Logger logger = getLogger(String.valueOf(record.getLoggerName())); // See SPIGOT-1230
         Throwable exception = record.getThrown();
         Level level = record.getLevel();
         String message = getFormatter().formatMessage(record);
