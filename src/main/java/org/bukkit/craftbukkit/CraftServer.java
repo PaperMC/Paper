@@ -397,7 +397,7 @@ public final class CraftServer implements Server {
         int delta = Integer.MAX_VALUE;
         for (Player player : getOnlinePlayers()) {
             if (player.getName().toLowerCase().startsWith(lowerName)) {
-                int curDelta = player.getName().length() - lowerName.length();
+                int curDelta = Math.abs(player.getName().length() - lowerName.length());
                 if (curDelta < delta) {
                     found = player;
                     delta = curDelta;
