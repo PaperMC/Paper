@@ -1,4 +1,4 @@
-From 6ec7f2863ddf38e1c9bb2cb7df05f280e90fb860 Mon Sep 17 00:00:00 2001
+From 107454d78a44a4dd3d04fc0f68cce6b476ae6274 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 8 Mar 2015 22:55:25 -0600
 Subject: [PATCH] Optimize TileEntity Ticking
@@ -186,29 +186,10 @@ index 794cdc8..00fceda 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index acfceb8..1729071 100644
+index acfceb8..4b642ba 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -28,6 +28,18 @@ public abstract class World implements IBlockAccess {
-     // Spigot start - guard entity list from removals
-     public final List<Entity> entityList = new java.util.ArrayList<Entity>()
-     {
-+        // PaperSpigot start - move always activated entities to top of tick list
-+        @Override
-+        public boolean add(Entity e) {
-+            if (e.defaultActivationState) {
-+                super.add(0, e);
-+                return true;
-+            } else {
-+                return super.add(e);
-+            }
-+        }
-+        // PaperSpigot end
-+
-         @Override
-         public Entity remove(int index)
-         {
-@@ -52,7 +64,7 @@ public abstract class World implements IBlockAccess {
+@@ -52,7 +52,7 @@ public abstract class World implements IBlockAccess {
      };
      // Spigot end
      protected final List<Entity> g = Lists.newArrayList();
@@ -217,32 +198,7 @@ index acfceb8..1729071 100644
      public final List<TileEntity> tileEntityList = Lists.newArrayList();
      private final List<TileEntity> b = Lists.newArrayList();
      private final List<TileEntity> c = Lists.newArrayList();
-@@ -1394,10 +1406,22 @@ public abstract class World implements IBlockAccess {
-         guardEntityList = true; // Spigot
-         // CraftBukkit start - Use field for loop variable
-         int entitiesThisCycle = 0;
-+
-+        // PaperSpigot start - Compute minimum tick index
-+        int minTickIndex = -1;
-+        ListIterator<Entity> e = entityList.listIterator();
-+        while (e.hasNext()) {
-+            if (!e.next().defaultActivationState) {
-+                minTickIndex = e.previousIndex();
-+                break;
-+            }
-+        }
-+        // PaperSpigot end
-+
-         if (tickPosition < 0) tickPosition = 0;
-         for (entityLimiter.initTick();
--                entitiesThisCycle < entityList.size() && (entitiesThisCycle % 10 != 0 || entityLimiter.shouldContinue());
--                tickPosition++, entitiesThisCycle++) {
-+             entitiesThisCycle < entityList.size() && (tickPosition <= minTickIndex || entitiesThisCycle % 10 != 0 || entityLimiter.shouldContinue()); // PaperSpigot
-+             tickPosition++, entitiesThisCycle++) {
-             tickPosition = (tickPosition < entityList.size()) ? tickPosition : 0;
-             entity = (Entity) this.entityList.get(this.tickPosition);
-             // CraftBukkit end
-@@ -1450,7 +1474,7 @@ public abstract class World implements IBlockAccess {
+@@ -1450,7 +1450,7 @@ public abstract class World implements IBlockAccess {
          // CraftBukkit start - From below, clean up tile entities before ticking them
          if (!this.c.isEmpty()) {
              this.tileEntityList.removeAll(this.c);
@@ -251,7 +207,7 @@ index acfceb8..1729071 100644
              this.c.clear();
          }
          // CraftBukkit end
-@@ -1496,7 +1520,7 @@ public abstract class World implements IBlockAccess {
+@@ -1496,7 +1496,7 @@ public abstract class World implements IBlockAccess {
              if (tileentity.x()) {
                  tilesThisCycle--;
                  this.tileEntityList.remove(tileTickPosition--);
@@ -260,7 +216,7 @@ index acfceb8..1729071 100644
                  if (this.isLoaded(tileentity.getPosition())) {
                      this.getChunkAtWorldCoords(tileentity.getPosition()).e(tileentity.getPosition());
                  }
-@@ -1543,7 +1567,7 @@ public abstract class World implements IBlockAccess {
+@@ -1543,7 +1543,7 @@ public abstract class World implements IBlockAccess {
      }
  
      public boolean a(TileEntity tileentity) {
@@ -269,7 +225,7 @@ index acfceb8..1729071 100644
  
          if (flag && tileentity instanceof IUpdatePlayerListBox) {
              this.tileEntityList.add(tileentity);
-@@ -1561,7 +1585,7 @@ public abstract class World implements IBlockAccess {
+@@ -1561,7 +1561,7 @@ public abstract class World implements IBlockAccess {
              while (iterator.hasNext()) {
                  TileEntity tileentity = (TileEntity) iterator.next();
  
@@ -278,7 +234,7 @@ index acfceb8..1729071 100644
                  if (tileentity instanceof IUpdatePlayerListBox) {
                      this.tileEntityList.add(tileentity);
                  }
-@@ -1997,7 +2021,7 @@ public abstract class World implements IBlockAccess {
+@@ -1997,7 +1997,7 @@ public abstract class World implements IBlockAccess {
          } else {
              if (tileentity != null) {
                  this.b.remove(tileentity);
