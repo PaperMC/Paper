@@ -190,25 +190,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-     // Spigot start - guard entity list from removals
-     public final List<Entity> entityList = new java.util.ArrayList<Entity>()
-     {
-+        // PaperSpigot start - move always activated entities to top of tick list
-+        @Override
-+        public boolean add(Entity e) {
-+            if (e.defaultActivationState) {
-+                super.add(0, e);
-+                return true;
-+            } else {
-+                return super.add(e);
-+            }
-+        }
-+        // PaperSpigot end
-+
-         @Override
-         public Entity remove(int index)
-         {
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
      };
      // Spigot end
      protected final List<Entity> g = Lists.newArrayList();
@@ -217,31 +198,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public final List<TileEntity> tileEntityList = Lists.newArrayList();
      private final List<TileEntity> b = Lists.newArrayList();
      private final List<TileEntity> c = Lists.newArrayList();
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-         guardEntityList = true; // Spigot
-         // CraftBukkit start - Use field for loop variable
-         int entitiesThisCycle = 0;
-+
-+        // PaperSpigot start - Compute minimum tick index
-+        int minTickIndex = -1;
-+        ListIterator<Entity> e = entityList.listIterator();
-+        while (e.hasNext()) {
-+            if (!e.next().defaultActivationState) {
-+                minTickIndex = e.previousIndex();
-+                break;
-+            }
-+        }
-+        // PaperSpigot end
-+
-         if (tickPosition < 0) tickPosition = 0;
-         for (entityLimiter.initTick();
--                entitiesThisCycle < entityList.size() && (entitiesThisCycle % 10 != 0 || entityLimiter.shouldContinue());
--                tickPosition++, entitiesThisCycle++) {
-+             entitiesThisCycle < entityList.size() && (tickPosition <= minTickIndex || entitiesThisCycle % 10 != 0 || entityLimiter.shouldContinue()); // PaperSpigot
-+             tickPosition++, entitiesThisCycle++) {
-             tickPosition = (tickPosition < entityList.size()) ? tickPosition : 0;
-             entity = (Entity) this.entityList.get(this.tickPosition);
-             // CraftBukkit end
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
          // CraftBukkit start - From below, clean up tile entities before ticking them
          if (!this.c.isEmpty()) {
