@@ -325,7 +325,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public <T> void playEffect(Location loc, Effect effect, T data) {
         if (data != null) {
-            Validate.isTrue(data.getClass().equals(effect.getData()), "Wrong kind of data for this effect!");
+            Validate.isTrue(data.getClass().isAssignableFrom(effect.getData()), "Wrong kind of data for this effect!");
         } else {
             Validate.isTrue(effect.getData() == null, "Wrong kind of data for this effect!");
         }

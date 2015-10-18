@@ -826,7 +826,7 @@ public class CraftWorld implements World {
 
     public <T> void playEffect(Location loc, Effect effect, T data, int radius) {
         if (data != null) {
-            Validate.isTrue(data.getClass().equals(effect.getData()), "Wrong kind of data for this effect!");
+            Validate.isTrue(data.getClass().isAssignableFrom(effect.getData()), "Wrong kind of data for this effect!");
         } else {
             Validate.isTrue(effect.getData() == null, "Wrong kind of data for this effect!");
         }
