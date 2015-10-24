@@ -1,4 +1,4 @@
-From 0faf299cfd4aa28f0aec544159cc14bc475c08ef Mon Sep 17 00:00:00 2001
+From 397ba6e9dffea1e1a2541596adb6b037088b645f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 16 Oct 2015 22:14:48 -0500
 Subject: [PATCH] Optimize Entity and Tile Entity Removal
@@ -30,7 +30,7 @@ previously .removeAll would shift entity index order but the tick
 position was never moved to its new location.
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 68126c4..868064d 100644
+index 68126c4..3b995c5 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -32,7 +32,12 @@ import org.bukkit.event.entity.EntityPortalEvent;
@@ -38,17 +38,17 @@ index 68126c4..868064d 100644
  // CraftBukkit end
  
 -public abstract class Entity implements ICommandListener {
-+// PaperSpigot start - Optimized entity and tileentity removal
-+public abstract class Entity implements ICommandListener, org.github.paperspigot.OptimizedRemoveAll.Marker {
++// PaperSpigot start - Optimized TE/E Removal
++public abstract class Entity implements ICommandListener, org.github.paperspigot.OptimizedRemoveAllArrayList.Marker {
 +    private boolean needsRemoved = false;
 +    public boolean isToBeRemoved() { return needsRemoved; }
-+    public void markToBeRemoved() { needsRemoved = true; }
-+    // PaperSpigot end
++    public void setRemovalState(boolean removalState) { needsRemoved = removalState; }
++    // PaperSpigot End
  
      // CraftBukkit start
      private static final int CURRENT_LEVEL = 2;
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 3fc6450..a69a3c9 100644
+index 3fc6450..6d13a55 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
 @@ -9,7 +9,12 @@ import org.apache.logging.log4j.Logger;
@@ -56,183 +56,178 @@ index 3fc6450..a69a3c9 100644
  import org.bukkit.inventory.InventoryHolder; // CraftBukkit
  
 -public abstract class TileEntity {
-+// PaperSpigot start - Optimized entity and tileentity removal
-+public abstract class TileEntity implements org.github.paperspigot.OptimizedRemoveAll.Marker {
++// PaperSpigot start - Optimized TE/E Removal
++public abstract class TileEntity implements org.github.paperspigot.OptimizedRemoveAllArrayList.Marker {
 +    private boolean needsRemoved = false;
 +    public boolean isToBeRemoved() { return needsRemoved; }
-+    public void markToBeRemoved() { needsRemoved = true; }
++    public void setRemovalState(boolean removalState) { needsRemoved = removalState; }
 +    // PaperSpigot end
  
      public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getTileEntityTimings(this); // Spigot
      private static final Logger a = LogManager.getLogger();
+@@ -126,7 +131,7 @@ public abstract class TileEntity {
+     }
+ 
+     public boolean x() {
+-        return this.d;
++        return this.d && !isToBeRemoved(); // PaperSpigot - Optimize TE/E Removal
+     }
+ 
+     public void y() {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index a9c627e..eb5fe7f 100644
+index 13ab789..0c1ed6c 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1393,7 +1393,7 @@ public abstract class World implements IBlockAccess {
-         }
- 
-         this.methodProfiler.c("remove");
--        this.entityList.removeAll(this.g);
-+        tickPosition = org.github.paperspigot.OptimizedRemoveAll.removeAll(this.entityList, this.g, tickPosition); // PaperSpigot
- 
-         int j;
-         int k;
-@@ -1462,13 +1462,15 @@ public abstract class World implements IBlockAccess {
+@@ -32,7 +32,7 @@ public abstract class World implements IBlockAccess {
+     private int a = 63;
+     protected boolean e;
+     // Spigot start - guard entity list from removals
+-    public final List<Entity> entityList = new java.util.ArrayList<Entity>()
++    public final List<Entity> entityList = new org.github.paperspigot.OptimizedRemoveAllArrayList<Entity>() // PaperSpigot - Optimized TE/E Removal
+     {
+         @Override
+         public Entity remove(int index)
+@@ -59,7 +59,7 @@ public abstract class World implements IBlockAccess {
+     // Spigot end
+     protected final List<Entity> g = Lists.newArrayList();
+     //public final List<TileEntity> h = Lists.newArrayList(); // PaperSpigot - Remove unused list
+-    public final List<TileEntity> tileEntityList = Lists.newArrayList();
++    public final List<TileEntity> tileEntityList = new org.github.paperspigot.OptimizedRemoveAllArrayList<TileEntity>(); // PaperSpigot - Optimized TE/E Removal
+     private final List<TileEntity> b = Lists.newArrayList();
+     private final List<TileEntity> c = Lists.newArrayList();
+     public final List<EntityHuman> players = Lists.newArrayList();
+@@ -1462,13 +1462,14 @@ public abstract class World implements IBlockAccess {
                  }
  
                  guardEntityList = false; // Spigot
 -                this.entityList.remove(this.tickPosition--); // CraftBukkit - Use field for loop variable
-+                if (entity instanceof EntityPlayer) this.entityList.remove(this.tickPosition--); // CraftBukkit - Use field for loop variable // PaperSpigot
-+                else entity.markToBeRemoved(); // PaperSpigot
++                this.entityList.remove(entity); // CraftBukkit - Use field for loop variable // PaperSpigot - Optimized TE/E Removal
                  guardEntityList = true; // Spigot
                  this.b(entity);
              }
  
              this.methodProfiler.b();
          }
-+        tickPosition = org.github.paperspigot.OptimizedRemoveAll.removeAll(this.entityList, null, tickPosition); // PaperSpigot
++        this.entityList.removeAll(null); // PaperSpigot - Optimize TE/E Removal
          guardEntityList = false; // Spigot
  
          timings.entityTick.stopTiming(); // Spigot
-@@ -1477,7 +1479,7 @@ public abstract class World implements IBlockAccess {
-         this.M = true;
-         // CraftBukkit start - From below, clean up tile entities before ticking them
-         if (!this.c.isEmpty()) {
--            this.tileEntityList.removeAll(this.c);
-+            tileTickPosition = org.github.paperspigot.OptimizedRemoveAll.removeAll(this.tileEntityList, this.c, tileTickPosition); // PaperSpigot
-             //this.h.removeAll(this.c); // PaperSpigot - Remove unused list
-             this.c.clear();
-         }
-@@ -1526,13 +1528,15 @@ public abstract class World implements IBlockAccess {
+@@ -1524,13 +1525,14 @@ public abstract class World implements IBlockAccess {
  
              if (tileentity.x()) {
                  tilesThisCycle--;
 -                this.tileEntityList.remove(tileTickPosition--);
-+                tileentity.markToBeRemoved(); // PaperSpigot
-+                //this.tileEntityList.remove(tileTickPosition--);
++                this.tileEntityList.remove(tileentity); // PaperSpigot - Optimized TE/E Removal
                  //this.h.remove(tileentity); // PaperSpigot - Remove unused list
                  if (this.isLoaded(tileentity.getPosition())) {
                      this.getChunkAtWorldCoords(tileentity.getPosition()).e(tileentity.getPosition());
                  }
              }
          }
-+        tileTickPosition = org.github.paperspigot.OptimizedRemoveAll.removeAll(this.tileEntityList, null, tileTickPosition); // PaperSpigot
++        this.tileEntityList.removeAll(null); // PaperSpigot - Optimized TE/E Removal
  
          timings.tileEntityTick.stopTiming(); // Spigot
          timings.tileEntityPending.startTiming(); // Spigot
-@@ -2636,6 +2640,7 @@ public abstract class World implements IBlockAccess {
+@@ -2619,6 +2621,7 @@ public abstract class World implements IBlockAccess {
  
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
-+            if (entity.isToBeRemoved()) { continue; } // PaperSpigot
++            if (entity.isToBeRemoved()) { continue; } // PaperSpigot - Optimized TE/E Removal
  
              if (oclass.isAssignableFrom(entity.getClass()) && predicate.apply((T) entity)) { // CraftBukkit - fix decompile error
                  arraylist.add(entity);
-@@ -2705,6 +2710,7 @@ public abstract class World implements IBlockAccess {
+@@ -2703,6 +2706,7 @@ public abstract class World implements IBlockAccess {
  
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
-+            if (entity.isToBeRemoved()) { continue; } // PaperSpigot
++            if (entity.isToBeRemoved()) { continue; } // PaperSpigot - Optimized TE/E Removal
              // CraftBukkit start - Split out persistent check, don't apply it to special persistent mobs
              if (entity instanceof EntityInsentient) {
                  EntityInsentient entityinsentient = (EntityInsentient) entity;
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 4402d57..dbde8ab 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -647,7 +647,7 @@ public class CraftWorld implements World {
-                 Entity bukkitEntity = mcEnt.getBukkitEntity();
- 
-                 // Assuming that bukkitEntity isn't null
--                if (bukkitEntity != null) {
-+                if (bukkitEntity != null && !mcEnt.isToBeRemoved()) { // PaperSpigot
-                     list.add(bukkitEntity);
-                 }
-             }
-@@ -665,7 +665,7 @@ public class CraftWorld implements World {
-                 Entity bukkitEntity = mcEnt.getBukkitEntity();
- 
-                 // Assuming that bukkitEntity isn't null
--                if (bukkitEntity != null && bukkitEntity instanceof LivingEntity) {
-+                if (bukkitEntity != null && bukkitEntity instanceof LivingEntity && !mcEnt.isToBeRemoved()) { // PaperSpigot
-                     list.add((LivingEntity) bukkitEntity);
-                 }
-             }
-@@ -688,7 +688,7 @@ public class CraftWorld implements World {
-             if (entity instanceof net.minecraft.server.Entity) {
-                 Entity bukkitEntity = ((net.minecraft.server.Entity) entity).getBukkitEntity();
- 
--                if (bukkitEntity == null) {
-+                if (bukkitEntity == null || ((net.minecraft.server.Entity) entity).isToBeRemoved()) { // PaperSpigot
-                     continue;
-                 }
- 
-@@ -710,7 +710,7 @@ public class CraftWorld implements World {
-             if (entity instanceof net.minecraft.server.Entity) {
-                 Entity bukkitEntity = ((net.minecraft.server.Entity) entity).getBukkitEntity();
- 
--                if (bukkitEntity == null) {
-+                if (bukkitEntity == null || ((net.minecraft.server.Entity) entity).isToBeRemoved()) { // PaperSpigot
-                     continue;
-                 }
- 
-diff --git a/src/main/java/org/github/paperspigot/OptimizedRemoveAll.java b/src/main/java/org/github/paperspigot/OptimizedRemoveAll.java
+diff --git a/src/main/java/org/github/paperspigot/OptimizedRemoveAllArrayList.java b/src/main/java/org/github/paperspigot/OptimizedRemoveAllArrayList.java
 new file mode 100644
-index 0000000..0095c25
+index 0000000..6d4388a
 --- /dev/null
-+++ b/src/main/java/org/github/paperspigot/OptimizedRemoveAll.java
-@@ -0,0 +1,50 @@
++++ b/src/main/java/org/github/paperspigot/OptimizedRemoveAllArrayList.java
+@@ -0,0 +1,78 @@
 +package org.github.paperspigot;
 +
-+import java.util.List;
++import org.github.paperspigot.OptimizedRemoveAllArrayList.Marker;
++
++import java.util.ArrayList;
++import java.util.Collection;
 +
 +/**
 + * Improved algorithim for bulk removing entries from a list
-+ * <p>
++ *
 + * WARNING: This system only works on Identity Based lists,
 + * unlike traditional .removeAll() that operates on object equality.
++ *
 + */
-+public final class OptimizedRemoveAll {
-+    private OptimizedRemoveAll() {
++public class OptimizedRemoveAllArrayList<T extends Marker> extends ArrayList<T> {
++    public OptimizedRemoveAllArrayList(int initialCapacity) {
++        super(initialCapacity);
++    }
++
++    public OptimizedRemoveAllArrayList() {
++    }
++
++    public OptimizedRemoveAllArrayList(Collection<? extends T> c) {
++        super(c);
++    }
++
++    public OptimizedRemoveAllArrayList<T> clone() {
++        return new OptimizedRemoveAllArrayList<T>(this);
++    }
++
++    @Override
++    public boolean addAll(Collection<? extends T> c) {
++        for (T t : c) {
++            t.setRemovalState(false);
++        }
++        return super.addAll(c);
++    }
++
++    @Override
++    public boolean add(T t) {
++        t.setRemovalState(false);
++        return super.add(t);
++    }
++
++    @Override
++    public boolean remove(Object o) {
++        ((Marker) o).setRemovalState(true);
++        return true;
++    }
++
++    @Override
++    public boolean removeAll(Collection<?> c) {
++        if (c != null) {
++            for (Object o : c) {
++                ((Marker) o).setRemovalState(true);
++            }
++        }
++
++        int size = size();
++        int insertAt = 0;
++
++        for (int i = 0; i < size; i++) {
++            T el = get(i);
++
++            if (el != null && !el.isToBeRemoved()) {
++                set(insertAt++, el);
++            }
++        }
++        subList(insertAt, size).clear();
++
++        return size() != size;
 +    }
 +
 +    public interface Marker {
 +        boolean isToBeRemoved();
-+
-+        void markToBeRemoved();
++        void setRemovalState(boolean removalState);
 +    }
-+
-+    /**
-+     * More effecient removeAll method
-+     *
-+     * @param tickPosition Previous Tick Position
-+     * @return New Tick Position
-+     */
-+    public static <E extends Marker> int removeAll(List<E> list, List<E> removal, int tickPosition) {
-+        if (removal != null && !removal.isEmpty()) {
-+            int removalSize = removal.size();
-+            for (int i = 0; i < removalSize; i++) {
-+                removal.get(i).markToBeRemoved();
-+            }
-+        }
-+
-+        int size = list.size();
-+        int insertAt = 0;
-+        for (int i = 0; i < size; i++) {
-+            E el = list.get(i);
-+            if (i == tickPosition) {
-+                tickPosition = insertAt;
-+            }
-+            if (el != null && !el.isToBeRemoved()) {
-+                list.set(insertAt++, el);
-+            }
-+        }
-+        list.subList(insertAt, size).clear();
-+        return tickPosition;
-+    }
-+
 +}
 -- 
-2.6.1.windows.1
+2.6.2
 
