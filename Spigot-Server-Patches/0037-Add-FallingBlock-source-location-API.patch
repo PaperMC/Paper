@@ -1,6 +1,6 @@
-From c5e8524e67e8def786c77dc219c459d0ef932b4a Mon Sep 17 00:00:00 2001
-From: Zach Brown <zach.brown@destroystokyo.com>
-Date: Sun, 6 Dec 2015 17:12:38 -0600
+From 70501efcdaf3ca00782b429d7ec5d50aef96db37 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Fri, 17 Apr 2015 02:26:14 -0700
 Subject: [PATCH] Add FallingBlock source location API
 
 
@@ -98,6 +98,35 @@ index 86556cd..b34e93c 100644
      }
  
      public void a(boolean flag) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index d8417c9..c15a0ba 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -886,7 +886,10 @@ public class CraftWorld implements World {
+         double y = location.getBlockY() + 0.5;
+         double z = location.getBlockZ() + 0.5;
+ 
+-        EntityFallingBlock entity = new EntityFallingBlock(world, x, y, z, net.minecraft.server.Block.getById(material.getId()).fromLegacyData(data));
++        // PaperSpigot start - Add FallingBlock source location API
++        location = location.clone();
++        EntityFallingBlock entity = new EntityFallingBlock(location, world, x, y, z, net.minecraft.server.Block.getById(material.getId()).fromLegacyData(data));
++        // PaperSpigot end
+         entity.ticksLived = 1;
+ 
+         world.addEntity(entity, SpawnReason.CUSTOM);
+@@ -921,8 +924,10 @@ public class CraftWorld implements World {
+             IBlockData blockData = world.getType(new BlockPosition(x, y, z));
+             int type = CraftMagicNumbers.getId(blockData.getBlock());
+             int data = blockData.getBlock().toLegacyData(blockData);
+-
+-            entity = new EntityFallingBlock(world, x + 0.5, y + 0.5, z + 0.5, net.minecraft.server.Block.getById(type).fromLegacyData(data));
++            // PaperSpigot start - Add FallingBlock source location API
++            location = location.clone();
++            entity = new EntityFallingBlock(location, world, x + 0.5, y + 0.5, z + 0.5, net.minecraft.server.Block.getById(type).fromLegacyData(data));
++            // PaperSpigot end
+         } else if (Projectile.class.isAssignableFrom(clazz)) {
+             if (Snowball.class.isAssignableFrom(clazz)) {
+                 entity = new EntitySnowball(world, x, y, z);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingSand.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingSand.java
 index 75eed48..eedb66f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingSand.java
