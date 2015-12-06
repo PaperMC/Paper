@@ -530,7 +530,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
         }
 
         if (args.containsKey("amount")) {
-            amount = (Integer) args.get("amount");
+            amount = ((Number) args.get("amount")).intValue();
         }
 
         ItemStack result = new ItemStack(type, amount, damage);
