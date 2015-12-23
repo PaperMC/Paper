@@ -9,10 +9,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 +++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 @@ -0,0 +0,0 @@ public class EntityTrackerEntry {
+     private boolean x;
      private boolean y;
      public boolean n;
-     public Set<EntityPlayer> trackedPlayers = Sets.newHashSet();
-+    public Set<EntityPlayer> freshViewers = Sets.newHashSet(); // PaperSpigot
+-    public Set<EntityPlayer> trackedPlayers = Sets.newHashSet();
++    // PaperSpigot start
++    // Replace trackedPlayers Set with a Map. The value is true until the player receives
++    // their first update (which is forced to have absolute coordinates), false afterward.
++    public java.util.Map<EntityPlayer, Boolean> trackedPlayerMap = new java.util.HashMap<EntityPlayer, Boolean>();
++    public Set<EntityPlayer> trackedPlayers = trackedPlayerMap.keySet();
++    // PaperSpigot end
  
      public EntityTrackerEntry(Entity entity, int i, int j, boolean flag) {
          this.tracker = entity;
@@ -26,7 +32,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                    this.yLoc = j;
 -                    this.zLoc = k;
 -                }
-+                if (this.m > 0 || this.tracker instanceof EntityArrow) {  // PaperSpigot - Move up
++                if (this.m > 0 || this.tracker instanceof EntityArrow) { // PaperSpigot - Moved up
 +                    // CraftBukkit start - Code moved from below
 +                    if (flag) {
 +                        this.xLoc = i;
@@ -59,18 +65,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    if (object instanceof PacketPlayOutEntityTeleport) {
 +                        this.broadcast((Packet) object);
 +                    } else {
-+                        PacketPlayOutEntityTeleport teleportPacket = new PacketPlayOutEntityTeleport(this.tracker.getId(), i, j, k, (byte) l, (byte) i1, this.tracker.onGround);
++                        PacketPlayOutEntityTeleport teleportPacket = null;
 +
-+                        for (EntityPlayer viewer : (Set<EntityPlayer>) this.trackedPlayers) {
-+                            if (this.freshViewers.contains(viewer)) {
-+                                viewer.playerConnection.sendPacket(teleportPacket);
++                        for (java.util.Map.Entry<EntityPlayer, Boolean> viewer : trackedPlayerMap.entrySet()) {
++                            if (viewer.getValue()) {
++                                viewer.setValue(false);
++                                if (teleportPacket == null) {
++                                    teleportPacket = new PacketPlayOutEntityTeleport(this.tracker.getId(), i, j, k, (byte) l, (byte) i1, this.tracker.onGround);
++                                }
++                                viewer.getKey().playerConnection.sendPacket(teleportPacket);
 +                            } else {
-+                                viewer.playerConnection.sendPacket((Packet) object);
++                                viewer.getKey().playerConnection.sendPacket((Packet) object);
 +                            }
 +                        }
 +                    }
-+
-+                    this.freshViewers.clear();
 +                    // PaperSpigot end
                  }
  
@@ -79,8 +87,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                      entityplayer.removeQueue.remove(Integer.valueOf(this.tracker.getId()));
                      // CraftBukkit end
-+                    this.freshViewers.add(entityplayer); // PaperSpigot
-                     this.trackedPlayers.add(entityplayer);
+-                    this.trackedPlayers.add(entityplayer);
++                    this.trackedPlayerMap.put(entityplayer, true); // PaperBukkit
                      Packet packet = this.c();
  
+                     entityplayer.playerConnection.sendPacket(packet);
 --
