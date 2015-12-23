@@ -1,0 +1,39 @@
+From 9a4310cbb356279870135af7e2c69828cc462a90 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 22 Dec 2015 18:16:11 -0600
+Subject: [PATCH] EAR: Fix bug with teleporting entities
+
+[17:53:15] <Aikar> had a reproduceable issue of losing entities on teleport, now resolved
+https://hub.spigotmc.org/stash/projects/SPIGOT/repos/spigot/pull-requests/52/overview
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 68126c4..20cc946 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -96,10 +96,19 @@ public abstract class Entity implements ICommandListener {
+     protected DataWatcher datawatcher;
+     private double ar;
+     private double as;
+-    public boolean ad; public boolean isAddedToChunk() { return ad; } // Spigot // PAIL
+-    public int ae;
+-    public int af;
+-    public int ag;
++    public boolean ad;
++    // PaperSpigot start - EAR: Fix bug with teleporting entities
++    public boolean isAddedToChunk() {
++        int chunkX = MathHelper.floor(locX / 16.0D);
++        int chunkY = MathHelper.floor(locY / 16.0D);
++        int chunkZ = MathHelper.floor(locZ / 16.0D);
++
++        return ad && getChunkX() == chunkX && getChunkY() == chunkY || getChunkZ() == chunkZ;
++    }
++    public int ae; public int getChunkX() { return ae; } // PAIL
++    public int af; public int getChunkY() { return af; } // PAIL
++    public int ag; public int getChunkZ() { return ag; } // PAIL
++    // PaperSpigot end
+     public boolean ah;
+     public boolean ai;
+     public int portalCooldown;
+-- 
+2.6.4
+
