@@ -21,6 +21,13 @@ if [ ! -f  "$jarpath.jar" ]; then
     fi
 fi
 
+# OS X doesn't have md5sum, just md5 -r
+if [[ "$OSTYPE" == "darwin"* ]]; then
+   shopt -s expand_aliases
+   alias md5sum='md5 -r'
+   echo "Using an alias for md5sum on OS X"
+fi
+
 checksum=$(md5sum "$jarpath.jar" | cut -d ' ' -f 1)
 if [ "$checksum" != "$minecrafthash" ]; then
     echo "The MD5 checksum of the downloaded server jar does not match the BuildData hash."
