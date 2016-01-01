@@ -97,7 +97,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
         if (xMin >= xMax || yMin >= yMax || zMin >= zMax) {
             return;
         }
-        char typeChar = (char) (blockId << 4 | data);
+        char typeChar = (char) ((blockId << 4) | data);
         if (xMin == 0 && xMax == 0x10) {
             if (zMin == 0 && zMax == 0x10) {
                 for (int y = yMin & 0xf0; y < yMax; y += 0x10) {
@@ -110,7 +110,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
                             // First chunk section
                             Arrays.fill(section, (yMin & 0xf) << 8, 0x1000, typeChar);
                         }
-                    } else if (y + 0x10 >= yMax) {
+                    } else if (y + 0x10 > yMax) {
                         // Last chunk section
                         Arrays.fill(section, 0, (yMax & 0xf) << 8, typeChar);
                     } else {
@@ -123,7 +123,8 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
                     char[] section = getChunkSection(y, true);
                     int offsetBase = (y & 0xf) << 8;
                     int min = offsetBase | (zMin << 4);
-                    int max = offsetBase | (zMax << 4);
+                    // Need to add zMax as it can be 16, which overlaps the y coordinate bits
+                    int max = offsetBase + (zMax << 4);
                     Arrays.fill(section, min, max, typeChar);
                 }
             }
@@ -132,8 +133,9 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
                 char[] section = getChunkSection(y, true);
                 int offsetBase = (y & 0xf) << 8;
                 for (int z = zMin; z < zMax; z++) {
-                    int offset = offsetBase | z << 4;
-                    Arrays.fill(section, offset | xMin, offset | xMax, typeChar);
+                    int offset = offsetBase | (z << 4);
+                    // Need to add xMax as it can be 16, which overlaps the z coordinate bits
+                    Arrays.fill(section, offset | xMin, offset + xMax, typeChar);
                 }
             }
         }
