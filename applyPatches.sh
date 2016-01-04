@@ -10,23 +10,21 @@ function applyPatch {
     branch=$3
     cd "$basedir/$what"
     git fetch
-    git reset --hard "$branch"
-    git branch -f upstream >/dev/null
+    git branch -f upstream "$branch" >/dev/null
 
     cd "$basedir"
     if [ ! -d  "$basedir/$target" ]; then
-        git clone $1 $target -b upstream
+        git clone "$what" "$target"
     fi
     cd "$basedir/$target"
     echo "Resetting $target to $what..."
-    git remote rm upstream 2>/dev/null 2>&1
-    git remote add upstream ../$what >/dev/null 2>&1
+    git remote add -f upstream ../$what >/dev/null 2>&1
     git checkout master >/dev/null 2>&1
     git fetch upstream >/dev/null 2>&1
     git reset --hard upstream/upstream
     echo "  Applying patches to $target..."
-    git am --abort
-    git am --3way "$basedir/${what}-Patches/"*.patch
+    git am --abort >/dev/null 2>&1
+    git am --3way --ignore-whitespace "$basedir/${what}-Patches/"*.patch
     if [ "$?" != "0" ]; then
         echo "  Something did not apply cleanly to $target."
         echo "  Please review above details and finish the apply then"
@@ -37,14 +35,5 @@ function applyPatch {
     fi
 }
 
-echo
-echo "Applying SpigotMC patches to CraftBukkit and Bukkit"
-echo
-cd ../Bukkit
-hash=$(git rev-parse HEAD)
-git branch -f spigot "$hash"
-applyPatch Bukkit Spigot-API origin/spigot && applyPatch CraftBukkit Spigot-Server origin/patched
-echo
-echo "Applying PaperSpigot patches to Spigot-Server and Spigot-API"
-echo
-applyPatch Spigot-API PaperSpigot-API && applyPatch Spigot-Server PaperSpigot-Server
+applyPatch Bukkit Spigot-API HEAD && applyPatch CraftBukkit Spigot-Server patched
+applyPatch Spigot-API PaperSpigot-API HEAD && applyPatch Spigot-Server PaperSpigot-Server HEAD
