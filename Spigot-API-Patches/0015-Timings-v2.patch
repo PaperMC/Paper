@@ -1,4 +1,4 @@
-From 266ed3fd268507677b3fe0706424b0217a76e84c Mon Sep 17 00:00:00 2001
+From 32fbda75d86e0e21c17f414a6e01c1f51eb369a2 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 8 Jan 2016 23:12:28 -0600
 Subject: [PATCH] Timings v2
@@ -22,663 +22,15 @@ index 2c43d25..7dd0adb 100644
              <groupId>commons-lang</groupId>
              <artifactId>commons-lang</artifactId>
              <version>2.6</version>
-diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 584fe11..a4396e8 100644
---- a/src/main/java/org/bukkit/Bukkit.java
-+++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -533,7 +533,6 @@ public final class Bukkit {
-      */
-     public static void reload() {
-         server.reload();
--        org.spigotmc.CustomTimingsHandler.reload(); // Spigot
-     }
- 
-     /**
-diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 26acdda..ae75bd4 100644
---- a/src/main/java/org/bukkit/Server.java
-+++ b/src/main/java/org/bukkit/Server.java
-@@ -926,12 +926,27 @@ public interface Server extends PluginMessageRecipient {
- 
-     public class Spigot
-     {
--
-+        @Deprecated
-         public org.bukkit.configuration.file.YamlConfiguration getConfig()
-         {
-             throw new UnsupportedOperationException( "Not supported yet." );
-         }
- 
-+        public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig()
-+        {
-+            throw new UnsupportedOperationException( "Not supported yet." );
-+        }
-+
-+        public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig()
-+        {
-+            throw new UnsupportedOperationException("Not supported yet.");
-+        }
-+
-+        public org.bukkit.configuration.file.YamlConfiguration getPaperSpigotConfig()
-+        {
-+            throw new UnsupportedOperationException("Not supported yet.");
-+        }
-+
-         /**
-          * Sends the component to the player
-          *
-diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
-index 0ba9b1c..535cdd6 100644
---- a/src/main/java/org/bukkit/command/Command.java
-+++ b/src/main/java/org/bukkit/command/Command.java
-@@ -31,7 +31,8 @@ public abstract class Command {
-     protected String usageMessage;
-     private String permission;
-     private String permissionMessage;
--    public org.spigotmc.CustomTimingsHandler timings; // Spigot
-+    public org.spigotmc.timings.Timing timings; // Spigot
-+    public String getTimingName() {return getName();} // Spigot
- 
-     protected Command(String name) {
-         this(name, "", "/" + name, new ArrayList<String>());
-@@ -45,7 +46,6 @@ public abstract class Command {
-         this.usageMessage = usageMessage;
-         this.aliases = aliases;
-         this.activeAliases = new ArrayList<String>(aliases);
--        this.timings = new org.spigotmc.CustomTimingsHandler("** Command: " + name); // Spigot
-     }
- 
-     /**
-@@ -229,7 +229,6 @@ public abstract class Command {
-     public boolean setLabel(String name) {
-         this.nextLabel = name;
-         if (!isRegistered()) {
--            this.timings = new org.spigotmc.CustomTimingsHandler("** Command: " + name); // Spigot
-             this.label = name;
-             return true;
-         }
-diff --git a/src/main/java/org/bukkit/command/FormattedCommandAlias.java b/src/main/java/org/bukkit/command/FormattedCommandAlias.java
-index 3f07d7f..c901a24 100644
---- a/src/main/java/org/bukkit/command/FormattedCommandAlias.java
-+++ b/src/main/java/org/bukkit/command/FormattedCommandAlias.java
-@@ -14,6 +14,7 @@ public class FormattedCommandAlias extends Command {
- 
-     public FormattedCommandAlias(String alias, String[] formatStrings) {
-         super(alias);
-+        timings = org.spigotmc.timings.TimingsManager.getCommandTiming("minecraft", this); // Spigot
-         this.formatStrings = formatStrings;
-     }
- 
-@@ -118,6 +119,9 @@ public class FormattedCommandAlias extends Command {
-         return formatString;
-     }
- 
-+    @Override // Spigot
-+    public String getTimingName() {return "Command Forwarder - " + super.getTimingName();} // Spigot
-+
-     private static boolean inRange(int i, int j, int k) {
-         return i >= j && i <= k;
-     }
-diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-index a08a49d..d11cbc2 100644
---- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
-+++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-@@ -31,7 +31,7 @@ public class SimpleCommandMap implements CommandMap {
-         register("bukkit", new VersionCommand("version"));
-         register("bukkit", new ReloadCommand("reload"));
-         register("bukkit", new PluginsCommand("plugins"));
--        register("bukkit", new TimingsCommand("timings"));
-+        register("bukkit", new org.spigotmc.timings.TimingsCommand("timings")); // Spigot
-     }
- 
-     public void setFallbackCommands() {
-@@ -60,6 +60,7 @@ public class SimpleCommandMap implements CommandMap {
-      * {@inheritDoc}
-      */
-     public boolean register(String label, String fallbackPrefix, Command command) {
-+        command.timings = org.spigotmc.timings.TimingsManager.getCommandTiming(fallbackPrefix, command); // Spigot
-         label = label.toLowerCase().trim();
-         fallbackPrefix = fallbackPrefix.toLowerCase().trim();
-         boolean registered = register(label, command, false, fallbackPrefix);
-diff --git a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java b/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
-index 9782a3b..80e0b0f 100644
---- a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
-+++ b/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
-@@ -33,87 +33,22 @@ import org.spigotmc.CustomTimingsHandler;
- // Spigot end
- 
- public class TimingsCommand extends BukkitCommand {
--    private static final List<String> TIMINGS_SUBCOMMANDS = ImmutableList.of("report", "reset", "on", "off", "paste"); // Spigot
--    public static long timingStart = 0; // Spigot
-+    public static final List<String> TIMINGS_SUBCOMMANDS = ImmutableList.of("merged", "reset", "separate");
- 
-     public TimingsCommand(String name) {
-         super(name);
--        this.description = "Manages Spigot Timings data to see performance of the server."; // Spigot
--        this.usageMessage = "/timings <reset|report|on|off|paste>"; // Spigot
-+        this.description = "Records timings for all plugin events";
-+        this.usageMessage = "/timings <reset>";
-         this.setPermission("bukkit.command.timings");
-     }
- 
--    // Spigot start - redesigned Timings Command
--    public void executeSpigotTimings(CommandSender sender, String[] args) {
--        if ( "on".equals( args[0] ) )
--        {
--            ( (SimplePluginManager) Bukkit.getPluginManager() ).useTimings( true );
--            CustomTimingsHandler.reload();
--            sender.sendMessage( "Enabled Timings & Reset" );
--            return;
--        } else if ( "off".equals( args[0] ) )
--        {
--            ( (SimplePluginManager) Bukkit.getPluginManager() ).useTimings( false );
--            sender.sendMessage( "Disabled Timings" );
--            return;
--        }
--
--        if ( !Bukkit.getPluginManager().useTimings() )
--        {
--            sender.sendMessage( "Please enable timings by typing /timings on" );
--            return;
--        }
--
--        boolean paste = "paste".equals( args[0] );
--        if ("reset".equals(args[0])) {
--            CustomTimingsHandler.reload();
--            sender.sendMessage("Timings reset");
--        } else if ("merged".equals(args[0]) || "report".equals(args[0]) || paste) {
--            long sampleTime = System.nanoTime() - timingStart;
--            int index = 0;
--            File timingFolder = new File("timings");
--            timingFolder.mkdirs();
--            File timings = new File(timingFolder, "timings.txt");
--            ByteArrayOutputStream bout = ( paste ) ? new ByteArrayOutputStream() : null;
--            while (timings.exists()) timings = new File(timingFolder, "timings" + (++index) + ".txt");
--            PrintStream fileTimings = null;
--            try {
--                fileTimings = ( paste ) ? new PrintStream( bout ) : new PrintStream( timings );
--
--                CustomTimingsHandler.printTimings(fileTimings);
--                fileTimings.println( "Sample time " + sampleTime + " (" + sampleTime / 1E9 + "s)" );
--
--                fileTimings.println( "<spigotConfig>" );
--                fileTimings.println( Bukkit.spigot().getConfig().saveToString() );
--                fileTimings.println( "</spigotConfig>" );
--
--                if ( paste )
--                {
--                    new PasteThread( sender, bout ).start();
--                    return;
--                }
--
--                sender.sendMessage("Timings written to " + timings.getPath());
--                sender.sendMessage( "Paste contents of file into form at http://aikar.co/timings.php to read results." );
--
--            } catch (IOException e) {
--            } finally {
--                if (fileTimings != null) {
--                    fileTimings.close();
--                }
--            }
--        }
--    }
--    // Spigot end
--
-     @Override
-     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
-         if (!testPermission(sender)) return true;
--        if (args.length < 1)  { // Spigot
-+        if (args.length != 1)  {
-             sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
-             return false;
-         }
--        if (true) { executeSpigotTimings(sender, args); return true; } // Spigot
-         if (!sender.getServer().getPluginManager().useTimings()) {
-             sender.sendMessage("Please enable timings by setting \"settings.plugin-profiling\" to true in bukkit.yml");
-             return true;
-@@ -199,55 +134,4 @@ public class TimingsCommand extends BukkitCommand {
-         }
-         return ImmutableList.of();
-     }
--
--    // Spigot start
--    private static class PasteThread extends Thread
--    {
--
--        private final CommandSender sender;
--        private final ByteArrayOutputStream bout;
--
--        public PasteThread(CommandSender sender, ByteArrayOutputStream bout)
--        {
--            super( "Timings paste thread" );
--            this.sender = sender;
--            this.bout = bout;
--        }
--
--        @Override
--        public synchronized void start() {
--            if (sender instanceof RemoteConsoleCommandSender) {
--                run();
--            } else {
--                super.start();
--            }
--        }
--
--        @Override
--        public void run()
--        {
--            try
--            {
--                HttpURLConnection con = (HttpURLConnection) new URL( "http://paste.ubuntu.com/" ).openConnection();
--                con.setDoOutput( true );
--                con.setRequestMethod( "POST" );
--                con.setInstanceFollowRedirects( false );
--
--                OutputStream out = con.getOutputStream();
--                out.write( "poster=Spigot&syntax=text&content=".getBytes( "UTF-8" ) );
--                out.write( URLEncoder.encode( bout.toString( "UTF-8" ), "UTF-8" ).getBytes( "UTF-8" ) );
--                out.close();
--                con.getInputStream().close();
--
--                String location = con.getHeaderField( "Location" );
--                String pasteID = location.substring( "http://paste.ubuntu.com/".length(), location.length() - 1 );
--                sender.sendMessage( ChatColor.GREEN + "Timings results can be viewed at http://aikar.co/timings.php?url=" + pasteID );
--            } catch ( IOException ex )
--            {
--                sender.sendMessage( ChatColor.RED + "Error pasting timings, check your console for more information" );
--                Bukkit.getServer().getLogger().log( Level.WARNING, "Could not paste timings", ex );
--            }
--        }
--    }
--    // Spigot end
- }
-diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 7522d45..c0ebe65 100644
---- a/src/main/java/org/bukkit/entity/Player.java
-+++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -1203,6 +1203,11 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
-         {
-             throw new UnsupportedOperationException( "Not supported yet" );
-         }
-+
-+        public int getPing()
-+        {
-+            throw new UnsupportedOperationException( "Not supported yet." );
-+        }
-     }
- 
-     Spigot spigot();
-diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index c9d23d6..eb654c2 100644
---- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-+++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-@@ -295,7 +295,6 @@ public final class SimplePluginManager implements PluginManager {
-             }
-         }
- 
--        org.bukkit.command.defaults.TimingsCommand.timingStart = System.nanoTime(); // Spigot
-         return result.toArray(new Plugin[result.size()]);
-     }
- 
-@@ -332,7 +331,7 @@ public final class SimplePluginManager implements PluginManager {
- 
-         if (result != null) {
-             plugins.add(result);
--            lookupNames.put(result.getDescription().getName(), result);
-+            lookupNames.put(result.getDescription().getName().toLowerCase(), result); // Spigot
-         }
- 
-         return result;
-@@ -358,7 +357,7 @@ public final class SimplePluginManager implements PluginManager {
-      * @return Plugin if it exists, otherwise null
-      */
-     public synchronized Plugin getPlugin(String name) {
--        return lookupNames.get(name.replace(' ', '_'));
-+        return lookupNames.get(name.replace(' ', '_').toLowerCase()); // Spigot
-     }
- 
-     public synchronized Plugin[] getPlugins() {
-@@ -556,7 +555,8 @@ public final class SimplePluginManager implements PluginManager {
-             throw new IllegalPluginAccessException("Plugin attempted to register " + event + " while not enabled");
-         }
- 
--        if (useTimings) {
-+        executor = new org.spigotmc.timings.TimedEventExecutor(executor, plugin, null, event); // Spigot
-+        if (false) { // Spigot - RL handles useTimings check now
-             getEventListeners(event).register(new TimedRegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
-         } else {
-             getEventListeners(event).register(new RegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
-@@ -717,7 +717,7 @@ public final class SimplePluginManager implements PluginManager {
-     }
- 
-     public boolean useTimings() {
--        return useTimings;
-+        return org.spigotmc.timings.Timings.isTimingsEnabled(); // Spigot
-     }
- 
-     /**
-@@ -726,6 +726,6 @@ public final class SimplePluginManager implements PluginManager {
-      * @param use True if per event timing code should be used
-      */
-     public void useTimings(boolean use) {
--        useTimings = use;
-+        org.spigotmc.timings.Timings.setTimingsEnabled(use); // Spigot
-     }
- }
-diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index 7bf2fa6..35cf754 100644
---- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-+++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-@@ -39,7 +39,6 @@ import org.bukkit.plugin.PluginLoader;
- import org.bukkit.plugin.RegisteredListener;
- import org.bukkit.plugin.TimedRegisteredListener;
- import org.bukkit.plugin.UnknownDependencyException;
--import org.spigotmc.CustomTimingsHandler; // Spigot
- import org.yaml.snakeyaml.error.YAMLException;
- 
- /**
-@@ -50,7 +49,6 @@ public final class JavaPluginLoader implements PluginLoader {
-     private final Pattern[] fileFilters = new Pattern[] { Pattern.compile("\\.jar$"), };
-     private final Map<String, Class<?>> classes = new java.util.concurrent.ConcurrentHashMap<String, Class<?>>(); // Spigot
-     private final Map<String, PluginClassLoader> loaders = new LinkedHashMap<String, PluginClassLoader>();
--    public static final CustomTimingsHandler pluginParentTimer = new CustomTimingsHandler("** Plugins"); // Spigot
- 
-     /**
-      * This class was not meant to be constructed explicitly
-@@ -293,26 +291,20 @@ public final class JavaPluginLoader implements PluginLoader {
-                 }
-             }
- 
--            final CustomTimingsHandler timings = new CustomTimingsHandler("Plugin: " + plugin.getDescription().getFullName() + " Event: " + listener.getClass().getName() + "::" + method.getName()+"("+eventClass.getSimpleName()+")", pluginParentTimer); // Spigot
--            EventExecutor executor = new EventExecutor() {
-+            EventExecutor executor = new org.spigotmc.timings.TimedEventExecutor(new EventExecutor() { // Spigot
-                 public void execute(Listener listener, Event event) throws EventException {
-                     try {
-                         if (!eventClass.isAssignableFrom(event.getClass())) {
-                             return;
-                         }
--                        // Spigot start
--                        boolean isAsync = event.isAsynchronous();
--                        if (!isAsync) timings.startTiming();
-                         method.invoke(listener, event);
--                        if (!isAsync) timings.stopTiming();
--                        // Spigot end
-                     } catch (InvocationTargetException ex) {
-                         throw new EventException(ex.getCause());
-                     } catch (Throwable t) {
-                         throw new EventException(t);
-                     }
-                 }
--            };
-+            }, plugin, method, eventClass); // Spigot
-             if (false) { // Spigot - RL handles useTimings check now
-                 eventSet.add(new TimedRegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
-             } else {
-diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index 4cffa13..b2cbf9e 100644
---- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-+++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-@@ -15,7 +15,8 @@ import org.bukkit.plugin.PluginDescriptionFile;
- /**
-  * A ClassLoader for plugins, to allow shared classes across multiple plugins
-  */
--final class PluginClassLoader extends URLClassLoader {
-+public final class PluginClassLoader extends URLClassLoader { // Spigot
-+    public JavaPlugin getPlugin() { return plugin; } // Spigot
-     private final JavaPluginLoader loader;
-     private final Map<String, Class<?>> classes = new java.util.concurrent.ConcurrentHashMap<String, Class<?>>(); // Spigot
-     private final PluginDescriptionFile description;
-diff --git a/src/main/java/org/bukkit/util/CachedServerIcon.java b/src/main/java/org/bukkit/util/CachedServerIcon.java
-index 5ca863b..0480470 100644
---- a/src/main/java/org/bukkit/util/CachedServerIcon.java
-+++ b/src/main/java/org/bukkit/util/CachedServerIcon.java
-@@ -12,4 +12,6 @@ import org.bukkit.event.server.ServerListPingEvent;
-  * @see Server#loadServerIcon(java.io.File)
-  * @see ServerListPingEvent#setServerIcon(CachedServerIcon)
-  */
--public interface CachedServerIcon {}
-+public interface CachedServerIcon {
-+    public String getData(); // Spigot
-+}
-diff --git a/src/main/java/org/spigotmc/CustomTimingsHandler.java b/src/main/java/org/spigotmc/CustomTimingsHandler.java
-index 8d98297..ed89acc 100644
---- a/src/main/java/org/spigotmc/CustomTimingsHandler.java
-+++ b/src/main/java/org/spigotmc/CustomTimingsHandler.java
-@@ -1,165 +1,76 @@
-+/*
-+ * This file is licensed under the MIT License (MIT).
-+ *
-+ * Copyright (c) 2014 Daniel Ennis <http://aikar.co>
-+ *
-+ * Permission is hereby granted, free of charge, to any person obtaining a copy
-+ * of this software and associated documentation files (the "Software"), to deal
-+ * in the Software without restriction, including without limitation the rights
-+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-+ * copies of the Software, and to permit persons to whom the Software is
-+ * furnished to do so, subject to the following conditions:
-+ *
-+ * The above copyright notice and this permission notice shall be included in
-+ * all copies or substantial portions of the Software.
-+ *
-+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-+ * THE SOFTWARE.
-+ */
- package org.spigotmc;
- 
--import org.bukkit.command.defaults.TimingsCommand;
--import org.bukkit.event.HandlerList;
-+import org.bukkit.Bukkit;
-+import org.bukkit.plugin.AuthorNagException;
- import org.bukkit.plugin.Plugin;
--import org.bukkit.plugin.RegisteredListener;
--import org.bukkit.plugin.TimedRegisteredListener;
--import java.io.PrintStream;
--import java.util.Collection;
--import java.util.HashSet;
--import java.util.List;
--import java.util.Queue;
--import java.util.concurrent.ConcurrentLinkedQueue;
-+import org.spigotmc.timings.NullTimingHandler;
-+import org.spigotmc.timings.Timing;
-+import org.spigotmc.timings.Timings;
-+import org.spigotmc.timings.TimingsManager;
-+import sun.reflect.Reflection;
- 
--import org.bukkit.Bukkit;
--import org.bukkit.World;
-+import java.lang.reflect.Method;
-+import java.util.logging.Level;
- 
- /**
-- * Provides custom timing sections for /timings merged.
-+ * This is here for legacy purposes incase any plugin used it.
-+ *
-+ * If you use this, migrate ASAP as this will be removed in the future!
-+ *
-+ * @deprecated
-+ * @see org.spigotmc.timings.Timings#of
-  */
--public class CustomTimingsHandler
--{
-+@Deprecated
-+public final class CustomTimingsHandler {
-+    private final Timing handler;
- 
--    private static Queue<CustomTimingsHandler> HANDLERS = new ConcurrentLinkedQueue<CustomTimingsHandler>();
--    /*========================================================================*/
--    private final String name;
--    private final CustomTimingsHandler parent;
--    private long count = 0;
--    private long start = 0;
--    private long timingDepth = 0;
--    private long totalTime = 0;
--    private long curTickTotal = 0;
--    private long violations = 0;
-+    public CustomTimingsHandler(String name) {
-+        Timing timing;
- 
--    public CustomTimingsHandler(String name)
--    {
--        this( name, null );
--    }
-+        Plugin plugin = null;
-+        try {
-+             plugin = TimingsManager.getPluginByClassloader(Reflection.getCallerClass(2));
-+        } catch (Exception ignored) {}
- 
--    public CustomTimingsHandler(String name, CustomTimingsHandler parent)
--    {
--        this.name = name;
--        this.parent = parent;
--        HANDLERS.add( this );
--    }
--
--    /**
--     * Prints the timings and extra data to the given stream.
--     *
--     * @param printStream
--     */
--    public static void printTimings(PrintStream printStream)
--    {
--        printStream.println( "Minecraft" );
--        for ( CustomTimingsHandler timings : HANDLERS )
--        {
--            long time = timings.totalTime;
--            long count = timings.count;
--            if ( count == 0 )
--            {
--                continue;
-+        new AuthorNagException("Deprecated use of CustomTimingsHandler. Please Switch to Timings.of ASAP").printStackTrace();
-+        if (plugin != null) {
-+            timing = Timings.of(plugin, "(Deprecated API) " + name);
-+        } else {
-+            try {
-+                final Method ofSafe = TimingsManager.class.getMethod("getHandler", String.class, String.class, Timing.class, boolean.class);
-+                timing = (Timing) ofSafe.invoke("Minecraft", "(Deprecated API) " + name, null, true);
-+            } catch (Exception e) {
-+                Bukkit.getLogger().log(Level.SEVERE, "This handler could not be registered");
-+                timing = Timings.NULL_HANDLER;
-             }
--            long avg = time / count;
--
--            printStream.println( "    " + timings.name + " Time: " + time + " Count: " + count + " Avg: " + avg + " Violations: " + timings.violations );
-         }
--        printStream.println( "# Version " + Bukkit.getVersion() );
--        int entities = 0;
--        int livingEntities = 0;
--        for ( World world : Bukkit.getWorlds() )
--        {
--            entities += world.getEntities().size();
--            livingEntities += world.getLivingEntities().size();
--        }
--        printStream.println( "# Entities " + entities );
--        printStream.println( "# LivingEntities " + livingEntities );
-+        handler = timing;
-     }
- 
--    /**
--     * Resets all timings.
--     */
--    public static void reload()
--    {
--        if ( Bukkit.getPluginManager().useTimings() )
--        {
--            for ( CustomTimingsHandler timings : HANDLERS )
--            {
--                timings.reset();
--            }
--        }
--        TimingsCommand.timingStart = System.nanoTime();
--    }
-+    public void startTiming() { handler.startTiming(); }
-+    public void stopTiming() { handler.stopTiming(); }
- 
--    /**
--     * Ticked every tick by CraftBukkit to count the number of times a timer
--     * caused TPS loss.
--     */
--    public static void tick()
--    {
--        if ( Bukkit.getPluginManager().useTimings() )
--        {
--            for ( CustomTimingsHandler timings : HANDLERS )
--            {
--                if ( timings.curTickTotal > 50000000 )
--                {
--                    timings.violations += Math.ceil( timings.curTickTotal / 50000000 );
--                }
--                timings.curTickTotal = 0;
--                timings.timingDepth = 0; // incase reset messes this up
--            }
--        }
--    }
--
--    /**
--     * Starts timing to track a section of code.
--     */
--    public void startTiming()
--    {
--        // If second condtion fails we are already timing
--        if ( Bukkit.getPluginManager().useTimings() && ++timingDepth == 1 )
--        {
--            start = System.nanoTime();
--            if ( parent != null && ++parent.timingDepth == 1 )
--            {
--                parent.start = start;
--            }
--        }
--    }
--
--    /**
--     * Stops timing a section of code.
--     */
--    public void stopTiming()
--    {
--        if ( Bukkit.getPluginManager().useTimings() )
--        {
--            if ( --timingDepth != 0 || start == 0 )
--            {
--                return;
--            }
--            long diff = System.nanoTime() - start;
--            totalTime += diff;
--            curTickTotal += diff;
--            count++;
--            start = 0;
--            if ( parent != null )
--            {
--                parent.stopTiming();
--            }
--        }
--    }
--
--    /**
--     * Reset this timer, setting all values to zero.
--     */
--    public void reset()
--    {
--        count = 0;
--        violations = 0;
--        curTickTotal = 0;
--        totalTime = 0;
--        start = 0;
--        timingDepth = 0;
--    }
- }
-diff --git a/src/main/java/org/spigotmc/timings/FullServerTickHandler.java b/src/main/java/org/spigotmc/timings/FullServerTickHandler.java
+diff --git a/src/main/java/co/aikar/timings/FullServerTickHandler.java b/src/main/java/co/aikar/timings/FullServerTickHandler.java
 new file mode 100644
-index 0000000..1d3926f
+index 0000000..cb4e7ba
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/timings/FullServerTickHandler.java
++++ b/src/main/java/co/aikar/timings/FullServerTickHandler.java
 @@ -0,0 +1,79 @@
-+package org.spigotmc.timings;
++package co.aikar.timings;
 +
-+import static org.spigotmc.timings.TimingsManager.*;
++import static co.aikar.timings.TimingsManager.*;
 +
 +public class FullServerTickHandler extends TimingHandler {
 +    static final TimingIdentifier IDENTITY = new TimingIdentifier("Minecraft", "Full Server Tick", null, false);
@@ -755,11 +107,11 @@ index 0000000..1d3926f
 +        return record.curTickTotal > 50000000;
 +    }
 +}
-diff --git a/src/main/java/org/spigotmc/timings/NullTimingHandler.java b/src/main/java/org/spigotmc/timings/NullTimingHandler.java
+diff --git a/src/main/java/co/aikar/timings/NullTimingHandler.java b/src/main/java/co/aikar/timings/NullTimingHandler.java
 new file mode 100644
-index 0000000..2993971
+index 0000000..c73b617
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/timings/NullTimingHandler.java
++++ b/src/main/java/co/aikar/timings/NullTimingHandler.java
 @@ -0,0 +1,61 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
@@ -784,7 +136,7 @@ index 0000000..2993971
 + * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 + * THE SOFTWARE.
 + */
-+package org.spigotmc.timings;
++package co.aikar.timings;
 +
 +public final class NullTimingHandler implements Timing {
 +    @Override
@@ -822,11 +174,11 @@ index 0000000..2993971
 +
 +    }
 +}
-diff --git a/src/main/java/org/spigotmc/timings/TimedEventExecutor.java b/src/main/java/org/spigotmc/timings/TimedEventExecutor.java
+diff --git a/src/main/java/co/aikar/timings/TimedEventExecutor.java b/src/main/java/co/aikar/timings/TimedEventExecutor.java
 new file mode 100644
-index 0000000..be75bfb
+index 0000000..e3da034
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/timings/TimedEventExecutor.java
++++ b/src/main/java/co/aikar/timings/TimedEventExecutor.java
 @@ -0,0 +1,81 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
@@ -851,7 +203,7 @@ index 0000000..be75bfb
 + * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 + * THE SOFTWARE.
 + */
-+package org.spigotmc.timings;
++package co.aikar.timings;
 +
 +import org.bukkit.Bukkit;
 +import org.bukkit.event.Event;
@@ -909,11 +261,11 @@ index 0000000..be75bfb
 +        timings.stopTiming();
 +    }
 +}
-diff --git a/src/main/java/org/spigotmc/timings/Timing.java b/src/main/java/org/spigotmc/timings/Timing.java
+diff --git a/src/main/java/co/aikar/timings/Timing.java b/src/main/java/co/aikar/timings/Timing.java
 new file mode 100644
-index 0000000..817aca8
+index 0000000..2ac1237
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/timings/Timing.java
++++ b/src/main/java/co/aikar/timings/Timing.java
 @@ -0,0 +1,72 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
@@ -938,7 +290,7 @@ index 0000000..817aca8
 + * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 + * THE SOFTWARE.
 + */
-+package org.spigotmc.timings;
++package co.aikar.timings;
 +
 +/**
 + * Provides an ability to time sections of code within the Minecraft Server
@@ -987,11 +339,11 @@ index 0000000..817aca8
 +    @Override
 +    void close();
 +}
-diff --git a/src/main/java/org/spigotmc/timings/TimingData.java b/src/main/java/org/spigotmc/timings/TimingData.java
+diff --git a/src/main/java/co/aikar/timings/TimingData.java b/src/main/java/co/aikar/timings/TimingData.java
 new file mode 100644
-index 0000000..677b597
+index 0000000..6ad0ca6
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/timings/TimingData.java
++++ b/src/main/java/co/aikar/timings/TimingData.java
 @@ -0,0 +1,105 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
@@ -1016,13 +368,13 @@ index 0000000..677b597
 + * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 + * THE SOFTWARE.
 + */
-+package org.spigotmc.timings;
++package co.aikar.timings;
 +
 +import com.google.common.base.Function;
 +
 +import java.util.List;
 +
-+import static org.spigotmc.util.JSONUtil.toArray;
++import static co.aikar.util.JSONUtil.toArray;
 +
 +/**
 + * Lightweight object for tracking timing data
@@ -1098,11 +450,11 @@ index 0000000..677b597
 +        return list;
 +    }
 +}
-diff --git a/src/main/java/org/spigotmc/timings/TimingHandler.java b/src/main/java/org/spigotmc/timings/TimingHandler.java
+diff --git a/src/main/java/co/aikar/timings/TimingHandler.java b/src/main/java/co/aikar/timings/TimingHandler.java
 new file mode 100644
-index 0000000..c956a90
+index 0000000..4918a17
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/timings/TimingHandler.java
++++ b/src/main/java/co/aikar/timings/TimingHandler.java
 @@ -0,0 +1,193 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
@@ -1127,13 +479,13 @@ index 0000000..c956a90
 + * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 + * THE SOFTWARE.
 + */
-+package org.spigotmc.timings;
++package co.aikar.timings;
 +
 +import gnu.trove.map.hash.TIntObjectHashMap;
 +import org.bukkit.Bukkit;
-+import org.spigotmc.util.LoadingIntMap;
-+import org.spigotmc.util.LoadingMap;
-+import org.spigotmc.util.MRUMapCache;
++import co.aikar.util.LoadingIntMap;
++import co.aikar.util.LoadingMap;
++import co.aikar.util.MRUMapCache;
 +
 +import java.util.Map;
 +import java.util.logging.Level;
@@ -1297,11 +649,11 @@ index 0000000..c956a90
 +        return this == TimingsManager.FULL_SERVER_TICK || this == TimingsManager.TIMINGS_TICK;
 +    }
 +}
-diff --git a/src/main/java/org/spigotmc/timings/TimingHistory.java b/src/main/java/org/spigotmc/timings/TimingHistory.java
+diff --git a/src/main/java/co/aikar/timings/TimingHistory.java b/src/main/java/co/aikar/timings/TimingHistory.java
 new file mode 100644
-index 0000000..b99f73c
+index 0000000..7a04770
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/timings/TimingHistory.java
++++ b/src/main/java/co/aikar/timings/TimingHistory.java
 @@ -0,0 +1,276 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
@@ -1326,7 +678,7 @@ index 0000000..b99f73c
 + * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 + * THE SOFTWARE.
 + */
-+package org.spigotmc.timings;
++package co.aikar.timings;
 +
 +import com.google.common.base.Function;
 +import com.google.common.collect.Sets;
@@ -1338,8 +690,8 @@ index 0000000..b99f73c
 +import org.bukkit.entity.Entity;
 +import org.bukkit.entity.EntityType;
 +import org.bukkit.entity.Player;
-+import org.spigotmc.util.LoadingMap;
-+import org.spigotmc.util.MRUMapCache;
++import co.aikar.util.LoadingMap;
++import co.aikar.util.MRUMapCache;
 +
 +import java.lang.management.ManagementFactory;
 +import java.util.Collection;
@@ -1348,9 +700,9 @@ index 0000000..b99f73c
 +import java.util.Map;
 +import java.util.Set;
 +
-+import static org.spigotmc.timings.TimingsManager.FULL_SERVER_TICK;
-+import static org.spigotmc.timings.TimingsManager.MINUTE_REPORTS;
-+import static org.spigotmc.util.JSONUtil.*;
++import static co.aikar.timings.TimingsManager.FULL_SERVER_TICK;
++import static co.aikar.timings.TimingsManager.MINUTE_REPORTS;
++import static co.aikar.util.JSONUtil.*;
 +
 +@SuppressWarnings({"deprecation", "SuppressionAnnotation"})
 +public class TimingHistory {
@@ -1579,11 +931,11 @@ index 0000000..b99f73c
 +        }
 +    }
 +}
-diff --git a/src/main/java/org/spigotmc/timings/TimingHistoryEntry.java b/src/main/java/org/spigotmc/timings/TimingHistoryEntry.java
+diff --git a/src/main/java/co/aikar/timings/TimingHistoryEntry.java b/src/main/java/co/aikar/timings/TimingHistoryEntry.java
 new file mode 100644
-index 0000000..2b37cbe
+index 0000000..eac4e21
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/timings/TimingHistoryEntry.java
++++ b/src/main/java/co/aikar/timings/TimingHistoryEntry.java
 @@ -0,0 +1,59 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
@@ -1608,13 +960,13 @@ index 0000000..2b37cbe
 + * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 + * THE SOFTWARE.
 + */
-+package org.spigotmc.timings;
++package co.aikar.timings;
 +
 +import com.google.common.base.Function;
 +
 +import java.util.List;
 +
-+import static org.spigotmc.util.JSONUtil.toArrayMapper;
++import static co.aikar.util.JSONUtil.toArrayMapper;
 +
 +class TimingHistoryEntry {
 +    final TimingData data;
@@ -1644,11 +996,11 @@ index 0000000..2b37cbe
 +        return result;
 +    }
 +}
-diff --git a/src/main/java/org/spigotmc/timings/TimingIdentifier.java b/src/main/java/org/spigotmc/timings/TimingIdentifier.java
+diff --git a/src/main/java/co/aikar/timings/TimingIdentifier.java b/src/main/java/co/aikar/timings/TimingIdentifier.java
 new file mode 100644
-index 0000000..69ed2b0
+index 0000000..6084afe
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/timings/TimingIdentifier.java
++++ b/src/main/java/co/aikar/timings/TimingIdentifier.java
 @@ -0,0 +1,102 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
@@ -1673,11 +1025,11 @@ index 0000000..69ed2b0
 + * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 + * THE SOFTWARE.
 + */
-+package org.spigotmc.timings;
++package co.aikar.timings;
 +
 +import com.google.common.base.Function;
-+import org.spigotmc.util.LoadingMap;
-+import org.spigotmc.util.MRUMapCache;
++import co.aikar.util.LoadingMap;
++import co.aikar.util.MRUMapCache;
 +
 +import java.util.ArrayDeque;
 +import java.util.Map;
@@ -1752,11 +1104,11 @@ index 0000000..69ed2b0
 +        }
 +    }
 +}
-diff --git a/src/main/java/org/spigotmc/timings/Timings.java b/src/main/java/org/spigotmc/timings/Timings.java
+diff --git a/src/main/java/co/aikar/timings/Timings.java b/src/main/java/co/aikar/timings/Timings.java
 new file mode 100644
-index 0000000..a7218aa
+index 0000000..e51e232
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/timings/Timings.java
++++ b/src/main/java/co/aikar/timings/Timings.java
 @@ -0,0 +1,273 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
@@ -1781,7 +1133,7 @@ index 0000000..a7218aa
 + * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 + * THE SOFTWARE.
 + */
-+package org.spigotmc.timings;
++package co.aikar.timings;
 +
 +import com.google.common.base.Preconditions;
 +import com.google.common.collect.EvictingQueue;
@@ -2031,11 +1383,11 @@ index 0000000..a7218aa
 +        return TimingsManager.getHandler(groupName, name, groupHandler, false);
 +    }
 +}
-diff --git a/src/main/java/org/spigotmc/timings/TimingsCommand.java b/src/main/java/org/spigotmc/timings/TimingsCommand.java
+diff --git a/src/main/java/co/aikar/timings/TimingsCommand.java b/src/main/java/co/aikar/timings/TimingsCommand.java
 new file mode 100644
-index 0000000..aa1867f
+index 0000000..3dba3aa
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/timings/TimingsCommand.java
++++ b/src/main/java/co/aikar/timings/TimingsCommand.java
 @@ -0,0 +1,110 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
@@ -2060,7 +1412,7 @@ index 0000000..aa1867f
 + * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 + * THE SOFTWARE.
 + */
-+package org.spigotmc.timings;
++package co.aikar.timings;
 +
 +import com.google.common.collect.ImmutableList;
 +import org.apache.commons.lang.Validate;
@@ -2147,11 +1499,11 @@ index 0000000..aa1867f
 +        return ImmutableList.of();
 +    }
 +}
-diff --git a/src/main/java/org/spigotmc/timings/TimingsExport.java b/src/main/java/org/spigotmc/timings/TimingsExport.java
+diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
 new file mode 100644
-index 0000000..9dac535
+index 0000000..dd78647
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/timings/TimingsExport.java
++++ b/src/main/java/co/aikar/timings/TimingsExport.java
 @@ -0,0 +1,373 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
@@ -2176,7 +1528,7 @@ index 0000000..9dac535
 + * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 + * THE SOFTWARE.
 + */
-+package org.spigotmc.timings;
++package co.aikar.timings;
 +
 +import com.google.common.base.Function;
 +import com.google.common.collect.Sets;
@@ -2211,8 +1563,8 @@ index 0000000..9dac535
 +import java.util.logging.Level;
 +import java.util.zip.GZIPOutputStream;
 +
-+import static org.spigotmc.timings.TimingsManager.HISTORY;
-+import static org.spigotmc.util.JSONUtil.*;
++import static co.aikar.timings.TimingsManager.HISTORY;
++import static co.aikar.util.JSONUtil.*;
 +
 +@SuppressWarnings({"rawtypes", "SuppressionAnnotation"})
 +class TimingsExport extends Thread {
@@ -2526,11 +1878,11 @@ index 0000000..9dac535
 +        }
 +    }
 +}
-diff --git a/src/main/java/org/spigotmc/timings/TimingsManager.java b/src/main/java/org/spigotmc/timings/TimingsManager.java
+diff --git a/src/main/java/co/aikar/timings/TimingsManager.java b/src/main/java/co/aikar/timings/TimingsManager.java
 new file mode 100644
-index 0000000..f6b31cb
+index 0000000..d27aa9b
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/timings/TimingsManager.java
++++ b/src/main/java/co/aikar/timings/TimingsManager.java
 @@ -0,0 +1,194 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
@@ -2555,7 +1907,7 @@ index 0000000..f6b31cb
 + * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 + * THE SOFTWARE.
 + */
-+package org.spigotmc.timings;
++package co.aikar.timings;
 +
 +import com.google.common.base.Function;
 +import com.google.common.collect.EvictingQueue;
@@ -2564,7 +1916,7 @@ index 0000000..f6b31cb
 +import org.bukkit.command.Command;
 +import org.bukkit.plugin.Plugin;
 +import org.bukkit.plugin.java.PluginClassLoader;
-+import org.spigotmc.util.LoadingMap;
++import co.aikar.util.LoadingMap;
 +
 +import java.util.ArrayDeque;
 +import java.util.ArrayList;
@@ -2726,11 +2078,11 @@ index 0000000..f6b31cb
 +        return null;
 +    }
 +}
-diff --git a/src/main/java/org/spigotmc/timings/UnsafeTimingHandler.java b/src/main/java/org/spigotmc/timings/UnsafeTimingHandler.java
+diff --git a/src/main/java/co/aikar/timings/UnsafeTimingHandler.java b/src/main/java/co/aikar/timings/UnsafeTimingHandler.java
 new file mode 100644
-index 0000000..971106f
+index 0000000..e3b0ed8
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/timings/UnsafeTimingHandler.java
++++ b/src/main/java/co/aikar/timings/UnsafeTimingHandler.java
 @@ -0,0 +1,51 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
@@ -2755,7 +2107,7 @@ index 0000000..971106f
 + * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 + * THE SOFTWARE.
 + */
-+package org.spigotmc.timings;
++package co.aikar.timings;
 +
 +import org.bukkit.Bukkit;
 +
@@ -2783,13 +2135,13 @@ index 0000000..971106f
 +        super.stopTiming();
 +    }
 +}
-diff --git a/src/main/java/org/spigotmc/util/JSONUtil.java b/src/main/java/org/spigotmc/util/JSONUtil.java
+diff --git a/src/main/java/co/aikar/util/JSONUtil.java b/src/main/java/co/aikar/util/JSONUtil.java
 new file mode 100644
-index 0000000..134fb2d
+index 0000000..5fdf7c4
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/util/JSONUtil.java
++++ b/src/main/java/co/aikar/util/JSONUtil.java
 @@ -0,0 +1,123 @@
-+package org.spigotmc.util;
++package co.aikar.util;
 +
 +import com.google.common.base.Function;
 +import com.google.common.collect.Lists;
@@ -2912,11 +2264,11 @@ index 0000000..134fb2d
 +        }
 +    }
 +}
-diff --git a/src/main/java/org/spigotmc/util/LoadingIntMap.java b/src/main/java/org/spigotmc/util/LoadingIntMap.java
+diff --git a/src/main/java/co/aikar/util/LoadingIntMap.java b/src/main/java/co/aikar/util/LoadingIntMap.java
 new file mode 100644
-index 0000000..e8087e8
+index 0000000..7de04fb
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/util/LoadingIntMap.java
++++ b/src/main/java/co/aikar/util/LoadingIntMap.java
 @@ -0,0 +1,68 @@
 +/*
 + * Copyright (c) 2015. Starlis LLC / dba Empire Minecraft
@@ -2924,7 +2276,7 @@ index 0000000..e8087e8
 + * This source code is proprietary software and must not be redistributed without Starlis LLC's approval
 + *
 + */
-+package org.spigotmc.util;
++package co.aikar.util;
 +
 +
 +import com.google.common.base.Function;
@@ -2986,11 +2338,11 @@ index 0000000..e8087e8
 +        public abstract T apply();
 +    }
 +}
-diff --git a/src/main/java/org/spigotmc/util/LoadingMap.java b/src/main/java/org/spigotmc/util/LoadingMap.java
+diff --git a/src/main/java/co/aikar/util/LoadingMap.java b/src/main/java/co/aikar/util/LoadingMap.java
 new file mode 100644
-index 0000000..17aead4
+index 0000000..a9f2919
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/util/LoadingMap.java
++++ b/src/main/java/co/aikar/util/LoadingMap.java
 @@ -0,0 +1,332 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
@@ -3015,12 +2367,12 @@ index 0000000..17aead4
 + * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 + * THE SOFTWARE.
 + */
-+package org.spigotmc.util;
++package co.aikar.util;
 +
 +
 +import com.google.common.base.Function;
 +import org.bukkit.Material;
-+import org.spigotmc.timings.TimingHistory;
++import co.aikar.timings.TimingHistory;
 +import org.w3c.dom.css.Counter;
 +
 +import java.lang.reflect.Constructor;
@@ -3324,11 +2676,11 @@ index 0000000..17aead4
 +        public abstract T apply();
 +    }
 +}
-diff --git a/src/main/java/org/spigotmc/util/MRUMapCache.java b/src/main/java/org/spigotmc/util/MRUMapCache.java
+diff --git a/src/main/java/co/aikar/util/MRUMapCache.java b/src/main/java/co/aikar/util/MRUMapCache.java
 new file mode 100644
-index 0000000..7b44039
+index 0000000..3a288d2
 --- /dev/null
-+++ b/src/main/java/org/spigotmc/util/MRUMapCache.java
++++ b/src/main/java/co/aikar/util/MRUMapCache.java
 @@ -0,0 +1,100 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
@@ -3353,7 +2705,7 @@ index 0000000..7b44039
 + * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 + * THE SOFTWARE.
 + */
-+package org.spigotmc.util;
++package co.aikar.util;
 +
 +import java.util.AbstractMap;
 +import java.util.Collection;
@@ -3430,6 +2782,654 @@ index 0000000..7b44039
 +        return new MRUMapCache<K, V>(map);
 +    }
 +}
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 584fe11..a4396e8 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -533,7 +533,6 @@ public final class Bukkit {
+      */
+     public static void reload() {
+         server.reload();
+-        org.spigotmc.CustomTimingsHandler.reload(); // Spigot
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 26acdda..ae75bd4 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -926,12 +926,27 @@ public interface Server extends PluginMessageRecipient {
+ 
+     public class Spigot
+     {
+-
++        @Deprecated
+         public org.bukkit.configuration.file.YamlConfiguration getConfig()
+         {
+             throw new UnsupportedOperationException( "Not supported yet." );
+         }
+ 
++        public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig()
++        {
++            throw new UnsupportedOperationException( "Not supported yet." );
++        }
++
++        public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig()
++        {
++            throw new UnsupportedOperationException("Not supported yet.");
++        }
++
++        public org.bukkit.configuration.file.YamlConfiguration getPaperSpigotConfig()
++        {
++            throw new UnsupportedOperationException("Not supported yet.");
++        }
++
+         /**
+          * Sends the component to the player
+          *
+diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
+index 0ba9b1c..548d570 100644
+--- a/src/main/java/org/bukkit/command/Command.java
++++ b/src/main/java/org/bukkit/command/Command.java
+@@ -31,7 +31,8 @@ public abstract class Command {
+     protected String usageMessage;
+     private String permission;
+     private String permissionMessage;
+-    public org.spigotmc.CustomTimingsHandler timings; // Spigot
++    public co.aikar.timings.Timing timings; // Spigot
++    public String getTimingName() {return getName();} // Spigot
+ 
+     protected Command(String name) {
+         this(name, "", "/" + name, new ArrayList<String>());
+@@ -45,7 +46,6 @@ public abstract class Command {
+         this.usageMessage = usageMessage;
+         this.aliases = aliases;
+         this.activeAliases = new ArrayList<String>(aliases);
+-        this.timings = new org.spigotmc.CustomTimingsHandler("** Command: " + name); // Spigot
+     }
+ 
+     /**
+@@ -229,7 +229,6 @@ public abstract class Command {
+     public boolean setLabel(String name) {
+         this.nextLabel = name;
+         if (!isRegistered()) {
+-            this.timings = new org.spigotmc.CustomTimingsHandler("** Command: " + name); // Spigot
+             this.label = name;
+             return true;
+         }
+diff --git a/src/main/java/org/bukkit/command/FormattedCommandAlias.java b/src/main/java/org/bukkit/command/FormattedCommandAlias.java
+index 3f07d7f..f89ad07 100644
+--- a/src/main/java/org/bukkit/command/FormattedCommandAlias.java
++++ b/src/main/java/org/bukkit/command/FormattedCommandAlias.java
+@@ -14,6 +14,7 @@ public class FormattedCommandAlias extends Command {
+ 
+     public FormattedCommandAlias(String alias, String[] formatStrings) {
+         super(alias);
++        timings = co.aikar.timings.TimingsManager.getCommandTiming("minecraft", this); // Spigot
+         this.formatStrings = formatStrings;
+     }
+ 
+@@ -118,6 +119,9 @@ public class FormattedCommandAlias extends Command {
+         return formatString;
+     }
+ 
++    @Override // Spigot
++    public String getTimingName() {return "Command Forwarder - " + super.getTimingName();} // Spigot
++
+     private static boolean inRange(int i, int j, int k) {
+         return i >= j && i <= k;
+     }
+diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
+index a08a49d..a300ae7 100644
+--- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
++++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
+@@ -31,7 +31,7 @@ public class SimpleCommandMap implements CommandMap {
+         register("bukkit", new VersionCommand("version"));
+         register("bukkit", new ReloadCommand("reload"));
+         register("bukkit", new PluginsCommand("plugins"));
+-        register("bukkit", new TimingsCommand("timings"));
++        register("bukkit", new co.aikar.timings.TimingsCommand("timings")); // Spigot
+     }
+ 
+     public void setFallbackCommands() {
+@@ -60,6 +60,7 @@ public class SimpleCommandMap implements CommandMap {
+      * {@inheritDoc}
+      */
+     public boolean register(String label, String fallbackPrefix, Command command) {
++        command.timings = co.aikar.timings.TimingsManager.getCommandTiming(fallbackPrefix, command); // Spigot
+         label = label.toLowerCase().trim();
+         fallbackPrefix = fallbackPrefix.toLowerCase().trim();
+         boolean registered = register(label, command, false, fallbackPrefix);
+diff --git a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java b/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
+index 9782a3b..80e0b0f 100644
+--- a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
+@@ -33,87 +33,22 @@ import org.spigotmc.CustomTimingsHandler;
+ // Spigot end
+ 
+ public class TimingsCommand extends BukkitCommand {
+-    private static final List<String> TIMINGS_SUBCOMMANDS = ImmutableList.of("report", "reset", "on", "off", "paste"); // Spigot
+-    public static long timingStart = 0; // Spigot
++    public static final List<String> TIMINGS_SUBCOMMANDS = ImmutableList.of("merged", "reset", "separate");
+ 
+     public TimingsCommand(String name) {
+         super(name);
+-        this.description = "Manages Spigot Timings data to see performance of the server."; // Spigot
+-        this.usageMessage = "/timings <reset|report|on|off|paste>"; // Spigot
++        this.description = "Records timings for all plugin events";
++        this.usageMessage = "/timings <reset>";
+         this.setPermission("bukkit.command.timings");
+     }
+ 
+-    // Spigot start - redesigned Timings Command
+-    public void executeSpigotTimings(CommandSender sender, String[] args) {
+-        if ( "on".equals( args[0] ) )
+-        {
+-            ( (SimplePluginManager) Bukkit.getPluginManager() ).useTimings( true );
+-            CustomTimingsHandler.reload();
+-            sender.sendMessage( "Enabled Timings & Reset" );
+-            return;
+-        } else if ( "off".equals( args[0] ) )
+-        {
+-            ( (SimplePluginManager) Bukkit.getPluginManager() ).useTimings( false );
+-            sender.sendMessage( "Disabled Timings" );
+-            return;
+-        }
+-
+-        if ( !Bukkit.getPluginManager().useTimings() )
+-        {
+-            sender.sendMessage( "Please enable timings by typing /timings on" );
+-            return;
+-        }
+-
+-        boolean paste = "paste".equals( args[0] );
+-        if ("reset".equals(args[0])) {
+-            CustomTimingsHandler.reload();
+-            sender.sendMessage("Timings reset");
+-        } else if ("merged".equals(args[0]) || "report".equals(args[0]) || paste) {
+-            long sampleTime = System.nanoTime() - timingStart;
+-            int index = 0;
+-            File timingFolder = new File("timings");
+-            timingFolder.mkdirs();
+-            File timings = new File(timingFolder, "timings.txt");
+-            ByteArrayOutputStream bout = ( paste ) ? new ByteArrayOutputStream() : null;
+-            while (timings.exists()) timings = new File(timingFolder, "timings" + (++index) + ".txt");
+-            PrintStream fileTimings = null;
+-            try {
+-                fileTimings = ( paste ) ? new PrintStream( bout ) : new PrintStream( timings );
+-
+-                CustomTimingsHandler.printTimings(fileTimings);
+-                fileTimings.println( "Sample time " + sampleTime + " (" + sampleTime / 1E9 + "s)" );
+-
+-                fileTimings.println( "<spigotConfig>" );
+-                fileTimings.println( Bukkit.spigot().getConfig().saveToString() );
+-                fileTimings.println( "</spigotConfig>" );
+-
+-                if ( paste )
+-                {
+-                    new PasteThread( sender, bout ).start();
+-                    return;
+-                }
+-
+-                sender.sendMessage("Timings written to " + timings.getPath());
+-                sender.sendMessage( "Paste contents of file into form at http://aikar.co/timings.php to read results." );
+-
+-            } catch (IOException e) {
+-            } finally {
+-                if (fileTimings != null) {
+-                    fileTimings.close();
+-                }
+-            }
+-        }
+-    }
+-    // Spigot end
+-
+     @Override
+     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
+         if (!testPermission(sender)) return true;
+-        if (args.length < 1)  { // Spigot
++        if (args.length != 1)  {
+             sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
+             return false;
+         }
+-        if (true) { executeSpigotTimings(sender, args); return true; } // Spigot
+         if (!sender.getServer().getPluginManager().useTimings()) {
+             sender.sendMessage("Please enable timings by setting \"settings.plugin-profiling\" to true in bukkit.yml");
+             return true;
+@@ -199,55 +134,4 @@ public class TimingsCommand extends BukkitCommand {
+         }
+         return ImmutableList.of();
+     }
+-
+-    // Spigot start
+-    private static class PasteThread extends Thread
+-    {
+-
+-        private final CommandSender sender;
+-        private final ByteArrayOutputStream bout;
+-
+-        public PasteThread(CommandSender sender, ByteArrayOutputStream bout)
+-        {
+-            super( "Timings paste thread" );
+-            this.sender = sender;
+-            this.bout = bout;
+-        }
+-
+-        @Override
+-        public synchronized void start() {
+-            if (sender instanceof RemoteConsoleCommandSender) {
+-                run();
+-            } else {
+-                super.start();
+-            }
+-        }
+-
+-        @Override
+-        public void run()
+-        {
+-            try
+-            {
+-                HttpURLConnection con = (HttpURLConnection) new URL( "http://paste.ubuntu.com/" ).openConnection();
+-                con.setDoOutput( true );
+-                con.setRequestMethod( "POST" );
+-                con.setInstanceFollowRedirects( false );
+-
+-                OutputStream out = con.getOutputStream();
+-                out.write( "poster=Spigot&syntax=text&content=".getBytes( "UTF-8" ) );
+-                out.write( URLEncoder.encode( bout.toString( "UTF-8" ), "UTF-8" ).getBytes( "UTF-8" ) );
+-                out.close();
+-                con.getInputStream().close();
+-
+-                String location = con.getHeaderField( "Location" );
+-                String pasteID = location.substring( "http://paste.ubuntu.com/".length(), location.length() - 1 );
+-                sender.sendMessage( ChatColor.GREEN + "Timings results can be viewed at http://aikar.co/timings.php?url=" + pasteID );
+-            } catch ( IOException ex )
+-            {
+-                sender.sendMessage( ChatColor.RED + "Error pasting timings, check your console for more information" );
+-                Bukkit.getServer().getLogger().log( Level.WARNING, "Could not paste timings", ex );
+-            }
+-        }
+-    }
+-    // Spigot end
+ }
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index 7522d45..c0ebe65 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -1203,6 +1203,11 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
+         {
+             throw new UnsupportedOperationException( "Not supported yet" );
+         }
++
++        public int getPing()
++        {
++            throw new UnsupportedOperationException( "Not supported yet." );
++        }
+     }
+ 
+     Spigot spigot();
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index c9d23d6..1325b03 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -295,7 +295,6 @@ public final class SimplePluginManager implements PluginManager {
+             }
+         }
+ 
+-        org.bukkit.command.defaults.TimingsCommand.timingStart = System.nanoTime(); // Spigot
+         return result.toArray(new Plugin[result.size()]);
+     }
+ 
+@@ -332,7 +331,7 @@ public final class SimplePluginManager implements PluginManager {
+ 
+         if (result != null) {
+             plugins.add(result);
+-            lookupNames.put(result.getDescription().getName(), result);
++            lookupNames.put(result.getDescription().getName().toLowerCase(), result); // Spigot
+         }
+ 
+         return result;
+@@ -358,7 +357,7 @@ public final class SimplePluginManager implements PluginManager {
+      * @return Plugin if it exists, otherwise null
+      */
+     public synchronized Plugin getPlugin(String name) {
+-        return lookupNames.get(name.replace(' ', '_'));
++        return lookupNames.get(name.replace(' ', '_').toLowerCase()); // Spigot
+     }
+ 
+     public synchronized Plugin[] getPlugins() {
+@@ -556,7 +555,8 @@ public final class SimplePluginManager implements PluginManager {
+             throw new IllegalPluginAccessException("Plugin attempted to register " + event + " while not enabled");
+         }
+ 
+-        if (useTimings) {
++        executor = new co.aikar.timings.TimedEventExecutor(executor, plugin, null, event); // Spigot
++        if (false) { // Spigot - RL handles useTimings check now
+             getEventListeners(event).register(new TimedRegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
+         } else {
+             getEventListeners(event).register(new RegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
+@@ -717,7 +717,7 @@ public final class SimplePluginManager implements PluginManager {
+     }
+ 
+     public boolean useTimings() {
+-        return useTimings;
++        return co.aikar.timings.Timings.isTimingsEnabled(); // Spigot
+     }
+ 
+     /**
+@@ -726,6 +726,6 @@ public final class SimplePluginManager implements PluginManager {
+      * @param use True if per event timing code should be used
+      */
+     public void useTimings(boolean use) {
+-        useTimings = use;
++        co.aikar.timings.Timings.setTimingsEnabled(use); // Spigot
+     }
+ }
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+index 7bf2fa6..4983ea8 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+@@ -39,7 +39,6 @@ import org.bukkit.plugin.PluginLoader;
+ import org.bukkit.plugin.RegisteredListener;
+ import org.bukkit.plugin.TimedRegisteredListener;
+ import org.bukkit.plugin.UnknownDependencyException;
+-import org.spigotmc.CustomTimingsHandler; // Spigot
+ import org.yaml.snakeyaml.error.YAMLException;
+ 
+ /**
+@@ -50,7 +49,6 @@ public final class JavaPluginLoader implements PluginLoader {
+     private final Pattern[] fileFilters = new Pattern[] { Pattern.compile("\\.jar$"), };
+     private final Map<String, Class<?>> classes = new java.util.concurrent.ConcurrentHashMap<String, Class<?>>(); // Spigot
+     private final Map<String, PluginClassLoader> loaders = new LinkedHashMap<String, PluginClassLoader>();
+-    public static final CustomTimingsHandler pluginParentTimer = new CustomTimingsHandler("** Plugins"); // Spigot
+ 
+     /**
+      * This class was not meant to be constructed explicitly
+@@ -293,26 +291,20 @@ public final class JavaPluginLoader implements PluginLoader {
+                 }
+             }
+ 
+-            final CustomTimingsHandler timings = new CustomTimingsHandler("Plugin: " + plugin.getDescription().getFullName() + " Event: " + listener.getClass().getName() + "::" + method.getName()+"("+eventClass.getSimpleName()+")", pluginParentTimer); // Spigot
+-            EventExecutor executor = new EventExecutor() {
++            EventExecutor executor = new co.aikar.timings.TimedEventExecutor(new EventExecutor() { // Spigot
+                 public void execute(Listener listener, Event event) throws EventException {
+                     try {
+                         if (!eventClass.isAssignableFrom(event.getClass())) {
+                             return;
+                         }
+-                        // Spigot start
+-                        boolean isAsync = event.isAsynchronous();
+-                        if (!isAsync) timings.startTiming();
+                         method.invoke(listener, event);
+-                        if (!isAsync) timings.stopTiming();
+-                        // Spigot end
+                     } catch (InvocationTargetException ex) {
+                         throw new EventException(ex.getCause());
+                     } catch (Throwable t) {
+                         throw new EventException(t);
+                     }
+                 }
+-            };
++            }, plugin, method, eventClass); // Spigot
+             if (false) { // Spigot - RL handles useTimings check now
+                 eventSet.add(new TimedRegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
+             } else {
+diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+index 4cffa13..b2cbf9e 100644
+--- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+@@ -15,7 +15,8 @@ import org.bukkit.plugin.PluginDescriptionFile;
+ /**
+  * A ClassLoader for plugins, to allow shared classes across multiple plugins
+  */
+-final class PluginClassLoader extends URLClassLoader {
++public final class PluginClassLoader extends URLClassLoader { // Spigot
++    public JavaPlugin getPlugin() { return plugin; } // Spigot
+     private final JavaPluginLoader loader;
+     private final Map<String, Class<?>> classes = new java.util.concurrent.ConcurrentHashMap<String, Class<?>>(); // Spigot
+     private final PluginDescriptionFile description;
+diff --git a/src/main/java/org/bukkit/util/CachedServerIcon.java b/src/main/java/org/bukkit/util/CachedServerIcon.java
+index 5ca863b..0480470 100644
+--- a/src/main/java/org/bukkit/util/CachedServerIcon.java
++++ b/src/main/java/org/bukkit/util/CachedServerIcon.java
+@@ -12,4 +12,6 @@ import org.bukkit.event.server.ServerListPingEvent;
+  * @see Server#loadServerIcon(java.io.File)
+  * @see ServerListPingEvent#setServerIcon(CachedServerIcon)
+  */
+-public interface CachedServerIcon {}
++public interface CachedServerIcon {
++    public String getData(); // Spigot
++}
+diff --git a/src/main/java/org/spigotmc/CustomTimingsHandler.java b/src/main/java/org/spigotmc/CustomTimingsHandler.java
+index 8d98297..7e89b97 100644
+--- a/src/main/java/org/spigotmc/CustomTimingsHandler.java
++++ b/src/main/java/org/spigotmc/CustomTimingsHandler.java
+@@ -1,165 +1,76 @@
++/*
++ * This file is licensed under the MIT License (MIT).
++ *
++ * Copyright (c) 2014 Daniel Ennis <http://aikar.co>
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ */
+ package org.spigotmc;
+ 
+-import org.bukkit.command.defaults.TimingsCommand;
+-import org.bukkit.event.HandlerList;
++import org.bukkit.Bukkit;
++import org.bukkit.plugin.AuthorNagException;
+ import org.bukkit.plugin.Plugin;
+-import org.bukkit.plugin.RegisteredListener;
+-import org.bukkit.plugin.TimedRegisteredListener;
+-import java.io.PrintStream;
+-import java.util.Collection;
+-import java.util.HashSet;
+-import java.util.List;
+-import java.util.Queue;
+-import java.util.concurrent.ConcurrentLinkedQueue;
++import co.aikar.timings.NullTimingHandler;
++import co.aikar.timings.Timing;
++import co.aikar.timings.Timings;
++import co.aikar.timings.TimingsManager;
++import sun.reflect.Reflection;
+ 
+-import org.bukkit.Bukkit;
+-import org.bukkit.World;
++import java.lang.reflect.Method;
++import java.util.logging.Level;
+ 
+ /**
+- * Provides custom timing sections for /timings merged.
++ * This is here for legacy purposes incase any plugin used it.
++ *
++ * If you use this, migrate ASAP as this will be removed in the future!
++ *
++ * @deprecated
++ * @see co.aikar.timings.Timings#of
+  */
+-public class CustomTimingsHandler
+-{
++@Deprecated
++public final class CustomTimingsHandler {
++    private final Timing handler;
+ 
+-    private static Queue<CustomTimingsHandler> HANDLERS = new ConcurrentLinkedQueue<CustomTimingsHandler>();
+-    /*========================================================================*/
+-    private final String name;
+-    private final CustomTimingsHandler parent;
+-    private long count = 0;
+-    private long start = 0;
+-    private long timingDepth = 0;
+-    private long totalTime = 0;
+-    private long curTickTotal = 0;
+-    private long violations = 0;
++    public CustomTimingsHandler(String name) {
++        Timing timing;
+ 
+-    public CustomTimingsHandler(String name)
+-    {
+-        this( name, null );
+-    }
++        Plugin plugin = null;
++        try {
++             plugin = TimingsManager.getPluginByClassloader(Reflection.getCallerClass(2));
++        } catch (Exception ignored) {}
+ 
+-    public CustomTimingsHandler(String name, CustomTimingsHandler parent)
+-    {
+-        this.name = name;
+-        this.parent = parent;
+-        HANDLERS.add( this );
+-    }
+-
+-    /**
+-     * Prints the timings and extra data to the given stream.
+-     *
+-     * @param printStream
+-     */
+-    public static void printTimings(PrintStream printStream)
+-    {
+-        printStream.println( "Minecraft" );
+-        for ( CustomTimingsHandler timings : HANDLERS )
+-        {
+-            long time = timings.totalTime;
+-            long count = timings.count;
+-            if ( count == 0 )
+-            {
+-                continue;
++        new AuthorNagException("Deprecated use of CustomTimingsHandler. Please Switch to Timings.of ASAP").printStackTrace();
++        if (plugin != null) {
++            timing = Timings.of(plugin, "(Deprecated API) " + name);
++        } else {
++            try {
++                final Method ofSafe = TimingsManager.class.getMethod("getHandler", String.class, String.class, Timing.class, boolean.class);
++                timing = (Timing) ofSafe.invoke("Minecraft", "(Deprecated API) " + name, null, true);
++            } catch (Exception e) {
++                Bukkit.getLogger().log(Level.SEVERE, "This handler could not be registered");
++                timing = Timings.NULL_HANDLER;
+             }
+-            long avg = time / count;
+-
+-            printStream.println( "    " + timings.name + " Time: " + time + " Count: " + count + " Avg: " + avg + " Violations: " + timings.violations );
+         }
+-        printStream.println( "# Version " + Bukkit.getVersion() );
+-        int entities = 0;
+-        int livingEntities = 0;
+-        for ( World world : Bukkit.getWorlds() )
+-        {
+-            entities += world.getEntities().size();
+-            livingEntities += world.getLivingEntities().size();
+-        }
+-        printStream.println( "# Entities " + entities );
+-        printStream.println( "# LivingEntities " + livingEntities );
++        handler = timing;
+     }
+ 
+-    /**
+-     * Resets all timings.
+-     */
+-    public static void reload()
+-    {
+-        if ( Bukkit.getPluginManager().useTimings() )
+-        {
+-            for ( CustomTimingsHandler timings : HANDLERS )
+-            {
+-                timings.reset();
+-            }
+-        }
+-        TimingsCommand.timingStart = System.nanoTime();
+-    }
++    public void startTiming() { handler.startTiming(); }
++    public void stopTiming() { handler.stopTiming(); }
+ 
+-    /**
+-     * Ticked every tick by CraftBukkit to count the number of times a timer
+-     * caused TPS loss.
+-     */
+-    public static void tick()
+-    {
+-        if ( Bukkit.getPluginManager().useTimings() )
+-        {
+-            for ( CustomTimingsHandler timings : HANDLERS )
+-            {
+-                if ( timings.curTickTotal > 50000000 )
+-                {
+-                    timings.violations += Math.ceil( timings.curTickTotal / 50000000 );
+-                }
+-                timings.curTickTotal = 0;
+-                timings.timingDepth = 0; // incase reset messes this up
+-            }
+-        }
+-    }
+-
+-    /**
+-     * Starts timing to track a section of code.
+-     */
+-    public void startTiming()
+-    {
+-        // If second condtion fails we are already timing
+-        if ( Bukkit.getPluginManager().useTimings() && ++timingDepth == 1 )
+-        {
+-            start = System.nanoTime();
+-            if ( parent != null && ++parent.timingDepth == 1 )
+-            {
+-                parent.start = start;
+-            }
+-        }
+-    }
+-
+-    /**
+-     * Stops timing a section of code.
+-     */
+-    public void stopTiming()
+-    {
+-        if ( Bukkit.getPluginManager().useTimings() )
+-        {
+-            if ( --timingDepth != 0 || start == 0 )
+-            {
+-                return;
+-            }
+-            long diff = System.nanoTime() - start;
+-            totalTime += diff;
+-            curTickTotal += diff;
+-            count++;
+-            start = 0;
+-            if ( parent != null )
+-            {
+-                parent.stopTiming();
+-            }
+-        }
+-    }
+-
+-    /**
+-     * Reset this timer, setting all values to zero.
+-     */
+-    public void reset()
+-    {
+-        count = 0;
+-        violations = 0;
+-        curTickTotal = 0;
+-        totalTime = 0;
+-        start = 0;
+-        timingDepth = 0;
+-    }
+ }
 -- 
 2.7.0
 
