@@ -1,0 +1,78 @@
+From 19a21a3299d8e33e9d2e74f2ec7216689a03c8e5 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Sat, 7 Mar 2015 22:03:47 -0600
+Subject: [PATCH] Drop falling block and tnt entities at the specified height
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+index 7a42040..95c188b 100644
+--- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
++++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+@@ -69,6 +69,17 @@ public class EntityFallingBlock extends Entity {
+ 
+             this.motY -= 0.03999999910593033D;
+             this.move(this.motX, this.motY, this.motZ);
++
++            // PaperSpigot start - Drop falling blocks above the specified height
++            if (this.world.paperSpigotConfig.fallingBlockHeightNerf != 0 && this.locY > this.world.paperSpigotConfig.fallingBlockHeightNerf) {
++                if (this.dropItem) {
++                    this.a(new ItemStack(block, 1, block.getDropData(this.block)), 0.0F);
++                }
++
++                this.die();
++            }
++            // PaperSpigot end
++
+             this.motX *= 0.9800000190734863D;
+             this.motY *= 0.9800000190734863D;
+             this.motZ *= 0.9800000190734863D;
+diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+index 2d22327..d2d94d7 100644
+--- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
++++ b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+@@ -47,6 +47,13 @@ public class EntityTNTPrimed extends Entity {
+         this.lastZ = this.locZ;
+         this.motY -= 0.03999999910593033D;
+         this.move(this.motX, this.motY, this.motZ);
++
++        // PaperSpigot start - Drop TNT entities above the specified height
++        if (this.world.paperSpigotConfig.tntEntityHeightNerf != 0 && this.locY > this.world.paperSpigotConfig.tntEntityHeightNerf) {
++            this.die();
++        }
++        // PaperSpigot end
++
+         this.motX *= 0.9800000190734863D;
+         this.motY *= 0.9800000190734863D;
+         this.motZ *= 0.9800000190734863D;
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+index b7703a0..52c05a8 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+@@ -146,4 +146,24 @@ public class PaperSpigotWorldConfig
+         keepSpawnInMemory = getBoolean( "keep-spawn-loaded", true );
+         log( "Keep spawn chunk loaded: " + keepSpawnInMemory );
+     }
++
++    public int fallingBlockHeightNerf;
++    private void fallingBlockheightNerf()
++    {
++        fallingBlockHeightNerf = getInt( "falling-block-height-nerf", 0 );
++        if ( fallingBlockHeightNerf != 0 )
++        {
++            log( "Falling Block Height Limit set to Y: " + fallingBlockHeightNerf );
++        }
++    }
++
++    public int tntEntityHeightNerf;
++    private void tntEntityHeightNerf()
++    {
++        tntEntityHeightNerf = getInt( "tnt-entity-height-nerf", 0 );
++        if ( tntEntityHeightNerf != 0 )
++        {
++            log( "TNT Entity Height Limit set to Y: " + tntEntityHeightNerf );
++        }
++    }
+ }
+-- 
+2.7.0
+
