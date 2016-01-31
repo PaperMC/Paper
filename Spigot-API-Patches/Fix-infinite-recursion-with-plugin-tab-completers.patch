@@ -1,0 +1,91 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DemonWav <demonwav@gmail.com>
+Date: Sun, 31 Jan 2016 01:20:21 -0600
+Subject: [PATCH] Fix infinite recursion with plugin tab completers
+
+
+diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/command/Command.java
++++ b/src/main/java/org/bukkit/command/Command.java
+@@ -0,0 +0,0 @@ public abstract class Command {
+      * @throws IllegalArgumentException if sender, alias, or args is null
+      */
+     public List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
+-        Validate.notNull(sender, "Sender cannot be null");
+-        Validate.notNull(args, "Arguments cannot be null");
+-        Validate.notNull(alias, "Alias cannot be null");
+-
+-        if (args.length == 0) {
+-            return ImmutableList.of();
+-        }
+-
+-        String lastWord = args[args.length - 1];
+-
+-        Player senderPlayer = sender instanceof Player ? (Player) sender : null;
+-
+-        ArrayList<String> matchedPlayers = new ArrayList<String>();
+-        for (Player player : sender.getServer().getOnlinePlayers()) {
+-            String name = player.getName();
+-            if ((senderPlayer == null || senderPlayer.canSee(player)) && StringUtil.startsWithIgnoreCase(name, lastWord)) {
+-                matchedPlayers.add(name);
+-            }
+-        }
+-
+-        Collections.sort(matchedPlayers, String.CASE_INSENSITIVE_ORDER);
+-        return matchedPlayers;
++        // PaperSpigot - location tab-completes
++        /*
++            To prevent infinite recursion, this implementation has been moved down to
++            tabCompleteImpl(CommandSender sender, String alias, String[] args). The infinite recursion happens when
++            a subclass calls super.tabComplete(CommandSender sender, String alias, String[] args, Location location),
++            which would end up calling tabComplete(CommandSender sender, String alias, String[] args), but rather than
++            this method, it would call the overridden method, which would call super.tabComplete again, etc. To prevent
++            this we move the actual main logic to a separate private method.
++         */
++        return tabCompleteImpl(sender, alias, args);
+     }
+ 
+     // PaperSpigot start - location tab-completes
+@@ -0,0 +0,0 @@ public abstract class Command {
+      */
+     public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
+         // Simply default to the standard tab-complete, subclasses can override this if needed
+-        return tabComplete(sender, alias, args);
++        return tabCompleteImpl(sender, alias, args);
++    }
++
++    private List<String> tabCompleteImpl(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
++        Validate.notNull(sender, "Sender cannot be null");
++        Validate.notNull(args, "Arguments cannot be null");
++        Validate.notNull(alias, "Alias cannot be null");
++
++        if (args.length == 0) {
++            return ImmutableList.of();
++        }
++
++        String lastWord = args[args.length - 1];
++
++        Player senderPlayer = sender instanceof Player ? (Player) sender : null;
++
++        ArrayList<String> matchedPlayers = new ArrayList<String>();
++        for (Player player : sender.getServer().getOnlinePlayers()) {
++            String name = player.getName();
++            if ((senderPlayer == null || senderPlayer.canSee(player)) && StringUtil.startsWithIgnoreCase(name, lastWord)) {
++                matchedPlayers.add(name);
++            }
++        }
++
++        Collections.sort(matchedPlayers, String.CASE_INSENSITIVE_ORDER);
++        return matchedPlayers;
+     }
+     // PaperSpigot end
+ 
+@@ -0,0 +0,0 @@ public abstract class Command {
+     public String toString() {
+         return getClass().getName() + '(' + name + ')';
+     }
+-}
++}
+\ No newline at end of file
+--
