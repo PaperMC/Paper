@@ -103,7 +103,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     }
 
     public boolean hasOwner() {
-        return profile != null;
+        return profile != null && profile.getName() != null;
     }
 
     public String getOwner() {
