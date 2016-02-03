@@ -1,4 +1,4 @@
-From e81b8ed1ed3fffcad21158f5d6516b274aa1cece Mon Sep 17 00:00:00 2001
+From 05251121920f4e6bf7d13afad30e9e34274a396e Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Fabian=20Fa=C3=9Fbender?=
  <fabian.fassbender42@googlemail.com>
 Date: Wed, 3 Feb 2016 19:32:44 +0100
@@ -6,33 +6,42 @@ Subject: [PATCH] Implementation of the Name to UUID caching
 
 
 diff --git a/src/main/java/net/minecraft/server/UserCache.java b/src/main/java/net/minecraft/server/UserCache.java
-index 0f82e06..d8df0f6 100644
+index 0f82e06..0865327 100644
 --- a/src/main/java/net/minecraft/server/UserCache.java
 +++ b/src/main/java/net/minecraft/server/UserCache.java
-@@ -36,6 +36,10 @@ import java.util.Locale;
+@@ -30,15 +30,17 @@ import java.util.ArrayList;
+ import java.util.Calendar;
+ import java.util.Date;
+ import java.util.Iterator;
+-import java.util.LinkedList;
+ import java.util.List;
+ import java.util.Locale;
  import java.util.Map;
  import java.util.UUID;
  import org.apache.commons.io.IOUtils;
-+import org.bukkit.Bukkit;
-+import org.github.paperspigot.event.cache.NameToUUIDResolveEvent;
-+import org.github.paperspigot.event.cache.NameToUUIDResolvedEvent;
++import org.github.paperspigot.cache.ProfileCacheAdapter;
 +import org.spigotmc.SpigotConfig;
  
  public class UserCache {
  
-@@ -75,6 +79,11 @@ public class UserCache {
++    public static ProfileCacheAdapter profileCacheAdapter = null; // PaperSpigot
+     public static final SimpleDateFormat a = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+     private final Map<String, UserCache.UserCacheEntry> c = Maps.newHashMap();
+     private final Map<UUID, UserCache.UserCacheEntry> d = Maps.newHashMap();
+@@ -75,6 +77,12 @@ public class UserCache {
          ProfileLookupCallback profilelookupcallback = new ProfileLookupCallback() {
              public void onProfileLookupSucceeded(GameProfile gameprofile) {
                  agameprofile[0] = gameprofile;
 +
-+                if (gameprofile != null && gameprofile.getId() != null && (minecraftserver.getOnlineMode() || SpigotConfig.bungee)) {
-+                    NameToUUIDResolvedEvent nameToUUIDResolvedEvent = new NameToUUIDResolvedEvent( s, agameprofile[0].getId() );
-+                    Bukkit.getPluginManager().callEvent( nameToUUIDResolvedEvent );
++                // PaperSpigot - Implement caching of uuids
++                if (profileCacheAdapter != null && gameprofile != null && gameprofile.getId() != null && (minecraftserver.getOnlineMode() || SpigotConfig.bungee)) {
++                    profileCacheAdapter.newProfile( gameprofile.getName(), gameprofile.getId() );
 +                }
++                // PaperSpigot
              }
  
              public void onProfileLookupFailed(GameProfile gameprofile, Exception exception) {
-@@ -82,12 +91,20 @@ public class UserCache {
+@@ -82,12 +90,20 @@ public class UserCache {
              }
          };
  
@@ -40,24 +49,50 @@ index 0f82e06..d8df0f6 100644
 -        if (!minecraftserver.getOnlineMode() && agameprofile[0] == null) {
 -            UUID uuid = EntityHuman.a(new GameProfile((UUID) null, s));
 -            GameProfile gameprofile = new GameProfile(uuid, s);
-+        // First check for Event (Cache)
-+        NameToUUIDResolveEvent nameToUUIDResolveEvent = new NameToUUIDResolveEvent( s, null );
-+        Bukkit.getPluginManager().callEvent(nameToUUIDResolveEvent);
++        // PaperSpigot - Check for cached UUIDs
++        if ( profileCacheAdapter != null ) {
++            UUID cachedUUID = profileCacheAdapter.resolve( s );
++            if ( cachedUUID != null ) {
++                return new GameProfile( cachedUUID, s );
++            }
++        }
++        // PaperSpigot
  
 -            profilelookupcallback.onProfileLookupSucceeded(gameprofile);
-+        if ( nameToUUIDResolveEvent.getUuid() == null ) {
-+            minecraftserver.getGameProfileRepository().findProfilesByNames( new String[]{s}, Agent.MINECRAFT, profilelookupcallback );
-+            if ( !minecraftserver.getOnlineMode() && !SpigotConfig.bungee && agameprofile[0] == null ) {
-+                UUID uuid = EntityHuman.a( new GameProfile( null, s ) );
-+                GameProfile profile = new GameProfile( uuid, s );
-+                profilelookupcallback.onProfileLookupSucceeded( profile );
-+            }
-+        } else {
-+            GameProfile gameProfile = new GameProfile( nameToUUIDResolveEvent.getUuid(), s );
-+            profilelookupcallback.onProfileLookupSucceeded( gameProfile );
++        minecraftserver.getGameProfileRepository().findProfilesByNames( new String[]{s}, Agent.MINECRAFT, profilelookupcallback );
++        if ( !minecraftserver.getOnlineMode() && !SpigotConfig.bungee && agameprofile[0] == null ) {
++            UUID uuid = EntityHuman.a( new GameProfile( null, s ) );
++            GameProfile profile = new GameProfile( uuid, s );
++            profilelookupcallback.onProfileLookupSucceeded( profile );
          }
  
          return agameprofile[0];
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 642880e..5e2599e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -102,6 +102,7 @@ import org.bukkit.plugin.messaging.StandardMessenger;
+ import org.bukkit.scheduler.BukkitWorker;
+ import org.bukkit.util.StringUtil;
+ import org.bukkit.util.permissions.DefaultPermissions;
++import org.github.paperspigot.cache.ProfileCacheAdapter;
+ import org.yaml.snakeyaml.Yaml;
+ import org.yaml.snakeyaml.constructor.SafeConstructor;
+ import org.yaml.snakeyaml.error.MarkedYAMLException;
+@@ -1764,6 +1765,13 @@ public final class CraftServer implements Server {
+         }
+         // PaperSpigot end
+ 
++        // PaperSpigot start - Add setProfileCacheAdapter (Third party UUID caching)
++        @Override
++        public void setProfileCacheAdapter( ProfileCacheAdapter adapter ) {
++            UserCache.profileCacheAdapter = adapter;
++        }
++        // PaperSpigot end
++
+         @Deprecated
+         @Override
+         public YamlConfiguration getConfig()
 -- 
 2.6.0.windows.1
 

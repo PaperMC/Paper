@@ -1,134 +1,65 @@
-From 74f3eba7481f1a142c94d03dab601a0756c80da0 Mon Sep 17 00:00:00 2001
+From 91cec68f3e2a2bed046554b9549f2cd20de94321 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Fabian=20Fa=C3=9Fbender?=
  <fabian.fassbender42@googlemail.com>
 Date: Wed, 3 Feb 2016 19:32:10 +0100
 Subject: [PATCH] API for Name to UUID caching
 
 
-diff --git a/src/main/java/org/github/paperspigot/event/cache/NameToUUIDResolveEvent.java b/src/main/java/org/github/paperspigot/event/cache/NameToUUIDResolveEvent.java
-new file mode 100644
-index 0000000..7b130c6
---- /dev/null
-+++ b/src/main/java/org/github/paperspigot/event/cache/NameToUUIDResolveEvent.java
-@@ -0,0 +1,59 @@
-+package org.github.paperspigot.event.cache;
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index ae75bd4..a83f3de 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -42,6 +42,7 @@ import org.bukkit.generator.ChunkGenerator;
+ 
+ import org.bukkit.inventory.ItemFactory;
+ import org.bukkit.inventory.meta.ItemMeta;
++import org.github.paperspigot.cache.ProfileCacheAdapter;
+ 
+ /**
+  * Represents a server implementation.
+@@ -978,6 +979,13 @@ public interface Server extends PluginMessageRecipient {
+             throw new UnsupportedOperationException( "Not supported yet." );
+         }
+         // PaperSpigot end
 +
-+import org.bukkit.event.Event;
-+import org.bukkit.event.HandlerList;
++        // PaperSpigot start - Add setProfileCacheAdapter method
++        public void setProfileCacheAdapter( ProfileCacheAdapter adapter )
++        {
++            throw new UnsupportedOperationException( "Not supported yet." );
++        }
++        // PaperSpigot end
+     }
+ 
+     Spigot spigot();
+diff --git a/src/main/java/org/github/paperspigot/cache/ProfileCacheAdapter.java b/src/main/java/org/github/paperspigot/cache/ProfileCacheAdapter.java
+new file mode 100644
+index 0000000..31ce477
+--- /dev/null
++++ b/src/main/java/org/github/paperspigot/cache/ProfileCacheAdapter.java
+@@ -0,0 +1,24 @@
++package org.github.paperspigot.cache;
 +
 +import java.util.UUID;
 +
 +/**
-+ * Gets called when the UserCache wants to resolve a UUID from a Name
++ * Used to bind an external Cache implementation like Redis into the UserCache of MC
 + */
-+public class NameToUUIDResolveEvent extends Event {
-+    private static final HandlerList handlers = new HandlerList();
-+
-+    private String name;
-+    private UUID uuid;
-+
-+    public NameToUUIDResolveEvent( String name, UUID uuid ) {
-+        this.name = name;
-+        this.uuid = uuid;
-+    }
-+
++public interface ProfileCacheAdapter {
 +    /**
-+     * Name of the User
++     * Resolve a name to its uuid
 +     *
-+     * @return unchanged name of the user
++     * @param name of the player in any case (like given into {@link org.bukkit.inventory.meta.SkullMeta#setOwner(String)})
++     * @return the resolved uuid or null if the cache does not recognize this name
 +     */
-+    public String getName() {
-+        return name;
-+    }
++    UUID resolve( String name );
 +
 +    /**
-+     * Should be null on the first listener but everybody else it can
-+     * be the resolved UUID. When this is not null the return value is
-+     * used to complete the GameProfile
++     * Announce a new profile which has been resolved from the mojang API
 +     *
-+     * @return null or the resolved UUID
-+     */
-+    public UUID getUuid() {
-+        return uuid;
-+    }
-+
-+    /**
-+     * Used by the caching implementation to set the UUID from it instead of asking Mojang to provide some
-+     *
-+     * @param uuid which has been resolved from the cache
-+     */
-+    public void setUuid( UUID uuid ) {
-+        this.uuid = uuid;
-+    }
-+
-+    @Override
-+    public HandlerList getHandlers() {
-+        return handlers;
-+    }
-+
-+    public static HandlerList getHandlerList() {
-+        return handlers;
-+    }
-+}
-diff --git a/src/main/java/org/github/paperspigot/event/cache/NameToUUIDResolvedEvent.java b/src/main/java/org/github/paperspigot/event/cache/NameToUUIDResolvedEvent.java
-new file mode 100644
-index 0000000..ed43b51
---- /dev/null
-+++ b/src/main/java/org/github/paperspigot/event/cache/NameToUUIDResolvedEvent.java
-@@ -0,0 +1,54 @@
-+package org.github.paperspigot.event.cache;
-+
-+import org.bukkit.event.Event;
-+import org.bukkit.event.HandlerList;
-+
-+import java.util.UUID;
-+
-+/**
-+ * Called when the UserCache has resolved a User with the help of the mojang API
-+ */
-+public class NameToUUIDResolvedEvent extends Event {
-+    private static final HandlerList handlers = new HandlerList();
-+
-+    private String name;
-+    private UUID uuid;
-+
-+    /**
-+     * Construct a new Event after it got resolved from the mojang API
-+     *
-+     * @param name of the player
++     * @param name of the profile (in correct case)
 +     * @param uuid of the profile
 +     */
-+    public NameToUUIDResolvedEvent( String name, UUID uuid ) {
-+        this.name = name;
-+        this.uuid = uuid;
-+    }
-+
-+    /**
-+     * Get the correct name of the player
-+     *
-+     * @return name in correct case
-+     */
-+    public String getName() {
-+        return name;
-+    }
-+
-+    /**
-+     * UUID of the profile which has been resolved from mojang
-+     *
-+     * @return profile UUID
-+     */
-+    public UUID getUuid() {
-+        return uuid;
-+    }
-+
-+    @Override
-+    public HandlerList getHandlers() {
-+        return handlers;
-+    }
-+
-+    public static HandlerList getHandlerList() {
-+        return handlers;
-+    }
++    void newProfile( String name, UUID uuid );
 +}
 -- 
 2.6.0.windows.1
