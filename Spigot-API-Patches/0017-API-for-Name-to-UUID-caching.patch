@@ -1,0 +1,135 @@
+From 74f3eba7481f1a142c94d03dab601a0756c80da0 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Fabian=20Fa=C3=9Fbender?=
+ <fabian.fassbender42@googlemail.com>
+Date: Wed, 3 Feb 2016 19:32:10 +0100
+Subject: [PATCH] API for Name to UUID caching
+
+
+diff --git a/src/main/java/org/github/paperspigot/event/cache/NameToUUIDResolveEvent.java b/src/main/java/org/github/paperspigot/event/cache/NameToUUIDResolveEvent.java
+new file mode 100644
+index 0000000..7b130c6
+--- /dev/null
++++ b/src/main/java/org/github/paperspigot/event/cache/NameToUUIDResolveEvent.java
+@@ -0,0 +1,59 @@
++package org.github.paperspigot.event.cache;
++
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++
++import java.util.UUID;
++
++/**
++ * Gets called when the UserCache wants to resolve a UUID from a Name
++ */
++public class NameToUUIDResolveEvent extends Event {
++    private static final HandlerList handlers = new HandlerList();
++
++    private String name;
++    private UUID uuid;
++
++    public NameToUUIDResolveEvent( String name, UUID uuid ) {
++        this.name = name;
++        this.uuid = uuid;
++    }
++
++    /**
++     * Name of the User
++     *
++     * @return unchanged name of the user
++     */
++    public String getName() {
++        return name;
++    }
++
++    /**
++     * Should be null on the first listener but everybody else it can
++     * be the resolved UUID. When this is not null the return value is
++     * used to complete the GameProfile
++     *
++     * @return null or the resolved UUID
++     */
++    public UUID getUuid() {
++        return uuid;
++    }
++
++    /**
++     * Used by the caching implementation to set the UUID from it instead of asking Mojang to provide some
++     *
++     * @param uuid which has been resolved from the cache
++     */
++    public void setUuid( UUID uuid ) {
++        this.uuid = uuid;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/org/github/paperspigot/event/cache/NameToUUIDResolvedEvent.java b/src/main/java/org/github/paperspigot/event/cache/NameToUUIDResolvedEvent.java
+new file mode 100644
+index 0000000..ed43b51
+--- /dev/null
++++ b/src/main/java/org/github/paperspigot/event/cache/NameToUUIDResolvedEvent.java
+@@ -0,0 +1,54 @@
++package org.github.paperspigot.event.cache;
++
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++
++import java.util.UUID;
++
++/**
++ * Called when the UserCache has resolved a User with the help of the mojang API
++ */
++public class NameToUUIDResolvedEvent extends Event {
++    private static final HandlerList handlers = new HandlerList();
++
++    private String name;
++    private UUID uuid;
++
++    /**
++     * Construct a new Event after it got resolved from the mojang API
++     *
++     * @param name of the player
++     * @param uuid of the profile
++     */
++    public NameToUUIDResolvedEvent( String name, UUID uuid ) {
++        this.name = name;
++        this.uuid = uuid;
++    }
++
++    /**
++     * Get the correct name of the player
++     *
++     * @return name in correct case
++     */
++    public String getName() {
++        return name;
++    }
++
++    /**
++     * UUID of the profile which has been resolved from mojang
++     *
++     * @return profile UUID
++     */
++    public UUID getUuid() {
++        return uuid;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+-- 
+2.6.0.windows.1
+

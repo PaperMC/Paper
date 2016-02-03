@@ -1,0 +1,63 @@
+From e81b8ed1ed3fffcad21158f5d6516b274aa1cece Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Fabian=20Fa=C3=9Fbender?=
+ <fabian.fassbender42@googlemail.com>
+Date: Wed, 3 Feb 2016 19:32:44 +0100
+Subject: [PATCH] Implementation of the Name to UUID caching
+
+
+diff --git a/src/main/java/net/minecraft/server/UserCache.java b/src/main/java/net/minecraft/server/UserCache.java
+index 0f82e06..d8df0f6 100644
+--- a/src/main/java/net/minecraft/server/UserCache.java
++++ b/src/main/java/net/minecraft/server/UserCache.java
+@@ -36,6 +36,10 @@ import java.util.Locale;
+ import java.util.Map;
+ import java.util.UUID;
+ import org.apache.commons.io.IOUtils;
++import org.bukkit.Bukkit;
++import org.github.paperspigot.event.cache.NameToUUIDResolveEvent;
++import org.github.paperspigot.event.cache.NameToUUIDResolvedEvent;
++import org.spigotmc.SpigotConfig;
+ 
+ public class UserCache {
+ 
+@@ -75,6 +79,11 @@ public class UserCache {
+         ProfileLookupCallback profilelookupcallback = new ProfileLookupCallback() {
+             public void onProfileLookupSucceeded(GameProfile gameprofile) {
+                 agameprofile[0] = gameprofile;
++
++                if (gameprofile != null && gameprofile.getId() != null && (minecraftserver.getOnlineMode() || SpigotConfig.bungee)) {
++                    NameToUUIDResolvedEvent nameToUUIDResolvedEvent = new NameToUUIDResolvedEvent( s, agameprofile[0].getId() );
++                    Bukkit.getPluginManager().callEvent( nameToUUIDResolvedEvent );
++                }
+             }
+ 
+             public void onProfileLookupFailed(GameProfile gameprofile, Exception exception) {
+@@ -82,12 +91,20 @@ public class UserCache {
+             }
+         };
+ 
+-        minecraftserver.getGameProfileRepository().findProfilesByNames(new String[] { s}, Agent.MINECRAFT, profilelookupcallback);
+-        if (!minecraftserver.getOnlineMode() && agameprofile[0] == null) {
+-            UUID uuid = EntityHuman.a(new GameProfile((UUID) null, s));
+-            GameProfile gameprofile = new GameProfile(uuid, s);
++        // First check for Event (Cache)
++        NameToUUIDResolveEvent nameToUUIDResolveEvent = new NameToUUIDResolveEvent( s, null );
++        Bukkit.getPluginManager().callEvent(nameToUUIDResolveEvent);
+ 
+-            profilelookupcallback.onProfileLookupSucceeded(gameprofile);
++        if ( nameToUUIDResolveEvent.getUuid() == null ) {
++            minecraftserver.getGameProfileRepository().findProfilesByNames( new String[]{s}, Agent.MINECRAFT, profilelookupcallback );
++            if ( !minecraftserver.getOnlineMode() && !SpigotConfig.bungee && agameprofile[0] == null ) {
++                UUID uuid = EntityHuman.a( new GameProfile( null, s ) );
++                GameProfile profile = new GameProfile( uuid, s );
++                profilelookupcallback.onProfileLookupSucceeded( profile );
++            }
++        } else {
++            GameProfile gameProfile = new GameProfile( nameToUUIDResolveEvent.getUuid(), s );
++            profilelookupcallback.onProfileLookupSucceeded( gameProfile );
+         }
+ 
+         return agameprofile[0];
+-- 
+2.6.0.windows.1
+
