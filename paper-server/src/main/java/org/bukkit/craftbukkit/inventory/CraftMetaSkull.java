@@ -71,7 +71,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     void applyToItem(NBTTagCompound tag) {
         super.applyToItem(tag);
 
-        if (hasOwner()) {
+        if (profile != null) {
             NBTTagCompound owner = new NBTTagCompound();
             GameProfileSerializer.serialize(owner, profile);
             tag.set(SKULL_OWNER.NBT, owner);
