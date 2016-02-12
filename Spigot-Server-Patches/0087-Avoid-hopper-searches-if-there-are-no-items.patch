@@ -1,0 +1,97 @@
+From c6556752a720dfaae5cc0ab754e357fec7f31484 Mon Sep 17 00:00:00 2001
+From: CullanP <cullanpage@gmail.com>
+Date: Thu, 11 Feb 2016 21:43:17 -0700
+Subject: [PATCH] Avoid hopper searches if there are no items
+
+Hoppers searching for items and minecarts is the most expensive part of hopper ticking.
+We keep track of the number of minecarts and items in a chunk.
+If there are no items in the chunk, we skip searching for items.
+If there are no minecarts in the chunk, we skip searching for them.
+
+Usually hoppers aren't near items, so we can skip most item searches.
+And since minecart hoppers are used _very_ rarely near we can avoid alot of searching there.
+
+Combined, this adds up a lot.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 7efacfa..3421934 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -34,6 +34,11 @@ public class Chunk {
+     private boolean k;
+     public final Map<BlockPosition, TileEntity> tileEntities;
+     public final List<Entity>[] entitySlices; // Spigot
++    // PaperSpigot start - track the number of minecarts and items
++    // Keep this synced with entitySlices.add() and entitySlices.remove()
++    private final int[] itemCounts = new int[16];
++    private final int[] inventoryEntityCounts = new int[16];
++    // PaperSpigot end
+     private boolean done;
+     private boolean lit;
+     private boolean p;
+@@ -724,6 +729,13 @@ public class Chunk {
+         entity.af = k;
+         entity.ag = this.locZ;
+         this.entitySlices[k].add(entity);
++        // PaperSpigot start - update counts
++        if (entity instanceof EntityItem) {
++            itemCounts[k]++;
++        } else if (entity instanceof IInventory) {
++            inventoryEntityCounts[k]++;
++        }
++        // PaperSpigot end
+         // Spigot start - increment creature type count
+         // Keep this synced up with World.a(Class)
+         if (entity instanceof EntityInsentient) {
+@@ -756,6 +768,12 @@ public class Chunk {
+         }
+ 
+         this.entitySlices[i].remove(entity);
++        // PaperSpigot start - update counts
++        if (entity instanceof EntityItem) {
++            itemCounts[i]--;
++        } else if (entity instanceof IInventory) {
++            inventoryEntityCounts[i]--;
++        }
+         // Spigot start - decrement creature type count
+         // Keep this synced up with World.a(Class)
+         if (entity instanceof EntityInsentient) {
+@@ -944,7 +962,15 @@ public class Chunk {
+         for (int k = i; k <= j; ++k) {
+             if (!this.entitySlices[k].isEmpty()) {
+                 Iterator iterator = this.entitySlices[k].iterator();
+-
++                // PaperSpigot start - Don't search for inventories if we have none, and that is all we want
++                /*
++                 * We check if they want inventories by seeing if it is the static `IEntitySelector.c`
++                 *
++                 * Make sure the inventory selector stays in sync.
++                 * It should be the one that checks `var1 instanceof IInventory && var1.isAlive()`
++                 */
++                if (predicate == IEntitySelector.c && inventoryEntityCounts[k] <= 0) continue;
++                // PaperSpigot end
+                 while (iterator.hasNext()) {
+                     Entity entity1 = (Entity) iterator.next();
+ 
+@@ -977,7 +1003,18 @@ public class Chunk {
+         i = MathHelper.clamp(i, 0, this.entitySlices.length - 1);
+         j = MathHelper.clamp(j, 0, this.entitySlices.length - 1);
+ 
++        // PaperSpigot start
++        int[] counts;
++        if (ItemStack.class.isAssignableFrom(oclass)) {
++            counts = itemCounts;
++        } else if (IInventory.class.isAssignableFrom(oclass)) {
++            counts = inventoryEntityCounts;
++        } else {
++            counts = null;
++        }
++        // PaperSpigot end
+         for (int k = i; k <= j; ++k) {
++            if (counts != null && counts[k] <= 0) continue; // PaperSpigot - Don't check a chunk if it doesn't have the type we are looking for
+             Iterator iterator = this.entitySlices[k].iterator(); // Spigot
+ 
+             while (iterator.hasNext()) {
+-- 
+2.7.0
+
