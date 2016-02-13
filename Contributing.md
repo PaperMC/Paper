@@ -2,7 +2,7 @@ Contributing to PaperSpigot
 ==========================
 PaperSpigot has a very lenient policy towards PRs, but would prefer that you try and adhere to the following guidelines.
 
-## Understaing Patches
+## Understanding Patches
 Patches to PaperSpigot are very simple, but center around the directories 'PaperSpigot-API' and 'PaperSpigot-Server'
 
 Assuming you already have forked the repository:
@@ -29,8 +29,8 @@ Adding patches to PaperSpigot is very simple:
 
 Your commit will be converted into a patch that you can then PR into PaperSpigot
 
-## Modifing Patches
-Modifiying previous patches is a bit more complex:
+## Modifying Patches
+Modifying previous patches is a bit more complex:
 
 1. Make sure `git status` is correct
   - If it says something like `212 commits ahead, 207 commits behind`, then type `git fetch` to update spigot
@@ -58,7 +58,7 @@ While we will fix minor formatting issues, you should stick to the guide below w
 All modifications to non-PaperSpigot files should be marked
 - Multi line changes start with `// PaperSpigot start` and end with `// PaperSpigot end`
 - You can put a messages with a change if it isn't obvious, like this: `// PaperSpigot start - reason
-  - Should generaly be about the reason the change was made, what it was before, or what the change is
+  - Should generally be about the reason the change was made, what it was before, or what the change is
   - Multi-line messages should start with `// PaperSpigot start` and use `/* Multi line message here */` for the message itself
 - Single line changes should have `// PaperSpigot` or `// PaperSpigot - reason`
 - For example:
@@ -73,7 +73,7 @@ Location spawnLocation = ((CraftWorld)entity.getWorld()).getSpawnLocation();
 entity.getWorld().explode(new BlockPosition(spawnLocation.getX(), spawnLocation.getY(), spawnLocation.getZ()));
 // PaperSpigot end
 ````
-- We generally follow usual java style, or what is programed into most IDEs and formatters by default
+- We generally follow usual java style, or what is programmed into most IDEs and formatters by default
   - This is also known as oracle style
   - It is fine to go over 80 lines as long as it doesn't hurt readability
   - There are exceptions, especially in Spigot-related files
