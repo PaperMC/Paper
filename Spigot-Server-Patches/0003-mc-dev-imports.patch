@@ -1,4 +1,4 @@
-From ef451696bb6004f2d3467750038f2010f52a04b2 Mon Sep 17 00:00:00 2001
+From 4b137c6b41c6fb9c38e2cd48b09f6bdab46ddfe7 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Mon, 25 May 2015 15:37:00 -0500
 Subject: [PATCH] mc-dev imports
@@ -3178,6 +3178,234 @@ index 0000000..620685a
 +        return this.id == MobEffectList.WEAKNESS.id ? (double) (-0.5F * (float) (i + 1)) : 1.3D * (double) (i + 1);
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
+new file mode 100644
+index 0000000..d5eaa24
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
+@@ -0,0 +1,222 @@
++package net.minecraft.server;
++
++import java.util.Iterator;
++import java.util.List;
++
++public abstract class NavigationAbstract {
++
++    protected EntityInsentient b;
++    protected World c;
++    protected PathEntity d;
++    protected double e;
++    private final AttributeInstance a;
++    private int f;
++    private int g;
++    private Vec3D h = new Vec3D(0.0D, 0.0D, 0.0D);
++    private float i = 1.0F;
++    private final Pathfinder j;
++
++    public NavigationAbstract(EntityInsentient entityinsentient, World world) {
++        this.b = entityinsentient;
++        this.c = world;
++        this.a = entityinsentient.getAttributeInstance(GenericAttributes.FOLLOW_RANGE);
++        this.j = this.a();
++    }
++
++    protected abstract Pathfinder a();
++
++    public void a(double d0) {
++        this.e = d0;
++    }
++
++    public float i() {
++        return (float) this.a.getValue();
++    }
++
++    public final PathEntity a(double d0, double d1, double d2) {
++        return this.a(new BlockPosition(MathHelper.floor(d0), (int) d1, MathHelper.floor(d2)));
++    }
++
++    public PathEntity a(BlockPosition blockposition) {
++        if (!this.b()) {
++            return null;
++        } else {
++            float f = this.i();
++
++            this.c.methodProfiler.a("pathfind");
++            BlockPosition blockposition1 = new BlockPosition(this.b);
++            int i = (int) (f + 8.0F);
++            ChunkCache chunkcache = new ChunkCache(this.c, blockposition1.a(-i, -i, -i), blockposition1.a(i, i, i), 0);
++            PathEntity pathentity = this.j.a((IBlockAccess) chunkcache, (Entity) this.b, blockposition, f);
++
++            this.c.methodProfiler.b();
++            return pathentity;
++        }
++    }
++
++    public boolean a(double d0, double d1, double d2, double d3) {
++        PathEntity pathentity = this.a((double) MathHelper.floor(d0), (double) ((int) d1), (double) MathHelper.floor(d2));
++
++        return this.a(pathentity, d3);
++    }
++
++    public void a(float f) {
++        this.i = f;
++    }
++
++    public PathEntity a(Entity entity) {
++        if (!this.b()) {
++            return null;
++        } else {
++            float f = this.i();
++
++            this.c.methodProfiler.a("pathfind");
++            BlockPosition blockposition = (new BlockPosition(this.b)).up();
++            int i = (int) (f + 16.0F);
++            ChunkCache chunkcache = new ChunkCache(this.c, blockposition.a(-i, -i, -i), blockposition.a(i, i, i), 0);
++            PathEntity pathentity = this.j.a((IBlockAccess) chunkcache, (Entity) this.b, entity, f);
++
++            this.c.methodProfiler.b();
++            return pathentity;
++        }
++    }
++
++    public boolean a(Entity entity, double d0) {
++        PathEntity pathentity = this.a(entity);
++
++        return pathentity != null ? this.a(pathentity, d0) : false;
++    }
++
++    public boolean a(PathEntity pathentity, double d0) {
++        if (pathentity == null) {
++            this.d = null;
++            return false;
++        } else {
++            if (!pathentity.a(this.d)) {
++                this.d = pathentity;
++            }
++
++            this.d();
++            if (this.d.d() == 0) {
++                return false;
++            } else {
++                this.e = d0;
++                Vec3D vec3d = this.c();
++
++                this.g = this.f;
++                this.h = vec3d;
++                return true;
++            }
++        }
++    }
++
++    public PathEntity j() {
++        return this.d;
++    }
++
++    public void k() {
++        ++this.f;
++        if (!this.m()) {
++            Vec3D vec3d;
++
++            if (this.b()) {
++                this.l();
++            } else if (this.d != null && this.d.e() < this.d.d()) {
++                vec3d = this.c();
++                Vec3D vec3d1 = this.d.a(this.b, this.d.e());
++
++                if (vec3d.b > vec3d1.b && !this.b.onGround && MathHelper.floor(vec3d.a) == MathHelper.floor(vec3d1.a) && MathHelper.floor(vec3d.c) == MathHelper.floor(vec3d1.c)) {
++                    this.d.c(this.d.e() + 1);
++                }
++            }
++
++            if (!this.m()) {
++                vec3d = this.d.a((Entity) this.b);
++                if (vec3d != null) {
++                    AxisAlignedBB axisalignedbb = (new AxisAlignedBB(vec3d.a, vec3d.b, vec3d.c, vec3d.a, vec3d.b, vec3d.c)).grow(0.5D, 0.5D, 0.5D);
++                    List list = this.c.getCubes(this.b, axisalignedbb.a(0.0D, -1.0D, 0.0D));
++                    double d0 = -1.0D;
++
++                    axisalignedbb = axisalignedbb.c(0.0D, 1.0D, 0.0D);
++
++                    AxisAlignedBB axisalignedbb1;
++
++                    for (Iterator iterator = list.iterator(); iterator.hasNext(); d0 = axisalignedbb1.b(axisalignedbb, d0)) {
++                        axisalignedbb1 = (AxisAlignedBB) iterator.next();
++                    }
++
++                    this.b.getControllerMove().a(vec3d.a, vec3d.b + d0, vec3d.c, this.e);
++                }
++            }
++        }
++    }
++
++    protected void l() {
++        Vec3D vec3d = this.c();
++        int i = this.d.d();
++
++        for (int j = this.d.e(); j < this.d.d(); ++j) {
++            if (this.d.a(j).b != (int) vec3d.b) {
++                i = j;
++                break;
++            }
++        }
++
++        float f = this.b.width * this.b.width * this.i;
++
++        int k;
++
++        for (k = this.d.e(); k < i; ++k) {
++            Vec3D vec3d1 = this.d.a(this.b, k);
++
++            if (vec3d.distanceSquared(vec3d1) < (double) f) {
++                this.d.c(k + 1);
++            }
++        }
++
++        k = MathHelper.f(this.b.width);
++        int l = (int) this.b.length + 1;
++        int i1 = k;
++
++        for (int j1 = i - 1; j1 >= this.d.e(); --j1) {
++            if (this.a(vec3d, this.d.a(this.b, j1), k, l, i1)) {
++                this.d.c(j1);
++                break;
++            }
++        }
++
++        this.a(vec3d);
++    }
++
++    protected void a(Vec3D vec3d) {
++        if (this.f - this.g > 100) {
++            if (vec3d.distanceSquared(this.h) < 2.25D) {
++                this.n();
++            }
++
++            this.g = this.f;
++            this.h = vec3d;
++        }
++
++    }
++
++    public boolean m() {
++        return this.d == null || this.d.b();
++    }
++
++    public void n() {
++        this.d = null;
++    }
++
++    protected abstract Vec3D c();
++
++    protected abstract boolean b();
++
++    protected boolean o() {
++        return this.b.V() || this.b.ab();
++    }
++
++    protected void d() {}
++
++    protected abstract boolean a(Vec3D vec3d, Vec3D vec3d1, int i, int j, int k);
++}
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoalFloat.java b/src/main/java/net/minecraft/server/PathfinderGoalFloat.java
 new file mode 100644
 index 0000000..6014b09
@@ -3205,6 +3433,231 @@ index 0000000..6014b09
 +            this.a.getControllerJump().a();
 +        }
 +
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/PathfinderNormal.java b/src/main/java/net/minecraft/server/PathfinderNormal.java
+new file mode 100644
+index 0000000..0a14c9d
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/PathfinderNormal.java
+@@ -0,0 +1,219 @@
++package net.minecraft.server;
++
++public class PathfinderNormal extends PathfinderAbstract {
++
++    private boolean f;
++    private boolean g;
++    private boolean h;
++    private boolean i;
++    private boolean j;
++
++    public PathfinderNormal() {}
++
++    public void a(IBlockAccess iblockaccess, Entity entity) {
++        super.a(iblockaccess, entity);
++        this.j = this.h;
++    }
++
++    public void a() {
++        super.a();
++        this.h = this.j;
++    }
++
++    public PathPoint a(Entity entity) {
++        int i;
++
++        if (this.i && entity.V()) {
++            i = (int) entity.getBoundingBox().b;
++            BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition(MathHelper.floor(entity.locX), i, MathHelper.floor(entity.locZ));
++
++            for (Block block = this.a.getType(blockposition_mutableblockposition).getBlock(); block == Blocks.FLOWING_WATER || block == Blocks.WATER; block = this.a.getType(blockposition_mutableblockposition).getBlock()) {
++                ++i;
++                blockposition_mutableblockposition.c(MathHelper.floor(entity.locX), i, MathHelper.floor(entity.locZ));
++            }
++
++            this.h = false;
++        } else {
++            i = MathHelper.floor(entity.getBoundingBox().b + 0.5D);
++        }
++
++        return this.a(MathHelper.floor(entity.getBoundingBox().a), i, MathHelper.floor(entity.getBoundingBox().c));
++    }
++
++    public PathPoint a(Entity entity, double d0, double d1, double d2) {
++        return this.a(MathHelper.floor(d0 - (double) (entity.width / 2.0F)), MathHelper.floor(d1), MathHelper.floor(d2 - (double) (entity.width / 2.0F)));
++    }
++
++    public int a(PathPoint[] apathpoint, Entity entity, PathPoint pathpoint, PathPoint pathpoint1, float f) {
++        int i = 0;
++        byte b0 = 0;
++
++        if (this.a(entity, pathpoint.a, pathpoint.b + 1, pathpoint.c) == 1) {
++            b0 = 1;
++        }
++
++        PathPoint pathpoint2 = this.a(entity, pathpoint.a, pathpoint.b, pathpoint.c + 1, b0);
++        PathPoint pathpoint3 = this.a(entity, pathpoint.a - 1, pathpoint.b, pathpoint.c, b0);
++        PathPoint pathpoint4 = this.a(entity, pathpoint.a + 1, pathpoint.b, pathpoint.c, b0);
++        PathPoint pathpoint5 = this.a(entity, pathpoint.a, pathpoint.b, pathpoint.c - 1, b0);
++
++        if (pathpoint2 != null && !pathpoint2.i && pathpoint2.a(pathpoint1) < f) {
++            apathpoint[i++] = pathpoint2;
++        }
++
++        if (pathpoint3 != null && !pathpoint3.i && pathpoint3.a(pathpoint1) < f) {
++            apathpoint[i++] = pathpoint3;
++        }
++
++        if (pathpoint4 != null && !pathpoint4.i && pathpoint4.a(pathpoint1) < f) {
++            apathpoint[i++] = pathpoint4;
++        }
++
++        if (pathpoint5 != null && !pathpoint5.i && pathpoint5.a(pathpoint1) < f) {
++            apathpoint[i++] = pathpoint5;
++        }
++
++        return i;
++    }
++
++    private PathPoint a(Entity entity, int i, int j, int k, int l) {
++        PathPoint pathpoint = null;
++        int i1 = this.a(entity, i, j, k);
++
++        if (i1 == 2) {
++            return this.a(i, j, k);
++        } else {
++            if (i1 == 1) {
++                pathpoint = this.a(i, j, k);
++            }
++
++            if (pathpoint == null && l > 0 && i1 != -3 && i1 != -4 && this.a(entity, i, j + l, k) == 1) {
++                pathpoint = this.a(i, j + l, k);
++                j += l;
++            }
++
++            if (pathpoint != null) {
++                int j1 = 0;
++
++                int k1;
++
++                for (k1 = 0; j > 0; pathpoint = this.a(i, j, k)) {
++                    k1 = this.a(entity, i, j - 1, k);
++                    if (this.h && k1 == -1) {
++                        return null;
++                    }
++
++                    if (k1 != 1) {
++                        break;
++                    }
++
++                    if (j1++ >= entity.aE()) {
++                        return null;
++                    }
++
++                    --j;
++                    if (j <= 0) {
++                        return null;
++                    }
++                }
++
++                if (k1 == -2) {
++                    return null;
++                }
++            }
++
++            return pathpoint;
++        }
++    }
++
++    private int a(Entity entity, int i, int j, int k) {
++        return a(this.a, entity, i, j, k, this.c, this.d, this.e, this.h, this.g, this.f);
++    }
++
++    public static int a(IBlockAccess iblockaccess, Entity entity, int i, int j, int k, int l, int i1, int j1, boolean flag, boolean flag1, boolean flag2) {
++        boolean flag3 = false;
++        BlockPosition blockposition = new BlockPosition(entity);
++        BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
++
++        for (int k1 = i; k1 < i + l; ++k1) {
++            for (int l1 = j; l1 < j + i1; ++l1) {
++                for (int i2 = k; i2 < k + j1; ++i2) {
++                    blockposition_mutableblockposition.c(k1, l1, i2);
++                    Block block = iblockaccess.getType(blockposition_mutableblockposition).getBlock();
++
++                    if (block.getMaterial() != Material.AIR) {
++                        if (block != Blocks.TRAPDOOR && block != Blocks.IRON_TRAPDOOR) {
++                            if (block != Blocks.FLOWING_WATER && block != Blocks.WATER) {
++                                if (!flag2 && block instanceof BlockDoor && block.getMaterial() == Material.WOOD) {
++                                    return 0;
++                                }
++                            } else {
++                                if (flag) {
++                                    return -1;
++                                }
++
++                                flag3 = true;
++                            }
++                        } else {
++                            flag3 = true;
++                        }
++
++                        if (entity.world.getType(blockposition_mutableblockposition).getBlock() instanceof BlockMinecartTrackAbstract) {
++                            if (!(entity.world.getType(blockposition).getBlock() instanceof BlockMinecartTrackAbstract) && !(entity.world.getType(blockposition.down()).getBlock() instanceof BlockMinecartTrackAbstract)) {
++                                return -3;
++                            }
++                        } else if (!block.b(iblockaccess, blockposition_mutableblockposition) && (!flag1 || !(block instanceof BlockDoor) || block.getMaterial() != Material.WOOD)) {
++                            if (block instanceof BlockFence || block instanceof BlockFenceGate || block instanceof BlockCobbleWall) {
++                                return -3;
++                            }
++
++                            if (block == Blocks.TRAPDOOR || block == Blocks.IRON_TRAPDOOR) {
++                                return -4;
++                            }
++
++                            Material material = block.getMaterial();
++
++                            if (material != Material.LAVA) {
++                                return 0;
++                            }
++
++                            if (!entity.ab()) {
++                                return -2;
++                            }
++                        }
++                    }
++                }
++            }
++        }
++
++        return flag3 ? 2 : 1;
++    }
++
++    public void a(boolean flag) {
++        this.f = flag;
++    }
++
++    public void b(boolean flag) {
++        this.g = flag;
++    }
++
++    public void c(boolean flag) {
++        this.h = flag;
++    }
++
++    public void d(boolean flag) {
++        this.i = flag;
++    }
++
++    public boolean b() {
++        return this.f;
++    }
++
++    public boolean d() {
++        return this.i;
++    }
++
++    public boolean e() {
++        return this.h;
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/TileEntityEnderChest.java b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
@@ -3323,5 +3776,5 @@ index 0000000..f75e2de
 +    }
 +}
 -- 
-2.7.0
+2.7.1
 

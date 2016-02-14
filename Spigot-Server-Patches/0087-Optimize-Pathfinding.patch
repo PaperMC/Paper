@@ -1,0 +1,68 @@
+From c6cd94e6eaec67e31528ad1c871a473e9415bc61 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 18 Jan 2016 00:18:43 -0500
+Subject: [PATCH] Optimize Pathfinding
+
+Prevents pathfinding from spamming failures for things such as
+arrow attacks.
+
+Also remove a duplicate .getType() call and fix .getType() on others
+to make them use the chunk cache vs chunk lookups
+
+diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
+index d5eaa24..8ebe584 100644
+--- a/src/main/java/net/minecraft/server/NavigationAbstract.java
++++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
+@@ -82,10 +82,25 @@ public abstract class NavigationAbstract {
+     }
+ 
+     public boolean a(Entity entity, double d0) {
++        // PaperSpigot start - Pathfinding optimizations
++        if (this.pathfindFailures > 10 && this.d == null && MinecraftServer.currentTick < this.lastFailure + 40) {
++            return false;
++        }
+         PathEntity pathentity = this.a(entity);
+ 
+-        return pathentity != null ? this.a(pathentity, d0) : false;
++        if (pathentity != null && this.a(pathentity, d0)) {
++            this.lastFailure = 0;
++            this.pathfindFailures = 0;
++            return true;
++        } else {
++            this.pathfindFailures++;
++            this.lastFailure = MinecraftServer.currentTick;
++            return false;
++        }
+     }
++    private int lastFailure = 0;
++    private int pathfindFailures = 0;
++    // PaperSpigot end
+ 
+     public boolean a(PathEntity pathentity, double d0) {
+         if (pathentity == null) {
+@@ -205,6 +220,7 @@ public abstract class NavigationAbstract {
+     }
+ 
+     public void n() {
++        this.pathfindFailures = 0; this.lastFailure = 0; // PaperSpigot - Pathfinding optimizations
+         this.d = null;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/PathfinderNormal.java b/src/main/java/net/minecraft/server/PathfinderNormal.java
+index 0a14c9d..629aa16 100644
+--- a/src/main/java/net/minecraft/server/PathfinderNormal.java
++++ b/src/main/java/net/minecraft/server/PathfinderNormal.java
+@@ -158,8 +158,8 @@ public class PathfinderNormal extends PathfinderAbstract {
+                             flag3 = true;
+                         }
+ 
+-                        if (entity.world.getType(blockposition_mutableblockposition).getBlock() instanceof BlockMinecartTrackAbstract) {
+-                            if (!(entity.world.getType(blockposition).getBlock() instanceof BlockMinecartTrackAbstract) && !(entity.world.getType(blockposition.down()).getBlock() instanceof BlockMinecartTrackAbstract)) {
++                        if (block instanceof BlockMinecartTrackAbstract) { // PaperSpigot - Pathfinder optimizations
++                            if (!(iblockaccess.getType(blockposition).getBlock() instanceof BlockMinecartTrackAbstract) && !(iblockaccess.getType(blockposition.down()).getBlock() instanceof BlockMinecartTrackAbstract)) { // PaperSpigot - Pathfinder optimizations
+                                 return -3;
+                             }
+                         } else if (!block.b(iblockaccess, blockposition_mutableblockposition) && (!flag1 || !(block instanceof BlockDoor) || block.getMaterial() != Material.WOOD)) {
+-- 
+2.7.1
+
