@@ -1,30 +1,29 @@
-From 17906168cc148f5e0159b13415a6c6be73e07475 Mon Sep 17 00:00:00 2001
+From 9515fddcb7392076601abb157235deb36daaaafe Mon Sep 17 00:00:00 2001
 From: Zach Brown <Zbob750@live.com>
 Date: Sun, 28 Dec 2014 16:28:21 -0600
 Subject: [PATCH] Check PaperSpigot versions
 
 
 diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
-index b55abdb..61f7443 100644
+index b55abdb..cf651fc 100644
 --- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
-@@ -185,7 +185,22 @@ public class VersionCommand extends BukkitCommand {
+@@ -185,7 +185,21 @@ public class VersionCommand extends BukkitCommand {
      private void obtainVersion() {
          String version = Bukkit.getVersion();
          if (version == null) version = "Custom";
 -        if (version.startsWith("git-Spigot-")) {
 +        // PaperSpigot start
 +        if (version.startsWith("git-PaperSpigot-")) {
-+            String[] parts = version.substring("git-PaperSpigot-".length()).split("-");
-+            int cbVersions = getDistance("craftbukkit", parts[1].substring(0, parts[1].indexOf(' ')));
++            String[] parts = version.substring("git-PaperSpigot-".length()).split("[-\\s]");
 +            int paperSpigotVersions = getDistance("paperspigot", parts[0]);
-+            if (cbVersions == -1 || paperSpigotVersions == -1) {
++            if (paperSpigotVersions == -1) {
 +                setVersionMessage("Error obtaining version information");
 +            } else {
-+                if (cbVersions == 0 && paperSpigotVersions == 0) {
++                if (paperSpigotVersions == 0) {
 +                    setVersionMessage("You are running the latest version");
 +                } else {
-+                    setVersionMessage("You are " + (cbVersions + paperSpigotVersions) + " version(s) behind");
++                    setVersionMessage("You are " + paperSpigotVersions + " version(s) behind");
 +                }
 +            }
 +        } else if (version.startsWith("git-Spigot-")) {
@@ -32,15 +31,31 @@ index b55abdb..61f7443 100644
              String[] parts = version.substring("git-Spigot-".length()).split("-");
              int cbVersions = getDistance("craftbukkit", parts[1].substring(0, parts[1].indexOf(' ')));
              int spigotVersions = getDistance("spigot", parts[0]);
-@@ -235,7 +250,7 @@ public class VersionCommand extends BukkitCommand {
-     private static int getDistance(String repo, String hash) {
+@@ -232,16 +246,19 @@ public class VersionCommand extends BukkitCommand {
+         }
+     }
+ 
+-    private static int getDistance(String repo, String hash) {
++    private static int getDistance(String repo, String currentVerInt) { // PaperSpigot
          try {
              BufferedReader reader = Resources.asCharSource(
 -                    new URL("https://hub.spigotmc.org/stash/rest/api/1.0/projects/SPIGOT/repos/" + repo + "/commits?since=" + URLEncoder.encode(hash, "UTF-8") + "&withCounts=true"),
-+                    new URL("https://hub.spigotmc.org/stash/rest/api/1.0/projects/PAPER/repos/" + repo + "/commits?since=" + URLEncoder.encode(hash, "UTF-8") + "&withCounts=true"), // PaperSpigot
++                    new URL("https://ci.destroystokyo.com/job/PaperSpigot/lastSuccessfulBuild/buildNumber"), // PaperSpigot
                      Charsets.UTF_8
              ).openBufferedStream();
              try {
+-                JSONObject obj = (JSONObject) new JSONParser().parse(reader);
+-                return ((Number) obj.get("totalCount")).intValue();
+-            } catch (ParseException ex) {
++                // PaperSpigot start
++                int newVer = Integer.decode(reader.readLine());
++                int currentVer = Integer.decode(currentVerInt);
++                return newVer - currentVer;
++            } catch (NumberFormatException ex) {
++                // PaperSpigot end
+                 ex.printStackTrace();
+                 return -1;
+             } finally {
 -- 
-1.9.5.msysgit.0
+2.7.1
 
