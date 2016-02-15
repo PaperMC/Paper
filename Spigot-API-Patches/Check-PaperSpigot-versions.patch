@@ -15,16 +15,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        if (version.startsWith("git-Spigot-")) {
 +        // PaperSpigot start
 +        if (version.startsWith("git-PaperSpigot-")) {
-+            String[] parts = version.substring("git-PaperSpigot-".length()).split("-");
-+            int cbVersions = getDistance("craftbukkit", parts[1].substring(0, parts[1].indexOf(' ')));
++            String[] parts = version.substring("git-PaperSpigot-".length()).split("[-\\s]");
 +            int paperSpigotVersions = getDistance("paperspigot", parts[0]);
-+            if (cbVersions == -1 || paperSpigotVersions == -1) {
++            if (paperSpigotVersions == -1) {
 +                setVersionMessage("Error obtaining version information");
 +            } else {
-+                if (cbVersions == 0 && paperSpigotVersions == 0) {
++                if (paperSpigotVersions == 0) {
 +                    setVersionMessage("You are running the latest version");
 +                } else {
-+                    setVersionMessage("You are " + (cbVersions + paperSpigotVersions) + " version(s) behind");
++                    setVersionMessage("You are " + paperSpigotVersions + " version(s) behind");
 +                }
 +            }
 +        } else if (version.startsWith("git-Spigot-")) {
@@ -33,14 +32,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              int cbVersions = getDistance("craftbukkit", parts[1].substring(0, parts[1].indexOf(' ')));
              int spigotVersions = getDistance("spigot", parts[0]);
 @@ -0,0 +0,0 @@ public class VersionCommand extends BukkitCommand {
-     private static int getDistance(String repo, String hash) {
+         }
+     }
+ 
+-    private static int getDistance(String repo, String hash) {
++    private static int getDistance(String repo, String currentVerInt) { // PaperSpigot
          try {
              BufferedReader reader = Resources.asCharSource(
 -                    new URL("https://hub.spigotmc.org/stash/rest/api/1.0/projects/SPIGOT/repos/" + repo + "/commits?since=" + URLEncoder.encode(hash, "UTF-8") + "&withCounts=true"),
-+                    new URL("https://hub.spigotmc.org/stash/rest/api/1.0/projects/PAPER/repos/" + repo + "/commits?since=" + URLEncoder.encode(hash, "UTF-8") + "&withCounts=true"), // PaperSpigot
++                    new URL("https://ci.destroystokyo.com/job/PaperSpigot/lastSuccessfulBuild/buildNumber"), // PaperSpigot
                      Charsets.UTF_8
              ).openBufferedStream();
              try {
--- 
-1.9.5.msysgit.0
-
+-                JSONObject obj = (JSONObject) new JSONParser().parse(reader);
+-                return ((Number) obj.get("totalCount")).intValue();
+-            } catch (ParseException ex) {
++                // PaperSpigot start
++                int newVer = Integer.decode(reader.readLine());
++                int currentVer = Integer.decode(currentVerInt);
++                return newVer - currentVer;
++            } catch (NumberFormatException ex) {
++                // PaperSpigot end
+                 ex.printStackTrace();
+                 return -1;
+             } finally {
+--
