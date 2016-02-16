@@ -1,0 +1,38 @@
+From 301c9572f887f801b027e43cfc4121e4fd520828 Mon Sep 17 00:00:00 2001
+From: Thinkofdeath <thinkofdeath@spigotmc.org>
+Date: Mon, 15 Feb 2016 23:16:00 -0600
+Subject: [PATCH] Fix FurnaceMinecarts losing all of their velocity on certain
+ corners
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityMinecartFurnace.java b/src/main/java/net/minecraft/server/EntityMinecartFurnace.java
+index 55f04b4..908620d 100644
+--- a/src/main/java/net/minecraft/server/EntityMinecartFurnace.java
++++ b/src/main/java/net/minecraft/server/EntityMinecartFurnace.java
+@@ -58,17 +58,12 @@ public class EntityMinecartFurnace extends EntityMinecartAbstract {
+ 
+         if (d0 > 1.0E-4D && this.motX * this.motX + this.motZ * this.motZ > 0.001D) {
+             d0 = (double) MathHelper.sqrt(d0);
+-            this.a /= d0;
+-            this.b /= d0;
+-            if (this.a * this.motX + this.b * this.motZ < 0.0D) {
+-                this.a = 0.0D;
+-                this.b = 0.0D;
+-            } else {
+-                double d1 = d0 / this.m();
+-
+-                this.a *= d1;
+-                this.b *= d1;
+-            }
++            // PaperSpigot - Don't lose all your velocity on corners
++            // https://bugs.mojang.com/browse/MC-51053?focusedCommentId=223854
++            double d1 = (double) MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
++            this.a = (motX / d1) * d0;
++            this.b = (motZ / d1) * d0;
++            // PaperSpigot end
+         }
+ 
+     }
+-- 
+2.7.1
+
