@@ -84,7 +84,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     }
 
     boolean isSkullEmpty() {
-        return !(hasOwner());
+        return profile == null;
     }
 
     @Override
