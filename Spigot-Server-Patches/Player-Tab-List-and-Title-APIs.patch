@@ -1,5 +1,5 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: Jedediah Smith <jedediah@silencegreys.com>
+From: Techcable <Techcable@outlook.com>
 Date: Tue, 16 Feb 2016 19:45:55 -0600
 Subject: [PATCH] Player Tab List and Title APIs
 
@@ -41,10 +41,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void a(PacketListenerPlayOut packetlistenerplayout) {
          packetlistenerplayout.a(this);
      }
--
--    public void a(PacketListener packetlistener) {
--        this.a((PacketListenerPlayOut) packetlistener);
--    }
+ 
++    // PaperSpigot start - fix compile error
++    /*
+     public void a(PacketListener packetlistener) {
+         this.a((PacketListenerPlayOut) packetlistener);
+     }
++    */
++    // PaperSpigot end
  }
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutTitle.java b/src/main/java/net/minecraft/server/PacketPlayOutTitle.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -88,17 +92,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          packetlistenerplayout.a(this);
      }
  
--    public void a(PacketListener packetlistener) {
--        this.a((PacketListenerPlayOut) packetlistener);
--    }
--
++    // PaperSpigot start - fix compile error
++    /*
+     public void a(PacketListener packetlistener) {
+         this.a((PacketListenerPlayOut) packetlistener);
+     }
++    */
++    // PaperSpigot end
+ 
      public static enum EnumTitleAction {
  
-         TITLE, SUBTITLE, TIMES, CLEAR, RESET;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -0,0 +0,0 @@ import org.bukkit.metadata.MetadataValue;
+ import org.bukkit.plugin.Plugin;
+ import org.bukkit.plugin.messaging.StandardMessenger;
+ import org.bukkit.scoreboard.Scoreboard;
++// PaperSpigot start
++import org.github.paperspigot.Title;
++// PaperSpigot end
+ 
+ @DelegateDeserialization(CraftOfflinePlayer.class)
+ public class CraftPlayer extends CraftHumanEntity implements Player {
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          packet.components = components;
          getHandle().playerConnection.sendPacket(packet);
@@ -156,6 +173,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        setTitleTimes(fadeInTicks, stayTicks, fadeOutTicks);
 +        setSubtitle(subtitle);
 +        showTitle(title);
++    }
++
++    @Override
++    public void sendTitle(Title title) {
++        Preconditions.checkNotNull(title, "Title is null");
++        setTitleTimes(title.getFadeIn(), title.getStay(), title.getFadeOut());
++        setSubtitle(title.getSubtitle() == null ? new BaseComponent[0] : title.getSubtitle());
++        showTitle(title.getTitle());
++    }
++
++    @Override
++    public void updateTitle(Title title) {
++        Preconditions.checkNotNull(title, "Title is null");
++        setTitleTimes(title.getFadeIn(), title.getStay(), title.getFadeOut());
++        if (title.getSubtitle() != null) {
++            setSubtitle(title.getSubtitle());
++        }
++        showTitle(title.getTitle());
 +    }
 +
 +    @Override
