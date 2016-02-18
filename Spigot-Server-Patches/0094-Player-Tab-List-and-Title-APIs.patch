@@ -1,11 +1,11 @@
-From c27a95f1caa97ff1b026429367c16abd20e46ed2 Mon Sep 17 00:00:00 2001
-From: Jedediah Smith <jedediah@silencegreys.com>
+From 88944a9edb0263524b98a1f1731831a360de0bd9 Mon Sep 17 00:00:00 2001
+From: Techcable <Techcable@outlook.com>
 Date: Tue, 16 Feb 2016 19:45:55 -0600
 Subject: [PATCH] Player Tab List and Title APIs
 
 
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java b/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java
-index 1606d6d..89a5056 100644
+index 1606d6d..795e70a 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java
 @@ -4,6 +4,8 @@ import java.io.IOException;
@@ -17,7 +17,7 @@ index 1606d6d..89a5056 100644
      private IChatBaseComponent a;
      private IChatBaseComponent b;
  
-@@ -19,15 +21,22 @@ public class PacketPlayOutPlayerListHeaderFooter implements Packet<PacketListene
+@@ -19,15 +21,30 @@ public class PacketPlayOutPlayerListHeaderFooter implements Packet<PacketListene
      }
  
      public void b(PacketDataSerializer packetdataserializer) throws IOException {
@@ -41,13 +41,17 @@ index 1606d6d..89a5056 100644
      public void a(PacketListenerPlayOut packetlistenerplayout) {
          packetlistenerplayout.a(this);
      }
--
--    public void a(PacketListener packetlistener) {
--        this.a((PacketListenerPlayOut) packetlistener);
--    }
+ 
++    // PaperSpigot start - fix compile error
++    /*
+     public void a(PacketListener packetlistener) {
+         this.a((PacketListenerPlayOut) packetlistener);
+     }
++    */
++    // PaperSpigot end
  }
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutTitle.java b/src/main/java/net/minecraft/server/PacketPlayOutTitle.java
-index 2711298..071215e 100644
+index 2711298..20016b5 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutTitle.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutTitle.java
 @@ -10,6 +10,18 @@ public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
@@ -84,22 +88,35 @@ index 2711298..071215e 100644
          }
  
          if (this.a == EnumTitleAction.TIMES) {
-@@ -60,10 +78,6 @@ public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
+@@ -60,9 +78,13 @@ public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
          packetlistenerplayout.a(this);
      }
  
--    public void a(PacketListener packetlistener) {
--        this.a((PacketListenerPlayOut) packetlistener);
--    }
--
++    // PaperSpigot start - fix compile error
++    /*
+     public void a(PacketListener packetlistener) {
+         this.a((PacketListenerPlayOut) packetlistener);
+     }
++    */
++    // PaperSpigot end
+ 
      public static enum EnumTitleAction {
  
-         TITLE, SUBTITLE, TIMES, CLEAR, RESET;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index dba0520..cabef35 100644
+index dba0520..3075076 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -176,6 +176,65 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -64,6 +64,9 @@ import org.bukkit.metadata.MetadataValue;
+ import org.bukkit.plugin.Plugin;
+ import org.bukkit.plugin.messaging.StandardMessenger;
+ import org.bukkit.scoreboard.Scoreboard;
++// PaperSpigot start
++import org.github.paperspigot.Title;
++// PaperSpigot end
+ 
+ @DelegateDeserialization(CraftOfflinePlayer.class)
+ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -176,6 +179,83 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          packet.components = components;
          getHandle().playerConnection.sendPacket(packet);
      }
@@ -156,6 +173,24 @@ index dba0520..cabef35 100644
 +        setTitleTimes(fadeInTicks, stayTicks, fadeOutTicks);
 +        setSubtitle(subtitle);
 +        showTitle(title);
++    }
++
++    @Override
++    public void sendTitle(Title title) {
++        Preconditions.checkNotNull(title, "Title is null");
++        setTitleTimes(title.getFadeIn(), title.getStay(), title.getFadeOut());
++        setSubtitle(title.getSubtitle() == null ? new BaseComponent[0] : title.getSubtitle());
++        showTitle(title.getTitle());
++    }
++
++    @Override
++    public void updateTitle(Title title) {
++        Preconditions.checkNotNull(title, "Title is null");
++        setTitleTimes(title.getFadeIn(), title.getStay(), title.getFadeOut());
++        if (title.getSubtitle() != null) {
++            setSubtitle(title.getSubtitle());
++        }
++        showTitle(title.getTitle());
 +    }
 +
 +    @Override
