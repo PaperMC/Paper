@@ -1,0 +1,65 @@
+From 75947eb4f2df553e6ca895ed5266eb188a7d0922 Mon Sep 17 00:00:00 2001
+From: Joseph Hirschfeld <joe@ibj.io>
+Date: Sat, 20 Feb 2016 00:42:18 -0500
+Subject: [PATCH] Change implementation of (tile)entity removal list
+
+As it stood, the complexity of a ArrayList.removeAll(ArrayList) is
+much greater as the argument array list grew than .removeAll(HashSet).
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index a76d83c..557f594 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -3,6 +3,7 @@ package net.minecraft.server;
+ import com.google.common.base.Predicate;
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Maps;
++import com.google.common.collect.Sets;
+ import org.bukkit.Bukkit;
+ import org.bukkit.block.BlockState;
+ import org.bukkit.craftbukkit.CraftServer;
+@@ -58,11 +59,11 @@ public abstract class World implements IBlockAccess {
+         }
+     };
+     // Spigot end
+-    protected final List<Entity> g = Lists.newArrayList();
++    protected final Set<Entity> g = Sets.newHashSet();
+     //public final List<TileEntity> h = Lists.newArrayList(); // PaperSpigot - Remove unused list
+     public final List<TileEntity> tileEntityList = Lists.newArrayList();
+     private final List<TileEntity> b = Lists.newArrayList();
+-    private final List<TileEntity> c = Lists.newArrayList();
++    private final Set<TileEntity> c = Sets.newHashSet();
+     public final List<EntityHuman> players = Lists.newArrayList();
+     public final List<Entity> k = Lists.newArrayList();
+     protected final IntHashMap<Entity> entitiesById = new IntHashMap();
+@@ -1400,18 +1401,19 @@ public abstract class World implements IBlockAccess {
+         int j;
+         int k;
+ 
+-        for (i = 0; i < this.g.size(); ++i) {
+-            entity = (Entity) this.g.get(i);
+-            j = entity.ae;
+-            k = entity.ag;
+-            if (entity.ad && this.isChunkLoaded(j, k, true)) {
+-                this.getChunkAt(j, k).b(entity);
++        // Paper begin
++        for (Entity e : this.g) {
++            j = e.ae;
++            k = e.ag;
++            if (e.ad && this.isChunkLoaded(j, k, true)) {
++                this.getChunkAt(j, k).b(e);
+             }
+         }
+ 
+-        for (i = 0; i < this.g.size(); ++i) {
+-            this.b((Entity) this.g.get(i));
++        for (Entity e : this.g) {
++            this.b(e);
+         }
++        // Paper end
+ 
+         this.g.clear();
+         timings.entityRemoval.stopTiming(); // Spigot
+-- 
+2.5.0
+
