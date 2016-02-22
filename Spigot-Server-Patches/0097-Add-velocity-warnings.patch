@@ -1,0 +1,52 @@
+From fd9c04c6412718ab55906cadf9748e2346e2483c Mon Sep 17 00:00:00 2001
+From: Joseph Hirschfeld <joe@ibj.io>
+Date: Mon, 22 Feb 2016 16:05:32 -0500
+Subject: [PATCH] Add velocity warnings
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 5df3476..4f91799 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -25,6 +25,7 @@ import org.bukkit.permissions.PermissionAttachmentInfo;
+ import org.bukkit.permissions.ServerOperator;
+ import org.bukkit.plugin.Plugin;
+ import org.bukkit.util.Vector;
++import org.github.paperspigot.PaperSpigotConfig;
+ 
+ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+     private static final PermissibleBase perm = new PermissibleBase(new ServerOperator() {
+@@ -205,6 +206,15 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+     }
+ 
+     public void setVelocity(Vector vel) {
++        // Paper start - warn server owners when plugins try to set super high velocities
++        if (PaperSpigotConfig.warnForExcessiveVelocity) {
++            if(vel.getX() > 4 || vel.getX() < -4 || vel.getY() > 4 || vel.getY() < -4 || vel.getZ() > 4 || vel.getZ() < -4) {
++                getServer().getLogger().warning("Excessive velocity set detected: tried to set velocity of entity #"+getEntityId()+" to ("+vel.getX()+","+vel.getY()+","+vel.getZ()+").");
++                Thread.dumpStack();
++            }
++        }
++        // Paper end
++
+         entity.motX = vel.getX();
+         entity.motY = vel.getY();
+         entity.motZ = vel.getZ();
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
+index ea5a427..d6d9899 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
+@@ -216,4 +216,10 @@ public class PaperSpigotConfig
+             e.printStackTrace();
+         }
+     }
++
++    public static boolean warnForExcessiveVelocity;
++    private static void excessiveVelocityWarning()
++    {
++        warnForExcessiveVelocity = getBoolean("warnWhenSettingExcessiveVelocity", true);
++    }
+ }
+-- 
+2.5.0
+
