@@ -1,0 +1,63 @@
+From 5fefb8fed5df6e1200c3119a6fbce019cf19e720 Mon Sep 17 00:00:00 2001
+From: Joseph Hirschfeld <joe@ibj.io>
+Date: Sat, 20 Feb 2016 23:38:24 -0500
+Subject: [PATCH] Add configurable portal search radius
+
+
+diff --git a/src/main/java/net/minecraft/server/PortalTravelAgent.java b/src/main/java/net/minecraft/server/PortalTravelAgent.java
+index 729cb96..72f3735 100644
+--- a/src/main/java/net/minecraft/server/PortalTravelAgent.java
++++ b/src/main/java/net/minecraft/server/PortalTravelAgent.java
+@@ -109,7 +109,7 @@ public class PortalTravelAgent {
+         return true;
+     }
+ 
+-    public BlockPosition findPortal(double x, double y, double z, int short1) {
++    public BlockPosition findPortal(double x, double y, double z, int searchRadius) { // Paper - actually use search radius
+         if (this.a.getWorld().getEnvironment() == org.bukkit.World.Environment.THE_END) {
+             return this.findEndPortal(this.a.worldProvider.h());
+         }
+@@ -133,10 +133,10 @@ public class PortalTravelAgent {
+         } else {
+             BlockPosition blockposition = new BlockPosition(x, y, z);
+ 
+-            for (int l = -128; l <= 128; ++l) {
++            for (int l = -searchRadius; l <= searchRadius; ++l) {   // Paper - actually use search radius
+                 BlockPosition blockposition1;
+ 
+-                for (int i1 = -128; i1 <= 128; ++i1) {
++                for (int i1 = -searchRadius; i1 <= searchRadius; ++i1) {    // Paper - actually use search radius
+                     for (BlockPosition blockposition2 = blockposition.a(l, this.a.V() - 1 - blockposition.getY(), i1); blockposition2.getY() >= 0; blockposition2 = blockposition1) {
+                         blockposition1 = blockposition2.down();
+                         if (this.a.getType(blockposition2).getBlock() == Blocks.PORTAL) {
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 3a2ca89..8752955 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -65,7 +65,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+         this.manager = new PlayerChunkMap(this, spigotConfig.viewDistance); // Spigot
+         this.worldProvider.a(this);
+         this.chunkProvider = this.k();
+-        this.Q = new org.bukkit.craftbukkit.CraftTravelAgent(this); // CraftBukkit
++        this.Q = ((org.bukkit.craftbukkit.CraftTravelAgent) new org.bukkit.craftbukkit.CraftTravelAgent(this).setSearchRadius(paperSpigotConfig.portalSearchRadius)); // CraftBukkit // Paper - configurable search radius
+         this.B();
+         this.C();
+         this.getWorldBorder().a(minecraftserver.aI());
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+index c3c374d..6ad8e81 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+@@ -396,4 +396,10 @@ public class PaperSpigotWorldConfig
+     {
+         allowBlockLocationTabCompletion = getBoolean( "allow-block-location-tab-completion", true );
+     }
++
++    public int portalSearchRadius;
++    private void portalSearchRadius()
++    {
++        portalSearchRadius = getInt("portal-search-radius", 128);
++    }
+ }
+-- 
+2.5.0
+
