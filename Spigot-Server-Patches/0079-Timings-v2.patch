@@ -1,4 +1,4 @@
-From 6ee5f9facbcd8fb924f76c21d31ab60a8e45b52f Mon Sep 17 00:00:00 2001
+From b031dee22afe4021b96e86b434dad0c2b8892429 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 8 Jan 2016 23:36:39 -0600
 Subject: [PATCH] Timings v2
@@ -6,10 +6,10 @@ Subject: [PATCH] Timings v2
 
 diff --git a/src/main/java/co/aikar/timings/SpigotTimings.java b/src/main/java/co/aikar/timings/SpigotTimings.java
 new file mode 100644
-index 0000000..a1aaaa2
+index 0000000..b3cafaf
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/SpigotTimings.java
-@@ -0,0 +1,110 @@
+@@ -0,0 +1,111 @@
 +package co.aikar.timings;
 +
 +import net.minecraft.server.*;
@@ -23,7 +23,8 @@ index 0000000..a1aaaa2
 +    public static final Timing playerListTimer = Timings.ofSafe("Player List");
 +    public static final Timing connectionTimer = Timings.ofSafe("Connection Handler");
 +    public static final Timing tickablesTimer = Timings.ofSafe("Tickables");
-+    public static final Timing schedulerTimer = Timings.ofSafe("Scheduler");
++    public static final Timing minecraftSchedulerTimer = Timings.ofSafe("Minecraft Scheduler");
++    public static final Timing bukkitSchedulerTimer = Timings.ofSafe("Bukkit Scheduler");
 +    public static final Timing chunkIOTickTimer = Timings.ofSafe("ChunkIOTick");
 +    public static final Timing timeUpdateTimer = Timings.ofSafe("Time Update");
 +    public static final Timing serverCommandTimer = Timings.ofSafe("Server Command");
@@ -340,7 +341,7 @@ index 0de13bb..19a743c 100644
  
          this.world.methodProfiler.b();
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index eac71e8..4a421ba 100644
+index eac71e8..ee09922 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -45,7 +45,7 @@ import jline.console.ConsoleReader;
@@ -370,7 +371,7 @@ index eac71e8..4a421ba 100644
          long i = System.nanoTime();
  
          ++this.ticks;
-@@ -757,8 +759,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -757,11 +759,11 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
          this.methodProfiler.b();
          this.methodProfiler.b();
          org.spigotmc.WatchdogThread.tick(); // Spigot
@@ -380,6 +381,27 @@ index eac71e8..4a421ba 100644
      }
  
      public void B() {
++        SpigotTimings.minecraftSchedulerTimer.startTiming(); // Spigot
+         this.methodProfiler.a("jobs");
+         Queue queue = this.j;
+ 
+@@ -772,13 +774,14 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+             SystemUtils.a(entry, MinecraftServer.LOGGER);
+          }
+         // Spigot end
++        SpigotTimings.minecraftSchedulerTimer.stopTiming(); // Spigot
+ 
+         this.methodProfiler.c("levels");
+ 
+-        SpigotTimings.schedulerTimer.startTiming(); // Spigot
++        SpigotTimings.bukkitSchedulerTimer.startTiming(); // Spigot
+         // CraftBukkit start
+         this.server.getScheduler().mainThreadHeartbeat(this.ticks);
+-        SpigotTimings.schedulerTimer.stopTiming(); // Spigot
++        SpigotTimings.bukkitSchedulerTimer.stopTiming(); // Spigot
+ 
+         // Run tasks that are waiting on processing
+         SpigotTimings.processQueueTimer.startTiming(); // Spigot
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
 index 2ab01a1..1138042 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
@@ -449,7 +471,7 @@ index 3fc6450..fdcbf44 100644
      private static Map<String, Class<? extends TileEntity>> f = Maps.newHashMap();
      private static Map<Class<? extends TileEntity>, String> g = Maps.newHashMap();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 13ab789..56cddeb 100644
+index b957bd2..a76d83c 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -7,13 +7,14 @@ import org.bukkit.Bukkit;
@@ -559,7 +581,7 @@ index 13ab789..56cddeb 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 6186f6c..ad51256 100644
+index fb16a8a..3a2ca89 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -245,13 +245,13 @@ public class WorldServer extends World implements IAsyncTaskHandler {
@@ -1078,7 +1100,7 @@ index 5466a61..c2ad90c 100644
      }
  
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index f6a67d6..93825d9 100644
+index f6a67d6..b9d185d 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -12,8 +12,10 @@ import java.util.HashSet;
@@ -1142,5 +1164,5 @@ index f6a67d6..93825d9 100644
      {
          int count = getInt( "settings.netty-threads", 4 );
 -- 
-2.7.0.windows.2
+2.7.1
 
