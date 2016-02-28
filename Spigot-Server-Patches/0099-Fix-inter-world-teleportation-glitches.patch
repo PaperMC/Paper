@@ -1,0 +1,43 @@
+From bb89655d63addb4ee096d8cec88b4c54e2a2d383 Mon Sep 17 00:00:00 2001
+From: Sudzzy <originmc@outlook.com>
+Date: Sun, 28 Feb 2016 18:33:06 +0000
+Subject: [PATCH] Fix inter-world teleportation glitches
+
+People are able to abuse the way Bukkit handles teleportation across worlds since it provides a built in teleportation safety check.
+
+To abuse the safety check, players are required to get into a location deemed unsafe by Bukkit e.g. be within a chest or door block. While they are in this block, they accept a teleport request from a player within a different world. Once the player teleports, Minecraft will recursively search upwards for a safe location, this could eventually land within a player's skybase.
+
+Example setup to perform the glitch: http://puu.sh/ng3PC/cf072dcbdb.png
+The wanted destination was on top of the emerald block however the player ended on top of the diamond block. This only is the case if the player is teleporting between worlds.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 3075076..b7b3bd6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -565,7 +565,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         if (fromWorld == toWorld) {
+             entity.playerConnection.teleport(to);
+         } else {
+-            server.getHandle().moveToWorld(entity, toWorld.dimension, true, to, true);
++            server.getHandle().moveToWorld(entity, toWorld.dimension, true, to, !toWorld.paperSpigotConfig.disableTeleportationSuffocationCheck);
+         }
+         return true;
+     }
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+index 6ad8e81..3539c90 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+@@ -402,4 +402,10 @@ public class PaperSpigotWorldConfig
+     {
+         portalSearchRadius = getInt("portal-search-radius", 128);
+     }
++
++    public boolean disableTeleportationSuffocationCheck;
++    private void disableTeleportationSuffocationCheck()
++    {
++        disableTeleportationSuffocationCheck = getBoolean("disable-teleportation-suffocation-check", false);
++    }
+ }
+-- 
+2.7.2
+
