@@ -402,11 +402,11 @@
 +            f = to.getYaw();
 +            f1 = to.getPitch();
 +        }
-+
-+        this.internalTeleport(d0, d1, d2, f, f1, set);
-+    }
  
 -        this.teleportPos = new Vec3D(d0 + d3, d1 + d4, d2 + d5);
++        this.internalTeleport(d0, d1, d2, f, f1, set);
++    }
++
 +    public void teleport(Location dest) {
 +        internalTeleport(dest.getX(), dest.getY(), dest.getZ(), dest.getYaw(), dest.getPitch(), Collections.emptySet());
 +    }
@@ -1329,7 +1329,7 @@
 +
 +                    event.setCancelled(cancelled);
 +                    server.getPluginManager().callEvent(event);
-+
+ 
 +                    switch (event.getResult()) {
 +                        case ALLOW:
 +                        case DEFAULT:
@@ -1338,7 +1338,7 @@
 +                        case DENY:
 +                            /* Needs enum constructor in InventoryAction
 +                            if (action.modifiesOtherSlots()) {
- 
++
 +                            } else {
 +                                if (action.modifiesCursor()) {
 +                                    this.player.playerConnection.sendPacket(new Packet103SetSlot(-1, -1, this.player.inventory.getCarried()));
@@ -1523,81 +1523,7 @@
          ArrayList arraylist = Lists.newArrayList();
          Iterator iterator = this.minecraftServer.tabCompleteCommand(this.player, packetplayintabcomplete.a(), packetplayintabcomplete.b(), packetplayintabcomplete.c()).iterator();
  
-@@ -1025,6 +2048,7 @@
-         ItemStack itemstack;
-         ItemStack itemstack1;
- 
-+        try { // CraftBukkit - Make sure the buffer is freed
-         if ("MC|BEdit".equals(s)) {
-             packetdataserializer = new PacketDataSerializer(Unpooled.wrappedBuffer(packetplayincustompayload.b()));
- 
-@@ -1041,13 +2065,16 @@
-                 itemstack1 = this.player.getItemInMainHand();
-                 if (itemstack1 != null) {
-                     if (itemstack.getItem() == Items.WRITABLE_BOOK && itemstack.getItem() == itemstack1.getItem()) {
-+                        itemstack1 = new ItemStack(Items.WRITABLE_BOOK); // CraftBukkit
-                         itemstack1.a("pages", (NBTBase) itemstack.getTag().getList("pages", 8));
-+                        CraftEventFactory.handleEditBookEvent(player, itemstack1); // CraftBukkit
-                     }
- 
-                     return;
-                 }
-             } catch (Exception exception) {
-                 PlayerConnection.LOGGER.error("Couldn\'t handle book info", exception);
-+                this.disconnect("Invalid book data!"); // CraftBukkit
-                 return;
-             } finally {
-                 packetdataserializer.release();
-@@ -1073,6 +2100,8 @@
-                     itemstack1 = this.player.getItemInMainHand();
-                     if (itemstack1 != null) {
-                         if (itemstack.getItem() == Items.WRITABLE_BOOK && itemstack1.getItem() == Items.WRITABLE_BOOK) {
-+                            // CraftBukkit start
-+                            itemstack1 = new ItemStack(Items.WRITABLE_BOOK);
-                             itemstack1.a("author", (NBTBase) (new NBTTagString(this.player.getName())));
-                             itemstack1.a("title", (NBTBase) (new NBTTagString(itemstack.getTag().getString("title"))));
-                             NBTTagList nbttaglist = itemstack.getTag().getList("pages", 8);
-@@ -1087,12 +2116,15 @@
- 
-                             itemstack1.a("pages", (NBTBase) nbttaglist);
-                             itemstack1.setItem(Items.WRITTEN_BOOK);
-+                            CraftEventFactory.handleEditBookEvent(player, itemstack1);
-+                            // CraftBukkit end
-                         }
- 
-                         return;
-                     }
-                 } catch (Exception exception1) {
-                     PlayerConnection.LOGGER.error("Couldn\'t sign book", exception1);
-+                this.disconnect("Invalid book data!"); // CraftBukkit
-                     return;
-                 } finally {
-                     packetdataserializer.release();
-@@ -1158,6 +2190,7 @@
-                         }
-                     } catch (Exception exception3) {
-                         PlayerConnection.LOGGER.error("Couldn\'t set command block", exception3);
-+                        this.disconnect("Invalid CommandBlock data!"); // CraftBukkit
-                     } finally {
-                         packetdataserializer.release();
-                     }
-@@ -1227,6 +2260,7 @@
-                         }
-                     } catch (Exception exception4) {
-                         PlayerConnection.LOGGER.error("Couldn\'t set command block", exception4);
-+                        this.disconnect("Invalid CommandBlock data!"); // CraftBukkit
-                     } finally {
-                         packetdataserializer.release();
-                     }
-@@ -1252,6 +2286,7 @@
-                                 }
-                             } catch (Exception exception5) {
-                                 PlayerConnection.LOGGER.error("Couldn\'t set beacon", exception5);
-+                                this.disconnect("Invalid beacon data!"); // CraftBukkit
-                             }
-                         }
-                     } else if ("MC|ItemName".equals(s)) {
-@@ -1334,10 +2369,37 @@
+@@ -1334,12 +2357,34 @@
                              packetdataserializer.release();
                          }
                      }
@@ -1621,17 +1547,14 @@
                  }
              }
          }
-+        // CraftBukkit start
-+        } finally {
-+            if (packetplayincustompayload.b().refCnt() > 0) {
-+                packetplayincustompayload.b().release();
-+            }
-+        }
-+    }
+ 
+     }
  
 +    // CraftBukkit start - Add "isDisconnected" method
 +    public final boolean isDisconnected() {
 +        return !this.player.joining && !this.networkManager.isConnected();
-     }
- 
++    }
++
      static class SyntheticClass_1 {
+ 
+         static final int[] a;
