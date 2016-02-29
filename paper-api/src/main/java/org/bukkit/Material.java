@@ -261,6 +261,21 @@ public enum Material {
     JUNGLE_DOOR(195, Door.class),
     ACACIA_DOOR(196, Door.class),
     DARK_OAK_DOOR(197, Door.class),
+    END_ROD(198),
+    CHORUS_PLANT(199),
+    CHORUS_FLOWER(200),
+    PURPUR_BLOCK(201),
+    PURPUR_PILLAR(202),
+    PURPUR_STAIRS(203, Stairs.class),
+    PURPUR_DOUBLE_SLAB(204),
+    PURPUR_SLAB(205),
+    END_BRICKS(206),
+    BEETROOT_BLOCK(207, Crops.class),
+    GRASS_PATH(208),
+    END_GATEWAY(209),
+    COMMAND_REPEATING(210),
+    COMMAND_CHAIN(211),
+    STRUCTURE_BLOCK(255),
     // ----- Item Separator -----
     IRON_SPADE(256, 1, 250),
     IRON_PICKAXE(257, 1, 250),
@@ -438,11 +453,32 @@ public enum Material {
     MUTTON(423),
     COOKED_MUTTON(424),
     BANNER(425, 16),
+    END_CRYSTAL(426),
     SPRUCE_DOOR_ITEM(427),
     BIRCH_DOOR_ITEM(428),
     JUNGLE_DOOR_ITEM(429),
     ACACIA_DOOR_ITEM(430),
     DARK_OAK_DOOR_ITEM(431),
+    CHORUS_FRUIT(432),
+    CHORUS_FRUIT_POPPED(433),
+    BEETROOT(434),
+    BEETROOT_SEEDS(435),
+    BEETROOT_SOUP(436, 1),
+    DRAGONS_BREATH(437),
+    SPLASH_POTION(438, 1),
+    SPECTRAL_ARROW(439),
+    TIPPED_ARROW(440),
+    /**
+     * @see Potion
+     */
+    LINGERING_POTION(441, 1, MaterialData.class),
+    SHIELD(442, 1),
+    ELYTRA(443, 1),
+    BOAT_SPRUCE(444, 1),
+    BOAT_BIRCH(445, 1),
+    BOAT_JUNGLE(446, 1),
+    BOAT_ACACIA(447, 1),
+    BOAT_DARK_OAK(448, 1),
     GOLD_RECORD(2256, 1),
     GREEN_RECORD(2257, 1),
     RECORD_3(2258, 1),
@@ -605,6 +641,9 @@ public enum Material {
             case RABBIT_STEW:
             case MUTTON:
             case COOKED_MUTTON:
+            case BEETROOT:
+            case CHORUS_FRUIT:
+            case BEETROOT_SOUP:
                 return true;
             default:
                 return false;
@@ -850,6 +889,16 @@ public enum Material {
             case JUNGLE_DOOR:
             case ACACIA_DOOR:
             case DARK_OAK_DOOR:
+            case PURPUR_BLOCK:
+            case PURPUR_PILLAR:
+            case PURPUR_STAIRS:
+            case PURPUR_DOUBLE_SLAB:
+            case PURPUR_SLAB:
+            case END_BRICKS:
+            case GRASS_PATH:
+            case STRUCTURE_BLOCK:
+            case COMMAND_REPEATING:
+            case COMMAND_CHAIN:
                 return true;
             default:
                 return false;
@@ -910,6 +959,11 @@ public enum Material {
             case ACTIVATOR_RAIL:
             case CARPET:
             case DOUBLE_PLANT:
+            case END_ROD:
+            case CHORUS_PLANT:
+            case CHORUS_FLOWER:
+            case BEETROOT_BLOCK:
+            case END_GATEWAY:
                 return true;
             default:
                 return false;
@@ -1032,6 +1086,8 @@ public enum Material {
             case JUNGLE_FENCE:
             case DARK_OAK_FENCE:
             case ACACIA_FENCE:
+            case ACACIA_STAIRS:
+            case DARK_OAK_STAIRS:
                 return true;
             default:
                 return false;
@@ -1096,7 +1152,6 @@ public enum Material {
             case MELON_BLOCK:
             case MYCEL:
             case NETHER_BRICK:
-            case ENDER_PORTAL_FRAME:
             case ENDER_STONE:
             case REDSTONE_LAMP_OFF:
             case REDSTONE_LAMP_ON:
@@ -1118,6 +1173,13 @@ public enum Material {
             case PRISMARINE:
             case RED_SANDSTONE:
             case DOUBLE_STONE_SLAB2:
+            case PURPUR_BLOCK:
+            case PURPUR_PILLAR:
+            case PURPUR_DOUBLE_SLAB:
+            case END_BRICKS:
+            case STRUCTURE_BLOCK:
+            case COMMAND_REPEATING:
+            case COMMAND_CHAIN:
                 return true;
             default:
                 return false;

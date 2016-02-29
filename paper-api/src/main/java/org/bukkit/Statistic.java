@@ -15,11 +15,13 @@ public enum Statistic {
     JUNK_FISHED,
     LEAVE_GAME,
     JUMP,
-    DROP,
+    DROP(Type.ITEM),
+    PICKUP(Type.ITEM),
     PLAY_ONE_TICK,
     WALK_ONE_CM,
     SWIM_ONE_CM,
     FALL_ONE_CM,
+    SNEAK_TIME,
     CLIMB_ONE_CM,
     FLY_ONE_CM,
     DIVE_ONE_CM,
@@ -29,6 +31,7 @@ public enum Statistic {
     HORSE_ONE_CM,
     SPRINT_ONE_CM,
     CROUCH_ONE_CM,
+    AVIATE_ONE_CM,
     MINE_BLOCK(Type.BLOCK),
     USE_ITEM(Type.ITEM),
     BREAK_ITEM(Type.ITEM),
@@ -57,7 +60,8 @@ public enum Statistic {
     RECORD_PLAYED,
     FURNACE_INTERACTION,
     CRAFTING_TABLE_INTERACTION,
-    CHEST_OPENED;
+    CHEST_OPENED,
+    SLEEP_IN_BED;
 
     private final Type type;
 

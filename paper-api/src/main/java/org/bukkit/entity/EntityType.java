@@ -13,6 +13,7 @@ import org.bukkit.entity.minecart.StorageMinecart;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.potion.PotionEffectType;
 
 public enum EntityType {
 
@@ -80,7 +81,29 @@ public enum EntityType {
      * A block that is going to or is about to fall.
      */
     FALLING_BLOCK("FallingSand", FallingBlock.class, 21, false),
+    /**
+     * Internal representation of a Firework once it has been launched.
+     */
     FIREWORK("FireworksRocketEntity", Firework.class, 22, false),
+    /**
+     * Like {@link #ARROW} but tipped with a specific potion which is applied on contact.
+     */
+    TIPPED_ARROW("TippedArrow", TippedArrow.class, 23),
+    /**
+     * Like {@link #TIPPED_ARROW} but causes the {@link PotionEffectType#GLOWING} effect on all team members.
+     */
+    SPECTRAL_ARROW("SpectralArrow", SpectralArrow.class, 24),
+    /**
+     * Bullet fired by {@link #SHULKER}.
+     */
+    SHULKER_BULLET("ShulkerBullet", ShulkerBullet.class, 25),
+    /**
+     * Like {@link #FIREBALL} but with added effects.
+     */
+    DRAGON_FIREBALL("DragonFireball", DragonFireball.class, 26),
+    /**
+     * Mechanical entity with an inventory for placing weapons / armor into.
+     */
     ARMOR_STAND("ArmorStand", ArmorStand.class, 30, false),
     /**
      * @see CommandMinecart
@@ -133,6 +156,7 @@ public enum EntityType {
     WITCH("Witch", Witch.class, 66),
     ENDERMITE("Endermite", Endermite.class, 67),
     GUARDIAN("Guardian", Guardian.class, 68),
+    SHULKER("Shulker", Shulker.class, 69),
     PIG("Pig", Pig.class, 90),
     SHEEP("Sheep", Sheep.class, 91),
     COW("Cow", Cow.class, 92),
@@ -152,6 +176,7 @@ public enum EntityType {
      * A flying splash potion.
      */
     SPLASH_POTION(null, ThrownPotion.class, -1, false),
+    AREA_EFFECT_CLOUD(null, AreaEffectCloud.class, -1),
     /**
      * A flying chicken egg.
      */

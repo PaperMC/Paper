@@ -15,6 +15,11 @@ public enum PotionType {
     INSTANT_DAMAGE(12, PotionEffectType.HARM, 2),
     WATER_BREATHING(13, PotionEffectType.WATER_BREATHING, 1),
     INVISIBILITY(14, PotionEffectType.INVISIBILITY, 1),
+    /**
+     * @deprecated not representable with a damage value!
+     */
+    @Deprecated
+    LUCK(-1, PotionEffectType.LUCK, 1),
     ;
 
     private final int damageValue, maxLevel;

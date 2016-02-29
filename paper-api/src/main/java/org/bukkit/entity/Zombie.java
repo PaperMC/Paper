@@ -30,6 +30,23 @@ public interface Zombie extends Monster {
      * Sets whether the zombie is a villager
      *
      * @param flag Whether the zombie is a villager
+     * @deprecated Defaults to a basic villager
      */
+    @Deprecated
     public void setVillager(boolean flag);
+
+    /**
+     * Sets whether the zombie is a villager
+     *
+     * @param profession the profession of the villager or null to clear
+     */
+    public void setVillagerProfession(Villager.Profession profession);
+
+    /**
+     * Returns the villager profession of the zombie if the
+     * zombie is a villager
+     *
+     * @return the profession or null
+     */
+    public Villager.Profession getVillagerProfession();
 }

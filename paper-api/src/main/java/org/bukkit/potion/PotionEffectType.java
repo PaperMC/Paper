@@ -126,6 +126,26 @@ public abstract class PotionEffectType {
      */
     public static final PotionEffectType SATURATION = new PotionEffectTypeWrapper(23);
 
+    /**
+     * Outlines the entity so that it can be seen from afar.
+     */
+    public static final PotionEffectType GLOWING = new PotionEffectTypeWrapper(24);
+
+    /**
+     * Causes the entity to float into the air.
+     */
+    public static final PotionEffectType LEVITATION = new PotionEffectTypeWrapper(25);
+
+    /**
+     * Loot table luck.
+     */
+    public static final PotionEffectType LUCK = new PotionEffectTypeWrapper(26);
+
+    /**
+     * Loot table unluck.
+     */
+    public static final PotionEffectType UNLUCK = new PotionEffectTypeWrapper(27);
+
     private final int id;
 
     protected PotionEffectType(int id) {
@@ -202,7 +222,7 @@ public abstract class PotionEffectType {
         return "PotionEffectType[" + id + ", " + getName() + "]";
     }
 
-    private static final PotionEffectType[] byId = new PotionEffectType[24];
+    private static final PotionEffectType[] byId = new PotionEffectType[28];
     private static final Map<String, PotionEffectType> byName = new HashMap<String, PotionEffectType>();
     // will break on updates.
     private static boolean acceptingNew = true;
