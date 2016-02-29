@@ -22,5 +22,19 @@ public interface BrewingStand extends BlockState, InventoryHolder {
      */
     void setBrewingTime(int brewTime);
 
+    /**
+     * Get the level of current fuel for brewing.
+     *
+     * @return The fuel level
+     */
+    int getFuelLevel();
+
+    /**
+     * Set the level of current fuel for brewing.
+     *
+     * @param level fuel level
+     */
+    void setFuelLevel(int level);
+
     public BrewerInventory getInventory();
 }

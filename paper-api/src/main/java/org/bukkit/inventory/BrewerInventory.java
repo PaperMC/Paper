@@ -1,5 +1,6 @@
 package org.bukkit.inventory;
 
+import org.bukkit.Material;
 import org.bukkit.block.BrewingStand;
 
 /**
@@ -20,6 +21,21 @@ public interface BrewerInventory extends Inventory {
      * @param ingredient The ingredient
      */
     void setIngredient(ItemStack ingredient);
+
+    /**
+     * Get the current fuel for brewing.
+     *
+     * @return The fuel
+     */
+    ItemStack getFuel();
+
+    /**
+     * Set the current fuel for brewing. Generally only
+     * {@link Material#BLAZE_POWDER} will be of use.
+     *
+     * @param fuel The fuel
+     */
+    void setFuel(ItemStack fuel);
 
     BrewingStand getHolder();
 }
