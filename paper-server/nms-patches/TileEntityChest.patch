@@ -9,7 +9,7 @@
 +import org.bukkit.entity.HumanEntity;
 +// CraftBukkit end
 +
- public class TileEntityChest extends TileEntityContainer implements IUpdatePlayerListBox, IInventory {
+ public class TileEntityChest extends TileEntityLootable implements ITickable, IInventory {
  
      private ItemStack[] items = new ItemStack[27];
 @@ -20,6 +25,31 @@
@@ -41,10 +41,10 @@
 +    }
 +    // CraftBukkit end
 +
-     public int getSize() {
-         return 27;
+     public TileEntityChest(BlockChest.Type blockchest_type) {
+         this.q = blockchest_type;
      }
-@@ -125,10 +155,11 @@
+@@ -118,10 +148,11 @@
      }
  
      public int getMaxStackSize() {
@@ -57,7 +57,7 @@
          return this.world.getTileEntity(this.position) != this ? false : entityhuman.e((double) this.position.getX() + 0.5D, (double) this.position.getY() + 0.5D, (double) this.position.getZ() + 0.5D) <= 64.0D;
      }
  
-@@ -304,9 +335,21 @@
+@@ -297,9 +328,21 @@
              if (this.l < 0) {
                  this.l = 0;
              }
@@ -65,10 +65,10 @@
  
              ++this.l;
 +            if (this.world == null) return; // CraftBukkit
-             this.world.playBlockAction(this.position, this.w(), 1, this.l);
+             this.world.playBlockAction(this.position, this.getBlock(), 1, this.l);
 +
 +            // CraftBukkit start - Call redstone event
-+            if (this.w() == Blocks.TRAPPED_CHEST) {
++            if (this.getBlock() == Blocks.TRAPPED_CHEST) {
 +                int newPower = Math.max(0, Math.min(15, this.l));
 +
 +                if (oldPower != newPower) {
@@ -76,20 +76,20 @@
 +                }
 +            }
 +            // CraftBukkit end
-             this.world.applyPhysics(this.position, this.w());
-             this.world.applyPhysics(this.position.down(), this.w());
+             this.world.applyPhysics(this.position, this.getBlock());
+             this.world.applyPhysics(this.position.down(), this.getBlock());
          }
-@@ -315,8 +358,20 @@
+@@ -308,8 +351,20 @@
  
      public void closeContainer(EntityHuman entityhuman) {
-         if (!entityhuman.isSpectator() && this.w() instanceof BlockChest) {
+         if (!entityhuman.isSpectator() && this.getBlock() instanceof BlockChest) {
 +            int oldPower = Math.max(0, Math.min(15, this.l)); // CraftBukkit - Get power before new viewer is added
              --this.l;
 +            if (this.world == null) return; // CraftBukkit
-             this.world.playBlockAction(this.position, this.w(), 1, this.l);
+             this.world.playBlockAction(this.position, this.getBlock(), 1, this.l);
 +
 +            // CraftBukkit start - Call redstone event
-+            if (this.w() == Blocks.TRAPPED_CHEST) {
++            if (this.getBlock() == Blocks.TRAPPED_CHEST) {
 +                int newPower = Math.max(0, Math.min(15, this.l));
 +
 +                if (oldPower != newPower) {
@@ -97,17 +97,16 @@
 +                }
 +            }
 +            // CraftBukkit end
-             this.world.applyPhysics(this.position, this.w());
-             this.world.applyPhysics(this.position.down(), this.w());
+             this.world.applyPhysics(this.position, this.getBlock());
+             this.world.applyPhysics(this.position.down(), this.getBlock());
          }
-@@ -370,6 +425,14 @@
- 
+@@ -371,6 +426,13 @@
+         this.n = i;
      }
  
 +    // CraftBukkit start
-+    // PAIL
 +    @Override
-+    public boolean F() {
++    public boolean isFilteredNBT() {
 +        return true;
 +    }
 +    // CraftBukkit end

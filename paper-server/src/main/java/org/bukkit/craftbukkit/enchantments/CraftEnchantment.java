@@ -10,7 +10,7 @@ public class CraftEnchantment extends Enchantment {
     private final net.minecraft.server.Enchantment target;
 
     public CraftEnchantment(net.minecraft.server.Enchantment target) {
-        super(target.id);
+        super(net.minecraft.server.Enchantment.getId(target));
         this.target = target;
     }
 
@@ -26,7 +26,7 @@ public class CraftEnchantment extends Enchantment {
 
     @Override
     public EnchantmentTarget getItemTarget() {
-        switch (target.slot) {
+        switch (target.itemTarget) {
         case ALL:
             return EnchantmentTarget.ALL;
         case ARMOR:
@@ -37,7 +37,7 @@ public class CraftEnchantment extends Enchantment {
             return EnchantmentTarget.ARMOR_HEAD;
         case ARMOR_LEGS:
             return EnchantmentTarget.ARMOR_LEGS;
-        case ARMOR_TORSO:
+        case ARMOR_CHEST:
             return EnchantmentTarget.ARMOR_TORSO;
         case DIGGER:
             return EnchantmentTarget.TOOL;
@@ -59,7 +59,7 @@ public class CraftEnchantment extends Enchantment {
 
     @Override
     public String getName() {
-        switch (target.id) {
+        switch (getId()) {
         case 0:
             return "PROTECTION_ENVIRONMENTAL";
         case 1:
@@ -111,7 +111,7 @@ public class CraftEnchantment extends Enchantment {
         case 62:
             return "LURE";
         default:
-            return "UNKNOWN_ENCHANT_" + target.id;
+            return "UNKNOWN_ENCHANT_" + getId();
         }
     }
 
@@ -137,5 +137,9 @@ public class CraftEnchantment extends Enchantment {
         }
         CraftEnchantment ench = (CraftEnchantment) other;
         return !target.a(ench.target);
+    }
+
+    public net.minecraft.server.Enchantment getHandle() {
+        return target;
     }
 }

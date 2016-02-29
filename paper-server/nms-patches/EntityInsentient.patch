@@ -1,7 +1,7 @@
 --- a/net/minecraft/server/EntityInsentient.java
 +++ b/net/minecraft/server/EntityInsentient.java
-@@ -4,6 +4,15 @@
- import java.util.List;
+@@ -8,6 +8,15 @@
+ import java.util.Random;
  import java.util.UUID;
  
 +// CraftBukkit start
@@ -15,9 +15,9 @@
 +
  public abstract class EntityInsentient extends EntityLiving {
  
-     public int a_;
-@@ -40,6 +49,9 @@
-             this.dropChances[i] = 0.085F;
+     private static final DataWatcherObject<Byte> a = DataWatcher.a(EntityInsentient.class, DataWatcherRegistry.a);
+@@ -60,6 +69,9 @@
+             this.r();
          }
  
 +        // CraftBukkit start - default persistance to type's persistance value
@@ -25,8 +25,8 @@
 +        // CraftBukkit end
      }
  
-     protected void initAttributes() {
-@@ -76,7 +88,37 @@
+     protected void r() {}
+@@ -110,7 +122,37 @@
      }
  
      public void setGoalTarget(EntityLiving entityliving) {
@@ -63,8 +63,8 @@
 +        // CraftBukkit end
      }
  
-     public boolean a(Class<? extends EntityLiving> oclass) {
-@@ -168,6 +210,7 @@
+     public boolean d(Class<? extends EntityLiving> oclass) {
+@@ -225,6 +267,7 @@
          return null;
      }
  
@@ -72,7 +72,7 @@
      protected void dropDeathLoot(boolean flag, int i) {
          Item item = this.getLoot();
  
-@@ -183,6 +226,12 @@
+@@ -240,6 +283,12 @@
              }
          }
  
@@ -85,17 +85,17 @@
      }
  
      public void b(NBTTagCompound nbttagcompound) {
-@@ -235,11 +284,20 @@
+@@ -321,11 +370,20 @@
  
      public void a(NBTTagCompound nbttagcompound) {
          super.a(nbttagcompound);
-+        
++
 +        // CraftBukkit start - If looting or persistence is false only use it if it was set after we started using it
          if (nbttagcompound.hasKeyOfType("CanPickUpLoot", 1)) {
--            this.j(nbttagcompound.getBoolean("CanPickUpLoot"));
+-            this.l(nbttagcompound.getBoolean("CanPickUpLoot"));
 +            boolean data = nbttagcompound.getBoolean("CanPickUpLoot");
 +            if (isLevelAtLeast(nbttagcompound, 1) || data) {
-+                this.j(data);
++                this.l(data);
 +            }
          }
  
@@ -108,7 +108,7 @@
          NBTTagList nbttaglist;
          int i;
  
-@@ -380,11 +438,11 @@
+@@ -549,11 +607,11 @@
                  double d2 = entityhuman.locZ - this.locZ;
                  double d3 = d0 * d0 + d1 * d1 + d2 * d2;
  
@@ -122,60 +122,44 @@
                      this.die();
                  } else if (d3 < 1024.0D) {
                      this.ticksFarFromPlayer = 0;
-@@ -707,6 +765,12 @@
+@@ -931,9 +989,21 @@
  
-     public final boolean e(EntityHuman entityhuman) {
-         if (this.cc() && this.getLeashHolder() == entityhuman) {
+     public final boolean a(EntityHuman entityhuman, ItemStack itemstack, EnumHand enumhand) {
+         if (this.isLeashed() && this.getLeashHolder() == entityhuman) {
 +            // CraftBukkit start - fire PlayerUnleashEntityEvent
 +            if (CraftEventFactory.callPlayerUnleashEntityEvent(this, entityhuman).isCancelled()) {
-+                ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutAttachEntity(1, this, this.getLeashHolder()));
++                ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutAttachEntity(this, this.getLeashHolder()));
 +                return false;
 +            }
 +            // CraftBukkit end
              this.unleash(true, !entityhuman.abilities.canInstantlyBuild);
              return true;
-         } else {
-@@ -714,12 +778,24 @@
+         } else if (itemstack != null && itemstack.getItem() == Items.LEAD && this.a(entityhuman)) {
++            // CraftBukkit start - fire PlayerLeashEntityEvent
++            if (CraftEventFactory.callPlayerLeashEntityEvent(this, entityhuman, entityhuman).isCancelled()) {
++                ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutAttachEntity(this, this.getLeashHolder()));
++                return false;
++            }
++            // CraftBukkit end
+             this.setLeashHolder(entityhuman, true);
+             --itemstack.count;
+             return true;
+@@ -953,10 +1023,12 @@
  
-             if (itemstack != null && itemstack.getItem() == Items.LEAD && this.cb()) {
-                 if (!(this instanceof EntityTameableAnimal) || !((EntityTameableAnimal) this).isTamed()) {
-+                    // CraftBukkit start - fire PlayerLeashEntityEvent
-+                    if (CraftEventFactory.callPlayerLeashEntityEvent(this, entityhuman, entityhuman).isCancelled()) {
-+                        ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutAttachEntity(1, this, this.getLeashHolder()));
-+                        return false;
-+                    }
-+                    // CraftBukkit end
-                     this.setLeashHolder(entityhuman, true);
-                     --itemstack.count;
-                     return true;
-                 }
- 
-                 if (((EntityTameableAnimal) this).e((EntityLiving) entityhuman)) {
-+                    // CraftBukkit start - fire PlayerLeashEntityEvent
-+                    if (CraftEventFactory.callPlayerLeashEntityEvent(this, entityhuman, entityhuman).isCancelled()) {
-+                        ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutAttachEntity(1, this, this.getLeashHolder()));
-+                        return false;
-+                    }
-+                    // CraftBukkit end
-                     this.setLeashHolder(entityhuman, true);
-                     --itemstack.count;
-                     return true;
-@@ -741,10 +817,12 @@
- 
-         if (this.bo) {
+         if (this.bC) {
              if (!this.isAlive()) {
 +                this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.PLAYER_UNLEASH)); // CraftBukkit
                  this.unleash(true, true);
              }
  
-             if (this.bp == null || this.bp.dead) {
+             if (this.leashHolder == null || this.leashHolder.dead) {
 +                this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.HOLDER_GONE)); // CraftBukkit
                  this.unleash(true, true);
              }
          }
-@@ -811,6 +889,7 @@
+@@ -1037,6 +1109,7 @@
  
-                 this.bp = entityleash;
+                 this.leashHolder = entityleash;
              } else {
 +                this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN)); // CraftBukkit
                  this.unleash(false, true);

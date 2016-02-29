@@ -1,22 +1,23 @@
 --- a/net/minecraft/server/TileEntityBrewingStand.java
 +++ b/net/minecraft/server/TileEntityBrewingStand.java
-@@ -3,6 +3,12 @@
+@@ -2,6 +2,13 @@
+ 
  import java.util.Arrays;
- import java.util.List;
  
 +// CraftBukkit start
++import java.util.List;
 +import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 +import org.bukkit.entity.HumanEntity;
 +import org.bukkit.event.inventory.BrewEvent;
 +// CraftBukkit end
 +
- public class TileEntityBrewingStand extends TileEntityContainer implements IUpdatePlayerListBox, IWorldInventory {
+ public class TileEntityBrewingStand extends TileEntityContainer implements ITickable, IWorldInventory {
  
      private static final int[] a = new int[] { 3};
-@@ -12,9 +18,35 @@
-     private boolean[] i;
-     private Item j;
-     private String k;
+@@ -13,9 +20,35 @@
+     private Item k;
+     private String l;
+     private int m;
 +    private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
  
      public TileEntityBrewingStand() {}
@@ -47,43 +48,42 @@
 +    // CraftBukkit end
 +
      public String getName() {
-         return this.hasCustomName() ? this.k : "container.brewing";
+         return this.hasCustomName() ? this.l : "container.brewing";
      }
-@@ -32,9 +64,14 @@
-     }
+@@ -46,9 +79,14 @@
+         boolean flag = this.n();
+         boolean flag1 = this.brewTime > 0;
  
-     public void c() {
 +        // CraftBukkit start - Use wall time instead of ticks for brewing
 +        int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
 +        this.lastTick = MinecraftServer.currentTick;
 +
-         if (this.brewTime > 0) {
+         if (flag1) {
 -            --this.brewTime;
--            if (this.brewTime == 0) {
+-            boolean flag2 = this.brewTime == 0;
 +            this.brewTime -= elapsedTicks;
-+            if (this.brewTime <= 0) { // == -> <=
-+                // CraftBukkit end
-                 this.o();
-                 this.update();
-             } else if (!this.n()) {
-@@ -110,6 +147,16 @@
-         if (this.n()) {
-             ItemStack itemstack = this.items[3];
- 
-+            // CraftBukkit start
-+            if (getOwner() != null) {
-+                BrewEvent event = new BrewEvent(world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()), (org.bukkit.inventory.BrewerInventory) this.getOwner().getInventory());
-+                org.bukkit.Bukkit.getPluginManager().callEvent(event);
-+                if (event.isCancelled()) {
-+                    return;
-+                }
-+            }
++            boolean flag2 = this.brewTime <= 0; // == -> <=
 +            // CraftBukkit end
-+
-             for (int i = 0; i < 3; ++i) {
-                 if (this.items[i] != null && this.items[i].getItem() == Items.POTION) {
-                     int j = this.items[i].getData();
-@@ -221,7 +268,7 @@
+ 
+             if (flag2 && flag) {
+                 this.o();
+@@ -124,6 +162,15 @@
+ 
+     private void o() {
+         ItemStack itemstack = this.items[3];
++        // CraftBukkit start
++        if (getOwner() != null) {
++            BrewEvent event = new BrewEvent(world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()), (org.bukkit.inventory.BrewerInventory) this.getOwner().getInventory());
++            org.bukkit.Bukkit.getPluginManager().callEvent(event);
++            if (event.isCancelled()) {
++                return;
++            }
++        }
++        // CraftBukkit end
+ 
+         for (int i = 0; i < 3; ++i) {
+             this.items[i] = PotionBrewer.d(itemstack, this.items[i]);
+@@ -216,7 +263,7 @@
      }
  
      public int getMaxStackSize() {

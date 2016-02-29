@@ -22,16 +22,33 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     }
 
     @Override
-    public int getSize() {
-        return super.getSize() - 4;
-    }
-
-    public ItemStack getItemInHand() {
+    public ItemStack getItemInMainHand() {
         return CraftItemStack.asCraftMirror(getInventory().getItemInHand());
     }
 
+    @Override
+    public void setItemInMainHand(ItemStack item) {
+        setItem(getHeldItemSlot(), item);
+    }
+
+    @Override
+    public ItemStack getItemInOffHand() {
+        return CraftItemStack.asCraftMirror(getInventory().extraSlots[0]);
+    }
+
+    @Override
+    public void setItemInOffHand(ItemStack item) {
+        getInventory().extraSlots[0] = CraftItemStack.asNMSCopy(item);
+    }
+
+    @Override
+    public ItemStack getItemInHand() {
+        return getItemInMainHand();
+    }
+
+    @Override
     public void setItemInHand(ItemStack stack) {
-        setItem(getHeldItemSlot(), stack);
+        setItemInMainHand(stack);
     }
 
     @Override
@@ -86,35 +103,35 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     }
 
     public ItemStack getHelmet() {
-        return getItem(getSize() + 3);
+        return getItem(getSize() - 2);
     }
 
     public ItemStack getChestplate() {
-        return getItem(getSize() + 2);
+        return getItem(getSize() - 3);
     }
 
     public ItemStack getLeggings() {
-        return getItem(getSize() + 1);
+        return getItem(getSize() - 4);
     }
 
     public ItemStack getBoots() {
-        return getItem(getSize() + 0);
+        return getItem(getSize() - 5);
     }
 
     public void setHelmet(ItemStack helmet) {
-        setItem(getSize() + 3, helmet);
+        setItem(getSize() - 2, helmet);
     }
 
     public void setChestplate(ItemStack chestplate) {
-        setItem(getSize() + 2, chestplate);
+        setItem(getSize() - 3, chestplate);
     }
 
     public void setLeggings(ItemStack leggings) {
-        setItem(getSize() + 1, leggings);
+        setItem(getSize() - 4, leggings);
     }
 
     public void setBoots(ItemStack boots) {
-        setItem(getSize() + 0, boots);
+        setItem(getSize() - 5, boots);
     }
 
     public ItemStack[] getArmorContents() {

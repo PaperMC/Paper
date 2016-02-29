@@ -15,10 +15,10 @@
 +
  public abstract class EntityMinecartAbstract extends Entity implements INamableTileEntity {
  
-     private boolean a;
-@@ -16,6 +25,17 @@
-     private double h;
-     private double i;
+     private static final DataWatcherObject<Integer> a = DataWatcher.a(EntityMinecartAbstract.class, DataWatcherRegistry.b);
+@@ -21,6 +30,17 @@
+     private double aw;
+     private double ax;
  
 +    // CraftBukkit start
 +    public boolean slowWhenEmpty = true;
@@ -33,8 +33,8 @@
 +
      public EntityMinecartAbstract(World world) {
          super(world);
-         this.k = true;
-@@ -81,6 +101,8 @@
+         this.i = true;
+@@ -86,6 +106,8 @@
          this.lastX = d0;
          this.lastY = d1;
          this.lastZ = d2;
@@ -42,8 +42,8 @@
 +        this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit
      }
  
-     public double an() {
-@@ -92,6 +114,19 @@
+     public double ay() {
+@@ -97,6 +119,19 @@
              if (this.isInvulnerable(damagesource)) {
                  return false;
              } else {
@@ -60,10 +60,10 @@
 +
 +                f = (float) event.getDamage();
 +                // CraftBukkit end
-                 this.k(-this.r());
-                 this.j(10);
-                 this.ac();
-@@ -99,6 +134,15 @@
+                 this.e(-this.u());
+                 this.d(10);
+                 this.ao();
+@@ -104,6 +139,15 @@
                  boolean flag = damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).abilities.canInstantlyBuild;
  
                  if (flag || this.getDamage() > 40.0F) {
@@ -76,13 +76,13 @@
 +                        return true;
 +                    }
 +                    // CraftBukkit end
-                     if (this.passenger != null) {
-                         this.passenger.mount((Entity) null);
-                     }
-@@ -140,6 +184,14 @@
+                     this.az();
+                     if (flag && !this.hasCustomName()) {
+                         this.die();
+@@ -146,6 +190,14 @@
      }
  
-     public void t_() {
+     public void m() {
 +        // CraftBukkit start
 +        double prevX = this.locX;
 +        double prevY = this.locY;
@@ -90,20 +90,20 @@
 +        float prevYaw = this.yaw;
 +        float prevPitch = this.pitch;
 +        // CraftBukkit end
-+        
++
          if (this.getType() > 0) {
-             this.j(this.getType() - 1);
+             this.d(this.getType() - 1);
          }
-@@ -160,7 +212,7 @@
+@@ -166,7 +218,7 @@
  
-             i = this.L();
+             i = this.V();
              if (this.ak) {
 -                if (minecraftserver.getAllowNether()) {
 +                if (true || minecraftserver.getAllowNether()) { // CraftBukkit - multi-world should still allow teleport even if default vanilla nether disabled
-                     if (this.vehicle == null && this.al++ >= i) {
+                     if (!this.isPassenger() && this.al++ >= i) {
                          this.al = i;
-                         this.portalCooldown = this.aq();
-@@ -257,6 +309,20 @@
+                         this.portalCooldown = this.aC();
+@@ -263,6 +315,20 @@
              }
  
              this.setYawPitch(this.yaw, this.pitch);
@@ -124,16 +124,16 @@
              Iterator iterator = this.world.getEntities(this, this.getBoundingBox().grow(0.20000000298023224D, 0.0D, 0.20000000298023224D)).iterator();
  
              while (iterator.hasNext()) {
-@@ -280,7 +346,7 @@
+@@ -278,7 +344,7 @@
      }
  
-     protected double m() {
+     protected double o() {
 -        return 0.4D;
 +        return this.maxSpeed; // CraftBukkit
      }
  
      public void a(int i, int j, int k, boolean flag) {}
-@@ -291,16 +357,20 @@
+@@ -289,16 +355,20 @@
          this.motX = MathHelper.a(this.motX, -d0, d0);
          this.motZ = MathHelper.a(this.motZ, -d0, d0);
          if (this.onGround) {
@@ -160,19 +160,19 @@
          }
  
      }
-@@ -488,7 +558,7 @@
+@@ -487,7 +557,7 @@
      }
  
-     protected void o() {
--        if (this.passenger != null) {
-+        if (this.passenger != null || !this.slowWhenEmpty) { // CraftBukkit - add !this.slowWhenEmpty
+     protected void r() {
+-        if (this.isVehicle()) {
++        if (this.isVehicle() || !this.slowWhenEmpty) { // CraftBukkit - add !this.slowWhenEmpty
              this.motX *= 0.996999979019165D;
              this.motY *= 0.0D;
              this.motZ *= 0.996999979019165D;
-@@ -616,6 +686,17 @@
+@@ -599,6 +669,17 @@
          if (!this.world.isClientSide) {
              if (!entity.noclip && !this.noclip) {
-                 if (entity != this.passenger) {
+                 if (!this.w(entity)) {
 +                    // CraftBukkit start
 +                    Vehicle vehicle = (Vehicle) this.getBukkitEntity();
 +                    org.bukkit.entity.Entity hitEntity = (entity == null) ? null : entity.getBukkitEntity();
@@ -184,10 +184,10 @@
 +                        return;
 +                    }
 +                    // CraftBukkit end
-                     if (entity instanceof EntityLiving && !(entity instanceof EntityHuman) && !(entity instanceof EntityIronGolem) && this.s() == EntityMinecartAbstract.EnumMinecartType.RIDEABLE && this.motX * this.motX + this.motZ * this.motZ > 0.01D && this.passenger == null && entity.vehicle == null) {
-                         entity.mount(this);
+                     if (entity instanceof EntityLiving && this.v() == EntityMinecartAbstract.EnumMinecartType.RIDEABLE && this.motX * this.motX + this.motZ * this.motZ > 0.01D && !(entity instanceof EntityHuman) && !(entity instanceof EntityIronGolem) && !this.isVehicle() && !entity.isPassenger()) {
+                         entity.startRiding(this);
                      }
-@@ -624,7 +705,8 @@
+@@ -607,7 +688,8 @@
                      double d1 = entity.locZ - this.locZ;
                      double d2 = d0 * d0 + d1 * d1;
  
@@ -197,7 +197,7 @@
                          d2 = (double) MathHelper.sqrt(d2);
                          d0 /= d2;
                          d1 /= d2;
-@@ -891,4 +973,26 @@
+@@ -836,4 +918,26 @@
  
          }
      }

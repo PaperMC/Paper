@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.IChatBaseComponent.ChatSerializer;
 import net.minecraft.server.Items;
 import net.minecraft.server.NBTTagString;
+import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 @DelegateDeserialization(ItemStack.class)
@@ -230,7 +231,7 @@ public final class CraftItemStack extends ItemStack {
         if (handle == null) {
             return 0;
         }
-        return EnchantmentManager.getEnchantmentLevel(ench.getId(), handle);
+        return EnchantmentManager.getEnchantmentLevel(CraftEnchantment.getRaw(ench), handle);
     }
 
     @Override
@@ -367,6 +368,7 @@ public final class CraftItemStack extends ItemStack {
             case HOPPER:
             case REDSTONE_COMPARATOR:
             case FLOWER_POT_ITEM:
+            case SHIELD:
                 return new CraftMetaBlockState(item.getTag(), CraftMagicNumbers.getMaterial(item.getItem()));
             default:
                 return new CraftMetaItem(item.getTag());

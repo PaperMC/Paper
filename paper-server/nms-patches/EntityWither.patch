@@ -12,13 +12,13 @@
 +
  public class EntityWither extends EntityMonster implements IRangedEntity {
  
-     private float[] a = new float[2];
-@@ -168,13 +174,38 @@
-         if (this.cl() > 0) {
-             i = this.cl() - 1;
+     private static final DataWatcherObject<Integer> a = DataWatcher.a(EntityWither.class, DataWatcherRegistry.b);
+@@ -179,13 +185,38 @@
+         if (this.cZ() > 0) {
+             i = this.cZ() - 1;
              if (i <= 0) {
 -                this.world.createExplosion(this, this.locX, this.locY + (double) this.getHeadHeight(), this.locZ, 7.0F, false, this.world.getGameRules().getBoolean("mobGriefing"));
--                this.world.a(1013, new BlockPosition(this), 0);
+-                this.world.a(1023, new BlockPosition(this), 0);
 +                // CraftBukkit start
 +                // this.world.createExplosion(this, this.locX, this.locY + (double) this.getHeadHeight(), this.locZ, 7.0F, false, this.world.getGameRules().getBoolean("mobGriefing"));
 +                ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), 7.0F, false);
@@ -30,7 +30,7 @@
 +                // CraftBukkit end
 +
 +                // CraftBukkit start - Use relative location for far away sounds
-+                // this.world.a(1013, new BlockPosition(this), 0);
++                // this.world.a(1023, new BlockPosition(this), 0);
 +                int viewDistance = ((WorldServer) this.world).getServer().getViewDistance() * 16;
 +                for (EntityPlayer player : (List<EntityPlayer>) MinecraftServer.getServer().getPlayerList().players) {
 +                    double deltaX = this.locX - player.locX;
@@ -48,17 +48,17 @@
 +                // CraftBukkit end
              }
  
-             this.r(i);
+             this.l(i);
              if (this.ticksLived % 10 == 0) {
 -                this.heal(10.0F);
 +                this.heal(10.0F, EntityRegainHealthEvent.RegainReason.WITHER_SPAWN); // CraftBukkit
              }
  
          } else {
-@@ -264,6 +295,11 @@
-                                 Block block = this.world.getType(blockposition).getBlock();
+@@ -276,6 +307,11 @@
+                                 Block block = iblockdata.getBlock();
  
-                                 if (block.getMaterial() != Material.AIR && a(block)) {
+                                 if (iblockdata.getMaterial() != Material.AIR && a(block)) {
 +                                    // CraftBukkit start
 +                                    if (CraftEventFactory.callEntityChangeBlockEvent(this, j2, k2, l2, Blocks.AIR, 0).isCancelled()) {
 +                                        continue;
@@ -67,7 +67,7 @@
                                      flag = this.world.setAir(blockposition, true) || flag;
                                  }
                              }
-@@ -277,7 +313,7 @@
+@@ -289,7 +325,7 @@
              }
  
              if (this.ticksLived % 20 == 0) {
@@ -75,4 +75,4 @@
 +                this.heal(1.0F, EntityRegainHealthEvent.RegainReason.REGEN); // CraftBukkit
              }
  
-         }
+             this.bE.setProgress(this.getHealth() / this.getMaxHealth());

@@ -54,6 +54,7 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDamageEvent.DamageModifier;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.event.server.ServerListPingEvent;
@@ -337,7 +338,7 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static void handleBlockSpreadEvent(Block block, Block source, net.minecraft.server.Block type, int data) {
+    public static boolean handleBlockSpreadEvent(Block block, Block source, net.minecraft.server.Block type, int data) {
         BlockState state = block.getState();
         state.setTypeId(net.minecraft.server.Block.getId(type));
         state.setRawData((byte) data);
@@ -348,6 +349,7 @@ public class CraftEventFactory {
         if (!event.isCancelled()) {
             state.update(true);
         }
+        return !event.isCancelled();
     }
 
     public static EntityDeathEvent callEntityDeathEvent(EntityLiving victim) {
@@ -414,7 +416,7 @@ public class CraftEventFactory {
             EntityDamageEvent event;
             if (damager == null) {
                 event = new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.BLOCK_EXPLOSION, modifiers, modifierFunctions);
-            } else if (entity instanceof EntityEnderDragon && ((EntityEnderDragon) entity).target == damager) {
+            } else if (entity instanceof EntityEnderDragon && /*PAIL FIXME ((EntityEnderDragon) entity).target == damager*/ false) {
                 event = new EntityDamageEvent(entity.getBukkitEntity(), DamageCause.ENTITY_EXPLOSION, modifiers, modifierFunctions);
             } else {
                 if (damager instanceof org.bukkit.entity.TNTPrimed) {
@@ -483,6 +485,8 @@ public class CraftEventFactory {
                 cause = DamageCause.LIGHTNING;
             } else if (source == DamageSource.FALL) {
                 cause = DamageCause.FALL;
+            } else if (source == DamageSource.DRAGON_BREATH) {
+                cause = DamageCause.DRAGON_BREATH;
             } else {
                 throw new AssertionError(String.format("Unhandled damage of %s by %s from %s", entity, damager.getHandle(), source.translationIndex));
             }
@@ -604,7 +608,7 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static void handleBlockGrowEvent(World world, int x, int y, int z, net.minecraft.server.Block type, int data) {
+    public static boolean handleBlockGrowEvent(World world, int x, int y, int z, net.minecraft.server.Block type, int data) {
         Block block = world.getWorld().getBlockAt(x, y, z);
         CraftBlockState state = (CraftBlockState) block.getState();
         state.setTypeId(net.minecraft.server.Block.getId(type));
@@ -616,6 +620,8 @@ public class CraftEventFactory {
         if (!event.isCancelled()) {
             state.update(true);
         }
+        
+        return !event.isCancelled();
     }
 
     public static FoodLevelChangeEvent callFoodLevelChangeEvent(EntityHuman entity, int level) {
@@ -930,6 +936,7 @@ public class CraftEventFactory {
                 case SPRINT_ONE_CM:
                 case CROUCH_ONE_CM:
                 case TIME_SINCE_DEATH:
+                case SNEAK_TIME:
                     // Do not process event for these - too spammy
                     return null;
                 default:
@@ -951,6 +958,13 @@ public class CraftEventFactory {
     public static FireworkExplodeEvent callFireworkExplodeEvent(EntityFireworks firework) {
         FireworkExplodeEvent event = new FireworkExplodeEvent((Firework) firework.getBukkitEntity());
         firework.world.getServer().getPluginManager().callEvent(event);
+        return event;
+    }
+
+    public static PrepareAnvilEvent callPrepareAnvilEvent(InventoryView view, ItemStack item) {
+        PrepareAnvilEvent event = new PrepareAnvilEvent(view, CraftItemStack.asCraftMirror(item).clone());
+        event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
+        event.getInventory().setItem(2, event.getResult());
         return event;
     }
 }

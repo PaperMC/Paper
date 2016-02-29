@@ -10,10 +10,6 @@ import org.bukkit.craftbukkit.util.AsynchronousExecutor;
 import org.bukkit.craftbukkit.util.LongHash;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import net.minecraft.server.Entity;
-import net.minecraft.server.EntitySlice;
 
 class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChunk, Chunk, Runnable, RuntimeException> {
     private final AtomicInteger threadNumber = new AtomicInteger(1);
@@ -48,8 +44,8 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
         queuedChunk.provider.chunks.put(LongHash.toLong(queuedChunk.x, queuedChunk.z), chunk);
         chunk.addEntities();
 
-        if (queuedChunk.provider.chunkProvider != null) {
-            queuedChunk.provider.chunkProvider.recreateStructures(chunk, queuedChunk.x, queuedChunk.z);
+        if (queuedChunk.provider.chunkGenerator != null) {
+            queuedChunk.provider.chunkGenerator.recreateStructures(chunk, queuedChunk.x, queuedChunk.z);
         }
 
         Server server = queuedChunk.provider.world.getServer();
@@ -72,7 +68,7 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
             }
         }
 
-        chunk.loadNearby(queuedChunk.provider, queuedChunk.provider, queuedChunk.x, queuedChunk.z);
+        chunk.loadNearby(queuedChunk.provider, queuedChunk.provider.chunkGenerator);
     }
 
     public void callStage3(QueuedChunk queuedChunk, Chunk chunk, Runnable runnable) throws RuntimeException {

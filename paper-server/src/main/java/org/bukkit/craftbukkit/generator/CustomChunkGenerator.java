@@ -19,10 +19,12 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     private static class CustomBiomeGrid implements BiomeGrid {
         BiomeBase[] biome;
 
+        @Override
         public Biome getBiome(int x, int z) {
             return CraftBlock.biomeBaseToBiome(biome[(z << 4) | x]);
         }
 
+        @Override
         public void setBiome(int x, int z, Biome bio) {
            biome[(z << 4) | x] = CraftBlock.biomeToBiomeBase(bio);
         }
@@ -35,10 +37,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
         this.random = new Random(seed);
     }
 
-    public boolean isChunkLoaded(int x, int z) {
-        return true;
-    }
-
+    @Override
     public Chunk getOrCreateChunk(int x, int z) {
         random.setSeed((long) x * 341873128712L + (long) z * 132897987541L);
 
@@ -67,7 +66,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                 char emptyTest = 0;
                 for (int i = 0; i < 4096; i++) {
                     // Filter invalid block id & data values.
-                    if (Block.d.a(section[i]) == null) {
+                    if (Block.REGISTRY_ID.fromId(section[i]) == null) {
                         section[i] = 0;
                     }
                     emptyTest |= section[i];
@@ -96,7 +95,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                     short[] bdata = xbtypes[sec];
                     for (int i = 0; i < bdata.length; i++) {
                         Block b = Block.getById(bdata[i]);
-                        secBlkID[i] = (char) Block.d.b(b.getBlockData());
+                        secBlkID[i] = (char) Block.REGISTRY_ID.getId(b.getBlockData());
                     }
                     // Build chunk section
                     csect[sec] = new ChunkSection(sec << 4, true, secBlkID);
@@ -119,7 +118,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                         char[] secBlkID = new char[4096]; // Allocate block ID bytes
                         for (int i = 0; i < secBlkID.length; i++) {
                             Block b = Block.getById(btypes[sec][i] & 0xFF);
-                            secBlkID[i] = (char) Block.d.b(b.getBlockData());
+                            secBlkID[i] = (char) Block.REGISTRY_ID.getId(b.getBlockData());
                         }
                         csect[sec] = new ChunkSection(sec << 4, true, secBlkID);
                     }
@@ -137,8 +136,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                     scnt = Math.min(scnt, csect.length);
                     // Loop through sections
                     for (int sec = 0; sec < scnt; sec++) {
-                        ChunkSection cs = null; // Add sections when needed
-                        char[] csbytes = null;
+                        char[] csbytes = null; // Add sections when needed
                         
                         for (int cy = 0; cy < 16; cy++) {
                             int cyoff = cy | (sec << 4);
@@ -150,19 +148,19 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                                     byte blk = types[cxyoff + (cz * ydim)];
                                     
                                     if (blk != 0) { // If non-empty
-                                        if (cs == null) { // If no section yet, get one
-                                            cs = csect[sec] = new ChunkSection(sec << 4, true);
-                                            csbytes = cs.getIdArray();
+                                        if (csbytes == null) { // If no section yet, get one
+                                            csbytes = new char[16*16*16];
                                         }
                                         
                                         Block b = Block.getById(blk & 0xFF);
-                                        csbytes[(cy << 8) | (cz << 4) | cx] = (char) Block.d.b(b.getBlockData());
+                                        csbytes[(cy << 8) | (cz << 4) | cx] = (char) Block.REGISTRY_ID.getId(b.getBlockData());
                                     }
                                 }
                             }
                         }
                         // If section built, finish prepping its state
-                        if (cs != null) {
+                        if (csbytes != null) {
+                            ChunkSection cs = csect[sec] = new ChunkSection(sec << 4, true, csbytes);
                             cs.recalcBlockCounts();
                         }
                     }
@@ -172,7 +170,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
         // Set biome grid
         byte[] biomeIndex = chunk.getBiomeIndex();
         for (int i = 0; i < biomeIndex.length; i++) {
-            biomeIndex[i] = (byte) (biomegrid.biome[i].id & 0xFF);
+            biomeIndex[i] = (byte) (BiomeBase.REGISTRY_ID.a(biomegrid.biome[i]) & 0xFF); // PAIL : rename
         }
         // Initialize lighting
         chunk.initLighting();
@@ -181,40 +179,22 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
-    public Chunk getChunkAt(BlockPosition blockPosition) {
-        return getChunkAt(blockPosition.getX() >> 4, blockPosition.getZ() >> 4);
-    }
-
-    public void getChunkAt(IChunkProvider icp, int i, int i1) {
-        // Nothing!
-    }
-
-    @Override
-    public boolean a(IChunkProvider iChunkProvider, Chunk chunk, int i, int i1) {
+    public boolean a(Chunk chunk, int i, int i1) {
         return false;
-    }
-
-    public boolean saveChunks(boolean bln, IProgressUpdate ipu) {
-        return true;
-    }
-
-    public boolean unloadChunks() {
-        return false;
-    }
-
-    public boolean canSave() {
-        return true;
     }
 
     @SuppressWarnings("deprecation")
+    @Override
     public byte[] generate(org.bukkit.World world, Random random, int x, int z) {
         return generator.generate(world, random, x, z);
     }
 
+    @Override
     public byte[][] generateBlockSections(org.bukkit.World world, Random random, int x, int z, BiomeGrid biomes) {
         return generator.generateBlockSections(world, random, x, z, biomes);
     }
 
+    @Override
     public short[][] generateExtBlockSections(org.bukkit.World world, Random random, int x, int z, BiomeGrid biomes) {
         return generator.generateExtBlockSections(world, random, x, z, biomes);
     }
@@ -245,20 +225,11 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
         return "Stronghold".equals(type) && this.strongholdGen != null ? this.strongholdGen.getNearestGeneratedFeature(world, position) : null;
     }
 
+    @Override
     public void recreateStructures(int i, int j) {}
-
-    public int getLoadedChunks() {
-        return 0;
-    }
 
     @Override
     public void recreateStructures(Chunk chunk, int i, int i1) {
 
     }
-
-    public String getName() {
-        return "CustomChunkGenerator";
-    }
-
-    public void c() {}
 }

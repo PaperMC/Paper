@@ -10,7 +10,7 @@
 +import org.bukkit.event.player.PlayerPreLoginEvent;
 +// CraftBukkit end
 +
- public class LoginListener implements PacketLoginInListener, IUpdatePlayerListBox {
+ public class LoginListener implements PacketLoginInListener, ITickable {
  
      private static final AtomicInteger b = new AtomicInteger(0);
 @@ -32,6 +38,7 @@
@@ -36,9 +36,9 @@
 +            // CraftBukkit end
          } else {
              this.g = LoginListener.EnumProtocolState.ACCEPTED;
-             if (this.server.aK() >= 0 && !this.networkManager.c()) {
+             if (this.server.aF() >= 0 && !this.networkManager.isLocal()) {
 @@ -90,7 +99,7 @@
-                         LoginListener.this.networkManager.a(LoginListener.this.server.aK());
+                         LoginListener.this.networkManager.setCompressionLevel(LoginListener.this.server.aF());
                      }
  
 -                    public void operationComplete(Future future) throws Exception {
@@ -49,7 +49,7 @@
 @@ -101,9 +110,9 @@
  
              if (entityplayer != null) {
-                 this.g = LoginListener.EnumProtocolState.e;
+                 this.g = LoginListener.EnumProtocolState.DELAY_ACCEPT;
 -                this.l = this.server.getPlayerList().processLogin(this.i);
 +                this.l = this.server.getPlayerList().processLogin(this.i, s); // CraftBukkit - add player reference
              } else {
@@ -60,10 +60,10 @@
  
 @@ -148,6 +157,43 @@
  
-                         LoginListener.this.i = LoginListener.this.server.aD().hasJoinedServer(new GameProfile((UUID) null, gameprofile.getName()), s);
+                         LoginListener.this.i = LoginListener.this.server.ay().hasJoinedServer(new GameProfile((UUID) null, gameprofile.getName()), s);
                          if (LoginListener.this.i != null) {
 +                            // CraftBukkit start - fire PlayerPreLoginEvent
-+                            if (!networkManager.g()) {
++                            if (!networkManager.isConnected()) {
 +                                return;
 +                            }
 +
@@ -101,7 +101,7 @@
 +                            // CraftBukkit end
                              LoginListener.c.info("UUID of player " + LoginListener.this.i.getName() + " is " + LoginListener.this.i.getId());
                              LoginListener.this.g = LoginListener.EnumProtocolState.READY_TO_ACCEPT;
-                         } else if (LoginListener.this.server.T()) {
+                         } else if (LoginListener.this.server.R()) {
 @@ -156,7 +202,7 @@
                              LoginListener.this.g = LoginListener.EnumProtocolState.READY_TO_ACCEPT;
                          } else {
@@ -110,7 +110,7 @@
 +                            LoginListener.c.error("Username \'" + gameprofile.getName() + "\' tried to join with an invalid session"); // CraftBukkit - fix null pointer
                          }
                      } catch (AuthenticationUnavailableException authenticationunavailableexception) {
-                         if (LoginListener.this.server.T()) {
+                         if (LoginListener.this.server.R()) {
 @@ -167,6 +213,11 @@
                              LoginListener.this.disconnect("Authentication servers are down. Please try again later, sorry!");
                              LoginListener.c.error("Couldn\'t verify username because servers are unavailable");

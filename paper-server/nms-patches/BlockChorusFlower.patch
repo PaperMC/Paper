@@ -1,0 +1,92 @@
+--- a/net/minecraft/server/BlockChorusFlower.java
++++ b/net/minecraft/server/BlockChorusFlower.java
+@@ -3,6 +3,8 @@
+ import java.util.Iterator;
+ import java.util.Random;
+ 
++import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
++
+ public class BlockChorusFlower extends Block {
+ 
+     public static final BlockStateInteger AGE = BlockStateInteger.of("age", 0, 5);
+@@ -66,8 +68,20 @@
+                     }
+ 
+                     if (flag && a(world, blockposition1, (EnumDirection) null) && world.isEmpty(blockposition.up(2))) {
+-                        world.setTypeAndData(blockposition, Blocks.CHORUS_PLANT.getBlockData(), 2);
+-                        this.a(world, blockposition1, i);
++                        // world.setTypeAndData(blockposition, Blocks.CHORUS_PLANT.getBlockData(), 2);
++                        // this.a(world, blockposition1, i);
++                        // CraftBukkit start - add event
++                        BlockPosition target = blockposition.up();
++                        if (CraftEventFactory.handleBlockSpreadEvent(
++                                world.getWorld().getBlockAt(target.getX(), target.getY(), target.getZ()),
++                                world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()),
++                                this,
++                                toLegacyData(this.getBlockData().set(BlockChorusFlower.AGE, Integer.valueOf(i)))
++                        )) {
++                            world.setTypeAndData(blockposition, Blocks.CHORUS_PLANT.getBlockData(), 2);
++                            world.triggerEffect(1033, blockposition, 0);
++                        }
++                        // CraftBukkit end
+                     } else if (i < 4) {
+                         j = random.nextInt(4);
+                         boolean flag2 = false;
+@@ -81,18 +95,53 @@
+                             BlockPosition blockposition2 = blockposition.shift(enumdirection);
+ 
+                             if (world.isEmpty(blockposition2) && world.isEmpty(blockposition2.down()) && a(world, blockposition2, enumdirection.opposite())) {
+-                                this.a(world, blockposition2, i + 1);
+-                                flag2 = true;
++                                // CraftBukkit start - add event
++                                // this.a(world, blockposition2, i + 1);
++                                BlockPosition target = blockposition1;
++                                if (CraftEventFactory.handleBlockSpreadEvent(
++                                        world.getWorld().getBlockAt(target.getX(), target.getY(), target.getZ()),
++                                        world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()),
++                                        this,
++                                        toLegacyData(this.getBlockData().set(BlockChorusFlower.AGE, Integer.valueOf(i + 1)))
++                                )) {
++                                    world.triggerEffect(1033, blockposition, 0);
++                                    flag2 = true;
++                                }
++                                // CraftBukkit end
+                             }
+                         }
+ 
+                         if (flag2) {
+                             world.setTypeAndData(blockposition, Blocks.CHORUS_PLANT.getBlockData(), 2);
+                         } else {
+-                            this.c(world, blockposition);
++                            // CraftBukkit - add event
++                            if (CraftEventFactory.handleBlockGrowEvent(
++                                    world,
++                                    blockposition.getX(),
++                                    blockposition.getY(),
++                                    blockposition.getZ(),
++                                    this,
++                                    toLegacyData(iblockdata.set(BlockChorusFlower.AGE, Integer.valueOf(5)))
++                            )) {
++                                world.triggerEffect(1034, blockposition, 0);
++                            }
++                            // this.c(world, blockposition);
++                            // CraftBukkit end
+                         }
+                     } else if (i == 4) {
+-                        this.c(world, blockposition);
++                        // CraftBukkit - add event
++                        if (CraftEventFactory.handleBlockGrowEvent(
++                                world,
++                                blockposition.getX(),
++                                blockposition.getY(),
++                                blockposition.getZ(),
++                                this,
++                                toLegacyData(iblockdata.set(BlockChorusFlower.AGE, Integer.valueOf(5)))
++                        )) {
++                            world.triggerEffect(1034, blockposition, 0);
++                        }
++                        // this.c(world, blockposition);
++                        // CraftBukkit end
+                     }
+ 
+                 }

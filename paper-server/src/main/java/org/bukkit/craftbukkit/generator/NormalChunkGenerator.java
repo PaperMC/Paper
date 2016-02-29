@@ -10,10 +10,10 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.generator.BlockPopulator;
 
 public class NormalChunkGenerator extends InternalChunkGenerator {
-    private final IChunkProvider provider;
+    private final ChunkGenerator generator;
 
     public NormalChunkGenerator(World world, long seed) {
-        provider = world.worldProvider.getChunkProvider();
+        generator = world.worldProvider.getChunkGenerator();
     }
 
     @Override
@@ -32,71 +32,32 @@ public class NormalChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
-    public boolean isChunkLoaded(int i, int i1) {
-        return provider.isChunkLoaded(i, i1);
-    }
-
-    @Override
     public Chunk getOrCreateChunk(int i, int i1) {
-        return provider.getOrCreateChunk(i, i1);
+        return generator.getOrCreateChunk(i, i1);
     }
 
     @Override
-    public Chunk getChunkAt(BlockPosition blockPosition) {
-        return provider.getChunkAt(blockPosition);
+    public void recreateStructures(int i, int i1) {
+        generator.recreateStructures(i, i1);
     }
 
     @Override
-    public void getChunkAt(IChunkProvider icp, int i, int i1) {
-        provider.getChunkAt(icp, i, i1);
+    public boolean a(Chunk chunk, int i, int i1) {
+        return generator.a(chunk, i, i1);
     }
 
     @Override
-    public boolean a(IChunkProvider iChunkProvider, Chunk chunk, int i, int i1) {
-        return provider.a(provider, chunk, i, i1);
+    public List<BiomeBase.BiomeMeta> getMobsFor(EnumCreatureType enumCreatureType, BlockPosition blockPosition) {
+        return generator.getMobsFor(enumCreatureType, blockPosition);
     }
 
     @Override
-    public boolean saveChunks(boolean bln, IProgressUpdate ipu) {
-        return provider.saveChunks(bln, ipu);
-    }
-
-    @Override
-    public boolean unloadChunks() {
-        return provider.unloadChunks();
-    }
-
-    @Override
-    public boolean canSave() {
-        return provider.canSave();
-    }
-
-    @Override
-    public List<BiomeBase.BiomeMeta> getMobsFor(EnumCreatureType ect, BlockPosition position) {
-        return provider.getMobsFor(ect, position);
-    }
-
-    @Override
-    public BlockPosition findNearestMapFeature(World world, String string, BlockPosition position) {
-        return provider.findNearestMapFeature(world, string, position);
-    }
-
-    // n.m.s implementations always return 0. (The true implementation is in ChunkProviderServer)
-    @Override
-    public int getLoadedChunks() {
-        return 0;
+    public BlockPosition findNearestMapFeature(World world, String s, BlockPosition blockPosition) {
+        return generator.findNearestMapFeature(world, s, blockPosition);
     }
 
     @Override
     public void recreateStructures(Chunk chunk, int i, int i1) {
-        provider.recreateStructures(chunk, i, i1);
+        generator.recreateStructures(chunk, i, i1);
     }
-
-    @Override
-    public String getName() {
-        return "NormalWorldGenerator";
-    }
-
-    @Override
-    public void c() {}
 }

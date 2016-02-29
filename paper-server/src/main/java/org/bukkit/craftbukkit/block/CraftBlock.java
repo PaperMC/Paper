@@ -29,8 +29,6 @@ public class CraftBlock implements Block {
     private final int x;
     private final int y;
     private final int z;
-    private static final Biome BIOME_MAPPING[];
-    private static final BiomeBase BIOMEBASE_MAPPING[];
 
     public CraftBlock(CraftChunk chunk, int x, int y, int z) {
         this.x = x;
@@ -107,6 +105,10 @@ public class CraftBlock implements Block {
         world.setTypeAndData(position, blockData.getBlock().fromLegacyData(data), flag);
     }
 
+    private IBlockData getData0() {
+        return chunk.getHandle().getBlockData(new BlockPosition(x, y, z));
+    }
+
     public byte getData() {
         IBlockData blockData = chunk.getHandle().getBlockData(new BlockPosition(x, y, z));
         return (byte) blockData.getBlock().toLegacyData(blockData);
@@ -136,9 +138,15 @@ public class CraftBlock implements Block {
         if (applyPhysics) {
             return chunk.getHandle().getWorld().setTypeAndData(position, blockData, 3);
         } else {
+            IBlockData old = chunk.getHandle().getBlockData(position);
             boolean success = chunk.getHandle().getWorld().setTypeAndData(position, blockData, 2);
             if (success) {
-                chunk.getHandle().getWorld().notify(position);
+                chunk.getHandle().getWorld().notify(
+                        position,
+                        old,
+                        blockData,
+                        3
+                );
             }
             return success;
         }
@@ -151,7 +159,7 @@ public class CraftBlock implements Block {
     @Deprecated
     @Override
     public int getTypeId() {
-        return CraftMagicNumbers.getId(chunk.getHandle().getType(new BlockPosition(this.x, this.y, this.z)));
+        return CraftMagicNumbers.getId(chunk.getHandle().getBlockData(new BlockPosition(this.x, this.y, this.z)).getBlock());
     }
 
     public byte getLightLevel() {
@@ -302,14 +310,15 @@ public class CraftBlock implements Block {
             return null;
         }
 
-        return BIOME_MAPPING[base.id];
+        return Biome.valueOf(BiomeBase.REGISTRY_ID.b(base).a().toUpperCase());
     }
 
     public static BiomeBase biomeToBiomeBase(Biome bio) {
         if (bio == null) {
             return null;
         }
-        return BIOMEBASE_MAPPING[bio.ordinal()];
+
+        return BiomeBase.REGISTRY_ID.get(new MinecraftKey(bio.name().toLowerCase()));
     }
 
     public double getTemperature() {
@@ -383,13 +392,13 @@ public class CraftBlock implements Block {
     }
 
     public PistonMoveReaction getPistonMoveReaction() {
-        return PistonMoveReaction.getById(getNMSBlock().getMaterial().getPushReaction());
+        return PistonMoveReaction.getById(getNMSBlock().getBlockData().getMaterial().getPushReaction().ordinal());
     }
 
     private boolean itemCausesDrops(ItemStack item) {
         net.minecraft.server.Block block = this.getNMSBlock();
         net.minecraft.server.Item itemType = item != null ? net.minecraft.server.Item.getById(item.getTypeId()) : null;
-        return block != null && (block.getMaterial().isAlwaysDestroyable() || (itemType != null && itemType.canDestroySpecialBlock(block)));
+        return block != null && (block.getBlockData().getMaterial().isAlwaysDestroyable() || (itemType != null && itemType.canDestroySpecialBlock(block.getBlockData())));
     }
 
     public boolean breakNaturally() {
@@ -420,15 +429,15 @@ public class CraftBlock implements Block {
 
         net.minecraft.server.Block block = this.getNMSBlock();
         if (block != Blocks.AIR) {
-            byte data = getData();
+            IBlockData data = getData0();
             // based on nms.Block.dropNaturally
             int count = block.getDropCount(0, chunk.getHandle().getWorld().random);
             for (int i = 0; i < count; ++i) {
-                Item item = block.getDropType(block.fromLegacyData(data), chunk.getHandle().getWorld().random, 0);
+                Item item = block.getDropType(data, chunk.getHandle().getWorld().random, 0);
                 if (item != null) {
                     // Skulls are special, their data is based on the tile entity
                     if (Blocks.SKULL == block) {
-                        net.minecraft.server.ItemStack nmsStack = new net.minecraft.server.ItemStack(item, 1, block.getDropData(chunk.getHandle().getWorld(), new BlockPosition(x, y, z)));
+                        net.minecraft.server.ItemStack nmsStack = new net.minecraft.server.ItemStack(item, 1, block.getDropData(data));
                         TileEntitySkull tileentityskull = (TileEntitySkull) chunk.getHandle().getWorld().getTileEntity(new BlockPosition(x, y, z));
 
                         if (tileentityskull.getSkullType() == 3 && tileentityskull.getGameProfile() != null) {
@@ -442,13 +451,13 @@ public class CraftBlock implements Block {
                         drops.add(CraftItemStack.asBukkitCopy(nmsStack));
                         // We don't want to drop cocoa blocks, we want to drop cocoa beans.
                     } else if (Blocks.COCOA == block) {
-                        int age = (Integer) block.fromLegacyData(data).get(BlockCocoa.AGE);
+                        int age = (Integer) data.get(BlockCocoa.AGE);
                         int dropAmount = (age >= 2 ? 3 : 1);
                         for (int j = 0; j < dropAmount; ++j) {
                             drops.add(new ItemStack(Material.INK_SACK, 1, (short) 3));
                         }
                     } else {
-                        drops.add(new ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(item), 1, (short) block.getDropData(block.fromLegacyData(data))));
+                        drops.add(new ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(item), 1, (short) block.getDropData(data)));
                     }
                 }
             }
@@ -461,86 +470,6 @@ public class CraftBlock implements Block {
             return getDrops();
         } else {
             return Collections.emptyList();
-        }
-    }
-
-    /* Build biome index based lookup table for BiomeBase to Biome mapping */
-    static {
-        BIOME_MAPPING = new Biome[BiomeBase.getBiomes().length];
-        BIOMEBASE_MAPPING = new BiomeBase[Biome.values().length];
-        BIOME_MAPPING[BiomeBase.OCEAN.id] = Biome.OCEAN;
-        BIOME_MAPPING[BiomeBase.PLAINS.id] = Biome.PLAINS;
-        BIOME_MAPPING[BiomeBase.DESERT.id] = Biome.DESERT;
-        BIOME_MAPPING[BiomeBase.EXTREME_HILLS.id] = Biome.EXTREME_HILLS;
-        BIOME_MAPPING[BiomeBase.FOREST.id] = Biome.FOREST;
-        BIOME_MAPPING[BiomeBase.TAIGA.id] = Biome.TAIGA;
-        BIOME_MAPPING[BiomeBase.SWAMPLAND.id] = Biome.SWAMPLAND;
-        BIOME_MAPPING[BiomeBase.RIVER.id] = Biome.RIVER;
-        BIOME_MAPPING[BiomeBase.HELL.id] = Biome.HELL;
-        BIOME_MAPPING[BiomeBase.SKY.id] = Biome.SKY;
-        BIOME_MAPPING[BiomeBase.FROZEN_OCEAN.id] = Biome.FROZEN_OCEAN;
-        BIOME_MAPPING[BiomeBase.FROZEN_RIVER.id] = Biome.FROZEN_RIVER;
-        BIOME_MAPPING[BiomeBase.ICE_PLAINS.id] = Biome.ICE_PLAINS;
-        BIOME_MAPPING[BiomeBase.ICE_MOUNTAINS.id] = Biome.ICE_MOUNTAINS;
-        BIOME_MAPPING[BiomeBase.MUSHROOM_ISLAND.id] = Biome.MUSHROOM_ISLAND;
-        BIOME_MAPPING[BiomeBase.MUSHROOM_SHORE.id] = Biome.MUSHROOM_SHORE;
-        BIOME_MAPPING[BiomeBase.BEACH.id] = Biome.BEACH;
-        BIOME_MAPPING[BiomeBase.DESERT_HILLS.id] = Biome.DESERT_HILLS;
-        BIOME_MAPPING[BiomeBase.FOREST_HILLS.id] = Biome.FOREST_HILLS;
-        BIOME_MAPPING[BiomeBase.TAIGA_HILLS.id] = Biome.TAIGA_HILLS;
-        BIOME_MAPPING[BiomeBase.SMALL_MOUNTAINS.id] = Biome.SMALL_MOUNTAINS;
-        BIOME_MAPPING[BiomeBase.JUNGLE.id] = Biome.JUNGLE;
-        BIOME_MAPPING[BiomeBase.JUNGLE_HILLS.id] = Biome.JUNGLE_HILLS;
-        BIOME_MAPPING[BiomeBase.JUNGLE_EDGE.id] = Biome.JUNGLE_EDGE;
-        BIOME_MAPPING[BiomeBase.DEEP_OCEAN.id] = Biome.DEEP_OCEAN;
-        BIOME_MAPPING[BiomeBase.STONE_BEACH.id] = Biome.STONE_BEACH;
-        BIOME_MAPPING[BiomeBase.COLD_BEACH.id] = Biome.COLD_BEACH;
-        BIOME_MAPPING[BiomeBase.BIRCH_FOREST.id] = Biome.BIRCH_FOREST;
-        BIOME_MAPPING[BiomeBase.BIRCH_FOREST_HILLS.id] = Biome.BIRCH_FOREST_HILLS;
-        BIOME_MAPPING[BiomeBase.ROOFED_FOREST.id] = Biome.ROOFED_FOREST;
-        BIOME_MAPPING[BiomeBase.COLD_TAIGA.id] = Biome.COLD_TAIGA;
-        BIOME_MAPPING[BiomeBase.COLD_TAIGA_HILLS.id] = Biome.COLD_TAIGA_HILLS;
-        BIOME_MAPPING[BiomeBase.MEGA_TAIGA.id] = Biome.MEGA_TAIGA;
-        BIOME_MAPPING[BiomeBase.MEGA_TAIGA_HILLS.id] = Biome.MEGA_TAIGA_HILLS;
-        BIOME_MAPPING[BiomeBase.EXTREME_HILLS_PLUS.id] = Biome.EXTREME_HILLS_PLUS;
-        BIOME_MAPPING[BiomeBase.SAVANNA.id] = Biome.SAVANNA;
-        BIOME_MAPPING[BiomeBase.SAVANNA_PLATEAU.id] = Biome.SAVANNA_PLATEAU;
-        BIOME_MAPPING[BiomeBase.MESA.id] = Biome.MESA;
-        BIOME_MAPPING[BiomeBase.MESA_PLATEAU_F.id] = Biome.MESA_PLATEAU_FOREST;
-        BIOME_MAPPING[BiomeBase.MESA_PLATEAU.id] = Biome.MESA_PLATEAU;
-
-        // Extended Biomes
-        BIOME_MAPPING[BiomeBase.PLAINS.id + 128] = Biome.SUNFLOWER_PLAINS;
-        BIOME_MAPPING[BiomeBase.DESERT.id + 128] = Biome.DESERT_MOUNTAINS;
-        BIOME_MAPPING[BiomeBase.FOREST.id + 128] = Biome.FLOWER_FOREST;
-        BIOME_MAPPING[BiomeBase.TAIGA.id + 128] = Biome.TAIGA_MOUNTAINS;
-        BIOME_MAPPING[BiomeBase.SWAMPLAND.id + 128] = Biome.SWAMPLAND_MOUNTAINS;
-        BIOME_MAPPING[BiomeBase.ICE_PLAINS.id + 128] = Biome.ICE_PLAINS_SPIKES;
-        BIOME_MAPPING[BiomeBase.JUNGLE.id + 128] = Biome.JUNGLE_MOUNTAINS;
-        BIOME_MAPPING[BiomeBase.JUNGLE_EDGE.id + 128] = Biome.JUNGLE_EDGE_MOUNTAINS;
-        BIOME_MAPPING[BiomeBase.COLD_TAIGA.id + 128] = Biome.COLD_TAIGA_MOUNTAINS;
-        BIOME_MAPPING[BiomeBase.SAVANNA.id + 128] = Biome.SAVANNA_MOUNTAINS;
-        BIOME_MAPPING[BiomeBase.SAVANNA_PLATEAU.id + 128] = Biome.SAVANNA_PLATEAU_MOUNTAINS;
-        BIOME_MAPPING[BiomeBase.MESA.id + 128] = Biome.MESA_BRYCE;
-        BIOME_MAPPING[BiomeBase.MESA_PLATEAU_F.id + 128] = Biome.MESA_PLATEAU_FOREST_MOUNTAINS;
-        BIOME_MAPPING[BiomeBase.MESA_PLATEAU.id + 128] = Biome.MESA_PLATEAU_MOUNTAINS;
-        BIOME_MAPPING[BiomeBase.BIRCH_FOREST.id + 128] = Biome.BIRCH_FOREST_MOUNTAINS;
-        BIOME_MAPPING[BiomeBase.BIRCH_FOREST_HILLS.id + 128] = Biome.BIRCH_FOREST_HILLS_MOUNTAINS;
-        BIOME_MAPPING[BiomeBase.ROOFED_FOREST.id + 128] = Biome.ROOFED_FOREST_MOUNTAINS;
-        BIOME_MAPPING[BiomeBase.MEGA_TAIGA.id + 128] = Biome.MEGA_SPRUCE_TAIGA;
-        BIOME_MAPPING[BiomeBase.EXTREME_HILLS.id + 128] = Biome.EXTREME_HILLS_MOUNTAINS;
-        BIOME_MAPPING[BiomeBase.EXTREME_HILLS_PLUS.id + 128] = Biome.EXTREME_HILLS_PLUS_MOUNTAINS;
-        BIOME_MAPPING[BiomeBase.MEGA_TAIGA_HILLS.id + 128] = Biome.MEGA_SPRUCE_TAIGA_HILLS;
-
-        /* Sanity check - we should have a record for each record in the BiomeBase.a table */
-        /* Helps avoid missed biomes when we upgrade bukkit to new code with new biomes */
-        for (int i = 0; i < BIOME_MAPPING.length; i++) {
-            if ((BiomeBase.getBiome(i) != null) && (BIOME_MAPPING[i] == null)) {
-                throw new IllegalArgumentException("Missing Biome mapping for BiomeBase[" + i + ", " + BiomeBase.getBiome(i) + "]");
-            }
-            if (BIOME_MAPPING[i] != null) {  /* Build reverse mapping for setBiome */
-                BIOMEBASE_MAPPING[BIOME_MAPPING[i].ordinal()] = BiomeBase.getBiome(i);
-            }
         }
     }
 

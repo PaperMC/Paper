@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/TileEntitySign.java
 +++ b/net/minecraft/server/TileEntitySign.java
-@@ -21,6 +21,12 @@
+@@ -19,6 +19,12 @@
              nbttagcompound.setString("Text" + (i + 1), s);
          }
  
@@ -13,8 +13,8 @@
          this.i.b(nbttagcompound);
      }
  
-@@ -65,12 +71,27 @@
-             public void a(CommandObjectiveExecutor.EnumCommandResult commandobjectiveexecutor_enumcommandresult, int i) {}
+@@ -67,14 +73,34 @@
+             }
          };
  
 +        // CraftBukkit start - Add an option to convert signs correctly
@@ -25,30 +25,45 @@
 +
          for (int i = 0; i < 4; ++i) {
              String s = nbttagcompound.getString("Text" + (i + 1));
+-            IChatBaseComponent ichatbasecomponent = IChatBaseComponent.ChatSerializer.a(s);
 +            if (s != null && s.length() > 2048) {
 +                s = "\"\"";
 +            }
  
              try {
-                 IChatBaseComponent ichatbasecomponent = IChatBaseComponent.ChatSerializer.a(s);
- 
+-                this.lines[i] = ChatComponentUtils.filterForDisplay(icommandlistener, ichatbasecomponent, (Entity) null);
+-            } catch (CommandException commandexception) {
+-                this.lines[i] = ichatbasecomponent;
++                IChatBaseComponent ichatbasecomponent = IChatBaseComponent.ChatSerializer.a(s);
++
 +                if (oldSign) {
 +                    lines[i] = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(s)[0];
 +                    continue;
 +                }
 +                // CraftBukkit end
 +
-                 try {
-                     this.lines[i] = ChatComponentUtils.filterForDisplay(icommandlistener, ichatbasecomponent, (Entity) null);
-                 } catch (CommandException commandexception) {
-@@ -155,7 +176,10 @@
++                try {
++                    this.lines[i] = ChatComponentUtils.filterForDisplay(icommandlistener, ichatbasecomponent, (Entity) null);
++                } catch (CommandException commandexception) {
++                    this.lines[i] = ichatbasecomponent;
++                }
++            } catch (com.google.gson.JsonParseException jsonparseexception) {
++                this.lines[i] = new ChatComponentText(s);
+             }
+         }
+ 
+@@ -159,7 +185,14 @@
                  ChatClickable chatclickable = chatmodifier.h();
  
                  if (chatclickable.a() == ChatClickable.EnumClickAction.RUN_COMMAND) {
--                    MinecraftServer.getServer().getCommandHandler().a(icommandlistener, chatclickable.b());
+-                    entityhuman.h().getCommandHandler().a(icommandlistener, chatclickable.b());
 +                    // CraftBukkit start
-+                    // MinecraftServer.getServer().getCommandHandler().a(tileentitysignplayerwrapper, chatclickable.b());
-+                    CommandBlockListenerAbstract.executeCommand(entityhuman, (org.bukkit.entity.Player) entityhuman.getBukkitEntity(), chatclickable.b());
++                    // entityhuman.h().getCommandHandler().a(icommandlistener, chatclickable.b());
++                    CommandBlockListenerAbstract.executeCommand(icommandlistener, new org.bukkit.craftbukkit.command.ProxiedNativeCommandSender(
++                            icommandlistener,
++                            new org.bukkit.craftbukkit.command.CraftBlockCommandSender(icommandlistener),
++                            entityhuman.getBukkitEntity()
++                    ), chatclickable.b());
 +                    // CraftBukkit end
                  }
              }

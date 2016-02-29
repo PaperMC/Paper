@@ -1,60 +1,28 @@
 --- a/net/minecraft/server/EntityEnderman.java
 +++ b/net/minecraft/server/EntityEnderman.java
-@@ -8,6 +8,12 @@
- import java.util.Set;
- import java.util.UUID;
+@@ -306,8 +306,12 @@
+             boolean flag = movingobjectposition != null && movingobjectposition.a().equals(blockposition);
  
-+// CraftBukkit start
-+import org.bukkit.Location;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.event.entity.EntityTeleportEvent;
-+// CraftBukkit end
-+
- public class EntityEnderman extends EntityMonster {
- 
-     private static final UUID a = UUID.fromString("020E0DFB-87AE-4653-9556-831010E291A0");
-@@ -177,7 +183,17 @@
-             }
- 
-             if (flag1) {
--                super.enderTeleportTo(this.locX, this.locY, this.locZ);
-+                // CraftBukkit start - Teleport event
-+                // super.enderTeleportTo(this.locX, this.locY, this.locZ);
-+                EntityTeleportEvent teleport = new EntityTeleportEvent(this.getBukkitEntity(), new Location(this.world.getWorld(), d3, d4, d5), new Location(this.world.getWorld(), this.locX, this.locY, this.locZ));
-+                this.world.getServer().getPluginManager().callEvent(teleport);
-+                if (teleport.isCancelled()) {
-+                    return false;
-+                }
-+
-+                Location to = teleport.getTo();
-+                this.enderTeleportTo(to.getX(), to.getY(), to.getZ());
-+                // CraftBukkit end
-                 if (this.world.getCubes(this, this.getBoundingBox()).isEmpty() && !this.world.containsLiquid(this.getBoundingBox())) {
-                     flag = true;
-                 }
-@@ -333,8 +349,12 @@
-             Block block = iblockdata.getBlock();
- 
-             if (EntityEnderman.c.contains(block)) {
+             if (EntityEnderman.c.contains(block) && flag) {
 -                this.enderman.setCarried(iblockdata);
--                world.setTypeUpdate(blockposition, Blocks.AIR.getBlockData());
+-                world.setAir(blockposition);
 +                // CraftBukkit start - Pickup event
 +                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.enderman, this.enderman.world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), org.bukkit.Material.AIR).isCancelled()) {
 +                    this.enderman.setCarried(iblockdata);
-+                    world.setTypeUpdate(blockposition, Blocks.AIR.getBlockData());
++                    world.setAir(blockposition);
 +                }
 +                // CraftBukkit end
              }
  
          }
-@@ -363,8 +383,12 @@
-             Block block1 = world.getType(blockposition.down()).getBlock();
+@@ -337,8 +341,12 @@
+             IBlockData iblockdata2 = this.a.getCarried();
  
-             if (this.a(world, blockposition, this.a.getCarried().getBlock(), block, block1)) {
+             if (iblockdata2 != null && this.a(world, blockposition, iblockdata2.getBlock(), iblockdata, iblockdata1)) {
 +                // CraftBukkit start - Place event
 +                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.a, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this.a.getCarried().getBlock(), this.a.getCarried().getBlock().toLegacyData(this.a.getCarried())).isCancelled()) {
-                 world.setTypeAndData(blockposition, this.a.getCarried(), 3);
-                 this.a.setCarried(Blocks.AIR.getBlockData());
+                 world.setTypeAndData(blockposition, iblockdata2, 3);
+                 this.a.setCarried((IBlockData) null);
 +                }
 +                // CraftBukkit end
              }

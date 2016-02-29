@@ -1,19 +1,62 @@
 --- a/net/minecraft/server/EntityVillager.java
 +++ b/net/minecraft/server/EntityVillager.java
-@@ -2,6 +2,7 @@
+@@ -2,6 +2,12 @@
  
  import java.util.Iterator;
  import java.util.Random;
++import org.bukkit.Bukkit;
 +import org.bukkit.craftbukkit.entity.CraftVillager; // CraftBukkit
++import org.bukkit.craftbukkit.inventory.CraftMerchantRecipe;
++import org.bukkit.entity.Villager;
++import org.bukkit.event.entity.VillagerAcquireTradeEvent;
++import org.bukkit.event.entity.VillagerReplenishTradeEvent;
  
  public class EntityVillager extends EntityAgeable implements IMerchant, NPC {
  
-@@ -29,7 +30,7 @@
+@@ -30,7 +36,7 @@
  
      public EntityVillager(World world, int i) {
          super(world);
 -        this.inventory = new InventorySubcontainer("Items", false, 8);
 +        this.inventory = new InventorySubcontainer("Items", false, 8, (CraftVillager) this.getBukkitEntity()); // CraftBukkit add argument
          this.setProfession(i);
-         this.setSize(0.6F, 1.8F);
-         ((Navigation) this.getNavigation()).b(true);
+         this.setSize(0.6F, 1.95F);
+         ((Navigation) this.getNavigation()).a(true);
+@@ -109,7 +115,14 @@
+                         MerchantRecipe merchantrecipe = (MerchantRecipe) iterator.next();
+ 
+                         if (merchantrecipe.h()) {
+-                            merchantrecipe.a(this.random.nextInt(6) + this.random.nextInt(6) + 2);
++                            // CraftBukkit start
++                            int bonus = this.random.nextInt(6) + this.random.nextInt(6) + 2;
++                            VillagerReplenishTradeEvent event = new VillagerReplenishTradeEvent((Villager) this.getBukkitEntity(), merchantrecipe.asBukkit(), bonus);
++                            Bukkit.getPluginManager().callEvent(event);
++                            if (!event.isCancelled()) {
++                                merchantrecipe.a(event.getBonus());
++                            }
++                            // CraftBukkit end
+                         }
+                     }
+ 
+@@ -401,7 +414,20 @@
+             for (int l = 0; l < k; ++l) {
+                 EntityVillager.IMerchantRecipeOption entityvillager_imerchantrecipeoption = aentityvillager_imerchantrecipeoption3[l];
+ 
+-                entityvillager_imerchantrecipeoption.a(this.trades, this.random);
++                // CraftBukkit start
++                // this is a hack. this must be done because otherwise, if
++                // mojang adds a new type of villager merchant option, it will need to
++                // have event handling added manually. this is better than having to do that.
++                MerchantRecipeList list = new MerchantRecipeList();
++                entityvillager_imerchantrecipeoption.a(list, this.random);
++                for (MerchantRecipe recipe : list) {
++                    VillagerAcquireTradeEvent event = new VillagerAcquireTradeEvent((Villager) getBukkitEntity(), recipe.asBukkit());
++                    Bukkit.getPluginManager().callEvent(event);
++                    if (!event.isCancelled()) {
++                        this.trades.add(CraftMerchantRecipe.fromBukkit(event.getRecipe()).toMinecraft());
++                    }
++                }
++                // CraftBukkit end
+             }
+         }
+ 

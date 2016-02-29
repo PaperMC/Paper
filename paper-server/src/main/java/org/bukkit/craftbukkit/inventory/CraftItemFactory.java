@@ -21,11 +21,14 @@ public final class CraftItemFactory implements ItemFactory {
         instance = new CraftItemFactory();
         ConfigurationSerialization.registerClass(CraftMetaItem.SerializableMeta.class);
         KNOWN_NBT_ATTRIBUTE_NAMES = ImmutableSet.<String>builder()
+            .add("generic.armor")
             .add("generic.attackDamage")
             .add("generic.followRange")
             .add("generic.knockbackResistance")
             .add("generic.maxHealth")
             .add("generic.movementSpeed")
+            .add("generic.attackSpeed")
+            .add("generic.luck")
             .add("horse.jumpStrength")
             .add("zombie.spawnReinforcements")
             .build();
@@ -103,6 +106,7 @@ public final class CraftItemFactory implements ItemFactory {
         case HOPPER:
         case REDSTONE_COMPARATOR:
         case FLOWER_POT_ITEM:
+        case SHIELD:
             return new CraftMetaBlockState(meta, material);
         default:
             return new CraftMetaItem(meta);

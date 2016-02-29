@@ -91,7 +91,7 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
     }
 
     public void setDisplayBlockOffset(int offset) {
-        getHandle().SetDisplayBlockOffset(offset);
+        getHandle().setDisplayBlockOffset(offset);
     }
 
     public int getDisplayBlockOffset() {

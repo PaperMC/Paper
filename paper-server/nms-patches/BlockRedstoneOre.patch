@@ -12,47 +12,49 @@
  public class BlockRedstoneOre extends Block {
  
      private final boolean a;
-@@ -20,23 +25,44 @@
+@@ -20,23 +25,46 @@
      }
  
      public void attack(World world, BlockPosition blockposition, EntityHuman entityhuman) {
--        this.e(world, blockposition);
-+        this.e(world, blockposition, entityhuman); // CraftBukkit - add entityhuman
+-        this.interact(world, blockposition);
++        this.interact(world, blockposition, entityhuman); // CraftBukkit - add entityhuman
          super.attack(world, blockposition, entityhuman);
      }
  
-     public void a(World world, BlockPosition blockposition, Entity entity) {
--        this.e(world, blockposition);
--        super.a(world, blockposition, entity);
+     public void stepOn(World world, BlockPosition blockposition, Entity entity) {
+-        this.interact(world, blockposition);
+-        super.stepOn(world, blockposition, entity);
 +        // CraftBukkit start
-+        // this.e(world, blockposition);
-+        // super.a(world, blockposition, entity);
++        // PAIL: Rename this method
++        // this.interact(world, blockposition);
++        // super.stepOn(world, blockposition, entity);
 +        if (entity instanceof EntityHuman) {
 +            org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, blockposition, null, null);
 +            if (!event.isCancelled()) {
-+                this.e(world, blockposition, entity); // add entity
-+                super.a(world, blockposition, entity);
++                this.interact(world, blockposition, entity); // add entity
++                super.stepOn(world, blockposition, entity);
 +            }
 +        } else {
 +            EntityInteractEvent event = new EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
 +            world.getServer().getPluginManager().callEvent(event);
 +            if (!event.isCancelled()) {
-+                this.e(world, blockposition, entity); // add entity
-+                super.a(world, blockposition, entity);
++                this.interact(world, blockposition, entity); // add entity
++                super.stepOn(world, blockposition, entity);
 +            }
 +        }
 +        // CraftBukkit end
      }
  
-     public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumDirection enumdirection, float f, float f1, float f2) {
--        this.e(world, blockposition);
-+        this.e(world, blockposition, entityhuman); // CraftBukkit - add entityhuman
-         return super.interact(world, blockposition, iblockdata, entityhuman, enumdirection, f, f1, f2);
++
+     public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumHand enumhand, ItemStack itemstack, EnumDirection enumdirection, float f, float f1, float f2) {
+-        this.interact(world, blockposition);
++        this.interact(world, blockposition, entityhuman); // CraftBukkit - add entityhuman
+         return super.interact(world, blockposition, iblockdata, entityhuman, enumhand, itemstack, enumdirection, f, f1, f2);
      }
  
--    private void e(World world, BlockPosition blockposition) {
-+    private void e(World world, BlockPosition blockposition, Entity entity) { // CraftBukkit - add Entity
-         this.f(world, blockposition);
+-    private void interact(World world, BlockPosition blockposition) {
++    private void interact(World world, BlockPosition blockposition, Entity entity) { // CraftBukkit - add Entity
+         this.playEffect(world, blockposition);
          if (this == Blocks.REDSTONE_ORE) {
 +            // CraftBukkit start
 +            if (CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition.getX(), blockposition.getY(), blockposition.getZ(), Blocks.LIT_REDSTONE_ORE, 0).isCancelled()) {
@@ -62,7 +64,7 @@
              world.setTypeUpdate(blockposition, Blocks.LIT_REDSTONE_ORE.getBlockData());
          }
  
-@@ -44,6 +70,11 @@
+@@ -44,6 +72,11 @@
  
      public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
          if (this == Blocks.LIT_REDSTONE_ORE) {
@@ -74,7 +76,7 @@
              world.setTypeUpdate(blockposition, Blocks.REDSTONE_ORE.getBlockData());
          }
  
-@@ -63,12 +94,24 @@
+@@ -63,12 +96,24 @@
  
      public void dropNaturally(World world, BlockPosition blockposition, IBlockData iblockdata, float f, int i) {
          super.dropNaturally(world, blockposition, iblockdata, f, i);
@@ -98,4 +100,4 @@
 +        // CraftBukkit end
      }
  
-     private void f(World world, BlockPosition blockposition) {
+     private void playEffect(World world, BlockPosition blockposition) {

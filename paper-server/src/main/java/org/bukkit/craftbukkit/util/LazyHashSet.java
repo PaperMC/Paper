@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 
-
 public abstract class LazyHashSet<E> implements Set<E> {
     Set<E> reference = null;
 

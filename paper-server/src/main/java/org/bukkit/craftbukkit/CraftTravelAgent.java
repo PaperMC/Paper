@@ -25,8 +25,6 @@ public class CraftTravelAgent extends PortalTravelAgent implements TravelAgent {
     @Override
     public Location findOrCreate(Location target) {
         WorldServer worldServer = ((CraftWorld) target.getWorld()).getHandle();
-        boolean before = worldServer.chunkProviderServer.forceChunkLoad;
-        worldServer.chunkProviderServer.forceChunkLoad = true;
 
         Location found = this.findPortal(target);
         if (found == null) {
@@ -37,7 +35,6 @@ public class CraftTravelAgent extends PortalTravelAgent implements TravelAgent {
             }
         }
 
-        worldServer.chunkProviderServer.forceChunkLoad = before;
         return found;
     }
 

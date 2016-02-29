@@ -13,71 +13,48 @@
  public class ItemBucket extends Item {
  
      private Block a;
-@@ -33,19 +40,41 @@
-                     Material material = iblockdata.getBlock().getMaterial();
+@@ -31,15 +38,29 @@
+                     Material material = iblockdata.getMaterial();
  
                      if (material == Material.WATER && ((Integer) iblockdata.get(BlockFluids.LEVEL)).intValue() == 0) {
 +                        // CraftBukkit start
 +                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, blockposition.getX(), blockposition.getY(), blockposition.getZ(), null, itemstack, Items.WATER_BUCKET);
-+
++ 
 +                        if (event.isCancelled()) {
-+                            return itemstack;
++                            return new InteractionResultWrapper(EnumInteractionResult.FAIL, itemstack);
 +                        }
 +                        // CraftBukkit end
-                         world.setAir(blockposition);
-                         entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this)]);
--                        return this.a(itemstack, entityhuman, Items.WATER_BUCKET);
-+                        return this.a(itemstack, entityhuman, Items.WATER_BUCKET, event.getItemStack()); // CraftBukkit - added Event stack
-                     }
- 
-                     if (material == Material.LAVA && ((Integer) iblockdata.get(BlockFluids.LEVEL)).intValue() == 0) {
+                         world.setTypeAndData(blockposition, Blocks.AIR.getBlockData(), 11);
+                         entityhuman.b(StatisticList.b((Item) this));
+                         entityhuman.a(SoundEffects.N, 1.0F, 1.0F);
+-                        return new InteractionResultWrapper(EnumInteractionResult.SUCCESS, this.a(itemstack, entityhuman, Items.WATER_BUCKET));
++                        return new InteractionResultWrapper(EnumInteractionResult.SUCCESS, this.a(itemstack, entityhuman, Items.WATER_BUCKET, event.getItemStack())); // CraftBUkkit
+                     } else if (material == Material.LAVA && ((Integer) iblockdata.get(BlockFluids.LEVEL)).intValue() == 0) {
 +                        // CraftBukkit start
 +                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, blockposition.getX(), blockposition.getY(), blockposition.getZ(), null, itemstack, Items.LAVA_BUCKET);
 +
 +                        if (event.isCancelled()) {
-+                            return itemstack;
++                            return new InteractionResultWrapper(EnumInteractionResult.FAIL, itemstack);
 +                        }
 +                        // CraftBukkit end
-                         world.setAir(blockposition);
-                         entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this)]);
--                        return this.a(itemstack, entityhuman, Items.LAVA_BUCKET);
-+                        return this.a(itemstack, entityhuman, Items.LAVA_BUCKET, event.getItemStack()); // CraftBukkit - added Event stack
+                         entityhuman.a(SoundEffects.O, 1.0F, 1.0F);
+                         world.setTypeAndData(blockposition, Blocks.AIR.getBlockData(), 11);
+                         entityhuman.b(StatisticList.b((Item) this));
+-                        return new InteractionResultWrapper(EnumInteractionResult.SUCCESS, this.a(itemstack, entityhuman, Items.LAVA_BUCKET));
++                        return new InteractionResultWrapper(EnumInteractionResult.SUCCESS, this.a(itemstack, entityhuman, Items.LAVA_BUCKET, event.getItemStack())); // CraftBukkit
+                     } else {
+                         return new InteractionResultWrapper(EnumInteractionResult.FAIL, itemstack);
                      }
+@@ -50,7 +71,7 @@
+ 
+                 if (!entityhuman.a(blockposition1, movingobjectposition.direction, itemstack)) {
+                     return new InteractionResultWrapper(EnumInteractionResult.FAIL, itemstack);
+-                } else if (this.a(entityhuman, world, blockposition1)) {
++                } else if (this.a(entityhuman, world, blockposition1, movingobjectposition.direction, itemstack)) { // CraftBukkit
+                     entityhuman.b(StatisticList.b((Item) this));
+                     return !entityhuman.abilities.canInstantlyBuild ? new InteractionResultWrapper(EnumInteractionResult.SUCCESS, new ItemStack(Items.BUCKET)) : new InteractionResultWrapper(EnumInteractionResult.SUCCESS, itemstack);
                  } else {
-                     if (this.a == Blocks.AIR) {
--                        return new ItemStack(Items.BUCKET);
-+                        // CraftBukkit start
-+                        PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, blockposition.getX(), blockposition.getY(), blockposition.getZ(), movingobjectposition.direction, itemstack);
-+
-+                        if (event.isCancelled()) {
-+                            return itemstack;
-+                        }
-+
-+                        return CraftItemStack.asNMSCopy(event.getItemStack());
-+                        // CraftBukkit end
-                     }
- 
-                     BlockPosition blockposition1 = blockposition.shift(movingobjectposition.direction);
-@@ -54,9 +83,17 @@
-                         return itemstack;
-                     }
- 
-+                    // CraftBukkit start
-+                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, blockposition.getX(), blockposition.getY(), blockposition.getZ(), movingobjectposition.direction, itemstack);
-+
-+                    if (event.isCancelled()) {
-+                        return itemstack;
-+                    }
-+                    // CraftBukkit end
-+
-                     if (this.a(world, blockposition1) && !entityhuman.abilities.canInstantlyBuild) {
-                         entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this)]);
--                        return new ItemStack(Items.BUCKET);
-+                        return CraftItemStack.asNMSCopy(event.getItemStack()); // CraftBukkit
-                     }
-                 }
-             }
-@@ -65,14 +102,15 @@
+@@ -60,21 +81,28 @@
          }
      }
  
@@ -91,9 +68,38 @@
 +            return CraftItemStack.asNMSCopy(result); // CraftBukkit
          } else {
 -            if (!entityhuman.inventory.pickup(new ItemStack(item))) {
--                entityhuman.drop(new ItemStack(item, 1, 0), false);
+-                entityhuman.drop(new ItemStack(item), false);
 +            if (!entityhuman.inventory.pickup(CraftItemStack.asNMSCopy(result))) {
 +                entityhuman.drop(CraftItemStack.asNMSCopy(result), false);
              }
  
              return itemstack;
+         }
+     }
+ 
++    // CraftBukkit start
+     public boolean a(EntityHuman entityhuman, World world, BlockPosition blockposition) {
++        return a(entityhuman, world, blockposition, null, null);
++    }
++
++    public boolean a(EntityHuman entityhuman, World world, BlockPosition blockposition, EnumDirection enumdirection, ItemStack itemstack) {
++        // CraftBukkit end
+         if (this.a == Blocks.AIR) {
+             return false;
+         } else {
+@@ -86,6 +114,15 @@
+             if (!world.isEmpty(blockposition) && !flag && !flag1) {
+                 return false;
+             } else {
++                // CraftBukkit start
++                if (entityhuman != null) {
++                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, blockposition.getX(), blockposition.getY(), blockposition.getZ(), enumdirection, itemstack);
++                    if (event.isCancelled()) {
++                        // TODO: inventory not updated
++                        return false;
++                    }
++                }
++                // CraftBukkit end
+                 if (world.worldProvider.l() && this.a == Blocks.FLOWING_WATER) {
+                     int i = blockposition.getX();
+                     int j = blockposition.getY();

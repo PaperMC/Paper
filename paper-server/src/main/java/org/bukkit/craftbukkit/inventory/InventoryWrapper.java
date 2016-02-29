@@ -6,6 +6,7 @@ import net.minecraft.server.EntityHuman;
 import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.IInventory;
 import net.minecraft.server.ItemStack;
+import org.bukkit.Location;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.HumanEntity;
@@ -106,7 +107,7 @@ public class InventoryWrapper implements IInventory {
     }
 
     @Override
-    public void b(int i, int j) {
+    public void setProperty(int i, int j) {
     }
 
     @Override
@@ -169,5 +170,10 @@ public class InventoryWrapper implements IInventory {
     @Override
     public IChatBaseComponent getScoreboardDisplayName() {
         return CraftChatMessage.fromString(getName())[0];
+    }
+
+    @Override
+    public Location getLocation() {
+        return inventory.getLocation();
     }
 }

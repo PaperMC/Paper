@@ -157,6 +157,7 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
     @Override
     public void setGravity(boolean gravity) {
         getHandle().setGravity(!gravity);
+        getHandle().noclip = !gravity;
     }
 
     @Override
@@ -207,13 +208,11 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
 
     @Override
     public boolean isMarker() {
-        // PAIL
-        return getHandle().s();
+        return getHandle().isMarker();
     }
 
     @Override
     public void setMarker(boolean marker) {
-        // PAIL
-        getHandle().n(marker);
+        getHandle().setMarker(marker);
     }
 }

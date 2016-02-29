@@ -9,6 +9,7 @@ import org.bukkit.World;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.material.MaterialData;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
@@ -159,7 +160,12 @@ public class CraftBlockState implements BlockState {
         }
 
         block.setTypeIdAndData(getTypeId(), getRawData(), applyPhysics);
-        world.getHandle().notify(new BlockPosition(x, y, z));
+        world.getHandle().notify(
+                new BlockPosition(x, y, z),
+                CraftMagicNumbers.getBlock(block).fromLegacyData(block.getData()),
+                CraftMagicNumbers.getBlock(getType()).fromLegacyData(getRawData()),
+                3
+        );
 
         return true;
     }

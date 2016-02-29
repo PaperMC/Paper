@@ -1,14 +1,14 @@
 --- a/net/minecraft/server/EntityAgeable.java
 +++ b/net/minecraft/server/EntityAgeable.java
-@@ -7,6 +7,7 @@
+@@ -8,6 +8,7 @@
      protected int c;
-     private float bm = -1.0F;
-     private float bn;
-+    public boolean ageLocked = false; // CraftBukkit
+     private float bw = -1.0F;
+     private float bx;
++    public boolean ageLocked; // CraftBukkit
  
      public EntityAgeable(World world) {
          super(world);
-@@ -27,14 +28,14 @@
+@@ -26,13 +27,16 @@
                      if (entityageable != null) {
                          entityageable.setAgeRaw(-24000);
                          entityageable.setPositionRotation(this.locX, this.locY, this.locZ, 0.0F, 0.0F);
@@ -20,12 +20,13 @@
  
                          if (!entityhuman.abilities.canInstantlyBuild) {
                              --itemstack.count;
--                            if (itemstack.count <= 0) {
 +                            if (itemstack.count == 0) { // CraftBukkit - allow less than 0 stacks as "infinite"
-                                 entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, (ItemStack) null);
-                             }
++                                entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, (ItemStack) null);
++                            }
                          }
-@@ -99,17 +100,19 @@
+                     }
+                 }
+@@ -95,12 +99,14 @@
          super.b(nbttagcompound);
          nbttagcompound.setInt("Age", this.getAge());
          nbttagcompound.setInt("ForcedAge", this.b);
@@ -39,19 +40,13 @@
 +        this.ageLocked = nbttagcompound.getBoolean("AgeLocked"); // CraftBukkit
      }
  
-     public void m() {
-         super.m();
+     public void a(DataWatcherObject<?> datawatcherobject) {
+@@ -113,7 +119,7 @@
+ 
+     public void n() {
+         super.n();
 -        if (this.world.isClientSide) {
 +        if (this.world.isClientSide || ageLocked) { // CraftBukkit
              if (this.c > 0) {
                  if (this.c % 4 == 0) {
                      this.world.addParticle(EnumParticle.VILLAGER_HAPPY, this.locX + (double) (this.random.nextFloat() * this.width * 2.0F) - (double) this.width, this.locY + 0.5D + (double) (this.random.nextFloat() * this.length), this.locZ + (double) (this.random.nextFloat() * this.width * 2.0F) - (double) this.width, 0.0D, 0.0D, 0.0D, new int[0]);
-@@ -146,7 +149,7 @@
-         this.a(flag ? 0.5F : 1.0F);
-     }
- 
--    protected final void setSize(float f, float f1) {
-+    public final void setSize(float f, float f1) { // CraftBukkit - protected to public
-         boolean flag = this.bm > 0.0F;
- 
-         this.bm = f;

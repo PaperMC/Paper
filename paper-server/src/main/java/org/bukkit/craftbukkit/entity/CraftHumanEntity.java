@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import java.util.Set;
 
 import net.minecraft.server.*;
@@ -21,6 +22,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.Villager;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.permissions.Permission;
@@ -345,6 +347,23 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title), size));
         player.activeContainer = container;
         player.activeContainer.addSlotListener(player);
+    }
+
+    @Override
+    public InventoryView openMerchant(Villager villager, boolean force) {
+        Preconditions.checkNotNull(villager, "villager cannot be null");
+        if (!force && villager.isTrading()) {
+            return null;
+        } else if (villager.isTrading()) {
+            // we're not supposed to have multiple people using the same villager, so we have to close it.
+            villager.getTrader().closeInventory();
+        }
+
+        EntityVillager ev = ((CraftVillager) villager).getHandle();
+        ev.setTradingPlayer(this.getHandle());
+        this.getHandle().openTrade(ev);
+
+        return this.getHandle().activeContainer.getBukkitView();
     }
 
     public void closeInventory() {

@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/ContainerPlayer.java
 +++ b/net/minecraft/server/ContainerPlayer.java
-@@ -1,28 +1,42 @@
+@@ -1,5 +1,10 @@
  package net.minecraft.server;
  
 +// CraftBukkit start
@@ -10,10 +10,11 @@
 +
  public class ContainerPlayer extends Container {
  
-     public InventoryCrafting craftInventory = new InventoryCrafting(this, 2, 2);
+     private static final EnumItemSlot[] h = new EnumItemSlot[] { EnumItemSlot.HEAD, EnumItemSlot.CHEST, EnumItemSlot.LEGS, EnumItemSlot.FEET};
+@@ -7,10 +12,20 @@
      public IInventory resultInventory = new InventoryCraftResult();
      public boolean g;
-     private final EntityHuman h;
+     private final EntityHuman owner;
 +    // CraftBukkit start
 +    private CraftInventoryView bukkitEntity = null;
 +    private PlayerInventory player;
@@ -21,58 +22,39 @@
  
      public ContainerPlayer(final PlayerInventory playerinventory, boolean flag, EntityHuman entityhuman) {
          this.g = flag;
-         this.h = entityhuman;
+         this.owner = entityhuman;
++        // CraftBukkit start
 +        this.resultInventory = new InventoryCraftResult(); // CraftBukkit - moved to before InventoryCrafting construction
 +        this.craftInventory = new InventoryCrafting(this, 2, 2, playerinventory.player); // CraftBukkit - pass player
 +        this.craftInventory.resultInventory = this.resultInventory; // CraftBukkit - let InventoryCrafting know about its result slot
 +        this.player = playerinventory; // CraftBukkit - save player
-         this.a((Slot) (new SlotResult(playerinventory.player, this.craftInventory, this.resultInventory, 0, 144, 36)));
++        // CraftBukkit end
+         this.a((Slot) (new SlotResult(playerinventory.player, this.craftInventory, this.resultInventory, 0, 154, 28)));
  
--        final int i;
-+        // CraftBukkit - fixed multiple decompiler errors below, good luck
-         int j;
- 
--        for (i = 0; i < 2; ++i) {
-+        for (int i = 0; i < 2; ++i) {
-             for (j = 0; j < 2; ++j) {
-                 this.a(new Slot(this.craftInventory, j + i * 2, 88 + j * 18, 26 + i * 18));
-             }
+         int i;
+@@ -23,7 +38,7 @@
          }
  
--        for (i = 0; i < 4; ++i) {
--            this.a(new Slot(playerinventory, playerinventory.getSize() - 1 - i, 8, 8 + i * 18) {
-+        for (int ii = 0; ii < 4; ++ii) {
-+            final int i = ii;
-+            this.a(new Slot(playerinventory, playerinventory.getSize() - 1 - ii, 8, 8 + ii * 18) {
+         for (i = 0; i < 4; ++i) {
+-            final EnumItemSlot enumitemslot = ContainerPlayer.h[i];
++            final EnumItemSlot enumitemslot1 = ContainerPlayer.h[i];
+ 
+             this.a(new Slot(playerinventory, 36 + (3 - i), 8, 8 + i * 18) {
                  public int getMaxStackSize() {
-                     return 1;
-                 }
-@@ -33,21 +47,32 @@
-             });
-         }
- 
--        for (i = 0; i < 3; ++i) {
-+        for (int i = 0; i < 3; ++i) {
-             for (j = 0; j < 9; ++j) {
-                 this.a(new Slot(playerinventory, j + (i + 1) * 9, 8 + j * 18, 84 + i * 18));
+@@ -57,11 +72,22 @@
+                 return super.isAllowed(itemstack);
              }
-         }
- 
--        for (i = 0; i < 9; ++i) {
-+        for (int i = 0; i < 9; ++i) {
-             this.a(new Slot(playerinventory, i, 8 + i * 18, 142));
-         }
- 
+         });
 -        this.a((IInventory) this.craftInventory);
 +        // this.a((IInventory) this.craftInventory); // CraftBukkit - unneeded since it just sets result slot to empty
      }
  
      public void a(IInventory iinventory) {
--        this.resultInventory.setItem(0, CraftingManager.getInstance().craft(this.craftInventory, this.h.world));
-+        // this.resultInventory.setItem(0, CraftingManager.getInstance().craft(this.craftInventory, this.h.world));
+-        this.resultInventory.setItem(0, CraftingManager.getInstance().craft(this.craftInventory, this.owner.world));
++        // this.resultInventory.setItem(0, CraftingManager.getInstance().craft(this.craftInventory, this.owner.world));
 +        // CraftBukkit start (Note: the following line would cause an error if called during construction)
 +        CraftingManager.getInstance().lastCraftView = getBukkitView();
-+        ItemStack craftResult = CraftingManager.getInstance().craft(this.craftInventory, this.h.world);
++        ItemStack craftResult = CraftingManager.getInstance().craft(this.craftInventory, this.owner.world);
 +        this.resultInventory.setItem(0, craftResult);
 +        if (super.listeners.size() < 1) {
 +            return;
@@ -84,7 +66,7 @@
      }
  
      public void b(EntityHuman entityhuman) {
-@@ -127,4 +152,17 @@
+@@ -143,4 +169,17 @@
      public boolean a(ItemStack itemstack, Slot slot) {
          return slot.inventory != this.resultInventory && super.a(itemstack, slot);
      }
