@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
@@ -378,4 +379,12 @@ public interface Inventory extends Iterable<ItemStack> {
      * @return An iterator.
      */
     public ListIterator<ItemStack> iterator(int index);
+
+    /**
+     * Get the location of the block or entity which corresponds to this inventory. May return null if this container
+     * was custom created or is a virtual / subcontainer.
+     *
+     * @return location or null if not applicable.
+     */
+    public Location getLocation();
 }
