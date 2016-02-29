@@ -2,8 +2,6 @@ package org.bukkit.plugin;
 
 import java.util.Set;
 
-import org.bukkit.plugin.java.JavaPlugin;
-
 /**
  * Represents a concept that a plugin is aware of.
  * <p>
@@ -21,8 +19,9 @@ public interface PluginAwareness {
          * This specifies that all (text) resources stored in a plugin's jar
          * use UTF-8 encoding.
          *
-         * @see JavaPlugin#getTextResource(String)
+         * @deprecated all plugins are now assumed to be UTF-8 aware.
          */
+        @Deprecated
         UTF8,
         ;
     }
