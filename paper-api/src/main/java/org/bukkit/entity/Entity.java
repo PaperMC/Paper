@@ -168,6 +168,39 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     public boolean teleport(@NotNull Entity destination, @NotNull TeleportCause cause);
 
+    // Paper start
+    /**
+     * Loads/Generates(in 1.13+) the Chunk asynchronously, and then teleports the entity when the chunk is ready.
+     * @param loc Location to teleport to
+     * @return A future that will be completed with the result of the teleport
+     */
+    default java.util.concurrent.@NotNull CompletableFuture<Boolean> teleportAsync(final @NotNull Location loc) {
+        return this.teleportAsync(loc, TeleportCause.PLUGIN);
+    }
+
+    /**
+     * Loads/Generates(in 1.13+) the Chunk asynchronously, and then teleports the entity when the chunk is ready.
+     * @param loc Location to teleport to
+     * @param cause Reason for teleport
+     * @return A future that will be completed with the result of the teleport
+     */
+    default java.util.concurrent.@NotNull CompletableFuture<Boolean> teleportAsync(final @NotNull Location loc, final @NotNull TeleportCause cause) {
+        final class Holder {
+            static final io.papermc.paper.entity.TeleportFlag[] EMPTY_FLAGS = new io.papermc.paper.entity.TeleportFlag[0];
+        }
+        return this.teleportAsync(loc, cause, Holder.EMPTY_FLAGS);
+    }
+
+    /**
+     * Loads/Generates(in 1.13+) the Chunk asynchronously, and then teleports the entity when the chunk is ready.
+     * @param loc Location to teleport to
+     * @param cause Reason for teleport
+     * @param teleportFlags Flags to be used in this teleportation
+     * @return A future that will be completed with the result of the teleport
+     */
+    java.util.concurrent.@NotNull CompletableFuture<Boolean> teleportAsync(@NotNull Location loc, @NotNull TeleportCause cause, @NotNull io.papermc.paper.entity.TeleportFlag @NotNull... teleportFlags);
+    // Paper end
+
     /**
      * Returns a list of entities within a bounding box centered around this
      * entity
