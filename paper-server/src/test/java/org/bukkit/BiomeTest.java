@@ -3,10 +3,11 @@ package org.bukkit;
 import net.minecraft.server.BiomeBase;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.support.AbstractTestingBase;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class BiomeTest {
+public class BiomeTest extends AbstractTestingBase {
 
     @Test
     public void testBukkitToMinecraft() {
