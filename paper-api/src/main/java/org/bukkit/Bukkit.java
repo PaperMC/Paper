@@ -13,6 +13,10 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import org.bukkit.Warning.WarningState;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarFlag;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -1128,6 +1132,20 @@ public final class Bukkit {
      */
     public static ChunkGenerator.ChunkData createChunkData(World world) {
         return server.createChunkData(world);
+    }
+
+    /**
+     * Creates a boss bar instance to display to players. The progress
+     * defaults to 1.0
+     *
+     * @param title the title of the boss bar
+     * @param color the color of the boss bar
+     * @param style the style of the boss bar
+     * @param flags an optional list of flags to set on the boss bar
+     * @return the created boss bar
+     */
+    public static BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag... flags) {
+        return server.createBossBar(title, color, style, flags);
     }
 
     /**
