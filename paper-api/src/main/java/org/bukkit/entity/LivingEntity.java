@@ -128,33 +128,6 @@ public interface LivingEntity extends Entity, Damageable, ProjectileSource {
     public List<Block> getLastTwoTargetBlocks(Set<Material> transparent, int maxDistance);
 
     /**
-     * Throws an egg from the living entity.
-     *
-     * @deprecated use launchProjectile(Egg.class) instead
-     * @return the egg thrown
-     */
-    @Deprecated
-    public Egg throwEgg();
-
-    /**
-     * Throws a snowball from the living entity.
-     *
-     * @deprecated use launchProjectile(Snowball.class) instead
-     * @return the snowball thrown
-     */
-    @Deprecated
-    public Snowball throwSnowball();
-
-    /**
-     * Shoots an arrow from the living entity.
-     *
-     * @deprecated use launchProjectile(Arrow.class) instead
-     * @return the arrow shot
-     */
-    @Deprecated
-    public Arrow shootArrow();
-
-    /**
      * Returns the amount of air that the living entity has remaining, in
      * ticks.
      *
