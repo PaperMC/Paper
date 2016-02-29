@@ -1,0 +1,34 @@
+From 682946385f860c723b7303cedb58048b8c1c7632 Mon Sep 17 00:00:00 2001
+From: riking <rikingcoding@gmail.com>
+Date: Wed, 14 May 2014 13:46:48 -0700
+Subject: [PATCH] Process conversation input on the main thread. Fixes
+ BUKKIT-5611
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 14c6f43..74c25a4 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -1127,7 +1127,18 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+             } else if (s.isEmpty()) {
+                 LOGGER.warn(this.player.getName() + " tried to send an empty message");
+             } else if (getPlayer().isConversing()) {
+-                getPlayer().acceptConversationInput(s);
++                // Spigot start
++                final String message = s;
++                this.minecraftServer.processQueue.add( new Waitable()
++                {
++                    @Override
++                    protected Object evaluate()
++                    {
++                        getPlayer().acceptConversationInput( message );
++                        return null;
++                    }
++                } );
++                // Spigot end
+             } else if (this.player.getChatFlags() == EntityHuman.EnumChatVisibility.SYSTEM) { // Re-add "Command Only" flag check
+                 ChatMessage chatmessage = new ChatMessage("chat.cannotSend", new Object[0]);
+ 
+-- 
+2.5.0
+

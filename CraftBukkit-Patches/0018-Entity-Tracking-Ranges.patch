@@ -1,4 +1,4 @@
-From 9af363974598c5f5b89a7ca2c88232b2941b5330 Mon Sep 17 00:00:00 2001
+From 4cf6a4c069827b34e5d1ee8007baa6c62848352c Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 20 Feb 2013 11:58:47 -0500
 Subject: [PATCH] Entity Tracking Ranges
@@ -12,61 +12,22 @@ This has multiple benefits:
 4) Less client lag - Not trying to render distant item frames and paintings and entities will reduce entity count on the client, which is major for shop/town worlds which may use tons of item frames.
 
 diff --git a/src/main/java/net/minecraft/server/EntityTracker.java b/src/main/java/net/minecraft/server/EntityTracker.java
-index e1ff4f0..cb72b36 100644
+index 0c19e5a..3773bb1 100644
 --- a/src/main/java/net/minecraft/server/EntityTracker.java
 +++ b/src/main/java/net/minecraft/server/EntityTracker.java
-@@ -95,6 +95,7 @@ public class EntityTracker {
+@@ -103,6 +103,7 @@ public class EntityTracker {
  
      public void addEntity(Entity entity, int i, final int j, boolean flag) {
          org.spigotmc.AsyncCatcher.catchOp( "entity track"); // Spigot
 +        i = org.spigotmc.TrackingRange.getEntityTrackingRange(entity, i); // Spigot
-         if (i > this.e) {
-             i = this.e;
-         }
-diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index 3da76ff..ccf6d93 100644
---- a/src/main/java/org/spigotmc/ActivationRange.java
-+++ b/src/main/java/org/spigotmc/ActivationRange.java
-@@ -108,7 +108,7 @@ public class ActivationRange
-         maxRange = Math.max( maxRange, miscActivationRange );
-         maxRange = Math.min( ( world.spigotConfig.viewDistance << 4 ) - 8, maxRange );
- 
--        for ( Entity player : (List<Entity>) world.players )
-+        for ( Entity player : (List<Entity>) (List) world.players )
-         {
- 
-             player.activatedTick = MinecraftServer.currentTick;
-@@ -190,7 +190,7 @@ public class ActivationRange
-     public static boolean checkEntityImmunities(Entity entity)
-     {
-         // quick checks.
--        if ( entity.inWater /* isInWater */ || entity.fireTicks > 0 )
-+        if ( entity.inWater || entity.fireTicks > 0 )
-         {
-             return true;
-         }
-@@ -217,14 +217,14 @@ public class ActivationRange
-             {
-                 return true;
-             }
--            if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).ck() /* Getter for first boolean */ )
-+            if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).cm() /* Getter for first boolean */ )
-             {
-                 return true;
-             }
-             if ( entity instanceof EntityAnimal )
-             {
-                 EntityAnimal animal = (EntityAnimal) entity;
--                if ( animal.isBaby() || animal.cp() /*love*/ )
-+                if ( animal.isBaby() || animal.isInLove() )
-                 {
-                     return true;
-                 }
+         try {
+             if (this.trackedEntities.b(entity.getId())) {
+                 throw new IllegalStateException("Entity is already tracked!");
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index da8563b..3d4896b 100644
+index 92dbe54..1369657 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-@@ -151,4 +151,19 @@ public class SpigotWorldConfig
+@@ -147,4 +147,19 @@ public class SpigotWorldConfig
          miscActivationRange = getInt( "entity-activation-range.misc", miscActivationRange );
          log( "Entity Activation Range: An " + animalActivationRange + " / Mo " + monsterActivationRange + " / Mi " + miscActivationRange );
      }
@@ -144,5 +105,5 @@ index 0000000..4bf4d2a
 +    }
 +}
 -- 
-2.1.4
+2.5.0
 
