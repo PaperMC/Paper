@@ -1,7 +1,7 @@
 --- a/net/minecraft/server/ChunkRegionLoader.java
 +++ b/net/minecraft/server/ChunkRegionLoader.java
-@@ -26,7 +26,35 @@
-         this.d = file;
+@@ -28,7 +28,35 @@
+         this.e = dataconvertermanager;
      }
  
 +    // CraftBukkit start
@@ -36,7 +36,7 @@
          ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
          NBTTagCompound nbttagcompound = (NBTTagCompound) this.b.get(chunkcoordintpair);
  
-@@ -43,7 +71,7 @@
+@@ -45,7 +73,7 @@
          return this.a(world, i, j, nbttagcompound);
      }
  
@@ -45,7 +45,7 @@
          if (!nbttagcompound.hasKeyOfType("Level", 10)) {
              ChunkRegionLoader.a.error("Chunk file at " + i + "," + j + " is missing level data, skipping");
              return null;
-@@ -60,10 +88,28 @@
+@@ -62,10 +90,28 @@
                      ChunkRegionLoader.a.error("Chunk file at " + i + "," + j + " is in the wrong location; relocating. (Expected " + i + ", " + j + ", got " + chunk.locX + ", " + chunk.locZ + ")");
                      nbttagcompound1.setInt("xPos", i);
                      nbttagcompound1.setInt("zPos", j);
@@ -75,35 +75,7 @@
              }
          }
      }
-@@ -303,7 +349,26 @@
-                 int k1 = l >> 4 & 15;
-                 int l1 = nibblearray1 != null ? nibblearray1.a(i1, j1, k1) : 0;
- 
--                achar[l] = (char) (l1 << 12 | (abyte[l] & 255) << 4 | nibblearray.a(i1, j1, k1));
-+                // CraftBukkit start - fix broken blocks
-+                // achar[l] = (char) (l1 << 12 | (abyte[l] & 255) << 4 | nibblearray.a(i1, j1, k1));
-+
-+                int ex =  l1;
-+                int id = (abyte[l] & 255);
-+                int data = nibblearray.a(i1, j1, k1);
-+                int packed = ex << 12 | id << 4 | data;
-+                if (Block.d.a(packed) == null) {
-+                    Block block = Block.getById(ex << 8 | id);
-+                    if (block != null) {
-+                        try {
-+                            data = block.toLegacyData(block.fromLegacyData(data));
-+                        } catch (Exception ignored) {
-+                            data = block.toLegacyData(block.getBlockData());
-+                        }
-+                        packed = ex << 12 | id << 4 | data;
-+                    }
-+                }
-+                achar[l] = (char) packed;
-+                // CraftBukkit end
-             }
- 
-             chunksection.a(achar);
-@@ -321,6 +386,13 @@
+@@ -295,6 +341,13 @@
              chunk.a(nbttagcompound.getByteArray("Biomes"));
          }
  
@@ -117,11 +89,28 @@
          NBTTagList nbttaglist1 = nbttagcompound.getList("Entities", 10);
  
          if (nbttaglist1 != null) {
-@@ -379,6 +451,6 @@
+@@ -338,7 +391,7 @@
              }
          }
  
 -        return chunk;
 +        // return chunk; // CraftBukkit
      }
- }
+ 
+     public static Entity a(NBTTagCompound nbttagcompound, World world, Chunk chunk) {
+@@ -399,8 +452,14 @@
+         }
+     }
+ 
++    // CraftBukkit start
+     public static void a(Entity entity, World world) {
+-        if (world.addEntity(entity) && entity.isVehicle()) {
++        a(entity, world, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++    }
++
++    public static void a(Entity entity, World world, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++        if (world.addEntity(entity, reason) && entity.isVehicle()) {
++            // CraftBukkit end
+             Iterator iterator = entity.bu().iterator();
+ 
+             while (iterator.hasNext()) {

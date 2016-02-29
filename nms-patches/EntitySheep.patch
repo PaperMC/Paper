@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/EntitySheep.java
 +++ b/net/minecraft/server/EntitySheep.java
-@@ -4,12 +4,25 @@
+@@ -4,6 +4,12 @@
  import java.util.Map;
  import java.util.Random;
  
@@ -12,7 +12,8 @@
 +
  public class EntitySheep extends EntityAnimal {
  
-     private final InventoryCrafting bm = new InventoryCrafting(new Container() {
+     private static final DataWatcherObject<Byte> bv = DataWatcher.a(EntitySheep.class, DataWatcherRegistry.a);
+@@ -11,6 +17,13 @@
          public boolean a(EntityHuman entityhuman) {
              return false;
          }
@@ -24,18 +25,18 @@
 +        }
 +        // CraftBukkit end
      }, 2, 1);
-     private static final Map<EnumColor, float[]> bo = Maps.newEnumMap(EnumColor.class);
-     private int bp;
-@@ -34,6 +47,7 @@
-         this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
-         this.bm.setItem(0, new ItemStack(Items.DYE, 1, 0));
-         this.bm.setItem(1, new ItemStack(Items.DYE, 1, 0));
-+        this.bm.resultInventory = new InventoryCraftResult(); // CraftBukkit - add result slot for event
+     private static final Map<EnumColor, float[]> bx = Maps.newEnumMap(EnumColor.class);
+     private int bz;
+@@ -25,6 +38,7 @@
+         this.setSize(0.9F, 1.3F);
+         this.container.setItem(0, new ItemStack(Items.DYE));
+         this.container.setItem(1, new ItemStack(Items.DYE));
++        this.container.resultInventory = new InventoryCraftResult(); // CraftBukkit - add result slot for event
      }
  
-     protected void E() {
-@@ -86,6 +100,15 @@
- 
+     protected void r() {
+@@ -123,6 +137,15 @@
+     public boolean a(EntityHuman entityhuman, EnumHand enumhand, ItemStack itemstack) {
          if (itemstack != null && itemstack.getItem() == Items.SHEARS && !this.isSheared() && !this.isBaby()) {
              if (!this.world.isClientSide) {
 +                // CraftBukkit start
@@ -50,19 +51,16 @@
                  this.setSheared(true);
                  int i = 1 + this.random.nextInt(3);
  
-@@ -173,7 +196,14 @@
+@@ -210,6 +233,12 @@
      }
  
-     public void v() {
--        this.setSheared(false);
+     public void B() {
 +        // CraftBukkit start
 +        SheepRegrowWoolEvent event = new SheepRegrowWoolEvent((org.bukkit.entity.Sheep) this.getBukkitEntity());
 +        this.world.getServer().getPluginManager().callEvent(event);
 +
-+        if (!event.isCancelled()) {
-+            this.setSheared(false);
-+        }
++        if (event.isCancelled()) return;
 +        // CraftBukkit end
+         this.setSheared(false);
          if (this.isBaby()) {
              this.setAge(60);
-         }

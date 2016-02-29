@@ -4,6 +4,7 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import net.minecraft.server.BlockJukeBox;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.TileEntity;
@@ -55,9 +56,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         this.material = material;
 
         if (!(meta instanceof CraftMetaBlockState)
-                || ((CraftMetaBlockState) meta).material != material
-                || material == Material.SIGN
-                || material == Material.COMMAND) {
+                || ((CraftMetaBlockState) meta).material != material) {
             blockEntityTag = null;
             return;
         }
@@ -153,7 +152,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
 
     @Override
     boolean applicableTo(Material type) {
-        switch(type){         
+        switch(type){
             case FURNACE:
             case CHEST:
             case TRAPPED_CHEST:
@@ -173,6 +172,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             case HOPPER:
             case REDSTONE_COMPARATOR:
             case FLOWER_POT_ITEM:
+            case SHIELD:
                 return true;
         }
         return false;
@@ -185,7 +185,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
 
     @Override
     public BlockState getBlockState() {
-        TileEntity te = blockEntityTag == null ? null : TileEntity.c(blockEntityTag);
+        TileEntity te = blockEntityTag == null ? null : TileEntity.a(MinecraftServer.getServer(), blockEntityTag);
 
         switch (material) {
         case SIGN:
@@ -257,6 +257,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
                 te = new TileEntityBeacon();
             }
             return new CraftBeacon(material, (TileEntityBeacon) te);
+        case SHIELD:
         case BANNER:
         case WALL_BANNER:
         case STANDING_BANNER:
@@ -320,6 +321,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         case BEACON:
             valid = te instanceof TileEntityBeacon;
             break;
+        case SHIELD:
         case BANNER:
         case WALL_BANNER:
         case STANDING_BANNER:
@@ -333,6 +335,6 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         Validate.isTrue(valid, "Invalid blockState for " + material);
 
         blockEntityTag = new NBTTagCompound();
-        te.b(blockEntityTag);
+        te.save(blockEntityTag);
     }
 }

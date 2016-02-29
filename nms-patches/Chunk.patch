@@ -9,10 +9,10 @@
 +
  public class Chunk {
  
-     private static final Logger c = LogManager.getLogger();
-@@ -40,6 +43,34 @@
-     private int v;
-     private ConcurrentLinkedQueue<BlockPosition> w;
+     private static final Logger d = LogManager.getLogger();
+@@ -41,6 +44,34 @@
+     private int w;
+     private ConcurrentLinkedQueue<BlockPosition> x;
  
 +    // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
 +    private int neighbors = 0x1 << 12;
@@ -44,16 +44,14 @@
 +
      public Chunk(World world, int i, int j) {
          this.sections = new ChunkSection[16];
-         this.e = new byte[256];
-@@ -60,8 +91,17 @@
+         this.f = new byte[256];
+@@ -61,8 +92,15 @@
  
-         Arrays.fill(this.f, -999);
-         Arrays.fill(this.e, (byte) -1);
+         Arrays.fill(this.g, -999);
+         Arrays.fill(this.f, (byte) -1);
 +
 +        // CraftBukkit start
-+        if (!(this instanceof EmptyChunk)) {
-+            this.bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
-+        }
++        this.bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
      }
  
 +    public org.bukkit.Chunk bukkitChunk;
@@ -63,30 +61,30 @@
      public Chunk(World world, ChunkSnapshot chunksnapshot, int i, int j) {
          this(world, i, j);
          short short0 = 256;
-@@ -529,7 +569,8 @@
+@@ -463,7 +501,8 @@
                      }
                  }
  
 -                if (!this.world.isClientSide && block1 != block) {
 +                // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled.
-+                if (!this.world.isClientSide && block1 != block  && (!this.world.captureBlockStates || block instanceof BlockContainer)) {
++                if (!this.world.isClientSide && block1 != block  && (!this.world.captureBlockStates || block instanceof BlockTileEntity)) {
                      block.onPlace(this.world, blockposition, iblockdata);
                  }
  
-@@ -610,7 +651,11 @@
+@@ -544,7 +583,11 @@
          int j = MathHelper.floor(entity.locZ / 16.0D);
  
          if (i != this.locX || j != this.locZ) {
--            Chunk.c.warn("Wrong location! (" + i + ", " + j + ") should be (" + this.locX + ", " + this.locZ + "), " + entity, new Object[] { entity});
+-            Chunk.d.warn("Wrong location! (" + i + ", " + j + ") should be (" + this.locX + ", " + this.locZ + "), " + entity, new Object[] { entity});
 +            // CraftBukkit start
 +            Bukkit.getLogger().warning("Wrong location for " + entity + " in world '" + world.getWorld().getName() + "'!");
-+            // Chunk.c.warn("Wrong location! (" + i + ", " + j + ") should be (" + this.locX + ", " + this.locZ + "), " + entity, new Object[] { entity});
++            // Chunk.d.warn("Wrong location! (" + i + ", " + j + ") should be (" + this.locX + ", " + this.locZ + "), " + entity, new Object[] { entity});
 +            Bukkit.getLogger().warning("Entity is at " + entity.locX + "," + entity.locZ + " (chunk " + i + "," + j + ") but was stored in chunk " + this.locX + "," + this.locZ);
 +            // CraftBukkit end
              entity.die();
          }
  
-@@ -662,7 +707,15 @@
+@@ -597,7 +640,15 @@
      }
  
      public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
@@ -103,21 +101,21 @@
  
          if (tileentity == null) {
              if (chunk_enumtileentitystate == Chunk.EnumTileEntityState.IMMEDIATE) {
-@@ -697,6 +750,13 @@
+@@ -632,6 +683,13 @@
  
-             tileentity.D();
+             tileentity.z();
              this.tileEntities.put(blockposition, tileentity);
 +            // CraftBukkit start
 +        } else {
 +            System.out.println("Attempted to place a tile entity (" + tileentity + ") at " + tileentity.position.getX() + "," + tileentity.position.getY() + "," + tileentity.position.getZ()
-+                + " (" + org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(getType(blockposition)) + ") where there was no entity tile!");
++                + " (" + org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(getBlockData(blockposition).getBlock()) + ") where there was no entity tile!");
 +            System.out.println("Chunk coordinates: " + (this.locX * 16) + "," + (this.locZ * 16));
 +            new Exception().printStackTrace();
 +            // CraftBukkit end
          }
      }
  
-@@ -740,7 +800,21 @@
+@@ -675,7 +733,21 @@
          }
  
          for (int i = 0; i < this.entitySlices.length; ++i) {
@@ -140,7 +138,7 @@
          }
  
      }
-@@ -798,8 +872,8 @@
+@@ -733,8 +805,8 @@
              while (iterator.hasNext()) {
                  Entity entity = (Entity) iterator.next();
  
@@ -151,3 +149,33 @@
                  }
              }
          }
+@@ -797,6 +869,29 @@
+         } else {
+             this.o();
+             chunkgenerator.recreateStructures(this.locX, this.locZ);
++
++            // CraftBukkit start
++            BlockSand.instaFall = true;
++            Random random = new Random();
++            random.setSeed(world.getSeed());
++            long xRand = random.nextLong() / 2L * 2L + 1L;
++            long zRand = random.nextLong() / 2L * 2L + 1L;
++            random.setSeed((long) locX * xRand + (long) locZ * zRand ^ world.getSeed());
++
++            org.bukkit.World world = this.world.getWorld();
++            if (world != null) {
++                this.world.populating = true;
++                try {
++                    for (org.bukkit.generator.BlockPopulator populator : world.getPopulators()) {
++                        populator.populate(world, random, bukkitChunk);
++                    }
++                } finally {
++                    this.world.populating = false;
++                }
++            }
++            BlockSand.instaFall = false;
++            this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(bukkitChunk));
++            // CraftBukkit end
+             this.e();
+         }
+ 

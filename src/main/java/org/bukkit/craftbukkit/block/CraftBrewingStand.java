@@ -38,15 +38,25 @@ public class CraftBrewingStand extends CraftBlockState implements BrewingStand {
     }
 
     public int getBrewingTime() {
-        return brewingStand.brewTime;
+        return brewingStand.getProperty(0);
     }
 
     public void setBrewingTime(int brewTime) {
-        brewingStand.brewTime = brewTime;
+        brewingStand.setProperty(0, brewTime);
     }
 
     @Override
     public TileEntityBrewingStand getTileEntity() {
         return brewingStand;
+    }
+
+    @Override
+    public int getFuelLevel() {
+        return brewingStand.getProperty(1);
+    }
+
+    @Override
+    public void setFuelLevel(int level) {
+        brewingStand.setProperty(1, level);
     }
 }

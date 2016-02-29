@@ -17,6 +17,7 @@ import net.minecraft.server.TileEntityDropper;
 import net.minecraft.server.TileEntityFurnace;
 
 import org.apache.commons.lang.Validate;
+import org.bukkit.Location;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
@@ -478,5 +479,10 @@ public class CraftInventory implements Inventory {
     @Override
     public boolean equals(final Object obj) {
         return obj instanceof CraftInventory && ((CraftInventory) obj).inventory.equals(this.inventory);
+    }
+
+    @Override
+    public Location getLocation() {
+        return inventory.getLocation();
     }
 }

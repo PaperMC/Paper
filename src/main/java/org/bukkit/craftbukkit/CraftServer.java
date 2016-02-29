@@ -36,6 +36,10 @@ import org.bukkit.Warning.WarningState;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.WorldCreator;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarFlag;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
@@ -46,6 +50,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.conversations.Conversable;
+import org.bukkit.craftbukkit.boss.CraftBossBar;
 import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.generator.CraftChunkData;
@@ -74,7 +79,6 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerChatTabCompleteEvent;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.event.world.WorldLoadEvent;
-import org.bukkit.event.world.WorldSaveEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.help.HelpMap;
@@ -188,11 +192,11 @@ public final class CraftServer implements Server {
         Bukkit.setServer(this);
 
         // Register all the Enchantments and PotionTypes now so we can stop new registration immediately after
-        Enchantment.DAMAGE_ALL.getClass();
+        Enchantments.DAMAGE_ALL.getClass();
         org.bukkit.enchantments.Enchantment.stopAcceptingRegistrations();
 
         Potion.setPotionBrewer(new CraftPotionBrewer());
-        MobEffectList.BLINDNESS.getClass();
+        MobEffects.BLINDNESS.getClass();
         PotionEffectType.stopAcceptingRegistrations();
         // Ugly hack :(
 
@@ -331,7 +335,7 @@ public final class CraftServer implements Server {
     }
 
     private void setVanillaCommands() {
-        Map<String, ICommand> commands = new CommandDispatcher().getCommands();
+        Map<String, ICommand> commands = new CommandDispatcher(console).getCommands();
         for (ICommand cmd : commands.values()) {
             commandMap.register("minecraft", new VanillaCommandWrapper((CommandAbstract) cmd, LocaleI18n.get(cmd.getUsage(null))));
         }
@@ -467,7 +471,7 @@ public final class CraftServer implements Server {
         return playerList.getMaxPlayers();
     }
 
-    // NOTE: These are dependent on the corrisponding call in MinecraftServer
+    // NOTE: These are dependent on the corresponding call in MinecraftServer
     // so if that changes this will need to as well
     @Override
     public int getPort() {
@@ -823,7 +827,7 @@ public final class CraftServer implements Server {
             generator = getGenerator(name);
         }
 
-        Convertable converter = new WorldLoaderServer(getWorldContainer());
+        Convertable converter = new WorldLoaderServer(getWorldContainer(), getHandle().getServer().getDataConverterManager());
         if (converter.isConvertable(name)) {
             getLogger().info("Converting world '" + name + "'");
             converter.convert(name, new IProgressUpdate() {
@@ -856,7 +860,7 @@ public final class CraftServer implements Server {
         } while(used);
         boolean hardcore = false;
 
-        IDataManager sdm = new ServerNBTManager(getWorldContainer(), name, true);
+        IDataManager sdm = new ServerNBTManager(getWorldContainer(), name, true, getHandle().getServer().getDataConverterManager());
         WorldData worlddata = sdm.getWorldData();
         if (worlddata == null) {
             WorldSettings worldSettings = new WorldSettings(creator.seed(), WorldSettings.EnumGamemode.getById(getDefaultGameMode().getValue()), generateStructures, hardcore, type);
@@ -905,7 +909,7 @@ public final class CraftServer implements Server {
                     }
 
                     BlockPosition chunkcoordinates = internal.getSpawn();
-                    internal.chunkProviderServer.getChunkAt(chunkcoordinates.getX() + j >> 4, chunkcoordinates.getZ() + k >> 4);
+                    internal.getChunkProviderServer().getChunkAt(chunkcoordinates.getX() + j >> 4, chunkcoordinates.getZ() + k >> 4);
                 }
             }
         }
@@ -1084,6 +1088,7 @@ public final class CraftServer implements Server {
         CraftingManager.getInstance().recipes.clear();
         RecipesFurnace.getInstance().recipes.clear();
         RecipesFurnace.getInstance().customRecipes.clear();
+        RecipesFurnace.getInstance().customExperience.clear();
     }
 
     @Override
@@ -1091,6 +1096,7 @@ public final class CraftServer implements Server {
         CraftingManager.getInstance().recipes = new CraftingManager().recipes;
         RecipesFurnace.getInstance().recipes = new RecipesFurnace().recipes;
         RecipesFurnace.getInstance().customRecipes.clear();
+        RecipesFurnace.getInstance().customExperience.clear();
     }
 
     @Override
@@ -1250,7 +1256,7 @@ public final class CraftServer implements Server {
         OfflinePlayer result = getPlayerExact(name);
         if (result == null) {
             // This is potentially blocking :(
-            GameProfile profile = MinecraftServer.getServer().getUserCache().getProfile(name);
+            GameProfile profile = console.getUserCache().getProfile(name);
             if (profile == null) {
                 // Make an OfflinePlayer using an offline mode UUID since the name has no profile
                 result = getOfflinePlayer(new GameProfile(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name));
@@ -1635,6 +1641,11 @@ public final class CraftServer implements Server {
     @Override
     public ChunkGenerator.ChunkData createChunkData(World world) {
         return new CraftChunkData(world);
+    }
+
+    @Override
+    public BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag... flags) {
+        return new CraftBossBar(title, color, style, flags);
     }
 
     @Deprecated

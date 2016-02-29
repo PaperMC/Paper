@@ -9,20 +9,20 @@
 +import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 +// CraftBukkit end
 +
- public class BlockSkull extends BlockContainer {
+ public class BlockSkull extends BlockTileEntity {
  
-     public static final BlockStateDirection FACING = BlockStateDirection.of("facing");
-@@ -81,8 +86,26 @@
- 
-         return tileentity instanceof TileEntitySkull ? ((TileEntitySkull) tileentity).getSkullType() : super.getDropData(world, blockposition);
+     public static final BlockStateDirection FACING = BlockDirectional.FACING;
+@@ -81,7 +86,25 @@
+         return new ItemStack(Items.SKULL, 1, i);
      }
-+    
+ 
+-    public void dropNaturally(World world, BlockPosition blockposition, IBlockData iblockdata, float f, int i) {}
 +    // CraftBukkit start - Special case dropping so we can get info from the tile entity
 +    @Override
 +    public void dropNaturally(World world, BlockPosition blockposition, IBlockData iblockdata, float f, int i) {
 +        if (world.random.nextFloat() < f) {
-+            ItemStack itemstack = new ItemStack(Items.SKULL, 1, this.getDropData(world, blockposition));
 +            TileEntitySkull tileentityskull = (TileEntitySkull) world.getTileEntity(blockposition);
++            ItemStack itemstack = this.a(world, blockposition, iblockdata);
 +
 +            if (tileentityskull.getSkullType() == 3 && tileentityskull.getGameProfile() != null) {
 +                itemstack.setTag(new NBTTagCompound());
@@ -31,8 +31,7 @@
 +                GameProfileSerializer.serialize(nbttagcompound, tileentityskull.getGameProfile());
 +                itemstack.getTag().set("SkullOwner", nbttagcompound);
 +            }
- 
--    public void dropNaturally(World world, BlockPosition blockposition, IBlockData iblockdata, float f, int i) {}
++
 +            a(world, blockposition, itemstack);
 +        }
 +    }
@@ -40,7 +39,7 @@
  
      public void a(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman) {
          if (entityhuman.abilities.canInstantlyBuild) {
-@@ -95,7 +118,10 @@
+@@ -94,7 +117,10 @@
  
      public void remove(World world, BlockPosition blockposition, IBlockData iblockdata) {
          if (!world.isClientSide) {
@@ -52,13 +51,13 @@
                  TileEntity tileentity = world.getTileEntity(blockposition);
  
                  if (tileentity instanceof TileEntitySkull) {
-@@ -127,24 +153,36 @@
+@@ -126,24 +152,36 @@
      }
  
      public void a(World world, BlockPosition blockposition, TileEntitySkull tileentityskull) {
 +        if (world.captureBlockStates) return; // CraftBukkit
          if (tileentityskull.getSkullType() == 1 && blockposition.getY() >= 2 && world.getDifficulty() != EnumDifficulty.PEACEFUL && !world.isClientSide) {
-             ShapeDetector shapedetector = this.n();
+             ShapeDetector shapedetector = this.g();
              ShapeDetector.ShapeDetectorCollection shapedetector_shapedetectorcollection = shapedetector.a(world, blockposition);
  
              if (shapedetector_shapedetectorcollection != null) {
@@ -91,14 +90,14 @@
                      }
                  }
  
-@@ -157,14 +195,16 @@
-                 entitywither.n();
-                 Iterator iterator = world.a(EntityHuman.class, entitywither.getBoundingBox().grow(50.0D, 50.0D, 50.0D)).iterator();
+@@ -156,14 +194,16 @@
+                 entitywither.o();
+                 Iterator iterator = world.a(EntityHuman.class, entitywither.getBoundingBox().g(50.0D)).iterator();
  
 +                // CraftBukkit start
 +                if (world.addEntity(entitywither, SpawnReason.BUILD_WITHER)) {
 +                    blockList.updateList();
-+                    
++
                  while (iterator.hasNext()) {
                      EntityHuman entityhuman = (EntityHuman) iterator.next();
  
@@ -110,7 +109,7 @@
                  int k;
  
                  for (k = 0; k < 120; ++k) {
-@@ -178,6 +218,7 @@
+@@ -177,6 +217,7 @@
                          world.update(shapedetectorblock2.getPosition(), Blocks.AIR);
                      }
                  }

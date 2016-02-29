@@ -1,8 +1,8 @@
 --- a/net/minecraft/server/EntityWolf.java
 +++ b/net/minecraft/server/EntityWolf.java
-@@ -2,6 +2,11 @@
- 
+@@ -3,6 +3,11 @@
  import com.google.common.base.Predicate;
+ import java.util.UUID;
  
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -11,9 +11,9 @@
 +
  public class EntityWolf extends EntityTameableAnimal {
  
-     private float bo;
-@@ -64,6 +69,18 @@
- 
+     private static final DataWatcherObject<Float> DATA_HEALTH = DataWatcher.a(EntityWolf.class, DataWatcherRegistry.c);
+@@ -59,6 +64,18 @@
+         this.getAttributeMap().b(GenericAttributes.ATTACK_DAMAGE).setValue(2.0D);
      }
  
 +    // CraftBukkit - add overriden version
@@ -28,48 +28,41 @@
 +    }
 +    // CraftBukkit end
 +
-     protected void E() {
-         this.datawatcher.watch(18, Float.valueOf(this.getHealth()));
-     }
-@@ -95,7 +112,8 @@
-     }
- 
-     protected String z() {
--        return this.isAngry() ? "mob.wolf.growl" : (this.random.nextInt(3) == 0 ? (this.isTamed() && this.datawatcher.getFloat(18) < 10.0F ? "mob.wolf.whine" : "mob.wolf.panting") : "mob.wolf.bark");
-+        // CraftBukkit - (getFloat(18) < 10) -> (getFloat(18) < this.getMaxHealth() / 2)
-+        return this.isAngry() ? "mob.wolf.growl" : (this.random.nextInt(3) == 0 ? (this.isTamed() && this.datawatcher.getFloat(18) < this.getMaxHealth() / 2 ? "mob.wolf.whine" : "mob.wolf.panting") : "mob.wolf.bark");
-     }
- 
-     protected String bo() {
-@@ -186,7 +204,8 @@
-         } else {
+     public void setGoalTarget(EntityLiving entityliving) {
+         super.setGoalTarget(entityliving);
+         if (entityliving == null) {
+@@ -192,9 +209,10 @@
              Entity entity = damagesource.getEntity();
  
--            this.bm.setSitting(false);
-+            // CraftBukkit - moved into EntityLiving.d(DamageSource, float)
-+            // this.bm.setSitting(false);
+             if (this.goalSit != null) {
+-                this.goalSit.setSitting(false);
++                // CraftBukkit - moved into EntityLiving.d(DamageSource, float)
++                // PAIL : checkme
++                // this.goalSit.setSitting(false);
+             }
+-
              if (entity != null && !(entity instanceof EntityHuman) && !(entity instanceof EntityArrow)) {
                  f = (f + 1.0F) / 2.0F;
              }
-@@ -229,7 +248,7 @@
+@@ -235,7 +253,7 @@
                              --itemstack.count;
                          }
  
 -                        this.heal((float) itemfood.getNutrition(itemstack));
 +                        this.heal((float) itemfood.getNutrition(itemstack), org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // CraftBukkit
-                         if (itemstack.count <= 0) {
-                             entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, (ItemStack) null);
-                         }
-@@ -254,7 +273,7 @@
-                 this.bm.setSitting(!this.isSitting());
-                 this.aY = false;
-                 this.navigation.n();
+                         return true;
+                     }
+                 } else if (itemstack.getItem() == Items.DYE) {
+@@ -256,7 +274,7 @@
+                 this.goalSit.setSitting(!this.isSitting());
+                 this.bc = false;
+                 this.navigation.o();
 -                this.setGoalTarget((EntityLiving) null);
 +                this.setGoalTarget((EntityLiving) null, TargetReason.FORGOT_TARGET, true); // CraftBukkit - reason
              }
          } else if (itemstack != null && itemstack.getItem() == Items.BONE && !this.isAngry()) {
              if (!entityhuman.abilities.canInstantlyBuild) {
-@@ -266,12 +285,13 @@
+@@ -264,12 +282,14 @@
              }
  
              if (!this.world.isClientSide) {
@@ -77,16 +70,15 @@
 +                // CraftBukkit - added event call and isCancelled check.
 +                if (this.random.nextInt(3) == 0 && !CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) {
                      this.setTamed(true);
-                     this.navigation.n();
--                    this.setGoalTarget((EntityLiving) null);
-+                    this.setGoalTarget((EntityLiving) null, TargetReason.FORGOT_TARGET, true);
-                     this.bm.setSitting(true);
--                    this.setHealth(20.0F);
+                     this.navigation.o();
+                     this.setGoalTarget((EntityLiving) null);
+                     this.goalSit.setSitting(true);
+                     this.setHealth(20.0F);
 +                    this.setHealth(this.getMaxHealth()); // CraftBukkit - 20.0 -> getMaxHealth()
-                     this.setOwnerUUID(entityhuman.getUniqueID().toString());
-                     this.l(true);
+                     this.setOwnerUUID(entityhuman.getUniqueID());
+                     this.o(true);
                      this.world.broadcastEntityEffect(this, (byte) 7);
-@@ -358,7 +378,7 @@
+@@ -351,7 +371,7 @@
      }
  
      protected boolean isTypeNotPersistent() {

@@ -1,12 +1,11 @@
 --- a/net/minecraft/server/EntityBoat.java
 +++ b/net/minecraft/server/EntityBoat.java
-@@ -2,6 +2,16 @@
- 
+@@ -4,6 +4,15 @@
+ import java.util.ArrayList;
  import java.util.List;
  
 +// CraftBukkit start
 +import org.bukkit.Location;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.entity.Vehicle;
 +import org.bukkit.event.vehicle.VehicleDamageEvent;
 +import org.bukkit.event.vehicle.VehicleDestroyEvent;
@@ -16,46 +15,32 @@
 +
  public class EntityBoat extends Entity {
  
-     private boolean a;
-@@ -13,6 +23,27 @@
-     private double g;
-     private double h;
+     private static final DataWatcherObject<Integer> a = DataWatcher.a(EntityBoat.class, DataWatcherRegistry.b);
+@@ -31,6 +40,14 @@
+     private EntityBoat.EnumStatus aG;
+     private double aH;
  
 +    // CraftBukkit start
++    // PAIL: Some of these haven't worked since a few updates, and since 1.9 they are less and less applicable.
 +    public double maxSpeed = 0.4D;
 +    public double occupiedDeceleration = 0.2D;
 +    public double unoccupiedDeceleration = -1;
 +    public boolean landBoats = false;
-+
-+    @Override
-+    public void collide(Entity entity) {
-+        org.bukkit.entity.Entity hitEntity = (entity == null) ? null : entity.getBukkitEntity();
-+
-+        VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), hitEntity);
-+        this.world.getServer().getPluginManager().callEvent(event);
-+
-+        if (event.isCancelled()) {
-+            return;
-+        }
-+
-+        super.collide(entity);
-+    }
 +    // CraftBukkit end
 +
      public EntityBoat(World world) {
          super(world);
-         this.a = true;
-@@ -52,6 +83,8 @@
+         this.f = new float[2];
+@@ -47,6 +64,7 @@
          this.lastX = d0;
          this.lastY = d1;
          this.lastZ = d2;
-+
 +        this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit
      }
  
-     public double an() {
-@@ -65,6 +98,19 @@
-             if (this.passenger != null && this.passenger == damagesource.getEntity() && damagesource instanceof EntityDamageSourceIndirect) {
+     protected boolean playStepSound() {
+@@ -88,6 +106,19 @@
+             if (damagesource instanceof EntityDamageSourceIndirect && damagesource.getEntity() != null && this.w(damagesource.getEntity())) {
                  return false;
              } else {
 +                // CraftBukkit start
@@ -71,13 +56,13 @@
 +                // f = event.getDamage(); // TODO Why don't we do this?
 +                // CraftBukkit end
 +
-                 this.b(-this.m());
-                 this.a(10);
-                 this.setDamage(this.j() + f * 10.0F);
-@@ -72,6 +118,15 @@
+                 this.d(-this.q());
+                 this.b(10);
+                 this.setDamage(this.n() + f * 10.0F);
+@@ -95,6 +126,15 @@
                  boolean flag = damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).abilities.canInstantlyBuild;
  
-                 if (flag || this.j() > 40.0F) {
+                 if (flag || this.n() > 40.0F) {
 +                    // CraftBukkit start
 +                    VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, attacker);
 +                    this.world.getServer().getPluginManager().callEvent(destroyEvent);
@@ -87,101 +72,56 @@
 +                        return true;
 +                    }
 +                    // CraftBukkit end
-                     if (this.passenger != null) {
-                         this.passenger.mount(this);
+                     if (!flag && this.world.getGameRules().getBoolean("doEntityDrops")) {
+                         this.a(this.j(), 1, 0.0F);
                      }
-@@ -95,6 +150,13 @@
-     }
+@@ -112,9 +152,25 @@
+     public void collide(Entity entity) {
+         if (entity instanceof EntityBoat) {
+             if (entity.getBoundingBox().b < this.getBoundingBox().e) {
++                // CraftBukkit start
++                VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
++                this.world.getServer().getPluginManager().callEvent(event);
++
++                if (event.isCancelled()) {
++                    return;
++                }
++                // CraftBukkit end
+                 super.collide(entity);
+             }
+         } else if (entity.getBoundingBox().b <= this.getBoundingBox().b) {
++            // CraftBukkit start
++            VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
++            this.world.getServer().getPluginManager().callEvent(event);
++
++            if (event.isCancelled()) {
++                return;
++            }
++            // CraftBukkit end
+             super.collide(entity);
+         }
  
-     public void t_() {
+@@ -172,6 +228,10 @@
+             this.setDamage(this.n() - 1.0F);
+         }
+ 
 +        // CraftBukkit start
-+        double prevX = this.locX;
-+        double prevY = this.locY;
-+        double prevZ = this.locZ;
 +        float prevYaw = this.yaw;
 +        float prevPitch = this.pitch;
 +        // CraftBukkit end
-         super.t_();
-         if (this.l() > 0) {
-             this.a(this.l() - 1);
-@@ -196,6 +258,19 @@
-                 this.motX += -Math.sin((double) (f * 3.1415927F / 180.0F)) * this.b * (double) entityliving.ba * 0.05000000074505806D;
-                 this.motZ += Math.cos((double) (f * 3.1415927F / 180.0F)) * this.b * (double) entityliving.ba * 0.05000000074505806D;
-             }
-+            // CraftBukkit start - Support unoccupied deceleration
-+            else if (unoccupiedDeceleration >= 0) {
-+                this.motX *= unoccupiedDeceleration;
-+                this.motZ *= unoccupiedDeceleration;
-+                // Kill lingering speed
-+                if (motX <= 0.00001) {
-+                    motX = 0;
-+                }
-+                if (motZ <= 0.00001) {
-+                    motZ = 0;
-+                }
-+            }
-+            // CraftBukkit end
- 
-             d4 = Math.sqrt(this.motX * this.motX + this.motZ * this.motZ);
-             if (d4 > 0.35D) {
-@@ -230,16 +305,26 @@
-                     Block block = this.world.getType(blockposition).getBlock();
- 
-                     if (block == Blocks.SNOW_LAYER) {
-+                        // CraftBukkit start
-+                        if (CraftEventFactory.callEntityChangeBlockEvent(this, l, j1, j, Blocks.AIR, 0).isCancelled()) {
-+                            continue;
-+                        }
-+                        // CraftBukkit end
-                         this.world.setAir(blockposition);
-                         this.positionChanged = false;
-                     } else if (block == Blocks.WATERLILY) {
-+                        // CraftBukkit start
-+                        if (CraftEventFactory.callEntityChangeBlockEvent(this, l, j1, j, Blocks.AIR, 0).isCancelled()) {
-+                            continue;
-+                        }
-+                        // CraftBukkit end
-                         this.world.setAir(blockposition, true);
-                         this.positionChanged = false;
-                     }
-                 }
+         this.lastX = this.locX;
+         this.lastY = this.locY;
+         this.lastZ = this.locZ;
+@@ -189,6 +249,22 @@
              }
  
--            if (this.onGround) {
-+            if (this.onGround && !this.landBoats) { // CraftBukkit
-                 this.motX *= 0.5D;
-                 this.motY *= 0.5D;
-                 this.motZ *= 0.5D;
-@@ -248,6 +333,11 @@
              this.move(this.motX, this.motY, this.motZ);
-             if (this.positionChanged && d3 > 0.2975D) {
-                 if (!this.world.isClientSide && !this.dead) {
-+                    // CraftBukkit start
-+                    Vehicle vehicle = (Vehicle) this.getBukkitEntity();
-+                    VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, null);
-+                    this.world.getServer().getPluginManager().callEvent(destroyEvent);
-+                    if (!destroyEvent.isCancelled()) {
-                     this.die();
-                     if (this.world.getGameRules().getBoolean("doEntityDrops")) {
-                         for (k = 0; k < 3; ++k) {
-@@ -258,6 +348,7 @@
-                             this.a(Items.STICK, 1, 0.0F);
-                         }
-                     }
-+                    } // CraftBukkit end
-                 }
-             } else {
-                 this.motX *= 0.9900000095367432D;
-@@ -285,6 +376,22 @@
- 
-             this.yaw = (float) ((double) this.yaw + d12);
-             this.setYawPitch(this.yaw, this.pitch);
-+
 +            // CraftBukkit start
++            // PAIL: CHECK ME
 +            org.bukkit.Server server = this.world.getServer();
 +            org.bukkit.World bworld = this.world.getWorld();
 +
-+            Location from = new Location(bworld, prevX, prevY, prevZ, prevYaw, prevPitch);
++            Location from = new Location(bworld, this.lastX, this.lastY, this.lastZ, prevYaw, prevPitch);
 +            Location to = new Location(bworld, this.locX, this.locY, this.locZ, this.yaw, this.pitch);
 +            Vehicle vehicle = (Vehicle) this.getBukkitEntity();
 +
@@ -192,31 +132,23 @@
 +                server.getPluginManager().callEvent(event);
 +            }
 +            // CraftBukkit end
-             if (!this.world.isClientSide) {
-                 List list = this.world.getEntities(this, this.getBoundingBox().grow(0.20000000298023224D, 0.0D, 0.20000000298023224D));
+         } else {
+             this.motX = 0.0D;
+             this.motY = 0.0D;
+@@ -591,6 +667,11 @@
  
-@@ -299,6 +406,7 @@
-                 }
- 
-                 if (this.passenger != null && this.passenger.dead) {
-+                    this.passenger.vehicle = null; // CraftBukkit
-                     this.passenger = null;
-                 }
- 
-@@ -336,6 +444,11 @@
-             if (this.fallDistance > 3.0F) {
-                 this.e(this.fallDistance, 1.0F);
-                 if (!this.world.isClientSide && !this.dead) {
+                     this.e(this.fallDistance, 1.0F);
+                     if (!this.world.isClientSide && !this.dead) {
 +                    // CraftBukkit start
 +                    Vehicle vehicle = (Vehicle) this.getBukkitEntity();
 +                    VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, null);
 +                    this.world.getServer().getPluginManager().callEvent(destroyEvent);
 +                    if (!destroyEvent.isCancelled()) {
-                     this.die();
-                     if (this.world.getGameRules().getBoolean("doEntityDrops")) {
-                         int i;
-@@ -348,6 +461,7 @@
-                             this.a(Items.STICK, 1, 0.0F);
+                         this.die();
+                         if (this.world.getGameRules().getBoolean("doEntityDrops")) {
+                             int i;
+@@ -604,6 +685,7 @@
+                             }
                          }
                      }
 +                    } // CraftBukkit end

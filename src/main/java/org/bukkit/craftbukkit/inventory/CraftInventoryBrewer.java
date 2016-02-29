@@ -23,4 +23,14 @@ public class CraftInventoryBrewer extends CraftInventory implements BrewerInvent
     public BrewingStand getHolder() {
         return (BrewingStand) inventory.getOwner();
     }
+
+    @Override
+    public ItemStack getFuel() {
+        return getItem(4);
+    }
+
+    @Override
+    public void setFuel(ItemStack fuel) {
+        setItem(4, fuel);
+    }
 }

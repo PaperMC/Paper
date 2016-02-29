@@ -5,13 +5,16 @@ import net.minecraft.server.RemoteControlCommandListener;
 import org.bukkit.command.RemoteConsoleCommandSender;
 
 public class CraftRemoteConsoleCommandSender extends ServerCommandSender implements RemoteConsoleCommandSender {
-    public CraftRemoteConsoleCommandSender() {
-        super();
+
+    private final RemoteControlCommandListener listener;
+
+    public CraftRemoteConsoleCommandSender(RemoteControlCommandListener listener) {
+        this.listener = listener;
     }
 
     @Override
     public void sendMessage(String message) {
-        RemoteControlCommandListener.getInstance().sendMessage(new ChatComponentText(message + "\n")); // Send a newline after each message, to preserve formatting.
+        listener.sendMessage(new ChatComponentText(message + "\n")); // Send a newline after each message, to preserve formatting.
     }
 
     @Override

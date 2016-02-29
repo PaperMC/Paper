@@ -16,6 +16,7 @@ import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.Block;
 import net.minecraft.server.Item;
 import net.minecraft.server.MinecraftKey;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 
 public class CraftStatistic {
     private static final BiMap<String, org.bukkit.Statistic> statistics;
@@ -69,23 +70,29 @@ public class CraftStatistic {
     }
 
     public static org.bukkit.Statistic getBukkitStatisticByName(String name) {
-        if (name.startsWith("stat.killEntity")) {
+        if (name.startsWith("stat.killEntity.")) {
             name = "stat.killEntity";
         }
-        if (name.startsWith("stat.entityKilledBy")) {
+        if (name.startsWith("stat.entityKilledBy.")) {
             name = "stat.entityKilledBy";
         }
-        if (name.startsWith("stat.breakItem")) {
+        if (name.startsWith("stat.breakItem.")) {
             name = "stat.breakItem";
         }
-        if (name.startsWith("stat.useItem")) {
+        if (name.startsWith("stat.useItem.")) {
             name = "stat.useItem";
         }
-        if (name.startsWith("stat.mineBlock")) {
+        if (name.startsWith("stat.mineBlock.")) {
             name = "stat.mineBlock";
         }
-        if (name.startsWith("stat.craftItem")) {
+        if (name.startsWith("stat.craftItem.")) {
             name = "stat.craftItem";
+        }
+        if (name.startsWith("stat.drop.")) {
+            name = "stat.drop";
+        }
+        if (name.startsWith("stat.pickup.")) {
+            name = "stat.pickup";
         }
         return statistics.get(name);
     }
@@ -101,16 +108,16 @@ public class CraftStatistic {
     public static net.minecraft.server.Statistic getMaterialStatistic(org.bukkit.Statistic stat, Material material) {
         try {
             if (stat == Statistic.MINE_BLOCK) {
-                return StatisticList.MINE_BLOCK_COUNT[material.getId()];
+                return StatisticList.a(CraftMagicNumbers.getBlock(material)); // PAIL: getMineBlockStatistic
             }
             if (stat == Statistic.CRAFT_ITEM) {
-                return StatisticList.CRAFT_BLOCK_COUNT[material.getId()];
+                return StatisticList.a(CraftMagicNumbers.getItem(material)); // PAIL: getCraftItemStatistic
             }
             if (stat == Statistic.USE_ITEM) {
-                return StatisticList.USE_ITEM_COUNT[material.getId()];
+                return StatisticList.b(CraftMagicNumbers.getItem(material)); // PAIL: getUseItemStatistic
             }
             if (stat == Statistic.BREAK_ITEM) {
-                return StatisticList.BREAK_ITEM_COUNT[material.getId()];
+                return StatisticList.c(CraftMagicNumbers.getItem(material)); // PAIL: getBreakItemStatistic
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             return null;

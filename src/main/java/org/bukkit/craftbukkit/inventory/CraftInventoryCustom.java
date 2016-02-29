@@ -14,6 +14,7 @@ import org.bukkit.inventory.InventoryHolder;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.IInventory;
 import net.minecraft.server.ItemStack;
+import org.bukkit.Location;
 
 public class CraftInventoryCustom extends CraftInventory {
     public CraftInventoryCustom(InventoryHolder owner, InventoryType type) {
@@ -165,8 +166,7 @@ public class CraftInventoryCustom extends CraftInventory {
         }
 
         @Override
-        public void b(int i, int i1) {
-
+        public void setProperty(int i, int j) {
         }
 
         @Override
@@ -192,6 +192,11 @@ public class CraftInventoryCustom extends CraftInventory {
         @Override
         public IChatBaseComponent getScoreboardDisplayName() {
             return new ChatComponentText(title);
+        }
+
+        @Override
+        public Location getLocation() {
+            return null;
         }
     }
 }

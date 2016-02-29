@@ -27,8 +27,8 @@
              s = "map_" + itemstack.getData();
              worldmap = new WorldMap(s);
              worldmap.scale = 3;
-             worldmap.a((double) world.getWorldData().c(), (double) world.getWorldData().e(), worldmap.scale);
--            worldmap.map = (byte) world.worldProvider.getDimension();
+             worldmap.a((double) world.getWorldData().b(), (double) world.getWorldData().d(), worldmap.scale);
+-            worldmap.map = (byte) world.worldProvider.getDimensionManager().getDimensionID();
 +            worldmap.map = (byte) ((WorldServer) world).dimension; // CraftBukkit - fixes Bukkit multiworld maps
              worldmap.c();
 -            world.a(s, (PersistentBase) worldmap);
@@ -44,30 +44,44 @@
      }
  
      public void a(World world, Entity entity, WorldMap worldmap) {
--        if (world.worldProvider.getDimension() == worldmap.map && entity instanceof EntityHuman) {
+-        if (world.worldProvider.getDimensionManager().getDimensionID() == worldmap.map && entity instanceof EntityHuman) {
 +        // CraftBukkit - world.worldProvider -> ((WorldServer) world)
 +        if (((WorldServer) world).dimension == worldmap.map && entity instanceof EntityHuman) {
              int i = 1 << worldmap.scale;
              int j = worldmap.centerX;
              int k = worldmap.centerZ;
-@@ -181,6 +193,8 @@
-         if (itemstack.hasTag() && itemstack.getTag().getBoolean("map_is_scaling")) {
-             WorldMap worldmap = Items.FILLED_MAP.getSavedMap(itemstack, world);
+@@ -195,6 +207,7 @@
+     protected static void a(ItemStack itemstack, World world, int i) {
+         WorldMap worldmap = Items.FILLED_MAP.getSavedMap(itemstack, world);
  
-+            world = world.getServer().getServer().worlds.get(0); // CraftBukkit - use primary world for maps
-+
-             itemstack.setData(world.b("map"));
-             WorldMap worldmap1 = new WorldMap("map_" + itemstack.getData());
++        world = world.getServer().getServer().worlds.get(0); // CraftBukkit - use primary world for maps
+         itemstack.setData(world.b("map"));
+         WorldMap worldmap1 = new WorldMap("map_" + itemstack.getData());
  
-@@ -193,6 +207,11 @@
-             worldmap1.map = worldmap.map;
-             worldmap1.c();
-             world.a("map_" + itemstack.getData(), (PersistentBase) worldmap1);
-+
-+            // CraftBukkit start
-+            MapInitializeEvent event = new MapInitializeEvent(worldmap1.mapView);
-+            Bukkit.getServer().getPluginManager().callEvent(event);
-+            // CraftBukkit end
-         }
- 
+@@ -204,11 +217,16 @@
+         worldmap1.map = worldmap.map;
+         worldmap1.c();
+         world.a("map_" + itemstack.getData(), (PersistentBase) worldmap1);
++        // CraftBukkit start
++        MapInitializeEvent event = new MapInitializeEvent(worldmap1.mapView);
++        Bukkit.getServer().getPluginManager().callEvent(event);
++        // CraftBukkit end
      }
+ 
+     protected static void b(ItemStack itemstack, World world) {
+         WorldMap worldmap = Items.FILLED_MAP.getSavedMap(itemstack, world);
+ 
++        world = world.getServer().getServer().worlds.get(0); // CraftBukkit - use primary world for maps
+         itemstack.setData(world.b("map"));
+         WorldMap worldmap1 = new WorldMap("map_" + itemstack.getData());
+ 
+@@ -219,5 +237,9 @@
+         worldmap1.map = worldmap.map;
+         worldmap1.c();
+         world.a("map_" + itemstack.getData(), (PersistentBase) worldmap1);
++        // CraftBukkit start
++        MapInitializeEvent event = new MapInitializeEvent(worldmap1.mapView);
++        Bukkit.getServer().getPluginManager().callEvent(event);
++        // CraftBukkit end
+     }
+ }

@@ -45,7 +45,7 @@
      }
  
 @@ -124,6 +147,7 @@
-                     l = playerinventory.getCarried().count;
+                     k = playerinventory.getCarried().count;
                      Iterator iterator = this.h.iterator();
  
 +                    Map<Integer, ItemStack> draggedSlots = new HashMap<Integer, ItemStack>(); // CraftBukkit - Store slots from drag in map (raw slot id -> new stack)
@@ -55,20 +55,20 @@
 @@ -141,16 +165,48 @@
                              }
  
-                             l -= itemstack2.count - j1;
+                             k -= itemstack2.count - i1;
 -                            slot1.set(itemstack2);
 +                            // slot1.set(itemstack2);
 +                            draggedSlots.put(slot1.rawSlotIndex, itemstack2); // CraftBukkit - Put in map instead of setting
                          }
                      }
  
--                    itemstack1.count = l;
+-                    itemstack1.count = k;
 -                    if (itemstack1.count <= 0) {
 -                        itemstack1 = null;
 +                    // CraftBukkit start - InventoryDragEvent
 +                    InventoryView view = getBukkitView();
 +                    org.bukkit.inventory.ItemStack newcursor = CraftItemStack.asCraftMirror(itemstack1);
-+                    newcursor.setAmount(l);
++                    newcursor.setAmount(k);
 +                    Map<Integer, org.bukkit.inventory.ItemStack> eventmap = new HashMap<Integer, org.bukkit.inventory.ItemStack>();
 +                    for (Map.Entry<Integer, ItemStack> ditem : draggedSlots.entrySet()) {
 +                        eventmap.put(ditem.getKey(), CraftItemStack.asBukkitCopy(ditem.getValue()));
@@ -112,20 +112,20 @@
                          if (j == 1) {
 -                            entityhuman.drop(playerinventory.getCarried().cloneAndSubtract(1), true);
 -                            if (playerinventory.getCarried().count == 0) {
-+                            // CraftBukkit start - Store a reference
-+                            ItemStack itemstack4 = playerinventory.getCarried();
-+                            if (itemstack4.count > 0) {
-+                                entityhuman.drop(itemstack4.cloneAndSubtract(1), true);
++                            // CraftBukkit start - Store a reference, don't drop unless > 0
++                            ItemStack carried = playerinventory.getCarried();
++                            if (carried.count > 0) {
++                                entityhuman.drop(carried.cloneAndSubtract(1), true);
 +                            }
 +
-+                            if (itemstack4.count == 0) {
++                            if (carried.count == 0) {
 +                                // CraftBukkit end
                                  playerinventory.setCarried((ItemStack) null);
                              }
                          }
-@@ -223,7 +285,11 @@
- 
-                                 if (itemstack4.count == 0) {
+@@ -225,7 +287,11 @@
+                                 slot2.set(itemstack3.cloneAndSubtract(j1));
+                                 if (itemstack3.count == 0) {
                                      playerinventory.setCarried((ItemStack) null);
 +                                // CraftBukkit start - Update client cursor if we didn't empty it
 +                                } else if (entityhuman instanceof EntityPlayer) {
@@ -134,10 +134,10 @@
 +                                // CraftBukkit end
                              }
                          } else if (slot2.isAllowed(entityhuman)) {
-                             if (itemstack4 == null) {
-@@ -249,7 +315,11 @@
-                                     itemstack4.cloneAndSubtract(k1);
-                                     if (itemstack4.count == 0) {
+                             if (itemstack3 == null) {
+@@ -255,7 +321,11 @@
+                                     itemstack3.cloneAndSubtract(j1);
+                                     if (itemstack3.count == 0) {
                                          playerinventory.setCarried((ItemStack) null);
 +                                    // CraftBukkit start - Update client cursor if we didn't empty it
 +                                    } else if (entityhuman instanceof EntityPlayer) {
@@ -145,20 +145,21 @@
                                      }
 +                                    // CraftBukkit end
  
-                                     itemstack1.count += k1;
-                                 } else if (itemstack4.count <= slot2.getMaxStackSize(itemstack4)) {
-@@ -258,7 +328,9 @@
+                                     itemstack1.count += j1;
+                                 } else if (itemstack3.count <= slot2.getMaxStackSize(itemstack3)) {
+@@ -264,7 +334,10 @@
                                  }
-                             } else if (itemstack1.getItem() == itemstack4.getItem() && itemstack4.getMaxStackSize() > 1 && (!itemstack1.usesData() || itemstack1.getData() == itemstack4.getData()) && ItemStack.equals(itemstack1, itemstack4)) {
-                                 k1 = itemstack1.count;
--                                if (k1 > 0 && k1 + itemstack4.count <= itemstack4.getMaxStackSize()) {
-+                                // CraftBukkit start - itemstack4.getMaxStackSize() -> maxStack
-+                                int maxStack = Math.min(itemstack4.getMaxStackSize(), slot2.getMaxStackSize());
-+                                if (k1 > 0 && k1 + itemstack4.count <= maxStack) {
-                                     itemstack4.count += k1;
-                                     itemstack1 = slot2.a(k1);
+                             } else if (itemstack1.getItem() == itemstack3.getItem() && itemstack3.getMaxStackSize() > 1 && (!itemstack1.usesData() || itemstack1.getData() == itemstack3.getData()) && ItemStack.equals(itemstack1, itemstack3)) {
+                                 j1 = itemstack1.count;
+-                                if (j1 > 0 && j1 + itemstack3.count <= itemstack3.getMaxStackSize()) {
++                                // CraftBukkit start - itemstack3.getMaxStackSize() -> maxStack
++                                int maxStack = Math.min(itemstack3.getMaxStackSize(), slot2.getMaxStackSize());
++                                if (j1 > 0 && j1 + itemstack3.count <= maxStack) {
++                                    // CraftBukkit end
+                                     itemstack3.count += j1;
+                                     itemstack1 = slot2.a(j1);
                                      if (itemstack1.count == 0) {
-@@ -266,11 +338,24 @@
+@@ -272,11 +345,24 @@
                                      }
  
                                      slot2.a(entityhuman, playerinventory.getCarried());
@@ -182,9 +183,9 @@
 +                        // CraftBukkit end
                      }
                  }
-             } else if (k == 2 && j >= 0 && j < 9) {
-@@ -411,17 +496,20 @@
-                 if (itemstack1 != null && itemstack1.getItem() == itemstack.getItem() && (!itemstack.usesData() || itemstack.getData() == itemstack1.getData()) && ItemStack.equals(itemstack, itemstack1)) {
+             } else if (inventoryclicktype == InventoryClickType.SWAP && j >= 0 && j < 9) {
+@@ -430,14 +516,17 @@
+                 if (itemstack1 != null && a(itemstack, itemstack1)) {
                      int l = itemstack1.count + itemstack.count;
  
 -                    if (l <= itemstack.getMaxStackSize()) {
@@ -201,10 +202,7 @@
 +                    } else if (itemstack1.count < maxStack) {
 +                        itemstack.count -= maxStack - itemstack1.count;
 +                        itemstack1.count = maxStack;
++                        // CraftBukkit end
                          slot.f();
                          flag1 = true;
                      }
-+                    // CraftBukkit end
-                 }
- 
-                 if (flag) {

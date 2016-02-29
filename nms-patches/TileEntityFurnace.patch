@@ -13,7 +13,7 @@
 +import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 +// CraftBukkit end
 +
- public class TileEntityFurnace extends TileEntityContainer implements IUpdatePlayerListBox, IWorldInventory {
+ public class TileEntityFurnace extends TileEntityContainer implements ITickable, IWorldInventory {
  
      private static final int[] a = new int[] { 0};
 @@ -12,6 +22,32 @@
@@ -49,21 +49,12 @@
      public TileEntityFurnace() {}
  
      public int getSize() {
-@@ -132,7 +168,7 @@
-     }
- 
-     public int getMaxStackSize() {
--        return 64;
-+        return maxStack; // CraftBukkit
-     }
- 
-     public boolean isBurning() {
-@@ -140,11 +176,29 @@
+@@ -116,11 +152,29 @@
      }
  
      public void c() {
 -        boolean flag = this.isBurning();
-+        boolean flag = (this.w() == Blocks.LIT_FURNACE); // CraftBukkit - SPIGOT-844 - Check if furnace block is lit using the block instead of burn time // PAIL: Rename
++        boolean flag = (this.getBlock() == Blocks.LIT_FURNACE); // CraftBukkit - SPIGOT-844 - Check if furnace block is lit using the block instead of burn time
          boolean flag1 = false;
  
 +        // CraftBukkit start - Use wall time instead of ticks for cooking
@@ -90,7 +81,7 @@
          }
  
          if (!this.world.isClientSide) {
-@@ -153,9 +207,21 @@
+@@ -129,9 +183,21 @@
                      this.cookTime = MathHelper.clamp(this.cookTime - 2, 0, this.cookTimeTotal);
                  }
              } else {
@@ -115,7 +106,7 @@
                          flag1 = true;
                          if (this.items[1] != null) {
                              --this.items[1].count;
-@@ -168,6 +234,7 @@
+@@ -144,6 +210,7 @@
                      }
                  }
  
@@ -123,7 +114,7 @@
                  if (this.isBurning() && this.canBurn()) {
                      ++this.cookTime;
                      if (this.cookTime == this.cookTimeTotal) {
-@@ -179,11 +246,13 @@
+@@ -155,11 +222,13 @@
                  } else {
                      this.cookTime = 0;
                  }
@@ -133,11 +124,11 @@
              if (flag != this.isBurning()) {
                  flag1 = true;
                  BlockFurnace.a(this.isBurning(), this.world, this.position);
-+                this.E(); // CraftBukkit - Invalidate tile entity's cached block type // PAIL: Rename
++                this.invalidateBlockCache(); // CraftBukkit - Invalidate tile entity's cached block type 
              }
          }
  
-@@ -203,7 +272,8 @@
+@@ -179,7 +248,8 @@
          } else {
              ItemStack itemstack = RecipesFurnace.getInstance().getResult(this.items[0]);
  
@@ -147,7 +138,7 @@
          }
      }
  
-@@ -211,11 +281,38 @@
+@@ -187,11 +257,38 @@
          if (this.canBurn()) {
              ItemStack itemstack = RecipesFurnace.getInstance().getResult(this.items[0]);
  

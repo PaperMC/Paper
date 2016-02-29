@@ -53,7 +53,7 @@ public class PerMaterialTest extends AbstractTestingBase {
         if (material == Material.AIR) {
             assertFalse(material.isSolid());
         } else if (material.isBlock()) {
-            assertThat(material.isSolid(), is(CraftMagicNumbers.getBlock(material).getMaterial().isSolid()));
+            assertThat(material.isSolid(), is(CraftMagicNumbers.getBlock(material).getBlockData().getMaterial().isSolid()));
         } else {
             assertFalse(material.isSolid());
         }
@@ -104,7 +104,7 @@ public class PerMaterialTest extends AbstractTestingBase {
         if (material == Material.AIR) {
             assertTrue(material.isTransparent());
         } else if (material.isBlock()) {
-            assertThat(material.isTransparent(), is(not(CraftMagicNumbers.getBlock(material).getMaterial().blocksLight())));
+            assertThat(material.isTransparent(), is(not(CraftMagicNumbers.getBlock(material).getBlockData().getMaterial().blocksLight())));
         } else {
             assertFalse(material.isTransparent());
         }
@@ -113,7 +113,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @Test
     public void isFlammable() {
         if (material != Material.AIR && material.isBlock()) {
-            assertThat(material.isFlammable(), is(CraftMagicNumbers.getBlock(material).getMaterial().isBurnable()));
+            assertThat(material.isFlammable(), is(CraftMagicNumbers.getBlock(material).getBlockData().getMaterial().isBurnable()));
         } else {
             assertFalse(material.isFlammable());
         }
@@ -132,7 +132,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @Test
     public void isOccluding() {
         if (material.isBlock()) {
-            assertThat(material.isOccluding(), is(CraftMagicNumbers.getBlock(material).isOccluding()));
+            assertThat(material.isOccluding(), is(CraftMagicNumbers.getBlock(material).isOccluding(CraftMagicNumbers.getBlock(material).getBlockData())));
         } else {
             assertFalse(material.isOccluding());
         }

@@ -8,13 +8,13 @@ public class CraftPotionEffectType extends PotionEffectType {
     private final MobEffectList handle;
 
     public CraftPotionEffectType(MobEffectList handle) {
-        super(handle.id);
+        super(MobEffectList.getId(handle));
         this.handle = handle;
     }
 
     @Override
     public double getDurationModifier() {
-        return handle.getDurationModifier();
+        return handle.durationModifier;
     }
 
     public MobEffectList getHandle() {
@@ -23,7 +23,7 @@ public class CraftPotionEffectType extends PotionEffectType {
 
     @Override
     public String getName() {
-        switch (handle.id) {
+        switch (getId()) {
         case 1:
             return "SPEED";
         case 2:
@@ -70,8 +70,16 @@ public class CraftPotionEffectType extends PotionEffectType {
             return "ABSORPTION";
         case 23:
             return "SATURATION";
+        case 24:
+            return "GLOWING";
+        case 25:
+            return "LEVITATION";
+        case 26:
+            return "LUCK";
+        case 27:
+            return "UNLUCK";
         default:
-            return "UNKNOWN_EFFECT_TYPE_" + handle.id;
+            return "UNKNOWN_EFFECT_TYPE_" + getId();
         }
     }
 

@@ -64,7 +64,12 @@ public abstract class AbstractTestingBase {
                     Material.BIRCH_DOOR,
                     Material.JUNGLE_DOOR,
                     Material.ACACIA_DOOR,
-                    Material.DARK_OAK_DOOR
+                    Material.DARK_OAK_DOOR,
+                    Material.PURPUR_DOUBLE_SLAB,
+                    Material.BEETROOT_BLOCK,
+                    Material.END_GATEWAY,
+                    Material.STRUCTURE_BLOCK,
+                    Material.BURNING_FURNACE
             ).build();
 
     @BeforeClass

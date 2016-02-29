@@ -49,7 +49,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
         Validate.notNull(sender, "Sender cannot be null");
         Validate.notNull(args, "Arguments cannot be null");
         Validate.notNull(alias, "Alias cannot be null");
-        return (List<String>) vanillaCommand.tabComplete(getListener(sender), args, new BlockPosition(0, 0, 0));
+        return (List<String>) vanillaCommand.tabComplete(MinecraftServer.getServer(), getListener(sender), args, new BlockPosition(0, 0, 0));
     }
 
     public static CommandSender lastSender = null; // Nasty :(
@@ -75,7 +75,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
         }
 
         try {
-            if (vanillaCommand.canUse(icommandlistener)) {
+            if (vanillaCommand.canUse(server, icommandlistener)) {
                 if (i > -1) {
                     List<Entity> list = ((List<Entity>)PlayerSelector.getPlayers(icommandlistener, as[i], Entity.class));
                     String s2 = as[i];
@@ -90,14 +90,14 @@ public final class VanillaCommandWrapper extends VanillaCommand {
                         lastSender = bSender;
                         try {
                             as[i] = entity.getUniqueID().toString();
-                            vanillaCommand.execute(icommandlistener, as);
+                            vanillaCommand.execute(server, icommandlistener, as);
                             j++;
                         } catch (ExceptionUsage exceptionusage) {
                             ChatMessage chatmessage = new ChatMessage("commands.generic.usage", new Object[] { new ChatMessage(exceptionusage.getMessage(), exceptionusage.getArgs())});
                             chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
                             icommandlistener.sendMessage(chatmessage);
                         } catch (CommandException commandexception) {
-                            CommandAbstract.a(icommandlistener, vanillaCommand, 1, commandexception.getMessage(), commandexception.getArgs());
+                            CommandAbstract.a(icommandlistener, vanillaCommand, 0, commandexception.getMessage(), commandexception.getArgs());
                         } finally {
                             lastSender = oldSender;
                         }
@@ -105,7 +105,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
                     as[i] = s2;
                 } else {
                     icommandlistener.a(CommandObjectiveExecutor.EnumCommandResult.AFFECTED_ENTITIES, 1);
-                    vanillaCommand.execute(icommandlistener, as);
+                    vanillaCommand.execute(server, icommandlistener, as);
                     j++;
                 }
             } else {
@@ -118,7 +118,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
             chatmessage1.getChatModifier().setColor(EnumChatFormat.RED);
             icommandlistener.sendMessage(chatmessage1);
         } catch (CommandException commandexception) {
-            CommandAbstract.a(icommandlistener, vanillaCommand, 1, commandexception.getMessage(), commandexception.getArgs());
+            CommandAbstract.a(icommandlistener, vanillaCommand, 0, commandexception.getMessage(), commandexception.getArgs());
         } catch (Throwable throwable) {
             ChatMessage chatmessage3 = new ChatMessage("commands.generic.exception", new Object[0]);
             chatmessage3.getChatModifier().setColor(EnumChatFormat.RED);
@@ -149,7 +149,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
             return ((EntityMinecartCommandBlock) ((CraftMinecartCommand) sender).getHandle()).getCommandBlock();
         }
         if (sender instanceof RemoteConsoleCommandSender) {
-            return RemoteControlCommandListener.getInstance();
+            return ((DedicatedServer)MinecraftServer.getServer()).remoteControlCommandListener;
         }
         if (sender instanceof ConsoleCommandSender) {
             return ((CraftServer) sender.getServer()).getServer();

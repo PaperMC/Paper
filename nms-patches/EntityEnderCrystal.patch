@@ -1,7 +1,8 @@
 --- a/net/minecraft/server/EntityEnderCrystal.java
 +++ b/net/minecraft/server/EntityEnderCrystal.java
-@@ -1,5 +1,10 @@
- package net.minecraft.server;
+@@ -2,6 +2,11 @@
+ 
+ import com.google.common.base.Optional;
  
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -10,21 +11,21 @@
 +
  public class EntityEnderCrystal extends Entity {
  
-     public int a;
-@@ -32,7 +37,11 @@
-         int k = MathHelper.floor(this.locZ);
+     private static final DataWatcherObject<Optional<BlockPosition>> b = DataWatcher.a(EntityEnderCrystal.class, DataWatcherRegistry.k);
+@@ -38,7 +43,11 @@
+             BlockPosition blockposition = new BlockPosition(this);
  
-         if (this.world.worldProvider instanceof WorldProviderTheEnd && this.world.getType(new BlockPosition(i, j, k)).getBlock() != Blocks.FIRE) {
--            this.world.setTypeUpdate(new BlockPosition(i, j, k), Blocks.FIRE.getBlockData());
-+            // CraftBukkit start
-+            if (!CraftEventFactory.callBlockIgniteEvent(this.world, i, j, k, this).isCancelled()) {
-+                this.world.setTypeUpdate(new BlockPosition(i, j, k), Blocks.FIRE.getBlockData());
-+            }
-+            // CraftBukkit end
+             if (this.world.worldProvider instanceof WorldProviderTheEnd && this.world.getType(blockposition).getBlock() != Blocks.FIRE) {
+-                this.world.setTypeUpdate(blockposition, Blocks.FIRE.getBlockData());
++                // CraftBukkit start
++                if (!CraftEventFactory.callBlockIgniteEvent(this.world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this).isCancelled()) {
++                    this.world.setTypeUpdate(blockposition, Blocks.FIRE.getBlockData());
++                }
++                // CraftBukkit end
+             }
          }
  
-     }
-@@ -50,11 +59,24 @@
+@@ -74,9 +83,22 @@
              return false;
          } else {
              if (!this.dead && !this.world.isClientSide) {
@@ -33,20 +34,18 @@
 +                    return false;
 +                }
 +                // CraftBukkit end
-                 this.b = 0;
-                 if (this.b <= 0) {
-                     this.die();
-                     if (!this.world.isClientSide) {
--                        this.world.explode((Entity) null, this.locX, this.locY, this.locZ, 6.0F, true);
-+                        // CraftBukkit start
-+                        ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), 6.0F, false);
-+                        this.world.getServer().getPluginManager().callEvent(event);
-+                        if (event.isCancelled()) {
-+                            this.dead = false;
-+                            return false;
-+                        }
-+                        this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire(), true);
-+                        // CraftBukkit end
-                     }
+                 this.die();
+                 if (!this.world.isClientSide) {
+-                    this.world.explode((Entity) null, this.locX, this.locY, this.locZ, 6.0F, true);
++                    // CraftBukkit start
++                    ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), 6.0F, true);
++                    this.world.getServer().getPluginManager().callEvent(event);
++                    if (event.isCancelled()) {
++                        this.dead = false;
++                        return false;
++                    }
++                    this.world.explode(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire());
++                    // CraftBukkit end
+                     this.a(damagesource);
                  }
              }

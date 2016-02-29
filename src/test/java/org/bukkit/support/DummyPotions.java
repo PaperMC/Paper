@@ -1,6 +1,6 @@
 package org.bukkit.support;
 
-import net.minecraft.server.MobEffectList;
+import net.minecraft.server.MobEffects;
 
 import org.bukkit.craftbukkit.potion.CraftPotionBrewer;
 import org.bukkit.potion.Potion;
@@ -9,7 +9,7 @@ import org.bukkit.potion.PotionEffectType;
 public class DummyPotions {
     static {
         Potion.setPotionBrewer(new CraftPotionBrewer());
-        MobEffectList.BLINDNESS.getClass();
+        MobEffects.BLINDNESS.getClass();
         PotionEffectType.stopAcceptingRegistrations();
     }
 

@@ -31,6 +31,7 @@ import net.minecraft.server.EntityProjectile;
 import net.minecraft.server.EntitySmallFireball;
 import net.minecraft.server.EntitySnowball;
 import net.minecraft.server.EntityThrownExpBottle;
+import net.minecraft.server.EntityTippedArrow;
 import net.minecraft.server.EntityWitherSkull;
 import net.minecraft.server.EnumDirection;
 import net.minecraft.server.IPosition;
@@ -63,7 +64,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
         SourceBlock isourceblock = new SourceBlock(dispenserBlock.getWorld(), dispenserBlock.getPosition());
         // Copied from DispenseBehaviorProjectile
         IPosition iposition = BlockDispenser.a(isourceblock);
-        EnumDirection enumdirection = BlockDispenser.b(isourceblock.f());
+        EnumDirection enumdirection = BlockDispenser.e(isourceblock.f());
         net.minecraft.server.World world = dispenserBlock.getWorld();
         net.minecraft.server.Entity launch = null;
 
@@ -79,8 +80,8 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
         } else if (ThrownPotion.class.isAssignableFrom(projectile)) {
             launch = new EntityPotion(world, iposition.getX(), iposition.getY(), iposition.getZ(), CraftItemStack.asNMSCopy(new ItemStack(Material.POTION, 1)));
         } else if (Arrow.class.isAssignableFrom(projectile)) {
-            launch = new EntityArrow(world, iposition.getX(), iposition.getY(), iposition.getZ());
-            ((EntityArrow) launch).fromPlayer = 1;
+            launch = new EntityTippedArrow(world, iposition.getX(), iposition.getY(), iposition.getZ());
+            ((EntityArrow) launch).fromPlayer = EntityArrow.PickupStatus.ALLOWED;
             ((EntityArrow) launch).projectileSource = this;
         } else if (Fireball.class.isAssignableFrom(projectile)) {
             double d0 = iposition.getX() + (double) ((float) enumdirection.getAdjacentX() * 0.3F);
@@ -92,7 +93,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
             double d5 = random.nextGaussian() * 0.05D + (double) enumdirection.getAdjacentZ();
 
             if (SmallFireball.class.isAssignableFrom(projectile)) {
-                launch = new EntitySmallFireball(world, d0, d1, d2, d3, d4, d5);
+                launch = new EntitySmallFireball(world, null, d0, d1, d2);
             } else if (WitherSkull.class.isAssignableFrom(projectile)) {
                 launch = new EntityWitherSkull(world);
                 launch.setPosition(d0, d1, d2);

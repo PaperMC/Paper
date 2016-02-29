@@ -10,40 +10,42 @@
 +
  public class EntityCreeper extends EntityMonster {
  
-     private int a;
-@@ -7,6 +12,7 @@
+     private static final DataWatcherObject<Integer> a = DataWatcher.a(EntityCreeper.class, DataWatcherRegistry.b);
+@@ -10,6 +15,7 @@
      private int maxFuseTicks = 30;
      private int explosionRadius = 3;
-     private int bn = 0;
+     private int bz = 0;
 +    private int record = -1; // CraftBukkit
  
      public EntityCreeper(World world) {
          super(world);
-@@ -110,19 +116,39 @@
+@@ -117,21 +123,41 @@
      }
  
      public void die(DamageSource damagesource) {
 -        super.die(damagesource);
 +        // super.die(damagesource); // CraftBukkit - Moved to end
-         if (damagesource.getEntity() instanceof EntitySkeleton) {
-             int i = Item.getId(Items.RECORD_13);
-             int j = Item.getId(Items.RECORD_WAIT);
-             int k = i + this.random.nextInt(j - i + 1);
+         if (this.world.getGameRules().getBoolean("doMobLoot")) {
+             if (damagesource.getEntity() instanceof EntitySkeleton) {
+                 int i = Item.getId(Items.RECORD_13);
+                 int j = Item.getId(Items.RECORD_WAIT);
+                 int k = i + this.random.nextInt(j - i + 1);
  
--            this.a(Item.getById(k), 1);
-+            // CraftBukkit start - Store record for now, drop in dropDeathLoot
-+            // this.a(Item.getById(k), 1);
-+            this.record = k;
-+            // CraftBukkit end
-         } else if (damagesource.getEntity() instanceof EntityCreeper && damagesource.getEntity() != this && ((EntityCreeper) damagesource.getEntity()).isPowered() && ((EntityCreeper) damagesource.getEntity()).cp()) {
-             ((EntityCreeper) damagesource.getEntity()).cq();
--            this.a(new ItemStack(Items.SKULL, 1, 4), 0.0F);
-+            // CraftBukkit start
-+            // this.a(new ItemStack(Items.SKULL, 1, 4), 0.0F);
-+            headDrop = new ItemStack(Items.SKULL, 1, 4);
-+            // CraftBukkit end
+-                this.a(Item.getById(k), 1);
++                // CraftBukkit start - Store record for now, drop in dropDeathLoot
++                // this.a(Item.getById(k), 1);
++                this.record = k;
++                // CraftBukkit end
+             } else if (damagesource.getEntity() instanceof EntityCreeper && damagesource.getEntity() != this && ((EntityCreeper) damagesource.getEntity()).isPowered() && ((EntityCreeper) damagesource.getEntity()).canCauseHeadDrop()) {
+                 ((EntityCreeper) damagesource.getEntity()).setCausedHeadDrop();
+-                this.a(new ItemStack(Items.SKULL, 1, 4), 0.0F);
++                // CraftBukkit start
++                // this.a(new ItemStack(Items.SKULL, 1, 4), 0.0F);
++                headDrop = new ItemStack(Items.SKULL, 1, 4);
++                // CraftBukkit end
+             }
          }
-+        
+ 
 +        super.die(damagesource); // CraftBukkit - Moved from above
 +    }
 +
@@ -51,7 +53,7 @@
 +    @Override
 +    protected void dropDeathLoot(boolean flag, int i) {
 +        super.dropDeathLoot(flag, i);
- 
++
 +        // Drop a music disc?
 +        if (this.record != -1) {
 +            this.a(Item.getById(this.record), 1);
@@ -60,13 +62,12 @@
      }
 +    // CraftBukkit end
  
-     public boolean r(Entity entity) {
+     public boolean B(Entity entity) {
          return true;
-@@ -146,7 +172,21 @@
+@@ -155,8 +181,18 @@
  
      public void onLightningStrike(EntityLightning entitylightning) {
          super.onLightningStrike(entitylightning);
--        this.datawatcher.watch(17, Byte.valueOf((byte) 1));
 +        // CraftBukkit start
 +        if (CraftEventFactory.callCreeperPowerEvent(this, entitylightning, org.bukkit.event.entity.CreeperPowerEvent.PowerCause.LIGHTNING).isCancelled()) {
 +            return;
@@ -76,24 +77,24 @@
 +    }
 +
 +    public void setPowered(boolean powered) {
-+        if (!powered) {
-+            this.datawatcher.watch(17, Byte.valueOf((byte) 0));
-+        } else {
-+            this.datawatcher.watch(17, Byte.valueOf((byte) 1));
-+        }
-+        // CraftBukkit end
+         this.datawatcher.set(EntityCreeper.b, Boolean.valueOf(true));
      }
++    // CraftBukkit end
  
-     protected boolean a(EntityHuman entityhuman) {
-@@ -170,8 +210,15 @@
+     protected boolean a(EntityHuman entityhuman, EnumHand enumhand, ItemStack itemstack) {
+         if (itemstack != null && itemstack.getItem() == Items.FLINT_AND_STEEL) {
+@@ -177,9 +213,17 @@
              boolean flag = this.world.getGameRules().getBoolean("mobGriefing");
              float f = this.isPowered() ? 2.0F : 1.0F;
  
+-            this.aT = true;
 -            this.world.explode(this, this.locX, this.locY, this.locZ, (float) this.explosionRadius * f, flag);
 -            this.die();
++            // CraftBukkit start
 +            ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), this.explosionRadius * f, false);
 +            this.world.getServer().getPluginManager().callEvent(event);
 +            if (!event.isCancelled()) {
++                this.aT = true;
 +                this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire(), flag);
 +                this.die();
 +            } else {

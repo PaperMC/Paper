@@ -1,26 +1,22 @@
 --- a/net/minecraft/server/RecipesFurnace.java
 +++ b/net/minecraft/server/RecipesFurnace.java
-@@ -10,12 +10,13 @@
+@@ -9,7 +9,9 @@
+ 
      private static final RecipesFurnace a = new RecipesFurnace();
      public Map<ItemStack, ItemStack> recipes = Maps.newHashMap();
-     private Map<ItemStack, Float> c = Maps.newHashMap();
+-    private Map<ItemStack, Float> c = Maps.newHashMap();
++    private Map<ItemStack, Float> c = Maps.newHashMap(); // PAIL: rename
 +    public Map customRecipes = Maps.newHashMap(); // CraftBukkit - add field
++    public Map customExperience = Maps.newHashMap(); // CraftBukkit - add field
  
      public static RecipesFurnace getInstance() {
          return RecipesFurnace.a;
-     }
- 
--    private RecipesFurnace() {
-+    public RecipesFurnace() { // PAIL: Public
-         this.registerRecipe(Blocks.IRON_ORE, new ItemStack(Items.IRON_INGOT), 0.7F);
-         this.registerRecipe(Blocks.GOLD_ORE, new ItemStack(Items.GOLD_INGOT), 1.0F);
-         this.registerRecipe(Blocks.DIAMOND_ORE, new ItemStack(Items.DIAMOND), 1.0F);
-@@ -53,6 +54,12 @@
+@@ -54,6 +56,12 @@
          this.registerRecipe(Blocks.QUARTZ_ORE, new ItemStack(Items.QUARTZ), 0.2F);
      }
  
 +    // CraftBukkit start - add method
-+    public void registerRecipe(ItemStack itemstack, ItemStack itemstack1) {
++    public void registerRecipe(ItemStack itemstack, ItemStack itemstack1, float f) {
 +        this.customRecipes.put(itemstack, itemstack1);
 +    }
 +    // CraftBukkit end
@@ -28,7 +24,7 @@
      public void registerRecipe(Block block, ItemStack itemstack, float f) {
          this.a(Item.getItemOf(block), itemstack, f);
      }
-@@ -67,13 +74,23 @@
+@@ -68,13 +76,23 @@
      }
  
      public ItemStack getResult(ItemStack itemstack) {
@@ -44,11 +40,37 @@
              if (!iterator.hasNext()) {
 -                return null;
 +                // CraftBukkit start - fall back to vanilla recipes
-+                if (!vanilla && !recipes.isEmpty()) {
++                if (!vanilla && !this.recipes.isEmpty()) {
 +                    iterator = this.recipes.entrySet().iterator();
 +                    vanilla = true;
 +                } else {
 +                    return null;
++                }
++                // CraftBukkit end
+             }
+ 
+             entry = (Entry) iterator.next();
+@@ -92,13 +110,23 @@
+     }
+ 
+     public float b(ItemStack itemstack) {
+-        Iterator iterator = this.c.entrySet().iterator();
++        // CraftBukkit start - initialize to customRecipes
++        boolean vanilla = false;
++        Iterator iterator = this.customRecipes.entrySet().iterator();
++        // CraftBukkit end
+ 
+         Entry entry;
+ 
+         do {
+             if (!iterator.hasNext()) {
+-                return 0.0F;
++                // CraftBukkit start - fall back to vanilla recipes
++                if (!vanilla && !this.c.isEmpty()) {
++                    iterator = this.c.entrySet().iterator();
++                    vanilla = true;
++                } else {
++                    return 0.0F;
 +                }
 +                // CraftBukkit end
              }

@@ -6,7 +6,6 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.CreatureSpawner;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.EntityType;
 
 public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpawner {
@@ -23,18 +22,8 @@ public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpa
         spawner = te;
     }
 
-    @Deprecated
-    public CreatureType getCreatureType() {
-        return CreatureType.fromName(spawner.getSpawner().getMobName());
-    }
-
     public EntityType getSpawnedType() {
         return EntityType.fromName(spawner.getSpawner().getMobName());
-    }
-
-    @Deprecated
-    public void setCreatureType(CreatureType creatureType) {
-        spawner.getSpawner().setMobName(creatureType.getName());
     }
 
     public void setSpawnedType(EntityType entityType) {

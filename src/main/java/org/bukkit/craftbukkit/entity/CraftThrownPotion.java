@@ -22,14 +22,11 @@ public class CraftThrownPotion extends CraftProjectile implements ThrownPotion {
     // TODO: This one does not handle custom NBT potion effects does it?
     // In that case this method could be said to be misleading or incorrect
     public Collection<PotionEffect> getEffects() {
-        return Potion.getBrewer().getEffectsFromDamage(getHandle().getPotionValue());
+        return Potion.getBrewer().getEffectsFromDamage(getHandle().getItem().getData());
     }
 
     public ItemStack getItem() {
-        // We run this method once since it will set the item stack if there is none.
-        getHandle().getPotionValue();
-
-        return CraftItemStack.asBukkitCopy(getHandle().item);
+        return CraftItemStack.asBukkitCopy(getHandle().getItem());
     }
 
     public void setItem(ItemStack item) {
@@ -39,7 +36,7 @@ public class CraftThrownPotion extends CraftProjectile implements ThrownPotion {
         // The ItemStack must be a potion.
         Validate.isTrue(item.getType() == Material.POTION, "ItemStack must be a potion. This item stack was " + item.getType() + ".");
 
-        getHandle().item = CraftItemStack.asNMSCopy(item);
+        getHandle().setItem(CraftItemStack.asNMSCopy(item));
     }
 
     @Override

@@ -19,7 +19,7 @@
 +
  public final class ItemStack {
  
-     public static final DecimalFormat a = new DecimalFormat("#.###");
+     public static final DecimalFormat a = new DecimalFormat("#.##");
 @@ -46,10 +59,14 @@
          this.k = false;
          this.item = item;
@@ -39,10 +39,10 @@
  
      }
  
-@@ -83,11 +100,128 @@
+@@ -84,11 +101,128 @@
      }
  
-     public boolean placeItem(EntityHuman entityhuman, World world, BlockPosition blockposition, EnumDirection enumdirection, float f, float f1, float f2) {
+     public EnumInteractionResult placeItem(EntityHuman entityhuman, World world, BlockPosition blockposition, EnumHand enumhand, EnumDirection enumdirection, float f, float f1, float f2) {
 +        // CraftBukkit start - handle all block place event logic here
 +        int data = this.getData();
 +        int count = this.count;
@@ -57,13 +57,13 @@
 +                }
 +            }
 +        }
-         boolean flag = this.getItem().interactWith(this, entityhuman, world, blockposition, enumdirection, f, f1, f2);
+         EnumInteractionResult enuminteractionresult = this.getItem().a(this, entityhuman, world, blockposition, enumhand, enumdirection, f, f1, f2);
 +        int newData = this.getData();
 +        int newCount = this.count;
 +        this.count = count;
 +        this.setData(data);
 +        world.captureBlockStates = false;
-+        if (flag && world.captureTreeGeneration && world.capturedBlockStates.size() > 0) {
++        if (enuminteractionresult == EnumInteractionResult.SUCCESS && world.captureTreeGeneration && world.capturedBlockStates.size() > 0) {
 +            world.captureTreeGeneration = false;
 +            Location location = new Location(world.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ());
 +            TreeType treeType = BlockSapling.treeType;
@@ -87,12 +87,12 @@
 +                }
 +            }
 +
-+            return flag;
++            return enuminteractionresult;
 +        }
 +        world.captureTreeGeneration = false;
  
-         if (flag) {
--            entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this.item)]);
+         if (enuminteractionresult == EnumInteractionResult.SUCCESS) {
+-            entityhuman.b(StatisticList.b(this.item));
 +            org.bukkit.event.block.BlockPlaceEvent placeEvent = null;
 +            List<BlockState> blocks = (List<BlockState>) world.capturedBlockStates.clone();
 +            world.capturedBlockStates.clear();
@@ -103,7 +103,7 @@
 +            }
 +
 +            if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
-+                flag = false; // cancel placement
++                enuminteractionresult = EnumInteractionResult.FAIL; // cancel placement
 +                // revert back all captured blocks
 +                for (BlockState blockstate : blocks) {
 +                    blockstate.update(true, false);
@@ -124,11 +124,11 @@
 +                    BlockPosition newblockposition = new BlockPosition(x, y, z);
 +                    IBlockData block = world.getType(newblockposition);
 +
-+                    if (!(block instanceof BlockContainer)) { // Containers get placed automatically
++                    if (!(block instanceof BlockTileEntity)) { // Containers get placed automatically
 +                        block.getBlock().onPlace(world, newblockposition, block);
 +                    }
 +
-+                    world.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block.getBlock(), updateFlag); // send null chunk as chunk.k() returns false by this point
++                    world.notifyAndUpdatePhysics(newblockposition, null, oldBlock.getBlockData(), block, updateFlag); // send null chunk as chunk.k() returns false by this point
 +                }
 +
 +                for (Map.Entry<BlockPosition, TileEntity> e : world.capturedTileEntities.entrySet()) {
@@ -146,7 +146,7 @@
 +                if (this.getItem() == Items.SKULL) { // Special case skulls to allow wither spawns to be cancelled
 +                    BlockPosition bp = blockposition;
 +                    if (!world.getType(blockposition).getBlock().a(world, blockposition)) {
-+                        if (!world.getType(blockposition).getBlock().getMaterial().isBuildable()) {
++                        if (!world.getType(blockposition).getMaterial().isBuildable()) {
 +                            bp = null;
 +                        } else {
 +                            bp = bp.shift(enumdirection);
@@ -160,16 +160,16 @@
 +                    }
 +                }
 +
-+                entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this.item)]);
++                entityhuman.b(StatisticList.b(this.item));
 +            }
          }
 +        world.capturedTileEntities.clear();
 +        world.capturedBlockStates.clear();
 +        // CraftBukkit end
  
-         return flag;
+         return enuminteractionresult;
      }
-@@ -111,7 +245,7 @@
+@@ -112,7 +246,7 @@
          nbttagcompound.setByte("Count", (byte) this.count);
          nbttagcompound.setShort("Damage", (short) this.damage);
          if (this.tag != null) {
@@ -178,9 +178,9 @@
          }
  
          return nbttagcompound;
-@@ -125,13 +259,18 @@
-         }
- 
+@@ -121,13 +255,18 @@
+     public void c(NBTTagCompound nbttagcompound) {
+         this.item = Item.d(nbttagcompound.getString("id"));
          this.count = nbttagcompound.getByte("Count");
 +        /* CraftBukkit start - Route through setData for filtering
          this.damage = nbttagcompound.getShort("Damage");
@@ -198,7 +198,7 @@
              if (this.item != null) {
                  this.item.a(this.tag);
              }
-@@ -168,8 +307,28 @@
+@@ -164,6 +303,26 @@
      }
  
      public void setData(int i) {
@@ -223,12 +223,9 @@
 +        }
 +        // CraftBukkit end
          this.damage = i;
--        if (this.damage < 0) {
-+        if (this.damage < -1) { // CraftBukkit
+         if (this.damage < 0) {
              this.damage = 0;
-         }
- 
-@@ -223,6 +382,12 @@
+@@ -216,6 +375,12 @@
                          this.count = 0;
                      }
  
@@ -241,11 +238,11 @@
                      this.damage = 0;
                  }
  
-@@ -489,6 +654,7 @@
+@@ -513,6 +678,7 @@
  
      public void setItem(Item item) {
          this.item = item;
 +        this.setData(this.getData()); // CraftBukkit - Set data again to ensure it is filtered properly
      }
  
-     public IChatBaseComponent C() {
+     public IChatBaseComponent B() {

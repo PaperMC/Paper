@@ -23,9 +23,7 @@ public class CraftChunk implements Chunk {
     private static final byte[] emptySkyLight = new byte[2048];
 
     public CraftChunk(net.minecraft.server.Chunk chunk) {
-        if (!(chunk instanceof EmptyChunk)) {
-            this.weakChunk = new WeakReference<net.minecraft.server.Chunk>(chunk);
-        }
+        this.weakChunk = new WeakReference<net.minecraft.server.Chunk>(chunk);
 
         worldServer = (WorldServer) getHandle().world;
         x = getHandle().locX;
@@ -46,9 +44,7 @@ public class CraftChunk implements Chunk {
         if (c == null) {
             c = worldServer.getChunkAt(x, z);
 
-            if (!(c instanceof EmptyChunk)) {
-                weakChunk = new WeakReference<net.minecraft.server.Chunk>(c);
-            }
+            weakChunk = new WeakReference<net.minecraft.server.Chunk>(c);
         }
 
         return c;
@@ -164,22 +160,16 @@ public class CraftChunk implements Chunk {
                 sectionEmpty[i] = true;
             } else { // Not empty
                 short[] blockids = new short[4096];
-                char[] baseids = cs[i].getIdArray();
-                byte[] dataValues = sectionBlockData[i] = new byte[2048];
+
+                byte[] rawIds = new byte[4096];
+                NibbleArray data = new NibbleArray();
+                cs[i].getBlocks().exportData(rawIds, data);
+
+                byte[] dataValues = sectionBlockData[i] = data.asBytes();
 
                 // Copy base IDs
                 for (int j = 0; j < 4096; j++) {
-                    if (baseids[j] == 0) continue;
-                    IBlockData blockData = (IBlockData) net.minecraft.server.Block.d.a(baseids[j]);
-                    if (blockData == null) continue;
-                    blockids[j] = (short) net.minecraft.server.Block.getId(blockData.getBlock());
-                    int data = blockData.getBlock().toLegacyData(blockData);
-                    int jj = j >> 1;
-                    if ((j & 1) == 0) {
-                        dataValues[jj] = (byte) ((dataValues[jj] & 0xF0) | (data & 0xF));
-                    } else {
-                        dataValues[jj] = (byte) ((dataValues[jj] & 0xF) | ((data & 0xF) << 4));
-                    }
+                    blockids[j] = (short) (rawIds[j] & 0xFF);
                 }               
 
                 sectionBlockIDs[i] = blockids;
@@ -188,10 +178,10 @@ public class CraftChunk implements Chunk {
                     sectionSkyLights[i] = emptyData;
                 } else {
                     sectionSkyLights[i] = new byte[2048];
-                    System.arraycopy(cs[i].getSkyLightArray().a(), 0, sectionSkyLights[i], 0, 2048);
+                    System.arraycopy(cs[i].getSkyLightArray().asBytes(), 0, sectionSkyLights[i], 0, 2048);
                 }
                 sectionEmitLights[i] = new byte[2048];
-                System.arraycopy(cs[i].getEmittedLightArray().a(), 0, sectionEmitLights[i], 0, 2048);
+                System.arraycopy(cs[i].getEmittedLightArray().asBytes(), 0, sectionEmitLights[i], 0, 2048);
             }
         }
 
@@ -225,11 +215,13 @@ public class CraftChunk implements Chunk {
                     biomeTemp[i] = dat[i];
                 }
 
+                /* Removed 15w46a
                 dat = wcm.getWetness(null, getX() << 4, getZ() << 4, 16, 16);
 
                 for (int i = 0; i < 256; i++) {
                     biomeRain[i] = dat[i];
                 }
+                */
             }
         }
 
@@ -261,11 +253,13 @@ public class CraftChunk implements Chunk {
                     biomeTemp[i] = dat[i];
                 }
 
+                /* Removed 15w46a
                 dat = wcm.getWetness(null, x << 4, z << 4, 16, 16);
 
                 for (int i = 0; i < 256; i++) {
                     biomeRain[i] = dat[i];
                 }
+                */
             }
         }
 
@@ -293,7 +287,7 @@ public class CraftChunk implements Chunk {
         float[] temps = new float[biomes.length];
 
         for (int i = 0; i < biomes.length; i++) {
-            float temp = biomes[i].temperature; // Vanilla of olde: ((int) biomes[i].temperature * 65536.0F) / 65536.0F
+            float temp = biomes[i].getTemperature(); // Vanilla of olde: ((int) biomes[i].temperature * 65536.0F) / 65536.0F
 
             if (temp > 1F) {
                 temp = 1F;

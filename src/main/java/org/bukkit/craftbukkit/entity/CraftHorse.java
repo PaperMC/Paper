@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityHorse;
+import net.minecraft.server.EnumHorseType;
 import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryHorse;
@@ -23,12 +24,12 @@ public class CraftHorse extends CraftAnimals implements Horse {
     }
 
     public Variant getVariant() {
-        return Variant.values()[getHandle().getType()];
+        return Variant.values()[getHandle().getType().ordinal()];
     }
 
     public void setVariant(Variant variant) {
         Validate.notNull(variant, "Variant cannot be null");
-        getHandle().setType(variant.ordinal());
+        getHandle().setType(EnumHorseType.values()[variant.ordinal()]);
     }
 
     public Color getColor() {
@@ -89,7 +90,7 @@ public class CraftHorse extends CraftAnimals implements Horse {
 
     @Override
     public boolean isTamed() {
-        return getHandle().isTame();
+        return getHandle().isTamed();
     }
 
     @Override
@@ -116,19 +117,11 @@ public class CraftHorse extends CraftAnimals implements Horse {
     }
 
     public UUID getOwnerUUID() {
-        try {
-            return UUID.fromString(getHandle().getOwnerUUID());
-        } catch (IllegalArgumentException ex) {
-            return null;
-        }
+        return getHandle().getOwnerUUID();
     }
 
     public void setOwnerUUID(UUID uuid) {
-        if (uuid == null) {
-            getHandle().setOwnerUUID("");
-        } else {
-            getHandle().setOwnerUUID(uuid.toString());
-        }
+        getHandle().setOwnerUUID(uuid);
     }
 
     public HorseInventory getInventory() {

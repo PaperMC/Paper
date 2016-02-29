@@ -4,10 +4,13 @@ import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
+import net.minecraft.server.MobEffect;
+import net.minecraft.server.MobEffectList;
+import net.minecraft.server.PotionRegistry;
 import org.bukkit.support.AbstractTestingBase;
-import org.bukkit.support.Util;
 import org.junit.Test;
 
 public class PotionTest extends AbstractTestingBase {
@@ -26,20 +29,20 @@ public class PotionTest extends AbstractTestingBase {
 
     @Test
     public void testEffectCompleteness() throws Throwable {
-        Map<Integer, ?> effectDurations = Util.getInternalState(net.minecraft.server.PotionBrewer.class, null, "effectDurations");
-
         Map<PotionType, String> effects = new EnumMap(PotionType.class);
-        for (int id : effectDurations.keySet()) {
+        for (PotionRegistry reg : PotionRegistry.a) {
+            List<MobEffect> eff = reg.a();
+            if (eff.size() != 1) continue;
+            int id = MobEffectList.getId(eff.get(0).getMobEffect());
             PotionEffectType type = PotionEffectType.getById(id);
             assertNotNull(String.valueOf(id), PotionEffectType.getById(id));
 
             PotionType enumType = PotionType.getByEffect(type);
             assertNotNull(type.getName(), enumType);
 
-            assertThat(enumType.name(), effects.put(enumType, enumType.name()), is(nullValue()));
+            effects.put(enumType, enumType.name());
         }
 
-        assertThat(effects.entrySet(), hasSize(effectDurations.size()));
-        assertThat(effectDurations.entrySet(), hasSize(PotionType.values().length - /* WATER */ 1));
+        assertEquals(effects.entrySet().size(), PotionType.values().length - /* WATER */ 1);
     }
 }

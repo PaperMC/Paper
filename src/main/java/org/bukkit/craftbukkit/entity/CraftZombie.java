@@ -4,6 +4,7 @@ import net.minecraft.server.EntityZombie;
 
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Villager;
 import org.bukkit.entity.Zombie;
 
 public class CraftZombie extends CraftMonster implements Zombie {
@@ -39,6 +40,21 @@ public class CraftZombie extends CraftMonster implements Zombie {
     }
 
     public void setVillager(boolean flag) {
-        getHandle().setVillager(flag);
+        getHandle().setVillagerType(0);
+    }
+
+    @Override
+    public void setVillagerProfession(Villager.Profession profession) {
+        if (profession == null) {
+            getHandle().clearVillagerType();
+        } else {
+            getHandle().setVillagerType(profession.getId());
+        }
+    }
+
+    @Override
+    public Villager.Profession getVillagerProfession() {
+        if (!isVillager()) return null;
+        return Villager.Profession.getProfession(getHandle().getVillagerType());
     }
 }
