@@ -20,14 +20,26 @@ dependencies {
     api("org.joml:joml:1.10.8") {
         isTransitive = false // https://github.com/JOML-CI/JOML/issues/352
     }
+    // Paper start
+    api("com.googlecode.json-simple:json-simple:1.1.1") {
+        isTransitive = false // includes junit
+    }
+    // Paper end
 
     compileOnly("org.apache.maven:maven-resolver-provider:3.9.6")
     compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
     compileOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.18")
 
-    val annotations = "org.jetbrains:annotations-java5:$annotationsVersion"
+    val annotations = "org.jetbrains:annotations:$annotationsVersion" // Paper - we don't want Java 5 annotations...
     compileOnly(annotations)
     testCompileOnly(annotations)
+
+    // Paper start - add checker
+    val checkerQual = "org.checkerframework:checker-qual:3.33.0"
+    compileOnlyApi(checkerQual)
+    testCompileOnly(checkerQual)
+    // Paper end
+    api("org.jspecify:jspecify:1.0.0") // Paper - add jspecify
 
     testImplementation("org.apache.commons:commons-lang3:3.12.0")
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
@@ -71,8 +83,13 @@ tasks.withType<Javadoc> {
     options.links(
         "https://guava.dev/releases/33.3.1-jre/api/docs/",
         "https://javadoc.io/doc/org.yaml/snakeyaml/2.2/",
-        "https://javadoc.io/doc/org.jetbrains/annotations-java5/$annotationsVersion/",
+        "https://javadoc.io/doc/org.jetbrains/annotations/$annotationsVersion/", // Paper - we don't want Java 5 annotations
         "https://javadoc.io/doc/net.md-5/bungeecord-chat/$bungeeCordChatVersion/",
+        // Paper start - add missing javadoc links
+        "https://javadoc.io/doc/org.joml/joml/1.10.8/index.html",
+        "https://www.javadoc.io/doc/com.google.code.gson/gson/2.11.0",
+        "https://jspecify.dev/docs/api/",
+        // Paper end
     )
     options.tags("apiNote:a:API Note:")
 
@@ -91,3 +108,14 @@ tasks.withType<Javadoc> {
 tasks.test {
     useJUnitPlatform()
 }
+
+// Paper start
+val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
+    badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
+    jarToScan.set(tasks.jar.flatMap { it.archiveFile })
+    classpath.from(configurations.compileClasspath)
+}
+tasks.check {
+    dependsOn(scanJar)
+}
+// Paper end
