@@ -791,5 +791,15 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     default net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowEntity> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowEntity> op) {
         return net.kyori.adventure.text.event.HoverEvent.showEntity(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowEntity.of(this.getType().getKey(), this.getUniqueId(), this.customName())));
     }
+
+    /**
+     * Gets the location where this entity originates from.
+     * <p>
+     * This value can be null if the entity hasn't yet been added to the world.
+     *
+     * @return Location where entity originates or null if not yet added
+     */
+    @Nullable
+    Location getOrigin();
     // Paper end
 }
