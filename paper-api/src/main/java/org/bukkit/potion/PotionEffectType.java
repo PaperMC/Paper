@@ -280,6 +280,7 @@ public abstract class PotionEffectType {
 
     /**
      * Returns an array of all the registered {@link PotionEffectType}s.
+     * This array is not necessarily in any particular order and may contain null.
      *
      * @return Array of types.
      */
