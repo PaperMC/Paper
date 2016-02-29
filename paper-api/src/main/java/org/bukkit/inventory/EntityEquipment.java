@@ -9,16 +9,56 @@ public interface EntityEquipment {
 
     /**
      * Gets a copy of the item the entity is currently holding
+     * in their main hand.
      *
      * @return the currently held item
      */
+    ItemStack getItemInMainHand();
+
+    /**
+     * Sets the item the entity is holding in their main hand.
+     *
+     * @param item The item to put into the entities hand
+     */
+    void setItemInMainHand(ItemStack item);
+
+    /**
+     * Gets a copy of the item the entity is currently holding
+     * in their off hand.
+     *
+     * @return the currently held item
+     */
+    ItemStack getItemInOffHand();
+
+    /**
+     * Sets the item the entity is holding in their off hand.
+     *
+     * @param item The item to put into the entities hand
+     */
+    void setItemInOffHand(ItemStack item);
+
+    /**
+     * Gets a copy of the item the entity is currently holding
+     *
+     * @deprecated entities can duel wield now use the methods for the
+     *      specific hand instead
+     * @see #getItemInMainHand()
+     * @see #getItemInOffHand()
+     * @return the currently held item
+     */
+    @Deprecated
     ItemStack getItemInHand();
 
     /**
      * Sets the item the entity is holding
      *
+     * @deprecated entities can duel wield now use the methods for the
+     *      specific hand instead
+     * @see #setItemInMainHand(ItemStack)
+     * @see #setItemInOffHand(ItemStack)
      * @param stack The item to put into the entities hand
      */
+    @Deprecated
     void setItemInHand(ItemStack stack);
 
     /**

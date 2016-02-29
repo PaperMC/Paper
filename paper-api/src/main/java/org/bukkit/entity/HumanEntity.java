@@ -105,7 +105,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
      * Returns the ItemStack currently in your hand, can be empty.
      *
      * @return The ItemStack of the item you are currently holding.
+     * @deprecated Humans may now dual wield in their off hand, use explicit
+     * methods in {@link PlayerInventory}.
      */
+    @Deprecated
     public ItemStack getItemInHand();
 
     /**
@@ -113,7 +116,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
      * user was holding.
      *
      * @param item The ItemStack which will end up in the hand
+     * @deprecated Humans may now dual wield in their off hand, use explicit
+     * methods in {@link PlayerInventory}.
      */
+    @Deprecated
     public void setItemInHand(ItemStack item);
 
     /**
