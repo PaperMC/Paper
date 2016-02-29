@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 import org.apache.commons.lang.Validate;
+import org.bukkit.Color;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.entity.LivingEntity;
@@ -28,6 +29,7 @@ public class PotionEffect implements ConfigurationSerializable {
     private final PotionEffectType type;
     private final boolean ambient;
     private final boolean particles;
+    private final Color color;
 
     /**
      * Creates a potion effect.
@@ -37,14 +39,30 @@ public class PotionEffect implements ConfigurationSerializable {
      * @param amplifier the amplifier, see {@link PotionEffect#getAmplifier()}
      * @param ambient the ambient status, see {@link PotionEffect#isAmbient()}
      * @param particles the particle status, see {@link PotionEffect#hasParticles()}
+     * @param color the particle color, see {@link PotionEffect#getColor()}
      */
-    public PotionEffect(PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particles){
+    public PotionEffect(PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particles, Color color){
         Validate.notNull(type, "effect type cannot be null");
         this.type = type;
         this.duration = duration;
         this.amplifier = amplifier;
         this.ambient = ambient;
         this.particles = particles;
+        this.color = color;
+    }
+
+    /**
+     * Creates a potion effect with no defined color.
+     *
+     * @param type effect type
+     * @param duration measured in ticks, see {@link
+     *     PotionEffect#getDuration()}
+     * @param amplifier the amplifier, see {@link PotionEffect#getAmplifier()}
+     * @param ambient the ambient status, see {@link PotionEffect#isAmbient()}
+     * @param particles the particle status, see {@link PotionEffect#hasParticles()}
+     */
+    public PotionEffect(PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particles) {
+        this(type, duration, amplifier, ambient, true, null);
     }
 
     /**
@@ -184,6 +202,13 @@ public class PotionEffect implements ConfigurationSerializable {
      */
     public boolean hasParticles(){
         return particles;
+    }
+
+    /**
+     * @return color of this potion's particles. May be null if the potion has no particles or defined color.
+     */
+    public Color getColor() {
+        return color;
     }
 
     @Override
