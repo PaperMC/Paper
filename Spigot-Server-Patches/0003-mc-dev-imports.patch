@@ -1,114 +1,21 @@
-From e9f93a9efde92cdfd70b6d404621281f3761c519 Mon Sep 17 00:00:00 2001
+From 541eaa4579cd06028863b58078500cdcb86fab6d Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
-Date: Mon, 25 May 2015 15:37:00 -0500
+Date: Mon, 29 Feb 2016 21:09:10 -0600
 Subject: [PATCH] mc-dev imports
 
 
-diff --git a/src/main/java/net/minecraft/server/BaseBlockPosition.java b/src/main/java/net/minecraft/server/BaseBlockPosition.java
-new file mode 100644
-index 0000000..0b2277c
---- /dev/null
-+++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
-@@ -0,0 +1,85 @@
-+package net.minecraft.server;
-+
-+import com.google.common.base.Objects;
-+
-+public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
-+
-+    public static final BaseBlockPosition ZERO = new BaseBlockPosition(0, 0, 0);
-+    private final int a;
-+    private final int c;
-+    private final int d;
-+
-+    public BaseBlockPosition(int i, int j, int k) {
-+        this.a = i;
-+        this.c = j;
-+        this.d = k;
-+    }
-+
-+    public BaseBlockPosition(double d0, double d1, double d2) {
-+        this(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2));
-+    }
-+
-+    public boolean equals(Object object) {
-+        if (this == object) {
-+            return true;
-+        } else if (!(object instanceof BaseBlockPosition)) {
-+            return false;
-+        } else {
-+            BaseBlockPosition baseblockposition = (BaseBlockPosition) object;
-+
-+            return this.getX() != baseblockposition.getX() ? false : (this.getY() != baseblockposition.getY() ? false : this.getZ() == baseblockposition.getZ());
-+        }
-+    }
-+
-+    public int hashCode() {
-+        return (this.getY() + this.getZ() * 31) * 31 + this.getX();
-+    }
-+
-+    public int g(BaseBlockPosition baseblockposition) {
-+        return this.getY() == baseblockposition.getY() ? (this.getZ() == baseblockposition.getZ() ? this.getX() - baseblockposition.getX() : this.getZ() - baseblockposition.getZ()) : this.getY() - baseblockposition.getY();
-+    }
-+
-+    public int getX() {
-+        return this.a;
-+    }
-+
-+    public int getY() {
-+        return this.c;
-+    }
-+
-+    public int getZ() {
-+        return this.d;
-+    }
-+
-+    public BaseBlockPosition d(BaseBlockPosition baseblockposition) {
-+        return new BaseBlockPosition(this.getY() * baseblockposition.getZ() - this.getZ() * baseblockposition.getY(), this.getZ() * baseblockposition.getX() - this.getX() * baseblockposition.getZ(), this.getX() * baseblockposition.getY() - this.getY() * baseblockposition.getX());
-+    }
-+
-+    public double c(double d0, double d1, double d2) {
-+        double d3 = (double) this.getX() - d0;
-+        double d4 = (double) this.getY() - d1;
-+        double d5 = (double) this.getZ() - d2;
-+
-+        return d3 * d3 + d4 * d4 + d5 * d5;
-+    }
-+
-+    public double d(double d0, double d1, double d2) {
-+        double d3 = (double) this.getX() + 0.5D - d0;
-+        double d4 = (double) this.getY() + 0.5D - d1;
-+        double d5 = (double) this.getZ() + 0.5D - d2;
-+
-+        return d3 * d3 + d4 * d4 + d5 * d5;
-+    }
-+
-+    public double i(BaseBlockPosition baseblockposition) {
-+        return this.c((double) baseblockposition.getX(), (double) baseblockposition.getY(), (double) baseblockposition.getZ());
-+    }
-+
-+    public String toString() {
-+        return Objects.toStringHelper(this).add("x", this.getX()).add("y", this.getY()).add("z", this.getZ()).toString();
-+    }
-+
-+    public int compareTo(Object object) {
-+        return this.g((BaseBlockPosition) object);
-+    }
-+}
 diff --git a/src/main/java/net/minecraft/server/BiomeBase.java b/src/main/java/net/minecraft/server/BiomeBase.java
 new file mode 100644
-index 0000000..b1ae67a
+index 0000000..be4b871
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/BiomeBase.java
-@@ -0,0 +1,489 @@
+@@ -0,0 +1,463 @@
 +package net.minecraft.server;
 +
 +import com.google.common.collect.Lists;
-+import com.google.common.collect.Maps;
 +import com.google.common.collect.Sets;
 +import java.util.Collections;
 +import java.util.List;
-+import java.util.Map;
 +import java.util.Random;
 +import java.util.Set;
 +import org.apache.logging.log4j.LogManager;
@@ -116,153 +23,95 @@ index 0000000..b1ae67a
 +
 +public abstract class BiomeBase {
 +
-+    private static final Logger aD = LogManager.getLogger();
-+    protected static final BiomeTemperature a = new BiomeTemperature(0.1F, 0.2F);
-+    protected static final BiomeTemperature b = new BiomeTemperature(-0.5F, 0.0F);
-+    protected static final BiomeTemperature c = new BiomeTemperature(-1.0F, 0.1F);
-+    protected static final BiomeTemperature d = new BiomeTemperature(-1.8F, 0.1F);
-+    protected static final BiomeTemperature e = new BiomeTemperature(0.125F, 0.05F);
-+    protected static final BiomeTemperature f = new BiomeTemperature(0.2F, 0.2F);
-+    protected static final BiomeTemperature g = new BiomeTemperature(0.45F, 0.3F);
-+    protected static final BiomeTemperature h = new BiomeTemperature(1.5F, 0.025F);
-+    protected static final BiomeTemperature i = new BiomeTemperature(1.0F, 0.5F);
-+    protected static final BiomeTemperature j = new BiomeTemperature(0.0F, 0.025F);
-+    protected static final BiomeTemperature k = new BiomeTemperature(0.1F, 0.8F);
-+    protected static final BiomeTemperature l = new BiomeTemperature(0.2F, 0.3F);
-+    protected static final BiomeTemperature m = new BiomeTemperature(-0.2F, 0.1F);
-+    private static final BiomeBase[] biomes = new BiomeBase[256];
-+    public static final Set<BiomeBase> n = Sets.newHashSet();
-+    public static final Map<String, BiomeBase> o = Maps.newHashMap();
-+    public static final BiomeBase OCEAN = (new BiomeOcean(0)).b(112).a("Ocean").a(BiomeBase.c);
-+    public static final BiomeBase PLAINS = (new BiomePlains(1)).b(9286496).a("Plains");
-+    public static final BiomeBase DESERT = (new BiomeDesert(2)).b(16421912).a("Desert").b().a(2.0F, 0.0F).a(BiomeBase.e);
-+    public static final BiomeBase EXTREME_HILLS = (new BiomeBigHills(3, false)).b(6316128).a("Extreme Hills").a(BiomeBase.i).a(0.2F, 0.3F);
-+    public static final BiomeBase FOREST = (new BiomeForest(4, 0)).b(353825).a("Forest");
-+    public static final BiomeBase TAIGA = (new BiomeTaiga(5, 0)).b(747097).a("Taiga").a(5159473).a(0.25F, 0.8F).a(BiomeBase.f);
-+    public static final BiomeBase SWAMPLAND = (new BiomeSwamp(6)).b(522674).a("Swampland").a(9154376).a(BiomeBase.m).a(0.8F, 0.9F);
-+    public static final BiomeBase RIVER = (new BiomeRiver(7)).b(255).a("River").a(BiomeBase.b);
-+    public static final BiomeBase HELL = (new BiomeHell(8)).b(16711680).a("Hell").b().a(2.0F, 0.0F);
-+    public static final BiomeBase SKY = (new BiomeTheEnd(9)).b(8421631).a("The End").b();
-+    public static final BiomeBase FROZEN_OCEAN = (new BiomeOcean(10)).b(9474208).a("FrozenOcean").c().a(BiomeBase.c).a(0.0F, 0.5F);
-+    public static final BiomeBase FROZEN_RIVER = (new BiomeRiver(11)).b(10526975).a("FrozenRiver").c().a(BiomeBase.b).a(0.0F, 0.5F);
-+    public static final BiomeBase ICE_PLAINS = (new BiomeIcePlains(12, false)).b(16777215).a("Ice Plains").c().a(0.0F, 0.5F).a(BiomeBase.e);
-+    public static final BiomeBase ICE_MOUNTAINS = (new BiomeIcePlains(13, false)).b(10526880).a("Ice Mountains").c().a(BiomeBase.g).a(0.0F, 0.5F);
-+    public static final BiomeBase MUSHROOM_ISLAND = (new BiomeMushrooms(14)).b(16711935).a("MushroomIsland").a(0.9F, 1.0F).a(BiomeBase.l);
-+    public static final BiomeBase MUSHROOM_SHORE = (new BiomeMushrooms(15)).b(10486015).a("MushroomIslandShore").a(0.9F, 1.0F).a(BiomeBase.j);
-+    public static final BiomeBase BEACH = (new BiomeBeach(16)).b(16440917).a("Beach").a(0.8F, 0.4F).a(BiomeBase.j);
-+    public static final BiomeBase DESERT_HILLS = (new BiomeDesert(17)).b(13786898).a("DesertHills").b().a(2.0F, 0.0F).a(BiomeBase.g);
-+    public static final BiomeBase FOREST_HILLS = (new BiomeForest(18, 0)).b(2250012).a("ForestHills").a(BiomeBase.g);
-+    public static final BiomeBase TAIGA_HILLS = (new BiomeTaiga(19, 0)).b(1456435).a("TaigaHills").a(5159473).a(0.25F, 0.8F).a(BiomeBase.g);
-+    public static final BiomeBase SMALL_MOUNTAINS = (new BiomeBigHills(20, true)).b(7501978).a("Extreme Hills Edge").a(BiomeBase.i.a()).a(0.2F, 0.3F);
-+    public static final BiomeBase JUNGLE = (new BiomeJungle(21, false)).b(5470985).a("Jungle").a(5470985).a(0.95F, 0.9F);
-+    public static final BiomeBase JUNGLE_HILLS = (new BiomeJungle(22, false)).b(2900485).a("JungleHills").a(5470985).a(0.95F, 0.9F).a(BiomeBase.g);
-+    public static final BiomeBase JUNGLE_EDGE = (new BiomeJungle(23, true)).b(6458135).a("JungleEdge").a(5470985).a(0.95F, 0.8F);
-+    public static final BiomeBase DEEP_OCEAN = (new BiomeOcean(24)).b(48).a("Deep Ocean").a(BiomeBase.d);
-+    public static final BiomeBase STONE_BEACH = (new BiomeStoneBeach(25)).b(10658436).a("Stone Beach").a(0.2F, 0.3F).a(BiomeBase.k);
-+    public static final BiomeBase COLD_BEACH = (new BiomeBeach(26)).b(16445632).a("Cold Beach").a(0.05F, 0.3F).a(BiomeBase.j).c();
-+    public static final BiomeBase BIRCH_FOREST = (new BiomeForest(27, 2)).a("Birch Forest").b(3175492);
-+    public static final BiomeBase BIRCH_FOREST_HILLS = (new BiomeForest(28, 2)).a("Birch Forest Hills").b(2055986).a(BiomeBase.g);
-+    public static final BiomeBase ROOFED_FOREST = (new BiomeForest(29, 3)).b(4215066).a("Roofed Forest");
-+    public static final BiomeBase COLD_TAIGA = (new BiomeTaiga(30, 0)).b(3233098).a("Cold Taiga").a(5159473).c().a(-0.5F, 0.4F).a(BiomeBase.f).c(16777215);
-+    public static final BiomeBase COLD_TAIGA_HILLS = (new BiomeTaiga(31, 0)).b(2375478).a("Cold Taiga Hills").a(5159473).c().a(-0.5F, 0.4F).a(BiomeBase.g).c(16777215);
-+    public static final BiomeBase MEGA_TAIGA = (new BiomeTaiga(32, 1)).b(5858897).a("Mega Taiga").a(5159473).a(0.3F, 0.8F).a(BiomeBase.f);
-+    public static final BiomeBase MEGA_TAIGA_HILLS = (new BiomeTaiga(33, 1)).b(4542270).a("Mega Taiga Hills").a(5159473).a(0.3F, 0.8F).a(BiomeBase.g);
-+    public static final BiomeBase EXTREME_HILLS_PLUS = (new BiomeBigHills(34, true)).b(5271632).a("Extreme Hills+").a(BiomeBase.i).a(0.2F, 0.3F);
-+    public static final BiomeBase SAVANNA = (new BiomeSavanna(35)).b(12431967).a("Savanna").a(1.2F, 0.0F).b().a(BiomeBase.e);
-+    public static final BiomeBase SAVANNA_PLATEAU = (new BiomeSavanna(36)).b(10984804).a("Savanna Plateau").a(1.0F, 0.0F).b().a(BiomeBase.h);
-+    public static final BiomeBase MESA = (new BiomeMesa(37, false, false)).b(14238997).a("Mesa");
-+    public static final BiomeBase MESA_PLATEAU_F = (new BiomeMesa(38, false, true)).b(11573093).a("Mesa Plateau F").a(BiomeBase.h);
-+    public static final BiomeBase MESA_PLATEAU = (new BiomeMesa(39, false, false)).b(13274213).a("Mesa Plateau").a(BiomeBase.h);
-+    public static final BiomeBase ad = BiomeBase.OCEAN;
-+    protected static final NoiseGenerator3 ae;
-+    protected static final NoiseGenerator3 af;
-+    protected static final WorldGenTallPlant ag;
-+    public String ah;
-+    public int ai;
-+    public int aj;
-+    public IBlockData ak;
-+    public IBlockData al;
-+    public int am;
-+    public float an;
-+    public float ao;
-+    public float temperature;
-+    public float humidity;
-+    public int ar;
-+    public BiomeDecorator as;
-+    protected List<BiomeMeta> at;
-+    protected List<BiomeMeta> au;
-+    protected List<BiomeMeta> av;
-+    protected List<BiomeMeta> aw;
-+    protected boolean ax;
-+    protected boolean ay;
-+    public final int id;
-+    protected WorldGenTrees aA;
-+    protected WorldGenBigTree aB;
-+    protected WorldGenSwampTree aC;
++    private static final Logger y = LogManager.getLogger();
++    protected static final IBlockData a = Blocks.STONE.getBlockData();
++    protected static final IBlockData b = Blocks.AIR.getBlockData();
++    protected static final IBlockData c = Blocks.BEDROCK.getBlockData();
++    protected static final IBlockData d = Blocks.GRAVEL.getBlockData();
++    protected static final IBlockData e = Blocks.RED_SANDSTONE.getBlockData();
++    protected static final IBlockData f = Blocks.SANDSTONE.getBlockData();
++    protected static final IBlockData g = Blocks.ICE.getBlockData();
++    protected static final IBlockData h = Blocks.WATER.getBlockData();
++    public static final Set<BiomeBase> i = Sets.newHashSet();
++    public static final RegistryBlockID<BiomeBase> j = new RegistryBlockID();
++    protected static final NoiseGenerator3 k = new NoiseGenerator3(new Random(1234L), 1);
++    protected static final NoiseGenerator3 l = new NoiseGenerator3(new Random(2345L), 1);
++    protected static final WorldGenTallPlant m = new WorldGenTallPlant();
++    protected static final WorldGenTrees n = new WorldGenTrees(false);
++    protected static final WorldGenBigTree o = new WorldGenBigTree(false);
++    protected static final WorldGenSwampTree p = new WorldGenSwampTree();
++    public static final RegistryMaterials<MinecraftKey, BiomeBase> REGISTRY_ID = new RegistryMaterials();
++    private final String z;
++    private final float A;
++    private final float B;
++    private final float C;
++    private final float D;
++    private final int E;
++    private final boolean F;
++    private final boolean G;
++    private final String H;
++    public IBlockData r;
++    public IBlockData s;
++    public BiomeDecorator t;
++    protected List<BiomeBase.BiomeMeta> u;
++    protected List<BiomeBase.BiomeMeta> v;
++    protected List<BiomeBase.BiomeMeta> w;
++    protected List<BiomeBase.BiomeMeta> x;
 +
-+    protected BiomeBase(int i) {
-+        this.ak = Blocks.GRASS.getBlockData();
-+        this.al = Blocks.DIRT.getBlockData();
-+        this.am = 5169201;
-+        this.an = BiomeBase.a.a;
-+        this.ao = BiomeBase.a.b;
-+        this.temperature = 0.5F;
-+        this.humidity = 0.5F;
-+        this.ar = 16777215;
-+        this.at = Lists.newArrayList();
-+        this.au = Lists.newArrayList();
-+        this.av = Lists.newArrayList();
-+        this.aw = Lists.newArrayList();
-+        this.ay = true;
-+        this.aA = new WorldGenTrees(false);
-+        this.aB = new WorldGenBigTree(false);
-+        this.aC = new WorldGenSwampTree();
-+        this.id = i;
-+        BiomeBase.biomes[i] = this;
-+        this.as = this.a();
-+        this.au.add(new BiomeMeta(EntitySheep.class, 12, 4, 4));
-+        this.au.add(new BiomeMeta(EntityRabbit.class, 10, 3, 3));
-+        this.au.add(new BiomeMeta(EntityPig.class, 10, 4, 4));
-+        this.au.add(new BiomeMeta(EntityChicken.class, 10, 4, 4));
-+        this.au.add(new BiomeMeta(EntityCow.class, 8, 4, 4));
-+        this.at.add(new BiomeMeta(EntitySpider.class, 100, 4, 4));
-+        this.at.add(new BiomeMeta(EntityZombie.class, 100, 4, 4));
-+        this.at.add(new BiomeMeta(EntitySkeleton.class, 100, 4, 4));
-+        this.at.add(new BiomeMeta(EntityCreeper.class, 100, 4, 4));
-+        this.at.add(new BiomeMeta(EntitySlime.class, 100, 4, 4));
-+        this.at.add(new BiomeMeta(EntityEnderman.class, 10, 1, 4));
-+        this.at.add(new BiomeMeta(EntityWitch.class, 5, 1, 1));
-+        this.av.add(new BiomeMeta(EntitySquid.class, 10, 4, 4));
-+        this.aw.add(new BiomeMeta(EntityBat.class, 10, 8, 8));
++    public static int a(BiomeBase biomebase) {
++        return BiomeBase.REGISTRY_ID.a((Object) biomebase);
++    }
++
++    public static BiomeBase a(int i) {
++        return (BiomeBase) BiomeBase.REGISTRY_ID.getId(i);
++    }
++
++    public static BiomeBase b(BiomeBase biomebase) {
++        return (BiomeBase) BiomeBase.j.fromId(a(biomebase));
++    }
++
++    protected BiomeBase(BiomeBase.a biomebase_a) {
++        this.r = Blocks.GRASS.getBlockData();
++        this.s = Blocks.DIRT.getBlockData();
++        this.u = Lists.newArrayList();
++        this.v = Lists.newArrayList();
++        this.w = Lists.newArrayList();
++        this.x = Lists.newArrayList();
++        this.z = biomebase_a.a;
++        this.A = biomebase_a.b;
++        this.B = biomebase_a.c;
++        this.C = biomebase_a.d;
++        this.D = biomebase_a.e;
++        this.E = biomebase_a.f;
++        this.F = biomebase_a.g;
++        this.G = biomebase_a.h;
++        this.H = biomebase_a.i;
++        this.t = this.a();
++        this.v.add(new BiomeBase.BiomeMeta(EntitySheep.class, 12, 4, 4));
++        this.v.add(new BiomeBase.BiomeMeta(EntityPig.class, 10, 4, 4));
++        this.v.add(new BiomeBase.BiomeMeta(EntityChicken.class, 10, 4, 4));
++        this.v.add(new BiomeBase.BiomeMeta(EntityCow.class, 8, 4, 4));
++        this.u.add(new BiomeBase.BiomeMeta(EntitySpider.class, 100, 4, 4));
++        this.u.add(new BiomeBase.BiomeMeta(EntityZombie.class, 100, 4, 4));
++        this.u.add(new BiomeBase.BiomeMeta(EntitySkeleton.class, 100, 4, 4));
++        this.u.add(new BiomeBase.BiomeMeta(EntityCreeper.class, 100, 4, 4));
++        this.u.add(new BiomeBase.BiomeMeta(EntitySlime.class, 100, 4, 4));
++        this.u.add(new BiomeBase.BiomeMeta(EntityEnderman.class, 10, 1, 4));
++        this.u.add(new BiomeBase.BiomeMeta(EntityWitch.class, 5, 1, 1));
++        this.w.add(new BiomeBase.BiomeMeta(EntitySquid.class, 10, 4, 4));
++        this.x.add(new BiomeBase.BiomeMeta(EntityBat.class, 10, 8, 8));
 +    }
 +
 +    protected BiomeDecorator a() {
 +        return new BiomeDecorator();
 +    }
 +
-+    protected BiomeBase a(float f, float f1) {
-+        if (f > 0.1F && f < 0.2F) {
-+            throw new IllegalArgumentException("Please avoid temperatures in the range 0.1 - 0.2 because of snow");
-+        } else {
-+            this.temperature = f;
-+            this.humidity = f1;
-+            return this;
-+        }
-+    }
-+
-+    protected final BiomeBase a(BiomeTemperature biomebase_biometemperature) {
-+        this.an = biomebase_biometemperature.a;
-+        this.ao = biomebase_biometemperature.b;
-+        return this;
-+    }
-+
-+    protected BiomeBase b() {
-+        this.ay = false;
-+        return this;
++    public boolean b() {
++        return this.H != null;
 +    }
 +
 +    public WorldGenTreeAbstract a(Random random) {
-+        return (WorldGenTreeAbstract) (random.nextInt(10) == 0 ? this.aB : this.aA);
++        return (WorldGenTreeAbstract) (random.nextInt(10) == 0 ? BiomeBase.o : BiomeBase.n);
 +    }
 +
 +    public WorldGenerator b(Random random) {
@@ -273,97 +122,53 @@ index 0000000..b1ae67a
 +        return random.nextInt(3) > 0 ? BlockFlowers.EnumFlowerVarient.DANDELION : BlockFlowers.EnumFlowerVarient.POPPY;
 +    }
 +
-+    protected BiomeBase c() {
-+        this.ax = true;
-+        return this;
-+    }
-+
-+    protected BiomeBase a(String s) {
-+        this.ah = s;
-+        return this;
-+    }
-+
-+    protected BiomeBase a(int i) {
-+        this.am = i;
-+        return this;
-+    }
-+
-+    protected BiomeBase b(int i) {
-+        this.a(i, false);
-+        return this;
-+    }
-+
-+    protected BiomeBase c(int i) {
-+        this.aj = i;
-+        return this;
-+    }
-+
-+    protected BiomeBase a(int i, boolean flag) {
-+        this.ai = i;
-+        if (flag) {
-+            this.aj = (i & 16711422) >> 1;
-+        } else {
-+            this.aj = i;
-+        }
-+
-+        return this;
-+    }
-+
-+    public List<BiomeMeta> getMobs(EnumCreatureType enumcreaturetype) {
-+        switch (SyntheticClass_1.switchMap[enumcreaturetype.ordinal()]) {
++    public List<BiomeBase.BiomeMeta> getMobs(EnumCreatureType enumcreaturetype) {
++        switch (BiomeBase.SyntheticClass_1.a[enumcreaturetype.ordinal()]) {
 +        case 1:
-+            return this.at;
++            return this.u;
 +
 +        case 2:
-+            return this.au;
++            return this.v;
 +
 +        case 3:
-+            return this.av;
++            return this.w;
 +
 +        case 4:
-+            return this.aw;
++            return this.x;
 +
 +        default:
 +            return Collections.emptyList();
 +        }
 +    }
 +
++    public boolean c() {
++        return this.p();
++    }
++
 +    public boolean d() {
-+        return this.j();
++        return this.p() ? false : this.G;
 +    }
 +
 +    public boolean e() {
-+        return this.j() ? false : this.ay;
++        return this.getHumidity() > 0.85F;
 +    }
 +
-+    public boolean f() {
-+        return this.humidity > 0.85F;
-+    }
-+
-+    public float g() {
++    public float f() {
 +        return 0.1F;
-+    }
-+
-+    public final int h() {
-+        return (int) (this.humidity * 65536.0F);
 +    }
 +
 +    public final float a(BlockPosition blockposition) {
 +        if (blockposition.getY() > 64) {
-+            float f = (float) (BiomeBase.ae.a((double) blockposition.getX() * 1.0D / 8.0D, (double) blockposition.getZ() * 1.0D / 8.0D) * 4.0D);
++            float f = (float) (BiomeBase.k.a((double) ((float) blockposition.getX() / 8.0F), (double) ((float) blockposition.getZ() / 8.0F)) * 4.0D);
 +
-+            return this.temperature - (f + (float) blockposition.getY() - 64.0F) * 0.05F / 30.0F;
++            return this.getTemperature() - (f + (float) blockposition.getY() - 64.0F) * 0.05F / 30.0F;
 +        } else {
-+            return this.temperature;
++            return this.getTemperature();
 +        }
 +    }
 +
 +    public void a(World world, Random random, BlockPosition blockposition) {
-+        this.as.a(world, random, this, blockposition);
-+    }
-+
-+    public boolean j() {
-+        return this.ax;
++        this.t.a(world, random, this, blockposition);
 +    }
 +
 +    public void a(World world, Random random, ChunkSnapshot chunksnapshot, int i, int j, double d0) {
@@ -371,9 +176,9 @@ index 0000000..b1ae67a
 +    }
 +
 +    public final void b(World world, Random random, ChunkSnapshot chunksnapshot, int i, int j, double d0) {
-+        int k = world.F();
-+        IBlockData iblockdata = this.ak;
-+        IBlockData iblockdata1 = this.al;
++        int k = world.K();
++        IBlockData iblockdata = this.r;
++        IBlockData iblockdata1 = this.s;
 +        int l = -1;
 +        int i1 = (int) (d0 / 3.0D + 3.0D + random.nextDouble() * 0.25D);
 +        int j1 = i & 15;
@@ -382,27 +187,27 @@ index 0000000..b1ae67a
 +
 +        for (int l1 = 255; l1 >= 0; --l1) {
 +            if (l1 <= random.nextInt(5)) {
-+                chunksnapshot.a(k1, l1, j1, Blocks.BEDROCK.getBlockData());
++                chunksnapshot.a(k1, l1, j1, BiomeBase.c);
 +            } else {
 +                IBlockData iblockdata2 = chunksnapshot.a(k1, l1, j1);
 +
-+                if (iblockdata2.getBlock().getMaterial() == Material.AIR) {
++                if (iblockdata2.getMaterial() == Material.AIR) {
 +                    l = -1;
 +                } else if (iblockdata2.getBlock() == Blocks.STONE) {
 +                    if (l == -1) {
 +                        if (i1 <= 0) {
-+                            iblockdata = null;
-+                            iblockdata1 = Blocks.STONE.getBlockData();
++                            iblockdata = BiomeBase.b;
++                            iblockdata1 = BiomeBase.a;
 +                        } else if (l1 >= k - 4 && l1 <= k + 1) {
-+                            iblockdata = this.ak;
-+                            iblockdata1 = this.al;
++                            iblockdata = this.r;
++                            iblockdata1 = this.s;
 +                        }
 +
-+                        if (l1 < k && (iblockdata == null || iblockdata.getBlock().getMaterial() == Material.AIR)) {
++                        if (l1 < k && (iblockdata == null || iblockdata.getMaterial() == Material.AIR)) {
 +                            if (this.a((BlockPosition) blockposition_mutableblockposition.c(i, l1, j)) < 0.15F) {
-+                                iblockdata = Blocks.ICE.getBlockData();
++                                iblockdata = BiomeBase.g;
 +                            } else {
-+                                iblockdata = Blocks.WATER.getBlockData();
++                                iblockdata = BiomeBase.h;
 +                            }
 +                        }
 +
@@ -410,9 +215,9 @@ index 0000000..b1ae67a
 +                        if (l1 >= k - 1) {
 +                            chunksnapshot.a(k1, l1, j1, iblockdata);
 +                        } else if (l1 < k - 7 - i1) {
-+                            iblockdata = null;
-+                            iblockdata1 = Blocks.STONE.getBlockData();
-+                            chunksnapshot.a(k1, l1, j1, Blocks.GRAVEL.getBlockData());
++                            iblockdata = BiomeBase.b;
++                            iblockdata1 = BiomeBase.a;
++                            chunksnapshot.a(k1, l1, j1, BiomeBase.d);
 +                        } else {
 +                            chunksnapshot.a(k1, l1, j1, iblockdata1);
 +                        }
@@ -421,7 +226,7 @@ index 0000000..b1ae67a
 +                        chunksnapshot.a(k1, l1, j1, iblockdata1);
 +                        if (l == 0 && iblockdata1.getBlock() == Blocks.SAND) {
 +                            l = random.nextInt(4) + Math.max(0, l1 - 63);
-+                            iblockdata1 = iblockdata1.get(BlockSand.VARIANT) == BlockSand.EnumSandVariant.RED_SAND ? Blocks.RED_SANDSTONE.getBlockData() : Blocks.SANDSTONE.getBlockData();
++                            iblockdata1 = iblockdata1.get(BlockSand.VARIANT) == BlockSand.EnumSandVariant.RED_SAND ? BiomeBase.e : BiomeBase.f;
 +                        }
 +                    }
 +                }
@@ -430,28 +235,12 @@ index 0000000..b1ae67a
 +
 +    }
 +
-+    protected BiomeBase k() {
-+        return this.d(this.id + 128);
-+    }
-+
-+    protected BiomeBase d(int i) {
-+        return new BiomeBaseSub(i, this);
-+    }
-+
-+    public Class<? extends BiomeBase> l() {
++    public Class<? extends BiomeBase> g() {
 +        return this.getClass();
 +    }
 +
-+    public boolean a(BiomeBase biomebase) {
-+        return biomebase == this ? true : (biomebase == null ? false : this.l() == biomebase.l());
-+    }
-+
-+    public EnumTemperature m() {
-+        return (double) this.temperature < 0.2D ? EnumTemperature.COLD : ((double) this.temperature < 1.0D ? EnumTemperature.MEDIUM : EnumTemperature.WARM);
-+    }
-+
-+    public static BiomeBase[] getBiomes() {
-+        return BiomeBase.biomes;
++    public BiomeBase.EnumTemperature h() {
++        return (double) this.getTemperature() < 0.2D ? BiomeBase.EnumTemperature.COLD : ((double) this.getTemperature() < 1.0D ? BiomeBase.EnumTemperature.MEDIUM : BiomeBase.EnumTemperature.WARM);
 +    }
 +
 +    public static BiomeBase getBiome(int i) {
@@ -459,94 +248,203 @@ index 0000000..b1ae67a
 +    }
 +
 +    public static BiomeBase getBiome(int i, BiomeBase biomebase) {
-+        if (i >= 0 && i <= BiomeBase.biomes.length) {
-+            BiomeBase biomebase1 = BiomeBase.biomes[i];
++        BiomeBase biomebase1 = a(i);
 +
-+            return biomebase1 == null ? biomebase : biomebase1;
-+        } else {
-+            BiomeBase.aD.warn("Biome ID is out of bounds: " + i + ", defaulting to 0 (Ocean)");
-+            return BiomeBase.OCEAN;
-+        }
++        return biomebase1 == null ? biomebase : biomebase1;
 +    }
 +
-+    static {
-+        BiomeBase.PLAINS.k();
-+        BiomeBase.DESERT.k();
-+        BiomeBase.FOREST.k();
-+        BiomeBase.TAIGA.k();
-+        BiomeBase.SWAMPLAND.k();
-+        BiomeBase.ICE_PLAINS.k();
-+        BiomeBase.JUNGLE.k();
-+        BiomeBase.JUNGLE_EDGE.k();
-+        BiomeBase.COLD_TAIGA.k();
-+        BiomeBase.SAVANNA.k();
-+        BiomeBase.SAVANNA_PLATEAU.k();
-+        BiomeBase.MESA.k();
-+        BiomeBase.MESA_PLATEAU_F.k();
-+        BiomeBase.MESA_PLATEAU.k();
-+        BiomeBase.BIRCH_FOREST.k();
-+        BiomeBase.BIRCH_FOREST_HILLS.k();
-+        BiomeBase.ROOFED_FOREST.k();
-+        BiomeBase.MEGA_TAIGA.k();
-+        BiomeBase.EXTREME_HILLS.k();
-+        BiomeBase.EXTREME_HILLS_PLUS.k();
-+        BiomeBase.MEGA_TAIGA.d(BiomeBase.MEGA_TAIGA_HILLS.id + 128).a("Redwood Taiga Hills M");
-+        BiomeBase[] abiomebase = BiomeBase.biomes;
-+        int i = abiomebase.length;
++    public boolean i() {
++        return false;
++    }
 +
-+        for (int j = 0; j < i; ++j) {
-+            BiomeBase biomebase = abiomebase[j];
++    public final float j() {
++        return this.A;
++    }
 +
-+            if (biomebase != null) {
-+                if (BiomeBase.o.containsKey(biomebase.ah)) {
-+                    throw new Error("Biome \"" + biomebase.ah + "\" is defined as both ID " + ((BiomeBase) BiomeBase.o.get(biomebase.ah)).id + " and " + biomebase.id);
-+                }
++    public final float getHumidity() {
++        return this.D;
++    }
 +
-+                BiomeBase.o.put(biomebase.ah, biomebase);
-+                if (biomebase.id < 128) {
-+                    BiomeBase.n.add(biomebase);
-+                }
-+            }
++    public final String l() {
++        return this.z;
++    }
++
++    public final float m() {
++        return this.B;
++    }
++
++    public final float getTemperature() {
++        return this.C;
++    }
++
++    public final boolean p() {
++        return this.F;
++    }
++
++    public static void q() {
++        a(0, "ocean", new BiomeOcean((new BiomeBase.a("Ocean")).c(-1.0F).d(0.1F)));
++        a(1, "plains", new BiomePlains(false, (new BiomeBase.a("Plains")).c(0.125F).d(0.05F).a(0.8F).b(0.4F)));
++        a(2, "desert", new BiomeDesert((new BiomeBase.a("Desert")).c(0.125F).d(0.05F).a(2.0F).b(0.0F).a()));
++        a(3, "extreme_hills", new BiomeBigHills(BiomeBigHills.Type.NORMAL, (new BiomeBase.a("Extreme Hills")).c(1.0F).d(0.5F).a(0.2F).b(0.3F)));
++        a(4, "forest", new BiomeForest(BiomeForest.Type.NORMAL, (new BiomeBase.a("Forest")).a(0.7F).b(0.8F)));
++        a(5, "taiga", new BiomeTaiga(BiomeTaiga.Type.NORMAL, (new BiomeBase.a("Taiga")).c(0.2F).d(0.2F).a(0.25F).b(0.8F)));
++        a(6, "swampland", new BiomeSwamp((new BiomeBase.a("Swampland")).c(-0.2F).d(0.1F).a(0.8F).b(0.9F).a(14745518)));
++        a(7, "river", new BiomeRiver((new BiomeBase.a("River")).c(-0.5F).d(0.0F)));
++        a(8, "hell", new BiomeHell((new BiomeBase.a("Hell")).a(2.0F).b(0.0F).a()));
++        a(9, "sky", new BiomeTheEnd((new BiomeBase.a("The End")).a()));
++        a(10, "frozen_ocean", new BiomeOcean((new BiomeBase.a("FrozenOcean")).c(-1.0F).d(0.1F).a(0.0F).b(0.5F).b()));
++        a(11, "frozen_river", new BiomeRiver((new BiomeBase.a("FrozenRiver")).c(-0.5F).d(0.0F).a(0.0F).b(0.5F).b()));
++        a(12, "ice_flats", new BiomeIcePlains(false, (new BiomeBase.a("Ice Plains")).c(0.125F).d(0.05F).a(0.0F).b(0.5F).b()));
++        a(13, "ice_mountains", new BiomeIcePlains(false, (new BiomeBase.a("Ice Mountains")).c(0.45F).d(0.3F).a(0.0F).b(0.5F).b()));
++        a(14, "mushroom_island", new BiomeMushrooms((new BiomeBase.a("MushroomIsland")).c(0.2F).d(0.3F).a(0.9F).b(1.0F)));
++        a(15, "mushroom_island_shore", new BiomeMushrooms((new BiomeBase.a("MushroomIslandShore")).c(0.0F).d(0.025F).a(0.9F).b(1.0F)));
++        a(16, "beaches", new BiomeBeach((new BiomeBase.a("Beach")).c(0.0F).d(0.025F).a(0.8F).b(0.4F)));
++        a(17, "desert_hills", new BiomeDesert((new BiomeBase.a("DesertHills")).c(0.45F).d(0.3F).a(2.0F).b(0.0F).a()));
++        a(18, "forest_hills", new BiomeForest(BiomeForest.Type.NORMAL, (new BiomeBase.a("ForestHills")).c(0.45F).d(0.3F).a(0.7F).b(0.8F)));
++        a(19, "taiga_hills", new BiomeTaiga(BiomeTaiga.Type.NORMAL, (new BiomeBase.a("TaigaHills")).a(0.25F).b(0.8F).c(0.45F).d(0.3F)));
++        a(20, "smaller_extreme_hills", new BiomeBigHills(BiomeBigHills.Type.EXTRA_TREES, (new BiomeBase.a("Extreme Hills Edge")).c(0.8F).d(0.3F).a(0.2F).b(0.3F)));
++        a(21, "jungle", new BiomeJungle(false, (new BiomeBase.a("Jungle")).a(0.95F).b(0.9F)));
++        a(22, "jungle_hills", new BiomeJungle(false, (new BiomeBase.a("JungleHills")).c(0.45F).d(0.3F).a(0.95F).b(0.9F)));
++        a(23, "jungle_edge", new BiomeJungle(true, (new BiomeBase.a("JungleEdge")).a(0.95F).b(0.8F)));
++        a(24, "deep_ocean", new BiomeOcean((new BiomeBase.a("Deep Ocean")).c(-1.8F).d(0.1F)));
++        a(25, "stone_beach", new BiomeStoneBeach((new BiomeBase.a("Stone Beach")).c(0.1F).d(0.8F).a(0.2F).b(0.3F)));
++        a(26, "cold_beach", new BiomeBeach((new BiomeBase.a("Cold Beach")).c(0.0F).d(0.025F).a(0.05F).b(0.3F).b()));
++        a(27, "birch_forest", new BiomeForest(BiomeForest.Type.BIRCH, (new BiomeBase.a("Birch Forest")).a(0.6F).b(0.6F)));
++        a(28, "birch_forest_hills", new BiomeForest(BiomeForest.Type.BIRCH, (new BiomeBase.a("Birch Forest Hills")).c(0.45F).d(0.3F).a(0.6F).b(0.6F)));
++        a(29, "roofed_forest", new BiomeForest(BiomeForest.Type.ROOFED, (new BiomeBase.a("Roofed Forest")).a(0.7F).b(0.8F)));
++        a(30, "taiga_cold", new BiomeTaiga(BiomeTaiga.Type.NORMAL, (new BiomeBase.a("Cold Taiga")).c(0.2F).d(0.2F).a(-0.5F).b(0.4F).b()));
++        a(31, "taiga_cold_hills", new BiomeTaiga(BiomeTaiga.Type.NORMAL, (new BiomeBase.a("Cold Taiga Hills")).c(0.45F).d(0.3F).a(-0.5F).b(0.4F).b()));
++        a(32, "redwood_taiga", new BiomeTaiga(BiomeTaiga.Type.MEGA, (new BiomeBase.a("Mega Taiga")).a(0.3F).b(0.8F).c(0.2F).d(0.2F)));
++        a(33, "redwood_taiga_hills", new BiomeTaiga(BiomeTaiga.Type.MEGA, (new BiomeBase.a("Mega Taiga Hills")).c(0.45F).d(0.3F).a(0.3F).b(0.8F)));
++        a(34, "extreme_hills_with_trees", new BiomeBigHills(BiomeBigHills.Type.EXTRA_TREES, (new BiomeBase.a("Extreme Hills+")).c(1.0F).d(0.5F).a(0.2F).b(0.3F)));
++        a(35, "savanna", new BiomeSavanna((new BiomeBase.a("Savanna")).c(0.125F).d(0.05F).a(1.2F).b(0.0F).a()));
++        a(36, "savanna_rock", new BiomeSavanna((new BiomeBase.a("Savanna Plateau")).c(1.5F).d(0.025F).a(1.0F).b(0.0F).a()));
++        a(37, "mesa", new BiomeMesa(false, false, (new BiomeBase.a("Mesa")).a(2.0F).b(0.0F).a()));
++        a(38, "mesa_rock", new BiomeMesa(false, true, (new BiomeBase.a("Mesa Plateau F")).c(1.5F).d(0.025F).a(2.0F).b(0.0F).a()));
++        a(39, "mesa_clear_rock", new BiomeMesa(false, false, (new BiomeBase.a("Mesa Plateau")).c(1.5F).d(0.025F).a(2.0F).b(0.0F).a()));
++        a(127, "void", new BiomeVoid((new BiomeBase.a("The Void")).a()));
++        a(129, "mutated_plains", new BiomePlains(true, (new BiomeBase.a("Sunflower Plains")).a("plains").c(0.125F).d(0.05F).a(0.8F).b(0.4F)));
++        a(130, "mutated_desert", new BiomeDesert((new BiomeBase.a("Desert M")).a("desert").c(0.225F).d(0.25F).a(2.0F).b(0.0F).a()));
++        a(131, "mutated_extreme_hills", new BiomeBigHills(BiomeBigHills.Type.MUTATED, (new BiomeBase.a("Extreme Hills M")).a("extreme_hills").c(1.0F).d(0.5F).a(0.2F).b(0.3F)));
++        a(132, "mutated_forest", new BiomeForest(BiomeForest.Type.FLOWER, (new BiomeBase.a("Flower Forest")).a("forest").d(0.4F).a(0.7F).b(0.8F)));
++        a(133, "mutated_taiga", new BiomeTaiga(BiomeTaiga.Type.NORMAL, (new BiomeBase.a("Taiga M")).a("taiga").c(0.3F).d(0.4F).a(0.25F).b(0.8F)));
++        a(134, "mutated_swampland", new BiomeSwamp((new BiomeBase.a("Swampland M")).a("swampland").c(-0.1F).d(0.3F).a(0.8F).b(0.9F).a(14745518)));
++        a(140, "mutated_ice_flats", new BiomeIcePlains(true, (new BiomeBase.a("Ice Plains Spikes")).a("ice_flats").c(0.425F).d(0.45000002F).a(0.0F).b(0.5F).b()));
++        a(149, "mutated_jungle", new BiomeJungle(false, (new BiomeBase.a("Jungle M")).a("jungle").c(0.2F).d(0.4F).a(0.95F).b(0.9F)));
++        a(151, "mutated_jungle_edge", new BiomeJungle(true, (new BiomeBase.a("JungleEdge M")).a("jungle_edge").c(0.2F).d(0.4F).a(0.95F).b(0.8F)));
++        a(155, "mutated_birch_forest", new BiomeForestMutated((new BiomeBase.a("Birch Forest M")).a("birch_forest").c(0.2F).d(0.4F).a(0.6F).b(0.6F)));
++        a(156, "mutated_birch_forest_hills", new BiomeForestMutated((new BiomeBase.a("Birch Forest Hills M")).a("birch_forest").c(0.55F).d(0.5F).a(0.6F).b(0.6F)));
++        a(157, "mutated_roofed_forest", new BiomeForest(BiomeForest.Type.ROOFED, (new BiomeBase.a("Roofed Forest M")).a("roofed_forest").c(0.2F).d(0.4F).a(0.7F).b(0.8F)));
++        a(158, "mutated_taiga_cold", new BiomeTaiga(BiomeTaiga.Type.NORMAL, (new BiomeBase.a("Cold Taiga M")).a("taiga_cold").c(0.3F).d(0.4F).a(-0.5F).b(0.4F).b()));
++        a(160, "mutated_redwood_taiga", new BiomeTaiga(BiomeTaiga.Type.MEGA_SPRUCE, (new BiomeBase.a("Mega Spruce Taiga")).a("redwood_taiga").c(0.2F).d(0.2F).a(0.25F).b(0.8F)));
++        a(161, "mutated_redwood_taiga_hills", new BiomeTaiga(BiomeTaiga.Type.MEGA_SPRUCE, (new BiomeBase.a("Redwood Taiga Hills M")).a("redwood_taiga_hills").c(0.2F).d(0.2F).a(0.25F).b(0.8F)));
++        a(162, "mutated_extreme_hills_with_trees", new BiomeBigHills(BiomeBigHills.Type.MUTATED, (new BiomeBase.a("Extreme Hills+ M")).a("extreme_hills_with_trees").c(1.0F).d(0.5F).a(0.2F).b(0.3F)));
++        a(163, "mutated_savanna", new BiomeSavannaMutated((new BiomeBase.a("Savanna M")).a("savanna").c(0.3625F).d(1.225F).a(1.1F).b(0.0F).a()));
++        a(164, "mutated_savanna_rock", new BiomeSavannaMutated((new BiomeBase.a("Savanna Plateau M")).a("savanna_rock").c(1.05F).d(1.2125001F).a(1.0F).b(0.0F).a()));
++        a(165, "mutated_mesa", new BiomeMesa(true, false, (new BiomeBase.a("Mesa (Bryce)")).a("mesa").a(2.0F).b(0.0F).a()));
++        a(166, "mutated_mesa_rock", new BiomeMesa(false, true, (new BiomeBase.a("Mesa Plateau F M")).a("mesa_rock").c(0.45F).d(0.3F).a(2.0F).b(0.0F).a()));
++        a(167, "mutated_mesa_clear_rock", new BiomeMesa(false, false, (new BiomeBase.a("Mesa Plateau M")).a("mesa_clear_rock").c(0.45F).d(0.3F).a(2.0F).b(0.0F).a()));
++        Collections.addAll(BiomeBase.i, new BiomeBase[] { Biomes.a, Biomes.c, Biomes.d, Biomes.e, Biomes.f, Biomes.g, Biomes.h, Biomes.i, Biomes.m, Biomes.n, Biomes.o, Biomes.p, Biomes.q, Biomes.r, Biomes.s, Biomes.t, Biomes.u, Biomes.w, Biomes.x, Biomes.y, Biomes.z, Biomes.A, Biomes.B, Biomes.C, Biomes.D, Biomes.E, Biomes.F, Biomes.G, Biomes.H, Biomes.I, Biomes.J, Biomes.K, Biomes.L, Biomes.M, Biomes.N, Biomes.O});
++    }
++
++    private static void a(int i, String s, BiomeBase biomebase) {
++        BiomeBase.REGISTRY_ID.a(i, new MinecraftKey(s), biomebase);
++        if (biomebase.b()) {
++            BiomeBase.j.a(biomebase, a((BiomeBase) BiomeBase.REGISTRY_ID.get(new MinecraftKey(biomebase.H))));
 +        }
 +
-+        BiomeBase.n.remove(BiomeBase.HELL);
-+        BiomeBase.n.remove(BiomeBase.SKY);
-+        BiomeBase.n.remove(BiomeBase.FROZEN_OCEAN);
-+        BiomeBase.n.remove(BiomeBase.SMALL_MOUNTAINS);
-+        ae = new NoiseGenerator3(new Random(1234L), 1);
-+        af = new NoiseGenerator3(new Random(2345L), 1);
-+        ag = new WorldGenTallPlant();
 +    }
 +
 +    static class SyntheticClass_1 {
 +
-+        static final int[] switchMap = new int[EnumCreatureType.values().length];
++        static final int[] a = new int[EnumCreatureType.values().length];
 +
 +        static {
 +            try {
-+                SyntheticClass_1.switchMap[EnumCreatureType.MONSTER.ordinal()] = 1;
++                BiomeBase.SyntheticClass_1.a[EnumCreatureType.MONSTER.ordinal()] = 1;
 +            } catch (NoSuchFieldError nosuchfielderror) {
 +                ;
 +            }
 +
 +            try {
-+                SyntheticClass_1.switchMap[EnumCreatureType.CREATURE.ordinal()] = 2;
++                BiomeBase.SyntheticClass_1.a[EnumCreatureType.CREATURE.ordinal()] = 2;
 +            } catch (NoSuchFieldError nosuchfielderror1) {
 +                ;
 +            }
 +
 +            try {
-+                SyntheticClass_1.switchMap[EnumCreatureType.WATER_CREATURE.ordinal()] = 3;
++                BiomeBase.SyntheticClass_1.a[EnumCreatureType.WATER_CREATURE.ordinal()] = 3;
 +            } catch (NoSuchFieldError nosuchfielderror2) {
 +                ;
 +            }
 +
 +            try {
-+                SyntheticClass_1.switchMap[EnumCreatureType.AMBIENT.ordinal()] = 4;
++                BiomeBase.SyntheticClass_1.a[EnumCreatureType.AMBIENT.ordinal()] = 4;
 +            } catch (NoSuchFieldError nosuchfielderror3) {
 +                ;
 +            }
 +
++        }
++    }
++
++    public static class a {
++
++        private final String a;
++        private float b = 0.1F;
++        private float c = 0.2F;
++        private float d = 0.5F;
++        private float e = 0.5F;
++        private int f = 16777215;
++        private boolean g;
++        private boolean h = true;
++        private String i;
++
++        public a(String s) {
++            this.a = s;
++        }
++
++        protected BiomeBase.a a(float f) {
++            if (f > 0.1F && f < 0.2F) {
++                throw new IllegalArgumentException("Please avoid temperatures in the range 0.1 - 0.2 because of snow");
++            } else {
++                this.d = f;
++                return this;
++            }
++        }
++
++        protected BiomeBase.a b(float f) {
++            this.e = f;
++            return this;
++        }
++
++        protected BiomeBase.a c(float f) {
++            this.b = f;
++            return this;
++        }
++
++        protected BiomeBase.a d(float f) {
++            this.c = f;
++            return this;
++        }
++
++        protected BiomeBase.a a() {
++            this.h = false;
++            return this;
++        }
++
++        protected BiomeBase.a b() {
++            this.g = true;
++            return this;
++        }
++
++        protected BiomeBase.a a(int i) {
++            this.f = i;
++            return this;
++        }
++
++        protected BiomeBase.a a(String s) {
++            this.i = s;
++            return this;
 +        }
 +    }
 +
@@ -568,21 +466,6 @@ index 0000000..b1ae67a
 +        }
 +    }
 +
-+    public static class BiomeTemperature {
-+
-+        public float a;
-+        public float b;
-+
-+        public BiomeTemperature(float f, float f1) {
-+            this.a = f;
-+            this.b = f1;
-+        }
-+
-+        public BiomeTemperature a() {
-+            return new BiomeTemperature(this.a * 0.8F, this.b * 0.6F);
-+        }
-+    }
-+
 +    public static enum EnumTemperature {
 +
 +        OCEAN, COLD, MEDIUM, WARM;
@@ -592,10 +475,10 @@ index 0000000..b1ae67a
 +}
 diff --git a/src/main/java/net/minecraft/server/BiomeMesa.java b/src/main/java/net/minecraft/server/BiomeMesa.java
 new file mode 100644
-index 0000000..fd827f2
+index 0000000..3ce22aa
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/BiomeMesa.java
-@@ -0,0 +1,264 @@
+@@ -0,0 +1,252 @@
 +package net.minecraft.server;
 +
 +import java.util.Arrays;
@@ -603,37 +486,41 @@ index 0000000..fd827f2
 +
 +public class BiomeMesa extends BiomeBase {
 +
-+    private IBlockData[] aD;
-+    private long aE;
-+    private NoiseGenerator3 aF;
-+    private NoiseGenerator3 aG;
-+    private NoiseGenerator3 aH;
-+    private boolean aI;
-+    private boolean aJ;
++    protected static final IBlockData y = Blocks.DIRT.getBlockData().set(BlockDirt.VARIANT, BlockDirt.EnumDirtVariant.COARSE_DIRT);
++    protected static final IBlockData z = Blocks.GRASS.getBlockData();
++    protected static final IBlockData A = Blocks.HARDENED_CLAY.getBlockData();
++    protected static final IBlockData B = Blocks.STAINED_HARDENED_CLAY.getBlockData();
++    protected static final IBlockData C = BiomeMesa.B.set(BlockCloth.COLOR, EnumColor.ORANGE);
++    protected static final IBlockData D = Blocks.SAND.getBlockData().set(BlockSand.VARIANT, BlockSand.EnumSandVariant.RED_SAND);
++    private IBlockData[] E;
++    private long F;
++    private NoiseGenerator3 G;
++    private NoiseGenerator3 H;
++    private NoiseGenerator3 I;
++    private boolean J;
++    private boolean K;
 +
-+    public BiomeMesa(int i, boolean flag, boolean flag1) {
-+        super(i);
-+        this.aI = flag;
-+        this.aJ = flag1;
-+        this.b();
-+        this.a(2.0F, 0.0F);
-+        this.au.clear();
-+        this.ak = Blocks.SAND.getBlockData().set(BlockSand.VARIANT, BlockSand.EnumSandVariant.RED_SAND);
-+        this.al = Blocks.STAINED_HARDENED_CLAY.getBlockData();
-+        this.as.A = -999;
-+        this.as.D = 20;
-+        this.as.F = 3;
-+        this.as.G = 5;
-+        this.as.B = 0;
-+        this.au.clear();
++    public BiomeMesa(boolean flag, boolean flag1, BiomeBase.a biomebase_a) {
++        super(biomebase_a);
++        this.J = flag;
++        this.K = flag1;
++        this.v.clear();
++        this.r = BiomeMesa.D;
++        this.s = BiomeMesa.B;
++        this.t.z = -999;
++        this.t.C = 20;
++        this.t.E = 3;
++        this.t.F = 5;
++        this.t.A = 0;
++        this.v.clear();
 +        if (flag1) {
-+            this.as.A = 5;
++            this.t.z = 5;
 +        }
 +
 +    }
 +
 +    public WorldGenTreeAbstract a(Random random) {
-+        return this.aA;
++        return BiomeMesa.n;
 +    }
 +
 +    public void a(World world, Random random, BlockPosition blockposition) {
@@ -641,30 +528,30 @@ index 0000000..fd827f2
 +    }
 +
 +    public void a(World world, Random random, ChunkSnapshot chunksnapshot, int i, int j, double d0) {
-+        if (this.aD == null || this.aE != world.getSeed()) {
++        if (this.E == null || this.F != world.getSeed()) {
 +            this.a(world.getSeed());
 +        }
 +
-+        if (this.aF == null || this.aG == null || this.aE != world.getSeed()) {
-+            Random random1 = new Random(this.aE);
++        if (this.G == null || this.H == null || this.F != world.getSeed()) {
++            Random random1 = new Random(this.F);
 +
-+            this.aF = new NoiseGenerator3(random1, 4);
-+            this.aG = new NoiseGenerator3(random1, 1);
++            this.G = new NoiseGenerator3(random1, 4);
++            this.H = new NoiseGenerator3(random1, 1);
 +        }
 +
-+        this.aE = world.getSeed();
++        this.F = world.getSeed();
 +        double d1 = 0.0D;
 +        int k;
 +        int l;
 +
-+        if (this.aI) {
++        if (this.J) {
 +            k = (i & -16) + (j & 15);
 +            l = (j & -16) + (i & 15);
-+            double d2 = Math.min(Math.abs(d0), this.aF.a((double) k * 0.25D, (double) l * 0.25D));
++            double d2 = Math.min(Math.abs(d0), this.G.a((double) k * 0.25D, (double) l * 0.25D));
 +
 +            if (d2 > 0.0D) {
 +                double d3 = 0.001953125D;
-+                double d4 = Math.abs(this.aG.a((double) k * d3, (double) l * d3));
++                double d4 = Math.abs(this.H.a((double) k * d3, (double) l * d3));
 +
 +                d1 = d2 * d2 * 2.5D;
 +                double d5 = Math.ceil(d4 * 50.0D) + 14.0D;
@@ -679,80 +566,79 @@ index 0000000..fd827f2
 +
 +        k = i & 15;
 +        l = j & 15;
-+        int i1 = world.F();
-+        IBlockData iblockdata = Blocks.STAINED_HARDENED_CLAY.getBlockData();
-+        IBlockData iblockdata1 = this.al;
++        int i1 = world.K();
++        IBlockData iblockdata = BiomeMesa.B;
++        IBlockData iblockdata1 = this.s;
 +        int j1 = (int) (d0 / 3.0D + 3.0D + random.nextDouble() * 0.25D);
 +        boolean flag = Math.cos(d0 / 3.0D * 3.141592653589793D) > 0.0D;
 +        int k1 = -1;
 +        boolean flag1 = false;
 +
 +        for (int l1 = 255; l1 >= 0; --l1) {
-+            if (chunksnapshot.a(l, l1, k).getBlock().getMaterial() == Material.AIR && l1 < (int) d1) {
-+                chunksnapshot.a(l, l1, k, Blocks.STONE.getBlockData());
++            if (chunksnapshot.a(l, l1, k).getMaterial() == Material.AIR && l1 < (int) d1) {
++                chunksnapshot.a(l, l1, k, BiomeMesa.a);
 +            }
 +
 +            if (l1 <= random.nextInt(5)) {
-+                chunksnapshot.a(l, l1, k, Blocks.BEDROCK.getBlockData());
++                chunksnapshot.a(l, l1, k, BiomeMesa.c);
 +            } else {
 +                IBlockData iblockdata2 = chunksnapshot.a(l, l1, k);
 +
-+                if (iblockdata2.getBlock().getMaterial() == Material.AIR) {
++                if (iblockdata2.getMaterial() == Material.AIR) {
 +                    k1 = -1;
 +                } else if (iblockdata2.getBlock() == Blocks.STONE) {
-+                    IBlockData iblockdata3;
-+
 +                    if (k1 == -1) {
 +                        flag1 = false;
 +                        if (j1 <= 0) {
-+                            iblockdata = null;
-+                            iblockdata1 = Blocks.STONE.getBlockData();
++                            iblockdata = BiomeMesa.b;
++                            iblockdata1 = BiomeMesa.a;
 +                        } else if (l1 >= i1 - 4 && l1 <= i1 + 1) {
-+                            iblockdata = Blocks.STAINED_HARDENED_CLAY.getBlockData();
-+                            iblockdata1 = this.al;
++                            iblockdata = BiomeMesa.B;
++                            iblockdata1 = this.s;
 +                        }
 +
-+                        if (l1 < i1 && (iblockdata == null || iblockdata.getBlock().getMaterial() == Material.AIR)) {
-+                            iblockdata = Blocks.WATER.getBlockData();
++                        if (l1 < i1 && (iblockdata == null || iblockdata.getMaterial() == Material.AIR)) {
++                            iblockdata = BiomeMesa.h;
 +                        }
 +
 +                        k1 = j1 + Math.max(0, l1 - i1);
 +                        if (l1 >= i1 - 1) {
-+                            if (this.aJ && l1 > 86 + j1 * 2) {
++                            if (this.K && l1 > 86 + j1 * 2) {
 +                                if (flag) {
-+                                    chunksnapshot.a(l, l1, k, Blocks.DIRT.getBlockData().set(BlockDirt.VARIANT, BlockDirt.EnumDirtVariant.COARSE_DIRT));
++                                    chunksnapshot.a(l, l1, k, BiomeMesa.y);
 +                                } else {
-+                                    chunksnapshot.a(l, l1, k, Blocks.GRASS.getBlockData());
++                                    chunksnapshot.a(l, l1, k, BiomeMesa.z);
 +                                }
 +                            } else if (l1 > i1 + 3 + j1) {
++                                IBlockData iblockdata3;
++
 +                                if (l1 >= 64 && l1 <= 127) {
 +                                    if (flag) {
-+                                        iblockdata3 = Blocks.HARDENED_CLAY.getBlockData();
++                                        iblockdata3 = BiomeMesa.A;
 +                                    } else {
 +                                        iblockdata3 = this.a(i, l1, j);
 +                                    }
 +                                } else {
-+                                    iblockdata3 = Blocks.STAINED_HARDENED_CLAY.getBlockData().set(BlockCloth.COLOR, EnumColor.ORANGE);
++                                    iblockdata3 = BiomeMesa.C;
 +                                }
 +
 +                                chunksnapshot.a(l, l1, k, iblockdata3);
 +                            } else {
-+                                chunksnapshot.a(l, l1, k, this.ak);
++                                chunksnapshot.a(l, l1, k, this.r);
 +                                flag1 = true;
 +                            }
 +                        } else {
 +                            chunksnapshot.a(l, l1, k, iblockdata1);
 +                            if (iblockdata1.getBlock() == Blocks.STAINED_HARDENED_CLAY) {
-+                                chunksnapshot.a(l, l1, k, iblockdata1.getBlock().getBlockData().set(BlockCloth.COLOR, EnumColor.ORANGE));
++                                chunksnapshot.a(l, l1, k, BiomeMesa.C);
 +                            }
 +                        }
 +                    } else if (k1 > 0) {
 +                        --k1;
 +                        if (flag1) {
-+                            chunksnapshot.a(l, l1, k, Blocks.STAINED_HARDENED_CLAY.getBlockData().set(BlockCloth.COLOR, EnumColor.ORANGE));
++                            chunksnapshot.a(l, l1, k, BiomeMesa.C);
 +                        } else {
-+                            iblockdata3 = this.a(i, l1, j);
-+                            chunksnapshot.a(l, l1, k, iblockdata3);
++                            chunksnapshot.a(l, l1, k, this.a(i, l1, j));
 +                        }
 +                    }
 +                }
@@ -762,18 +648,18 @@ index 0000000..fd827f2
 +    }
 +
 +    private void a(long i) {
-+        this.aD = new IBlockData[64];
-+        Arrays.fill(this.aD, Blocks.HARDENED_CLAY.getBlockData());
++        this.E = new IBlockData[64];
++        Arrays.fill(this.E, BiomeMesa.A);
 +        Random random = new Random(i);
 +
-+        this.aH = new NoiseGenerator3(random, 1);
++        this.I = new NoiseGenerator3(random, 1);
 +
 +        int j;
 +
 +        for (j = 0; j < 64; ++j) {
 +            j += random.nextInt(5) + 1;
 +            if (j < 64) {
-+                this.aD[j] = Blocks.STAINED_HARDENED_CLAY.getBlockData().set(BlockCloth.COLOR, EnumColor.ORANGE);
++                this.E[j] = BiomeMesa.C;
 +            }
 +        }
 +
@@ -789,7 +675,7 @@ index 0000000..fd827f2
 +            i1 = random.nextInt(64);
 +
 +            for (j1 = 0; i1 + j1 < 64 && j1 < l; ++j1) {
-+                this.aD[i1 + j1] = Blocks.STAINED_HARDENED_CLAY.getBlockData().set(BlockCloth.COLOR, EnumColor.YELLOW);
++                this.E[i1 + j1] = BiomeMesa.B.set(BlockCloth.COLOR, EnumColor.YELLOW);
 +            }
 +        }
 +
@@ -802,7 +688,7 @@ index 0000000..fd827f2
 +            j1 = random.nextInt(64);
 +
 +            for (k1 = 0; j1 + k1 < 64 && k1 < i1; ++k1) {
-+                this.aD[j1 + k1] = Blocks.STAINED_HARDENED_CLAY.getBlockData().set(BlockCloth.COLOR, EnumColor.BROWN);
++                this.E[j1 + k1] = BiomeMesa.B.set(BlockCloth.COLOR, EnumColor.BROWN);
 +            }
 +        }
 +
@@ -813,7 +699,7 @@ index 0000000..fd827f2
 +            k1 = random.nextInt(64);
 +
 +            for (int l1 = 0; k1 + l1 < 64 && l1 < j1; ++l1) {
-+                this.aD[k1 + l1] = Blocks.STAINED_HARDENED_CLAY.getBlockData().set(BlockCloth.COLOR, EnumColor.RED);
++                this.E[k1 + l1] = BiomeMesa.B.set(BlockCloth.COLOR, EnumColor.RED);
 +            }
 +        }
 +
@@ -826,13 +712,13 @@ index 0000000..fd827f2
 +            j1 += random.nextInt(16) + 4;
 +
 +            for (int i2 = 0; j1 + i2 < 64 && i2 < b0; ++i2) {
-+                this.aD[j1 + i2] = Blocks.STAINED_HARDENED_CLAY.getBlockData().set(BlockCloth.COLOR, EnumColor.WHITE);
++                this.E[j1 + i2] = BiomeMesa.B.set(BlockCloth.COLOR, EnumColor.WHITE);
 +                if (j1 + i2 > 1 && random.nextBoolean()) {
-+                    this.aD[j1 + i2 - 1] = Blocks.STAINED_HARDENED_CLAY.getBlockData().set(BlockCloth.COLOR, EnumColor.SILVER);
++                    this.E[j1 + i2 - 1] = BiomeMesa.B.set(BlockCloth.COLOR, EnumColor.SILVER);
 +                }
 +
 +                if (j1 + i2 < 63 && random.nextBoolean()) {
-+                    this.aD[j1 + i2 + 1] = Blocks.STAINED_HARDENED_CLAY.getBlockData().set(BlockCloth.COLOR, EnumColor.SILVER);
++                    this.E[j1 + i2 + 1] = BiomeMesa.B.set(BlockCloth.COLOR, EnumColor.SILVER);
 +                }
 +            }
 +        }
@@ -840,75 +726,52 @@ index 0000000..fd827f2
 +    }
 +
 +    private IBlockData a(int i, int j, int k) {
-+        int l = (int) Math.round(this.aH.a((double) i * 1.0D / 512.0D, (double) i * 1.0D / 512.0D) * 2.0D);
++        int l = (int) Math.round(this.I.a((double) i / 512.0D, (double) i / 512.0D) * 2.0D);
 +
-+        return this.aD[(j + l + 64) % 64];
-+    }
-+
-+    protected BiomeBase d(int i) {
-+        boolean flag = this.id == BiomeBase.MESA.id;
-+        BiomeMesa biomemesa = new BiomeMesa(i, flag, this.aJ);
-+
-+        if (!flag) {
-+            biomemesa.a(BiomeMesa.g);
-+            biomemesa.a(this.ah + " M");
-+        } else {
-+            biomemesa.a(this.ah + " (Bryce)");
-+        }
-+
-+        biomemesa.a(this.ai, true);
-+        return biomemesa;
++        return this.E[(j + l + 64) % 64];
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/BlockChest.java b/src/main/java/net/minecraft/server/BlockChest.java
 new file mode 100644
-index 0000000..f725aea
+index 0000000..7d27317
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/BlockChest.java
-@@ -0,0 +1,455 @@
+@@ -0,0 +1,452 @@
 +package net.minecraft.server;
 +
-+import com.google.common.base.Predicate;
 +import java.util.Iterator;
 +
-+public class BlockChest extends BlockContainer {
++public class BlockChest extends BlockTileEntity {
 +
-+    public static final BlockStateDirection FACING = BlockStateDirection.of("facing", (Predicate) EnumDirection.EnumDirectionLimit.HORIZONTAL);
-+    public final int b;
++    public static final BlockStateDirection FACING = BlockFacingHorizontal.FACING;
++    protected static final AxisAlignedBB b = new AxisAlignedBB(0.0625D, 0.0D, 0.0D, 0.9375D, 0.875D, 0.9375D);
++    protected static final AxisAlignedBB c = new AxisAlignedBB(0.0625D, 0.0D, 0.0625D, 0.9375D, 0.875D, 1.0D);
++    protected static final AxisAlignedBB d = new AxisAlignedBB(0.0D, 0.0D, 0.0625D, 0.9375D, 0.875D, 0.9375D);
++    protected static final AxisAlignedBB e = new AxisAlignedBB(0.0625D, 0.0D, 0.0625D, 1.0D, 0.875D, 0.9375D);
++    protected static final AxisAlignedBB f = new AxisAlignedBB(0.0625D, 0.0D, 0.0625D, 0.9375D, 0.875D, 0.9375D);
++    public final Type g;
 +
-+    protected BlockChest(int i) {
++    protected BlockChest(Type blockchest_type) {
 +        super(Material.WOOD);
-+        this.j(this.blockStateList.getBlockData().set(BlockChest.FACING, EnumDirection.NORTH));
-+        this.b = i;
-+        this.a(CreativeModeTab.c);
-+        this.a(0.0625F, 0.0F, 0.0625F, 0.9375F, 0.875F, 0.9375F);
++        this.w(this.blockStateList.getBlockData().set(BlockChest.FACING, EnumDirection.NORTH));
++        this.g = blockchest_type;
++        this.a(blockchest_type == Type.TRAP ? CreativeModeTab.d : CreativeModeTab.c);
 +    }
 +
-+    public boolean c() {
++    public boolean b(IBlockData iblockdata) {
 +        return false;
 +    }
 +
-+    public boolean d() {
++    public boolean c(IBlockData iblockdata) {
 +        return false;
 +    }
 +
-+    public int b() {
-+        return 2;
++    public EnumRenderType a(IBlockData iblockdata) {
++        return EnumRenderType.ENTITYBLOCK_ANIMATED;
 +    }
 +
-+    public void updateShape(IBlockAccess iblockaccess, BlockPosition blockposition) {
-+        if (iblockaccess.getType(blockposition.north()).getBlock() == this) {
-+            this.a(0.0625F, 0.0F, 0.0F, 0.9375F, 0.875F, 0.9375F);
-+        } else if (iblockaccess.getType(blockposition.south()).getBlock() == this) {
-+            this.a(0.0625F, 0.0F, 0.0625F, 0.9375F, 0.875F, 1.0F);
-+        } else if (iblockaccess.getType(blockposition.west()).getBlock() == this) {
-+            this.a(0.0F, 0.0F, 0.0625F, 0.9375F, 0.875F, 0.9375F);
-+        } else if (iblockaccess.getType(blockposition.east()).getBlock() == this) {
-+            this.a(0.0625F, 0.0F, 0.0625F, 1.0F, 0.875F, 0.9375F);
-+        } else {
-+            this.a(0.0625F, 0.0F, 0.0625F, 0.9375F, 0.875F, 0.9375F);
-+        }
-+
++    public AxisAlignedBB a(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition) {
++        return iblockaccess.getType(blockposition.north()).getBlock() == this ? BlockChest.b : (iblockaccess.getType(blockposition.south()).getBlock() == this ? BlockChest.c : (iblockaccess.getType(blockposition.west()).getBlock() == this ? BlockChest.d : (iblockaccess.getType(blockposition.east()).getBlock() == this ? BlockChest.e : BlockChest.f)));
 +    }
 +
 +    public void onPlace(World world, BlockPosition blockposition, IBlockData iblockdata) {
@@ -983,24 +846,20 @@ index 0000000..f725aea
 +            IBlockData iblockdata3 = world.getType(blockposition.west());
 +            IBlockData iblockdata4 = world.getType(blockposition.east());
 +            EnumDirection enumdirection = (EnumDirection) iblockdata.get(BlockChest.FACING);
-+            Block block = iblockdata1.getBlock();
-+            Block block1 = iblockdata2.getBlock();
-+            Block block2 = iblockdata3.getBlock();
-+            Block block3 = iblockdata4.getBlock();
 +
-+            if (block != this && block1 != this) {
-+                boolean flag = block.o();
-+                boolean flag1 = block1.o();
++            if (iblockdata1.getBlock() != this && iblockdata2.getBlock() != this) {
++                boolean flag = iblockdata1.b();
++                boolean flag1 = iblockdata2.b();
 +
-+                if (block2 == this || block3 == this) {
-+                    BlockPosition blockposition1 = block2 == this ? blockposition.west() : blockposition.east();
++                if (iblockdata3.getBlock() == this || iblockdata4.getBlock() == this) {
++                    BlockPosition blockposition1 = iblockdata3.getBlock() == this ? blockposition.west() : blockposition.east();
 +                    IBlockData iblockdata5 = world.getType(blockposition1.north());
 +                    IBlockData iblockdata6 = world.getType(blockposition1.south());
 +
 +                    enumdirection = EnumDirection.SOUTH;
 +                    EnumDirection enumdirection1;
 +
-+                    if (block2 == this) {
++                    if (iblockdata3.getBlock() == this) {
 +                        enumdirection1 = (EnumDirection) iblockdata3.get(BlockChest.FACING);
 +                    } else {
 +                        enumdirection1 = (EnumDirection) iblockdata4.get(BlockChest.FACING);
@@ -1010,26 +869,23 @@ index 0000000..f725aea
 +                        enumdirection = EnumDirection.NORTH;
 +                    }
 +
-+                    Block block4 = iblockdata5.getBlock();
-+                    Block block5 = iblockdata6.getBlock();
-+
-+                    if ((flag || block4.o()) && !flag1 && !block5.o()) {
++                    if ((flag || iblockdata5.b()) && !flag1 && !iblockdata6.b()) {
 +                        enumdirection = EnumDirection.SOUTH;
 +                    }
 +
-+                    if ((flag1 || block5.o()) && !flag && !block4.o()) {
++                    if ((flag1 || iblockdata6.b()) && !flag && !iblockdata5.b()) {
 +                        enumdirection = EnumDirection.NORTH;
 +                    }
 +                }
 +            } else {
-+                BlockPosition blockposition2 = block == this ? blockposition.north() : blockposition.south();
++                BlockPosition blockposition2 = iblockdata1.getBlock() == this ? blockposition.north() : blockposition.south();
 +                IBlockData iblockdata7 = world.getType(blockposition2.west());
 +                IBlockData iblockdata8 = world.getType(blockposition2.east());
 +
 +                enumdirection = EnumDirection.EAST;
 +                EnumDirection enumdirection2;
 +
-+                if (block == this) {
++                if (iblockdata1.getBlock() == this) {
 +                    enumdirection2 = (EnumDirection) iblockdata1.get(BlockChest.FACING);
 +                } else {
 +                    enumdirection2 = (EnumDirection) iblockdata2.get(BlockChest.FACING);
@@ -1039,14 +895,11 @@ index 0000000..f725aea
 +                    enumdirection = EnumDirection.WEST;
 +                }
 +
-+                Block block6 = iblockdata7.getBlock();
-+                Block block7 = iblockdata8.getBlock();
-+
-+                if ((block2.o() || block6.o()) && !block3.o() && !block7.o()) {
++                if ((iblockdata3.b() || iblockdata7.b()) && !iblockdata4.b() && !iblockdata8.b()) {
 +                    enumdirection = EnumDirection.EAST;
 +                }
 +
-+                if ((block3.o() || block7.o()) && !block2.o() && !block6.o()) {
++                if ((iblockdata4.b() || iblockdata8.b()) && !iblockdata3.b() && !iblockdata7.b()) {
 +                    enumdirection = EnumDirection.WEST;
 +                }
 +            }
@@ -1069,7 +922,7 @@ index 0000000..f725aea
 +                return iblockdata;
 +            }
 +
-+            if (iblockdata1.getBlock().o()) {
++            if (iblockdata1.b()) {
 +                if (enumdirection != null) {
 +                    enumdirection = null;
 +                    break;
@@ -1084,15 +937,15 @@ index 0000000..f725aea
 +        } else {
 +            EnumDirection enumdirection2 = (EnumDirection) iblockdata.get(BlockChest.FACING);
 +
-+            if (world.getType(blockposition.shift(enumdirection2)).getBlock().o()) {
++            if (world.getType(blockposition.shift(enumdirection2)).b()) {
 +                enumdirection2 = enumdirection2.opposite();
 +            }
 +
-+            if (world.getType(blockposition.shift(enumdirection2)).getBlock().o()) {
++            if (world.getType(blockposition.shift(enumdirection2)).b()) {
 +                enumdirection2 = enumdirection2.e();
 +            }
 +
-+            if (world.getType(blockposition.shift(enumdirection2)).getBlock().o()) {
++            if (world.getType(blockposition.shift(enumdirection2)).b()) {
 +                enumdirection2 = enumdirection2.opposite();
 +            }
 +
@@ -1108,7 +961,7 @@ index 0000000..f725aea
 +        BlockPosition blockposition4 = blockposition.south();
 +
 +        if (world.getType(blockposition1).getBlock() == this) {
-+            if (this.m(world, blockposition1)) {
++            if (this.d(world, blockposition1)) {
 +                return false;
 +            }
 +
@@ -1116,7 +969,7 @@ index 0000000..f725aea
 +        }
 +
 +        if (world.getType(blockposition2).getBlock() == this) {
-+            if (this.m(world, blockposition2)) {
++            if (this.d(world, blockposition2)) {
 +                return false;
 +            }
 +
@@ -1124,7 +977,7 @@ index 0000000..f725aea
 +        }
 +
 +        if (world.getType(blockposition3).getBlock() == this) {
-+            if (this.m(world, blockposition3)) {
++            if (this.d(world, blockposition3)) {
 +                return false;
 +            }
 +
@@ -1132,7 +985,7 @@ index 0000000..f725aea
 +        }
 +
 +        if (world.getType(blockposition4).getBlock() == this) {
-+            if (this.m(world, blockposition4)) {
++            if (this.d(world, blockposition4)) {
 +                return false;
 +            }
 +
@@ -1142,7 +995,7 @@ index 0000000..f725aea
 +        return i <= 1;
 +    }
 +
-+    private boolean m(World world, BlockPosition blockposition) {
++    private boolean d(World world, BlockPosition blockposition) {
 +        if (world.getType(blockposition).getBlock() != this) {
 +            return false;
 +        } else {
@@ -1167,7 +1020,7 @@ index 0000000..f725aea
 +        TileEntity tileentity = world.getTileEntity(blockposition);
 +
 +        if (tileentity instanceof TileEntityChest) {
-+            tileentity.E();
++            tileentity.invalidateBlockCache();
 +        }
 +
 +    }
@@ -1183,18 +1036,18 @@ index 0000000..f725aea
 +        super.remove(world, blockposition, iblockdata);
 +    }
 +
-+    public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumDirection enumdirection, float f, float f1, float f2) {
++    public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumHand enumhand, ItemStack itemstack, EnumDirection enumdirection, float f, float f1, float f2) {
 +        if (world.isClientSide) {
 +            return true;
 +        } else {
-+            ITileInventory itileinventory = this.f(world, blockposition);
++            ITileInventory itileinventory = this.c(world, blockposition);
 +
 +            if (itileinventory != null) {
 +                entityhuman.openContainer(itileinventory);
-+                if (this.b == 0) {
-+                    entityhuman.b(StatisticList.aa);
-+                } else if (this.b == 1) {
-+                    entityhuman.b(StatisticList.U);
++                if (this.g == Type.BASIC) {
++                    entityhuman.b(StatisticList.ac);
++                } else if (this.g == Type.TRAP) {
++                    entityhuman.b(StatisticList.W);
 +                }
 +            }
 +
@@ -1202,7 +1055,7 @@ index 0000000..f725aea
 +        }
 +    }
 +
-+    public ITileInventory f(World world, BlockPosition blockposition) {
++    public ITileInventory c(World world, BlockPosition blockposition) {
 +        TileEntity tileentity = world.getTileEntity(blockposition);
 +
 +        if (!(tileentity instanceof TileEntityChest)) {
@@ -1210,7 +1063,7 @@ index 0000000..f725aea
 +        } else {
 +            Object object = (TileEntityChest) tileentity;
 +
-+            if (this.n(world, blockposition)) {
++            if (this.e(world, blockposition)) {
 +                return null;
 +            } else {
 +                Iterator iterator = EnumDirection.EnumDirectionLimit.HORIZONTAL.iterator();
@@ -1221,7 +1074,7 @@ index 0000000..f725aea
 +                    Block block = world.getType(blockposition1).getBlock();
 +
 +                    if (block == this) {
-+                        if (this.n(world, blockposition1)) {
++                        if (this.e(world, blockposition1)) {
 +                            return null;
 +                        }
 +
@@ -1246,12 +1099,12 @@ index 0000000..f725aea
 +        return new TileEntityChest();
 +    }
 +
-+    public boolean isPowerSource() {
-+        return this.b == 1;
++    public boolean isPowerSource(IBlockData iblockdata) {
++        return this.g == Type.TRAP;
 +    }
 +
-+    public int a(IBlockAccess iblockaccess, BlockPosition blockposition, IBlockData iblockdata, EnumDirection enumdirection) {
-+        if (!this.isPowerSource()) {
++    public int b(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition, EnumDirection enumdirection) {
++        if (!iblockdata.m()) {
 +            return 0;
 +        } else {
 +            int i = 0;
@@ -1265,19 +1118,19 @@ index 0000000..f725aea
 +        }
 +    }
 +
-+    public int b(IBlockAccess iblockaccess, BlockPosition blockposition, IBlockData iblockdata, EnumDirection enumdirection) {
-+        return enumdirection == EnumDirection.UP ? this.a(iblockaccess, blockposition, iblockdata, enumdirection) : 0;
++    public int c(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition, EnumDirection enumdirection) {
++        return enumdirection == EnumDirection.UP ? iblockdata.a(iblockaccess, blockposition, enumdirection) : 0;
 +    }
 +
-+    private boolean n(World world, BlockPosition blockposition) {
-+        return this.o(world, blockposition) || this.p(world, blockposition);
++    private boolean e(World world, BlockPosition blockposition) {
++        return this.i(world, blockposition) || this.j(world, blockposition);
 +    }
 +
-+    private boolean o(World world, BlockPosition blockposition) {
-+        return world.getType(blockposition.up()).getBlock().isOccluding();
++    private boolean i(World world, BlockPosition blockposition) {
++        return world.getType(blockposition.up()).l();
 +    }
 +
-+    private boolean p(World world, BlockPosition blockposition) {
++    private boolean j(World world, BlockPosition blockposition) {
 +        Iterator iterator = world.a(EntityOcelot.class, new AxisAlignedBB((double) blockposition.getX(), (double) (blockposition.getY() + 1), (double) blockposition.getZ(), (double) (blockposition.getX() + 1), (double) (blockposition.getY() + 2), (double) (blockposition.getZ() + 1))).iterator();
 +
 +        EntityOcelot entityocelot;
@@ -1295,12 +1148,12 @@ index 0000000..f725aea
 +        return true;
 +    }
 +
-+    public boolean isComplexRedstone() {
++    public boolean isComplexRedstone(IBlockData iblockdata) {
 +        return true;
 +    }
 +
-+    public int l(World world, BlockPosition blockposition) {
-+        return Container.b((IInventory) this.f(world, blockposition));
++    public int d(IBlockData iblockdata, World world, BlockPosition blockposition) {
++        return Container.b((IInventory) this.c(world, blockposition));
 +    }
 +
 +    public IBlockData fromLegacyData(int i) {
@@ -1317,13 +1170,28 @@ index 0000000..f725aea
 +        return ((EnumDirection) iblockdata.get(BlockChest.FACING)).a();
 +    }
 +
++    public IBlockData a(IBlockData iblockdata, EnumBlockRotation enumblockrotation) {
++        return iblockdata.set(BlockChest.FACING, enumblockrotation.a((EnumDirection) iblockdata.get(BlockChest.FACING)));
++    }
++
++    public IBlockData a(IBlockData iblockdata, EnumBlockMirror enumblockmirror) {
++        return iblockdata.a(enumblockmirror.a((EnumDirection) iblockdata.get(BlockChest.FACING)));
++    }
++
 +    protected BlockStateList getStateList() {
 +        return new BlockStateList(this, new IBlockState[] { BlockChest.FACING});
++    }
++
++    public static enum Type {
++
++        BASIC, TRAP;
++
++        private Type() {}
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/BlockFalling.java b/src/main/java/net/minecraft/server/BlockFalling.java
 new file mode 100644
-index 0000000..29f8554
+index 0000000..6654240
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/BlockFalling.java
 @@ -0,0 +1,75 @@
@@ -1354,13 +1222,13 @@ index 0000000..29f8554
 +
 +    public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
 +        if (!world.isClientSide) {
-+            this.f(world, blockposition);
++            this.b(world, blockposition);
 +        }
 +
 +    }
 +
-+    private void f(World world, BlockPosition blockposition) {
-+        if (canFall(world, blockposition.down()) && blockposition.getY() >= 0) {
++    private void b(World world, BlockPosition blockposition) {
++        if (i(world.getType(blockposition.down())) && blockposition.getY() >= 0) {
 +            byte b0 = 32;
 +
 +            if (!BlockFalling.instaFall && world.areChunksLoadedBetween(blockposition.a(-b0, -b0, -b0), blockposition.a(b0, b0, b0))) {
@@ -1375,7 +1243,7 @@ index 0000000..29f8554
 +
 +                BlockPosition blockposition1;
 +
-+                for (blockposition1 = blockposition.down(); canFall(world, blockposition1) && blockposition1.getY() > 0; blockposition1 = blockposition1.down()) {
++                for (blockposition1 = blockposition.down(); i(world.getType(blockposition1)) && blockposition1.getY() > 0; blockposition1 = blockposition1.down()) {
 +                    ;
 +                }
 +
@@ -1393,9 +1261,9 @@ index 0000000..29f8554
 +        return 2;
 +    }
 +
-+    public static boolean canFall(World world, BlockPosition blockposition) {
-+        Block block = world.getType(blockposition).getBlock();
-+        Material material = block.material;
++    public static boolean i(IBlockData iblockdata) {
++        Block block = iblockdata.getBlock();
++        Material material = iblockdata.getMaterial();
 +
 +        return block == Blocks.FIRE || material == Material.AIR || material == Material.WATER || material == Material.LAVA;
 +    }
@@ -1404,10 +1272,10 @@ index 0000000..29f8554
 +}
 diff --git a/src/main/java/net/minecraft/server/BlockFluids.java b/src/main/java/net/minecraft/server/BlockFluids.java
 new file mode 100644
-index 0000000..b610450
+index 0000000..675cdc0
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/BlockFluids.java
-@@ -0,0 +1,212 @@
+@@ -0,0 +1,224 @@
 +package net.minecraft.server;
 +
 +import java.util.Iterator;
@@ -1419,16 +1287,23 @@ index 0000000..b610450
 +
 +    protected BlockFluids(Material material) {
 +        super(material);
-+        this.j(this.blockStateList.getBlockData().set(BlockFluids.LEVEL, Integer.valueOf(0)));
-+        this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
++        this.w(this.blockStateList.getBlockData().set(BlockFluids.LEVEL, Integer.valueOf(0)));
 +        this.a(true);
++    }
++
++    public AxisAlignedBB a(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition) {
++        return BlockFluids.j;
++    }
++
++    public AxisAlignedBB a(IBlockData iblockdata, World world, BlockPosition blockposition) {
++        return BlockFluids.k;
 +    }
 +
 +    public boolean b(IBlockAccess iblockaccess, BlockPosition blockposition) {
 +        return this.material != Material.LAVA;
 +    }
 +
-+    public static float b(int i) {
++    public static float e(int i) {
 +        if (i >= 8) {
 +            i = 0;
 +        }
@@ -1436,21 +1311,21 @@ index 0000000..b610450
 +        return (float) (i + 1) / 9.0F;
 +    }
 +
-+    protected int e(IBlockAccess iblockaccess, BlockPosition blockposition) {
-+        return iblockaccess.getType(blockposition).getBlock().getMaterial() == this.material ? ((Integer) iblockaccess.getType(blockposition).get(BlockFluids.LEVEL)).intValue() : -1;
++    protected int c(IBlockAccess iblockaccess, BlockPosition blockposition) {
++        return iblockaccess.getType(blockposition).getMaterial() == this.material ? ((Integer) iblockaccess.getType(blockposition).get(BlockFluids.LEVEL)).intValue() : -1;
 +    }
 +
-+    protected int f(IBlockAccess iblockaccess, BlockPosition blockposition) {
-+        int i = this.e(iblockaccess, blockposition);
++    protected int d(IBlockAccess iblockaccess, BlockPosition blockposition) {
++        int i = this.c(iblockaccess, blockposition);
 +
 +        return i >= 8 ? 0 : i;
 +    }
 +
-+    public boolean d() {
++    public boolean c(IBlockData iblockdata) {
 +        return false;
 +    }
 +
-+    public boolean c() {
++    public boolean b(IBlockData iblockdata) {
 +        return false;
 +    }
 +
@@ -1458,18 +1333,14 @@ index 0000000..b610450
 +        return flag && ((Integer) iblockdata.get(BlockFluids.LEVEL)).intValue() == 0;
 +    }
 +
-+    public boolean b(IBlockAccess iblockaccess, BlockPosition blockposition, EnumDirection enumdirection) {
-+        Material material = iblockaccess.getType(blockposition).getBlock().getMaterial();
++    public boolean a(IBlockAccess iblockaccess, BlockPosition blockposition, EnumDirection enumdirection) {
++        Material material = iblockaccess.getType(blockposition).getMaterial();
 +
-+        return material == this.material ? false : (enumdirection == EnumDirection.UP ? true : (material == Material.ICE ? false : super.b(iblockaccess, blockposition, enumdirection)));
++        return material == this.material ? false : (enumdirection == EnumDirection.UP ? true : (material == Material.ICE ? false : super.a(iblockaccess, blockposition, enumdirection)));
 +    }
 +
-+    public AxisAlignedBB a(World world, BlockPosition blockposition, IBlockData iblockdata) {
-+        return null;
-+    }
-+
-+    public int b() {
-+        return 1;
++    public EnumRenderType a(IBlockData iblockdata) {
++        return EnumRenderType.LIQUID;
 +    }
 +
 +    public Item getDropType(IBlockData iblockdata, Random random, int i) {
@@ -1480,56 +1351,65 @@ index 0000000..b610450
 +        return 0;
 +    }
 +
-+    protected Vec3D h(IBlockAccess iblockaccess, BlockPosition blockposition) {
-+        Vec3D vec3d = new Vec3D(0.0D, 0.0D, 0.0D);
-+        int i = this.f(iblockaccess, blockposition);
++    protected Vec3D f(IBlockAccess iblockaccess, BlockPosition blockposition) {
++        double d0 = 0.0D;
++        double d1 = 0.0D;
++        double d2 = 0.0D;
++        int i = this.d(iblockaccess, blockposition);
++        BlockPosition.PooledBlockPosition blockposition_pooledblockposition = BlockPosition.PooledBlockPosition.s();
 +        Iterator iterator = EnumDirection.EnumDirectionLimit.HORIZONTAL.iterator();
 +
-+        EnumDirection enumdirection;
-+        BlockPosition blockposition1;
-+
 +        while (iterator.hasNext()) {
-+            enumdirection = (EnumDirection) iterator.next();
-+            blockposition1 = blockposition.shift(enumdirection);
-+            int j = this.f(iblockaccess, blockposition1);
++            EnumDirection enumdirection = (EnumDirection) iterator.next();
++
++            blockposition_pooledblockposition.h(blockposition).c(enumdirection);
++            int j = this.d(iblockaccess, blockposition_pooledblockposition);
 +            int k;
 +
 +            if (j < 0) {
-+                if (!iblockaccess.getType(blockposition1).getBlock().getMaterial().isSolid()) {
-+                    j = this.f(iblockaccess, blockposition1.down());
++                if (!iblockaccess.getType(blockposition_pooledblockposition).getMaterial().isSolid()) {
++                    j = this.d(iblockaccess, blockposition_pooledblockposition.down());
 +                    if (j >= 0) {
 +                        k = j - (i - 8);
-+                        vec3d = vec3d.add((double) ((blockposition1.getX() - blockposition.getX()) * k), (double) ((blockposition1.getY() - blockposition.getY()) * k), (double) ((blockposition1.getZ() - blockposition.getZ()) * k));
++                        d0 += (double) (enumdirection.getAdjacentX() * k);
++                        d1 += (double) (enumdirection.getAdjacentY() * k);
++                        d2 += (double) (enumdirection.getAdjacentZ() * k);
 +                    }
 +                }
 +            } else if (j >= 0) {
 +                k = j - i;
-+                vec3d = vec3d.add((double) ((blockposition1.getX() - blockposition.getX()) * k), (double) ((blockposition1.getY() - blockposition.getY()) * k), (double) ((blockposition1.getZ() - blockposition.getZ()) * k));
++                d0 += (double) (enumdirection.getAdjacentX() * k);
++                d1 += (double) (enumdirection.getAdjacentY() * k);
++                d2 += (double) (enumdirection.getAdjacentZ() * k);
 +            }
 +        }
 +
-+        if (((Integer) iblockaccess.getType(blockposition).get(BlockFluids.LEVEL)).intValue() >= 8) {
-+            iterator = EnumDirection.EnumDirectionLimit.HORIZONTAL.iterator();
++        Vec3D vec3d = new Vec3D(d0, d1, d2);
 +
-+            while (iterator.hasNext()) {
-+                enumdirection = (EnumDirection) iterator.next();
-+                blockposition1 = blockposition.shift(enumdirection);
-+                if (this.b(iblockaccess, blockposition1, enumdirection) || this.b(iblockaccess, blockposition1.up(), enumdirection)) {
++        if (((Integer) iblockaccess.getType(blockposition).get(BlockFluids.LEVEL)).intValue() >= 8) {
++            Iterator iterator1 = EnumDirection.EnumDirectionLimit.HORIZONTAL.iterator();
++
++            while (iterator1.hasNext()) {
++                EnumDirection enumdirection1 = (EnumDirection) iterator1.next();
++
++                blockposition_pooledblockposition.h(blockposition).c(enumdirection1);
++                if (this.a(iblockaccess, (BlockPosition) blockposition_pooledblockposition, enumdirection1) || this.a(iblockaccess, blockposition_pooledblockposition.up(), enumdirection1)) {
 +                    vec3d = vec3d.a().add(0.0D, -6.0D, 0.0D);
 +                    break;
 +                }
 +            }
 +        }
 +
++        blockposition_pooledblockposition.t();
 +        return vec3d.a();
 +    }
 +
 +    public Vec3D a(World world, BlockPosition blockposition, Entity entity, Vec3D vec3d) {
-+        return vec3d.e(this.h(world, blockposition));
++        return vec3d.e(this.f(world, blockposition));
 +    }
 +
 +    public int a(World world) {
-+        return this.material == Material.WATER ? 5 : (this.material == Material.LAVA ? (world.worldProvider.o() ? 10 : 30) : 0);
++        return this.material == Material.WATER ? 5 : (this.material == Material.LAVA ? (world.worldProvider.m() ? 10 : 30) : 0);
 +    }
 +
 +    public void onPlace(World world, BlockPosition blockposition, IBlockData iblockdata) {
@@ -1549,7 +1429,7 @@ index 0000000..b610450
 +            for (int j = 0; j < i; ++j) {
 +                EnumDirection enumdirection = aenumdirection[j];
 +
-+                if (enumdirection != EnumDirection.DOWN && world.getType(blockposition.shift(enumdirection)).getBlock().getMaterial() == Material.WATER) {
++                if (enumdirection != EnumDirection.DOWN && world.getType(blockposition.shift(enumdirection)).getMaterial() == Material.WATER) {
 +                    flag = true;
 +                    break;
 +                }
@@ -1580,7 +1460,7 @@ index 0000000..b610450
 +        double d1 = (double) blockposition.getY();
 +        double d2 = (double) blockposition.getZ();
 +
-+        world.makeSound(d0 + 0.5D, d1 + 0.5D, d2 + 0.5D, "random.fizz", 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
++        world.a((EntityHuman) null, blockposition, SoundEffects.db, SoundCategory.BLOCKS, 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
 +
 +        for (int i = 0; i < 8; ++i) {
 +            world.addParticle(EnumParticle.SMOKE_LARGE, d0 + Math.random(), d1 + 1.2D, d2 + Math.random(), 0.0D, 0.0D, 0.0D, new int[0]);
@@ -1620,278 +1500,12 @@ index 0000000..b610450
 +        }
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-new file mode 100644
-index 0000000..2bd5499
---- /dev/null
-+++ b/src/main/java/net/minecraft/server/BlockPosition.java
-@@ -0,0 +1,260 @@
-+package net.minecraft.server;
-+
-+import com.google.common.collect.AbstractIterator;
-+import java.util.Iterator;
-+
-+public class BlockPosition extends BaseBlockPosition {
-+
-+    public static final BlockPosition ZERO = new BlockPosition(0, 0, 0);
-+    private static final int c = 1 + MathHelper.c(MathHelper.b(30000000));
-+    private static final int d = BlockPosition.c;
-+    private static final int e = 64 - BlockPosition.c - BlockPosition.d;
-+    private static final int f = 0 + BlockPosition.d;
-+    private static final int g = BlockPosition.f + BlockPosition.e;
-+    private static final long h = (1L << BlockPosition.c) - 1L;
-+    private static final long i = (1L << BlockPosition.e) - 1L;
-+    private static final long j = (1L << BlockPosition.d) - 1L;
-+
-+    public BlockPosition(int i, int j, int k) {
-+        super(i, j, k);
-+    }
-+
-+    public BlockPosition(double d0, double d1, double d2) {
-+        super(d0, d1, d2);
-+    }
-+
-+    public BlockPosition(Entity entity) {
-+        this(entity.locX, entity.locY, entity.locZ);
-+    }
-+
-+    public BlockPosition(Vec3D vec3d) {
-+        this(vec3d.a, vec3d.b, vec3d.c);
-+    }
-+
-+    public BlockPosition(BaseBlockPosition baseblockposition) {
-+        this(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
-+    }
-+
-+    public BlockPosition a(double d0, double d1, double d2) {
-+        return d0 == 0.0D && d1 == 0.0D && d2 == 0.0D ? this : new BlockPosition((double) this.getX() + d0, (double) this.getY() + d1, (double) this.getZ() + d2);
-+    }
-+
-+    public BlockPosition a(int i, int j, int k) {
-+        return i == 0 && j == 0 && k == 0 ? this : new BlockPosition(this.getX() + i, this.getY() + j, this.getZ() + k);
-+    }
-+
-+    public BlockPosition a(BaseBlockPosition baseblockposition) {
-+        return baseblockposition.getX() == 0 && baseblockposition.getY() == 0 && baseblockposition.getZ() == 0 ? this : new BlockPosition(this.getX() + baseblockposition.getX(), this.getY() + baseblockposition.getY(), this.getZ() + baseblockposition.getZ());
-+    }
-+
-+    public BlockPosition b(BaseBlockPosition baseblockposition) {
-+        return baseblockposition.getX() == 0 && baseblockposition.getY() == 0 && baseblockposition.getZ() == 0 ? this : new BlockPosition(this.getX() - baseblockposition.getX(), this.getY() - baseblockposition.getY(), this.getZ() - baseblockposition.getZ());
-+    }
-+
-+    public BlockPosition up() {
-+        return this.up(1);
-+    }
-+
-+    public BlockPosition up(int i) {
-+        return this.shift(EnumDirection.UP, i);
-+    }
-+
-+    public BlockPosition down() {
-+        return this.down(1);
-+    }
-+
-+    public BlockPosition down(int i) {
-+        return this.shift(EnumDirection.DOWN, i);
-+    }
-+
-+    public BlockPosition north() {
-+        return this.north(1);
-+    }
-+
-+    public BlockPosition north(int i) {
-+        return this.shift(EnumDirection.NORTH, i);
-+    }
-+
-+    public BlockPosition south() {
-+        return this.south(1);
-+    }
-+
-+    public BlockPosition south(int i) {
-+        return this.shift(EnumDirection.SOUTH, i);
-+    }
-+
-+    public BlockPosition west() {
-+        return this.west(1);
-+    }
-+
-+    public BlockPosition west(int i) {
-+        return this.shift(EnumDirection.WEST, i);
-+    }
-+
-+    public BlockPosition east() {
-+        return this.east(1);
-+    }
-+
-+    public BlockPosition east(int i) {
-+        return this.shift(EnumDirection.EAST, i);
-+    }
-+
-+    public BlockPosition shift(EnumDirection enumdirection) {
-+        return this.shift(enumdirection, 1);
-+    }
-+
-+    public BlockPosition shift(EnumDirection enumdirection, int i) {
-+        return i == 0 ? this : new BlockPosition(this.getX() + enumdirection.getAdjacentX() * i, this.getY() + enumdirection.getAdjacentY() * i, this.getZ() + enumdirection.getAdjacentZ() * i);
-+    }
-+
-+    public BlockPosition c(BaseBlockPosition baseblockposition) {
-+        return new BlockPosition(this.getY() * baseblockposition.getZ() - this.getZ() * baseblockposition.getY(), this.getZ() * baseblockposition.getX() - this.getX() * baseblockposition.getZ(), this.getX() * baseblockposition.getY() - this.getY() * baseblockposition.getX());
-+    }
-+
-+    public long asLong() {
-+        return ((long) this.getX() & BlockPosition.h) << BlockPosition.g | ((long) this.getY() & BlockPosition.i) << BlockPosition.f | ((long) this.getZ() & BlockPosition.j) << 0;
-+    }
-+
-+    public static BlockPosition fromLong(long i) {
-+        int j = (int) (i << 64 - BlockPosition.g - BlockPosition.c >> 64 - BlockPosition.c);
-+        int k = (int) (i << 64 - BlockPosition.f - BlockPosition.e >> 64 - BlockPosition.e);
-+        int l = (int) (i << 64 - BlockPosition.d >> 64 - BlockPosition.d);
-+
-+        return new BlockPosition(j, k, l);
-+    }
-+
-+    public static Iterable<BlockPosition> a(BlockPosition blockposition, BlockPosition blockposition1) {
-+        final BlockPosition blockposition2 = new BlockPosition(Math.min(blockposition.getX(), blockposition1.getX()), Math.min(blockposition.getY(), blockposition1.getY()), Math.min(blockposition.getZ(), blockposition1.getZ()));
-+        final BlockPosition blockposition3 = new BlockPosition(Math.max(blockposition.getX(), blockposition1.getX()), Math.max(blockposition.getY(), blockposition1.getY()), Math.max(blockposition.getZ(), blockposition1.getZ()));
-+
-+        return new Iterable() {
-+            public Iterator<BlockPosition> iterator() {
-+                return new AbstractIterator() {
-+                    private BlockPosition b = null;
-+
-+                    protected BlockPosition a() {
-+                        if (this.b == null) {
-+                            this.b = blockposition;
-+                            return this.b;
-+                        } else if (this.b.equals(blockposition1)) {
-+                            return (BlockPosition) this.endOfData();
-+                        } else {
-+                            int i = this.b.getX();
-+                            int j = this.b.getY();
-+                            int k = this.b.getZ();
-+
-+                            if (i < blockposition1.getX()) {
-+                                ++i;
-+                            } else if (j < blockposition1.getY()) {
-+                                i = blockposition.getX();
-+                                ++j;
-+                            } else if (k < blockposition1.getZ()) {
-+                                i = blockposition.getX();
-+                                j = blockposition.getY();
-+                                ++k;
-+                            }
-+
-+                            this.b = new BlockPosition(i, j, k);
-+                            return this.b;
-+                        }
-+                    }
-+
-+                    protected Object computeNext() {
-+                        return this.a();
-+                    }
-+                };
-+            }
-+        };
-+    }
-+
-+    public static Iterable<BlockPosition.MutableBlockPosition> b(BlockPosition blockposition, BlockPosition blockposition1) {
-+        final BlockPosition blockposition2 = new BlockPosition(Math.min(blockposition.getX(), blockposition1.getX()), Math.min(blockposition.getY(), blockposition1.getY()), Math.min(blockposition.getZ(), blockposition1.getZ()));
-+        final BlockPosition blockposition3 = new BlockPosition(Math.max(blockposition.getX(), blockposition1.getX()), Math.max(blockposition.getY(), blockposition1.getY()), Math.max(blockposition.getZ(), blockposition1.getZ()));
-+
-+        return new Iterable() {
-+            public Iterator<BlockPosition.MutableBlockPosition> iterator() {
-+                return new AbstractIterator() {
-+                    private BlockPosition.MutableBlockPosition b = null;
-+
-+                    protected BlockPosition.MutableBlockPosition a() {
-+                        if (this.b == null) {
-+                            this.b = new BlockPosition.MutableBlockPosition(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-+                            return this.b;
-+                        } else if (this.b.equals(blockposition1)) {
-+                            return (BlockPosition.MutableBlockPosition) this.endOfData();
-+                        } else {
-+                            int i = this.b.getX();
-+                            int j = this.b.getY();
-+                            int k = this.b.getZ();
-+
-+                            if (i < blockposition1.getX()) {
-+                                ++i;
-+                            } else if (j < blockposition1.getY()) {
-+                                i = blockposition.getX();
-+                                ++j;
-+                            } else if (k < blockposition1.getZ()) {
-+                                i = blockposition.getX();
-+                                j = blockposition.getY();
-+                                ++k;
-+                            }
-+
-+                            this.b.c = i;
-+                            this.b.d = j;
-+                            this.b.e = k;
-+                            return this.b;
-+                        }
-+                    }
-+
-+                    protected Object computeNext() {
-+                        return this.a();
-+                    }
-+                };
-+            }
-+        };
-+    }
-+
-+    public BaseBlockPosition d(BaseBlockPosition baseblockposition) {
-+        return this.c(baseblockposition);
-+    }
-+
-+    public static final class MutableBlockPosition extends BlockPosition {
-+
-+        private int c;
-+        private int d;
-+        private int e;
-+
-+        public MutableBlockPosition() {
-+            this(0, 0, 0);
-+        }
-+
-+        public MutableBlockPosition(int i, int j, int k) {
-+            super(0, 0, 0);
-+            this.c = i;
-+            this.d = j;
-+            this.e = k;
-+        }
-+
-+        public int getX() {
-+            return this.c;
-+        }
-+
-+        public int getY() {
-+            return this.d;
-+        }
-+
-+        public int getZ() {
-+            return this.e;
-+        }
-+
-+        public BlockPosition.MutableBlockPosition c(int i, int j, int k) {
-+            this.c = i;
-+            this.d = j;
-+            this.e = k;
-+            return this;
-+        }
-+
-+        public BaseBlockPosition d(BaseBlockPosition baseblockposition) {
-+            return super.c(baseblockposition);
-+        }
-+    }
-+}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderFlat.java b/src/main/java/net/minecraft/server/ChunkProviderFlat.java
 new file mode 100644
-index 0000000..d1e10c6
+index 0000000..17e0b8e
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/ChunkProviderFlat.java
-@@ -0,0 +1,244 @@
+@@ -0,0 +1,214 @@
 +package net.minecraft.server;
 +
 +import com.google.common.collect.Lists;
@@ -1900,10 +1514,10 @@ index 0000000..d1e10c6
 +import java.util.Map;
 +import java.util.Random;
 +
-+public class ChunkProviderFlat implements IChunkProvider {
++public class ChunkProviderFlat implements ChunkGenerator {
 +
-+    private World a;
-+    private Random b;
++    private final World a;
++    private final Random b;
 +    private final IBlockData[] c = new IBlockData[256];
 +    private final WorldGenFlatInfo d;
 +    private final List<StructureGenerator> e = Lists.newArrayList();
@@ -1981,7 +1595,7 @@ index 0000000..d1e10c6
 +        }
 +
 +        world.b(j);
-+        this.f = flag1 ? false : this.d.b().containsKey("decoration");
++        this.f = flag1 && this.d.a() != BiomeBase.a(Biomes.P) ? false : this.d.b().containsKey("decoration");
 +    }
 +
 +    public Chunk getOrCreateChunk(int i, int j) {
@@ -2006,7 +1620,7 @@ index 0000000..d1e10c6
 +        while (iterator.hasNext()) {
 +            WorldGenBase worldgenbase = (WorldGenBase) iterator.next();
 +
-+            worldgenbase.a(this, this.a, i, j, chunksnapshot);
++            worldgenbase.a(this.a, i, j, chunksnapshot);
 +        }
 +
 +        Chunk chunk = new Chunk(this.a, chunksnapshot, i, j);
@@ -2014,18 +1628,14 @@ index 0000000..d1e10c6
 +        byte[] abyte = chunk.getBiomeIndex();
 +
 +        for (k = 0; k < abyte.length; ++k) {
-+            abyte[k] = (byte) abiomebase[k].id;
++            abyte[k] = (byte) BiomeBase.a(abiomebase[k]);
 +        }
 +
 +        chunk.initLighting();
 +        return chunk;
 +    }
 +
-+    public boolean isChunkLoaded(int i, int j) {
-+        return true;
-+    }
-+
-+    public void getChunkAt(IChunkProvider ichunkprovider, int i, int j) {
++    public void recreateStructures(int i, int j) {
 +        int k = i * 16;
 +        int l = j * 16;
 +        BlockPosition blockposition = new BlockPosition(k, 0, l);
@@ -2056,7 +1666,7 @@ index 0000000..d1e10c6
 +        if (this.i != null && !flag && this.b.nextInt(8) == 0) {
 +            BlockPosition blockposition1 = blockposition.a(this.b.nextInt(16) + 8, this.b.nextInt(this.b.nextInt(248) + 8), this.b.nextInt(16) + 8);
 +
-+            if (blockposition1.getY() < this.a.F() || this.b.nextInt(10) == 0) {
++            if (blockposition1.getY() < this.a.K() || this.b.nextInt(10) == 0) {
 +                this.i.generate(this.a, this.b, blockposition1);
 +            }
 +        }
@@ -2073,26 +1683,8 @@ index 0000000..d1e10c6
 +
 +    }
 +
-+    public boolean a(IChunkProvider ichunkprovider, Chunk chunk, int i, int j) {
++    public boolean a(Chunk chunk, int i, int j) {
 +        return false;
-+    }
-+
-+    public boolean saveChunks(boolean flag, IProgressUpdate iprogressupdate) {
-+        return true;
-+    }
-+
-+    public void c() {}
-+
-+    public boolean unloadChunks() {
-+        return false;
-+    }
-+
-+    public boolean canSave() {
-+        return true;
-+    }
-+
-+    public String getName() {
-+        return "FlatLevelSource";
 +    }
 +
 +    public List<BiomeBase.BiomeMeta> getMobsFor(EnumCreatureType enumcreaturetype, BlockPosition blockposition) {
@@ -2117,109 +1709,102 @@ index 0000000..d1e10c6
 +        return null;
 +    }
 +
-+    public int getLoadedChunks() {
-+        return 0;
-+    }
-+
 +    public void recreateStructures(Chunk chunk, int i, int j) {
 +        Iterator iterator = this.e.iterator();
 +
 +        while (iterator.hasNext()) {
 +            StructureGenerator structuregenerator = (StructureGenerator) iterator.next();
 +
-+            structuregenerator.a(this, this.a, i, j, (ChunkSnapshot) null);
++            structuregenerator.a(this.a, i, j, (ChunkSnapshot) null);
 +        }
 +
-+    }
-+
-+    public Chunk getChunkAt(BlockPosition blockposition) {
-+        return this.getOrCreateChunk(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderGenerate.java b/src/main/java/net/minecraft/server/ChunkProviderGenerate.java
 new file mode 100644
-index 0000000..e0be3c1
+index 0000000..88d0374
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/ChunkProviderGenerate.java
-@@ -0,0 +1,472 @@
+@@ -0,0 +1,449 @@
 +package net.minecraft.server;
 +
 +import java.util.List;
 +import java.util.Random;
 +
-+public class ChunkProviderGenerate implements IChunkProvider {
++public class ChunkProviderGenerate implements ChunkGenerator {
 +
-+    private Random h;
-+    private NoiseGeneratorOctaves i;
-+    private NoiseGeneratorOctaves j;
-+    private NoiseGeneratorOctaves k;
-+    private NoiseGenerator3 l;
-+    public NoiseGeneratorOctaves a;
++    protected static final IBlockData a = Blocks.STONE.getBlockData();
++    private final Random i;
++    private final NoiseGeneratorOctaves j;
++    private final NoiseGeneratorOctaves k;
++    private final NoiseGeneratorOctaves l;
++    private final NoiseGenerator3 m;
 +    public NoiseGeneratorOctaves b;
 +    public NoiseGeneratorOctaves c;
-+    private World m;
-+    private final boolean n;
-+    private WorldType o;
-+    private final double[] p;
-+    private final float[] q;
-+    private CustomWorldSettingsFinal r;
-+    private Block s;
-+    private double[] t;
-+    private WorldGenBase u;
-+    private WorldGenStronghold v;
-+    private WorldGenVillage w;
-+    private WorldGenMineshaft x;
-+    private WorldGenLargeFeature y;
-+    private WorldGenBase z;
-+    private WorldGenMonument A;
-+    private BiomeBase[] B;
-+    double[] d;
++    public NoiseGeneratorOctaves d;
++    private final World n;
++    private final boolean o;
++    private final WorldType p;
++    private final double[] q;
++    private final float[] r;
++    private CustomWorldSettingsFinal s;
++    private IBlockData t;
++    private double[] u;
++    private final WorldGenBase v;
++    private final WorldGenStronghold w;
++    private final WorldGenVillage x;
++    private final WorldGenMineshaft y;
++    private final WorldGenLargeFeature z;
++    private final WorldGenBase A;
++    private final WorldGenMonument B;
++    private BiomeBase[] C;
 +    double[] e;
 +    double[] f;
 +    double[] g;
++    double[] h;
 +
 +    public ChunkProviderGenerate(World world, long i, boolean flag, String s) {
-+        this.s = Blocks.WATER;
-+        this.t = new double[256];
-+        this.u = new WorldGenCaves();
-+        this.v = new WorldGenStronghold();
-+        this.w = new WorldGenVillage();
-+        this.x = new WorldGenMineshaft();
-+        this.y = new WorldGenLargeFeature();
-+        this.z = new WorldGenCanyon();
-+        this.A = new WorldGenMonument();
-+        this.m = world;
-+        this.n = flag;
-+        this.o = world.getWorldData().getType();
-+        this.h = new Random(i);
-+        this.i = new NoiseGeneratorOctaves(this.h, 16);
-+        this.j = new NoiseGeneratorOctaves(this.h, 16);
-+        this.k = new NoiseGeneratorOctaves(this.h, 8);
-+        this.l = new NoiseGenerator3(this.h, 4);
-+        this.a = new NoiseGeneratorOctaves(this.h, 10);
-+        this.b = new NoiseGeneratorOctaves(this.h, 16);
-+        this.c = new NoiseGeneratorOctaves(this.h, 8);
-+        this.p = new double[825];
-+        this.q = new float[25];
++        this.t = Blocks.WATER.getBlockData();
++        this.u = new double[256];
++        this.v = new WorldGenCaves();
++        this.w = new WorldGenStronghold();
++        this.x = new WorldGenVillage();
++        this.y = new WorldGenMineshaft();
++        this.z = new WorldGenLargeFeature();
++        this.A = new WorldGenCanyon();
++        this.B = new WorldGenMonument();
++        this.n = world;
++        this.o = flag;
++        this.p = world.getWorldData().getType();
++        this.i = new Random(i);
++        this.j = new NoiseGeneratorOctaves(this.i, 16);
++        this.k = new NoiseGeneratorOctaves(this.i, 16);
++        this.l = new NoiseGeneratorOctaves(this.i, 8);
++        this.m = new NoiseGenerator3(this.i, 4);
++        this.b = new NoiseGeneratorOctaves(this.i, 10);
++        this.c = new NoiseGeneratorOctaves(this.i, 16);
++        this.d = new NoiseGeneratorOctaves(this.i, 8);
++        this.q = new double[825];
++        this.r = new float[25];
 +
 +        for (int j = -2; j <= 2; ++j) {
 +            for (int k = -2; k <= 2; ++k) {
 +                float f = 10.0F / MathHelper.c((float) (j * j + k * k) + 0.2F);
 +
-+                this.q[j + 2 + (k + 2) * 5] = f;
++                this.r[j + 2 + (k + 2) * 5] = f;
 +            }
 +        }
 +
 +        if (s != null) {
-+            this.r = CustomWorldSettingsFinal.CustomWorldSettings.a(s).b();
-+            this.s = this.r.E ? Blocks.LAVA : Blocks.WATER;
-+            world.b(this.r.q);
++            this.s = CustomWorldSettingsFinal.CustomWorldSettings.a(s).b();
++            this.t = this.s.E ? Blocks.LAVA.getBlockData() : Blocks.WATER.getBlockData();
++            world.b(this.s.q);
 +        }
 +
 +    }
 +
 +    public void a(int i, int j, ChunkSnapshot chunksnapshot) {
-+        this.B = this.m.getWorldChunkManager().getBiomes(this.B, i * 4 - 2, j * 4 - 2, 10, 10);
++        this.C = this.n.getWorldChunkManager().getBiomes(this.C, i * 4 - 2, j * 4 - 2, 10, 10);
 +        this.a(i * 4, 0, j * 4);
 +
 +        for (int k = 0; k < 4; ++k) {
@@ -2234,14 +1819,14 @@ index 0000000..e0be3c1
 +
 +                for (int k2 = 0; k2 < 32; ++k2) {
 +                    double d0 = 0.125D;
-+                    double d1 = this.p[k1 + k2];
-+                    double d2 = this.p[l1 + k2];
-+                    double d3 = this.p[i2 + k2];
-+                    double d4 = this.p[j2 + k2];
-+                    double d5 = (this.p[k1 + k2 + 1] - d1) * d0;
-+                    double d6 = (this.p[l1 + k2 + 1] - d2) * d0;
-+                    double d7 = (this.p[i2 + k2 + 1] - d3) * d0;
-+                    double d8 = (this.p[j2 + k2 + 1] - d4) * d0;
++                    double d1 = this.q[k1 + k2];
++                    double d2 = this.q[l1 + k2];
++                    double d3 = this.q[i2 + k2];
++                    double d4 = this.q[j2 + k2];
++                    double d5 = (this.q[k1 + k2 + 1] - d1) * d0;
++                    double d6 = (this.q[l1 + k2 + 1] - d2) * d0;
++                    double d7 = (this.q[i2 + k2 + 1] - d3) * d0;
++                    double d8 = (this.q[j2 + k2 + 1] - d4) * d0;
 +
 +                    for (int l2 = 0; l2 < 8; ++l2) {
 +                        double d9 = 0.25D;
@@ -2257,9 +1842,9 @@ index 0000000..e0be3c1
 +
 +                            for (int j3 = 0; j3 < 4; ++j3) {
 +                                if ((d16 += d15) > 0.0D) {
-+                                    chunksnapshot.a(k * 4 + i3, k2 * 8 + l2, j1 * 4 + j3, Blocks.STONE.getBlockData());
-+                                } else if (k2 * 8 + l2 < this.r.q) {
-+                                    chunksnapshot.a(k * 4 + i3, k2 * 8 + l2, j1 * 4 + j3, this.s.getBlockData());
++                                    chunksnapshot.a(k * 4 + i3, k2 * 8 + l2, j1 * 4 + j3, ChunkProviderGenerate.a);
++                                } else if (k2 * 8 + l2 < this.s.q) {
++                                    chunksnapshot.a(k * 4 + i3, k2 * 8 + l2, j1 * 4 + j3, this.t);
 +                                }
 +                            }
 +
@@ -2281,58 +1866,60 @@ index 0000000..e0be3c1
 +    public void a(int i, int j, ChunkSnapshot chunksnapshot, BiomeBase[] abiomebase) {
 +        double d0 = 0.03125D;
 +
-+        this.t = this.l.a(this.t, (double) (i * 16), (double) (j * 16), 16, 16, d0 * 2.0D, d0 * 2.0D, 1.0D);
++        this.u = this.m.a(this.u, (double) (i * 16), (double) (j * 16), 16, 16, d0 * 2.0D, d0 * 2.0D, 1.0D);
 +
 +        for (int k = 0; k < 16; ++k) {
 +            for (int l = 0; l < 16; ++l) {
 +                BiomeBase biomebase = abiomebase[l + k * 16];
 +
-+                biomebase.a(this.m, this.h, chunksnapshot, i * 16 + k, j * 16 + l, this.t[l + k * 16]);
++                biomebase.a(this.n, this.i, chunksnapshot, i * 16 + k, j * 16 + l, this.u[l + k * 16]);
 +            }
 +        }
 +
 +    }
 +
 +    public Chunk getOrCreateChunk(int i, int j) {
-+        this.h.setSeed((long) i * 341873128712L + (long) j * 132897987541L);
++        this.i.setSeed((long) i * 341873128712L + (long) j * 132897987541L);
 +        ChunkSnapshot chunksnapshot = new ChunkSnapshot();
 +
 +        this.a(i, j, chunksnapshot);
-+        this.B = this.m.getWorldChunkManager().getBiomeBlock(this.B, i * 16, j * 16, 16, 16);
-+        this.a(i, j, chunksnapshot, this.B);
-+        if (this.r.r) {
-+            this.u.a(this, this.m, i, j, chunksnapshot);
++        this.C = this.n.getWorldChunkManager().getBiomeBlock(this.C, i * 16, j * 16, 16, 16);
++        this.a(i, j, chunksnapshot, this.C);
++        if (this.s.r) {
++            this.v.a(this.n, i, j, chunksnapshot);
 +        }
 +
-+        if (this.r.z) {
-+            this.z.a(this, this.m, i, j, chunksnapshot);
++        if (this.s.z) {
++            this.A.a(this.n, i, j, chunksnapshot);
 +        }
 +
-+        if (this.r.w && this.n) {
-+            this.x.a(this, this.m, i, j, chunksnapshot);
++        if (this.o) {
++            if (this.s.w) {
++                this.y.a(this.n, i, j, chunksnapshot);
++            }
++
++            if (this.s.v) {
++                this.x.a(this.n, i, j, chunksnapshot);
++            }
++
++            if (this.s.u) {
++                this.w.a(this.n, i, j, chunksnapshot);
++            }
++
++            if (this.s.x) {
++                this.z.a(this.n, i, j, chunksnapshot);
++            }
++
++            if (this.s.y) {
++                this.B.a(this.n, i, j, chunksnapshot);
++            }
 +        }
 +
-+        if (this.r.v && this.n) {
-+            this.w.a(this, this.m, i, j, chunksnapshot);
-+        }
-+
-+        if (this.r.u && this.n) {
-+            this.v.a(this, this.m, i, j, chunksnapshot);
-+        }
-+
-+        if (this.r.x && this.n) {
-+            this.y.a(this, this.m, i, j, chunksnapshot);
-+        }
-+
-+        if (this.r.y && this.n) {
-+            this.A.a(this, this.m, i, j, chunksnapshot);
-+        }
-+
-+        Chunk chunk = new Chunk(this.m, chunksnapshot, i, j);
++        Chunk chunk = new Chunk(this.n, chunksnapshot, i, j);
 +        byte[] abyte = chunk.getBiomeIndex();
 +
 +        for (int k = 0; k < abyte.length; ++k) {
-+            abyte[k] = (byte) this.B[k].id;
++            abyte[k] = (byte) BiomeBase.a(this.C[k]);
 +        }
 +
 +        chunk.initLighting();
@@ -2340,13 +1927,13 @@ index 0000000..e0be3c1
 +    }
 +
 +    private void a(int i, int j, int k) {
-+        this.g = this.b.a(this.g, i, k, 5, 5, (double) this.r.e, (double) this.r.f, (double) this.r.g);
-+        float f = this.r.a;
-+        float f1 = this.r.b;
++        this.h = this.c.a(this.h, i, k, 5, 5, (double) this.s.e, (double) this.s.f, (double) this.s.g);
++        float f = this.s.a;
++        float f1 = this.s.b;
 +
-+        this.d = this.k.a(this.d, i, j, k, 5, 33, 5, (double) (f / this.r.h), (double) (f1 / this.r.i), (double) (f / this.r.j));
-+        this.e = this.i.a(this.e, i, j, k, 5, 33, 5, (double) f, (double) f1, (double) f);
++        this.e = this.l.a(this.e, i, j, k, 5, 33, 5, (double) (f / this.s.h), (double) (f1 / this.s.i), (double) (f / this.s.j));
 +        this.f = this.j.a(this.f, i, j, k, 5, 33, 5, (double) f, (double) f1, (double) f);
++        this.g = this.k.a(this.g, i, j, k, 5, 33, 5, (double) f, (double) f1, (double) f);
 +        boolean flag = false;
 +        boolean flag1 = false;
 +        int l = 0;
@@ -2358,22 +1945,22 @@ index 0000000..e0be3c1
 +                float f3 = 0.0F;
 +                float f4 = 0.0F;
 +                byte b0 = 2;
-+                BiomeBase biomebase = this.B[j1 + 2 + (k1 + 2) * 10];
++                BiomeBase biomebase = this.C[j1 + 2 + (k1 + 2) * 10];
 +
 +                for (int l1 = -b0; l1 <= b0; ++l1) {
 +                    for (int i2 = -b0; i2 <= b0; ++i2) {
-+                        BiomeBase biomebase1 = this.B[j1 + l1 + 2 + (k1 + i2 + 2) * 10];
-+                        float f5 = this.r.n + biomebase1.an * this.r.m;
-+                        float f6 = this.r.p + biomebase1.ao * this.r.o;
++                        BiomeBase biomebase1 = this.C[j1 + l1 + 2 + (k1 + i2 + 2) * 10];
++                        float f5 = this.s.n + biomebase1.j() * this.s.m;
++                        float f6 = this.s.p + biomebase1.m() * this.s.o;
 +
-+                        if (this.o == WorldType.AMPLIFIED && f5 > 0.0F) {
++                        if (this.p == WorldType.AMPLIFIED && f5 > 0.0F) {
 +                            f5 = 1.0F + f5 * 2.0F;
 +                            f6 = 1.0F + f6 * 4.0F;
 +                        }
 +
-+                        float f7 = this.q[l1 + 2 + (i2 + 2) * 5] / (f5 + 2.0F);
++                        float f7 = this.r[l1 + 2 + (i2 + 2) * 5] / (f5 + 2.0F);
 +
-+                        if (biomebase1.an > biomebase.an) {
++                        if (biomebase1.j() > biomebase.j()) {
 +                            f7 /= 2.0F;
 +                        }
 +
@@ -2387,7 +1974,7 @@ index 0000000..e0be3c1
 +                f3 /= f4;
 +                f2 = f2 * 0.9F + 0.1F;
 +                f3 = (f3 * 4.0F - 1.0F) / 8.0F;
-+                double d0 = this.g[i1] / 8000.0D;
++                double d0 = this.h[i1] / 8000.0D;
 +
 +                if (d0 < 0.0D) {
 +                    d0 = -d0 * 0.3D;
@@ -2415,19 +2002,19 @@ index 0000000..e0be3c1
 +                double d2 = (double) f2;
 +
 +                d1 += d0 * 0.2D;
-+                d1 = d1 * (double) this.r.k / 8.0D;
-+                double d3 = (double) this.r.k + d1 * 4.0D;
++                d1 = d1 * (double) this.s.k / 8.0D;
++                double d3 = (double) this.s.k + d1 * 4.0D;
 +
 +                for (int j2 = 0; j2 < 33; ++j2) {
-+                    double d4 = ((double) j2 - d3) * (double) this.r.l * 128.0D / 256.0D / d2;
++                    double d4 = ((double) j2 - d3) * (double) this.s.l * 128.0D / 256.0D / d2;
 +
 +                    if (d4 < 0.0D) {
 +                        d4 *= 4.0D;
 +                    }
 +
-+                    double d5 = this.e[l] / (double) this.r.d;
-+                    double d6 = this.f[l] / (double) this.r.c;
-+                    double d7 = (this.d[l] / 10.0D + 1.0D) / 2.0D;
++                    double d5 = this.f[l] / (double) this.s.d;
++                    double d6 = this.g[l] / (double) this.s.c;
++                    double d7 = (this.e[l] / 10.0D + 1.0D) / 2.0D;
 +                    double d8 = MathHelper.b(d5, d6, d7) - d4;
 +
 +                    if (j2 > 29) {
@@ -2436,7 +2023,7 @@ index 0000000..e0be3c1
 +                        d8 = d8 * (1.0D - d9) + -10.0D * d9;
 +                    }
 +
-+                    this.p[l] = d8;
++                    this.q[l] = d8;
 +                    ++l;
 +                }
 +            }
@@ -2444,90 +2031,88 @@ index 0000000..e0be3c1
 +
 +    }
 +
-+    public boolean isChunkLoaded(int i, int j) {
-+        return true;
-+    }
-+
-+    public void getChunkAt(IChunkProvider ichunkprovider, int i, int j) {
++    public void recreateStructures(int i, int j) {
 +        BlockFalling.instaFall = true;
 +        int k = i * 16;
 +        int l = j * 16;
 +        BlockPosition blockposition = new BlockPosition(k, 0, l);
-+        BiomeBase biomebase = this.m.getBiome(blockposition.a(16, 0, 16));
++        BiomeBase biomebase = this.n.getBiome(blockposition.a(16, 0, 16));
 +
-+        this.h.setSeed(this.m.getSeed());
-+        long i1 = this.h.nextLong() / 2L * 2L + 1L;
-+        long j1 = this.h.nextLong() / 2L * 2L + 1L;
++        this.i.setSeed(this.n.getSeed());
++        long i1 = this.i.nextLong() / 2L * 2L + 1L;
++        long j1 = this.i.nextLong() / 2L * 2L + 1L;
 +
-+        this.h.setSeed((long) i * i1 + (long) j * j1 ^ this.m.getSeed());
++        this.i.setSeed((long) i * i1 + (long) j * j1 ^ this.n.getSeed());
 +        boolean flag = false;
 +        ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
 +
-+        if (this.r.w && this.n) {
-+            this.x.a(this.m, this.h, chunkcoordintpair);
-+        }
++        if (this.o) {
++            if (this.s.w) {
++                this.y.a(this.n, this.i, chunkcoordintpair);
++            }
 +
-+        if (this.r.v && this.n) {
-+            flag = this.w.a(this.m, this.h, chunkcoordintpair);
-+        }
++            if (this.s.v) {
++                flag = this.x.a(this.n, this.i, chunkcoordintpair);
++            }
 +
-+        if (this.r.u && this.n) {
-+            this.v.a(this.m, this.h, chunkcoordintpair);
-+        }
++            if (this.s.u) {
++                this.w.a(this.n, this.i, chunkcoordintpair);
++            }
 +
-+        if (this.r.x && this.n) {
-+            this.y.a(this.m, this.h, chunkcoordintpair);
-+        }
++            if (this.s.x) {
++                this.z.a(this.n, this.i, chunkcoordintpair);
++            }
 +
-+        if (this.r.y && this.n) {
-+            this.A.a(this.m, this.h, chunkcoordintpair);
++            if (this.s.y) {
++                this.B.a(this.n, this.i, chunkcoordintpair);
++            }
 +        }
 +
 +        int k1;
 +        int l1;
 +        int i2;
 +
-+        if (biomebase != BiomeBase.DESERT && biomebase != BiomeBase.DESERT_HILLS && this.r.A && !flag && this.h.nextInt(this.r.B) == 0) {
-+            k1 = this.h.nextInt(16) + 8;
-+            l1 = this.h.nextInt(256);
-+            i2 = this.h.nextInt(16) + 8;
-+            (new WorldGenLakes(Blocks.WATER)).generate(this.m, this.h, blockposition.a(k1, l1, i2));
++        if (biomebase != Biomes.d && biomebase != Biomes.s && this.s.A && !flag && this.i.nextInt(this.s.B) == 0) {
++            k1 = this.i.nextInt(16) + 8;
++            l1 = this.i.nextInt(256);
++            i2 = this.i.nextInt(16) + 8;
++            (new WorldGenLakes(Blocks.WATER)).generate(this.n, this.i, blockposition.a(k1, l1, i2));
 +        }
 +
-+        if (!flag && this.h.nextInt(this.r.D / 10) == 0 && this.r.C) {
-+            k1 = this.h.nextInt(16) + 8;
-+            l1 = this.h.nextInt(this.h.nextInt(248) + 8);
-+            i2 = this.h.nextInt(16) + 8;
-+            if (l1 < this.m.F() || this.h.nextInt(this.r.D / 8) == 0) {
-+                (new WorldGenLakes(Blocks.LAVA)).generate(this.m, this.h, blockposition.a(k1, l1, i2));
++        if (!flag && this.i.nextInt(this.s.D / 10) == 0 && this.s.C) {
++            k1 = this.i.nextInt(16) + 8;
++            l1 = this.i.nextInt(this.i.nextInt(248) + 8);
++            i2 = this.i.nextInt(16) + 8;
++            if (l1 < this.n.K() || this.i.nextInt(this.s.D / 8) == 0) {
++                (new WorldGenLakes(Blocks.LAVA)).generate(this.n, this.i, blockposition.a(k1, l1, i2));
 +            }
 +        }
 +
-+        if (this.r.s) {
-+            for (k1 = 0; k1 < this.r.t; ++k1) {
-+                l1 = this.h.nextInt(16) + 8;
-+                i2 = this.h.nextInt(256);
-+                int j2 = this.h.nextInt(16) + 8;
++        if (this.s.s) {
++            for (k1 = 0; k1 < this.s.t; ++k1) {
++                l1 = this.i.nextInt(16) + 8;
++                i2 = this.i.nextInt(256);
++                int j2 = this.i.nextInt(16) + 8;
 +
-+                (new WorldGenDungeons()).generate(this.m, this.h, blockposition.a(l1, i2, j2));
++                (new WorldGenDungeons()).generate(this.n, this.i, blockposition.a(l1, i2, j2));
 +            }
 +        }
 +
-+        biomebase.a(this.m, this.h, new BlockPosition(k, 0, l));
-+        SpawnerCreature.a(this.m, biomebase, k + 8, l + 8, 16, 16, this.h);
++        biomebase.a(this.n, this.i, new BlockPosition(k, 0, l));
++        SpawnerCreature.a(this.n, biomebase, k + 8, l + 8, 16, 16, this.i);
 +        blockposition = blockposition.a(8, 0, 8);
 +
 +        for (k1 = 0; k1 < 16; ++k1) {
 +            for (l1 = 0; l1 < 16; ++l1) {
-+                BlockPosition blockposition1 = this.m.q(blockposition.a(k1, 0, l1));
++                BlockPosition blockposition1 = this.n.p(blockposition.a(k1, 0, l1));
 +                BlockPosition blockposition2 = blockposition1.down();
 +
-+                if (this.m.v(blockposition2)) {
-+                    this.m.setTypeAndData(blockposition2, Blocks.ICE.getBlockData(), 2);
++                if (this.n.u(blockposition2)) {
++                    this.n.setTypeAndData(blockposition2, Blocks.ICE.getBlockData(), 2);
 +                }
 +
-+                if (this.m.f(blockposition1, true)) {
-+                    this.m.setTypeAndData(blockposition1, Blocks.SNOW_LAYER.getBlockData(), 2);
++                if (this.n.f(blockposition1, true)) {
++                    this.n.setTypeAndData(blockposition1, Blocks.SNOW_LAYER.getBlockData(), 2);
 +                }
 +            }
 +        }
@@ -2535,44 +2120,26 @@ index 0000000..e0be3c1
 +        BlockFalling.instaFall = false;
 +    }
 +
-+    public boolean a(IChunkProvider ichunkprovider, Chunk chunk, int i, int j) {
++    public boolean a(Chunk chunk, int i, int j) {
 +        boolean flag = false;
 +
-+        if (this.r.y && this.n && chunk.w() < 3600L) {
-+            flag |= this.A.a(this.m, this.h, new ChunkCoordIntPair(i, j));
++        if (this.s.y && this.o && chunk.x() < 3600L) {
++            flag |= this.B.a(this.n, this.i, new ChunkCoordIntPair(i, j));
 +        }
 +
 +        return flag;
 +    }
 +
-+    public boolean saveChunks(boolean flag, IProgressUpdate iprogressupdate) {
-+        return true;
-+    }
-+
-+    public void c() {}
-+
-+    public boolean unloadChunks() {
-+        return false;
-+    }
-+
-+    public boolean canSave() {
-+        return true;
-+    }
-+
-+    public String getName() {
-+        return "RandomLevelSource";
-+    }
-+
 +    public List<BiomeBase.BiomeMeta> getMobsFor(EnumCreatureType enumcreaturetype, BlockPosition blockposition) {
-+        BiomeBase biomebase = this.m.getBiome(blockposition);
++        BiomeBase biomebase = this.n.getBiome(blockposition);
 +
-+        if (this.n) {
-+            if (enumcreaturetype == EnumCreatureType.MONSTER && this.y.a(blockposition)) {
-+                return this.y.b();
++        if (this.o) {
++            if (enumcreaturetype == EnumCreatureType.MONSTER && this.z.a(blockposition)) {
++                return this.z.b();
 +            }
 +
-+            if (enumcreaturetype == EnumCreatureType.MONSTER && this.r.y && this.A.a(this.m, blockposition)) {
-+                return this.A.b();
++            if (enumcreaturetype == EnumCreatureType.MONSTER && this.s.y && this.B.b(this.n, blockposition)) {
++                return this.B.b();
 +            }
 +        }
 +
@@ -2580,125 +2147,125 @@ index 0000000..e0be3c1
 +    }
 +
 +    public BlockPosition findNearestMapFeature(World world, String s, BlockPosition blockposition) {
-+        return "Stronghold".equals(s) && this.v != null ? this.v.getNearestGeneratedFeature(world, blockposition) : null;
-+    }
-+
-+    public int getLoadedChunks() {
-+        return 0;
++        return "Stronghold".equals(s) && this.w != null ? this.w.getNearestGeneratedFeature(world, blockposition) : null;
 +    }
 +
 +    public void recreateStructures(Chunk chunk, int i, int j) {
-+        if (this.r.w && this.n) {
-+            this.x.a(this, this.m, i, j, (ChunkSnapshot) null);
++        if (this.o) {
++            if (this.s.w) {
++                this.y.a(this.n, i, j, (ChunkSnapshot) null);
++            }
++
++            if (this.s.v) {
++                this.x.a(this.n, i, j, (ChunkSnapshot) null);
++            }
++
++            if (this.s.u) {
++                this.w.a(this.n, i, j, (ChunkSnapshot) null);
++            }
++
++            if (this.s.x) {
++                this.z.a(this.n, i, j, (ChunkSnapshot) null);
++            }
++
++            if (this.s.y) {
++                this.B.a(this.n, i, j, (ChunkSnapshot) null);
++            }
 +        }
 +
-+        if (this.r.v && this.n) {
-+            this.w.a(this, this.m, i, j, (ChunkSnapshot) null);
-+        }
-+
-+        if (this.r.u && this.n) {
-+            this.v.a(this, this.m, i, j, (ChunkSnapshot) null);
-+        }
-+
-+        if (this.r.x && this.n) {
-+            this.y.a(this, this.m, i, j, (ChunkSnapshot) null);
-+        }
-+
-+        if (this.r.y && this.n) {
-+            this.A.a(this, this.m, i, j, (ChunkSnapshot) null);
-+        }
-+
-+    }
-+
-+    public Chunk getChunkAt(BlockPosition blockposition) {
-+        return this.getOrCreateChunk(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderHell.java b/src/main/java/net/minecraft/server/ChunkProviderHell.java
 new file mode 100644
-index 0000000..2f01bbf
+index 0000000..0150efd
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/ChunkProviderHell.java
-@@ -0,0 +1,393 @@
+@@ -0,0 +1,369 @@
 +package net.minecraft.server;
 +
 +import java.util.List;
 +import java.util.Random;
 +
-+public class ChunkProviderHell implements IChunkProvider {
++public class ChunkProviderHell implements ChunkGenerator {
 +
-+    private final World h;
-+    private final boolean i;
-+    private final Random j;
-+    private double[] k = new double[256];
-+    private double[] l = new double[256];
-+    private double[] m = new double[256];
-+    private double[] n;
-+    private final NoiseGeneratorOctaves o;
-+    private final NoiseGeneratorOctaves p;
-+    private final NoiseGeneratorOctaves q;
-+    private final NoiseGeneratorOctaves r;
-+    private final NoiseGeneratorOctaves s;
-+    public final NoiseGeneratorOctaves a;
-+    public final NoiseGeneratorOctaves b;
-+    private final WorldGenFire t = new WorldGenFire();
-+    private final WorldGenLightStone1 u = new WorldGenLightStone1();
-+    private final WorldGenLightStone2 v = new WorldGenLightStone2();
-+    private final WorldGenerator w;
-+    private final WorldGenHellLava x;
-+    private final WorldGenHellLava y;
-+    private final WorldGenMushrooms z;
-+    private final WorldGenMushrooms A;
-+    private final WorldGenNether B;
-+    private final WorldGenBase C;
-+    double[] c;
-+    double[] d;
-+    double[] e;
-+    double[] f;
-+    double[] g;
++    protected static final IBlockData a = Blocks.AIR.getBlockData();
++    protected static final IBlockData b = Blocks.NETHERRACK.getBlockData();
++    protected static final IBlockData c = Blocks.BEDROCK.getBlockData();
++    protected static final IBlockData d = Blocks.LAVA.getBlockData();
++    protected static final IBlockData e = Blocks.GRAVEL.getBlockData();
++    protected static final IBlockData f = Blocks.SOUL_SAND.getBlockData();
++    private final World n;
++    private final boolean o;
++    private final Random p;
++    private double[] q = new double[256];
++    private double[] r = new double[256];
++    private double[] s = new double[256];
++    private double[] t;
++    private final NoiseGeneratorOctaves u;
++    private final NoiseGeneratorOctaves v;
++    private final NoiseGeneratorOctaves w;
++    private final NoiseGeneratorOctaves x;
++    private final NoiseGeneratorOctaves y;
++    public final NoiseGeneratorOctaves g;
++    public final NoiseGeneratorOctaves h;
++    private final WorldGenFire z = new WorldGenFire();
++    private final WorldGenLightStone1 A = new WorldGenLightStone1();
++    private final WorldGenLightStone2 B = new WorldGenLightStone2();
++    private final WorldGenerator C;
++    private final WorldGenHellLava D;
++    private final WorldGenHellLava E;
++    private final WorldGenMushrooms F;
++    private final WorldGenMushrooms G;
++    private final WorldGenNether H;
++    private final WorldGenBase I;
++    double[] i;
++    double[] j;
++    double[] k;
++    double[] l;
++    double[] m;
 +
 +    public ChunkProviderHell(World world, boolean flag, long i) {
-+        this.w = new WorldGenMinable(Blocks.QUARTZ_ORE.getBlockData(), 14, BlockPredicate.a(Blocks.NETHERRACK));
-+        this.x = new WorldGenHellLava(Blocks.FLOWING_LAVA, true);
-+        this.y = new WorldGenHellLava(Blocks.FLOWING_LAVA, false);
-+        this.z = new WorldGenMushrooms(Blocks.BROWN_MUSHROOM);
-+        this.A = new WorldGenMushrooms(Blocks.RED_MUSHROOM);
-+        this.B = new WorldGenNether();
-+        this.C = new WorldGenCavesHell();
-+        this.h = world;
-+        this.i = flag;
-+        this.j = new Random(i);
-+        this.o = new NoiseGeneratorOctaves(this.j, 16);
-+        this.p = new NoiseGeneratorOctaves(this.j, 16);
-+        this.q = new NoiseGeneratorOctaves(this.j, 8);
-+        this.r = new NoiseGeneratorOctaves(this.j, 4);
-+        this.s = new NoiseGeneratorOctaves(this.j, 4);
-+        this.a = new NoiseGeneratorOctaves(this.j, 10);
-+        this.b = new NoiseGeneratorOctaves(this.j, 16);
++        this.C = new WorldGenMinable(Blocks.QUARTZ_ORE.getBlockData(), 14, BlockPredicate.a(Blocks.NETHERRACK));
++        this.D = new WorldGenHellLava(Blocks.FLOWING_LAVA, true);
++        this.E = new WorldGenHellLava(Blocks.FLOWING_LAVA, false);
++        this.F = new WorldGenMushrooms(Blocks.BROWN_MUSHROOM);
++        this.G = new WorldGenMushrooms(Blocks.RED_MUSHROOM);
++        this.H = new WorldGenNether();
++        this.I = new WorldGenCavesHell();
++        this.n = world;
++        this.o = flag;
++        this.p = new Random(i);
++        this.u = new NoiseGeneratorOctaves(this.p, 16);
++        this.v = new NoiseGeneratorOctaves(this.p, 16);
++        this.w = new NoiseGeneratorOctaves(this.p, 8);
++        this.x = new NoiseGeneratorOctaves(this.p, 4);
++        this.y = new NoiseGeneratorOctaves(this.p, 4);
++        this.g = new NoiseGeneratorOctaves(this.p, 10);
++        this.h = new NoiseGeneratorOctaves(this.p, 16);
 +        world.b(63);
 +    }
 +
 +    public void a(int i, int j, ChunkSnapshot chunksnapshot) {
 +        byte b0 = 4;
-+        int k = this.h.F() / 2 + 1;
++        int k = this.n.K() / 2 + 1;
 +        int l = b0 + 1;
 +        byte b1 = 17;
 +        int i1 = b0 + 1;
 +
-+        this.n = this.a(this.n, i * b0, 0, j * b0, l, b1, i1);
++        this.t = this.a(this.t, i * b0, 0, j * b0, l, b1, i1);
 +
 +        for (int j1 = 0; j1 < b0; ++j1) {
 +            for (int k1 = 0; k1 < b0; ++k1) {
 +                for (int l1 = 0; l1 < 16; ++l1) {
 +                    double d0 = 0.125D;
-+                    double d1 = this.n[((j1 + 0) * i1 + k1 + 0) * b1 + l1 + 0];
-+                    double d2 = this.n[((j1 + 0) * i1 + k1 + 1) * b1 + l1 + 0];
-+                    double d3 = this.n[((j1 + 1) * i1 + k1 + 0) * b1 + l1 + 0];
-+                    double d4 = this.n[((j1 + 1) * i1 + k1 + 1) * b1 + l1 + 0];
-+                    double d5 = (this.n[((j1 + 0) * i1 + k1 + 0) * b1 + l1 + 1] - d1) * d0;
-+                    double d6 = (this.n[((j1 + 0) * i1 + k1 + 1) * b1 + l1 + 1] - d2) * d0;
-+                    double d7 = (this.n[((j1 + 1) * i1 + k1 + 0) * b1 + l1 + 1] - d3) * d0;
-+                    double d8 = (this.n[((j1 + 1) * i1 + k1 + 1) * b1 + l1 + 1] - d4) * d0;
++                    double d1 = this.t[((j1 + 0) * i1 + k1 + 0) * b1 + l1 + 0];
++                    double d2 = this.t[((j1 + 0) * i1 + k1 + 1) * b1 + l1 + 0];
++                    double d3 = this.t[((j1 + 1) * i1 + k1 + 0) * b1 + l1 + 0];
++                    double d4 = this.t[((j1 + 1) * i1 + k1 + 1) * b1 + l1 + 0];
++                    double d5 = (this.t[((j1 + 0) * i1 + k1 + 0) * b1 + l1 + 1] - d1) * d0;
++                    double d6 = (this.t[((j1 + 0) * i1 + k1 + 1) * b1 + l1 + 1] - d2) * d0;
++                    double d7 = (this.t[((j1 + 1) * i1 + k1 + 0) * b1 + l1 + 1] - d3) * d0;
++                    double d8 = (this.t[((j1 + 1) * i1 + k1 + 1) * b1 + l1 + 1] - d4) * d0;
 +
 +                    for (int i2 = 0; i2 < 8; ++i2) {
 +                        double d9 = 0.25D;
@@ -2716,11 +2283,11 @@ index 0000000..2f01bbf
 +                                IBlockData iblockdata = null;
 +
 +                                if (l1 * 8 + i2 < k) {
-+                                    iblockdata = Blocks.LAVA.getBlockData();
++                                    iblockdata = ChunkProviderHell.d;
 +                                }
 +
 +                                if (d15 > 0.0D) {
-+                                    iblockdata = Blocks.NETHERRACK.getBlockData();
++                                    iblockdata = ChunkProviderHell.b;
 +                                }
 +
 +                                int l2 = j2 + j1 * 4;
@@ -2747,48 +2314,48 @@ index 0000000..2f01bbf
 +    }
 +
 +    public void b(int i, int j, ChunkSnapshot chunksnapshot) {
-+        int k = this.h.F() + 1;
++        int k = this.n.K() + 1;
 +        double d0 = 0.03125D;
 +
-+        this.k = this.r.a(this.k, i * 16, j * 16, 0, 16, 16, 1, d0, d0, 1.0D);
-+        this.l = this.r.a(this.l, i * 16, 109, j * 16, 16, 1, 16, d0, 1.0D, d0);
-+        this.m = this.s.a(this.m, i * 16, j * 16, 0, 16, 16, 1, d0 * 2.0D, d0 * 2.0D, d0 * 2.0D);
++        this.q = this.x.a(this.q, i * 16, j * 16, 0, 16, 16, 1, d0, d0, 1.0D);
++        this.r = this.x.a(this.r, i * 16, 109, j * 16, 16, 1, 16, d0, 1.0D, d0);
++        this.s = this.y.a(this.s, i * 16, j * 16, 0, 16, 16, 1, d0 * 2.0D, d0 * 2.0D, d0 * 2.0D);
 +
 +        for (int l = 0; l < 16; ++l) {
 +            for (int i1 = 0; i1 < 16; ++i1) {
-+                boolean flag = this.k[l + i1 * 16] + this.j.nextDouble() * 0.2D > 0.0D;
-+                boolean flag1 = this.l[l + i1 * 16] + this.j.nextDouble() * 0.2D > 0.0D;
-+                int j1 = (int) (this.m[l + i1 * 16] / 3.0D + 3.0D + this.j.nextDouble() * 0.25D);
++                boolean flag = this.q[l + i1 * 16] + this.p.nextDouble() * 0.2D > 0.0D;
++                boolean flag1 = this.r[l + i1 * 16] + this.p.nextDouble() * 0.2D > 0.0D;
++                int j1 = (int) (this.s[l + i1 * 16] / 3.0D + 3.0D + this.p.nextDouble() * 0.25D);
 +                int k1 = -1;
-+                IBlockData iblockdata = Blocks.NETHERRACK.getBlockData();
-+                IBlockData iblockdata1 = Blocks.NETHERRACK.getBlockData();
++                IBlockData iblockdata = ChunkProviderHell.b;
++                IBlockData iblockdata1 = ChunkProviderHell.b;
 +
 +                for (int l1 = 127; l1 >= 0; --l1) {
-+                    if (l1 < 127 - this.j.nextInt(5) && l1 > this.j.nextInt(5)) {
++                    if (l1 < 127 - this.p.nextInt(5) && l1 > this.p.nextInt(5)) {
 +                        IBlockData iblockdata2 = chunksnapshot.a(i1, l1, l);
 +
-+                        if (iblockdata2.getBlock() != null && iblockdata2.getBlock().getMaterial() != Material.AIR) {
++                        if (iblockdata2.getBlock() != null && iblockdata2.getMaterial() != Material.AIR) {
 +                            if (iblockdata2.getBlock() == Blocks.NETHERRACK) {
 +                                if (k1 == -1) {
 +                                    if (j1 <= 0) {
-+                                        iblockdata = null;
-+                                        iblockdata1 = Blocks.NETHERRACK.getBlockData();
++                                        iblockdata = ChunkProviderHell.a;
++                                        iblockdata1 = ChunkProviderHell.b;
 +                                    } else if (l1 >= k - 4 && l1 <= k + 1) {
-+                                        iblockdata = Blocks.NETHERRACK.getBlockData();
-+                                        iblockdata1 = Blocks.NETHERRACK.getBlockData();
++                                        iblockdata = ChunkProviderHell.b;
++                                        iblockdata1 = ChunkProviderHell.b;
 +                                        if (flag1) {
-+                                            iblockdata = Blocks.GRAVEL.getBlockData();
-+                                            iblockdata1 = Blocks.NETHERRACK.getBlockData();
++                                            iblockdata = ChunkProviderHell.e;
++                                            iblockdata1 = ChunkProviderHell.b;
 +                                        }
 +
 +                                        if (flag) {
-+                                            iblockdata = Blocks.SOUL_SAND.getBlockData();
-+                                            iblockdata1 = Blocks.SOUL_SAND.getBlockData();
++                                            iblockdata = ChunkProviderHell.f;
++                                            iblockdata1 = ChunkProviderHell.f;
 +                                        }
 +                                    }
 +
-+                                    if (l1 < k && (iblockdata == null || iblockdata.getBlock().getMaterial() == Material.AIR)) {
-+                                        iblockdata = Blocks.LAVA.getBlockData();
++                                    if (l1 < k && (iblockdata == null || iblockdata.getMaterial() == Material.AIR)) {
++                                        iblockdata = ChunkProviderHell.d;
 +                                    }
 +
 +                                    k1 = j1;
@@ -2806,7 +2373,7 @@ index 0000000..2f01bbf
 +                            k1 = -1;
 +                        }
 +                    } else {
-+                        chunksnapshot.a(i1, l1, l, Blocks.BEDROCK.getBlockData());
++                        chunksnapshot.a(i1, l1, l, ChunkProviderHell.c);
 +                    }
 +                }
 +            }
@@ -2815,25 +2382,25 @@ index 0000000..2f01bbf
 +    }
 +
 +    public Chunk getOrCreateChunk(int i, int j) {
-+        this.j.setSeed((long) i * 341873128712L + (long) j * 132897987541L);
++        this.p.setSeed((long) i * 341873128712L + (long) j * 132897987541L);
 +        ChunkSnapshot chunksnapshot = new ChunkSnapshot();
 +
 +        this.a(i, j, chunksnapshot);
 +        this.b(i, j, chunksnapshot);
-+        this.C.a(this, this.h, i, j, chunksnapshot);
-+        if (this.i) {
-+            this.B.a(this, this.h, i, j, chunksnapshot);
++        this.I.a(this.n, i, j, chunksnapshot);
++        if (this.o) {
++            this.H.a(this.n, i, j, chunksnapshot);
 +        }
 +
-+        Chunk chunk = new Chunk(this.h, chunksnapshot, i, j);
-+        BiomeBase[] abiomebase = this.h.getWorldChunkManager().getBiomeBlock((BiomeBase[]) null, i * 16, j * 16, 16, 16);
++        Chunk chunk = new Chunk(this.n, chunksnapshot, i, j);
++        BiomeBase[] abiomebase = this.n.getWorldChunkManager().getBiomeBlock((BiomeBase[]) null, i * 16, j * 16, 16, 16);
 +        byte[] abyte = chunk.getBiomeIndex();
 +
 +        for (int k = 0; k < abyte.length; ++k) {
-+            abyte[k] = (byte) abiomebase[k].id;
++            abyte[k] = (byte) BiomeBase.a(abiomebase[k]);
 +        }
 +
-+        chunk.l();
++        chunk.m();
 +        return chunk;
 +    }
 +
@@ -2845,11 +2412,11 @@ index 0000000..2f01bbf
 +        double d0 = 684.412D;
 +        double d1 = 2053.236D;
 +
-+        this.f = this.a.a(this.f, i, j, k, l, 1, j1, 1.0D, 0.0D, 1.0D);
-+        this.g = this.b.a(this.g, i, j, k, l, 1, j1, 100.0D, 0.0D, 100.0D);
-+        this.c = this.q.a(this.c, i, j, k, l, i1, j1, d0 / 80.0D, d1 / 60.0D, d0 / 80.0D);
-+        this.d = this.o.a(this.d, i, j, k, l, i1, j1, d0, d1, d0);
-+        this.e = this.p.a(this.e, i, j, k, l, i1, j1, d0, d1, d0);
++        this.l = this.g.a(this.l, i, j, k, l, 1, j1, 1.0D, 0.0D, 1.0D);
++        this.m = this.h.a(this.m, i, j, k, l, 1, j1, 100.0D, 0.0D, 100.0D);
++        this.i = this.w.a(this.i, i, j, k, l, i1, j1, d0 / 80.0D, d1 / 60.0D, d0 / 80.0D);
++        this.j = this.u.a(this.j, i, j, k, l, i1, j1, d0, d1, d0);
++        this.k = this.v.a(this.k, i, j, k, l, i1, j1, d0, d1, d0);
 +        int k1 = 0;
 +        double[] adouble1 = new double[i1];
 +
@@ -2876,9 +2443,9 @@ index 0000000..2f01bbf
 +                for (int j2 = 0; j2 < i1; ++j2) {
 +                    double d4 = 0.0D;
 +                    double d5 = adouble1[j2];
-+                    double d6 = this.d[k1] / 512.0D;
-+                    double d7 = this.e[k1] / 512.0D;
-+                    double d8 = (this.c[k1] / 10.0D + 1.0D) / 2.0D;
++                    double d6 = this.j[k1] / 512.0D;
++                    double d7 = this.k[k1] / 512.0D;
++                    double d8 = (this.i[k1] / 10.0D + 1.0D) / 2.0D;
 +
 +                    if (d8 < 0.0D) {
 +                        d4 = d6;
@@ -2911,88 +2478,66 @@ index 0000000..2f01bbf
 +        return adouble;
 +    }
 +
-+    public boolean isChunkLoaded(int i, int j) {
-+        return true;
-+    }
-+
-+    public void getChunkAt(IChunkProvider ichunkprovider, int i, int j) {
++    public void recreateStructures(int i, int j) {
 +        BlockFalling.instaFall = true;
 +        BlockPosition blockposition = new BlockPosition(i * 16, 0, j * 16);
 +        ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
 +
-+        this.B.a(this.h, this.j, chunkcoordintpair);
++        this.H.a(this.n, this.p, chunkcoordintpair);
 +
 +        int k;
 +
 +        for (k = 0; k < 8; ++k) {
-+            this.y.generate(this.h, this.j, blockposition.a(this.j.nextInt(16) + 8, this.j.nextInt(120) + 4, this.j.nextInt(16) + 8));
++            this.E.generate(this.n, this.p, blockposition.a(this.p.nextInt(16) + 8, this.p.nextInt(120) + 4, this.p.nextInt(16) + 8));
 +        }
 +
-+        for (k = 0; k < this.j.nextInt(this.j.nextInt(10) + 1) + 1; ++k) {
-+            this.t.generate(this.h, this.j, blockposition.a(this.j.nextInt(16) + 8, this.j.nextInt(120) + 4, this.j.nextInt(16) + 8));
++        for (k = 0; k < this.p.nextInt(this.p.nextInt(10) + 1) + 1; ++k) {
++            this.z.generate(this.n, this.p, blockposition.a(this.p.nextInt(16) + 8, this.p.nextInt(120) + 4, this.p.nextInt(16) + 8));
 +        }
 +
-+        for (k = 0; k < this.j.nextInt(this.j.nextInt(10) + 1); ++k) {
-+            this.u.generate(this.h, this.j, blockposition.a(this.j.nextInt(16) + 8, this.j.nextInt(120) + 4, this.j.nextInt(16) + 8));
++        for (k = 0; k < this.p.nextInt(this.p.nextInt(10) + 1); ++k) {
++            this.A.generate(this.n, this.p, blockposition.a(this.p.nextInt(16) + 8, this.p.nextInt(120) + 4, this.p.nextInt(16) + 8));
 +        }
 +
 +        for (k = 0; k < 10; ++k) {
-+            this.v.generate(this.h, this.j, blockposition.a(this.j.nextInt(16) + 8, this.j.nextInt(128), this.j.nextInt(16) + 8));
++            this.B.generate(this.n, this.p, blockposition.a(this.p.nextInt(16) + 8, this.p.nextInt(128), this.p.nextInt(16) + 8));
 +        }
 +
-+        if (this.j.nextBoolean()) {
-+            this.z.generate(this.h, this.j, blockposition.a(this.j.nextInt(16) + 8, this.j.nextInt(128), this.j.nextInt(16) + 8));
++        if (this.p.nextBoolean()) {
++            this.F.generate(this.n, this.p, blockposition.a(this.p.nextInt(16) + 8, this.p.nextInt(128), this.p.nextInt(16) + 8));
 +        }
 +
-+        if (this.j.nextBoolean()) {
-+            this.A.generate(this.h, this.j, blockposition.a(this.j.nextInt(16) + 8, this.j.nextInt(128), this.j.nextInt(16) + 8));
-+        }
-+
-+        for (k = 0; k < 16; ++k) {
-+            this.w.generate(this.h, this.j, blockposition.a(this.j.nextInt(16), this.j.nextInt(108) + 10, this.j.nextInt(16)));
++        if (this.p.nextBoolean()) {
++            this.G.generate(this.n, this.p, blockposition.a(this.p.nextInt(16) + 8, this.p.nextInt(128), this.p.nextInt(16) + 8));
 +        }
 +
 +        for (k = 0; k < 16; ++k) {
-+            this.x.generate(this.h, this.j, blockposition.a(this.j.nextInt(16), this.j.nextInt(108) + 10, this.j.nextInt(16)));
++            this.C.generate(this.n, this.p, blockposition.a(this.p.nextInt(16), this.p.nextInt(108) + 10, this.p.nextInt(16)));
++        }
++
++        for (k = 0; k < 16; ++k) {
++            this.D.generate(this.n, this.p, blockposition.a(this.p.nextInt(16), this.p.nextInt(108) + 10, this.p.nextInt(16)));
 +        }
 +
 +        BlockFalling.instaFall = false;
 +    }
 +
-+    public boolean a(IChunkProvider ichunkprovider, Chunk chunk, int i, int j) {
++    public boolean a(Chunk chunk, int i, int j) {
 +        return false;
-+    }
-+
-+    public boolean saveChunks(boolean flag, IProgressUpdate iprogressupdate) {
-+        return true;
-+    }
-+
-+    public void c() {}
-+
-+    public boolean unloadChunks() {
-+        return false;
-+    }
-+
-+    public boolean canSave() {
-+        return true;
-+    }
-+
-+    public String getName() {
-+        return "HellRandomLevelSource";
 +    }
 +
 +    public List<BiomeBase.BiomeMeta> getMobsFor(EnumCreatureType enumcreaturetype, BlockPosition blockposition) {
 +        if (enumcreaturetype == EnumCreatureType.MONSTER) {
-+            if (this.B.b(blockposition)) {
-+                return this.B.b();
++            if (this.H.b(blockposition)) {
++                return this.H.b();
 +            }
 +
-+            if (this.B.a(this.h, blockposition) && this.h.getType(blockposition.down()).getBlock() == Blocks.NETHER_BRICK) {
-+                return this.B.b();
++            if (this.H.b(this.n, blockposition) && this.n.getType(blockposition.down()).getBlock() == Blocks.NETHER_BRICK) {
++                return this.H.b();
 +            }
 +        }
 +
-+        BiomeBase biomebase = this.h.getBiome(blockposition);
++        BiomeBase biomebase = this.n.getBiome(blockposition);
 +
 +        return biomebase.getMobs(enumcreaturetype);
 +    }
@@ -3001,175 +2546,204 @@ index 0000000..2f01bbf
 +        return null;
 +    }
 +
-+    public int getLoadedChunks() {
-+        return 0;
-+    }
-+
 +    public void recreateStructures(Chunk chunk, int i, int j) {
-+        this.B.a(this, this.h, i, j, (ChunkSnapshot) null);
-+    }
-+
-+    public Chunk getChunkAt(BlockPosition blockposition) {
-+        return this.getOrCreateChunk(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++        this.H.a(this.n, i, j, (ChunkSnapshot) null);
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/server/EntityMinecartFurnace.java b/src/main/java/net/minecraft/server/EntityMinecartFurnace.java
+diff --git a/src/main/java/net/minecraft/server/EntitySquid.java b/src/main/java/net/minecraft/server/EntitySquid.java
 new file mode 100644
-index 0000000..55f04b4
+index 0000000..b94444d
 --- /dev/null
-+++ b/src/main/java/net/minecraft/server/EntityMinecartFurnace.java
-@@ -0,0 +1,145 @@
++++ b/src/main/java/net/minecraft/server/EntitySquid.java
+@@ -0,0 +1,182 @@
 +package net.minecraft.server;
 +
-+public class EntityMinecartFurnace extends EntityMinecartAbstract {
++public class EntitySquid extends EntityWaterAnimal {
 +
-+    private int c;
-+    public double a;
-+    public double b;
++    public float a;
++    public float b;
++    public float c;
++    public float bt;
++    public float bu;
++    public float bv;
++    public float bw;
++    public float bx;
++    private float by;
++    private float bz;
++    private float bA;
++    private float bB;
++    private float bC;
++    private float bD;
 +
-+    public EntityMinecartFurnace(World world) {
++    public EntitySquid(World world) {
 +        super(world);
++        this.setSize(0.8F, 0.8F);
++        this.random.setSeed((long) (1 + this.getId()));
++        this.bz = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
 +    }
 +
-+    public EntityMinecartFurnace(World world, double d0, double d1, double d2) {
-+        super(world, d0, d1, d2);
++    protected void r() {
++        this.goalSelector.a(0, new PathfinderGoalSquid(this));
 +    }
 +
-+    public EnumMinecartType s() {
-+        return EnumMinecartType.FURNACE;
++    protected void initAttributes() {
++        super.initAttributes();
++        this.getAttributeInstance(GenericAttributes.maxHealth).setValue(10.0D);
 +    }
 +
-+    protected void h() {
-+        super.h();
-+        this.datawatcher.a(16, new Byte((byte) 0));
++    public float getHeadHeight() {
++        return this.length * 0.5F;
 +    }
 +
-+    public void t_() {
-+        super.t_();
-+        if (this.c > 0) {
-+            --this.c;
-+        }
-+
-+        if (this.c <= 0) {
-+            this.a = this.b = 0.0D;
-+        }
-+
-+        this.i(this.c > 0);
-+        if (this.j() && this.random.nextInt(4) == 0) {
-+            this.world.addParticle(EnumParticle.SMOKE_LARGE, this.locX, this.locY + 0.8D, this.locZ, 0.0D, 0.0D, 0.0D, new int[0]);
-+        }
-+
++    protected SoundEffect G() {
++        return SoundEffects.fW;
 +    }
 +
-+    protected double m() {
-+        return 0.2D;
++    protected SoundEffect bR() {
++        return SoundEffects.fY;
 +    }
 +
-+    public void a(DamageSource damagesource) {
-+        super.a(damagesource);
-+        if (!damagesource.isExplosion() && this.world.getGameRules().getBoolean("doEntityDrops")) {
-+            this.a(new ItemStack(Blocks.FURNACE, 1), 0.0F);
-+        }
-+
++    protected SoundEffect bS() {
++        return SoundEffects.fX;
 +    }
 +
-+    protected void a(BlockPosition blockposition, IBlockData iblockdata) {
-+        super.a(blockposition, iblockdata);
-+        double d0 = this.a * this.a + this.b * this.b;
++    protected float cd() {
++        return 0.4F;
++    }
 +
-+        if (d0 > 1.0E-4D && this.motX * this.motX + this.motZ * this.motZ > 0.001D) {
-+            d0 = (double) MathHelper.sqrt(d0);
-+            this.a /= d0;
-+            this.b /= d0;
-+            if (this.a * this.motX + this.b * this.motZ < 0.0D) {
-+                this.a = 0.0D;
-+                this.b = 0.0D;
++    protected boolean playStepSound() {
++        return false;
++    }
++
++    protected MinecraftKey J() {
++        return LootTables.af;
++    }
++
++    public boolean isInWater() {
++        return super.isInWater();
++    }
++
++    public void n() {
++        super.n();
++        this.b = this.a;
++        this.bt = this.c;
++        this.bv = this.bu;
++        this.bx = this.bw;
++        this.bu += this.bz;
++        if ((double) this.bu > 6.283185307179586D) {
++            if (this.world.isClientSide) {
++                this.bu = 6.2831855F;
 +            } else {
-+                double d1 = d0 / this.m();
++                this.bu = (float) ((double) this.bu - 6.283185307179586D);
++                if (this.random.nextInt(10) == 0) {
++                    this.bz = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
++                }
 +
-+                this.a *= d1;
-+                this.b *= d1;
++                this.world.broadcastEntityEffect(this, (byte) 19);
 +            }
 +        }
 +
-+    }
++        if (this.inWater) {
++            float f;
 +
-+    protected void o() {
-+        double d0 = this.a * this.a + this.b * this.b;
-+
-+        if (d0 > 1.0E-4D) {
-+            d0 = (double) MathHelper.sqrt(d0);
-+            this.a /= d0;
-+            this.b /= d0;
-+            double d1 = 1.0D;
-+
-+            this.motX *= 0.800000011920929D;
-+            this.motY *= 0.0D;
-+            this.motZ *= 0.800000011920929D;
-+            this.motX += this.a * d1;
-+            this.motZ += this.b * d1;
-+        } else {
-+            this.motX *= 0.9800000190734863D;
-+            this.motY *= 0.0D;
-+            this.motZ *= 0.9800000190734863D;
-+        }
-+
-+        super.o();
-+    }
-+
-+    public boolean e(EntityHuman entityhuman) {
-+        ItemStack itemstack = entityhuman.inventory.getItemInHand();
-+
-+        if (itemstack != null && itemstack.getItem() == Items.COAL) {
-+            if (!entityhuman.abilities.canInstantlyBuild && --itemstack.count == 0) {
-+                entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, (ItemStack) null);
++            if (this.bu < 3.1415927F) {
++                f = this.bu / 3.1415927F;
++                this.bw = MathHelper.sin(f * f * 3.1415927F) * 3.1415927F * 0.25F;
++                if ((double) f > 0.75D) {
++                    this.by = 1.0F;
++                    this.bA = 1.0F;
++                } else {
++                    this.bA *= 0.8F;
++                }
++            } else {
++                this.bw = 0.0F;
++                this.by *= 0.9F;
++                this.bA *= 0.99F;
 +            }
 +
-+            this.c += 3600;
-+        }
++            if (!this.world.isClientSide) {
++                this.motX = (double) (this.bB * this.by);
++                this.motY = (double) (this.bC * this.by);
++                this.motZ = (double) (this.bD * this.by);
++            }
 +
-+        this.a = this.locX - entityhuman.locX;
-+        this.b = this.locZ - entityhuman.locZ;
-+        return true;
-+    }
-+
-+    protected void b(NBTTagCompound nbttagcompound) {
-+        super.b(nbttagcompound);
-+        nbttagcompound.setDouble("PushX", this.a);
-+        nbttagcompound.setDouble("PushZ", this.b);
-+        nbttagcompound.setShort("Fuel", (short) this.c);
-+    }
-+
-+    protected void a(NBTTagCompound nbttagcompound) {
-+        super.a(nbttagcompound);
-+        this.a = nbttagcompound.getDouble("PushX");
-+        this.b = nbttagcompound.getDouble("PushZ");
-+        this.c = nbttagcompound.getShort("Fuel");
-+    }
-+
-+    protected boolean j() {
-+        return (this.datawatcher.getByte(16) & 1) != 0;
-+    }
-+
-+    protected void i(boolean flag) {
-+        if (flag) {
-+            this.datawatcher.watch(16, Byte.valueOf((byte) (this.datawatcher.getByte(16) | 1)));
++            f = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
++            this.aM += (-((float) MathHelper.b(this.motX, this.motZ)) * 57.295776F - this.aM) * 0.1F;
++            this.yaw = this.aM;
++            this.c = (float) ((double) this.c + 3.141592653589793D * (double) this.bA * 1.5D);
++            this.a += (-((float) MathHelper.b((double) f, this.motY)) * 57.295776F - this.a) * 0.1F;
 +        } else {
-+            this.datawatcher.watch(16, Byte.valueOf((byte) (this.datawatcher.getByte(16) & -2)));
++            this.bw = MathHelper.e(MathHelper.sin(this.bu)) * 3.1415927F * 0.25F;
++            if (!this.world.isClientSide) {
++                this.motX = 0.0D;
++                this.motZ = 0.0D;
++                if (this.hasEffect(MobEffects.LEVITATION)) {
++                    this.motY += 0.05D * (double) (this.getEffect(MobEffects.LEVITATION).getAmplifier() + 1) - this.motY;
++                } else {
++                    this.motY -= 0.08D;
++                }
++
++                this.motY *= 0.9800000190734863D;
++            }
++
++            this.a = (float) ((double) this.a + (double) (-90.0F - this.a) * 0.02D);
 +        }
 +
 +    }
 +
-+    public IBlockData u() {
-+        return (this.j() ? Blocks.LIT_FURNACE : Blocks.FURNACE).getBlockData().set(BlockFurnace.FACING, EnumDirection.NORTH);
++    public void g(float f, float f1) {
++        this.move(this.motX, this.motY, this.motZ);
++    }
++
++    public boolean cF() {
++        return this.locY > 45.0D && this.locY < (double) this.world.K() && super.cF();
++    }
++
++    public void b(float f, float f1, float f2) {
++        this.bB = f;
++        this.bC = f1;
++        this.bD = f2;
++    }
++
++    public boolean o() {
++        return this.bB != 0.0F || this.bC != 0.0F || this.bD != 0.0F;
++    }
++
++    static class PathfinderGoalSquid extends PathfinderGoal {
++
++        private EntitySquid a;
++
++        public PathfinderGoalSquid(EntitySquid entitysquid) {
++            this.a = entitysquid;
++        }
++
++        public boolean a() {
++            return true;
++        }
++
++        public void e() {
++            int i = this.a.bK();
++
++            if (i > 100) {
++                this.a.b(0.0F, 0.0F, 0.0F);
++            } else if (this.a.getRandom().nextInt(50) == 0 || !this.a.inWater || !this.a.o()) {
++                float f = this.a.getRandom().nextFloat() * 6.2831855F;
++                float f1 = MathHelper.cos(f) * 0.2F;
++                float f2 = -0.1F + this.a.getRandom().nextFloat() * 0.2F;
++                float f3 = MathHelper.sin(f) * 0.2F;
++
++                this.a.b(f1, f2, f3);
++            }
++
++        }
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/ItemBlock.java b/src/main/java/net/minecraft/server/ItemBlock.java
 new file mode 100644
-index 0000000..57b3d9d
+index 0000000..300573a
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/ItemBlock.java
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,98 @@
 +package net.minecraft.server;
 +
 +public class ItemBlock extends Item {
@@ -3185,41 +2759,39 @@ index 0000000..57b3d9d
 +        return this;
 +    }
 +
-+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, BlockPosition blockposition, EnumDirection enumdirection, float f, float f1, float f2) {
++    public EnumInteractionResult a(ItemStack itemstack, EntityHuman entityhuman, World world, BlockPosition blockposition, EnumHand enumhand, EnumDirection enumdirection, float f, float f1, float f2) {
 +        IBlockData iblockdata = world.getType(blockposition);
 +        Block block = iblockdata.getBlock();
 +
-+        if (!block.a(world, blockposition)) {
++        if (!block.a((IBlockAccess) world, blockposition)) {
 +            blockposition = blockposition.shift(enumdirection);
 +        }
 +
-+        if (itemstack.count == 0) {
-+            return false;
-+        } else if (!entityhuman.a(blockposition, enumdirection, itemstack)) {
-+            return false;
-+        } else if (world.a(this.a, blockposition, false, enumdirection, (Entity) null, itemstack)) {
++        if (itemstack.count != 0 && entityhuman.a(blockposition, enumdirection, itemstack) && world.a(this.a, blockposition, false, enumdirection, (Entity) null, itemstack)) {
 +            int i = this.filterData(itemstack.getData());
 +            IBlockData iblockdata1 = this.a.getPlacedState(world, blockposition, enumdirection, f, f1, f2, i, entityhuman);
 +
-+            if (world.setTypeAndData(blockposition, iblockdata1, 3)) {
++            if (world.setTypeAndData(blockposition, iblockdata1, 11)) {
 +                iblockdata1 = world.getType(blockposition);
 +                if (iblockdata1.getBlock() == this.a) {
 +                    a(world, entityhuman, blockposition, itemstack);
 +                    this.a.postPlace(world, blockposition, iblockdata1, entityhuman, itemstack);
 +                }
 +
-+                world.makeSound((double) ((float) blockposition.getX() + 0.5F), (double) ((float) blockposition.getY() + 0.5F), (double) ((float) blockposition.getZ() + 0.5F), this.a.stepSound.getPlaceSound(), (this.a.stepSound.getVolume1() + 1.0F) / 2.0F, this.a.stepSound.getVolume2() * 0.8F);
++                SoundEffectType soundeffecttype = this.a.w();
++
++                world.a(entityhuman, blockposition, soundeffecttype.e(), SoundCategory.BLOCKS, (soundeffecttype.a() + 1.0F) / 2.0F, soundeffecttype.b() * 0.8F);
 +                --itemstack.count;
 +            }
 +
-+            return true;
++            return EnumInteractionResult.SUCCESS;
 +        } else {
-+            return false;
++            return EnumInteractionResult.FAIL;
 +        }
 +    }
 +
 +    public static boolean a(World world, EntityHuman entityhuman, BlockPosition blockposition, ItemStack itemstack) {
-+        MinecraftServer minecraftserver = MinecraftServer.getServer();
++        MinecraftServer minecraftserver = world.getMinecraftServer();
 +
 +        if (minecraftserver == null) {
 +            return false;
@@ -3228,14 +2800,14 @@ index 0000000..57b3d9d
 +                TileEntity tileentity = world.getTileEntity(blockposition);
 +
 +                if (tileentity != null) {
-+                    if (!world.isClientSide && tileentity.F() && !minecraftserver.getPlayerList().isOp(entityhuman.getProfile())) {
++                    if (!world.isClientSide && tileentity.isFilteredNBT() && (entityhuman == null || !minecraftserver.getPlayerList().isOp(entityhuman.getProfile()))) {
 +                        return false;
 +                    }
 +
 +                    NBTTagCompound nbttagcompound = new NBTTagCompound();
 +                    NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttagcompound.clone();
 +
-+                    tileentity.b(nbttagcompound);
++                    tileentity.save(nbttagcompound);
 +                    NBTTagCompound nbttagcompound2 = (NBTTagCompound) itemstack.getTag().get("BlockEntityTag");
 +
 +                    nbttagcompound.a(nbttagcompound2);
@@ -3254,7 +2826,7 @@ index 0000000..57b3d9d
 +        }
 +    }
 +
-+    public String e_(ItemStack itemstack) {
++    public String f_(ItemStack itemstack) {
 +        return this.a.a();
 +    }
 +
@@ -3270,104 +2842,75 @@ index 0000000..57b3d9d
 +        return this.b(s);
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/server/ItemMilkBucket.java b/src/main/java/net/minecraft/server/ItemMilkBucket.java
-new file mode 100644
-index 0000000..91ea70d
---- /dev/null
-+++ b/src/main/java/net/minecraft/server/ItemMilkBucket.java
-@@ -0,0 +1,35 @@
-+package net.minecraft.server;
-+
-+public class ItemMilkBucket extends Item {
-+
-+    public ItemMilkBucket() {
-+        this.c(1);
-+        this.a(CreativeModeTab.f);
-+    }
-+
-+    public ItemStack b(ItemStack itemstack, World world, EntityHuman entityhuman) {
-+        if (!entityhuman.abilities.canInstantlyBuild) {
-+            --itemstack.count;
-+        }
-+
-+        if (!world.isClientSide) {
-+            entityhuman.removeAllEffects();
-+        }
-+
-+        entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this)]);
-+        return itemstack.count <= 0 ? new ItemStack(Items.BUCKET) : itemstack;
-+    }
-+
-+    public int d(ItemStack itemstack) {
-+        return 32;
-+    }
-+
-+    public EnumAnimation e(ItemStack itemstack) {
-+        return EnumAnimation.DRINK;
-+    }
-+
-+    public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
-+        entityhuman.a(itemstack, this.d(itemstack));
-+        return itemstack;
-+    }
-+}
-diff --git a/src/main/java/net/minecraft/server/MobEffectAttackDamage.java b/src/main/java/net/minecraft/server/MobEffectAttackDamage.java
-new file mode 100644
-index 0000000..620685a
---- /dev/null
-+++ b/src/main/java/net/minecraft/server/MobEffectAttackDamage.java
-@@ -0,0 +1,12 @@
-+package net.minecraft.server;
-+
-+public class MobEffectAttackDamage extends MobEffectList {
-+
-+    protected MobEffectAttackDamage(int i, MinecraftKey minecraftkey, boolean flag, int j) {
-+        super(i, minecraftkey, flag, j);
-+    }
-+
-+    public double a(int i, AttributeModifier attributemodifier) {
-+        return this.id == MobEffectList.WEAKNESS.id ? (double) (-0.5F * (float) (i + 1)) : 1.3D * (double) (i + 1);
-+    }
-+}
 diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
 new file mode 100644
-index 0000000..d5eaa24
+index 0000000..2f4265a
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
-@@ -0,0 +1,222 @@
+@@ -0,0 +1,275 @@
 +package net.minecraft.server;
-+
-+import java.util.Iterator;
-+import java.util.List;
 +
 +public abstract class NavigationAbstract {
 +
-+    protected EntityInsentient b;
-+    protected World c;
-+    protected PathEntity d;
-+    protected double e;
-+    private final AttributeInstance a;
-+    private int f;
-+    private int g;
-+    private Vec3D h = new Vec3D(0.0D, 0.0D, 0.0D);
-+    private float i = 1.0F;
-+    private final Pathfinder j;
++    private static int f = 20;
++    protected EntityInsentient a;
++    protected World b;
++    protected PathEntity c;
++    protected double d;
++    private final AttributeInstance g;
++    private int h;
++    private int i;
++    private Vec3D j;
++    private Vec3D k;
++    private long l;
++    private long m;
++    private double n;
++    private float o;
++    private boolean p;
++    private long q;
++    protected PathfinderAbstract e;
++    private BlockPosition r;
++    private final Pathfinder s;
 +
 +    public NavigationAbstract(EntityInsentient entityinsentient, World world) {
-+        this.b = entityinsentient;
-+        this.c = world;
-+        this.a = entityinsentient.getAttributeInstance(GenericAttributes.FOLLOW_RANGE);
-+        this.j = this.a();
++        this.j = Vec3D.a;
++        this.k = Vec3D.a;
++        this.l = 0L;
++        this.m = 0L;
++        this.o = 0.5F;
++        this.a = entityinsentient;
++        this.b = world;
++        this.g = entityinsentient.getAttributeInstance(GenericAttributes.FOLLOW_RANGE);
++        this.s = this.a();
++        this.b.C().a(this);
 +    }
 +
 +    protected abstract Pathfinder a();
 +
 +    public void a(double d0) {
-+        this.e = d0;
++        this.d = d0;
 +    }
 +
-+    public float i() {
-+        return (float) this.a.getValue();
++    public float h() {
++        return (float) this.g.getValue();
++    }
++
++    public boolean i() {
++        return this.p;
++    }
++
++    public void j() {
++        if (this.b.getTime() - this.q > (long) NavigationAbstract.f) {
++            if (this.r != null) {
++                this.c = null;
++                this.c = this.a(this.r);
++                this.q = this.b.getTime();
++                this.p = false;
++            }
++        } else {
++            this.p = true;
++        }
++
 +    }
 +
 +    public final PathEntity a(double d0, double d1, double d2) {
@@ -3377,17 +2920,44 @@ index 0000000..d5eaa24
 +    public PathEntity a(BlockPosition blockposition) {
 +        if (!this.b()) {
 +            return null;
++        } else if (this.c != null && !this.c.b() && blockposition.equals(this.r)) {
++            return this.c;
 +        } else {
-+            float f = this.i();
++            this.r = blockposition;
++            float f = this.h();
 +
-+            this.c.methodProfiler.a("pathfind");
-+            BlockPosition blockposition1 = new BlockPosition(this.b);
++            this.b.methodProfiler.a("pathfind");
++            BlockPosition blockposition1 = new BlockPosition(this.a);
 +            int i = (int) (f + 8.0F);
-+            ChunkCache chunkcache = new ChunkCache(this.c, blockposition1.a(-i, -i, -i), blockposition1.a(i, i, i), 0);
-+            PathEntity pathentity = this.j.a((IBlockAccess) chunkcache, (Entity) this.b, blockposition, f);
++            ChunkCache chunkcache = new ChunkCache(this.b, blockposition1.a(-i, -i, -i), blockposition1.a(i, i, i), 0);
++            PathEntity pathentity = this.s.a(chunkcache, this.a, this.r, f);
 +
-+            this.c.methodProfiler.b();
++            this.b.methodProfiler.b();
 +            return pathentity;
++        }
++    }
++
++    public PathEntity a(Entity entity) {
++        if (!this.b()) {
++            return null;
++        } else {
++            BlockPosition blockposition = new BlockPosition(entity);
++
++            if (this.c != null && !this.c.b() && blockposition.equals(this.r)) {
++                return this.c;
++            } else {
++                this.r = blockposition;
++                float f = this.h();
++
++                this.b.methodProfiler.a("pathfind");
++                BlockPosition blockposition1 = (new BlockPosition(this.a)).up();
++                int i = (int) (f + 16.0F);
++                ChunkCache chunkcache = new ChunkCache(this.b, blockposition1.a(-i, -i, -i), blockposition1.a(i, i, i), 0);
++                PathEntity pathentity = this.s.a(chunkcache, this.a, entity, f);
++
++                this.b.methodProfiler.b();
++                return pathentity;
++            }
 +        }
 +    }
 +
@@ -3395,27 +2965,6 @@ index 0000000..d5eaa24
 +        PathEntity pathentity = this.a((double) MathHelper.floor(d0), (double) ((int) d1), (double) MathHelper.floor(d2));
 +
 +        return this.a(pathentity, d3);
-+    }
-+
-+    public void a(float f) {
-+        this.i = f;
-+    }
-+
-+    public PathEntity a(Entity entity) {
-+        if (!this.b()) {
-+            return null;
-+        } else {
-+            float f = this.i();
-+
-+            this.c.methodProfiler.a("pathfind");
-+            BlockPosition blockposition = (new BlockPosition(this.b)).up();
-+            int i = (int) (f + 16.0F);
-+            ChunkCache chunkcache = new ChunkCache(this.c, blockposition.a(-i, -i, -i), blockposition.a(i, i, i), 0);
-+            PathEntity pathentity = this.j.a((IBlockAccess) chunkcache, (Entity) this.b, entity, f);
-+
-+            this.c.methodProfiler.b();
-+            return pathentity;
-+        }
 +    }
 +
 +    public boolean a(Entity entity, double d0) {
@@ -3426,98 +2975,89 @@ index 0000000..d5eaa24
 +
 +    public boolean a(PathEntity pathentity, double d0) {
 +        if (pathentity == null) {
-+            this.d = null;
++            this.c = null;
 +            return false;
 +        } else {
-+            if (!pathentity.a(this.d)) {
-+                this.d = pathentity;
++            if (!pathentity.a(this.c)) {
++                this.c = pathentity;
 +            }
 +
 +            this.d();
-+            if (this.d.d() == 0) {
++            if (this.c.d() == 0) {
 +                return false;
 +            } else {
-+                this.e = d0;
++                this.d = d0;
 +                Vec3D vec3d = this.c();
 +
-+                this.g = this.f;
-+                this.h = vec3d;
++                this.i = this.h;
++                this.j = vec3d;
 +                return true;
 +            }
 +        }
 +    }
 +
-+    public PathEntity j() {
-+        return this.d;
++    public PathEntity k() {
++        return this.c;
 +    }
 +
-+    public void k() {
-+        ++this.f;
-+        if (!this.m()) {
++    public void l() {
++        ++this.h;
++        if (this.p) {
++            this.j();
++        }
++
++        if (!this.n()) {
 +            Vec3D vec3d;
 +
 +            if (this.b()) {
-+                this.l();
-+            } else if (this.d != null && this.d.e() < this.d.d()) {
++                this.m();
++            } else if (this.c != null && this.c.e() < this.c.d()) {
 +                vec3d = this.c();
-+                Vec3D vec3d1 = this.d.a(this.b, this.d.e());
++                Vec3D vec3d1 = this.c.a(this.a, this.c.e());
 +
-+                if (vec3d.b > vec3d1.b && !this.b.onGround && MathHelper.floor(vec3d.a) == MathHelper.floor(vec3d1.a) && MathHelper.floor(vec3d.c) == MathHelper.floor(vec3d1.c)) {
-+                    this.d.c(this.d.e() + 1);
++                if (vec3d.y > vec3d1.y && !this.a.onGround && MathHelper.floor(vec3d.x) == MathHelper.floor(vec3d1.x) && MathHelper.floor(vec3d.z) == MathHelper.floor(vec3d1.z)) {
++                    this.c.c(this.c.e() + 1);
 +                }
 +            }
 +
-+            if (!this.m()) {
-+                vec3d = this.d.a((Entity) this.b);
++            if (!this.n()) {
++                vec3d = this.c.a((Entity) this.a);
 +                if (vec3d != null) {
-+                    AxisAlignedBB axisalignedbb = (new AxisAlignedBB(vec3d.a, vec3d.b, vec3d.c, vec3d.a, vec3d.b, vec3d.c)).grow(0.5D, 0.5D, 0.5D);
-+                    List list = this.c.getCubes(this.b, axisalignedbb.a(0.0D, -1.0D, 0.0D));
-+                    double d0 = -1.0D;
++                    BlockPosition blockposition = (new BlockPosition(vec3d)).down();
++                    AxisAlignedBB axisalignedbb = this.b.getType(blockposition).c(this.b, blockposition);
 +
-+                    axisalignedbb = axisalignedbb.c(0.0D, 1.0D, 0.0D);
-+
-+                    AxisAlignedBB axisalignedbb1;
-+
-+                    for (Iterator iterator = list.iterator(); iterator.hasNext(); d0 = axisalignedbb1.b(axisalignedbb, d0)) {
-+                        axisalignedbb1 = (AxisAlignedBB) iterator.next();
-+                    }
-+
-+                    this.b.getControllerMove().a(vec3d.a, vec3d.b + d0, vec3d.c, this.e);
++                    vec3d = vec3d.a(0.0D, 1.0D - axisalignedbb.e, 0.0D);
++                    this.a.getControllerMove().a(vec3d.x, vec3d.y, vec3d.z, this.d);
 +                }
 +            }
 +        }
 +    }
 +
-+    protected void l() {
++    protected void m() {
 +        Vec3D vec3d = this.c();
-+        int i = this.d.d();
++        int i = this.c.d();
 +
-+        for (int j = this.d.e(); j < this.d.d(); ++j) {
-+            if (this.d.a(j).b != (int) vec3d.b) {
++        for (int j = this.c.e(); j < this.c.d(); ++j) {
++            if ((double) this.c.a(j).b != Math.floor(vec3d.y)) {
 +                i = j;
 +                break;
 +            }
 +        }
 +
-+        float f = this.b.width * this.b.width * this.i;
++        this.o = this.a.width > 0.75F ? this.a.width / 2.0F : 0.75F - this.a.width / 2.0F;
++        Vec3D vec3d1 = this.c.f();
 +
-+        int k;
-+
-+        for (k = this.d.e(); k < i; ++k) {
-+            Vec3D vec3d1 = this.d.a(this.b, k);
-+
-+            if (vec3d.distanceSquared(vec3d1) < (double) f) {
-+                this.d.c(k + 1);
-+            }
++        if (MathHelper.e((float) (this.a.locX - (vec3d1.x + 0.5D))) < this.o && MathHelper.e((float) (this.a.locZ - (vec3d1.z + 0.5D))) < this.o) {
++            this.c.c(this.c.e() + 1);
 +        }
 +
-+        k = MathHelper.f(this.b.width);
-+        int l = (int) this.b.length + 1;
++        int k = MathHelper.f(this.a.width);
++        int l = (int) this.a.length + 1;
 +        int i1 = k;
 +
-+        for (int j1 = i - 1; j1 >= this.d.e(); --j1) {
-+            if (this.a(vec3d, this.d.a(this.b, j1), k, l, i1)) {
-+                this.d.c(j1);
++        for (int j1 = i - 1; j1 >= this.c.e(); --j1) {
++            if (this.a(vec3d, this.c.a(this.a, j1), k, l, i1)) {
++                this.c.c(j1);
 +                break;
 +            }
 +        }
@@ -3526,188 +3066,66 @@ index 0000000..d5eaa24
 +    }
 +
 +    protected void a(Vec3D vec3d) {
-+        if (this.f - this.g > 100) {
-+            if (vec3d.distanceSquared(this.h) < 2.25D) {
-+                this.n();
++        if (this.h - this.i > 100) {
++            if (vec3d.distanceSquared(this.j) < 2.25D) {
++                this.o();
 +            }
 +
-+            this.g = this.f;
-+            this.h = vec3d;
++            this.i = this.h;
++            this.j = vec3d;
++        }
++
++        if (this.c != null && !this.c.b()) {
++            Vec3D vec3d1 = this.c.f();
++
++            if (!vec3d1.equals(this.k)) {
++                this.k = vec3d1;
++                double d0 = vec3d.f(this.k);
++
++                this.n = this.a.ck() > 0.0F ? d0 / (double) this.a.ck() * 1000.0D : 0.0D;
++            } else {
++                this.l += System.currentTimeMillis() - this.m;
++            }
++
++            if (this.n > 0.0D && (double) this.l > this.n * 3.0D) {
++                this.k = Vec3D.a;
++                this.l = 0L;
++                this.n = 0.0D;
++                this.o();
++            }
++
++            this.m = System.currentTimeMillis();
 +        }
 +
 +    }
 +
-+    public boolean m() {
-+        return this.d == null || this.d.b();
++    public boolean n() {
++        return this.c == null || this.c.b();
 +    }
 +
-+    public void n() {
-+        this.d = null;
++    public void o() {
++        this.c = null;
 +    }
 +
 +    protected abstract Vec3D c();
 +
 +    protected abstract boolean b();
 +
-+    protected boolean o() {
-+        return this.b.V() || this.b.ab();
++    protected boolean p() {
++        return this.a.isInWater() || this.a.an();
 +    }
 +
 +    protected void d() {}
 +
 +    protected abstract boolean a(Vec3D vec3d, Vec3D vec3d1, int i, int j, int k);
-+}
-diff --git a/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java b/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java
-new file mode 100644
-index 0000000..1606d6d
---- /dev/null
-+++ b/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java
-@@ -0,0 +1,33 @@
-+package net.minecraft.server;
 +
-+import java.io.IOException;
-+
-+public class PacketPlayOutPlayerListHeaderFooter implements Packet<PacketListenerPlayOut> {
-+
-+    private IChatBaseComponent a;
-+    private IChatBaseComponent b;
-+
-+    public PacketPlayOutPlayerListHeaderFooter() {}
-+
-+    public PacketPlayOutPlayerListHeaderFooter(IChatBaseComponent ichatbasecomponent) {
-+        this.a = ichatbasecomponent;
-+    }
-+
-+    public void a(PacketDataSerializer packetdataserializer) throws IOException {
-+        this.a = packetdataserializer.d();
-+        this.b = packetdataserializer.d();
-+    }
-+
-+    public void b(PacketDataSerializer packetdataserializer) throws IOException {
-+        packetdataserializer.a(this.a);
-+        packetdataserializer.a(this.b);
-+    }
-+
-+    public void a(PacketListenerPlayOut packetlistenerplayout) {
-+        packetlistenerplayout.a(this);
-+    }
-+
-+    public void a(PacketListener packetlistener) {
-+        this.a((PacketListenerPlayOut) packetlistener);
-+    }
-+}
-diff --git a/src/main/java/net/minecraft/server/PacketPlayOutTitle.java b/src/main/java/net/minecraft/server/PacketPlayOutTitle.java
-new file mode 100644
-index 0000000..2711298
---- /dev/null
-+++ b/src/main/java/net/minecraft/server/PacketPlayOutTitle.java
-@@ -0,0 +1,103 @@
-+package net.minecraft.server;
-+
-+import java.io.IOException;
-+
-+public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
-+
-+    private EnumTitleAction a;
-+    private IChatBaseComponent b;
-+    private int c;
-+    private int d;
-+    private int e;
-+
-+    public PacketPlayOutTitle() {}
-+
-+    public PacketPlayOutTitle(EnumTitleAction packetplayouttitle_enumtitleaction, IChatBaseComponent ichatbasecomponent) {
-+        this(packetplayouttitle_enumtitleaction, ichatbasecomponent, -1, -1, -1);
-+    }
-+
-+    public PacketPlayOutTitle(int i, int j, int k) {
-+        this(EnumTitleAction.TIMES, (IChatBaseComponent) null, i, j, k);
-+    }
-+
-+    public PacketPlayOutTitle(EnumTitleAction packetplayouttitle_enumtitleaction, IChatBaseComponent ichatbasecomponent, int i, int j, int k) {
-+        this.a = packetplayouttitle_enumtitleaction;
-+        this.b = ichatbasecomponent;
-+        this.c = i;
-+        this.d = j;
-+        this.e = k;
-+    }
-+
-+    public void a(PacketDataSerializer packetdataserializer) throws IOException {
-+        this.a = (EnumTitleAction) packetdataserializer.a(EnumTitleAction.class);
-+        if (this.a == EnumTitleAction.TITLE || this.a == EnumTitleAction.SUBTITLE) {
-+            this.b = packetdataserializer.d();
-+        }
-+
-+        if (this.a == EnumTitleAction.TIMES) {
-+            this.c = packetdataserializer.readInt();
-+            this.d = packetdataserializer.readInt();
-+            this.e = packetdataserializer.readInt();
-+        }
-+
-+    }
-+
-+    public void b(PacketDataSerializer packetdataserializer) throws IOException {
-+        packetdataserializer.a((Enum) this.a);
-+        if (this.a == EnumTitleAction.TITLE || this.a == EnumTitleAction.SUBTITLE) {
-+            packetdataserializer.a(this.b);
-+        }
-+
-+        if (this.a == EnumTitleAction.TIMES) {
-+            packetdataserializer.writeInt(this.c);
-+            packetdataserializer.writeInt(this.d);
-+            packetdataserializer.writeInt(this.e);
-+        }
-+
-+    }
-+
-+    public void a(PacketListenerPlayOut packetlistenerplayout) {
-+        packetlistenerplayout.a(this);
-+    }
-+
-+    public void a(PacketListener packetlistener) {
-+        this.a((PacketListenerPlayOut) packetlistener);
-+    }
-+
-+    public static enum EnumTitleAction {
-+
-+        TITLE, SUBTITLE, TIMES, CLEAR, RESET;
-+
-+        private EnumTitleAction() {}
-+
-+        public static EnumTitleAction a(String s) {
-+            EnumTitleAction[] apacketplayouttitle_enumtitleaction = values();
-+            int i = apacketplayouttitle_enumtitleaction.length;
-+
-+            for (int j = 0; j < i; ++j) {
-+                EnumTitleAction packetplayouttitle_enumtitleaction = apacketplayouttitle_enumtitleaction[j];
-+
-+                if (packetplayouttitle_enumtitleaction.name().equalsIgnoreCase(s)) {
-+                    return packetplayouttitle_enumtitleaction;
-+                }
-+            }
-+
-+            return EnumTitleAction.TITLE;
-+        }
-+
-+        public static String[] a() {
-+            String[] astring = new String[values().length];
-+            int i = 0;
-+            EnumTitleAction[] apacketplayouttitle_enumtitleaction = values();
-+            int j = apacketplayouttitle_enumtitleaction.length;
-+
-+            for (int k = 0; k < j; ++k) {
-+                EnumTitleAction packetplayouttitle_enumtitleaction = apacketplayouttitle_enumtitleaction[k];
-+
-+                astring[i++] = packetplayouttitle_enumtitleaction.name().toLowerCase();
-+            }
-+
-+            return astring;
-+        }
++    public boolean b(BlockPosition blockposition) {
++        return this.b.getType(blockposition.down()).b();
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoalFloat.java b/src/main/java/net/minecraft/server/PathfinderGoalFloat.java
 new file mode 100644
-index 0000000..6014b09
+index 0000000..1a20dbf
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PathfinderGoalFloat.java
 @@ -0,0 +1,23 @@
@@ -3720,254 +3138,29 @@ index 0000000..6014b09
 +    public PathfinderGoalFloat(EntityInsentient entityinsentient) {
 +        this.a = entityinsentient;
 +        this.a(4);
-+        ((Navigation) entityinsentient.getNavigation()).d(true);
++        ((Navigation) entityinsentient.getNavigation()).c(true);
 +    }
 +
 +    public boolean a() {
-+        return this.a.V() || this.a.ab();
++        return this.a.isInWater() || this.a.an();
 +    }
 +
 +    public void e() {
-+        if (this.a.bc().nextFloat() < 0.8F) {
++        if (this.a.getRandom().nextFloat() < 0.8F) {
 +            this.a.getControllerJump().a();
 +        }
 +
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/server/PathfinderNormal.java b/src/main/java/net/minecraft/server/PathfinderNormal.java
-new file mode 100644
-index 0000000..0a14c9d
---- /dev/null
-+++ b/src/main/java/net/minecraft/server/PathfinderNormal.java
-@@ -0,0 +1,219 @@
-+package net.minecraft.server;
-+
-+public class PathfinderNormal extends PathfinderAbstract {
-+
-+    private boolean f;
-+    private boolean g;
-+    private boolean h;
-+    private boolean i;
-+    private boolean j;
-+
-+    public PathfinderNormal() {}
-+
-+    public void a(IBlockAccess iblockaccess, Entity entity) {
-+        super.a(iblockaccess, entity);
-+        this.j = this.h;
-+    }
-+
-+    public void a() {
-+        super.a();
-+        this.h = this.j;
-+    }
-+
-+    public PathPoint a(Entity entity) {
-+        int i;
-+
-+        if (this.i && entity.V()) {
-+            i = (int) entity.getBoundingBox().b;
-+            BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition(MathHelper.floor(entity.locX), i, MathHelper.floor(entity.locZ));
-+
-+            for (Block block = this.a.getType(blockposition_mutableblockposition).getBlock(); block == Blocks.FLOWING_WATER || block == Blocks.WATER; block = this.a.getType(blockposition_mutableblockposition).getBlock()) {
-+                ++i;
-+                blockposition_mutableblockposition.c(MathHelper.floor(entity.locX), i, MathHelper.floor(entity.locZ));
-+            }
-+
-+            this.h = false;
-+        } else {
-+            i = MathHelper.floor(entity.getBoundingBox().b + 0.5D);
-+        }
-+
-+        return this.a(MathHelper.floor(entity.getBoundingBox().a), i, MathHelper.floor(entity.getBoundingBox().c));
-+    }
-+
-+    public PathPoint a(Entity entity, double d0, double d1, double d2) {
-+        return this.a(MathHelper.floor(d0 - (double) (entity.width / 2.0F)), MathHelper.floor(d1), MathHelper.floor(d2 - (double) (entity.width / 2.0F)));
-+    }
-+
-+    public int a(PathPoint[] apathpoint, Entity entity, PathPoint pathpoint, PathPoint pathpoint1, float f) {
-+        int i = 0;
-+        byte b0 = 0;
-+
-+        if (this.a(entity, pathpoint.a, pathpoint.b + 1, pathpoint.c) == 1) {
-+            b0 = 1;
-+        }
-+
-+        PathPoint pathpoint2 = this.a(entity, pathpoint.a, pathpoint.b, pathpoint.c + 1, b0);
-+        PathPoint pathpoint3 = this.a(entity, pathpoint.a - 1, pathpoint.b, pathpoint.c, b0);
-+        PathPoint pathpoint4 = this.a(entity, pathpoint.a + 1, pathpoint.b, pathpoint.c, b0);
-+        PathPoint pathpoint5 = this.a(entity, pathpoint.a, pathpoint.b, pathpoint.c - 1, b0);
-+
-+        if (pathpoint2 != null && !pathpoint2.i && pathpoint2.a(pathpoint1) < f) {
-+            apathpoint[i++] = pathpoint2;
-+        }
-+
-+        if (pathpoint3 != null && !pathpoint3.i && pathpoint3.a(pathpoint1) < f) {
-+            apathpoint[i++] = pathpoint3;
-+        }
-+
-+        if (pathpoint4 != null && !pathpoint4.i && pathpoint4.a(pathpoint1) < f) {
-+            apathpoint[i++] = pathpoint4;
-+        }
-+
-+        if (pathpoint5 != null && !pathpoint5.i && pathpoint5.a(pathpoint1) < f) {
-+            apathpoint[i++] = pathpoint5;
-+        }
-+
-+        return i;
-+    }
-+
-+    private PathPoint a(Entity entity, int i, int j, int k, int l) {
-+        PathPoint pathpoint = null;
-+        int i1 = this.a(entity, i, j, k);
-+
-+        if (i1 == 2) {
-+            return this.a(i, j, k);
-+        } else {
-+            if (i1 == 1) {
-+                pathpoint = this.a(i, j, k);
-+            }
-+
-+            if (pathpoint == null && l > 0 && i1 != -3 && i1 != -4 && this.a(entity, i, j + l, k) == 1) {
-+                pathpoint = this.a(i, j + l, k);
-+                j += l;
-+            }
-+
-+            if (pathpoint != null) {
-+                int j1 = 0;
-+
-+                int k1;
-+
-+                for (k1 = 0; j > 0; pathpoint = this.a(i, j, k)) {
-+                    k1 = this.a(entity, i, j - 1, k);
-+                    if (this.h && k1 == -1) {
-+                        return null;
-+                    }
-+
-+                    if (k1 != 1) {
-+                        break;
-+                    }
-+
-+                    if (j1++ >= entity.aE()) {
-+                        return null;
-+                    }
-+
-+                    --j;
-+                    if (j <= 0) {
-+                        return null;
-+                    }
-+                }
-+
-+                if (k1 == -2) {
-+                    return null;
-+                }
-+            }
-+
-+            return pathpoint;
-+        }
-+    }
-+
-+    private int a(Entity entity, int i, int j, int k) {
-+        return a(this.a, entity, i, j, k, this.c, this.d, this.e, this.h, this.g, this.f);
-+    }
-+
-+    public static int a(IBlockAccess iblockaccess, Entity entity, int i, int j, int k, int l, int i1, int j1, boolean flag, boolean flag1, boolean flag2) {
-+        boolean flag3 = false;
-+        BlockPosition blockposition = new BlockPosition(entity);
-+        BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
-+
-+        for (int k1 = i; k1 < i + l; ++k1) {
-+            for (int l1 = j; l1 < j + i1; ++l1) {
-+                for (int i2 = k; i2 < k + j1; ++i2) {
-+                    blockposition_mutableblockposition.c(k1, l1, i2);
-+                    Block block = iblockaccess.getType(blockposition_mutableblockposition).getBlock();
-+
-+                    if (block.getMaterial() != Material.AIR) {
-+                        if (block != Blocks.TRAPDOOR && block != Blocks.IRON_TRAPDOOR) {
-+                            if (block != Blocks.FLOWING_WATER && block != Blocks.WATER) {
-+                                if (!flag2 && block instanceof BlockDoor && block.getMaterial() == Material.WOOD) {
-+                                    return 0;
-+                                }
-+                            } else {
-+                                if (flag) {
-+                                    return -1;
-+                                }
-+
-+                                flag3 = true;
-+                            }
-+                        } else {
-+                            flag3 = true;
-+                        }
-+
-+                        if (entity.world.getType(blockposition_mutableblockposition).getBlock() instanceof BlockMinecartTrackAbstract) {
-+                            if (!(entity.world.getType(blockposition).getBlock() instanceof BlockMinecartTrackAbstract) && !(entity.world.getType(blockposition.down()).getBlock() instanceof BlockMinecartTrackAbstract)) {
-+                                return -3;
-+                            }
-+                        } else if (!block.b(iblockaccess, blockposition_mutableblockposition) && (!flag1 || !(block instanceof BlockDoor) || block.getMaterial() != Material.WOOD)) {
-+                            if (block instanceof BlockFence || block instanceof BlockFenceGate || block instanceof BlockCobbleWall) {
-+                                return -3;
-+                            }
-+
-+                            if (block == Blocks.TRAPDOOR || block == Blocks.IRON_TRAPDOOR) {
-+                                return -4;
-+                            }
-+
-+                            Material material = block.getMaterial();
-+
-+                            if (material != Material.LAVA) {
-+                                return 0;
-+                            }
-+
-+                            if (!entity.ab()) {
-+                                return -2;
-+                            }
-+                        }
-+                    }
-+                }
-+            }
-+        }
-+
-+        return flag3 ? 2 : 1;
-+    }
-+
-+    public void a(boolean flag) {
-+        this.f = flag;
-+    }
-+
-+    public void b(boolean flag) {
-+        this.g = flag;
-+    }
-+
-+    public void c(boolean flag) {
-+        this.h = flag;
-+    }
-+
-+    public void d(boolean flag) {
-+        this.i = flag;
-+    }
-+
-+    public boolean b() {
-+        return this.f;
-+    }
-+
-+    public boolean d() {
-+        return this.i;
-+    }
-+
-+    public boolean e() {
-+        return this.h;
-+    }
-+}
 diff --git a/src/main/java/net/minecraft/server/TileEntityEnderChest.java b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 new file mode 100644
-index 0000000..794cdc8
+index 0000000..e454622
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 @@ -0,0 +1,87 @@
 +package net.minecraft.server;
 +
-+public class TileEntityEnderChest extends TileEntity implements IUpdatePlayerListBox {
++public class TileEntityEnderChest extends TileEntity implements ITickable {
 +
 +    public float a;
 +    public float f;
@@ -3992,7 +3185,7 @@ index 0000000..794cdc8
 +            double d1 = (double) i + 0.5D;
 +
 +            d0 = (double) k + 0.5D;
-+            this.world.makeSound(d1, (double) j + 0.5D, d0, "random.chestopen", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
++            this.world.a((EntityHuman) null, d1, (double) j + 0.5D, d0, SoundEffects.aL, SoundCategory.BLOCKS, 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
 +        }
 +
 +        if (this.g == 0 && this.a > 0.0F || this.g > 0 && this.a < 1.0F) {
@@ -4014,7 +3207,7 @@ index 0000000..794cdc8
 +                d0 = (double) i + 0.5D;
 +                double d2 = (double) k + 0.5D;
 +
-+                this.world.makeSound(d0, (double) j + 0.5D, d2, "random.chestclosed", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
++                this.world.a((EntityHuman) null, d0, (double) j + 0.5D, d2, SoundEffects.aK, SoundCategory.BLOCKS, 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
 +            }
 +
 +            if (this.a < 0.0F) {
@@ -4034,7 +3227,7 @@ index 0000000..794cdc8
 +    }
 +
 +    public void y() {
-+        this.E();
++        this.invalidateBlockCache();
 +        super.y();
 +    }
 +
@@ -4052,28 +3245,151 @@ index 0000000..794cdc8
 +        return this.world.getTileEntity(this.position) != this ? false : entityhuman.e((double) this.position.getX() + 0.5D, (double) this.position.getY() + 0.5D, (double) this.position.getZ() + 0.5D) <= 64.0D;
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/server/TileEntityLightDetector.java b/src/main/java/net/minecraft/server/TileEntityLightDetector.java
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/PacketPlayOutPlayerListHeaderFooter.java b/src/main/java/org/bukkit/craftbukkit/entity/PacketPlayOutPlayerListHeaderFooter.java
 new file mode 100644
-index 0000000..f75e2de
+index 0000000..842db1d
 --- /dev/null
-+++ b/src/main/java/net/minecraft/server/TileEntityLightDetector.java
-@@ -0,0 +1,16 @@
++++ b/src/main/java/org/bukkit/craftbukkit/entity/PacketPlayOutPlayerListHeaderFooter.java
+@@ -0,0 +1,34 @@
++package org.bukkit.craftbukkit.entity;
++
++import net.minecraft.server.IChatBaseComponent;
++import net.minecraft.server.Packet;
++import net.minecraft.server.PacketDataSerializer;
++import net.minecraft.server.PacketListenerPlayOut;
++
++import java.io.IOException;
++
++public class PacketPlayOutPlayerListHeaderFooter implements Packet<PacketListenerPlayOut> {
++
++    private IChatBaseComponent a;
++    private IChatBaseComponent b;
++
++    public PacketPlayOutPlayerListHeaderFooter() {}
++
++    public PacketPlayOutPlayerListHeaderFooter(IChatBaseComponent ichatbasecomponent) {
++        this.a = ichatbasecomponent;
++    }
++
++    public void a(PacketDataSerializer packetdataserializer) throws IOException {
++        this.a = packetdataserializer.f();
++        this.b = packetdataserializer.f();
++    }
++
++    public void b(PacketDataSerializer packetdataserializer) throws IOException {
++        packetdataserializer.a(this.a);
++        packetdataserializer.a(this.b);
++    }
++
++    public void a(PacketListenerPlayOut packetlistenerplayout) {
++        packetlistenerplayout.a(this);
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/PacketPlayOutTitle.java b/src/main/java/org/bukkit/craftbukkit/entity/PacketPlayOutTitle.java
+new file mode 100644
+index 0000000..2286c9e
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/entity/PacketPlayOutTitle.java
+@@ -0,0 +1,99 @@
 +package net.minecraft.server;
 +
-+public class TileEntityLightDetector extends TileEntity implements IUpdatePlayerListBox {
++import java.io.IOException;
 +
-+    public TileEntityLightDetector() {}
++public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
 +
-+    public void c() {
-+        if (this.world != null && !this.world.isClientSide && this.world.getTime() % 20L == 0L) {
-+            this.e = this.w();
-+            if (this.e instanceof BlockDaylightDetector) {
-+                ((BlockDaylightDetector) this.e).f(this.world, this.position);
-+            }
++    private PacketPlayOutTitle.EnumTitleAction a;
++    private IChatBaseComponent b;
++    private int c;
++    private int d;
++    private int e;
++
++    public PacketPlayOutTitle() {}
++
++    public PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction packetplayouttitle_enumtitleaction, IChatBaseComponent ichatbasecomponent) {
++        this(packetplayouttitle_enumtitleaction, ichatbasecomponent, -1, -1, -1);
++    }
++
++    public PacketPlayOutTitle(int i, int j, int k) {
++        this(PacketPlayOutTitle.EnumTitleAction.TIMES, (IChatBaseComponent) null, i, j, k);
++    }
++
++    public PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction packetplayouttitle_enumtitleaction, IChatBaseComponent ichatbasecomponent, int i, int j, int k) {
++        this.a = packetplayouttitle_enumtitleaction;
++        this.b = ichatbasecomponent;
++        this.c = i;
++        this.d = j;
++        this.e = k;
++    }
++
++    public void a(PacketDataSerializer packetdataserializer) throws IOException {
++        this.a = (PacketPlayOutTitle.EnumTitleAction) packetdataserializer.a(PacketPlayOutTitle.EnumTitleAction.class);
++        if (this.a == PacketPlayOutTitle.EnumTitleAction.TITLE || this.a == PacketPlayOutTitle.EnumTitleAction.SUBTITLE) {
++            this.b = packetdataserializer.f();
++        }
++
++        if (this.a == PacketPlayOutTitle.EnumTitleAction.TIMES) {
++            this.c = packetdataserializer.readInt();
++            this.d = packetdataserializer.readInt();
++            this.e = packetdataserializer.readInt();
 +        }
 +
 +    }
++
++    public void b(PacketDataSerializer packetdataserializer) throws IOException {
++        packetdataserializer.a((Enum) this.a);
++        if (this.a == PacketPlayOutTitle.EnumTitleAction.TITLE || this.a == PacketPlayOutTitle.EnumTitleAction.SUBTITLE) {
++            packetdataserializer.a(this.b);
++        }
++
++        if (this.a == PacketPlayOutTitle.EnumTitleAction.TIMES) {
++            packetdataserializer.writeInt(this.c);
++            packetdataserializer.writeInt(this.d);
++            packetdataserializer.writeInt(this.e);
++        }
++
++    }
++
++    public void a(PacketListenerPlayOut packetlistenerplayout) {
++        packetlistenerplayout.a(this);
++    }
++
++    public static enum EnumTitleAction {
++
++        TITLE, SUBTITLE, TIMES, CLEAR, RESET;
++
++        private EnumTitleAction() {}
++
++        public static PacketPlayOutTitle.EnumTitleAction a(String s) {
++            PacketPlayOutTitle.EnumTitleAction[] apacketplayouttitle_enumtitleaction = values();
++            int i = apacketplayouttitle_enumtitleaction.length;
++
++            for (int j = 0; j < i; ++j) {
++                PacketPlayOutTitle.EnumTitleAction packetplayouttitle_enumtitleaction = apacketplayouttitle_enumtitleaction[j];
++
++                if (packetplayouttitle_enumtitleaction.name().equalsIgnoreCase(s)) {
++                    return packetplayouttitle_enumtitleaction;
++                }
++            }
++
++            return PacketPlayOutTitle.EnumTitleAction.TITLE;
++        }
++
++        public static String[] a() {
++            String[] astring = new String[values().length];
++            int i = 0;
++            PacketPlayOutTitle.EnumTitleAction[] apacketplayouttitle_enumtitleaction = values();
++            int j = apacketplayouttitle_enumtitleaction.length;
++
++            for (int k = 0; k < j; ++k) {
++                PacketPlayOutTitle.EnumTitleAction packetplayouttitle_enumtitleaction = apacketplayouttitle_enumtitleaction[k];
++
++                astring[i++] = packetplayouttitle_enumtitleaction.name().toLowerCase();
++            }
++
++            return astring;
++        }
++    }
 +}
 -- 
-2.7.1
+2.7.2
 

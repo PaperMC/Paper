@@ -1,97 +1,98 @@
-From 4c8e5bf4bb19ffc86e578b04deaa1ec1746a0201 Mon Sep 17 00:00:00 2001
+From de4a6a9e00d7de06c75df36b7b96ee4d3750a430 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
-Date: Sat, 7 Mar 2015 19:50:01 -0600
+Date: Mon, 29 Feb 2016 21:20:21 -0600
 Subject: [PATCH] Vanished players don't have rights
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityArrow.java b/src/main/java/net/minecraft/server/EntityArrow.java
-index 3a80776..eac0363 100644
+index e40642f..5ccdb88 100644
 --- a/src/main/java/net/minecraft/server/EntityArrow.java
 +++ b/src/main/java/net/minecraft/server/EntityArrow.java
-@@ -220,6 +220,14 @@ public class EntityArrow extends Entity implements IProjectile {
-             float f2;
-             float f3;
+@@ -184,6 +184,14 @@ public abstract class EntityArrow extends Entity implements IProjectile {
+                 }
+             }
  
-+            // PaperSpigot start - Allow arrows to fly through vanished players the shooter can't see
++            // Paper start - Allow arrows to fly through vanished players the shooter can't see
 +            if (movingobjectposition != null && movingobjectposition.entity instanceof EntityPlayer && shooter != null && shooter instanceof EntityPlayer) {
 +                if (!((EntityPlayer) shooter).getBukkitEntity().canSee(((EntityPlayer) movingobjectposition.entity).getBukkitEntity())) {
 +                    movingobjectposition = null;
 +                }
 +            }
-+            // PaperSpigot end
++            // Paper end
 +
              if (movingobjectposition != null) {
-                 org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this); // CraftBukkit - Call event
-                 if (movingobjectposition.entity != null) {
+                 this.a(movingobjectposition);
+             }
 diff --git a/src/main/java/net/minecraft/server/EntityFishingHook.java b/src/main/java/net/minecraft/server/EntityFishingHook.java
-index 503e78a..00ffff0 100644
+index a07e55e..2751b92 100644
 --- a/src/main/java/net/minecraft/server/EntityFishingHook.java
 +++ b/src/main/java/net/minecraft/server/EntityFishingHook.java
-@@ -187,6 +187,14 @@ public class EntityFishingHook extends Entity {
-                 movingobjectposition = new MovingObjectPosition(entity);
-             }
+@@ -198,6 +198,14 @@ public class EntityFishingHook extends Entity {
+                     movingobjectposition = new MovingObjectPosition(entity);
+                 }
  
-+            // PaperSpigot start - Allow fishing hooks to fly through vanished players the shooter can't see
-+            if (movingobjectposition != null && movingobjectposition.entity instanceof EntityPlayer && owner != null && owner instanceof EntityPlayer) {
-+                if (!((EntityPlayer) owner).getBukkitEntity().canSee(((EntityPlayer) movingobjectposition.entity).getBukkitEntity())) {
-+                    movingobjectposition = null;
++                // Paper start - Allow fishing hooks to fly through vanished players the shooter can't see
++                if (movingobjectposition != null && movingobjectposition.entity instanceof EntityPlayer && owner != null && owner instanceof EntityPlayer) {
++                    if (!((EntityPlayer) owner).getBukkitEntity().canSee(((EntityPlayer) movingobjectposition.entity).getBukkitEntity())) {
++                        movingobjectposition = null;
++                    }
 +                }
-+            }
-+            // PaperSpigot end
++                // Paper end
 +
-             if (movingobjectposition != null) {
-                 org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this); // Craftbukkit - Call event
-                 if (movingobjectposition.entity != null) {
+                 if (movingobjectposition != null) {
+                     org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this); // Craftbukkit - Call event
+                     if (movingobjectposition.entity != null) {
 diff --git a/src/main/java/net/minecraft/server/EntityProjectile.java b/src/main/java/net/minecraft/server/EntityProjectile.java
-index 72478be..e7cca3c 100644
+index 93014a4..e0fc22b 100644
 --- a/src/main/java/net/minecraft/server/EntityProjectile.java
 +++ b/src/main/java/net/minecraft/server/EntityProjectile.java
-@@ -147,6 +147,14 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
-             }
+@@ -157,6 +157,14 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+             movingobjectposition = new MovingObjectPosition(entity);
          }
  
-+        // PaperSpigot start - Allow projectiles to fly through vanished players the shooter can't see
++        // Paper start - Allow projectiles to fly through vanished players the shooter can't see
 +        if (movingobjectposition != null && movingobjectposition.entity instanceof EntityPlayer && shooter != null && shooter instanceof EntityPlayer) {
 +            if (!((EntityPlayer) shooter).getBukkitEntity().canSee(((EntityPlayer) movingobjectposition.entity).getBukkitEntity())) {
 +                movingobjectposition = null;
 +            }
 +        }
-+        // PaperSpigot end
++        // Paper end
 +
          if (movingobjectposition != null) {
              if (movingobjectposition.type == MovingObjectPosition.EnumMovingObjectType.BLOCK && this.world.getType(movingobjectposition.a()).getBlock() == Blocks.PORTAL) {
-                 this.d(movingobjectposition.a());
+                 this.e(movingobjectposition.a());
 diff --git a/src/main/java/net/minecraft/server/ItemBlock.java b/src/main/java/net/minecraft/server/ItemBlock.java
-index 57b3d9d..0cd4175 100644
+index 300573a..6eeb03b 100644
 --- a/src/main/java/net/minecraft/server/ItemBlock.java
 +++ b/src/main/java/net/minecraft/server/ItemBlock.java
-@@ -25,7 +25,7 @@ public class ItemBlock extends Item {
-             return false;
-         } else if (!entityhuman.a(blockposition, enumdirection, itemstack)) {
-             return false;
--        } else if (world.a(this.a, blockposition, false, enumdirection, (Entity) null, itemstack)) {
-+        } else if (world.a(this.a, blockposition, false, enumdirection, entityhuman, itemstack)) { // PaperSpigot - Pass entityhuman instead of null
+@@ -21,7 +21,7 @@ public class ItemBlock extends Item {
+             blockposition = blockposition.shift(enumdirection);
+         }
+ 
+-        if (itemstack.count != 0 && entityhuman.a(blockposition, enumdirection, itemstack) && world.a(this.a, blockposition, false, enumdirection, (Entity) null, itemstack)) {
++        if (itemstack.count != 0 && entityhuman.a(blockposition, enumdirection, itemstack) && world.a(this.a, blockposition, false, enumdirection, entityhuman, itemstack)) { // Paper - Pass entityhuman instead of null
              int i = this.filterData(itemstack.getData());
              IBlockData iblockdata1 = this.a.getPlacedState(world, blockposition, enumdirection, f, f1, f2, i, entityhuman);
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index bb46799..d184f8a 100644
+index 92f9e3d..93dbc9c 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1673,6 +1673,13 @@ public abstract class World implements IBlockAccess {
+@@ -1646,6 +1646,14 @@ public abstract class World implements IBlockAccess {
          for (int i = 0; i < list.size(); ++i) {
              Entity entity1 = (Entity) list.get(i);
  
-+            // PaperSpigot start - Allow block placement if the placer cannot see the vanished blocker
++            // Paper start - Allow block placement if the placer cannot see the vanished blocker
 +            if (entity instanceof EntityPlayer && entity1 instanceof EntityPlayer) {
 +                if (!((EntityPlayer) entity).getBukkitEntity().canSee(((EntityPlayer) entity1).getBukkitEntity())) {
 +                    continue;
 +                }
 +            }
++            // Paper end
 +
-             if (!entity1.dead && entity1.k && entity1 != entity && (entity == null || entity.vehicle != entity1 && entity.passenger != entity1)) {
+             if (!entity1.dead && entity1.i && entity1 != entity && (entity == null || entity1.x(entity))) {
                  return false;
              }
 -- 
-2.6.3.windows.1
+2.7.2
 

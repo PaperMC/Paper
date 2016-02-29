@@ -1,4 +1,4 @@
-PaperSpigot [![CI Status](http://ci.destroystokyo.com/buildStatus/icon?job=PaperSpigot)](http://ci.destroystokyo.com/job/PaperSpigot/)
+Paper [![CI Status](http://ci.destroystokyo.com/buildStatus/icon?job=PaperSpigot)](http://ci.destroystokyo.com/job/PaperSpigot/)
 ===========
 
 High performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.
@@ -15,12 +15,12 @@ https://ci.destroystokyo.com/job/PaperSpigot/
 
 Run the PaperClip jar directly from your server. Just like old times
 
-PaperSpigot requires **JRE 8** or above.
+PaperSpigot requires **Java 8** or above.
 
 
 How To (Compiling From Source)
 ------
-To compile PaperSpigot, you need JDK8, maven, and an internet connection.
+To compile PaperSpigot, you need JDK 8, maven, and an internet connection.
 
 Clone this repo, run ./build.sh from *bash*, get files.
 

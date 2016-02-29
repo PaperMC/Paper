@@ -1,0 +1,34 @@
+From 5c18f5c1534e3aa5152cbc64360cabecd1797e66 Mon Sep 17 00:00:00 2001
+From: Nik Gil <nikmanG@users.noreply.github.com>
+Date: Thu, 3 Mar 2016 01:50:54 -0600
+Subject: [PATCH] Made EntityDismountEvent Cancellable
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index d10fd67..4b66c59 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -38,6 +38,7 @@ import org.bukkit.craftbukkit.event.CraftEventFactory;
+ import org.bukkit.event.entity.EntityCombustEvent;
+ import org.bukkit.event.entity.EntityPortalEvent;
+ import org.bukkit.plugin.PluginManager;
++import org.spigotmc.event.entity.EntityDismountEvent;
+ // CraftBukkit end
+ 
+ public abstract class Entity implements ICommandListener {
+@@ -1734,7 +1735,11 @@ public abstract class Entity implements ICommandListener {
+                 }
+             }
+             // CraftBukkit end
+-            Bukkit.getPluginManager().callEvent( new org.spigotmc.event.entity.EntityDismountEvent( this.getBukkitEntity(), entity.getBukkitEntity() ) ); // Spigot
++            // Paper start - make EntityDismountEvent cancellable
++            EntityDismountEvent dismountEvent = new EntityDismountEvent(this.getBukkitEntity(), entity.getBukkitEntity()); // Spigot
++            Bukkit.getPluginManager().callEvent(dismountEvent);
++            if (dismountEvent.isCancelled()) return;
++            // Paper end
+             this.passengers.remove(entity);
+             entity.j = 60;
+         }
+-- 
+2.7.2
+
