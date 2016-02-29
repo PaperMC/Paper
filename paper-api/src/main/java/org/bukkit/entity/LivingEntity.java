@@ -7,6 +7,7 @@ import java.util.Set;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.attribute.Attributable;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.potion.PotionEffect;
@@ -16,7 +17,7 @@ import org.bukkit.projectiles.ProjectileSource;
 /**
  * Represents a living entity, such as a monster or player
  */
-public interface LivingEntity extends Entity, Damageable, ProjectileSource {
+public interface LivingEntity extends Attributable, Entity, Damageable, ProjectileSource {
 
     /**
      * Gets the height of the living entity's eyes above its Location.
