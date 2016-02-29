@@ -1,11 +1,12 @@
 package org.bukkit.block;
 
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 
 /**
  * Represents a chest.
  */
-public interface Chest extends BlockState, ContainerBlock {
+public interface Chest extends BlockState, InventoryHolder {
 
     /**
      * Returns the chest's inventory. If this is a double chest, it returns
