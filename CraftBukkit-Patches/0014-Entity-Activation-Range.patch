@@ -16,37 +16,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public int ticksLived;
      public int maxFireTicks;
      public int fireTicks;
--    protected boolean inWater;
+-    public boolean inWater;
 +    public boolean inWater; // Spigot - protected -> public // PAIL
      public int noDamageTicks;
      protected boolean justCreated;
      protected boolean fireProof;
-     protected DataWatcher datawatcher;
-     private double ar;
-     private double as;
--    public boolean ad;
-+    public boolean ad; public boolean isAddedToChunk() { return ad; } // Spigot // PAIL
-     public int ae;
-     public int af;
-     public int ag;
 @@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
      public org.bukkit.projectiles.ProjectileSource projectileSource; // CraftBukkit - For projectiles only
      public boolean forceExplosionKnockback; // CraftBukkit - SPIGOT-949
- 
-+    // Spigot start
      public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getEntityTimings(this); // Spigot
++    // Spigot start
 +    public final byte activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
 +    public final boolean defaultActivationState;
 +    public long activatedTick = Integer.MIN_VALUE;
 +    public void inactiveTick() { }
 +    // Spigot end
  
-     public int getId() {
-         return this.id;
+     public Entity(World world) {
+         this.id = Entity.entityCount++;
 @@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
          this.setPosition(0.0D, 0.0D, 0.0D);
          if (world != null) {
-             this.dimension = world.worldProvider.getDimension();
+             this.dimension = world.worldProvider.getDimensionManager().getDimensionID();
 +            // Spigot start
 +            this.defaultActivationState = org.spigotmc.ActivationRange.initializeEntityActivationState(this, world.spigotConfig);
 +        } else {
@@ -55,14 +46,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Spigot end
  
          this.datawatcher = new DataWatcher(this);
-         this.datawatcher.a(0, Byte.valueOf((byte) 0));
+         this.datawatcher.register(Entity.ax, Byte.valueOf((byte) 0));
 diff --git a/src/main/java/net/minecraft/server/EntityAgeable.java b/src/main/java/net/minecraft/server/EntityAgeable.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityAgeable.java
 +++ b/src/main/java/net/minecraft/server/EntityAgeable.java
 @@ -0,0 +0,0 @@ public abstract class EntityAgeable extends EntityCreature {
-     private float bn;
-     public boolean ageLocked = false; // CraftBukkit
+     private float bx;
+     public boolean ageLocked; // CraftBukkit
  
 +    // Spigot start
 +    @Override
@@ -96,17 +87,17 @@ diff --git a/src/main/java/net/minecraft/server/EntityArrow.java b/src/main/java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityArrow.java
 +++ b/src/main/java/net/minecraft/server/EntityArrow.java
-@@ -0,0 +0,0 @@ public class EntityArrow extends Entity implements IProjectile {
-     private int f = -1;
-     private Block g;
-     private int h;
--    private boolean inGround;
-+    public boolean inGround = false; // Spigot - private -> public
-     public int fromPlayer;
+@@ -0,0 +0,0 @@ public abstract class EntityArrow extends Entity implements IProjectile {
+     private int at;
+     private Block au;
+     private int av;
+-    protected boolean inGround;
++    public boolean inGround; // Spigot - protected -> public
+     protected int b;
+     public EntityArrow.PickupStatus fromPlayer;
      public int shake;
-     public Entity shooter;
-@@ -0,0 +0,0 @@ public class EntityArrow extends Entity implements IProjectile {
-     private double damage = 2.0D;
+@@ -0,0 +0,0 @@ public abstract class EntityArrow extends Entity implements IProjectile {
+     private double damage;
      public int knockbackStrength;
  
 +    // Spigot Start
@@ -115,7 +106,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    {
 +        if ( this.inGround )
 +        {
-+            this.ar += 1; // Despawn counter. First int after shooter
++            this.aw += 1; // Despawn counter. First int after shooter
 +        }
 +        super.inactiveTick();
 +    }
@@ -123,27 +114,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      public EntityArrow(World world) {
          super(world);
-         this.j = 10.0D;
+         this.h = -1;
 diff --git a/src/main/java/net/minecraft/server/EntityFireworks.java b/src/main/java/net/minecraft/server/EntityFireworks.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityFireworks.java
 +++ b/src/main/java/net/minecraft/server/EntityFireworks.java
 @@ -0,0 +0,0 @@ public class EntityFireworks extends Entity {
-     private int ticksFlown;
-     public int expectedLifespan;
+         this.setSize(0.25F, 0.25F);
+     }
  
 +    // Spigot Start
 +    @Override
-+    public void inactiveTick()
-+    {
++    public void inactiveTick() {
 +        this.ticksFlown += 1;
 +        super.inactiveTick();
 +    }
 +    // Spigot End
 +
-     public EntityFireworks(World world) {
-         super(world);
-         this.setSize(0.25F, 0.25F);
+     protected void i() {
+         this.datawatcher.register(EntityFireworks.FIREWORK_ITEM, Optional.absent());
+     }
 diff --git a/src/main/java/net/minecraft/server/EntityItem.java b/src/main/java/net/minecraft/server/EntityItem.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityItem.java
@@ -174,7 +164,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Spigot end
 +
-     private void w() {
+     private void x() {
          // Spigot start
          double radius = world.spigotConfig.itemMerge;
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
@@ -182,8 +172,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
-     public int maxAirTicks = 300;
-     ArrayList<org.bukkit.inventory.ItemStack> drops = null;
+     ArrayList<org.bukkit.inventory.ItemStack> drops;
+      public org.bukkit.craftbukkit.attribute.CraftAttributeMap craftAttributes;
      // CraftBukkit end
 +    // Spigot start
 +    public void inactiveTick()
@@ -193,15 +183,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Spigot end
  
-     public void G() {
+     public void Q() {
          this.damageEntity(DamageSource.OUT_OF_WORLD, Float.MAX_VALUE);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-         this.g.clear();
-         this.methodProfiler.c("regular");
+         CrashReportSystemDetails crashreportsystemdetails1;
+         CrashReport crashreport1;
  
 +        org.spigotmc.ActivationRange.activateEntities(this); // Spigot
          timings.entityTick.startTiming(); // Spigot
@@ -221,7 +211,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } else {
              entity.tickTimer.startTiming(); // Spigot
              // CraftBukkit end
-             entity.P = entity.locX;
+             entity.M = entity.locX;
 diff --git a/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java b/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/SpigotTimings.java
@@ -244,8 +234,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package org.spigotmc;
 +
-+import java.util.ArrayList;
-+import java.util.List;
 +import java.util.Set;
 +import net.minecraft.server.AxisAlignedBB;
 +import net.minecraft.server.Chunk;
@@ -275,15 +263,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.World;
 +import org.bukkit.craftbukkit.SpigotTimings;
-+import org.bukkit.entity.Creeper;
 +
 +public class ActivationRange
 +{
 +
-+    static AxisAlignedBB maxBB = AxisAlignedBB.a( 0, 0, 0, 0, 0, 0 );
-+    static AxisAlignedBB miscBB = AxisAlignedBB.a( 0, 0, 0, 0, 0, 0 );
-+    static AxisAlignedBB animalBB = AxisAlignedBB.a( 0, 0, 0, 0, 0, 0 );
-+    static AxisAlignedBB monsterBB = AxisAlignedBB.a( 0, 0, 0, 0, 0, 0 );
++    static AxisAlignedBB maxBB = new AxisAlignedBB( 0, 0, 0, 0, 0, 0 );
++    static AxisAlignedBB miscBB = new AxisAlignedBB( 0, 0, 0, 0, 0, 0 );
++    static AxisAlignedBB animalBB = new AxisAlignedBB( 0, 0, 0, 0, 0, 0 );
++    static AxisAlignedBB monsterBB = new AxisAlignedBB( 0, 0, 0, 0, 0, 0 );
 +
 +    /**
 +     * Initializes an entities type on construction to specify what group this
@@ -352,7 +339,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        maxRange = Math.max( maxRange, miscActivationRange );
 +        maxRange = Math.min( ( world.spigotConfig.viewDistance << 4 ) - 8, maxRange );
 +
-+        for ( Entity player : (List<Entity>) world.players )
++        for ( EntityHuman player : world.players )
 +        {
 +
 +            player.activatedTick = MinecraftServer.currentTick;
@@ -434,14 +421,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static boolean checkEntityImmunities(Entity entity)
 +    {
 +        // quick checks.
-+        if ( entity.inWater /* isInWater */ || entity.fireTicks > 0 )
++        if ( entity.inWater || entity.fireTicks > 0 )
 +        {
 +            return true;
 +        }
 +        if ( !( entity instanceof EntityArrow ) )
 +        {
-+            if ( !entity.onGround || entity.passenger != null
-+                    || entity.vehicle != null )
++            if ( !entity.onGround || !entity.passengers.isEmpty() || entity.getVehicle()!= null )
 +            {
 +                return true;
 +            }
@@ -461,14 +447,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            {
 +                return true;
 +            }
-+            if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).ck() /* Getter for first boolean */ )
++            if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).da() /* Getter for first boolean */ )
 +            {
 +                return true;
 +            }
 +            if ( entity instanceof EntityAnimal )
 +            {
 +                EntityAnimal animal = (EntityAnimal) entity;
-+                if ( animal.isBaby() || animal.cp() /*love*/ )
++                if ( animal.isBaby() || animal.isInLove() )
 +                {
 +                    return true;
 +                }
@@ -477,7 +463,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    return true;
 +                }
 +            }
-+            if (entity instanceof EntityCreeper && ((EntityCreeper) entity).cn()) { // isExplosive
++            if (entity instanceof EntityCreeper && ((EntityCreeper) entity).isIgnited()) { // isExplosive
 +                return true;
 +            }
 +        }
@@ -494,7 +480,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    {
 +        SpigotTimings.checkIfActiveTimer.startTiming();
 +        // Never safe to skip fireworks or entities not yet added to chunk
-+        if ( !entity.isAddedToChunk() || entity instanceof EntityFireworks ) {
++        // PAIL: inChunk
++        if ( !entity.aa || entity instanceof EntityFireworks ) {
 +            SpigotTimings.checkIfActiveTimer.stopTiming();
 +            return true;
 +        }
@@ -536,8 +523,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -0,0 +0,0 @@ public class SpigotWorldConfig
-         mobSpawnRange = (byte) getInt( "mob-spawn-range", 4 );
-         log( "Mob Spawn Range: " + mobSpawnRange );
+         itemDespawnRate = getInt( "item-despawn-rate", 6000 );
+         log( "Item Despawn Rate: " + itemDespawnRate );
      }
 +
 +    public int animalActivationRange = 32;
