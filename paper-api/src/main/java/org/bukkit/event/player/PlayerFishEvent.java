@@ -134,5 +134,9 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
          * poor aiming or timing
          */
         FAILED_ATTEMPT,
+        /**
+         * Called when there is a bite on the hook and it is ready to be reeled in.
+         */
+        BITE
     }
 }
