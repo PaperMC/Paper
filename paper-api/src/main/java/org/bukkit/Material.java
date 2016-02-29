@@ -24,6 +24,7 @@ import org.bukkit.material.FlowerPot;
 import org.bukkit.material.Furnace;
 import org.bukkit.material.Gate;
 import org.bukkit.material.Ladder;
+import org.bukkit.material.Leaves;
 import org.bukkit.material.Lever;
 import org.bukkit.material.LongGrass;
 import org.bukkit.material.MaterialData;
@@ -39,6 +40,7 @@ import org.bukkit.material.Rails;
 import org.bukkit.material.RedstoneTorch;
 import org.bukkit.material.RedstoneWire;
 import org.bukkit.material.Sandstone;
+import org.bukkit.material.Sapling;
 import org.bukkit.material.Sign;
 import org.bukkit.material.Skull;
 import org.bukkit.material.SmoothBrick;
@@ -51,12 +53,14 @@ import org.bukkit.material.Tree;
 import org.bukkit.material.Tripwire;
 import org.bukkit.material.TripwireHook;
 import org.bukkit.material.Vine;
+import org.bukkit.material.Wood;
 import org.bukkit.material.WoodenStep;
 import org.bukkit.material.Wool;
 import org.bukkit.potion.Potion;
 import org.bukkit.util.Java15Compat;
 
 import com.google.common.collect.Maps;
+
 import org.bukkit.material.Banner;
 
 /**
@@ -68,8 +72,8 @@ public enum Material {
     GRASS(2),
     DIRT(3),
     COBBLESTONE(4),
-    WOOD(5, Tree.class),
-    SAPLING(6, Tree.class),
+    WOOD(5, Wood.class),
+    SAPLING(6, Sapling.class),
     BEDROCK(7),
     WATER(8, MaterialData.class),
     STATIONARY_WATER(9, MaterialData.class),
@@ -81,7 +85,7 @@ public enum Material {
     IRON_ORE(15),
     COAL_ORE(16),
     LOG(17, Tree.class),
-    LEAVES(18, Tree.class),
+    LEAVES(18, Leaves.class),
     SPONGE(19),
     GLASS(20),
     LAPIS_ORE(21),
@@ -188,7 +192,7 @@ public enum Material {
     DRAGON_EGG(122),
     REDSTONE_LAMP_OFF(123),
     REDSTONE_LAMP_ON(124),
-    WOOD_DOUBLE_STEP(125, WoodenStep.class),
+    WOOD_DOUBLE_STEP(125, Wood.class),
     WOOD_STEP(126, WoodenStep.class),
     COCOA(127, CocoaPlant.class),
     SANDSTONE_STAIRS(128, Stairs.class),
@@ -224,8 +228,8 @@ public enum Material {
     DROPPER(158, Dispenser.class),
     STAINED_CLAY(159),
     STAINED_GLASS_PANE(160),
-    LEAVES_2(161),
-    LOG_2(162),
+    LEAVES_2(161, Leaves.class),
+    LOG_2(162, Tree.class),
     ACACIA_STAIRS(163, Stairs.class),
     DARK_OAK_STAIRS(164, Stairs.class),
     SLIME_BLOCK(165),
