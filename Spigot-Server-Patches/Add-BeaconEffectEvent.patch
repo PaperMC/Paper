@@ -1,9 +1,22 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
-Date: Thu, 23 Apr 2015 17:26:21 -0400
+Date: Wed, 2 Mar 2016 23:30:53 -0600
 Subject: [PATCH] Add BeaconEffectEvent
 
 
+diff --git a/src/main/java/net/minecraft/server/MobEffectList.java b/src/main/java/net/minecraft/server/MobEffectList.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/MobEffectList.java
++++ b/src/main/java/net/minecraft/server/MobEffectList.java
+@@ -0,0 +0,0 @@ public class MobEffectList {
+     private final Map<IAttribute, AttributeModifier> a = Maps.newHashMap();
+     private final boolean c;
+     private final int d;
+-    private String e = "";
++    public String e = ""; // Paper - private -> public
+     private int f = -1;
+     public double durationModifier;
+     private boolean h;
 diff --git a/src/main/java/net/minecraft/server/TileEntityBeacon.java b/src/main/java/net/minecraft/server/TileEntityBeacon.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/TileEntityBeacon.java
@@ -12,52 +25,50 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import org.bukkit.entity.HumanEntity;
  // CraftBukkit end
  
-+// PaperSpigot start
++// Paper start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.entity.Player;
 +import org.bukkit.potion.PotionEffect;
 +import org.bukkit.potion.PotionEffectType;
-+import org.github.paperspigot.event.block.BeaconEffectEvent;
-+// PaperSpigot end
++import com.destroystokyo.paper.event.block.BeaconEffectEvent;
++// Paper end
 +
- public class TileEntityBeacon extends TileEntityContainer implements IUpdatePlayerListBox, IInventory {
+ public class TileEntityBeacon extends TileEntityContainer implements ITickable, IWorldInventory {
  
-     public static final MobEffectList[][] a = new MobEffectList[][] { { MobEffectList.FASTER_MOVEMENT, MobEffectList.FASTER_DIG}, { MobEffectList.RESISTANCE, MobEffectList.JUMP}, { MobEffectList.INCREASE_DAMAGE}, { MobEffectList.REGENERATION}};
-@@ -0,0 +0,0 @@ public class TileEntityBeacon extends TileEntityContainer implements IUpdatePlay
-             Iterator iterator = list.iterator();
+     public static final MobEffectList[][] a = new MobEffectList[][] { { MobEffects.FASTER_MOVEMENT, MobEffects.FASTER_DIG}, { MobEffects.RESISTANCE, MobEffects.JUMP}, { MobEffects.INCREASE_DAMAGE}, { MobEffects.REGENERATION}};
+@@ -0,0 +0,0 @@ public class TileEntityBeacon extends TileEntityContainer implements ITickable,
  
              EntityHuman entityhuman;
-+            // PaperSpigot start
-+            org.bukkit.block.Block block = world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ());
-+            PotionEffect primaryEffect = new PotionEffect(PotionEffectType.getById(this.k), 180, b0, true, true);
-+            // PaperSpigot end
  
++            // Paper start
++            org.bukkit.block.Block block = world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ());
++            PotionEffect primaryEffect = new PotionEffect(PotionEffectType.getByName(this.l.e), 180, b0, true, true);
++            // Paper end
++
              while (iterator.hasNext()) {
                  entityhuman = (EntityHuman) iterator.next();
--                entityhuman.addEffect(new MobEffect(this.k, 180, b0, true, true));
-+                // PaperSpigot start - BeaconEffectEvent
+-                entityhuman.addEffect(new MobEffect(this.l, i, b0, true, true));
++                // Paper start - BeaconEffectEvent
 +                BeaconEffectEvent event = new BeaconEffectEvent(block, primaryEffect, (Player) entityhuman.getBukkitEntity(), true);
 +                if (CraftEventFactory.callEvent(event).isCancelled()) continue;
-+
 +                PotionEffect effect = event.getEffect();
-+                entityhuman.addEffect(new MobEffect(effect.getType().getId(), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles()));
-+                // PaperSpigot end
++                entityhuman.addEffect(new MobEffect(MobEffectList.fromId(effect.getType().getId()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles()));
++                // Paper end
              }
  
-             if (this.j >= 4 && this.k != this.l && this.l > 0) {
+             if (this.k >= 4 && this.l != this.m && this.m != null) {
                  iterator = list.iterator();
-+                PotionEffect secondaryEffect = new PotionEffect(PotionEffectType.getById(this.l), 180, 0, true, true); // PaperSpigot
++                PotionEffect secondaryEffect = new PotionEffect(PotionEffectType.getByName(this.m.e), 180, 0, true, true); // Paper
  
                  while (iterator.hasNext()) {
                      entityhuman = (EntityHuman) iterator.next();
--                    entityhuman.addEffect(new MobEffect(this.l, 180, 0, true, true));
-+                    // PaperSpigot start - BeaconEffectEvent
+-                    entityhuman.addEffect(new MobEffect(this.m, i, 0, true, true));
++                    // Paper start - BeaconEffectEvent
 +                    BeaconEffectEvent event = new BeaconEffectEvent(block, secondaryEffect, (Player) entityhuman.getBukkitEntity(), false);
 +                    if (CraftEventFactory.callEvent(event).isCancelled()) continue;
-+
 +                    PotionEffect effect = event.getEffect();
-+                    entityhuman.addEffect(new MobEffect(effect.getType().getId(), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles()));
-+                    // PaperSpigot end
++                    entityhuman.addEffect(new MobEffect(MobEffectList.fromId(effect.getType().getId()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles()));
++                    // Paper end
                  }
              }
          }

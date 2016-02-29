@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
-Date: Tue, 16 Jun 2015 00:43:17 -0700
+Date: Wed, 2 Mar 2016 11:59:48 -0600
 Subject: [PATCH] Optimize explosions
 
 The process of determining an entity's exposure from explosions can be
@@ -9,6 +9,21 @@ expensive when there are hundreds or more entities in range.
 This patch adds a per-tick cache that is used for storing and retrieving
 an entity's exposure during an explosion.
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -0,0 +0,0 @@ public class PaperWorldConfig {
+         generateVillage = getBoolean("generator-settings.village", true);
+         generateFlatBedrock = getBoolean("generator-settings.flat-bedrock", false);
+     }
++
++    public boolean optimizeExplosions;
++    private void optimizeExplosions() {
++        optimizeExplosions = getBoolean("optimize-explosions", false);
++        log("Optimize explosions: " + optimizeExplosions);
++    }
+ }
 diff --git a/src/main/java/net/minecraft/server/Explosion.java b/src/main/java/net/minecraft/server/Explosion.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/Explosion.java
@@ -18,21 +33,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          d9 /= d11;
                          d10 /= d11;
 -                        double d12 = (double) this.world.a(vec3d, entity.getBoundingBox());
-+                        double d12 = this.getBlockDensity(vec3d, entity.getBoundingBox()); // PaperSpigot - Optimize explosions
++                        double d12 = this.getBlockDensity(vec3d, entity.getBoundingBox()); // Paper - Optimize explosions
                          double d13 = (1.0D - d7) * d12;
  
-                         // entity.damageEntity(DamageSource.explosion(this), (float) ((int) ((d13 * d13 + d13) / 2.0D * 8.0D * (double) f3 + 1.0D)));+                        // CraftBukkit start
+                         // CraftBukkit start
 @@ -0,0 +0,0 @@ public class Explosion {
      public List<BlockPosition> getBlocks() {
          return this.blocks;
      }
 +
-+    // PaperSpigot start - Optimize explosions
++    // Paper start - Optimize explosions
 +    private float getBlockDensity(Vec3D vec3d, AxisAlignedBB aabb) {
-+        if (!this.world.paperSpigotConfig.optimizeExplosions) {
++        if (!this.world.paperConfig.optimizeExplosions) {
 +            return this.world.a(vec3d, aabb);
 +        }
-+
 +        CacheKey key = new CacheKey(this, aabb);
 +        Float blockDensity = this.world.explosionDensityCache.get(key);
 +        if (blockDensity == null) {
@@ -107,7 +121,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return result;
 +        }
 +    }
-+    // PaperSpigot end
++    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -117,7 +131,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  worldserver.timings.tracker.stopTiming(); // Spigot
                  this.methodProfiler.b();
                  this.methodProfiler.b();
-+                worldserver.explosionDensityCache.clear(); // PaperSpigot - Optimize explosions
++                worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
              // } // CraftBukkit
  
              // this.i[i][this.ticks % 100] = System.nanoTime() - j; // CraftBukkit
@@ -125,27 +139,20 @@ diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/m
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
+@@ -0,0 +0,0 @@ import org.bukkit.generator.ChunkGenerator;
+ // Paper start
+ import java.util.concurrent.ExecutorService;
+ import java.util.concurrent.Executors;
++import java.util.HashMap;
+ import com.google.common.util.concurrent.ThreadFactoryBuilder;
+ // Paper end
+ 
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
      private org.spigotmc.TickLimiter tileLimiter;
      private int tileTickPosition;
-     public ExecutorService lightingExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("PaperSpigot - Lighting Thread").build()); // PaperSpigot - Asynchronous lighting updates
-+    public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<Explosion.CacheKey, Float>(); // PaperSpigot - Optimize explosions
+     public ExecutorService lightingExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("Paper - Lighting Thread").build()); // Paper - Asynchronous lighting updates
++    public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<Explosion.CacheKey, Float>(); // Paper - Optimize explosions
  
-     public static long chunkToKey(int x, int z)
-     {
-diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-+++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperSpigotWorldConfig
-     {
-         fallingBlocksCollideWithSigns = getBoolean( "falling-blocks-collide-with-signs", false );
-     }
-+
-+    public boolean optimizeExplosions;
-+    private void optimizeExplosions()
-+    {
-+        optimizeExplosions = getBoolean( "optimize-explosions", false );
-+    }
- }
+     public CraftWorld getWorld() {
+         return this.world;
 --

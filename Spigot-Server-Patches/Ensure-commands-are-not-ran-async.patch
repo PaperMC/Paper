@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
-Date: Wed, 8 Oct 2014 19:51:28 -0400
+Date: Thu, 3 Mar 2016 01:17:12 -0600
 Subject: [PATCH] Ensure commands are not ran async
 
 Plugins calling Player.chat("/foo") or Server.dispatchCommand() could
@@ -17,11 +17,11 @@ diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, IUpdatePlayerList
+@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
          }
  
          if (!async && s.startsWith("/")) {
-+            // PaperSpigot Start
++            // Paper Start
 +            if (!org.bukkit.Bukkit.isPrimaryThread()) {
 +                final String fCommandLine = s;
 +                MinecraftServer.LOGGER.log(org.apache.logging.log4j.Level.ERROR, "Command Dispatched Async: " + fCommandLine);
@@ -43,7 +43,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    throw new RuntimeException("Exception processing chat command", e.getCause());
 +                }
 +            }
-+            // PaperSpigot End
++            // Paper End
              this.handleCommand(s);
          } else if (this.player.getChatFlags() == EntityHuman.EnumChatVisibility.SYSTEM) {
              // Do nothing, this is coming from a plugin
@@ -55,7 +55,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Validate.notNull(sender, "Sender cannot be null");
          Validate.notNull(commandLine, "CommandLine cannot be null");
  
-+        // PaperSpigot Start
++        // Paper Start
 +        if (!Bukkit.isPrimaryThread()) {
 +            final CommandSender fSender = sender;
 +            final String fCommandLine = commandLine;
@@ -76,7 +76,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                throw new RuntimeException("Exception processing dispatch command", e.getCause());
 +            }
 +        }
-+        // PaperSpigot End
++        // Paper End
 +
          if (commandMap.dispatch(sender, commandLine)) {
              return true;

@@ -1,91 +1,73 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: DoctorDark <doctordark11@gmail.com>
-Date: Thu, 28 May 2015 20:12:38 -0500
+Date: Wed, 2 Mar 2016 01:17:06 -0600
 Subject: [PATCH] Configurable end credits when leaving the end
 
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -0,0 +0,0 @@ public class PaperWorldConfig {
+         useAsyncLighting = getBoolean( "use-async-lighting", false );
+         log("World async lighting: " + useAsyncLighting);
+     }
++
++    public boolean disableEndCredits;
++    private void disableEndCredits() {
++        disableEndCredits = getBoolean("game-mechanics.disable-end-credits", false);
++        log("End credits disabled: " + disableEndCredits);
++    }
+ }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
-     }
  
-     public void c(int i) {
--        if (this.dimension == 1 && i == 1) {
-+        // PaperSpigot start - Allow configurable end portal credits
-+        boolean endPortal = this.dimension == 1 && i == 1;
-+        if (endPortal) {
-             this.b((Statistic) AchievementList.D);
+     public Entity c(int i) {
+         this.cj = true;
++        // Paper start - Allow configurable end portal credits
+         if (this.dimension == 1 && i == 1) {
 -            this.world.kill(this);
--            this.viewingCredits = true;
--            this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(4, 0.0F));
-+            if (!world.paperSpigotConfig.disableEndCredits) {
+-            if (!this.viewingCredits) {
++            if (!this.viewingCredits && !world.paperConfig.disableEndCredits) {
 +                this.world.kill(this);
-+                this.viewingCredits = true;
-+                this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(4, 0.0F));
-+            }
-+        // PaperSpigot end
-         } else {
-             if (this.dimension == 0 && i == 1) {
-                 this.b((Statistic) AchievementList.C);
++                // Paper end
+                 this.viewingCredits = true;
+                 if (this.a(AchievementList.D)) {
+                     this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(4, 0.0F));
 @@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
              } else {
                  this.b((Statistic) AchievementList.y);
              }
 +        }
  
-+        // PaperSpigot start - Allow configurable end portal credits
-+        if (!endPortal || world.paperSpigotConfig.disableEndCredits) {
++        if (!(this.dimension == 1 && i == 1) || world.paperConfig.disableEndCredits) { // Paper - Allow configurable end portal credits
              // CraftBukkit start
--            TeleportCause cause = (this.dimension == 1 || i == 1) ? TeleportCause.END_PORTAL : TeleportCause.NETHER_PORTAL;
-+            TeleportCause cause = (endPortal || (this.dimension == 1 || i == 1)) ? TeleportCause.END_PORTAL : TeleportCause.NETHER_PORTAL;
-             this.server.getPlayerList().changeDimension(this, i, cause);
-             // CraftBukkit end
-             this.lastSentExp = -1;
-             this.bM = -1.0F;
-             this.bN = -1;
+             TeleportCause cause = (this.dimension == 1 || i == 1) ? TeleportCause.END_PORTAL : TeleportCause.NETHER_PORTAL;
+             this.server.getPlayerList().changeDimension(this, i, cause); // PAIL: check all this
+@@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             this.cb = -1;
+             return this;
          }
-+        // PaperSpigot end
- 
++
++        return null; // Paper - Theoretically it should never make it here
      }
  
+     public boolean a(EntityPlayer entityplayer) {
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
-         }
- 
-         TravelAgent agent = exit != null ? (TravelAgent) ((CraftWorld) exit.getWorld()).getHandle().getTravelAgent() : org.bukkit.craftbukkit.CraftTravelAgent.DEFAULT; // return arbitrary TA to compensate for implementation dependent plugins
-+        agent.setCanCreatePortal(cause != TeleportCause.END_PORTAL); // PaperSpigot - Configurable end credits, don't allow End Portals to create portals
-+
-         PlayerPortalEvent event = new PlayerPortalEvent(entityplayer.getBukkitEntity(), enter, exit, agent, cause);
-         event.useTravelAgent(useTravelAgent);
-         Bukkit.getServer().getPluginManager().callEvent(event);
-@@ -0,0 +0,0 @@ public abstract class PlayerList {
              return;
          }
  
 -        exit = event.useTravelAgent() ? event.getPortalTravelAgent().findOrCreate(event.getTo()) : event.getTo();
-+        // PaperSpigot - Configurable end credits, if a plugin sets to use a travel agent even if the cause is an end portal, ignore it
++        // Paper - Configurable end credits, if a plugin sets to use a travel agent even if the cause is an end portal, ignore it
 +        exit = cause != TeleportCause.END_PORTAL && event.useTravelAgent() ? event.getPortalTravelAgent().findOrCreate(event.getTo()) : event.getTo();
          if (exit == null) {
              return;
          }
-diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-+++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperSpigotWorldConfig
-         useAsyncLighting = getBoolean( "use-async-lighting", false );
-         log( "World async lighting: " + useAsyncLighting );
-     }
-+
-+    public boolean disableEndCredits;
-+    private void disableEndCredits()
-+    {
-+        disableEndCredits = getBoolean( "game-mechanics.disable-end-credits", false );
-+    }
- }
 --

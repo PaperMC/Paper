@@ -1,9 +1,23 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
-Date: Wed, 1 Jul 2015 00:18:10 -0700
+Date: Wed, 2 Mar 2016 00:52:31 -0600
 Subject: [PATCH] Configurable async light updates
 
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -0,0 +0,0 @@ public class PaperWorldConfig {
+ 
+     }
+ 
++    public boolean useAsyncLighting;
++    private void useAsyncLighting() {
++        useAsyncLighting = getBoolean( "use-async-lighting", false );
++        log("World async lighting: " + useAsyncLighting);
++    }
+ }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
@@ -12,19 +26,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import java.util.Random;
  import java.util.concurrent.Callable;
  import java.util.concurrent.ConcurrentLinkedQueue;
-+import java.util.concurrent.atomic.AtomicInteger; // PaperSpigot
++import java.util.concurrent.atomic.AtomicInteger; // Paper
 +
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
 @@ -0,0 +0,0 @@ public class Chunk {
-     private int v;
-     private ConcurrentLinkedQueue<BlockPosition> w;
+     private int w;
+     private ConcurrentLinkedQueue<BlockPosition> x;
      protected gnu.trove.map.hash.TObjectIntHashMap<Class> entityCount = new gnu.trove.map.hash.TObjectIntHashMap<Class>(); // Spigot
-+    // PaperSpigot start - Asynchronous light updates
++    // Paper start - Asynchronous light updates
 +    public AtomicInteger pendingLightUpdates = new AtomicInteger();
 +    public long lightUpdateTime;
-+    // PaperSpigot end
++    // Paper end
  
      // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
      private int neighbors = 0x1 << 12;
@@ -33,29 +47,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (l > k && this.world.areChunksLoaded(new BlockPosition(i, 0, j), 16)) {
              for (int i1 = k; i1 < l; ++i1) {
 -                this.world.c(EnumSkyBlock.SKY, new BlockPosition(i, i1, j));
-+                this.world.updateLight(EnumSkyBlock.SKY, new BlockPosition(i, i1, j)); // PaperSpigot - Asynchronous lighting updates
++                this.world.updateLight(EnumSkyBlock.SKY, new BlockPosition(i, i1, j));
              }
  
-             this.q = true;
+             this.r = true;
 @@ -0,0 +0,0 @@ public class Chunk {
  
      public void b(boolean flag) {
-         if (this.k && !this.world.worldProvider.o() && !flag) {
+         if (this.l && !this.world.worldProvider.m() && !flag) {
 -            this.h(this.world.isClientSide);
-+            this.recheckGaps(this.world.isClientSide); // PaperSpigot - Asynchronous lighting updates
++            this.recheckGaps(this.world.isClientSide); // Paper - Asynchronous lighting updates
          }
  
-         this.p = true;
+         this.q = true;
 @@ -0,0 +0,0 @@ public class Chunk {
  
      }
  
 +    /**
-+     * PaperSpigot - Recheck gaps asynchronously.
++     * Paper- Recheck gaps asynchronously
 +     */
 +    public void recheckGaps(final boolean isClientSide) {
-+        if (!world.paperSpigotConfig.useAsyncLighting) {
-+            this.h(isClientSide);
++        if (!world.paperConfig.useAsyncLighting) {
++            this.h(this.world.isClientSide);
 +            return;
 +        }
 +
@@ -78,59 +92,59 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public void queueUnload(int i, int j) {
-+        // PaperSpigot start - Asynchronous lighting updates
++        // Paper start - Asynchronous lighting updates
 +        Chunk chunk = chunks.get(LongHash.toLong(i, j));
-+        if (chunk != null && chunk.world.paperSpigotConfig.useAsyncLighting && (chunk.pendingLightUpdates.get() > 0 || chunk.world.getTime() - chunk.lightUpdateTime < 20)) {
++        if (chunk != null && chunk.world.paperConfig.useAsyncLighting && (chunk.pendingLightUpdates.get() > 0 || chunk.world.getTime() - chunk.lightUpdateTime < 20)) {
 +            return;
 +        }
-+        // PaperSpigot end
-         if (this.world.worldProvider.e()) {
-             if (!this.world.c(i, j)) {
-                 // CraftBukkit start
++        // Paper end
+         if (this.world.worldProvider.c(i, j)) {
+             // CraftBukkit start
+             this.unloadQueue.add(i, j);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ import org.bukkit.generator.ChunkGenerator;
- import java.util.*;
- import java.util.concurrent.Callable;
+@@ -0,0 +0,0 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
+ import org.bukkit.generator.ChunkGenerator;
+ // CraftBukkit end
  
-+// PaperSpigot start
++// Paper start
 +import java.util.concurrent.ExecutorService;
 +import java.util.concurrent.Executors;
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
-+// PaperSpigot end
++// Paper end
 +
- // CraftBukkit start
- // CraftBukkit end
+ public abstract class World implements IBlockAccess {
  
+     private int a = 63;
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
      private org.spigotmc.TickLimiter entityLimiter;
      private org.spigotmc.TickLimiter tileLimiter;
      private int tileTickPosition;
-+    public ExecutorService lightingExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("PaperSpigot - Lighting Thread").build()); // PaperSpigot - Asynchronous lighting updates
++    public ExecutorService lightingExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("Paper - Lighting Thread").build()); // Paper - Asynchronous lighting updates
  
-     public static long chunkToKey(int x, int z)
-     {
+     public CraftWorld getWorld() {
+         return this.world;
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
  
-         if (!this.worldProvider.o()) {
+         if (!this.worldProvider.m()) {
              for (i1 = k; i1 <= l; ++i1) {
 -                this.c(EnumSkyBlock.SKY, new BlockPosition(i, i1, j));
-+                this.updateLight(EnumSkyBlock.SKY, new BlockPosition(i, i1, j)); // PaperSpigot - Asynchronous lighting updates
++                this.updateLight(EnumSkyBlock.SKY, new BlockPosition(i, i1, j)); // Paper - Asynchronous lighting updates
              }
          }
  
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
          boolean flag = false;
  
-         if (!this.worldProvider.o()) {
+         if (!this.worldProvider.m()) {
 -            flag |= this.c(EnumSkyBlock.SKY, blockposition);
-+            flag |= this.updateLight(EnumSkyBlock.SKY, blockposition); // PaperSpigot - Asynchronous lighting updates
++            flag |= this.updateLight(EnumSkyBlock.SKY, blockposition); // Paper - Asynchronous lighting updates
          }
  
 -        flag |= this.c(EnumSkyBlock.BLOCK, blockposition);
-+        flag |= this.updateLight(EnumSkyBlock.BLOCK, blockposition); // PaperSpigot - Asynchronous lighting updates
++        flag |= this.updateLight(EnumSkyBlock.BLOCK, blockposition); // Paper - Asynchronous lighting updates
          return flag;
      }
  
@@ -138,8 +152,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
  
--    public boolean c(EnumSkyBlock enumskyblock, BlockPosition blockposition) {
-+    public boolean c(EnumSkyBlock enumskyblock, BlockPosition blockposition, Chunk chunk, List<Chunk> neighbors) { // PaperSpigot
++    // Paper start - Asynchronous lighting updates
+     public boolean c(EnumSkyBlock enumskyblock, BlockPosition blockposition) {
++        return this.c(enumskyblock, blockposition, null, null);
++    }
++
++    public boolean c(EnumSkyBlock enumskyblock, BlockPosition blockposition, Chunk chunk, List<Chunk> neighbors) { // Paper
          // CraftBukkit start - Use neighbor cache instead of looking up
 -        Chunk chunk = this.getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 -        if (chunk == null || !chunk.areNeighborsLoaded(1) /*!this.areChunksLoaded(blockposition, 17, false)*/) {
@@ -149,11 +167,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return false;
          } else {
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-                 }
+                 i = 0;
              }
  
-+            // PaperSpigot start - Asynchronous light updates
-+            if (chunk.world.paperSpigotConfig.useAsyncLighting) {
++            // Paper start - Asynchronous light updates
++            if (chunk.world.paperConfig.useAsyncLighting) {
 +                chunk.pendingLightUpdates.decrementAndGet();
 +                if (neighbors != null) {
 +                    for (Chunk neighbor : neighbors) {
@@ -161,14 +179,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    }
 +                }
 +            }
-+            // PaperSpigot end
++            // Paper end
++
              this.methodProfiler.b();
-             return true;
+             this.methodProfiler.a("checkedPosition < toCheckCount");
+ 
+@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
          }
      }
  
 +    /**
-+     * PaperSpigot - Asynchronous lighting updates
++     * Paper - Asynchronous lighting updates
 +     */
 +    public boolean updateLight(final EnumSkyBlock enumskyblock, final BlockPosition position) {
 +        int x = position.getX();
@@ -178,7 +199,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return false;
 +        }
 +
-+        if (!chunk.world.paperSpigotConfig.useAsyncLighting) {
++        if (!chunk.world.paperConfig.useAsyncLighting) {
 +            return this.c(enumskyblock, position, chunk, null);
 +        }
 +
@@ -186,6 +207,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        chunk.lightUpdateTime = chunk.world.getTime();
 +
 +        final List<Chunk> neighbors = new ArrayList<Chunk>();
++
 +        for (int cx = (x >> 4) - 1; cx <= (x >> 4) + 1; ++cx) {
 +            for (int cz = (z >> 4) - 1; cz <= (z >> 4) + 1; ++cz) {
 +                if (cx != x >> 4 && cz != z >> 4) {
@@ -215,20 +237,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public boolean a(boolean flag) {
          return false;
      }
-diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-+++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperSpigotWorldConfig
-         log( "WorldServer TickNextTick cap set at " + tickNextTickCap );
-         log( "WorldServer TickNextTickList cap always processes redstone: " + tickNextTickListCapIgnoresRedstone );
-     }
-+
-+    public boolean useAsyncLighting;
-+    private void useAsyncLighting()
-+    {
-+        useAsyncLighting = getBoolean( "use-async-lighting", false );
-+        log( "World async lighting: " + useAsyncLighting );
-+    }
- }
 --

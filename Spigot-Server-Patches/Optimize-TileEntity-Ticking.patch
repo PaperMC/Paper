@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: Aikar <aikar@aikar.co>
-Date: Sun, 8 Mar 2015 22:55:25 -0600
+From: Zach Brown <1254957+zachbr@users.noreply.github.com>
+Date: Tue, 1 Mar 2016 22:01:19 -0600
 Subject: [PATCH] Optimize TileEntity Ticking
 
 
@@ -12,8 +12,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import org.bukkit.entity.HumanEntity;
  // CraftBukkit end
  
--public class TileEntityChest extends TileEntityContainer implements IUpdatePlayerListBox, IInventory {
-+public class TileEntityChest extends TileEntityContainer implements IInventory { // PaperSpigot - remove IUpdatePlayerListBox
+-public class TileEntityChest extends TileEntityLootable implements ITickable, IInventory {
++public class TileEntityChest extends TileEntityLootable implements IInventory { // Paper - Remove ITickable
  
      private ItemStack[] items = new ItemStack[27];
      public boolean a;
@@ -22,42 +22,42 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    public TileEntityChest h;
 -    public TileEntityChest i;
 -    public float j;
-+    public TileEntityChest f; // PaperSpigot - adjacentChestZNeg
-+    public TileEntityChest g; // PaperSpigot - adjacentChestXPos
-+    public TileEntityChest h; // PaperSpigot - adjacentChestXNeg
-+    public TileEntityChest i; // PaperSpigot - adjacentChestZPos
-+    public float j; // PaperSpigot - lidAngle
++    public TileEntityChest f; // Paper - Adjacent Chest Z Neg
++    public TileEntityChest g; // Paper - Adjacent Chest X Pos
++    public TileEntityChest h; // Paper - Adjacent Chest X Neg
++    public TileEntityChest i; // Paper - Adjacent Chest Z Pos
++    public float j; // Paper - lid angle
      public float k;
 -    public int l;
-+    public int l; // PaperSpigot - numPlayersUsing
-     private int n;
-     private int o = -1;
-     private String p;
-@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
++    public int l; // Paper - Number of viewers
+     private int p;
+     private BlockChest.Type q;
+     private String r;
+@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntityLootable implements ITickable, II
      }
  
      public void c() {
-+        // PaperSpigot - Move chest sounds out of the tick loop
++        // Paper - Disable all of this, just in case this does get ticked
 +        /*
          this.m();
          int i = this.position.getX();
          int j = this.position.getY();
-@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
+@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntityLootable implements ITickable, II
                  this.j = 0.0F;
              }
          }
 -
 +        */
-+        // PaperSpigot end
++        // Paper end
      }
  
      public boolean c(int i, int j) {
-@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
+@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntityLootable implements ITickable, II
+             int oldPower = Math.max(0, Math.min(15, this.l)); // CraftBukkit - Get power before new viewer is added
  
              ++this.l;
-             if (this.world == null) return; // CraftBukkit
 +
-+            // PaperSpigot start - Move chest open sound out of the tick loop
++            // Paper start - Move chest open sound out of the tick loop
 +            this.m();
 +
 +            if (this.l > 0 && this.j == 0.0F && this.f == null && this.h == null) {
@@ -74,19 +74,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    d1 += 0.5D;
 +                }
 +
-+                this.world.makeSound(d1, (double) this.position.getY() + 0.5D, d0, "random.chestopen", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
++                this.world.a((EntityHuman) null, d1, (double) j + 0.5D, d0, SoundEffects.X, SoundCategory.BLOCKS, 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
 +            }
-+            // PaperSpigot end
++            // Paper end
 +
-             this.world.playBlockAction(this.position, this.w(), 1, this.l);
+             if (this.world == null) return; // CraftBukkit
+             this.world.playBlockAction(this.position, this.getBlock(), 1, this.l);
  
-             // CraftBukkit start - Call redstone event
-@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
+@@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntityLootable implements ITickable, II
              int oldPower = Math.max(0, Math.min(15, this.l)); // CraftBukkit - Get power before new viewer is added
              --this.l;
              if (this.world == null) return; // CraftBukkit
 +
-+            // PaperSpigot start - Move chest close sound handling out of the tick loop
++            // Paper start - Move chest close sound out of the tick loop
 +            if (this.l == 0 && this.j > 0.0F || this.l > 0 && this.j < 1.0F) {
 +                float f = 0.1F;
 +
@@ -107,12 +107,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    d0 += 0.5D;
 +                }
 +
-+                this.world.makeSound(d0, (double) this.getPosition().getY() + 0.5D, d2, "random.chestclosed", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
-+                this.j = 0.0F;
++                this.world.a((EntityHuman) null, d0, (double) j + 0.5D, d2, SoundEffects.V, SoundCategory.BLOCKS, 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
++                    this.j = 0.0F;
 +            }
-+            // PaperSpigot end
++            // Paper end
 +
-             this.world.playBlockAction(this.position, this.w(), 1, this.l);
+             this.world.playBlockAction(this.position, this.getBlock(), 1, this.l);
  
              // CraftBukkit start - Call redstone event
 diff --git a/src/main/java/net/minecraft/server/TileEntityEnderChest.java b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
@@ -122,49 +122,48 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
  package net.minecraft.server;
  
--public class TileEntityEnderChest extends TileEntity implements IUpdatePlayerListBox {
-+public class TileEntityEnderChest extends TileEntity { // PaperSpigot - remove IUpdatePlayerListBox
+-public class TileEntityEnderChest extends TileEntity implements ITickable {
++public class TileEntityEnderChest extends TileEntity { // Paper - Remove ITickable
  
 -    public float a;
-+    public float a; // PaperSpigot - lidAngle
++    public float a; // Paper - lid angle
      public float f;
 -    public int g;
-+    public int g; // PaperSpigot - numPlayersUsing
++    public int g; // Paper - Number of viewers
      private int h;
  
      public TileEntityEnderChest() {}
  
      public void c() {
-+        // PaperSpigot start - Move enderchest sound handling out of the tick loop
++        // Paper start - Disable all of this, just in case this does get ticked
 +        /*
          if (++this.h % 20 * 4 == 0) {
              this.world.playBlockAction(this.position, Blocks.ENDER_CHEST, 1, this.g);
          }
-@@ -0,0 +0,0 @@ public class TileEntityEnderChest extends TileEntity implements IUpdatePlayerLis
+@@ -0,0 +0,0 @@ public class TileEntityEnderChest extends TileEntity implements ITickable {
                  this.a = 0.0F;
              }
          }
--
 +        */
-+        // PaperSpigot end
++        // Paper end
+ 
      }
  
-     public boolean c(int i, int j) {
-@@ -0,0 +0,0 @@ public class TileEntityEnderChest extends TileEntity implements IUpdatePlayerLis
+@@ -0,0 +0,0 @@ public class TileEntityEnderChest extends TileEntity implements ITickable {
  
      public void b() {
          ++this.g;
 +
-+        // PaperSpigot start - Move enderchest open sounds out of the tick loop
++        // Paper start - Move enderchest open sounds out of the tick loop
 +        if (this.g > 0 && this.a == 0.0F) {
 +            this.a = 0.7F;
 +
 +            double d1 = (double) this.getPosition().getX() + 0.5D;
 +            double d0 = (double) this.getPosition().getZ() + 0.5D;
 +
-+            this.world.makeSound(d1, (double) this.getPosition().getY() + 0.5D, d0, "random.chestopen", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
++            this.world.a((EntityHuman) null, d1, (double) this.getPosition().getY() + 0.5D, d0, SoundEffects.aL, SoundCategory.BLOCKS, 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
 +        }
-+        // PaperSpigot end
++        // Paper end
 +
          this.world.playBlockAction(this.position, Blocks.ENDER_CHEST, 1, this.g);
      }
@@ -172,15 +171,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void d() {
          --this.g;
 +
-+        // PaperSpigot start - Move enderchest close sounds out of the tick loop
++        // Paper start - Move enderchest close sounds out of the tick loop
 +        if (this.g == 0 && this.a > 0.0F || this.g > 0 && this.a < 1.0F) {
 +            double d0 = (double) this.getPosition().getX() + 0.5D;
 +            double d2 = (double) this.getPosition().getZ() + 0.5D;
 +
-+            this.world.makeSound(d0, (double) this.getPosition().getY() + 0.5D, d2, "random.chestclosed", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
++            this.world.a((EntityHuman) null, d0, (double) this.getPosition().getY() + 0.5D, d2, SoundEffects.aK, SoundCategory.BLOCKS, 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
 +            this.a = 0.0F;
 +        }
-+        // PaperSpigot end
++        // Paper end
 +
          this.world.playBlockAction(this.position, Blocks.ENDER_CHEST, 1, this.g);
      }
@@ -192,55 +191,46 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
      };
      // Spigot end
-     protected final List<Entity> g = Lists.newArrayList();
--    public final List<TileEntity> h = Lists.newArrayList();
-+    //public final List<TileEntity> h = Lists.newArrayList(); // PaperSpigot - Remove unused list
-     public final List<TileEntity> tileEntityList = Lists.newArrayList();
+     protected final List<Entity> f = Lists.newArrayList();
+-    public final List<TileEntity> tileEntityList = Lists.newArrayList();
++    //public final List<TileEntity> tileEntityList = Lists.newArrayList(); // Paper - Remove unused list
+     public final List<TileEntity> tileEntityListTick = Lists.newArrayList();
      private final List<TileEntity> b = Lists.newArrayList();
-     private final List<TileEntity> c = Lists.newArrayList();
+     private final List<TileEntity> tileEntityListUnload = Lists.newArrayList();
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
          // CraftBukkit start - From below, clean up tile entities before ticking them
-         if (!this.c.isEmpty()) {
-             this.tileEntityList.removeAll(this.c);
--            this.h.removeAll(this.c);
-+            //this.h.removeAll(this.c); // PaperSpigot - Remove unused list
-             this.c.clear();
+         if (!this.tileEntityListUnload.isEmpty()) {
+             this.tileEntityListTick.removeAll(this.tileEntityListUnload);
+-            this.tileEntityList.removeAll(this.tileEntityListUnload);
++            //this.tileEntityList.removeAll(this.tileEntityListUnload); // Paper - Remove unused list
+             this.tileEntityListUnload.clear();
          }
          // CraftBukkit end
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
              if (tileentity.x()) {
                  tilesThisCycle--;
-                 this.tileEntityList.remove(tileTickPosition--);
--                this.h.remove(tileentity);
-+                //this.h.remove(tileentity); // PaperSpigot - Remove unused list
+                 this.tileEntityListTick.remove(tileTickPosition--);
+-                this.tileEntityList.remove(tileentity);
++                //this.tileEntityList.remove(tileentity); // Paper - Remove unused list
                  if (this.isLoaded(tileentity.getPosition())) {
-                     this.getChunkAtWorldCoords(tileentity.getPosition()).e(tileentity.getPosition());
+                     this.getChunkAtWorldCoords(tileentity.getPosition()).d(tileentity.getPosition());
                  }
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-     }
+     protected void l() {}
  
      public boolean a(TileEntity tileentity) {
--        boolean flag = this.h.add(tileentity);
-+        boolean flag = true; // PaperSpigot - Remove unused list
+-        boolean flag = this.tileEntityList.add(tileentity);
++        boolean flag = true; // Paper - Remove unused list
  
-         if (flag && tileentity instanceof IUpdatePlayerListBox) {
-             this.tileEntityList.add(tileentity);
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-             while (iterator.hasNext()) {
-                 TileEntity tileentity = (TileEntity) iterator.next();
- 
--                this.h.add(tileentity);
-+                //this.h.add(tileentity); // PaperSpigot - Remove unused list
-                 if (tileentity instanceof IUpdatePlayerListBox) {
-                     this.tileEntityList.add(tileentity);
-                 }
+         if (flag && tileentity instanceof ITickable) {
+             this.tileEntityListTick.add(tileentity);
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
          } else {
              if (tileentity != null) {
                  this.b.remove(tileentity);
--                this.h.remove(tileentity);
-+                //this.h.remove(tileentity); // PaperSpigot - Remove unused list
-                 this.tileEntityList.remove(tileentity);
+-                this.tileEntityList.remove(tileentity);
++                //this.tileEntityList.remove(tileentity); // Paper - Remove unused list
+                 this.tileEntityListTick.remove(tileentity);
              }
  
 --

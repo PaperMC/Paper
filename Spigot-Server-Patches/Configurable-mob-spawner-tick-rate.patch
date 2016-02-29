@@ -1,9 +1,23 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Sudzzy <originmc@outlook.com>
-Date: Tue, 14 Jul 2015 09:58:15 -0700
+Date: Wed, 2 Mar 2016 15:03:53 -0600
 Subject: [PATCH] Configurable mob spawner tick rate
 
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -0,0 +0,0 @@ public class PaperWorldConfig {
+     private void disableIceAndSnow(){
+         disableIceAndSnow = getBoolean("disable-ice-and-snow", false);
+     }
++
++    public int mobSpawnerTickRate;
++    private void mobSpawnerTickRate() {
++        mobSpawnerTickRate = getInt("mob-spawner-tick-rate", 1);
++    }
+ }
 diff --git a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
@@ -12,7 +26,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private int maxNearbyEntities = 6;
      private int requiredPlayerRange = 16;
      private int spawnRange = 4;
-+    private int tickDelay = 0; // PaperSpigot
++    private int tickDelay = 0; // Paper
  
      public MobSpawnerAbstract() {}
  
@@ -20,48 +34,33 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public void c() {
-+        // PaperSpigot start - Configurable mob spawner tick rate
++        // Paper start - Configurable mob spawner tick rate
 +        if (spawnDelay > 0 && --tickDelay > 0) return;
-+        tickDelay = this.a().paperSpigotConfig.mobSpawnerTickRate;
-+        // PaperSpigot end
-         if (this.g()) {
-             BlockPosition blockposition = this.b();
-             double d0;
++        tickDelay = this.a().paperConfig.mobSpawnerTickRate;
++        // Paper end
+         if (!this.h()) {
+             this.e = this.d;
+         } else {
 @@ -0,0 +0,0 @@ public abstract class MobSpawnerAbstract {
-                 this.a().addParticle(EnumParticle.SMOKE_NORMAL, d1, d2, d0, 0.0D, 0.0D, 0.0D, new int[0]);
-                 this.a().addParticle(EnumParticle.FLAME, d1, d2, d0, 0.0D, 0.0D, 0.0D, new int[0]);
+                 this.a().addParticle(EnumParticle.SMOKE_NORMAL, d0, d1, d2, 0.0D, 0.0D, 0.0D, new int[0]);
+                 this.a().addParticle(EnumParticle.FLAME, d0, d1, d2, 0.0D, 0.0D, 0.0D, new int[0]);
                  if (this.spawnDelay > 0) {
 -                    --this.spawnDelay;
-+                    this.spawnDelay -= tickDelay; // PaperSpigot
++                    this.spawnDelay -= tickDelay; // Paper
                  }
  
-                 this.f = this.e;
-                 this.e = (this.e + (double) (1000.0F / ((float) this.spawnDelay + 200.0F))) % 360.0D;
+                 this.e = this.d;
+                 this.d = (this.d + (double) (1000.0F / ((float) this.spawnDelay + 200.0F))) % 360.0D;
              } else {
 -                if (this.spawnDelay == -1) {
-+                if (this.spawnDelay < -tickDelay) { // PaperSpigot
-                     this.h();
++                if (this.spawnDelay < -tickDelay) { // Paper
+                     this.i();
                  }
  
                  if (this.spawnDelay > 0) {
 -                    --this.spawnDelay;
-+                    this.spawnDelay -= tickDelay; // PaperSpigot
++                    this.spawnDelay -= tickDelay; // Paper
                      return;
                  }
  
-diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-+++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperSpigotWorldConfig
-     {
-         disableMoodSounds = getBoolean( "disable-mood-sounds", false );
-     }
-+
-+    public int mobSpawnerTickRate;
-+    private void mobSpawnerTickRate()
-+    {
-+        mobSpawnerTickRate = getInt( "mob-spawner-tick-rate", 1 );
-+    }
- }
 --

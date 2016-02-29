@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: DemonWav <demonwav@gmail.com>
-Date: Sat, 30 Jan 2016 18:58:09 -0600
+Date: Mon, 29 Feb 2016 19:37:41 -0600
 Subject: [PATCH] Add Location support to tab completers (vanilla feature
  missing in CraftBukkit)
 
@@ -21,7 +21,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return matchedPlayers;
      }
  
-+    // PaperSpigot start - location tab-completes
++    // Paper start - location tab-completes
++
 +    /**
 +     * Executed on tab completion for this command, returning a list of options the player can tab through. This method
 +     * returns the {@link Location} of the block the player is looking at at the time of the tab complete.
@@ -31,19 +32,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * attempts the tab complete. For this to be valid, the block must be highlighted by the player (i.e. the player is
 +     * close enough to interact with the block).
 +     *
-+     * @param sender Source object which is executing this command
-+     * @param alias the alias being used
-+     * @param args All arguments passed to the command, split via ' '
++     * @param sender   Source object which is executing this command
++     * @param alias    the alias being used
++     * @param args     All arguments passed to the command, split via ' '
 +     * @param location the location of the block the player is looking at
 +     * @return a list of tab-completions for the specified arguments. This
-+     *     will never be null. List may be immutable.
++     * will never be null. List may be immutable.
 +     * @throws IllegalArgumentException if sender, alias, or args is null
 +     */
 +    public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
 +        // Simply default to the standard tab-complete, subclasses can override this if needed
 +        return tabComplete(sender, alias, args);
 +    }
-+    // PaperSpigot end
++    // Paper end
 +
      /**
       * Returns the name of this command
@@ -52,25 +53,19 @@ diff --git a/src/main/java/org/bukkit/command/PluginCommand.java b/src/main/java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/command/PluginCommand.java
 +++ b/src/main/java/org/bukkit/command/PluginCommand.java
-@@ -0,0 +0,0 @@
- package org.bukkit.command;
+@@ -0,0 +0,0 @@ package org.bukkit.command;
+ import java.util.List;
  
--import java.util.List;
--
  import org.apache.commons.lang.Validate;
 +import org.bukkit.Location;
  import org.bukkit.plugin.Plugin;
  
-+import java.util.List;
-+
  /**
-  * Represents a {@link Command} belonging to a plugin
-  */
 @@ -0,0 +0,0 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
       */
      @Override
      public java.util.List<String> tabComplete(CommandSender sender, String alias, String[] args) throws CommandException, IllegalArgumentException {
-+        return tabComplete(sender, alias, args, null); // PaperSpigot - The code from this method has been (slightly modified) moved to the Location method.
++        return tabComplete(sender, alias, args, null); // Paper - The code from this method has been (slightly modified) moved to the Location method.
 +    }
 +
 +    // PaperSpigot start - location tab-completes
@@ -87,11 +82,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          try {
              if (completer != null) {
 -                completions = completer.onTabComplete(sender, this, alias, args);
-+                completions = completer.onTabComplete(sender, this, alias, args, location); // PaperSpigot - add location argument
++                completions = completer.onTabComplete(sender, this, alias, args, location); // Paper - add location argument
              }
              if (completions == null && executor instanceof TabCompleter) {
 -                completions = ((TabCompleter) executor).onTabComplete(sender, this, alias, args);
-+                completions = ((TabCompleter) executor).onTabComplete(sender, this, alias, args, location); // PaperSpigot - add location argument
++                completions = ((TabCompleter) executor).onTabComplete(sender, this, alias, args, location); // Paper - add location argument
              }
          } catch (Throwable ex) {
              StringBuilder message = new StringBuilder();
@@ -99,7 +94,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
          return completions;
      }
-+    // PaperSpigot end
++    // Paper end
  
      @Override
      public String toString() {
@@ -119,12 +114,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public List<String> tabComplete(CommandSender sender, String cmdLine) {
-+        return tabComplete(sender, cmdLine, null); // PaperSpigot - location tab-completes, code moved below
++        return tabComplete(sender, cmdLine, null); // Paper - location tab-completes, code moved below
 +    }
 +
-+    // PaperSpigot start - location tab-completes
-+    /*
-+        this code was copied, except for the noted change, from tabComplete(CommandSender sender, String cmdLine)
++    // Paper start - location tab-completes
++    /**
++     * This code was copied, except for the noted change, from tabComplete(CommandSender sender, String cmdLine)
 +     */
 +    public List<String> tabComplete(CommandSender sender, String cmdLine, Location location) {
          Validate.notNull(sender, "Sender cannot be null");
@@ -135,14 +130,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          try {
 -            return target.tabComplete(sender, commandName, args);
-+            return target.tabComplete(sender, commandName, args, location); // PaperSpigot - add location argument
++            return target.tabComplete(sender, commandName, args, location); // Paper - add location argument
          } catch (CommandException ex) {
              throw ex;
          } catch (Throwable ex) {
              throw new CommandException("Unhandled exception executing tab-completer for '" + cmdLine + "' in " + target, ex);
          }
      }
-+    // PaperSpigot end
++    // Paper end
  
      public Collection<Command> getCommands() {
          return Collections.unmodifiableCollection(knownCommands.values());
@@ -163,10 +158,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
       */
      public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args);
 +
-+    // PaperSpigot start - location tab-completes
++    // Paper start - location tab-completes
 +    default List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args, Location location) {
 +        return onTabComplete(sender, command, alias, args);
 +    }
-+    // PaperSpigot end
++    // Paper end
  }
 --

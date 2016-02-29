@@ -1,9 +1,34 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Suddenly <suddenly@suddenly.coffee>
-Date: Sat, 7 Mar 2015 21:40:48 -0600
+Date: Tue, 1 Mar 2016 13:51:54 -0600
 Subject: [PATCH] Add configurable despawn distances for living entities
 
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -0,0 +0,0 @@ public class PaperWorldConfig {
+         log("Player exhaustion penalty for breaking blocks is " + blockBreakExhaustion);
+         log("Player exhaustion penalty for swimming is " + playerSwimmingExhaustion);
+     }
++
++    public int softDespawnDistance;
++    public int hardDespawnDistance;
++    private void despawnDistances() {
++        softDespawnDistance = getInt("despawn-ranges.soft", 32); // 32^2 = 1024, Minecraft Default
++        hardDespawnDistance = getInt("despawn-ranges.hard", 128); // 128^2 = 16384, Minecraft Default
++
++        if (softDespawnDistance > hardDespawnDistance) {
++            softDespawnDistance = hardDespawnDistance;
++        }
++
++        log("Living Entity Despawn Ranges:  Soft: " + softDespawnDistance + " Hard: " + hardDespawnDistance);
++
++        softDespawnDistance = softDespawnDistance*softDespawnDistance;
++        hardDespawnDistance = hardDespawnDistance*hardDespawnDistance;
++    }
+ }
 diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityInsentient.java
@@ -13,42 +38,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  double d3 = d0 * d0 + d1 * d1 + d2 * d2;
  
 -                if (d3 > 16384.0D) { // CraftBukkit - remove isTypeNotPersistent() check
-+                if (d3 > this.world.paperSpigotConfig.hardDespawnDistance) { // CraftBukkit - remove isTypeNotPersistent() check // PaperSpigot - custom despawn distances
++                if (d3 > world.paperConfig.hardDespawnDistance) { // CraftBukkit - remove isTypeNotPersistent() check // Paper - custom despawn distances
                      this.die();
                  }
  
 -                if (this.ticksFarFromPlayer > 600 && this.random.nextInt(800) == 0 && d3 > 1024.0D) { // CraftBukkit - remove isTypeNotPersistent() check
-+                if (this.ticksFarFromPlayer > 600 && this.random.nextInt(800) == 0 && d3 > this.world.paperSpigotConfig.softDespawnDistance) { // CraftBukkit - remove isTypeNotPersistent() check // PaperSpigot - custom despawn distance
++                if (this.ticksFarFromPlayer > 600 && this.random.nextInt(800) == 0 && d3 > world.paperConfig.softDespawnDistance) { // CraftBukkit - remove isTypeNotPersistent() check // Paper - custom despawn distances
                      this.die();
 -                } else if (d3 < 1024.0D) {
-+                } else if (d3 < this.world.paperSpigotConfig.softDespawnDistance) { // PaperSpigot - custom despawn distances
++                } else if (d3 < world.paperConfig.softDespawnDistance) { // Paper - custom despawn distances
                      this.ticksFarFromPlayer = 0;
                  }
              }
-diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-+++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperSpigotWorldConfig
-         blockBreakExhaustion = getFloat( "player-exhaustion.block-break", 0.025F );
-         playerSwimmingExhaustion = getFloat( "player-exhaustion.swimming", 0.015F );
-     }
-+
-+    public int softDespawnDistance;
-+    public int hardDespawnDistance;
-+    private void despawnDistances()
-+    {
-+        softDespawnDistance = getInt( "despawn-ranges.soft", 32 ); // 32^2 = 1024, Minecraft Default
-+        hardDespawnDistance = getInt( "despawn-ranges.hard", 128 ); // 128^2 = 16384, Minecraft Default;
-+
-+        if ( softDespawnDistance > hardDespawnDistance ) {
-+            softDespawnDistance = hardDespawnDistance;
-+        }
-+
-+        log( "Living Entity Despawn Ranges:  Soft: " + softDespawnDistance + " Hard: " + hardDespawnDistance );
-+
-+        softDespawnDistance = softDespawnDistance*softDespawnDistance;
-+        hardDespawnDistance = hardDespawnDistance*hardDespawnDistance;
-+    }
- }
 --

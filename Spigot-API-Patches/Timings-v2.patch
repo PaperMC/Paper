@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
-Date: Fri, 8 Jan 2016 23:12:28 -0600
+Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
 
 
@@ -8,6 +8,11 @@ diff --git a/pom.xml b/pom.xml
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/pom.xml
 +++ b/pom.xml
+@@ -0,0 +0,0 @@
+-
+ <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+     <modelVersion>4.0.0</modelVersion>
 @@ -0,0 +0,0 @@
  
      <dependencies>
@@ -1709,7 +1714,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        parent.put("config", createObject(
 +            pair("spigot", mapAsJSON(Bukkit.spigot().getSpigotConfig(), null)),
 +            pair("bukkit", mapAsJSON(Bukkit.spigot().getBukkitConfig(), null)),
-+            pair("paperspigot", mapAsJSON(Bukkit.spigot().getPaperSpigotConfig(), null))
++            pair("paperspigot", mapAsJSON(Bukkit.spigot().getPaperConfig(), null))
 +        ));
 +
 +        new TimingsExport(sender, parent, history).start();
@@ -2814,7 +2819,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            throw new UnsupportedOperationException("Not supported yet.");
 +        }
 +
-+        public org.bukkit.configuration.file.YamlConfiguration getPaperSpigotConfig()
++        public org.bukkit.configuration.file.YamlConfiguration getPaperConfig()
 +        {
 +            throw new UnsupportedOperationException("Not supported yet.");
 +        }
@@ -2896,26 +2901,56 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          fallbackPrefix = fallbackPrefix.toLowerCase().trim();
          boolean registered = register(label, command, false, fallbackPrefix);
 diff --git a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java b/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+deleted file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
 --- a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
-+++ b/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
-@@ -0,0 +0,0 @@ import org.spigotmc.CustomTimingsHandler;
- // Spigot end
- 
- public class TimingsCommand extends BukkitCommand {
++++ /dev/null
+@@ -0,0 +0,0 @@
+-package org.bukkit.command.defaults;
+-
+-import java.io.File;
+-import java.io.IOException;
+-import java.io.PrintStream;
+-import java.util.ArrayList;
+-import java.util.List;
+-
+-import org.apache.commons.lang.Validate;
+-import org.bukkit.Bukkit;
+-import org.bukkit.ChatColor;
+-import org.bukkit.command.CommandSender;
+-import org.bukkit.event.Event;
+-import org.bukkit.event.HandlerList;
+-import org.bukkit.plugin.Plugin;
+-import org.bukkit.plugin.RegisteredListener;
+-import org.bukkit.plugin.TimedRegisteredListener;
+-import org.bukkit.util.StringUtil;
+-
+-import com.google.common.collect.ImmutableList;
+-
+-// Spigot start
+-import java.io.ByteArrayOutputStream;
+-import java.io.OutputStream;
+-import java.net.HttpURLConnection;
+-import java.net.URL;
+-import java.net.URLEncoder;
+-import java.util.logging.Level;
+-
+-import org.bukkit.command.RemoteConsoleCommandSender;
+-import org.bukkit.plugin.SimplePluginManager;
+-import org.spigotmc.CustomTimingsHandler;
+-// Spigot end
+-
+-public class TimingsCommand extends BukkitCommand {
 -    private static final List<String> TIMINGS_SUBCOMMANDS = ImmutableList.of("report", "reset", "on", "off", "paste"); // Spigot
 -    public static long timingStart = 0; // Spigot
-+    public static final List<String> TIMINGS_SUBCOMMANDS = ImmutableList.of("merged", "reset", "separate");
- 
-     public TimingsCommand(String name) {
-         super(name);
+-
+-    public TimingsCommand(String name) {
+-        super(name);
 -        this.description = "Manages Spigot Timings data to see performance of the server."; // Spigot
 -        this.usageMessage = "/timings <reset|report|on|off|paste>"; // Spigot
-+        this.description = "Records timings for all plugin events";
-+        this.usageMessage = "/timings <reset>";
-         this.setPermission("bukkit.command.timings");
-     }
- 
+-        this.setPermission("bukkit.command.timings");
+-    }
+-
 -    // Spigot start - redesigned Timings Command
 -    public void executeSpigotTimings(CommandSender sender, String[] args) {
 -        if ( "on".equals( args[0] ) )
@@ -2967,7 +3002,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                }
 -
 -                sender.sendMessage("Timings written to " + timings.getPath());
--                sender.sendMessage( "Paste contents of file into form at http://aikar.co/timings.php to read results." );
+-                sender.sendMessage( "Paste contents of file into form at http://www.spigotmc.org/go/timings to read results." );
 -
 -            } catch (IOException e) {
 -            } finally {
@@ -2979,22 +3014,99 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    }
 -    // Spigot end
 -
-     @Override
-     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
-         if (!testPermission(sender)) return true;
+-    @Override
+-    public boolean execute(CommandSender sender, String currentAlias, String[] args) {
+-        if (!testPermission(sender)) return true;
 -        if (args.length < 1)  { // Spigot
-+        if (args.length != 1)  {
-             sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
-             return false;
-         }
+-            sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
+-            return false;
+-        }
 -        if (true) { executeSpigotTimings(sender, args); return true; } // Spigot
-         if (!sender.getServer().getPluginManager().useTimings()) {
-             sender.sendMessage("Please enable timings by setting \"settings.plugin-profiling\" to true in bukkit.yml");
-             return true;
-@@ -0,0 +0,0 @@ public class TimingsCommand extends BukkitCommand {
-         }
-         return ImmutableList.of();
-     }
+-        if (!sender.getServer().getPluginManager().useTimings()) {
+-            sender.sendMessage("Please enable timings by setting \"settings.plugin-profiling\" to true in bukkit.yml");
+-            return true;
+-        }
+-
+-        boolean separate = "separate".equalsIgnoreCase(args[0]);
+-        if ("reset".equalsIgnoreCase(args[0])) {
+-            for (HandlerList handlerList : HandlerList.getHandlerLists()) {
+-                for (RegisteredListener listener : handlerList.getRegisteredListeners()) {
+-                    if (listener instanceof TimedRegisteredListener) {
+-                        ((TimedRegisteredListener)listener).reset();
+-                    }
+-                }
+-            }
+-            sender.sendMessage("Timings reset");
+-        } else if ("merged".equalsIgnoreCase(args[0]) || separate) {
+-
+-            int index = 0;
+-            int pluginIdx = 0;
+-            File timingFolder = new File("timings");
+-            timingFolder.mkdirs();
+-            File timings = new File(timingFolder, "timings.txt");
+-            File names = null;
+-            while (timings.exists()) timings = new File(timingFolder, "timings" + (++index) + ".txt");
+-            PrintStream fileTimings = null;
+-            PrintStream fileNames = null;
+-            try {
+-                fileTimings = new PrintStream(timings);
+-                if (separate) {
+-                    names = new File(timingFolder, "names" + index + ".txt");
+-                    fileNames = new PrintStream(names);
+-                }
+-                for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
+-                    pluginIdx++;
+-                    long totalTime = 0;
+-                    if (separate) {
+-                        fileNames.println(pluginIdx + " " + plugin.getDescription().getFullName());
+-                        fileTimings.println("Plugin " + pluginIdx);
+-                    }
+-                    else fileTimings.println(plugin.getDescription().getFullName());
+-                    for (RegisteredListener listener : HandlerList.getRegisteredListeners(plugin)) {
+-                        if (listener instanceof TimedRegisteredListener) {
+-                            TimedRegisteredListener trl = (TimedRegisteredListener) listener;
+-                            long time = trl.getTotalTime();
+-                            int count = trl.getCount();
+-                            if (count == 0) continue;
+-                            long avg = time / count;
+-                            totalTime += time;
+-                            Class<? extends Event> eventClass = trl.getEventClass();
+-                            if (count > 0 && eventClass != null) {
+-                                fileTimings.println("    " + eventClass.getSimpleName() + (trl.hasMultiple() ? " (and sub-classes)" : "") + " Time: " + time + " Count: " + count + " Avg: " + avg);
+-                            }
+-                        }
+-                    }
+-                    fileTimings.println("    Total time " + totalTime + " (" + totalTime / 1000000000 + "s)");
+-                }
+-                sender.sendMessage("Timings written to " + timings.getPath());
+-                if (separate) sender.sendMessage("Names written to " + names.getPath());
+-            } catch (IOException e) {
+-            } finally {
+-                if (fileTimings != null) {
+-                    fileTimings.close();
+-                }
+-                if (fileNames != null) {
+-                    fileNames.close();
+-                }
+-            }
+-        } else {
+-            sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
+-            return false;
+-        }
+-        return true;
+-    }
+-
+-    @Override
+-    public List<String> tabComplete(CommandSender sender, String alias, String[] args) {
+-        Validate.notNull(sender, "Sender cannot be null");
+-        Validate.notNull(args, "Arguments cannot be null");
+-        Validate.notNull(alias, "Alias cannot be null");
+-
+-        if (args.length == 1) {
+-            return StringUtil.copyPartialMatches(args[0], TIMINGS_SUBCOMMANDS, new ArrayList<String>(TIMINGS_SUBCOMMANDS.size()));
+-        }
+-        return ImmutableList.of();
+-    }
 -
 -    // Spigot start
 -    private static class PasteThread extends Thread
@@ -3037,7 +3149,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -
 -                String location = con.getHeaderField( "Location" );
 -                String pasteID = location.substring( "http://paste.ubuntu.com/".length(), location.length() - 1 );
--                sender.sendMessage( ChatColor.GREEN + "Timings results can be viewed at http://aikar.co/timings.php?url=" + pasteID );
+-                sender.sendMessage( ChatColor.GREEN + "Timings results can be viewed at http://www.spigotmc.org/go/timings?url=" + pasteID );
 -            } catch ( IOException ex )
 -            {
 -                sender.sendMessage( ChatColor.RED + "Error pasting timings, check your console for more information" );
@@ -3046,14 +3158,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        }
 -    }
 -    // Spigot end
- }
+-}
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
 @@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
-         {
-             throw new UnsupportedOperationException( "Not supported yet" );
+         public void sendMessage(net.md_5.bungee.api.chat.BaseComponent... components) {
+             throw new UnsupportedOperationException("Not supported yet.");
          }
 +
 +        public int getPing()

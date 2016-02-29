@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
-Date: Tue, 22 Dec 2015 18:16:11 -0600
+Date: Thu, 3 Mar 2016 00:07:23 -0600
 Subject: [PATCH] EAR: Fix bug with teleporting entities
 
 [17:53:15] <Aikar> had a reproduceable issue of losing entities on teleport, now resolved
@@ -11,27 +11,37 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
-     protected DataWatcher datawatcher;
-     private double ar;
-     private double as;
--    public boolean ad; public boolean isAddedToChunk() { return ad; } // Spigot // PAIL
--    public int ae;
--    public int af;
--    public int ag;
-+    public boolean ad;
-+    // PaperSpigot start - EAR: Fix bug with teleporting entities
+     private static final DataWatcherObject<Boolean> aA = DataWatcher.a(Entity.class, DataWatcherRegistry.h);
+     private static final DataWatcherObject<Boolean> aB = DataWatcher.a(Entity.class, DataWatcherRegistry.h);
+     public boolean aa;
+-    public int ab;
+-    public int ac;
+-    public int ad;
++    // Paper start - EAR: Fix bug with teleporting entities
 +    public boolean isAddedToChunk() {
 +        int chunkX = MathHelper.floor(locX / 16.0D);
 +        int chunkY = MathHelper.floor(locY / 16.0D);
 +        int chunkZ = MathHelper.floor(locZ / 16.0D);
-+
-+        return ad && getChunkX() == chunkX && getChunkY() == chunkY || getChunkZ() == chunkZ;
++        return aa && getChunkX() == chunkX && getChunkY() == chunkY || getChunkZ() == chunkZ;
 +    }
-+    public int ae; public int getChunkX() { return ae; } // PAIL
-+    public int af; public int getChunkY() { return af; } // PAIL
-+    public int ag; public int getChunkZ() { return ag; } // PAIL
-+    // PaperSpigot end
++    public int ab; public int getChunkX() { return ab; }
++    public int ac; public int getChunkY() { return ac; }
++    public int ad; public int getChunkZ() { return ad; }
++    // Paper end
      public boolean ah;
-     public boolean ai;
+     public boolean impulse;
      public int portalCooldown;
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -0,0 +0,0 @@ public class ActivationRange
+         SpigotTimings.checkIfActiveTimer.startTiming();
+         // Never safe to skip fireworks or entities not yet added to chunk
+         // PAIL: inChunk
+-        if ( !entity.aa || entity instanceof EntityFireworks ) {
++        if ( !entity.isAddedToChunk() || entity instanceof EntityFireworks ) { // Paper - EAR: Fix bug with teleporting entities
+             SpigotTimings.checkIfActiveTimer.stopTiming();
+             return true;
+         }
 --

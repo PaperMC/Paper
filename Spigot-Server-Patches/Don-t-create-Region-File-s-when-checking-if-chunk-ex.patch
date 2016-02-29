@@ -1,9 +1,9 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
-Date: Tue, 3 Nov 2015 21:05:41 -0500
+Date: Wed, 2 Mar 2016 23:51:51 -0600
 Subject: [PATCH] Don't create Region File's when checking if chunk exists
 
-Plugins like Dynap can end up creating tons of emtpy Region Files
+Plugins like Dynmap can end up creating tons of emtpy Region Files
 when using chunkExists.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
@@ -15,8 +15,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
 -        return RegionFileCache.a(this.d, i, j).chunkExists(i & 31, j & 31);
-+        final RegionFile region = RegionFileCache.a(this.d, i, j, false); // PaperSpigot
-+        return region != null && region.chunkExists(i & 31, j & 31); // PaperSpigot
++        // Paper start - Don't create region files when checking that they exist
++        final RegionFile region = RegionFileCache.a(this.d, i, j, false);
++        return region != null && region.chunkExists(i & 31, j & 31);
++        // Paper end
      }
      // CraftBukkit end
  
@@ -28,12 +30,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public static final Map<File, RegionFile> a = Maps.newHashMap(); // Spigot - private -> public
  
-+    // PaperSpigot start
++    // Paper start
      public static synchronized RegionFile a(File file, int i, int j) {
 +        return a(file, i, j, true);
 +    }
++
 +    public static synchronized RegionFile a(File file, int i, int j, boolean create) {
-+        // PaperSpigot end
++        // Paper end
          File file1 = new File(file, "region");
          File file2 = new File(file1, "r." + (i >> 5) + "." + (j >> 5) + ".mca");
          RegionFile regionfile = (RegionFile) RegionFileCache.a.get(file2);
@@ -41,7 +44,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (regionfile != null) {
              return regionfile;
          } else {
-+            if (!create && !file2.exists()) { return null; } // PaperSpigot
++            if (!create && !file2.exists()) { return null; } // Paper
              if (!file1.exists()) {
                  file1.mkdirs();
              }
