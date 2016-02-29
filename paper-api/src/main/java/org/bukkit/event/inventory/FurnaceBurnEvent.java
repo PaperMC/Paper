@@ -25,17 +25,6 @@ public class FurnaceBurnEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * Gets the block for the furnace involved in this event
-     *
-     * @return the block of the furnace
-     * @deprecated In favour of {@link #getBlock()}.
-     */
-    @Deprecated
-    public Block getFurnace() {
-        return getBlock();
-    }
-
-    /**
      * Gets the fuel ItemStack for this event
      *
      * @return the fuel ItemStack
