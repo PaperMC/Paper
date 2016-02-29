@@ -1,7 +1,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.Art;
-import org.bukkit.event.painting.PaintingBreakEvent;
+import org.bukkit.event.hanging.HangingBreakEvent;
 
 /**
  * Represents a Painting.
@@ -31,7 +31,7 @@ public interface Painting extends Hanging {
      * @param force If true, force the new art regardless of whether it fits
      *     at the current location. Note that forcing it where it can't fit
      *     normally causes it to drop as an item unless you override this by
-     *     catching the {@link PaintingBreakEvent}.
+     *     catching the {@link HangingBreakEvent}.
      * @return False if force was false and the new art won't fit at the
      *     painting's current location
      */
