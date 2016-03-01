@@ -465,7 +465,7 @@ public class CraftEventFactory {
             DamageCause cause = null;
             Block damager = blockDamage;
             blockDamage = null;
-            if (source == DamageSource.CACTUS) {
+            if (source == DamageSource.CACTUS || source == DamageSource.j) { // PAIL: rename
                 cause = DamageCause.CONTACT;
             } else {
                 throw new AssertionError(String.format("Unhandled damage of %s by %s from %s", entity, damager, source.translationIndex));
