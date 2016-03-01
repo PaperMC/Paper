@@ -18,7 +18,15 @@
  
  public abstract class Mob extends LivingEntity implements EquipmentUser, Leashable, Targeting {
  
-@@ -132,6 +143,8 @@
+@@ -112,6 +123,7 @@
+     private final BodyRotationControl bodyRotationControl;
+     protected PathNavigation navigation;
+     public GoalSelector goalSelector;
++    @Nullable public net.minecraft.world.entity.ai.goal.FloatGoal goalFloat; // Paper - Allow nerfed mobs to jump and float
+     public GoalSelector targetSelector;
+     @Nullable
+     private LivingEntity target;
+@@ -132,6 +144,8 @@
      private BlockPos restrictCenter;
      private float restrictRadius;
  
@@ -27,7 +35,7 @@
      protected Mob(EntityType<? extends Mob> type, Level world) {
          super(type, world);
          this.handItems = NonNullList.withSize(2, ItemStack.EMPTY);
-@@ -160,6 +173,12 @@
+@@ -160,6 +174,12 @@
  
      }
  
@@ -40,7 +48,7 @@
      protected void registerGoals() {}
  
      public static AttributeSupplier.Builder createMobAttributes() {
-@@ -264,13 +283,44 @@
+@@ -264,13 +284,44 @@
  
      @Nullable
      protected final LivingEntity getTargetFromBrain() {
@@ -87,7 +95,7 @@
      @Override
      public boolean canAttackType(EntityType<?> type) {
          return type != EntityType.GHAST;
-@@ -399,6 +449,12 @@
+@@ -399,6 +450,12 @@
          return null;
      }
  
@@ -100,7 +108,7 @@
      @Override
      public void addAdditionalSaveData(CompoundTag nbt) {
          super.addAdditionalSaveData(nbt);
-@@ -473,13 +529,25 @@
+@@ -473,13 +530,25 @@
              nbt.putBoolean("NoAI", this.isNoAi());
          }
  
@@ -128,7 +136,7 @@
          ListTag nbttaglist;
          CompoundTag nbttagcompound1;
          int i;
-@@ -547,6 +615,11 @@
+@@ -547,6 +616,11 @@
  
          this.lootTableSeed = nbt.getLong("DeathLootTableSeed");
          this.setNoAi(nbt.getBoolean("NoAI"));
@@ -140,7 +148,7 @@
      }
  
      @Override
-@@ -623,23 +696,29 @@
+@@ -623,23 +697,29 @@
  
      protected void pickUpItem(ServerLevel world, ItemEntity itemEntity) {
          ItemStack itemstack = itemEntity.getItem();
@@ -174,7 +182,7 @@
  
          if (enumitemslot.isArmor() && !flag) {
              enumitemslot = EquipmentSlot.MAINHAND;
-@@ -647,14 +726,22 @@
+@@ -647,14 +727,22 @@
              flag = itemstack1.isEmpty();
          }
  
@@ -200,7 +208,7 @@
  
              this.setItemSlotAndDropWhenKilled(enumitemslot, itemstack2);
              return itemstack2;
-@@ -768,7 +855,7 @@
+@@ -768,7 +856,7 @@
      @Override
      public void checkDespawn() {
          if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
@@ -209,7 +217,7 @@
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
              Player entityhuman = this.level().getNearestPlayer(this, -1.0D);
  
-@@ -778,14 +865,14 @@
+@@ -778,14 +866,14 @@
                  int j = i * i;
  
                  if (d0 > (double) j && this.removeWhenFarAway(d0)) {
@@ -226,15 +234,23 @@
                  } else if (d0 < (double) l) {
                      this.noActionTime = 0;
                  }
-@@ -799,6 +886,7 @@
+@@ -799,6 +887,15 @@
      @Override
      protected final void serverAiStep() {
          ++this.noActionTime;
-+        if (!this.aware) return; // CraftBukkit
++        // Paper start - Allow nerfed mobs to jump and float
++        if (!this.aware) {
++            if (goalFloat != null) {
++                if (goalFloat.canUse()) goalFloat.tick();
++                this.getJumpControl().tick();
++            }
++            return;
++        }
++        // Paper end - Allow nerfed mobs to jump and float
          ProfilerFiller gameprofilerfiller = Profiler.get();
  
          gameprofilerfiller.push("sensing");
-@@ -1338,7 +1426,7 @@
+@@ -1338,7 +1435,7 @@
          if (itemstack.getItem() instanceof SpawnEggItem) {
              if (this.level() instanceof ServerLevel) {
                  SpawnEggItem itemmonsteregg = (SpawnEggItem) itemstack.getItem();
@@ -243,7 +259,7 @@
  
                  optional.ifPresent((entityinsentient) -> {
                      this.onOffspringSpawnedFromEgg(player, entityinsentient);
-@@ -1389,28 +1477,45 @@
+@@ -1389,28 +1486,45 @@
          return this.restrictRadius != -1.0F;
      }
  
@@ -295,7 +311,7 @@
                  }
  
                  return t0;
-@@ -1420,10 +1525,17 @@
+@@ -1420,10 +1534,17 @@
  
      @Nullable
      public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams context, ConversionParams.AfterConversion<T> finalizer) {
@@ -314,7 +330,7 @@
      @Override
      public Leashable.LeashData getLeashData() {
          return this.leashData;
-@@ -1458,6 +1570,7 @@
+@@ -1458,6 +1579,7 @@
          boolean flag1 = super.startRiding(entity, force);
  
          if (flag1 && this.isLeashed()) {
@@ -322,7 +338,7 @@
              this.dropLeash();
          }
  
-@@ -1542,7 +1655,7 @@
+@@ -1542,7 +1664,7 @@
  
              if (f1 > 0.0F && target instanceof LivingEntity) {
                  entityliving = (LivingEntity) target;
