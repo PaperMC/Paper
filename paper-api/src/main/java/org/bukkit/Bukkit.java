@@ -2361,6 +2361,19 @@ public final class Bukkit {
         return server.getUnsafe();
     }
 
+
+    // Paper start
+    /**
+     * Gets the active {@link org.bukkit.command.CommandMap}
+     *
+     * @return the active command map
+     */
+    @NotNull
+    public static org.bukkit.command.CommandMap getCommandMap() {
+        return server.getCommandMap();
+    }
+    // Paper end
+
     @NotNull
     public static Server.Spigot spigot() {
         return server.spigot();
