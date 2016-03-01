@@ -48,7 +48,7 @@
      protected void registerGoals() {}
  
      public static AttributeSupplier.Builder createMobAttributes() {
-@@ -264,13 +284,44 @@
+@@ -264,11 +284,42 @@
  
      @Nullable
      protected final LivingEntity getTargetFromBrain() {
@@ -60,8 +60,8 @@
 -        this.target = target;
 +        // CraftBukkit start - fire event
 +        this.setTarget(target, EntityTargetEvent.TargetReason.UNKNOWN, true);
-     }
- 
++    }
++
 +    public boolean setTarget(LivingEntity entityliving, EntityTargetEvent.TargetReason reason, boolean fireEvent) {
 +        if (this.getTarget() == entityliving) return false;
 +        if (fireEvent) {
@@ -90,11 +90,9 @@
 +        this.target = entityliving;
 +        return true;
 +        // CraftBukkit end
-+    }
-+
+     }
+ 
      @Override
-     public boolean canAttackType(EntityType<?> type) {
-         return type != EntityType.GHAST;
 @@ -399,6 +450,12 @@
          return null;
      }
@@ -208,7 +206,7 @@
  
              this.setItemSlotAndDropWhenKilled(enumitemslot, itemstack2);
              return itemstack2;
-@@ -768,7 +856,7 @@
+@@ -768,25 +856,29 @@
      @Override
      public void checkDespawn() {
          if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
@@ -217,24 +215,42 @@
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
              Player entityhuman = this.level().getNearestPlayer(this, -1.0D);
  
-@@ -778,14 +866,14 @@
-                 int j = i * i;
- 
-                 if (d0 > (double) j && this.removeWhenFarAway(d0)) {
+             if (entityhuman != null) {
+-                double d0 = entityhuman.distanceToSqr((Entity) this);
+-                int i = this.getType().getCategory().getDespawnDistance();
+-                int j = i * i;
+-
+-                if (d0 > (double) j && this.removeWhenFarAway(d0)) {
 -                    this.discard();
++                // Paper start - Configurable despawn distances
++                final io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DespawnRangePair despawnRangePair = this.level().paperConfig().entities.spawning.despawnRanges.get(this.getType().getCategory());
++                final io.papermc.paper.configuration.type.DespawnRange.Shape shape = this.level().paperConfig().entities.spawning.despawnRangeShape;
++                final double dy = Math.abs(entityhuman.getY() - this.getY());
++                final double dySqr = Math.pow(dy, 2);
++                final double dxSqr = Math.pow(entityhuman.getX() - this.getX(), 2);
++                final double dzSqr = Math.pow(entityhuman.getZ() - this.getZ(), 2);
++                final double distanceSquared = dxSqr + dzSqr + dySqr;
++                // Despawn if hard/soft limit is exceeded
++                if (despawnRangePair.hard().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy) && this.removeWhenFarAway(distanceSquared)) {
 +                    this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
                  }
- 
-                 int k = this.getType().getCategory().getNoDespawnDistance();
-                 int l = k * k;
- 
-                 if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d0 > (double) l && this.removeWhenFarAway(d0)) {
+-
+-                int k = this.getType().getCategory().getNoDespawnDistance();
+-                int l = k * k;
+-
+-                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d0 > (double) l && this.removeWhenFarAway(d0)) {
 -                    this.discard();
-+                    this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
-                 } else if (d0 < (double) l) {
+-                } else if (d0 < (double) l) {
++                if (despawnRangePair.soft().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy)) {
++                    if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && this.removeWhenFarAway(distanceSquared)) {
++                        this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++                    }
++                } else {
++                // Paper end - Configurable despawn distances
                      this.noActionTime = 0;
                  }
-@@ -799,6 +887,15 @@
+             }
+@@ -799,6 +891,15 @@
      @Override
      protected final void serverAiStep() {
          ++this.noActionTime;
@@ -250,7 +266,7 @@
          ProfilerFiller gameprofilerfiller = Profiler.get();
  
          gameprofilerfiller.push("sensing");
-@@ -1338,7 +1435,7 @@
+@@ -1338,7 +1439,7 @@
          if (itemstack.getItem() instanceof SpawnEggItem) {
              if (this.level() instanceof ServerLevel) {
                  SpawnEggItem itemmonsteregg = (SpawnEggItem) itemstack.getItem();
@@ -259,7 +275,7 @@
  
                  optional.ifPresent((entityinsentient) -> {
                      this.onOffspringSpawnedFromEgg(player, entityinsentient);
-@@ -1389,28 +1486,45 @@
+@@ -1389,28 +1490,45 @@
          return this.restrictRadius != -1.0F;
      }
  
@@ -311,7 +327,7 @@
                  }
  
                  return t0;
-@@ -1420,10 +1534,17 @@
+@@ -1420,10 +1538,17 @@
  
      @Nullable
      public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams context, ConversionParams.AfterConversion<T> finalizer) {
@@ -330,7 +346,7 @@
      @Override
      public Leashable.LeashData getLeashData() {
          return this.leashData;
-@@ -1458,6 +1579,7 @@
+@@ -1458,6 +1583,7 @@
          boolean flag1 = super.startRiding(entity, force);
  
          if (flag1 && this.isLeashed()) {
@@ -338,7 +354,7 @@
              this.dropLeash();
          }
  
-@@ -1542,7 +1664,7 @@
+@@ -1542,7 +1668,7 @@
  
              if (f1 > 0.0F && target instanceof LivingEntity) {
                  entityliving = (LivingEntity) target;
