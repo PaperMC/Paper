@@ -54,6 +54,12 @@ public class EntityTNTPrimed extends Entity {
         }
 
         this.move(EnumMoveType.SELF, this.getMot());
+        // Paper start - Configurable TNT entity height nerf
+        if (this.world.paperConfig.entityTNTHeightNerf != 0 && this.locY() > this.world.paperConfig.entityTNTHeightNerf) {
+            this.die();
+            return;
+        }
+        // Paper end
         this.setMot(this.getMot().a(0.98D));
         if (this.onGround) {
             this.setMot(this.getMot().d(0.7D, -0.5D, 0.7D));

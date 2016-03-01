@@ -1765,6 +1765,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
         return this.a(itemstack, 0.0F);
     }
 
+    @Nullable public final EntityItem dropItem(ItemStack itemstack, float offset) { return this.a(itemstack, offset); } // Paper - OBFHELPER
     @Nullable
     public EntityItem a(ItemStack itemstack, float f) {
         if (itemstack.isEmpty()) {
