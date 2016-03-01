@@ -279,6 +279,7 @@ public enum Material {
     END_GATEWAY(209),
     COMMAND_REPEATING(210),
     COMMAND_CHAIN(211),
+    FROSTED_ICE(212),
     STRUCTURE_BLOCK(255),
     // ----- Item Separator -----
     IRON_SPADE(256, 1, 250),
