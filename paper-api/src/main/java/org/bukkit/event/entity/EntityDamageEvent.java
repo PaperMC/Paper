@@ -418,6 +418,12 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          * <p>
          * Damage: variable
          */
-        CUSTOM
+        CUSTOM,
+        /**
+         * Damage caused when an entity runs into a wall.
+         * <p>
+         * Damage: variable
+         */
+        FLY_INTO_WALL
     }
 }
