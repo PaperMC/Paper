@@ -477,7 +477,7 @@ public enum Material {
      * @see Potion
      */
     LINGERING_POTION(441, 1, MaterialData.class),
-    SHIELD(442, 1),
+    SHIELD(442, 1, 336),
     ELYTRA(443, 1),
     BOAT_SPRUCE(444, 1),
     BOAT_BIRCH(445, 1),
