@@ -1,5 +1,6 @@
 package org.bukkit.event.server;
 
+import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
 
 /**
@@ -8,7 +9,7 @@ import org.bukkit.event.Event;
 public abstract class ServerEvent extends Event {
 
     public ServerEvent() {
-        super();
+        super(!Bukkit.isPrimaryThread()); // Paper
     }
 
     public ServerEvent(boolean isAsync) {
