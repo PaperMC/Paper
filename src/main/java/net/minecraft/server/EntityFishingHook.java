@@ -338,7 +338,7 @@ public class EntityFishingHook extends IProjectile {
                     this.ai = MathHelper.nextInt(this.random, 20, 80);
                 }
             } else {
-                this.ah = MathHelper.nextInt(this.random, 100, 600);
+                this.ah = MathHelper.nextInt(this.random, world.paperConfig.fishingMinTicks, world.paperConfig.fishingMaxTicks); // Paper
                 this.ah -= this.ao * 20 * 5;
             }
         }
