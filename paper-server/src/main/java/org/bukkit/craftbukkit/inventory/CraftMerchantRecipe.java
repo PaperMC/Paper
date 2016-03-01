@@ -10,8 +10,10 @@ public class CraftMerchantRecipe extends MerchantRecipe {
     private final net.minecraft.server.MerchantRecipe handle;
 
     public CraftMerchantRecipe(net.minecraft.server.MerchantRecipe merchantRecipe) {
-        super(null, 0);
+        super(CraftItemStack.asBukkitCopy(merchantRecipe.sellingItem), 0);
         this.handle = merchantRecipe;
+        addIngredient(CraftItemStack.asBukkitCopy(merchantRecipe.buyingItem1));
+        addIngredient(CraftItemStack.asBukkitCopy(merchantRecipe.buyingItem2));
     }
 
     public CraftMerchantRecipe(ItemStack result, int uses, int maxUses, boolean experienceReward) {
