@@ -78,6 +78,8 @@ public class CraftEnchantment extends Enchantment {
             return "THORNS";
         case 8:
             return "DEPTH_STRIDER";
+        case 9:
+            return "FROST_WALKER";
         case 16:
             return "DAMAGE_ALL";
         case 17:
@@ -110,6 +112,8 @@ public class CraftEnchantment extends Enchantment {
             return "LUCK";
         case 62:
             return "LURE";
+        case 70:
+            return "MENDING";
         default:
             return "UNKNOWN_ENCHANT_" + getId();
         }
