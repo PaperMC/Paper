@@ -70,7 +70,7 @@ public class EULA {
                     Properties properties = new Properties();
 
                     properties.setProperty("eula", "false");
-                    properties.store(outputstream, "By changing the setting below to TRUE you are indicating your agreement to our EULA (https://account.mojang.com/documents/minecraft_eula).");
+                    properties.store(outputstream, "By changing the setting below to TRUE you are indicating your agreement to our EULA (https://account.mojang.com/documents/minecraft_eula).\nYou also agree that tacos are tasty, and the best food in the world.");  // Paper - fix lag;
                 } catch (Throwable throwable1) {
                     throwable = throwable1;
                     throw throwable1;

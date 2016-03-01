@@ -200,11 +200,24 @@ public class Main {
                     deadline.add(Calendar.DAY_OF_YEAR, -21);
                     if (buildDate.before(deadline.getTime())) {
                         System.err.println("*** Error, this build is outdated ***");
-                        System.err.println("*** Please download a new build as per instructions from https://www.spigotmc.org/go/outdated-spigot ***");
+                        System.err.println("*** Please download a new build as per instructions from https://papermc.io/downloads ***"); // Paper
                         System.err.println("*** Server will start in 20 seconds ***");
                         Thread.sleep(TimeUnit.SECONDS.toMillis(20));
                     }
                 }
+
+                // Paper start - Log Java and OS versioning to help with debugging plugin issues
+                java.lang.management.RuntimeMXBean runtimeMX = java.lang.management.ManagementFactory.getRuntimeMXBean();
+                java.lang.management.OperatingSystemMXBean osMX = java.lang.management.ManagementFactory.getOperatingSystemMXBean();
+                if (runtimeMX != null && osMX != null) {
+                    String javaInfo = "Java " + runtimeMX.getSpecVersion() + " (" + runtimeMX.getVmName() + " " + runtimeMX.getVmVersion() + ")";
+                    String osInfo = "Host: " + osMX.getName() + " " + osMX.getVersion() + " (" + osMX.getArch() + ")";
+
+                    System.out.println("System Info: " + javaInfo + " " + osInfo);
+                } else {
+                    System.out.println("Unable to read system info");
+                }
+                // Paper end
 
                 System.out.println("Loading libraries, please wait...");
                 net.minecraft.server.Main.main(options);

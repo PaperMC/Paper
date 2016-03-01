@@ -1222,7 +1222,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
     }
 
     public String getServerModName() {
-        return "Spigot"; // Spigot - Spigot > // CraftBukkit - cb > vanilla!
+        return "Paper"; //Paper - Paper > // Spigot - Spigot > // CraftBukkit - cb > vanilla!
     }
 
     public CrashReport b(CrashReport crashreport) {
