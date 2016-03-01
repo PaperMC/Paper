@@ -73,4 +73,15 @@ public class PaperWorldConfig {
         log("Max height for cactus growth " + cactusMaxHeight + ". Max height for reed growth " + reedMaxHeight);
 
     }
+
+    public double babyZombieMovementModifier;
+    private void babyZombieMovementModifier() {
+        babyZombieMovementModifier = getDouble("baby-zombie-movement-modifier", 0.5D);
+        if (PaperConfig.version < 20) {
+            babyZombieMovementModifier = getDouble("baby-zombie-movement-speed", 0.5D);
+            set("baby-zombie-movement-modifier", babyZombieMovementModifier);
+        }
+
+        log("Baby zombies will move at the speed of " + babyZombieMovementModifier);
+    }
 }

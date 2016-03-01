@@ -21,7 +21,7 @@ import org.bukkit.event.entity.EntityTransformEvent;
 public class EntityZombie extends EntityMonster {
 
     private static final UUID b = UUID.fromString("B9766B59-9566-4402-BC1F-2EE2A276D836");
-    private static final AttributeModifier c = new AttributeModifier(EntityZombie.b, "Baby speed boost", 0.5D, AttributeModifier.Operation.MULTIPLY_BASE);
+    private final AttributeModifier c = new AttributeModifier(EntityZombie.b, "Baby speed boost", 0.5D, AttributeModifier.Operation.MULTIPLY_BASE); private final AttributeModifier babyModifier = this.c; // Paper - remove static - Make baby speed configurable
     private static final DataWatcherObject<Boolean> d = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i);
     private static final DataWatcherObject<Integer> bo = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.b);
     public static final DataWatcherObject<Boolean> DROWN_CONVERTING = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i);
@@ -124,9 +124,9 @@ public class EntityZombie extends EntityMonster {
         if (this.world != null && !this.world.isClientSide) {
             AttributeModifiable attributemodifiable = this.getAttributeInstance(GenericAttributes.MOVEMENT_SPEED);
 
-            attributemodifiable.removeModifier(EntityZombie.c);
+            attributemodifiable.removeModifier(this.babyModifier); // Paper
             if (flag) {
-                attributemodifiable.b(EntityZombie.c);
+                attributemodifiable.b(this.babyModifier); // Paper
             }
         }
 
