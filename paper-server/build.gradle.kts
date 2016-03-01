@@ -8,9 +8,7 @@ plugins {
 dependencies {
     implementation(project(":paper-api"))
     implementation("jline:jline:2.12.1")
-    implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1") {
-        exclude(group = "org.apache.logging.log4j", module = "log4j-api")
-    }
+    implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1") // Paper - remove exclusion
     implementation("org.ow2.asm:asm-commons:9.7.1")
     implementation("commons-lang:commons-lang:2.6")
     runtimeOnly("org.xerial:sqlite-jdbc:3.47.0.0")
@@ -39,6 +37,7 @@ tasks.jar {
         val gitHash = git("rev-parse", "--short=7", "HEAD").getText().trim()
         val implementationVersion = System.getenv("BUILD_NUMBER") ?: "\"$gitHash\""
         val date = git("show", "-s", "--format=%ci", gitHash).getText().trim() // Paper
+        val gitBranch = git("rev-parse", "--abbrev-ref", "HEAD").getText().trim() // Paper
         attributes(
             "Main-Class" to "org.bukkit.craftbukkit.Main",
             "Implementation-Title" to "CraftBukkit",
@@ -47,6 +46,9 @@ tasks.jar {
             "Specification-Title" to "Bukkit",
             "Specification-Version" to project.version,
             "Specification-Vendor" to "Bukkit Team",
+            "Git-Branch" to gitBranch, // Paper
+            "Git-Commit" to gitHash, // Paper
+            "CraftBukkit-Package-Version" to paperweight.craftBukkitPackageVersion.get(), // Paper
         )
         for (tld in setOf("net", "com", "org")) {
             attributes("$tld/bukkit", "Sealed" to true)
@@ -58,6 +60,17 @@ publishing {
     publications.create<MavenPublication>("maven") {
     }
 }
+
+// Paper start
+val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
+    badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
+    jarToScan.set(tasks.serverJar.flatMap { it.archiveFile })
+    classpath.from(configurations.compileClasspath)
+}
+tasks.check {
+    dependsOn(scanJar)
+}
+// Paper end
 
 tasks.test {
     include("**/**TestSuite.class")
@@ -128,4 +141,5 @@ tasks.registerRunTask("runReobf") {
 tasks.registerRunTask("runDev") {
     description = "Spin up a non-relocated Mojang-mapped test server"
     classpath(sourceSets.main.map { it.runtimeClasspath })
+    jvmArgs("-DPaper.pushPaperAssetsRoot=true")
 }
