@@ -70,6 +70,9 @@ public abstract class EntityHuman extends EntityLiving {
     private final ItemCooldown bM;
     @Nullable
     public EntityFishingHook hookedFish;
+    // Paper start
+    public boolean affectsSpawning = true;
+    // Paper end
 
     // CraftBukkit start
     public boolean fauxSleeping;

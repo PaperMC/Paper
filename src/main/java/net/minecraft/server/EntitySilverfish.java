@@ -95,7 +95,7 @@ public class EntitySilverfish extends EntityMonster {
         if (c(entitytypes, generatoraccess, enummobspawn, blockposition, random)) {
             EntityHuman entityhuman = generatoraccess.a((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, 5.0D, true);
 
-            return entityhuman == null;
+            return !(entityhuman != null && !entityhuman.affectsSpawning) && entityhuman == null; // Paper - Affects Spawning API
         } else {
             return false;
         }

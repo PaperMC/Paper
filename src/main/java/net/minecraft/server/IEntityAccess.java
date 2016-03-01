@@ -83,8 +83,9 @@ public interface IEntityAccess {
         }
     }
 
-    @Nullable
-    default EntityHuman a(double d0, double d1, double d2, double d3, @Nullable Predicate<Entity> predicate) {
+    default EntityHuman findNearbyPlayer(Entity entity, double d0, @Nullable Predicate<Entity> predicate) { return this.findNearbyPlayer(entity.locX(), entity.locY(), entity.locZ(), d0, predicate); } // Paper
+    @Nullable default EntityHuman findNearbyPlayer(double d0, double d1, double d2, double d3, @Nullable Predicate<Entity> predicate) { return a(d0, d1, d2, d3, predicate); } // Paper - OBFHELPER
+    @Nullable default EntityHuman a(double d0, double d1, double d2, double d3, @Nullable Predicate<Entity> predicate) { // Paper
         double d4 = -1.0D;
         EntityHuman entityhuman = null;
         Iterator iterator = this.getPlayers().iterator();
@@ -116,6 +117,27 @@ public interface IEntityAccess {
 
         return this.a(d0, d1, d2, d3, predicate);
     }
+
+    // Paper end
+    default boolean isAffectsSpawningPlayerNearby(double d0, double d1, double d2, double d3) {
+        Iterator iterator = this.getPlayers().iterator();
+        double d4;
+        do {
+            EntityHuman entityhuman;
+            do {
+                if (!iterator.hasNext()) {
+                    return false;
+                }
+
+                entityhuman = (EntityHuman) iterator.next();
+            } while (!IEntitySelector.affectsSpawning.test(entityhuman));
+
+            d4 = entityhuman.getDistanceSquared(d0, d1, d2);
+        } while (d3 >= 0.0D && d4 >= d3 * d3);
+
+        return true;
+    }
+    // Paper end
 
     default boolean isPlayerNearby(double d0, double d1, double d2, double d3) {
         Iterator iterator = this.getPlayers().iterator();

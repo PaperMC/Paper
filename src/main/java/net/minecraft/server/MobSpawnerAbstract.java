@@ -49,7 +49,7 @@ public abstract class MobSpawnerAbstract {
     private boolean h() {
         BlockPosition blockposition = this.b();
 
-        return this.a().isPlayerNearby((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, (double) this.requiredPlayerRange);
+        return this.a().isAffectsSpawningPlayerNearby((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, (double) this.requiredPlayerRange); // Paper
     }
 
     public void c() {

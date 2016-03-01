@@ -691,7 +691,7 @@ public abstract class EntityInsentient extends EntityLiving {
         if (this.world.getDifficulty() == EnumDifficulty.PEACEFUL && this.L()) {
             this.die();
         } else if (!this.isPersistent() && !this.isSpecialPersistence()) {
-            EntityHuman entityhuman = this.world.findNearbyPlayer(this, -1.0D);
+            EntityHuman entityhuman = this.world.findNearbyPlayer(this, -1.0D, IEntitySelector.affectsSpawning); // Paper
 
             if (entityhuman != null) {
                 double d0 = entityhuman.h((Entity) this); // CraftBukkit - decompile error

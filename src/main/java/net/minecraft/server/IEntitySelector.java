@@ -24,6 +24,12 @@ public final class IEntitySelector {
         return !entity.isSpectator();
     };
 
+    // Paper start
+    public static final Predicate<Entity> affectsSpawning = (entity) -> {
+        return !entity.isSpectator() && entity.isAlive() && (entity instanceof EntityPlayer) && ((EntityPlayer) entity).affectsSpawning;
+    };
+    // Paper end
+
     public static Predicate<Entity> a(double d0, double d1, double d2, double d3) {
         double d4 = d3 * d3;
 
