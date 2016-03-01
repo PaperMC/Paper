@@ -145,7 +145,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     }
 
     public void setArmorContents(ItemStack[] items) {
-        int cnt = getSize();
+        int cnt = getInventory().items.length;
 
         if (items == null) {
             items = new ItemStack[4];
