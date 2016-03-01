@@ -528,7 +528,8 @@ public final class SimplePluginManager implements PluginManager {
             try {
                 plugin.getPluginLoader().enablePlugin(plugin);
             } catch (Throwable ex) {
-                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while enabling " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
+                handlePluginException("Error occurred (in the plugin loader) while enabling "
+                        + plugin.getDescription().getFullName() + " (Is it up to date?)", ex, plugin);
             }
 
             HandlerList.bakeAll();
@@ -551,32 +552,37 @@ public final class SimplePluginManager implements PluginManager {
             try {
                 plugin.getPluginLoader().disablePlugin(plugin);
             } catch (Throwable ex) {
-                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while disabling " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
+                handlePluginException("Error occurred (in the plugin loader) while disabling "
+                        + plugin.getDescription().getFullName() + " (Is it up to date?)", ex, plugin); // Paper
             }
 
             try {
                 server.getScheduler().cancelTasks(plugin);
             } catch (Throwable ex) {
-                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while cancelling tasks for " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
+                handlePluginException("Error occurred (in the plugin loader) while cancelling tasks for "
+                        + plugin.getDescription().getFullName() + " (Is it up to date?)", ex, plugin); // Paper
             }
 
             try {
                 server.getServicesManager().unregisterAll(plugin);
             } catch (Throwable ex) {
-                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while unregistering services for " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
+                handlePluginException("Error occurred (in the plugin loader) while unregistering services for "
+                        + plugin.getDescription().getFullName() + " (Is it up to date?)", ex, plugin); // Paper
             }
 
             try {
                 HandlerList.unregisterAll(plugin);
             } catch (Throwable ex) {
-                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while unregistering events for " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
+                handlePluginException("Error occurred (in the plugin loader) while unregistering events for "
+                        + plugin.getDescription().getFullName() + " (Is it up to date?)", ex, plugin); // Paper
             }
 
             try {
                 server.getMessenger().unregisterIncomingPluginChannel(plugin);
                 server.getMessenger().unregisterOutgoingPluginChannel(plugin);
             } catch (Throwable ex) {
-                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while unregistering plugin channels for " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
+                handlePluginException("Error occurred (in the plugin loader) while unregistering plugin channels for "
+                        + plugin.getDescription().getFullName() + " (Is it up to date?)", ex, plugin); // Paper
             }
 
             try {
@@ -588,6 +594,13 @@ public final class SimplePluginManager implements PluginManager {
             }
         }
     }
+
+    // Paper start
+    private void handlePluginException(String msg, Throwable ex, Plugin plugin) {
+        server.getLogger().log(Level.SEVERE, msg, ex);
+        callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerPluginEnableDisableException(msg, ex, plugin)));
+    }
+    // Paper end
 
     @Override
     public void clearPlugins() {
@@ -654,7 +667,13 @@ public final class SimplePluginManager implements PluginManager {
                             ));
                 }
             } catch (Throwable ex) {
-                server.getLogger().log(Level.SEVERE, "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getDescription().getFullName(), ex);
+                // Paper start - error reporting
+                String msg = "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getDescription().getFullName();
+                server.getLogger().log(Level.SEVERE, msg, ex);
+                if (!(event instanceof com.destroystokyo.paper.event.server.ServerExceptionEvent)) { // We don't want to cause an endless event loop
+                    callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerEventException(msg, ex, registration.getPlugin(), registration.getListener(), event)));
+                }
+                // Paper end
             }
         }
     }
