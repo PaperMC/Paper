@@ -92,4 +92,9 @@ public class PaperWorldConfig {
         fishingMaxTicks = getInt("fishing-time-range.MaximumTicks", 600);
         log("Fishing time ranges are between " + fishingMinTicks +" and " + fishingMaxTicks + " ticks");
     }
+
+    public boolean nerfedMobsShouldJump;
+    private void nerfedMobsShouldJump() {
+        nerfedMobsShouldJump = getBoolean("spawner-nerfed-mobs-should-jump", false);
+    }
 }

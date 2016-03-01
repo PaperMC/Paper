@@ -1020,6 +1020,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
         return this.isInWater() || this.isInRain();
     }
 
+    public final boolean isInWaterOrRainOrBubble() { return aF(); } // Paper - OBFHELPER
     public boolean aF() {
         return this.isInWater() || this.isInRain() || this.k();
     }

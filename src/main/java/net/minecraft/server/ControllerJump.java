@@ -13,6 +13,7 @@ public class ControllerJump {
         this.a = true;
     }
 
+    public final void jumpIfSet() { this.b(); } // Paper - OBFHELPER
     public void b() {
         this.b.setJumping(this.a);
         this.a = false;

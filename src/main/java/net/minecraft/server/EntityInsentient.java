@@ -33,6 +33,7 @@ public abstract class EntityInsentient extends EntityLiving {
     private final EntityAIBodyControl c;
     protected NavigationAbstract navigation;
     public PathfinderGoalSelector goalSelector;
+    @Nullable public PathfinderGoalFloat goalFloat; // Paper
     public PathfinderGoalSelector targetSelector;
     private EntityLiving goalTarget;
     private final EntitySenses bo;
@@ -719,7 +720,17 @@ public abstract class EntityInsentient extends EntityLiving {
     @Override
     protected final void doTick() {
         ++this.ticksFarFromPlayer;
-        if (!this.aware) return; // CraftBukkit
+        if (!this.aware) { // Paper start - Allow nerfed mobs to jump, float and take water damage
+            if (goalFloat != null) {
+                if (goalFloat.validConditions()) goalFloat.update();
+                this.getControllerJump().jumpIfSet();
+            }
+            if ((this instanceof EntityBlaze || this instanceof EntityEnderman) && isInWaterOrRainOrBubble()) {
+                damageEntity(DamageSource.DROWN, 1.0F);
+            }
+            return;
+        }
+        // Paper end
         this.world.getMethodProfiler().enter("sensing");
         this.bo.a();
         this.world.getMethodProfiler().exit();
