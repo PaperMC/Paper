@@ -251,7 +251,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             instrumentName = "harp";
             break;
         case 1:
-            instrumentName = "bd";
+            instrumentName = "basedrum";
             break;
         case 2:
             instrumentName = "snare";
@@ -260,12 +260,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             instrumentName = "hat";
             break;
         case 4:
-            instrumentName = "bassattack";
+            instrumentName = "bass";
             break;
         }
 
         float f = (float) Math.pow(2.0D, (note - 12.0D) / 12.0D);
-        getHandle().playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect(CraftSound.getSoundEffect("note." + instrumentName), SoundCategory.MUSIC, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f));
+        getHandle().playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect(CraftSound.getSoundEffect("block.note." + instrumentName), SoundCategory.MUSIC, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f));
     }
 
     @Override
@@ -278,7 +278,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 instrumentName = "harp";
                 break;
             case 1:
-                instrumentName = "bd";
+                instrumentName = "basedrum";
                 break;
             case 2:
                 instrumentName = "snare";
@@ -287,11 +287,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 instrumentName = "hat";
                 break;
             case 4:
-                instrumentName = "bassattack";
+                instrumentName = "bass";
                 break;
         }
         float f = (float) Math.pow(2.0D, (note.getId() - 12.0D) / 12.0D);
-        getHandle().playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect(CraftSound.getSoundEffect("note." + instrumentName), SoundCategory.MUSIC, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f));
+        getHandle().playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect(CraftSound.getSoundEffect("block.note." + instrumentName), SoundCategory.MUSIC, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f));
     }
 
     @Override
