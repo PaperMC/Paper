@@ -2637,6 +2637,82 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param affects Whether the player can affect mob spawning
      */
     public void setAffectsSpawning(boolean affects);
+
+    /**
+     * Gets the view distance for this player
+     *
+     * @return the player's view distance
+     * @see org.bukkit.World#getViewDistance()
+     */
+    public int getViewDistance();
+
+    /**
+     * Sets the view distance for this player
+     *
+     * @param viewDistance the player's view distance
+     * @see org.bukkit.World#setViewDistance(int)
+     */
+    public void setViewDistance(int viewDistance);
+
+    /**
+     * Gets the simulation distance for this player
+     *
+     * @return the player's simulation distance
+     */
+    public int getSimulationDistance();
+
+    /**
+     * Sets the simulation distance for this player
+     *
+     * @param simulationDistance the player's new simulation distance
+     */
+    public void setSimulationDistance(int simulationDistance);
+    
+    /**
+     * Gets the no-ticking view distance for this player.
+     * <p>
+     * No-tick view distance is the view distance where chunks will load, however the chunks and their entities will not
+     * be set to tick.
+     * </p>
+     * @return The no-tick view distance for this player.
+     * @deprecated Use {@link #getViewDistance()}
+     */
+    @Deprecated
+    default int getNoTickViewDistance() {
+        return this.getViewDistance();
+    }
+
+    /**
+     * Sets the no-ticking view distance for this player.
+     * <p>
+     * No-tick view distance is the view distance where chunks will load, however the chunks and their entities will not
+     * be set to tick.
+     * </p>
+     * @param viewDistance view distance in [2, 32] or -1
+     * @deprecated Use {@link #setViewDistance(int)}
+     */
+    @Deprecated
+    default void setNoTickViewDistance(int viewDistance) {
+        this.setViewDistance(viewDistance);
+    }
+
+    /**
+     * Gets the sending view distance for this player.
+     * <p>
+     * Sending view distance is the view distance where chunks will load in for players.
+     * </p>
+     * @return The sending view distance for this player.
+     */
+    public int getSendViewDistance();
+
+    /**
+     * Sets the sending view distance for this player.
+     * <p>
+     * Sending view distance is the view distance where chunks will load in for players.
+     * </p>
+     * @param viewDistance view distance in [2, 32] or -1
+     */
+    public void setSendViewDistance(int viewDistance);
     // Paper end
 
     /**
