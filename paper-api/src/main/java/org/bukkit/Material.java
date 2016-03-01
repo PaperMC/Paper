@@ -904,6 +904,7 @@ public enum Material {
             case STRUCTURE_BLOCK:
             case COMMAND_REPEATING:
             case COMMAND_CHAIN:
+            case FROSTED_ICE:
                 return true;
             default:
                 return false;
