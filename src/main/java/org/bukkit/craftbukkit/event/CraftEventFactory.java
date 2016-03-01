@@ -91,10 +91,10 @@ public class CraftEventFactory {
     /**
      * Block place methods
      */
-    public static BlockMultiPlaceEvent callBlockMultiPlaceEvent(World world, EntityHuman who, List<BlockState> blockStates, int clickedX, int clickedY, int clickedZ) {
+    public static BlockMultiPlaceEvent callBlockMultiPlaceEvent(World world, EntityHuman who, EnumHand hand, List<BlockState> blockStates, int clickedX, int clickedY, int clickedZ) {
         CraftWorld craftWorld = world.getWorld();
         CraftServer craftServer = world.getServer();
-        Player player = (who == null) ? null : (Player) who.getBukkitEntity();
+        Player player = (Player) who.getBukkitEntity();
 
         Block blockClicked = craftWorld.getBlockAt(clickedX, clickedY, clickedZ);
 
@@ -106,24 +106,38 @@ public class CraftEventFactory {
             }
         }
 
-        BlockMultiPlaceEvent event = new BlockMultiPlaceEvent(blockStates, blockClicked, player.getItemInHand(), player, canBuild);
+        org.bukkit.inventory.ItemStack item;
+        if (hand == EnumHand.MAIN_HAND) {
+            item = player.getInventory().getItemInMainHand();
+        } else {
+            item = player.getInventory().getItemInOffHand();
+        }
+
+        BlockMultiPlaceEvent event = new BlockMultiPlaceEvent(blockStates, blockClicked, item, player, canBuild);
         craftServer.getPluginManager().callEvent(event);
 
         return event;
     }
 
-    public static BlockPlaceEvent callBlockPlaceEvent(World world, EntityHuman who, BlockState replacedBlockState, int clickedX, int clickedY, int clickedZ) {
+    public static BlockPlaceEvent callBlockPlaceEvent(World world, EntityHuman who, EnumHand hand, BlockState replacedBlockState, int clickedX, int clickedY, int clickedZ) {
         CraftWorld craftWorld = world.getWorld();
         CraftServer craftServer = world.getServer();
 
-        Player player = (who == null) ? null : (Player) who.getBukkitEntity();
+        Player player = (Player) who.getBukkitEntity();
 
         Block blockClicked = craftWorld.getBlockAt(clickedX, clickedY, clickedZ);
         Block placedBlock = replacedBlockState.getBlock();
 
         boolean canBuild = canBuild(craftWorld, player, placedBlock.getX(), placedBlock.getZ());
 
-        BlockPlaceEvent event = new BlockPlaceEvent(placedBlock, replacedBlockState, blockClicked, player.getItemInHand(), player, canBuild);
+        org.bukkit.inventory.ItemStack item;
+        if (hand == EnumHand.MAIN_HAND) {
+            item = player.getInventory().getItemInMainHand();
+        } else {
+            item = player.getInventory().getItemInOffHand();
+        }
+
+        BlockPlaceEvent event = new BlockPlaceEvent(placedBlock, replacedBlockState, blockClicked, item, player, canBuild);
         craftServer.getPluginManager().callEvent(event);
 
         return event;
