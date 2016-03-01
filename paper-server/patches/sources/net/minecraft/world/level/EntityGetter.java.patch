@@ -1,0 +1,35 @@
+--- a/net/minecraft/world/level/EntityGetter.java
++++ b/net/minecraft/world/level/EntityGetter.java
+@@ -71,6 +71,11 @@
+         }
+     }
+ 
++    // Paper start - Affects Spawning API
++    default @Nullable Player findNearbyPlayer(Entity entity, double maxDistance, @Nullable Predicate<Entity> predicate) {
++        return this.getNearestPlayer(entity.getX(), entity.getY(), entity.getZ(), maxDistance, predicate);
++    }
++    // Paper end - Affects Spawning API
+     @Nullable
+     default Player getNearestPlayer(double x, double y, double z, double maxDistance, @Nullable Predicate<Entity> targetPredicate) {
+         double d = -1.0;
+@@ -100,6 +105,20 @@
+         return this.getNearestPlayer(x, y, z, maxDistance, predicate);
+     }
+ 
++    // Paper start - Affects Spawning API
++    default boolean hasNearbyAlivePlayerThatAffectsSpawning(double x, double y, double z, double range) {
++        for (Player player : this.players()) {
++            if (EntitySelector.PLAYER_AFFECTS_SPAWNING.test(player)) { // combines NO_SPECTATORS and LIVING_ENTITY_STILL_ALIVE with an "affects spawning" check
++                double distanceSqr = player.distanceToSqr(x, y, z);
++                if (range < 0.0D || distanceSqr < range * range) {
++                    return true;
++                }
++            }
++        }
++        return false;
++    }
++    // Paper end - Affects Spawning API
++
+     default boolean hasNearbyAlivePlayer(double x, double y, double z, double range) {
+         for (Player player : this.players()) {
+             if (EntitySelector.NO_SPECTATORS.test(player) && EntitySelector.LIVING_ENTITY_STILL_ALIVE.test(player)) {

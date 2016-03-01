@@ -35,10 +35,11 @@
      public final InventoryMenu inventoryMenu;
      public AbstractContainerMenu containerMenu;
      protected FoodData foodData = new FoodData();
-@@ -188,7 +198,17 @@
+@@ -188,7 +198,18 @@
      public Entity currentExplosionCause;
      private boolean ignoreFallDamageFromCurrentImpulse;
      private int currentImpulseContextResetGraceTime;
++    public boolean affectsSpawning = true; // Paper - Affects Spawning API
 +
 +    // CraftBukkit start
 +    public boolean fauxSleeping;
@@ -53,7 +54,7 @@
      public Player(Level world, BlockPos pos, float yaw, GameProfile gameProfile) {
          super(EntityType.PLAYER, world);
          this.lastItemInMainHand = ItemStack.EMPTY;
-@@ -353,7 +373,7 @@
+@@ -353,7 +374,7 @@
      }
  
      private void turtleHelmetTick() {
@@ -62,7 +63,7 @@
      }
  
      private boolean isEquipped(Item item) {
-@@ -523,8 +543,14 @@
+@@ -523,8 +544,14 @@
      public void rideTick() {
          if (!this.level().isClientSide && this.wantsToStopRiding() && this.isPassenger()) {
              this.stopRiding();
@@ -79,7 +80,7 @@
              super.rideTick();
              this.oBob = this.bob;
              this.bob = 0.0F;
-@@ -719,7 +745,14 @@
+@@ -719,7 +746,14 @@
  
      @Nullable
      public ItemEntity drop(ItemStack stack, boolean throwRandomly, boolean retainOwnership) {
@@ -95,7 +96,7 @@
              this.swing(InteractionHand.MAIN_HAND);
          }
  
-@@ -809,7 +842,7 @@
+@@ -809,7 +843,7 @@
          }
  
          if (nbt.contains("LastDeathLocation", 10)) {
@@ -104,7 +105,7 @@
              Logger logger = Player.LOGGER;
  
              Objects.requireNonNull(logger);
-@@ -817,7 +850,7 @@
+@@ -817,7 +851,7 @@
          }
  
          if (nbt.contains("current_explosion_impact_pos", 9)) {
@@ -113,7 +114,7 @@
              Logger logger1 = Player.LOGGER;
  
              Objects.requireNonNull(logger1);
-@@ -854,7 +887,7 @@
+@@ -854,7 +888,7 @@
          }
  
          this.getLastDeathLocation().flatMap((globalpos) -> {
@@ -122,7 +123,7 @@
              Logger logger = Player.LOGGER;
  
              Objects.requireNonNull(logger);
-@@ -886,10 +919,10 @@
+@@ -886,10 +920,10 @@
              if (this.isDeadOrDying()) {
                  return false;
              } else {
@@ -135,7 +136,7 @@
                      }
  
                      if (world.getDifficulty() == Difficulty.EASY) {
-@@ -901,7 +934,13 @@
+@@ -901,7 +935,13 @@
                      }
                  }
  
@@ -150,7 +151,7 @@
              }
          }
      }
-@@ -923,10 +962,29 @@
+@@ -923,10 +963,29 @@
      }
  
      public boolean canHarmPlayer(Player player) {
@@ -183,7 +184,7 @@
      }
  
      @Override
-@@ -966,32 +1024,38 @@
+@@ -966,32 +1025,38 @@
          }
      }
  
@@ -236,7 +237,7 @@
      }
  
      public boolean isTextFilteringEnabled() {
-@@ -1144,10 +1208,15 @@
+@@ -1144,10 +1209,15 @@
  
                  f *= 0.2F + f2 * f2 * 0.8F;
                  f1 *= f2;
@@ -253,7 +254,7 @@
                      if (iprojectile.deflect(ProjectileDeflection.AIM_DEFLECT, this, this, true)) {
                          this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource());
                          return;
-@@ -1223,8 +1292,13 @@
+@@ -1223,8 +1293,13 @@
                                  if (entityliving2 != this && entityliving2 != target && !this.isAlliedTo((Entity) entityliving2) && (!(entityliving2 instanceof ArmorStand) || !((ArmorStand) entityliving2).isMarker()) && this.distanceToSqr((Entity) entityliving2) < 9.0D) {
                                      float f7 = this.getEnchantedDamage(entityliving2, f6, damagesource) * f2;
  
@@ -268,7 +269,7 @@
                                      Level world = this.level();
  
                                      if (world instanceof ServerLevel) {
-@@ -1240,9 +1314,26 @@
+@@ -1240,9 +1315,26 @@
                          }
  
                          if (target instanceof ServerPlayer && target.hurtMarked) {
@@ -295,7 +296,7 @@
                          }
  
                          if (flag2) {
-@@ -1308,9 +1399,14 @@
+@@ -1308,9 +1400,14 @@
                              }
                          }
  
@@ -311,7 +312,7 @@
                      }
                  }
  
-@@ -1351,7 +1447,14 @@
+@@ -1351,7 +1448,14 @@
  
      @Override
      public void remove(Entity.RemovalReason reason) {
@@ -327,7 +328,7 @@
          this.inventoryMenu.removed(this);
          if (this.containerMenu != null && this.hasContainerOpen()) {
              this.doCloseContainer();
-@@ -1391,7 +1494,13 @@
+@@ -1391,7 +1495,13 @@
      }
  
      public Either<Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos pos) {
@@ -342,7 +343,7 @@
          this.sleepCounter = 0;
          return Either.right(Unit.INSTANCE);
      }
-@@ -1545,12 +1654,24 @@
+@@ -1545,12 +1655,24 @@
      }
  
      public void startFallFlying() {
@@ -368,7 +369,7 @@
      }
  
      @Override
-@@ -1665,10 +1786,21 @@
+@@ -1665,10 +1787,21 @@
          return this.experienceLevel >= 30 ? 112 + (this.experienceLevel - 30) * 9 : (this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2);
      }
  
@@ -391,7 +392,7 @@
              }
  
          }
-@@ -1748,13 +1880,20 @@
+@@ -1748,13 +1881,20 @@
  
      @Override
      public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
@@ -419,7 +420,7 @@
          }
  
      }
-@@ -1798,26 +1937,31 @@
+@@ -1798,26 +1938,31 @@
  
      public void removeEntitiesOnShoulder() {
          if (this.timeEntitySatOnShoulder + 20L < this.level().getGameTime()) {
