@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 import com.google.common.collect.ImmutableSet;
 import java.util.Optional;
+import java.util.Set; // Paper
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -468,4 +469,10 @@ public class EntityTypes<T extends Entity> {
             return new EntityTypes<>(this.a, this.b, this.d, this.e, this.f, this.g, this.c, this.j, this.h, this.i);
         }
     }
+
+    // Paper start
+    public static Set<MinecraftKey> getEntityNameList() {
+        return IRegistry.ENTITY_TYPE.keySet();
+    }
+    // Paper end
 }

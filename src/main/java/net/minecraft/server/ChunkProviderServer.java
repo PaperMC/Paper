@@ -273,15 +273,15 @@ public class ChunkProviderServer extends IChunkProvider {
         }
     }
 
-    @Override
-    public boolean a(Entity entity) {
+    public final boolean isInEntityTickingChunk(Entity entity) { return this.a(entity); } // Paper - OBFHELPER
+    @Override public boolean a(Entity entity) {
         long i = ChunkCoordIntPair.pair(MathHelper.floor(entity.locX()) >> 4, MathHelper.floor(entity.locZ()) >> 4);
 
         return this.a(i, (Function<PlayerChunk, CompletableFuture<Either<Chunk, PlayerChunk.Failure>>>) PlayerChunk::b); // CraftBukkit - decompile error
     }
 
-    @Override
-    public boolean a(ChunkCoordIntPair chunkcoordintpair) {
+    public final boolean isEntityTickingChunk(ChunkCoordIntPair chunkcoordintpair) { return this.a(chunkcoordintpair); } // Paper - OBFHELPER
+    @Override public boolean a(ChunkCoordIntPair chunkcoordintpair) {
         return this.a(chunkcoordintpair.pair(), (Function<PlayerChunk, CompletableFuture<Either<Chunk, PlayerChunk.Failure>>>) PlayerChunk::b); // CraftBukkit - decompile error
     }
 

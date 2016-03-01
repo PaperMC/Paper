@@ -65,6 +65,12 @@ public class Main {
             DedicatedServerSettings dedicatedserversettings = new DedicatedServerSettings(iregistrycustom_dimension, optionset); // CraftBukkit - CLI argument support
 
             dedicatedserversettings.save();
+            // Paper start - load config files for access below if needed
+            org.bukkit.configuration.file.YamlConfiguration bukkitConfiguration = loadConfigFile((File) optionset.valueOf("bukkit-settings"));
+            org.bukkit.configuration.file.YamlConfiguration spigotConfiguration = loadConfigFile((File) optionset.valueOf("spigot-settings"));
+            org.bukkit.configuration.file.YamlConfiguration paperConfiguration = loadConfigFile((File) optionset.valueOf("paper-settings"));
+            // Paper end
+
             java.nio.file.Path java_nio_file_path1 = Paths.get("eula.txt");
             EULA eula = new EULA(java_nio_file_path1);
 
@@ -205,6 +211,16 @@ public class Main {
         }
 
     }
+
+    // Paper start - load config files
+    private static org.bukkit.configuration.file.YamlConfiguration loadConfigFile(File configFile) throws java.io.IOException, org.bukkit.configuration.InvalidConfigurationException {
+        org.bukkit.configuration.file.YamlConfiguration config = new org.bukkit.configuration.file.YamlConfiguration();
+        if (configFile.exists()) {
+            config.load(configFile);
+        }
+        return config;
+    }
+    // Paper end
 
     public static void convertWorld(Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, boolean flag, BooleanSupplier booleansupplier, ImmutableSet<ResourceKey<DimensionManager>> immutableset) { // CraftBukkit
         Main.LOGGER.info("Forcing world upgrade! {}", convertable_conversionsession.getLevelName()); // CraftBukkit

@@ -145,6 +145,15 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
         org.spigotmc.SpigotConfig.init((java.io.File) options.valueOf("spigot-settings"));
         org.spigotmc.SpigotConfig.registerCommands();
         // Spigot end
+        // Paper start
+        try {
+            com.destroystokyo.paper.PaperConfig.init((java.io.File) options.valueOf("paper-settings"));
+        } catch (Exception e) {
+            DedicatedServer.LOGGER.error("Unable to load server configuration", e);
+            return false;
+        }
+        com.destroystokyo.paper.PaperConfig.registerCommands();
+        // Paper end
 
         this.setPVP(dedicatedserverproperties.pvp);
         this.setAllowFlight(dedicatedserverproperties.allowFlight);

@@ -77,6 +77,8 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
     public boolean populating;
     public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
 
+    public final com.destroystokyo.paper.PaperWorldConfig paperConfig; // Paper
+
     public final SpigotTimings.WorldTimingsHandler timings; // Spigot
     public static BlockPosition lastPhysicsProblem; // Spigot
     private org.spigotmc.TickLimiter entityLimiter;
@@ -97,6 +99,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
 
     protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, final DimensionManager dimensionmanager, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) {
         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((WorldDataServer) worlddatamutable).getName()); // Spigot
+        this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(worlddata.getName(), this.spigotConfig); // Paper
         this.generator = gen;
         this.world = new CraftWorld((WorldServer) this, gen, env);
         this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
