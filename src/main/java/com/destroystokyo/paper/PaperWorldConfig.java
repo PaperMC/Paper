@@ -97,4 +97,20 @@ public class PaperWorldConfig {
     private void nerfedMobsShouldJump() {
         nerfedMobsShouldJump = getBoolean("spawner-nerfed-mobs-should-jump", false);
     }
+
+    public int softDespawnDistance;
+    public int hardDespawnDistance;
+    private void despawnDistances() {
+        softDespawnDistance = getInt("despawn-ranges.soft", 32); // 32^2 = 1024, Minecraft Default
+        hardDespawnDistance = getInt("despawn-ranges.hard", 128); // 128^2 = 16384, Minecraft Default
+
+        if (softDespawnDistance > hardDespawnDistance) {
+            softDespawnDistance = hardDespawnDistance;
+        }
+
+        log("Living Entity Despawn Ranges:  Soft: " + softDespawnDistance + " Hard: " + hardDespawnDistance);
+
+        softDespawnDistance = softDespawnDistance*softDespawnDistance;
+        hardDespawnDistance = hardDespawnDistance*hardDespawnDistance;
+    }
 }
