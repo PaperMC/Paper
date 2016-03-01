@@ -49,6 +49,8 @@ public class CraftSkull extends CraftBlockState implements Skull {
                 return SkullType.PLAYER;
             case 4:
                 return SkullType.CREEPER;
+            case 5:
+                return SkullType.DRAGON;
         }
     }
 
@@ -65,6 +67,8 @@ public class CraftSkull extends CraftBlockState implements Skull {
                 return 3;
             case CREEPER:
                 return 4;
+            case DRAGON:
+                return 5;
         }
     }
 
