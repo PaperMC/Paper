@@ -35,7 +35,7 @@ public class BlockReed extends Block {
                 ;
             }
 
-            if (i < 3) {
+                if (i < worldserver.paperConfig.reedMaxHeight) { // Paper - Configurable growth height
                 int j = (Integer) iblockdata.get(BlockReed.AGE);
 
                 if (j >= (byte) range(3, ((100.0F / worldserver.spigotConfig.caneModifier) * 15) + 0.5F, 15)) { // Spigot
