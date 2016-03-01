@@ -21,7 +21,7 @@
  
      public PrimedTnt(EntityType<? extends PrimedTnt> type, Level world) {
          super(type, world);
-@@ -94,6 +101,7 @@
+@@ -94,10 +101,17 @@
  
      @Override
      public void tick() {
@@ -29,7 +29,17 @@
          this.handlePortal();
          this.applyGravity();
          this.move(MoverType.SELF, this.getDeltaMovement());
-@@ -107,10 +115,13 @@
+         this.applyEffectsFromBlocks();
++        // Paper start - Configurable TNT height nerf
++        if (this.level().paperConfig().fixes.tntEntityHeightNerf.test(v -> this.getY() > v)) {
++            this.discard(EntityRemoveEvent.Cause.OUT_OF_WORLD);
++            return;
++        }
++        // Paper end - Configurable TNT height nerf
+         this.setDeltaMovement(this.getDeltaMovement().scale(0.98D));
+         if (this.onGround()) {
+             this.setDeltaMovement(this.getDeltaMovement().multiply(0.7D, -0.5D, 0.7D));
+@@ -107,10 +121,13 @@
  
          this.setFuse(i);
          if (i <= 0) {
@@ -44,7 +54,7 @@
          } else {
              this.updateInWaterStateAndDoFluidPushing();
              if (this.level().isClientSide) {
-@@ -121,7 +132,13 @@
+@@ -121,7 +138,13 @@
      }
  
      private void explode() {

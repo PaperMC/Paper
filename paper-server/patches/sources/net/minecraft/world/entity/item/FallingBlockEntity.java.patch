@@ -42,7 +42,24 @@
          } else {
              Block block = this.blockState.getBlock();
  
-@@ -174,7 +186,7 @@
+@@ -147,6 +159,16 @@
+             this.applyGravity();
+             this.move(MoverType.SELF, this.getDeltaMovement());
+             this.applyEffectsFromBlocks();
++            // Paper start - Configurable falling blocks height nerf
++            if (this.level().paperConfig().fixes.fallingBlockHeightNerf.test(v -> this.getY() > v)) {
++                if (this.dropItem && this.level() instanceof final ServerLevel serverLevel && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
++                    this.spawnAtLocation(serverLevel, block);
++                }
++
++                this.discard(EntityRemoveEvent.Cause.OUT_OF_WORLD);
++                return;
++            }
++            // Paper end - Configurable falling blocks height nerf
+             this.handlePortal();
+             Level world = this.level();
+ 
+@@ -174,7 +196,7 @@
                                  this.spawnAtLocation(worldserver, (ItemLike) block);
                              }
  
@@ -51,7 +68,7 @@
                          }
                      } else {
                          BlockState iblockdata = this.level().getBlockState(blockposition);
-@@ -191,9 +203,15 @@
+@@ -191,9 +213,15 @@
                                          this.blockState = (BlockState) this.blockState.setValue(BlockStateProperties.WATERLOGGED, true);
                                      }
  
@@ -68,7 +85,7 @@
                                          if (block instanceof Fallable) {
                                              ((Fallable) block).onLand(this.level(), blockposition, this.blockState, iblockdata, this);
                                          }
-@@ -221,19 +239,19 @@
+@@ -221,19 +249,19 @@
                                              }
                                          }
                                      } else if (this.dropItem && worldserver.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
