@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Optional;
 import net.minecraft.server.EntityFireworks;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.Items;
@@ -14,7 +15,6 @@ import org.bukkit.inventory.meta.FireworkMeta;
 import java.util.Random;
 
 public class CraftFirework extends CraftEntity implements Firework {
-    private static final int FIREWORK_ITEM_INDEX = 8;
 
     private final Random random = new Random();
     private final CraftItemStack item;
@@ -26,7 +26,7 @@ public class CraftFirework extends CraftEntity implements Firework {
 
         if (item == null) {
             item = new ItemStack(Items.FIREWORKS);
-            getHandle().getDataWatcher().register(EntityFireworks.FIREWORK_ITEM, item);
+            getHandle().getDataWatcher().set(EntityFireworks.FIREWORK_ITEM, Optional.of(item));
         }
 
         this.item = CraftItemStack.asCraftMirror(item);
