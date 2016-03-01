@@ -608,6 +608,10 @@ public class Chunk implements IChunkAccess {
             }
 
             // CraftBukkit start
+            // Paper start - Remove invalid mob spawner tile entities
+        } else if (tileentity instanceof TileEntityMobSpawner && !(getBlockData(blockposition.getX(), blockposition.getY(), blockposition.getZ()).getBlock() instanceof BlockMobSpawner)) {
+            this.tileEntities.remove(blockposition);
+            // Paper end
         } else {
             System.out.println("Attempted to place a tile entity (" + tileentity + ") at " + tileentity.position.getX() + "," + tileentity.position.getY() + "," + tileentity.position.getZ()
                 + " (" + getType(blockposition) + ") where there was no entity tile!");
