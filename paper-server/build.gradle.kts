@@ -1,4 +1,5 @@
 import io.papermc.paperweight.util.*
+import java.time.Instant
 
 plugins {
     java
@@ -80,18 +81,24 @@ tasks.jar {
 
     manifest {
         val git = Git(rootProject.layout.projectDirectory.path)
+        val mcVersion = rootProject.providers.gradleProperty("mcVersion").get()
+        val build = System.getenv("BUILD_NUMBER") ?: null
         val gitHash = git("rev-parse", "--short=7", "HEAD").getText().trim()
-        val implementationVersion = System.getenv("BUILD_NUMBER") ?: "\"$gitHash\""
+        val implementationVersion = "$mcVersion-${build ?: "DEV"}-$gitHash"
         val date = git("show", "-s", "--format=%ci", gitHash).getText().trim() // Paper
         val gitBranch = git("rev-parse", "--abbrev-ref", "HEAD").getText().trim() // Paper
         attributes(
             "Main-Class" to "org.bukkit.craftbukkit.Main",
-            "Implementation-Title" to "CraftBukkit",
-            "Implementation-Version" to "git-Paper-$implementationVersion",
+            "Implementation-Title" to "Paper",
+            "Implementation-Version" to implementationVersion,
             "Implementation-Vendor" to date, // Paper
-            "Specification-Title" to "Bukkit",
+            "Specification-Title" to "Paper",
             "Specification-Version" to project.version,
-            "Specification-Vendor" to "Bukkit Team",
+            "Specification-Vendor" to "Paper Team",
+            "Brand-Id" to "papermc:paper",
+            "Brand-Name" to "Paper",
+            "Build-Number" to (build ?: ""),
+            "Build-Time" to Instant.now().toString(),
             "Git-Branch" to gitBranch, // Paper
             "Git-Commit" to gitHash, // Paper
             "CraftBukkit-Package-Version" to paperweight.craftBukkitPackageVersion.get(), // Paper

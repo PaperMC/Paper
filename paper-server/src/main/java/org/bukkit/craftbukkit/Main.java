@@ -15,6 +15,7 @@ import joptsimple.OptionSet;
 import joptsimple.util.PathConverter;
 
 public class Main {
+    public static final java.time.Instant BOOT_TIME = java.time.Instant.now(); // Paper - track initial start time
     public static boolean useJline = true;
     public static boolean useConsole = true;
 
@@ -241,7 +242,7 @@ public class Main {
                     deadline.add(Calendar.DAY_OF_YEAR, -2);
                     if (buildDate.before(deadline.getTime())) {
                         System.err.println("*** Error, this build is outdated ***");
-                        System.err.println("*** Please download a new build as per instructions from https://www.spigotmc.org/go/outdated-spigot ***");
+                        System.err.println("*** Please download a new build as per instructions from https://papermc.io/downloads/paper ***"); // Paper
                         System.err.println("*** Server will start in 20 seconds ***");
                         Thread.sleep(TimeUnit.SECONDS.toMillis(20));
                     }
@@ -249,8 +250,9 @@ public class Main {
 
                 System.setProperty("library.jansi.version", "Paper"); // Paper - set meaningless jansi version to prevent git builds from crashing on Windows
                 System.setProperty("jdk.console", "java.base"); // Paper - revert default console provider back to java.base so we can have our own jline
-                System.out.println("Loading libraries, please wait...");
-                net.minecraft.server.Main.main(options);
+                //System.out.println("Loading libraries, please wait...");
+                //net.minecraft.server.Main.main(options);
+                io.papermc.paper.PaperBootstrap.boot(options);
             } catch (Throwable t) {
                 t.printStackTrace();
             }

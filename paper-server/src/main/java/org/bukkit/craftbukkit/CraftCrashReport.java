@@ -18,8 +18,10 @@ public class CraftCrashReport implements Supplier<String> {
 
     @Override
     public String get() {
+        final io.papermc.paper.ServerBuildInfo build = io.papermc.paper.ServerBuildInfo.buildInfo(); // Paper
         StringWriter value = new StringWriter();
         try {
+            value.append("\n   BrandInfo: ").append(String.format("%s (%s) version %s", build.brandName(), build.brandId(), build.asString(io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_FULL))); // Paper
             value.append("\n   Running: ").append(Bukkit.getName()).append(" version ").append(Bukkit.getVersion()).append(" (Implementing API version ").append(Bukkit.getBukkitVersion()).append(") ").append(String.valueOf(MinecraftServer.getServer().usesAuthentication()));
             value.append("\n   Plugins: {");
             for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {

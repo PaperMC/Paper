@@ -475,6 +475,13 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return this.customBiome;
     }
 
+    // Paper start
+    @Override
+    public com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
+        return new com.destroystokyo.paper.PaperVersionFetcher();
+    }
+    // Paper end
+
     /**
      * This helper class represents the different NBT Tags.
      * <p>
