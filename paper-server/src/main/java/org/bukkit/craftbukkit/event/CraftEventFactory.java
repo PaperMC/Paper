@@ -465,7 +465,7 @@ public class CraftEventFactory {
             DamageCause cause = null;
             Block damager = blockDamage;
             blockDamage = null;
-            if (source == DamageSource.CACTUS || source == DamageSource.j) { // PAIL: rename
+            if (source == DamageSource.CACTUS) {
                 cause = DamageCause.CONTACT;
             } else {
                 throw new AssertionError(String.format("Unhandled damage of %s by %s from %s", entity, damager, source.translationIndex));
@@ -518,6 +518,8 @@ public class CraftEventFactory {
             cause = DamageCause.MAGIC;
         } else if (source == DamageSource.FALL) {
             cause = DamageCause.FALL;
+        } else if (source == DamageSource.j) { // PAIL: rename
+            cause = DamageCause.FLY_INTO_WALL;
         } else if (source == DamageSource.GENERIC) {
             return new EntityDamageEvent(entity.getBukkitEntity(), null, modifiers, modifierFunctions);
         }
