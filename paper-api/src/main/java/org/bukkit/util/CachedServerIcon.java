@@ -2,6 +2,7 @@ package org.bukkit.util;
 
 import org.bukkit.Server;
 import org.bukkit.event.server.ServerListPingEvent;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This is a cached version of a server-icon. It's internal representation
@@ -12,4 +13,9 @@ import org.bukkit.event.server.ServerListPingEvent;
  * @see Server#loadServerIcon(java.io.File)
  * @see ServerListPingEvent#setServerIcon(CachedServerIcon)
  */
-public interface CachedServerIcon {}
+public interface CachedServerIcon {
+
+    @Nullable
+    public String getData(); // Paper
+
+}
