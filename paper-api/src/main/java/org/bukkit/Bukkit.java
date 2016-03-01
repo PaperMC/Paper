@@ -472,6 +472,30 @@ public final class Bukkit {
         return server.broadcastMessage(message);
     }
 
+    // Paper start
+    /**
+     * Sends the component to all online players.
+     *
+     * @param component the component to send
+     * @deprecated use {@code sendMessage} methods on {@link #getServer()} that accept {@link net.kyori.adventure.text.Component}
+     */
+    @Deprecated
+    public static void broadcast(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+        server.broadcast(component);
+    }
+
+    /**
+     * Sends an array of components as a single message to all online players.
+     *
+     * @param components the components to send
+     * @deprecated use {@code sendMessage} methods on {@link #getServer()} that accept {@link net.kyori.adventure.text.Component}
+     */
+    @Deprecated
+    public static void broadcast(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+        server.broadcast(components);
+    }
+    // Paper end
+
     /**
      * Gets the name of the update folder. The update folder is used to safely
      * update plugins at the right moment on a plugin load.
