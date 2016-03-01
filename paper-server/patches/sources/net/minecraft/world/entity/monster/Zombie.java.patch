@@ -20,7 +20,7 @@
  import net.minecraft.util.Mth;
  import net.minecraft.util.RandomSource;
  import net.minecraft.world.Difficulty;
-@@ -66,6 +53,26 @@
+@@ -66,11 +53,31 @@
  import net.minecraft.world.level.ServerLevelAccessor;
  import net.minecraft.world.level.block.Blocks;
  import net.minecraft.world.level.block.state.BlockState;
@@ -47,6 +47,12 @@
  
  public class Zombie extends Monster {
  
+     private static final ResourceLocation SPEED_MODIFIER_BABY_ID = ResourceLocation.withDefaultNamespace("baby");
+-    private static final AttributeModifier SPEED_MODIFIER_BABY = new AttributeModifier(Zombie.SPEED_MODIFIER_BABY_ID, 0.5D, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
++    private final AttributeModifier babyModifier = new AttributeModifier(Zombie.SPEED_MODIFIER_BABY_ID, this.level().paperConfig().entities.behavior.babyZombieMovementModifier, AttributeModifier.Operation.ADD_MULTIPLIED_BASE); // Paper - Make baby speed configurable
+     private static final ResourceLocation REINFORCEMENT_CALLER_CHARGE_ID = ResourceLocation.withDefaultNamespace("reinforcement_caller_charge");
+     private static final AttributeModifier ZOMBIE_REINFORCEMENT_CALLEE_CHARGE = new AttributeModifier(ResourceLocation.withDefaultNamespace("reinforcement_callee_charge"), -0.05000000074505806D, AttributeModifier.Operation.ADD_VALUE);
+     private static final ResourceLocation LEADER_ZOMBIE_BONUS_ID = ResourceLocation.withDefaultNamespace("leader_zombie_bonus");
 @@ -91,6 +98,7 @@
      private boolean canBreakDoors;
      private int inWaterTime;
@@ -64,6 +70,18 @@
          this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
          this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Turtle.class, 10, true, false, Turtle.BABY_ON_LAND_SELECTOR));
      }
+@@ -178,9 +186,9 @@
+         if (this.level() != null && !this.level().isClientSide) {
+             AttributeInstance attributemodifiable = this.getAttribute(Attributes.MOVEMENT_SPEED);
+ 
+-            attributemodifiable.removeModifier(Zombie.SPEED_MODIFIER_BABY_ID);
++            attributemodifiable.removeModifier(this.babyModifier.id()); // Paper - Make baby speed configurable
+             if (baby) {
+-                attributemodifiable.addTransientModifier(Zombie.SPEED_MODIFIER_BABY);
++                attributemodifiable.addTransientModifier(this.babyModifier); // Paper - Make baby speed configurable
+             }
+         }
+ 
 @@ -203,7 +211,10 @@
      public void tick() {
          if (!this.level().isClientSide && this.isAlive() && !this.isNoAi()) {
