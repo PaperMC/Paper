@@ -2,6 +2,7 @@ package org.bukkit.material;
 
 import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
+import org.bukkit.inventory.meta.ItemMeta;
 
 /**
  * Represents a spawn egg that can be used to spawn mobs
@@ -40,7 +41,9 @@ public class SpawnEgg extends MaterialData {
      * Get the type of entity this egg will spawn.
      *
      * @return The entity type.
+     * @deprecated This is now stored in {@link ItemMeta}. See SPIGOT-1592.
      */
+    @Deprecated
     public EntityType getSpawnedType() {
         return EntityType.fromId(getData());
     }
@@ -49,7 +52,9 @@ public class SpawnEgg extends MaterialData {
      * Set the type of entity this egg will spawn.
      *
      * @param type The entity type.
+     * @deprecated This is now stored in {@link ItemMeta}. See SPIGOT-1592.
      */
+    @Deprecated
     public void setSpawnedType(EntityType type) {
         setData((byte) type.getTypeId());
     }
