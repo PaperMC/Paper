@@ -708,10 +708,15 @@
  
      }
  
-@@ -720,6 +1025,64 @@
- 
-     }
- 
+@@ -715,10 +1020,68 @@
+                 this.serverThread.join();
+             } catch (InterruptedException interruptedexception) {
+                 MinecraftServer.LOGGER.error("Error while shutting down", interruptedexception);
++            }
++        }
++
++    }
++
 +    // Spigot Start
 +    private static double calcTps(double avg, double exp, double tps)
 +    {
@@ -744,9 +749,9 @@
 +            for (int i = 0; i < size; i++) {
 +                this.samples[i] = dec(TPS);
 +                this.times[i] = SEC_IN_NANO;
-+            }
-+        }
-+
+             }
+         }
+ 
 +        private static java.math.BigDecimal dec(long t) {
 +            return new java.math.BigDecimal(t);
 +        }
@@ -765,14 +770,13 @@
 +        public double getAverage() {
 +            return total.divide(dec(time), 30, java.math.RoundingMode.HALF_UP).doubleValue();
 +        }
-+    }
+     }
 +    private static final java.math.BigDecimal TPS_BASE = new java.math.BigDecimal(1E9).multiply(new java.math.BigDecimal(SAMPLE_INTERVAL));
 +    // Paper end
 +    // Spigot End
-+
+ 
      protected void runServer() {
          try {
-             if (!this.initServer()) {
 @@ -727,9 +1090,15 @@
              }
  
@@ -971,7 +975,15 @@
  
              gameprofilerfiller.push("tick");
  
-@@ -1265,7 +1690,23 @@
+@@ -1186,6 +1611,7 @@
+ 
+             gameprofilerfiller.pop();
+             gameprofilerfiller.pop();
++            worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
+         }
+ 
+         gameprofilerfiller.popPush("connection");
+@@ -1265,7 +1691,23 @@
      @Nullable
      public ServerLevel getLevel(ResourceKey<Level> key) {
          return (ServerLevel) this.levels.get(key);
@@ -995,7 +1007,7 @@
  
      public Set<ResourceKey<Level>> levelKeys() {
          return this.levels.keySet();
-@@ -1296,7 +1737,7 @@
+@@ -1296,7 +1738,7 @@
  
      @DontObfuscate
      public String getServerModName() {
@@ -1004,7 +1016,7 @@
      }
  
      public SystemReport fillSystemReport(SystemReport details) {
-@@ -1347,7 +1788,7 @@
+@@ -1347,7 +1789,7 @@
  
      @Override
      public void sendSystemMessage(Component message) {
@@ -1013,7 +1025,7 @@
      }
  
      public KeyPair getKeyPair() {
-@@ -1481,10 +1922,20 @@
+@@ -1481,10 +1923,20 @@
  
      @Override
      public String getMotd() {
@@ -1035,7 +1047,7 @@
          this.motd = motd;
      }
  
-@@ -1507,7 +1958,7 @@
+@@ -1507,7 +1959,7 @@
      }
  
      public ServerConnectionListener getConnection() {
@@ -1044,7 +1056,7 @@
      }
  
      public boolean isReady() {
-@@ -1634,11 +2085,11 @@
+@@ -1634,11 +2086,11 @@
  
      public CompletableFuture<Void> reloadResources(Collection<String> dataPacks) {
          CompletableFuture<Void> completablefuture = CompletableFuture.supplyAsync(() -> {
@@ -1058,7 +1070,7 @@
          }, this).thenCompose((immutablelist) -> {
              MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
              List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess());
-@@ -1654,6 +2105,7 @@
+@@ -1654,6 +2106,7 @@
          }).thenAcceptAsync((minecraftserver_reloadableresources) -> {
              this.resources.close();
              this.resources = minecraftserver_reloadableresources;
@@ -1066,7 +1078,7 @@
              this.packRepository.setSelected(dataPacks);
              WorldDataConfiguration worlddataconfiguration = new WorldDataConfiguration(MinecraftServer.getSelectedPacks(this.packRepository, true), this.worldData.enabledFeatures());
  
-@@ -1952,7 +2404,7 @@
+@@ -1952,7 +2405,7 @@
              final List<String> list = Lists.newArrayList();
              final GameRules gamerules = this.getGameRules();
  
@@ -1075,7 +1087,7 @@
                  @Override
                  public <T extends GameRules.Value<T>> void visit(GameRules.Key<T> key, GameRules.Type<T> type) {
                      list.add(String.format(Locale.ROOT, "%s=%s\n", key.getId(), gamerules.getRule(key)));
-@@ -2058,7 +2510,7 @@
+@@ -2058,7 +2511,7 @@
              try {
                  label51:
                  {
@@ -1084,7 +1096,7 @@
  
                      try {
                          arraylist = Lists.newArrayList(NativeModuleLister.listModules());
-@@ -2108,6 +2560,22 @@
+@@ -2108,6 +2561,22 @@
  
      }
  
@@ -1107,7 +1119,7 @@
      private ProfilerFiller createProfiler() {
          if (this.willStartRecordingMetrics) {
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(Util.timeSource, this.isDedicatedServer()), Util.timeSource, Util.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -2225,18 +2693,24 @@
+@@ -2225,18 +2694,24 @@
      }
  
      public void logChatMessage(Component message, ChatType.Bound params, @Nullable String prefix) {

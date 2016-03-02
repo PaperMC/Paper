@@ -57,7 +57,7 @@
  public abstract class Level implements LevelAccessor, AutoCloseable {
  
      public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
-@@ -121,23 +144,72 @@
+@@ -121,23 +144,73 @@
      private final DamageSources damageSources;
      private long subTickCount;
  
@@ -92,6 +92,7 @@
 +    private org.spigotmc.TickLimiter entityLimiter;
 +    private org.spigotmc.TickLimiter tileLimiter;
 +    private int tileTickPosition;
++    public final Map<ServerExplosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
 +
 +    public CraftWorld getWorld() {
 +        return this.world;
@@ -139,7 +140,7 @@
                  }
              };
          } else {
-@@ -145,11 +217,49 @@
+@@ -145,11 +218,49 @@
          }
  
          this.thread = Thread.currentThread();
@@ -194,7 +195,7 @@
      }
  
      @Override
-@@ -163,6 +273,13 @@
+@@ -163,6 +274,13 @@
          return null;
      }
  
@@ -208,7 +209,7 @@
      public boolean isInWorldBounds(BlockPos pos) {
          return !this.isOutsideBuildHeight(pos) && Level.isInWorldBoundsHorizontal(pos);
      }
-@@ -179,18 +296,52 @@
+@@ -179,18 +297,52 @@
          return y < -20000000 || y >= 20000000;
      }
  
@@ -264,7 +265,7 @@
          ChunkAccess ichunkaccess = this.getChunkSource().getChunk(chunkX, chunkZ, leastStatus, create);
  
          if (ichunkaccess == null && create) {
-@@ -207,6 +358,18 @@
+@@ -207,6 +359,18 @@
  
      @Override
      public boolean setBlock(BlockPos pos, BlockState state, int flags, int maxUpdateDepth) {
@@ -283,7 +284,7 @@
          if (this.isOutsideBuildHeight(pos)) {
              return false;
          } else if (!this.isClientSide && this.isDebug()) {
-@@ -214,44 +377,123 @@
+@@ -214,45 +378,124 @@
          } else {
              LevelChunk chunk = this.getChunkAt(pos);
              Block block = state.getBlock();
@@ -367,10 +368,10 @@
 +                // CraftBukkit end
 +
                  return true;
-+            }
-+        }
-+    }
-+
+             }
+         }
+     }
+ 
 +    // CraftBukkit start - Split off from above in order to directly send client and physic updates
 +    public void notifyAndUpdatePhysics(BlockPos blockposition, LevelChunk chunk, BlockState oldBlock, BlockState newBlock, BlockState actualBlock, int i, int j) {
 +        BlockState iblockdata = newBlock;
@@ -390,7 +391,7 @@
 +                if (!this.isClientSide && iblockdata.hasAnalogOutputSignal()) {
 +                    this.updateNeighbourForOutputSignal(blockposition, newBlock.getBlock());
 +                }
-             }
++            }
 +
 +            if ((i & 16) == 0 && j > 0) {
 +                int k = i & -34;
@@ -416,13 +417,14 @@
 +                this.onBlockStateChange(blockposition, iblockdata1, iblockdata2);
 +            }
 +            // CraftBukkit end
-         }
-     }
++        }
++    }
 +    // CraftBukkit end
- 
++
      public void onBlockStateChange(BlockPos pos, BlockState oldBlock, BlockState newBlock) {}
  
-@@ -340,10 +582,18 @@
+     @Override
+@@ -340,10 +583,18 @@
  
      @Override
      public BlockState getBlockState(BlockPos pos) {
@@ -442,7 +444,7 @@
  
              return chunk.getBlockState(pos);
          }
-@@ -446,14 +696,23 @@
+@@ -446,14 +697,23 @@
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -470,7 +472,7 @@
              } else if (flag && this.shouldTickBlocksAt(tickingblockentity.getPos())) {
                  tickingblockentity.tick();
              }
-@@ -461,17 +720,18 @@
+@@ -461,17 +721,18 @@
  
          this.tickingBlockEntities = false;
          gameprofilerfiller.pop();
@@ -494,7 +496,7 @@
          }
      }
  
-@@ -510,13 +770,29 @@
+@@ -510,13 +771,29 @@
      @Nullable
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
@@ -525,7 +527,7 @@
              this.getChunkAt(blockposition).addAndRegisterBlockEntity(blockEntity);
          }
      }
-@@ -643,7 +919,7 @@
+@@ -643,7 +920,7 @@
  
                  for (int k = 0; k < j; ++k) {
                      EnderDragonPart entitycomplexpart = aentitycomplexpart[k];
@@ -534,7 +536,7 @@
  
                      if (t0 != null && predicate.test(t0)) {
                          result.add(t0);
-@@ -912,7 +1188,7 @@
+@@ -912,7 +1189,7 @@
  
      public static enum ExplosionInteraction implements StringRepresentable {
  
