@@ -189,14 +189,14 @@ public class Explosion {
                         double d14 = d13;
 
                         if (entity instanceof EntityLiving) {
-                            d14 = EnchantmentProtection.a((EntityLiving) entity, d13);
+                            d14 = entity instanceof EntityHuman && world.paperConfig.disableExplosionKnockback ? 0 : EnchantmentProtection.a((EntityLiving) entity, d13); // Paper - Disable explosion knockback
                         }
 
                         entity.setMot(entity.getMot().add(d8 * d14, d9 * d14, d10 * d14));
                         if (entity instanceof EntityHuman) {
                             EntityHuman entityhuman = (EntityHuman) entity;
 
-                            if (!entityhuman.isSpectator() && (!entityhuman.isCreative() || !entityhuman.abilities.isFlying)) {
+                            if (!entityhuman.isSpectator() && (!entityhuman.isCreative() || !entityhuman.abilities.isFlying) && !world.paperConfig.disableExplosionKnockback) { // Paper - Disable explosion knockback
                                 this.n.put(entityhuman, new Vec3D(d8 * d13, d9 * d13, d10 * d13));
                             }
                         }
