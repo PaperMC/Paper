@@ -1206,6 +1206,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
 
             this.methodProfiler.exit();
             this.methodProfiler.exit();
+            worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
         }
 
         this.methodProfiler.exitEnter("connection");

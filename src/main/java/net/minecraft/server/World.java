@@ -84,6 +84,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
     private org.spigotmc.TickLimiter entityLimiter;
     private org.spigotmc.TickLimiter tileLimiter;
     private int tileTickPosition;
+    public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
 
     public CraftWorld getWorld() {
         return this.world;

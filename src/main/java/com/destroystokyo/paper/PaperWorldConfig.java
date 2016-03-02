@@ -150,4 +150,10 @@ public class PaperWorldConfig {
         disableEndCredits = getBoolean("game-mechanics.disable-end-credits", false);
         log("End credits disabled: " + disableEndCredits);
     }
+
+    public boolean optimizeExplosions;
+    private void optimizeExplosions() {
+        optimizeExplosions = getBoolean("optimize-explosions", false);
+        log("Optimize explosions: " + optimizeExplosions);
+    }
 }
