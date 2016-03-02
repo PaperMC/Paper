@@ -191,11 +191,33 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
         return (HumanEntity) inventory.getOwner();
     }
 
+    @Override
     public float getItemInHandDropChance() {
+        return getItemInMainHandDropChance();
+    }
+
+    @Override
+    public void setItemInHandDropChance(float chance) {
+        setItemInMainHandDropChance(chance);
+    }
+
+    @Override
+    public float getItemInMainHandDropChance() {
         return 1;
     }
 
-    public void setItemInHandDropChance(float chance) {
+    @Override
+    public void setItemInMainHandDropChance(float chance) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public float getItemInOffHandDropChance() {
+        return 1;
+    }
+
+    @Override
+    public void setItemInOffHandDropChance(float chance) {
         throw new UnsupportedOperationException();
     }
 
