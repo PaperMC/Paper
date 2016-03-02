@@ -161,4 +161,9 @@ public class PaperWorldConfig {
     private void disableExplosionKnockback(){
         disableExplosionKnockback = getBoolean("disable-explosion-knockback", false);
     }
+
+    public boolean disableThunder;
+    private void disableThunder() {
+        disableThunder = getBoolean("disable-thunder", false);
+    }
 }

@@ -471,7 +471,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         gameprofilerfiller.enter("thunder");
         BlockPosition blockposition;
 
-        if (flag && this.V() && this.random.nextInt(100000) == 0) {
+        if (!this.paperConfig.disableThunder && flag && this.V() && this.random.nextInt(100000) == 0) { // Paper - Disable thunder
             blockposition = this.a(this.a(j, 0, k, 15));
             if (this.isRainingAt(blockposition)) {
                 DifficultyDamageScaler difficultydamagescaler = this.getDamageScaler(blockposition);
