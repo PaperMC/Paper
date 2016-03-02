@@ -24,6 +24,7 @@ public abstract class MobSpawnerAbstract {
     public int maxNearbyEntities = 6;
     public int requiredPlayerRange = 16;
     public int spawnRange = 4;
+    private int tickDelay = 0; // Paper
 
     public MobSpawnerAbstract() {}
 
@@ -53,6 +54,10 @@ public abstract class MobSpawnerAbstract {
     }
 
     public void c() {
+        // Paper start - Configurable mob spawner tick rate
+        if (spawnDelay > 0 && --tickDelay > 0) return;
+        tickDelay = this.a().paperConfig.mobSpawnerTickRate;
+        // Paper end
         if (!this.h()) {
             this.f = this.e;
         } else {
@@ -67,18 +72,18 @@ public abstract class MobSpawnerAbstract {
                 world.addParticle(Particles.SMOKE, d0, d1, d2, 0.0D, 0.0D, 0.0D);
                 world.addParticle(Particles.FLAME, d0, d1, d2, 0.0D, 0.0D, 0.0D);
                 if (this.spawnDelay > 0) {
-                    --this.spawnDelay;
+                    this.spawnDelay -= tickDelay; // Paper
                 }
 
                 this.f = this.e;
                 this.e = (this.e + (double) (1000.0F / ((float) this.spawnDelay + 200.0F))) % 360.0D;
             } else {
-                if (this.spawnDelay == -1) {
+                if (this.spawnDelay < -tickDelay) { // Paper
                     this.i();
                 }
 
                 if (this.spawnDelay > 0) {
-                    --this.spawnDelay;
+                    this.spawnDelay -= tickDelay; // Paper
                     return;
                 }
 
