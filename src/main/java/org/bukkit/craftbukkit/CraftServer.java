@@ -2061,6 +2061,17 @@ public final class CraftServer implements Server {
         return CraftMagicNumbers.INSTANCE;
     }
 
+    // Paper - Add getTPS API - Further improve tick loop
+    @Override
+    public double[] getTPS() {
+        return new double[] {
+                net.minecraft.server.MinecraftServer.getServer().tps1.getAverage(),
+                net.minecraft.server.MinecraftServer.getServer().tps5.getAverage(),
+                net.minecraft.server.MinecraftServer.getServer().tps15.getAverage()
+        };
+    }
+    // Paper end
+
     private final Spigot spigot = new Spigot()
     {
 
