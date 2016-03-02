@@ -129,4 +129,19 @@ public class PaperWorldConfig {
         if (fallingBlockHeightNerf != 0) log("Falling Block Height Limit set to Y: " + fallingBlockHeightNerf);
         if (entityTNTHeightNerf != 0) log("TNT Entity Height Limit set to Y: " + entityTNTHeightNerf);
     }
+
+    public int netherVoidTopDamageHeight;
+    public boolean doNetherTopVoidDamage() { return netherVoidTopDamageHeight > 0; }
+    private void netherVoidTopDamageHeight() {
+        netherVoidTopDamageHeight = getInt("nether-ceiling-void-damage-height", 0);
+        log("Top of the nether void damage height: " + netherVoidTopDamageHeight);
+
+        if (PaperConfig.version < 18) {
+            boolean legacy = getBoolean("nether-ceiling-void-damage", false);
+            if (legacy) {
+                netherVoidTopDamageHeight = 128;
+                set("nether-ceiling-void-damage-height", netherVoidTopDamageHeight);
+            }
+        }
+    }
 }
