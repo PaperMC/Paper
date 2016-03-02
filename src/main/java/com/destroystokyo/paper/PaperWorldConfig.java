@@ -556,4 +556,9 @@ public class PaperWorldConfig {
     private void perPlayerMobSpawns() {
         perPlayerMobSpawns = getBoolean("per-player-mob-spawns", false);
     }
+
+    public boolean generateFlatBedrock;
+    private void generatorSettings() {
+        generateFlatBedrock = getBoolean("generator-settings.flat-bedrock", false);
+    }
 }

@@ -374,8 +374,8 @@ public final class ChunkGeneratorAbstract extends ChunkGenerator {
         int i = ichunkaccess.getPos().d();
         int j = ichunkaccess.getPos().e();
         GeneratorSettingBase generatorsettingbase = (GeneratorSettingBase) this.h.get();
-        int k = generatorsettingbase.f();
-        int l = this.x - 1 - generatorsettingbase.e();
+        int k = generatorsettingbase.f(); final int floorHeight = k; // Paper
+        int l = this.x - 1 - generatorsettingbase.e(); final int roofHeight = l; // Paper
         boolean flag = true;
         boolean flag1 = l + 4 >= 0 && l < this.x;
         boolean flag2 = k + 4 >= 0 && k < this.x;
@@ -389,7 +389,7 @@ public final class ChunkGeneratorAbstract extends ChunkGenerator {
 
                 if (flag1) {
                     for (i1 = 0; i1 < 5; ++i1) {
-                        if (i1 <= random.nextInt(5)) {
+                        if (i1 <= (ichunkaccess.generateFlatBedrock() ? roofHeight : random.nextInt(5))) { // Paper - Configurable flat bedrock roof
                             ichunkaccess.setType(blockposition_mutableblockposition.d(blockposition.getX(), l - i1, blockposition.getZ()), Blocks.BEDROCK.getBlockData(), false);
                         }
                     }
@@ -397,7 +397,7 @@ public final class ChunkGeneratorAbstract extends ChunkGenerator {
 
                 if (flag2) {
                     for (i1 = 4; i1 >= 0; --i1) {
-                        if (i1 <= random.nextInt(5)) {
+                        if (i1 <= (ichunkaccess.generateFlatBedrock() ? floorHeight : random.nextInt(5))) { // Paper - Configurable flat bedrock floor
                             ichunkaccess.setType(blockposition_mutableblockposition.d(blockposition.getX(), k + i1, blockposition.getZ()), Blocks.BEDROCK.getBlockData(), false);
                         }
                     }

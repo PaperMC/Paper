@@ -12,6 +12,18 @@ import org.apache.logging.log4j.LogManager;
 
 public interface IChunkAccess extends IBlockAccess, IStructureAccess {
 
+    // Paper start
+    default boolean generateFlatBedrock() {
+        if (this instanceof ProtoChunk) {
+            return ((ProtoChunk)this).world.paperConfig.generateFlatBedrock;
+        } else if (this instanceof Chunk) {
+            return ((Chunk)this).world.paperConfig.generateFlatBedrock;
+        } else {
+            return false;
+        }
+    }
+    // Paper end
+
     IBlockData getType(final int x, final int y, final int z); // Paper
     @Nullable
     IBlockData setType(BlockPosition blockposition, IBlockData iblockdata, boolean flag);

@@ -46,7 +46,7 @@ public class ProtoChunk implements IChunkAccess {
     private long s;
     private final Map<WorldGenStage.Features, BitSet> t;
     private volatile boolean u;
-    private final World world; // Paper - Anti-Xray - Add world
+    final World world; // Paper - Anti-Xray - Add world // Paper - private -> default
 
     // Paper start - Anti-Xray - Add world
     @Deprecated public ProtoChunk(ChunkCoordIntPair chunkcoordintpair, ChunkConverter chunkconverter) { this(chunkcoordintpair, chunkconverter, null); } // Notice for updates: Please make sure this constructor isn't used anywhere
