@@ -2680,7 +2680,11 @@ public final class CraftServer implements Server {
 
     @Override
     public double[] getTPS() {
-        return new double[]{0, 0, 0}; // TODO
+        return new double[] {
+            net.minecraft.server.MinecraftServer.getServer().tps1.getAverage(),
+            net.minecraft.server.MinecraftServer.getServer().tps5.getAverage(),
+            net.minecraft.server.MinecraftServer.getServer().tps15.getAverage()
+        };
     }
 
     // Paper start - adventure sounds
