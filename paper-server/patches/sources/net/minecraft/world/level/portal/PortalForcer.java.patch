@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/portal/PortalForcer.java
 +++ b/net/minecraft/world/level/portal/PortalForcer.java
-@@ -43,24 +43,36 @@
+@@ -43,33 +43,50 @@
      }
  
      public Optional<BlockPos> findClosestPortalPosition(BlockPos pos, boolean destIsNether, WorldBorder worldBorder) {
@@ -25,7 +25,7 @@
 -        Objects.requireNonNull(worldBorder);
 -        return stream.filter(worldBorder::isWithinBounds).filter((blockposition1) -> {
 +        Objects.requireNonNull(worldborder);
-+        return stream.filter(worldborder::isWithinBounds).filter((blockposition1) -> {
++        return stream.filter(worldborder::isWithinBounds).filter(pos -> !(this.level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> pos.getY() >= v))).filter((blockposition1) -> { // Paper - Configurable nether ceiling damage
              return this.level.getBlockState(blockposition1).hasProperty(BlockStateProperties.HORIZONTAL_AXIS);
 -        }).min(Comparator.comparingDouble((blockposition1) -> {
 -            return blockposition1.distSqr(pos);
@@ -46,9 +46,14 @@
          double d0 = -1.0D;
          BlockPos blockposition1 = null;
          double d1 = -1.0D;
-@@ -68,8 +80,8 @@
+         BlockPos blockposition2 = null;
          WorldBorder worldborder = this.level.getWorldBorder();
          int i = Math.min(this.level.getMaxY(), this.level.getMinY() + this.level.getLogicalHeight() - 1);
++        // Paper start - Configurable nether ceiling damage; make sure the max height doesn't exceed the void damage height
++        if (this.level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.enabled()) {
++            i = Math.min(i, this.level.paperConfig().environment.netherCeilingVoidDamageHeight.intValue() - 1);
++        }
++        // Paper end - Configurable nether ceiling damage
          boolean flag = true;
 -        BlockPos.MutableBlockPos blockposition_mutableblockposition = pos.mutable();
 -        Iterator iterator = BlockPos.spiralAround(pos, 16, Direction.EAST, Direction.SOUTH).iterator();
@@ -57,7 +62,7 @@
  
          int j;
          int k;
-@@ -95,7 +107,7 @@
+@@ -95,7 +112,7 @@
                              if (i1 <= 0 || i1 >= 3) {
                                  blockposition_mutableblockposition1.setY(k);
                                  if (this.canHostFrame(blockposition_mutableblockposition1, blockposition_mutableblockposition, enumdirection, 0)) {
@@ -66,7 +71,7 @@
  
                                      if (this.canHostFrame(blockposition_mutableblockposition1, blockposition_mutableblockposition, enumdirection, -1) && this.canHostFrame(blockposition_mutableblockposition1, blockposition_mutableblockposition, enumdirection, 1) && (d0 == -1.0D || d0 > d2)) {
                                          d0 = d2;
-@@ -122,6 +134,7 @@
+@@ -122,6 +139,7 @@
          int j1;
          int k1;
  
@@ -74,7 +79,7 @@
          if (d0 == -1.0D) {
              j1 = Math.max(this.level.getMinY() - -1, 70);
              k1 = i - 9;
-@@ -129,7 +142,7 @@
+@@ -129,7 +147,7 @@
                  return Optional.empty();
              }
  
@@ -83,7 +88,7 @@
              blockposition1 = worldborder.clampToBounds(blockposition1);
              Direction enumdirection1 = enumdirection.getClockWise();
  
-@@ -139,7 +152,7 @@
+@@ -139,7 +157,7 @@
                          BlockState iblockdata = i1 < 0 ? Blocks.OBSIDIAN.defaultBlockState() : Blocks.AIR.defaultBlockState();
  
                          blockposition_mutableblockposition.setWithOffset(blockposition1, l * enumdirection.getStepX() + k * enumdirection1.getStepX(), i1, l * enumdirection.getStepZ() + k * enumdirection1.getStepZ());
@@ -92,7 +97,7 @@
                      }
                  }
              }
-@@ -149,20 +162,30 @@
+@@ -149,20 +167,30 @@
              for (k1 = -1; k1 < 4; ++k1) {
                  if (j1 == -1 || j1 == 2 || k1 == -1 || k1 == 3) {
                      blockposition_mutableblockposition.setWithOffset(blockposition1, j1 * enumdirection.getStepX(), k1, j1 * enumdirection.getStepZ());
