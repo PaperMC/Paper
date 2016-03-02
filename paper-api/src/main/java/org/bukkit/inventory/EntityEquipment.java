@@ -137,9 +137,29 @@ public interface EntityEquipment {
     void clear();
 
     /**
-     * Gets the chance of the currently held item being dropped upon this
-     * creature's death.
-     * 
+     * @deprecated entities can duel wield now use the methods for the specific
+     * hand instead
+     * @see #getItemInMainHandDropChance(ItemStack)
+     * @see #getItemInOffHandDropChance(ItemStack)
+     * @return drop chance
+     */
+    @Deprecated
+    float getItemInHandDropChance();
+
+    /**
+     * @deprecated entities can duel wield now use the methods for the specific
+     * hand instead
+     * @see #setItemInMainHandDropChance(ItemStack)
+     * @see #setItemInOffHandDropChance(ItemStack)
+     * @param chance drop chance
+     */
+    @Deprecated
+    void setItemInHandDropChance(float chance);
+
+    /**
+     * Gets the chance of the main hand item being dropped upon this creature's
+     * death.
+     *
      * <ul>
      * <li>A drop chance of 0F will never drop
      * <li>A drop chance of 1F will always drop
@@ -147,25 +167,52 @@ public interface EntityEquipment {
      *
      * @return chance of the currently held item being dropped (1 for players)
      */
-    float getItemInHandDropChance();
+    float getItemInMainHandDropChance();
 
     /**
-     * Sets the chance of the item this creature is currently holding being
-     * dropped upon this creature's death.
-     * 
+     * Sets the chance of the item this creature is currently holding in their
+     * main hand being dropped upon this creature's death.
+     *
      * <ul>
      * <li>A drop chance of 0F will never drop
      * <li>A drop chance of 1F will always drop
      * </ul>
      *
-     * @param chance the chance of the currently held item being dropped
+     * @param chance the chance of the main hand item being dropped
      * @throws UnsupportedOperationException when called on players
      */
-    void setItemInHandDropChance(float chance);
+    void setItemInMainHandDropChance(float chance);
+
+    /**
+     * Gets the chance of the off hand item being dropped upon this creature's
+     * death.
+     *
+     * <ul>
+     * <li>A drop chance of 0F will never drop
+     * <li>A drop chance of 1F will always drop
+     * </ul>
+     *
+     * @return chance of the off hand item being dropped (1 for players)
+     */
+    float getItemInOffHandDropChance();
+
+    /**
+     * Sets the chance of the off hand item being dropped upon this creature's
+     * death.
+     *
+     * <ul>
+     * <li>A drop chance of 0F will never drop
+     * <li>A drop chance of 1F will always drop
+     * </ul>
+     *
+     * @param chance the chance of off hand item being dropped
+     * @throws UnsupportedOperationException when called on players
+     */
+    void setItemInOffHandDropChance(float chance);
 
     /**
      * Gets the chance of the helmet being dropped upon this creature's death.
-     * 
+     *
      * <ul>
      * <li>A drop chance of 0F will never drop
      * <li>A drop chance of 1F will always drop
