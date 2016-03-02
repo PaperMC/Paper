@@ -78,7 +78,7 @@
 +    // CraftBukkit start
 +    public final LevelStorageSource.LevelStorageAccess convertable;
 +    public final UUID uuid;
- 
++
 +    public LevelChunk getChunkIfLoaded(int x, int z) {
 +        return this.chunkSource.getChunk(x, z, false);
 +    }
@@ -128,7 +128,7 @@
 +        }
 +        int minBlockX = Mth.floor(axisalignedbb.minX - 1.0E-7D) - 3;
 +        int minBlockZ = Mth.floor(axisalignedbb.minZ - 1.0E-7D) - 3;
-+
+ 
 +        int maxBlockX = Mth.floor(axisalignedbb.maxX + 1.0E-7D) + 3;
 +        int maxBlockZ = Mth.floor(axisalignedbb.maxZ + 1.0E-7D) + 3;
 +
@@ -404,7 +404,7 @@
 +                ((ServerPlayer) this.players.get(idx)).tickWeather();
 +            }
 +        }
-+
+ 
 +        if (flag != this.isRaining()) {
 +            // Only send weather packets to those affected
 +            for (int idx = 0; idx < this.players.size(); ++idx) {
@@ -419,7 +419,7 @@
 +            }
 +        }
 +        // CraftBukkit end
- 
++
      }
  
      @VisibleForTesting
@@ -855,12 +855,21 @@
              ServerLevel.this.getChunkSource().addEntity(entity);
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.add(entityplayer);
-@@ -1864,9 +2195,42 @@
+@@ -1864,9 +2195,51 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
 +            entity.inWorld = true; // CraftBukkit - Mark entity as in world
 +            entity.valid = true; // CraftBukkit
++            // Paper start - Entity origin API
++            if (entity.getOriginVector() == null) {
++                entity.setOrigin(entity.getBukkitEntity().getLocation());
++            }
++            // Default to current world if unknown, gross assumption but entities rarely change world
++            if (entity.getOriginWorld() == null) {
++                entity.setOrigin(entity.getOriginVector().toLocation(getWorld()));
++            }
++            // Paper end - Entity origin API
          }
  
          public void onTrackingEnd(Entity entity) {
@@ -898,7 +907,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.remove(entityplayer);
-@@ -1895,6 +2259,14 @@
+@@ -1895,6 +2268,14 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
