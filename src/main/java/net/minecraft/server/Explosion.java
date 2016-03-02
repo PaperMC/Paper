@@ -154,7 +154,7 @@ public class Explosion {
         int i1 = MathHelper.floor(this.posY + (double) f2 + 1.0D);
         int j1 = MathHelper.floor(this.posZ - (double) f2 - 1.0D);
         int k1 = MathHelper.floor(this.posZ + (double) f2 + 1.0D);
-        List<Entity> list = this.world.getEntities(this.source, new AxisAlignedBB((double) i, (double) l, (double) j1, (double) j, (double) i1, (double) k1));
+        List<Entity> list = this.world.getEntities(this.source, new AxisAlignedBB((double) i, (double) l, (double) j1, (double) j, (double) i1, (double) k1), (com.google.common.base.Predicate<Entity>) entity -> entity.isAlive() && !entity.isSpectator()); // Paper - Fix lag from explosions processing dead entities
         Vec3D vec3d = new Vec3D(this.posX, this.posY, this.posZ);
 
         for (int l1 = 0; l1 < list.size(); ++l1) {
