@@ -1367,7 +1367,7 @@ public class CraftWorld implements World {
 
     @Override
     public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, T data) {
-        spawnParticle(particle, x, y, z, count, 0, 0, 0);
+        spawnParticle(particle, x, y, z, count, 0, 0, 0, data);
     }
 
     @Override
