@@ -104,6 +104,14 @@ public class EntityTNTPrimed extends Entity {
     @Override
     protected void loadData(NBTTagCompound nbttagcompound) {
         this.setFuseTicks(nbttagcompound.getShort("Fuse"));
+        // Paper start - Try and load origin location from the old NBT tags for backwards compatibility
+        if (nbttagcompound.hasKey("SourceLoc_x")) {
+            int srcX = nbttagcompound.getInt("SourceLoc_x");
+            int srcY = nbttagcompound.getInt("SourceLoc_y");
+            int srcZ = nbttagcompound.getInt("SourceLoc_z");
+            origin = new org.bukkit.Location(world.getWorld(), srcX, srcY, srcZ);
+        }
+        // Paper end
     }
 
     @Nullable

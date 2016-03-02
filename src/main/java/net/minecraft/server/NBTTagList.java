@@ -188,6 +188,7 @@ public class NBTTagList extends NBTList<NBTBase> {
         return new int[0];
     }
 
+    public final double getDoubleAt(int i) { return this.h(i); } // Paper - OBFHELPER
     public double h(int i) {
         if (i >= 0 && i < this.list.size()) {
             NBTBase nbtbase = (NBTBase) this.list.get(i);

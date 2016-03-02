@@ -162,6 +162,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
     public org.bukkit.projectiles.ProjectileSource projectileSource; // For projectiles only
     public boolean forceExplosionKnockback; // SPIGOT-949
     public boolean persistentInvisibility = false;
+    public org.bukkit.Location origin; // Paper
     // Spigot start
     public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
     public final boolean defaultActivationState;
@@ -1540,6 +1541,11 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
                 this.bukkitEntity.storeBukkitValues(nbttagcompound);
             }
             // CraftBukkit end
+            // Paper start - Save the entity's origin location
+            if (this.origin != null) {
+                nbttagcompound.set("Paper.Origin", this.createList(origin.getX(), origin.getY(), origin.getZ()));
+            }
+            // Paper end
             return nbttagcompound;
         } catch (Throwable throwable) {
             CrashReport crashreport = CrashReport.a(throwable, "Saving entity NBT");
@@ -1662,6 +1668,13 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
             }
             // CraftBukkit end
 
+            // Paper start - Restore the entity's origin location
+            NBTTagList originTag = nbttagcompound.getList("Paper.Origin", 6);
+            if (!originTag.isEmpty()) {
+                origin = new org.bukkit.Location(world.getWorld(), originTag.getDoubleAt(0), originTag.getDoubleAt(1), originTag.getDoubleAt(2));
+            }
+            // Paper end
+
         } catch (Throwable throwable) {
             CrashReport crashreport = CrashReport.a(throwable, "Loading entity NBT");
             CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being loaded");
@@ -1723,6 +1736,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
 
     protected abstract void saveData(NBTTagCompound nbttagcompound);
 
+    protected final NBTTagList createList(double... adouble) { return a(adouble); } // Paper - OBFHELPER
     protected NBTTagList a(double... adouble) {
         NBTTagList nbttaglist = new NBTTagList();
         double[] adouble1 = adouble;
