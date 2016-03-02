@@ -166,4 +166,9 @@ public class PaperWorldConfig {
     private void disableThunder() {
         disableThunder = getBoolean("disable-thunder", false);
     }
+
+    public boolean disableIceAndSnow;
+    private void disableIceAndSnow(){
+        disableIceAndSnow = getBoolean("disable-ice-and-snow", false);
+    }
 }

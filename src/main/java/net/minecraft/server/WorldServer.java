@@ -495,7 +495,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         }
 
         gameprofilerfiller.exitEnter("iceandsnow");
-        if (this.random.nextInt(16) == 0) {
+        if (!this.paperConfig.disableIceAndSnow && this.random.nextInt(16) == 0) { // Paper - Disable ice and snow
             blockposition = this.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING, this.a(j, 0, k, 15));
             BlockPosition blockposition1 = blockposition.down();
             BiomeBase biomebase = this.getBiome(blockposition);
