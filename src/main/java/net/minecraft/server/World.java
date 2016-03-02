@@ -685,11 +685,13 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
 
                         gameprofilerfiller.exit();
                     } catch (Throwable throwable) {
-                        CrashReport crashreport = CrashReport.a(throwable, "Ticking block entity");
-                        CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Block entity being ticked");
-
-                        tileentity.a(crashreportsystemdetails);
-                        throw new ReportedException(crashreport);
+                        // Paper start - Prevent tile entity and entity crashes
+                        System.err.println("TileEntity threw exception at " + tileentity.world.getWorld().getName() + ":" + tileentity.position.getX() + "," + tileentity.position.getY() + "," + tileentity.position.getZ());
+                        throwable.printStackTrace();
+                        tilesThisCycle--;
+                        this.tileEntityListTick.remove(tileTickPosition--);
+                        continue;
+                        // Paper end
                     }
                     // Spigot start
                     finally {
@@ -755,11 +757,12 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
         try {
             consumer.accept(entity);
         } catch (Throwable throwable) {
-            CrashReport crashreport = CrashReport.a(throwable, "Ticking entity");
-            CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being ticked");
-
-            entity.appendEntityCrashDetails(crashreportsystemdetails);
-            throw new ReportedException(crashreport);
+            // Paper start - Prevent tile entity and entity crashes
+            System.err.println("Entity threw exception at " + entity.world.getWorld().getName() + ":" + entity.locX() + "," + entity.locY() + "," + entity.locZ());
+            throwable.printStackTrace();
+            entity.dead = true;
+            return;
+            // Paper end
         }
     }
 

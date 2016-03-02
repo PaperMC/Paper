@@ -194,7 +194,12 @@ public abstract class TileEntity implements KeyedObject { // Paper
             return IRegistry.BLOCK_ENTITY_TYPE.getKey(this.getTileType()) + " // " + this.getClass().getCanonicalName();
         });
         if (this.world != null) {
-            CrashReportSystemDetails.a(crashreportsystemdetails, this.position, this.getBlock());
+            // Paper start - Prevent TileEntity and Entity crashes
+            IBlockData block = this.getBlock();
+            if (block != null) {
+                CrashReportSystemDetails.a(crashreportsystemdetails, this.position, block);
+            }
+            // Paper end
             CrashReportSystemDetails.a(crashreportsystemdetails, this.position, this.world.getType(this.position));
         }
     }
