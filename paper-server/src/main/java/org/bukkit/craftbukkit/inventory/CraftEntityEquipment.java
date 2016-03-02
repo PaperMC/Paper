@@ -113,12 +113,34 @@ public class CraftEntityEquipment implements EntityEquipment {
         return entity;
     }
 
+    @Override
     public float getItemInHandDropChance() {
+        return getItemInMainHandDropChance();
+    }
+
+    @Override
+    public void setItemInHandDropChance(float chance) {
+        setItemInMainHandDropChance(chance);
+    }
+
+    @Override
+    public float getItemInMainHandDropChance() {
        return getDropChance(EnumItemSlot.MAINHAND);
     }
 
-    public void setItemInHandDropChance(float chance) {
+    @Override
+    public void setItemInMainHandDropChance(float chance) {
         setDropChance(EnumItemSlot.MAINHAND, chance);
+    }
+
+    @Override
+    public float getItemInOffHandDropChance() {
+        return getDropChance(EnumItemSlot.OFFHAND);
+    }
+
+    @Override
+    public void setItemInOffHandDropChance(float chance) {
+        setDropChance(EnumItemSlot.OFFHAND, chance);
     }
 
     public float getHelmetDropChance() {
