@@ -34,8 +34,7 @@ public class CraftParticle {
                 return new int[]{0};
             }
             MaterialData data = (MaterialData) obj;
-            IBlockData nms = CraftMagicNumbers.getBlock(data.getItemType()).fromLegacyData(data.getData());
-            return new int[]{Block.REGISTRY_ID.getId(nms)};
+            return new int[]{data.getItemTypeId() + ((int)(data.getData()) << 12)};
         }
         throw new IllegalArgumentException(particle.getDataType().toString());
     }
