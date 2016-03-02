@@ -338,6 +338,9 @@ public final class CraftItemStack extends ItemStack {
             case LEATHER_BOOTS:
                 return new CraftMetaLeatherArmor(item.getTag());
             case POTION:
+            case SPLASH_POTION:
+            case LINGERING_POTION:
+            case TIPPED_ARROW:
                 return new CraftMetaPotion(item.getTag());
             case MAP:
                 return new CraftMetaMap(item.getTag());
