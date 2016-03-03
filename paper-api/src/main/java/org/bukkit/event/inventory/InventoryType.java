@@ -37,7 +37,7 @@ public enum InventoryType {
     /**
      * A brewing stand inventory, with one FUEL slot and three CRAFTING slots.
      */
-    BREWING(4,"Brewing"),
+    BREWING(5,"Brewing"),
     /**
      * A player's inventory, with 9 QUICKBAR slots, 27 CONTAINER slots, and 4
      * ARMOR slots. The ARMOUR slots may not be visible to the player, though.
