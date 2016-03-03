@@ -20,6 +20,7 @@ import net.minecraft.server.EntityLargeFireball;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPotion;
+import net.minecraft.server.EntityProjectile;
 import net.minecraft.server.EntitySmallFireball;
 import net.minecraft.server.EntitySnowball;
 import net.minecraft.server.EntityThrownExpBottle;
@@ -327,16 +328,22 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
         if (Snowball.class.isAssignableFrom(projectile)) {
             launch = new EntitySnowball(world, getHandle());
+            ((EntityProjectile) launch).a(getHandle(), getHandle().pitch, getHandle().yaw, 0.0F, 1.5F, 1.0F); // ItemSnowball
         } else if (Egg.class.isAssignableFrom(projectile)) {
             launch = new EntityEgg(world, getHandle());
+            ((EntityProjectile) launch).a(getHandle(), getHandle().pitch, getHandle().yaw, 0.0F, 1.5F, 1.0F); // ItemEgg
         } else if (EnderPearl.class.isAssignableFrom(projectile)) {
             launch = new EntityEnderPearl(world, getHandle());
+            ((EntityProjectile) launch).a(getHandle(), getHandle().pitch, getHandle().yaw, 0.0F, 1.5F, 1.0F); // ItemEnderPearl
         } else if (Arrow.class.isAssignableFrom(projectile)) {
             launch = new EntityTippedArrow(world, getHandle());
+            ((EntityProjectile) launch).a(getHandle(), getHandle().pitch, getHandle().yaw, 0.0F, 3.0F, 1.0F); // ItemBow
         } else if (ThrownPotion.class.isAssignableFrom(projectile)) {
             launch = new EntityPotion(world, getHandle(), CraftItemStack.asNMSCopy(new ItemStack(Material.POTION, 1)));
+            ((EntityProjectile) launch).a(getHandle(), getHandle().pitch, getHandle().yaw, -20.0F, 0.5F, 1.0F); // ItemSplashPotion
         } else if (ThrownExpBottle.class.isAssignableFrom(projectile)) {
             launch = new EntityThrownExpBottle(world, getHandle());
+            ((EntityProjectile) launch).a(getHandle(), getHandle().pitch, getHandle().yaw, -20.0F, 0.7F, 1.0F); // ItemExpBottle
         } else if (Fish.class.isAssignableFrom(projectile) && getHandle() instanceof EntityHuman) {
             launch = new EntityFishingHook(world, (EntityHuman) getHandle());
         } else if (Fireball.class.isAssignableFrom(projectile)) {
