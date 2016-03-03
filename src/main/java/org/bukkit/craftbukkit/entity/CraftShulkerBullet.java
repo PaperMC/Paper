@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.Entity;
 import net.minecraft.server.EntityShulkerBullet;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
@@ -8,7 +7,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.ShulkerBullet;
 import org.bukkit.projectiles.ProjectileSource;
 
-public class CraftShulkerBullet extends CraftEntity implements ShulkerBullet {
+public class CraftShulkerBullet extends AbstractProjectile implements ShulkerBullet {
 
     public CraftShulkerBullet(CraftServer server, EntityShulkerBullet entity) {
         super(server, entity);
@@ -47,5 +46,18 @@ public class CraftShulkerBullet extends CraftEntity implements ShulkerBullet {
     @Override
     public EntityShulkerBullet getHandle() {
         return (EntityShulkerBullet) entity;
+    }
+
+    @Deprecated
+    public LivingEntity _INVALID_getShooter() {
+        if (getHandle().getShooter() == null) {
+            return null;
+        }
+        return (LivingEntity) getHandle().getShooter().getBukkitEntity();
+    }
+
+    @Deprecated
+    public void _INVALID_setShooter(LivingEntity shooter) {
+        getHandle().setShooter(((CraftLivingEntity) shooter).getHandle());
     }
 }
