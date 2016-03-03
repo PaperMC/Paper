@@ -8,6 +8,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.block.Action;
+import org.bukkit.inventory.EquipmentSlot;
 
 /**
  * Called when a player interacts with an object or air.
@@ -23,13 +24,19 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
     protected BlockFace blockFace;
     private Result useClickedBlock;
     private Result useItemInHand;
+    private EquipmentSlot hand;
 
     public PlayerInteractEvent(final Player who, final Action action, final ItemStack item, final Block clickedBlock, final BlockFace clickedFace) {
+        this(who, action, item, clickedBlock, clickedFace, EquipmentSlot.HAND);
+    }
+
+    public PlayerInteractEvent(final Player who, final Action action, final ItemStack item, final Block clickedBlock, final BlockFace clickedFace, final EquipmentSlot hand) {
         super(who);
         this.action = action;
         this.item = item;
         this.blockClicked = clickedBlock;
         this.blockFace = clickedFace;
+        this.hand = hand;
 
         useItemInHand = Result.DEFAULT;
         useClickedBlock = clickedBlock == null ? Result.DENY : Result.ALLOW;
@@ -177,6 +184,16 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      */
     public void setUseItemInHand(Result useItemInHand) {
         this.useItemInHand = useItemInHand;
+    }
+
+    /**
+     * The hand used to perform this interaction. May be null in the case of
+     * {@link Action#PHYSICAL}.
+     *
+     * @return the hand used to interact. May be null.
+     */
+    public EquipmentSlot getHand() {
+        return hand;
     }
 
     @Override
