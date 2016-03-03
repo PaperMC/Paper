@@ -26,6 +26,11 @@ public class ProtoChunkExtension extends ProtoChunk {
     public IBlockData getType(BlockPosition blockposition) {
         return this.a.getType(blockposition);
     }
+    // Paper start
+    public final IBlockData getType(final int x, final int y, final int z) {
+        return this.a.getBlockData(x, y, z);
+    }
+    // Paper end
 
     @Override
     public Fluid getFluid(BlockPosition blockposition) {

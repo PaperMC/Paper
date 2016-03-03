@@ -95,16 +95,18 @@ public class ProtoChunk implements IChunkAccess {
 
     @Override
     public IBlockData getType(BlockPosition blockposition) {
-        int i = blockposition.getY();
-
-        if (World.b(i)) {
+        return getType(blockposition.getX(), blockposition.getY(), blockposition.getZ());
+    }
+    // Paper start
+    public IBlockData getType(final int x, final int y, final int z) {
+        if (y < 0 || y >= 256) {
             return Blocks.VOID_AIR.getBlockData();
         } else {
-            ChunkSection chunksection = this.getSections()[i >> 4];
-
-            return ChunkSection.a(chunksection) ? Blocks.AIR.getBlockData() : chunksection.getType(blockposition.getX() & 15, i & 15, blockposition.getZ() & 15);
+            ChunkSection chunksection = this.getSections()[y >> 4];
+            return chunksection == Chunk.EMPTY_CHUNK_SECTION || chunksection.c() ? Blocks.AIR.getBlockData() : chunksection.getType(x & 15, y & 15, z & 15);
         }
     }
+    // Paper end
 
     @Override
     public Fluid getFluid(BlockPosition blockposition) {

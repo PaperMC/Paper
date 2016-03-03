@@ -187,7 +187,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
     }
 
     public static boolean isValidLocation(BlockPosition blockposition) {
-        return !isOutsideWorld(blockposition) && D(blockposition);
+        return blockposition.isValidLocation(); // Paper - use better/optimized check
     }
 
     public static boolean l(BlockPosition blockposition) {

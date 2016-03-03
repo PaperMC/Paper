@@ -308,12 +308,27 @@ public class Chunk implements IChunkAccess {
         return this.sections;
     }
 
-    @Override
+    // Paper start - Optimize getBlockData to reduce instructions
+    public final IBlockData getBlockData(BlockPosition pos) { return getBlockData(pos.getX(), pos.getY(), pos.getZ()); } // Paper
     public IBlockData getType(BlockPosition blockposition) {
-        int i = blockposition.getX();
-        int j = blockposition.getY();
-        int k = blockposition.getZ();
+        return this.getBlockData(blockposition.getX(), blockposition.getY(), blockposition.getZ());
+    }
 
+    public IBlockData getType(final int x, final int y, final int z) {
+        return getBlockData(x, y, z);
+    }
+    public final IBlockData getBlockData(final int x, final int y, final int z) {
+        // Method body / logic copied from below
+        final int i = y >> 4;
+        if (y < 0 || i >= this.sections.length || this.sections[i] == null || this.sections[i].nonEmptyBlockCount == 0) {
+            return Blocks.AIR.getBlockData();
+        }
+        // Inlined ChunkSection.getType() and DataPaletteBlock.a(int,int,int)
+        return this.sections[i].blockIds.a((y & 15) << 8 | (z & 15) << 4 | x & 15);
+    }
+
+    public IBlockData getBlockData_unused(int i, int j, int k) {
+        // Paper end
         if (this.world.isDebugWorld()) {
             IBlockData iblockdata = null;
 

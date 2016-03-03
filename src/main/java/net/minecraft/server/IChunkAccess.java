@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
 
 public interface IChunkAccess extends IBlockAccess, IStructureAccess {
 
+    IBlockData getType(final int x, final int y, final int z); // Paper
     @Nullable
     IBlockData setType(BlockPosition blockposition, IBlockData iblockdata, boolean flag);
 

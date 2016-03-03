@@ -20,6 +20,15 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
     private int b;public final void setY(final int y) { this.b = y; } // Paper - OBFHELPER
     private int e;public final void setZ(final int z) { this.e = z; } // Paper - OBFHELPER
 
+    // Paper start
+    public boolean isValidLocation() {
+        return getX() >= -30000000 && getZ() >= -30000000 && getX() < 30000000 && getZ() < 30000000 && getY() >= 0 && getY() < 256;
+    }
+    public boolean isInvalidYLocation() {
+        return b < 0 || b >= 256;
+    }
+    // Paper end
+
     public BaseBlockPosition(int i, int j, int k) {
         this.a = i;
         this.b = j;

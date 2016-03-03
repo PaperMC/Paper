@@ -7,10 +7,10 @@ public class ChunkSection {
 
     public static final DataPalette<IBlockData> GLOBAL_PALETTE = new DataPaletteGlobal<>(Block.REGISTRY_ID, Blocks.AIR.getBlockData());
     private final int yPos;
-    private short nonEmptyBlockCount;
+    short nonEmptyBlockCount; // Paper - package-private
     private short tickingBlockCount;
     private short e;
-    private final DataPaletteBlock<IBlockData> blockIds;
+    final DataPaletteBlock<IBlockData> blockIds; // Paper - package-private
 
     public ChunkSection(int i) {
         this(i, (short) 0, (short) 0, (short) 0);
@@ -24,8 +24,8 @@ public class ChunkSection {
         this.blockIds = new DataPaletteBlock<>(ChunkSection.GLOBAL_PALETTE, Block.REGISTRY_ID, GameProfileSerializer::c, GameProfileSerializer::a, Blocks.AIR.getBlockData());
     }
 
-    public IBlockData getType(int i, int j, int k) {
-        return (IBlockData) this.blockIds.a(i, j, k);
+    public final IBlockData getType(int i, int j, int k) { // Paper
+        return this.blockIds.a(j << 8 | k << 4 | i); // Paper - inline
     }
 
     public Fluid b(int i, int j, int k) {
