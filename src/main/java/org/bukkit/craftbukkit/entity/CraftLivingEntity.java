@@ -9,6 +9,7 @@ import java.util.Set;
 
 import net.minecraft.server.DamageSource;
 import net.minecraft.server.EntityArmorStand;
+import net.minecraft.server.EntityArrow;
 import net.minecraft.server.EntityDragonFireball;
 import net.minecraft.server.EntityEgg;
 import net.minecraft.server.EntityEnderPearl;
@@ -337,7 +338,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             ((EntityProjectile) launch).a(getHandle(), getHandle().pitch, getHandle().yaw, 0.0F, 1.5F, 1.0F); // ItemEnderPearl
         } else if (Arrow.class.isAssignableFrom(projectile)) {
             launch = new EntityTippedArrow(world, getHandle());
-            ((EntityProjectile) launch).a(getHandle(), getHandle().pitch, getHandle().yaw, 0.0F, 3.0F, 1.0F); // ItemBow
+            ((EntityArrow) launch).a(getHandle(), getHandle().pitch, getHandle().yaw, 0.0F, 3.0F, 1.0F); // ItemBow
         } else if (ThrownPotion.class.isAssignableFrom(projectile)) {
             launch = new EntityPotion(world, getHandle(), CraftItemStack.asNMSCopy(new ItemStack(Material.POTION, 1)));
             ((EntityProjectile) launch).a(getHandle(), getHandle().pitch, getHandle().yaw, -20.0F, 0.5F, 1.0F); // ItemSplashPotion
