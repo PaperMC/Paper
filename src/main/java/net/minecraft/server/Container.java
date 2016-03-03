@@ -223,7 +223,7 @@ public abstract class Container {
                     this.d();
                 }
             } else if (this.h == 1) {
-                Slot slot = (Slot) this.slots.get(i);
+                Slot slot = i < this.slots.size() ? this.slots.get(i) : null; // Paper - Ensure drag in bounds
 
                 itemstack1 = playerinventory.getCarried();
                 if (slot != null && a(slot, itemstack1, true) && slot.isAllowed(itemstack1) && (this.dragType == 2 || itemstack1.getCount() > this.i.size()) && this.b(slot)) {
