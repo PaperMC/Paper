@@ -36,6 +36,7 @@ import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.entity.*;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.metadata.BlockMetadataStore;
+import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.LongHash;
 import org.bukkit.entity.*;
@@ -53,6 +54,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.StandardMessenger;
+import org.bukkit.potion.PotionData;
+import org.bukkit.potion.PotionType;
 import org.bukkit.util.Vector;
 
 public class CraftWorld implements World {
@@ -360,14 +363,28 @@ public class CraftWorld implements World {
     }
 
     public Arrow spawnArrow(Location loc, Vector velocity, float speed, float spread) {
+        return spawnArrow(loc, velocity, speed, spread, Arrow.class);
+    }
+
+    public <T extends Arrow> T spawnArrow(Location loc, Vector velocity, float speed, float spread, Class<T> clazz) {
         Validate.notNull(loc, "Can not spawn arrow with a null location");
         Validate.notNull(velocity, "Can not spawn arrow with a null velocity");
+        Validate.notNull(clazz, "Can not spawn an arrow with no class");
 
-        EntityArrow arrow = new EntityTippedArrow(world);
+        EntityArrow arrow;
+        if (TippedArrow.class.isAssignableFrom(clazz)) {
+            arrow = new EntityTippedArrow(world);
+            ((EntityTippedArrow) arrow).setType(CraftPotionUtil.fromBukkit(new PotionData(PotionType.WATER, false, false)));
+        } else if (SpectralArrow.class.isAssignableFrom(clazz)) {
+            arrow = new EntitySpectralArrow(world);
+        } else {
+            arrow = new EntityTippedArrow(world);
+        }
+
         arrow.setPositionRotation(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
         arrow.shoot(velocity.getX(), velocity.getY(), velocity.getZ(), speed, spread);
         world.addEntity(arrow);
-        return (Arrow) arrow.getBukkitEntity();
+        return (T) arrow.getBukkitEntity();
     }
 
     public Entity spawnEntity(Location loc, EntityType entityType) {
@@ -922,7 +939,14 @@ public class CraftWorld implements World {
             } else if (Egg.class.isAssignableFrom(clazz)) {
                 entity = new EntityEgg(world, x, y, z);
             } else if (Arrow.class.isAssignableFrom(clazz)) {
-                entity = new EntityTippedArrow(world);
+                if (TippedArrow.class.isAssignableFrom(clazz)) {
+                    entity = new EntityTippedArrow(world);
+                    ((EntityTippedArrow) entity).setType(CraftPotionUtil.fromBukkit(new PotionData(PotionType.WATER, false, false)));
+                } else if (SpectralArrow.class.isAssignableFrom(clazz)) {
+                    entity = new EntitySpectralArrow(world);
+                } else {
+                    entity = new EntityTippedArrow(world);
+                }
                 entity.setPositionRotation(x, y, z, 0, 0);
             } else if (ThrownExpBottle.class.isAssignableFrom(clazz)) {
                 entity = new EntityThrownExpBottle(world);
@@ -931,15 +955,19 @@ public class CraftWorld implements World {
                 entity = new EntityEnderPearl(world, null);
                 entity.setPositionRotation(x, y, z, 0, 0);
             } else if (ThrownPotion.class.isAssignableFrom(clazz)) {
-                entity = new EntityPotion(world, x, y, z, CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.POTION, 1)));
+                if (LingeringPotion.class.isAssignableFrom(clazz)) {
+                    entity = new EntityPotion(world, x, y, z, CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.LINGERING_POTION, 1)));
+                } else {
+                    entity = new EntityPotion(world, x, y, z, CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.SPLASH_POTION, 1)));
+                }
             } else if (Fireball.class.isAssignableFrom(clazz)) {
                 if (SmallFireball.class.isAssignableFrom(clazz)) {
                     entity = new EntitySmallFireball(world);
                 } else if (WitherSkull.class.isAssignableFrom(clazz)) {
                     entity = new EntityWitherSkull(world);
-                } else if (DragonFireball.class.isAssignableFrom(clazz)){
+                } else if (DragonFireball.class.isAssignableFrom(clazz)) {
                     entity = new EntityDragonFireball(world);
-                }else{
+                } else {
                     entity = new EntityLargeFireball(world);
                 }
                 entity.setPositionRotation(x, y, z, yaw, pitch);
@@ -1049,7 +1077,7 @@ public class CraftWorld implements World {
                 entity = new EntityRabbit(world);
             } else if (Endermite.class.isAssignableFrom(clazz)) {
                 entity = new EntityEndermite(world);
-            } else if (Guardian.class.isAssignableFrom(clazz)){
+            } else if (Guardian.class.isAssignableFrom(clazz)) {
                 entity = new EntityGuardian(world);
             } else if (ArmorStand.class.isAssignableFrom(clazz)) {
                 entity = new EntityArmorStand(world, x, y, z);
@@ -1073,13 +1101,13 @@ public class CraftWorld implements World {
                 height = 9;
             }
 
-            BlockFace[] faces = new BlockFace[]{BlockFace.EAST,BlockFace.NORTH,BlockFace.WEST,BlockFace.SOUTH};
+            BlockFace[] faces = new BlockFace[]{BlockFace.EAST, BlockFace.NORTH, BlockFace.WEST, BlockFace.SOUTH};
             final BlockPosition pos = new BlockPosition((int) x, (int) y, (int) z);
             for (BlockFace dir : faces) {
                 net.minecraft.server.Block nmsBlock = CraftMagicNumbers.getBlock(block.getRelative(dir));
                 if (nmsBlock.getBlockData().getMaterial().isBuildable() || BlockDiodeAbstract.isDiode(nmsBlock.getBlockData())) {
                     boolean taken = false;
-                    AxisAlignedBB bb = EntityHanging.calculateBoundingBox(null, pos,CraftBlock.blockFaceToNotch(dir).opposite(),width,height);
+                    AxisAlignedBB bb = EntityHanging.calculateBoundingBox(null, pos, CraftBlock.blockFaceToNotch(dir).opposite(), width, height);
                     List<net.minecraft.server.Entity> list = (List<net.minecraft.server.Entity>) world.getEntities(null, bb);
                     for (Iterator<net.minecraft.server.Entity> it = list.iterator(); !taken && it.hasNext();) {
                         net.minecraft.server.Entity e = it.next();
@@ -1096,7 +1124,6 @@ public class CraftWorld implements World {
             }
 
             EnumDirection dir = CraftBlock.blockFaceToNotch(face).opposite();
-            
             if (Painting.class.isAssignableFrom(clazz)) {
                 entity = new EntityPainting(world, new BlockPosition((int) x, (int) y, (int) z), dir);
             } else if (ItemFrame.class.isAssignableFrom(clazz)) {

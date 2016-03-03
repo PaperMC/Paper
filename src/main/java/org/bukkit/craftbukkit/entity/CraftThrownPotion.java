@@ -1,55 +1,41 @@
 package org.bukkit.craftbukkit.entity;
 
 import java.util.Collection;
-
 import net.minecraft.server.EntityPotion;
+import net.minecraft.server.MobEffect;
+import net.minecraft.server.PotionUtil;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.Potion;
 import org.bukkit.potion.PotionEffect;
 
-public class CraftThrownPotion extends CraftProjectile implements ThrownPotion {
+import com.google.common.collect.ImmutableList;
+
+public abstract class CraftThrownPotion extends CraftProjectile implements ThrownPotion {
     public CraftThrownPotion(CraftServer server, EntityPotion entity) {
         super(server, entity);
     }
 
-    // TODO: This one does not handle custom NBT potion effects does it?
-    // In that case this method could be said to be misleading or incorrect
     public Collection<PotionEffect> getEffects() {
-        return Potion.getBrewer().getEffectsFromDamage(getHandle().getItem().getData());
+        ImmutableList.Builder<PotionEffect> builder = ImmutableList.builder();
+        for (MobEffect effect : PotionUtil.getEffects(getHandle().getItem())) {
+            builder.add(CraftPotionUtil.toBukkit(effect));
+        }
+        return builder.build();
     }
 
     public ItemStack getItem() {
         return CraftItemStack.asBukkitCopy(getHandle().getItem());
     }
 
-    public void setItem(ItemStack item) {
-        // The ItemStack must not be null.
-        Validate.notNull(item, "ItemStack cannot be null.");
-
-        // The ItemStack must be a potion.
-        Validate.isTrue(item.getType() == Material.POTION, "ItemStack must be a potion. This item stack was " + item.getType() + ".");
-
-        getHandle().setItem(CraftItemStack.asNMSCopy(item));
-    }
-
     @Override
     public EntityPotion getHandle() {
         return (EntityPotion) entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftThrownPotion";
-    }
-
-    public EntityType getType() {
-        return EntityType.SPLASH_POTION;
     }
 }
