@@ -12,6 +12,7 @@ import org.bukkit.scoreboard.Team;
 import com.google.common.collect.ImmutableSet;
 
 import net.minecraft.server.ScoreboardTeam;
+import net.minecraft.server.ScoreboardTeamBase;
 
 final class CraftTeam extends CraftScoreboardComponent implements Team {
     private final ScoreboardTeam team;
@@ -179,6 +180,41 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         CraftScoreboard scoreboard = checkState();
 
         scoreboard.board.removeTeam(team);
+    }
+
+    @Override
+    public OptionStatus getOption(Option option) throws IllegalStateException {
+        checkState();
+
+        switch (option) {
+            case NAME_TAG_VISIBILITY:
+                return OptionStatus.values()[team.getNameTagVisibility().ordinal()];
+            case DEATH_MESSAGE_VISIBILITY:
+                return OptionStatus.values()[team.j().ordinal()]; // PAIL: rename
+            case COLLISION_RULE:
+                return OptionStatus.values()[team.k().ordinal()]; // PAIL: rename
+            default:
+                throw new IllegalArgumentException("Unrecognised option " + option);
+        }
+    }
+
+    @Override
+    public void setOption(Option option, OptionStatus status) throws IllegalStateException {
+        checkState();
+
+        switch (option) {
+            case NAME_TAG_VISIBILITY:
+                team.setNameTagVisibility(EnumNameTagVisibility.values()[status.ordinal()]);
+                break;
+            case DEATH_MESSAGE_VISIBILITY:
+                team.b(EnumNameTagVisibility.values()[status.ordinal()]); // PAIL: rename
+                break;
+            case COLLISION_RULE:
+                team.a(ScoreboardTeamBase.EnumTeamPush.values()[status.ordinal()]); // PAIL: rename
+                break;
+            default:
+                throw new IllegalArgumentException("Unrecognised option " + option);
+        }
     }
 
     public static EnumNameTagVisibility bukkitToNotch(NameTagVisibility visibility) {
