@@ -198,4 +198,9 @@ public class PaperWorldConfig {
         portalSearchRadius = getInt("portal-search-radius", 128);
         portalCreateRadius = getInt("portal-create-radius", 16);
     }
+
+    public boolean disableTeleportationSuffocationCheck;
+    private void disableTeleportationSuffocationCheck() {
+        disableTeleportationSuffocationCheck = getBoolean("disable-teleportation-suffocation-check", false);
+    }
 }
