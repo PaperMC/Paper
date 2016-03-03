@@ -29,8 +29,10 @@ public class CraftAttributeMap implements Attributable {
         StringBuilder sb = new StringBuilder(bukkit.toLowerCase());
 
         sb.setCharAt(first, '.');
-        sb.deleteCharAt(second);
-        sb.setCharAt(second, bukkit.charAt(second + 1));
+        if (second != -1) {
+            sb.deleteCharAt(second);
+            sb.setCharAt(second, bukkit.charAt(second + 1));
+        }
 
         return sb.toString();
     }
