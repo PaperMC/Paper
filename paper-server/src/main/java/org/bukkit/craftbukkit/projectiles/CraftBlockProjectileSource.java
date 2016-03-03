@@ -6,17 +6,23 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.Fireball;
+import org.bukkit.entity.LingeringPotion;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.SmallFireball;
 import org.bukkit.entity.Snowball;
+import org.bukkit.entity.SpectralArrow;
 import org.bukkit.entity.ThrownExpBottle;
 import org.bukkit.entity.ThrownPotion;
+import org.bukkit.entity.TippedArrow;
 import org.bukkit.entity.WitherSkull;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionData;
+import org.bukkit.potion.PotionType;
 import org.bukkit.projectiles.BlockProjectileSource;
 import org.bukkit.util.Vector;
 
@@ -30,6 +36,7 @@ import net.minecraft.server.EntityPotion;
 import net.minecraft.server.EntityProjectile;
 import net.minecraft.server.EntitySmallFireball;
 import net.minecraft.server.EntitySnowball;
+import net.minecraft.server.EntitySpectralArrow;
 import net.minecraft.server.EntityThrownExpBottle;
 import net.minecraft.server.EntityTippedArrow;
 import net.minecraft.server.EntityWitherSkull;
@@ -78,9 +85,20 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
         } else if (ThrownExpBottle.class.isAssignableFrom(projectile)) {
             launch = new EntityThrownExpBottle(world, iposition.getX(), iposition.getY(), iposition.getZ());
         } else if (ThrownPotion.class.isAssignableFrom(projectile)) {
-            launch = new EntityPotion(world, iposition.getX(), iposition.getY(), iposition.getZ(), CraftItemStack.asNMSCopy(new ItemStack(Material.POTION, 1)));
+            if (LingeringPotion.class.isAssignableFrom(projectile)) {
+                launch = new EntityPotion(world, iposition.getX(), iposition.getY(), iposition.getZ(), CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.LINGERING_POTION, 1)));
+            } else {
+                launch = new EntityPotion(world, iposition.getX(), iposition.getY(), iposition.getZ(), CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.SPLASH_POTION, 1)));
+            }
         } else if (Arrow.class.isAssignableFrom(projectile)) {
-            launch = new EntityTippedArrow(world, iposition.getX(), iposition.getY(), iposition.getZ());
+            if (TippedArrow.class.isAssignableFrom(projectile)) {
+                launch = new EntityTippedArrow(world, iposition.getX(), iposition.getY(), iposition.getZ());
+                ((EntityTippedArrow) launch).setType(CraftPotionUtil.fromBukkit(new PotionData(PotionType.WATER, false, false)));
+            } else if (SpectralArrow.class.isAssignableFrom(projectile)) {
+                launch = new EntitySpectralArrow(world, iposition.getX(), iposition.getY(), iposition.getZ());
+            } else {
+                launch = new EntityTippedArrow(world, iposition.getX(), iposition.getY(), iposition.getZ());
+            }
             ((EntityArrow) launch).fromPlayer = EntityArrow.PickupStatus.ALLOWED;
             ((EntityArrow) launch).projectileSource = this;
         } else if (Fireball.class.isAssignableFrom(projectile)) {
@@ -111,7 +129,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
                 ((EntityFireball) launch).dirY = d4 / d6 * 0.1D;
                 ((EntityFireball) launch).dirZ = d5 / d6 * 0.1D;
             }
-            
+
             ((EntityFireball) launch).projectileSource = this;
         }
 

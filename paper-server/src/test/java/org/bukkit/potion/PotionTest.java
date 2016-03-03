@@ -14,19 +14,6 @@ import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;
 
 public class PotionTest extends AbstractTestingBase {
-
-    @Test
-    public void getEffects() {
-        for (PotionType type : PotionType.values()) {
-            for (PotionEffect effect : new Potion(type).getEffects()) {
-                PotionEffectType potionType = effect.getType();
-                assertThat(effect.getType(), is(sameInstance(PotionEffectType.getById(potionType.getId()))));
-
-                assertNotNull(potionType.getName(), PotionType.getByEffect(potionType));
-            }
-        }
-    }
-
     @Test
     public void testEffectCompleteness() throws Throwable {
         Map<PotionType, String> effects = new EnumMap(PotionType.class);
@@ -43,6 +30,6 @@ public class PotionTest extends AbstractTestingBase {
             effects.put(enumType, enumType.name());
         }
 
-        assertEquals(effects.entrySet().size(), PotionType.values().length - /* WATER */ 1);
+        assertEquals(effects.entrySet().size(), PotionType.values().length - /* PotionTypes with no Effects */ 5);
     }
 }

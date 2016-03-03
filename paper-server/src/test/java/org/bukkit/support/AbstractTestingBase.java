@@ -77,7 +77,6 @@ public abstract class AbstractTestingBase {
     public static void setup() {
         DispenserRegistry.c();
         DummyServer.setup();
-        DummyPotions.setup();
         DummyEnchantments.setup();
     }
 }
