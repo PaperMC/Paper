@@ -50,7 +50,7 @@ public enum Effect {
     /**
      * Sound of zombies chewing on wooden doors.
      */
-    ZOMBIE_CHEW_WOODEN_DOOR(1010, Type.SOUND),
+    ZOMBIE_CHEW_WOODEN_DOOR(1012, Type.SOUND),
     /**
      * Sound of zombies chewing on iron doors.
      */
@@ -58,7 +58,7 @@ public enum Effect {
     /**
      * Sound of zombies destroying a door.
      */
-    ZOMBIE_DESTROY_DOOR(1012, Type.SOUND),
+    ZOMBIE_DESTROY_DOOR(1021, Type.SOUND),
     /**
      * A visual smoke effect. Needs direction as additional info.
      */
