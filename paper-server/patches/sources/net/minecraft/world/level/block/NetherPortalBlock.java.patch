@@ -48,7 +48,7 @@
              entity.setAsInsidePortal(this, pos);
          }
  
-@@ -121,51 +133,66 @@
+@@ -121,51 +133,72 @@
      @Nullable
      @Override
      public TeleportTransition getPortalDestination(ServerLevel world, Entity entity, BlockPos pos) {
@@ -67,8 +67,14 @@
              WorldBorder worldborder = worldserver1.getWorldBorder();
              double d0 = DimensionType.getTeleportationScale(world.dimensionType(), worldserver1.dimensionType());
              BlockPos blockposition1 = worldborder.clampToBounds(entity.getX() * d0, entity.getY(), entity.getZ() * d0);
++            // Paper start - Configurable portal search radius
++            int portalSearchRadius = worldserver1.paperConfig().environment.portalSearchRadius;
++            if (entity.level().paperConfig().environment.portalSearchVanillaDimensionScaling && flag) { // flag = is going to nether
++                portalSearchRadius = (int) (portalSearchRadius / worldserver1.dimensionType().coordinateScale());
++            }
++            // Paper end - Configurable portal search radius
 +            // CraftBukkit start
-+            CraftPortalEvent event = entity.callPortalEvent(entity, CraftLocation.toBukkit(blockposition1, worldserver1.getWorld()), PlayerTeleportEvent.TeleportCause.NETHER_PORTAL, flag ? 16 : 128, 16);
++            CraftPortalEvent event = entity.callPortalEvent(entity, CraftLocation.toBukkit(blockposition1, worldserver1.getWorld()), PlayerTeleportEvent.TeleportCause.NETHER_PORTAL, portalSearchRadius, worldserver1.paperConfig().environment.portalCreateRadius); // Paper - use custom portal search radius
 +            if (event == null) {
 +                return null;
 +            }
@@ -128,7 +134,7 @@
      }
  
      private static TeleportTransition getDimensionTransitionFromExit(Entity entity, BlockPos pos, BlockUtil.FoundRectangle exitPortalRectangle, ServerLevel world, TeleportTransition.PostTeleportTransition postDimensionTransition) {
-@@ -203,7 +230,7 @@
+@@ -203,7 +236,7 @@
          Vec3 vec3d1 = new Vec3((double) blockposition.getX() + (flag ? d2 : d4), (double) blockposition.getY() + d3, (double) blockposition.getZ() + (flag ? d4 : d2));
          Vec3 vec3d2 = PortalShape.findCollisionFreePosition(vec3d1, world, entity, entitysize);
  
