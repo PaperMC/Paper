@@ -263,6 +263,7 @@ public final class CraftServer implements Server {
     public boolean ignoreVanillaPermissions = false;
     private final List<CraftPlayer> playerView;
     public int reloadCount;
+    public static Exception excessiveVelEx; // Paper - Velocity warnings
 
     static {
         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
