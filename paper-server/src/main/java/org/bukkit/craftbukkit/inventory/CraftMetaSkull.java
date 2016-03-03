@@ -172,7 +172,13 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         if (name == null) {
             this.setProfile(null);
         } else {
-            this.setProfile(new ResolvableProfile(new GameProfile(Util.NIL_UUID, name)));
+            // Paper start - Use Online Players Skull
+            GameProfile newProfile = null;
+            net.minecraft.server.level.ServerPlayer player = net.minecraft.server.MinecraftServer.getServer().getPlayerList().getPlayerByName(name);
+            if (player != null) newProfile = player.getGameProfile();
+            if (newProfile == null) newProfile = new GameProfile(Util.NIL_UUID, name);
+            this.setProfile(new ResolvableProfile(newProfile));
+            // Paper end
         }
 
         return true;
