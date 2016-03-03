@@ -655,9 +655,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
         // Spigot start
         // Iterator iterator = this.tileEntityListTick.iterator();
         int tilesThisCycle = 0;
-        for (tileLimiter.initTick();
-                tilesThisCycle < tileEntityListTick.size() && (tilesThisCycle % 10 != 0 || tileLimiter.shouldContinue());
-                tileTickPosition++, tilesThisCycle++) {
+        for (tileTickPosition = 0; tileTickPosition < tileEntityListTick.size(); tileTickPosition++) { // Paper - Disable tick limiters
             tileTickPosition = (tileTickPosition < tileEntityListTick.size()) ? tileTickPosition : 0;
             TileEntity tileentity = (TileEntity) this.tileEntityListTick.get(tileTickPosition);
             // Spigot start
