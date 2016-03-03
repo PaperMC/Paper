@@ -61,6 +61,9 @@ dependencies {
     apiAndDocs("net.kyori:adventure-text-serializer-legacy")
     apiAndDocs("net.kyori:adventure-text-serializer-plain")
     apiAndDocs("net.kyori:adventure-text-logger-slf4j")
+
+    implementation("org.ow2.asm:asm:9.7.1")
+    implementation("org.ow2.asm:asm-commons:9.7.1")
     // Paper end
 
     compileOnly("org.apache.maven:maven-resolver-provider:3.9.6")
