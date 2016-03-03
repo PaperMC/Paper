@@ -319,6 +319,20 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public Arrow spawnArrow(Location location, Vector direction, float speed, float spread);
 
     /**
+     * Creates an arrow entity of the given class at the given {@link Location}
+     *
+     * @param <T> type of arrow to spawn
+     * @param location Location to spawn the arrow
+     * @param direction Direction to shoot the arrow in
+     * @param speed Speed of the arrow. A recommend speed is 0.6
+     * @param spread Spread of the arrow. A recommend spread is 12
+     * @param clazz the Entity class for the arrow
+     * {@link org.bukkit.entity.SpectralArrow},{@link org.bukkit.entity.Arrow},{@link org.bukkit.entity.TippedArrow}
+     * @return Arrow entity spawned as a result of this method
+     */
+    public <T extends Arrow> T spawnArrow(Location location, Vector direction, float speed, float spread, Class<T> clazz);
+
+    /**
      * Creates a tree at the given {@link Location}
      *
      * @param location Location to spawn the tree

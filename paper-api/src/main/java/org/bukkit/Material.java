@@ -402,9 +402,6 @@ public enum Material {
     GHAST_TEAR(370),
     GOLD_NUGGET(371),
     NETHER_STALK(372),
-    /**
-     * @see Potion
-     */
     POTION(373, 1, MaterialData.class),
     GLASS_BOTTLE(374),
     SPIDER_EYE(375),
@@ -473,10 +470,7 @@ public enum Material {
     SPLASH_POTION(438, 1),
     SPECTRAL_ARROW(439),
     TIPPED_ARROW(440),
-    /**
-     * @see Potion
-     */
-    LINGERING_POTION(441, 1, MaterialData.class),
+    LINGERING_POTION(441, 1),
     SHIELD(442, 1, 336),
     ELYTRA(443, 1),
     BOAT_SPRUCE(444, 1),

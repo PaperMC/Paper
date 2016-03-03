@@ -20,8 +20,8 @@ public interface ThrownPotion extends Projectile {
     /**
      * Returns a copy of the ItemStack for this thrown potion.
      * <p>
-     * Altering this copy will not alter the thrown potion directly. If you
-     * want to alter the thrown potion, you must use the {@link
+     * Altering this copy will not alter the thrown potion directly. If you want
+     * to alter the thrown potion, you must use the {@link
      * #setItem(ItemStack) setItemStack} method.
      *
      * @return A copy of the ItemStack for this thrown potion.
@@ -31,7 +31,9 @@ public interface ThrownPotion extends Projectile {
     /**
      * Set the ItemStack for this thrown potion.
      * <p>
-     * The ItemStack must be a potion, otherwise an exception is thrown.
+     * The ItemStack must be of type {@link org.bukkit.Material#SPLASH_POTION}
+     * or {@link org.bukkit.Material#LINGERING_POTION}, otherwise an exception
+     * is thrown.
      *
      * @param item New ItemStack
      */

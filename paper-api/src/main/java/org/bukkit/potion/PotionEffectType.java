@@ -162,7 +162,7 @@ public abstract class PotionEffectType {
      * @return a resulting potion effect
      */
     public PotionEffect createEffect(int duration, int amplifier) {
-        return Potion.getBrewer().createEffect(this, duration, amplifier);
+        return new PotionEffect(this, isInstant() ? 1 : (int) (duration * getDurationModifier()), amplifier);
     }
 
     /**

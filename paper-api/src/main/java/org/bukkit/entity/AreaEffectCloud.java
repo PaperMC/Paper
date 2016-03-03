@@ -2,9 +2,10 @@ package org.bukkit.entity;
 
 import java.util.List;
 import org.bukkit.Color;
-import org.bukkit.Effect;
 import org.bukkit.Particle;
+import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 /**
  * Represents an area effect cloud which will imbue a potion effect onto
@@ -71,6 +72,7 @@ public interface AreaEffectCloud extends Entity {
      * @param duration duration on use delta
      */
     void setDurationOnUse(int duration);
+
     /**
      * Gets the initial radius of the cloud.
      *
@@ -130,33 +132,67 @@ public interface AreaEffectCloud extends Entity {
     void setParticle(Particle particle);
 
     /**
-     * Get a copy of all effects which can be applied by this cloud. No
-     * guarantees are made about the nature of the returned list.
+     * Sets the underlying potion data
      *
-     * @return the list of all effects
+     * @param data PotionData to set the base potion state to
      */
-    List<PotionEffect> getEffects();
+    void setBasePotionData(PotionData data);
 
     /**
-     * Add an effect which can be applied by this cloud.
+     * Returns the potion data about the base potion
      *
-     * @param effect the effect to add
+     * @return a PotionData object
      */
-    void addEffect(PotionEffect effect);
+    PotionData getBasePotionData();
 
     /**
-     * Remove an effect from this cloud.
+     * Checks for the presence of custom potion effects.
      *
-     * @param effect the effect to remove
+     * @return true if custom potion effects are applied
      */
-    void removeEffect(PotionEffect effect);
+    boolean hasCustomEffects();
 
     /**
-     * Set the effects of this cloud. Will remove all existing effects.
+     * Gets an immutable list containing all custom potion effects applied to
+     * this cloud.
+     * <p>
+     * Plugins should check that hasCustomEffects() returns true before calling
+     * this method.
      *
-     * @param effects the new effects to set
+     * @return the immutable list of custom potion effects
      */
-    void setEffects(List<PotionEffect> effects);
+    List<PotionEffect> getCustomEffects();
+
+    /**
+     * Adds a custom potion effect to this cloud.
+     *
+     * @param effect the potion effect to add
+     * @param overwrite true if any existing effect of the same type should be
+     * overwritten
+     * @return true if the effect was added as a result of this call
+     */
+    boolean addCustomEffect(PotionEffect effect, boolean overwrite);
+
+    /**
+     * Removes a custom potion effect from this cloud.
+     *
+     * @param type the potion effect type to remove
+     * @return true if the an effect was removed as a result of this call
+     */
+    boolean removeCustomEffect(PotionEffectType type);
+
+    /**
+     * Checks for a specific custom potion effect type on this cloud.
+     *
+     * @param type the potion effect type to check for
+     * @return true if the potion has this effect
+     */
+    boolean hasCustomEffect(PotionEffectType type);
+
+    /**
+     * Removes all custom potion effects from this cloud.
+     */
+    void clearCustomEffects();
 
     /**
      * Gets the color of this cloud. Will be applied as a tint to its particles.

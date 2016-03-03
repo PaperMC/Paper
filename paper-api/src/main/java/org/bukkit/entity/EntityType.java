@@ -173,9 +173,13 @@ public enum EntityType {
     ENDER_CRYSTAL("EnderCrystal", EnderCrystal.class, 200),
     // These don't have an entity ID in nms.EntityTypes.
     /**
-     * A flying splash potion.
+     * A flying splash potion
      */
-    SPLASH_POTION(null, ThrownPotion.class, -1, false),
+    SPLASH_POTION(null, SplashPotion.class, -1, false),
+    /**
+     * A flying lingering potion
+     */
+    LINGERING_POTION(null, LingeringPotion.class, -1, false),
     AREA_EFFECT_CLOUD(null, AreaEffectCloud.class, -1),
     /**
      * A flying chicken egg.

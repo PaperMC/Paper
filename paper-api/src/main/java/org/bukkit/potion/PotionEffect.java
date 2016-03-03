@@ -62,7 +62,7 @@ public class PotionEffect implements ConfigurationSerializable {
      * @param particles the particle status, see {@link PotionEffect#hasParticles()}
      */
     public PotionEffect(PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particles) {
-        this(type, duration, amplifier, ambient, true, null);
+        this(type, duration, amplifier, ambient, particles, null);
     }
 
     /**

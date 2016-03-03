@@ -24,8 +24,17 @@ public interface PotionBrewer {
      *
      * @param damage The data value of the potion
      * @return The list of effects
-     * @deprecated Magic value
+     * @deprecated Non-Functional
      */
     @Deprecated
     public Collection<PotionEffect> getEffectsFromDamage(int damage);
+
+    /**
+     * Returns a collection of {@link PotionEffect} that would be applied from
+     * a potion with the given type.
+     *
+     * @param type The type of the potion
+     * @return The list of effects
+     */
+    public Collection<PotionEffect> getEffects(PotionType type, boolean upgraded, boolean extended);
 }
