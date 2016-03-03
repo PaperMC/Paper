@@ -176,4 +176,9 @@ public class PaperWorldConfig {
     private void mobSpawnerTickRate() {
         mobSpawnerTickRate = getInt("mob-spawner-tick-rate", 1);
     }
+
+    public int containerUpdateTickRate;
+    private void containerUpdateTickRate() {
+        containerUpdateTickRate = getInt("container-update-tick-rate", 1);
+    }
 }
