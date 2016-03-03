@@ -43,12 +43,29 @@ public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
         }
 
     }
+    // Paper start
+    public net.md_5.bungee.api.chat.BaseComponent[] components;
+
+    public PacketPlayOutTitle(EnumTitleAction action, net.md_5.bungee.api.chat.BaseComponent[] components, int fadeIn, int stay, int fadeOut) {
+        this.a = action;
+        this.components = components;
+        this.c = fadeIn;
+        this.d = stay;
+        this.e = fadeOut;
+    }
+    // Paper end
 
     @Override
     public void b(PacketDataSerializer packetdataserializer) throws IOException {
         packetdataserializer.a((Enum) this.a);
         if (this.a == PacketPlayOutTitle.EnumTitleAction.TITLE || this.a == PacketPlayOutTitle.EnumTitleAction.SUBTITLE || this.a == PacketPlayOutTitle.EnumTitleAction.ACTIONBAR) {
-            packetdataserializer.a(this.b);
+            // Paper start
+            if (this.components != null) {
+                packetdataserializer.a(net.md_5.bungee.chat.ComponentSerializer.toString(components));
+            } else {
+                packetdataserializer.a(this.b);
+            }
+            // Paper end
         }
 
         if (this.a == PacketPlayOutTitle.EnumTitleAction.TIMES) {
