@@ -1,0 +1,47 @@
+From 6a48229227e8d21ce020e18f5a2622a3a68724df Mon Sep 17 00:00:00 2001
+From: md_5 <git@md-5.net>
+Date: Thu, 3 Mar 2016 19:45:46 +1100
+Subject: [PATCH] Implement SpawnerSpawnEvent.
+
+
+diff --git a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+index efe792b..a7903a2 100644
+--- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
++++ b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+@@ -99,6 +99,9 @@ public abstract class MobSpawnerAbstract {
+                 {
+                     entity.fromMobSpawner = true;
+                 }
++                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, blockposition).isCancelled()) {
++                            continue;
++                        }
+                 // Spigot End
+                         ChunkRegionLoader.a(entity, world, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER); // CraftBukkit
+                         world.triggerEffect(2004, blockposition, 0);
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 1946c05..ed4ce69 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -983,4 +983,19 @@ public class CraftEventFactory {
+         event.getInventory().setItem(2, event.getResult());
+         return event;
+     }
++
++    /**
++     * Mob spawner event.
++     */
++    public static SpawnerSpawnEvent callSpawnerSpawnEvent(Entity spawnee, BlockPosition pos) {
++        org.bukkit.craftbukkit.entity.CraftEntity entity = spawnee.getBukkitEntity();
++        BlockState state = entity.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()).getState();
++        if (!(state instanceof org.bukkit.block.CreatureSpawner)) {
++            state = null;
++        }
++
++        SpawnerSpawnEvent event = new SpawnerSpawnEvent(entity, (org.bukkit.block.CreatureSpawner) state);
++        entity.getServer().getPluginManager().callEvent(event);
++        return event;
++    }
+ }
+-- 
+2.5.0
+
