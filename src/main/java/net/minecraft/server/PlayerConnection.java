@@ -1609,6 +1609,29 @@ public class PlayerConnection implements PacketListenerPlayIn {
         }
 
         if (!async && s.startsWith("/")) {
+            // Paper Start
+            if (!org.spigotmc.AsyncCatcher.shuttingDown && !org.bukkit.Bukkit.isPrimaryThread()) {
+                final String fCommandLine = s;
+                MinecraftServer.LOGGER.log(org.apache.logging.log4j.Level.ERROR, "Command Dispatched Async: " + fCommandLine);
+                MinecraftServer.LOGGER.log(org.apache.logging.log4j.Level.ERROR, "Please notify author of plugin causing this execution to fix this bug! see: http://bit.ly/1oSiM6C", new Throwable());
+                Waitable wait = new Waitable() {
+                    @Override
+                    protected Object evaluate() {
+                        chat(fCommandLine, false);
+                        return null;
+                    }
+                };
+                minecraftServer.processQueue.add(wait);
+                try {
+                    wait.get();
+                    return;
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt(); // This is proper habit for java. If we aren't handling it, pass it on!
+                } catch (Exception e) {
+                    throw new RuntimeException("Exception processing chat command", e.getCause());
+                }
+            }
+            // Paper End
             this.handleCommand(s);
         } else if (this.player.getChatFlags() == EnumChatVisibility.SYSTEM) {
             // Do nothing, this is coming from a plugin
