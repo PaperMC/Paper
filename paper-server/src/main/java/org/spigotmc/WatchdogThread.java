@@ -81,6 +81,17 @@ public class WatchdogThread extends Thread
                     log.log( Level.SEVERE, "near " + net.minecraft.world.level.Level.lastPhysicsProblem );
                 }
                 //
+                // Paper start - Warn in watchdog if an excessive velocity was ever set
+                if (org.bukkit.craftbukkit.CraftServer.excessiveVelEx != null) {
+                    log.log(Level.SEVERE, "------------------------------");
+                    log.log(Level.SEVERE, "During the run of the server, a plugin set an excessive velocity on an entity");
+                    log.log(Level.SEVERE, "This may be the cause of the issue, or it may be entirely unrelated");
+                    log.log(Level.SEVERE, org.bukkit.craftbukkit.CraftServer.excessiveVelEx.getMessage());
+                    for (StackTraceElement stack : org.bukkit.craftbukkit.CraftServer.excessiveVelEx.getStackTrace()) {
+                        log.log( Level.SEVERE, "\t\t" + stack );
+                    }
+                }
+                // Paper end
                 log.log( Level.SEVERE, "------------------------------" );
                 log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):" ); // Paper
                 WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );

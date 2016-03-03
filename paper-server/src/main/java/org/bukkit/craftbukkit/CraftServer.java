@@ -305,6 +305,7 @@ public final class CraftServer implements Server {
     private final List<CraftPlayer> playerView;
     public int reloadCount;
     public Set<String> activeCompatibilities = Collections.emptySet();
+    public static Exception excessiveVelEx; // Paper - Velocity warnings
 
     static {
         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
