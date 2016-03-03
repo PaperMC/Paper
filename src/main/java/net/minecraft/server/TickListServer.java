@@ -26,12 +26,17 @@ public class TickListServer<T> implements TickList<T> {
     private final List<NextTickListEntry<T>> g = Lists.newArrayList();
     private final Consumer<NextTickListEntry<T>> h;
 
-    public TickListServer(WorldServer worldserver, Predicate<T> predicate, Function<T, MinecraftKey> function, Consumer<NextTickListEntry<T>> consumer) {
+    public TickListServer(WorldServer worldserver, Predicate<T> predicate, Function<T, MinecraftKey> function, Consumer<NextTickListEntry<T>> consumer, String timingsType) { // Paper
         this.a = predicate;
         this.b = function;
         this.e = worldserver;
         this.h = consumer;
+        this.timingCleanup = co.aikar.timings.WorldTimingsHandler.getTickList(worldserver, timingsType + " - Cleanup");
+        this.timingTicking = co.aikar.timings.WorldTimingsHandler.getTickList(worldserver, timingsType + " - Ticking");
     }
+    private final co.aikar.timings.Timing timingCleanup; // Paper
+    private final co.aikar.timings.Timing timingTicking; // Paper
+    // Paper end
 
     public void b() {
         int i = this.nextTickList.size();
@@ -54,6 +59,7 @@ public class TickListServer<T> implements TickList<T> {
 
             this.e.getMethodProfiler().enter("cleaning");
 
+            this.timingCleanup.startTiming(); // Paper
             NextTickListEntry nextticklistentry;
 
             while (i > 0 && iterator.hasNext()) {
@@ -69,7 +75,9 @@ public class TickListServer<T> implements TickList<T> {
                     --i;
                 }
             }
+            this.timingCleanup.stopTiming(); // Paper
 
+            this.timingTicking.startTiming(); // Paper
             this.e.getMethodProfiler().exitEnter("ticking");
 
             while ((nextticklistentry = (NextTickListEntry) this.f.poll()) != null) {
@@ -89,6 +97,7 @@ public class TickListServer<T> implements TickList<T> {
                 }
             }
 
+            this.timingTicking.stopTiming(); // Paper
             this.e.getMethodProfiler().exit();
             this.g.clear();
             this.f.clear();

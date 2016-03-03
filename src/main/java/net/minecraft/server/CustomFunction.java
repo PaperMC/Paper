@@ -13,12 +13,22 @@ public class CustomFunction {
 
     private final CustomFunction.c[] a;
     private final MinecraftKey b;
+    // Paper start
+    public co.aikar.timings.Timing timing;
+    public co.aikar.timings.Timing getTiming() {
+        if (timing == null) {
+            timing = co.aikar.timings.MinecraftTimings.getCommandFunctionTiming(this);
+        }
+        return timing;
+    }
+    // Paper end
 
     public CustomFunction(MinecraftKey minecraftkey, CustomFunction.c[] acustomfunction_c) {
         this.b = minecraftkey;
         this.a = acustomfunction_c;
     }
 
+    public final MinecraftKey getMinecraftKey() { return this.a(); } // Paper - OBFHELPER
     public MinecraftKey a() {
         return this.b;
     }

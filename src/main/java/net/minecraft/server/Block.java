@@ -22,6 +22,15 @@ public class Block extends BlockBase implements IMaterial {
     });
     protected final BlockStateList<Block, IBlockData> blockStateList;
     private IBlockData blockData;
+    // Paper start
+    public co.aikar.timings.Timing timing;
+    public co.aikar.timings.Timing getTiming() {
+        if (timing == null) {
+            timing = co.aikar.timings.MinecraftTimings.getBlockTiming(this);
+        }
+        return timing;
+    }
+    // Paper end
     @Nullable
     private String name;
     @Nullable

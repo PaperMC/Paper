@@ -65,7 +65,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.Main;
 import org.bukkit.event.server.ServerLoadEvent;
 // CraftBukkit end
-import org.bukkit.craftbukkit.SpigotTimings; // Spigot
+import co.aikar.timings.MinecraftTimings; // Paper
 import org.spigotmc.SlackActivityAccountant; // Spigot
 
 public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTask> implements IMojangStatistics, ICommandListener, AutoCloseable {
@@ -119,8 +119,8 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
     private long T;
     public final Thread serverThread;
     private long nextTick;
-    private long W;
-    private boolean X;
+    private long W; final long getTickOversleepMaxTime() { return this.W; } // Paper - OBFHELPER
+    private boolean X; final boolean hasExecutedTask() { return this.X; } // Paper - OBFHELPER
     private final ResourcePackRepository resourcePackRepository;
     private final ScoreboardServer scoreboardServer;
     @Nullable
@@ -710,6 +710,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         }
         // CraftBukkit end
         MinecraftServer.LOGGER.info("Stopping server");
+        MinecraftTimings.stopServer(); // Paper
         // CraftBukkit start
         if (this.server != null) {
             this.server.disablePlugins();
@@ -907,8 +908,20 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
 
     private boolean canSleepForTick() {
         // CraftBukkit start
+        if (isOversleep) return canOversleep();// Paper - because of our changes, this logic is broken
         return this.forceTicks || this.isEntered() || SystemUtils.getMonotonicMillis() < (this.X ? this.W : this.nextTick);
     }
+
+    // Paper start
+    boolean isOversleep = false;
+    private boolean canOversleep() {
+        return this.hasExecutedTask() && SystemUtils.getMonotonicMillis() < this.getTickOversleepMaxTime();
+    }
+
+    private boolean canSleepForTickNoOversleep() {
+        return this.forceTicks || this.isEntered() || SystemUtils.getMonotonicMillis() < this.nextTick;
+    }
+    // Paper end
 
     private void executeModerately() {
         this.executeAll();
@@ -917,9 +930,9 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
     // CraftBukkit end
 
     protected void sleepForTick() {
-        this.executeAll();
+        //this.executeAll(); // Paper - move this into the tick method for timings
         this.awaitTasks(() -> {
-            return !this.canSleepForTick();
+            return !this.canSleepForTickNoOversleep(); // Paper - move oversleep into full server tick
         });
     }
 
@@ -1002,9 +1015,17 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
     protected void exit() {}
 
     protected void a(BooleanSupplier booleansupplier) {
-        SpigotTimings.serverTickTimer.startTiming(); // Spigot
+        co.aikar.timings.TimingsManager.FULL_SERVER_TICK.startTiming(); // Paper
         this.slackActivityAccountant.tickStarted(); // Spigot
         long i = SystemUtils.getMonotonicNanos();
+
+        // Paper start - move oversleep into full server tick
+        isOversleep = true;MinecraftTimings.serverOversleep.startTiming();
+        this.awaitTasks(() -> {
+            return !this.canOversleep();
+        });
+        isOversleep = false;MinecraftTimings.serverOversleep.stopTiming();
+        // Paper end
 
         ++this.ticks;
         this.b(booleansupplier);
@@ -1023,14 +1044,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         }
 
         if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit
-            SpigotTimings.worldSaveTimer.startTiming(); // Spigot
             MinecraftServer.LOGGER.debug("Autosave started");
             this.methodProfiler.enter("save");
             this.playerList.savePlayers();
             this.saveChunks(true, false, false);
             this.methodProfiler.exit();
             MinecraftServer.LOGGER.debug("Autosave finished");
-            SpigotTimings.worldSaveTimer.stopTiming(); // Spigot
         }
 
         this.methodProfiler.enter("snooper");
@@ -1043,6 +1062,13 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         }
 
         this.methodProfiler.exit();
+
+        // Paper start - move executeAll() into full server tick timing
+        try (co.aikar.timings.Timing ignored = MinecraftTimings.processTasksTimer.startTiming()) {
+            this.executeAll();
+        }
+        // Paper end
+
         this.methodProfiler.enter("tallying");
         long l = this.h[this.ticks % 100] = SystemUtils.getMonotonicNanos() - i;
 
@@ -1053,30 +1079,29 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         this.methodProfiler.exit();
         org.spigotmc.WatchdogThread.tick(); // Spigot
         this.slackActivityAccountant.tickEnded(l); // Spigot
-        SpigotTimings.serverTickTimer.stopTiming(); // Spigot
-        org.spigotmc.CustomTimingsHandler.tick(); // Spigot
+        co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Paper
     }
 
     protected void b(BooleanSupplier booleansupplier) {
-        SpigotTimings.schedulerTimer.startTiming(); // Spigot
+        MinecraftTimings.bukkitSchedulerTimer.startTiming(); // Spigot // Paper
         this.server.getScheduler().mainThreadHeartbeat(this.ticks); // CraftBukkit
-        SpigotTimings.schedulerTimer.stopTiming(); // Spigot
+        MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Spigot // Paper
         this.methodProfiler.enter("commandFunctions");
-        SpigotTimings.commandFunctionsTimer.startTiming(); // Spigot
+        MinecraftTimings.commandFunctionsTimer.startTiming(); // Spigot // Paper
         this.getFunctionData().tick();
-        SpigotTimings.commandFunctionsTimer.stopTiming(); // Spigot
+        MinecraftTimings.commandFunctionsTimer.stopTiming(); // Spigot // Paper
         this.methodProfiler.exitEnter("levels");
         Iterator iterator = this.getWorlds().iterator();
 
         // CraftBukkit start
         // Run tasks that are waiting on processing
-        SpigotTimings.processQueueTimer.startTiming(); // Spigot
+        MinecraftTimings.processQueueTimer.startTiming(); // Spigot
         while (!processQueue.isEmpty()) {
             processQueue.remove().run();
         }
-        SpigotTimings.processQueueTimer.stopTiming(); // Spigot
+        MinecraftTimings.processQueueTimer.stopTiming(); // Spigot
 
-        SpigotTimings.timeUpdateTimer.startTiming(); // Spigot
+        MinecraftTimings.timeUpdateTimer.startTiming(); // Spigot // Paper
         // Send time updates to everyone, it will get the right time from the world the player is in.
         if (this.ticks % 20 == 0) {
             for (int i = 0; i < this.getPlayerList().players.size(); ++i) {
@@ -1084,7 +1109,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                 entityplayer.playerConnection.sendPacket(new PacketPlayOutUpdateTime(entityplayer.world.getTime(), entityplayer.getPlayerTime(), entityplayer.world.getGameRules().getBoolean(GameRules.DO_DAYLIGHT_CYCLE))); // Add support for per player time
             }
         }
-        SpigotTimings.timeUpdateTimer.stopTiming(); // Spigot
+        MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot // Paper
 
         while (iterator.hasNext()) {
             WorldServer worldserver = (WorldServer) iterator.next();
@@ -1125,24 +1150,24 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         }
 
         this.methodProfiler.exitEnter("connection");
-        SpigotTimings.connectionTimer.startTiming(); // Spigot
+        MinecraftTimings.connectionTimer.startTiming(); // Spigot
         this.getServerConnection().c();
-        SpigotTimings.connectionTimer.stopTiming(); // Spigot
+        MinecraftTimings.connectionTimer.stopTiming(); // Spigot
         this.methodProfiler.exitEnter("players");
-        SpigotTimings.playerListTimer.startTiming(); // Spigot
+        MinecraftTimings.playerListTimer.startTiming(); // Spigot // Paper
         this.playerList.tick();
-        SpigotTimings.playerListTimer.stopTiming(); // Spigot
+        MinecraftTimings.playerListTimer.stopTiming(); // Spigot // Paper
         if (SharedConstants.d) {
             GameTestHarnessTicker.a.b();
         }
 
         this.methodProfiler.exitEnter("server gui refresh");
 
-        SpigotTimings.tickablesTimer.startTiming(); // Spigot
+        MinecraftTimings.tickablesTimer.startTiming(); // Spigot // Paper
         for (int i = 0; i < this.tickables.size(); ++i) {
             ((Runnable) this.tickables.get(i)).run();
         }
-        SpigotTimings.tickablesTimer.stopTiming(); // Spigot
+        MinecraftTimings.tickablesTimer.stopTiming(); // Spigot // Paper
 
         this.methodProfiler.exit();
     }

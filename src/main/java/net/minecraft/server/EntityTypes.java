@@ -151,7 +151,9 @@ public class EntityTypes<T extends Entity> {
         return IRegistry.ENTITY_TYPE.getOptional(MinecraftKey.a(s));
     }
 
-    public EntityTypes(EntityTypes.b<T> entitytypes_b, EnumCreatureType enumcreaturetype, boolean flag, boolean flag1, boolean flag2, boolean flag3, ImmutableSet<Block> immutableset, EntitySize entitysize, int i, int j) {
+    public final String id;
+    public EntityTypes(EntityTypes.b<T> entitytypes_b, EnumCreatureType enumcreaturetype, boolean flag, boolean flag1, boolean flag2, boolean flag3, ImmutableSet<Block> immutableset, EntitySize entitysize, int i, int j) { this(entitytypes_b, enumcreaturetype, flag, flag1, flag2, flag3, immutableset, entitysize, i, j, "custom"); } // Paper - old signature
+    public EntityTypes(EntityTypes.b<T> entitytypes_b, EnumCreatureType enumcreaturetype, boolean flag, boolean flag1, boolean flag2, boolean flag3, ImmutableSet<Block> immutableset, EntitySize entitysize, int i, int j, String id) { // Paper - add id
         this.bf = entitytypes_b;
         this.bg = enumcreaturetype;
         this.bl = flag3;
@@ -162,6 +164,14 @@ public class EntityTypes<T extends Entity> {
         this.br = entitysize;
         this.bm = i;
         this.bn = j;
+
+        // Paper start - timings
+        this.id = id;
+        this.tickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "tick");
+        this.inactiveTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "inactiveTick");
+        this.passengerTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "passengerTick");
+        this.passengerInactiveTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "passengerInactiveTick");
+        // Paper end
     }
 
     @Nullable
@@ -381,6 +391,12 @@ public class EntityTypes<T extends Entity> {
         return this.bn;
     }
 
+    // Paper start - timings
+    public final co.aikar.timings.Timing tickTimer;
+    public final co.aikar.timings.Timing inactiveTickTimer;
+    public final co.aikar.timings.Timing passengerTickTimer;
+    public final co.aikar.timings.Timing passengerInactiveTickTimer;
+    // Paper end
     public boolean isDeltaTracking() {
         return this != EntityTypes.PLAYER && this != EntityTypes.LLAMA_SPIT && this != EntityTypes.WITHER && this != EntityTypes.BAT && this != EntityTypes.ITEM_FRAME && this != EntityTypes.LEASH_KNOT && this != EntityTypes.PAINTING && this != EntityTypes.END_CRYSTAL && this != EntityTypes.EVOKER_FANGS;
     }
@@ -468,7 +484,7 @@ public class EntityTypes<T extends Entity> {
                 SystemUtils.a(DataConverterTypes.ENTITY_TREE, s);
             }
 
-            return new EntityTypes<>(this.a, this.b, this.d, this.e, this.f, this.g, this.c, this.j, this.h, this.i);
+            return new EntityTypes<>(this.a, this.b, this.d, this.e, this.f, this.g, this.c, this.j, this.h, this.i, s); // Paper - add id
         }
     }
 

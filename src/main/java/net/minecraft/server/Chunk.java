@@ -693,6 +693,7 @@ public class Chunk implements IChunkAccess {
             server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(this.bukkitChunk, this.needsDecoration));
 
             if (this.needsDecoration) {
+                try (co.aikar.timings.Timing ignored = this.world.timings.chunkLoadPopulate.startTiming()) { // Paper
                 this.needsDecoration = false;
                 java.util.Random random = new java.util.Random();
                 random.setSeed(world.getSeed());
@@ -712,6 +713,7 @@ public class Chunk implements IChunkAccess {
                     }
                 }
                 server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(bukkitChunk));
+                } // Paper
             }
         }
     }

@@ -14,12 +14,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
+import com.google.common.collect.Lists;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
+import co.aikar.timings.Timings;
+import co.aikar.timings.TimingsManager;
 
 public class PaperConfig {
 
@@ -187,5 +190,28 @@ public class PaperConfig {
     private static String getString(String path, String def) {
         config.addDefault(path, def);
         return config.getString(path, config.getString(path));
+    }
+
+    public static String timingsServerName;
+    private static void timings() {
+        boolean timings = getBoolean("timings.enabled", true);
+        boolean verboseTimings = getBoolean("timings.verbose", true);
+        TimingsManager.privacy = getBoolean("timings.server-name-privacy", false);
+        TimingsManager.hiddenConfigs = getList("timings.hidden-config-entries", Lists.newArrayList("database", "settings.bungeecord-addresses"));
+        int timingHistoryInterval = getInt("timings.history-interval", 300);
+        int timingHistoryLength = getInt("timings.history-length", 3600);
+        timingsServerName = getString("timings.server-name", "Unknown Server");
+
+
+        Timings.setVerboseTimingsEnabled(verboseTimings);
+        Timings.setTimingsEnabled(timings);
+        Timings.setHistoryInterval(timingHistoryInterval * 20);
+        Timings.setHistoryLength(timingHistoryLength * 20);
+
+        log("Timings: " + timings +
+                " - Verbose: " + verboseTimings +
+                " - Interval: " + timeSummary(Timings.getHistoryInterval() / 20) +
+                " - Length: " + timeSummary(Timings.getHistoryLength() / 20) +
+                " - Server Name: " + timingsServerName);
     }
 }

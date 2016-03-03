@@ -1774,6 +1774,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             packet.components = components;
             getHandle().playerConnection.sendPacket(packet);
         }
+
+        // Paper start
+        @Override
+        public int getPing()
+        {
+            return getHandle().ping;
+        }
+        // Paper end
     };
 
     public Player.Spigot spigot()

@@ -2064,10 +2064,29 @@ public final class CraftServer implements Server {
     private final Spigot spigot = new Spigot()
     {
 
+        @Deprecated
         @Override
         public YamlConfiguration getConfig()
         {
             return org.spigotmc.SpigotConfig.config;
+        }
+
+        @Override
+        public YamlConfiguration getBukkitConfig()
+        {
+            return configuration;
+        }
+
+        @Override
+        public YamlConfiguration getSpigotConfig()
+        {
+            return org.spigotmc.SpigotConfig.config;
+        }
+
+        @Override
+        public YamlConfiguration getPaperConfig()
+        {
+            return com.destroystokyo.paper.PaperConfig.config;
         }
 
         @Override

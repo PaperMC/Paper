@@ -26,8 +26,9 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.io.IoBuilder;
 import org.bukkit.command.CommandSender;
-import org.bukkit.craftbukkit.SpigotTimings; // Spigot
+import co.aikar.timings.MinecraftTimings; // Paper
 import org.bukkit.event.server.ServerCommandEvent;
+import org.bukkit.craftbukkit.util.Waitable;
 import org.bukkit.event.server.RemoteServerCommandEvent;
 // CraftBukkit end
 
@@ -376,7 +377,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
     }
 
     public void handleCommandQueue() {
-        SpigotTimings.serverCommandTimer.startTiming(); // Spigot
+        MinecraftTimings.serverCommandTimer.startTiming(); // Spigot
         while (!this.serverCommandQueue.isEmpty()) {
             ServerCommand servercommand = (ServerCommand) this.serverCommandQueue.remove(0);
 
@@ -391,7 +392,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
             // CraftBukkit end
         }
 
-        SpigotTimings.serverCommandTimer.stopTiming(); // Spigot
+        MinecraftTimings.serverCommandTimer.stopTiming(); // Spigot
     }
 
     @Override
@@ -627,6 +628,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
 
     @Override
     public String executeRemoteCommand(String s) {
+        Waitable[] waitableArray = new Waitable[1];
         this.remoteControlCommandListener.clearMessages();
         this.executeSync(() -> {
             // CraftBukkit start - fire RemoteServerCommandEvent
@@ -635,10 +637,39 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
             if (event.isCancelled()) {
                 return;
             }
+            // Paper start
+            if (s.toLowerCase().startsWith("timings") && s.toLowerCase().matches("timings (report|paste|get|merged|seperate)")) {
+                org.bukkit.command.BufferedCommandSender sender = new org.bukkit.command.BufferedCommandSender();
+                Waitable<String> waitable = new Waitable<String>() {
+                    @Override
+                    protected String evaluate() {
+                        return sender.getBuffer();
+                    }
+                };
+                waitableArray[0] = waitable;
+                co.aikar.timings.Timings.generateReport(new co.aikar.timings.TimingsReportListener(sender, waitable));
+            } else {
+            // Paper end
             ServerCommand serverCommand = new ServerCommand(event.getCommand(), remoteControlCommandListener.getWrapper());
             server.dispatchServerCommand(remoteConsole, serverCommand);
+            } // Paper
             // CraftBukkit end
         });
+        // Paper start
+        if (waitableArray[0] != null) {
+            //noinspection unchecked
+            Waitable<String> waitable = waitableArray[0];
+            try {
+                return waitable.get();
+            } catch (java.util.concurrent.ExecutionException e) {
+                throw new RuntimeException("Exception processing rcon command " + s, e.getCause());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt(); // Maintain interrupted state
+                throw new RuntimeException("Interrupted processing rcon command " + s, e);
+            }
+
+        }
+        // Paper end
         return this.remoteControlCommandListener.getMessages();
     }
 
