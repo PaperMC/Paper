@@ -14,7 +14,7 @@ public class PortalTravelAgent {
 
     public Optional<BlockUtil.Rectangle> findPortal(BlockPosition blockposition, boolean flag) {
         // CraftBukkit start
-        return findPortal(blockposition, flag ? 16 : 128); // Search Radius
+        return findPortal(blockposition, flag ? world.paperConfig.portalCreateRadius : world.paperConfig.portalSearchRadius); // Paper - search Radius
     }
 
     public Optional<BlockUtil.Rectangle> findPortal(BlockPosition blockposition, int i) {
