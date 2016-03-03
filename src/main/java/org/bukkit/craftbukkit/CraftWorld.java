@@ -926,9 +926,6 @@ public class CraftWorld implements World {
                 entity.setPositionRotation(x, y, z, yaw, pitch);
                 Vector direction = location.getDirection().multiply(10);
                 ((EntityFireball) entity).setDirection(direction.getX(), direction.getY(), direction.getZ());
-            } else if (ShulkerBullet.class.isAssignableFrom(clazz)) {
-                entity = new EntityShulkerBullet(world);
-                entity.setPositionRotation(x, y, z, yaw, pitch);
             }
         } else if (Minecart.class.isAssignableFrom(clazz)) {
             if (PoweredMinecart.class.isAssignableFrom(clazz)) {
@@ -1104,6 +1101,9 @@ public class CraftWorld implements World {
             entity = new EntityFireworks(world, x, y, z, null);
         } else if (AreaEffectCloud.class.isAssignableFrom(clazz)) {
             entity = new EntityAreaEffectCloud(world, x, y, z);
+        } else if (ShulkerBullet.class.isAssignableFrom(clazz)) {
+            entity = new EntityShulkerBullet(world);
+            entity.setPositionRotation(x, y, z, yaw, pitch);
         }
 
         if (entity != null) {
