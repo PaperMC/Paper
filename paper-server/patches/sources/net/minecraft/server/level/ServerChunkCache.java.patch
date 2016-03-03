@@ -79,7 +79,7 @@
      @Override
      public ThreadedLevelLightEngine getLightEngine() {
          return this.lightEngine;
-@@ -138,20 +203,22 @@
+@@ -138,7 +203,7 @@
                  if (k == this.lastChunkPos[l] && leastStatus == this.lastChunkStatus[l]) {
                      ChunkAccess ichunkaccess = this.lastChunk[l];
  
@@ -88,23 +88,16 @@
                          return ichunkaccess;
                      }
                  }
-             }
- 
-             gameprofilerfiller.incrementCounter("getChunkCacheMiss");
-+            this.level.timings.syncChunkLoadTimer.startTiming(); // Spigot
-             CompletableFuture<ChunkResult<ChunkAccess>> completablefuture = this.getChunkFutureMainThread(x, z, leastStatus, create);
-             ServerChunkCache.MainThreadExecutor chunkproviderserver_b = this.mainThreadProcessor;
- 
+@@ -151,7 +216,7 @@
              Objects.requireNonNull(completablefuture);
              chunkproviderserver_b.managedBlock(completablefuture::isDone);
-+            this.level.timings.syncChunkLoadTimer.stopTiming(); // Spigot
              ChunkResult<ChunkAccess> chunkresult = (ChunkResult) completablefuture.join();
 -            ChunkAccess ichunkaccess1 = (ChunkAccess) chunkresult.orElse((Object) null);
 +            ChunkAccess ichunkaccess1 = (ChunkAccess) chunkresult.orElse(null); // CraftBukkit - decompile error
  
              if (ichunkaccess1 == null && create) {
                  throw (IllegalStateException) Util.pauseInIde(new IllegalStateException("Chunk not there when requested: " + chunkresult.getError()));
-@@ -231,7 +298,15 @@
+@@ -231,7 +296,15 @@
          int l = ChunkLevel.byStatus(leastStatus);
          ChunkHolder playerchunk = this.getVisibleChunkIfPresent(k);
  
@@ -121,7 +114,7 @@
              this.distanceManager.addTicket(TicketType.UNKNOWN, chunkcoordintpair, l, chunkcoordintpair);
              if (this.chunkAbsent(playerchunk, l)) {
                  ProfilerFiller gameprofilerfiller = Profiler.get();
-@@ -250,7 +325,7 @@
+@@ -250,7 +323,7 @@
      }
  
      private boolean chunkAbsent(@Nullable ChunkHolder holder, int maxLevel) {
@@ -130,7 +123,7 @@
      }
  
      @Override
-@@ -279,7 +354,7 @@
+@@ -279,7 +352,7 @@
          return this.mainThreadProcessor.pollTask();
      }
  
@@ -139,7 +132,7 @@
          boolean flag = this.distanceManager.runAllUpdates(this.chunkMap);
          boolean flag1 = this.chunkMap.promoteChunkMap();
  
-@@ -309,30 +384,58 @@
+@@ -309,18 +382,40 @@
  
      @Override
      public void close() throws IOException {
@@ -156,8 +149,8 @@
          this.dataStorage.close();
          this.lightEngine.close();
          this.chunkMap.close();
-     }
- 
++    }
++
 +    // CraftBukkit start - modelled on below
 +    public void purgeUnload() {
 +        ProfilerFiller gameprofilerfiller = Profiler.get();
@@ -169,38 +162,20 @@
 +        this.chunkMap.tick(() -> true);
 +        gameprofilerfiller.pop();
 +        this.clearCache();
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      @Override
      public void tick(BooleanSupplier shouldKeepTicking, boolean tickChunks) {
          ProfilerFiller gameprofilerfiller = Profiler.get();
  
          gameprofilerfiller.push("purge");
 -        if (this.level.tickRateManager().runsNormally() || !tickChunks) {
-+        this.level.timings.doChunkMap.startTiming(); // Spigot
 +        if (this.level.tickRateManager().runsNormally() || !tickChunks || this.level.spigotConfig.unloadFrozenChunks) { // Spigot
              this.distanceManager.purgeStaleTickets();
          }
  
-         this.runDistanceManagerUpdates();
-+        this.level.timings.doChunkMap.stopTiming(); // Spigot
-         gameprofilerfiller.popPush("chunks");
-         if (tickChunks) {
-             this.tickChunks();
-+            this.level.timings.tracker.startTiming(); // Spigot
-             this.chunkMap.tick();
-+            this.level.timings.tracker.stopTiming(); // Spigot
-         }
- 
-+        this.level.timings.doChunkUnload.startTiming(); // Spigot
-         gameprofilerfiller.popPush("unload");
-         this.chunkMap.tick(shouldKeepTicking);
-+        this.level.timings.doChunkUnload.stopTiming(); // Spigot
-         gameprofilerfiller.pop();
-         this.clearCache();
-     }
-@@ -401,14 +504,14 @@
+@@ -401,14 +496,14 @@
  
          this.lastSpawnState = spawnercreature_d;
          profiler.popPush("spawnAndTick");
@@ -218,7 +193,7 @@
          } else {
              list1 = List.of();
          }
-@@ -420,12 +523,14 @@
+@@ -420,7 +515,7 @@
              ChunkPos chunkcoordintpair = chunk.getPos();
  
              chunk.incrementInhabitedTime(timeDelta);
@@ -227,14 +202,7 @@
                  NaturalSpawner.spawnForChunk(this.level, chunk, spawnercreature_d, list1);
              }
  
-             if (this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) {
-+                this.level.timings.doTickTiles.startTiming(); // Spigot
-                 this.level.tickChunk(chunk, k);
-+                this.level.timings.doTickTiles.stopTiming(); // Spigot
-             }
-         }
- 
-@@ -541,10 +646,16 @@
+@@ -541,10 +636,16 @@
  
      @Override
      public void setSpawnSettings(boolean spawnMonsters) {
@@ -253,7 +221,7 @@
      public String getChunkDebugData(ChunkPos pos) {
          return this.chunkMap.getChunkDebugData(pos);
      }
-@@ -618,14 +729,20 @@
+@@ -618,14 +719,20 @@
          }
  
          @Override

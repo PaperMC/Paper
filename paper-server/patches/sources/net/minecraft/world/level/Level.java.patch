@@ -31,7 +31,7 @@
  import net.minecraft.world.level.entity.EntityTypeTest;
  import net.minecraft.world.level.entity.LevelEntityGetter;
  import net.minecraft.world.level.gameevent.GameEvent;
-@@ -81,6 +85,26 @@
+@@ -81,6 +85,25 @@
  import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.scores.Scoreboard;
  
@@ -46,7 +46,6 @@
 +import org.bukkit.Bukkit;
 +import org.bukkit.craftbukkit.CraftServer;
 +import org.bukkit.craftbukkit.CraftWorld;
-+import org.bukkit.craftbukkit.SpigotTimings; // Spigot
 +import org.bukkit.craftbukkit.block.CapturedBlockState;
 +import org.bukkit.craftbukkit.block.CraftBlockState;
 +import org.bukkit.craftbukkit.block.data.CraftBlockData;
@@ -58,7 +57,7 @@
  public abstract class Level implements LevelAccessor, AutoCloseable {
  
      public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
-@@ -121,23 +145,73 @@
+@@ -121,23 +144,72 @@
      private final DamageSources damageSources;
      private long subTickCount;
  
@@ -89,7 +88,6 @@
 +    }
 +    // Paper end - add paper world config
 +
-+    public final SpigotTimings.WorldTimingsHandler timings; // Spigot
 +    public static BlockPos lastPhysicsProblem; // Spigot
 +    private org.spigotmc.TickLimiter entityLimiter;
 +    private org.spigotmc.TickLimiter tileLimiter;
@@ -141,7 +139,7 @@
                  }
              };
          } else {
-@@ -145,11 +219,50 @@
+@@ -145,11 +217,49 @@
          }
  
          this.thread = Thread.currentThread();
@@ -191,13 +189,12 @@
 +            public void onBorderSetDamageSafeZOne(WorldBorder border, double safeZoneRadius) {}
 +        });
 +        // CraftBukkit end
-+        this.timings = new SpigotTimings.WorldTimingsHandler(this); // Spigot - code below can generate new world and access timings
 +        this.entityLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.entityMaxTickTime);
 +        this.tileLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.tileMaxTickTime);
      }
  
      @Override
-@@ -163,6 +276,13 @@
+@@ -163,6 +273,13 @@
          return null;
      }
  
@@ -211,7 +208,7 @@
      public boolean isInWorldBounds(BlockPos pos) {
          return !this.isOutsideBuildHeight(pos) && Level.isInWorldBoundsHorizontal(pos);
      }
-@@ -179,18 +299,52 @@
+@@ -179,18 +296,52 @@
          return y < -20000000 || y >= 20000000;
      }
  
@@ -229,7 +226,7 @@
  
 +    // Paper start - if loaded
      @Nullable
-     @Override
++    @Override
 +    public final ChunkAccess getChunkIfLoadedImmediately(int x, int z) {
 +        return ((ServerLevel)this).chunkSource.getChunkAtIfLoadedImmediately(x, z);
 +    }
@@ -261,13 +258,13 @@
 +        return chunk == null ? null : chunk.getFluidState(blockposition);
 +    }
 +
-+    @Override
+     @Override
      public ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
 +        // Paper end
          ChunkAccess ichunkaccess = this.getChunkSource().getChunk(chunkX, chunkZ, leastStatus, create);
  
          if (ichunkaccess == null && create) {
-@@ -207,6 +361,18 @@
+@@ -207,6 +358,18 @@
  
      @Override
      public boolean setBlock(BlockPos pos, BlockState state, int flags, int maxUpdateDepth) {
@@ -286,7 +283,7 @@
          if (this.isOutsideBuildHeight(pos)) {
              return false;
          } else if (!this.isClientSide && this.isDebug()) {
-@@ -214,44 +380,123 @@
+@@ -214,44 +377,123 @@
          } else {
              LevelChunk chunk = this.getChunkAt(pos);
              Block block = state.getBlock();
@@ -386,14 +383,14 @@
 +
 +            if ((i & 2) != 0 && (!this.isClientSide || (i & 4) == 0) && (this.isClientSide || chunk == null || (chunk.getFullStatus() != null && chunk.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
 +                this.sendBlockUpdated(blockposition, iblockdata1, iblockdata, i);
-+            }
+             }
 +
 +            if ((i & 1) != 0) {
 +                this.blockUpdated(blockposition, iblockdata1.getBlock());
 +                if (!this.isClientSide && iblockdata.hasAnalogOutputSignal()) {
 +                    this.updateNeighbourForOutputSignal(blockposition, newBlock.getBlock());
 +                }
-             }
++            }
 +
 +            if ((i & 16) == 0 && j > 0) {
 +                int k = i & -34;
@@ -425,7 +422,7 @@
  
      public void onBlockStateChange(BlockPos pos, BlockState oldBlock, BlockState newBlock) {}
  
-@@ -340,10 +585,18 @@
+@@ -340,10 +582,18 @@
  
      @Override
      public BlockState getBlockState(BlockPos pos) {
@@ -445,20 +442,11 @@
  
              return chunk.getBlockState(pos);
          }
-@@ -440,32 +693,48 @@
-         ProfilerFiller gameprofilerfiller = Profiler.get();
- 
-         gameprofilerfiller.push("blockEntities");
-+        this.timings.tileEntityPending.startTiming(); // Spigot
-         this.tickingBlockEntities = true;
-         if (!this.pendingBlockEntityTickers.isEmpty()) {
-             this.blockEntityTickers.addAll(this.pendingBlockEntityTickers);
+@@ -446,14 +696,23 @@
              this.pendingBlockEntityTickers.clear();
          }
-+        this.timings.tileEntityPending.stopTiming(); // Spigot
  
 -        Iterator<TickingBlockEntity> iterator = this.blockEntityTickers.iterator();
-+        this.timings.tileEntityTick.startTiming(); // Spigot
 +        // Spigot start
 +        // Iterator<TickingBlockEntity> iterator = this.blockEntityTickers.iterator();
          boolean flag = this.tickRateManager().runsNormally();
@@ -482,31 +470,23 @@
              } else if (flag && this.shouldTickBlocksAt(tickingblockentity.getPos())) {
                  tickingblockentity.tick();
              }
-         }
+@@ -461,6 +720,7 @@
  
-+        this.timings.tileEntityTick.stopTiming(); // Spigot
          this.tickingBlockEntities = false;
          gameprofilerfiller.pop();
 +        this.spigotConfig.currentPrimedTnt = 0; // Spigot
      }
  
      public <T extends Entity> void guardEntityTick(Consumer<T> tickConsumer, T entity) {
-         try {
-+            SpigotTimings.tickEntityTimer.startTiming(); // Spigot
-             tickConsumer.accept(entity);
-+            SpigotTimings.tickEntityTimer.stopTiming(); // Spigot
-         } catch (Throwable throwable) {
-             CrashReport crashreport = CrashReport.forThrowable(throwable, "Ticking entity");
-             CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Entity being ticked");
-@@ -510,13 +779,29 @@
+@@ -510,13 +770,29 @@
      @Nullable
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
 -        return this.isOutsideBuildHeight(pos) ? null : (!this.isClientSide && Thread.currentThread() != this.thread ? null : this.getChunkAt(pos).getBlockEntity(pos, LevelChunk.EntityCreationType.IMMEDIATE));
 +        // CraftBukkit start
 +        return this.getBlockEntity(pos, true);
-     }
- 
++    }
++
 +    @Nullable
 +    public BlockEntity getBlockEntity(BlockPos blockposition, boolean validate) {
 +        if (this.capturedTileEntities.containsKey(blockposition)) {
@@ -514,8 +494,8 @@
 +        }
 +        // CraftBukkit end
 +        return this.isOutsideBuildHeight(blockposition) ? null : (!this.isClientSide && Thread.currentThread() != this.thread ? null : this.getChunkAt(blockposition).getBlockEntity(blockposition, LevelChunk.EntityCreationType.IMMEDIATE));
-+    }
-+
+     }
+ 
      public void setBlockEntity(BlockEntity blockEntity) {
          BlockPos blockposition = blockEntity.getBlockPos();
  
@@ -529,7 +509,7 @@
              this.getChunkAt(blockposition).addAndRegisterBlockEntity(blockEntity);
          }
      }
-@@ -643,7 +928,7 @@
+@@ -643,7 +919,7 @@
  
                  for (int k = 0; k < j; ++k) {
                      EnderDragonPart entitycomplexpart = aentitycomplexpart[k];
@@ -538,7 +518,7 @@
  
                      if (t0 != null && predicate.test(t0)) {
                          result.add(t0);
-@@ -912,7 +1197,7 @@
+@@ -912,7 +1188,7 @@
  
      public static enum ExplosionInteraction implements StringRepresentable {
  

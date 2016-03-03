@@ -28,7 +28,6 @@ import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.entity.raid.Raider;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-import org.bukkit.craftbukkit.SpigotTimings;
 
 public class ActivationRange
 {
@@ -111,7 +110,6 @@ public class ActivationRange
      */
     public static void activateEntities(Level world)
     {
-        SpigotTimings.entityActivationCheckTimer.startTiming();
         final int miscActivationRange = world.spigotConfig.miscActivationRange;
         final int raiderActivationRange = world.spigotConfig.raiderActivationRange;
         final int animalActivationRange = world.spigotConfig.animalActivationRange;
@@ -138,7 +136,6 @@ public class ActivationRange
 
             world.getEntities().get(ActivationRange.maxBB, ActivationRange::activateEntity);
         }
-        SpigotTimings.entityActivationCheckTimer.stopTiming();
     }
 
     /**
@@ -233,10 +230,8 @@ public class ActivationRange
      */
     public static boolean checkIfActive(Entity entity)
     {
-        SpigotTimings.checkIfActiveTimer.startTiming();
         // Never safe to skip fireworks or item gravity
         if (entity instanceof FireworkRocketEntity || (entity instanceof ItemEntity && (entity.tickCount + entity.getId() + 1) % 4 == 0)) {
-            SpigotTimings.checkIfActiveTimer.stopTiming();
             return true;
         }
 
@@ -260,7 +255,6 @@ public class ActivationRange
         {
             isActive = false;
         }
-        SpigotTimings.checkIfActiveTimer.stopTiming();
         return isActive;
     }
 }

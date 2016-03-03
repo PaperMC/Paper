@@ -379,7 +379,6 @@ public final class CraftServer implements Server {
         this.saveCommandsConfig();
         this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
         this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
-        this.pluginManager.useTimings(this.configuration.getBoolean("settings.plugin-profiling"));
         this.overrideSpawnLimits();
         console.autosavePeriod = this.configuration.getInt("ticks-per.autosave");
         this.warningState = WarningState.value(this.configuration.getString("settings.deprecated-verbose"));
@@ -2646,10 +2645,29 @@ public final class CraftServer implements Server {
     private final org.bukkit.Server.Spigot spigot = new org.bukkit.Server.Spigot()
     {
 
+        @Deprecated
         @Override
         public YamlConfiguration getConfig()
         {
             return org.spigotmc.SpigotConfig.config;
+        }
+
+        @Override
+        public YamlConfiguration getBukkitConfig()
+        {
+            return configuration;
+        }
+
+        @Override
+        public YamlConfiguration getSpigotConfig()
+        {
+            return org.spigotmc.SpigotConfig.config;
+        }
+
+        @Override
+        public YamlConfiguration getPaperConfig()
+        {
+            return CraftServer.this.console.paperConfigurations.createLegacyObject(CraftServer.this.console);
         }
 
         @Override
