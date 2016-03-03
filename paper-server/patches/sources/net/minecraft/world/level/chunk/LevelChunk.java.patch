@@ -217,15 +217,22 @@
  
          if (tileentity == null) {
              CompoundTag nbttagcompound = (CompoundTag) this.pendingBlockEntities.remove(pos);
-@@ -447,6 +502,7 @@
+@@ -446,7 +501,13 @@
+         BlockState iblockdata = this.getBlockState(blockposition);
  
          if (!iblockdata.hasBlockEntity()) {
-             LevelChunk.LOGGER.warn("Trying to set block entity {} at position {}, but state {} does not allow it", new Object[]{blockEntity, blockposition, iblockdata});
-+            new Exception().printStackTrace(); // CraftBukkit
+-            LevelChunk.LOGGER.warn("Trying to set block entity {} at position {}, but state {} does not allow it", new Object[]{blockEntity, blockposition, iblockdata});
++            // Paper start - ServerExceptionEvent
++            com.destroystokyo.paper.exception.ServerInternalException e = new com.destroystokyo.paper.exception.ServerInternalException(
++                "Trying to set block entity %s at position %s, but state %s does not allow it".formatted(blockEntity, blockposition, iblockdata)
++            );
++            e.printStackTrace();
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(e);
++            // Paper end - ServerExceptionEvent
          } else {
              BlockState iblockdata1 = blockEntity.getBlockState();
  
-@@ -500,6 +556,12 @@
+@@ -500,6 +561,12 @@
          if (this.isInLevel()) {
              BlockEntity tileentity = (BlockEntity) this.blockEntities.remove(pos);
  
@@ -238,10 +245,14 @@
              if (tileentity != null) {
                  Level world = this.level;
  
-@@ -553,6 +615,65 @@
- 
-     }
- 
+@@ -549,9 +616,68 @@
+         if (this.postLoad != null) {
+             this.postLoad.run(this);
+             this.postLoad = null;
++        }
++
++    }
++
 +    // CraftBukkit start
 +    public void loadCallback() {
 +        // Paper start
@@ -279,9 +290,9 @@
 +                }
 +                server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(bukkitChunk));
 +            }
-+        }
+         }
 +    }
-+
+ 
 +    public void unloadCallback() {
 +        org.bukkit.Server server = this.level.getCraftServer();
 +        org.bukkit.Chunk bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
@@ -298,13 +309,12 @@
 +    @Override
 +    public boolean isUnsaved() {
 +        return super.isUnsaved() && !this.mustNotSave;
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      public boolean isEmpty() {
          return false;
-     }
-@@ -750,7 +871,7 @@
+@@ -750,7 +876,7 @@
  
      private <T extends BlockEntity> void updateBlockEntityTicker(T blockEntity) {
          BlockState iblockdata = blockEntity.getBlockState();
@@ -313,7 +323,7 @@
  
          if (blockentityticker == null) {
              this.removeBlockEntityTicker(blockEntity.getBlockPos());
-@@ -841,7 +962,7 @@
+@@ -841,7 +967,7 @@
          private boolean loggedInvalidBlockState;
  
          BoundTickingBlockEntity(final BlockEntity tileentity, final BlockEntityTicker blockentityticker) {
@@ -322,7 +332,7 @@
              this.ticker = blockentityticker;
          }
  
-@@ -867,11 +988,12 @@
+@@ -867,11 +993,13 @@
  
                          gameprofilerfiller.pop();
                      } catch (Throwable throwable) {
@@ -334,6 +344,7 @@
 +                        // Paper start - Prevent block entity and entity crashes
 +                        final String msg = String.format("BlockEntity threw exception at %s:%s,%s,%s", LevelChunk.this.getLevel().getWorld().getName(), this.getPos().getX(), this.getPos().getY(), this.getPos().getZ());
 +                        net.minecraft.server.MinecraftServer.LOGGER.error(msg, throwable);
++                        net.minecraft.world.level.chunk.LevelChunk.this.level.getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
 +                        LevelChunk.this.removeBlockEntity(this.getPos());
 +                        // Paper end - Prevent block entity and entity crashes
 +                        // Spigot start
