@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import com.destroystokyo.paper.exception.ServerInternalException;
+
 import java.util.Iterator;
 import javax.annotation.Nullable;
 import org.apache.logging.log4j.LogManager;
@@ -104,6 +106,7 @@ public class VillageSiege implements MobSpawner {
                 entityzombie.prepare(worldserver, worldserver.getDamageScaler(entityzombie.getChunkCoordinates()), EnumMobSpawn.EVENT, (GroupDataEntity) null, (NBTTagCompound) null);
             } catch (Exception exception) {
                 VillageSiege.LOGGER.warn("Failed to create zombie for village siege at {}", vec3d, exception);
+                ServerInternalException.reportInternalException(exception); // Paper
                 return;
             }
 

@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 // CraftBukkit start
+import com.destroystokyo.paper.exception.ServerInternalException;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 // CraftBukkit end
 
@@ -267,6 +268,7 @@ public final class SpawnerCreature {
             }
         } catch (Exception exception) {
             SpawnerCreature.LOGGER.warn("Failed to create mob", exception);
+            ServerInternalException.reportInternalException(exception); // Paper
             return null;
         }
     }
@@ -373,6 +375,7 @@ public final class SpawnerCreature {
                                 entity = biomesettingsmobs_c.c.a((World) worldaccess.getMinecraftWorld());
                             } catch (Exception exception) {
                                 SpawnerCreature.LOGGER.warn("Failed to create mob", exception);
+                                ServerInternalException.reportInternalException(exception); // Paper
                                 continue;
                             }
 

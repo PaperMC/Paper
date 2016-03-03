@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import com.destroystokyo.paper.exception.ServerInternalException;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -613,10 +614,15 @@ public class Chunk implements IChunkAccess {
             this.tileEntities.remove(blockposition);
             // Paper end
         } else {
-            System.out.println("Attempted to place a tile entity (" + tileentity + ") at " + tileentity.position.getX() + "," + tileentity.position.getY() + "," + tileentity.position.getZ()
-                + " (" + getType(blockposition) + ") where there was no entity tile!");
-            System.out.println("Chunk coordinates: " + (this.loc.x * 16) + "," + (this.loc.z * 16));
-            new Exception().printStackTrace();
+            // Paper start
+            ServerInternalException e = new ServerInternalException(
+                    "Attempted to place a tile entity (" + tileentity + ") at " + tileentity.position.getX() + ","
+                            + tileentity.position.getY() + "," + tileentity.position.getZ()
+                            + " (" + getType(blockposition) + ") where there was no entity tile!\n" +
+                            "Chunk coordinates: " + (this.loc.x * 16) + "," + (this.loc.z * 16));
+            e.printStackTrace();
+            ServerInternalException.reportInternalException(e);
+            // Paper end
             // CraftBukkit end
         }
     }

@@ -761,6 +761,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                 return true;
             } catch (Exception exception) {
                 PlayerChunkMap.LOGGER.error("Failed to save chunk {},{}", chunkcoordintpair.x, chunkcoordintpair.z, exception);
+                com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper
                 return false;
             }
         }

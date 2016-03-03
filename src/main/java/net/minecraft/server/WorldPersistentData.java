@@ -144,6 +144,7 @@ public class WorldPersistentData {
             }
         } catch (Throwable throwable6) {
             throwable = throwable6;
+            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(throwable); // Paper
             throw throwable6;
         } finally {
             if (fileinputstream != null) {

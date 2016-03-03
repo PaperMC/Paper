@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import com.destroystokyo.paper.exception.ServerInternalException;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
@@ -353,6 +354,7 @@ public class NameReferencingFileConverter {
                             root = NBTCompressedStreamTools.a(new java.io.FileInputStream(file5));
                         } catch (Exception exception) {
                             exception.printStackTrace();
+                            ServerInternalException.reportInternalException(exception); // Paper
                         }
 
                         if (root != null) {
@@ -366,6 +368,7 @@ public class NameReferencingFileConverter {
                                 NBTCompressedStreamTools.a(root, new java.io.FileOutputStream(file2));
                             } catch (Exception exception) {
                                 exception.printStackTrace();
+                                ServerInternalException.reportInternalException(exception); // Paper
                             }
                        }
                         // CraftBukkit end

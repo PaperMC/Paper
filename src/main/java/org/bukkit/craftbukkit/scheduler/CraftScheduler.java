@@ -16,6 +16,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.logging.Level;
+import com.destroystokyo.paper.ServerSchedulerReportingWrapper;
+import com.destroystokyo.paper.event.server.ServerExceptionEvent;
+import com.destroystokyo.paper.exception.ServerSchedulerException;
 import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.Plugin;
@@ -419,6 +422,8 @@ public class CraftScheduler implements BukkitScheduler {
                             msg,
                             throwable);
                     }
+                    task.getOwner().getServer().getPluginManager().callEvent(
+                        new ServerExceptionEvent(new ServerSchedulerException(msg, throwable, task)));
                     // Paper end
                 } finally {
                     currentTask = null;
@@ -426,7 +431,7 @@ public class CraftScheduler implements BukkitScheduler {
                 parsePending();
             } else {
                 debugTail = debugTail.setNext(new CraftAsyncDebugger(currentTick + RECENT_TICKS, task.getOwner(), task.getTaskClass()));
-                executor.execute(task);
+                executor.execute(new ServerSchedulerReportingWrapper(task)); // Paper
                 // We don't need to parse pending
                 // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
             }

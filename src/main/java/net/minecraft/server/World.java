@@ -1,5 +1,10 @@
 package net.minecraft.server;
 
+import co.aikar.timings.Timing;
+import co.aikar.timings.Timings;
+import com.destroystokyo.paper.event.server.ServerExceptionEvent;
+import com.destroystokyo.paper.exception.ServerInternalException;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.mojang.serialization.Codec;
 import java.io.IOException;
@@ -685,8 +690,11 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
                         gameprofilerfiller.exit();
                     } catch (Throwable throwable) {
                         // Paper start - Prevent tile entity and entity crashes
-                        System.err.println("TileEntity threw exception at " + tileentity.world.getWorld().getName() + ":" + tileentity.position.getX() + "," + tileentity.position.getY() + "," + tileentity.position.getZ());
+                        String msg = "TileEntity threw exception at " + tileentity.world.getWorld().getName() + ":" + tileentity.position.getX() + "," + tileentity.position.getY() + "," + tileentity.position.getZ();
+                        System.err.println(msg);
                         throwable.printStackTrace();
+                        getServer().getPluginManager().callEvent(new ServerExceptionEvent(new ServerInternalException(msg, throwable)));
+                        // Paper end
                         tilesThisCycle--;
                         this.tileEntityListTick.remove(tileTickPosition--);
                         continue;
@@ -757,8 +765,10 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
             consumer.accept(entity);
         } catch (Throwable throwable) {
             // Paper start - Prevent tile entity and entity crashes
-            System.err.println("Entity threw exception at " + entity.world.getWorld().getName() + ":" + entity.locX() + "," + entity.locY() + "," + entity.locZ());
+            String msg = "Entity threw exception at " + entity.world.getWorld().getName() + ":" + entity.locX() + "," + entity.locY() + "," + entity.locZ();
+            System.err.println(msg);
             throwable.printStackTrace();
+            getServer().getPluginManager().callEvent(new ServerExceptionEvent(new ServerInternalException(msg, throwable)));
             entity.dead = true;
             return;
             // Paper end
