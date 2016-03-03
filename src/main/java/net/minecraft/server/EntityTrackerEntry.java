@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Pair;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -23,7 +24,7 @@ public class EntityTrackerEntry {
     private final Entity tracker;
     private final int d;
     private final boolean e;
-    private final Consumer<Packet<?>> f;
+    private final Consumer<Packet<?>> f; private Consumer<Packet<?>> getPacketConsumer() { return f; } // Paper - OBFHELPER
     private long xLoc;
     private long yLoc;
     private long zLoc;
@@ -38,8 +39,23 @@ public class EntityTrackerEntry {
     private boolean r;
     // CraftBukkit start
     private final Set<EntityPlayer> trackedPlayers;
+    // Paper start
+    private java.util.Map<EntityPlayer, Boolean> trackedPlayerMap = null;
+
+    /**
+     * Requested in https://github.com/PaperMC/Paper/issues/1537 to allow intercepting packets
+     */
+    public void sendPlayerPacket(EntityPlayer player, Packet packet) {
+        player.playerConnection.sendPacket(packet);
+    }
+
+    public EntityTrackerEntry(WorldServer worldserver, Entity entity, int i, boolean flag, Consumer<Packet<?>> consumer, java.util.Map<EntityPlayer, Boolean> trackedPlayers) {
+        this(worldserver, entity, i, flag, consumer, trackedPlayers.keySet());
+        trackedPlayerMap = trackedPlayers;
+    }
 
     public EntityTrackerEntry(WorldServer worldserver, Entity entity, int i, boolean flag, Consumer<Packet<?>> consumer, Set<EntityPlayer> trackedPlayers) {
+        // Paper end
         this.trackedPlayers = trackedPlayers;
         // CraftBukkit end
         this.m = Vec3D.ORIGIN;
@@ -161,7 +177,25 @@ public class EntityTrackerEntry {
                 }
 
                 if (packet1 != null) {
-                    this.f.accept(packet1);
+                    // paper start
+                    if (trackedPlayerMap == null || packet1 instanceof PacketPlayOutEntityTeleport) {
+                        this.f.accept((packet1));
+                    } else {
+                        PacketPlayOutEntityTeleport teleportPacket = null;
+
+                        for (java.util.Map.Entry<EntityPlayer, Boolean> viewer : trackedPlayerMap.entrySet()) {
+                            if (viewer.getValue()) {
+                                viewer.setValue(false);
+                                if (teleportPacket == null) {
+                                    teleportPacket = new PacketPlayOutEntityTeleport(this.tracker);
+                                }
+                                sendPlayerPacket(viewer.getKey(), teleportPacket);
+                            } else {
+                                sendPlayerPacket(viewer.getKey(), packet1);
+                            }
+                        }
+                    }
+                    // Paper end
                 }
 
                 this.c();

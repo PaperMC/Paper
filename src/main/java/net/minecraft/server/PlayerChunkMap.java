@@ -1249,10 +1249,14 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
         private final Entity tracker;
         private final int trackingDistance;
         private SectionPosition e;
-        public final Set<EntityPlayer> trackedPlayers = Sets.newHashSet();
+        // Paper start
+        // Replace trackedPlayers Set with a Map. The value is true until the player receives
+        // their first update (which is forced to have absolute coordinates), false afterward.
+        public java.util.Map<EntityPlayer, Boolean> trackedPlayerMap = new java.util.HashMap<>();
+        public Set<EntityPlayer> trackedPlayers = trackedPlayerMap.keySet();
 
         public EntityTracker(Entity entity, int i, int j, boolean flag) {
-            this.trackerEntry = new EntityTrackerEntry(PlayerChunkMap.this.world, entity, j, flag, this::broadcast, trackedPlayers); // CraftBukkit
+            this.trackerEntry = new EntityTrackerEntry(PlayerChunkMap.this.world, entity, j, flag, this::broadcast, trackedPlayerMap); // CraftBukkit // Paper
             this.tracker = entity;
             this.trackingDistance = i;
             this.e = SectionPosition.a(entity);
@@ -1334,7 +1338,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                     entityplayer.removeQueue.remove(Integer.valueOf(this.tracker.getId()));
                     // CraftBukkit end
 
-                    if (flag1 && this.trackedPlayers.add(entityplayer)) {
+                    if (flag1 && this.trackedPlayerMap.putIfAbsent(entityplayer, true) == null) { // Paper
                         this.trackerEntry.b(entityplayer);
                     }
                 } else if (this.trackedPlayers.remove(entityplayer)) {
