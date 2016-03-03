@@ -11,6 +11,7 @@ public final class IEntitySelector {
     public static final Predicate<Entity> c = (entity) -> {
         return entity.isAlive() && !entity.isVehicle() && !entity.isPassenger();
     };
+    public static final Predicate<Entity> isInventory() { return d; } // Paper - OBFHELPER
     public static final Predicate<Entity> d = (entity) -> {
         return entity instanceof IInventory && entity.isAlive();
     };
