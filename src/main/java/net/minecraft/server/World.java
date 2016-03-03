@@ -37,7 +37,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
     public final List<TileEntity> tileEntityList = Lists.newArrayList();
     public final List<TileEntity> tileEntityListTick = Lists.newArrayList();
     protected final List<TileEntity> tileEntityListPending = Lists.newArrayList();
-    protected final List<TileEntity> tileEntityListUnload = Lists.newArrayList();
+    protected final java.util.Set<TileEntity> tileEntityListUnload = com.google.common.collect.Sets.newHashSet();
     public final Thread serverThread;
     private final boolean debugWorld;
     private int d;
