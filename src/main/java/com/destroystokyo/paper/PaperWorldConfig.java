@@ -181,4 +181,9 @@ public class PaperWorldConfig {
     private void containerUpdateTickRate() {
         containerUpdateTickRate = getInt("container-update-tick-rate", 1);
     }
+
+    public boolean disableChestCatDetection;
+    private void disableChestCatDetection() {
+        disableChestCatDetection = getBoolean("game-mechanics.disable-chest-cat-detection", false);
+    }
 }

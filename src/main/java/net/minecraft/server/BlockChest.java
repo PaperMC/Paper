@@ -268,6 +268,11 @@ public class BlockChest extends BlockChestAbstract<TileEntityChest> implements I
     }
 
     private static boolean b(GeneratorAccess generatoraccess, BlockPosition blockposition) {
+        // Paper start - Option to disable chest cat detection
+        if (((World) generatoraccess).paperConfig.disableChestCatDetection) {
+            return false;
+        }
+        // Paper end
         List<EntityCat> list = generatoraccess.a(EntityCat.class, new AxisAlignedBB((double) blockposition.getX(), (double) (blockposition.getY() + 1), (double) blockposition.getZ(), (double) (blockposition.getX() + 1), (double) (blockposition.getY() + 2), (double) (blockposition.getZ() + 1)));
 
         if (!list.isEmpty()) {
