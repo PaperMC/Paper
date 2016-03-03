@@ -115,7 +115,9 @@ public interface Team {
      *
      * @return the current name tag visibilty for the team
      * @throws IllegalArgumentException if this team has been unregistered
+     * @deprecated see {@link #getOption()}
      */
+    @Deprecated
     NameTagVisibility getNameTagVisibility() throws IllegalArgumentException;
 
     /**
@@ -123,7 +125,10 @@ public interface Team {
      *
      * @param visibility The nameTagVisibilty to set
      * @throws IllegalArgumentException if this team has been unregistered
+     * @deprecated see
+     * {@link #setOption(org.bukkit.scoreboard.Team.Option, org.bukkit.scoreboard.Team.OptionStatus)}
      */
+    @Deprecated
     void setNameTagVisibility(NameTagVisibility visibility) throws IllegalArgumentException;
 
     /**
@@ -236,5 +241,65 @@ public interface Team {
      * @throws IllegalArgumentException if entry is null
      * @throws IllegalStateException if this team has been unregistered
      */
-    boolean hasEntry(String entry) throws IllegalArgumentException,IllegalStateException;
+    boolean hasEntry(String entry) throws IllegalArgumentException, IllegalStateException;
+
+    /**
+     * Get an option for this team
+     *
+     * @param option the option to get
+     * @return the option status
+     * @throws IllegalStateException if this team has been unregistered
+     */
+    OptionStatus getOption(Option option) throws IllegalStateException;
+
+    /**
+     * Set an option for this team
+     *
+     * @param option the option to set
+     * @param status the new option status
+     * @throws IllegalStateException if this team has been unregistered
+     */
+    void setOption(Option option, OptionStatus status) throws IllegalStateException;
+
+    /**
+     * Represents an option which may be applied to this team.
+     */
+    public enum Option {
+
+        /**
+         * How to display the name tags of players on this team.
+         */
+        NAME_TAG_VISIBILITY,
+        /**
+         * How to display the death messages for players on this team.
+         */
+        DEATH_MESSAGE_VISIBILITY,
+        /**
+         * How players of this team collide with others.
+         */
+        COLLISION_RULE;
+    }
+
+    /**
+     * How an option may be applied to members of this team.
+     */
+    public enum OptionStatus {
+
+        /**
+         * Apply this option to everyone.
+         */
+        ALWAYS,
+        /**
+         * Never apply this option.
+         */
+        NEVER,
+        /**
+         * Apply this option only for opposing teams.
+         */
+        FOR_OTHER_TEAMS,
+        /**
+         * Apply this option for only team members.
+         */
+        FOR_OWN_TEAM;
+    }
 }
