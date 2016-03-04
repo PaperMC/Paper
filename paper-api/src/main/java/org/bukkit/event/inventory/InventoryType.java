@@ -39,10 +39,11 @@ public enum InventoryType {
      */
     BREWING(5,"Brewing"),
     /**
-     * A player's inventory, with 9 QUICKBAR slots, 27 CONTAINER slots, and 4
-     * ARMOR slots. The ARMOUR slots may not be visible to the player, though.
+     * A player's inventory, with 9 QUICKBAR slots, 27 CONTAINER slots, 4 ARMOR
+     * slots and 1 offhand slot. The ARMOR and offhand slots may not be visible
+     * to the player, though.
      */
-    PLAYER(36,"Player"),
+    PLAYER(41,"Player"),
     /**
      * The creative mode inventory, with only 9 QUICKBAR slots and nothing
      * else. (The actual creative interface with the items is client-side and
