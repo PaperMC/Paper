@@ -7,8 +7,8 @@ import org.bukkit.block.BlockFace;
 /**
  * Represents the different types of Tree block that face a direction.
  *
- * @see Material.LOG
- * @see Material.LOG_2
+ * @see Material#LOG
+ * @see Material#LOG_2
  */
 public class Tree extends Wood {
     protected static final Material DEFAULT_TYPE = Material.LOG;

@@ -6,9 +6,9 @@ import org.bukkit.TreeSpecies;
 /**
  * Represents wood blocks of different species.
  *
- * @see Material.WOOD
- * @see Material.SAPLING
- * @see Material.WOOD_DOUBLE_STEP
+ * @see Material#WOOD
+ * @see Material#SAPLING
+ * @see Material#WOOD_DOUBLE_STEP
  */
 public class Wood extends MaterialData {
     protected static final Material DEFAULT_TYPE = Material.WOOD;

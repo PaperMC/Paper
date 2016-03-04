@@ -6,7 +6,7 @@ import org.bukkit.TreeSpecies;
 /**
  * Represents the different types of Tree block that face a direction.
  *
- * @see Material.SAPLING
+ * @see Material#SAPLING
  */
 public class Sapling extends Wood {
 

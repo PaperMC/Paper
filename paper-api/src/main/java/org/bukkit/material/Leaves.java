@@ -7,8 +7,8 @@ import org.bukkit.TreeSpecies;
  * Represents the different types of leaf block that may be permanent or can
  * decay when too far from a log.
  *
- * @see Material.LEAVES
- * @see Material.LEAVES_2
+ * @see Material#LEAVES
+ * @see Material#LEAVES_2
  */
 public class Leaves extends Wood {
     protected static final Material DEFAULT_TYPE = Material.LEAVES;

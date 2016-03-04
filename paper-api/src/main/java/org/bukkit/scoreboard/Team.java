@@ -115,7 +115,7 @@ public interface Team {
      *
      * @return the current name tag visibilty for the team
      * @throws IllegalArgumentException if this team has been unregistered
-     * @deprecated see {@link #getOption()}
+     * @deprecated see {@link #getOption(org.bukkit.scoreboard.Team.Option)}
      */
     @Deprecated
     NameTagVisibility getNameTagVisibility() throws IllegalArgumentException;

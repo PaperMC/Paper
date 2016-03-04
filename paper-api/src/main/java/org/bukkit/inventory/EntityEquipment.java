@@ -139,8 +139,8 @@ public interface EntityEquipment {
     /**
      * @deprecated entities can duel wield now use the methods for the specific
      * hand instead
-     * @see #getItemInMainHandDropChance(ItemStack)
-     * @see #getItemInOffHandDropChance(ItemStack)
+     * @see #getItemInMainHandDropChance()
+     * @see #getItemInOffHandDropChance()
      * @return drop chance
      */
     @Deprecated
@@ -149,8 +149,8 @@ public interface EntityEquipment {
     /**
      * @deprecated entities can duel wield now use the methods for the specific
      * hand instead
-     * @see #setItemInMainHandDropChance(ItemStack)
-     * @see #setItemInOffHandDropChance(ItemStack)
+     * @see #setItemInMainHandDropChance(float)
+     * @see #setItemInOffHandDropChance(float)
      * @param chance drop chance
      */
     @Deprecated

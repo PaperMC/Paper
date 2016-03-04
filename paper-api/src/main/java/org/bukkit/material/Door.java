@@ -11,13 +11,13 @@ import org.bukkit.block.BlockFace;
  * work with modern doors. Some methods are undefined dependant on <code>isTopHalf()</code>
  * due to Minecraft's internal representation of doors.
  *
- * @see Material.WOODEN_DOOR
- * @see Material.IRON_DOOR_BLOCK
- * @see Material.SPRUCE_DOOR
- * @see Material.BIRCH_DOOR
- * @see Material.JUNGLE_DOOR
- * @see Material.ACACIA_DOOR
- * @see Material.DARK_OAK_DOOR
+ * @see Material#WOODEN_DOOR
+ * @see Material#IRON_DOOR_BLOCK
+ * @see Material#SPRUCE_DOOR
+ * @see Material#BIRCH_DOOR
+ * @see Material#JUNGLE_DOOR
+ * @see Material#ACACIA_DOOR
+ * @see Material#DARK_OAK_DOOR
  */
 public class Door extends MaterialData implements Directional, Openable {
 
@@ -51,18 +51,18 @@ public class Door extends MaterialData implements Directional, Openable {
      * @param type The type of material this door is made of. This must match the type of the block above.
      * @param face The direction the door is facing.
      *
-     * @see Material.WOODEN_DOOR
-     * @see Material.IRON_DOOR_BLOCK
-     * @see Material.SPRUCE_DOOR
-     * @see Material.BIRCH_DOOR
-     * @see Material.JUNGLE_DOOR
-     * @see Material.ACACIA_DOOR
-     * @see Material.DARK_OAK_DOOR
+     * @see Material#WOODEN_DOOR
+     * @see Material#IRON_DOOR_BLOCK
+     * @see Material#SPRUCE_DOOR
+     * @see Material#BIRCH_DOOR
+     * @see Material#JUNGLE_DOOR
+     * @see Material#ACACIA_DOOR
+     * @see Material#DARK_OAK_DOOR
      *
-     * @see BlockFace.WEST
-     * @see BlockFace.NORTH
-     * @see BlockFace.EAST
-     * @see BlockFace.SOUTH
+     * @see BlockFace#WEST
+     * @see BlockFace#NORTH
+     * @see BlockFace#EAST
+     * @see BlockFace#SOUTH
      */
     public Door(final Material type, BlockFace face) {
         this(type, face, false);
@@ -76,18 +76,18 @@ public class Door extends MaterialData implements Directional, Openable {
      * @param face The direction the door is facing.
      * @param isOpen Whether the door is currently opened.
      *
-     * @see Material.WOODEN_DOOR
-     * @see Material.IRON_DOOR_BLOCK
-     * @see Material.SPRUCE_DOOR
-     * @see Material.BIRCH_DOOR
-     * @see Material.JUNGLE_DOOR
-     * @see Material.ACACIA_DOOR
-     * @see Material.DARK_OAK_DOOR
+     * @see Material#WOODEN_DOOR
+     * @see Material#IRON_DOOR_BLOCK
+     * @see Material#SPRUCE_DOOR
+     * @see Material#BIRCH_DOOR
+     * @see Material#JUNGLE_DOOR
+     * @see Material#ACACIA_DOOR
+     * @see Material#DARK_OAK_DOOR
      *
-     * @see BlockFace.WEST
-     * @see BlockFace.NORTH
-     * @see BlockFace.EAST
-     * @see BlockFace.SOUTH
+     * @see BlockFace#WEST
+     * @see BlockFace#NORTH
+     * @see BlockFace#EAST
+     * @see BlockFace#SOUTH
      */
     public Door(final Material type, BlockFace face, boolean isOpen) {
         super(type);
@@ -102,13 +102,13 @@ public class Door extends MaterialData implements Directional, Openable {
      * @param type The type of material this door is made of. This must match the type of the block below.
      * @param isHingeRight True if the hinge is on the right hand side, false if the hinge is on the left hand side.
      *
-     * @see Material.WOODEN_DOOR
-     * @see Material.IRON_DOOR_BLOCK
-     * @see Material.SPRUCE_DOOR
-     * @see Material.BIRCH_DOOR
-     * @see Material.JUNGLE_DOOR
-     * @see Material.ACACIA_DOOR
-     * @see Material.DARK_OAK_DOOR
+     * @see Material#WOODEN_DOOR
+     * @see Material#IRON_DOOR_BLOCK
+     * @see Material#SPRUCE_DOOR
+     * @see Material#BIRCH_DOOR
+     * @see Material#JUNGLE_DOOR
+     * @see Material#ACACIA_DOOR
+     * @see Material#DARK_OAK_DOOR
      */
     public Door(final Material type, boolean isHingeRight) {
         super(type);
@@ -125,10 +125,10 @@ public class Door extends MaterialData implements Directional, Openable {
      *
      * @see TreeSpecies
      *
-     * @see BlockFace.WEST
-     * @see BlockFace.NORTH
-     * @see BlockFace.EAST
-     * @see BlockFace.SOUTH
+     * @see BlockFace#WEST
+     * @see BlockFace#NORTH
+     * @see BlockFace#EAST
+     * @see BlockFace#SOUTH
      */
     public Door(final TreeSpecies species, BlockFace face) {
         this(getWoodDoorOfSpecies(species), face, false);
@@ -144,10 +144,10 @@ public class Door extends MaterialData implements Directional, Openable {
      *
      * @see TreeSpecies
      *
-     * @see BlockFace.WEST
-     * @see BlockFace.NORTH
-     * @see BlockFace.EAST
-     * @see BlockFace.SOUTH
+     * @see BlockFace#WEST
+     * @see BlockFace#NORTH
+     * @see BlockFace#EAST
+     * @see BlockFace#SOUTH
      */
     public Door(final TreeSpecies species, BlockFace face, boolean isOpen) {
         this(getWoodDoorOfSpecies(species), face, isOpen);
@@ -191,12 +191,12 @@ public class Door extends MaterialData implements Directional, Openable {
      * @param species The species of wood door required.
      * @return The item type for the given species.
      *
-     * @see Material.WOODEN_DOOR
-     * @see Material.SPRUCE_DOOR
-     * @see Material.BIRCH_DOOR
-     * @see Material.JUNGLE_DOOR
-     * @see Material.ACACIA_DOOR
-     * @see Material.DARK_OAK_DOOR
+     * @see Material#WOODEN_DOOR
+     * @see Material#SPRUCE_DOOR
+     * @see Material#BIRCH_DOOR
+     * @see Material#JUNGLE_DOOR
+     * @see Material#ACACIA_DOOR
+     * @see Material#DARK_OAK_DOOR
      */
     public static Material getWoodDoorOfSpecies(TreeSpecies species) {
         switch (species) {
