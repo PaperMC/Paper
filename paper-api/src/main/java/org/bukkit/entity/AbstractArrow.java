@@ -186,4 +186,38 @@ public interface AbstractArrow extends Projectile {
          */
         CREATIVE_ONLY
     }
+
+    // Paper start
+    /**
+     * Gets the {@link PickupRule} for this arrow.
+     *
+     * <p>This is generally {@link PickupRule#ALLOWED} only if the arrow was
+     * <b>not</b> fired from a bow with the infinity enchantment.</p>
+     *
+     * @return The pickup rule
+     * @deprecated Use {@link Arrow#getPickupStatus()} as an upstream compatible replacement for this function
+     */
+    @Deprecated
+    default PickupRule getPickupRule() {
+        return PickupRule.valueOf(this.getPickupStatus().name());
+    }
+
+    /**
+     * Set the rule for which players can pickup this arrow as an item.
+     *
+     * @param rule The pickup rule
+     * @deprecated Use {@link Arrow#setPickupStatus(PickupStatus)} with {@link PickupStatus} as an upstream compatible replacement for this function
+     */
+    @Deprecated
+    default void setPickupRule(PickupRule rule) {
+        this.setPickupStatus(PickupStatus.valueOf(rule.name()));
+    }
+
+    @Deprecated
+    enum PickupRule {
+        DISALLOWED,
+        ALLOWED,
+        CREATIVE_ONLY;
+    }
+    // Paper end
 }
