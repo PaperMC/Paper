@@ -365,6 +365,8 @@ public final class CraftItemStack extends ItemStack {
             case BREWING_STAND_ITEM:
             case ENCHANTMENT_TABLE:
             case COMMAND:
+            case COMMAND_REPEATING:
+            case COMMAND_CHAIN:
             case BEACON:
             case DAYLIGHT_DETECTOR:
             case DAYLIGHT_DETECTOR_INVERTED:

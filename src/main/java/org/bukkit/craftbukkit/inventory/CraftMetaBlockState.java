@@ -166,6 +166,8 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             case BREWING_STAND_ITEM:
             case ENCHANTMENT_TABLE:
             case COMMAND:
+            case COMMAND_REPEATING:
+            case COMMAND_CHAIN:
             case BEACON:
             case DAYLIGHT_DETECTOR:
             case DAYLIGHT_DETECTOR_INVERTED:
@@ -248,6 +250,8 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             }
             return new CraftSkull(material, (TileEntitySkull) te);
         case COMMAND:
+        case COMMAND_REPEATING:
+        case COMMAND_CHAIN:
             if (te == null) {
                 te = new TileEntityCommand();
             }
@@ -316,6 +320,8 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             valid = te instanceof TileEntitySkull;
             break;
         case COMMAND:
+        case COMMAND_REPEATING:
+        case COMMAND_CHAIN:
             valid = te instanceof TileEntityCommand;
             break;
         case BEACON:
