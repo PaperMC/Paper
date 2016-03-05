@@ -115,12 +115,30 @@ public interface BossBar {
     List<Player> getPlayers();
 
     /**
-     * Shows the previously hidden boss bar to all attached players
+     * Set if the boss bar is displayed to attached players.
+     *
+     * @param visible visible status
      */
+    void setVisible(boolean visible);
+
+    /**
+     * Return if the boss bar is displayed to attached players.
+     *
+     * @return visible status
+     */
+    boolean isVisible();
+
+    /**
+     * Shows the previously hidden boss bar to all attached players
+     * @deprecated {@link #setVisible(boolean)}
+     */
+    @Deprecated
     void show();
 
     /**
      * Hides this boss bar from all attached players
+     * @deprecated {@link #setVisible(boolean)}
      */
+    @Deprecated
     void hide();
 }
