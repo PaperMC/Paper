@@ -1,4 +1,4 @@
-From 6c03dff1c70f865415916ba38ab69bc3c2558086 Mon Sep 17 00:00:00 2001
+From de9891edbb2d499223c574e843feb2e6287921fa Mon Sep 17 00:00:00 2001
 From: Techcable <Techcable@outlook.com>
 Date: Fri, 4 Mar 2016 20:54:31 -0700
 Subject: [PATCH] Use arrays instead of map in the DataWatcher
@@ -7,19 +7,29 @@ The ids never exceed 16, so there is no memory benefit for using maps.
 Arrays are much, much faster, and require no locking.
 
 diff --git a/src/main/java/net/minecraft/server/DataWatcher.java b/src/main/java/net/minecraft/server/DataWatcher.java
-index 26bec1c..cd1155a 100644
+index 26bec1c..9e2fca5 100644
 --- a/src/main/java/net/minecraft/server/DataWatcher.java
 +++ b/src/main/java/net/minecraft/server/DataWatcher.java
-@@ -9,16 +9,59 @@ import java.util.ArrayList;
+@@ -5,20 +5,138 @@ import com.google.common.collect.Maps;
+ import io.netty.handler.codec.DecoderException;
+ import io.netty.handler.codec.EncoderException;
+ import java.io.IOException;
++import java.util.AbstractSet;
+ import java.util.ArrayList;
++import java.util.Collection;
  import java.util.Iterator;
  import java.util.List;
  import java.util.Map;
-+import java.util.concurrent.TimeUnit;
-+import java.util.concurrent.locks.Condition;
++import java.util.NoSuchElementException;
++import java.util.Set;
  import java.util.concurrent.locks.ReadWriteLock;
  import java.util.concurrent.locks.ReentrantReadWriteLock;
  import org.apache.commons.lang3.ObjectUtils;
++import org.apache.commons.lang3.tuple.Pair;
 +// Paper start
++import java.util.AbstractMap;
++import java.util.concurrent.TimeUnit;
++import java.util.concurrent.locks.Condition;
 +import java.util.concurrent.atomic.AtomicReferenceArray;
 +import java.util.concurrent.locks.Lock;
 +// Paper end
@@ -30,7 +40,76 @@ index 26bec1c..cd1155a 100644
      private final Entity b;
 -    private final Map<Integer, DataWatcher.Item<?>> c = Maps.newHashMap();
 -    private final ReadWriteLock d = new ReentrantReadWriteLock();
-+    private final AtomicReferenceArray<DataWatcher.Item> data = new AtomicReferenceArray<>(16); // Paper - Map -> array
++    // Paper start - start Map -> array start
++    private final AtomicReferenceArray<DataWatcher.Item> data = new AtomicReferenceArray<>(16);
++    private final Map<Integer, DataWatcher.Item<?>> c = new AbstractMap<Integer, Item<?>>() {
++        private int size;
++        @Override
++        public int size() {
++            return size;
++        }
++
++        @Override
++        public boolean containsKey(Object key) {
++            return data.get((Integer) key) != null;
++        }
++
++        @Override
++        public Item<?> get(Object key) {
++            return data.get((Integer) key);
++        }
++
++        @Override
++        public Item<?> put(final Integer key, final Item<?> value) {
++            if (value == null) throw new NullPointerException("Null value");
++            Item<?> previous = data.getAndSet(key, value);
++            if (previous == null) size++;
++            return previous;
++        }
++
++        @Override
++        public Item<?> remove(Object key) {
++            Item<?> previous = data.getAndSet((Integer) key, null);
++            if (previous != null) size--;
++            return previous;
++        }
++        @Override
++        public Set<Entry<Integer, Item<?>>> entrySet() {
++            return new AbstractSet<Entry<Integer, Item<?>>>() {
++                @Override
++                public Iterator<Entry<Integer, Item<?>>> iterator() {
++                    return new Iterator<Entry<Integer, Item<?>>>() {
++                        int index = 0;
++
++                        @Override
++                        public boolean hasNext() {
++                            while (index < data.length()) {
++                                if (data.get(index) == null) {
++                                    index++;
++                                } else {
++                                    return true;
++                                }
++                            }
++                            return false;
++                        }
++
++                        @Override
++                        public Entry<Integer, Item<?>> next() {
++                            if (!hasNext()) throw new NoSuchElementException();
++                            int i = index++;
++                            return Pair.of(i, data.get(i));
++                        }
++                    };
++                }
++
++                @Override
++                public int size() {
++                    return size();
++                }
++            };
++        }
++    };
++    // Paper end
 +    // Paper start - no lock
 +    private static Lock NO_OP_LOCK = new Lock() {
 +        @Override
@@ -72,83 +151,6 @@ index 26bec1c..cd1155a 100644
      private boolean e = true;
      private boolean f;
  
-@@ -56,10 +99,11 @@ public class DataWatcher {
- 
-     public <T> void register(DataWatcherObject<T> datawatcherobject, Object t0) { // CraftBukkit T -> Object
-         int i = datawatcherobject.a();
-+        // Paper - a
- 
-         if (i > 254) {
-             throw new IllegalArgumentException("Data value id is too big with " + i + "! (Max is " + 254 + ")");
--        } else if (this.c.containsKey(Integer.valueOf(i))) {
-+        } else if (data.get(i) != null) { // Paper - array
-             throw new IllegalArgumentException("Duplicate id value for " + i + "!");
-         } else if (DataWatcherRegistry.b(datawatcherobject.b()) < 0) {
-             throw new IllegalArgumentException("Unregistered serializer " + datawatcherobject.b() + " for " + i + "!");
-@@ -72,7 +116,7 @@ public class DataWatcher {
-         DataWatcher.Item datawatcher_item = new DataWatcher.Item(datawatcherobject, t0);
- 
-         this.d.writeLock().lock();
--        this.c.put(Integer.valueOf(datawatcherobject.a()), datawatcher_item);
-+        this.data.set(datawatcherobject.a(), datawatcher_item); // Paper - array
-         this.e = false;
-         this.d.writeLock().unlock();
-     }
-@@ -83,7 +127,7 @@ public class DataWatcher {
-         DataWatcher.Item datawatcher_item;
- 
-         try {
--            datawatcher_item = (DataWatcher.Item) this.c.get(Integer.valueOf(datawatcherobject.a()));
-+            datawatcher_item = data.get(datawatcherobject.a()); // Paper - array
-         } catch (Throwable throwable) {
-             CrashReport crashreport = CrashReport.a(throwable, "Getting synched entity data");
-             CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Synched entity data");
-@@ -140,11 +184,11 @@ public class DataWatcher {
- 
-         if (this.f) {
-             this.d.readLock().lock();
--            Iterator iterator = this.c.values().iterator();
--
--            while (iterator.hasNext()) {
--                DataWatcher.Item datawatcher_item = (DataWatcher.Item) iterator.next();
--
-+            // Paper start
-+            for (int i = 0; i < data.length(); i++) {
-+                DataWatcher.Item datawatcher_item = data.get(i);
-+                if (datawatcher_item == null) continue;
-+                // Paper end
-                 if (datawatcher_item.c()) {
-                     datawatcher_item.a(false);
-                     if (arraylist == null) {
-@@ -164,10 +208,11 @@ public class DataWatcher {
- 
-     public void a(PacketDataSerializer packetdataserializer) throws IOException {
-         this.d.readLock().lock();
--        Iterator iterator = this.c.values().iterator();
--
--        while (iterator.hasNext()) {
--            DataWatcher.Item datawatcher_item = (DataWatcher.Item) iterator.next();
-+        // Paper start - iterate over array
-+        for (int i = 0; i < data.length(); i++) {
-+            DataWatcher.Item datawatcher_item = data.get(i);
-+            if (datawatcher_item == null) continue;
-+            // Paper end
- 
-             a(packetdataserializer, datawatcher_item);
-         }
-@@ -183,8 +228,10 @@ public class DataWatcher {
- 
-         DataWatcher.Item datawatcher_item;
- 
--        for (Iterator iterator = this.c.values().iterator(); iterator.hasNext(); arraylist.add(datawatcher_item)) {
--            datawatcher_item = (DataWatcher.Item) iterator.next();
-+        // Paper start - iterate over array
-+        for (int i = 0; i < data.length(); i++, arraylist.add(datawatcher_item)) {
-+            datawatcher_item = data.get(i);
-+            // Paper end
-             if (arraylist == null) {
-                 arraylist = Lists.newArrayList();
-             }
 -- 
 2.7.1
 
