@@ -1,0 +1,154 @@
+From 6c03dff1c70f865415916ba38ab69bc3c2558086 Mon Sep 17 00:00:00 2001
+From: Techcable <Techcable@outlook.com>
+Date: Fri, 4 Mar 2016 20:54:31 -0700
+Subject: [PATCH] Use arrays instead of map in the DataWatcher
+
+The ids never exceed 16, so there is no memory benefit for using maps.
+Arrays are much, much faster, and require no locking.
+
+diff --git a/src/main/java/net/minecraft/server/DataWatcher.java b/src/main/java/net/minecraft/server/DataWatcher.java
+index 26bec1c..cd1155a 100644
+--- a/src/main/java/net/minecraft/server/DataWatcher.java
++++ b/src/main/java/net/minecraft/server/DataWatcher.java
+@@ -9,16 +9,59 @@ import java.util.ArrayList;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Map;
++import java.util.concurrent.TimeUnit;
++import java.util.concurrent.locks.Condition;
+ import java.util.concurrent.locks.ReadWriteLock;
+ import java.util.concurrent.locks.ReentrantReadWriteLock;
+ import org.apache.commons.lang3.ObjectUtils;
++// Paper start
++import java.util.concurrent.atomic.AtomicReferenceArray;
++import java.util.concurrent.locks.Lock;
++// Paper end
+ 
+ public class DataWatcher {
+ 
+     private static final Map<Class<? extends Entity>, Integer> a = Maps.newHashMap();
+     private final Entity b;
+-    private final Map<Integer, DataWatcher.Item<?>> c = Maps.newHashMap();
+-    private final ReadWriteLock d = new ReentrantReadWriteLock();
++    private final AtomicReferenceArray<DataWatcher.Item> data = new AtomicReferenceArray<>(16); // Paper - Map -> array
++    // Paper start - no lock
++    private static Lock NO_OP_LOCK = new Lock() {
++        @Override
++        public void lock() {}
++
++        @Override
++        public void lockInterruptibly() throws InterruptedException {}
++
++        @Override
++        public boolean tryLock() {
++            return true;
++        }
++
++        @Override
++        public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
++            return true;
++        }
++
++        @Override
++        public void unlock() {}
++
++        @Override
++        public Condition newCondition() {
++            throw new UnsupportedOperationException();
++        }
++    };
++    private static final ReadWriteLock d = new ReadWriteLock() {
++        @Override
++        public Lock readLock() {
++            return NO_OP_LOCK;
++        }
++
++        @Override
++        public Lock writeLock() {
++            return NO_OP_LOCK;
++        }
++    };
++    // Paper end
+     private boolean e = true;
+     private boolean f;
+ 
+@@ -56,10 +99,11 @@ public class DataWatcher {
+ 
+     public <T> void register(DataWatcherObject<T> datawatcherobject, Object t0) { // CraftBukkit T -> Object
+         int i = datawatcherobject.a();
++        // Paper - a
+ 
+         if (i > 254) {
+             throw new IllegalArgumentException("Data value id is too big with " + i + "! (Max is " + 254 + ")");
+-        } else if (this.c.containsKey(Integer.valueOf(i))) {
++        } else if (data.get(i) != null) { // Paper - array
+             throw new IllegalArgumentException("Duplicate id value for " + i + "!");
+         } else if (DataWatcherRegistry.b(datawatcherobject.b()) < 0) {
+             throw new IllegalArgumentException("Unregistered serializer " + datawatcherobject.b() + " for " + i + "!");
+@@ -72,7 +116,7 @@ public class DataWatcher {
+         DataWatcher.Item datawatcher_item = new DataWatcher.Item(datawatcherobject, t0);
+ 
+         this.d.writeLock().lock();
+-        this.c.put(Integer.valueOf(datawatcherobject.a()), datawatcher_item);
++        this.data.set(datawatcherobject.a(), datawatcher_item); // Paper - array
+         this.e = false;
+         this.d.writeLock().unlock();
+     }
+@@ -83,7 +127,7 @@ public class DataWatcher {
+         DataWatcher.Item datawatcher_item;
+ 
+         try {
+-            datawatcher_item = (DataWatcher.Item) this.c.get(Integer.valueOf(datawatcherobject.a()));
++            datawatcher_item = data.get(datawatcherobject.a()); // Paper - array
+         } catch (Throwable throwable) {
+             CrashReport crashreport = CrashReport.a(throwable, "Getting synched entity data");
+             CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Synched entity data");
+@@ -140,11 +184,11 @@ public class DataWatcher {
+ 
+         if (this.f) {
+             this.d.readLock().lock();
+-            Iterator iterator = this.c.values().iterator();
+-
+-            while (iterator.hasNext()) {
+-                DataWatcher.Item datawatcher_item = (DataWatcher.Item) iterator.next();
+-
++            // Paper start
++            for (int i = 0; i < data.length(); i++) {
++                DataWatcher.Item datawatcher_item = data.get(i);
++                if (datawatcher_item == null) continue;
++                // Paper end
+                 if (datawatcher_item.c()) {
+                     datawatcher_item.a(false);
+                     if (arraylist == null) {
+@@ -164,10 +208,11 @@ public class DataWatcher {
+ 
+     public void a(PacketDataSerializer packetdataserializer) throws IOException {
+         this.d.readLock().lock();
+-        Iterator iterator = this.c.values().iterator();
+-
+-        while (iterator.hasNext()) {
+-            DataWatcher.Item datawatcher_item = (DataWatcher.Item) iterator.next();
++        // Paper start - iterate over array
++        for (int i = 0; i < data.length(); i++) {
++            DataWatcher.Item datawatcher_item = data.get(i);
++            if (datawatcher_item == null) continue;
++            // Paper end
+ 
+             a(packetdataserializer, datawatcher_item);
+         }
+@@ -183,8 +228,10 @@ public class DataWatcher {
+ 
+         DataWatcher.Item datawatcher_item;
+ 
+-        for (Iterator iterator = this.c.values().iterator(); iterator.hasNext(); arraylist.add(datawatcher_item)) {
+-            datawatcher_item = (DataWatcher.Item) iterator.next();
++        // Paper start - iterate over array
++        for (int i = 0; i < data.length(); i++, arraylist.add(datawatcher_item)) {
++            datawatcher_item = data.get(i);
++            // Paper end
+             if (arraylist == null) {
+                 arraylist = Lists.newArrayList();
+             }
+-- 
+2.7.1
+
