@@ -147,6 +147,16 @@ public class CraftBossBar implements BossBar {
     }
 
     @Override
+    public void setVisible(boolean visible) {
+        handle.setVisible(visible);
+    }
+
+    @Override
+    public boolean isVisible() {
+        return handle.j;
+    }
+
+    @Override
     public void show() {
         handle.setVisible(true);
     }
