@@ -1,0 +1,91 @@
+From bac54e7fdf4fc01e7612add17775850de8ab036a Mon Sep 17 00:00:00 2001
+From: Techcable <Techcable@outlook.com>
+Date: Fri, 4 Mar 2016 23:12:22 -0700
+Subject: [PATCH] Fix iteration speed in NavigationListener
+
+Mojang was iterating over a copy of a key set of a map.
+This was very slow, since maps are slow, and copies are pretty slow.
+Mojang was using maps for their weak-key functionality, which we reimplement directly.
+
+diff --git a/src/main/java/net/minecraft/server/NavigationListener.java b/src/main/java/net/minecraft/server/NavigationListener.java
+index f82ea80..a2e4d0c 100644
+--- a/src/main/java/net/minecraft/server/NavigationListener.java
++++ b/src/main/java/net/minecraft/server/NavigationListener.java
+@@ -1,26 +1,56 @@
+ package net.minecraft.server;
+ 
+ import java.util.WeakHashMap;
++// Paper start
++import java.lang.ref.WeakReference;
++import java.lang.ref.Reference;
++import java.lang.ref.ReferenceQueue;
++import java.util.HashSet;
++import java.util.Set;
++import java.util.List;
++import java.util.ArrayList;
++// Paper end
+ 
+ public class NavigationListener implements IWorldAccess {
+-
+-    private static final Object a = new Object();
+-    private final WeakHashMap<NavigationAbstract, Object> b = new WeakHashMap();
++    // Paper start
++    private final List<Reference<NavigationAbstract>> navigations = new ArrayList<>();
++    private static final ReferenceQueue<NavigationAbstract> referenceQueue = new ReferenceQueue<>();
++
++    private void cleanup() {
++        Reference<NavigationAbstract> navigation;
++        Set<Reference<NavigationAbstract>> toRemove = new HashSet<>();
++        while ((navigation = (Reference<NavigationAbstract>) referenceQueue.poll()) != null) {
++            toRemove.add(navigation);
++        }
++        navigations.removeAll(toRemove);
++    }
++    // Paper end
+ 
+     public NavigationListener() {}
+ 
+     public void a(NavigationAbstract navigationabstract) {
+-        this.b.put(navigationabstract, NavigationListener.a);
++        // Paper start
++        if (navigationabstract == null) throw new IllegalArgumentException("Null navigation");
++        cleanup();
++        navigations.add(new WeakReference<>(navigationabstract));
++        // Paper end
+     }
+ 
+     public void a(World world, BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1, int i) {
+         if (this.a(world, blockposition, iblockdata, iblockdata1)) {
+-            NavigationAbstract[] anavigationabstract = (NavigationAbstract[]) this.b.keySet().toArray(new NavigationAbstract[0]);
+-            NavigationAbstract[] anavigationabstract1 = anavigationabstract;
+-            int j = anavigationabstract.length;
+-
++            // Paper start - iterate over our own array instead of a copied array from the set
++            cleanup();
++            Set<Reference<NavigationAbstract>> toRemove = new HashSet<>();
++            int j = navigations.size();
+             for (int k = 0; k < j; ++k) {
+-                NavigationAbstract navigationabstract = anavigationabstract1[k];
++                Reference<NavigationAbstract> ref = navigations.get(k);
++                NavigationAbstract navigationabstract = ref.get();
++                if (navigationabstract == null) {
++                    // Ugg, lets remove this
++                    toRemove.add(ref);
++                    continue;
++                }
++                // Paper end
+ 
+                 if (navigationabstract != null && !navigationabstract.i()) {
+                     PathEntity pathentity = navigationabstract.k();
+@@ -36,7 +66,7 @@ public class NavigationListener implements IWorldAccess {
+                     }
+                 }
+             }
+-
++            navigations.removeAll(toRemove); // Paper
+         }
+     }
+ 
+-- 
+2.7.1
+
