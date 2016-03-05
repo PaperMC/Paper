@@ -126,10 +126,15 @@ public class CraftStatistic {
     }
 
     public static net.minecraft.server.Statistic getEntityStatistic(org.bukkit.Statistic stat, EntityType entity) {
-        MonsterEggInfo monsteregginfo = (MonsterEggInfo) EntityTypes.eggInfo.get(Integer.valueOf(entity.getTypeId()));
+        MonsterEggInfo monsteregginfo = (MonsterEggInfo) EntityTypes.eggInfo.get(entity.getName());
 
         if (monsteregginfo != null) {
-            return monsteregginfo.killEntityStatistic;
+            if (stat == org.bukkit.Statistic.KILL_ENTITY) {
+                return monsteregginfo.killEntityStatistic;
+            }
+            if (stat == org.bukkit.Statistic.ENTITY_KILLED_BY) {
+                return monsteregginfo.e; // PAIL: rename
+            }
         }
         return null;
     }
