@@ -229,7 +229,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     public void recreateStructures(int i, int j) {}
 
     @Override
-    public void recreateStructures(Chunk chunk, int i, int i1) {
-
+    public void recreateStructures(Chunk chunk, int i, int j) {
+        strongholdGen.a(this.world, i, j, (ChunkSnapshot) null);
     }
 }
