@@ -195,6 +195,21 @@ public class CraftWorld implements World {
         world.getChunkProviderServer().unloadQueue.remove(x, z);
         world.getChunkProviderServer().chunks.remove(LongHash.toLong(x, z));
 
+        // Update neighbor counts
+        for (int xx = -2; xx < 3; xx++) {
+            for (int zz = -2; zz < 3; zz++) {
+                if (xx == 0 && zz == 0) {
+                    continue;
+                }
+
+                net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
+                if (neighbor != null) {
+                    neighbor.setNeighborUnloaded(-xx, -zz);
+                    chunk.setNeighborUnloaded(xx, zz);
+                }
+            }
+        }
+
         return true;
     }
 
@@ -206,6 +221,10 @@ public class CraftWorld implements World {
         net.minecraft.server.Chunk chunk = null;
 
         chunk = world.getChunkProviderServer().chunkGenerator.getOrCreateChunk(x, z);
+        PlayerChunk playerChunk = world.getPlayerChunkMap().b/*PAIL: Rename*/(x, z);
+        if (playerChunk != null) {
+            playerChunk.chunk = chunk;
+        }
 
         chunkLoadPostProcess(chunk, x, z);
 
