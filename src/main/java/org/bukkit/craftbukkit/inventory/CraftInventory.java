@@ -49,6 +49,16 @@ public class CraftInventory implements Inventory {
         return item == null ? null : CraftItemStack.asCraftMirror(item);
     }
 
+    @Override
+    public ItemStack[] getStorageContents() {
+        return getContents();
+    }
+
+    @Override
+    public void setStorageContents(ItemStack[] items) throws IllegalArgumentException {
+        setContents(items);
+    }
+
     public ItemStack[] getContents() {
         ItemStack[] items = new ItemStack[getSize()];
         net.minecraft.server.ItemStack[] mcItems = getInventory().getContents();
@@ -79,7 +89,7 @@ public class CraftInventory implements Inventory {
     }
 
     public boolean contains(int materialId) {
-        for (ItemStack item : getContents()) {
+        for (ItemStack item : getStorageContents()) {
             if (item != null && item.getTypeId() == materialId) {
                 return true;
             }
@@ -96,7 +106,7 @@ public class CraftInventory implements Inventory {
         if (item == null) {
             return false;
         }
-        for (ItemStack i : getContents()) {
+        for (ItemStack i : getStorageContents()) {
             if (item.equals(i)) {
                 return true;
             }
@@ -108,7 +118,7 @@ public class CraftInventory implements Inventory {
         if (amount <= 0) {
             return true;
         }
-        for (ItemStack item : getContents()) {
+        for (ItemStack item : getStorageContents()) {
             if (item != null && item.getTypeId() == materialId) {
                 if ((amount -= item.getAmount()) <= 0) {
                     return true;
@@ -130,7 +140,7 @@ public class CraftInventory implements Inventory {
         if (amount <= 0) {
             return true;
         }
-        for (ItemStack i : getContents()) {
+        for (ItemStack i : getStorageContents()) {
             if (item.equals(i) && --amount <= 0) {
                 return true;
             }
@@ -145,7 +155,7 @@ public class CraftInventory implements Inventory {
         if (amount <= 0) {
             return true;
         }
-        for (ItemStack i : getContents()) {
+        for (ItemStack i : getStorageContents()) {
             if (item.isSimilar(i) && (amount -= i.getAmount()) <= 0) {
                 return true;
             }
@@ -156,7 +166,7 @@ public class CraftInventory implements Inventory {
     public HashMap<Integer, ItemStack> all(int materialId) {
         HashMap<Integer, ItemStack> slots = new HashMap<Integer, ItemStack>();
 
-        ItemStack[] inventory = getContents();
+        ItemStack[] inventory = getStorageContents();
         for (int i = 0; i < inventory.length; i++) {
             ItemStack item = inventory[i];
             if (item != null && item.getTypeId() == materialId) {
@@ -174,7 +184,7 @@ public class CraftInventory implements Inventory {
     public HashMap<Integer, ItemStack> all(ItemStack item) {
         HashMap<Integer, ItemStack> slots = new HashMap<Integer, ItemStack>();
         if (item != null) {
-            ItemStack[] inventory = getContents();
+            ItemStack[] inventory = getStorageContents();
             for (int i = 0; i < inventory.length; i++) {
                 if (item.equals(inventory[i])) {
                     slots.put(i, inventory[i]);
@@ -185,7 +195,7 @@ public class CraftInventory implements Inventory {
     }
 
     public int first(int materialId) {
-        ItemStack[] inventory = getContents();
+        ItemStack[] inventory = getStorageContents();
         for (int i = 0; i < inventory.length; i++) {
             ItemStack item = inventory[i];
             if (item != null && item.getTypeId() == materialId) {
@@ -208,7 +218,7 @@ public class CraftInventory implements Inventory {
         if (item == null) {
             return -1;
         }
-        ItemStack[] inventory = getContents();
+        ItemStack[] inventory = getStorageContents();
         for (int i = 0; i < inventory.length; i++) {
             if (inventory[i] == null) continue;
 
@@ -220,7 +230,7 @@ public class CraftInventory implements Inventory {
     }
 
     public int firstEmpty() {
-        ItemStack[] inventory = getContents();
+        ItemStack[] inventory = getStorageContents();
         for (int i = 0; i < inventory.length; i++) {
             if (inventory[i] == null) {
                 return i;
@@ -230,7 +240,7 @@ public class CraftInventory implements Inventory {
     }
 
     public int firstPartial(int materialId) {
-        ItemStack[] inventory = getContents();
+        ItemStack[] inventory = getStorageContents();
         for (int i = 0; i < inventory.length; i++) {
             ItemStack item = inventory[i];
             if (item != null && item.getTypeId() == materialId && item.getAmount() < item.getMaxStackSize()) {
@@ -246,7 +256,7 @@ public class CraftInventory implements Inventory {
     }
 
     private int firstPartial(ItemStack item) {
-        ItemStack[] inventory = getContents();
+        ItemStack[] inventory = getStorageContents();
         ItemStack filteredItem = CraftItemStack.asCraftCopy(item);
         if (item == null) {
             return -1;
@@ -373,7 +383,7 @@ public class CraftInventory implements Inventory {
     }
 
     public void remove(int materialId) {
-        ItemStack[] items = getContents();
+        ItemStack[] items = getStorageContents();
         for (int i = 0; i < items.length; i++) {
             if (items[i] != null && items[i].getTypeId() == materialId) {
                 clear(i);
@@ -387,7 +397,7 @@ public class CraftInventory implements Inventory {
     }
 
     public void remove(ItemStack item) {
-        ItemStack[] items = getContents();
+        ItemStack[] items = getStorageContents();
         for (int i = 0; i < items.length; i++) {
             if (items[i] != null && items[i].equals(item)) {
                 clear(i);

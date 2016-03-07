@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
+import com.google.common.base.Preconditions;
+import java.util.Arrays;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.PacketPlayOutHeldItemSlot;
 import net.minecraft.server.PacketPlayOutSetSlot;
@@ -22,6 +24,12 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     }
 
     @Override
+    public ItemStack[] getStorageContents() {
+        return Arrays.copyOfRange(getContents(), 0, getInventory().items.length);
+    }
+
+
+    @Override
     public ItemStack getItemInMainHand() {
         return CraftItemStack.asCraftMirror(getInventory().getItemInHand());
     }
@@ -38,7 +46,9 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public void setItemInOffHand(ItemStack item) {
-        getInventory().extraSlots[0] = CraftItemStack.asNMSCopy(item);
+        ItemStack[] extra = getExtraContents();
+        extra[0] = item;
+        setExtraContents(extra);
     }
 
     @Override
@@ -135,35 +145,49 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     }
 
     public ItemStack[] getArmorContents() {
-        net.minecraft.server.ItemStack[] mcItems = getInventory().getArmorContents();
-        ItemStack[] ret = new ItemStack[mcItems.length];
-
-        for (int i = 0; i < mcItems.length; i++) {
-            ret[i] = CraftItemStack.asCraftMirror(mcItems[i]);
-        }
-        return ret;
+        int start = getInventory().items.length;
+        return Arrays.copyOfRange(getContents(), start, start + getInventory().armor.length);
     }
 
-    public void setArmorContents(ItemStack[] items) {
-        int cnt = getInventory().items.length;
-
+    private void setSlots(ItemStack[] items, int baseSlot, int length) {
         if (items == null) {
-            items = new ItemStack[4];
+            items = new ItemStack[length];
         }
-        for (ItemStack item : items) {
-            if (item == null || item.getTypeId() == 0) {
-                clear(cnt++);
+        Preconditions.checkArgument(items.length <= length, "items.length must be < %s", length);
+
+        for (int i = 0; i < length; i++) {
+            if (i >= items.length) {
+                setItem(baseSlot + i, null);
             } else {
-                setItem(cnt++, item);
+                setItem(baseSlot + i, items[i]);
             }
         }
+    }
+
+    @Override
+    public void setStorageContents(ItemStack[] items) throws IllegalArgumentException {
+        setSlots(items, 0, getInventory().items.length);
+    }
+
+    @Override
+    public void setArmorContents(ItemStack[] items) {
+        setSlots(items, getInventory().items.length, getInventory().armor.length);
+    }
+
+    @Override
+    public ItemStack[] getExtraContents() {
+        int start = getInventory().items.length + getInventory().armor.length;
+        return Arrays.copyOfRange(getContents(), start, start + getInventory().extraSlots.length);
+    }
+
+    @Override
+    public void setExtraContents(ItemStack[] items) {
+        setSlots(items, getInventory().items.length + getInventory().armor.length, getInventory().extraSlots.length);
     }
 
     public int clear(int id, int data) {
         int count = 0;
         ItemStack[] items = getContents();
-        ItemStack[] armor = getArmorContents();
-        int armorSlot = getSize();
 
         for (int i = 0; i < items.length; i++) {
             ItemStack item = items[i];
@@ -175,14 +199,6 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
             setItem(i, null);
         }
 
-        for (ItemStack item : armor) {
-            if (item == null) continue;
-            if (id > -1 && item.getTypeId() != id) continue;
-            if (data > -1 && item.getData().getData() != data) continue;
-
-            count += item.getAmount();
-            setItem(armorSlot++, null);
-        }
         return count;
     }
 
