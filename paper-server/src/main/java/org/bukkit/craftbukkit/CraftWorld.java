@@ -122,7 +122,7 @@ public class CraftWorld implements World {
     }
 
     public Chunk getChunkAt(int x, int z) {
-        return this.world.getChunkProviderServer().getChunkAt(x, z).bukkitChunk;
+        return this.world.getChunkProviderServer().getOrCreateChunkFast(x, z).bukkitChunk;
     }
 
     public Chunk getChunkAt(Block block) {
