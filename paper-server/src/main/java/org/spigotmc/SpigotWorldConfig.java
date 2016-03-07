@@ -79,4 +79,59 @@ public class SpigotWorldConfig
         this.config.addDefault( "world-settings.default." + path, def );
         return this.config.get( "world-settings." + this.worldName + "." + path, this.config.get( "world-settings.default." + path ) );
     }
+
+    // Crop growth rates
+    public int cactusModifier;
+    public int caneModifier;
+    public int melonModifier;
+    public int mushroomModifier;
+    public int pumpkinModifier;
+    public int saplingModifier;
+    public int beetrootModifier;
+    public int carrotModifier;
+    public int potatoModifier;
+    public int wheatModifier;
+    public int wartModifier;
+    public int vineModifier;
+    public int cocoaModifier;
+    public int bambooModifier;
+    public int sweetBerryModifier;
+    public int kelpModifier;
+    public int twistingVinesModifier;
+    public int weepingVinesModifier;
+    public int caveVinesModifier;
+    private int getAndValidateGrowth(String crop)
+    {
+        int modifier = this.getInt( "growth." + crop.toLowerCase(java.util.Locale.ENGLISH) + "-modifier", 100 );
+        if ( modifier == 0 )
+        {
+            this.log( "Cannot set " + crop + " growth to zero, defaulting to 100" );
+            modifier = 100;
+        }
+        this.log( crop + " Growth Modifier: " + modifier + "%" );
+
+        return modifier;
+    }
+    private void growthModifiers()
+    {
+        this.cactusModifier = this.getAndValidateGrowth( "Cactus" );
+        this.caneModifier = this.getAndValidateGrowth( "Cane" );
+        this.melonModifier = this.getAndValidateGrowth( "Melon" );
+        this.mushroomModifier = this.getAndValidateGrowth( "Mushroom" );
+        this.pumpkinModifier = this.getAndValidateGrowth( "Pumpkin" );
+        this.saplingModifier = this.getAndValidateGrowth( "Sapling" );
+        this.beetrootModifier = this.getAndValidateGrowth( "Beetroot" );
+        this.carrotModifier = this.getAndValidateGrowth( "Carrot" );
+        this.potatoModifier = this.getAndValidateGrowth( "Potato" );
+        this.wheatModifier = this.getAndValidateGrowth( "Wheat" );
+        this.wartModifier = this.getAndValidateGrowth( "NetherWart" );
+        this.vineModifier = this.getAndValidateGrowth( "Vine" );
+        this.cocoaModifier = this.getAndValidateGrowth( "Cocoa" );
+        this.bambooModifier = this.getAndValidateGrowth( "Bamboo" );
+        this.sweetBerryModifier = this.getAndValidateGrowth( "SweetBerry" );
+        this.kelpModifier = this.getAndValidateGrowth( "Kelp" );
+        this.twistingVinesModifier = this.getAndValidateGrowth( "TwistingVines" );
+        this.weepingVinesModifier = this.getAndValidateGrowth( "WeepingVines" );
+        this.caveVinesModifier = this.getAndValidateGrowth( "CaveVines" );
+    }
 }
