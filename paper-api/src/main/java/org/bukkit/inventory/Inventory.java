@@ -128,6 +128,28 @@ public interface Inventory extends Iterable<ItemStack> {
     public void setContents(ItemStack[] items) throws IllegalArgumentException;
 
     /**
+     * Return the contents from the section of the inventory where items can
+     * reasonably be expected to be stored. In most cases this will represent
+     * the entire inventory, but in some cases it may exclude armor or result
+     * slots.
+     * <br>
+     * It is these contents which will be used for add / contains / remove
+     * methods which look for a specific stack.
+     *
+     * @return inventory storage contents
+     */
+    public ItemStack[] getStorageContents();
+
+    /**
+     * Put the given ItemStacks into the storage slots
+     *
+     * @param items The ItemStacks to use as storage contents
+     * @throws IllegalArgumentException If the array has more items than the
+     * inventory.
+     */
+    public void setStorageContents(ItemStack[] items) throws IllegalArgumentException;
+
+    /**
      * Checks if the inventory contains any ItemStacks with the given
      * materialId
      *
