@@ -11,15 +11,7 @@
  public class EntityCreeper extends EntityMonster {
  
      private static final DataWatcherObject<Integer> a = DataWatcher.a(EntityCreeper.class, DataWatcherRegistry.b);
-@@ -10,6 +15,7 @@
-     private int maxFuseTicks = 30;
-     private int explosionRadius = 3;
-     private int bz = 0;
-+    private int record = -1; // CraftBukkit
- 
-     public EntityCreeper(World world) {
-         super(world);
-@@ -117,21 +123,41 @@
+@@ -117,7 +122,7 @@
      }
  
      public void die(DamageSource damagesource) {
@@ -28,43 +20,15 @@
          if (this.world.getGameRules().getBoolean("doMobLoot")) {
              if (damagesource.getEntity() instanceof EntitySkeleton) {
                  int i = Item.getId(Items.RECORD_13);
-                 int j = Item.getId(Items.RECORD_WAIT);
-                 int k = i + this.random.nextInt(j - i + 1);
- 
--                this.a(Item.getById(k), 1);
-+                // CraftBukkit start - Store record for now, drop in dropDeathLoot
-+                // this.a(Item.getById(k), 1);
-+                this.record = k;
-+                // CraftBukkit end
-             } else if (damagesource.getEntity() instanceof EntityCreeper && damagesource.getEntity() != this && ((EntityCreeper) damagesource.getEntity()).isPowered() && ((EntityCreeper) damagesource.getEntity()).canCauseHeadDrop()) {
-                 ((EntityCreeper) damagesource.getEntity()).setCausedHeadDrop();
--                this.a(new ItemStack(Items.SKULL, 1, 4), 0.0F);
-+                // CraftBukkit start
-+                // this.a(new ItemStack(Items.SKULL, 1, 4), 0.0F);
-+                headDrop = new ItemStack(Items.SKULL, 1, 4);
-+                // CraftBukkit end
+@@ -130,6 +135,7 @@
+                 this.a(new ItemStack(Items.SKULL, 1, 4), 0.0F);
              }
          }
- 
 +        super.die(damagesource); // CraftBukkit - Moved from above
-+    }
-+
-+    // CraftBukkit start - Whole method
-+    @Override
-+    protected void dropDeathLoot(boolean flag, int i) {
-+        super.dropDeathLoot(flag, i);
-+
-+        // Drop a music disc?
-+        if (this.record != -1) {
-+            this.a(Item.getById(this.record), 1);
-+            this.record = -1;
-+        }
-     }
-+    // CraftBukkit end
  
-     public boolean B(Entity entity) {
-         return true;
-@@ -155,8 +181,18 @@
+     }
+ 
+@@ -155,8 +161,18 @@
  
      public void onLightningStrike(EntityLightning entitylightning) {
          super.onLightningStrike(entitylightning);
@@ -83,7 +47,7 @@
  
      protected boolean a(EntityHuman entityhuman, EnumHand enumhand, ItemStack itemstack) {
          if (itemstack != null && itemstack.getItem() == Items.FLINT_AND_STEEL) {
-@@ -177,9 +213,17 @@
+@@ -177,9 +193,17 @@
              boolean flag = this.world.getGameRules().getBoolean("mobGriefing");
              float f = this.isPowered() ? 2.0F : 1.0F;
  
