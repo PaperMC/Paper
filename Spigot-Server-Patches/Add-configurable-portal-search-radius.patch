@@ -22,39 +22,35 @@ diff --git a/src/main/java/net/minecraft/server/PortalTravelAgent.java b/src/mai
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PortalTravelAgent.java
 +++ b/src/main/java/net/minecraft/server/PortalTravelAgent.java
-@@ -0,0 +0,0 @@ public class PortalTravelAgent {
-         return true;
-     }
+@@ -0,0 +0,0 @@ import java.util.Random;
  
--    public BlockPosition findPortal(double x, double y, double z, int short1) {
-+    public BlockPosition findPortal(double x, double y, double z, int searchRadius) { // Paper - short1 -> searchRadius
-         if (this.world.getWorld().getEnvironment() == org.bukkit.World.Environment.THE_END) {
-             return this.findEndPortal(this.world.worldProvider.h());
+ public class PortalTravelAgent {
+ 
+-    private final WorldServer world;
++    protected final WorldServer world; // Paper - private -> protected
+     private final Random b;
+     private final LongHashMap<PortalTravelAgent.ChunkCoordinatesPortal> c = new LongHashMap();
+     private final List<Long> d = Lists.newArrayList();
+@@ -0,0 +0,0 @@ public class PortalTravelAgent {
+ 
+     public boolean b(Entity entity, float f) {
+         // CraftBukkit start - Modularize portal search process and entity teleportation
+-        BlockPosition found = this.findPortal(entity.locX, entity.locY, entity.locZ, 128);
++        BlockPosition found = this.findPortal(entity.locX, entity.locY, entity.locZ, world.paperConfig.portalSearchRadius); // Paper - Configurable search radius
+         if (found == null) {
+             return false;
          }
-@@ -0,0 +0,0 @@ public class PortalTravelAgent {
-         } else {
-             BlockPosition blockposition = new BlockPosition(x, y, z); // CraftBukkit
- 
--            for (int l = -128; l <= 128; ++l) {
-+            for (int l = -searchRadius; l <= searchRadius; ++l) { // Paper - actually use search radiusfor (int l = -128; l <= 128; ++l) {
-                 BlockPosition blockposition1;
- 
--                for (int i1 = -128; i1 <= 128; ++i1) {
-+                for (int i1 = -searchRadius; i1 <= searchRadius; ++i1) { // Paper - actually use search radius
-                     for (BlockPosition blockposition2 = blockposition.a(l, this.world.Z() - 1 - blockposition.getY(), i1); blockposition2.getY() >= 0; blockposition2 = blockposition1) {
-                         blockposition1 = blockposition2.down();
-                         if (this.world.getType(blockposition2).getBlock() == Blocks.PORTAL) {
-diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftTravelAgent.java b/src/main/java/org/bukkit/craftbukkit/CraftTravelAgent.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/WorldServer.java
-+++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ public class WorldServer extends World implements IAsyncTaskHandler {
-         this.manager = new PlayerChunkMap(this, spigotConfig.viewDistance); // Spigot
-         this.worldProvider.a((World) this);
-         this.chunkProvider = this.n();
--        this.portalTravelAgent = new org.bukkit.craftbukkit.CraftTravelAgent(this); // CraftBukkit
-+        this.portalTravelAgent = ((org.bukkit.craftbukkit.CraftTravelAgent) new org.bukkit.craftbukkit.CraftTravelAgent(this).setSearchRadius(paperConfig.portalSearchRadius)); // CraftBukkit // Paper - configurable search radius
-         this.H();
-         this.I();
-         this.getWorldBorder().a(minecraftserver.aD());
+--- a/src/main/java/org/bukkit/craftbukkit/CraftTravelAgent.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftTravelAgent.java
+@@ -0,0 +0,0 @@ public class CraftTravelAgent extends PortalTravelAgent implements TravelAgent {
+ 
+     public static TravelAgent DEFAULT = null;
+ 
+-    private int searchRadius = 128;
++    private int searchRadius = world.paperConfig.portalSearchRadius; // Paper - Configurable search radius
+     private int creationRadius = 16;
+     private boolean canCreatePortal = true;
+ 
 --
