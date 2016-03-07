@@ -1,4 +1,4 @@
-From e723a6c4e1cff0a81d30ef7bb0b17ff361b86520 Mon Sep 17 00:00:00 2001
+From 339093668968143899beea3510d72e9e13889c80 Mon Sep 17 00:00:00 2001
 From: Joseph Hirschfeld <joe@ibj.io>
 Date: Thu, 3 Mar 2016 02:46:17 -0600
 Subject: [PATCH] Add configurable portal search radius
@@ -19,44 +19,40 @@ index 50fc4a0..f42efe7 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/PortalTravelAgent.java b/src/main/java/net/minecraft/server/PortalTravelAgent.java
-index 7c8df40..22c94d1 100644
+index 519d27c..3f35303 100644
 --- a/src/main/java/net/minecraft/server/PortalTravelAgent.java
 +++ b/src/main/java/net/minecraft/server/PortalTravelAgent.java
-@@ -107,7 +107,7 @@ public class PortalTravelAgent {
-         return true;
-     }
+@@ -11,7 +11,7 @@ import java.util.Random;
  
--    public BlockPosition findPortal(double x, double y, double z, int short1) {
-+    public BlockPosition findPortal(double x, double y, double z, int searchRadius) { // Paper - short1 -> searchRadius
-         if (this.world.getWorld().getEnvironment() == org.bukkit.World.Environment.THE_END) {
-             return this.findEndPortal(this.world.worldProvider.h());
+ public class PortalTravelAgent {
+ 
+-    private final WorldServer world;
++    protected final WorldServer world; // Paper - private -> protected
+     private final Random b;
+     private final LongHashMap<PortalTravelAgent.ChunkCoordinatesPortal> c = new LongHashMap();
+     private final List<Long> d = Lists.newArrayList();
+@@ -92,7 +92,7 @@ public class PortalTravelAgent {
+ 
+     public boolean b(Entity entity, float f) {
+         // CraftBukkit start - Modularize portal search process and entity teleportation
+-        BlockPosition found = this.findPortal(entity.locX, entity.locY, entity.locZ, 128);
++        BlockPosition found = this.findPortal(entity.locX, entity.locY, entity.locZ, world.paperConfig.portalSearchRadius); // Paper - Configurable search radius
+         if (found == null) {
+             return false;
          }
-@@ -131,10 +131,10 @@ public class PortalTravelAgent {
-         } else {
-             BlockPosition blockposition = new BlockPosition(x, y, z); // CraftBukkit
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftTravelAgent.java b/src/main/java/org/bukkit/craftbukkit/CraftTravelAgent.java
+index 1d5dce1..7ca2617 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftTravelAgent.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftTravelAgent.java
+@@ -11,7 +11,7 @@ public class CraftTravelAgent extends PortalTravelAgent implements TravelAgent {
  
--            for (int l = -128; l <= 128; ++l) {
-+            for (int l = -searchRadius; l <= searchRadius; ++l) { // Paper - actually use search radiusfor (int l = -128; l <= 128; ++l) {
-                 BlockPosition blockposition1;
+     public static TravelAgent DEFAULT = null;
  
--                for (int i1 = -128; i1 <= 128; ++i1) {
-+                for (int i1 = -searchRadius; i1 <= searchRadius; ++i1) { // Paper - actually use search radius
-                     for (BlockPosition blockposition2 = blockposition.a(l, this.world.Z() - 1 - blockposition.getY(), i1); blockposition2.getY() >= 0; blockposition2 = blockposition1) {
-                         blockposition1 = blockposition2.down();
-                         if (this.world.getType(blockposition2).getBlock() == Blocks.PORTAL) {
-diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 66b7e77..1ef9987 100644
---- a/src/main/java/net/minecraft/server/WorldServer.java
-+++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -60,7 +60,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
-         this.manager = new PlayerChunkMap(this, spigotConfig.viewDistance); // Spigot
-         this.worldProvider.a((World) this);
-         this.chunkProvider = this.n();
--        this.portalTravelAgent = new org.bukkit.craftbukkit.CraftTravelAgent(this); // CraftBukkit
-+        this.portalTravelAgent = ((org.bukkit.craftbukkit.CraftTravelAgent) new org.bukkit.craftbukkit.CraftTravelAgent(this).setSearchRadius(paperConfig.portalSearchRadius)); // CraftBukkit // Paper - configurable search radius
-         this.H();
-         this.I();
-         this.getWorldBorder().a(minecraftserver.aD());
+-    private int searchRadius = 128;
++    private int searchRadius = world.paperConfig.portalSearchRadius; // Paper - Configurable search radius
+     private int creationRadius = 16;
+     private boolean canCreatePortal = true;
+ 
 -- 
 2.7.2
 
