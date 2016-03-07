@@ -31,7 +31,7 @@ public class BlockNetherWart extends BlockPlant {
     public void tick(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, Random random) {
         int i = (Integer) iblockdata.get(BlockNetherWart.AGE);
 
-        if (i < 3 && random.nextInt(10) == 0) {
+        if (i < 3 && random.nextInt(Math.max(1, (int) (100.0F / worldserver.spigotConfig.wartModifier) * 10)) == 0) { // Spigot
             iblockdata = (IBlockData) iblockdata.set(BlockNetherWart.AGE, i + 1);
             org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(worldserver, blockposition, iblockdata, 2); // CraftBukkit
         }

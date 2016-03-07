@@ -38,7 +38,7 @@ public class BlockReed extends Block {
             if (i < 3) {
                 int j = (Integer) iblockdata.get(BlockReed.AGE);
 
-                if (j == 15) {
+                if (j >= (byte) range(3, ((100.0F / worldserver.spigotConfig.caneModifier) * 15) + 0.5F, 15)) { // Spigot
                     org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(worldserver, blockposition.up(), this.getBlockData()); // CraftBukkit
                     worldserver.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockReed.AGE, 0), 4);
                 } else {

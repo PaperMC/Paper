@@ -79,4 +79,53 @@ public class SpigotWorldConfig
         config.addDefault( "world-settings.default." + path, def );
         return config.get( "world-settings." + worldName + "." + path, config.get( "world-settings.default." + path ) );
     }
+
+    // Crop growth rates
+    public int cactusModifier;
+    public int caneModifier;
+    public int melonModifier;
+    public int mushroomModifier;
+    public int pumpkinModifier;
+    public int saplingModifier;
+    public int beetrootModifier;
+    public int carrotModifier;
+    public int potatoModifier;
+    public int wheatModifier;
+    public int wartModifier;
+    public int vineModifier;
+    public int cocoaModifier;
+    public int bambooModifier;
+    public int sweetBerryModifier;
+    public int kelpModifier;
+    private int getAndValidateGrowth(String crop)
+    {
+        int modifier = getInt( "growth." + crop.toLowerCase(java.util.Locale.ENGLISH) + "-modifier", 100 );
+        if ( modifier == 0 )
+        {
+            log( "Cannot set " + crop + " growth to zero, defaulting to 100" );
+            modifier = 100;
+        }
+        log( crop + " Growth Modifier: " + modifier + "%" );
+
+        return modifier;
+    }
+    private void growthModifiers()
+    {
+        cactusModifier = getAndValidateGrowth( "Cactus" );
+        caneModifier = getAndValidateGrowth( "Cane" );
+        melonModifier = getAndValidateGrowth( "Melon" );
+        mushroomModifier = getAndValidateGrowth( "Mushroom" );
+        pumpkinModifier = getAndValidateGrowth( "Pumpkin" );
+        saplingModifier = getAndValidateGrowth( "Sapling" );
+        beetrootModifier = getAndValidateGrowth( "Beetroot" );
+        carrotModifier = getAndValidateGrowth( "Carrot" );
+        potatoModifier = getAndValidateGrowth( "Potato" );
+        wheatModifier = getAndValidateGrowth( "Wheat" );
+        wartModifier = getAndValidateGrowth( "NetherWart" );
+        vineModifier = getAndValidateGrowth( "Vine" );
+        cocoaModifier = getAndValidateGrowth( "Cocoa" );
+        bambooModifier = getAndValidateGrowth( "Bamboo" );
+        sweetBerryModifier = getAndValidateGrowth( "SweetBerry" );
+        kelpModifier = getAndValidateGrowth( "Kelp" );
+    }
 }

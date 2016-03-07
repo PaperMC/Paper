@@ -25,7 +25,7 @@ public abstract class BlockGrowingTop extends BlockGrowingAbstract implements IB
 
     @Override
     public void tick(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, Random random) {
-        if ((Integer) iblockdata.get(BlockGrowingTop.d) < 25 && random.nextDouble() < this.e) {
+        if ((Integer) iblockdata.get(BlockGrowingTop.d) < 25 && random.nextDouble() < (100.0D / worldserver.spigotConfig.kelpModifier) * this.e) { // Spigot
             BlockPosition blockposition1 = blockposition.shift(this.a);
 
             if (this.h(worldserver.getType(blockposition1))) {

@@ -22,7 +22,7 @@ public class BlockMushroom extends BlockPlant implements IBlockFragilePlantEleme
 
     @Override
     public void tick(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, Random random) {
-        if (random.nextInt(25) == 0) {
+        if (random.nextInt(Math.max(1, (int) (100.0F / worldserver.spigotConfig.mushroomModifier) * 25)) == 0) { // Spigot
             int i = 5;
             boolean flag = true;
             Iterator iterator = BlockPosition.a(blockposition.b(-4, -1, -4), blockposition.b(4, 1, 4)).iterator();

@@ -57,7 +57,20 @@ public class BlockCrops extends BlockPlant implements IBlockFragilePlantElement 
             if (i < this.d()) {
                 float f = a((Block) this, (IBlockAccess) worldserver, blockposition);
 
-                if (random.nextInt((int) (25.0F / f) + 1) == 0) {
+                // Spigot start
+                int modifier;
+                if (this == Blocks.BEETROOTS) {
+                    modifier = worldserver.spigotConfig.beetrootModifier;
+                } else if (this == Blocks.CARROTS) {
+                    modifier = worldserver.spigotConfig.carrotModifier;
+                } else if (this == Blocks.POTATOES) {
+                    modifier = worldserver.spigotConfig.potatoModifier;
+                } else {
+                    modifier = worldserver.spigotConfig.wheatModifier;
+                }
+
+                if (random.nextInt((int) ((100.0F / modifier) * (25.0F / f)) + 1) == 0) {
+                    // Spigot end
                     CraftEventFactory.handleBlockGrowEvent(worldserver, blockposition, this.setAge(i + 1), 2); // CraftBukkit
                 }
             }
