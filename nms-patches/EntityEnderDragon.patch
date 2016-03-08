@@ -1,10 +1,105 @@
 --- a/net/minecraft/server/EntityEnderDragon.java
 +++ b/net/minecraft/server/EntityEnderDragon.java
-@@ -5,6 +5,7 @@
+@@ -4,7 +4,12 @@
+ import java.util.List;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
++// CraftBukkit start
++import org.bukkit.event.entity.EntityExplodeEvent;
++import org.bukkit.event.entity.EntityRegainHealthEvent;
++// CraftBukkit end
  
 +// PAIL: Fixme
  public class EntityEnderDragon extends EntityInsentient implements IComplex, IMonster {
  
      private static final Logger bH = LogManager.getLogger();
+@@ -32,6 +37,7 @@
+     private final PathPoint[] bM = new PathPoint[24];
+     private final int[] bN = new int[24];
+     private final Path bO = new Path();
++    private Explosion explosionSource = new Explosion(null, this, Double.NaN, Double.NaN, Double.NaN, Float.NaN, true, true); // CraftBukkit - reusable source for CraftTNTPrimed.getSource()
+ 
+     public EntityEnderDragon(World world) {
+         super(world);
+@@ -308,7 +314,14 @@
+             if (this.currentEnderCrystal.dead) {
+                 this.currentEnderCrystal = null;
+             } else if (this.ticksLived % 10 == 0 && this.getHealth() < this.getMaxHealth()) {
+-                this.setHealth(this.getHealth() + 1.0F);
++                // CraftBukkit start
++                EntityRegainHealthEvent event = new EntityRegainHealthEvent(this.getBukkitEntity(), 1.0F, EntityRegainHealthEvent.RegainReason.ENDER_CRYSTAL);
++                this.world.getServer().getPluginManager().callEvent(event);
++
++                if (!event.isCancelled()) {
++                    this.setHealth((float) (this.getHealth() + event.getAmount()));
++                }
++                // CraftBukkit end
+             }
+         }
+ 
+@@ -381,6 +394,10 @@
+         int j1 = MathHelper.floor(axisalignedbb.f);
+         boolean flag = false;
+         boolean flag1 = false;
++        // CraftBukkit start - Create a list to hold all the destroyed blocks
++        List<org.bukkit.block.Block> destroyedBlocks = new java.util.ArrayList<org.bukkit.block.Block>();
++        org.bukkit.craftbukkit.CraftWorld craftWorld = this.world.getWorld();
++        // CraftBukkit end
+ 
+         for (int k1 = i; k1 <= l; ++k1) {
+             for (int l1 = j; l1 <= i1; ++l1) {
+@@ -394,7 +411,11 @@
+                             flag = true;
+                         } else if (block != Blocks.BARRIER && block != Blocks.OBSIDIAN && block != Blocks.END_STONE && block != Blocks.BEDROCK && block != Blocks.END_PORTAL && block != Blocks.END_PORTAL_FRAME) {
+                             if (block != Blocks.COMMAND_BLOCK && block != Blocks.dc && block != Blocks.dd && block != Blocks.IRON_BARS && block != Blocks.END_GATEWAY) {
+-                                flag1 = this.world.setAir(blockposition) || flag1;
++                                // CraftBukkit start - Add blocks to list rather than destroying them
++                                // flag1 = this.world.setAir(blockposition) || flag1;
++                                flag1 = true;
++                                destroyedBlocks.add(craftWorld.getBlockAt(k1, l1, i2));
++                                // CraftBukkit end
+                             } else {
+                                 flag = true;
+                             }
+@@ -406,6 +427,41 @@
+             }
+         }
+ 
++        // CraftBukkit start - Set off an EntityExplodeEvent for the dragon exploding all these blocks
++        org.bukkit.entity.Entity bukkitEntity = this.getBukkitEntity();
++        EntityExplodeEvent event = new EntityExplodeEvent(bukkitEntity, bukkitEntity.getLocation(), destroyedBlocks, 0F);
++        bukkitEntity.getServer().getPluginManager().callEvent(event);
++        if (event.isCancelled()) {
++            // This flag literally means 'Dragon hit something hard' (Obsidian, White Stone or Bedrock) and will cause the dragon to slow down.
++            // We should consider adding an event extension for it, or perhaps returning true if the event is cancelled.
++            return flag;
++        } else if (event.getYield() == 0F) {
++            // Yield zero ==> no drops
++            for (org.bukkit.block.Block block : event.blockList()) {
++                this.world.setAir(new BlockPosition(block.getX(), block.getY(), block.getZ()));
++            }
++        } else {
++            for (org.bukkit.block.Block block : event.blockList()) {
++                org.bukkit.Material blockId = block.getType();
++                if (blockId == org.bukkit.Material.AIR) {
++                    continue;
++                }
++
++                int blockX = block.getX();
++                int blockY = block.getY();
++                int blockZ = block.getZ();
++
++                Block nmsBlock = org.bukkit.craftbukkit.util.CraftMagicNumbers.getBlock(blockId);
++                if (nmsBlock.a(explosionSource)) {
++                    nmsBlock.dropNaturally(this.world, new BlockPosition(blockX, blockY, blockZ), nmsBlock.fromLegacyData(block.getData()), event.getYield(), 0);
++                }
++                nmsBlock.wasExploded(world, new BlockPosition(blockX, blockY, blockZ), explosionSource);
++
++                this.world.setAir(new BlockPosition(blockX, blockY, blockZ));
++            }
++        }
++        // CraftBukkit end
++
+         if (flag1) {
+             double d0 = axisalignedbb.a + (axisalignedbb.d - axisalignedbb.a) * (double) this.random.nextFloat();
+             double d1 = axisalignedbb.b + (axisalignedbb.e - axisalignedbb.b) * (double) this.random.nextFloat();
