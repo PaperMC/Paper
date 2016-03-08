@@ -117,4 +117,9 @@ public class CraftBanner extends CraftBlockState implements Banner {
 
         return result;
     }
+
+    @Override
+    public TileEntityBanner getTileEntity() {
+        return banner;
+    }
 }
