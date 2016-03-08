@@ -1,6 +1,9 @@
 package org.bukkit.command;
 
 import java.util.UUID;
+import net.kyori.adventure.audience.MessageType;
+import net.kyori.adventure.identity.Identity;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Server;
 import org.bukkit.permissions.Permissible;
 import org.jetbrains.annotations.NotNull;
@@ -167,6 +170,34 @@ public interface CommandSender extends net.kyori.adventure.audience.Audience, Pe
      */
     default void sendPlainMessage(final @NotNull String message) {
         this.sendMessage(net.kyori.adventure.text.Component.text(message));
+    }
+
+    /**
+     * Sends the component to the sender
+     *
+     * <p>If this sender does not support sending full components then
+     * the component will be sent as legacy text.</p>
+     *
+     * @param component the component to send
+     * @deprecated use {@link #sendMessage(Identity, Component, MessageType)} instead
+     */
+    @Deprecated
+    default void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+        this.sendMessage(component.toLegacyText());
+    }
+
+    /**
+     * Sends an array of components as a single message to the sender
+     *
+     * <p>If this sender does not support sending full components then
+     * the components will be sent as legacy text.</p>
+     *
+     * @param components the components to send
+     * @deprecated use {@link #sendMessage(Identity, Component, MessageType)} instead
+     */
+    @Deprecated
+    default void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+        this.sendMessage(new net.md_5.bungee.api.chat.TextComponent(components).toLegacyText());
     }
     // Paper end
 }
