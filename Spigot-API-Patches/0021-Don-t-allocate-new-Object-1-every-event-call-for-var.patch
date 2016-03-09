@@ -1,0 +1,32 @@
+From 4674110731b39d2d8835e16d12df03a315774289 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 30 Aug 2015 23:58:44 -0400
+Subject: [PATCH] Don't allocate new Object[1] every event call for varargs
+
+
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+index 93a43dd..d8d1e27 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+@@ -49,6 +49,7 @@ public final class JavaPluginLoader implements PluginLoader {
+     private final Pattern[] fileFilters = new Pattern[] { Pattern.compile("\\.jar$"), };
+     private final Map<String, Class<?>> classes = new java.util.concurrent.ConcurrentHashMap<String, Class<?>>(); // Spigot
+     private final Map<String, PluginClassLoader> loaders = new LinkedHashMap<String, PluginClassLoader>();
++    private static final Object[] SYNC_INVOKE_VARARG = new Object[1]; // Paper
+ 
+     /**
+      * This class was not meant to be constructed explicitly
+@@ -297,7 +298,9 @@ public final class JavaPluginLoader implements PluginLoader {
+                         if (!eventClass.isAssignableFrom(event.getClass())) {
+                             return;
+                         }
+-                        method.invoke(listener, event);
++                        Object[] invokeArg = event.isAsynchronous() ? new Object[1] : SYNC_INVOKE_VARARG; // Paper
++                        invokeArg[0] = event; // This is to prevent 1 byte Object array allocation every event call // Paper
++                        method.invoke(listener, invokeArg); // Paper
+                     } catch (InvocationTargetException ex) {
+                         throw new EventException(ex.getCause());
+                     } catch (Throwable t) {
+-- 
+2.7.2
+
