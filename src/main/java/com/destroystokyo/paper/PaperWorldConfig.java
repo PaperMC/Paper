@@ -203,4 +203,9 @@ public class PaperWorldConfig {
     private void disableTeleportationSuffocationCheck() {
         disableTeleportationSuffocationCheck = getBoolean("disable-teleportation-suffocation-check", false);
     }
+
+    public boolean nonPlayerEntitiesOnScoreboards = false;
+    private void nonPlayerEntitiesOnScoreboards() {
+        nonPlayerEntitiesOnScoreboards = getBoolean("allow-non-player-entities-on-scoreboards", false);
+    }
 }
