@@ -366,4 +366,19 @@ public interface LivingEntity extends Attributable, Entity, Damageable, Projecti
      * @return whether the operation was successful
      */
     public boolean setLeashHolder(Entity holder);
+
+    /**
+     * Checks to see if an entity is gliding, such as using an Elytra.
+     * @return True if this entity is gliding.
+     */
+    public boolean isGliding();
+
+    /**
+     * Makes entity start or stop gliding. This will work even if an Elytra
+     * is not equipped, but will be reverted by the server immediately after
+     * unless an event-cancelling mechanism is put in place.
+     * @param gliding True if the entity is gliding.
+     */
+    public void setGliding(boolean gliding);
+
 }
