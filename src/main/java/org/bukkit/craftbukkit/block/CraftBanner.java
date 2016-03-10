@@ -96,7 +96,7 @@ public class CraftBanner extends CraftBlockState implements Banner {
 
     @Override
     public boolean update(boolean force, boolean applyPhysics) {
-        boolean result = super.update(force, applyPhysics);
+        boolean result = (isPlaced()) ? super.update(force, applyPhysics) : true;
 
         if (result) {
             banner.color = base.getDyeData();
