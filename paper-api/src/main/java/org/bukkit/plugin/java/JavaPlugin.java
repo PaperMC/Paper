@@ -39,6 +39,7 @@ import com.avaje.ebean.config.ServerConfig;
 import com.avaje.ebeaninternal.api.SpiEbeanServer;
 import com.avaje.ebeaninternal.server.ddl.DdlGenerator;
 import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
 import com.google.common.io.ByteStreams;
 
 /**
@@ -437,6 +438,8 @@ public abstract class JavaPlugin extends PluginBase {
 
     @Override
     public EbeanServer getDatabase() {
+        Preconditions.checkState(description.isDatabaseEnabled(), "Plugin does not have database: true in plugin.yml");
+
         return ebean;
     }
 
