@@ -7,6 +7,7 @@ import net.minecraft.server.*;
 
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.inventory.MainHand;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
@@ -58,6 +59,10 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     public Inventory getEnderChest() {
         return enderChest;
+    }
+
+    public MainHand getMainHand() {
+        return getHandle().cr() == EnumMainHand.LEFT ? MainHand.LEFT : MainHand.RIGHT; // PAIL Rename cr()->getMainHand()
     }
 
     public ItemStack getItemInHand() {
