@@ -2,6 +2,7 @@ package org.bukkit.entity;
 
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.inventory.MainHand;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.InventoryView;
@@ -35,6 +36,13 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
      * @return The EnderChest of the player
      */
     public Inventory getEnderChest();
+
+    /**
+     * Gets the players selected main hand
+     *
+     * @return the players main hand
+     */
+    public MainHand getMainHand();
 
     /**
      * If the player currently has an inventory window open, this method will
