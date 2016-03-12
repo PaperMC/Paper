@@ -6,6 +6,7 @@ import org.bukkit.Particle;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.projectiles.ProjectileSource;
 
 /**
  * Represents an area effect cloud which will imbue a potion effect onto
@@ -207,4 +208,18 @@ public interface AreaEffectCloud extends Entity {
      * @param color cloud color
      */
     void setColor(Color color);
+
+    /**
+     * Retrieve the original source of this cloud.
+     * 
+     * @return the {@link ProjectileSource} that threw the LingeringPotion
+     */
+    public ProjectileSource getSource();
+
+    /**
+     * Set the original source of this cloud.
+     *
+     * @param source the {@link ProjectileSource} that threw the LingeringPotion
+     */
+    public void setSource(ProjectileSource source);
 }
