@@ -10,6 +10,7 @@ import org.bukkit.entity.Entity;
  * Examples:
  * <ul>
  * <li>Snow formed by a {@link org.bukkit.entity.Snowman}.
+ * <li>Frosted Ice formed by the Frost Walker enchantment.
  * </ul>
  */
 public class EntityBlockFormEvent extends BlockFormEvent {
