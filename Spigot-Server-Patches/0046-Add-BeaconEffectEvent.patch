@@ -1,4 +1,4 @@
-From dc65a8bcffb8c2767d4907e60d516b57f401730e Mon Sep 17 00:00:00 2001
+From e517ad6d7b004bfea02ba11c3e32ff28ba42acdc Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Wed, 2 Mar 2016 23:30:53 -0600
 Subject: [PATCH] Add BeaconEffectEvent
@@ -18,31 +18,32 @@ index 24ae8e2..a5cbda5 100644
      public double durationModifier;
      private boolean h;
 diff --git a/src/main/java/net/minecraft/server/TileEntityBeacon.java b/src/main/java/net/minecraft/server/TileEntityBeacon.java
-index ed5b374..6615890 100644
+index ed5b374..f490dca 100644
 --- a/src/main/java/net/minecraft/server/TileEntityBeacon.java
 +++ b/src/main/java/net/minecraft/server/TileEntityBeacon.java
-@@ -13,6 +13,14 @@ import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+@@ -13,6 +13,15 @@ import org.bukkit.craftbukkit.entity.CraftHumanEntity;
  import org.bukkit.entity.HumanEntity;
  // CraftBukkit end
  
 +// Paper start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 +import org.bukkit.entity.Player;
++import org.bukkit.potion.PotionData;
 +import org.bukkit.potion.PotionEffect;
-+import org.bukkit.potion.PotionEffectType;
 +import com.destroystokyo.paper.event.block.BeaconEffectEvent;
 +// Paper end
 +
  public class TileEntityBeacon extends TileEntityContainer implements ITickable, IWorldInventory {
  
      public static final MobEffectList[][] a = new MobEffectList[][] { { MobEffects.FASTER_MOVEMENT, MobEffects.FASTER_DIG}, { MobEffects.RESISTANCE, MobEffects.JUMP}, { MobEffects.INCREASE_DAMAGE}, { MobEffects.REGENERATION}};
-@@ -85,17 +93,33 @@ public class TileEntityBeacon extends TileEntityContainer implements ITickable,
+@@ -85,17 +94,33 @@ public class TileEntityBeacon extends TileEntityContainer implements ITickable,
  
              EntityHuman entityhuman;
  
 +            // Paper start
 +            org.bukkit.block.Block block = world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ());
-+            PotionEffect primaryEffect = new PotionEffect(PotionEffectType.getByName(this.l.e), 180, b0, true, true);
++            PotionEffect primaryEffect = CraftPotionUtil.toBukkit(new MobEffect(this.l, i, b0, true, true));
 +            // Paper end
 +
              while (iterator.hasNext()) {
@@ -52,13 +53,13 @@ index ed5b374..6615890 100644
 +                BeaconEffectEvent event = new BeaconEffectEvent(block, primaryEffect, (Player) entityhuman.getBukkitEntity(), true);
 +                if (CraftEventFactory.callEvent(event).isCancelled()) continue;
 +                PotionEffect effect = event.getEffect();
-+                entityhuman.addEffect(new MobEffect(MobEffectList.fromId(effect.getType().getId()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles()));
++                entityhuman.getBukkitEntity().addPotionEffect(effect);
 +                // Paper end
              }
  
              if (this.k >= 4 && this.l != this.m && this.m != null) {
                  iterator = list.iterator();
-+                PotionEffect secondaryEffect = new PotionEffect(PotionEffectType.getByName(this.m.e), 180, 0, true, true); // Paper
++                PotionEffect secondaryEffect = org.bukkit.craftbukkit.potion.CraftPotionUtil.toBukkit(new MobEffect(this.m, i, 0, true, true)); // Paper
  
                  while (iterator.hasNext()) {
                      entityhuman = (EntityHuman) iterator.next();
@@ -67,7 +68,7 @@ index ed5b374..6615890 100644
 +                    BeaconEffectEvent event = new BeaconEffectEvent(block, secondaryEffect, (Player) entityhuman.getBukkitEntity(), false);
 +                    if (CraftEventFactory.callEvent(event).isCancelled()) continue;
 +                    PotionEffect effect = event.getEffect();
-+                    entityhuman.addEffect(new MobEffect(MobEffectList.fromId(effect.getType().getId()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles()));
++                    entityhuman.getBukkitEntity().addPotionEffect(effect);
 +                    // Paper end
                  }
              }
