@@ -474,6 +474,16 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return true;
     }
 
+    @Override
+    public boolean isGliding() {
+        return getHandle().getFlag(7);
+    }
+
+    @Override
+    public void setGliding(boolean gliding) {
+        getHandle().setFlag(7, gliding);
+    }
+
     @Deprecated
     public int _INVALID_getLastDamage() {
         return NumberConversions.ceil(getLastDamage());

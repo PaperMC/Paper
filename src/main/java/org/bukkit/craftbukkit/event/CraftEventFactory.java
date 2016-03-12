@@ -984,4 +984,10 @@ public class CraftEventFactory {
         event.getInventory().setItem(2, event.getResult());
         return event;
     }
+
+    public static EntityToggleGlideEvent callToggleGlideEvent(EntityLiving entity, boolean gliding) {
+        EntityToggleGlideEvent event = new EntityToggleGlideEvent((LivingEntity) entity.getBukkitEntity(), gliding);
+        entity.world.getServer().getPluginManager().callEvent(event);
+        return event;
+    }
 }
