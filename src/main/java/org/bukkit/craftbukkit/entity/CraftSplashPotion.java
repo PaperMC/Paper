@@ -6,9 +6,10 @@ import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.SplashPotion;
 import org.bukkit.inventory.ItemStack;
 
-public class CraftSplashPotion extends CraftThrownPotion {
+public class CraftSplashPotion extends CraftThrownPotion implements SplashPotion {
 
     public CraftSplashPotion(CraftServer server, EntityPotion entity) {
         super(server, entity);

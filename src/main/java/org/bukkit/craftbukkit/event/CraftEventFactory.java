@@ -31,6 +31,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftMetaBook;
 import org.bukkit.craftbukkit.util.CraftDamageSource;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Creeper;
 import org.bukkit.entity.EntityType;
@@ -343,6 +344,15 @@ public class CraftEventFactory {
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
+
+	public static LingeringPotionSplashEvent callLingeringPotionSplashEvent(EntityPotion potion, EntityAreaEffectCloud cloud) {
+        ThrownPotion thrownPotion = (ThrownPotion) potion.getBukkitEntity();
+        AreaEffectCloud effectCloud = (AreaEffectCloud) cloud.getBukkitEntity();
+
+        LingeringPotionSplashEvent event = new LingeringPotionSplashEvent(thrownPotion, effectCloud);
+        Bukkit.getPluginManager().callEvent(event);
+        return event;
+	}
 
     /**
      * BlockFadeEvent
@@ -993,4 +1003,10 @@ public class CraftEventFactory {
         entity.world.getServer().getPluginManager().callEvent(event);
         return event;
     }
+
+	public static AreaEffectCloudApplyEvent callAreaEffectCloudApplyEvent(EntityAreaEffectCloud cloud, List<LivingEntity> entities) {
+		AreaEffectCloudApplyEvent event = new AreaEffectCloudApplyEvent((AreaEffectCloud) cloud.getBukkitEntity(), entities);
+		cloud.world.getServer().getPluginManager().callEvent(event);
+		return event;
+	}
 }
