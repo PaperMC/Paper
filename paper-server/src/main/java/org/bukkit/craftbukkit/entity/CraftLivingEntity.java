@@ -345,12 +345,12 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             ((EntityProjectile) launch).a(getHandle(), getHandle().pitch, getHandle().yaw, 0.0F, 1.5F, 1.0F); // ItemEnderPearl
         } else if (Arrow.class.isAssignableFrom(projectile)) {
             if (TippedArrow.class.isAssignableFrom(projectile)) {
-                launch = new EntityTippedArrow(world);
+                launch = new EntityTippedArrow(world, getHandle());
                 ((EntityTippedArrow) launch).setType(CraftPotionUtil.fromBukkit(new PotionData(PotionType.WATER, false, false)));
             } else if (SpectralArrow.class.isAssignableFrom(projectile)) {
-                launch = new EntitySpectralArrow(world);
+                launch = new EntitySpectralArrow(world, getHandle());
             } else {
-                launch = new EntityTippedArrow(world);
+                launch = new EntityTippedArrow(world, getHandle());
             }
             ((EntityArrow) launch).a(getHandle(), getHandle().pitch, getHandle().yaw, 0.0F, 3.0F, 1.0F); // ItemBow
         } else if (ThrownPotion.class.isAssignableFrom(projectile)) {
