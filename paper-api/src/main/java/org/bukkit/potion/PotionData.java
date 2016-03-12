@@ -61,4 +61,25 @@ public final class PotionData {
     public boolean isExtended() {
         return extended;
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 23 * hash + (this.type != null ? this.type.hashCode() : 0);
+        hash = 23 * hash + (this.extended ? 1 : 0);
+        hash = 23 * hash + (this.upgraded ? 1 : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        PotionData other = (PotionData) obj;
+        return (this.upgraded == other.upgraded) && (this.extended == other.extended) && (this.type == other.type);
+    }
 }
