@@ -143,7 +143,7 @@ public class Potion {
         Validate.isTrue(to.hasItemMeta(), "given itemstack is not a potion");
         Validate.isTrue(to.getItemMeta() instanceof PotionMeta, "given itemstack is not a potion");
         PotionMeta meta = (PotionMeta) to.getItemMeta();
-        meta.setBasePotionData(new PotionData(type, level == 2, extended));
+        meta.setBasePotionData(new PotionData(type, extended, level == 2));
         to.setItemMeta(meta);
     }
 
