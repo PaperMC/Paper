@@ -501,7 +501,7 @@
          if (++this.teleportAwait == Integer.MAX_VALUE) {
              this.teleportAwait = 0;
          }
-@@ -399,15 +737,32 @@
+@@ -399,14 +737,16 @@
  
      public void a(PacketPlayInBlockDig packetplayinblockdig) {
          PlayerConnectionUtils.ensureMainThread(packetplayinblockdig, this, this.player.x());
@@ -515,7 +515,16 @@
 +        // CraftBukkit start
          switch (PlayerConnection.SyntheticClass_1.a[packetplayinblockdig.c().ordinal()]) {
 -        case 1:
-+        case 1: // DROP_ITEM
++        case 1: // SWAP_HELD_ITEMS
+             if (!this.player.isSpectator()) {
+                 itemstack = this.player.b(EnumHand.OFF_HAND);
+                 this.player.a(EnumHand.OFF_HAND, this.player.b(EnumHand.MAIN_HAND));
+@@ -415,21 +755,36 @@
+ 
+             return;
+ 
+-        case 2:
++        case 2: // DROP_ITEM
              if (!this.player.isSpectator()) {
 +                // limit how quickly items can be dropped
 +                // If the ticks aren't the same then the count starts from 0 and we update the lastDropTick.
@@ -526,29 +535,19 @@
 +                    // Else we increment the drop count and check the amount.
 +                    this.dropCount++;
 +                    if (this.dropCount >= 20) {
-+                        this.LOGGER.warn(this.player.getName() + " dropped their items too quickly!");
++                        LOGGER.warn(this.player.getName() + " dropped their items too quickly!");
 +                        this.disconnect("You dropped your items too quickly (Hacking?)");
 +                        return;
 +                    }
 +                }
 +                // CraftBukkit end
-                 itemstack = this.player.b(EnumHand.OFF_HAND);
-                 this.player.a(EnumHand.OFF_HAND, this.player.b(EnumHand.MAIN_HAND));
-                 this.player.a(EnumHand.MAIN_HAND, itemstack);
-@@ -415,21 +770,21 @@
- 
-             return;
- 
--        case 2:
-+        case 2: // DROP_ALL_ITEMS
-             if (!this.player.isSpectator()) {
                  this.player.a(false);
              }
  
              return;
  
 -        case 3:
-+        case 3: // RELEASE_USE_ITEM
++        case 3: // DROP_ALL_ITEMS
              if (!this.player.isSpectator()) {
                  this.player.a(true);
              }
@@ -556,21 +555,23 @@
              return;
  
 -        case 4:
-+        case 4: // START_DESTROY_BLOCK
++        case 4: // RELEASE_USE_ITEM
              this.player.clearActiveItem();
              itemstack = this.player.getItemInMainHand();
              if (itemstack != null && itemstack.count == 0) {
-@@ -438,8 +793,8 @@
+@@ -438,9 +793,9 @@
  
              return;
  
 -        case 5:
 -        case 6:
-+        case 5: // ABORT_DESTROY_BLOCK
-+        case 6: // STOP_DESTROY_BLOCK
-         case 7:
+-        case 7:
++        case 5: // START_DESTROY_BLOCK
++        case 6: // ABORT_DESTROY_BLOCK
++        case 7: // STOP_DESTROY_BLOCK
              double d0 = this.player.locX - ((double) blockposition.getX() + 0.5D);
              double d1 = this.player.locY - ((double) blockposition.getY() + 0.5D) + 1.5D;
+             double d2 = this.player.locZ - ((double) blockposition.getZ() + 0.5D);
 @@ -455,7 +810,15 @@
                      if (!this.minecraftServer.a(worldserver, blockposition, this.player) && worldserver.getWorldBorder().a(blockposition)) {
                          this.player.playerInteractManager.a(blockposition, packetplayinblockdig.b());
