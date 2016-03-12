@@ -6,9 +6,10 @@ import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LingeringPotion;
 import org.bukkit.inventory.ItemStack;
 
-public class CraftLingeringPotion extends CraftThrownPotion {
+public class CraftLingeringPotion extends CraftThrownPotion implements LingeringPotion {
 
     public CraftLingeringPotion(CraftServer server, EntityPotion entity) {
         super(server, entity);
