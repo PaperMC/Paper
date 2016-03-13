@@ -205,7 +205,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
         Iterator<PotionEffect> iterator = customEffects.iterator();
         while (iterator.hasNext()) {
             PotionEffect effect = iterator.next();
-            if (effect.getType() == type) {
+            if (type.equals(effect.getType())) {
                 iterator.remove();
                 changed = true;
             }
