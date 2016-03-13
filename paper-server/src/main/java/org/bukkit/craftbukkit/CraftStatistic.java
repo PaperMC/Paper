@@ -119,6 +119,9 @@ public class CraftStatistic {
             if (stat == Statistic.BREAK_ITEM) {
                 return StatisticList.c(CraftMagicNumbers.getItem(material)); // PAIL: getBreakItemStatistic
             }
+            if (stat == Statistic.DROP) {
+                return StatisticList.e(CraftMagicNumbers.getItem(material)); // PAIL: getDropItemStatistic
+            }
         } catch (ArrayIndexOutOfBoundsException e) {
             return null;
         }
