@@ -132,13 +132,16 @@ public class CraftEventFactory {
         boolean canBuild = canBuild(craftWorld, player, placedBlock.getX(), placedBlock.getZ());
 
         org.bukkit.inventory.ItemStack item;
+        EquipmentSlot equipmentSlot;
         if (hand == EnumHand.MAIN_HAND) {
             item = player.getInventory().getItemInMainHand();
+            equipmentSlot = EquipmentSlot.HAND;
         } else {
             item = player.getInventory().getItemInOffHand();
+            equipmentSlot = EquipmentSlot.OFF_HAND;
         }
 
-        BlockPlaceEvent event = new BlockPlaceEvent(placedBlock, replacedBlockState, blockClicked, item, player, canBuild);
+        BlockPlaceEvent event = new BlockPlaceEvent(placedBlock, replacedBlockState, blockClicked, item, player, canBuild, equipmentSlot);
         craftServer.getPluginManager().callEvent(event);
 
         return event;
