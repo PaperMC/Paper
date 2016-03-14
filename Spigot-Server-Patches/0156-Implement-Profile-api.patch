@@ -1,0 +1,770 @@
+From d99192ff867f5a7ab2d82d2c2ef33b631fcb0c95 Mon Sep 17 00:00:00 2001
+From: Techcable <Techcable@outlook.com>
+Date: Sun, 13 Mar 2016 20:42:57 -0700
+Subject: [PATCH] Implement Profile api.
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/profile/EventProfileLookup.java b/src/main/java/com/destroystokyo/paper/profile/EventProfileLookup.java
+new file mode 100644
+index 0000000..f2ad29d
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/EventProfileLookup.java
+@@ -0,0 +1,141 @@
++package com.destroystokyo.paper.profile;
++
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.List;
++import java.util.UUID;
++
++import com.destroystokyo.paper.profile.event.AsyncPropertiesPreResolveEvent;
++import com.google.common.base.Preconditions;
++
++import org.bukkit.Bukkit;
++import com.destroystokyo.paper.profile.event.AsyncNamePreResolveEvent;
++import com.destroystokyo.paper.profile.event.AsyncProfileResolveEvent;
++import com.destroystokyo.paper.profile.event.AsyncUUIDPreResolveEvent;
++
++public class EventProfileLookup implements ProfileLookup {
++    private final ProfileLookup delegate;
++
++    public EventProfileLookup(ProfileLookup delegate) {
++        Preconditions.checkNotNull(delegate, "Null delegate");
++        this.delegate = Preconditions.checkNotNull(delegate, "Null delegate");;
++    }
++
++    @Override
++    public AccountProfile lookup(String name) {
++        Preconditions.checkNotNull(name, "Null name");
++        AsyncNamePreResolveEvent preResolveEvent = new AsyncNamePreResolveEvent(name);
++        Bukkit.getPluginManager().callEvent(preResolveEvent);
++        AsyncProfileResolveEvent resolveEvent;
++        if (preResolveEvent.isResolved()) { // Plugin set result
++            resolveEvent = new AsyncProfileResolveEvent(LookupCause.NAME_LOOKUP, preResolveEvent.getResult(), false);
++        } else {
++            // Lookup result from mojang
++            AccountProfile profile = delegate.lookup(name);
++            if (profile == null) return null; // Not found
++            resolveEvent = new AsyncProfileResolveEvent(LookupCause.NAME_LOOKUP, profile, true);
++        }
++        Bukkit.getPluginManager().callEvent(resolveEvent);
++        return resolveEvent.getResult();
++    }
++
++    @Override
++    public AccountProfile lookup(UUID id) {
++        Preconditions.checkNotNull(id, "Null id");
++        AsyncUUIDPreResolveEvent preResolveEvent = new AsyncUUIDPreResolveEvent(id);
++        Bukkit.getPluginManager().callEvent(preResolveEvent);
++        AsyncProfileResolveEvent resolveEvent;
++        if (preResolveEvent.isResolved()) { // Plugin set result
++            resolveEvent = new AsyncProfileResolveEvent(LookupCause.UUID_LOOKUP, preResolveEvent.getResult(), false);
++        } else {
++            // Lookup result from mojang
++            AccountProfile profile = delegate.lookup(id);
++            if (profile == null) return null; // Not found
++            resolveEvent = new AsyncProfileResolveEvent(LookupCause.UUID_LOOKUP, profile, true);
++        }
++        Bukkit.getPluginManager().callEvent(resolveEvent);
++        return resolveEvent.getResult();
++    }
++
++    @Override
++    public void lookupIds(Collection<UUID> ids, ProfileLookupCallback<UUID> callback) {
++        List<UUID> toLookup = new ArrayList<>(ids.size());
++        for (UUID id : ids) {
++            Preconditions.checkNotNull(id, "Null id");
++            AsyncUUIDPreResolveEvent preResolveEvent = new AsyncUUIDPreResolveEvent(id);
++            Bukkit.getPluginManager().callEvent(preResolveEvent);
++            if (preResolveEvent.isResolved()) { // Plugin set result
++                AsyncProfileResolveEvent resolveEvent = new AsyncProfileResolveEvent(LookupCause.UUID_LOOKUP, preResolveEvent.getResult(), false);
++                Bukkit.getPluginManager().callEvent(resolveEvent);
++                callback.onLookup(resolveEvent.getResult(), id);
++            } else {
++                toLookup.add(id);
++            }
++        }
++        delegate.lookupIds(toLookup, new ProfileLookupCallback<UUID>() {
++            @Override
++            public void onLookup(AccountProfile profile, UUID original) {
++                if (profile != null) {
++                    AsyncProfileResolveEvent resolveEvent = new AsyncProfileResolveEvent(LookupCause.UUID_LOOKUP, profile, true);
++                    Bukkit.getPluginManager().callEvent(resolveEvent);
++                    profile = resolveEvent.getResult();
++                }
++                callback.onLookup(profile, original);
++            }
++
++            @Override
++            public void onLookupFailed(Throwable t, UUID original) {
++                callback.onLookupFailed(t, original);
++            }
++        });
++    }
++
++    @Override
++    public void lookupNames(Collection<String> names, ProfileLookupCallback<String> callback) {
++        List<String> toLookup = new ArrayList<>(names.size());
++        for (String name : names) {
++            Preconditions.checkNotNull(name, "Null id");
++            AsyncNamePreResolveEvent preResolveEvent = new AsyncNamePreResolveEvent(name);
++            Bukkit.getPluginManager().callEvent(preResolveEvent);
++            if (preResolveEvent.isResolved()) { // Plugin set result
++                AsyncProfileResolveEvent resolveEvent = new AsyncProfileResolveEvent(LookupCause.NAME_LOOKUP, preResolveEvent.getResult(), false);
++                Bukkit.getPluginManager().callEvent(resolveEvent);
++                callback.onLookup(resolveEvent.getResult(), name);
++            } else {
++                toLookup.add(name);
++            }
++        }
++        delegate.lookupNames(toLookup, new ProfileLookupCallback<String>() {
++            @Override
++            public void onLookup(AccountProfile profile, String original) {
++                if (profile != null) {
++                    AsyncProfileResolveEvent resolveEvent = new AsyncProfileResolveEvent(LookupCause.NAME_LOOKUP, profile, true);
++                    Bukkit.getPluginManager().callEvent(resolveEvent);
++                    profile = resolveEvent.getResult();
++                }
++                callback.onLookup(profile, original);
++            }
++
++            @Override
++            public void onLookupFailed(Throwable t, String original) {
++                callback.onLookupFailed(t, original);
++            }
++        });
++    }
++
++    @Override
++    public ProfileProperties lookupProperties(AccountProfile profile) {
++        AsyncPropertiesPreResolveEvent preResolveEvent = new AsyncPropertiesPreResolveEvent(profile);
++        Bukkit.getPluginManager().callEvent(preResolveEvent);
++        AsyncProfileResolveEvent resolveEvent;
++        if (preResolveEvent.isResolved()) {
++            resolveEvent = new AsyncProfileResolveEvent(LookupCause.PROPERTIES_LOOKUP, preResolveEvent.getResult(), false);
++        } else {
++            ProfileProperties properties = delegate.lookupProperties(profile);
++            if (properties == null) return null;
++            resolveEvent = new AsyncProfileResolveEvent(LookupCause.PROPERTIES_LOOKUP, profile.withProperties(properties), true);
++        }
++        Bukkit.getPluginManager().callEvent(resolveEvent);
++        return resolveEvent.getResult().getProperties();
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/MojangLookup.java b/src/main/java/com/destroystokyo/paper/profile/MojangLookup.java
+new file mode 100644
+index 0000000..f58b36a
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/MojangLookup.java
+@@ -0,0 +1,45 @@
++package com.destroystokyo.paper.profile;
++
++import java.util.Collection;
++import java.util.UUID;
++
++import com.google.common.base.Preconditions;
++import com.google.common.collect.ImmutableList;
++
++public final class MojangLookup implements ProfileLookup {
++
++    @Override
++    public AccountProfile lookup(String name) {
++        AccountProfile[] profileHolder = new AccountProfile[1];
++        lookupNames(ImmutableList.of(name), (profile, original) -> profileHolder[0] = profile);
++        return profileHolder[0];
++    }
++
++    @Override
++    public AccountProfile lookup(UUID id) {
++        return ProfileUtils.requestProfile(id).orElse(null);
++    }
++
++    @Override
++    public void lookupNames(Collection<String> names, final ProfileLookupCallback<String> callback) {
++        Preconditions.checkNotNull(callback, "Null callback");
++
++    }
++
++    @Override
++    public ProfileProperties lookupProperties(AccountProfile profile) {
++        AccountProfile newProfile = lookup(profile.getId());
++        Preconditions.checkArgument(newProfile != null, "%s doesn't exist", profile);
++        return newProfile.getProperties();
++    }
++
++    @Override
++    public boolean equals(Object obj) {
++        return obj instanceof MojangLookup;
++    }
++
++    @Override
++    public int hashCode() {
++        return 0;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/ProfileUtils.java b/src/main/java/com/destroystokyo/paper/profile/ProfileUtils.java
+new file mode 100644
+index 0000000..dc50aaf
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/ProfileUtils.java
+@@ -0,0 +1,290 @@
++package com.destroystokyo.paper.profile;
++
++import java.io.BufferedReader;
++import java.io.BufferedWriter;
++import java.io.IOException;
++import java.io.InputStreamReader;
++import java.io.OutputStreamWriter;
++import java.net.HttpURLConnection;
++import java.net.MalformedURLException;
++import java.net.URL;
++import java.util.List;
++import java.util.Map;
++import java.util.Optional;
++import java.util.UUID;
++
++import com.destroystokyo.paper.utils.json.ProfilePropertyTypeAdapter;
++import com.destroystokyo.paper.utils.json.UUIDTypeAdapter;
++import com.google.common.base.Charsets;
++import com.google.common.base.Preconditions;
++import com.google.common.collect.ImmutableList;
++import com.google.common.collect.ImmutableSet;
++import com.google.common.collect.UnmodifiableIterator;
++import com.google.common.net.HttpHeaders;
++import com.google.gson.Gson;
++import com.google.gson.GsonBuilder;
++import com.google.gson.JsonIOException;
++import com.google.gson.JsonParseException;
++import com.google.gson.stream.JsonReader;
++import com.google.gson.stream.JsonWriter;
++import com.mojang.authlib.GameProfile;
++import com.mojang.authlib.properties.Property;
++import com.mojang.authlib.properties.PropertyMap;
++
++import static com.destroystokyo.paper.profile.UUIDUtils.fromString;
++import static com.destroystokyo.paper.profile.UUIDUtils.toMojangString;
++
++public class ProfileUtils {
++
++    private static final Gson GSON = new GsonBuilder()
++            .registerTypeAdapter(UUID.class, UUIDTypeAdapter.createMojang())
++            .registerTypeAdapter(ProfileProperty.class, new ProfilePropertyTypeAdapter())
++            .create();
++
++    public static Optional<AccountProfile> requestProfile(UUID id) {
++        Preconditions.checkNotNull(id, "Null id");
++        try {
++            URL url = new URL("https://sessionserver.mojang.com/session/minecraft/profile/" + toMojangString(id) + "?unsigned=false");
++            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
++            connection.connect();
++            if (connection.getResponseCode() == HttpURLConnection.HTTP_NO_CONTENT) {
++                return Optional.empty(); // Profile not found
++            }
++            if (connection.getResponseCode() == 429) {
++                throw new LookupFailedException("Mojang rate limited request for: " + id);
++            }
++            try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), Charsets.UTF_8))) {
++                ProfileResponse response = GSON.fromJson(reader, ProfileResponse.class);
++
++                if (response.errorMessage != null) {
++                    throw new LookupFailedException("Mojang returned error: " + response.errorMessage);
++                } else if (response.id == null || response.name == null || response.profile == null) {
++                    throw new LookupFailedException("Unknown error looking up " + id.toString());
++                }
++
++                return Optional.of(new AccountProfile(response.id, response.name, ProfileProperties.copyOf(response.profile)));
++            }
++        } catch (JsonIOException e) {
++            throw new LookupFailedException("Error contacting mojang", e.getCause());
++        } catch (MalformedURLException e) {
++            // This shouldn't happen as UUID.toString() is a perfectly valid url
++            throw new AssertionError("Unable to parse url " + e);
++        } catch (IOException | JsonParseException e) {
++            throw new LookupFailedException("Error contacting mojang", e);
++        }
++    }
++
++    private static class ProfileResponse {
++        private String errorMessage;
++        private UUID id;
++        private String name;
++        private List<ProfileProperty> profile;
++    }
++
++    public static Optional<AccountProfile> lookup(String name) {
++        Preconditions.checkNotNull(name, "Null name");
++        Preconditions.checkArgument(ProfileLookup.isValidName(name), "Invalid name %s", name);
++        try {
++            URL url = new URL("https://api.mojang.com/users/profiles/minecraft/" + name);
++            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
++            connection.connect();
++            if (connection.getResponseCode() == HttpURLConnection.HTTP_NO_CONTENT) {
++                return Optional.empty(); // Profile not found
++            }
++            if (connection.getResponseCode() == 429) {
++                throw new LookupFailedException("Mojang rate limited request for: " + name);
++            }
++
++            try (JsonReader reader = new JsonReader(new BufferedReader(new InputStreamReader(connection.getInputStream(), Charsets.UTF_8)))) {
++                reader.beginObject();
++                UUID id = null;
++                name = null; // Reset to null so we can check for errors
++                while (reader.hasNext()) {
++                    String key;
++                    switch ((key = reader.nextName())) {
++                        case "id":
++                            String s = reader.nextString();
++                            if (s == null) throw new LookupFailedException("Mojang returned null id");
++                            id = fromString(s);
++                            break;
++                        case "name":
++                            name = reader.nextString(); // Now reset to case-corrected name
++                            if (name == null) throw new LookupFailedException("Mojang returned null name");
++                            break;
++                        case "legacy":
++                        case "demo":
++                            break;
++                        default:
++                            throw new LookupFailedException("Invalid json, unexpected object key: " + key);
++                    }
++                }
++
++                if (id == null) {
++                    throw new LookupFailedException("Mojang didn't return id");
++                } else if (name == null) {
++                    throw new LookupFailedException("Mojang didn't return name");
++                }
++                reader.endObject();
++                if (reader.hasNext()) {
++                    throw new LookupFailedException("Didn't read all data mojang sent. Unexpected " + reader.peek());
++                }
++                return Optional.of(new AccountProfile(id, name));
++            }
++        } catch (JsonIOException e) {
++            throw new LookupFailedException("Error contacting mojang", e.getCause());
++        } catch (MalformedURLException e) {
++            // This shouldn't happen as names are perfectly valid urls
++            throw new AssertionError("Unable to parse url " + e);
++        } catch (IOException | JsonParseException e) {
++            throw new LookupFailedException("Error contacting mojang", e);
++        }
++    }
++
++    public static final URL BULK_NAME_LOOKUP_URL;
++
++    static {
++        try {
++            BULK_NAME_LOOKUP_URL = new URL("https://api.mojang.com/profiles/minecraft");
++        } catch (MalformedURLException e) {
++            throw new AssertionError("Couldn't  parse URL", e);
++        }
++    }
++
++    public static ImmutableList<AccountProfile> lookupNames(ImmutableSet<String> names) {
++        Preconditions.checkNotNull(names, "Null names");
++        if (names.isEmpty()) return ImmutableList.of();
++        if (names.size() > 100) {
++            ImmutableList.Builder<AccountProfile> result = ImmutableList.builder();
++            // Split up the request to meet mojang's limit of 100 names per request
++            UnmodifiableIterator<String> iterator = names.iterator();
++            while (iterator.hasNext()) {
++                ImmutableSet.Builder<String> split = ImmutableSet.builder();
++                for (int i = 0; i < 100 && iterator.hasNext(); i++) {
++                    String name = iterator.next();
++                    split.add(name);
++                }
++                result.addAll(lookupNames(split.build()));
++            }
++            return result.build();
++        }
++        try {
++            HttpURLConnection connection = (HttpURLConnection) BULK_NAME_LOOKUP_URL.openConnection();
++            connection.setDoOutput(true);
++            connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, "application/json");
++            connection.connect();
++            if (connection.getResponseCode() == 429) {
++                throw new LookupFailedException("Mojang rate limited request for " + names.size() + " names");
++            }
++            try (JsonWriter writer = new JsonWriter(new BufferedWriter(new OutputStreamWriter(connection.getOutputStream(), Charsets.UTF_8)))) {
++                writer.beginArray();
++                for (String name : names) {
++                    writer.value(name);
++                }
++                writer.endArray();
++            }
++            ImmutableList.Builder<AccountProfile> profiles = ImmutableList.builder();
++            try (JsonReader reader = new JsonReader(new BufferedReader(new InputStreamReader(connection.getInputStream(), Charsets.UTF_8)))) {
++                reader.beginArray();
++                while (reader.hasNext()) {
++                    reader.beginObject();
++                    UUID id = null;
++                    String name = null;
++                    while (reader.hasNext()) {
++                        String key;
++                        switch ((key = reader.nextName())) {
++                            case "id":
++                                String s = reader.nextString();
++                                if (s == null) throw new LookupFailedException("Mojang returned null id");
++                                id = fromString(s);
++                                break;
++                            case "name":
++                                name = reader.nextString();
++                                if (name == null) throw new LookupFailedException("Mojang returned null name");
++                                break;
++                            case "legacy":
++                            case "demo":
++                                break;
++                            default:
++                                throw new LookupFailedException("Invalid json. Unexpected object key: " + key);
++                        }
++                    }
++
++                    if (id == null) {
++                        throw new LookupFailedException("Mojang didn't return id");
++                    } else if (name == null) {
++                        throw new LookupFailedException("Mojang didn't return name");
++                    }
++                    profiles.add(new AccountProfile(id, name));
++                    reader.endObject();
++                }
++                reader.endArray();
++                if (reader.hasNext()) {
++                    throw new LookupFailedException("Didn't read response fully. Unexpected: " + reader.peek());
++                }
++                return profiles.build();
++            }
++        } catch (IOException e) {
++            throw new LookupFailedException("Error contacting mojang", e);
++        }
++    }
++
++    //
++    // Converters
++    //
++
++    public static GameProfile toMojang(AccountProfile paper) {
++        if (paper == null) return null;
++        GameProfile mojang = new GameProfile(paper.getId(), paper.getName());
++        if (paper.hasProperties()) {
++            mojang.getProperties().clear();
++            addAllToMojang(paper.getProperties(), mojang.getProperties());
++        }
++        return mojang;
++    }
++
++    public static AccountProfile toPaper(GameProfile mojang) {
++        if (mojang == null) return null;
++        // If the profile's properties aren't empty, we must know them
++        return toPaper0(mojang, !mojang.getProperties().isEmpty());
++    }
++
++    public static AccountProfile toPaperWithProperties(GameProfile mojang) {
++        if (mojang == null) return null;
++        return toPaper0(mojang, true);
++    }
++
++    private static AccountProfile toPaper0(GameProfile mojang, boolean propertiesKnown) {
++        Preconditions.checkArgument(mojang.isComplete(), "Incomplete profile %s", mojang);
++        return new AccountProfile(mojang.getId(), mojang.getName(), propertiesKnown ? toPaper(mojang.getProperties()) : null);
++    }
++
++    public static PropertyMap toMojang(ProfileProperties paper) {
++        if (paper == null) return null;
++        PropertyMap mojang = new PropertyMap();
++        addAllToMojang(paper, mojang);
++        return mojang;
++    }
++
++    private static void addAllToMojang(ProfileProperties paper, PropertyMap mojang) {
++        paper.forEach((name, property) -> mojang.put(name, toMojang(property)));
++    }
++
++    public static ProfileProperties toPaper(PropertyMap mojang) {
++        if (mojang == null) return null;
++        ProfileProperties.Builder builder = ProfileProperties.builder();
++        for (Map.Entry<String, Property> entry : mojang.entries()) {
++            builder.put(entry.getKey(), toPaper(entry.getValue()));
++        }
++        return builder.build();
++    }
++
++    public static Property toMojang(ProfileProperty paper) {
++        if (paper == null) return null;
++        return new Property(paper.getName(), paper.getValue(), paper.isSigned() ? paper.getSignature() : null);
++    }
++
++    public static ProfileProperty toPaper(Property mojang) {
++        if (mojang == null) return null;
++        return new ProfileProperty(mojang.getName(), mojang.getValue(), mojang.getSignature());
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/utils/json/ProfilePropertyTypeAdapter.java b/src/main/java/com/destroystokyo/paper/utils/json/ProfilePropertyTypeAdapter.java
+new file mode 100644
+index 0000000..590a778
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/utils/json/ProfilePropertyTypeAdapter.java
+@@ -0,0 +1,31 @@
++package com.destroystokyo.paper.utils.json;
++
++import java.io.IOException;
++
++import com.destroystokyo.paper.profile.ProfileProperty;
++import com.google.gson.TypeAdapter;
++import com.google.gson.stream.JsonReader;
++import com.google.gson.stream.JsonWriter;
++
++public class ProfilePropertyTypeAdapter extends TypeAdapter<ProfileProperty> {
++    @Override
++    public void write(JsonWriter out, ProfileProperty property) throws IOException {
++        if (property != null) {
++            out.beginObject();
++            out.name("name");
++            out.value(property.getName());
++            out.name("value");
++            out.value(property.getName());
++            if (property.isSigned()) {
++                out.name("signature");
++                out.name(property.getSignature());
++            }
++            out.endObject();
++        }
++    }
++
++    @Override
++    public ProfileProperty read(JsonReader in) throws IOException {
++        return null;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/utils/json/UUIDTypeAdapter.java b/src/main/java/com/destroystokyo/paper/utils/json/UUIDTypeAdapter.java
+new file mode 100644
+index 0000000..908c7b4
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/utils/json/UUIDTypeAdapter.java
+@@ -0,0 +1,54 @@
++package com.destroystokyo.paper.utils.json;
++
++import java.io.IOException;
++import java.util.UUID;
++
++import com.google.gson.TypeAdapter;
++import com.google.gson.stream.JsonReader;
++import com.google.gson.stream.JsonToken;
++import com.google.gson.stream.JsonWriter;
++
++import com.destroystokyo.paper.profile.UUIDUtils;
++
++public class UUIDTypeAdapter extends TypeAdapter<UUID> {
++    private final boolean mojangStyle;
++    private final boolean lenient;
++
++    private UUIDTypeAdapter(boolean mojangStyle, boolean lenient) {
++        if (mojangStyle && !lenient) throw new AssertionError("Mojang style should imply lenient");
++        this.mojangStyle = mojangStyle;
++        this.lenient = lenient;
++    }
++
++    public static UUIDTypeAdapter create() {
++        return new UUIDTypeAdapter(false, false);
++    }
++
++    public static UUIDTypeAdapter createMojang() {
++        return new UUIDTypeAdapter(true, true);
++    }
++
++    public static UUIDTypeAdapter createLenient() {
++        return new UUIDTypeAdapter(false, true);
++    }
++
++    @Override
++    public void write(JsonWriter out, UUID value) throws IOException {
++        if (value != null) {
++            out.value(mojangStyle ? UUIDUtils.toMojangString(value) : value.toString());
++        } else {
++            out.nullValue();
++        }
++    }
++
++    @Override
++    public UUID read(JsonReader in) throws IOException {
++        if (in.peek() != JsonToken.NULL) {
++            String s = in.nextString();
++            return lenient ? UUIDUtils.fromString(s) : UUID.fromString(s);
++        } else {
++            in.nextNull();
++            return null;
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index 696f21f..bd77866 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -23,6 +23,10 @@ import org.bukkit.event.player.PlayerDropItemEvent;
+ import org.bukkit.event.player.PlayerVelocityEvent;
+ import org.bukkit.util.Vector;
+ // CraftBukkit end
++// Paper start
++import com.destroystokyo.paper.profile.AccountProfile;
++import com.destroystokyo.paper.profile.ProfileUtils;
++// Paper end
+ 
+ public abstract class EntityHuman extends EntityLiving {
+ 
+@@ -1214,6 +1218,14 @@ public abstract class EntityHuman extends EntityLiving {
+         return this.bS;
+     }
+ 
++    // Paper start - bukkit profile method
++    private final AccountProfile bukkitProfile = ProfileUtils.toPaperWithProperties(getProfile());
++
++    public AccountProfile getBukkitProfile() {
++        return bukkitProfile;
++    }
++    // Paper end
++
+     public EntityHuman.EnumBedResult a(BlockPosition blockposition) {
+         if (!this.world.isClientSide) {
+             if (this.isSleeping() || !this.isAlive()) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
+index 4521786..e902cd8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
+@@ -21,6 +21,10 @@ import org.bukkit.configuration.serialization.SerializableAs;
+ import org.bukkit.entity.Player;
+ import org.bukkit.metadata.MetadataValue;
+ import org.bukkit.plugin.Plugin;
++// Paper start
++import com.destroystokyo.paper.profile.ProfileUtils;
++import com.destroystokyo.paper.profile.AccountProfile;
++// Paper end
+ 
+ @SerializableAs("Player")
+ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable {
+@@ -32,7 +36,20 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
+         this.server = server;
+         this.profile = profile;
+         this.storage = (WorldNBTStorage) (server.console.worlds.get(0).getDataManager());
++        // Paper start - store our profile
++        this.paperProfile = ProfileUtils.toPaper(profile);
++    }
++    private final AccountProfile paperProfile;
++
++    protected CraftOfflinePlayer(CraftServer server, AccountProfile profile) {
++        this.server = server;
++        this.profile = ProfileUtils.toMojang(profile);
++        this.storage = (WorldNBTStorage) (server.console.worlds.get(0).getDataManager());
++        this.paperProfile = profile;
++    }
+ 
++    public AccountProfile getAccount() {
++        return paperProfile;
+     }
+ 
+     public GameProfile getProfile() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index e6a76cf..b12dfc2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -122,6 +122,12 @@ import io.netty.buffer.Unpooled;
+ import io.netty.handler.codec.base64.Base64;
+ import jline.console.ConsoleReader;
+ import net.md_5.bungee.api.chat.BaseComponent;
++// Paper start
++import com.destroystokyo.paper.profile.EventProfileLookup;
++import com.destroystokyo.paper.profile.MojangLookup;
++import com.destroystokyo.paper.profile.AccountProfile;
++import com.destroystokyo.paper.profile.ProfileLookup;
++// Paper end
+ 
+ public final class CraftServer implements Server {
+     private static final Player[] EMPTY_PLAYER_ARRAY = new Player[0];
+@@ -1344,11 +1350,13 @@ public final class CraftServer implements Server {
+         OfflinePlayer result = getPlayerExact(name);
+         if (result == null) {
+             // Spigot Start
+-            GameProfile profile = null;
++            // Paper start  use our uuid lookup
++            AccountProfile profile = null;
+             // Only fetch an online UUID in online mode
+             if ( MinecraftServer.getServer().getOnlineMode() || org.spigotmc.SpigotConfig.bungee )
+             {
+-                profile = console.getUserCache().getProfile( name );
++                profile = getProfileLookup().lookup(name);
++                // Paper end
+             }
+             // Spigot end
+             if (profile == null) {
+@@ -1356,7 +1364,10 @@ public final class CraftServer implements Server {
+                 result = getOfflinePlayer(new GameProfile(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name));
+             } else {
+                 // Use the GameProfile even when we get a UUID so we ensure we still have a name
+-                result = getOfflinePlayer(profile);
++                // Paper start
++                result = new CraftOfflinePlayer(this, profile);
++                offlinePlayers.put(result.getUniqueId(), result);
++                // Paper end
+             }
+         } else {
+             offlinePlayers.remove(result.getUniqueId());
+@@ -1373,7 +1384,7 @@ public final class CraftServer implements Server {
+         if (result == null) {
+             result = offlinePlayers.get(id);
+             if (result == null) {
+-                result = new CraftOfflinePlayer(this, new GameProfile(id, null));
++                result = new CraftOfflinePlayer(this, getProfileLookup().lookup(id)); // Paper - do lookup
+                 offlinePlayers.put(id, result);
+             }
+         } else {
+@@ -1415,7 +1426,7 @@ public final class CraftServer implements Server {
+ 
+         for (JsonListEntry entry : playerList.getProfileBans().getValues()) {
+             result.add(getOfflinePlayer((GameProfile) entry.getKey()));
+-        }        
++        }
+ 
+         return result;
+     }
+@@ -1844,6 +1855,14 @@ public final class CraftServer implements Server {
+         return spigot;
+     }
+ 
++    // Paper start - uuid api
++    private final ProfileLookup lookup = new EventProfileLookup(new MojangLookup());
++
++    @Override
++    public ProfileLookup getProfileLookup() {
++        return lookup;
++    }
++    // Paper end
+     // Paper start
+     @Override
+     public void reloadPermissions() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index d23cade..3c57acf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -59,6 +59,7 @@ import org.bukkit.metadata.MetadataValue;
+ import org.bukkit.plugin.Plugin;
+ import org.bukkit.plugin.messaging.StandardMessenger;
+ import org.bukkit.scoreboard.Scoreboard;
++import com.destroystokyo.paper.profile.AccountProfile; // Paper
+ 
+ @DelegateDeserialization(CraftOfflinePlayer.class)
+ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -83,6 +84,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         firstPlayed = System.currentTimeMillis();
+     }
+ 
++    // Paper start
++    @Override
++    public AccountProfile getAccount() {
++        return getHandle().getBukkitProfile();
++    }
++    // Paper end
++
+     public GameProfile getProfile() {
+         return getHandle().getProfile();
+     }
+-- 
+2.8.3
+
