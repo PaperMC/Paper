@@ -5,6 +5,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -20,14 +21,21 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     protected BlockState replacedBlockState;
     protected ItemStack itemInHand;
     protected Player player;
+    protected EquipmentSlot hand;
 
+    @Deprecated
     public BlockPlaceEvent(final Block placedBlock, final BlockState replacedBlockState, final Block placedAgainst, final ItemStack itemInHand, final Player thePlayer, final boolean canBuild) {
+        this(placedBlock, replacedBlockState, placedAgainst, itemInHand, thePlayer, canBuild, EquipmentSlot.HAND);
+    }
+
+    public BlockPlaceEvent(final Block placedBlock, final BlockState replacedBlockState, final Block placedAgainst, final ItemStack itemInHand, final Player thePlayer, final boolean canBuild, final EquipmentSlot hand) {
         super(placedBlock);
         this.placedAgainst = placedAgainst;
         this.itemInHand = itemInHand;
         this.player = thePlayer;
         this.replacedBlockState = replacedBlockState;
         this.canBuild = canBuild;
+        this.hand = hand;
         cancel = false;
     }
 
@@ -85,6 +93,14 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
      */
     public ItemStack getItemInHand() {
         return itemInHand;
+    }
+
+    /**
+     * Gets the hand which placed the block
+     * @return Main or off-hand, depending on which hand was used to place the block
+     */
+    public EquipmentSlot getHand() {
+        return this.hand;
     }
 
     /**
