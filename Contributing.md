@@ -13,21 +13,21 @@ Assuming you already have forked the repository:
 
 These directories aren't git repositories in the traditional sense:
 
-- Every single commit in PaperSpigot-Server/API is a patch. 
-- 'origin/master' points to a directory similar to PaperSpigot-Server/API but for PaperSpigot
-- Typing `git status` should show that we are 10 or 11 commits ahead of master, meaning we have 10 or 11 patches that PaperSpigot and Spigot don't
+- Every single commit in Paper-Server/API is a patch. 
+- 'origin/master' points to a directory similar to Paper-Server/API but for Paper
+- Typing `git status` should show that we are 10 or 11 commits ahead of master, meaning we have 10 or 11 patches that Paper and Spigot don't
   - If it says something like `212 commits ahead, 207 commits behind`, then type `git fetch` to update spigot/paper
 
 ## Adding Patches
 Adding patches to Paper is very simple:
 
-1) Modify `Paper-Server` and/or `Paper-API` with the appropriate changes
-2) Type `git add .` to add your changes
-3) Run `git commit` with the desired patch message
-4) Run `./rebuildPatches.sh` in the main directory to convert your commit into a new patch
-5) PR your patches back to this repository
+1. Modify `Paper-Server` and/or `Paper-API` with the appropriate changes
+2. Type `git add .` to add your changes
+3. Run `git commit` with the desired patch message
+4. Run `./rebuildPatches.sh` in the main directory to convert your commit into a new patch
+5. PR your patches back to this repository
 
-Your commit will be converted into a patch that you can then PR into PaperSpigot
+Your commit will be converted into a patch that you can then PR into Paper
 
 ## Modifying Patches
 Modifying previous patches is a bit more complex:
@@ -55,7 +55,7 @@ We'll accept changes that make sense. You should be able to justify their existe
 While we will fix minor formatting issues, you should stick to the guide below when making and submitting changes.
 
 ## Formatting
-All modifications to non-PaperSpigot files should be marked
+All modifications to non-Paper files should be marked
 - Multi line changes start with `// Paper start` and end with `// Paper end`
 - You can put a messages with a change if it isn't obvious, like this: `// Paper start - reason
   - Should generally be about the reason the change was made, what it was before, or what the change is
