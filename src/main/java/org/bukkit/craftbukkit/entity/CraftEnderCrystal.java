@@ -11,6 +11,16 @@ public class CraftEnderCrystal extends CraftEntity implements EnderCrystal {
     }
 
     @Override
+    public boolean isShowingBottom() {
+        return getHandle().k(); // PAIL: Rename isShowingBottom
+    }
+
+    @Override
+    public void setShowingBottom(boolean showing) {
+        getHandle().a(showing); // PAIL: Rename setShowingBottom
+    }
+
+    @Override
     public EntityEnderCrystal getHandle() {
         return (EntityEnderCrystal) entity;
     }
