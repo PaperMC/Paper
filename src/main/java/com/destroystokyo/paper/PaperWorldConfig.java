@@ -144,4 +144,10 @@ public class PaperWorldConfig {
             }
         }
     }
+
+    public boolean disableEndCredits;
+    private void disableEndCredits() {
+        disableEndCredits = getBoolean("game-mechanics.disable-end-credits", false);
+        log("End credits disabled: " + disableEndCredits);
+    }
 }
