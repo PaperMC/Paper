@@ -1,9 +1,25 @@
 package org.bukkit.entity;
 
+import org.bukkit.TreeSpecies;
+
 /**
  * Represents a boat entity.
  */
 public interface Boat extends Vehicle {
+
+    /**
+     * Gets the wood type of the boat.
+     * 
+     * @return the wood type
+     */
+    TreeSpecies getWoodType();
+
+    /**
+     * Sets the wood type of the boat.
+     * 
+     * @param species the new wood type
+     */
+    void setWoodType(TreeSpecies species);
 
     /**
      * Gets the maximum speed of a boat. The speed is unrelated to the
