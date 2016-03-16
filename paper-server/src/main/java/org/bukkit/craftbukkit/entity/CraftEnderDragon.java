@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet.Builder;
 
 import java.util.Set;
 
+import net.minecraft.server.DragonControllerPhase;
 import net.minecraft.server.EntityComplexPart;
 import net.minecraft.server.EntityEnderDragon;
 
@@ -40,5 +41,23 @@ public class CraftEnderDragon extends CraftComplexLivingEntity implements EnderD
 
     public EntityType getType() {
         return EntityType.ENDER_DRAGON;
+    }
+
+    @Override
+    public Phase getPhase() {
+        return Phase.values()[getHandle().getDataWatcher().get(EntityEnderDragon.a)]; // PAIL: Rename PHASE 
+    }
+
+    @Override
+    public void setPhase(Phase phase) {
+        getHandle().cT().a(getMinecraftPhase(phase)); // PAIL: Rename getDragonControllerManager setPhase
+    }
+    
+    public static Phase getBukkitPhase(DragonControllerPhase phase) {
+        return Phase.values()[phase.b()];
+    }
+    
+    public static DragonControllerPhase getMinecraftPhase(Phase phase) {
+        return DragonControllerPhase.a(phase.ordinal()); // PAIL: Rename getById
     }
 }
