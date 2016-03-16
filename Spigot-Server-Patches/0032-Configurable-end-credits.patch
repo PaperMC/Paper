@@ -1,0 +1,55 @@
+From f710e478cc89844a8a0f4718ba8bdf1189055143 Mon Sep 17 00:00:00 2001
+From: DoctorDark <doctordark11@gmail.com>
+Date: Wed, 16 Mar 2016 02:21:39 -0500
+Subject: [PATCH] Configurable end credits
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 5504cfe..6dc7e4c 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -163,4 +163,10 @@ public class PaperWorldConfig {
+         useAsyncLighting = false; //getBoolean( "use-async-lighting", false );
+         log("World async lighting: " + useAsyncLighting);
+     }
++
++    public boolean disableEndCredits;
++    private void disableEndCredits() {
++        disableEndCredits = getBoolean("game-mechanics.disable-end-credits", false);
++        log("End credits disabled: " + disableEndCredits);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index ff0939b..987164e 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -523,13 +523,25 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         return this.world.pvpMode;
+     }
+ 
++    /**
++     * Paper - Give "theEnd2" achievement if the player doesn't already have it
++     */
++    private void giveTheEnd2() {
++        if (!this.a(AchievementList.D)) {
++            this.b(AchievementList.D);
++        }
++    }
++
+     public Entity c(int i) {
+         this.cj = true;
+         if (this.dimension == 1 && i == 1) {
+             this.world.kill(this);
+             if (!this.viewingCredits) {
+                 this.viewingCredits = true;
+-                if (this.a(AchievementList.D)) {
++                // Paper start - Allow configurable end portal credits
++                if (world.paperConfig.disableEndCredits || this.a(AchievementList.D)) {
++                    this.giveTheEnd2();
++                    // Paper end
+                     this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(4, 0.0F));
+                 } else {
+                     this.b((Statistic) AchievementList.D);
+-- 
+2.7.2
+
