@@ -15,6 +15,7 @@ import net.minecraft.server.TileEntityChest;
 import net.minecraft.server.TileEntityCommand;
 import net.minecraft.server.TileEntityDispenser;
 import net.minecraft.server.TileEntityDropper;
+import net.minecraft.server.TileEntityEndGateway;
 import net.minecraft.server.TileEntityFurnace;
 import net.minecraft.server.TileEntityHopper;
 import net.minecraft.server.TileEntityMobSpawner;
@@ -34,6 +35,7 @@ import org.bukkit.craftbukkit.block.CraftCommandBlock;
 import org.bukkit.craftbukkit.block.CraftCreatureSpawner;
 import org.bukkit.craftbukkit.block.CraftDispenser;
 import org.bukkit.craftbukkit.block.CraftDropper;
+import org.bukkit.craftbukkit.block.CraftEndGateway;
 import org.bukkit.craftbukkit.block.CraftFurnace;
 import org.bukkit.craftbukkit.block.CraftHopper;
 import org.bukkit.craftbukkit.block.CraftJukebox;
@@ -222,6 +224,11 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
                 te = new TileEntityDispenser();
             }
             return new CraftDropper(material, (TileEntityDropper) te);
+        case END_GATEWAY:
+            if (te == null) {
+                te = new TileEntityEndGateway();
+            }
+            return new CraftEndGateway(material, (TileEntityEndGateway) te);
         case HOPPER:
             if (te == null) {
                 te = new TileEntityHopper();
@@ -303,6 +310,9 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             break;
         case DROPPER:
             valid = te instanceof TileEntityDropper;
+            break;
+        case END_GATEWAY:
+            valid = te instanceof TileEntityEndGateway;
             break;
         case HOPPER:
             valid = te instanceof TileEntityHopper;
