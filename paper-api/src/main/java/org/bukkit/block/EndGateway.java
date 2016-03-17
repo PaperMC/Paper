@@ -23,4 +23,20 @@ public interface EndGateway extends BlockState {
      * @throws IllegalArgumentException for differing worlds
      */
     void setExitLocation(Location location);
+
+    /**
+     * Gets whether this gateway will teleport entities directly to
+     * the exit location instead of finding a nearby location.
+     * 
+     * @return true if the gateway is teleporting to the exact location
+     */
+    boolean isExactTeleport();
+
+    /**
+     * Sets whether this gateway will teleport entities directly to
+     * the exit location instead of finding a nearby location.
+     * 
+     * @param exact whether to teleport to the exact location
+     */
+    void setExactTeleport(boolean exact);
 }
