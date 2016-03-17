@@ -44,6 +44,16 @@ public class CraftEndGateway extends CraftBlockState implements EndGateway {
     }
 
     @Override
+    public boolean isExactTeleport() {
+        return gateway.i; // PAIL: Rename exactTeleport
+    }
+
+    @Override
+    public void setExactTeleport(boolean exact) {
+        gateway.i = exact;
+    }
+
+    @Override
     public boolean update(boolean force, boolean applyPhysics) {
         boolean result = super.update(force, applyPhysics);
 
