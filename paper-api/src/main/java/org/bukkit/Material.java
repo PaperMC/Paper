@@ -472,7 +472,7 @@ public enum Material {
     TIPPED_ARROW(440),
     LINGERING_POTION(441, 1),
     SHIELD(442, 1, 336),
-    ELYTRA(443, 1),
+    ELYTRA(443, 1, 431),
     BOAT_SPRUCE(444, 1),
     BOAT_BIRCH(445, 1),
     BOAT_JUNGLE(446, 1),
