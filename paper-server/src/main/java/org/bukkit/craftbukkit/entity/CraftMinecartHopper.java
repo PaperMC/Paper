@@ -28,4 +28,14 @@ final class CraftMinecartHopper extends CraftMinecart implements HopperMinecart 
     public Inventory getInventory() {
         return inventory;
     }
+
+    @Override
+    public boolean isEnabled() {
+        return ((EntityMinecartHopper) getHandle()).C(); // PAIL: Rename isEnabled
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        ((EntityMinecartHopper) getHandle()).k(enabled); // PAIL: Rename setEnabled
+    }
 }
