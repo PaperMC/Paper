@@ -1,4 +1,4 @@
-From 43f79313160aa6461b4ee989f4fb2464ab9f1a4c Mon Sep 17 00:00:00 2001
+From 6b6ec7e713ac57a04dc7004e164eb3cd80d364ca Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 8 Mar 2016 19:13:54 -0500
 Subject: [PATCH] Optimize Navigation Listener
@@ -32,7 +32,7 @@ index 7d794b9..aa18f54 100644
  
      protected abstract Pathfinder a();
 diff --git a/src/main/java/net/minecraft/server/NavigationListener.java b/src/main/java/net/minecraft/server/NavigationListener.java
-index 39a4032..18536b5 100644
+index 39a4032..3c277cb 100644
 --- a/src/main/java/net/minecraft/server/NavigationListener.java
 +++ b/src/main/java/net/minecraft/server/NavigationListener.java
 @@ -1,16 +1,19 @@
@@ -57,7 +57,7 @@ index 39a4032..18536b5 100644
      }
  
      public void a(World world, BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1, int i) {
-@@ -19,10 +22,12 @@ public class NavigationListener implements IWorldAccess {
+@@ -19,10 +22,15 @@ public class NavigationListener implements IWorldAccess {
              // NavigationAbstract[] anavigationabstract = (NavigationAbstract[]) this.b.keySet().toArray(new NavigationAbstract[0]);
              // NavigationAbstract[] anavigationabstract1 = anavigationabstract;
              // int j = anavigationabstract.length;
@@ -67,13 +67,16 @@ index 39a4032..18536b5 100644
 -                // NavigationAbstract navigationabstract = anavigationabstract1[k];
 -                // Spigot end
 +            // Paper start
++            // DO NOT USE AN ITERATOR! This must be a for (;;) to avoid CME.
++            // This is perfectly safe, as additions are ok to be done in this iteration
++            // And Removals are queued instead of immediate.
 +            for (int k = 0; k < this.navigators.size(); ++k) {
 +                NavigationAbstract navigationabstract = this.navigators.get(k);
 +                // Paper end
  
                  if (navigationabstract != null && !navigationabstract.i()) {
                      PathEntity pathentity = navigationabstract.k();
-@@ -57,9 +62,21 @@ public class NavigationListener implements IWorldAccess {
+@@ -57,9 +65,21 @@ public class NavigationListener implements IWorldAccess {
  
      public void a(int i, boolean flag, double d0, double d1, double d2, double d3, double d4, double d5, int... aint) {}
  
@@ -98,5 +101,5 @@ index 39a4032..18536b5 100644
      public void a(SoundEffect soundeffect, BlockPosition blockposition) {}
  
 -- 
-2.7.3
+2.7.4
 
