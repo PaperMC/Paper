@@ -4386,6 +4386,87 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/server/FileIOThread.java b/src/main/java/net/minecraft/server/FileIOThread.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/FileIOThread.java
+@@ -0,0 +0,0 @@
++package net.minecraft.server;
++
++import com.google.common.collect.Lists;
++import java.util.Collections;
++import java.util.List;
++
++public class FileIOThread implements Runnable {
++
++    private static final FileIOThread a = new FileIOThread();
++    private List<IAsyncChunkSaver> b = Collections.synchronizedList(Lists.newArrayList());
++    private volatile long c;
++    private volatile long d;
++    private volatile boolean e;
++
++    private FileIOThread() {
++        Thread thread = new Thread(this, "File IO Thread");
++
++        thread.setPriority(1);
++        thread.start();
++    }
++
++    public static FileIOThread a() {
++        return FileIOThread.a;
++    }
++
++    public void run() {
++        while (true) {
++            this.c();
++        }
++    }
++
++    private void c() {
++        for (int i = 0; i < this.b.size(); ++i) {
++            IAsyncChunkSaver iasyncchunksaver = (IAsyncChunkSaver) this.b.get(i);
++            boolean flag = iasyncchunksaver.c();
++
++            if (!flag) {
++                this.b.remove(i--);
++                ++this.d;
++            }
++
++            try {
++                Thread.sleep(this.e ? 0L : 10L);
++            } catch (InterruptedException interruptedexception) {
++                interruptedexception.printStackTrace();
++            }
++        }
++
++        if (this.b.isEmpty()) {
++            try {
++                Thread.sleep(25L);
++            } catch (InterruptedException interruptedexception1) {
++                interruptedexception1.printStackTrace();
++            }
++        }
++
++    }
++
++    public void a(IAsyncChunkSaver iasyncchunksaver) {
++        if (!this.b.contains(iasyncchunksaver)) {
++            ++this.c;
++            this.b.add(iasyncchunksaver);
++        }
++    }
++
++    public void b() throws InterruptedException {
++        this.e = true;
++
++        while (this.c != this.d) {
++            Thread.sleep(10L);
++        }
++
++        this.e = false;
++    }
++}
 diff --git a/src/main/java/net/minecraft/server/ItemBlock.java b/src/main/java/net/minecraft/server/ItemBlock.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -4770,81 +4851,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public boolean b(BlockPosition blockposition) {
 +        return this.b.getType(blockposition.down()).b();
 +    }
-+}
-diff --git a/src/main/java/net/minecraft/server/NavigationListener.java b/src/main/java/net/minecraft/server/NavigationListener.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/net/minecraft/server/NavigationListener.java
-@@ -0,0 +0,0 @@
-+package net.minecraft.server;
-+
-+import java.util.WeakHashMap;
-+
-+public class NavigationListener implements IWorldAccess {
-+
-+    private static final Object a = new Object();
-+    private final WeakHashMap<NavigationAbstract, Object> b = new WeakHashMap();
-+
-+    public NavigationListener() {}
-+
-+    public void a(NavigationAbstract navigationabstract) {
-+        this.b.put(navigationabstract, NavigationListener.a);
-+    }
-+
-+    public void a(World world, BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1, int i) {
-+        if (this.a(world, blockposition, iblockdata, iblockdata1)) {
-+            NavigationAbstract[] anavigationabstract = (NavigationAbstract[]) this.b.keySet().toArray(new NavigationAbstract[0]);
-+            NavigationAbstract[] anavigationabstract1 = anavigationabstract;
-+            int j = anavigationabstract.length;
-+
-+            for (int k = 0; k < j; ++k) {
-+                NavigationAbstract navigationabstract = anavigationabstract1[k];
-+
-+                if (navigationabstract != null && !navigationabstract.i()) {
-+                    PathEntity pathentity = navigationabstract.k();
-+
-+                    if (pathentity != null && !pathentity.b() && pathentity.d() != 0) {
-+                        PathPoint pathpoint = navigationabstract.c.c();
-+                        double d0 = blockposition.distanceSquared(((double) pathpoint.a + navigationabstract.a.locX) / 2.0D, ((double) pathpoint.b + navigationabstract.a.locY) / 2.0D, ((double) pathpoint.c + navigationabstract.a.locZ) / 2.0D);
-+                        int l = (pathentity.d() - pathentity.e()) * (pathentity.d() - pathentity.e());
-+
-+                        if (d0 < (double) l) {
-+                            navigationabstract.j();
-+                        }
-+                    }
-+                }
-+            }
-+
-+        }
-+    }
-+
-+    protected boolean a(World world, BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {
-+        AxisAlignedBB axisalignedbb = iblockdata.d(world, blockposition);
-+        AxisAlignedBB axisalignedbb1 = iblockdata1.d(world, blockposition);
-+
-+        return axisalignedbb != axisalignedbb1 && (axisalignedbb == null || !axisalignedbb.equals(axisalignedbb1));
-+    }
-+
-+    public void a(BlockPosition blockposition) {}
-+
-+    public void a(int i, int j, int k, int l, int i1, int j1) {}
-+
-+    public void a(EntityHuman entityhuman, SoundEffect soundeffect, SoundCategory soundcategory, double d0, double d1, double d2, float f, float f1) {}
-+
-+    public void a(int i, boolean flag, double d0, double d1, double d2, double d3, double d4, double d5, int... aint) {}
-+
-+    public void a(Entity entity) {}
-+
-+    public void b(Entity entity) {}
-+
-+    public void a(SoundEffect soundeffect, BlockPosition blockposition) {}
-+
-+    public void a(int i, BlockPosition blockposition, int j) {}
-+
-+    public void a(EntityHuman entityhuman, int i, BlockPosition blockposition, int j) {}
-+
-+    public void b(int i, BlockPosition blockposition, int j) {}
 +}
 diff --git a/src/main/java/net/minecraft/server/PacketPlayInResourcePackStatus.java b/src/main/java/net/minecraft/server/PacketPlayInResourcePackStatus.java
 new file mode 100644
