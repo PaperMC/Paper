@@ -1,0 +1,78 @@
+From 8700193f3c37b4259d7d08c3eb9ec4a9b709f8d3 Mon Sep 17 00:00:00 2001
+From: William <admin@domnian.com>
+Date: Fri, 18 Mar 2016 03:28:07 -0400
+Subject: [PATCH] Add command to reload permissions.yml
+
+https://github.com/PaperMC/Paper/issues/49
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index f93ca2e..cd73bfa 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1188,4 +1188,11 @@ public final class Bukkit {
+     {
+         return server.spigot();
+     }
++
++    // Paper start
++    public static void reloadPermissions() {
++        server.reloadPermissions();
++    }
++    // Paper end
++
+ }
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 91bde81..35745ad 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1018,4 +1018,6 @@ public interface Server extends PluginMessageRecipient {
+     }
+ 
+     Spigot spigot();
++
++    public void reloadPermissions(); // Paper
+ }
+diff --git a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+index c70d512..c838915 100644
+--- a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+@@ -4,6 +4,7 @@ import java.util.Arrays;
+ 
+ import org.bukkit.Bukkit;
+ import org.bukkit.ChatColor;
++import org.bukkit.Server;
+ import org.bukkit.command.Command;
+ import org.bukkit.command.CommandSender;
+ 
+@@ -11,15 +12,27 @@ public class ReloadCommand extends BukkitCommand {
+     public ReloadCommand(String name) {
+         super(name);
+         this.description = "Reloads the server configuration and plugins";
+-        this.usageMessage = "/reload";
++        this.usageMessage = "/reload [perms|permissions]";
+         this.setPermission("bukkit.command.reload");
+         this.setAliases(Arrays.asList("rl"));
+     }
+ 
+     @Override
+     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
++
+         if (!testPermission(sender)) return true;
+ 
++        // Paper Start - Reload permissions.yml (PAPER-49)
++        if ( args.length == 1 ) {
++            if ( args[0].equalsIgnoreCase("permissions") || args[0].equalsIgnoreCase("perms") ) {
++                Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Reloading Server Permissions...");
++                Bukkit.reloadPermissions();
++                Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Reloaded complete.");
++                return true;
++            }
++        }
++        // Paper End
++
+         Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues when using some plugins.");
+         Command.broadcastCommandMessage(sender, ChatColor.RED + "If you encounter any issues please use the /stop command to restart your server.");
+         Bukkit.reload();
+-- 
+2.5.0
+

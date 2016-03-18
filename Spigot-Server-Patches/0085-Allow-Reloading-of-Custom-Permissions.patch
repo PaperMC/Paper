@@ -1,0 +1,55 @@
+From 851b8dd020bee11acdc4675474781bba8b818738 Mon Sep 17 00:00:00 2001
+From: William <admin@domnian.com>
+Date: Fri, 18 Mar 2016 03:30:17 -0400
+Subject: [PATCH] Allow Reloading of Custom Permissions
+
+https://github.com/PaperMC/Paper/issues/49
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index cb9906a..6282485 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -777,8 +777,15 @@ public final class CraftServer implements Server {
+         }
+     }
+ 
++    // Paper start
+     @SuppressWarnings({ "unchecked", "finally" })
+     private void loadCustomPermissions() {
++        loadCustomPermissions(false);
++    }
++    // Paper end
++
++    @SuppressWarnings({ "unchecked", "finally" })
++    private void loadCustomPermissions(boolean reload) { // Paper - Add Reload Boolean
+         File file = new File(configuration.getString("settings.permissions-file"));
+         FileInputStream stream;
+ 
+@@ -819,7 +826,11 @@ public final class CraftServer implements Server {
+             try {
+                 pluginManager.addPermission(perm);
+             } catch (IllegalArgumentException ex) {
+-                getLogger().log(Level.SEVERE, "Permission in " + file + " was already defined", ex);
++                if ( reload ) {
++                    getLogger().log(Level.WARNING, "Permission in " + file + " was already defined");
++                } else {
++                    getLogger().log(Level.SEVERE, "Permission in " + file + " was already defined", ex);
++                }
+             }
+         }
+     }
+@@ -1833,4 +1844,11 @@ public final class CraftServer implements Server {
+     {
+         return spigot;
+     }
++
++    // Paper start
++    @Override
++    public void reloadPermissions() {
++        loadCustomPermissions(true);
++    }
++    // Paper end
+ }
+-- 
+2.5.0
+
