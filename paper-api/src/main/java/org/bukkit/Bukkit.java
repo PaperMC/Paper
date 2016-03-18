@@ -2396,6 +2396,13 @@ public final class Bukkit {
     public static org.bukkit.command.CommandMap getCommandMap() {
         return server.getCommandMap();
     }
+
+    /**
+     * Reload the Permissions in permissions.yml
+     */
+    public static void reloadPermissions() {
+        server.reloadPermissions();
+    }
     // Paper end
 
     @NotNull
