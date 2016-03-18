@@ -866,8 +866,18 @@ public final class CraftServer implements Server {
             world.paperConfig.init(); // Paper
         }
 
+        Plugin[] pluginClone = pluginManager.getPlugins().clone(); // Paper
         pluginManager.clearPlugins();
         commandMap.clearCommands();
+
+        // Paper start
+        for (Plugin plugin : pluginClone) {
+            entityMetadata.removeAll(plugin);
+            worldMetadata.removeAll(plugin);
+            playerMetadata.removeAll(plugin);
+        }
+        // Paper end
+
         resetRecipes();
         reloadData();
         org.spigotmc.SpigotConfig.registerCommands(); // Spigot
