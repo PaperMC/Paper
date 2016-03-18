@@ -22,7 +22,9 @@ How To (Compiling From Source)
 ------
 To compile PaperSpigot, you need JDK 8, maven, and an internet connection.
 
-Clone this repo, run ./build.sh from *bash*, get files.
+Clone this repo, run ./build.sh --jar from *bash*, get files.
+
+Leave off --jar if you only wish to resync your checkout and not create a paperclip jar file just yet.
 
 Special Thanks To:
 -------------
