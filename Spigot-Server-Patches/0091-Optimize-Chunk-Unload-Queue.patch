@@ -1,0 +1,177 @@
+From 5036fed452975d8857105532162be561fcd8effc Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 18 Mar 2016 17:57:25 -0400
+Subject: [PATCH] Optimize Chunk Unload Queue
+
+Removing chunks from the unload queue when performing chunk lookups is a costly activity.
+
+It drastically slows down server performance as many methods call getChunkAt, resulting in a bandaid
+to skip removing chunks from the unload queue.
+
+This patch optimizes the unload queue to instead use a boolean on the Chunk object itself to mark
+if the chunk is active, and then insert into a LinkedList queue.
+
+The benefits here is that all chunk unload queue actions are now O(1) constant time.
+
+A LinkedList will never need to resize, and can be removed from in constant time when
+used in a queue like method.
+
+We mark the chunk as active in many places that notify it is still being used, so that
+when the chunk unload queue reaches that chunk, and sees the chunk became active again,
+it will skip it and move to next.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index b6d84d7..a4c0b4e 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -55,6 +55,8 @@ public class Chunk {
+     // Keep this synced with entitySlices.add() and entitySlices.remove()
+     private final int[] itemCounts = new int[16];
+     private final int[] inventoryEntityCounts = new int[16];
++    public boolean isChunkActive = true;
++    public boolean isInUnloadQueue = false;
+     // Paper end
+ 
+     // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
+@@ -780,6 +782,7 @@ public class Chunk {
+     }
+ 
+     public void addEntities() {
++        isChunkActive = true; // Paper
+         this.i = true;
+         this.world.b(this.tileEntities.values());
+ 
+@@ -798,6 +801,7 @@ public class Chunk {
+     }
+ 
+     public void removeEntities() {
++        isChunkActive = false; // Paper
+         this.i = false;
+         Iterator iterator = this.tileEntities.values().iterator();
+ 
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 9ef6246..f62a2c7 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -21,7 +21,7 @@ import org.bukkit.event.world.ChunkUnloadEvent;
+ public class ChunkProviderServer implements IChunkProvider {
+ 
+     private static final Logger a = LogManager.getLogger();
+-    public final LongHashSet unloadQueue = new LongHashSet(); // CraftBukkit - LongHashSet
++    public final ChunkUnloadQueue unloadQueue = new ChunkUnloadQueue(); // CraftBukkit - LongHashSet // Paper -> ChunkUnloadQueue
+     public final ChunkGenerator chunkGenerator; // CraftBukkit - public
+     private final IChunkLoader chunkLoader;
+     public LongObjectHashMap<Chunk> chunks = new LongObjectHashMap<Chunk>(); // CraftBukkit
+@@ -79,18 +79,18 @@ public class ChunkProviderServer implements IChunkProvider {
+ 
+     // CraftBukkit start - Add async variant, provide compatibility
+     public Chunk getOrCreateChunkFast(int x, int z) {
+-        Chunk chunk = chunks.get(LongHash.toLong(x, z));
+-        return (chunk == null) ? getChunkAt(x, z) : chunk;
++        return getChunkAt(x, z); // Paper
+     }
+ 
+     public Chunk getChunkIfLoaded(int x, int z) {
+-        return chunks.get(LongHash.toLong(x, z));
++        return getLoadedChunkAt(x, z); // Paper - Bukkit has a duplicate method now.
+     }
+ 
+     public Chunk getLoadedChunkAt(int i, int j) {
+         Chunk chunk = chunks.get(LongHash.toLong(i, j)); // CraftBukkit
+ 
+         this.unloadQueue.remove(i, j); // CraftBukkit
++        if (chunk != null) { chunk.isChunkActive = true; }// Paper
+         return chunk;
+     }
+ 
+@@ -151,6 +151,7 @@ public class ChunkProviderServer implements IChunkProvider {
+             runnable.run();
+         }
+ 
++        chunk.isChunkActive = true; // Paper
+         return chunk;
+     }
+ 
+@@ -300,10 +301,17 @@ public class ChunkProviderServer implements IChunkProvider {
+         if (!this.world.savingDisabled) {
+             // CraftBukkit start
+             Server server = this.world.getServer();
+-            for (int i = 0; i < 100 && !this.unloadQueue.isEmpty(); ++i) {
+-                long chunkcoordinates = this.unloadQueue.popFirst();
+-                Chunk chunk = this.chunks.get(chunkcoordinates);
+-                if (chunk == null) continue;
++            // Paper start
++            final Iterator<Chunk> iterator = this.unloadQueue.iterator();
++            for (int i = 0; i < 100 && iterator.hasNext(); ++i) {
++                Chunk chunk = iterator.next();
++                iterator.remove();
++                long chunkcoordinates = LongHash.toLong(chunk.locX, chunk.locZ);
++                chunk.isInUnloadQueue = false;
++                if (chunk.isChunkActive) {
++                    continue;
++                }
++                // Paper end
+ 
+                 ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
+                 server.getPluginManager().callEvent(event);
+@@ -367,4 +375,22 @@ public class ChunkProviderServer implements IChunkProvider {
+     public boolean e(int i, int j) {
+         return this.chunks.containsKey(LongHash.toLong(i, j)); // CraftBukkit
+     }
++
++    // Paper start
++    public class ChunkUnloadQueue extends java.util.LinkedList<Chunk> {
++        public void remove(int x, int z) {
++            // nothing! Just to reduce diff
++        }
++        public void add(int x, int z) {
++            final Chunk chunk = chunks.get(LongHash.toLong(x, z));
++            if (chunk != null) {
++                chunk.isChunkActive = false;
++                if (!chunk.isInUnloadQueue) {
++                    chunk.isInUnloadQueue = true;
++                    add(chunk);
++                }
++            }
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
+index 63e118d..721bcae 100644
+--- a/src/main/java/net/minecraft/server/SpawnerCreature.java
++++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
+@@ -28,7 +28,7 @@ public final class SpawnerCreature {
+             Long coord = it.next();
+             int x = LongHash.msw( coord );
+             int z = LongHash.lsw( coord );
+-            if ( !((ChunkProviderServer)server.chunkProvider).unloadQueue.contains( coord ) && server.isChunkLoaded( x, z, true ) )
++            if ( server.isChunkLoaded( x, z, true ) ) // Paper
+             {
+                 i += server.getChunkAt( x, z ).entityCount.get( oClass );
+             }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 40338c0..bd28154 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -302,7 +302,7 @@ public class CraftWorld implements World {
+             world.timings.syncChunkLoadTimer.startTiming(); // Spigot
+             chunk = world.getChunkProviderServer().getOrLoadChunkAt(x, z);
+             world.timings.syncChunkLoadTimer.stopTiming(); // Spigot
+-        }
++        } else { chunk.isChunkActive = true; } // Paper
+         return chunk != null;
+     }
+ 
+@@ -1538,7 +1538,7 @@ public class CraftWorld implements World {
+             }
+ 
+             // Already unloading?
+-            if (cps.unloadQueue.contains(chunk.locX, chunk.locZ)) {
++            if (!chunk.isChunkActive) { // Paper
+                 continue;
+             }
+ 
+-- 
+2.7.4
+
