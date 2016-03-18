@@ -208,4 +208,19 @@ public class PaperWorldConfig {
     private void nonPlayerEntitiesOnScoreboards() {
         nonPlayerEntitiesOnScoreboards = getBoolean("allow-non-player-entities-on-scoreboards", false);
     }
+
+    public int nonPlayerArrowDespawnRate = -1;
+    public int creativeArrowDespawnRate = -1;
+    private void nonPlayerArrowDespawnRate() {
+        nonPlayerArrowDespawnRate = getInt("non-player-arrow-despawn-rate", -1);
+        if (nonPlayerArrowDespawnRate == -1) {
+            nonPlayerArrowDespawnRate = spigotConfig.arrowDespawnRate;
+        }
+        creativeArrowDespawnRate = getInt("creative-arrow-despawn-rate", -1);
+        if (creativeArrowDespawnRate == -1) {
+            creativeArrowDespawnRate = spigotConfig.arrowDespawnRate;
+        }
+        log("Non Player Arrow Despawn Rate: " + nonPlayerArrowDespawnRate);
+        log("Creative Arrow Despawn Rate: " + creativeArrowDespawnRate);
+    }
 }
