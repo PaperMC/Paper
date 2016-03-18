@@ -214,4 +214,9 @@ public class PaperConfig {
                 " - Length: " + timeSummary(Timings.getHistoryLength() / 20) +
                 " - Server Name: " + timingsServerName);
     }
+
+    public static boolean loadPermsBeforePlugins = true;
+    private static void loadPermsBeforePlugins() {
+        loadPermsBeforePlugins = getBoolean("settings.load-permissions-yml-before-plugins", true);
+    }
 }

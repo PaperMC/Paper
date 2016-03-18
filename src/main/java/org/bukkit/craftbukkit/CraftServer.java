@@ -400,6 +400,7 @@ public final class CraftServer implements Server {
         if (type == PluginLoadOrder.STARTUP) {
             helpMap.clear();
             helpMap.initializeGeneralTopics();
+            if (com.destroystokyo.paper.PaperConfig.loadPermsBeforePlugins) loadCustomPermissions(); // Paper
         }
 
         Plugin[] plugins = pluginManager.getPlugins();
@@ -419,7 +420,7 @@ public final class CraftServer implements Server {
             commandMap.registerServerAliases();
             DefaultPermissions.registerCorePermissions();
             CraftDefaultPermissions.registerCorePermissions();
-            loadCustomPermissions();
+            if (!com.destroystokyo.paper.PaperConfig.loadPermsBeforePlugins) loadCustomPermissions(); // Paper
             helpMap.initializeCommands();
             syncCommands();
         }
