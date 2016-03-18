@@ -16,9 +16,14 @@ This has multiple impacts:
    elevated memory usage, and then the objects used in the serialization sit around longer than needed,
    resulting in promotion to Old Generation instead of dying young.
 
-If there is work to do, then the thread should be doing its work, and only sleep when it is done.
+To optimize this, we change the entire unload queue to be a proper queue. This improves the behavior of popping
+the first queued chunk off, instead of abusing iterators like Mojang was doing.
 
-Additionally, optimize the ChunkRegionLoader queue to reduce lock contention (issue with 1.9)
+This also improves reliability of chunk saving, as the previous hack job had a race condition that could
+fail to save some chunks.
+
+Then finally, Sleeping will by default be removed, but due to known issues with 1.9, a config option was added.
+But if sleeps are to remain enabled, we at least lower the sleep interval so it doesn't have as much negative impact.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -155,7 +160,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper start - Add toggle
 +            if (com.destroystokyo.paper.PaperConfig.enableFileIOThreadSleep) {
 +                try {
-+                    Thread.sleep(this.e ? 0L : 10L);
++                    Thread.sleep(this.e ? 0L : 2L);
 +                } catch (InterruptedException interruptedexception) {
 +                    interruptedexception.printStackTrace();
 +                }
