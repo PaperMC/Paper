@@ -1,4 +1,4 @@
-From 2d2446c8e66b71c2101f78d0d42701c03952fcf9 Mon Sep 17 00:00:00 2001
+From 009f6b77c95094a9d2e9698ab89a0ae8eaa539b4 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 4 Mar 2016 18:18:37 -0600
 Subject: [PATCH] Chunk save queue improvements
@@ -16,9 +16,14 @@ This has multiple impacts:
    elevated memory usage, and then the objects used in the serialization sit around longer than needed,
    resulting in promotion to Old Generation instead of dying young.
 
-If there is work to do, then the thread should be doing its work, and only sleep when it is done.
+To optimize this, we change the entire unload queue to be a proper queue. This improves the behavior of popping
+the first queued chunk off, instead of abusing iterators like Mojang was doing.
 
-Additionally, optimize the ChunkRegionLoader queue to reduce lock contention (issue with 1.9)
+This also improves reliability of chunk saving, as the previous hack job had a race condition that could
+fail to save some chunks.
+
+Then finally, Sleeping will by default be removed, but due to known issues with 1.9, a config option was added.
+But if sleeps are to remain enabled, we at least lower the sleep interval so it doesn't have as much negative impact.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 index 62f4631..ed49d83 100644
@@ -141,7 +146,7 @@ index 5bd6ce0..336e780 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/FileIOThread.java b/src/main/java/net/minecraft/server/FileIOThread.java
-index 198b00f..d997dd4 100644
+index 4733f94..113aea2 100644
 --- a/src/main/java/net/minecraft/server/FileIOThread.java
 +++ b/src/main/java/net/minecraft/server/FileIOThread.java
 @@ -39,11 +39,15 @@ public class FileIOThread implements Runnable {
@@ -155,7 +160,7 @@ index 198b00f..d997dd4 100644
 +            // Paper start - Add toggle
 +            if (com.destroystokyo.paper.PaperConfig.enableFileIOThreadSleep) {
 +                try {
-+                    Thread.sleep(this.e ? 0L : 10L);
++                    Thread.sleep(this.e ? 0L : 2L);
 +                } catch (InterruptedException interruptedexception) {
 +                    interruptedexception.printStackTrace();
 +                }
@@ -165,5 +170,5 @@ index 198b00f..d997dd4 100644
  
          if (this.b.isEmpty()) {
 -- 
-2.7.2
+2.7.3
 
