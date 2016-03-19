@@ -4,7 +4,13 @@ import java.io.IOException;
 
 public class PacketPlayOutUpdateTime implements Packet<PacketListenerPlayOut> {
 
+    // World Age in ticks
+    // Not changed by server commands
+    // World Age must not be negative
     private long a;
+    // Time of Day in ticks
+    // If negative the sun will stop moving at the Math.abs of the time
+    // Displayed in the debug screen (F3)
     private long b;
 
     public PacketPlayOutUpdateTime() {}
@@ -19,6 +25,9 @@ public class PacketPlayOutUpdateTime implements Packet<PacketListenerPlayOut> {
             }
         }
 
+        // Paper start
+        this.a = this.a % 192000;
+        // Paper end
     }
 
     @Override
