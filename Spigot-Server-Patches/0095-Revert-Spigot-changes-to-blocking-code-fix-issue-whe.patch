@@ -1,0 +1,73 @@
+From 7753525019a5b4ca88a9d28322329d8f6d76e14a Mon Sep 17 00:00:00 2001
+From: DemonWav <demonwav@gmail.com>
+Date: Sat, 19 Mar 2016 12:14:50 -0500
+Subject: [PATCH] Revert Spigot changes to blocking code, fix issue where
+ entities cannot die
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 34abdd4..a78614c 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -1,30 +1,28 @@
+ package net.minecraft.server;
+ 
+-import com.google.common.base.Objects;
+-import com.google.common.collect.Maps;
+-import java.util.Collection;
+-import java.util.Iterator;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.Random;
+-import java.util.UUID;
+-
+-// CraftBukkit start
+-import java.util.ArrayList;
+ import com.google.common.base.Function;
++import com.google.common.base.Objects;
+ import com.google.common.collect.Lists;
++import com.google.common.collect.Maps;
+ import org.bukkit.craftbukkit.attribute.CraftAttributeMap;
+ import org.bukkit.craftbukkit.event.CraftEventFactory;
+ import org.bukkit.craftbukkit.inventory.CraftItemStack;
+-import org.bukkit.entity.LivingEntity;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.entity.EntityDamageEvent;
+ import org.bukkit.event.entity.EntityDamageEvent.DamageModifier;
+ import org.bukkit.event.entity.EntityRegainHealthEvent;
+ import org.bukkit.event.player.PlayerItemConsumeEvent;
+-// CraftBukkit end
+ 
+-import co.aikar.timings.SpigotTimings; // Paper
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++import java.util.Random;
++import java.util.UUID;
++
++// CraftBukkit start
++// CraftBukkit end
+ 
+ public abstract class EntityLiving extends Entity {
+ 
+@@ -1157,7 +1155,14 @@ public abstract class EntityLiving extends Entity {
+             Function<Double, Double> blocking = new Function<Double, Double>() {
+                 @Override
+                 public Double apply(Double f) {
+-                    return (damagesource.a()) ? -0.0 : f * 0.33F; // PAIL: rename
++                    // Paper start - revert Spigot change
++                    if (human) {
++                        if (!damagesource.ignoresArmor() && ((EntityHuman) EntityLiving.this).isBlocking() && f > 0.0F) {
++                            return -(f - ((1.0F + f) * 0.5F));
++                        }
++                    }
++                    return -0.0;
++                    // Paper end
+                 }
+             };
+             float blockingModifier = blocking.apply((double) f).floatValue();
+-- 
+2.7.3
+
