@@ -374,6 +374,10 @@
 -            f = this.applyArmorModifier(damagesource, f);
 -            f = this.applyMagicModifier(damagesource, f);
 -            float f1 = f;
+-
+-            f = Math.max(f - this.getAbsorptionHearts(), 0.0F);
+-            this.setAbsorptionHearts(this.getAbsorptionHearts() - (f1 - f));
+-            if (f != 0.0F) {
 +    // CraftBukkit start
 +    protected boolean damageEntity0(final DamageSource damagesource, float f) { // void -> boolean, add final
 +       if (!this.isInvulnerable(damagesource)) {
@@ -384,9 +388,7 @@
 +                public Double apply(Double f) {
 +                    if ((damagesource == DamageSource.ANVIL || damagesource == DamageSource.FALLING_BLOCK) && EntityLiving.this.getEquipment(EnumItemSlot.HEAD) != null) {
 +                        return -(f - (f * 0.75F));
- 
--            f = Math.max(f - this.getAbsorptionHearts(), 0.0F);
--            this.setAbsorptionHearts(this.getAbsorptionHearts() - (f1 - f));
++
 +                    }
 +                    return -0.0;
 +                }
@@ -397,7 +399,7 @@
 +            Function<Double, Double> blocking = new Function<Double, Double>() {
 +                @Override
 +                public Double apply(Double f) {
-+                    return (damagesource.a()) ? -0.0 : f * 0.33F; // PAIL: rename
++                    return -((EntityLiving.this.d(damagesource)) ? ((damagesource.a()) ? f : (f - (f * 0.33F))) : 0.0); // PAIL: rename
 +                }
 +            };
 +            float blockingModifier = blocking.apply((double) f).floatValue();
@@ -463,17 +465,16 @@
 +            }
 +
 +            // Apply blocking code
-+            if (this.d(damagesource)) { // PAIL: rename
-+                float blockingDamage = (float) event.getDamage(DamageModifier.BLOCKING);
-+                this.k(blockingDamage); // PAIL: rename
-+                if (blockingDamage > 0 && damagesource.i() instanceof EntityLiving) { // PAIL: rename
++            if (event.getDamage(DamageModifier.BLOCKING) < 0) {
++                if (damagesource.i() instanceof EntityLiving) {// PAIL: rename
++                    this.k(f); // PAIL: rename
 +                    ((EntityLiving) damagesource.i()).a(EntityLiving.this, 0.5F, EntityLiving.this.locX - damagesource.i().locX, EntityLiving.this.locZ - damagesource.i().locZ);
 +                }
 +            }
 +
 +            absorptionModifier = (float) -event.getDamage(DamageModifier.ABSORPTION);
 +            this.setAbsorptionHearts(Math.max(this.getAbsorptionHearts() - absorptionModifier, 0.0F));
-             if (f != 0.0F) {
++            if (f > 0) {
 +                if (human) {
 +                    // PAIL: Be sure to drag all this code from the EntityHuman subclass each update.
 +                    ((EntityHuman) this).applyExhaustion(damagesource.getExhaustionCost());
@@ -486,14 +487,16 @@
  
                  this.setHealth(f2 - f);
                  this.getCombatTracker().trackDamage(damagesource, f2, f);
+-                this.setAbsorptionHearts(this.getAbsorptionHearts() - f);
 +                // CraftBukkit start
 +                if (human) {
 +                    return true;
 +                }
 +                // CraftBukkit end
-                 this.setAbsorptionHearts(this.getAbsorptionHearts() - f);
++               this.setAbsorptionHearts(this.getAbsorptionHearts() - f);
++            } else {
++                return false;
              }
-+            return true;
          }
 +        return false; // CraftBukkit
      }
