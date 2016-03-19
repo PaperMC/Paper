@@ -14,6 +14,7 @@ import net.minecraft.server.PacketPlayOutOpenWindow;
 import net.minecraft.server.Slot;
 
 public class CraftContainer extends Container {
+
     private final InventoryView view;
     private InventoryType cachedType;
     private String cachedTitle;
@@ -23,8 +24,8 @@ public class CraftContainer extends Container {
         this.view = view;
         this.windowId = id;
         // TODO: Do we need to check that it really is a CraftInventory?
-        IInventory top = ((CraftInventory)view.getTopInventory()).getInventory();
-        IInventory bottom = ((CraftInventory)view.getBottomInventory()).getInventory();
+        IInventory top = ((CraftInventory) view.getTopInventory()).getInventory();
+        IInventory bottom = ((CraftInventory) view.getBottomInventory()).getInventory();
         cachedType = view.getType();
         cachedTitle = view.getTitle();
         cachedSize = getSize();
@@ -78,8 +79,8 @@ public class CraftContainer extends Container {
         if (view.getPlayer() instanceof CraftPlayer) {
             CraftPlayer player = (CraftPlayer) view.getPlayer();
             String type = getNotchInventoryType(cachedType);
-            IInventory top = ((CraftInventory)view.getTopInventory()).getInventory();
-            IInventory bottom = ((CraftInventory)view.getBottomInventory()).getInventory();
+            IInventory top = ((CraftInventory) view.getTopInventory()).getInventory();
+            IInventory bottom = ((CraftInventory) view.getBottomInventory()).getInventory();
             this.b.clear();
             this.c.clear();
             if (typeChanged) {
@@ -93,55 +94,55 @@ public class CraftContainer extends Container {
     }
 
     public static String getNotchInventoryType(InventoryType type) {
-        switch(type) {
-        case WORKBENCH:
-            return "minecraft:crafting_table";
-        case FURNACE:
-            return "minecraft:furnace";
-        case DISPENSER:
-            return "minecraft:dispenser";
-        case ENCHANTING:
-            return "minecraft:enchanting_table";
-        case BREWING:
-            return "minecraft:brewing_stand";
-        case BEACON:
-            return "minecraft:beacon";
-        case ANVIL:
-            return "minecraft:anvil";
-        case HOPPER:
-            return "minecraft:hopper";
-        default:
-            return "minecraft:chest";
+        switch (type) {
+            case WORKBENCH:
+                return "minecraft:crafting_table";
+            case FURNACE:
+                return "minecraft:furnace";
+            case DISPENSER:
+                return "minecraft:dispenser";
+            case ENCHANTING:
+                return "minecraft:enchanting_table";
+            case BREWING:
+                return "minecraft:brewing_stand";
+            case BEACON:
+                return "minecraft:beacon";
+            case ANVIL:
+                return "minecraft:anvil";
+            case HOPPER:
+                return "minecraft:hopper";
+            default:
+                return "minecraft:chest";
         }
     }
 
     private void setupSlots(IInventory top, IInventory bottom) {
-        switch(cachedType) {
-        case CREATIVE:
-            break; // TODO: This should be an error?
-        case PLAYER:
-        case CHEST:
-            setupChest(top, bottom);
-            break;
-        case DISPENSER:
-            setupDispenser(top, bottom);
-            break;
-        case FURNACE:
-            setupFurnace(top, bottom);
-            break;
-        case CRAFTING: // TODO: This should be an error?
-        case WORKBENCH:
-            setupWorkbench(top, bottom);
-            break;
-        case ENCHANTING:
-            setupEnchanting(top, bottom);
-            break;
-        case BREWING:
-            setupBrewing(top, bottom);
-            break;
-        case HOPPER:
-            setupHopper(top, bottom);
-            break;
+        switch (cachedType) {
+            case CREATIVE:
+                break; // TODO: This should be an error?
+            case PLAYER:
+            case CHEST:
+                setupChest(top, bottom);
+                break;
+            case DISPENSER:
+                setupDispenser(top, bottom);
+                break;
+            case FURNACE:
+                setupFurnace(top, bottom);
+                break;
+            case CRAFTING: // TODO: This should be an error?
+            case WORKBENCH:
+                setupWorkbench(top, bottom);
+                break;
+            case ENCHANTING:
+                setupEnchanting(top, bottom);
+                break;
+            case BREWING:
+                setupBrewing(top, bottom);
+                break;
+            case HOPPER:
+                setupHopper(top, bottom);
+                break;
         }
     }
 
@@ -262,9 +263,9 @@ public class CraftContainer extends Container {
         this.a(new Slot(top, 1, 79, 53));
         this.a(new Slot(top, 2, 102, 46));
         this.a(new Slot(top, 3, 79, 17));
+        this.a(new Slot(top, 4, 17, 17));
 
         int i;
-
         for (i = 0; i < 3; ++i) {
             for (int j = 0; j < 9; ++j) {
                 this.a(new Slot(bottom, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
