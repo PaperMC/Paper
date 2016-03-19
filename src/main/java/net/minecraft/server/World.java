@@ -245,10 +245,26 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
     }
 
     @Override
-    public Fluid getFluidIfLoaded(BlockPosition blockposition) {
+    public final Fluid getFluidIfLoaded(BlockPosition blockposition) {
         IChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 
         return chunk == null ? null : chunk.getFluid(blockposition);
+    }
+
+    public final boolean isLoadedAndInBounds(BlockPosition blockposition) { // Paper - final for inline
+        return getWorldBorder().isInBounds(blockposition) && getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null;
+    }
+
+    public Chunk getChunkIfLoaded(int x, int z) { // Overridden in WorldServer for ABI compat which has final
+        return ((WorldServer) this).getChunkProvider().getChunkAtIfLoadedImmediately(x, z);
+    }
+    public final Chunk getChunkIfLoaded(BlockPosition blockposition) {
+        return ((WorldServer) this).getChunkProvider().getChunkAtIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
+    }
+
+    //  reduces need to do isLoaded before getType
+    public final IBlockData getTypeIfLoadedAndInBounds(BlockPosition blockposition) {
+        return getWorldBorder().isInBounds(blockposition) ? getTypeIfLoaded(blockposition) : null;
     }
     // Paper end
 

@@ -84,7 +84,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
     public final Convertable.ConversionSession convertable;
     public final UUID uuid;
 
-    public Chunk getChunkIfLoaded(int x, int z) {
+    @Override public Chunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
         return this.chunkProvider.getChunkAt(x, z, false);
     }
 
