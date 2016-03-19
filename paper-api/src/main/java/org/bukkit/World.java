@@ -242,7 +242,9 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param safe Controls whether to unload the chunk when players are
      *     nearby
      * @return true if the chunk has unloaded successfully, otherwise false
+     * @deprecated it is never safe to remove a chunk in use
      */
+    @Deprecated
     public boolean unloadChunk(int x, int z, boolean save, boolean safe);
 
     /**
