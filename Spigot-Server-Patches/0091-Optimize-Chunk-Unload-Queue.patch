@@ -1,4 +1,4 @@
-From 5036fed452975d8857105532162be561fcd8effc Mon Sep 17 00:00:00 2001
+From a129b303afc36a4e665fc1328a68aa307e09f0f0 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 18 Mar 2016 17:57:25 -0400
 Subject: [PATCH] Optimize Chunk Unload Queue
@@ -50,7 +50,7 @@ index b6d84d7..a4c0b4e 100644
          Iterator iterator = this.tileEntities.values().iterator();
  
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 9ef6246..f62a2c7 100644
+index 9ef6246..247a6dd 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -21,7 +21,7 @@ import org.bukkit.event.world.ChunkUnloadEvent;
@@ -62,7 +62,7 @@ index 9ef6246..f62a2c7 100644
      public final ChunkGenerator chunkGenerator; // CraftBukkit - public
      private final IChunkLoader chunkLoader;
      public LongObjectHashMap<Chunk> chunks = new LongObjectHashMap<Chunk>(); // CraftBukkit
-@@ -79,18 +79,18 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -79,18 +79,24 @@ public class ChunkProviderServer implements IChunkProvider {
  
      // CraftBukkit start - Add async variant, provide compatibility
      public Chunk getOrCreateChunkFast(int x, int z) {
@@ -71,6 +71,12 @@ index 9ef6246..f62a2c7 100644
 +        return getChunkAt(x, z); // Paper
      }
  
++    // Paper start
++    public Chunk getLoadedChunkAtWithoutMarkingActive(int i, int j) {
++        return chunks.get(LongHash.toLong(i, j));
++    }
++    // Paper end
++
      public Chunk getChunkIfLoaded(int x, int z) {
 -        return chunks.get(LongHash.toLong(x, z));
 +        return getLoadedChunkAt(x, z); // Paper - Bukkit has a duplicate method now.
@@ -84,7 +90,7 @@ index 9ef6246..f62a2c7 100644
          return chunk;
      }
  
-@@ -151,6 +151,7 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -151,6 +157,7 @@ public class ChunkProviderServer implements IChunkProvider {
              runnable.run();
          }
  
@@ -92,7 +98,16 @@ index 9ef6246..f62a2c7 100644
          return chunk;
      }
  
-@@ -300,10 +301,17 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -201,7 +208,7 @@ public class ChunkProviderServer implements IChunkProvider {
+                         continue;
+                     }
+ 
+-                    Chunk neighbor = this.getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
++                    Chunk neighbor = this.getLoadedChunkAtWithoutMarkingActive(chunk.locX + x, chunk.locZ + z); // Paper
+                     if (neighbor != null) {
+                         neighbor.setNeighborLoaded(-x, -z);
+                         chunk.setNeighborLoaded(x, z);
+@@ -300,10 +307,17 @@ public class ChunkProviderServer implements IChunkProvider {
          if (!this.world.savingDisabled) {
              // CraftBukkit start
              Server server = this.world.getServer();
@@ -114,7 +129,16 @@ index 9ef6246..f62a2c7 100644
  
                  ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
                  server.getPluginManager().callEvent(event);
-@@ -367,4 +375,22 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -325,7 +339,7 @@ public class ChunkProviderServer implements IChunkProvider {
+                                 continue;
+                             }
+ 
+-                            Chunk neighbor = this.getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
++                            Chunk neighbor = this.getLoadedChunkAtWithoutMarkingActive(chunk.locX + x, chunk.locZ + z); // Paper
+                             if (neighbor != null) {
+                                 neighbor.setNeighborUnloaded(-x, -z);
+                                 chunk.setNeighborUnloaded(x, z);
+@@ -367,4 +381,22 @@ public class ChunkProviderServer implements IChunkProvider {
      public boolean e(int i, int j) {
          return this.chunks.containsKey(LongHash.toLong(i, j)); // CraftBukkit
      }
@@ -151,9 +175,18 @@ index 63e118d..721bcae 100644
                  i += server.getChunkAt( x, z ).entityCount.get( oClass );
              }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 40338c0..bd28154 100644
+index 40338c0..c6b70b6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -232,7 +232,7 @@ public class CraftWorld implements World {
+                     continue;
+                 }
+ 
+-                net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
++                net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getLoadedChunkAtWithoutMarkingActive(chunk.locX + x, chunk.locZ + z); // Paper
+                 if (neighbor != null) {
+                     neighbor.setNeighborUnloaded(-xx, -zz);
+                     chunk.setNeighborUnloaded(xx, zz);
 @@ -302,7 +302,7 @@ public class CraftWorld implements World {
              world.timings.syncChunkLoadTimer.startTiming(); // Spigot
              chunk = world.getChunkProviderServer().getOrLoadChunkAt(x, z);
@@ -163,6 +196,15 @@ index 40338c0..bd28154 100644
          return chunk != null;
      }
  
+@@ -319,7 +319,7 @@ public class CraftWorld implements World {
+                         continue;
+                     }
+ 
+-                    net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
++                    net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getLoadedChunkAtWithoutMarkingActive(chunk.locX + x, chunk.locZ + z); // Paper
+                     if (neighbor != null) {
+                         neighbor.setNeighborLoaded(-x, -z);
+                         chunk.setNeighborLoaded(x, z);
 @@ -1538,7 +1538,7 @@ public class CraftWorld implements World {
              }
  
@@ -172,6 +214,19 @@ index 40338c0..bd28154 100644
                  continue;
              }
  
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
+index 482af17..a1a6d5a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
+@@ -62,7 +62,7 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
+                     continue;
+                 }
+ 
+-                Chunk neighbor = queuedChunk.provider.getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
++                Chunk neighbor = queuedChunk.provider.getLoadedChunkAtWithoutMarkingActive(chunk.locX + x, chunk.locZ + z); // Paper
+                 if (neighbor != null) {
+                     neighbor.setNeighborLoaded(-x, -z);
+                     chunk.setNeighborLoaded(x, z);
 -- 
 2.7.4
 
