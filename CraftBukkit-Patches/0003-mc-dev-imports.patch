@@ -968,6 +968,362 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.data;
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
+@@ -0,0 +0,0 @@
++package net.minecraft.server;
++
++public abstract class NavigationAbstract {
++
++    private static int f = 20;
++    protected EntityInsentient a;
++    protected World b;
++    protected PathEntity c;
++    protected double d;
++    private final AttributeInstance g;
++    private int h;
++    private int i;
++    private Vec3D j;
++    private Vec3D k;
++    private long l;
++    private long m;
++    private double n;
++    private float o;
++    private boolean p;
++    private long q;
++    protected PathfinderAbstract e;
++    private BlockPosition r;
++    private final Pathfinder s;
++
++    public NavigationAbstract(EntityInsentient entityinsentient, World world) {
++        this.j = Vec3D.a;
++        this.k = Vec3D.a;
++        this.l = 0L;
++        this.m = 0L;
++        this.o = 0.5F;
++        this.a = entityinsentient;
++        this.b = world;
++        this.g = entityinsentient.getAttributeInstance(GenericAttributes.FOLLOW_RANGE);
++        this.s = this.a();
++        this.b.C().a(this);
++    }
++
++    protected abstract Pathfinder a();
++
++    public void a(double d0) {
++        this.d = d0;
++    }
++
++    public float h() {
++        return (float) this.g.getValue();
++    }
++
++    public boolean i() {
++        return this.p;
++    }
++
++    public void j() {
++        if (this.b.getTime() - this.q > (long) NavigationAbstract.f) {
++            if (this.r != null) {
++                this.c = null;
++                this.c = this.a(this.r);
++                this.q = this.b.getTime();
++                this.p = false;
++            }
++        } else {
++            this.p = true;
++        }
++
++    }
++
++    public final PathEntity a(double d0, double d1, double d2) {
++        return this.a(new BlockPosition(MathHelper.floor(d0), (int) d1, MathHelper.floor(d2)));
++    }
++
++    public PathEntity a(BlockPosition blockposition) {
++        if (!this.b()) {
++            return null;
++        } else if (this.c != null && !this.c.b() && blockposition.equals(this.r)) {
++            return this.c;
++        } else {
++            this.r = blockposition;
++            float f = this.h();
++
++            this.b.methodProfiler.a("pathfind");
++            BlockPosition blockposition1 = new BlockPosition(this.a);
++            int i = (int) (f + 8.0F);
++            ChunkCache chunkcache = new ChunkCache(this.b, blockposition1.a(-i, -i, -i), blockposition1.a(i, i, i), 0);
++            PathEntity pathentity = this.s.a(chunkcache, this.a, this.r, f);
++
++            this.b.methodProfiler.b();
++            return pathentity;
++        }
++    }
++
++    public PathEntity a(Entity entity) {
++        if (!this.b()) {
++            return null;
++        } else {
++            BlockPosition blockposition = new BlockPosition(entity);
++
++            if (this.c != null && !this.c.b() && blockposition.equals(this.r)) {
++                return this.c;
++            } else {
++                this.r = blockposition;
++                float f = this.h();
++
++                this.b.methodProfiler.a("pathfind");
++                BlockPosition blockposition1 = (new BlockPosition(this.a)).up();
++                int i = (int) (f + 16.0F);
++                ChunkCache chunkcache = new ChunkCache(this.b, blockposition1.a(-i, -i, -i), blockposition1.a(i, i, i), 0);
++                PathEntity pathentity = this.s.a(chunkcache, this.a, entity, f);
++
++                this.b.methodProfiler.b();
++                return pathentity;
++            }
++        }
++    }
++
++    public boolean a(double d0, double d1, double d2, double d3) {
++        PathEntity pathentity = this.a((double) MathHelper.floor(d0), (double) ((int) d1), (double) MathHelper.floor(d2));
++
++        return this.a(pathentity, d3);
++    }
++
++    public boolean a(Entity entity, double d0) {
++        PathEntity pathentity = this.a(entity);
++
++        return pathentity != null ? this.a(pathentity, d0) : false;
++    }
++
++    public boolean a(PathEntity pathentity, double d0) {
++        if (pathentity == null) {
++            this.c = null;
++            return false;
++        } else {
++            if (!pathentity.a(this.c)) {
++                this.c = pathentity;
++            }
++
++            this.d();
++            if (this.c.d() == 0) {
++                return false;
++            } else {
++                this.d = d0;
++                Vec3D vec3d = this.c();
++
++                this.i = this.h;
++                this.j = vec3d;
++                return true;
++            }
++        }
++    }
++
++    public PathEntity k() {
++        return this.c;
++    }
++
++    public void l() {
++        ++this.h;
++        if (this.p) {
++            this.j();
++        }
++
++        if (!this.n()) {
++            Vec3D vec3d;
++
++            if (this.b()) {
++                this.m();
++            } else if (this.c != null && this.c.e() < this.c.d()) {
++                vec3d = this.c();
++                Vec3D vec3d1 = this.c.a(this.a, this.c.e());
++
++                if (vec3d.y > vec3d1.y && !this.a.onGround && MathHelper.floor(vec3d.x) == MathHelper.floor(vec3d1.x) && MathHelper.floor(vec3d.z) == MathHelper.floor(vec3d1.z)) {
++                    this.c.c(this.c.e() + 1);
++                }
++            }
++
++            if (!this.n()) {
++                vec3d = this.c.a((Entity) this.a);
++                if (vec3d != null) {
++                    BlockPosition blockposition = (new BlockPosition(vec3d)).down();
++                    AxisAlignedBB axisalignedbb = this.b.getType(blockposition).c(this.b, blockposition);
++
++                    vec3d = vec3d.a(0.0D, 1.0D - axisalignedbb.e, 0.0D);
++                    this.a.getControllerMove().a(vec3d.x, vec3d.y, vec3d.z, this.d);
++                }
++            }
++        }
++    }
++
++    protected void m() {
++        Vec3D vec3d = this.c();
++        int i = this.c.d();
++
++        for (int j = this.c.e(); j < this.c.d(); ++j) {
++            if ((double) this.c.a(j).b != Math.floor(vec3d.y)) {
++                i = j;
++                break;
++            }
++        }
++
++        this.o = this.a.width > 0.75F ? this.a.width / 2.0F : 0.75F - this.a.width / 2.0F;
++        Vec3D vec3d1 = this.c.f();
++
++        if (MathHelper.e((float) (this.a.locX - (vec3d1.x + 0.5D))) < this.o && MathHelper.e((float) (this.a.locZ - (vec3d1.z + 0.5D))) < this.o) {
++            this.c.c(this.c.e() + 1);
++        }
++
++        int k = MathHelper.f(this.a.width);
++        int l = (int) this.a.length + 1;
++        int i1 = k;
++
++        for (int j1 = i - 1; j1 >= this.c.e(); --j1) {
++            if (this.a(vec3d, this.c.a(this.a, j1), k, l, i1)) {
++                this.c.c(j1);
++                break;
++            }
++        }
++
++        this.a(vec3d);
++    }
++
++    protected void a(Vec3D vec3d) {
++        if (this.h - this.i > 100) {
++            if (vec3d.distanceSquared(this.j) < 2.25D) {
++                this.o();
++            }
++
++            this.i = this.h;
++            this.j = vec3d;
++        }
++
++        if (this.c != null && !this.c.b()) {
++            Vec3D vec3d1 = this.c.f();
++
++            if (!vec3d1.equals(this.k)) {
++                this.k = vec3d1;
++                double d0 = vec3d.f(this.k);
++
++                this.n = this.a.ck() > 0.0F ? d0 / (double) this.a.ck() * 1000.0D : 0.0D;
++            } else {
++                this.l += System.currentTimeMillis() - this.m;
++            }
++
++            if (this.n > 0.0D && (double) this.l > this.n * 3.0D) {
++                this.k = Vec3D.a;
++                this.l = 0L;
++                this.n = 0.0D;
++                this.o();
++            }
++
++            this.m = System.currentTimeMillis();
++        }
++
++    }
++
++    public boolean n() {
++        return this.c == null || this.c.b();
++    }
++
++    public void o() {
++        this.c = null;
++    }
++
++    protected abstract Vec3D c();
++
++    protected abstract boolean b();
++
++    protected boolean p() {
++        return this.a.isInWater() || this.a.an();
++    }
++
++    protected void d() {}
++
++    protected abstract boolean a(Vec3D vec3d, Vec3D vec3d1, int i, int j, int k);
++
++    public boolean b(BlockPosition blockposition) {
++        return this.b.getType(blockposition.down()).b();
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/NavigationListener.java b/src/main/java/net/minecraft/server/NavigationListener.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/NavigationListener.java
+@@ -0,0 +0,0 @@
++package net.minecraft.server;
++
++import java.util.WeakHashMap;
++
++public class NavigationListener implements IWorldAccess {
++
++    private static final Object a = new Object();
++    private final WeakHashMap<NavigationAbstract, Object> b = new WeakHashMap();
++
++    public NavigationListener() {}
++
++    public void a(NavigationAbstract navigationabstract) {
++        this.b.put(navigationabstract, NavigationListener.a);
++    }
++
++    public void a(World world, BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1, int i) {
++        if (this.a(world, blockposition, iblockdata, iblockdata1)) {
++            NavigationAbstract[] anavigationabstract = (NavigationAbstract[]) this.b.keySet().toArray(new NavigationAbstract[0]);
++            NavigationAbstract[] anavigationabstract1 = anavigationabstract;
++            int j = anavigationabstract.length;
++
++            for (int k = 0; k < j; ++k) {
++                NavigationAbstract navigationabstract = anavigationabstract1[k];
++
++                if (navigationabstract != null && !navigationabstract.i()) {
++                    PathEntity pathentity = navigationabstract.k();
++
++                    if (pathentity != null && !pathentity.b() && pathentity.d() != 0) {
++                        PathPoint pathpoint = navigationabstract.c.c();
++                        double d0 = blockposition.distanceSquared(((double) pathpoint.a + navigationabstract.a.locX) / 2.0D, ((double) pathpoint.b + navigationabstract.a.locY) / 2.0D, ((double) pathpoint.c + navigationabstract.a.locZ) / 2.0D);
++                        int l = (pathentity.d() - pathentity.e()) * (pathentity.d() - pathentity.e());
++
++                        if (d0 < (double) l) {
++                            navigationabstract.j();
++                        }
++                    }
++                }
++            }
++
++        }
++    }
++
++    protected boolean a(World world, BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {
++        AxisAlignedBB axisalignedbb = iblockdata.d(world, blockposition);
++        AxisAlignedBB axisalignedbb1 = iblockdata1.d(world, blockposition);
++
++        return axisalignedbb != axisalignedbb1 && (axisalignedbb == null || !axisalignedbb.equals(axisalignedbb1));
++    }
++
++    public void a(BlockPosition blockposition) {}
++
++    public void a(int i, int j, int k, int l, int i1, int j1) {}
++
++    public void a(EntityHuman entityhuman, SoundEffect soundeffect, SoundCategory soundcategory, double d0, double d1, double d2, float f, float f1) {}
++
++    public void a(int i, boolean flag, double d0, double d1, double d2, double d3, double d4, double d5, int... aint) {}
++
++    public void a(Entity entity) {}
++
++    public void b(Entity entity) {}
++
++    public void a(SoundEffect soundeffect, BlockPosition blockposition) {}
++
++    public void a(int i, BlockPosition blockposition, int j) {}
++
++    public void a(EntityHuman entityhuman, int i, BlockPosition blockposition, int j) {}
++
++    public void b(int i, BlockPosition blockposition, int j) {}
++}
 diff --git a/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java b/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000

@@ -1,0 +1,97 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 8 Mar 2016 19:13:54 -0500
+Subject: [PATCH] Optimize Navigation Listener
+
+Replace WeakHashMap with an ArrayList and manually manage object
+lifecycle. Gives superior iteration performance at a slight cost
+to removal performance and also ensures entities are removed immediately
+upon losing their validity within the world.
+
+Additionally, change listener registration to be done upon world add
+instead of immediate up creation. This provides benefit of only
+registering and ticking real Navigation objects, and not invalid
+entities (cancelled entity spawns for example).
+
+diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/NavigationAbstract.java
++++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
+@@ -0,0 +0,0 @@ public abstract class NavigationAbstract {
+         this.b = world;
+         this.g = entityinsentient.getAttributeInstance(GenericAttributes.FOLLOW_RANGE);
+         this.s = this.a();
+-        this.b.C().a(this);
++        //this.b.C().a(this); // Spigot - Optimized Nav Listener - registered on world add
+     }
+ 
+     protected abstract Pathfinder a();
+diff --git a/src/main/java/net/minecraft/server/NavigationListener.java b/src/main/java/net/minecraft/server/NavigationListener.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/NavigationListener.java
++++ b/src/main/java/net/minecraft/server/NavigationListener.java
+@@ -0,0 +0,0 @@
+ package net.minecraft.server;
+ 
++import java.util.ArrayList; // Spigot
++import java.util.List; // Spigot
+ import java.util.WeakHashMap;
+ 
+ public class NavigationListener implements IWorldAccess {
+ 
+     private static final Object a = new Object();
+-    private final WeakHashMap<NavigationAbstract, Object> b = new WeakHashMap();
++    private final List<NavigationAbstract> navigators = new ArrayList<NavigationAbstract>(); // Spigot
+ 
+     public NavigationListener() {}
+ 
+     public void a(NavigationAbstract navigationabstract) {
+-        this.b.put(navigationabstract, NavigationListener.a);
++        //this.b.put(navigationabstract, NavigationListener.a); // Spigot
++        new Throwable("Unexpected NavigationListener add").printStackTrace(); // Spigot
+     }
+ 
+     public void a(World world, BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1, int i) {
+         if (this.a(world, blockposition, iblockdata, iblockdata1)) {
++            /* // Spigot start
+             NavigationAbstract[] anavigationabstract = (NavigationAbstract[]) this.b.keySet().toArray(new NavigationAbstract[0]);
+             NavigationAbstract[] anavigationabstract1 = anavigationabstract;
+             int j = anavigationabstract.length;
+ 
+-            for (int k = 0; k < j; ++k) {
+-                NavigationAbstract navigationabstract = anavigationabstract1[k];
++            */
++            // DO NOT USE AN ITERATOR! This must be a for (;;) to avoid CME.
++            // This is perfectly safe, as additions are ok to be done in this iteration
++            // and Removals are queued instead of immediate.
++            for (int k = 0; k < this.navigators.size(); ++k) {
++                NavigationAbstract navigationabstract = this.navigators.get(k);
++                // Spigot end
+ 
+                 if (navigationabstract != null && !navigationabstract.i()) {
+                     PathEntity pathentity = navigationabstract.k();
+@@ -0,0 +0,0 @@ public class NavigationListener implements IWorldAccess {
+ 
+     public void a(int i, boolean flag, double d0, double d1, double d2, double d3, double d4, double d5, int... aint) {}
+ 
+-    public void a(Entity entity) {}
++    public void a(Entity entity) {
++        // Spigot start
++        if (entity instanceof EntityInsentient) {
++            this.navigators.add(((EntityInsentient) entity).navigation);
++        }
++        // Spigot end
++    }
+ 
+-    public void b(Entity entity) {}
++    public void b(Entity entity) {
++        // Spigot start
++        if (entity instanceof EntityInsentient) {
++            this.navigators.remove(((EntityInsentient) entity).navigation);
++        }
++        // Spigot end
++    }
+ 
+     public void a(SoundEffect soundeffect, BlockPosition blockposition) {}
+ 
+--
