@@ -179,7 +179,7 @@ public class CraftWorld implements World {
     }
 
     public boolean unloadChunk(int x, int z, boolean save, boolean safe) {
-        if (safe && isChunkInUse(x, z)) {
+        if (isChunkInUse(x, z)) {
             return false;
         }
 
