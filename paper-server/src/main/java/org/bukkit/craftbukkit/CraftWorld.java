@@ -404,6 +404,8 @@ public class CraftWorld implements World {
     }
 
     public boolean generateTree(Location loc, TreeType type) {
+        BlockPosition pos = new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+
         net.minecraft.server.WorldGenerator gen;
         switch (type) {
         case BIG_TREE:
@@ -459,13 +461,16 @@ public class CraftWorld implements World {
         case TALL_BIRCH:
             gen = new WorldGenForest(true, true);
             break;
+        case CHORUS_PLANT:
+            BlockChorusFlower.a(world, pos, rand, 8);
+            return true;
         case TREE:
         default:
             gen = new WorldGenTrees(true);
             break;
         }
 
-        return gen.generate(world, rand, new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
+        return gen.generate(world, rand, pos);
     }
 
     public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate) {
