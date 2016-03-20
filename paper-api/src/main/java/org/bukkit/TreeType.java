@@ -69,4 +69,8 @@ public enum TreeType {
      * Tall birch tree
      */
     TALL_BIRCH,
+    /**
+     * Large plant native to The End
+     */
+    CHORUS_PLANT,
 }
