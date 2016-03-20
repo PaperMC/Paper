@@ -27,7 +27,7 @@ public class AreaEffectCloudApplyEvent extends EntityEvent {
 
     @Override
     public AreaEffectCloud getEntity() {
-        return (AreaEffectCloud) getEntity();
+        return (AreaEffectCloud) entity;
     }
 
     /**
