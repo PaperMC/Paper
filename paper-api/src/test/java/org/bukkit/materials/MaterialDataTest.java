@@ -8,10 +8,12 @@ import org.bukkit.TreeSpecies;
 import org.bukkit.block.BlockFace;
 import org.bukkit.material.Door;
 import org.bukkit.material.Leaves;
+import org.bukkit.material.Mushroom;
 import org.bukkit.material.Sapling;
 import org.bukkit.material.Tree;
 import org.bukkit.material.Wood;
 import org.bukkit.material.WoodenStep;
+import org.bukkit.material.types.MushroomBlockTexture;
 import org.junit.Test;
 
 public class MaterialDataTest {
@@ -228,6 +230,32 @@ public class MaterialDataTest {
                 assertThat("Constructed with default sapling type", sapling.getItemType(), equalTo(Material.SAPLING));
                 assertThat("Constructed with correct tree species", sapling.getSpecies(), equalTo(species));
                 assertThat("Constructed with correct growable", sapling.isInstantGrowable(), equalTo(isInstantGrowable));
+            }
+        }
+    }
+
+    @Test
+    public void testMushroom() {
+        Material[] mushroomTypes = new Material[] { Material.HUGE_MUSHROOM_1, Material.HUGE_MUSHROOM_2 };
+        BlockFace[] setFaces = new BlockFace[] { BlockFace.SELF, BlockFace.UP, BlockFace.NORTH,
+                BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST, BlockFace.NORTH_EAST, BlockFace.NORTH_WEST,
+                BlockFace.SOUTH_EAST, BlockFace.SOUTH_WEST };
+        MushroomBlockTexture[] textures = MushroomBlockTexture.values();
+        for (Material type : mushroomTypes) {
+            Mushroom mushroom = new Mushroom(type);
+            assertThat("Constructed with correct mushroom type", mushroom.getItemType(), equalTo(type));
+            assertThat("Constructed with default pores face", mushroom.getBlockTexture(), equalTo(MushroomBlockTexture.ALL_PORES));
+
+            for (int f = 0; f < setFaces.length; f++) {
+                mushroom = new Mushroom(type, setFaces[f]);
+                assertThat("Constructed with correct mushroom type", mushroom.getItemType(), equalTo(type));
+                assertThat("Constructed with correct texture", mushroom.getBlockTexture(), equalTo(MushroomBlockTexture.getCapByFace(setFaces[f])));
+            }
+
+            for (MushroomBlockTexture texture : textures) {
+                mushroom = new Mushroom(type, texture);
+                assertThat("Constructed with correct mushroom type", mushroom.getItemType(), equalTo(type));
+                assertThat("Constructed with correct texture", mushroom.getBlockTexture(), equalTo(texture));
             }
         }
     }

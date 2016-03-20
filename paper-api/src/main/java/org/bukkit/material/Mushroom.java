@@ -6,13 +6,16 @@ import java.util.Set;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
+import org.bukkit.material.types.MushroomBlockTexture;
 
 /**
- * Represents a huge mushroom block
+ * Represents a huge mushroom block with certain combinations of faces set to
+ * cap, pores or stem.
+ *
+ * @see Material#HUGE_MUSHROOM_1
+ * @see Material#HUGE_MUSHROOM_2
  */
 public class Mushroom extends MaterialData {
-    private static final byte SHROOM_NONE = 0;
-    private static final byte SHROOM_STEM = 10;
     private static final byte NORTH_LIMIT = 4;
     private static final byte SOUTH_LIMIT = 6;
     private static final byte EAST_WEST_LIMIT = 3;
@@ -21,9 +24,51 @@ public class Mushroom extends MaterialData {
     private static final byte NORTH_SOUTH_MOD = 3;
     private static final byte EAST_WEST_MOD = 1;
 
+    /**
+     * Constructs a brown/red mushroom block with all sides set to pores.
+     *
+     * @param shroom A brown or red mushroom material type.
+     *
+     * @see Material#HUGE_MUSHROOM_1
+     * @see Material#HUGE_MUSHROOM_2
+     */
     public Mushroom(Material shroom) {
         super(shroom);
         Validate.isTrue(shroom == Material.HUGE_MUSHROOM_1 || shroom == Material.HUGE_MUSHROOM_2, "Not a mushroom!");
+    }
+
+    /**
+     * Constructs a brown/red mushroom cap block with the specified face or
+     * faces set to cap texture.
+     *
+     * Setting any of the four sides will also set the top to cap.
+     *
+     * To set two side faces at once use e.g. north-west.
+     *
+     * Specify self to set all six faces at once.
+     *
+     * @param shroom A brown or red mushroom material type.
+     * @param capFace The face or faces to set to mushroom cap texture.
+     *
+     * @see Material#HUGE_MUSHROOM_1
+     * @see Material#HUGE_MUSHROOM_2
+     * @see BlockFace
+     */
+    public Mushroom(Material shroom, BlockFace capFace) {
+        this(shroom, MushroomBlockTexture.getCapByFace(capFace));
+    }
+
+    /**
+     * Constructs a brown/red mushroom block with the specified textures.
+     *
+     * @param shroom A brown or red mushroom material type.
+     * @param texture The textured mushroom faces.
+     *
+     * @see Material#HUGE_MUSHROOM_1
+     * @see Material#HUGE_MUSHROOM_2
+     */
+    public Mushroom(Material shroom, MushroomBlockTexture texture) {
+        this(shroom, texture.getData());
     }
 
     /**
@@ -52,18 +97,45 @@ public class Mushroom extends MaterialData {
      * @return Whether this is a mushroom stem.
      */
     public boolean isStem() {
-        return getData() == SHROOM_STEM;
+        return getData() == MushroomBlockTexture.STEM_SIDES.getData() || getData() == MushroomBlockTexture.ALL_STEM.getData();
     }
 
     /**
      * Sets this to be a mushroom stem.
+     *
+     * @see MushroomBlockTexture#STEM_SIDES
+     * @see MushroomBlockTexture#ALL_STEM
+     *
+     * @deprecated Use
+     * {@link #setBlockTexture(org.bukkit.material.types.MushroomBlockTexture)}
+     * with {@link MushroomBlockTexture#STEM_SIDES } or
+     * {@link MushroomBlockTexture#ALL_STEM}
      */
+    @Deprecated
     public void setStem() {
-        setData((byte) 10);
+        setData((byte) MushroomBlockTexture.STEM_SIDES.getData());
     }
 
     /**
-     * Checks whether a face of the block is painted.
+     * Gets the mushroom texture of this block.
+     *
+     * @return The mushroom texture of this block
+     */
+    public MushroomBlockTexture getBlockTexture() {
+        return MushroomBlockTexture.getByData(getData());
+    }
+
+    /**
+     * Sets the mushroom texture of this block.
+     *
+     * @param texture The mushroom texture to set
+     */
+    public void setBlockTexture(MushroomBlockTexture texture) {
+        setData(texture.getData());
+    }
+
+    /**
+     * Checks whether a face of the block is painted with cap texture.
      *
      * @param face The face to check.
      * @return True if it is painted.
@@ -71,7 +143,8 @@ public class Mushroom extends MaterialData {
     public boolean isFacePainted(BlockFace face) {
         byte data = getData();
 
-        if (data == SHROOM_NONE || data == SHROOM_STEM) {
+        if (data == MushroomBlockTexture.ALL_PORES.getData() || data == MushroomBlockTexture.STEM_SIDES.getData()
+                || data == MushroomBlockTexture.ALL_STEM.getData()) {
             return false;
         }
 
@@ -86,6 +159,9 @@ public class Mushroom extends MaterialData {
                 return data % EAST_WEST_LIMIT == WEST_REMAINDER;
             case UP:
                 return true;
+            case DOWN:
+            case SELF:
+                return data == MushroomBlockTexture.ALL_CAP.getData();
             default:
                 return false;
         }
@@ -99,7 +175,10 @@ public class Mushroom extends MaterialData {
      * @param face The face to paint or unpaint.
      * @param painted True if you want to paint it, false if you want the
      *     pores to show.
+     *
+     * @deprecated Use MushroomBlockType cap options
      */
+    @Deprecated
     public void setFacePainted(BlockFace face, boolean painted) {
         if (painted == isFacePainted(face)) {
             return;
@@ -107,8 +186,13 @@ public class Mushroom extends MaterialData {
 
         byte data = getData();
 
-        if (data == SHROOM_STEM) {
-            data = 5;
+        if (data == MushroomBlockTexture.ALL_PORES.getData() || isStem()) {
+            data = MushroomBlockTexture.CAP_TOP.getData();
+        }
+        if (data == MushroomBlockTexture.ALL_CAP.getData() && !painted) {
+            data = MushroomBlockTexture.CAP_TOP.getData();
+            face = face.getOppositeFace();
+            painted = true;
         }
 
         switch (face) {
@@ -146,9 +230,17 @@ public class Mushroom extends MaterialData {
                 break;
             case UP:
                 if (!painted) {
-                    data = 0;
+                    data = MushroomBlockTexture.ALL_PORES.getData();
                 }
-
+                break;
+            case SELF:
+            case DOWN:
+                if (painted) {
+                    data = MushroomBlockTexture.ALL_CAP.getData();
+                }
+                else {
+                    data = MushroomBlockTexture.ALL_PORES.getData();
+                }
                 break;
             default:
                 throw new IllegalArgumentException("Can't paint that face of a mushroom!");
@@ -184,12 +276,16 @@ public class Mushroom extends MaterialData {
             faces.add(BlockFace.UP);
         }
 
+        if (isFacePainted(BlockFace.DOWN)) {
+            faces.add(BlockFace.DOWN);
+        }
+
         return faces;
     }
 
     @Override
     public String toString() {
-        return Material.getMaterial(getItemTypeId()).toString() + (isStem() ? "{STEM}" : getPaintedFaces());
+        return Material.getMaterial(getItemTypeId()).toString() + (isStem() ? " STEM " : " CAP ") + getPaintedFaces();
     }
 
     @Override
