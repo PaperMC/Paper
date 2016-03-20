@@ -69,18 +69,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        Chunk chunk = chunks.get(LongHash.toLong(x, z));
 -        return (chunk == null) ? getChunkAt(x, z) : chunk;
 +        return getChunkAt(x, z); // Paper
-     }
- 
++    }
++
 +    // Paper start
 +    public Chunk getLoadedChunkAtWithoutMarkingActive(int i, int j) {
 +        return chunks.get(LongHash.toLong(i, j));
-+    }
-+    // Paper end
-+
-     public Chunk getChunkIfLoaded(int x, int z) {
--        return chunks.get(LongHash.toLong(x, z));
-+        return getLoadedChunkAt(x, z); // Paper - Bukkit has a duplicate method now.
      }
+ 
+-    public Chunk getChunkIfLoaded(int x, int z) {
+-        return chunks.get(LongHash.toLong(x, z));
++    // getChunkIfLoaded -> getChunkIfActive
++    // this is only used by CraftBukkit now, and plugins shouldnt mark things active
++    public Chunk getChunkIfActive(int x, int z) {
++        Chunk chunk = chunks.get(LongHash.toLong(x, z));
++        return (chunk != null && chunk.isChunkActive) ? chunk : null;
+     }
++    // Paper end
  
      public Chunk getLoadedChunkAt(int i, int j) {
          Chunk chunk = chunks.get(LongHash.toLong(i, j)); // CraftBukkit
@@ -174,10 +178,40 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              {
                  i += server.getChunkAt( x, z ).entityCount.get( oClass );
              }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+     }
+ 
+     public Chunk getChunkIfLoaded(int x, int z) {
+-        return ((ChunkProviderServer) this.chunkProvider).getChunkIfLoaded(x, z);
++        return ((ChunkProviderServer) this.chunkProvider).getLoadedChunkAtWithoutMarkingActive(x, z); // Paper - This is added by CB, and will not mark as active. Simply an alias
+     }
+ 
++    // Paper start
++    public Chunk getChunkIfActive(int x, int z) {
++        return ((ChunkProviderServer) this.chunkProvider).getChunkIfActive(x, z);
++    }
++    // Paper end
++
+     protected World(IDataManager idatamanager, WorldData worlddata, WorldProvider worldprovider, MethodProfiler methodprofiler, boolean flag, ChunkGenerator gen, org.bukkit.World.Environment env) {
+         this.spigotConfig = new org.spigotmc.SpigotWorldConfig( worlddata.getName() ); // Spigot
+         this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(worlddata.getName(), this.spigotConfig); // Paper
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -0,0 +0,0 @@ public class CraftWorld implements World {
+         }
+ 
+         // Paper start - Don't create a chunk just to unload it
+-        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().getChunkIfLoaded(x, z);
++        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().getChunkIfActive(x, z); // Paper
+         if (chunk == null) {
+             return false;
+         }
 @@ -0,0 +0,0 @@ public class CraftWorld implements World {
                      continue;
                  }
@@ -227,4 +261,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  if (neighbor != null) {
                      neighbor.setNeighborLoaded(-x, -z);
                      chunk.setNeighborLoaded(x, z);
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -0,0 +0,0 @@ public class ActivationRange
+         int x = MathHelper.floor( entity.locX );
+         int z = MathHelper.floor( entity.locZ );
+         // Make sure not on edge of unloaded chunk
+-        Chunk chunk = entity.world.getChunkIfLoaded( x >> 4, z >> 4 );
++        Chunk chunk = entity.world.getChunkIfActive( x >> 4, z >> 4 ); // Paper
+         if ( isActive && !( chunk != null && chunk.areNeighborsLoaded( 1 ) ) )
+         {
+             isActive = false;
 --
