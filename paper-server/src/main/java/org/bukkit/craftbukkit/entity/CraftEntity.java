@@ -25,18 +25,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 
 public abstract class CraftEntity implements org.bukkit.entity.Entity {
-    private static final PermissibleBase perm = new PermissibleBase(new ServerOperator() {
-
-        @Override
-        public boolean isOp() {
-            return false;
-        }
-
-        @Override
-        public void setOp(boolean value) {
-
-        }
-    });
+    private static PermissibleBase perm;
 
     protected final CraftServer server;
     protected Entity entity;
@@ -487,67 +476,67 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean isPermissionSet(String name) {
-        return perm.isPermissionSet(name);
+        return getPermissibleBase().isPermissionSet(name);
     }
 
     @Override
     public boolean isPermissionSet(Permission perm) {
-        return CraftEntity.perm.isPermissionSet(perm);
+        return CraftEntity.getPermissibleBase().isPermissionSet(perm);
     }
 
     @Override
     public boolean hasPermission(String name) {
-        return perm.hasPermission(name);
+        return getPermissibleBase().hasPermission(name);
     }
 
     @Override
     public boolean hasPermission(Permission perm) {
-        return this.perm.hasPermission(perm);
+        return getPermissibleBase().hasPermission(perm);
     }
 
     @Override
     public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value) {
-        return perm.addAttachment(plugin, name, value);
+        return getPermissibleBase().addAttachment(plugin, name, value);
     }
 
     @Override
     public PermissionAttachment addAttachment(Plugin plugin) {
-        return perm.addAttachment(plugin);
+        return getPermissibleBase().addAttachment(plugin);
     }
 
     @Override
     public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value, int ticks) {
-        return perm.addAttachment(plugin, name, value, ticks);
+        return getPermissibleBase().addAttachment(plugin, name, value, ticks);
     }
 
     @Override
     public PermissionAttachment addAttachment(Plugin plugin, int ticks) {
-        return perm.addAttachment(plugin, ticks);
+        return getPermissibleBase().addAttachment(plugin, ticks);
     }
 
     @Override
     public void removeAttachment(PermissionAttachment attachment) {
-        perm.removeAttachment(attachment);
+        getPermissibleBase().removeAttachment(attachment);
     }
 
     @Override
     public void recalculatePermissions() {
-        perm.recalculatePermissions();
+        getPermissibleBase().recalculatePermissions();
     }
 
     @Override
     public Set<PermissionAttachmentInfo> getEffectivePermissions() {
-        return perm.getEffectivePermissions();
+        return getPermissibleBase().getEffectivePermissions();
     }
 
     @Override
     public boolean isOp() {
-        return perm.isOp();
+        return getPermissibleBase().isOp();
     }
 
     @Override
     public void setOp(boolean value) {
-        perm.setOp(value);
+        getPermissibleBase().setOp(value);
     }
 
     @Override
@@ -562,5 +551,23 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public boolean isGlowing() {
         return getHandle().glowing;
+    }
+
+    private static PermissibleBase getPermissibleBase() {
+        if (perm == null) {
+            perm = new PermissibleBase(new ServerOperator() {
+
+                @Override
+                public boolean isOp() {
+                    return false;
+                }
+
+                @Override
+                public void setOp(boolean value) {
+
+                }
+            });
+        }
+        return perm;
     }
 }
