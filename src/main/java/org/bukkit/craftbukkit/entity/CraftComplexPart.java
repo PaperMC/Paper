@@ -28,6 +28,11 @@ public class CraftComplexPart extends CraftEntity implements ComplexEntityPart {
     }
 
     @Override
+    public boolean isValid() {
+        return getParent().isValid();
+    }
+
+    @Override
     public EntityComplexPart getHandle() {
         return (EntityComplexPart) entity;
     }
