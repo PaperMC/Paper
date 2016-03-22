@@ -1,9 +1,9 @@
-From 0c61689b93f5228d8c03e5ba96642b7ec1dcfb3b Mon Sep 17 00:00:00 2001
+From 6b8f5a4b05511bf5b5b10776f02951b702c56fb9 Mon Sep 17 00:00:00 2001
 From: William <admin@domnian.com>
 Date: Fri, 18 Mar 2016 03:28:07 -0400
-Subject: [PATCH] Add command to reload permissions.yml
+Subject: [PATCH] Add command to reload permissions.yml and require confirm to
+ reload
 
-https://github.com/PaperMC/Paper/issues/49
 
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
 index f93ca2e..5e31665 100644
@@ -35,10 +35,10 @@ index 91bde81..6b1f2a4 100644
 +    void reloadPermissions(); // Paper
  }
 diff --git a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
-index c70d512..7f32a7c 100644
+index c70d512..f48187a 100644
 --- a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
-@@ -11,15 +11,28 @@ public class ReloadCommand extends BukkitCommand {
+@@ -11,15 +11,33 @@ public class ReloadCommand extends BukkitCommand {
      public ReloadCommand(String name) {
          super(name);
          this.description = "Reloads the server configuration and plugins";
@@ -53,22 +53,27 @@ index c70d512..7f32a7c 100644
 +
          if (!testPermission(sender)) return true;
  
-+        // Paper start - Reload permissions.yml (PAPER-49)
++        // Paper start - Reload permissions.yml & require confirm
++        boolean confirmed = false;
 +        if (args.length == 1) {
 +            if (args[0].equalsIgnoreCase("permissions")) {
 +                Bukkit.getServer().reloadPermissions();
 +                Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Permissions successfully reloaded.");
 +                return true;
-+            } else {
-+                return false;
++            } else if ("confirm".equalsIgnoreCase(args[0])) {
++                confirmed = true;
 +            }
++        }
++        if (!confirmed) {
++            Command.broadcastCommandMessage(sender, ChatColor.RED + "Are you sure you wish to reload your server? Doing so may cause bugs and memory leaks. It is recommended to restart instead of using /reload. To confirm, please type " + ChatColor.YELLOW + "/reload confirm");
++            return true;
 +        }
 +        // Paper end
 +
          Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues when using some plugins.");
          Command.broadcastCommandMessage(sender, ChatColor.RED + "If you encounter any issues please use the /stop command to restart your server.");
          Bukkit.reload();
-@@ -32,7 +45,8 @@ public class ReloadCommand extends BukkitCommand {
+@@ -32,7 +50,8 @@ public class ReloadCommand extends BukkitCommand {
      @Override
      public java.util.List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException
      {
@@ -97,5 +102,5 @@ index 49f5872..e988a7c 100644
 +
  }
 -- 
-2.5.0
+2.7.4
 
