@@ -223,4 +223,12 @@ public class PaperWorldConfig {
         log("Non Player Arrow Despawn Rate: " + nonPlayerArrowDespawnRate);
         log("Creative Arrow Despawn Rate: " + creativeArrowDespawnRate);
     }
+
+    public double skeleHorseSpawnChance;
+    private void skeleHorseSpawnChance() {
+        skeleHorseSpawnChance = getDouble("skeleton-horse-thunder-spawn-chance", 0.01D);
+        if (skeleHorseSpawnChance < 0) {
+            skeleHorseSpawnChance = 0.01D; // Vanilla value
+        }
+    }
 }
