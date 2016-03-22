@@ -1,0 +1,115 @@
+From a73987d51afd939b95f45c717a6504098970dcbd Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 27 Aug 2015 01:15:02 -0400
+Subject: [PATCH] Optimize Chunk Access
+
+getting a loaded chunk is one of the most hottest pieces of code in the game.
+Often, getChunkAt is called for the same chunk multiple times in a row, often
+from getType();
+
+Optimize this look up by using a Last Access cache.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 7ba45c8..fd65117 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -32,6 +32,7 @@ public class Chunk {
+     private boolean i;
+     public final World world;
+     public final int[] heightMap;
++    public final long chunkKey; // Paper
+     public final int locX;
+     public final int locZ;
+     private boolean l;
+@@ -99,6 +100,7 @@ public class Chunk {
+         this.world = world;
+         this.locX = i;
+         this.locZ = j;
++        this.chunkKey = org.bukkit.craftbukkit.util.LongHash.toLong(this.locX, this.locZ); // Paper
+         this.heightMap = new int[256];
+ 
+         for (int k = 0; k < this.entitySlices.length; ++k) {
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index f9375eb..0ed894c 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -24,7 +24,18 @@ public class ChunkProviderServer implements IChunkProvider {
+     public final ChunkUnloadQueue unloadQueue = new ChunkUnloadQueue(); // CraftBukkit - LongHashSet // Paper -> ChunkUnloadQueue
+     public final ChunkGenerator chunkGenerator; // CraftBukkit - public
+     private final IChunkLoader chunkLoader;
+-    public LongObjectHashMap<Chunk> chunks = new LongObjectHashMap<Chunk>(); // CraftBukkit
++    // Paper start
++    protected Chunk lastChunkByPos = null;
++    public LongObjectHashMap<Chunk> chunks = new LongObjectHashMap<Chunk>() {
++        @Override
++        public Chunk get(long key) {
++            if (lastChunkByPos != null && key == lastChunkByPos.chunkKey) {
++                return lastChunkByPos;
++            }
++            return super.get(key);
++        }
++    }; // CraftBukkit
++    // Paper end
+     // private final LongHashMap<Chunk> chunks = new LongHashMap();
+     // private final List<Chunk> chunkList = Lists.newArrayList();
+     public final WorldServer world;
+@@ -59,6 +70,7 @@ public class ChunkProviderServer implements IChunkProvider {
+ 
+             Chunk c = chunks.get(LongHash.toLong(i, j));
+             if (c != null) {
++                world.testResetChunkCache(c); // Paper
+                 c.mustSave = true;
+             }
+             // CraftBukkit end
+@@ -333,6 +345,7 @@ public class ChunkProviderServer implements IChunkProvider {
+                         chunk.removeEntities();
+                         this.saveChunk(chunk);
+                         this.saveChunkNOP(chunk);
++                        world.testResetChunkCache(chunk); // Paper
+                         this.chunks.remove(chunkcoordinates); // CraftBukkit
+                     }
+ 
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index d8bd36c..d21076b 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -160,6 +160,12 @@ public abstract class World implements IBlockAccess {
+     public Chunk getChunkIfLoaded(BlockPosition blockposition) {
+         return this.chunkProvider.getLoadedChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4);
+     }
++
++    public void testResetChunkCache(Chunk chunk) {
++        if (chunk == ((ChunkProviderServer) chunkProvider).lastChunkByPos) {
++            ((ChunkProviderServer) chunkProvider).lastChunkByPos = null;
++        }
++    }
+     // Paper end
+ 
+     public Chunk getChunkIfLoaded(int x, int z) {
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 0e1cbfe..7e06fa9 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -200,6 +200,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+     // CraftBukkit end
+ 
+     public void doTick() {
++        ((ChunkProviderServer) chunkProvider).lastChunkByPos = null; // Paper
+         super.doTick();
+         if (this.getWorldData().isHardcore() && this.getDifficulty() != EnumDifficulty.HARD) {
+             this.getWorldData().setDifficulty(EnumDifficulty.HARD);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 6307c19..0b3a882 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -224,6 +224,7 @@ public class CraftWorld implements World {
+ 
+         world.getChunkProviderServer().unloadQueue.remove(x, z);
+         world.getChunkProviderServer().chunks.remove(LongHash.toLong(x, z));
++        world.testResetChunkCache(chunk); // Paper
+ 
+         // Update neighbor counts
+         for (int xx = -2; xx < 3; xx++) {
+-- 
+2.7.4
+
