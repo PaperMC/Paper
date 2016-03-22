@@ -105,7 +105,7 @@ public class Potion {
     }
 
     /**
-     * @Deprecated
+     * @deprecated
      */
     @Deprecated
     public Potion(int name) {

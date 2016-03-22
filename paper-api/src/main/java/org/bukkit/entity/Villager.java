@@ -72,7 +72,7 @@ public interface Villager extends Ageable, NPC, InventoryHolder {
      * Note that this inventory is not the Merchant inventory, rather, it is the
      * items that a villager might have collected (from harvesting crops, etc.)
      *
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     Inventory getInventory();
