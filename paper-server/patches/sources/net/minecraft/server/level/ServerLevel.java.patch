@@ -78,7 +78,7 @@
 +    // CraftBukkit start
 +    public final LevelStorageSource.LevelStorageAccess convertable;
 +    public final UUID uuid;
- 
++
 +    public LevelChunk getChunkIfLoaded(int x, int z) {
 +        return this.chunkSource.getChunk(x, z, false);
 +    }
@@ -128,7 +128,7 @@
 +        }
 +        int minBlockX = Mth.floor(axisalignedbb.minX - 1.0E-7D) - 3;
 +        int minBlockZ = Mth.floor(axisalignedbb.minZ - 1.0E-7D) - 3;
-+
+ 
 +        int maxBlockX = Mth.floor(axisalignedbb.maxX + 1.0E-7D) + 3;
 +        int maxBlockZ = Mth.floor(axisalignedbb.maxZ + 1.0E-7D) + 3;
 +
@@ -320,7 +320,7 @@
              entityplayer.stopSleepInBed(false, false);
          });
      }
-@@ -442,7 +595,7 @@
+@@ -442,12 +595,12 @@
          ProfilerFiller gameprofilerfiller = Profiler.get();
  
          gameprofilerfiller.push("thunder");
@@ -329,6 +329,12 @@
              BlockPos blockposition = this.findLightningTargetAround(this.getBlockRandomPos(j, 0, k, 15));
  
              if (this.isRainingAt(blockposition)) {
+                 DifficultyInstance difficultydamagescaler = this.getCurrentDifficultyAt(blockposition);
+-                boolean flag1 = this.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && this.random.nextDouble() < (double) difficultydamagescaler.getEffectiveDifficulty() * 0.01D && !this.getBlockState(blockposition.below()).is(Blocks.LIGHTNING_ROD);
++                boolean flag1 = this.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && this.random.nextDouble() < (double) difficultydamagescaler.getEffectiveDifficulty() * this.paperConfig().entities.spawning.skeletonHorseThunderSpawnChance.or(0.01D) && !this.getBlockState(blockposition.below()).is(Blocks.LIGHTNING_ROD); // Paper - Configurable spawn chances for skeleton horses
+ 
+                 if (flag1) {
+                     SkeletonHorse entityhorseskeleton = (SkeletonHorse) EntityType.SKELETON_HORSE.create(this, EntitySpawnReason.EVENT);
 @@ -456,7 +609,7 @@
                          entityhorseskeleton.setTrap(true);
                          entityhorseskeleton.setAge(0);
@@ -438,10 +444,9 @@
      @VisibleForTesting
      public void resetWeatherCycle() {
 -        this.serverLevelData.setRainTime(0);
--        this.serverLevelData.setRaining(false);
--        this.serverLevelData.setThunderTime(0);
 +        // CraftBukkit start
-+        this.serverLevelData.setRaining(false);
+         this.serverLevelData.setRaining(false);
+-        this.serverLevelData.setThunderTime(0);
 +        // If we stop due to everyone sleeping we should reset the weather duration to some other random value.
 +        // Not that everyone ever manages to get the whole server to sleep at the same time....
 +        if (!this.serverLevelData.isRaining()) {
