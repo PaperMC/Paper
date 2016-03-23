@@ -43,7 +43,7 @@ basedir=$basedir/Spigot
 applyPatch ../Bukkit Spigot-API HEAD && applyPatch ../CraftBukkit Spigot-Server patched
 # Move out of Spigot
 popd
-basedir=$(dirname $basedir)
+basedir=$(dirname "$basedir")
 
 # Apply paper
 applyPatch Spigot/Spigot-API Paper-API HEAD && applyPatch Spigot/Spigot-Server Paper-Server HEAD
