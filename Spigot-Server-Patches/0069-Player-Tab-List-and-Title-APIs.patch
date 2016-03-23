@@ -1,11 +1,113 @@
-From 6bc0cb76575e073281e081ed2e932a1c7ddede7f Mon Sep 17 00:00:00 2001
+From fb30bddc521a4f713e03a4b909e08c04088c9bdb Mon Sep 17 00:00:00 2001
 From: Techcable <Techcable@outlook.com>
 Date: Thu, 3 Mar 2016 02:32:10 -0600
 Subject: [PATCH] Player Tab List and Title APIs
 
 
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java b/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java
+index e9c2a23..3431b12 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java
+@@ -1,14 +1,11 @@
+ package net.minecraft.server;
+ 
+-import net.minecraft.server.IChatBaseComponent;
+-import net.minecraft.server.Packet;
+-import net.minecraft.server.PacketDataSerializer;
+-import net.minecraft.server.PacketListenerPlayOut;
+-
+ import java.io.IOException;
+ 
+ public class PacketPlayOutPlayerListHeaderFooter implements Packet<PacketListenerPlayOut> {
+ 
++    public net.md_5.bungee.api.chat.BaseComponent[] header, footer; // Paper
++
+     private IChatBaseComponent a;
+     private IChatBaseComponent b;
+ 
+@@ -19,8 +16,19 @@ public class PacketPlayOutPlayerListHeaderFooter implements Packet<PacketListene
+     }
+ 
+     public void a(PacketDataSerializer packetdataserializer) throws IOException {
+-        this.a = packetdataserializer.f();
+-        this.b = packetdataserializer.f();
++        // Paper start
++        if (this.header != null) {
++            packetdataserializer.a(net.md_5.bungee.chat.ComponentSerializer.toString(this.header));
++        } else {
++            packetdataserializer.a(this.a);
++        }
++
++        if (this.footer != null) {
++            packetdataserializer.a(net.md_5.bungee.chat.ComponentSerializer.toString(this.footer));
++        } else {
++            packetdataserializer.a(this.b);
++        }
++        // Paper end
+     }
+ 
+     public void b(PacketDataSerializer packetdataserializer) throws IOException {
+@@ -28,7 +36,8 @@ public class PacketPlayOutPlayerListHeaderFooter implements Packet<PacketListene
+         packetdataserializer.a(this.b);
+     }
+ 
++    // PaperSpigot - Fix compile error
+     public void a(PacketListenerPlayOut packetlistenerplayout) {
+-        packetlistenerplayout.a(this);
++        packetlistenerplayout.a((IChatBaseComponent) this);
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutTitle.java b/src/main/java/net/minecraft/server/PacketPlayOutTitle.java
+index 2286c9e..8cc2efb 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutTitle.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutTitle.java
+@@ -10,6 +10,18 @@ public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
+     private int d;
+     private int e;
+ 
++    // Paper start
++    public net.md_5.bungee.api.chat.BaseComponent[] components;
++
++    public PacketPlayOutTitle(EnumTitleAction action, net.md_5.bungee.api.chat.BaseComponent[] components, int fadeIn, int stay, int fadeOut) {
++        this.a = action;
++        this.components = components;
++        this.c = fadeIn;
++        this.d = stay;
++        this.e = fadeOut;
++    }
++    // Paper end
++
+     public PacketPlayOutTitle() {}
+ 
+     public PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction packetplayouttitle_enumtitleaction, IChatBaseComponent ichatbasecomponent) {
+@@ -45,7 +57,13 @@ public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
+     public void b(PacketDataSerializer packetdataserializer) throws IOException {
+         packetdataserializer.a((Enum) this.a);
+         if (this.a == PacketPlayOutTitle.EnumTitleAction.TITLE || this.a == PacketPlayOutTitle.EnumTitleAction.SUBTITLE) {
+-            packetdataserializer.a(this.b);
++            // Paper start
++            if (this.components != null) {
++                packetdataserializer.a(net.md_5.bungee.chat.ComponentSerializer.toString(components));
++            } else {
++                packetdataserializer.a(this.b);
++            }
++            // Paper end
+         }
+ 
+         if (this.a == PacketPlayOutTitle.EnumTitleAction.TIMES) {
+@@ -56,8 +74,9 @@ public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
+ 
+     }
+ 
++    // Paper - Fix compile error
+     public void a(PacketListenerPlayOut packetlistenerplayout) {
+-        packetlistenerplayout.a(this);
++        packetlistenerplayout.a((IChatBaseComponent) this);
+     }
+ 
+     public static enum EnumTitleAction {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 10bf160..70f3fcc 100644
+index 10bf160..f5afeeb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1,5 +1,6 @@
@@ -99,211 +201,6 @@ index 10bf160..70f3fcc 100644
      // Paper end
  
      @Override
-@@ -1342,19 +1420,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-     @Override
-     public void sendTitle(String title, String subtitle) {
-         if (title != null) {
--            PacketPlayOutTitle packetTitle = new PacketPlayOutTitle(EnumTitleAction.TITLE, CraftChatMessage.fromString(title)[0]);
-+            PacketPlayOutTitle packetTitle = new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.TITLE, CraftChatMessage.fromString(title)[0]);
-             getHandle().playerConnection.sendPacket(packetTitle);
-         }
- 
-         if (subtitle != null) {
--            PacketPlayOutTitle packetSubtitle = new PacketPlayOutTitle(EnumTitleAction.SUBTITLE, CraftChatMessage.fromString(subtitle)[0]);
-+            PacketPlayOutTitle packetSubtitle = new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.SUBTITLE, CraftChatMessage.fromString(subtitle)[0]);
-             getHandle().playerConnection.sendPacket(packetSubtitle);
-         }
-     }
- 
-     @Override
-     public void resetTitle() {
--        PacketPlayOutTitle packetReset = new PacketPlayOutTitle(EnumTitleAction.RESET, null);
-+        PacketPlayOutTitle packetReset = new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.RESET, null);
-         getHandle().playerConnection.sendPacket(packetReset);
-     }
- 
-diff --git a/src/main/java/org/bukkit/craftbukkit/entity/PacketPlayOutPlayerListHeaderFooter.java b/src/main/java/org/bukkit/craftbukkit/entity/PacketPlayOutPlayerListHeaderFooter.java
-index 842db1d..2d1bc58 100644
---- a/src/main/java/org/bukkit/craftbukkit/entity/PacketPlayOutPlayerListHeaderFooter.java
-+++ b/src/main/java/org/bukkit/craftbukkit/entity/PacketPlayOutPlayerListHeaderFooter.java
-@@ -9,6 +9,8 @@ import java.io.IOException;
- 
- public class PacketPlayOutPlayerListHeaderFooter implements Packet<PacketListenerPlayOut> {
- 
-+    public net.md_5.bungee.api.chat.BaseComponent[] header, footer; // Paper
-+
-     private IChatBaseComponent a;
-     private IChatBaseComponent b;
- 
-@@ -19,8 +21,19 @@ public class PacketPlayOutPlayerListHeaderFooter implements Packet<PacketListene
-     }
- 
-     public void a(PacketDataSerializer packetdataserializer) throws IOException {
--        this.a = packetdataserializer.f();
--        this.b = packetdataserializer.f();
-+        // Paper start
-+        if (this.header != null) {
-+            packetdataserializer.a(net.md_5.bungee.chat.ComponentSerializer.toString(this.header));
-+        } else {
-+            packetdataserializer.a(this.a);
-+        }
-+
-+        if (this.footer != null) {
-+            packetdataserializer.a(net.md_5.bungee.chat.ComponentSerializer.toString(this.footer));
-+        } else {
-+            packetdataserializer.a(this.b);
-+        }
-+        // Paper end
-     }
- 
-     public void b(PacketDataSerializer packetdataserializer) throws IOException {
-@@ -28,7 +41,8 @@ public class PacketPlayOutPlayerListHeaderFooter implements Packet<PacketListene
-         packetdataserializer.a(this.b);
-     }
- 
-+    // PaperSpigot - Fix compile error
-     public void a(PacketListenerPlayOut packetlistenerplayout) {
--        packetlistenerplayout.a(this);
-+        packetlistenerplayout.a((IChatBaseComponent) this);
-     }
- }
-diff --git a/src/main/java/org/bukkit/craftbukkit/entity/PacketPlayOutTitle.java b/src/main/java/org/bukkit/craftbukkit/entity/PacketPlayOutTitle.java
-index 2286c9e..dbbb53f 100644
---- a/src/main/java/org/bukkit/craftbukkit/entity/PacketPlayOutTitle.java
-+++ b/src/main/java/org/bukkit/craftbukkit/entity/PacketPlayOutTitle.java
-@@ -1,26 +1,43 @@
--package net.minecraft.server;
-+package org.bukkit.craftbukkit.entity;
-+
-+import net.minecraft.server.IChatBaseComponent;
-+import net.minecraft.server.Packet;
-+import net.minecraft.server.PacketDataSerializer;
-+import net.minecraft.server.PacketListenerPlayOut;
- 
- import java.io.IOException;
- 
- public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
- 
--    private PacketPlayOutTitle.EnumTitleAction a;
-+    private EnumTitleAction a;
-     private IChatBaseComponent b;
-     private int c;
-     private int d;
-     private int e;
- 
-+    // Paper start
-+    public net.md_5.bungee.api.chat.BaseComponent[] components;
-+
-+    public PacketPlayOutTitle(EnumTitleAction action, net.md_5.bungee.api.chat.BaseComponent[] components, int fadeIn, int stay, int fadeOut) {
-+        this.a = action;
-+        this.components = components;
-+        this.c = fadeIn;
-+        this.d = stay;
-+        this.e = fadeOut;
-+    }
-+    // Paper end
-+
-     public PacketPlayOutTitle() {}
- 
--    public PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction packetplayouttitle_enumtitleaction, IChatBaseComponent ichatbasecomponent) {
-+    public PacketPlayOutTitle(EnumTitleAction packetplayouttitle_enumtitleaction, IChatBaseComponent ichatbasecomponent) {
-         this(packetplayouttitle_enumtitleaction, ichatbasecomponent, -1, -1, -1);
-     }
- 
-     public PacketPlayOutTitle(int i, int j, int k) {
--        this(PacketPlayOutTitle.EnumTitleAction.TIMES, (IChatBaseComponent) null, i, j, k);
-+        this(EnumTitleAction.TIMES, (IChatBaseComponent) null, i, j, k);
-     }
- 
--    public PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction packetplayouttitle_enumtitleaction, IChatBaseComponent ichatbasecomponent, int i, int j, int k) {
-+    public PacketPlayOutTitle(EnumTitleAction packetplayouttitle_enumtitleaction, IChatBaseComponent ichatbasecomponent, int i, int j, int k) {
-         this.a = packetplayouttitle_enumtitleaction;
-         this.b = ichatbasecomponent;
-         this.c = i;
-@@ -29,12 +46,12 @@ public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
-     }
- 
-     public void a(PacketDataSerializer packetdataserializer) throws IOException {
--        this.a = (PacketPlayOutTitle.EnumTitleAction) packetdataserializer.a(PacketPlayOutTitle.EnumTitleAction.class);
--        if (this.a == PacketPlayOutTitle.EnumTitleAction.TITLE || this.a == PacketPlayOutTitle.EnumTitleAction.SUBTITLE) {
-+        this.a = (EnumTitleAction) packetdataserializer.a(EnumTitleAction.class);
-+        if (this.a == EnumTitleAction.TITLE || this.a == EnumTitleAction.SUBTITLE) {
-             this.b = packetdataserializer.f();
-         }
- 
--        if (this.a == PacketPlayOutTitle.EnumTitleAction.TIMES) {
-+        if (this.a == EnumTitleAction.TIMES) {
-             this.c = packetdataserializer.readInt();
-             this.d = packetdataserializer.readInt();
-             this.e = packetdataserializer.readInt();
-@@ -44,11 +61,17 @@ public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
- 
-     public void b(PacketDataSerializer packetdataserializer) throws IOException {
-         packetdataserializer.a((Enum) this.a);
--        if (this.a == PacketPlayOutTitle.EnumTitleAction.TITLE || this.a == PacketPlayOutTitle.EnumTitleAction.SUBTITLE) {
--            packetdataserializer.a(this.b);
-+        if (this.a == EnumTitleAction.TITLE || this.a == EnumTitleAction.SUBTITLE) {
-+            // Paper start
-+            if (this.components != null) {
-+                packetdataserializer.a(net.md_5.bungee.chat.ComponentSerializer.toString(components));
-+            } else {
-+                packetdataserializer.a(this.b);
-+            }
-+            // Paper end
-         }
- 
--        if (this.a == PacketPlayOutTitle.EnumTitleAction.TIMES) {
-+        if (this.a == EnumTitleAction.TIMES) {
-             packetdataserializer.writeInt(this.c);
-             packetdataserializer.writeInt(this.d);
-             packetdataserializer.writeInt(this.e);
-@@ -56,8 +79,9 @@ public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
- 
-     }
- 
-+    // Paper - Fix compile error
-     public void a(PacketListenerPlayOut packetlistenerplayout) {
--        packetlistenerplayout.a(this);
-+        packetlistenerplayout.a((IChatBaseComponent) this);
-     }
- 
-     public static enum EnumTitleAction {
-@@ -66,29 +90,29 @@ public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
- 
-         private EnumTitleAction() {}
- 
--        public static PacketPlayOutTitle.EnumTitleAction a(String s) {
--            PacketPlayOutTitle.EnumTitleAction[] apacketplayouttitle_enumtitleaction = values();
-+        public static EnumTitleAction a(String s) {
-+            EnumTitleAction[] apacketplayouttitle_enumtitleaction = values();
-             int i = apacketplayouttitle_enumtitleaction.length;
- 
-             for (int j = 0; j < i; ++j) {
--                PacketPlayOutTitle.EnumTitleAction packetplayouttitle_enumtitleaction = apacketplayouttitle_enumtitleaction[j];
-+                EnumTitleAction packetplayouttitle_enumtitleaction = apacketplayouttitle_enumtitleaction[j];
- 
-                 if (packetplayouttitle_enumtitleaction.name().equalsIgnoreCase(s)) {
-                     return packetplayouttitle_enumtitleaction;
-                 }
-             }
- 
--            return PacketPlayOutTitle.EnumTitleAction.TITLE;
-+            return EnumTitleAction.TITLE;
-         }
- 
-         public static String[] a() {
-             String[] astring = new String[values().length];
-             int i = 0;
--            PacketPlayOutTitle.EnumTitleAction[] apacketplayouttitle_enumtitleaction = values();
-+            EnumTitleAction[] apacketplayouttitle_enumtitleaction = values();
-             int j = apacketplayouttitle_enumtitleaction.length;
- 
-             for (int k = 0; k < j; ++k) {
--                PacketPlayOutTitle.EnumTitleAction packetplayouttitle_enumtitleaction = apacketplayouttitle_enumtitleaction[k];
-+                EnumTitleAction packetplayouttitle_enumtitleaction = apacketplayouttitle_enumtitleaction[k];
- 
-                 astring[i++] = packetplayouttitle_enumtitleaction.name().toLowerCase();
-             }
 -- 
-2.7.2
+2.7.4.windows.1
 
