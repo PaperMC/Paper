@@ -1,11 +1,10 @@
-From d52945bca9e8748091ae1f2d8d63118701f011a6 Mon Sep 17 00:00:00 2001
+From 8c50e5009f1cb259ff523b25166d23696d0b9b08 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 27 Aug 2015 01:15:02 -0400
 Subject: [PATCH] Optimize Chunk Access
 
 getting a loaded chunk is one of the most hottest pieces of code in the game.
-Often, getChunkAt is called for the same chunk multiple times in a row, often
-from getType();
+getChunkAt is called for the same chunk multiple times in a row, often from getType();
 
 Optimize this look up by using a Last Access cache.
 
@@ -30,7 +29,7 @@ index 7ba45c8..fd65117 100644
  
          for (int k = 0; k < this.entitySlices.length; ++k) {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index f9375eb..0ed894c 100644
+index f9375eb..90348d5 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -24,7 +24,18 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -46,7 +45,7 @@ index f9375eb..0ed894c 100644
 +            if (lastChunkByPos != null && key == lastChunkByPos.chunkKey) {
 +                return lastChunkByPos;
 +            }
-+            return super.get(key);
++            return lastChunkByPos = super.get(key);
 +        }
 +    }; // CraftBukkit
 +    // Paper end
