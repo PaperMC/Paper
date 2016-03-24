@@ -356,4 +356,21 @@ public interface Entity extends Metadatable, CommandSender {
      * @return whether the entity is glowing
      */
     boolean isGlowing();
+
+    /**
+     * Sets whether the entity is invulnerable or not.
+     * <p>
+     * When an entity is invulnerable it can only be damaged by players in
+     * creative mode.
+     *
+     * @param flag if the entity is invulnerable
+     */
+    public void setInvulnerable(boolean flag);
+
+    /**
+     * Gets whether the entity is invulnerable or not.
+     *
+     * @return whether the entity is
+     */
+    public boolean isInvulnerable();
 }
