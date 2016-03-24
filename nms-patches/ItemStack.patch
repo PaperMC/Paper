@@ -20,14 +20,13 @@
  public final class ItemStack {
  
      public static final DecimalFormat a = new DecimalFormat("#.##");
-@@ -46,10 +59,14 @@
+@@ -46,10 +59,20 @@
          this.k = false;
          this.item = item;
          this.count = i;
 -        this.damage = j;
 -        if (this.damage < 0) {
 -            this.damage = 0;
--        }
 +
 +        // CraftBukkit start - Pass to setData to do filtering
 +        this.setData(j);
@@ -35,11 +34,17 @@
 +        //if (this.damage < 0) {
 +        //    this.damage = 0;
 +        //}
++        if (MinecraftServer.getServer() != null) {
++            NBTTagCompound savedStack = new NBTTagCompound();
++            this.save(savedStack);
++            MinecraftServer.getServer().getDataConverterManager().a(DataConverterTypes.ITEM_INSTANCE, savedStack); // PAIL: convert
++            this.c(savedStack); // PAIL: load
+         }
 +        // CraftBukkit end
  
      }
  
-@@ -84,11 +101,131 @@
+@@ -84,11 +107,131 @@
      }
  
      public EnumInteractionResult placeItem(EntityHuman entityhuman, World world, BlockPosition blockposition, EnumHand enumhand, EnumDirection enumdirection, float f, float f1, float f2) {
@@ -172,7 +177,7 @@
  
          return enuminteractionresult;
      }
-@@ -112,7 +249,7 @@
+@@ -112,7 +255,7 @@
          nbttagcompound.setByte("Count", (byte) this.count);
          nbttagcompound.setShort("Damage", (short) this.damage);
          if (this.tag != null) {
@@ -181,7 +186,7 @@
          }
  
          return nbttagcompound;
-@@ -121,13 +258,18 @@
+@@ -121,13 +264,18 @@
      public void c(NBTTagCompound nbttagcompound) {
          this.item = Item.d(nbttagcompound.getString("id"));
          this.count = nbttagcompound.getByte("Count");
@@ -201,7 +206,7 @@
              if (this.item != null) {
                  this.item.a(this.tag);
              }
-@@ -164,9 +306,29 @@
+@@ -164,11 +312,30 @@
      }
  
      public void setData(int i) {
@@ -230,9 +235,11 @@
 -            this.damage = 0;
 +            // this.damage = 0; // CraftBukkit - remove this.
          }
- 
+-
      }
-@@ -216,6 +378,12 @@
+ 
+     public int j() {
+@@ -216,6 +383,12 @@
                          this.count = 0;
                      }
  
@@ -245,7 +252,7 @@
                      this.damage = 0;
                  }
  
-@@ -513,6 +681,7 @@
+@@ -513,6 +686,7 @@
  
      public void setItem(Item item) {
          this.item = item;
