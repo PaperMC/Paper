@@ -553,6 +553,16 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return getHandle().glowing;
     }
 
+    @Override
+    public void setInvulnerable(boolean flag) {
+        getHandle().h(flag); // PAIL: rename setInvulnerable
+    }
+
+    @Override
+    public boolean isInvulnerable() {
+        return getHandle().isInvulnerable(DamageSource.GENERIC);
+    }
+
     private static PermissibleBase getPermissibleBase() {
         if (perm == null) {
             perm = new PermissibleBase(new ServerOperator() {
