@@ -82,7 +82,7 @@ public class CraftPotionUtil {
         }
         potionType = regular.inverse().get(type);
         if (potionType != null) {
-            return new PotionData(potionType, false, true);
+            return new PotionData(potionType, false, false);
         }
         return new PotionData(PotionType.UNCRAFTABLE, false, false);
     }
