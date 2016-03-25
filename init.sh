@@ -30,6 +30,6 @@ do
     "$patch" -s -d src/main/java/ "net/minecraft/server/$file" < "$patchFile"
 done
 
-git add src >/dev/null 2>&1
-git commit -m "CraftBukkit $ $(date)" >/dev/null 2>&1
-git checkout -f HEAD^ >/dev/null 2>&1
+git add src >/dev/null 2>&1 || exit 1
+git commit -m "CraftBukkit $ $(date)" >/dev/null 2>&1 || exit 1
+git checkout -f HEAD^ >/dev/null 2>&1 || exit 1
