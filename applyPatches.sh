@@ -40,11 +40,23 @@ function applyPatch {
 pushd Spigot
 basedir=$basedir/Spigot
 # Apply Spigot
-applyPatch ../Bukkit Spigot-API HEAD && applyPatch ../CraftBukkit Spigot-Server patched
+(
+	applyPatch ../Bukkit Spigot-API HEAD &&
+	applyPatch ../CraftBukkit Spigot-Server patched
+) || (
+	echo "Failed to apply Spigot Patches"
+	exit 1
+) || exit 1
 # Move out of Spigot
 popd
 basedir=$(dirname "$basedir")
 
 # Apply paper
-applyPatch Spigot/Spigot-API Paper-API HEAD && applyPatch Spigot/Spigot-Server Paper-Server HEAD
+(
+	applyPatch Spigot/Spigot-API Paper-API HEAD &&
+	applyPatch Spigot/Spigot-Server Paper-Server HEAD
+) || (
+	echo "Failed to apply Paper Patches"
+	exit 1
+) || exit 1
 
