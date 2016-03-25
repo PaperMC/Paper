@@ -218,8 +218,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  public class PaperConfig {
  
 @@ -0,0 +0,0 @@ public class PaperConfig {
-             Bukkit.getLogger().log(Level.INFO, "Disabling player interaction limiter, your server may be more vulnerable to malicious users");
-         }
+         config.addDefault(path, def);
+         return config.getString(path, config.getString(path));
      }
 +
 +    private static void timings() {
@@ -554,9 +554,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static boolean haveWeSilencedAPhysicsCrash;
      public static String blockLocation;
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+         });
          this.getServer().addWorld(this.world);
          // CraftBukkit end
-         this.keepSpawnInMemory = this.paperConfig.keepSpawnInMemory; // Paper
 -        timings = new SpigotTimings.WorldTimingsHandler(this); // Spigot - code below can generate new world and access timings
 +        timings = new co.aikar.timings.WorldTimingsHandler(this); // Paper - code below can generate new world and access timings
                  this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
@@ -584,8 +584,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // CraftBukkit start - Use field for loop variable
 +        co.aikar.timings.TimingHistory.entityTicks += this.entityList.size(); // Paper
          int entitiesThisCycle = 0;
-         // Paper start - Disable tick limiters
-         //if (tickPosition < 0) tickPosition = 0;
+         if (tickPosition < 0) tickPosition = 0;
+         for (entityLimiter.initTick();
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
              this.methodProfiler.a("tick");
              if (!entity.dead && !(entity instanceof EntityPlayer)) {
@@ -596,12 +596,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                    SpigotTimings.tickEntityTimer.stopTiming(); // Spigot
 +                    entity.tickTimer.stopTiming(); // Paper
                  } catch (Throwable throwable1) {
-                     // Paper start - Prevent tile entity and entity crashes
--                    SpigotTimings.tickEntityTimer.stopTiming();
 +                    entity.tickTimer.stopTiming();
-                     System.err.println("Entity threw exception at " + entity.world.getWorld().getName() + ":" + entity.locX + "," + entity.locY + "," + entity.locZ);
-                     throwable1.printStackTrace();
-                     entity.dead = true;
+                     crashreport1 = CrashReport.a(throwable1, "Ticking entity");
+                     crashreportsystemdetails1 = crashreport1.a("Entity being ticked");
+                     entity.appendEntityCrashDetails(crashreportsystemdetails1);
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
          }
  
@@ -687,10 +685,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      this.U.add(nextticklistentry);
                  }
 +                timings.scheduledBlocksCleanup.stopTiming(); // Paper
- 
-                 // Paper start - Allow redstone ticks to bypass the tickNextTickListCap
-                 if (paperConfig.tickNextTickListCapIgnoresRedstone) {
-@@ -0,0 +0,0 @@ public class WorldServer extends World implements IAsyncTaskHandler {
  
                  this.methodProfiler.b();
                  this.methodProfiler.a("ticking");
@@ -1109,10 +1103,10 @@ diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
-@@ -0,0 +0,0 @@ import java.util.List;
- import java.util.Set;
- 
- import net.minecraft.server.*;
+@@ -0,0 +0,0 @@ import net.minecraft.server.EntityWither;
+ import net.minecraft.server.MathHelper;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.World;
 -import org.bukkit.craftbukkit.SpigotTimings;
 +import co.aikar.timings.SpigotTimings;
  
@@ -1125,7 +1119,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        SpigotTimings.checkIfActiveTimer.startTiming();
          // Never safe to skip fireworks or entities not yet added to chunk
          // PAIL: inChunk
-         if ( !entity.isAddedToChunk() || entity instanceof EntityFireworks ) { // Paper - EAR: Fix bug with teleporting entities
+         if ( !entity.aa || entity instanceof EntityFireworks ) {
 -            SpigotTimings.checkIfActiveTimer.stopTiming();
              return true;
          }
