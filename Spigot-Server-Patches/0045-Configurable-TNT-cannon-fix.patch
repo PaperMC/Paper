@@ -1,11 +1,11 @@
-From 60c2444bb8842bbeeec2b7c92dbe2df43eeabba5 Mon Sep 17 00:00:00 2001
+From af956966919135aa17834ffb544bbb26b999edaf Mon Sep 17 00:00:00 2001
 From: Iceee <andrew@opticgaming.tv>
 Date: Wed, 2 Mar 2016 23:00:53 -0600
 Subject: [PATCH] Configurable TNT cannon fix
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 5efba80..2cfeb9c 100644
+index 1236128..8d97890 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -241,4 +241,10 @@ public class PaperWorldConfig {
@@ -140,37 +140,37 @@ index 1a133d9..f4f9be6 100644
              int i = aenumdirection.length;
  
 diff --git a/src/main/java/net/minecraft/server/BlockTNT.java b/src/main/java/net/minecraft/server/BlockTNT.java
-index 09d5f7b..a3c0315 100644
+index f794167..021a3be 100644
 --- a/src/main/java/net/minecraft/server/BlockTNT.java
 +++ b/src/main/java/net/minecraft/server/BlockTNT.java
-@@ -30,7 +30,11 @@ public class BlockTNT extends Block {
+@@ -29,7 +29,11 @@ public class BlockTNT extends Block {
+ 
      public void wasExploded(World world, BlockPosition blockposition, Explosion explosion) {
          if (!world.isClientSide) {
-             org.bukkit.Location loc = explosion.source instanceof EntityTNTPrimed ? ((EntityTNTPrimed) explosion.source).sourceLoc : new org.bukkit.Location(world.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ()); // Paper
--            EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(loc, world, (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F), explosion.getSource()); // Paper - Add loc
+-            EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F), explosion.getSource());
 +            // Paper start - Fix cannons
 +            double y = blockposition.getY();
 +            if (!world.paperConfig.fixCannons) y += 0.5;
-+            EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(loc, world, (double) ((float) blockposition.getX() + 0.5F), y, (double) ((float) blockposition.getZ() + 0.5F), explosion.getSource()); // Paper - Add loc
++            EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) blockposition.getX() + 0.5F), y, (double) ((float) blockposition.getZ() + 0.5F), explosion.getSource());
 +            // Paper end
  
              entitytntprimed.setFuseTicks((short) (world.random.nextInt(entitytntprimed.getFuseTicks() / 4) + entitytntprimed.getFuseTicks() / 8));
              world.addEntity(entitytntprimed);
-@@ -45,7 +49,11 @@ public class BlockTNT extends Block {
+@@ -43,7 +47,11 @@ public class BlockTNT extends Block {
+     public void a(World world, BlockPosition blockposition, IBlockData iblockdata, EntityLiving entityliving) {
          if (!world.isClientSide) {
              if (((Boolean) iblockdata.get(BlockTNT.EXPLODE)).booleanValue()) {
-                 org.bukkit.Location loc = new org.bukkit.Location(world.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ()); // Paper
--                EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(loc, world, (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F), entityliving); // Paper - Add loc
+-                EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F), entityliving);
 +                // Paper start - Fix cannons
 +                double y = blockposition.getY();
 +                if (!world.paperConfig.fixCannons) y += 0.5;
-+                EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(loc, world, (double) ((float) blockposition.getX() + 0.5F), y, (double) ((float) blockposition.getZ() + 0.5F), entityliving); // Paper - Add loc
++                EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) blockposition.getX() + 0.5F), y, (double) ((float) blockposition.getZ() + 0.5F), entityliving);
 +                // Paper end
  
                  world.addEntity(entitytntprimed);
                  world.a((EntityHuman) null, entitytntprimed.locX, entitytntprimed.locY, entitytntprimed.locZ, SoundEffects.gj, SoundCategory.BLOCKS, 1.0F, 1.0F);
 diff --git a/src/main/java/net/minecraft/server/DispenserRegistry.java b/src/main/java/net/minecraft/server/DispenserRegistry.java
-index c1c0c7c..e2eb620 100644
+index d7bea3d..61ac795 100644
 --- a/src/main/java/net/minecraft/server/DispenserRegistry.java
 +++ b/src/main/java/net/minecraft/server/DispenserRegistry.java
 @@ -498,7 +498,11 @@ public class DispenserRegistry {
@@ -187,10 +187,10 @@ index c1c0c7c..e2eb620 100644
                     world.getServer().getPluginManager().callEvent(event);
                  }
 diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
-index 5e8523d..4345a3c 100644
+index 8f2b253..23fb154 100644
 --- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
 +++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
-@@ -293,4 +293,22 @@ public class EntityFallingBlock extends Entity {
+@@ -274,4 +274,22 @@ public class EntityFallingBlock extends Entity {
      public boolean br() {
          return true;
      }
@@ -214,10 +214,10 @@ index 5e8523d..4345a3c 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
-index 1820c7b..ca3bfd5 100644
+index 1113b1c..12feacf 100644
 --- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
 +++ b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
-@@ -42,6 +42,7 @@ public class EntityTNTPrimed extends Entity {
+@@ -30,6 +30,7 @@ public class EntityTNTPrimed extends Entity {
          this.lastY = d1;
          this.lastZ = d2;
          this.source = entityliving;
@@ -225,7 +225,7 @@ index 1820c7b..ca3bfd5 100644
      }
  
      protected void i() {
-@@ -137,9 +138,66 @@ public class EntityTNTPrimed extends Entity {
+@@ -118,9 +119,66 @@ public class EntityTNTPrimed extends Entity {
          return this.source;
      }
  
