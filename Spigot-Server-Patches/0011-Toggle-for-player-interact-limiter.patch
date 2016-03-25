@@ -1,0 +1,40 @@
+From b3ec2e2d2be0d461b657c45f7adb14aa4fe6edb0 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 1 Mar 2016 13:31:05 -0600
+Subject: [PATCH] Toggle for player interact limiter
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 7cfe3b9..f0ed051 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -156,4 +156,12 @@ public class PaperConfig {
+         }
+         return time;
+     }
++
++    public static boolean useInteractLimiter;
++    private static void useInteractLimiter() {
++        useInteractLimiter = getBoolean("settings.limit-player-interactions", true);
++        if (!useInteractLimiter) {
++            Bukkit.getLogger().log(Level.INFO, "Disabling player interaction limiter, your server may be more vulnerable to malicious users");
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 38a3abb..80ed7f8 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -913,7 +913,8 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+         this.player.resetIdleTimer();
+         // Spigot start
+         boolean throttled = false;
+-        if (lastPlace != -1 && packetplayinblockplace.timestamp - lastPlace < 30 && packets++ >= 4) {
++        // Paper - Allow disabling interact limiter
++        if (com.destroystokyo.paper.PaperConfig.useInteractLimiter && lastPlace != -1 && packetplayinblockplace.timestamp - lastPlace < 30 && packets++ >= 4) {
+             throttled = true;
+         } else if ( packetplayinblockplace.timestamp - lastPlace >= 30 || lastPlace == -1 )
+         {
+-- 
+2.7.1.windows.2
+

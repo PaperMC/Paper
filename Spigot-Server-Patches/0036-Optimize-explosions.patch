@@ -1,0 +1,160 @@
+From 40287dea24fbe1f8d97a10d6580beb13dc7037c7 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Wed, 2 Mar 2016 11:59:48 -0600
+Subject: [PATCH] Optimize explosions
+
+The process of determining an entity's exposure from explosions can be
+expensive when there are hundreds or more entities in range.
+
+This patch adds a per-tick cache that is used for storing and retrieving
+an entity's exposure during an explosion.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 7154d31..2be15d2 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -201,4 +201,10 @@ public class PaperWorldConfig {
+         generateVillage = getBoolean("generator-settings.village", true);
+         generateFlatBedrock = getBoolean("generator-settings.flat-bedrock", false);
+     }
++
++    public boolean optimizeExplosions;
++    private void optimizeExplosions() {
++        optimizeExplosions = getBoolean("optimize-explosions", false);
++        log("Optimize explosions: " + optimizeExplosions);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/Explosion.java b/src/main/java/net/minecraft/server/Explosion.java
+index 8ce1b23..5bb2510 100644
+--- a/src/main/java/net/minecraft/server/Explosion.java
++++ b/src/main/java/net/minecraft/server/Explosion.java
+@@ -129,7 +129,7 @@ public class Explosion {
+                         d8 /= d11;
+                         d9 /= d11;
+                         d10 /= d11;
+-                        double d12 = (double) this.world.a(vec3d, entity.getBoundingBox());
++                        double d12 = this.getBlockDensity(vec3d, entity.getBoundingBox()); // Paper - Optimize explosions
+                         double d13 = (1.0D - d7) * d12;
+ 
+                         // CraftBukkit start
+@@ -296,4 +296,85 @@ public class Explosion {
+     public List<BlockPosition> getBlocks() {
+         return this.blocks;
+     }
++
++    // Paper start - Optimize explosions
++    private float getBlockDensity(Vec3D vec3d, AxisAlignedBB aabb) {
++        if (!this.world.paperConfig.optimizeExplosions) {
++            return this.world.a(vec3d, aabb);
++        }
++        CacheKey key = new CacheKey(this, aabb);
++        Float blockDensity = this.world.explosionDensityCache.get(key);
++        if (blockDensity == null) {
++            blockDensity = this.world.a(vec3d, aabb);
++            this.world.explosionDensityCache.put(key, blockDensity);
++        }
++
++        return blockDensity;
++    }
++
++    static class CacheKey {
++        private final World world;
++        private final double posX, posY, posZ;
++        private final double minX, minY, minZ;
++        private final double maxX, maxY, maxZ;
++
++        public CacheKey(Explosion explosion, AxisAlignedBB aabb) {
++            this.world = explosion.world;
++            this.posX = explosion.posX;
++            this.posY = explosion.posY;
++            this.posZ = explosion.posZ;
++            this.minX = aabb.a;
++            this.minY = aabb.b;
++            this.minZ = aabb.c;
++            this.maxX = aabb.d;
++            this.maxY = aabb.e;
++            this.maxZ = aabb.f;
++        }
++
++        @Override
++        public boolean equals(Object o) {
++            if (this == o) return true;
++            if (o == null || getClass() != o.getClass()) return false;
++
++            CacheKey cacheKey = (CacheKey) o;
++
++            if (Double.compare(cacheKey.posX, posX) != 0) return false;
++            if (Double.compare(cacheKey.posY, posY) != 0) return false;
++            if (Double.compare(cacheKey.posZ, posZ) != 0) return false;
++            if (Double.compare(cacheKey.minX, minX) != 0) return false;
++            if (Double.compare(cacheKey.minY, minY) != 0) return false;
++            if (Double.compare(cacheKey.minZ, minZ) != 0) return false;
++            if (Double.compare(cacheKey.maxX, maxX) != 0) return false;
++            if (Double.compare(cacheKey.maxY, maxY) != 0) return false;
++            if (Double.compare(cacheKey.maxZ, maxZ) != 0) return false;
++            return world.equals(cacheKey.world);
++        }
++
++        @Override
++        public int hashCode() {
++            int result;
++            long temp;
++            result = world.hashCode();
++            temp = Double.doubleToLongBits(posX);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(posY);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(posZ);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(minX);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(minY);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(minZ);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(maxX);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(maxY);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(maxZ);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            return result;
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 6ae06a5..92b98a0 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -865,6 +865,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+                 worldserver.timings.tracker.stopTiming(); // Spigot
+                 this.methodProfiler.b();
+                 this.methodProfiler.b();
++                worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
+             // } // CraftBukkit
+ 
+             // this.i[i][this.ticks % 100] = System.nanoTime() - j; // CraftBukkit
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index fae23ae..b6d8e1b 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -32,6 +32,7 @@ import org.bukkit.generator.ChunkGenerator;
+ // Paper start
+ import java.util.concurrent.ExecutorService;
+ import java.util.concurrent.Executors;
++import java.util.HashMap;
+ import com.google.common.util.concurrent.ThreadFactoryBuilder;
+ // Paper end
+ 
+@@ -141,6 +142,7 @@ public abstract class World implements IBlockAccess {
+     private org.spigotmc.TickLimiter tileLimiter;
+     private int tileTickPosition;
+     public ExecutorService lightingExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("Paper - Lighting Thread").build()); // Paper - Asynchronous lighting updates
++    public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<Explosion.CacheKey, Float>(); // Paper - Optimize explosions
+ 
+     public CraftWorld getWorld() {
+         return this.world;
+-- 
+2.7.1.windows.2
+

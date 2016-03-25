@@ -1,0 +1,267 @@
+From e34f99c1db1594796d68b10e563925c324b255f2 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Tue, 1 Mar 2016 23:45:08 -0600
+Subject: [PATCH] FallingBlock and TNTPrimed source location API
+
+
+diff --git a/src/main/java/net/minecraft/server/BlockDragonEgg.java b/src/main/java/net/minecraft/server/BlockDragonEgg.java
+index f6095af..5c12227 100644
+--- a/src/main/java/net/minecraft/server/BlockDragonEgg.java
++++ b/src/main/java/net/minecraft/server/BlockDragonEgg.java
+@@ -33,7 +33,10 @@ public class BlockDragonEgg extends Block {
+             byte b0 = 32;
+ 
+             if (!BlockFalling.instaFall && world.areChunksLoadedBetween(blockposition.a(-b0, -b0, -b0), blockposition.a(b0, b0, b0))) {
+-                world.addEntity(new EntityFallingBlock(world, (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F), this.getBlockData()));
++                // Paper start - Add FallingBlock source location API
++                org.bukkit.Location loc = new org.bukkit.Location(world.getWorld(), (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F));
++                world.addEntity(new EntityFallingBlock(loc, world, (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F), this.getBlockData()));
++                // Paper end
+             } else {
+                 world.setAir(blockposition);
+ 
+diff --git a/src/main/java/net/minecraft/server/BlockFalling.java b/src/main/java/net/minecraft/server/BlockFalling.java
+index 6654240..936a754 100644
+--- a/src/main/java/net/minecraft/server/BlockFalling.java
++++ b/src/main/java/net/minecraft/server/BlockFalling.java
+@@ -36,7 +36,10 @@ public class BlockFalling extends Block {
+ 
+             if (!BlockFalling.instaFall && world.areChunksLoadedBetween(blockposition.a(-b0, -b0, -b0), blockposition.a(b0, b0, b0))) {
+                 if (!world.isClientSide) {
+-                    EntityFallingBlock entityfallingblock = new EntityFallingBlock(world, (double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D, world.getType(blockposition));
++                    // Paper start - Add FallingBlock source location
++                    org.bukkit.Location loc = new org.bukkit.Location(world.getWorld(), (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F));
++                    EntityFallingBlock entityfallingblock = new EntityFallingBlock(loc, world, (double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D, world.getType(blockposition));
++                    // Paper end
+ 
+                     this.a(entityfallingblock);
+                     world.addEntity(entityfallingblock);
+diff --git a/src/main/java/net/minecraft/server/BlockTNT.java b/src/main/java/net/minecraft/server/BlockTNT.java
+index f794167..09d5f7b 100644
+--- a/src/main/java/net/minecraft/server/BlockTNT.java
++++ b/src/main/java/net/minecraft/server/BlockTNT.java
+@@ -29,7 +29,8 @@ public class BlockTNT extends Block {
+ 
+     public void wasExploded(World world, BlockPosition blockposition, Explosion explosion) {
+         if (!world.isClientSide) {
+-            EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F), explosion.getSource());
++            org.bukkit.Location loc = explosion.source instanceof EntityTNTPrimed ? ((EntityTNTPrimed) explosion.source).sourceLoc : new org.bukkit.Location(world.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ()); // Paper
++            EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(loc, world, (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F), explosion.getSource()); // Paper - Add loc
+ 
+             entitytntprimed.setFuseTicks((short) (world.random.nextInt(entitytntprimed.getFuseTicks() / 4) + entitytntprimed.getFuseTicks() / 8));
+             world.addEntity(entitytntprimed);
+@@ -43,7 +44,8 @@ public class BlockTNT extends Block {
+     public void a(World world, BlockPosition blockposition, IBlockData iblockdata, EntityLiving entityliving) {
+         if (!world.isClientSide) {
+             if (((Boolean) iblockdata.get(BlockTNT.EXPLODE)).booleanValue()) {
+-                EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F), entityliving);
++                org.bukkit.Location loc = new org.bukkit.Location(world.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ()); // Paper
++                EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(loc, world, (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F), entityliving); // Paper - Add loc
+ 
+                 world.addEntity(entitytntprimed);
+                 world.a((EntityHuman) null, entitytntprimed.locX, entitytntprimed.locY, entitytntprimed.locZ, SoundEffects.gj, SoundCategory.BLOCKS, 1.0F, 1.0F);
+diff --git a/src/main/java/net/minecraft/server/DispenserRegistry.java b/src/main/java/net/minecraft/server/DispenserRegistry.java
+index d7bea3d..c1c0c7c 100644
+--- a/src/main/java/net/minecraft/server/DispenserRegistry.java
++++ b/src/main/java/net/minecraft/server/DispenserRegistry.java
+@@ -519,7 +519,7 @@ public class DispenserRegistry {
+                     }
+                 }
+ 
+-                EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), (EntityLiving) null);
++                EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(block.getLocation(), world, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), (EntityLiving) null); // Paper - Add source loc
+                 // CraftBukkit end
+ 
+                 world.addEntity(entitytntprimed);
+diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+index 6246c05..5e8523d 100644
+--- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
++++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+@@ -17,13 +17,25 @@ public class EntityFallingBlock extends Entity {
+     private float fallHurtAmount = 2.0F;
+     public NBTTagCompound tileEntityData;
+     protected static final DataWatcherObject<BlockPosition> d = DataWatcher.a(EntityFallingBlock.class, DataWatcherRegistry.j);
++    public org.bukkit.Location sourceLoc; // Paper
+ 
++    // Paper start - FallingBlock source location API
+     public EntityFallingBlock(World world) {
++        this(null, world);
++    }
++
++    public EntityFallingBlock(org.bukkit.Location loc, World world) {
+         super(world);
+     }
+ 
+     public EntityFallingBlock(World world, double d0, double d1, double d2, IBlockData iblockdata) {
++        this(null, world, d0, d1, d2, iblockdata);
++    }
++
++    public EntityFallingBlock(org.bukkit.Location loc, World world, double d0, double d1, double d2, IBlockData iblockdata) {
+         super(world);
++        sourceLoc = loc;
++        // Paper end
+         this.block = iblockdata;
+         this.i = true;
+         this.setSize(0.98F, 0.98F);
+@@ -206,6 +218,13 @@ public class EntityFallingBlock extends Entity {
+             nbttagcompound.set("TileEntityData", this.tileEntityData);
+         }
+ 
++        // Paper start - Add FallingBlock source location API
++        if (sourceLoc != null) {
++            nbttagcompound.setInt("SourceLoc_x", sourceLoc.getBlockX());
++            nbttagcompound.setInt("SourceLoc_y", sourceLoc.getBlockY());
++            nbttagcompound.setInt("SourceLoc_z", sourceLoc.getBlockZ());
++        }
++        // Paper end
+     }
+ 
+     protected void a(NBTTagCompound nbttagcompound) {
+@@ -242,6 +261,14 @@ public class EntityFallingBlock extends Entity {
+             this.block = Blocks.SAND.getBlockData();
+         }
+ 
++        // Paper start - Add FallingBlock source location API
++        if (nbttagcompound.hasKey("SourceLoc_x")) {
++            int srcX = nbttagcompound.getInt("SourceLoc_x");
++            int srcY = nbttagcompound.getInt("SourceLoc_y");
++            int srcZ = nbttagcompound.getInt("SourceLoc_z");
++            sourceLoc = new org.bukkit.Location(world.getWorld(), srcX, srcY, srcZ);
++        }
++        // Paper end
+     }
+ 
+     public void a(boolean flag) {
+diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+index 564ea37..1820c7b 100644
+--- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
++++ b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+@@ -9,16 +9,28 @@ public class EntityTNTPrimed extends Entity {
+     private int c;
+     public float yield = 4; // CraftBukkit - add field
+     public boolean isIncendiary = false; // CraftBukkit - add field
++    public org.bukkit.Location sourceLoc; // Paper - TNT soure location API
+ 
++    // Paper start - TNT source location API
+     public EntityTNTPrimed(World world) {
++        this(null, world);
++    }
++
++    public EntityTNTPrimed(org.bukkit.Location loc, World world) {
+         super(world);
++        sourceLoc = loc;
++        // Paper end
+         this.c = 80;
+         this.i = true;
+         this.setSize(0.98F, 0.98F);
+     }
+ 
+     public EntityTNTPrimed(World world, double d0, double d1, double d2, EntityLiving entityliving) {
+-        this(world);
++        this(null, world, d0, d1, d2, entityliving);
++    }
++
++    public EntityTNTPrimed(org.bukkit.Location loc, World world, double d0, double d1, double d2, EntityLiving entityliving) {
++        this(loc, world);
+         this.setPosition(d0, d1, d2);
+         float f = (float) (Math.random() * 6.2831854820251465D);
+ 
+@@ -100,10 +112,25 @@ public class EntityTNTPrimed extends Entity {
+ 
+     protected void b(NBTTagCompound nbttagcompound) {
+         nbttagcompound.setShort("Fuse", (short) this.getFuseTicks());
++        // Paper start - TNT source location API
++        if (sourceLoc != null) {
++            nbttagcompound.setInt("SourceLoc_x", sourceLoc.getBlockX());
++            nbttagcompound.setInt("SourceLoc_y", sourceLoc.getBlockY());
++            nbttagcompound.setInt("SourceLoc_z", sourceLoc.getBlockZ());
++        }
++        // Paper end
+     }
+ 
+     protected void a(NBTTagCompound nbttagcompound) {
+         this.setFuseTicks(nbttagcompound.getShort("Fuse"));
++        // Paper start - TNT source location API
++        if (nbttagcompound.hasKey("SourceLoc_x")) {
++            int srcX = nbttagcompound.getInt("SourceLoc_x");
++            int srcY = nbttagcompound.getInt("SourceLoc_y");
++            int srcZ = nbttagcompound.getInt("SourceLoc_z");
++            sourceLoc = new org.bukkit.Location(world.getWorld(), srcX, srcY, srcZ);
++        }
++        // Paper end
+     }
+ 
+     public EntityLiving getSource() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 83e3003..25edfb8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -921,7 +921,10 @@ public class CraftWorld implements World {
+         double y = location.getBlockY() + 0.5;
+         double z = location.getBlockZ() + 0.5;
+ 
+-        EntityFallingBlock entity = new EntityFallingBlock(world, x, y, z, net.minecraft.server.Block.getById(material.getId()).fromLegacyData(data));
++        // Paper start - Add FallingBlock source location API
++        location = location.clone();
++        EntityFallingBlock entity = new EntityFallingBlock(location, world, x, y, z, net.minecraft.server.Block.getById(material.getId()).fromLegacyData(data));
++        // Paper end
+         entity.ticksLived = 1;
+ 
+         world.addEntity(entity, SpawnReason.CUSTOM);
+@@ -957,7 +960,10 @@ public class CraftWorld implements World {
+             int type = CraftMagicNumbers.getId(blockData.getBlock());
+             int data = blockData.getBlock().toLegacyData(blockData);
+ 
+-            entity = new EntityFallingBlock(world, x + 0.5, y + 0.5, z + 0.5, net.minecraft.server.Block.getById(type).fromLegacyData(data));
++            // Paper start - Add FallingBlock source location API
++            location = location.clone();
++            entity = new EntityFallingBlock(location, world, x + 0.5, y + 0.5, z + 0.5, net.minecraft.server.Block.getById(type).fromLegacyData(data));
++            // Paper end
+         } else if (Projectile.class.isAssignableFrom(clazz)) {
+             if (Snowball.class.isAssignableFrom(clazz)) {
+                 entity = new EntitySnowball(world, x, y, z);
+@@ -1162,7 +1168,8 @@ public class CraftWorld implements World {
+                 throw new IllegalArgumentException("Cannot spawn hanging entity for " + clazz.getName() + " at " + location);
+             }
+         } else if (TNTPrimed.class.isAssignableFrom(clazz)) {
+-            entity = new EntityTNTPrimed(world, x, y, z, null);
++            org.bukkit.Location loc = new org.bukkit.Location(world.getWorld(), x, y, z); // Paper
++            entity = new EntityTNTPrimed(loc, world, x, y, z, null);
+         } else if (ExperienceOrb.class.isAssignableFrom(clazz)) {
+             entity = new EntityExperienceOrb(world, x, y, z, 0);
+         } else if (Weather.class.isAssignableFrom(clazz)) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingSand.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingSand.java
+index 75eed48..9e6ed0c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingSand.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingSand.java
+@@ -57,4 +57,11 @@ public class CraftFallingSand extends CraftEntity implements FallingSand {
+     public void setHurtEntities(boolean hurtEntities) {
+         getHandle().hurtEntities = hurtEntities;
+     }
++
++    // Paper start - Add FallingBlock source location API
++    @Override
++    public org.bukkit.Location getSourceLoc() {
++        return getHandle().sourceLoc;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTNTPrimed.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTNTPrimed.java
+index c493c9c..eea3238 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTNTPrimed.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTNTPrimed.java
+@@ -65,4 +65,11 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
+ 
+         return null;
+     }
++
++    // Paper start
++    @Override
++    public org.bukkit.Location getSourceLoc() {
++        return getHandle().sourceLoc;
++    }
++    // Paper end
+ }
+-- 
+2.7.1.windows.2
+
