@@ -1,4 +1,4 @@
-From db83f7f21876709f4d9a58499435fb7ecad82d0b Mon Sep 17 00:00:00 2001
+From f3a9dd01aab3b666d2b5e76346c58afef11ed3b1 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 18 Mar 2016 17:57:25 -0400
 Subject: [PATCH] Optimize Chunk Unload Queue
@@ -23,10 +23,10 @@ it will skip it and move to next.
 Also optimize EAR to use these methods.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index b6d84d7..7ba45c8 100644
+index d42a8d2..05417a7 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -55,6 +55,8 @@ public class Chunk {
+@@ -53,6 +53,8 @@ public class Chunk {
      // Keep this synced with entitySlices.add() and entitySlices.remove()
      private final int[] itemCounts = new int[16];
      private final int[] inventoryEntityCounts = new int[16];
@@ -36,7 +36,7 @@ index b6d84d7..7ba45c8 100644
  
      // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 9ef6246..f9375eb 100644
+index 450bf9b..f5a2580 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -21,7 +21,7 @@ import org.bukkit.event.world.ChunkUnloadEvent;
@@ -48,7 +48,7 @@ index 9ef6246..f9375eb 100644
      public final ChunkGenerator chunkGenerator; // CraftBukkit - public
      private final IChunkLoader chunkLoader;
      public LongObjectHashMap<Chunk> chunks = new LongObjectHashMap<Chunk>(); // CraftBukkit
-@@ -83,14 +83,24 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -77,14 +77,24 @@ public class ChunkProviderServer implements IChunkProvider {
          return (chunk == null) ? getChunkAt(x, z) : chunk;
      }
  
@@ -76,7 +76,7 @@ index 9ef6246..f9375eb 100644
          return chunk;
      }
  
-@@ -118,6 +128,7 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -112,6 +122,7 @@ public class ChunkProviderServer implements IChunkProvider {
              // CraftBukkit end
          }
  
@@ -84,7 +84,7 @@ index 9ef6246..f9375eb 100644
          return chunk;
      }
  
-@@ -126,7 +137,7 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -120,7 +131,7 @@ public class ChunkProviderServer implements IChunkProvider {
      }
  
      public Chunk getChunkAt(int i, int j, Runnable runnable) {
@@ -93,7 +93,7 @@ index 9ef6246..f9375eb 100644
          Chunk chunk = chunks.get(LongHash.toLong(i, j));
          ChunkRegionLoader loader = null;
  
-@@ -150,12 +161,13 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -144,12 +155,13 @@ public class ChunkProviderServer implements IChunkProvider {
          if (runnable != null) {
              runnable.run();
          }
@@ -108,7 +108,7 @@ index 9ef6246..f9375eb 100644
          Chunk chunk = this.chunks.get(LongHash.toLong(i, j));
          boolean newChunk = false;
          // CraftBukkit end
-@@ -201,7 +213,7 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -195,7 +207,7 @@ public class ChunkProviderServer implements IChunkProvider {
                          continue;
                      }
  
@@ -117,7 +117,7 @@ index 9ef6246..f9375eb 100644
                      if (neighbor != null) {
                          neighbor.setNeighborLoaded(-x, -z);
                          chunk.setNeighborLoaded(x, z);
-@@ -212,6 +224,7 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -206,6 +218,7 @@ public class ChunkProviderServer implements IChunkProvider {
              chunk.loadNearby(this, this.chunkGenerator);
              world.timings.syncChunkLoadTimer.stopTiming(); // Spigot
          }
@@ -125,7 +125,7 @@ index 9ef6246..f9375eb 100644
  
          return chunk;
      }
-@@ -300,10 +313,17 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -294,10 +307,17 @@ public class ChunkProviderServer implements IChunkProvider {
          if (!this.world.savingDisabled) {
              // CraftBukkit start
              Server server = this.world.getServer();
@@ -144,10 +144,10 @@ index 9ef6246..f9375eb 100644
 +                    continue;
 +                }
 +                // Paper end
+                 if (chunk.hasLightUpdates()) continue; // Paper - Don't unload chunks with pending light updates.
  
                  ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
-                 server.getPluginManager().callEvent(event);
-@@ -325,7 +345,7 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -320,7 +340,7 @@ public class ChunkProviderServer implements IChunkProvider {
                                  continue;
                              }
  
@@ -156,7 +156,7 @@ index 9ef6246..f9375eb 100644
                              if (neighbor != null) {
                                  neighbor.setNeighborUnloaded(-x, -z);
                                  chunk.setNeighborUnloaded(x, z);
-@@ -367,4 +387,69 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -362,4 +382,69 @@ public class ChunkProviderServer implements IChunkProvider {
      public boolean e(int i, int j) {
          return this.chunks.containsKey(LongHash.toLong(i, j)); // CraftBukkit
      }
@@ -240,10 +240,10 @@ index 63e118d..721bcae 100644
                  i += server.getChunkAt( x, z ).entityCount.get( oClass );
              }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index f261e01..22c87eb 100644
+index 2283536..406bdaa 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -163,9 +163,15 @@ public abstract class World implements IBlockAccess {
+@@ -159,9 +159,15 @@ public abstract class World implements IBlockAccess {
      // Paper end
  
      public Chunk getChunkIfLoaded(int x, int z) {

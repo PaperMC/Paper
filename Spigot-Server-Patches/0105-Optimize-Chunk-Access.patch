@@ -1,4 +1,4 @@
-From 1f1ba7ebcc4d5a51914decb47c0537ff3a5ae1da Mon Sep 17 00:00:00 2001
+From 03ee6c4a13460987076f859841235e5460bc2661 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 27 Aug 2015 01:15:02 -0400
 Subject: [PATCH] Optimize Chunk Access
@@ -9,10 +9,10 @@ getChunkAt is called for the same chunk multiple times in a row, often from getT
 Optimize this look up by using a Last Access cache.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 7ba45c8..fd65117 100644
+index 05417a7..c4b3461 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -32,6 +32,7 @@ public class Chunk {
+@@ -30,6 +30,7 @@ public class Chunk {
      private boolean i;
      public final World world;
      public final int[] heightMap;
@@ -20,7 +20,7 @@ index 7ba45c8..fd65117 100644
      public final int locX;
      public final int locZ;
      private boolean l;
-@@ -99,6 +100,7 @@ public class Chunk {
+@@ -97,6 +98,7 @@ public class Chunk {
          this.world = world;
          this.locX = i;
          this.locZ = j;
@@ -29,7 +29,7 @@ index 7ba45c8..fd65117 100644
  
          for (int k = 0; k < this.entitySlices.length; ++k) {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index f9375eb..90348d5 100644
+index f5a2580..f31ffe2 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -24,7 +24,18 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -52,7 +52,7 @@ index f9375eb..90348d5 100644
      // private final LongHashMap<Chunk> chunks = new LongHashMap();
      // private final List<Chunk> chunkList = Lists.newArrayList();
      public final WorldServer world;
-@@ -59,6 +70,7 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -53,6 +64,7 @@ public class ChunkProviderServer implements IChunkProvider {
  
              Chunk c = chunks.get(LongHash.toLong(i, j));
              if (c != null) {
@@ -60,7 +60,7 @@ index f9375eb..90348d5 100644
                  c.mustSave = true;
              }
              // CraftBukkit end
-@@ -333,6 +345,7 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -328,6 +340,7 @@ public class ChunkProviderServer implements IChunkProvider {
                          chunk.removeEntities();
                          this.saveChunk(chunk);
                          this.saveChunkNOP(chunk);
@@ -69,10 +69,10 @@ index f9375eb..90348d5 100644
                      }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index d8bd36c..d21076b 100644
+index 406bdaa..0419eb4 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -160,6 +160,12 @@ public abstract class World implements IBlockAccess {
+@@ -156,6 +156,12 @@ public abstract class World implements IBlockAccess {
      public Chunk getChunkIfLoaded(BlockPosition blockposition) {
          return this.chunkProvider.getLoadedChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4);
      }
@@ -110,5 +110,5 @@ index caa5e62..c69e070 100644
          // Update neighbor counts
          for (int xx = -2; xx < 3; xx++) {
 -- 
-2.7.4.windows.1
+2.7.1.windows.2
 

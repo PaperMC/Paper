@@ -1,4 +1,4 @@
-From 40287dea24fbe1f8d97a10d6580beb13dc7037c7 Mon Sep 17 00:00:00 2001
+From abf2b31e23d05c3fb8ec5b85f739356b48047979 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Wed, 2 Mar 2016 11:59:48 -0600
 Subject: [PATCH] Optimize explosions
@@ -10,7 +10,7 @@ This patch adds a per-tick cache that is used for storing and retrieving
 an entity's exposure during an explosion.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 7154d31..2be15d2 100644
+index 66deccb..09b9867 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -201,4 +201,10 @@ public class PaperWorldConfig {
@@ -124,10 +124,10 @@ index 8ce1b23..5bb2510 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 6ae06a5..92b98a0 100644
+index aa337cc..a30b019 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -865,6 +865,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -900,6 +900,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
                  worldserver.timings.tracker.stopTiming(); // Spigot
                  this.methodProfiler.b();
                  this.methodProfiler.b();
@@ -136,22 +136,22 @@ index 6ae06a5..92b98a0 100644
  
              // this.i[i][this.ticks % 100] = System.nanoTime() - j; // CraftBukkit
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index fae23ae..b6d8e1b 100644
+index a1d8bc5..3fe987f 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -32,6 +32,7 @@ import org.bukkit.generator.ChunkGenerator;
- // Paper start
- import java.util.concurrent.ExecutorService;
- import java.util.concurrent.Executors;
-+import java.util.HashMap;
- import com.google.common.util.concurrent.ThreadFactoryBuilder;
- // Paper end
+@@ -15,6 +15,7 @@ import java.util.concurrent.Callable;
  
-@@ -141,6 +142,7 @@ public abstract class World implements IBlockAccess {
+ // CraftBukkit start
+ import com.google.common.collect.Maps;
++import java.util.HashMap; // Paper
+ import java.util.Map;
+ import org.bukkit.Bukkit;
+ import org.bukkit.block.BlockState;
+@@ -134,6 +135,7 @@ public abstract class World implements IBlockAccess {
+     private org.spigotmc.TickLimiter entityLimiter;
      private org.spigotmc.TickLimiter tileLimiter;
      private int tileTickPosition;
-     public ExecutorService lightingExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("Paper - Lighting Thread").build()); // Paper - Asynchronous lighting updates
-+    public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<Explosion.CacheKey, Float>(); // Paper - Optimize explosions
++    public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
  
      public CraftWorld getWorld() {
          return this.world;

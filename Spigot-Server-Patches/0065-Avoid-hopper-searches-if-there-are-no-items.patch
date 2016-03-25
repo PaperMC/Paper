@@ -1,4 +1,4 @@
-From f10417f375c81cec510a68204309474063d79aff Mon Sep 17 00:00:00 2001
+From 2a296ac64bd3bd678edd258287d058ed28e9c186 Mon Sep 17 00:00:00 2001
 From: CullanP <cullanpage@gmail.com>
 Date: Thu, 3 Mar 2016 02:13:38 -0600
 Subject: [PATCH] Avoid hopper searches if there are no items
@@ -14,21 +14,24 @@ And since minecart hoppers are used _very_ rarely near we can avoid alot of sear
 Combined, this adds up a lot.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 19788ed..6d148d7 100644
+index f233c13..d8c0347 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -49,6 +49,10 @@ public class Chunk {
-     // Paper start - Asynchronous light updates
-     public AtomicInteger pendingLightUpdates = new AtomicInteger();
-     public long lightUpdateTime;
+@@ -46,6 +46,13 @@ public class Chunk {
+     protected gnu.trove.map.hash.TObjectIntHashMap<Class> entityCount = new gnu.trove.map.hash.TObjectIntHashMap<Class>(); // Spigot
+     public int lightUpdates; // Paper - Number of queued light updates for this chunk
+ 
++    // Paper start
 +    // Track the number of minecarts and items
 +    // Keep this synced with entitySlices.add() and entitySlices.remove()
 +    private final int[] itemCounts = new int[16];
 +    private final int[] inventoryEntityCounts = new int[16];
-     // Paper end
- 
++    // Paper end
++
      // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
-@@ -620,6 +624,13 @@ public class Chunk {
+     private int neighbors = 0x1 << 12;
+ 
+@@ -653,6 +660,13 @@ public class Chunk {
          entity.ac = k;
          entity.ad = this.locZ;
          this.entitySlices[k].add(entity);
@@ -42,7 +45,7 @@ index 19788ed..6d148d7 100644
          // Spigot start - increment creature type count
          // Keep this synced up with World.a(Class)
          if (entity instanceof EntityInsentient) {
-@@ -652,6 +663,13 @@ public class Chunk {
+@@ -685,6 +699,13 @@ public class Chunk {
          }
  
          this.entitySlices[i].remove(entity);
@@ -56,7 +59,7 @@ index 19788ed..6d148d7 100644
          // Spigot start - decrement creature type count
          // Keep this synced up with World.a(Class)
          if (entity instanceof EntityInsentient) {
-@@ -841,6 +859,15 @@ public class Chunk {
+@@ -874,6 +895,15 @@ public class Chunk {
              if (!this.entitySlices[k].isEmpty()) {
                  Iterator iterator = this.entitySlices[k].iterator();
  
@@ -72,7 +75,7 @@ index 19788ed..6d148d7 100644
                  while (iterator.hasNext()) {
                      Entity entity1 = (Entity) iterator.next();
  
-@@ -873,7 +900,18 @@ public class Chunk {
+@@ -906,7 +936,18 @@ public class Chunk {
          i = MathHelper.clamp(i, 0, this.entitySlices.length - 1);
          j = MathHelper.clamp(j, 0, this.entitySlices.length - 1);
  
@@ -92,5 +95,5 @@ index 19788ed..6d148d7 100644
  
              while (iterator.hasNext()) {
 -- 
-2.7.2
+2.7.1.windows.2
 
