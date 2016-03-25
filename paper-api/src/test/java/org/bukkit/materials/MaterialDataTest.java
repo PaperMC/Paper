@@ -3,12 +3,16 @@ package org.bukkit.materials;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 
+import org.bukkit.CropState;
 import org.bukkit.Material;
+import org.bukkit.NetherWartsState;
 import org.bukkit.TreeSpecies;
 import org.bukkit.block.BlockFace;
+import org.bukkit.material.Crops;
 import org.bukkit.material.Door;
 import org.bukkit.material.Leaves;
 import org.bukkit.material.Mushroom;
+import org.bukkit.material.NetherWarts;
 import org.bukkit.material.Sapling;
 import org.bukkit.material.Tree;
 import org.bukkit.material.Wood;
@@ -257,6 +261,64 @@ public class MaterialDataTest {
                 assertThat("Constructed with correct mushroom type", mushroom.getItemType(), equalTo(type));
                 assertThat("Constructed with correct texture", mushroom.getBlockTexture(), equalTo(texture));
             }
+        }
+    }
+
+    @Test
+    public void testCrops() {
+        Crops crops = new Crops();
+        assertThat("Constructed with default crops type", crops.getItemType(), equalTo(Material.CROPS));
+        assertThat("Constructed with default crop state", crops.getState(), equalTo(CropState.SEEDED));
+
+        CropState[] allStates = CropState.values();
+        for (CropState state : allStates) {
+            crops = new Crops(state);
+            assertThat("Constructed with default crops type", crops.getItemType(), equalTo(Material.CROPS));
+            assertThat("Constructed with correct crop state", crops.getState(), equalTo(state));
+        }
+
+        // The crops which fully implement all crop states
+        Material[] allCrops = new Material[] {Material.CROPS, Material.CARROT, Material.POTATO};
+        for (Material crop : allCrops) {
+            crops = new Crops(crop);
+            assertThat("Constructed with correct crops type", crops.getItemType(), equalTo(crop));
+            assertThat("Constructed with default crop state", crops.getState(), equalTo(CropState.SEEDED));
+
+            for (CropState state : allStates) {
+                crops = new Crops(crop, state);
+                assertThat("Constructed with correct crops type", crops.getItemType(), equalTo(crop));
+                assertThat("Constructed with correct crop state", crops.getState(), equalTo(state));
+            }
+        }
+
+        // Beetroot are crops too, but they only have four states
+        // Setting different crop states for beetroot will return the following when retrieved back
+        CropState[] beetrootStates = new CropState[] {CropState.SEEDED, CropState.SEEDED, CropState.SMALL, CropState.SMALL, CropState.TALL, CropState.TALL, CropState.RIPE, CropState.RIPE};
+        assertThat("Beetroot state translations match size", beetrootStates.length, equalTo(allStates.length));
+        crops = new Crops(Material.BEETROOT_BLOCK);
+        assertThat("Constructed with correct crops type", crops.getItemType(), equalTo(Material.BEETROOT_BLOCK));
+        assertThat("Constructed with default crop state", crops.getState(), equalTo(CropState.SEEDED));
+        for (int s = 0; s < beetrootStates.length; s++) {
+            crops = new Crops(Material.BEETROOT_BLOCK, allStates[s]);
+            assertThat("Constructed with correct crops type", crops.getItemType(), equalTo(Material.BEETROOT_BLOCK));
+            assertThat("Constructed with correct crop state", crops.getState(), equalTo(beetrootStates[s]));
+        }
+
+        // In case you want to treat NetherWarts as Crops, although they really aren't
+        crops = new Crops(Material.NETHER_WARTS);
+        NetherWarts warts = new NetherWarts();
+        assertThat("Constructed with correct crops type", crops.getItemType(), equalTo(warts.getItemType()));
+        assertThat("Constructed with default crop state", crops.getState(), equalTo(CropState.SEEDED));
+        assertThat("Constructed with default wart state", warts.getState(), equalTo(NetherWartsState.SEEDED));
+        allStates = new CropState[] {CropState.SEEDED, CropState.SMALL, CropState.TALL, CropState.RIPE};
+        NetherWartsState[] allWartStates = NetherWartsState.values();
+        assertThat("Nether Warts state translations match size", allWartStates.length, equalTo(allStates.length));
+        for (int s = 0; s < allStates.length; s++) {
+            crops = new Crops(Material.NETHER_WARTS, allStates[s]);
+            warts = new NetherWarts(allWartStates[s]);
+            assertThat("Constructed with correct crops type", crops.getItemType(), equalTo(warts.getItemType()));
+            assertThat("Constructed with correct crop state", crops.getState(), equalTo(allStates[s]));
+            assertThat("Constructed with correct wart state", warts.getState(), equalTo(allWartStates[s]));
         }
     }
 }
