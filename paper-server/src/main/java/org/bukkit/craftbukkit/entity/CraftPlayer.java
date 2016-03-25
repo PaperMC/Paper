@@ -1281,7 +1281,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void updateScaledHealth() {
         AttributeMapServer attributemapserver = (AttributeMapServer) getHandle().getAttributeMap();
-        Set set = attributemapserver.getAttributes();
+        Collection set = attributemapserver.c(); // PAIL: Rename
 
         injectScaledMaxHealth(set, true);
 
@@ -1289,7 +1289,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateHealth(getScaledHealth(), getHandle().getFoodData().getFoodLevel(), getHandle().getFoodData().getSaturationLevel()));
         getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateAttributes(getHandle().getId(), set));
 
-        set.clear();
         getHandle().maxHealthCache = getMaxHealth();
     }
 
