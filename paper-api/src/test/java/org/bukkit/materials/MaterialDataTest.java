@@ -9,7 +9,10 @@ import org.bukkit.NetherWartsState;
 import org.bukkit.TreeSpecies;
 import org.bukkit.block.BlockFace;
 import org.bukkit.material.Crops;
+import org.bukkit.material.Comparator;
+import org.bukkit.material.Diode;
 import org.bukkit.material.Door;
+import org.bukkit.material.Hopper;
 import org.bukkit.material.Leaves;
 import org.bukkit.material.Mushroom;
 import org.bukkit.material.NetherWarts;
@@ -319,6 +322,112 @@ public class MaterialDataTest {
             assertThat("Constructed with correct crops type", crops.getItemType(), equalTo(warts.getItemType()));
             assertThat("Constructed with correct crop state", crops.getState(), equalTo(allStates[s]));
             assertThat("Constructed with correct wart state", warts.getState(), equalTo(allWartStates[s]));
+        }
+    }
+
+    @Test
+    public void testDiode() {
+        Diode diode = new Diode();
+        assertThat("Constructed with backward compatible diode state", diode.getItemType(), equalTo(Material.DIODE_BLOCK_ON));
+        assertThat("Constructed with backward compatible powered", diode.isPowered(), equalTo(true));
+        assertThat("Constructed with default delay", diode.getDelay(), equalTo(1));
+        assertThat("Constructed with default direction", diode.getFacing(), equalTo(BlockFace.NORTH));
+
+        BlockFace[] directions = new BlockFace[] {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
+        int[] delays = new int[] {1, 2, 3, 4};
+        boolean[] states = new boolean[] {false, true};
+        for (BlockFace direction : directions) {
+            diode = new Diode(direction);
+            assertThat("Constructed with default diode state", diode.getItemType(), equalTo(Material.DIODE_BLOCK_OFF));
+            assertThat("Constructed with default powered", diode.isPowered(), equalTo(false));
+            assertThat("Constructed with default delay", diode.getDelay(), equalTo(1));
+            assertThat("Constructed with correct direction", diode.getFacing(), equalTo(direction));
+            for (int delay : delays) {
+                diode = new Diode(direction, delay);
+                assertThat("Constructed with default diode state", diode.getItemType(), equalTo(Material.DIODE_BLOCK_OFF));
+                assertThat("Constructed with default powered", diode.isPowered(), equalTo(false));
+                assertThat("Constructed with correct delay", diode.getDelay(), equalTo(delay));
+                assertThat("Constructed with correct direction", diode.getFacing(), equalTo(direction));
+                for (boolean state : states) {
+                    diode = new Diode(direction, delay, state);
+                    assertThat("Constructed with correct diode state", diode.getItemType(), equalTo(state ? Material.DIODE_BLOCK_ON : Material.DIODE_BLOCK_OFF));
+                    assertThat("Constructed with default powered", diode.isPowered(), equalTo(state));
+                    assertThat("Constructed with correct delay", diode.getDelay(), equalTo(delay));
+                    assertThat("Constructed with correct direction", diode.getFacing(), equalTo(direction));
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testComparator() {
+        Comparator comparator = new Comparator();
+        assertThat("Constructed with default comparator state", comparator.getItemType(), equalTo(Material.REDSTONE_COMPARATOR_OFF));
+        assertThat("Constructed with default powered", comparator.isPowered(), equalTo(false));
+        assertThat("Constructed with default being powered", comparator.isBeingPowered(), equalTo(false));
+        assertThat("Constructed with default mode", comparator.isSubtractionMode(), equalTo(false));
+        assertThat("Constructed with default direction", comparator.getFacing(), equalTo(BlockFace.NORTH));
+
+        BlockFace[] directions = new BlockFace[] {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
+        boolean[] modes = new boolean[] {false, true};
+        boolean[] states = new boolean[] {false, true};
+        for (BlockFace direction : directions) {
+            comparator = new Comparator(direction);
+            assertThat("Constructed with default comparator state", comparator.getItemType(), equalTo(Material.REDSTONE_COMPARATOR_OFF));
+            assertThat("Constructed with default powered", comparator.isPowered(), equalTo(false));
+            assertThat("Constructed with default being powered", comparator.isBeingPowered(), equalTo(false));
+            assertThat("Constructed with default mode", comparator.isSubtractionMode(), equalTo(false));
+            assertThat("Constructed with correct direction", comparator.getFacing(), equalTo(direction));
+            for (boolean mode : modes) {
+                comparator = new Comparator(direction, mode);
+                assertThat("Constructed with default comparator state", comparator.getItemType(), equalTo(Material.REDSTONE_COMPARATOR_OFF));
+                assertThat("Constructed with default powered", comparator.isPowered(), equalTo(false));
+                assertThat("Constructed with default being powered", comparator.isBeingPowered(), equalTo(false));
+                assertThat("Constructed with correct mode", comparator.isSubtractionMode(), equalTo(mode));
+                assertThat("Constructed with correct direction", comparator.getFacing(), equalTo(direction));
+                for (boolean state : states) {
+                    comparator = new Comparator(direction, mode, state);
+                    assertThat("Constructed with correct comparator state", comparator.getItemType(), equalTo(state ? Material.REDSTONE_COMPARATOR_ON : Material.REDSTONE_COMPARATOR_OFF));
+                    assertThat("Constructed with correct powered", comparator.isPowered(), equalTo(state));
+                    assertThat("Constructed with default being powered", comparator.isBeingPowered(), equalTo(false));
+                    assertThat("Constructed with correct mode", comparator.isSubtractionMode(), equalTo(mode));
+                    assertThat("Constructed with correct direction", comparator.getFacing(), equalTo(direction));
+
+                    // Check if the game sets the fourth bit, that block data is still interpreted correctly
+                    comparator.setData((byte)((comparator.getData() & 0x7) | 0x8));
+                    assertThat("Constructed with correct comparator state", comparator.getItemType(), equalTo(state ? Material.REDSTONE_COMPARATOR_ON : Material.REDSTONE_COMPARATOR_OFF));
+                    assertThat("Constructed with correct powered", comparator.isPowered(), equalTo(state));
+                    assertThat("Constructed with correct being powered", comparator.isBeingPowered(), equalTo(true));
+                    assertThat("Constructed with correct mode", comparator.isSubtractionMode(), equalTo(mode));
+                    assertThat("Constructed with correct direction", comparator.getFacing(), equalTo(direction));
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testHopper() {
+        Hopper hopper = new Hopper();
+        assertThat("Constructed with default hopper type", hopper.getItemType(), equalTo(Material.HOPPER));
+        assertThat("Constructed with default active state", hopper.isActive(), equalTo(true));
+        assertThat("Constructed with default powered state", hopper.isPowered(), equalTo(false));
+        assertThat("Constructed with default direction", hopper.getFacing(), equalTo(BlockFace.DOWN));
+
+        BlockFace[] directions = new BlockFace[] {BlockFace.DOWN, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.WEST, BlockFace.EAST};
+        boolean[] activeStates = new boolean[] {true, false};
+        for (BlockFace direction : directions) {
+            hopper = new Hopper(direction);
+            assertThat("Constructed with default hopper type", hopper.getItemType(), equalTo(Material.HOPPER));
+            assertThat("Constructed with default active state", hopper.isActive(), equalTo(true));
+            assertThat("Constructed with correct powered state", hopper.isPowered(), equalTo(false));
+            assertThat("Constructed with correct direction", hopper.getFacing(), equalTo(direction));
+            for(boolean isActive : activeStates) {
+                hopper = new Hopper(direction, isActive);
+                assertThat("Constructed with default hopper type", hopper.getItemType(), equalTo(Material.HOPPER));
+                assertThat("Constructed with correct active state", hopper.isActive(), equalTo(isActive));
+                assertThat("Constructed with correct powered state", hopper.isPowered(), equalTo(!isActive));
+                assertThat("Constructed with correct direction", hopper.getFacing(), equalTo(direction));
+            }
         }
     }
 }

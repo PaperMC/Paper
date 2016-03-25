@@ -13,6 +13,7 @@ import org.bukkit.material.Chest;
 import org.bukkit.material.Coal;
 import org.bukkit.material.CocoaPlant;
 import org.bukkit.material.Command;
+import org.bukkit.material.Comparator;
 import org.bukkit.material.Crops;
 import org.bukkit.material.DetectorRail;
 import org.bukkit.material.Diode;
@@ -23,6 +24,7 @@ import org.bukkit.material.EnderChest;
 import org.bukkit.material.FlowerPot;
 import org.bukkit.material.Furnace;
 import org.bukkit.material.Gate;
+import org.bukkit.material.Hopper;
 import org.bukkit.material.Ladder;
 import org.bukkit.material.Leaves;
 import org.bukkit.material.Lever;
@@ -216,12 +218,12 @@ public enum Material {
     TRAPPED_CHEST(146, Chest.class),
     GOLD_PLATE(147),
     IRON_PLATE(148),
-    REDSTONE_COMPARATOR_OFF(149),
-    REDSTONE_COMPARATOR_ON(150),
+    REDSTONE_COMPARATOR_OFF(149, Comparator.class),
+    REDSTONE_COMPARATOR_ON(150, Comparator.class),
     DAYLIGHT_DETECTOR(151),
     REDSTONE_BLOCK(152),
     QUARTZ_ORE(153),
-    HOPPER(154),
+    HOPPER(154, Hopper.class),
     QUARTZ_BLOCK(155),
     QUARTZ_STAIRS(156, Stairs.class),
     ACTIVATOR_RAIL(157, PoweredRail.class),
