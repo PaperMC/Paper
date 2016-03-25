@@ -9,6 +9,7 @@ function applyPatch {
     what_name=$(basename $what)
     target=$2
     branch=$3
+
     cd "$basedir/$what"
     git fetch
     git branch -f upstream "$branch" >/dev/null
@@ -19,8 +20,9 @@ function applyPatch {
     fi
     cd "$basedir/$target"
     echo "Resetting $target to $what_name..."
-    git remote add -f upstream ../$what >/dev/null 2>&1
-    git checkout master >/dev/null 2>&1
+    git remote rm upstream > /dev/null 2>&1
+    git remote add upstream $basedir/$what >/dev/null 2>&1
+    git checkout master 2>/dev/null || git checkout -b master
     git fetch upstream >/dev/null 2>&1
     git reset --hard upstream/upstream
     echo "  Applying patches to $target..."
