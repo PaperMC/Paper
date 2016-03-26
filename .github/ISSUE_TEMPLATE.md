@@ -23,6 +23,7 @@ issue.___
 
 ### Paper build number:
 ___This can be found by running `/version` on your server. `latest` is not a proper version number; we require the output of `/version` so we can properly track down the issue.___
+
 # Incompatibility (Bug)
 
 ### What behaviour is expected:
