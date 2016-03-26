@@ -381,4 +381,17 @@ public interface LivingEntity extends Attributable, Entity, Damageable, Projecti
      */
     public void setGliding(boolean gliding);
 
+    /**
+     * Sets whether an entity will have AI.
+     *
+     * @param ai whether the mob will have AI or not.
+     */
+    void setAI(boolean ai);
+
+    /**
+     * Checks whether an entity has AI.
+     *
+     * @return true if the entity has AI, otherwise false.
+     */
+    boolean hasAI();
 }
