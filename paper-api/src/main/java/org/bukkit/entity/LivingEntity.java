@@ -394,4 +394,26 @@ public interface LivingEntity extends Attributable, Entity, Damageable, Projecti
      * @return true if the entity has AI, otherwise false.
      */
     boolean hasAI();
+
+    /**
+     * Set if this entity will be subject to collisions other entities.
+     * <p>
+     * Note that collisions are bidirectional, so this method would need to be
+     * set to false on both the collidee and the collidant to ensure no
+     * collisions take place.
+     *
+     * @param collidable collision status
+     */
+    void setCollidable(boolean collidable);
+
+    /**
+     * Gets if this entity is subject to collisions with other entities.
+     * <p>
+     * Please note that this method returns only the custom collidable state,
+     * not whether the entity is non-collidable for other reasons such as being
+     * dead.
+     *
+     * @return collision status
+     */
+    boolean isCollidable();
 }
