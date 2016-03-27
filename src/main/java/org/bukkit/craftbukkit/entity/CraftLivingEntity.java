@@ -540,4 +540,14 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public boolean hasAI() {
         return (this.getHandle() instanceof EntityInsentient) ? !((EntityInsentient) this.getHandle()).cR() : false; // PAIL: rename
     }
+
+    @Override
+    public void setCollidable(boolean collidable) {
+        getHandle().collides = collidable;
+    }
+
+    @Override
+    public boolean isCollidable() {
+        return getHandle().collides;
+    }
 }
