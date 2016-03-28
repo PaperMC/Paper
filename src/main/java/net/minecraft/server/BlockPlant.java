@@ -14,7 +14,7 @@ public class BlockPlant extends Block {
     public IBlockData updateState(IBlockData iblockdata, EnumDirection enumdirection, IBlockData iblockdata1, GeneratorAccess generatoraccess, BlockPosition blockposition, BlockPosition blockposition1) {
         // CraftBukkit start
         if (!iblockdata.canPlace(generatoraccess, blockposition)) {
-            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(generatoraccess, blockposition).isCancelled()) {
+            if (!(generatoraccess instanceof WorldServer && ((WorldServer) generatoraccess).hasPhysicsEvent) || !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(generatoraccess, blockposition).isCancelled()) { // Paper
                 return Blocks.AIR.getBlockData();
             }
         }

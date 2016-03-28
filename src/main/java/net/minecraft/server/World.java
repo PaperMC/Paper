@@ -406,7 +406,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
                 // CraftBukkit start
                 iblockdata1.b(this, blockposition, k, j - 1); // Don't call an event for the old block to limit event spam
                 CraftWorld world = ((WorldServer) this).getWorld();
-                if (world != null) {
+                if (world != null && ((WorldServer)this).hasPhysicsEvent) { // Paper
                     BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftBlockData.fromData(iblockdata));
                     this.getServer().getPluginManager().callEvent(event);
 
@@ -508,7 +508,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
             try {
                 // CraftBukkit start
                 CraftWorld world = ((WorldServer) this).getWorld();
-                if (world != null) {
+                if (world != null && ((WorldServer)this).hasPhysicsEvent) { // Paper
                     BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftBlockData.fromData(iblockdata), world.getBlockAt(blockposition1.getX(), blockposition1.getY(), blockposition1.getZ()));
                     this.getServer().getPluginManager().callEvent(event);
 
