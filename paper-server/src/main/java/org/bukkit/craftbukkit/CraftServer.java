@@ -862,8 +862,9 @@ public final class CraftServer implements Server {
 
         IDataManager sdm = new ServerNBTManager(getWorldContainer(), name, true, getHandle().getServer().getDataConverterManager());
         WorldData worlddata = sdm.getWorldData();
+        WorldSettings worldSettings = null;
         if (worlddata == null) {
-            WorldSettings worldSettings = new WorldSettings(creator.seed(), WorldSettings.EnumGamemode.getById(getDefaultGameMode().getValue()), generateStructures, hardcore, type);
+            worldSettings = new WorldSettings(creator.seed(), WorldSettings.EnumGamemode.getById(getDefaultGameMode().getValue()), generateStructures, hardcore, type);
             worldSettings.setGeneratorSettings(creator.generatorSettings());
             worlddata = new WorldData(worldSettings, name);
         }
@@ -874,6 +875,9 @@ public final class CraftServer implements Server {
             return null;
         }
 
+        if (worldSettings != null) {
+            internal.a(worldSettings);
+        }
         internal.scoreboard = getScoreboardManager().getMainScoreboard().getHandle();
 
         internal.tracker = new EntityTracker(internal);
