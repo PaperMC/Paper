@@ -28,7 +28,7 @@ public final class RegionFileCache implements AutoCloseable {
         if (regionfile != null) {
             return regionfile;
         } else {
-            if (this.cache.size() >= 256) {
+            if (this.cache.size() >= com.destroystokyo.paper.PaperConfig.regionFileCacheSize) { // Paper - configurable
                 ((RegionFile) this.cache.removeLast()).close();
             }
 
