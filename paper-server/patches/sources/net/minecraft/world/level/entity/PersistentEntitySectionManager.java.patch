@@ -32,7 +32,24 @@
      void removeSectionIfEmpty(long sectionPos, EntitySection<T> section) {
          if (section.isEmpty()) {
              this.sectionStorage.remove(sectionPos);
-@@ -196,27 +211,35 @@
+@@ -76,6 +91,16 @@
+     }
+ 
+     private boolean addEntity(T entity, boolean existing) {
++        // Paper start - chunk system hooks
++        // I don't want to know why this is a generic type.
++        Entity entityCasted = (Entity)entity;
++        boolean wasRemoved = entityCasted.isRemoved();
++        boolean screened = ca.spottedleaf.moonrise.common.util.ChunkSystem.screenEntity((net.minecraft.server.level.ServerLevel)entityCasted.level(), entityCasted, existing, true);
++        if ((!wasRemoved && entityCasted.isRemoved()) || !screened) {
++            // removed by callback
++            return false;
++        }
++        // Paper end - chunk system hooks
+         if (!this.addEntityUuid(entity)) {
+             return false;
+         } else {
+@@ -196,27 +221,35 @@
      }
  
      private boolean storeChunkSections(long chunkPos, Consumer<T> action) {
@@ -74,7 +91,7 @@
                  return true;
              }
          }
-@@ -238,7 +261,7 @@
+@@ -238,7 +271,7 @@
      private boolean processChunkUnload(long chunkPos) {
          boolean flag = this.storeChunkSections(chunkPos, (entityaccess) -> {
              entityaccess.getPassengersAndSelf().forEach(this::unloadEntity);
@@ -83,7 +100,7 @@
  
          if (!flag) {
              return false;
-@@ -249,24 +272,28 @@
+@@ -249,24 +282,28 @@
      }
  
      private void unloadEntity(EntityAccess entity) {
@@ -115,7 +132,7 @@
          }
  
      }
-@@ -292,7 +319,7 @@
+@@ -292,7 +329,7 @@
      }
  
      public void autoSave() {
@@ -124,7 +141,7 @@
              boolean flag = this.chunkVisibility.get(i) == Visibility.HIDDEN;
  
              if (flag) {
-@@ -311,7 +338,7 @@
+@@ -311,7 +348,7 @@
          while (!longset.isEmpty()) {
              this.permanentStorage.flush(false);
              this.processPendingLoads();
@@ -133,7 +150,7 @@
                  boolean flag = this.chunkVisibility.get(i) == Visibility.HIDDEN;
  
                  return flag ? this.processChunkUnload(i) : this.storeChunkSections(i, (entityaccess) -> {
-@@ -323,7 +350,15 @@
+@@ -323,7 +360,15 @@
      }
  
      public void close() throws IOException {
@@ -150,7 +167,7 @@
          this.permanentStorage.close();
      }
  
-@@ -350,7 +385,7 @@
+@@ -350,7 +395,7 @@
      public void dumpSections(Writer writer) throws IOException {
          CsvOutput csvwriter = CsvOutput.builder().addColumn("x").addColumn("y").addColumn("z").addColumn("visibility").addColumn("load_status").addColumn("entity_count").build(writer);
  
@@ -159,7 +176,7 @@
              PersistentEntitySectionManager.ChunkLoadStatus persistententitysectionmanager_b = (PersistentEntitySectionManager.ChunkLoadStatus) this.chunkLoadStatuses.get(i);
  
              this.sectionStorage.getExistingSectionPositionsInChunk(i).forEach((j) -> {
-@@ -394,7 +429,7 @@
+@@ -394,7 +439,7 @@
          private EntitySection<T> currentSection;
  
          Callback(final EntityAccess entityaccess, final long i, final EntitySection entitysection) {

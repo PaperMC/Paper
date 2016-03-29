@@ -56,6 +56,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.ticks.LevelTickAccess;
 import net.minecraft.world.ticks.TickPriority;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.jetbrains.annotations.Nullable;
 
 public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
 
@@ -788,4 +789,25 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     public boolean isFluidAtPosition(BlockPos pos, Predicate<FluidState> state) {
         return this.handle.isFluidAtPosition(pos, state);
     }
+
+    // Paper start
+    @Nullable
+    @Override
+    public BlockState getBlockStateIfLoaded(final BlockPos blockposition) {
+        return this.handle.getBlockStateIfLoaded(blockposition);
+    }
+
+    @Nullable
+    @Override
+    public FluidState getFluidIfLoaded(final BlockPos blockposition) {
+        return this.handle.getFluidIfLoaded(blockposition);
+    }
+
+    @Nullable
+    @Override
+    public ChunkAccess getChunkIfLoadedImmediately(final int x, final int z) {
+        return this.handle.getChunkIfLoadedImmediately(x, z);
+    }
+    // Paper end
 }
+

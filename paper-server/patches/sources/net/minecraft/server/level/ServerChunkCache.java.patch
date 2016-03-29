@@ -1,6 +1,20 @@
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
-@@ -95,6 +95,16 @@
+@@ -74,6 +74,13 @@
+     @Nullable
+     @VisibleForDebug
+     private NaturalSpawner.SpawnState lastSpawnState;
++    // Paper start
++    private final ca.spottedleaf.concurrentutil.map.ConcurrentLong2ReferenceChainedHashTable<net.minecraft.world.level.chunk.LevelChunk> fullChunks = new ca.spottedleaf.concurrentutil.map.ConcurrentLong2ReferenceChainedHashTable<>();
++    public int getFullChunksCount() {
++        return this.fullChunks.size();
++    }
++    long chunkFutureAwaitCounter;
++    // Paper end
+ 
+     public ServerChunkCache(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, int simulationDistance, boolean dsync, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory) {
+         this.level = world;
+@@ -95,6 +102,64 @@
          this.clearCache();
      }
  
@@ -13,11 +27,59 @@
 +        return chunk.getFullChunkNow() != null;
 +    }
 +    // CraftBukkit end
++    // Paper start
++    public void addLoadedChunk(LevelChunk chunk) {
++        this.fullChunks.put(chunk.coordinateKey, chunk);
++    }
++
++    public void removeLoadedChunk(LevelChunk chunk) {
++        this.fullChunks.remove(chunk.coordinateKey);
++    }
++
++    @Nullable
++    public ChunkAccess getChunkAtImmediately(int x, int z) {
++        ChunkHolder holder = this.chunkMap.getVisibleChunkIfPresent(ChunkPos.asLong(x, z));
++        if (holder == null) {
++            return null;
++        }
++
++        return holder.getLatestChunk();
++    }
++
++    public <T> void addTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
++        this.distanceManager.addTicket(ticketType, chunkPos, ticketLevel, identifier);
++    }
++
++    public <T> void removeTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
++        this.distanceManager.removeTicket(ticketType, chunkPos, ticketLevel, identifier);
++    }
++
++    // "real" get chunk if loaded
++    // Note: Partially copied from the getChunkAt method below
++    @Nullable
++    public LevelChunk getChunkAtIfCachedImmediately(int x, int z) {
++        long k = ChunkPos.asLong(x, z);
++
++        // Note: Bypass cache since we need to check ticket level, and to make this MT-Safe
++
++        ChunkHolder playerChunk = this.getVisibleChunkIfPresent(k);
++        if (playerChunk == null) {
++            return null;
++        }
++
++        return playerChunk.getFullChunkNowUnchecked();
++    }
++
++    @Nullable
++    public LevelChunk getChunkAtIfLoadedImmediately(int x, int z) {
++        return this.fullChunks.get(ChunkPos.asLong(x, z));
++    }
++    // Paper end
 +
      @Override
      public ThreadedLevelLightEngine getLightEngine() {
          return this.lightEngine;
-@@ -138,20 +148,22 @@
+@@ -138,20 +203,22 @@
                  if (k == this.lastChunkPos[l] && leastStatus == this.lastChunkStatus[l]) {
                      ChunkAccess ichunkaccess = this.lastChunk[l];
  
@@ -42,7 +104,7 @@
  
              if (ichunkaccess1 == null && create) {
                  throw (IllegalStateException) Util.pauseInIde(new IllegalStateException("Chunk not there when requested: " + chunkresult.getError()));
-@@ -231,7 +243,15 @@
+@@ -231,7 +298,15 @@
          int l = ChunkLevel.byStatus(leastStatus);
          ChunkHolder playerchunk = this.getVisibleChunkIfPresent(k);
  
@@ -59,7 +121,7 @@
              this.distanceManager.addTicket(TicketType.UNKNOWN, chunkcoordintpair, l, chunkcoordintpair);
              if (this.chunkAbsent(playerchunk, l)) {
                  ProfilerFiller gameprofilerfiller = Profiler.get();
-@@ -250,7 +270,7 @@
+@@ -250,7 +325,7 @@
      }
  
      private boolean chunkAbsent(@Nullable ChunkHolder holder, int maxLevel) {
@@ -68,7 +130,16 @@
      }
  
      @Override
-@@ -309,30 +329,58 @@
+@@ -279,7 +354,7 @@
+         return this.mainThreadProcessor.pollTask();
+     }
+ 
+-    boolean runDistanceManagerUpdates() {
++    public boolean runDistanceManagerUpdates() { // Paper - public
+         boolean flag = this.distanceManager.runAllUpdates(this.chunkMap);
+         boolean flag1 = this.chunkMap.promoteChunkMap();
+ 
+@@ -309,30 +384,58 @@
  
      @Override
      public void close() throws IOException {
@@ -85,8 +156,8 @@
          this.dataStorage.close();
          this.lightEngine.close();
          this.chunkMap.close();
-+    }
-+
+     }
+ 
 +    // CraftBukkit start - modelled on below
 +    public void purgeUnload() {
 +        ProfilerFiller gameprofilerfiller = Profiler.get();
@@ -98,9 +169,9 @@
 +        this.chunkMap.tick(() -> true);
 +        gameprofilerfiller.pop();
 +        this.clearCache();
-     }
++    }
 +    // CraftBukkit end
- 
++
      @Override
      public void tick(BooleanSupplier shouldKeepTicking, boolean tickChunks) {
          ProfilerFiller gameprofilerfiller = Profiler.get();
@@ -129,7 +200,7 @@
          gameprofilerfiller.pop();
          this.clearCache();
      }
-@@ -401,14 +449,14 @@
+@@ -401,14 +504,14 @@
  
          this.lastSpawnState = spawnercreature_d;
          profiler.popPush("spawnAndTick");
@@ -147,7 +218,7 @@
          } else {
              list1 = List.of();
          }
-@@ -420,12 +468,14 @@
+@@ -420,12 +523,14 @@
              ChunkPos chunkcoordintpair = chunk.getPos();
  
              chunk.incrementInhabitedTime(timeDelta);
@@ -163,7 +234,7 @@
              }
          }
  
-@@ -541,10 +591,16 @@
+@@ -541,10 +646,16 @@
  
      @Override
      public void setSpawnSettings(boolean spawnMonsters) {
@@ -182,7 +253,7 @@
      public String getChunkDebugData(ChunkPos pos) {
          return this.chunkMap.getChunkDebugData(pos);
      }
-@@ -618,14 +674,20 @@
+@@ -618,14 +729,20 @@
          }
  
          @Override

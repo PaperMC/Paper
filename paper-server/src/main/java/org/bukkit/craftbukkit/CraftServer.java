@@ -2627,4 +2627,9 @@ public final class CraftServer implements Server {
         return this.spigot;
     }
     // Spigot end
+
+    @Override
+    public double[] getTPS() {
+        return new double[]{0, 0, 0}; // TODO
+    }
 }

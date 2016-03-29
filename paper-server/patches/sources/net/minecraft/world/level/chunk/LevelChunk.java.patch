@@ -18,7 +18,7 @@
          this.gameEventListenerRegistrySections = new Int2ObjectOpenHashMap();
          Heightmap.Types[] aheightmap_type = Heightmap.Types.values();
          int j = aheightmap_type.length;
-@@ -116,6 +116,11 @@
+@@ -116,6 +116,15 @@
          this.fluidTicks = fluidTickScheduler;
      }
  
@@ -27,10 +27,14 @@
 +    public boolean needsDecoration;
 +    // CraftBukkit end
 +
++    // Paper start
++    boolean loadedTicketLevel;
++    // Paper end
++
      public LevelChunk(ServerLevel world, ProtoChunk protoChunk, @Nullable LevelChunk.PostLoadProcessor entityLoader) {
          this(world, protoChunk.getPos(), protoChunk.getUpgradeData(), protoChunk.unpackBlockTicks(), protoChunk.unpackFluidTicks(), protoChunk.getInhabitedTime(), protoChunk.getSections(), entityLoader, protoChunk.getBlendingData());
          if (!Collections.disjoint(protoChunk.pendingBlockEntities.keySet(), protoChunk.blockEntities.keySet())) {
-@@ -151,6 +156,10 @@
+@@ -151,6 +160,10 @@
          this.skyLightSources = protoChunk.skyLightSources;
          this.setLightCorrect(protoChunk.isLightCorrect());
          this.markUnsaved();
@@ -41,7 +45,53 @@
      }
  
      public void setUnsavedListener(LevelChunk.UnsavedListener unsavedListener) {
-@@ -272,78 +281,86 @@
+@@ -200,8 +213,25 @@
+         }
+     }
+ 
++    // Paper start - Perf: Reduce instructions and provide final method
++    public BlockState getBlockState(final int x, final int y, final int z) {
++        return this.getBlockStateFinal(x, y, z);
++    }
++    public BlockState getBlockStateFinal(final int x, final int y, final int z) {
++        // Copied and modified from below
++        final int sectionIndex = this.getSectionIndex(y);
++        if (sectionIndex < 0 || sectionIndex >= this.sections.length
++            || this.sections[sectionIndex].nonEmptyBlockCount == 0) {
++            return Blocks.AIR.defaultBlockState();
++        }
++        return this.sections[sectionIndex].states.get((y & 15) << 8 | (z & 15) << 4 | x & 15);
++    }
+     @Override
+     public BlockState getBlockState(BlockPos pos) {
++        if (true) {
++            return this.getBlockStateFinal(pos.getX(), pos.getY(), pos.getZ());
++        }
++        // Paper end - Perf: Reduce instructions and provide final method
+         int i = pos.getX();
+         int j = pos.getY();
+         int k = pos.getZ();
+@@ -243,7 +273,19 @@
+         }
+     }
+ 
++    // Paper start - If loaded util
+     @Override
++    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
++        return this.getFluidState(blockposition);
++    }
++
++    @Override
++    public final BlockState getBlockStateIfLoaded(BlockPos blockposition) {
++        return this.getBlockState(blockposition);
++    }
++    // Paper end
++
++    @Override
+     public FluidState getFluidState(BlockPos pos) {
+         return this.getFluidState(pos.getX(), pos.getY(), pos.getZ());
+     }
+@@ -272,78 +314,86 @@
          }
      }
  
@@ -153,7 +203,7 @@
                              this.updateBlockEntityTicker(tileentity);
                          }
                      }
-@@ -375,7 +392,12 @@
+@@ -375,7 +425,12 @@
  
      @Nullable
      public BlockEntity getBlockEntity(BlockPos pos, LevelChunk.EntityCreationType creationType) {
@@ -167,7 +217,7 @@
  
          if (tileentity == null) {
              CompoundTag nbttagcompound = (CompoundTag) this.pendingBlockEntities.remove(pos);
-@@ -447,6 +469,7 @@
+@@ -447,6 +502,7 @@
  
          if (!iblockdata.hasBlockEntity()) {
              LevelChunk.LOGGER.warn("Trying to set block entity {} at position {}, but state {} does not allow it", new Object[]{blockEntity, blockposition, iblockdata});
@@ -175,7 +225,7 @@
          } else {
              BlockState iblockdata1 = blockEntity.getBlockState();
  
-@@ -500,6 +523,12 @@
+@@ -500,6 +556,12 @@
          if (this.isInLevel()) {
              BlockEntity tileentity = (BlockEntity) this.blockEntities.remove(pos);
  
@@ -188,7 +238,7 @@
              if (tileentity != null) {
                  Level world = this.level;
  
-@@ -549,10 +578,61 @@
+@@ -549,9 +611,68 @@
          if (this.postLoad != null) {
              this.postLoad.run(this);
              this.postLoad = null;
@@ -198,7 +248,11 @@
 +
 +    // CraftBukkit start
 +    public void loadCallback() {
++        // Paper start
++        this.loadedTicketLevel = true;
++        // Paper end
 +        org.bukkit.Server server = this.level.getCraftServer();
++        this.level.getChunkSource().addLoadedChunk(this); // Paper
 +        if (server != null) {
 +            /*
 +             * If it's a new world, the first few chunks are generated inside
@@ -239,18 +293,21 @@
 +        server.getPluginManager().callEvent(unloadEvent);
 +        // note: saving can be prevented, but not forced if no saving is actually required
 +        this.mustNotSave = !unloadEvent.isSaveChunk();
-     }
- 
++        this.level.getChunkSource().removeLoadedChunk(this); // Paper
++        // Paper start
++        this.loadedTicketLevel = false;
++        // Paper end
++    }
++
 +    @Override
 +    public boolean isUnsaved() {
 +        return super.isUnsaved() && !this.mustNotSave;
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      public boolean isEmpty() {
          return false;
-     }
-@@ -750,7 +830,7 @@
+@@ -750,7 +871,7 @@
  
      private <T extends BlockEntity> void updateBlockEntityTicker(T blockEntity) {
          BlockState iblockdata = blockEntity.getBlockState();
@@ -259,7 +316,7 @@
  
          if (blockentityticker == null) {
              this.removeBlockEntityTicker(blockEntity.getBlockPos());
-@@ -841,7 +921,7 @@
+@@ -841,7 +962,7 @@
          private boolean loggedInvalidBlockState;
  
          BoundTickingBlockEntity(final BlockEntity tileentity, final BlockEntityTicker blockentityticker) {
@@ -268,7 +325,7 @@
              this.ticker = blockentityticker;
          }
  
-@@ -855,6 +935,7 @@
+@@ -855,6 +976,7 @@
                          ProfilerFiller gameprofilerfiller = Profiler.get();
  
                          gameprofilerfiller.push(this::getType);
@@ -276,7 +333,7 @@
                          BlockState iblockdata = LevelChunk.this.getBlockState(blockposition);
  
                          if (this.blockEntity.getType().isValid(iblockdata)) {
-@@ -872,6 +953,10 @@
+@@ -872,6 +994,10 @@
  
                          this.blockEntity.fillCrashReportCategory(crashreportsystemdetails);
                          throw new ReportedException(crashreport);

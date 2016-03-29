@@ -257,8 +257,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public Chunk[] getLoadedChunks() {
-        Long2ObjectLinkedOpenHashMap<ChunkHolder> chunks = this.world.getChunkSource().chunkMap.visibleChunkMap;
-        return chunks.values().stream().map(ChunkHolder::getFullChunkNow).filter(Objects::nonNull).map(CraftChunk::new).toArray(Chunk[]::new);
+        List<ChunkHolder> chunks = ca.spottedleaf.moonrise.common.util.ChunkSystem.getVisibleChunkHolders(this.world); // Paper
+        return chunks.stream().map(ChunkHolder::getFullChunkNow).filter(Objects::nonNull).map(CraftChunk::new).toArray(Chunk[]::new);
     }
 
     @Override
@@ -335,7 +335,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean refreshChunk(int x, int z) {
-        ChunkHolder playerChunk = this.world.getChunkSource().chunkMap.visibleChunkMap.get(ChunkPos.asLong(x, z));
+        ChunkHolder playerChunk = this.world.getChunkSource().chunkMap.getVisibleChunkIfPresent(ChunkPos.asLong(x, z));
         if (playerChunk == null) return false;
 
         playerChunk.getTickingChunkFuture().thenAccept(either -> {
@@ -2115,4 +2115,51 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return this.spigot;
     }
     // Spigot end
+    // Paper start
+    @Override
+    public void getChunkAtAsync(int x, int z, boolean gen, boolean urgent, @NotNull Consumer<? super Chunk> cb) {
+        ca.spottedleaf.moonrise.common.util.ChunkSystem.scheduleChunkLoad(
+            this.getHandle(), x, z, gen, ChunkStatus.FULL, true,
+            urgent ? ca.spottedleaf.concurrentutil.util.Priority.HIGHER : ca.spottedleaf.concurrentutil.util.Priority.NORMAL,
+            (ChunkAccess chunk) -> {
+                cb.accept(chunk == null ? null : new CraftChunk((net.minecraft.world.level.chunk.LevelChunk)chunk));
+            }
+        );
+
+    }
+
+    @Override
+    public void getChunksAtAsync(int minX, int minZ, int maxX, int maxZ, boolean urgent, Runnable cb) {
+        this.getHandle().loadChunks(
+            minX, minZ, maxX, maxZ,
+            urgent ? ca.spottedleaf.concurrentutil.util.Priority.HIGHER : ca.spottedleaf.concurrentutil.util.Priority.NORMAL,
+            (List<ChunkAccess> chunks) -> {
+                cb.run();
+            }
+        );
+    }
+
+    @Override
+    public void setViewDistance(final int viewDistance) {
+        if (viewDistance < 2 || viewDistance > 32) {
+            throw new IllegalArgumentException("View distance " + viewDistance + " is out of range of [2, 32]");
+        }
+        this.getHandle().chunkSource.chunkMap.setServerViewDistance(viewDistance);
+    }
+
+    @Override
+    public void setSimulationDistance(final int simulationDistance) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public int getSendViewDistance() {
+        return this.getViewDistance();
+    }
+
+    @Override
+    public void setSendViewDistance(final int viewDistance) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+    // Paper end
 }

@@ -35,6 +35,9 @@ public class ActivationRange
 
     public enum ActivationType
     {
+        WATER, // Paper
+        FLYING_MONSTER, // Paper
+        VILLAGER, // Paper
         MONSTER,
         ANIMAL,
         RAIDER,

@@ -1,6 +1,14 @@
 --- a/net/minecraft/world/level/BlockGetter.java
 +++ b/net/minecraft/world/level/BlockGetter.java
-@@ -31,7 +31,7 @@
+@@ -12,6 +12,7 @@
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
+ import net.minecraft.util.Mth;
++import net.minecraft.world.level.block.Block;
+ import net.minecraft.world.level.block.entity.BlockEntity;
+ import net.minecraft.world.level.block.entity.BlockEntityType;
+ import net.minecraft.world.level.block.state.BlockState;
+@@ -31,10 +32,19 @@
      default <T extends BlockEntity> Optional<T> getBlockEntity(BlockPos pos, BlockEntityType<T> type) {
          BlockEntity tileentity = this.getBlockEntity(pos);
  
@@ -9,7 +17,19 @@
      }
  
      BlockState getBlockState(BlockPos pos);
-@@ -59,8 +59,8 @@
++    // Paper start - if loaded util
++    @Nullable BlockState getBlockStateIfLoaded(BlockPos blockposition);
++
++    default @Nullable Block getBlockIfLoaded(BlockPos blockposition) {
++        BlockState type = this.getBlockStateIfLoaded(blockposition);
++        return type == null ? null : type.getBlock();
++    }
++    @Nullable FluidState getFluidIfLoaded(BlockPos blockposition);
++    // Paper end
+ 
+     FluidState getFluidState(BlockPos pos);
+ 
+@@ -59,8 +69,8 @@
          });
      }
  
@@ -20,7 +40,7 @@
              BlockState iblockdata = this.getBlockState(blockposition);
              FluidState fluid = this.getFluidState(blockposition);
              Vec3 vec3d = raytrace1.getFrom();
-@@ -73,6 +73,12 @@
+@@ -73,6 +83,12 @@
              double d1 = movingobjectpositionblock1 == null ? Double.MAX_VALUE : raytrace1.getFrom().distanceToSqr(movingobjectpositionblock1.getLocation());
  
              return d0 <= d1 ? movingobjectpositionblock : movingobjectpositionblock1;
@@ -33,7 +53,7 @@
          }, (raytrace1) -> {
              Vec3 vec3d = raytrace1.getFrom().subtract(raytrace1.getTo());
  
-@@ -145,7 +151,7 @@
+@@ -145,7 +161,7 @@
                  double d13 = d10 * (i1 > 0 ? 1.0D - Mth.frac(d4) : Mth.frac(d4));
                  double d14 = d11 * (j1 > 0 ? 1.0D - Mth.frac(d5) : Mth.frac(d5));
  

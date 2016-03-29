@@ -12,15 +12,27 @@
      @Nullable
      private volatile PacketListener disconnectListener;
      @Nullable
-@@ -114,6 +119,7 @@
+@@ -114,6 +119,19 @@
      private volatile DisconnectionDetails delayedDisconnect;
      @Nullable
      BandwidthDebugMonitor bandwidthDebugMonitor;
 +    public String hostname = ""; // CraftBukkit - add field
++
++    // Paper start - add utility methods
++    public final net.minecraft.server.level.ServerPlayer getPlayer() {
++        if (this.packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl impl) {
++            return impl.player;
++        } else if (this.packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl impl) {
++            org.bukkit.craftbukkit.entity.CraftPlayer player = impl.getCraftPlayer();
++            return player == null ? null : player.getHandle();
++        }
++        return null;
++    }
++    // Paper end - add utility methods
  
      public Connection(PacketFlow side) {
          this.receiving = side;
-@@ -123,6 +129,9 @@
+@@ -123,6 +141,9 @@
          super.channelActive(channelhandlercontext);
          this.channel = channelhandlercontext.channel();
          this.address = this.channel.remoteAddress();
@@ -30,7 +42,7 @@
          if (this.delayedDisconnect != null) {
              this.disconnect(this.delayedDisconnect);
          }
-@@ -176,6 +185,7 @@
+@@ -176,6 +197,7 @@
  
              }
          }
@@ -38,7 +50,7 @@
      }
  
      protected void channelRead0(ChannelHandlerContext channelhandlercontext, Packet<?> packet) {
-@@ -205,7 +215,7 @@
+@@ -205,7 +227,7 @@
      }
  
      private static <T extends PacketListener> void genericsFtw(Packet<T> packet, PacketListener listener) {
@@ -47,7 +59,7 @@
      }
  
      private void validateListener(ProtocolInfo<?> state, PacketListener listener) {
-@@ -464,12 +474,15 @@
+@@ -464,12 +486,15 @@
      }
  
      public void disconnect(DisconnectionDetails disconnectionInfo) {
@@ -64,7 +76,7 @@
              this.disconnectionDetails = disconnectionInfo;
          }
  
-@@ -537,7 +550,7 @@
+@@ -537,7 +562,7 @@
      }
  
      public void configurePacketHandler(ChannelPipeline pipeline) {
@@ -73,7 +85,7 @@
              public void write(ChannelHandlerContext channelhandlercontext, Object object, ChannelPromise channelpromise) throws Exception {
                  super.write(channelhandlercontext, object, channelpromise);
              }
-@@ -661,6 +674,7 @@
+@@ -661,6 +686,7 @@
  
                      packetlistener1.onDisconnect(disconnectiondetails);
                  }

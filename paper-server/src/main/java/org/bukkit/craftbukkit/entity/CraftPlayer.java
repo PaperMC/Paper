@@ -2432,4 +2432,34 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         return this.spigot;
     }
     // Spigot end
+
+    @Override
+    public int getViewDistance() {
+        return ca.spottedleaf.moonrise.common.util.ChunkSystem.getViewDistance(this.getHandle());
+    }
+
+    @Override
+    public void setViewDistance(final int viewDistance) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public int getSimulationDistance() {
+        return ca.spottedleaf.moonrise.common.util.ChunkSystem.getTickViewDistance(this.getHandle());
+    }
+
+    @Override
+    public void setSimulationDistance(final int simulationDistance) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public int getSendViewDistance() {
+        return ca.spottedleaf.moonrise.common.util.ChunkSystem.getSendViewDistance(this.getHandle());
+    }
+
+    @Override
+    public void setSendViewDistance(final int viewDistance) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
 }

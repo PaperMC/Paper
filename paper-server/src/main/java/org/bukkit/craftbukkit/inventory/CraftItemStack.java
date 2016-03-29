@@ -31,6 +31,20 @@ import org.jetbrains.annotations.ApiStatus;
 @DelegateDeserialization(ItemStack.class)
 public final class CraftItemStack extends ItemStack {
 
+    // Paper start - MC Utils
+    public static net.minecraft.world.item.ItemStack unwrap(ItemStack bukkit) {
+        if (bukkit instanceof CraftItemStack craftItemStack) {
+            return craftItemStack.handle != null ? craftItemStack.handle : net.minecraft.world.item.ItemStack.EMPTY;
+        } else {
+            return asNMSCopy(bukkit);
+        }
+    }
+
+    public static net.minecraft.world.item.ItemStack getOrCloneOnMutation(ItemStack old, ItemStack newInstance) {
+        return old == newInstance ? unwrap(old) : asNMSCopy(newInstance);
+    }
+    // Paper end - MC Utils
+
     public static net.minecraft.world.item.ItemStack asNMSCopy(ItemStack original) {
         if (original instanceof CraftItemStack) {
             CraftItemStack stack = (CraftItemStack) original;

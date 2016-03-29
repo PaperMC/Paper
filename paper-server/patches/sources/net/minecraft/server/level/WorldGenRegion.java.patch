@@ -1,6 +1,34 @@
 --- a/net/minecraft/server/level/WorldGenRegion.java
 +++ b/net/minecraft/server/level/WorldGenRegion.java
-@@ -217,7 +217,7 @@
+@@ -169,7 +169,27 @@
+         return k < this.generatingStep.directDependencies().size();
+     }
+ 
++    // Paper start - if loaded util
++    @Nullable
+     @Override
++    public ChunkAccess getChunkIfLoadedImmediately(int x, int z) {
++        return this.getChunk(x, z, ChunkStatus.FULL, false);
++    }
++
++    @Override
++    public final BlockState getBlockStateIfLoaded(BlockPos blockposition) {
++        ChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++        return chunk == null ? null : chunk.getBlockState(blockposition);
++    }
++
++    @Override
++    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
++        ChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++        return chunk == null ? null : chunk.getFluidState(blockposition);
++    }
++    // Paper end
++
++    @Override
+     public BlockState getBlockState(BlockPos pos) {
+         return this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ())).getBlockState(pos);
+     }
+@@ -217,7 +237,7 @@
          if (iblockdata.isAir()) {
              return false;
          } else {
@@ -9,7 +37,7 @@
                  BlockEntity tileentity = iblockdata.hasBlockEntity() ? this.getBlockEntity(pos) : null;
  
                  Block.dropResources(iblockdata, this.level, pos, tileentity, breakingEntity, ItemStack.EMPTY);
-@@ -336,6 +336,13 @@
+@@ -336,6 +356,13 @@
  
      @Override
      public boolean addFreshEntity(Entity entity) {

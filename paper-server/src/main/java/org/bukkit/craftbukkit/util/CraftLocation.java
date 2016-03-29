@@ -40,6 +40,17 @@ public final class CraftLocation {
         return new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
+    // Paper start
+    public static net.minecraft.core.GlobalPos toGlobalPos(Location location) {
+        return net.minecraft.core.GlobalPos.of(((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle().dimension(), toBlockPosition(location));
+    }
+
+    public static Location fromGlobalPos(net.minecraft.core.GlobalPos globalPos) {
+        BlockPos pos = globalPos.pos();
+        return new org.bukkit.Location(net.minecraft.server.MinecraftServer.getServer().getLevel(globalPos.dimension()).getWorld(), pos.getX(), pos.getY(), pos.getZ());
+    }
+    // Paper end
+
     public static Vec3 toVec3D(Location location) {
         return new Vec3(location.getX(), location.getY(), location.getZ());
     }
