@@ -1097,7 +1097,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         if (entity instanceof EntityInsentient) {
             this.navigators.remove(((EntityInsentient) entity).getNavigation());
         }
-
+        new com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent(entity.getBukkitEntity()).callEvent(); // Paper - fire while valid
         entity.valid = false; // CraftBukkit
     }
 
@@ -1135,6 +1135,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
                 entity.origin = entity.getBukkitEntity().getLocation();
             }
             // Paper end
+            new com.destroystokyo.paper.event.entity.EntityAddToWorldEvent(entity.getBukkitEntity()).callEvent(); // Paper - fire while valid
         }
 
     }
