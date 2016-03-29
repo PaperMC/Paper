@@ -1,0 +1,49 @@
+From 6ccc58fffcabd1eb401162d3f524ad539964f177 Mon Sep 17 00:00:00 2001
+From: Sudzzy <originmc@outlook.com>
+Date: Wed, 2 Mar 2016 23:34:44 -0600
+Subject: [PATCH] Configurable container update tick rate
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 8d97890..91eb5de 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -247,4 +247,9 @@ public class PaperWorldConfig {
+         fixCannons = getBoolean("fix-cannons", false);
+         log("Fix TNT cannons: " + fixCannons);
+     }
++
++    public int containerUpdateTickRate;
++    private void containerUpdateTickRate() {
++        containerUpdateTickRate = getInt("container-update-tick-rate", 1);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index ed307bc..2681aa5 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -54,6 +54,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public int ping;
+     public boolean viewingCredits;
+     public int viewDistance; // Paper - Player view distance API
++    private int containerUpdateDelay; // Paper
+ 
+     // CraftBukkit start
+     public String displayName;
+@@ -200,7 +201,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             --this.noDamageTicks;
+         }
+ 
+-        this.activeContainer.b();
++        // Paper start - Configurable container update tick rate
++        if (--containerUpdateDelay <= 0) {
++            this.activeContainer.b();
++            containerUpdateDelay = world.paperConfig.containerUpdateTickRate;
++        }
++        // Paper end
+         if (!this.world.isClientSide && !this.activeContainer.a((EntityHuman) this)) {
+             this.closeInventory();
+             this.activeContainer = this.defaultContainer;
+-- 
+2.7.4
+
