@@ -977,7 +977,7 @@ public class Chunk implements IChunkAccess {
 
     @Override
     public long getInhabitedTime() {
-        return this.inhabitedTime;
+        return world.paperConfig.fixedInhabitedTime < 0 ? this.inhabitedTime : world.paperConfig.fixedInhabitedTime; // Paper
     }
 
     @Override

@@ -231,4 +231,14 @@ public class PaperWorldConfig {
             skeleHorseSpawnChance = 0.01D; // Vanilla value
         }
     }
+
+    public int fixedInhabitedTime;
+    private void fixedInhabitedTime() {
+        if (PaperConfig.version < 16) {
+            if (!config.getBoolean("world-settings.default.use-chunk-inhabited-timer", true)) config.set("world-settings.default.fixed-chunk-inhabited-time", 0);
+            if (!config.getBoolean("world-settings." + worldName + ".use-chunk-inhabited-timer", true)) config.set("world-settings." + worldName + ".fixed-chunk-inhabited-time", 0);
+            set("use-chunk-inhabited-timer", null);
+        }
+        fixedInhabitedTime = getInt("fixed-chunk-inhabited-time", -1);
+    }
 }
