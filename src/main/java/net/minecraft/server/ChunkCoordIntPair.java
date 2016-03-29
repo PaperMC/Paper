@@ -11,27 +11,32 @@ public class ChunkCoordIntPair {
     public static final long a = pair(1875016, 1875016);
     public final int x;
     public final int z;
+    public final long longKey; // Paper
 
     public ChunkCoordIntPair(int i, int j) {
         this.x = i;
         this.z = j;
+        this.longKey = pair(this.x, this.z); // Paper
     }
 
     public ChunkCoordIntPair(BlockPosition blockposition) {
         this.x = blockposition.getX() >> 4;
         this.z = blockposition.getZ() >> 4;
+        this.longKey = pair(this.x, this.z); // Paper
     }
 
     public ChunkCoordIntPair(long i) {
         this.x = (int) i;
         this.z = (int) (i >> 32);
+        this.longKey = pair(this.x, this.z); // Paper
     }
 
     public long pair() {
-        return pair(this.x, this.z);
+        return longKey; // Paper
     }
 
-    public static long pair(int i, int j) {
+    public static long pair(final BlockPosition pos) { return pair(pos.getX() >> 4, pos.getZ() >> 4); } // Paper - OBFHELPER
+        public static long pair(int i, int j) {
         return (long) i & 4294967295L | ((long) j & 4294967295L) << 32;
     }
 

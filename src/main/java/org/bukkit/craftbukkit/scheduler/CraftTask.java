@@ -39,6 +39,21 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
     CraftTask(final Object task) {
         this(null, task, CraftTask.NO_REPEATING, CraftTask.NO_REPEATING);
     }
+    // Paper start
+    public String taskName = null;
+    boolean internal = false;
+    CraftTask(final Object task, int id, String taskName) {
+        this.rTask = (Runnable) task;
+        this.cTask = null;
+        this.plugin = CraftScheduler.MINECRAFT;
+        this.taskName = taskName;
+        this.internal = true;
+        this.id = id;
+        this.period = CraftTask.NO_REPEATING;
+        this.taskName = taskName;
+        this.timings = null; // Will be changed in later patch
+    }
+    // Paper end
 
     CraftTask(final Plugin plugin, final Object task, final int id, final long period) {
         this.plugin = plugin;

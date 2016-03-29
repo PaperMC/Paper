@@ -190,10 +190,12 @@ public class AxisAlignedBB {
         return this.d(vec3d.x, vec3d.y, vec3d.z);
     }
 
+    public final boolean intersects(AxisAlignedBB axisalignedbb) { return this.c(axisalignedbb); } // Paper - OBFHELPER
     public boolean c(AxisAlignedBB axisalignedbb) {
         return this.a(axisalignedbb.minX, axisalignedbb.minY, axisalignedbb.minZ, axisalignedbb.maxX, axisalignedbb.maxY, axisalignedbb.maxZ);
     }
 
+    public final boolean intersects(double d0, double d1, double d2, double d3, double d4, double d5) { return a(d0, d1, d2, d3, d4, d5); } // Paper - OBFHELPER
     public boolean a(double d0, double d1, double d2, double d3, double d4, double d5) {
         return this.minX < d3 && this.maxX > d0 && this.minY < d4 && this.maxY > d1 && this.minZ < d5 && this.maxZ > d2;
     }
@@ -206,6 +208,7 @@ public class AxisAlignedBB {
         return d0 >= this.minX && d0 < this.maxX && d1 >= this.minY && d1 < this.maxY && d2 >= this.minZ && d2 < this.maxZ;
     }
 
+    public final double getAverageSideLength(){return a();} // Paper - OBFHELPER
     public double a() {
         double d0 = this.b();
         double d1 = this.c();

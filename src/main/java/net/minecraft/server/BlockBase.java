@@ -636,6 +636,7 @@ public abstract class BlockBase {
             return this.a != null ? this.a.d : Block.a(this.getCollisionShape(iblockaccess, blockposition));
         }
 
+        public final IBlockData getBlockData() { return p(); } // Paper - OBFHELPER
         protected abstract IBlockData p();
 
         public boolean isRequiresSpecialTool() {

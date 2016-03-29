@@ -21,7 +21,7 @@ public class IOWorker implements AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger();
     private final AtomicBoolean b = new AtomicBoolean();
     private final ThreadedMailbox<PairedQueue.b> c;
-    private final RegionFileCache d;
+    private final RegionFileCache d;public RegionFileCache getRegionFileCache() { return d; } // Paper - OBFHELPER
     private final Map<ChunkCoordIntPair, IOWorker.a> e = Maps.newLinkedHashMap();
 
     protected IOWorker(File file, boolean flag, String s) {

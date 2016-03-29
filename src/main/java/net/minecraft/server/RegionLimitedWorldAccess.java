@@ -102,6 +102,26 @@ public class RegionLimitedWorldAccess implements GeneratorAccessSeed {
         return i >= this.n.x && i <= this.o.x && j >= this.n.z && j <= this.o.z;
     }
 
+    // Paper start - if loaded util
+    @Nullable
+    @Override
+    public IChunkAccess getChunkIfLoadedImmediately(int x, int z) {
+        return this.getChunkAt(x, z, ChunkStatus.FULL, false);
+    }
+
+    @Override
+    public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
+        IChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
+        return chunk == null ? null : chunk.getType(blockposition);
+    }
+
+    @Override
+    public Fluid getFluidIfLoaded(BlockPosition blockposition) {
+        IChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
+        return chunk == null ? null : chunk.getFluid(blockposition);
+    }
+    // Paper end
+
     @Override
     public IBlockData getType(BlockPosition blockposition) {
         return this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4).getType(blockposition);

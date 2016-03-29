@@ -70,7 +70,7 @@ public class NBTTagCompound implements NBTBase {
             return "TAG_Compound";
         }
     };
-    private final Map<String, NBTBase> map;
+    public final Map<String, NBTBase> map; // Paper
 
     protected NBTTagCompound(Map<String, NBTBase> map) {
         this.map = map;
@@ -133,10 +133,14 @@ public class NBTTagCompound implements NBTBase {
         this.map.put(s, NBTTagLong.a(i));
     }
 
+    public void setUUID(String prefix, UUID uuid) { a(prefix, uuid); } // Paper - OBFHELPER
     public void a(String s, UUID uuid) {
         this.map.put(s, GameProfileSerializer.a(uuid));
     }
 
+
+    @Nullable public UUID getUUID(String prefix) { return a(prefix); } // Paper - OBFHELPER
+    @Nullable
     public UUID a(String s) {
         return GameProfileSerializer.a(this.get(s));
     }

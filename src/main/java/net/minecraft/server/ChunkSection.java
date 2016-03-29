@@ -133,6 +133,7 @@ public class ChunkSection {
         return this.blockIds;
     }
 
+    public void writeChunkSection(PacketDataSerializer packetDataSerializer) { this.b(packetDataSerializer); } // Paper - OBFHELPER
     public void b(PacketDataSerializer packetdataserializer) {
         packetdataserializer.writeShort(this.nonEmptyBlockCount);
         this.blockIds.b(packetdataserializer);

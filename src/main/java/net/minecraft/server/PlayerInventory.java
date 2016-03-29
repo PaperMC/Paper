@@ -17,7 +17,7 @@ public class PlayerInventory implements IInventory, INamableTileEntity {
     public final NonNullList<ItemStack> items;
     public final NonNullList<ItemStack> armor;
     public final NonNullList<ItemStack> extraSlots;
-    private final List<NonNullList<ItemStack>> f;
+    private final List<NonNullList<ItemStack>> f;List<NonNullList<ItemStack>> getComponents() { return f; } // Paper - OBFHELPER
     public int itemInHandIndex;
     public final EntityHuman player;
     private ItemStack carried;

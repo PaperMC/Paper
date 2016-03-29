@@ -112,6 +112,7 @@ public class PotionUtil {
         return nbttagcompound == null ? Potions.EMPTY : PotionRegistry.a(nbttagcompound.getString("Potion"));
     }
 
+    public static ItemStack addPotionToItemStack(ItemStack itemstack, PotionRegistry potionregistry) { return a(itemstack, potionregistry); } // Paper - OBFHELPER
     public static ItemStack a(ItemStack itemstack, PotionRegistry potionregistry) {
         MinecraftKey minecraftkey = IRegistry.POTION.getKey(potionregistry);
 

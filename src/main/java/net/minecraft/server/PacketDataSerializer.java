@@ -36,6 +36,7 @@ public class PacketDataSerializer extends ByteBuf {
         this.a = bytebuf;
     }
 
+    public static int countBytes(int i) { return PacketDataSerializer.a(i); } // Paper - OBFHELPER
     public static int a(int i) {
         for (int j = 1; j < 5; ++j) {
             if ((i & -1 << j * 7) == 0) {

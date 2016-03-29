@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
 
-    private final DataPalette<T> b;
+    private final DataPalette<T> b; private final DataPalette<T> getDataPaletteGlobal() { return this.b; } // Paper - OBFHELPER
     private final DataPaletteExpandable<T> c = (i, object) -> {
         return 0;
     };
@@ -18,9 +18,9 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
     private final Function<NBTTagCompound, T> e;
     private final Function<T, NBTTagCompound> f;
     private final T g;
-    protected DataBits a;
-    private DataPalette<T> h;
-    private int i;
+    protected DataBits a; public final DataBits getDataBits() { return this.a; } // Paper - OBFHELPER
+    private DataPalette<T> h; private DataPalette<T> getDataPalette() { return this.h; } // Paper - OBFHELPER
+    private int i; private int getBitsPerObject() { return this.i; } // Paper - OBFHELPER
     private final ReentrantLock j = new ReentrantLock();
 
     public void a() {
@@ -55,6 +55,7 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
         return j << 8 | k << 4 | i;
     }
 
+    private void initialize(int bitsPerObject) { this.b(bitsPerObject); } // Paper - OBFHELPER
     private void b(int i) {
         if (i != this.i) {
             this.i = i;
@@ -132,6 +133,7 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
         return t0 == null ? this.g : t0;
     }
 
+    public void writeDataPaletteBlock(PacketDataSerializer packetDataSerializer) { this.b(packetDataSerializer); } // Paper - OBFHELPER
     public void b(PacketDataSerializer packetdataserializer) {
         this.a();
         packetdataserializer.writeByte(this.i);

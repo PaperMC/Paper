@@ -12,6 +12,19 @@ public interface IBlockAccess {
     TileEntity getTileEntity(BlockPosition blockposition);
 
     IBlockData getType(BlockPosition blockposition);
+    // Paper start - if loaded util
+    IBlockData getTypeIfLoaded(BlockPosition blockposition);
+    default Material getMaterialIfLoaded(BlockPosition blockposition) {
+        IBlockData type = this.getTypeIfLoaded(blockposition);
+        return type == null ? null : type.getMaterial();
+    }
+
+    default Block getBlockIfLoaded(BlockPosition blockposition) {
+        IBlockData type = this.getTypeIfLoaded(blockposition);
+        return type == null ? null : type.getBlock();
+    }
+    Fluid getFluidIfLoaded(BlockPosition blockposition);
+    // Paper end
 
     Fluid getFluid(BlockPosition blockposition);
 

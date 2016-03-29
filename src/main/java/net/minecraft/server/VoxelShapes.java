@@ -21,10 +21,12 @@ public final class VoxelShapes {
     public static final VoxelShape a = create(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
     private static final VoxelShape c = new VoxelShapeArray(new VoxelShapeBitSet(0, 0, 0), new DoubleArrayList(new double[]{0.0D}), new DoubleArrayList(new double[]{0.0D}), new DoubleArrayList(new double[]{0.0D}));
 
+    public static final VoxelShape empty() {return a();} // Paper - OBFHELPER
     public static VoxelShape a() {
         return VoxelShapes.c;
     }
 
+    public static final VoxelShape fullCube() {return b();} // Paper - OBFHELPER
     public static VoxelShape b() {
         return VoxelShapes.b;
     }

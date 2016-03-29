@@ -22,6 +22,7 @@ import org.bukkit.craftbukkit.SpigotTimings; // Spigot
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CapturedBlockState;
+import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.event.block.BlockPhysicsEvent;
 // CraftBukkit end
@@ -99,7 +100,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
 
     protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, final DimensionManager dimensionmanager, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) {
         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((WorldDataServer) worlddatamutable).getName()); // Spigot
-        this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(worlddata.getName(), this.spigotConfig); // Paper
+        this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig((((WorldDataServer)worlddatamutable).getName()), this.spigotConfig); // Paper
         this.generator = gen;
         this.world = new CraftWorld((WorldServer) this, gen, env);
         this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
@@ -203,17 +204,50 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
         return i < 0 || i >= 256;
     }
 
-    public Chunk getChunkAtWorldCoords(BlockPosition blockposition) {
+    public final Chunk getChunkAtWorldCoords(BlockPosition blockposition) { // Paper - help inline
         return this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4);
     }
 
     @Override
-    public Chunk getChunkAt(int i, int j) {
-        return (Chunk) this.getChunkAt(i, j, ChunkStatus.FULL);
+    public final Chunk getChunkAt(int i, int j) { // Paper - final to help inline
+        return (Chunk) this.getChunkAt(i, j, ChunkStatus.FULL, true); // Paper - avoid a method jump
+    }
+
+    // Paper start - if loaded
+    @Nullable
+    @Override
+    public final IChunkAccess getChunkIfLoadedImmediately(int x, int z) {
+        return ((WorldServer)this).chunkProvider.getChunkAtIfLoadedImmediately(x, z);
     }
 
     @Override
-    public IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) {
+    public final IBlockData getTypeIfLoaded(BlockPosition blockposition) {
+        // CraftBukkit start - tree generation
+        if (captureTreeGeneration) {
+            CraftBlockState previous = capturedBlockStates.get(blockposition);
+            if (previous != null) {
+                return previous.getHandle();
+            }
+        }
+        // CraftBukkit end
+        if (!isValidLocation(blockposition)) {
+            return Blocks.AIR.getBlockData();
+        }
+        IChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
+
+        return chunk == null ? null : chunk.getType(blockposition);
+    }
+
+    @Override
+    public Fluid getFluidIfLoaded(BlockPosition blockposition) {
+        IChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
+
+        return chunk == null ? null : chunk.getFluid(blockposition);
+    }
+    // Paper end
+
+    @Override
+    public final IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) { // Paper - final for inline
         IChunkAccess ichunkaccess = this.getChunkProvider().getChunkAt(i, j, chunkstatus, flag);
 
         if (ichunkaccess == null && flag) {
@@ -224,7 +258,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
     }
 
     @Override
-    public boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) {
+    public final boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) { // Paper - final for inline
         return this.a(blockposition, iblockdata, i, 512);
     }
 
@@ -370,8 +404,9 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
 
     public void a(BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {}
 
-    @Override
-    public boolean a(BlockPosition blockposition, boolean flag) {
+    public boolean setAir(BlockPosition blockposition) { return this.a(blockposition, false); } // Paper - OBFHELPER
+    public boolean setAir(BlockPosition blockposition, boolean moved) { return this.a(blockposition, moved); } // Paper - OBFHELPER
+    @Override public boolean a(BlockPosition blockposition, boolean flag) { // Paper - OBFHELPER
         Fluid fluid = this.getFluid(blockposition);
 
         return this.setTypeAndData(blockposition, fluid.getBlockData(), 3 | (flag ? 64 : 0));

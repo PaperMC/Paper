@@ -6,6 +6,8 @@ import org.bukkit.event.entity.EntityUnleashEvent;
 
 public abstract class EntityCreature extends EntityInsentient {
 
+    public org.bukkit.craftbukkit.entity.CraftCreature getBukkitCreature() { return (org.bukkit.craftbukkit.entity.CraftCreature) super.getBukkitEntity(); } // Paper
+
     protected EntityCreature(EntityTypes<? extends EntityCreature> entitytypes, World world) {
         super(entitytypes, world);
     }

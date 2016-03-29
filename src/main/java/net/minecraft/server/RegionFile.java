@@ -108,6 +108,7 @@ public class RegionFile implements AutoCloseable {
         return this.e.resolve(s);
     }
 
+    @Nullable public synchronized DataInputStream getReadStream(ChunkCoordIntPair chunkCoordIntPair) throws IOException { return a(chunkCoordIntPair);} // Paper - OBFHELPER
     @Nullable
     public synchronized DataInputStream a(ChunkCoordIntPair chunkcoordintpair) throws IOException {
         int i = this.getOffset(chunkcoordintpair);

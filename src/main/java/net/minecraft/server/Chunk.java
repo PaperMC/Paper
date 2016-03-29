@@ -26,7 +26,7 @@ public class Chunk implements IChunkAccess {
 
     private static final Logger LOGGER = LogManager.getLogger();
     @Nullable
-    public static final ChunkSection a = null;
+    public static final ChunkSection a = null; public static final ChunkSection EMPTY_CHUNK_SECTION = a; // Paper - OBFHELPER
     private final ChunkSection[] sections;
     private BiomeStorage d;
     private final Map<BlockPosition, NBTTagCompound> e;
@@ -49,7 +49,7 @@ public class Chunk implements IChunkAccess {
     private Supplier<PlayerChunk.State> u;
     @Nullable
     private Consumer<Chunk> v;
-    private final ChunkCoordIntPair loc;
+    private final ChunkCoordIntPair loc; public final long coordinateKey; // Paper - cache coordinate key
     private volatile boolean x;
 
     public Chunk(World world, ChunkCoordIntPair chunkcoordintpair, BiomeStorage biomestorage) {
@@ -66,7 +66,7 @@ public class Chunk implements IChunkAccess {
         this.n = new ShortList[16];
         this.entitySlices = (List[]) (new List[16]); // Spigot
         this.world = (WorldServer) world; // CraftBukkit - type
-        this.loc = chunkcoordintpair;
+        this.loc = chunkcoordintpair; this.coordinateKey = MCUtil.getCoordinateKey(chunkcoordintpair); // Paper - cache coordinate key
         this.i = chunkconverter;
         HeightMap.Type[] aheightmap_type = HeightMap.Type.values();
         int j = aheightmap_type.length;
@@ -108,6 +108,110 @@ public class Chunk implements IChunkAccess {
     public boolean mustNotSave;
     public boolean needsDecoration;
     // CraftBukkit end
+
+    // Paper start
+    public final com.destroystokyo.paper.util.maplist.EntityList entities = new com.destroystokyo.paper.util.maplist.EntityList();
+    public PlayerChunk playerChunk;
+
+    static final int NEIGHBOUR_CACHE_RADIUS = 3;
+    public static int getNeighbourCacheRadius() {
+        return NEIGHBOUR_CACHE_RADIUS;
+    }
+
+    boolean loadedTicketLevel;
+    private long neighbourChunksLoadedBitset;
+    private final Chunk[] loadedNeighbourChunks = new Chunk[(NEIGHBOUR_CACHE_RADIUS * 2 + 1) * (NEIGHBOUR_CACHE_RADIUS * 2 + 1)];
+
+    private static int getNeighbourIndex(final int relativeX, final int relativeZ) {
+        // index = (relativeX + NEIGHBOUR_CACHE_RADIUS) + (relativeZ + NEIGHBOUR_CACHE_RADIUS) * (NEIGHBOUR_CACHE_RADIUS * 2 + 1)
+        // optimised variant of the above by moving some of the ops to compile time
+        return relativeX + (relativeZ * (NEIGHBOUR_CACHE_RADIUS * 2 + 1)) + (NEIGHBOUR_CACHE_RADIUS + NEIGHBOUR_CACHE_RADIUS * ((NEIGHBOUR_CACHE_RADIUS * 2 + 1)));
+    }
+
+    public final Chunk getRelativeNeighbourIfLoaded(final int relativeX, final int relativeZ) {
+        return this.loadedNeighbourChunks[getNeighbourIndex(relativeX, relativeZ)];
+    }
+
+    public final boolean isNeighbourLoaded(final int relativeX, final int relativeZ) {
+        return (this.neighbourChunksLoadedBitset & (1L << getNeighbourIndex(relativeX, relativeZ))) != 0;
+    }
+
+    public final void setNeighbourLoaded(final int relativeX, final int relativeZ, final Chunk chunk) {
+        if (chunk == null) {
+            throw new IllegalArgumentException("Chunk must be non-null, neighbour: (" + relativeX + "," + relativeZ + "), chunk: " + this.loc);
+        }
+        final long before = this.neighbourChunksLoadedBitset;
+        final int index = getNeighbourIndex(relativeX, relativeZ);
+        this.loadedNeighbourChunks[index] = chunk;
+        this.neighbourChunksLoadedBitset |= (1L << index);
+        this.onNeighbourChange(before, this.neighbourChunksLoadedBitset);
+    }
+
+    public final void setNeighbourUnloaded(final int relativeX, final int relativeZ) {
+        final long before = this.neighbourChunksLoadedBitset;
+        final int index = getNeighbourIndex(relativeX, relativeZ);
+        this.loadedNeighbourChunks[index] = null;
+        this.neighbourChunksLoadedBitset &= ~(1L << index);
+        this.onNeighbourChange(before, this.neighbourChunksLoadedBitset);
+    }
+
+    public final void resetNeighbours() {
+        final long before = this.neighbourChunksLoadedBitset;
+        this.neighbourChunksLoadedBitset = 0L;
+        java.util.Arrays.fill(this.loadedNeighbourChunks, null);
+        this.onNeighbourChange(before, 0L);
+    }
+
+    protected void onNeighbourChange(final long bitsetBefore, final long bitsetAfter) {
+
+    }
+
+    public final boolean isAnyNeighborsLoaded() {
+        return neighbourChunksLoadedBitset != 0;
+    }
+    public final boolean areNeighboursLoaded(final int radius) {
+        return Chunk.areNeighboursLoaded(this.neighbourChunksLoadedBitset, radius);
+    }
+
+    public static boolean areNeighboursLoaded(final long bitset, final int radius) {
+        // index = relativeX + (relativeZ * (NEIGHBOUR_CACHE_RADIUS * 2 + 1)) + (NEIGHBOUR_CACHE_RADIUS + NEIGHBOUR_CACHE_RADIUS * ((NEIGHBOUR_CACHE_RADIUS * 2 + 1)))
+        switch (radius) {
+            case 0: {
+                return (bitset & (1L << getNeighbourIndex(0, 0))) != 0;
+            }
+            case 1: {
+                long mask = 0L;
+                for (int dx = -1; dx <= 1; ++dx) {
+                    for (int dz = -1; dz <= 1; ++dz) {
+                        mask |= (1L << getNeighbourIndex(dx, dz));
+                    }
+                }
+                return (bitset & mask) == mask;
+            }
+            case 2: {
+                long mask = 0L;
+                for (int dx = -2; dx <= 2; ++dx) {
+                    for (int dz = -2; dz <= 2; ++dz) {
+                        mask |= (1L << getNeighbourIndex(dx, dz));
+                    }
+                }
+                return (bitset & mask) == mask;
+            }
+            case 3: {
+                long mask = 0L;
+                for (int dx = -3; dx <= 3; ++dx) {
+                    for (int dz = -3; dz <= 3; ++dz) {
+                        mask |= (1L << getNeighbourIndex(dx, dz));
+                    }
+                }
+                return (bitset & mask) == mask;
+            }
+
+            default:
+                throw new IllegalArgumentException("Radius not recognized: " + radius);
+        }
+    }
+    // Paper end
 
     public Chunk(World world, ProtoChunk protochunk) {
         this(world, protochunk.getPos(), protochunk.getBiomeIndex(), protochunk.p(), protochunk.n(), protochunk.o(), protochunk.getInhabitedTime(), protochunk.getSections(), (Consumer) null);
@@ -213,6 +317,18 @@ public class Chunk implements IChunkAccess {
             }
         }
     }
+
+    // Paper start - If loaded util
+    @Override
+    public Fluid getFluidIfLoaded(BlockPosition blockposition) {
+        return this.getFluid(blockposition);
+    }
+
+    @Override
+    public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
+        return this.getType(blockposition);
+    }
+    // Paper end
 
     @Override
     public Fluid getFluid(BlockPosition blockposition) {
@@ -353,6 +469,7 @@ public class Chunk implements IChunkAccess {
         entity.chunkX = this.loc.x;
         entity.chunkY = k;
         entity.chunkZ = this.loc.z;
+        this.entities.add(entity); // Paper - per chunk entity list
         this.entitySlices[k].add(entity);
     }
 
@@ -375,6 +492,7 @@ public class Chunk implements IChunkAccess {
         }
 
         this.entitySlices[i].remove(entity);
+        this.entities.remove(entity); // Paper
     }
 
     @Override
@@ -396,6 +514,7 @@ public class Chunk implements IChunkAccess {
         return this.a(blockposition, Chunk.EnumTileEntityState.CHECK);
     }
 
+    @Nullable public final TileEntity getTileEntityImmediately(BlockPosition pos) { return this.a(pos, EnumTileEntityState.IMMEDIATE); } // Paper - OBFHELPER
     @Nullable
     public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
         // CraftBukkit start
@@ -507,7 +626,25 @@ public class Chunk implements IChunkAccess {
 
     // CraftBukkit start
     public void loadCallback() {
+        // Paper start - neighbour cache
+        int chunkX = this.loc.x;
+        int chunkZ = this.loc.z;
+        ChunkProviderServer chunkProvider = ((WorldServer)this.world).getChunkProvider();
+        for (int dx = -NEIGHBOUR_CACHE_RADIUS; dx <= NEIGHBOUR_CACHE_RADIUS; ++dx) {
+            for (int dz = -NEIGHBOUR_CACHE_RADIUS; dz <= NEIGHBOUR_CACHE_RADIUS; ++dz) {
+                Chunk neighbour = chunkProvider.getChunkAtIfLoadedMainThreadNoCache(chunkX + dx, chunkZ + dz);
+                if (neighbour != null) {
+                    neighbour.setNeighbourLoaded(-dx, -dz, this);
+                    // should be in cached already
+                    this.setNeighbourLoaded(dx, dz, neighbour);
+                }
+            }
+        }
+        this.setNeighbourLoaded(0, 0, this);
+        this.loadedTicketLevel = true;
+        // Paper end - neighbour cache
         org.bukkit.Server server = this.world.getServer();
+        ((WorldServer)this.world).getChunkProvider().addLoadedChunk(this); // Paper
         if (server != null) {
             /*
              * If it's a new world, the first few chunks are generated inside
@@ -546,6 +683,22 @@ public class Chunk implements IChunkAccess {
         server.getPluginManager().callEvent(unloadEvent);
         // note: saving can be prevented, but not forced if no saving is actually required
         this.mustNotSave = !unloadEvent.isSaveChunk();
+        ((WorldServer)this.world).getChunkProvider().removeLoadedChunk(this); // Paper
+        // Paper start - neighbour cache
+        int chunkX = this.loc.x;
+        int chunkZ = this.loc.z;
+        ChunkProviderServer chunkProvider = ((WorldServer)this.world).getChunkProvider();
+        for (int dx = -NEIGHBOUR_CACHE_RADIUS; dx <= NEIGHBOUR_CACHE_RADIUS; ++dx) {
+            for (int dz = -NEIGHBOUR_CACHE_RADIUS; dz <= NEIGHBOUR_CACHE_RADIUS; ++dz) {
+                Chunk neighbour = chunkProvider.getChunkAtIfLoadedMainThreadNoCache(chunkX + dx, chunkZ + dz);
+                if (neighbour != null) {
+                    neighbour.setNeighbourUnloaded(-dx, -dz);
+                }
+            }
+        }
+        this.loadedTicketLevel = false;
+        this.resetNeighbours();
+        // Paper end
     }
     // CraftBukkit end
 

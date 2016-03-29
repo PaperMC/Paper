@@ -16,9 +16,9 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
         return IntStream.of(new int[]{baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ()});
     });
     public static final BaseBlockPosition ZERO = new BaseBlockPosition(0, 0, 0);
-    private int a;
-    private int b;
-    private int e;
+    private int a;public final void setX(final int x) { this.a = x; } // Paper - OBFHELPER
+    private int b;public final void setY(final int y) { this.b = y; } // Paper - OBFHELPER
+    private int e;public final void setZ(final int z) { this.e = z; } // Paper - OBFHELPER
 
     public BaseBlockPosition(int i, int j, int k) {
         this.a = i;
@@ -62,15 +62,15 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
         return this.e;
     }
 
-    protected void o(int i) {
+    public void o(int i) { // Paper - protected -> public
         this.a = i;
     }
 
-    protected void p(int i) {
+    public void p(int i) { // Paper - protected -> public
         this.b = i;
     }
 
-    protected void q(int i) {
+    public void q(int i) { // Paper - protected -> public
         this.e = i;
     }
 
@@ -106,6 +106,7 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
         return this.distanceSquared(iposition.getX(), iposition.getY(), iposition.getZ(), true) < d0 * d0;
     }
 
+    public final double distanceSquared(BaseBlockPosition baseblockposition) { return j(baseblockposition); } // Paper - OBFHELPER
     public double j(BaseBlockPosition baseblockposition) {
         return this.distanceSquared((double) baseblockposition.getX(), (double) baseblockposition.getY(), (double) baseblockposition.getZ(), true);
     }

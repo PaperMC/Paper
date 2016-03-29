@@ -67,9 +67,9 @@ public class PlayerConnection implements PacketListenerPlayIn {
     private final MinecraftServer minecraftServer;
     public EntityPlayer player;
     private int e;
-    private long lastKeepAlive;
-    private boolean awaitingKeepAlive;
-    private long h;
+    private long lastKeepAlive; private void setLastPing(long lastPing) { this.lastKeepAlive = lastPing;}; private long getLastPing() { return this.lastKeepAlive;}; // Paper - OBFHELPER
+    private boolean awaitingKeepAlive; private void setPendingPing(boolean isPending) { this.awaitingKeepAlive = isPending;}; private boolean isPendingPing() { return this.awaitingKeepAlive;}; // Paper - OBFHELPER
+    private long h; private void setKeepAliveID(long keepAliveID) { this.h = keepAliveID;}; private long getKeepAliveID() {return this.h; };  // Paper - OBFHELPER
     // CraftBukkit start - multithreaded fields
     private volatile int chatThrottle;
     private static final AtomicIntegerFieldUpdater chatSpamField = AtomicIntegerFieldUpdater.newUpdater(PlayerConnection.class, "chatThrottle");

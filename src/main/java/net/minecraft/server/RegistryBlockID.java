@@ -64,6 +64,7 @@ public class RegistryBlockID<T> implements Registry<T> {
         return Iterators.filter(this.c.iterator(), Predicates.notNull());
     }
 
+    public int size() { return this.a(); } // Paper - OBFHELPER
     public int a() {
         return this.b.size();
     }

@@ -160,6 +160,7 @@ public abstract class EntityInsentient extends EntityLiving {
         return this.goalTarget;
     }
 
+    public org.bukkit.craftbukkit.entity.CraftMob getBukkitMob() { return (org.bukkit.craftbukkit.entity.CraftMob) super.getBukkitEntity(); } // Paper
     public void setGoalTarget(@Nullable EntityLiving entityliving) {
         // CraftBukkit start - fire event
         setGoalTarget(entityliving, EntityTargetEvent.TargetReason.UNKNOWN, true);

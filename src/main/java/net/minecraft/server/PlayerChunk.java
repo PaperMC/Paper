@@ -21,9 +21,9 @@ public class PlayerChunk {
     private static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.a();
     private static final PlayerChunk.State[] CHUNK_STATES = PlayerChunk.State.values();
     private final AtomicReferenceArray<CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>>> statusFutures;
-    private volatile CompletableFuture<Either<Chunk, PlayerChunk.Failure>> fullChunkFuture;
-    private volatile CompletableFuture<Either<Chunk, PlayerChunk.Failure>> tickingFuture;
-    private volatile CompletableFuture<Either<Chunk, PlayerChunk.Failure>> entityTickingFuture;
+    private volatile CompletableFuture<Either<Chunk, PlayerChunk.Failure>> fullChunkFuture; private int fullChunkCreateCount; private volatile boolean isFullChunkReady; // Paper - cache chunk ticking stage
+    private volatile CompletableFuture<Either<Chunk, PlayerChunk.Failure>> tickingFuture; private volatile boolean isTickingReady; // Paper - cache chunk ticking stage
+    private volatile CompletableFuture<Either<Chunk, PlayerChunk.Failure>> entityTickingFuture; private volatile boolean isEntityTickingReady; // Paper - cache chunk ticking stage
     private CompletableFuture<IChunkAccess> chunkSave;
     public int oldTicketLevel;
     private int ticketLevel;
@@ -38,6 +38,8 @@ public class PlayerChunk {
     public final PlayerChunk.d players;
     private boolean hasBeenLoaded;
     private boolean x;
+
+    private final PlayerChunkMap chunkMap; // Paper
 
     public PlayerChunk(ChunkCoordIntPair chunkcoordintpair, int i, LightEngine lightengine, PlayerChunk.c playerchunk_c, PlayerChunk.d playerchunk_d) {
         this.statusFutures = new AtomicReferenceArray(PlayerChunk.CHUNK_STATUSES.size());
@@ -54,16 +56,63 @@ public class PlayerChunk {
         this.ticketLevel = this.oldTicketLevel;
         this.n = this.oldTicketLevel;
         this.a(i);
+        this.chunkMap = (PlayerChunkMap)playerchunk_d; // Paper
     }
 
+    // Paper start
+    @Nullable
+    public final Chunk getEntityTickingChunk() {
+        CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.entityTickingFuture;
+        Either<Chunk, PlayerChunk.Failure> either = completablefuture.getNow(null);
+
+        return either == null ? null : either.left().orElse(null);
+    }
+
+    @Nullable
+    public final Chunk getTickingChunk() {
+        CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.tickingFuture;
+        Either<Chunk, PlayerChunk.Failure> either = completablefuture.getNow(null);
+
+        return either == null ? null : either.left().orElse(null);
+    }
+
+    @Nullable
+    public final Chunk getFullReadyChunk() {
+        CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.fullChunkFuture;
+        Either<Chunk, PlayerChunk.Failure> either = completablefuture.getNow(null);
+
+        return either == null ? null : either.left().orElse(null);
+    }
+
+    public final boolean isEntityTickingReady() {
+        return this.isEntityTickingReady;
+    }
+
+    public final boolean isTickingReady() {
+        return this.isTickingReady;
+    }
+
+    public final boolean isFullChunkReady() {
+        return this.isFullChunkReady;
+    }
+    // Paper end
+
     // CraftBukkit start
-    public Chunk getFullChunk() {
+    public final Chunk getFullChunk() { // Paper - final for inline
         if (!getChunkState(this.oldTicketLevel).isAtLeast(PlayerChunk.State.BORDER)) return null; // note: using oldTicketLevel for isLoaded checks
         CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> statusFuture = this.getStatusFutureUnchecked(ChunkStatus.FULL);
         Either<IChunkAccess, PlayerChunk.Failure> either = (Either<IChunkAccess, PlayerChunk.Failure>) statusFuture.getNow(null);
         return either == null ? null : (Chunk) either.left().orElse(null);
     }
     // CraftBukkit end
+    // Paper start - "real" get full chunk immediately
+    public final Chunk getFullChunkIfCached() {
+        // Note: Copied from above without ticket level check
+        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> statusFuture = this.getStatusFutureUnchecked(ChunkStatus.FULL);
+        Either<IChunkAccess, PlayerChunk.Failure> either = (Either<IChunkAccess, PlayerChunk.Failure>) statusFuture.getNow(null);
+        return either == null ? null : (Chunk) either.left().orElse(null);
+    }
+    // Paper end
 
     public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
         CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = (CompletableFuture) this.statusFutures.get(chunkstatus.c());
@@ -75,20 +124,23 @@ public class PlayerChunk {
         return getChunkStatus(this.ticketLevel).b(chunkstatus) ? this.getStatusFutureUnchecked(chunkstatus) : PlayerChunk.UNLOADED_CHUNK_ACCESS_FUTURE;
     }
 
-    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> a() {
+    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getTickingFuture() { return this.a(); } // Paper - OBFHELPER
+    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> a() { // Paper - final for inline
         return this.tickingFuture;
     }
 
-    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> b() {
+    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getEntityTickingFuture() { return this.b(); } // Paper - OBFHELPER
+    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> b() { // Paper - final for inline
         return this.entityTickingFuture;
     }
 
-    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> c() {
+    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getFullChunkFuture() { return this.c(); } // Paper - OBFHELPER
+    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> c() { // Paper - final for inline
         return this.fullChunkFuture;
     }
 
     @Nullable
-    public Chunk getChunk() {
+    public final Chunk getChunk() { // Paper - final for inline
         CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.a();
         Either<Chunk, PlayerChunk.Failure> either = (Either) completablefuture.getNow(null); // CraftBukkit - decompile error
 
@@ -113,7 +165,7 @@ public class PlayerChunk {
         return null;
     }
 
-    public CompletableFuture<IChunkAccess> getChunkSave() {
+    public final CompletableFuture<IChunkAccess> getChunkSave() { // Paper - final for inline
         return this.chunkSave;
     }
 
@@ -254,11 +306,11 @@ public class PlayerChunk {
         });
     }
 
-    public ChunkCoordIntPair i() {
+    public final ChunkCoordIntPair i() { // Paper - final for inline
         return this.location;
     }
 
-    public int getTicketLevel() {
+    public final int getTicketLevel() { // Paper - final for inline
         return this.ticketLevel;
     }
 
@@ -329,13 +381,27 @@ public class PlayerChunk {
 
         this.hasBeenLoaded |= flag3;
         if (!flag2 && flag3) {
-            this.fullChunkFuture = playerchunkmap.b(this);
+            // Paper start - cache ticking ready status
+            int expectCreateCount = ++this.fullChunkCreateCount;
+            this.fullChunkFuture = playerchunkmap.b(this); this.fullChunkFuture.thenAccept((either) -> {
+                if (either.left().isPresent() && PlayerChunk.this.fullChunkCreateCount == expectCreateCount) {
+                    // note: Here is a very good place to add callbacks to logic waiting on this.
+                    Chunk fullChunk = either.left().get();
+                    PlayerChunk.this.isFullChunkReady = true;
+                    fullChunk.playerChunk = PlayerChunk.this;
+
+
+                }
+            });
+            // Paper end
             this.a(this.fullChunkFuture);
         }
 
         if (flag2 && !flag3) {
             completablefuture = this.fullChunkFuture;
             this.fullChunkFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
+            ++this.fullChunkCreateCount; // Paper - cache ticking ready status
+            this.isFullChunkReady = false; // Paper - cache ticking ready status
             this.a(((CompletableFuture<Either<Chunk, PlayerChunk.Failure>>) completablefuture).thenApply((either1) -> { // CraftBukkit - decompile error
                 playerchunkmap.getClass();
                 return either1.ifLeft(playerchunkmap::a);
@@ -346,12 +412,24 @@ public class PlayerChunk {
         boolean flag5 = playerchunk_state1.isAtLeast(PlayerChunk.State.TICKING);
 
         if (!flag4 && flag5) {
-            this.tickingFuture = playerchunkmap.a(this);
+            // Paper start - cache ticking ready status
+            this.tickingFuture = playerchunkmap.a(this); this.tickingFuture.thenAccept((either) -> {
+                if (either.left().isPresent()) {
+                    // note: Here is a very good place to add callbacks to logic waiting on this.
+                    Chunk tickingChunk = either.left().get();
+                    PlayerChunk.this.isTickingReady = true;
+
+
+
+
+                }
+            });
+            // Paper end
             this.a(this.tickingFuture);
         }
 
         if (flag4 && !flag5) {
-            this.tickingFuture.complete(PlayerChunk.UNLOADED_CHUNK);
+            this.tickingFuture.complete(PlayerChunk.UNLOADED_CHUNK); this.isTickingReady = false; // Paper - cache chunk ticking stage
             this.tickingFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
         }
 
@@ -363,12 +441,24 @@ public class PlayerChunk {
                 throw (IllegalStateException) SystemUtils.c((Throwable) (new IllegalStateException()));
             }
 
-            this.entityTickingFuture = playerchunkmap.b(this.location);
+            // Paper start - cache ticking ready status
+            this.entityTickingFuture = playerchunkmap.b(this.location); this.entityTickingFuture.thenAccept((either) -> {
+                if (either.left().isPresent()) {
+                    // note: Here is a very good place to add callbacks to logic waiting on this.
+                    Chunk entityTickingChunk = either.left().get();
+                    PlayerChunk.this.isEntityTickingReady = true;
+
+
+
+
+                }
+            });
+            // Paper end
             this.a(this.entityTickingFuture);
         }
 
         if (flag6 && !flag7) {
-            this.entityTickingFuture.complete(PlayerChunk.UNLOADED_CHUNK);
+            this.entityTickingFuture.complete(PlayerChunk.UNLOADED_CHUNK); this.isEntityTickingReady = false; // Paper - cache chunk ticking stage
             this.entityTickingFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
         }
 

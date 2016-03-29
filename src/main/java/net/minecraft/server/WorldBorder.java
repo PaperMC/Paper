@@ -37,6 +37,7 @@ public class WorldBorder {
         return this.b(entity.locX(), entity.locZ());
     }
 
+    public final VoxelShape asVoxelShape(){ return c();} // Paper - OBFHELPER
     public VoxelShape c() {
         return this.j.m();
     }

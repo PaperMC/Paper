@@ -43,6 +43,7 @@ import org.bukkit.scheduler.BukkitWorker;
  */
 public class CraftScheduler implements BukkitScheduler {
 
+    static Plugin MINECRAFT = new MinecraftInternalPlugin();
     /**
      * Counter for IDs. Order doesn't matter, only uniqueness.
      */
@@ -175,6 +176,11 @@ public class CraftScheduler implements BukkitScheduler {
     @Override
     public void runTaskTimer(Plugin plugin, Consumer<BukkitTask> task, long delay, long period) throws IllegalArgumentException {
         runTaskTimer(plugin, (Object) task, delay, period);
+    }
+
+    public BukkitTask scheduleInternalTask(Runnable run, int delay, String taskName) {
+        final CraftTask task = new CraftTask(run, nextId(), taskName);
+        return handle(task, delay);
     }
 
     public BukkitTask runTaskTimer(Plugin plugin, Object runnable, long delay, long period) {
@@ -400,13 +406,20 @@ public class CraftScheduler implements BukkitScheduler {
                     task.run();
                     task.timings.stopTiming(); // Spigot
                 } catch (final Throwable throwable) {
-                    task.getOwner().getLogger().log(
+                    // Paper start
+                    String msg = String.format(
+                        "Task #%s for %s generated an exception",
+                        task.getTaskId(),
+                        task.getOwner().getDescription().getFullName());
+                    if (task.getOwner() == MINECRAFT) {
+                        net.minecraft.server.MinecraftServer.LOGGER.error(msg, throwable);
+                    } else {
+                        task.getOwner().getLogger().log(
                             Level.WARNING,
-                            String.format(
-                                "Task #%s for %s generated an exception",
-                                task.getTaskId(),
-                                task.getOwner().getDescription().getFullName()),
+                            msg,
                             throwable);
+                    }
+                    // Paper end
                 } finally {
                     currentTask = null;
                 }

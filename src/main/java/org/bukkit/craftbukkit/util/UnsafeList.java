@@ -17,7 +17,7 @@ import java.util.RandomAccess;
 public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAccess, Cloneable, Serializable {
     private static final long serialVersionUID = 8683452581112892191L;
 
-    private transient Object[] data;
+    private transient Object[] data; public final Object[] getRawDataArray() { return this.data; } // Paper - expose for raw get
     private int size;
     private int initialCapacity;
 

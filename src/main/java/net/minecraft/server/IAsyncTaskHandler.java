@@ -68,6 +68,15 @@ public abstract class IAsyncTaskHandler<R extends Runnable> implements Mailbox<R
 
     }
 
+    // Paper start
+    public void scheduleOnMain(Runnable r0) {
+        // postToMainThread does not work the same as older versions of mc
+        // This method is actually used to create a TickTask, which can then be posted onto main
+        this.addTask(this.postToMainThread(r0));
+    }
+    // Paper end
+
+    public final void addTask(R r0) { a(r0); }; // Paper - OBFHELPER
     public void a(R r0) {
         this.d.add(r0);
         LockSupport.unpark(this.getThread());

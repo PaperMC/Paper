@@ -14,6 +14,18 @@ public enum BlockAccessAir implements IBlockAccess {
         return null;
     }
 
+    // Paper start - If loaded util
+    @Override
+    public Fluid getFluidIfLoaded(BlockPosition blockposition) {
+        return this.getFluid(blockposition);
+    }
+
+    @Override
+    public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
+        return this.getType(blockposition);
+    }
+    // Paper end
+
     @Override
     public IBlockData getType(BlockPosition blockposition) {
         return Blocks.AIR.getBlockData();

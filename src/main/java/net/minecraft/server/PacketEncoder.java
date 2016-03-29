@@ -42,6 +42,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
                     packet.b(packetdataserializer);
                 } catch (Throwable throwable) {
                     PacketEncoder.LOGGER.error(throwable);
+                    throwable.printStackTrace(); // Paper - WHAT WAS IT? WHO DID THIS TO YOU? WHAT DID YOU SEE?
                     if (packet.a()) {
                         throw new SkipEncodeException(throwable);
                     } else {

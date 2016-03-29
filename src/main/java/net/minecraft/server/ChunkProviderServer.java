@@ -17,6 +17,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
+import com.destroystokyo.paper.exception.ServerInternalException;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap; // Paper
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ChunkProviderServer extends IChunkProvider {
 
@@ -24,7 +28,7 @@ public class ChunkProviderServer extends IChunkProvider {
     private final ChunkMapDistance chunkMapDistance;
     public final ChunkGenerator chunkGenerator;
     private final WorldServer world;
-    private final Thread serverThread;
+    public final Thread serverThread; // Paper - private -> public
     private final LightEngineThreaded lightEngine;
     private final ChunkProviderServer.a serverThreadQueue;
     public final PlayerChunkMap playerChunkMap;
@@ -37,6 +41,167 @@ public class ChunkProviderServer extends IChunkProvider {
     private final IChunkAccess[] cacheChunk = new IChunkAccess[4];
     @Nullable
     private SpawnerCreature.d p;
+    // Paper start
+    final com.destroystokyo.paper.util.concurrent.WeakSeqLock loadedChunkMapSeqLock = new com.destroystokyo.paper.util.concurrent.WeakSeqLock();
+    final Long2ObjectOpenHashMap<Chunk> loadedChunkMap = new Long2ObjectOpenHashMap<>(8192, 0.5f);
+
+    private final Chunk[] lastLoadedChunks = new Chunk[4 * 4];
+    private final long[] lastLoadedChunkKeys = new long[4 * 4];
+
+    {
+        java.util.Arrays.fill(this.lastLoadedChunkKeys, MCUtil.INVALID_CHUNK_KEY);
+    }
+
+    private static int getCacheKey(int x, int z) {
+        return x & 3 | ((z & 3) << 2);
+    }
+
+    void addLoadedChunk(Chunk chunk) {
+        this.loadedChunkMapSeqLock.acquireWrite();
+        try {
+            this.loadedChunkMap.put(chunk.coordinateKey, chunk);
+        } finally {
+            this.loadedChunkMapSeqLock.releaseWrite();
+        }
+
+        // rewrite cache if we have to
+        // we do this since we also cache null chunks
+        int cacheKey = getCacheKey(chunk.getPos().x, chunk.getPos().z);
+
+        long cachedKey = this.lastLoadedChunkKeys[cacheKey];
+        if (cachedKey == chunk.coordinateKey) {
+            this.lastLoadedChunks[cacheKey] = chunk;
+        }
+    }
+
+    void removeLoadedChunk(Chunk chunk) {
+        this.loadedChunkMapSeqLock.acquireWrite();
+        try {
+            this.loadedChunkMap.remove(chunk.coordinateKey);
+        } finally {
+            this.loadedChunkMapSeqLock.releaseWrite();
+        }
+
+        // rewrite cache if we have to
+        // we do this since we also cache null chunks
+        int cacheKey = getCacheKey(chunk.getPos().x, chunk.getPos().z);
+
+        long cachedKey = this.lastLoadedChunkKeys[cacheKey];
+        if (cachedKey == chunk.coordinateKey) {
+            this.lastLoadedChunks[cacheKey] = null;
+        }
+    }
+
+    public Chunk getChunkAtIfLoadedMainThread(int x, int z) {
+        int cacheKey = getCacheKey(x, z);
+        long chunkKey = MCUtil.getCoordinateKey(x, z);
+
+        long cachedKey = this.lastLoadedChunkKeys[cacheKey];
+        if (cachedKey == chunkKey) {
+            return this.lastLoadedChunks[cacheKey];
+        }
+
+        Chunk ret = this.loadedChunkMap.get(chunkKey);
+
+        this.lastLoadedChunkKeys[cacheKey] = chunkKey;
+        this.lastLoadedChunks[cacheKey] = ret;
+
+        return ret;
+    }
+
+    public Chunk getChunkAtIfLoadedMainThreadNoCache(int x, int z) {
+        return this.loadedChunkMap.get(MCUtil.getCoordinateKey(x, z));
+    }
+
+    public Chunk getChunkAtMainThread(int x, int z) {
+        Chunk ret = this.getChunkAtIfLoadedMainThread(x, z);
+        if (ret != null) {
+            return ret;
+        }
+        return (Chunk)this.getChunkAt(x, z, ChunkStatus.FULL, true);
+    }
+
+    private long chunkFutureAwaitCounter;
+
+    public void getEntityTickingChunkAsync(int x, int z, java.util.function.Consumer<Chunk> onLoad) {
+        if (Thread.currentThread() != this.serverThread) {
+            this.serverThreadQueue.execute(() -> {
+                ChunkProviderServer.this.getEntityTickingChunkAsync(x, z, onLoad);
+            });
+            return;
+        }
+        this.getChunkFutureAsynchronously(x, z, 31, PlayerChunk::getEntityTickingFuture, onLoad);
+    }
+
+    public void getTickingChunkAsync(int x, int z, java.util.function.Consumer<Chunk> onLoad) {
+        if (Thread.currentThread() != this.serverThread) {
+            this.serverThreadQueue.execute(() -> {
+                ChunkProviderServer.this.getTickingChunkAsync(x, z, onLoad);
+            });
+            return;
+        }
+        this.getChunkFutureAsynchronously(x, z, 32, PlayerChunk::getTickingFuture, onLoad);
+    }
+
+    public void getFullChunkAsync(int x, int z, java.util.function.Consumer<Chunk> onLoad) {
+        if (Thread.currentThread() != this.serverThread) {
+            this.serverThreadQueue.execute(() -> {
+                ChunkProviderServer.this.getFullChunkAsync(x, z, onLoad);
+            });
+            return;
+        }
+        this.getChunkFutureAsynchronously(x, z, 33, PlayerChunk::getFullChunkFuture, onLoad);
+    }
+
+    private void getChunkFutureAsynchronously(int x, int z, int ticketLevel, Function<PlayerChunk, CompletableFuture<Either<Chunk, PlayerChunk.Failure>>> futureGet, java.util.function.Consumer<Chunk> onLoad) {
+        if (Thread.currentThread() != this.serverThread) {
+            throw new IllegalStateException();
+        }
+        ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(x, z);
+        Long identifier = Long.valueOf(this.chunkFutureAwaitCounter++);
+        this.chunkMapDistance.addTicketAtLevel(TicketType.FUTURE_AWAIT, chunkPos, ticketLevel, identifier);
+        this.tickDistanceManager();
+
+        PlayerChunk chunk = this.playerChunkMap.getUpdatingChunk(chunkPos.pair());
+
+        if (chunk == null) {
+            throw new IllegalStateException("Expected playerchunk " + chunkPos + " in world '" + this.world.getWorld().getName() + "'");
+        }
+
+        CompletableFuture<Either<Chunk, PlayerChunk.Failure>> future = futureGet.apply(chunk);
+
+        future.whenCompleteAsync((either, throwable) -> {
+            try {
+                if (throwable != null) {
+                    if (throwable instanceof ThreadDeath) {
+                        throw (ThreadDeath)throwable;
+                    }
+                    MinecraftServer.LOGGER.fatal("Failed to complete future await for chunk " + chunkPos.toString() + " in world '" + ChunkProviderServer.this.world.getWorld().getName() + "'", throwable);
+                } else if (either.right().isPresent()) {
+                    MinecraftServer.LOGGER.fatal("Failed to complete future await for chunk " + chunkPos.toString() + " in world '" + ChunkProviderServer.this.world.getWorld().getName() + "': " + either.right().get().toString());
+                }
+
+                try {
+                    if (onLoad != null) {
+                        playerChunkMap.callbackExecutor.execute(() -> {
+                            onLoad.accept(either == null ? null : either.left().orElse(null)); // indicate failure to the callback.
+                        });
+                    }
+                } catch (Throwable thr) {
+                    if (thr instanceof ThreadDeath) {
+                        throw (ThreadDeath)thr;
+                    }
+                    MinecraftServer.LOGGER.fatal("Load callback for future await failed " + chunkPos.toString() + " in world '" + ChunkProviderServer.this.world.getWorld().getName() + "'", thr);
+                    return;
+                }
+            } finally {
+                // due to odd behaviour with CB unload implementation we need to have these AFTER the load callback.
+                ChunkProviderServer.this.chunkMapDistance.addTicketAtLevel(TicketType.UNKNOWN, chunkPos, ticketLevel, chunkPos);
+                ChunkProviderServer.this.chunkMapDistance.removeTicketAtLevel(TicketType.FUTURE_AWAIT, chunkPos, ticketLevel, identifier);
+            }
+        }, this.serverThreadQueue);
+    }
+    // Paper end
 
     public ChunkProviderServer(WorldServer worldserver, Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, ChunkGenerator chunkgenerator, int i, boolean flag, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier) {
         this.world = worldserver;
@@ -89,6 +254,49 @@ public class ChunkProviderServer extends IChunkProvider {
         this.cacheStatus[0] = chunkstatus;
         this.cacheChunk[0] = ichunkaccess;
     }
+
+    // Paper start - "real" get chunk if loaded
+    // Note: Partially copied from the getChunkAt method below
+    @Nullable
+    public Chunk getChunkAtIfCachedImmediately(int x, int z) {
+        long k = ChunkCoordIntPair.pair(x, z);
+
+        // Note: Bypass cache since we need to check ticket level, and to make this MT-Safe
+
+        PlayerChunk playerChunk = this.getChunk(k);
+        if (playerChunk == null) {
+            return null;
+        }
+
+        return playerChunk.getFullChunkIfCached();
+    }
+
+    @Nullable
+    public Chunk getChunkAtIfLoadedImmediately(int x, int z) {
+        long k = ChunkCoordIntPair.pair(x, z);
+
+        if (Thread.currentThread() == this.serverThread) {
+            return this.getChunkAtIfLoadedMainThread(x, z);
+        }
+
+        Chunk ret = null;
+        long readlock;
+        do {
+            readlock = this.loadedChunkMapSeqLock.acquireRead();
+            try {
+                ret = this.loadedChunkMap.get(k);
+            } catch (Throwable thr) {
+                if (thr instanceof ThreadDeath) {
+                    throw (ThreadDeath)thr;
+                }
+                // re-try, this means a CME occurred...
+                continue;
+            }
+        } while (!this.loadedChunkMapSeqLock.tryReleaseRead(readlock));
+
+        return ret;
+    }
+    // Paper end
 
     @Nullable
     @Override
@@ -372,10 +580,9 @@ public class ChunkProviderServer extends IChunkProvider {
 
             this.p = spawnercreature_d;
             this.world.getMethodProfiler().exit();
-            List<PlayerChunk> list = Lists.newArrayList(this.playerChunkMap.f());
-
-            Collections.shuffle(list);
-            list.forEach((playerchunk) -> {
+            //List<PlayerChunk> list = Lists.newArrayList(this.playerChunkMap.f()); // Paper
+            //Collections.shuffle(list); // Paper
+            this.playerChunkMap.f().forEach((playerchunk) -> { // Paper - no... just no...
                 Optional<Chunk> optional = ((Either) playerchunk.a().getNow(PlayerChunk.UNLOADED_CHUNK)).left();
 
                 if (optional.isPresent()) {

@@ -17,7 +17,7 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
     private NBTTagCompound d;
     @Nullable
     private int[] e;
-    private byte[] f;
+    private byte[] f; private byte[] getData() { return this.f; } // Paper - OBFHELPER
     private List<NBTTagCompound> g;
     private boolean h;
 
@@ -129,6 +129,7 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
         return bytebuf;
     }
 
+    public int writeChunk(PacketDataSerializer packetDataSerializer, Chunk chunk, int chunkSectionSelector) { return this.a(packetDataSerializer, chunk, chunkSectionSelector); } // Paper - OBFHELPER
     public int a(PacketDataSerializer packetdataserializer, Chunk chunk, int i) {
         int j = 0;
         ChunkSection[] achunksection = chunk.getSections();

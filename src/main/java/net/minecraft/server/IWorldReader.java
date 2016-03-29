@@ -5,6 +5,7 @@ import javax.annotation.Nullable;
 
 public interface IWorldReader extends IBlockLightAccess, ICollisionAccess, BiomeManager.Provider {
 
+    @Nullable IChunkAccess getChunkIfLoadedImmediately(int x, int z); // Paper - ifLoaded api (we need this since current impl blocks if the chunk is loading)
     @Nullable
     IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag);
 
