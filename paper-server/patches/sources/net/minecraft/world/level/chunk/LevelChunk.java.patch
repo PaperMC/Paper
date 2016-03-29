@@ -45,7 +45,22 @@
      }
  
      public void setUnsavedListener(LevelChunk.UnsavedListener unsavedListener) {
-@@ -200,8 +213,25 @@
+@@ -187,7 +200,14 @@
+         return new ChunkAccess.PackedTicks(this.blockTicks.pack(time), this.fluidTicks.pack(time));
+     }
+ 
++    // Paper start
+     @Override
++    public long getInhabitedTime() {
++        return this.level.paperConfig().chunks.fixedChunkInhabitedTime < 0 ? super.getInhabitedTime() : this.level.paperConfig().chunks.fixedChunkInhabitedTime;
++    }
++    // Paper end
++
++    @Override
+     public GameEventListenerRegistry getListenerRegistry(int ySectionCoord) {
+         Level world = this.level;
+ 
+@@ -200,8 +220,25 @@
          }
      }
  
@@ -71,7 +86,7 @@
          int i = pos.getX();
          int j = pos.getY();
          int k = pos.getZ();
-@@ -243,7 +273,19 @@
+@@ -243,7 +280,19 @@
          }
      }
  
@@ -91,7 +106,7 @@
      public FluidState getFluidState(BlockPos pos) {
          return this.getFluidState(pos.getX(), pos.getY(), pos.getZ());
      }
-@@ -272,78 +314,86 @@
+@@ -272,78 +321,86 @@
          }
      }
  
@@ -203,7 +218,7 @@
                              this.updateBlockEntityTicker(tileentity);
                          }
                      }
-@@ -375,7 +425,12 @@
+@@ -375,7 +432,12 @@
  
      @Nullable
      public BlockEntity getBlockEntity(BlockPos pos, LevelChunk.EntityCreationType creationType) {
@@ -217,7 +232,7 @@
  
          if (tileentity == null) {
              CompoundTag nbttagcompound = (CompoundTag) this.pendingBlockEntities.remove(pos);
-@@ -446,7 +501,13 @@
+@@ -446,7 +508,13 @@
          BlockState iblockdata = this.getBlockState(blockposition);
  
          if (!iblockdata.hasBlockEntity()) {
@@ -232,7 +247,7 @@
          } else {
              BlockState iblockdata1 = blockEntity.getBlockState();
  
-@@ -500,6 +561,12 @@
+@@ -500,6 +568,12 @@
          if (this.isInLevel()) {
              BlockEntity tileentity = (BlockEntity) this.blockEntities.remove(pos);
  
@@ -245,14 +260,10 @@
              if (tileentity != null) {
                  Level world = this.level;
  
-@@ -549,9 +616,68 @@
-         if (this.postLoad != null) {
-             this.postLoad.run(this);
-             this.postLoad = null;
-+        }
-+
-+    }
-+
+@@ -553,6 +627,65 @@
+ 
+     }
+ 
 +    // CraftBukkit start
 +    public void loadCallback() {
 +        // Paper start
@@ -290,9 +301,9 @@
 +                }
 +                server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(bukkitChunk));
 +            }
-         }
++        }
 +    }
- 
++
 +    public void unloadCallback() {
 +        org.bukkit.Server server = this.level.getCraftServer();
 +        org.bukkit.Chunk bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
@@ -309,12 +320,13 @@
 +    @Override
 +    public boolean isUnsaved() {
 +        return super.isUnsaved() && !this.mustNotSave;
-     }
++    }
 +    // CraftBukkit end
- 
++
      public boolean isEmpty() {
          return false;
-@@ -750,7 +876,7 @@
+     }
+@@ -750,7 +883,7 @@
  
      private <T extends BlockEntity> void updateBlockEntityTicker(T blockEntity) {
          BlockState iblockdata = blockEntity.getBlockState();
@@ -323,7 +335,7 @@
  
          if (blockentityticker == null) {
              this.removeBlockEntityTicker(blockEntity.getBlockPos());
-@@ -841,7 +967,7 @@
+@@ -841,7 +974,7 @@
          private boolean loggedInvalidBlockState;
  
          BoundTickingBlockEntity(final BlockEntity tileentity, final BlockEntityTicker blockentityticker) {
@@ -332,7 +344,7 @@
              this.ticker = blockentityticker;
          }
  
-@@ -867,11 +993,13 @@
+@@ -867,11 +1000,13 @@
  
                          gameprofilerfiller.pop();
                      } catch (Throwable throwable) {
