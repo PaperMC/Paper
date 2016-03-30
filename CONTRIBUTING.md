@@ -8,7 +8,7 @@ Patches to Paper are very simple, but center around the directories 'Paper-API' 
 Assuming you already have forked the repository:
 
 1. Pull the latest changes from the main repository
-2. Type `./applyPatches.sh` in git bash to apply the changes from upstream
+2. Type `./build.sh` in git bash to apply the changes from upstream
 3. cd into `Paper-Server` for server changes, and `Paper-API` for api changes
 
 These directories aren't git repositories in the traditional sense:
@@ -32,23 +32,40 @@ Your commit will be converted into a patch that you can then PR into Paper
 ## Modifying Patches
 Modifying previous patches is a bit more complex:
 
-1. Make sure `git status` is correct
-  - If it says something like `212 commits ahead, 207 commits behind`, then type `git fetch` to update spigot
-2. If you have changes you are working on type `git stash` to store them for later
+### Method 1
+This method works by temporarily resetting HEAD to the desired commit to edit using rebase.
+
+However, while in the middle of an edit, unless you also reset your API to a related commit, you will not be able to compile.
+
+1. If you have changes you are working on type `git stash` to store them for later
   - Later you can type `git stash pop` to get them back
-3. Type `git rebase -i`
+2. Type `git rebase -i upstream/upstream`
   - It should show something like [this](https://gist.github.com/Zbob750/e6bb220d3b734933c320)
-4. Replace `pick` with `edit` for the commit/patch you want to modify, and "save" the changes
+3. Replace `pick` with `edit` for the commit/patch you want to modify, and "save" the changes
   - Only do this for one commit until you get more advanced and understand what `git rebase -i` does
-5. Make the changes you want to make to the patch
-6. Type `git add .` to add your changes
-7. Type `git commit --amend` to commit
+4. Make the changes you want to make to the patch
+5. Type `git add .` to add your changes
+6. Type `git commit --amend` to commit
   - **MAKE SURE TO ADD `--amend`** or else a new patch will be created
   - You can also modify the commit message here
-8. Type `git rebase --continue` to finish rebasing
-9. Type `./rebuildPatches.sh` in the main directory
+7. Type `git rebase --continue` to finish rebasing
+8. Type `./rebuildPatches.sh` in the main directory
   - This will modify the appropriate patches based on your commits
-10. PR your modifications to github
+9. PR your modifications to github
+
+### Method 2 (sometimes easier)
+If you are simply editing a more recent commit or your change is small, simply making the change at HEAD and then moving the commit after you have tested it may be easier.
+
+This method has the benefit of being able to compile to test your change without messing with your API HEAD.
+
+1. Make your change while at HEAD
+2. Make a temporary commit. You don't need to make a message for this.
+3. Type `git rebase -i upstream/upstream`, move (cut) your temporary commit and move it under the line of the patch you wish to modify.
+4. Change the `pick` with `f` (fixup) or `s` (squash) if you need to edit the commit message 
+5. Type `./rebuildPatches.sh` in the main directory
+  - This will modify the appropriate patches based on your commits
+6. PR your modifications to github
+
 
 ## PR Policy
 We'll accept changes that make sense. You should be able to justify their existence, along with any maintenance costs that come with them. Remember, these changes will affect everyone who runs Paper, not just you and your server.
