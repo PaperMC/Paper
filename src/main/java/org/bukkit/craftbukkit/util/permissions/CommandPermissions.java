@@ -29,6 +29,7 @@ public final class CommandPermissions {
         DefaultPermissions.registerPermission(PREFIX + "seed", "Allows the user to view the seed of the world", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(PREFIX + "effect", "Allows the user to add/remove effects on players", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(PREFIX + "selector", "Allows the use of selectors", PermissionDefault.OP, commands);
+        DefaultPermissions.registerPermission(PREFIX + "trigger", "Allows the use of the trigger command", PermissionDefault.TRUE, commands);
 
         commands.recalculatePermissibles();
         return commands;
