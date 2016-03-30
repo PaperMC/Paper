@@ -1,0 +1,48 @@
+From dc74220050b2649edcd76d58e5becfe9f8280d9d Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 29 Mar 2016 23:20:10 -0500
+Subject: [PATCH] PaperMC/Paper/GH-166
+
+
+diff --git a/src/main/java/net/minecraft/server/PacketDataSerializer.java b/src/main/java/net/minecraft/server/PacketDataSerializer.java
+index f426c2e..e2eb305 100644
+--- a/src/main/java/net/minecraft/server/PacketDataSerializer.java
++++ b/src/main/java/net/minecraft/server/PacketDataSerializer.java
+@@ -46,8 +46,16 @@ public class PacketDataSerializer extends ByteBuf {
+         this.writeBytes(abyte);
+     }
+ 
++    // Paper start
+     public byte[] a() {
+-        byte[] abyte = new byte[this.e()];
++        return readByteArray(Short.MAX_VALUE);
++    }
++
++    public byte[]readByteArray(int limit) {
++        int len = this.e();
++        if (len > limit) throw new DecoderException("The received a byte array longer than allowed " + len + " > " + limit);
++        byte[] abyte = new byte[len];
++    // Paper end
+ 
+         this.readBytes(abyte);
+         return abyte;
+diff --git a/src/main/java/net/minecraft/server/PacketLoginInEncryptionBegin.java b/src/main/java/net/minecraft/server/PacketLoginInEncryptionBegin.java
+index 1d2e855..da9d4d8 100644
+--- a/src/main/java/net/minecraft/server/PacketLoginInEncryptionBegin.java
++++ b/src/main/java/net/minecraft/server/PacketLoginInEncryptionBegin.java
+@@ -12,8 +12,10 @@ public class PacketLoginInEncryptionBegin implements Packet<PacketLoginInListene
+     public PacketLoginInEncryptionBegin() {}
+ 
+     public void a(PacketDataSerializer packetdataserializer) throws IOException {
+-        this.a = packetdataserializer.a();
+-        this.b = packetdataserializer.a();
++        // Paper start
++        this.a = packetdataserializer.readByteArray(256);
++        this.b = packetdataserializer.readByteArray(256);
++        // Paper end
+     }
+ 
+     public void b(PacketDataSerializer packetdataserializer) throws IOException {
+-- 
+2.7.4
+
