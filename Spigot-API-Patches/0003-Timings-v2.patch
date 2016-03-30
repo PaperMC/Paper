@@ -1,4 +1,4 @@
-From e3d0784acb044ea7d704eae393c66e586edd6dcc Mon Sep 17 00:00:00 2001
+From c06ec1a9abc604b79f3c0e282ca752814de91110 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
@@ -457,10 +457,10 @@ index 0000000..b62e428
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHandler.java b/src/main/java/co/aikar/timings/TimingHandler.java
 new file mode 100644
-index 0000000..4918a17
+index 0000000..46c4e13
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHandler.java
-@@ -0,0 +1,193 @@
+@@ -0,0 +1,190 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -486,13 +486,10 @@ index 0000000..4918a17
 + */
 +package co.aikar.timings;
 +
-+import gnu.trove.map.hash.TIntObjectHashMap;
-+import org.bukkit.Bukkit;
 +import co.aikar.util.LoadingIntMap;
-+import co.aikar.util.LoadingMap;
-+import co.aikar.util.MRUMapCache;
++import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
++import org.bukkit.Bukkit;
 +
-+import java.util.Map;
 +import java.util.logging.Level;
 +
 +class TimingHandler implements Timing {
@@ -503,7 +500,7 @@ index 0000000..4918a17
 +    final String name;
 +    final boolean verbose;
 +
-+    final TIntObjectHashMap<TimingData> children = new LoadingIntMap<TimingData>(TimingData.LOADER);
++    final Int2ObjectOpenHashMap<TimingData> children = new LoadingIntMap<>(TimingData.LOADER);
 +
 +    final TimingData record;
 +    final TimingHandler groupHandler;
@@ -543,7 +540,7 @@ index 0000000..4918a17
 +        }
 +
 +        record.processTick(violated);
-+        for (TimingData handler : children.valueCollection()) {
++        for (TimingData handler : children.values()) {
 +            handler.processTick(violated);
 +        }
 +    }
@@ -938,7 +935,7 @@ index 0000000..7a04770
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHistoryEntry.java b/src/main/java/co/aikar/timings/TimingHistoryEntry.java
 new file mode 100644
-index 0000000..eac4e21
+index 0000000..a5c5dfd
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHistoryEntry.java
 @@ -0,0 +1,59 @@
@@ -981,7 +978,7 @@ index 0000000..eac4e21
 +        this.data = handler.record.clone();
 +        children = new TimingData[handler.children.size()];
 +        int i = 0;
-+        for (TimingData child : handler.children.valueCollection()) {
++        for (TimingData child : handler.children.values()) {
 +            children[i++] = child.clone();
 +        }
 +    }
@@ -2271,10 +2268,10 @@ index 0000000..5fdf7c4
 +}
 diff --git a/src/main/java/co/aikar/util/LoadingIntMap.java b/src/main/java/co/aikar/util/LoadingIntMap.java
 new file mode 100644
-index 0000000..8d0f269
+index 0000000..79fa9d5
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/LoadingIntMap.java
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,70 @@
 +/*
 + * Copyright (c) 2015. Starlis LLC / dba Empire Minecraft
 + *
@@ -2285,7 +2282,7 @@ index 0000000..8d0f269
 +
 +
 +import com.google.common.base.Function;
-+import gnu.trove.map.hash.TIntObjectHashMap;
++import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 +
 +/**
 + * Allows you to pass a Loader function that when a key is accessed that doesn't exist,
@@ -2301,14 +2298,21 @@ index 0000000..8d0f269
 + *
 + * @param <V> Value
 + */
-+public class LoadingIntMap<V> extends TIntObjectHashMap<V> {
++public class LoadingIntMap<V> extends Int2ObjectOpenHashMap<V> {
 +    private final Function<Integer, V> loader;
 +
-+    /**
-+     * Initializes an auto loading map using specified loader and backing map
-+     * @param loader The loader
-+     */
 +    public LoadingIntMap(Function<Integer, V> loader) {
++        super();
++        this.loader = loader;
++    }
++
++    public LoadingIntMap(int expectedSize, Function<Integer, V> loader) {
++        super(expectedSize);
++        this.loader = loader;
++    }
++
++    public LoadingIntMap(int expectedSize, float loadFactor, Function<Integer, V> loader) {
++        super(expectedSize, loadFactor);
 +        this.loader = loader;
 +    }
 +
@@ -3538,5 +3542,5 @@ index 8d98297..7e89b97 100644
 -    }
  }
 -- 
-2.7.4
+2.8.0
 
