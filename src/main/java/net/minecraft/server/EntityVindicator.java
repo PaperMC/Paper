@@ -25,7 +25,7 @@ public class EntityVindicator extends EntityIllagerAbstract {
         this.goalSelector.a(2, new EntityIllagerAbstract.b(this));
         this.goalSelector.a(3, new EntityRaider.a(this, 10.0F));
         this.goalSelector.a(4, new EntityVindicator.c(this));
-        this.targetSelector.a(1, (new PathfinderGoalHurtByTarget(this, new Class[]{EntityRaider.class})).a());
+        this.targetSelector.a(1, (new PathfinderGoalHurtByTarget(this, new Class[]{EntityRaider.class})).a(new Class[0])); // Paper - decompile fix
         this.targetSelector.a(2, new PathfinderGoalNearestAttackableTarget<>(this, EntityHuman.class, true));
         this.targetSelector.a(3, new PathfinderGoalNearestAttackableTarget<>(this, EntityVillagerAbstract.class, true));
         this.targetSelector.a(3, new PathfinderGoalNearestAttackableTarget<>(this, EntityIronGolem.class, true));

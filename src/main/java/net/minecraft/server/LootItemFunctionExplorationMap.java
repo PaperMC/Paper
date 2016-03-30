@@ -73,7 +73,7 @@ public class LootItemFunctionExplorationMap extends LootItemFunctionConditional 
         public b() {}
 
         public void a(JsonObject jsonobject, LootItemFunctionExplorationMap lootitemfunctionexplorationmap, JsonSerializationContext jsonserializationcontext) {
-            super.a(jsonobject, (LootItemFunctionConditional) lootitemfunctionexplorationmap, jsonserializationcontext);
+            super.a(jsonobject, lootitemfunctionexplorationmap, jsonserializationcontext); // Paper - decompile fix
             if (!lootitemfunctionexplorationmap.e.equals(LootItemFunctionExplorationMap.a)) {
                 jsonobject.add("destination", jsonserializationcontext.serialize(lootitemfunctionexplorationmap.e.i()));
             }

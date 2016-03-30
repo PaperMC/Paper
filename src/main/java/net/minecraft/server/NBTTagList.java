@@ -51,7 +51,7 @@ public class NBTTagList extends NBTList<NBTBase> {
             return "TAG_List";
         }
     };
-    private static final ByteSet b = new ByteOpenHashSet(Arrays.asList(1, 2, 3, 4, 5, 6));
+    private static final ByteSet b = new ByteOpenHashSet(Arrays.asList((byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6)); // Paper - decompiler fix
     private final List<NBTBase> list;
     private byte type;
 

@@ -235,8 +235,8 @@ public class BlockPosition extends BaseBlockPosition {
         };
     }
 
-    public static Iterable<BlockPosition> a(BlockPosition blockposition, int i, int j, int k) {
-        int l = i + j + k;
+    public static Iterable<BlockPosition> a(BlockPosition blockposition, int p_i, int p_j, int p_k) { // Paper - decompile issues - variable name conflicts to inner class field refs
+        int l_decompiled = p_i + p_j + p_k; // Paper - decompile issues
         int i1 = blockposition.getX();
         int j1 = blockposition.getY();
         int k1 = blockposition.getZ();
@@ -264,15 +264,15 @@ public class BlockPosition extends BaseBlockPosition {
                                 ++this.l;
                                 if (this.l > this.j) {
                                     ++this.i;
-                                    if (this.i > l) {
+                                    if (this.i > l_decompiled) { // Paper - use proper l above (first line of this method)
                                         return (BlockPosition) this.endOfData();
                                     }
 
-                                    this.j = Math.min(i, this.i);
+                                    this.j = Math.min(p_i, this.i); // Paper - decompile issues
                                     this.l = -this.j;
                                 }
 
-                                this.k = Math.min(j, this.i - Math.abs(this.l));
+                                this.k = Math.min(p_j, this.i - Math.abs(this.l)); // Paper - decompile issues
                                 this.m = -this.k;
                             }
 
@@ -280,7 +280,7 @@ public class BlockPosition extends BaseBlockPosition {
                             int i2 = this.m;
                             int j2 = this.i - Math.abs(l1) - Math.abs(i2);
 
-                            if (j2 <= k) {
+                            if (j2 <= p_k) { // Paper - decompile issues
                                 this.n = j2 != 0;
                                 blockposition_mutableblockposition = this.h.d(i1 + l1, j1 + i2, k1 + j2);
                             }
@@ -349,13 +349,13 @@ public class BlockPosition extends BaseBlockPosition {
         };
     }
 
-    public static Iterable<BlockPosition.MutableBlockPosition> a(BlockPosition blockposition, int i, EnumDirection enumdirection, EnumDirection enumdirection1) {
+    public static Iterable<BlockPosition.MutableBlockPosition> a(BlockPosition blockposition, int I, EnumDirection enumdirection, EnumDirection enumdirection1) { // Paper - decompile fix
         Validate.validState(enumdirection.n() != enumdirection1.n(), "The two directions cannot be on the same axis", new Object[0]);
         return () -> {
             return new AbstractIterator<BlockPosition.MutableBlockPosition>() {
                 private final EnumDirection[] e = new EnumDirection[]{enumdirection, enumdirection1, enumdirection.opposite(), enumdirection1.opposite()};
                 private final BlockPosition.MutableBlockPosition f = blockposition.i().c(enumdirection1);
-                private final int g = 4 * i;
+                private final int g = 4 * I;
                 private int h = -1;
                 private int i;
                 private int j;

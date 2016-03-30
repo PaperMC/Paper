@@ -83,7 +83,7 @@ public class IOWorker implements AutoCloseable {
             return this.a(() -> {
                 try {
                     this.d.a();
-                    return Either.left((Object) null);
+                    return Either.left(null); // Paper - decompile error
                 } catch (Exception exception) {
                     IOWorker.LOGGER.warn("Failed to synchronized chunks", exception);
                     return Either.right(exception);
@@ -117,13 +117,13 @@ public class IOWorker implements AutoCloseable {
     }
 
     private void c() {
-        this.c.a((Object) (new PairedQueue.b(IOWorker.Priority.LOW.ordinal(), this::b)));
+        this.c.a((new PairedQueue.b(IOWorker.Priority.LOW.ordinal(), this::b))); // Paper - decompile error
     }
 
     private void a(ChunkCoordIntPair chunkcoordintpair, IOWorker.a ioworker_a) {
         try {
             this.d.write(chunkcoordintpair, ioworker_a.a);
-            ioworker_a.b.complete((Object) null);
+            ioworker_a.b.complete(null); // Paper - decompile fix
         } catch (Exception exception) {
             IOWorker.LOGGER.error("Failed to store chunk {}", chunkcoordintpair, exception);
             ioworker_a.b.completeExceptionally(exception);

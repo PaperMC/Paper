@@ -20,10 +20,10 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends IBlockState<T>
     protected BlockStateEnum(String s, Class<T> oclass, Collection<T> collection) {
         super(s, oclass);
         this.a = ImmutableSet.copyOf(collection);
-        Iterator iterator = collection.iterator();
+        Iterator<T> iterator = collection.iterator(); // Paper - decompile fix
 
         while (iterator.hasNext()) {
-            T t0 = (Enum) iterator.next();
+            T t0 = iterator.next(); // Paper - Decompile fix
             String s1 = ((INamable) t0).getName();
 
             if (this.b.containsKey(s1)) {

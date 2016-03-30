@@ -99,7 +99,7 @@ public class ThreadedMailbox<T> implements Mailbox<T>, AutoCloseable, Runnable {
 
     public void run() {
         try {
-            this.a((i) -> {
+            this.a((int i) -> { // Paper - decompile fix
                 return i == 0;
             });
         } finally {

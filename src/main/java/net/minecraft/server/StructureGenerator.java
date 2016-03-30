@@ -38,13 +38,13 @@ public abstract class StructureGenerator<C extends WorldGenFeatureConfiguration>
     public static final StructureGenerator<WorldGenFeatureVillageConfiguration> BASTION_REMNANT = a("Bastion_Remnant", new WorldGenFeatureBastionRemnant(WorldGenFeatureVillageConfiguration.a), WorldGenStage.Decoration.SURFACE_STRUCTURES);
     public static final List<StructureGenerator<?>> t = ImmutableList.of(StructureGenerator.PILLAGER_OUTPOST, StructureGenerator.VILLAGE, StructureGenerator.NETHER_FOSSIL);
     private static final MinecraftKey w = new MinecraftKey("jigsaw");
-    private static final Map<MinecraftKey, MinecraftKey> x = ImmutableMap.builder().put(new MinecraftKey("nvi"), StructureGenerator.w).put(new MinecraftKey("pcp"), StructureGenerator.w).put(new MinecraftKey("bastionremnant"), StructureGenerator.w).put(new MinecraftKey("runtime"), StructureGenerator.w).build();
+    private static final Map<MinecraftKey, MinecraftKey> x = ImmutableMap.<MinecraftKey, MinecraftKey>builder().put(new MinecraftKey("nvi"), StructureGenerator.w).put(new MinecraftKey("pcp"), StructureGenerator.w).put(new MinecraftKey("bastionremnant"), StructureGenerator.w).put(new MinecraftKey("runtime"), StructureGenerator.w).build(); // Paper - decompile fix
     private final Codec<StructureFeature<C, StructureGenerator<C>>> y;
 
     private static <F extends StructureGenerator<?>> F a(String s, F f0, WorldGenStage.Decoration worldgenstage_decoration) {
         StructureGenerator.a.put(s.toLowerCase(Locale.ROOT), f0);
         StructureGenerator.u.put(f0, worldgenstage_decoration);
-        return (StructureGenerator) IRegistry.a(IRegistry.STRUCTURE_FEATURE, s.toLowerCase(Locale.ROOT), (Object) f0);
+        return (F) IRegistry.<StructureGenerator<?>>a(IRegistry.STRUCTURE_FEATURE, s.toLowerCase(Locale.ROOT), f0); // Paper - decomp fix
     }
 
     public StructureGenerator(Codec<C> codec) {

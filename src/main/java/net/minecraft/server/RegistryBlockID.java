@@ -27,7 +27,7 @@ public class RegistryBlockID<T> implements Registry<T> {
         this.b.put(t0, i);
 
         while (this.c.size() <= i) {
-            this.c.add((Object) null);
+            this.c.add(null); // Paper - decompile fix
         }
 
         this.c.set(i, t0);
@@ -40,6 +40,13 @@ public class RegistryBlockID<T> implements Registry<T> {
     public void b(T t0) {
         this.a(t0, this.a);
     }
+
+    // Paper start - decompile fix
+    @Override
+    public int a(T t) {
+        return getId(t);
+    }
+    // Paper end
 
     public int getId(T t0) {
         Integer integer = (Integer) this.b.get(t0);

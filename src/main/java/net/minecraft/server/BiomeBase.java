@@ -20,8 +20,15 @@ import org.apache.logging.log4j.Logger;
 public final class BiomeBase {
 
     public static final Logger LOGGER = LogManager.getLogger();
+    // Paper start
+    private static class dProxy extends BiomeBase.d {
+        private dProxy(Precipitation biomebase_precipitation, float f, TemperatureModifier biomebase_temperaturemodifier, float f1) {
+            super(biomebase_precipitation, f, biomebase_temperaturemodifier, f1);
+        }
+    };
+    // Paper end
     public static final Codec<BiomeBase> b = RecordCodecBuilder.create((instance) -> {
-        return instance.group(BiomeBase.d.a.forGetter((biomebase) -> {
+        return instance.group(dProxy.a.forGetter((biomebase) -> { // Paper
             return biomebase.j;
         }), BiomeBase.Geography.r.fieldOf("category").forGetter((biomebase) -> {
             return biomebase.o;
@@ -38,7 +45,7 @@ public final class BiomeBase {
         })).apply(instance, BiomeBase::new);
     });
     public static final Codec<BiomeBase> c = RecordCodecBuilder.create((instance) -> {
-        return instance.group(BiomeBase.d.a.forGetter((biomebase) -> {
+        return instance.group(dProxy.a.forGetter((biomebase) -> { // Paper
             return biomebase.j;
         }), BiomeBase.Geography.r.fieldOf("category").forGetter((biomebase) -> {
             return biomebase.o;

@@ -59,8 +59,8 @@ public class SystemUtils {
         return Collectors.toMap(Entry::getKey, Entry::getValue);
     }
 
-    public static <T extends Comparable<T>> String a(IBlockState<T> iblockstate, Object object) {
-        return iblockstate.a((Comparable) object);
+    public static <T extends Comparable<T>> String a(IBlockState<T> iblockstate, T object) { // Paper - decompile fix
+        return iblockstate.a(object); // Paper - decompile fix
     }
 
     public static String a(String s, @Nullable MinecraftKey minecraftkey) {
@@ -228,8 +228,8 @@ public class SystemUtils {
     public static <T> T b(Iterable<T> iterable, @Nullable T t0) {
         Iterator<T> iterator = iterable.iterator();
 
-        Object object;
-        Object object1;
+        T object; // Paper - decompile fix
+        T object1; // Paper - decompile fix
 
         for (object1 = null; iterator.hasNext(); object1 = object) {
             object = iterator.next();
@@ -254,7 +254,7 @@ public class SystemUtils {
     }
 
     public static <K> Strategy<K> k() {
-        return SystemUtils.IdentityHashingStrategy.INSTANCE;
+        return (Strategy<K>) SystemUtils.IdentityHashingStrategy.INSTANCE; // Paper - decompile fix
     }
 
     public static <V> CompletableFuture<List<V>> b(List<? extends CompletableFuture<? extends V>> list) {
@@ -265,7 +265,7 @@ public class SystemUtils {
         list.forEach((completablefuture1) -> {
             int i = list1.size();
 
-            list1.add((Object) null);
+            list1.add(null); // Paper - decompile fix
             acompletablefuture[i] = completablefuture1.whenComplete((object, throwable) -> {
                 if (throwable != null) {
                     completablefuture.completeExceptionally(throwable);

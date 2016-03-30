@@ -27,11 +27,11 @@ public abstract class IBlockDataHolder<O, S> {
             } else {
                 IBlockState<?> iblockstate = (IBlockState) entry.getKey();
 
-                return iblockstate.getName() + "=" + this.a(iblockstate, (Comparable) entry.getValue());
+                return iblockstate.getName() + "=" + this.a((IBlockState) iblockstate, (Comparable) entry.getValue()); // Paper - decompile fix
             }
         }
 
-        private <T extends Comparable<T>> String a(IBlockState<T> iblockstate, Comparable<?> comparable) {
+        private <T extends Comparable<T>> String a(IBlockState<T> iblockstate, T comparable) { // Paper - decompile error
             return iblockstate.a(comparable);
         }
     };
@@ -47,11 +47,11 @@ public abstract class IBlockDataHolder<O, S> {
     }
 
     public <T extends Comparable<T>> S a(IBlockState<T> iblockstate) {
-        return this.set(iblockstate, (Comparable) a(iblockstate.getValues(), (Object) this.get(iblockstate)));
+        return this.set(iblockstate, a(iblockstate.getValues(), this.get(iblockstate))); // Paper - decompile error
     }
 
     protected static <T> T a(Collection<T> collection, T t0) {
-        Iterator iterator = collection.iterator();
+        Iterator<T> iterator = collection.iterator(); // Paper
 
         do {
             if (!iterator.hasNext()) {
@@ -93,7 +93,7 @@ public abstract class IBlockDataHolder<O, S> {
         if (comparable == null) {
             throw new IllegalArgumentException("Cannot get property " + iblockstate + " as it does not exist in " + this.c);
         } else {
-            return (Comparable) iblockstate.getType().cast(comparable);
+            return iblockstate.getType().cast(comparable); // Paper - decompile error
         }
     }
 
@@ -109,7 +109,7 @@ public abstract class IBlockDataHolder<O, S> {
         if (comparable == null) {
             throw new IllegalArgumentException("Cannot set property " + iblockstate + " as it does not exist in " + this.c);
         } else if (comparable == v0) {
-            return this;
+            return (S) this; // Paper - decompile error
         } else {
             S s0 = this.e.get(iblockstate, v0);
 
@@ -161,7 +161,7 @@ public abstract class IBlockDataHolder<O, S> {
         return codec.dispatch("Name", (iblockdataholder) -> {
             return iblockdataholder.c;
         }, (object) -> {
-            S s0 = (IBlockDataHolder) function.apply(object);
+            S s0 = function.apply(object); // Paper - decompile error
 
             return s0.getStateMap().isEmpty() ? Codec.unit(s0) : s0.d.fieldOf("Properties").codec();
         });

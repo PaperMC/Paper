@@ -23,11 +23,11 @@ public class ArraySetSorted<T> extends AbstractSet<T> {
     }
 
     public static <T extends Comparable<T>> ArraySetSorted<T> a(int i) {
-        return new ArraySetSorted<>(i, Comparator.naturalOrder());
+        return new ArraySetSorted<>(i, (Comparator)Comparator.naturalOrder()); // Paper - decompile fix
     }
 
     private static <T> T[] a(Object[] aobject) {
-        return (Object[]) aobject;
+        return (T[])aobject; // Paper - decompile fix
     }
 
     private int c(T t0) {
@@ -101,7 +101,7 @@ public class ArraySetSorted<T> extends AbstractSet<T> {
     }
 
     public boolean remove(Object object) {
-        int i = this.c(object);
+        int i = this.c((T)object); // Paper - decompile fix
 
         if (i >= 0) {
             this.d(i);
@@ -116,7 +116,7 @@ public class ArraySetSorted<T> extends AbstractSet<T> {
     }
 
     public boolean contains(Object object) {
-        int i = this.c(object);
+        int i = this.c((T)object); // Paper - decompile fix
 
         return i >= 0;
     }
@@ -135,7 +135,7 @@ public class ArraySetSorted<T> extends AbstractSet<T> {
 
     public <U> U[] toArray(U[] au) {
         if (au.length < this.c) {
-            return (Object[]) Arrays.copyOf(this.b, this.c, au.getClass());
+            return (U[])Arrays.copyOf(this.b, this.c, au.getClass()); // Paper - decompile fix
         } else {
             System.arraycopy(this.b, 0, au, 0, this.c);
             if (au.length > this.c) {

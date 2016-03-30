@@ -64,7 +64,7 @@ public class CraftingManager extends ResourceDataJson {
         }
 
         this.recipes = (Map) map1.entrySet().stream().collect(ImmutableMap.toImmutableMap(Entry::getKey, (entry1) -> {
-            return (entry1.getValue()); // CraftBukkit
+            return entry1.getValue(); // CraftBukkit // Paper - decompile fix - *shrugs internally*
         }));
         CraftingManager.LOGGER.info("Loaded {} recipes", map1.size());
     }

@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import io.netty.buffer.ByteBufInputStream; // Paper
 
 public class NBTCompressedStreamTools {
 
@@ -133,7 +134,7 @@ public class NBTCompressedStreamTools {
 
     public static NBTTagCompound a(DataInput datainput, NBTReadLimiter nbtreadlimiter) throws IOException {
         // Spigot start
-        if ( datainput instanceof io.netty.buffer.ByteBufInputStream )
+        if ( datainput instanceof ByteBufInputStream) // Paper
         {
             datainput = new DataInputStream(new org.spigotmc.LimitStream((InputStream) datainput, nbtreadlimiter));
         }

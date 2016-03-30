@@ -36,7 +36,7 @@ public abstract class LootEntryAbstract implements LootEntryChildren {
 
         // CraftBukkit start
         @Override
-        public final void a(JsonObject jsonobject, T t0, JsonSerializationContext jsonserializationcontext) {
+        public void a(JsonObject jsonobject, T t0, JsonSerializationContext jsonserializationcontext) { // Paper - remove final
             if (!org.apache.commons.lang3.ArrayUtils.isEmpty(t0.d)) {
                 jsonobject.add("conditions", jsonserializationcontext.serialize(t0.d));
             }

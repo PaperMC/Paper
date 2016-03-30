@@ -17,10 +17,17 @@ public class RegistryID<K> implements Registry<K> {
 
     public RegistryID(int i) {
         i = (int) ((float) i / 0.8F);
-        this.b = (Object[]) (new Object[i]);
+        this.b = (K[]) (new Object[i]); // Paper - decompile fix
         this.c = new int[i];
-        this.d = (Object[]) (new Object[i]);
+        this.d = (K[]) (new Object[i]); // Paper - decompile fix
     }
+
+    // Paper start - decompile fix
+    @Override
+    public int a(K k) {
+        return getId(k);
+    }
+    // Paper end
 
     public int getId(@Nullable K k0) {
         return this.c(this.b(k0, this.d(k0)));
@@ -55,9 +62,9 @@ public class RegistryID<K> implements Registry<K> {
         K[] ak = this.b;
         int[] aint = this.c;
 
-        this.b = (Object[]) (new Object[i]);
+        this.b = (K[]) (new Object[i]); // Paper - decompile fix
         this.c = new int[i];
-        this.d = (Object[]) (new Object[i]);
+        this.d = (K[]) (new Object[i]); // Paper - decompile fix
         this.e = 0;
         this.f = 0;
 

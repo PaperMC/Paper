@@ -167,7 +167,7 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
 
     public void queueUpdate() {
         if ((!this.c.isEmpty() || super.a()) && this.g.compareAndSet(false, true)) {
-            this.b.a((Object) (() -> {
+            this.b.a((() -> { // Paper - decompile error
                 this.b();
                 this.g.set(false);
             }));

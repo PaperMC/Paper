@@ -388,7 +388,7 @@ public class EnderDragonBattle {
             }
         }
 
-        worldgenendtrophy.b((WorldGenFeatureConfiguration) WorldGenFeatureConfiguration.k).a(this.world, this.world.getChunkProvider().getChunkGenerator(), new Random(), this.exitPortalLocation);
+        worldgenendtrophy.b(WorldGenFeatureConfiguration.k).a(this.world, this.world.getChunkProvider().getChunkGenerator(), new Random(), this.exitPortalLocation); // Paper - decompile fix
     }
 
     private EntityEnderDragon o() {

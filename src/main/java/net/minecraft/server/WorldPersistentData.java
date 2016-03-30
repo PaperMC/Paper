@@ -38,7 +38,7 @@ public class WorldPersistentData {
         if (t0 != null) {
             return t0;
         } else {
-            T t1 = (PersistentBase) supplier.get();
+            T t1 = supplier.get(); // Paper - decompile fix
 
             this.a(t1);
             return t1;
@@ -47,7 +47,7 @@ public class WorldPersistentData {
 
     @Nullable
     public <T extends PersistentBase> T b(Supplier<T> supplier, String s) {
-        PersistentBase persistentbase = (PersistentBase) this.data.get(s);
+        T persistentbase = (T) this.data.get(s); // Paper - decompile fix
 
         if (persistentbase == null && !this.data.containsKey(s)) {
             persistentbase = this.c(supplier, s);
@@ -63,7 +63,7 @@ public class WorldPersistentData {
             File file = this.a(s);
 
             if (file.exists()) {
-                T t0 = (PersistentBase) supplier.get();
+                T t0 = supplier.get(); // Paper - decompile fix
                 NBTTagCompound nbttagcompound = this.a(s, SharedConstants.getGameVersion().getWorldVersion());
 
                 t0.a(nbttagcompound.getCompound("data"));

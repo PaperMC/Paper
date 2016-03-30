@@ -37,13 +37,13 @@ public class NextTickListEntry<T> {
         return this.a.hashCode();
     }
 
-    public static <T> Comparator<NextTickListEntry<T>> a() {
+    public static <T> Comparator<Object> a() { // Paper - decompile fix
         return Comparator.comparingLong((nextticklistentry) -> {
-            return nextticklistentry.b;
+            return ((NextTickListEntry<T>) nextticklistentry).b; // Paper - decompile fix
         }).thenComparing((nextticklistentry) -> {
-            return nextticklistentry.c;
+            return ((NextTickListEntry<T>) nextticklistentry).c; // Paper - decompile fix
         }).thenComparingLong((nextticklistentry) -> {
-            return nextticklistentry.f;
+            return ((NextTickListEntry<T>) nextticklistentry).f; // Paper - decompile fix
         });
     }
 

@@ -28,10 +28,10 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
         int l = lightenginestoragesky_a.c.get(SectionPosition.f(j));
 
         if (l != lightenginestoragesky_a.b && k < l) {
-            NibbleArray nibblearray = this.a((LightEngineStorageArray) lightenginestoragesky_a, j);
+            NibbleArray nibblearray = this.a(lightenginestoragesky_a, j); // Paper - decompile fix
 
             if (nibblearray == null) {
-                for (i = BlockPosition.f(i); nibblearray == null; nibblearray = this.a((LightEngineStorageArray) lightenginestoragesky_a, j)) {
+                for (i = BlockPosition.f(i); nibblearray == null; nibblearray = this.a(lightenginestoragesky_a, j)) { // Paper - decompile fix
                     j = SectionPosition.a(j, EnumDirection.UP);
                     ++k;
                     if (k >= l) {

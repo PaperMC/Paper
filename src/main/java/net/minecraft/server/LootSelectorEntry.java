@@ -123,7 +123,7 @@ public abstract class LootSelectorEntry extends LootEntryAbstract {
         @Override
         public T b(LootItemFunction.a lootitemfunction_a) {
             this.c.add(lootitemfunction_a.b());
-            return (LootSelectorEntry.a) this.d();
+            return this.d(); // Paper - decompile fix
         }
 
         protected LootItemFunction[] a() {
@@ -132,12 +132,12 @@ public abstract class LootSelectorEntry extends LootEntryAbstract {
 
         public T a(int i) {
             this.a = i;
-            return (LootSelectorEntry.a) this.d();
+            return this.d(); // Paper - decompile fix
         }
 
         public T b(int i) {
             this.b = i;
-            return (LootSelectorEntry.a) this.d();
+            return this.d(); // Paper - decompile fix
         }
     }
 

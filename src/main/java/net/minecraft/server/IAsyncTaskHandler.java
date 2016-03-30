@@ -55,7 +55,7 @@ public abstract class IAsyncTaskHandler<R extends Runnable> implements Mailbox<R
             return this.executeFuture(runnable);
         } else {
             runnable.run();
-            return CompletableFuture.completedFuture((Object) null);
+            return CompletableFuture.completedFuture(null); // Paper - decompile fix
         }
     }
 
@@ -90,14 +90,14 @@ public abstract class IAsyncTaskHandler<R extends Runnable> implements Mailbox<R
     }
 
     protected boolean executeNext() {
-        R r0 = (Runnable) this.d.peek();
+        R r0 = this.d.peek(); // Paper - decompile fix
 
         if (r0 == null) {
             return false;
         } else if (this.e == 0 && !this.canExecute(r0)) {
             return false;
         } else {
-            this.executeTask((Runnable) this.d.remove());
+            this.executeTask(this.d.remove()); // Paper - decompile fix
             return true;
         }
     }

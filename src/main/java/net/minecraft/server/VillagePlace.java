@@ -180,9 +180,9 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
     }
 
     private static boolean a(ChunkSection chunksection) {
-        Set set = VillagePlaceType.x;
+        Set<IBlockData> set = VillagePlaceType.x; // Paper - decompile error
 
-        set.getClass();
+        //set.getClass(); // Paper - decompile error
         return chunksection.a(set::contains);
     }
 
@@ -200,7 +200,7 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
         SectionPosition.b(new ChunkCoordIntPair(blockposition), Math.floorDiv(i, 16)).map((sectionposition) -> {
             return Pair.of(sectionposition, this.d(sectionposition.s()));
         }).filter((pair) -> {
-            return !(Boolean) ((Optional) pair.getSecond()).map(VillagePlaceSection::a).orElse(false);
+            return !(Boolean) (pair.getSecond()).map(VillagePlaceSection::a).orElse(false); // Paper - decompile fix
         }).map((pair) -> {
             return ((SectionPosition) pair.getFirst()).r();
         }).filter((chunkcoordintpair) -> {
@@ -252,7 +252,7 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
 
         private final Predicate<? super VillagePlaceRecord> d;
 
-        private Occupancy(Predicate predicate) {
+        private Occupancy(Predicate<? super VillagePlaceRecord> predicate) { // Paper - decompile fix
             this.d = predicate;
         }
 

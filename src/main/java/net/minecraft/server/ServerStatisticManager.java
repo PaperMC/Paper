@@ -191,7 +191,7 @@ public class ServerStatisticManager extends StatisticManager {
         ObjectIterator objectiterator = this.a.object2IntEntrySet().iterator();
 
         while (objectiterator.hasNext()) {
-            it.unimi.dsi.fastutil.objects.Object2IntMap.Entry<Statistic<?>> it_unimi_dsi_fastutil_objects_object2intmap_entry = (it.unimi.dsi.fastutil.objects.Object2IntMap.Entry) objectiterator.next();
+            Object2IntMap.Entry<Statistic<?>> it_unimi_dsi_fastutil_objects_object2intmap_entry = (Object2IntMap.Entry) objectiterator.next(); // Paper - decompile fix
             Statistic<?> statistic = (Statistic) it_unimi_dsi_fastutil_objects_object2intmap_entry.getKey();
 
             ((JsonObject) map.computeIfAbsent(statistic.getWrapper(), (statisticwrapper) -> {

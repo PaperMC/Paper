@@ -16,12 +16,10 @@ public abstract class IBlockState<T extends Comparable<T>> {
     private final Codec<IBlockState.a<T>> e;
 
     protected IBlockState(String s, Class<T> oclass) {
-        this.d = Codec.STRING.comapFlatMap((s1) -> {
-            return (DataResult) this.b(s1).map(DataResult::success).orElseGet(() -> {
-                return DataResult.error("Unable to read property: " + this + " with value: " + s1);
-            });
-        }, this::a);
-        this.e = this.d.xmap(this::b, IBlockState.a::b);
+        this.d = Codec.STRING.comapFlatMap((s1) -> this.b(s1).map(DataResult::success).orElseGet(() -> { // Paper - decompile error
+            return DataResult.error("Unable to read property: " + this + " with value: " + s1);
+        }), this::a);
+        this.e = this.d.xmap(this::b, (IBlockState.a<T> param) -> param.b()); // Paper - decompile fix
         this.a = oclass;
         this.b = s;
     }

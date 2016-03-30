@@ -1549,9 +1549,9 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
             ResourcePackRepository resourcepackrepository = this.resourcePackRepository;
 
             this.resourcePackRepository.getClass();
-            return stream.map(resourcepackrepository::a).filter(Objects::nonNull).map(ResourcePackLoader::d).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error
+            return stream.<ResourcePackLoader>map(resourcepackrepository::a).filter(Objects::nonNull).map(ResourcePackLoader::d).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error // Paper - decompile error
         }, this).thenCompose((immutablelist) -> {
-            return DataPackResources.a(immutablelist, this.j() ? CommandDispatcher.ServerType.DEDICATED : CommandDispatcher.ServerType.INTEGRATED, this.h(), this.executorService, this);
+            return DataPackResources.a((List<IResourcePack>) immutablelist, this.j() ? CommandDispatcher.ServerType.DEDICATED : CommandDispatcher.ServerType.INTEGRATED, this.h(), this.executorService, this); // Paper - decompile error
         }).thenAcceptAsync((datapackresources) -> {
             this.dataPackResources.close();
             this.dataPackResources = datapackresources;

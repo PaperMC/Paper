@@ -137,7 +137,7 @@ public class TileEntityPiston extends TileEntity implements ITickable {
     private static void a(EnumDirection enumdirection, Entity entity, double d0, EnumDirection enumdirection1) {
         TileEntityPiston.h.set(enumdirection);
         entity.move(EnumMoveType.PISTON, new Vec3D(d0 * (double) enumdirection1.getAdjacentX(), d0 * (double) enumdirection1.getAdjacentY(), d0 * (double) enumdirection1.getAdjacentZ()));
-        TileEntityPiston.h.set((Object) null);
+        TileEntityPiston.h.set(null); // Paper - decompile fix
     }
 
     private void g(float f) {

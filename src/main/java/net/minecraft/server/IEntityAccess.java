@@ -158,22 +158,22 @@ public interface IEntityAccess {
 
     @Nullable
     default <T extends EntityLiving> T a(Class<? extends T> oclass, PathfinderTargetCondition pathfindertargetcondition, @Nullable EntityLiving entityliving, double d0, double d1, double d2, AxisAlignedBB axisalignedbb) {
-        return this.a(this.a(oclass, axisalignedbb, (Predicate) null), pathfindertargetcondition, entityliving, d0, d1, d2);
+        return this.a(this.a(oclass, axisalignedbb, null), pathfindertargetcondition, entityliving, d0, d1, d2); // Paper - decompile fix
     }
 
     @Nullable
     default <T extends EntityLiving> T b(Class<? extends T> oclass, PathfinderTargetCondition pathfindertargetcondition, @Nullable EntityLiving entityliving, double d0, double d1, double d2, AxisAlignedBB axisalignedbb) {
-        return this.a(this.b(oclass, axisalignedbb, (Predicate) null), pathfindertargetcondition, entityliving, d0, d1, d2);
+        return this.a(this.b(oclass, axisalignedbb, null), pathfindertargetcondition, entityliving, d0, d1, d2); // Paper - decompile fix
     }
 
     @Nullable
     default <T extends EntityLiving> T a(List<? extends T> list, PathfinderTargetCondition pathfindertargetcondition, @Nullable EntityLiving entityliving, double d0, double d1, double d2) {
         double d3 = -1.0D;
         T t0 = null;
-        Iterator iterator = list.iterator();
+        Iterator<? extends T> iterator = list.iterator(); // Paper - decompile fix
 
         while (iterator.hasNext()) {
-            T t1 = (EntityLiving) iterator.next();
+            T t1 = iterator.next(); // Paper - decompile fix
 
             if (pathfindertargetcondition.a(entityliving, t1)) {
                 double d4 = t1.h(d0, d1, d2);
@@ -206,10 +206,10 @@ public interface IEntityAccess {
     default <T extends EntityLiving> List<T> a(Class<? extends T> oclass, PathfinderTargetCondition pathfindertargetcondition, EntityLiving entityliving, AxisAlignedBB axisalignedbb) {
         List<T> list = this.a(oclass, axisalignedbb, (Predicate) null);
         List<T> list1 = Lists.newArrayList();
-        Iterator iterator = list.iterator();
+        Iterator<T> iterator = list.iterator(); // Paper - decompile fix
 
         while (iterator.hasNext()) {
-            T t0 = (EntityLiving) iterator.next();
+            T t0 = iterator.next(); // Paper - decompile fix
 
             if (pathfindertargetcondition.a(entityliving, t0)) {
                 list1.add(t0);
