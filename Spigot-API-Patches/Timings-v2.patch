@@ -486,13 +486,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + */
 +package co.aikar.timings;
 +
-+import gnu.trove.map.hash.TIntObjectHashMap;
-+import org.bukkit.Bukkit;
 +import co.aikar.util.LoadingIntMap;
-+import co.aikar.util.LoadingMap;
-+import co.aikar.util.MRUMapCache;
++import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
++import org.bukkit.Bukkit;
 +
-+import java.util.Map;
 +import java.util.logging.Level;
 +
 +class TimingHandler implements Timing {
@@ -503,7 +500,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    final String name;
 +    final boolean verbose;
 +
-+    final TIntObjectHashMap<TimingData> children = new LoadingIntMap<TimingData>(TimingData.LOADER);
++    final Int2ObjectOpenHashMap<TimingData> children = new LoadingIntMap<>(TimingData.LOADER);
 +
 +    final TimingData record;
 +    final TimingHandler groupHandler;
@@ -543,7 +540,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        record.processTick(violated);
-+        for (TimingData handler : children.valueCollection()) {
++        for (TimingData handler : children.values()) {
 +            handler.processTick(violated);
 +        }
 +    }
@@ -981,7 +978,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.data = handler.record.clone();
 +        children = new TimingData[handler.children.size()];
 +        int i = 0;
-+        for (TimingData child : handler.children.valueCollection()) {
++        for (TimingData child : handler.children.values()) {
 +            children[i++] = child.clone();
 +        }
 +    }
@@ -2285,7 +2282,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +
 +import com.google.common.base.Function;
-+import gnu.trove.map.hash.TIntObjectHashMap;
++import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 +
 +/**
 + * Allows you to pass a Loader function that when a key is accessed that doesn't exist,
@@ -2301,14 +2298,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + *
 + * @param <V> Value
 + */
-+public class LoadingIntMap<V> extends TIntObjectHashMap<V> {
++public class LoadingIntMap<V> extends Int2ObjectOpenHashMap<V> {
 +    private final Function<Integer, V> loader;
 +
-+    /**
-+     * Initializes an auto loading map using specified loader and backing map
-+     * @param loader The loader
-+     */
 +    public LoadingIntMap(Function<Integer, V> loader) {
++        super();
++        this.loader = loader;
++    }
++
++    public LoadingIntMap(int expectedSize, Function<Integer, V> loader) {
++        super(expectedSize);
++        this.loader = loader;
++    }
++
++    public LoadingIntMap(int expectedSize, float loadFactor, Function<Integer, V> loader) {
++        super(expectedSize, loadFactor);
 +        this.loader = loader;
 +    }
 +
