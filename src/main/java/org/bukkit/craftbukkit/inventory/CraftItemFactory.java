@@ -22,6 +22,7 @@ public final class CraftItemFactory implements ItemFactory {
         ConfigurationSerialization.registerClass(CraftMetaItem.SerializableMeta.class);
         KNOWN_NBT_ATTRIBUTE_NAMES = ImmutableSet.<String>builder()
             .add("generic.armor")
+            .add("generic.armorToughness")
             .add("generic.attackDamage")
             .add("generic.followRange")
             .add("generic.knockbackResistance")

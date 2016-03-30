@@ -424,6 +424,7 @@ public enum CraftSound {
     ITEM_BUCKET_FILL("item.bucket.fill"),
     ITEM_BUCKET_FILL_LAVA("item.bucket.fill_lava"),
     ITEM_CHORUS_FRUIT_TELEPORT("item.chorus_fruit.teleport"),
+    ITEM_ELYTRA_FLYING("item.elytra.flying"),
     ITEM_FIRECHARGE_USE("item.firecharge.use"),
     ITEM_FLINTANDSTEEL_USE("item.flintandsteel.use"),
     ITEM_HOE_TILL("item.hoe.till"),
