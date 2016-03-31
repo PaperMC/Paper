@@ -1,0 +1,269 @@
+From a96d56be4ce9239126a7d0677042ca9a9c429e58 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Wed, 2 Mar 2016 02:17:54 -0600
+Subject: [PATCH] Generator Settings
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 3a57c8e..66deccb 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -177,4 +177,28 @@ public class PaperWorldConfig {
+         disableEndCredits = getBoolean("game-mechanics.disable-end-credits", false);
+         log("End credits disabled: " + disableEndCredits);
+     }
++
++    public boolean generateCanyon;
++    public boolean generateCaves;
++    public boolean generateDungeon;
++    public boolean generateFortress;
++    public boolean generateMineshaft;
++    public boolean generateMonument;
++    public boolean generateStronghold;
++    public boolean generateTemple;
++    public boolean generateVillage;
++    public boolean generateFlatBedrock;
++
++    private void generatorSettings() {
++        generateCanyon = getBoolean("generator-settings.canyon", true);
++        generateCaves = getBoolean("generator-settings.caves", true);
++        generateDungeon = getBoolean("generator-settings.dungeon", true);
++        generateFortress = getBoolean("generator-settings.fortress", true);
++        generateMineshaft = getBoolean("generator-settings.mineshaft", true);
++        generateMonument = getBoolean("generator-settings.monument", true);
++        generateStronghold = getBoolean("generator-settings.stronghold", true);
++        generateTemple = getBoolean("generator-settings.temple", true);
++        generateVillage = getBoolean("generator-settings.village", true);
++        generateFlatBedrock = getBoolean("generator-settings.flat-bedrock", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/BiomeBase.java b/src/main/java/net/minecraft/server/BiomeBase.java
+index 5ca8125..e321a89 100644
+--- a/src/main/java/net/minecraft/server/BiomeBase.java
++++ b/src/main/java/net/minecraft/server/BiomeBase.java
+@@ -174,7 +174,7 @@ public abstract class BiomeBase {
+         BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
+ 
+         for (int l1 = 255; l1 >= 0; --l1) {
+-            if (l1 <= random.nextInt(5)) {
++            if (l1 <= (world.paperConfig.generateFlatBedrock ? 0 : random.nextInt(5))) { // Paper - Configurable flat bedrock
+                 chunksnapshot.a(k1, l1, j1, BiomeBase.c);
+             } else {
+                 IBlockData iblockdata2 = chunksnapshot.a(k1, l1, j1);
+diff --git a/src/main/java/net/minecraft/server/BiomeMesa.java b/src/main/java/net/minecraft/server/BiomeMesa.java
+index 3ce22aa..336fa16 100644
+--- a/src/main/java/net/minecraft/server/BiomeMesa.java
++++ b/src/main/java/net/minecraft/server/BiomeMesa.java
+@@ -98,7 +98,7 @@ public class BiomeMesa extends BiomeBase {
+                 chunksnapshot.a(l, l1, k, BiomeMesa.a);
+             }
+ 
+-            if (l1 <= random.nextInt(5)) {
++            if (l1 <= (world.paperConfig.generateFlatBedrock ? 0 : random.nextInt(5))) { // Paper - Configurable flat bedrock
+                 chunksnapshot.a(l, l1, k, BiomeMesa.c);
+             } else {
+                 IBlockData iblockdata2 = chunksnapshot.a(l, l1, k);
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderFlat.java b/src/main/java/net/minecraft/server/ChunkProviderFlat.java
+index 17e0b8e..89a33fd 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderFlat.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderFlat.java
+@@ -25,7 +25,7 @@ public class ChunkProviderFlat implements ChunkGenerator {
+         if (flag) {
+             Map map = this.d.b();
+ 
+-            if (map.containsKey("village")) {
++            if (map.containsKey("village") && world.paperConfig.generateVillage) { // Paper
+                 Map map1 = (Map) map.get("village");
+ 
+                 if (!map1.containsKey("size")) {
+@@ -35,19 +35,19 @@ public class ChunkProviderFlat implements ChunkGenerator {
+                 this.e.add(new WorldGenVillage(map1));
+             }
+ 
+-            if (map.containsKey("biome_1")) {
++            if (map.containsKey("biome_1") && world.paperConfig.generateTemple) { // Paper
+                 this.e.add(new WorldGenLargeFeature((Map) map.get("biome_1")));
+             }
+ 
+-            if (map.containsKey("mineshaft")) {
++            if (map.containsKey("mineshaft") && world.paperConfig.generateMineshaft) { // Paper
+                 this.e.add(new WorldGenMineshaft((Map) map.get("mineshaft")));
+             }
+ 
+-            if (map.containsKey("stronghold")) {
++            if (map.containsKey("stronghold") && world.paperConfig.generateStronghold) { // Paper
+                 this.e.add(new WorldGenStronghold((Map) map.get("stronghold")));
+             }
+ 
+-            if (map.containsKey("oceanmonument")) {
++            if (map.containsKey("oceanmonument") && world.paperConfig.generateMonument) { // Paper
+                 this.e.add(new WorldGenMonument((Map) map.get("oceanmonument")));
+             }
+         }
+@@ -60,7 +60,7 @@ public class ChunkProviderFlat implements ChunkGenerator {
+             this.i = new WorldGenLakes(Blocks.LAVA);
+         }
+ 
+-        this.g = this.d.b().containsKey("dungeon");
++        this.g = world.paperConfig.generateDungeon && this.d.b().containsKey("dungeon");  // Paper
+         int j = 0;
+         int k = 0;
+         boolean flag1 = true;
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderGenerate.java b/src/main/java/net/minecraft/server/ChunkProviderGenerate.java
+index 88d0374..168d071 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderGenerate.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderGenerate.java
+@@ -157,32 +157,32 @@ public class ChunkProviderGenerate implements ChunkGenerator {
+         this.a(i, j, chunksnapshot);
+         this.C = this.n.getWorldChunkManager().getBiomeBlock(this.C, i * 16, j * 16, 16, 16);
+         this.a(i, j, chunksnapshot, this.C);
+-        if (this.s.r) {
++        if (this.s.r && this.n.paperConfig.generateCaves) { // Paper
+             this.v.a(this.n, i, j, chunksnapshot);
+         }
+ 
+-        if (this.s.z) {
++        if (this.s.z && this.n.paperConfig.generateCanyon) { // Paper
+             this.A.a(this.n, i, j, chunksnapshot);
+         }
+ 
+         if (this.o) {
+-            if (this.s.w) {
++            if (this.s.w && this.n.paperConfig.generateMineshaft) { // Paper
+                 this.y.a(this.n, i, j, chunksnapshot);
+             }
+ 
+-            if (this.s.v) {
++            if (this.s.v&& this.n.paperConfig.generateVillage) { // Paper
+                 this.x.a(this.n, i, j, chunksnapshot);
+             }
+ 
+-            if (this.s.u) {
++            if (this.s.u && this.n.paperConfig.generateStronghold) { // Paper
+                 this.w.a(this.n, i, j, chunksnapshot);
+             }
+ 
+-            if (this.s.x) {
++            if (this.s.x && this.n.paperConfig.generateTemple) { // Paper
+                 this.z.a(this.n, i, j, chunksnapshot);
+             }
+ 
+-            if (this.s.y) {
++            if (this.s.y && this.n.paperConfig.generateMonument) { // Paper
+                 this.B.a(this.n, i, j, chunksnapshot);
+             }
+         }
+@@ -319,23 +319,23 @@ public class ChunkProviderGenerate implements ChunkGenerator {
+         ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
+ 
+         if (this.o) {
+-            if (this.s.w) {
++            if (this.s.w && this.n.paperConfig.generateMineshaft) { // Paper
+                 this.y.a(this.n, this.i, chunkcoordintpair);
+             }
+ 
+-            if (this.s.v) {
++            if (this.s.v && this.n.paperConfig.generateVillage) { // Paper
+                 flag = this.x.a(this.n, this.i, chunkcoordintpair);
+             }
+ 
+-            if (this.s.u) {
++            if (this.s.u && this.n.paperConfig.generateStronghold) { // Paper
+                 this.w.a(this.n, this.i, chunkcoordintpair);
+             }
+ 
+-            if (this.s.x) {
++            if (this.s.x && this.n.paperConfig.generateTemple) { // Paper
+                 this.z.a(this.n, this.i, chunkcoordintpair);
+             }
+ 
+-            if (this.s.y) {
++            if (this.s.y && this.n.paperConfig.generateMonument) { // Paper
+                 this.B.a(this.n, this.i, chunkcoordintpair);
+             }
+         }
+@@ -360,7 +360,7 @@ public class ChunkProviderGenerate implements ChunkGenerator {
+             }
+         }
+ 
+-        if (this.s.s) {
++        if (this.s.s && this.n.paperConfig.generateDungeon) { // Paper
+             for (k1 = 0; k1 < this.s.t; ++k1) {
+                 l1 = this.i.nextInt(16) + 8;
+                 i2 = this.i.nextInt(256);
+@@ -424,23 +424,23 @@ public class ChunkProviderGenerate implements ChunkGenerator {
+ 
+     public void recreateStructures(Chunk chunk, int i, int j) {
+         if (this.o) {
+-            if (this.s.w) {
++            if (this.s.w && this.n.paperConfig.generateMineshaft) { // Paper
+                 this.y.a(this.n, i, j, (ChunkSnapshot) null);
+             }
+ 
+-            if (this.s.v) {
++            if (this.s.v && this.n.paperConfig.generateVillage) { // Paper
+                 this.x.a(this.n, i, j, (ChunkSnapshot) null);
+             }
+ 
+-            if (this.s.u) {
++            if (this.s.u && this.n.paperConfig.generateStronghold) { // Paper
+                 this.w.a(this.n, i, j, (ChunkSnapshot) null);
+             }
+ 
+-            if (this.s.x) {
++            if (this.s.x && this.n.paperConfig.generateTemple) { // Paper
+                 this.z.a(this.n, i, j, (ChunkSnapshot) null);
+             }
+ 
+-            if (this.s.y) {
++            if (this.s.y && this.n.paperConfig.generateMonument) { // Paper
+                 this.B.a(this.n, i, j, (ChunkSnapshot) null);
+             }
+         }
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderHell.java b/src/main/java/net/minecraft/server/ChunkProviderHell.java
+index 0150efd..d17a6fd 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderHell.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderHell.java
+@@ -148,7 +148,10 @@ public class ChunkProviderHell implements ChunkGenerator {
+                 IBlockData iblockdata1 = ChunkProviderHell.b;
+ 
+                 for (int l1 = 127; l1 >= 0; --l1) {
+-                    if (l1 < 127 - this.p.nextInt(5) && l1 > this.p.nextInt(5)) {
++                    // Paper start - Configurable flat bedrock worldgen
++                    if (l1 < 127 - (n.paperConfig.generateFlatBedrock ? 0 : this.p.nextInt(5)) &&
++                            l1 > (n.paperConfig.generateFlatBedrock ? 0 : this.p.nextInt(5))) {
++                        // Paper end
+                         IBlockData iblockdata2 = chunksnapshot.a(i1, l1, l);
+ 
+                         if (iblockdata2.getBlock() != null && iblockdata2.getMaterial() != Material.AIR) {
+@@ -364,6 +367,6 @@ public class ChunkProviderHell implements ChunkGenerator {
+     }
+ 
+     public void recreateStructures(Chunk chunk, int i, int j) {
+-        this.H.a(this.n, i, j, (ChunkSnapshot) null);
++        if (this.n.paperConfig.generateFortress) this.H.a(this.n, i, j, (ChunkSnapshot) null); // Paper
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/StructureGenerator.java b/src/main/java/net/minecraft/server/StructureGenerator.java
+index 22d96e9..83d9509 100644
+--- a/src/main/java/net/minecraft/server/StructureGenerator.java
++++ b/src/main/java/net/minecraft/server/StructureGenerator.java
+@@ -90,6 +90,7 @@ public abstract class StructureGenerator extends WorldGenBase {
+     }
+ 
+     public boolean b(BlockPosition blockposition) {
++        if (this.g == null) return false; // Paper
+         this.a(this.g);
+         return this.c(blockposition) != null;
+     }
+@@ -117,6 +118,7 @@ public abstract class StructureGenerator extends WorldGenBase {
+     }
+ 
+     public boolean b(World world, BlockPosition blockposition) {
++        if (this.g == null) return false; // Paper
+         this.a(world);
+         Iterator iterator = this.c.values().iterator();
+ 
+-- 
+2.8.0
+

@@ -1,0 +1,244 @@
+From 0c7102107d53530cbc3158beae7f75f00b4daca3 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Wed, 2 Mar 2016 00:52:31 -0600
+Subject: [PATCH] Lighting Queue
+
+
+diff --git a/src/main/java/co/aikar/timings/SpigotTimings.java b/src/main/java/co/aikar/timings/SpigotTimings.java
+index 3f4271c..5fdf051 100644
+--- a/src/main/java/co/aikar/timings/SpigotTimings.java
++++ b/src/main/java/co/aikar/timings/SpigotTimings.java
+@@ -17,6 +17,7 @@ public final class SpigotTimings {
+     public static final Timing timeUpdateTimer = Timings.ofSafe("Time Update");
+     public static final Timing serverCommandTimer = Timings.ofSafe("Server Command");
+     public static final Timing worldSaveTimer = Timings.ofSafe("World Save");
++    public static final Timing lightingQueueTimer = Timings.ofSafe("Lighting Queue");
+ 
+     public static final Timing tickEntityTimer = Timings.ofSafe("## tickEntity");
+     public static final Timing tickTileEntityTimer = Timings.ofSafe("## tickTileEntity");
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 7c0e61f..e0e9a65 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -155,4 +155,20 @@ public class PaperWorldConfig {
+         netherVoidTopDamage = getBoolean( "nether-ceiling-void-damage", false );
+         log("Top of the nether void damage: " + netherVoidTopDamage);
+     }
++
++    public int tickNextTickCap;
++    public boolean tickNextTickListCapIgnoresRedstone;
++    private void tickNextTickCap() {
++        tickNextTickCap = getInt("tick-next-tick-list-cap", 1000); // Higher values will be friendlier to vanilla style mechanics (to a point) but may hurt performance
++        tickNextTickListCapIgnoresRedstone = getBoolean("tick-next-tick-list-cap-ignores-redstone", false); // Redstone TickNextTicks will always bypass the preceding cap
++        log("WorldServer TickNextTick cap set at " + tickNextTickCap);
++        log("WorldServer TickNextTickList cap always processes redstone: " + tickNextTickListCapIgnoresRedstone);
++
++    }
++
++    public boolean queueLightUpdates;
++    private void queueLightUpdates() {
++        queueLightUpdates = getBoolean("queue-light-updates", false);
++        log("Lighting Queue enabled: " + queueLightUpdates);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index cde4124..3b5e8c2 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -44,6 +44,7 @@ public class Chunk {
+     private int w;
+     private ConcurrentLinkedQueue<BlockPosition> x;
+     protected gnu.trove.map.hash.TObjectIntHashMap<Class> entityCount = new gnu.trove.map.hash.TObjectIntHashMap<Class>(); // Spigot
++    public int lightUpdates; // Paper - Number of queued light updates for this chunk
+ 
+     // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
+     private int neighbors = 0x1 << 12;
+@@ -226,6 +227,22 @@ public class Chunk {
+     private void h(boolean flag) {
+         this.world.methodProfiler.a("recheckGaps");
+         if (this.world.areChunksLoaded(new BlockPosition(this.locX * 16 + 8, 0, this.locZ * 16 + 8), 16)) {
++            // Paper start - Queue light update
++            if (!world.paperConfig.queueLightUpdates) {
++                recheckGaps(flag);
++            } else {
++                ++lightUpdates;
++                world.getServer().getServer().lightingQueue.add(() -> {
++                    recheckGaps(flag);
++                    --lightUpdates;
++                });
++            }
++        }
++    }
++
++    private void recheckGaps(boolean flag) {
++        if (true) {
++            // Paper end
+             for (int i = 0; i < 16; ++i) {
+                 for (int j = 0; j < 16; ++j) {
+                     if (this.h[i + j * 16]) {
+@@ -476,7 +493,7 @@ public class Chunk {
+             } else {
+                 if (flag) {
+                     this.initLighting();
+-                } else {
++                } else if (!world.paperConfig.queueLightUpdates) { // Paper
+                     int j1 = iblockdata.c();
+                     int k1 = iblockdata1.c();
+ 
+@@ -491,6 +508,28 @@ public class Chunk {
+                     if (j1 != k1 && (j1 < k1 || this.getBrightness(EnumSkyBlock.SKY, blockposition) > 0 || this.getBrightness(EnumSkyBlock.BLOCK, blockposition) > 0)) {
+                         this.d(i, k);
+                     }
++                    // Paper start - Queue light update
++                } else {
++                    int j1 = iblockdata.c();
++                    int k1 = iblockdata1.c();
++
++                    ++lightUpdates;
++                    world.getServer().getServer().lightingQueue.add(() -> {
++                        if (j1 > 0) {
++                            if (j >= i1) {
++                                this.c(i, j + 1, k);
++                            }
++                        } else if (j == i1 - 1) {
++                            this.c(i, j, k);
++                        }
++
++                        if (j1 != k1 && (j1 < k1 || this.getBrightness(EnumSkyBlock.SKY, blockposition) > 0 || this.getBrightness(EnumSkyBlock.BLOCK, blockposition) > 0)) {
++                            this.d(i, k);
++                        }
++
++                        --lightUpdates;
++                    });
++                    // Paper end
+                 }
+ 
+                 TileEntity tileentity;
+@@ -1314,4 +1353,29 @@ public class Chunk {
+ 
+         private EnumTileEntityState() {}
+     }
++
++    // Paper start
++    public boolean hasLightUpdates() {
++        if (world.paperConfig.queueLightUpdates) {
++            if (lightUpdates > 0) {
++                return true;
++            }
++
++            for (int x = locX - 2; x <= locX + 2; ++x) {
++                for (int z = locZ - 2; z <= locZ + 2; ++z) {
++                    if ((x == 0 && z == 0) || (x == locX && z == locZ)) {
++                        continue;
++                    }
++
++                    Chunk chunk = world.getChunkIfLoaded(x, z);
++                    if (chunk != null && chunk.lightUpdates > 0) {
++                        return true;
++                    }
++                }
++            }
++        }
++
++        return false;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 83857a6..4dd672a 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -284,6 +284,7 @@ public class ChunkProviderServer implements IChunkProvider {
+                 long chunkcoordinates = this.unloadQueue.popFirst();
+                 Chunk chunk = this.chunks.get(chunkcoordinates);
+                 if (chunk == null) continue;
++                if (chunk.hasLightUpdates()) continue; // Paper - Don't unload chunks with pending light updates.
+ 
+                 ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
+                 server.getPluginManager().callEvent(event);
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 3aac51d..24aa5b5 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -47,6 +47,11 @@ import org.bukkit.craftbukkit.CraftServer;
+ // CraftBukkit end
+ import co.aikar.timings.SpigotTimings; // Paper
+ 
++// Paper start
++import java.util.LinkedList;
++import java.util.Queue;
++// Paper end
++
+ public abstract class MinecraftServer implements Runnable, ICommandListener, IAsyncTaskHandler, IMojangStatistics {
+ 
+     public static final Logger LOGGER = LogManager.getLogger();
+@@ -113,6 +118,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+     public final Thread primaryThread;
+     public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
+     public int autosavePeriod;
++    public final Queue<Runnable> lightingQueue = new LinkedList<Runnable>(); // Paper - Queued light updates
+     // CraftBukkit end
+ 
+     public MinecraftServer(OptionSet options, Proxy proxy, DataConverterManager dataconvertermanager, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache) {
+@@ -759,6 +765,35 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+ 
+         this.methodProfiler.b();
+         this.methodProfiler.b();
++
++        // Paper start - Flush light updates
++        if (!lightingQueue.isEmpty()) {
++            SpigotTimings.lightingQueueTimer.startTiming();
++
++            int updatesThisTick = 0;
++            long cachedTime = System.currentTimeMillis();
++            long startTime = cachedTime - (this.h[this.ticks % 100] / 1000000);
++            int maxTickTimeCap = MathHelper.floor((TICK_TIME / 1000000) * 0.8);
++            int maxTickTime = Math.max(0, (int) (maxTickTimeCap - (cachedTime - startTime)));
++            Runnable lightUpdate;
++
++            while (maxTickTime > 0 && (lightUpdate = lightingQueue.poll()) != null) {
++                lightUpdate.run();
++                if (++updatesThisTick % 10 == 0) {
++                    long currentTime = System.currentTimeMillis();
++                    if (currentTime - cachedTime > maxTickTime) {
++                        break;
++                    }
++
++                    cachedTime = currentTime;
++                    maxTickTime = Math.max(0, (int) (maxTickTimeCap - (currentTime - startTime)));
++                }
++            }
++
++            SpigotTimings.lightingQueueTimer.stopTiming();
++        }
++        // Paper end
++
+         org.spigotmc.WatchdogThread.tick(); // Spigot
+         co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Paper
+     }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index f8746b3..a6d4097 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -378,7 +378,17 @@ public abstract class World implements IBlockAccess {
+             } else {
+                 if (iblockdata.c() != iblockdata1.c() || iblockdata.d() != iblockdata1.d()) {
+                     this.methodProfiler.a("checkLight");
+-                    this.w(blockposition);
++                    // Paper start - Queue light update
++                    if (!paperConfig.queueLightUpdates) {
++                        this.w(blockposition);
++                    } else {
++                        ++chunk.lightUpdates;
++                        getMinecraftServer().lightingQueue.add(() -> {
++                            this.w(blockposition);
++                            --chunk.lightUpdates;
++                        });
++                    }
++                    // Paper end
+                     this.methodProfiler.b();
+                 }
+ 
+-- 
+2.8.0
+

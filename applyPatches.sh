@@ -53,6 +53,10 @@ basedir=$basedir/Spigot
 popd
 basedir=$(dirname "$basedir")
 
+echo "Importing MC Dev"
+
+./importmcdev.sh
+
 # Apply paper
 (
 	applyPatch Spigot/Spigot-API Paper-API HEAD &&
