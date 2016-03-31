@@ -10,10 +10,10 @@ vanillajar="${decompiledir}/${mcver}.jar"
 cd ./Paperclip
 mvn clean package -Dmcver=${mcver} -Dpaperjar="${paperjar}" -Dvanillajar="${vanillajar}"
 cd ..
-cp ./Paperclip/target/paperclip-${mcver}.jar ./paperclip-${mcver}.jar
+cp ./Paperclip/target/paperclip-${mcver}.jar ./paperclip.jar
 
 echo ""
 echo ""
 echo ""
 echo "Build success!"
-echo "Copied final jar to $(pwd)/paperclip-${mcver}.jar"
+echo "Copied final jar to $(pwd)/paperclip.jar"
