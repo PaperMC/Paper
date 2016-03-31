@@ -2,13 +2,9 @@
 basedir=`pwd`
 workdir=$basedir/work
 mcver=$(cat BuildData/info.json | grep minecraftVersion | cut -d '"' -f 4)
-decompiledir="$workdir/$mcver"
-
-paperjar="$basedir/$(ls ./Paper-Server/target/paper*-SNAPSHOT.jar)"
-vanillajar="${decompiledir}/${mcver}.jar"
 
 cd ./Paperclip
-mvn clean package -Dmcver=${mcver} -Dpaperjar="${paperjar}" -Dvanillajar="${vanillajar}"
+mvn clean package
 cd ..
 cp ./Paperclip/target/paperclip-${mcver}.jar ./paperclip.jar
 
