@@ -54,6 +54,7 @@ import PacketPlayInResourcePackStatus
 import PacketPlayOutPlayerListHeaderFooter
 import PacketPlayOutTitle
 import PacketPlayOutUpdateTime
+import PathfinderAbstract
 import PathfinderGoalFloat
 import PersistentVillage
 import TileEntityEnderChest
