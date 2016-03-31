@@ -2,11 +2,16 @@
 
 PS1="$"
 basedir=`pwd`
-workdir=$basedir/work
+workdir="$basedir/work"
 minecraftversion=$(cat BuildData/info.json | grep minecraftVersion | cut -d '"' -f 4)
-decompiledir=$workdir/$minecraftversion
-nms=$decompiledir/net/minecraft/server
+decompiledir="$workdir/$minecraftversion"
+nms="$decompiledir/net/minecraft/server"
 cb=src/main/java/net/minecraft/server
+
+paperjar="$basedir/Paper-Server/target/paper-${minecraftversion}.jar"
+vanillajar="${decompiledir}/${minecraftversion}.jar"
+
+echo -e "mcver=${minecraftversion}\npaperjar=${paperjar}\nvanillajar=${vanillajar}" > paperclip.properties
 
 patch=$(which patch 2>/dev/null)
 if [ "x$patch" == "x" ]; then
