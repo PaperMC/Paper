@@ -456,7 +456,12 @@ public class PathfinderNormal extends PathfinderAbstract {
                 for (int j1 = -1; j1 <= 1; ++j1) {
                     if (l != 0 || j1 != 0) {
                         blockposition_mutableblockposition.d(i + l, j + i1, k + j1);
-                        IBlockData iblockdata = iblockaccess.getType(blockposition_mutableblockposition);
+                        // Paper start
+                        IBlockData iblockdata = iblockaccess.getTypeIfLoaded(blockposition_mutableblockposition);
+                        if (iblockdata == null) {
+                            pathtype = PathType.BLOCKED;
+                        } else {
+                        // Paper end
 
                         if (iblockdata.a(Blocks.CACTUS)) {
                             return PathType.DANGER_CACTUS;
@@ -473,6 +478,7 @@ public class PathfinderNormal extends PathfinderAbstract {
                         if (iblockaccess.getFluid(blockposition_mutableblockposition).a((Tag) TagsFluid.WATER)) {
                             return PathType.WATER_BORDER;
                         }
+                        } // Paper
                     }
                 }
             }
@@ -482,7 +488,8 @@ public class PathfinderNormal extends PathfinderAbstract {
     }
 
     protected static PathType b(IBlockAccess iblockaccess, BlockPosition blockposition) {
-        IBlockData iblockdata = iblockaccess.getType(blockposition);
+        IBlockData iblockdata = iblockaccess.getTypeIfLoaded(blockposition); // Paper
+        if (iblockdata == null) return PathType.BLOCKED; // Paper
         Block block = iblockdata.getBlock();
         Material material = iblockdata.getMaterial();
 

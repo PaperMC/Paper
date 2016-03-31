@@ -17,7 +17,7 @@ public class Pathfinder {
 
     private final PathPoint[] a = new PathPoint[32];
     private final int b;
-    private final PathfinderAbstract c;
+    private final PathfinderAbstract c; public PathfinderAbstract getPathfinder() { return this.c; }  // Paper - OBFHELPER
     private final Path d = new Path();
 
     public Pathfinder(PathfinderAbstract pathfinderabstract, int i) {

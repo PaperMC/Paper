@@ -27,7 +27,7 @@ public abstract class NavigationAbstract {
     private BlockPosition p;
     private int q;
     private float r;
-    private final Pathfinder s;
+    private final Pathfinder s; public Pathfinder getPathfinder() { return this.s; } // Paper - OBFHELPER
     private boolean t;
 
     public NavigationAbstract(EntityInsentient entityinsentient, World world) {
