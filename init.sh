@@ -8,10 +8,10 @@ decompiledir="$workdir/$minecraftversion"
 nms="$decompiledir/net/minecraft/server"
 cb=src/main/java/net/minecraft/server
 
-paperjar="$basedir/Paper-Server/target/paper-${minecraftversion}.jar"
-vanillajar="${decompiledir}/${minecraftversion}.jar"
+paperjar="Paper-Server/target/paper-${minecraftversion}.jar"
+vanillajar="work/${minecraftversion}/${minecraftversion}.jar"
 
-echo -e "mcver=${minecraftversion}\r\npaperjar=${paperjar}\r\nvanillajar=${vanillajar}" > paperclip.properties
+echo -e "mcver=${minecraftversion}\npaperjar=../${paperjar}\nvanillajar=../${vanillajar}\n" > paperclip.properties
 
 patch=$(which patch 2>/dev/null)
 if [ "x$patch" == "x" ]; then
