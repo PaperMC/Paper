@@ -1,0 +1,2643 @@
+From ebe7a4167b26b9307a4e18c9a7003aa646c45bcb Mon Sep 17 00:00:00 2001
+From: Antony Riley <antony@cyberiantiger.org>
+Date: Fri, 1 Apr 2016 09:42:31 +0300
+Subject: [PATCH] Add alternative implementation for Mojang's File IO.
+
+New IO implementation is entirely optional.
+Better locking.
+Better guarantees about closing region files on world unload.
+Better detection and handling of corrupt region files.
+Region files can shrink as well as grow.
+Better free space map implementation for region files.
+Fairly minimal diff.
+Configurable thread count for async chunk saving.
+Configurable limit to the async chunk saving queue size.
+
+Future: possibility of a plugin API to modify world persistence.
+Future: possibility of per world disk IO stats.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index cd25fb8..8f3bfe6 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -190,4 +190,26 @@ public class PaperConfig {
+     private static void regionFileCacheSize() {
+         regionFileCacheSize = getInt("settings.region-file-cache-size", 256);
+     }
++
++    public static boolean usePaperIO = false;
++    public static int paperIORegionFileCacheSize = 256;
++    public static int paperIOAsyncChunkSaveQueueSize = 0;
++    public static int paperIOAsyncChunkSaveQueueThreads = 1;
++    private static void paperIO() {
++        usePaperIO = getBoolean("settings.paper-io", false);
++        // Region file cache size (per world). 
++        // TODO: Move to world settings.
++        paperIORegionFileCacheSize = getInt("settings.paper-io-region-file-cache-size", 256);
++        if (paperIORegionFileCacheSize < 1) {
++            paperIORegionFileCacheSize = 1;
++        }
++        // Max size of async chunk save queue (global) , < 1 disabled.
++        paperIOAsyncChunkSaveQueueSize = getInt("settings.paper-io-async-chunk-save-queue-size", -1);
++        // Max size of async chunk save queue (global) , < 1 disabled.
++        paperIOAsyncChunkSaveQueueThreads = getInt("settings.paper-io-async-chunk-save-queue-threads", 1);
++        // Minimum value of 1.
++        if (paperIOAsyncChunkSaveQueueSize < 1) {
++            paperIOAsyncChunkSaveQueueSize = 1;
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 3a1ee86..16ff192 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -122,6 +122,7 @@ public class ChunkProviderServer implements IChunkProvider {
+ 
+         if (chunk == null) {
+             // CraftBukkit start
++            /* // Paper
+             ChunkRegionLoader loader = null;
+ 
+             if (this.chunkLoader instanceof ChunkRegionLoader) {
+@@ -130,6 +131,8 @@ public class ChunkProviderServer implements IChunkProvider {
+             if (loader != null && loader.chunkExists(world, i, j)) {
+                 chunk = ChunkIOExecutor.syncChunkLoad(world, loader, this, i, j);
+             }
++            */ // Paper
++            chunk = ChunkIOExecutor.syncChunkLoad(world, chunkLoader, this, i, j); // Paper - skip chunkExists, expensive and performed by loading anyway.
+             /* chunk = this.loadChunk(i, j);
+             if (chunk != null) {
+                 this.chunks.put(ChunkCoordIntPair.a(i, j), chunk);
+@@ -152,12 +155,14 @@ public class ChunkProviderServer implements IChunkProvider {
+     public Chunk getChunkAt(int i, int j, Runnable runnable) {
+         //unloadQueue.remove(i, j); // Paper
+         Chunk chunk = chunks.get(LongHash.toLong(i, j));
+-        ChunkRegionLoader loader = null;
++        IChunkLoader loader = this.chunkLoader;
+ 
++        /*
+         if (this.chunkLoader instanceof ChunkRegionLoader) {
+             loader = (ChunkRegionLoader) this.chunkLoader;
+ 
+         }
++        */
+         // We can only use the queue for already generated chunks
+         if (chunk == null && loader != null && loader.chunkExists(world, i, j)) {
+             if (runnable != null) {
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index 778f8f5..6dbc13a 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -81,7 +81,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+         return this.a(world, i, j, nbttagcompound);
+     }
+ 
+-    protected Object[] a(World world, int i, int j, NBTTagCompound nbttagcompound) { // CraftBukkit - return Chunk -> Object[]
++    public static Object[] a(World world, int i, int j, NBTTagCompound nbttagcompound) { // CraftBukkit - return Chunk -> Object[] // Paper protected -> public static
+         if (!nbttagcompound.hasKeyOfType("Level", 10)) {
+             ChunkRegionLoader.a.error("Chunk file at " + i + "," + j + " is missing level data, skipping");
+             return null;
+@@ -92,7 +92,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+                 ChunkRegionLoader.a.error("Chunk file at " + i + "," + j + " is missing block data, skipping");
+                 return null;
+             } else {
+-                Chunk chunk = this.a(world, nbttagcompound1);
++                Chunk chunk = ChunkRegionLoader.a(world, nbttagcompound1); // Paper
+ 
+                 if (!chunk.a(i, j)) {
+                     ChunkRegionLoader.a.error("Chunk file at " + i + "," + j + " is in the wrong location; relocating. (Expected " + i + ", " + j + ", got " + chunk.locX + ", " + chunk.locZ + ")");
+@@ -111,7 +111,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+                         }
+                     }
+                     // CraftBukkit end
+-                    chunk = this.a(world, nbttagcompound1);
++                    chunk = ChunkRegionLoader.a(world, nbttagcompound1); // Paper
+                 }
+ 
+                 // CraftBukkit start
+@@ -218,7 +218,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+ 
+     }
+ 
+-    private void a(Chunk chunk, World world, NBTTagCompound nbttagcompound) {
++    public static void a(Chunk chunk, World world, NBTTagCompound nbttagcompound) { // Paper private -> public static
+         nbttagcompound.setInt("xPos", chunk.locX);
+         nbttagcompound.setInt("zPos", chunk.locZ);
+         nbttagcompound.setLong("LastUpdate", world.getTime());
+@@ -322,7 +322,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+ 
+     }
+ 
+-    private Chunk a(World world, NBTTagCompound nbttagcompound) {
++    public static Chunk a(World world, NBTTagCompound nbttagcompound) { // Paper private -> public static
+         int i = nbttagcompound.getInt("xPos");
+         int j = nbttagcompound.getInt("zPos");
+         Chunk chunk = new Chunk(world, i, j);
+@@ -363,7 +363,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+         return chunk;
+     }
+ 
+-    public void loadEntities(Chunk chunk, NBTTagCompound nbttagcompound, World world) {
++    public static void loadEntities(Chunk chunk, NBTTagCompound nbttagcompound, World world) { // Paper - make static
+         // CraftBukkit end
+         world.timings.syncChunkLoadEntitiesTimer.startTiming(); // Spigot
+         NBTTagList nbttaglist1 = nbttagcompound.getList("Entities", 10);
+diff --git a/src/main/java/net/minecraft/server/IChunkLoader.java b/src/main/java/net/minecraft/server/IChunkLoader.java
+index df4c1e0..726e42e 100644
+--- a/src/main/java/net/minecraft/server/IChunkLoader.java
++++ b/src/main/java/net/minecraft/server/IChunkLoader.java
+@@ -13,4 +13,8 @@ public interface IChunkLoader {
+     void a();
+ 
+     void b();
++
++    public Object[] loadChunk(World world, int x, int z) throws IOException; // Paper
++
++    public boolean chunkExists(World world, int i, int j); // Paper
+ }
+diff --git a/src/main/java/net/minecraft/server/IDataManager.java b/src/main/java/net/minecraft/server/IDataManager.java
+index dc638d9..44ac431 100644
+--- a/src/main/java/net/minecraft/server/IDataManager.java
++++ b/src/main/java/net/minecraft/server/IDataManager.java
+@@ -1,8 +1,9 @@
+ package net.minecraft.server;
+ 
++import java.io.Closeable;
+ import java.io.File;
+ 
+-public interface IDataManager {
++public interface IDataManager extends Closeable { // Paper - Closing worlds would be nice!
+ 
+     WorldData getWorldData();
+ 
+diff --git a/src/main/java/net/minecraft/server/IPlayerFileData.java b/src/main/java/net/minecraft/server/IPlayerFileData.java
+index 8b2d910..5d359c3 100644
+--- a/src/main/java/net/minecraft/server/IPlayerFileData.java
++++ b/src/main/java/net/minecraft/server/IPlayerFileData.java
+@@ -1,5 +1,8 @@
+ package net.minecraft.server;
+ 
++import java.util.List; // Paper
++import java.util.UUID; // Paper
++
+ public interface IPlayerFileData {
+ 
+     void save(EntityHuman entityhuman);
+@@ -7,4 +10,10 @@ public interface IPlayerFileData {
+     NBTTagCompound load(EntityHuman entityhuman);
+ 
+     String[] getSeenPlayers();
++
++    List<UUID> getSeenPlayerUUIDs(); // Paper
++
++    NBTTagCompound getPlayerData(UUID id); // Paper
++
++    long getLastModified(UUID id); // Paper
+ }
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 06dec17..bc7125a 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -50,6 +50,7 @@ import co.aikar.timings.SpigotTimings; // Paper
+ // Paper start
+ import java.util.LinkedList;
+ import java.util.Queue;
++import org.bukkit.craftbukkit.chunkio2.impl.CraftNBTStorage;
+ // Paper end
+ 
+ public abstract class MinecraftServer implements Runnable, ICommandListener, IAsyncTaskHandler, IMojangStatistics {
+@@ -248,15 +249,21 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+                 }
+             }
+ 
+-            String worldType = org.bukkit.World.Environment.getEnvironment(dimension).toString().toLowerCase();
++            org.bukkit.World.Environment env = org.bukkit.World.Environment.getEnvironment(dimension); // Paper
++            String worldType = env.toString().toLowerCase(); // Paper
+             String name = (dimension == 0) ? s : s + "_" + worldType;
+ 
+             org.bukkit.generator.ChunkGenerator gen = this.server.getGenerator(name);
++            org.bukkit.craftbukkit.chunkio2.WorldPersistence persistence = this.server.getPersistence(name, env, j == 0);
+             WorldSettings worldsettings = new WorldSettings(i, this.getGamemode(), this.getGenerateStructures(), this.isHardcore(), worldtype);
+             worldsettings.setGeneratorSettings(s2);
+ 
+             if (j == 0) {
+-                IDataManager idatamanager = new ServerNBTManager(server.getWorldContainer(), s1, true, this.dataConverterManager);
++                // Paper - Start
++                IDataManager idatamanager = persistence == null ? 
++                        new ServerNBTManager(server.getWorldContainer(), s1, true, this.dataConverterManager) :
++                        new CraftNBTStorage(true, this.dataConverterManager, persistence);
++                // Paper - End
+                 WorldData worlddata = idatamanager.getWorldData();
+                 if (worlddata == null) {
+                     worlddata = new WorldData(worldsettings, s1);
+@@ -305,7 +312,11 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+                     }
+                 }
+ 
+-                IDataManager idatamanager = new ServerNBTManager(server.getWorldContainer(), name, true, this.dataConverterManager);
++                // Paper - Start
++                IDataManager idatamanager = persistence == null ? 
++                        new ServerNBTManager(server.getWorldContainer(), name, true, this.dataConverterManager) :
++                        new CraftNBTStorage(true, this.dataConverterManager, persistence);
++                // Paper - End
+                 // world =, b0 to dimension, s1 to name, added Environment and gen
+                 WorldData worlddata = idatamanager.getWorldData();
+                 if (worlddata == null) {
+@@ -479,6 +490,17 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+ 
+             this.saveChunks(false);
+ 
++            // Paper - Start
++            for (i = 0; i < this.worldServer.length; ++i) {
++                if (this.worldServer[i] != null) {
++                    try {
++                        this.worldServer[i].getDataManager().close();
++                    } catch (IOException ex) {
++                        LOGGER.warn("Exception closing world",ex);
++                    }
++                }
++            }
++            // Paper - End
+             /* CraftBukkit start - Handled in saveChunks
+             for (i = 0; i < this.worldServer.length; ++i) {
+                 if (this.worldServer[i] != null) {
+diff --git a/src/main/java/net/minecraft/server/WorldNBTStorage.java b/src/main/java/net/minecraft/server/WorldNBTStorage.java
+index c2d384c..820a815 100644
+--- a/src/main/java/net/minecraft/server/WorldNBTStorage.java
++++ b/src/main/java/net/minecraft/server/WorldNBTStorage.java
+@@ -16,6 +16,12 @@ import java.util.UUID;
+ import org.bukkit.craftbukkit.entity.CraftPlayer;
+ // CraftBukkit end
+ 
++// Paper start
++import java.util.Arrays;
++import java.util.List;
++import java.util.stream.Collectors;
++// Paper end
++
+ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+ 
+     private static final Logger b = LogManager.getLogger();
+@@ -208,7 +214,7 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+     }
+ 
+     // CraftBukkit start
+-    public NBTTagCompound getPlayerData(String s) {
++    public NBTTagCompound getPlayerData(UUID s) { // Paper - String -> UUID.
+         try {
+             File file1 = new File(this.playerDir, s + ".dat");
+ 
+@@ -298,4 +304,37 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+         return playerDir;
+     }
+     // CraftBukkit end
++
++    // Paper start
++    @Override
++    public List<UUID> getSeenPlayerUUIDs() {
++        return Arrays.asList(playerDir.list((dir, s) -> s.endsWith(".dat")))
++                .stream()
++                .map((s) -> {
++                    try {
++                        return UUID.fromString(s.substring(0,s.length() - 4));
++                    } catch (IllegalArgumentException ex) {
++                        return null;
++                    }
++                })
++                .filter((s) -> s != null)
++                .collect(Collectors.toList());
++    }
++
++    @Override
++    public long getLastModified(UUID id) {
++        File file = new File(playerDir, id + ".dat");
++        if (file.exists()) {
++            return file.lastModified();
++        } else {
++            return 0L;
++        }
++    }
++
++    @Override
++    public void close() throws IOException {
++        a(); // This is more like flush() than close()
++    }
++    // Paper end
++
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
+index 4521786..ee4ef0b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
+@@ -1,15 +1,13 @@
+ package org.bukkit.craftbukkit;
+ 
+ import com.mojang.authlib.GameProfile;
+-import java.io.File;
+ import java.util.LinkedHashMap;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.UUID;
+ 
+-import net.minecraft.server.EntityPlayer;
++import net.minecraft.server.IPlayerFileData; // Paper
+ import net.minecraft.server.NBTTagCompound;
+-import net.minecraft.server.WorldNBTStorage;
+ 
+ import org.bukkit.BanList;
+ import org.bukkit.Bukkit;
+@@ -26,13 +24,12 @@ import org.bukkit.plugin.Plugin;
+ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable {
+     private final GameProfile profile;
+     private final CraftServer server;
+-    private final WorldNBTStorage storage;
++    private final IPlayerFileData storage; // Paper
+ 
+     protected CraftOfflinePlayer(CraftServer server, GameProfile profile) {
+         this.server = server;
+         this.profile = profile;
+-        this.storage = (WorldNBTStorage) (server.console.worlds.get(0).getDataManager());
+-
++        this.storage = server.console.worlds.get(0).getDataManager().getPlayerFileData(); // Paper
+     }
+ 
+     public GameProfile getProfile() {
+@@ -169,7 +166,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
+     }
+ 
+     private NBTTagCompound getData() {
+-        return storage.getPlayerData(getUniqueId().toString());
++        return storage.getPlayerData(getUniqueId()); // Paper
+     }
+ 
+     private NBTTagCompound getBukkitData() {
+@@ -185,10 +182,6 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
+         return result;
+     }
+ 
+-    private File getDataFile() {
+-        return new File(storage.getPlayerDir(), getUniqueId() + ".dat");
+-    }
+-
+     public long getFirstPlayed() {
+         Player player = getPlayer();
+         if (player != null) return player.getFirstPlayed();
+@@ -199,8 +192,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
+             if (data.hasKey("firstPlayed")) {
+                 return data.getLong("firstPlayed");
+             } else {
+-                File file = getDataFile();
+-                return file.lastModified();
++                return storage.getLastModified(getUniqueId()); // Paper
+             }
+         } else {
+             return 0;
+@@ -217,8 +209,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
+             if (data.hasKey("lastPlayed")) {
+                 return data.getLong("lastPlayed");
+             } else {
+-                File file = getDataFile();
+-                return file.lastModified();
++                return storage.getLastModified(getUniqueId()); // Paper
+             }
+         } else {
+             return 0;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 5b70d7a..98c8de5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -109,6 +109,7 @@ import com.avaje.ebean.config.DataSourceConfig;
+ import com.avaje.ebean.config.ServerConfig;
+ import com.avaje.ebean.config.dbplatform.SQLitePlatform;
+ import com.avaje.ebeaninternal.server.lib.sql.TransactionIsolation;
++import com.destroystokyo.paper.PaperConfig;
+ import com.google.common.base.Charsets;
+ import com.google.common.base.Function;
+ import com.google.common.collect.ImmutableList;
+@@ -120,8 +121,11 @@ import io.netty.buffer.ByteBuf;
+ import io.netty.buffer.ByteBufOutputStream;
+ import io.netty.buffer.Unpooled;
+ import io.netty.handler.codec.base64.Base64;
++import java.util.stream.Collectors; // Paper
+ import jline.console.ConsoleReader;
+ import net.md_5.bungee.api.chat.BaseComponent;
++import org.bukkit.craftbukkit.chunkio2.WorldPersistence;
++import org.bukkit.craftbukkit.chunkio2.anvil.AnvilWorldPersistenceFactory;
+ 
+ public final class CraftServer implements Server {
+     private static final Player[] EMPTY_PLAYER_ARRAY = new Player[0];
+@@ -1040,6 +1044,15 @@ public final class CraftServer implements Server {
+             }
+         }
+ 
++        // Paper - Start
++        // For paper-io
++        try {
++            handle.getDataManager().close();
++        } catch (IOException ex) {
++            getLogger().log(Level.SEVERE, null, ex);
++        }
++        // Paper - End
++
+         return true;
+     }
+ 
+@@ -1282,6 +1295,19 @@ public final class CraftServer implements Server {
+         return result;
+     }
+ 
++    // Paper - Start
++    public WorldPersistence getPersistence(String name, Environment env, boolean primary) {
++        if (!PaperConfig.usePaperIO) return null;
++        try {
++            // TODO: Service lookup & worlds config section in paper.yml
++            return AnvilWorldPersistenceFactory.INSTANCE.createWorldPersistence( new File(getWorldContainer(), name), name, env, primary);
++        } catch (IOException ex) {
++            getLogger().severe("Failed to create persistence for world: " + name + " environment: " + env.name() + " primary: " + primary);
++            return null;
++        }
++    }
++    // Paper - End
++
+     @Override
+     @Deprecated
+     public CraftMapView getMap(short id) {
+@@ -1516,21 +1542,13 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public OfflinePlayer[] getOfflinePlayers() {
+-        WorldNBTStorage storage = (WorldNBTStorage) console.worlds.get(0).getDataManager();
+-        String[] files = storage.getPlayerDir().list(new DatFileFilter());
+-        Set<OfflinePlayer> players = new HashSet<OfflinePlayer>();
+-
+-        for (String file : files) {
+-            try {
+-                players.add(getOfflinePlayer(UUID.fromString(file.substring(0, file.length() - 4))));
+-            } catch (IllegalArgumentException ex) {
+-                // Who knows what is in this directory, just ignore invalid files
+-            }
+-        }
+-
+-        players.addAll(getOnlinePlayers());
+-
+-        return players.toArray(new OfflinePlayer[players.size()]);
++        // Paper Start
++        Set<OfflinePlayer> result = 
++                console.worlds.get(0).getDataManager().getPlayerFileData().getSeenPlayerUUIDs().stream()
++                .map((id) -> getOfflinePlayer(id))
++                .collect(Collectors.toSet());
++        return result.toArray(new OfflinePlayer[result.size()]);
++        // Paper End
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index c81dfee..a7c7f98 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -1282,7 +1282,7 @@ public class CraftWorld implements World {
+     }
+ 
+     public File getWorldFolder() {
+-        return ((WorldNBTStorage) world.getDataManager()).getDirectory();
++        return world.getDataManager().getDirectory(); // Paper
+     }
+ 
+     public void sendPluginMessage(Plugin source, String channel, byte[] message) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOExecutor.java b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOExecutor.java
+index 7b7a3d0..1ffaa46 100644
+--- a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOExecutor.java
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOExecutor.java
+@@ -3,7 +3,7 @@ package org.bukkit.craftbukkit.chunkio;
+ import com.destroystokyo.paper.PaperConfig;
+ import net.minecraft.server.Chunk;
+ import net.minecraft.server.ChunkProviderServer;
+-import net.minecraft.server.ChunkRegionLoader;
++import net.minecraft.server.IChunkLoader;
+ import net.minecraft.server.World;
+ import org.bukkit.craftbukkit.util.AsynchronousExecutor;
+ 
+@@ -13,11 +13,11 @@ public class ChunkIOExecutor {
+ 
+     private static final AsynchronousExecutor<QueuedChunk, Chunk, Runnable, RuntimeException> instance = new AsynchronousExecutor<QueuedChunk, Chunk, Runnable, RuntimeException>(new ChunkIOProvider(), BASE_THREADS);
+ 
+-    public static Chunk syncChunkLoad(World world, ChunkRegionLoader loader, ChunkProviderServer provider, int x, int z) {
++    public static Chunk syncChunkLoad(World world, IChunkLoader loader, ChunkProviderServer provider, int x, int z) {
+         return instance.getSkipQueue(new QueuedChunk(x, z, loader, world, provider));
+     }
+ 
+-    public static void queueChunkLoad(World world, ChunkRegionLoader loader, ChunkProviderServer provider, int x, int z, Runnable runnable) {
++    public static void queueChunkLoad(World world, IChunkLoader loader, ChunkProviderServer provider, int x, int z, Runnable runnable) {
+         instance.add(new QueuedChunk(x, z, loader, world, provider), runnable);
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
+index a1a6d5a..ffe3901 100644
+--- a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
+@@ -10,6 +10,7 @@ import org.bukkit.craftbukkit.util.AsynchronousExecutor;
+ import org.bukkit.craftbukkit.util.LongHash;
+ 
+ import java.util.concurrent.atomic.AtomicInteger;
++import net.minecraft.server.IChunkLoader;
+ 
+ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChunk, Chunk, Runnable, RuntimeException> {
+     private final AtomicInteger threadNumber = new AtomicInteger(1);
+@@ -17,7 +18,7 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
+     // async stuff
+     public Chunk callStage1(QueuedChunk queuedChunk) throws RuntimeException {
+         try {
+-            ChunkRegionLoader loader = queuedChunk.loader;
++            IChunkLoader loader = queuedChunk.loader;
+             Object[] data = loader.loadChunk(queuedChunk.world, queuedChunk.x, queuedChunk.z);
+             
+             if (data != null) {
+@@ -39,7 +40,7 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
+             return;
+         }
+ 
+-        queuedChunk.loader.loadEntities(chunk, queuedChunk.compound.getCompound("Level"), queuedChunk.world);
++        ChunkRegionLoader.loadEntities(chunk, queuedChunk.compound.getCompound("Level"), queuedChunk.world);
+         chunk.setLastSaved(queuedChunk.provider.world.getTime());
+         queuedChunk.provider.chunks.put(LongHash.toLong(queuedChunk.x, queuedChunk.z), chunk);
+         chunk.addEntities();
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio/QueuedChunk.java b/src/main/java/org/bukkit/craftbukkit/chunkio/QueuedChunk.java
+index 842d424..2ab5099 100644
+--- a/src/main/java/org/bukkit/craftbukkit/chunkio/QueuedChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio/QueuedChunk.java
+@@ -2,18 +2,19 @@ package org.bukkit.craftbukkit.chunkio;
+ 
+ import net.minecraft.server.ChunkProviderServer;
+ import net.minecraft.server.ChunkRegionLoader;
++import net.minecraft.server.IChunkLoader;
+ import net.minecraft.server.NBTTagCompound;
+ import net.minecraft.server.World;
+ 
+ class QueuedChunk {
+     final int x;
+     final int z;
+-    final ChunkRegionLoader loader;
++    final IChunkLoader loader;
+     final World world;
+     final ChunkProviderServer provider;
+     NBTTagCompound compound;
+ 
+-    public QueuedChunk(int x, int z, ChunkRegionLoader loader, World world, ChunkProviderServer provider) {
++    public QueuedChunk(int x, int z, IChunkLoader loader, World world, ChunkProviderServer provider) {
+         this.x = x;
+         this.z = z;
+         this.loader = loader;
+@@ -35,4 +36,4 @@ class QueuedChunk {
+ 
+         return false;
+     }
+-}
++}
+\ No newline at end of file
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/AbstractIOConsumer.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/AbstractIOConsumer.java
+new file mode 100644
+index 0000000..746cf1e
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/AbstractIOConsumer.java
+@@ -0,0 +1,20 @@
++package org.bukkit.craftbukkit.chunkio2;
++
++import java.io.IOException;
++
++public abstract class AbstractIOConsumer<T> implements IOConsumer<T> {
++    private IOException ex;
++
++    @Override
++    public void exception(IOException ex) {
++        this.ex = ex;
++    }
++
++    public boolean hasException() {
++        return ex != null;
++    }
++
++    public IOException getException() {
++        return ex;
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/ChunkException.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/ChunkException.java
+new file mode 100644
+index 0000000..1165a64
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/ChunkException.java
+@@ -0,0 +1,17 @@
++package org.bukkit.craftbukkit.chunkio2;
++
++import java.io.IOException;
++
++public class ChunkException extends IOException {
++    private final boolean corrupt;
++
++    public ChunkException(String message, boolean corrupt) {
++        super(message);
++        this.corrupt = corrupt;
++    }
++
++    public boolean isCorrupt() {
++        return corrupt;
++    }
++    
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/ChunkPersistence.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/ChunkPersistence.java
+new file mode 100644
+index 0000000..257e6f5
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/ChunkPersistence.java
+@@ -0,0 +1,48 @@
++package org.bukkit.craftbukkit.chunkio2;
++
++import java.io.Closeable;
++import java.io.DataInput;
++import java.io.DataOutput;
++import javax.annotation.Nonnull;
++
++/**
++ * Intended to become public API.
++ */
++public interface ChunkPersistence extends Closeable {
++    /**
++     * Test if a chunk exists.
++     * 
++     * The implementation <b>must</b> be thread safe.
++     * 
++     * @param x X coordinate of the Chunk
++     * @param z Z coordinate of the Chunk
++     * @param handler A handler to process the result.
++     */
++    public void chunkExists(int x, int z, @Nonnull IOConsumer<Boolean> handler);
++
++    /**
++     * Load a chunk from this world.
++     * 
++     * handler is <b>not</b> expected to close the passed DataInput.
++     * 
++     * The implementation <b>must</b> be thread safe.
++     * 
++     * @param x X coordinate of the Chunk
++     * @param z Z coordinate of the Chunk
++     * @param handler A handler to process the DataInput for the chunk.
++     */
++    public void loadChunk(int x, int z, @Nonnull IOConsumer<DataInput> handler);
++
++    /**
++     * Save a chunk to this world.
++     * 
++     * handler is <b>not</b> expected to close the passed DataOutput.
++     * 
++     * The implementation <b>must</b> be thread safe.
++     * 
++     * @param x X coordinate of the Chunk
++     * @param z Z coordinate of the Chunk
++     * @param handler A handler to process the DataOutput for the chunk
++     */
++    public void saveChunk(int x, int z, @Nonnull IOConsumer<DataOutput> handler);
++}
+\ No newline at end of file
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/IOConsumer.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/IOConsumer.java
+new file mode 100644
+index 0000000..9d4fb9d
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/IOConsumer.java
+@@ -0,0 +1,14 @@
++package org.bukkit.craftbukkit.chunkio2;
++
++import java.io.IOException;
++
++/**
++ * Intended to become public API.
++ */
++public interface IOConsumer<T> {
++
++    public void accept(T t) throws IOException;
++
++    public void exception(IOException ex);
++    
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/NullPlayerPersistence.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/NullPlayerPersistence.java
+new file mode 100644
+index 0000000..b1cc433
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/NullPlayerPersistence.java
+@@ -0,0 +1,37 @@
++package org.bukkit.craftbukkit.chunkio2;
++
++import java.io.DataInput;
++import java.io.DataOutput;
++import java.io.IOException;
++import java.util.Collections;
++import java.util.List;
++import java.util.UUID;
++
++/**
++ * PlayerPersistence for worlds which cannot persist players.
++ */
++public final class NullPlayerPersistence implements PlayerPersistence {
++    @Override
++    public List<UUID> getPlayerUUIDs() {
++        return Collections.emptyList();
++    }
++
++    @Override
++    public void savePlayer(UUID uuid, IOConsumer<DataOutput> handler) {
++        IOException ex = new IOException("Cannot persist players");
++        ex.fillInStackTrace();
++        handler.exception(ex);
++    }
++
++    @Override
++    public void loadPlayer(String name, UUID uuid, IOConsumer<DataInput> handler) {
++        IOException ex = new IOException("Cannot persist players");
++        ex.fillInStackTrace();
++        handler.exception(ex);
++    }
++
++    @Override
++    public long getLastModified(UUID uuid) {
++        return 0L;
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/PersistenceCounters.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/PersistenceCounters.java
+new file mode 100644
+index 0000000..104c93a
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/PersistenceCounters.java
+@@ -0,0 +1,11 @@
++package org.bukkit.craftbukkit.chunkio2;
++
++/**
++ * Intended to become public API
++ */
++public class PersistenceCounters {
++
++    // TODO
++    // Counters pertaining to world saving, so we can get per world stats on chunk io
++    
++}
+\ No newline at end of file
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/PlayerPersistence.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/PlayerPersistence.java
+new file mode 100644
+index 0000000..436c790
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/PlayerPersistence.java
+@@ -0,0 +1,51 @@
++package org.bukkit.craftbukkit.chunkio2;
++
++import java.io.DataInput;
++import java.io.DataOutput;
++import java.util.List;
++import java.util.UUID;
++import javax.annotation.CheckForNull;
++import javax.annotation.Nonnull;
++
++/**
++ * Intended to become public API.
++ */
++public interface PlayerPersistence {
++
++    /**
++     * Get all players in this world save.
++     * @return A list containing the UUIDS of all players saved
++     */
++    @Nonnull
++    public List<UUID> getPlayerUUIDs();
++
++    /**
++     * Save player data to this world save.
++     * 
++     * The implementation <b>must</b> be thread safe.
++     * 
++     * @param uuid UUID of player to save
++     * @param handler
++     */
++    public void savePlayer(@Nonnull UUID uuid, @Nonnull IOConsumer<DataOutput> handler);
++    
++    /**
++     * Load player data from this world save.
++     * 
++     * The implementation <b>must</b> be thread safe.
++     * 
++     * @param name the name of the player, or null if not known
++     * @param uuid UUID of player to load
++     * @param handler
++     */
++    public void loadPlayer(@CheckForNull String name, @Nonnull UUID uuid, @Nonnull IOConsumer<DataInput> handler);
++
++    /**
++     * Get the last modification time for the passed UUID.
++     * @param uuid UUID of a player
++     * 
++     * @return the last modified time or 0L if the player was never seen.
++     */
++    public long getLastModified(@Nonnull UUID uuid);
++
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/WorldConflictException.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/WorldConflictException.java
+new file mode 100644
+index 0000000..d67c077
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/WorldConflictException.java
+@@ -0,0 +1,14 @@
++package org.bukkit.craftbukkit.chunkio2;
++
++import java.io.IOException;
++
++public class WorldConflictException extends IOException {
++
++    public WorldConflictException(String message) {
++        super(message);
++    }
++
++    public WorldConflictException(String message, IOException ex) {
++        super(message, ex);
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/WorldPersistence.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/WorldPersistence.java
+new file mode 100644
+index 0000000..42c392c
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/WorldPersistence.java
+@@ -0,0 +1,135 @@
++package org.bukkit.craftbukkit.chunkio2;
++
++import java.io.DataInput;
++import java.io.DataOutput;
++import java.io.File;
++import java.util.UUID;
++import javax.annotation.Nonnull;
++
++/**
++ * Persistence for a World.
++ */
++public interface WorldPersistence extends ChunkPersistence {
++
++    /**
++     * Get the UUID for the world.
++     * 
++     * Note: World UUID is a Bukkit specific concept.
++     * 
++     * @return the UUID
++     */
++    @Nonnull
++    public UUID getUUID();
++
++    /**
++     * Set the UUID for the world.
++     * 
++     * Note: World UUID is a Bukkit specific concept.
++     * 
++     * @param uuid A new UUID for the world
++     */
++    public void setUUID(@Nonnull UUID uuid);
++
++    /**
++     * Load the world's data (also known as level.dat).
++     * 
++     * handler is <b>not</b> expected to close the passed DataInput.
++     * 
++     * @param handler A handler to process the DataInput.
++     */
++    public void loadWorldData(@Nonnull IOConsumer<DataInput> handler);
++
++    /**
++     * Save the world's data (also known as level.dat).
++     * 
++     * handler is <b>not</b> expected to close the passed DataOutput.
++     * 
++     * @param handler A handler to process the DataOutput.
++     */
++    public void saveWorldData(@Nonnull IOConsumer<DataOutput> handler);
++
++    /**
++     * Get a File in a world's folder.
++     * 
++     * Note: the implementation is free to create the file when this is called,
++     * this is used by files such as structures.dat etc, and persist it
++     * elsewhere when close() is called.
++     * <p>
++     * Special files such as level.dat and uuid.dat whose content is available 
++     * via more specific API calls <b>should</b> also be available here for plugin
++     * compatibility.
++     * 
++     * 
++     * @param file The file to retrieve
++     * @return the file
++     */
++    @Nonnull
++    public File getWorldFile(@Nonnull String file);
++
++    /**
++     * Get a File in a world's data folder.
++     * 
++     * Note: the implementation is free to create the file when this is called,
++     * this is used by files such as structures.dat etc, and persist it
++     * elsewhere when close() is called.
++     * <p>
++     * Special files such as level.dat and uuid.dat whose content is available 
++     * via more specific API calls <b>should</b> also be available here for plugin
++     * compatibility.
++     * 
++     * 
++     * @param file The file to retrieve
++     * @return the file
++     */
++    @Nonnull
++    public File getWorldDataFile(@Nonnull String file);
++
++    /**
++     * Get the Folder this world resides in.
++     * @return a folder
++     */
++    @Nonnull
++    public File getWorldFolder();
++
++    /**
++     * Get the name of this world (A Bukkit concept).
++     * @return a name
++     */
++    @Nonnull
++    public String getWorldName();
++
++    /**
++     * Get counters pertaining to this world's persistence.
++     * 
++     * This includes bytes and chunks read/written, and is intended for
++     * monitoring disk usage per world.
++     * 
++     * @return A copy of the current counters
++     */
++    @Nonnull
++    public PersistenceCounters getCounters();
++
++    /**
++     * This checks we are the only people accessing the world save.
++     * 
++     * In anvil this is implemented by checking that session.lock has
++     * not been modified by another process.
++     * 
++     * @throws org.bukkit.craftbukkit.chunkio2.WorldConflictException
++     */
++    public void checkSession() throws WorldConflictException;
++
++    /**
++     * Does this world persistence have player persistence.
++     * @return true if we have player persistence, false otherwise.
++     */
++    public boolean hasPlayerPersistence();
++
++    /**
++     * Get this world's PlayerPersistence
++     * @return this world's PlayerPersistence or a NullPlayerPersistence if this world has none
++     */
++    @Nonnull
++    public PlayerPersistence getPlayerPersistence();
++
++}
+\ No newline at end of file
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/WorldPersistenceFactory.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/WorldPersistenceFactory.java
+new file mode 100644
+index 0000000..eaa6ceb
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/WorldPersistenceFactory.java
+@@ -0,0 +1,21 @@
++package org.bukkit.craftbukkit.chunkio2;
++
++import java.io.File;
++import java.io.IOException;
++import org.bukkit.World;
++
++public interface WorldPersistenceFactory {
++
++    /**
++     * Create a persistence implementation for a world.
++     * 
++     * @param folder Folder the world is saved to
++     * @param name Name of the world
++     * @param env Environment of the world
++     * @param primary true if the world is the primary world
++     * @return a new persistence provider
++     * @throws IOException 
++     */
++    public WorldPersistence createWorldPersistence(File folder, String name, World.Environment env, boolean primary) throws IOException;
++    
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilRegionFile.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilRegionFile.java
+new file mode 100644
+index 0000000..5cc3db5
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilRegionFile.java
+@@ -0,0 +1,429 @@
++package org.bukkit.craftbukkit.chunkio2.anvil;
++
++import org.bukkit.craftbukkit.chunkio2.ChunkException;
++import it.unimi.dsi.fastutil.ints.IntArrayList;
++import java.io.ByteArrayInputStream;
++import java.io.ByteArrayOutputStream;
++import java.io.Closeable;
++import java.io.DataInput;
++import java.io.DataInputStream;
++import java.io.DataOutput;
++import java.io.DataOutputStream;
++import java.io.File;
++import java.io.FileNotFoundException;
++import java.io.IOException;
++import java.io.RandomAccessFile;
++import java.nio.ByteBuffer;
++import java.nio.IntBuffer;
++import java.nio.MappedByteBuffer;
++import java.nio.channels.FileChannel;
++import java.util.BitSet;
++import java.util.Map;
++import java.util.NavigableMap;
++import java.util.Set;
++import java.util.SortedSet;
++import java.util.TreeMap;
++import java.util.TreeSet;
++import java.util.zip.DeflaterOutputStream;
++import java.util.zip.GZIPInputStream;
++import java.util.zip.InflaterInputStream;
++import org.apache.logging.log4j.LogManager;
++import org.apache.logging.log4j.Logger;
++import org.bukkit.craftbukkit.chunkio2.IOConsumer;
++
++class AnvilRegionFile implements Closeable {
++    private static final Logger LOG = LogManager.getLogger();
++    private final Object LOCK = new Object();
++    private static final int BLOCK_SIZE = 4096;
++    private static final int HEADER_SIZE = BLOCK_SIZE * 2;
++    private static final int CHUNK_COUNT = 1024;
++    private static final byte COMPRESSION_GZIP = 1;
++    private static final byte COMPRESSION_DEFLATE = 2;
++    static final int EMPTY = -1;
++    private final File file;
++    private final RandomAccessFile fd;
++    private final MappedByteBuffer header;
++    private final IntBuffer intHeader;
++    private final Object REF_LOCK = new Object();
++    private int inUseCount = 0;
++    private final FreeSpaceMap freeSpaceMap;
++    /**
++     * A bitset representing which chunks are present in the region fd.
++     */
++    private final BitSet present = new BitSet(1024);
++
++    public AnvilRegionFile(File file, boolean create) throws IOException {
++        if (create && !file.exists()) {
++            throw new FileNotFoundException();
++        }
++        this.file = file;
++        this.fd = new RandomAccessFile(file, "rw");
++        if (this.fd.length() < HEADER_SIZE) {
++            this.fd.setLength(HEADER_SIZE);
++        }
++        this.header = this.fd.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, 2 * BLOCK_SIZE);
++        this.intHeader = header.asIntBuffer();
++        int blockCount = (int) ((this.fd.length() + BLOCK_SIZE - 1) >> 12);
++        IntArrayList blockOwner = new IntArrayList(blockCount);
++        for (int i = 0; i < blockCount; i++) {
++            blockOwner.add(EMPTY);
++        }
++
++        BitSet corrupt = new BitSet(CHUNK_COUNT);
++
++        for (int i = 0; i < CHUNK_COUNT; i++) {
++            int location = intHeader.get(i);
++            if (location == 0) {
++                continue;
++            }
++            int offset = (location >> 8) & 0xFFFFFF;
++            int length = location & 0xFF;
++            if (offset < 2 || offset + length > blockOwner.size()) {
++                // Invalid offset or offset + length
++                LOG.warn("File: " + file.getPath() + " Invalid chunk (data region not in file): " + (i&0x1f) + ", " + (i>>5) + " block location: " + length + "@" + offset);
++                // Delete the chunk to prevent further warnings.
++                intHeader.put(i, 0);
++                continue;
++            }
++            for (int j = offset; j < offset + length; j++) {
++                int chunkId = blockOwner.getInt(j);
++                if (chunkId != EMPTY) {
++                    corrupt.set(chunkId);
++                    corrupt.set(i);
++                }
++                blockOwner.set(j, i);
++            }
++            present.set(i);
++        }
++
++        if (!corrupt.isEmpty()) {
++            // Cleanup corrupted chunks and warn.
++            present.andNot(corrupt); // Means what it says
++            for (int i = 0; i < blockOwner.size(); i++) {
++                int chunkId = blockOwner.getInt(i);
++                if (chunkId != EMPTY && corrupt.get(chunkId)) {
++                    // Chunk was marked invalid due to overlapping other chunks.
++                    blockOwner.set(i, EMPTY);
++                }
++            }
++            
++            for (int i = 0; i < CHUNK_COUNT; i++) {
++                if (corrupt.get(i)) {
++                    // Warn about corrupted overlapping chunks and delete them.
++                    int location = intHeader.get(i);
++                    int offset = (location>>8) & 0xFFFFFF;
++                    int length = location & 0xFF;
++                    LOG.warn("File: " + file.getPath() + " Invalid chunk (data region overlaps other chunks): " + (i&0x1f) + ", " + (i>>5) + " block location: " + length + "@" + offset);
++                    intHeader.put(i, 0);
++                }
++            }
++        }
++        freeSpaceMap = new FreeSpaceMap(blockOwner);
++    }
++
++    private int getChunkId(int x, int z) {
++        return x | z << 5;
++    }
++
++    // Chunk header, 4 byte length plus compression type.
++    private static final byte[] CHUNK_HEADER = { 0, 0, 0, 0, COMPRESSION_DEFLATE };
++
++    public void saveChunk(int x, int z, IOConsumer<DataOutput> handler) throws IOException {
++        AnvilByteArrayOutputStream out = new AnvilByteArrayOutputStream(2 * BLOCK_SIZE);
++        out.write(CHUNK_HEADER);
++        try (DataOutputStream dataOut = new DataOutputStream(new DeflaterOutputStream(out))) {
++            handler.accept(dataOut);
++        }
++        int chunkId = getChunkId(x, z);
++        int length = out.size(); // including CHUNK_HEADER.length
++        byte[] buffer = out.getBuffer();
++        ByteBuffer.wrap(buffer).asIntBuffer().put(0, length - CHUNK_HEADER.length);
++        synchronized (LOCK) {
++            int location = allocateChunk(chunkId, length);
++            // LOG.info("Allocated chunk file: " + file.getPath() + " id: " + chunkId + " length: " + length + " at block offset: " + ((location >> 8) & 0xFF) + " block length: " + (location & 0xFF));
++            // Write chunk
++            fd.seek((location & 0xFFFFFF00L) << 4);
++            fd.write(buffer, 0, length);
++            // Update header
++            intHeader.put(chunkId, location);
++            intHeader.put(chunkId + CHUNK_COUNT, (int)(System.currentTimeMillis() / 1000)); // Y2k38 bug
++        }
++    }
++
++    private int allocateChunk(int chunkId, int length) throws IOException {
++        int blockLength = (length + BLOCK_SIZE - 1) >> 12;
++        if (present.get(chunkId)) {
++            int currentLocation = intHeader.get(chunkId);
++            if (blockLength == (currentLocation & 0xFF)) {
++                return currentLocation;
++            } else {
++                freeSpaceMap.free(currentLocation);
++            }
++        }
++        return freeSpaceMap.allocate(blockLength);
++    }
++
++    public void loadChunk(int x, int z, IOConsumer<DataInput> handler) throws IOException {
++        int chunkId = getChunkId(x, z);
++        byte[] data;
++        int compressionType;
++        synchronized (LOCK) {
++            if (!present.get(chunkId)) {
++                throw new ChunkException("Chunk not present in region file.", false);
++            }
++            int location = intHeader.get(chunkId);
++            long fileOffset = (location & 0xFFFFFF00L) << 4;
++            int chunkLength = (location & 0xFF) << 12;
++            if (fileOffset + 5 > fd.length()) {
++                throw new ChunkException("Chunk is located beyond EOF at: " + fileOffset + " EOF: " + fd.length(), true);
++            }
++            fd.seek(fileOffset);
++            int trueLength = fd.readInt();
++            compressionType = fd.read();
++            if (trueLength < 0) {
++                throw new ChunkException("Chunk length was negative: " + trueLength, true);
++            }
++            if (trueLength + 5 > chunkLength) {
++                throw new ChunkException("Chunk length: " + (trueLength+5) +  " exceeds length in header: " + chunkLength, true);
++            }
++            if (trueLength + fd.getFilePointer() > fd.length()) {
++                throw new ChunkException("Chunk data " + (trueLength + 5) + "@" + fileOffset + " exceeds length of file: " + fd.length(), true);
++            }
++            data = new byte[trueLength];
++            fd.read(data, 0, trueLength);
++        }
++        switch (compressionType) {
++            case COMPRESSION_GZIP:
++                try (DataInputStream in = new DataInputStream(new GZIPInputStream(new ByteArrayInputStream(data)))) {
++                    handler.accept(in);
++                }
++                break;
++            case COMPRESSION_DEFLATE:
++                try (DataInputStream in = new DataInputStream(new InflaterInputStream(new ByteArrayInputStream(data)))) {
++                    handler.accept(in);
++                }
++                break;
++            default:
++                throw new ChunkException("Unknown compression type: " + compressionType, true);
++        }
++    }
++
++    public boolean chunkExists(int x, int z) {
++        synchronized (LOCK) {
++            return present.get(getChunkId(x, z));
++        }
++    }
++
++    public void ref() {
++        synchronized (REF_LOCK) {
++            inUseCount++;
++        }
++    }
++    public void deref() {
++        synchronized (REF_LOCK) {
++            inUseCount--;
++            if (inUseCount == 0) {
++                REF_LOCK.notify();
++            }
++        }
++    }
++
++
++    @Override
++    public void close() throws IOException {
++        synchronized (REF_LOCK) {
++            while (inUseCount > 0) {
++                try {
++                    REF_LOCK.wait();
++                } catch (InterruptedException ex) {
++                }
++            }
++        }
++        synchronized (LOCK) {
++            long usedSpace = ((long) freeSpaceMap.size()) << 12;
++            if (usedSpace < fd.length()) {
++                fd.setLength(usedSpace);
++            }
++            fd.close();
++        }
++    }
++
++    private static class AnvilByteArrayOutputStream extends ByteArrayOutputStream {
++        public AnvilByteArrayOutputStream(int length) {
++            super(length);
++        }
++        public byte[] getBuffer() {
++            return buf;
++        }
++    }
++
++    static class FreeRegion implements Comparable<FreeRegion> {
++        private final int offset;
++        private final int length;
++
++        public FreeRegion(int offset, int length) {
++            this.offset = offset;
++            this.length = length;
++        }
++
++        public int getOffset() {
++            return offset;
++        }
++
++        public int getLength() {
++            return length;
++        }
++
++        @Override
++        public int compareTo(FreeRegion o) {
++            if (o.offset < this.offset) {
++                return 1;
++            } else if (o.offset > this.offset) {
++                return -1;
++            } else {
++                return 0;
++            }
++        }
++    }
++
++    static class FreeSpaceMap {
++        private final NavigableMap<Integer, FreeRegion> freeByOffset = new TreeMap<>();
++        private final NavigableMap<Integer, SortedSet<FreeRegion>> freeBySize = new TreeMap<>();
++        private int size;
++        private int totalFree;
++
++        public FreeSpaceMap(IntArrayList blockOwners) {
++            size = blockOwners.size();
++            int freeCount = 0;
++            // First 2 blocks are never free
++            for (int i = 2; i < blockOwners.size(); i++) {
++                if (blockOwners.getInt(i) == EMPTY) {
++                    freeCount++;
++                } else {
++                    if (freeCount != 0) {
++                        int offset = i - freeCount;
++                        addFree(offset, freeCount);
++                        freeCount = 0;
++                    }
++                }
++            }
++            if (freeCount > 0) {
++                addFree(size - freeCount, freeCount);
++            }
++        }
++
++        public int size() {
++            return size;
++        }
++
++        public int totalFree() {
++            return totalFree;
++        }
++
++        public double utilisation() {
++            return totalFree * 1.0D / size;
++        }
++
++        private void addFree(int offset, int length) {
++            if (offset + length == size) {
++                // Free is at end of file, just shrink file size.
++                size = offset;
++                return;
++            } else {
++                // Assert we're not freeing past the end of the file. (double free)
++                assert(offset + length < size);
++            }
++            FreeRegion region = new FreeRegion(offset, length);
++            FreeRegion old = freeByOffset.put(region.getOffset(), region);
++            assert(old == null);
++            SortedSet<FreeRegion> current = freeBySize.get(region.getLength());
++            if (current == null) {
++                // TreeSet makes us prefer to alloc at lower addresses.
++                current = new TreeSet<>(); 
++                freeBySize.put(region.getLength(), current);
++            } 
++            boolean addSuccess = current.add(region);
++            assert(addSuccess);
++            // Increase free counter
++            totalFree += length;
++        }
++
++        private void removeFree(FreeRegion region) {
++            FreeRegion old = freeByOffset.remove(region.getOffset());
++            assert(old != null);
++            Set<FreeRegion> current = freeBySize.get(region.getLength());
++            boolean regionRemoved = current.remove(region);
++            assert(regionRemoved);
++            if (current.isEmpty()) {
++                freeBySize.remove(region.getLength());
++            }
++            // Decrease free counter
++            totalFree -= region.getLength();
++        }
++
++        public int allocate(int length) {
++            Map.Entry<Integer, SortedSet<FreeRegion>> e = freeBySize.ceilingEntry(length);
++            if (e == null) {
++                // No free space, allocate at end of file.
++                int result = (size << 8) | length;
++                size += length;
++                return result;
++            } else {
++                FreeRegion r = e.getValue().first();
++                removeFree(r);
++                int result = (r.getOffset()<<8) | length;
++                if (r.getLength() > length) {
++                    addFree(r.getOffset() + length, r.getLength() - length);
++                }
++                return result;
++            }
++        }
++
++        public void free(int location) {
++            int offset = (location >> 8) & 0xFFFFFF;
++            int length = location & 0xFF;
++
++            assert(offset >= 2 && length > 0);
++
++            int switchKey = 0;
++            FreeRegion prev = null;
++            FreeRegion next = null;
++            Map.Entry<Integer, FreeRegion> prevEntry = freeByOffset.floorEntry(offset);
++            if (prevEntry != null) {
++                prev = prevEntry.getValue();
++                if (prev.getOffset() + prev.getLength() == offset) {
++                    switchKey |= 1;
++                } else {
++                    assert(prev.getOffset() + prev.getLength() < offset); // Double free test
++                }
++            }
++            Map.Entry<Integer, FreeRegion> nextEntry = freeByOffset.ceilingEntry(offset);
++            if (nextEntry != null) {
++                next = nextEntry.getValue();
++                if (offset + length == next.getOffset()) {
++                    switchKey |= 2;
++                } else {
++                    assert(offset + length < next.getOffset()); // Double free test
++                }
++            }
++            switch (switchKey) {
++                case 0:
++                    addFree(offset, length);
++                    break;
++                case 1:
++                    removeFree(prev);
++                    addFree(prev.getOffset(), prev.getLength() + length);
++                    break;
++                case 2:
++                    removeFree(next);
++                    addFree(offset, length + next.getLength());
++                    break;
++                case 3:
++                    removeFree(prev);
++                    removeFree(next);
++                    addFree(prev.getOffset(), prev.getLength() + length + next.getLength());
++                    break;
++            }
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilWorldPersistence.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilWorldPersistence.java
+new file mode 100644
+index 0000000..f589fd3
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilWorldPersistence.java
+@@ -0,0 +1,413 @@
++package org.bukkit.craftbukkit.chunkio2.anvil;
++
++import com.destroystokyo.paper.PaperConfig;
++import java.io.DataInput;
++import java.io.DataInputStream;
++import java.io.DataOutput;
++import java.io.DataOutputStream;
++import java.io.File;
++import java.io.FileInputStream;
++import java.io.FileNotFoundException;
++import java.io.FileOutputStream;
++import java.io.IOException;
++import java.io.InputStream;
++import java.io.OutputStream;
++import java.util.Arrays;
++import java.util.LinkedHashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.UUID;
++import java.util.stream.Collectors;
++import java.util.zip.GZIPInputStream;
++import java.util.zip.GZIPOutputStream;
++import org.bukkit.World;
++import org.bukkit.craftbukkit.chunkio2.IOConsumer;
++import org.bukkit.craftbukkit.chunkio2.NullPlayerPersistence;
++import org.bukkit.craftbukkit.chunkio2.PersistenceCounters;
++import org.bukkit.craftbukkit.chunkio2.PlayerPersistence;
++import org.bukkit.craftbukkit.chunkio2.WorldConflictException;
++import org.bukkit.craftbukkit.chunkio2.WorldPersistence;
++
++final class AnvilWorldPersistence implements WorldPersistence {
++    private final Object REGION_FILE_CACHE_LOCK = new Object();
++    private final Map<File, AnvilRegionFile> regionFiles =
++            new LinkedHashMap<File, AnvilRegionFile>(PaperConfig.regionFileCacheSize + 1, 0.75f, true) {
++                @Override
++                protected boolean removeEldestEntry(Map.Entry<File, AnvilRegionFile> eldest) {
++                    if (size() > PaperConfig.regionFileCacheSize) {
++                        AnvilRegionFile regionFile = eldest.getValue();
++                        try {
++                            eldest.getValue().close(); // Blocks until the RegionFile is not in use.
++                        } catch (IOException ex) {
++                            // TODO
++                        }
++                        return true;
++                    } else {
++                        return false;
++                    }
++                }
++            };
++    private final Object UUID_LOCK = new Object();
++    private final Object WORLD_DATA_LOCK = new Object();
++    private final Object SESSION_LOCK = new Object();
++    private final File folder;
++    private final boolean primary;
++    private final File data;
++    private final PlayerPersistence playerPersistence;
++    private final File regionData;
++    private final String name;
++    private final long sessionId = System.nanoTime(); // Note: Mojang use MinecraftServer.av() -> System.currentTimeMillis()
++
++    private UUID uuid = null;
++
++    public AnvilWorldPersistence(File folder, String name, World.Environment env, boolean primary) throws IOException {
++        this.folder = folder;
++        this.name = name;
++        this.primary = primary;
++        this.data = getWorldFile("data");
++        if (primary) {
++            playerPersistence = new AnvilPlayerPersistence();
++        } else {
++            playerPersistence = new NullPlayerPersistence();
++        }
++        // Someone should really fix this so we can remove World.Environment
++        // from the constructor and factory.
++        // No good reason to have regions from the end / nether in different 
++        // sub folders, other than legacy.
++        switch (env) {
++            case NETHER:
++                regionData = new File(folder, "DIM-1/region");
++                break;
++            case THE_END:
++                regionData = new File(folder, "DIM1/region");
++                break;
++            default:
++                regionData = new File(folder, "region");
++                break;
++        }
++        folder.mkdirs();
++        data.mkdirs();
++        regionData.mkdirs();
++        writeSessionLock();
++    }
++
++    private static DataInputStream openGzipCompressedStream(InputStream in) throws IOException {
++        return new DataInputStream(new GZIPInputStream(in, 1<<12));
++    }
++
++    private static DataOutputStream openGzipCompressedStream(OutputStream out) throws IOException {
++        return new DataOutputStream(new GZIPOutputStream(out, 1<<12));
++    }
++
++    @Override
++    public File getWorldFolder() {
++        return folder;
++    }
++
++    @Override
++    public String getWorldName() {
++        return name;
++    }
++
++    @Override
++    public UUID getUUID() {
++        synchronized (UUID_LOCK) {
++            if (uuid != null) {
++                return uuid;
++            }
++            File uuidFile = getWorldFile("uuid.dat");
++            if (uuidFile.isFile()) {
++                try {
++                    try (DataInputStream in = new DataInputStream(new FileInputStream(uuidFile))) {
++                        uuid = new UUID(in.readLong(), in.readLong());
++                    }
++                } catch (IOException ex) {
++                    // Keep current behaviour of silently failing ?
++                    // TODO: Log exception somewhere (?)
++                }
++            } else {
++                setUUID(UUID.randomUUID());
++            }
++            return uuid;
++        }
++    }
++
++    @Override
++    public void setUUID(UUID uuid) {
++        synchronized (UUID_LOCK) {
++            this.uuid = uuid;
++            File uuidFile = getWorldFile("uuid.dat");
++            try {
++                try (DataOutputStream out = new DataOutputStream(new FileOutputStream(uuidFile))) {
++                    out.writeLong(uuid.getMostSignificantBits());
++                    out.writeLong(uuid.getLeastSignificantBits());
++                }
++            } catch (IOException ex) {
++                // Keep current behaviour of silently failing ?
++                // TODO: Log exception somewhere (?)
++            }
++        }
++    }
++
++    @Override
++    public void loadWorldData(IOConsumer<DataInput> handler) {
++        synchronized (WORLD_DATA_LOCK) {
++            try {
++                File currentFile = getWorldFile("level.dat");
++                File oldFile = getWorldFile("level.dat_old");
++                if (currentFile.isFile()) {
++                    try (DataInputStream in = openGzipCompressedStream(new FileInputStream(currentFile))) {
++                        handler.accept(in);
++                    }
++                    return;
++                }
++                if (oldFile.isFile()) {
++                    try (DataInputStream in = openGzipCompressedStream(new FileInputStream(oldFile))) {
++                        handler.accept(in);
++                    }
++                    return;
++                }
++                throw new FileNotFoundException("World data not found, checked: " + currentFile + " and: " + oldFile);
++            } catch (IOException ex) {
++                handler.exception(ex);
++            }
++        }
++    }
++
++    @Override
++    public void saveWorldData(IOConsumer<DataOutput> handler) {
++        synchronized (WORLD_DATA_LOCK) {
++            try {
++                File newFile = getWorldFile("level.dat_new");
++                File currentFile = getWorldFile("level.dat");
++                File oldFile = getWorldFile("level.dat_old");
++                try (DataOutputStream out = openGzipCompressedStream(new FileOutputStream(newFile))) {
++                    handler.accept(out);
++                }
++                if (oldFile.exists()) {
++                    oldFile.delete();
++                }
++                if (currentFile.exists()) {
++                    currentFile.renameTo(oldFile);
++                }
++                if (currentFile.exists()) {
++                    currentFile.delete();
++                }
++                newFile.renameTo(currentFile);
++                if (newFile.exists()) {
++                    newFile.delete();
++                }
++            } catch (IOException ex) {
++                handler.exception(ex);
++            }
++        }
++    }
++
++    private File getRegionFolder() {
++        return regionData;
++    }
++
++    private File getRegionFile(int x, int z) {
++        return new File(getRegionFolder(), "r." + (x >> 5) + "." + (z >> 5) + ".mca");
++    }
++
++    private void withRegionFile(int x, int z, boolean create, IOConsumer<AnvilRegionFile> handler) {
++        try {
++            AnvilRegionFile regionFile;
++            synchronized (REGION_FILE_CACHE_LOCK) {
++                File file = getRegionFile(x, z);
++                regionFile = regionFiles.get(file);
++                if (regionFile == null) {
++                    regionFile = new AnvilRegionFile(file, create);
++                    regionFiles.put(file, regionFile);
++                }
++                regionFile.ref();
++            }
++            try {
++                handler.accept(regionFile);
++            } finally {
++                regionFile.deref();
++            }
++        } catch (IOException ex) {
++            handler.exception(ex);
++        }
++    }
++
++    @Override
++    public void chunkExists(int x, int z, final IOConsumer<Boolean> handler) {
++        withRegionFile(x,z,false,new IOConsumer<AnvilRegionFile>() {
++
++            @Override
++            public void accept(AnvilRegionFile t) throws IOException {
++                handler.accept(t.chunkExists(x & 0x1f, z & 0x1f));
++            }
++
++            @Override
++            public void exception(IOException ex) {
++                if (ex instanceof FileNotFoundException) {
++                    try {
++                        handler.accept(Boolean.FALSE);
++                    } catch (IOException ex2) {
++                        handler.exception(ex2);
++                    }
++                } else {
++                    handler.exception(ex);
++                }
++            }
++        });
++    }
++
++    @Override
++    public void loadChunk(int x, int z, IOConsumer<DataInput> handler) {
++        withRegionFile(x, z, false, new IOConsumer<AnvilRegionFile>() {
++            @Override
++            public void accept(AnvilRegionFile t) throws IOException {
++                t.loadChunk(x & 0x1f, z & 0x1f, handler);
++            }
++
++            @Override
++            public void exception(IOException ex) {
++                handler.exception(ex);
++            }
++        });
++    }
++
++    @Override
++    public void saveChunk(int x, int z, IOConsumer<DataOutput> handler) {
++        withRegionFile(x, z, true, new IOConsumer<AnvilRegionFile>() {
++            @Override
++            public void accept(AnvilRegionFile t) throws IOException {
++                t.saveChunk(x & 0x1f, z & 0x1f, handler);
++            }
++
++            @Override
++            public void exception(IOException ex) {
++            }
++        });
++    }
++
++    @Override
++    public File getWorldFile(String file) {
++        return new File(getWorldFolder(), file);
++    }
++
++    @Override
++    public PersistenceCounters getCounters() {
++        return new PersistenceCounters();
++    }
++
++    @Override
++    public void close() throws IOException {
++        synchronized (REGION_FILE_CACHE_LOCK) {
++            for (AnvilRegionFile file : regionFiles.values()) {
++                file.close();
++            }
++            regionFiles.clear();
++        }
++    }
++
++    private void writeSessionLock() throws IOException {
++        synchronized (SESSION_LOCK) {
++            try {
++                try (DataOutputStream out = new DataOutputStream(new FileOutputStream(getWorldFile("session.lock")))) {
++                    out.writeLong(sessionId);
++                }
++            } catch (IOException ex) {
++                throw new IOException("Failed to check session lock for world located at " + getWorldFolder() + ", aborting. Stop the server and delete the session.lock in this world to prevent further issues.", ex);
++            }
++        }
++    }
++
++    @Override
++    public void checkSession() throws WorldConflictException {
++        synchronized (SESSION_LOCK) {
++            try {
++                try (DataInputStream in = new DataInputStream(new FileInputStream(getWorldFile("session.lock")))) {
++                    if (sessionId != in.readLong())
++                        throw new WorldConflictException("The save for world located at " + getWorldFolder() + " is being accessed from another location, aborting");
++                }
++            } catch (WorldConflictException ex) {
++                throw ex;
++            } catch (IOException ex) {
++                throw new WorldConflictException("Failed to check session lock for world located at " + getWorldFolder() + ", aborting. Stop the server and delete the session.lock in this world to prevent further issues.", ex);
++            }
++        }
++    }
++
++    @Override
++    public boolean hasPlayerPersistence() {
++        return primary;
++    }
++
++    @Override
++    public PlayerPersistence getPlayerPersistence() {
++        return playerPersistence;
++    }
++
++    @Override
++    public File getWorldDataFile(String file) {
++        return new File(data, file);
++    }
++
++    private class AnvilPlayerPersistence implements PlayerPersistence {
++        private final File playerData;
++
++        public AnvilPlayerPersistence() {
++            this.playerData = getWorldFile("playerdata");
++            playerData.mkdirs();
++        }
++
++        private File getPlayerFolder() {
++            return playerData;
++        }
++        
++        private File getPlayerFile(UUID uuid) {
++            return new File(getPlayerFolder(), uuid.toString() + ".dat");
++        }
++        
++        @Override
++        public List<UUID> getPlayerUUIDs() {
++            return Arrays.asList(getPlayerFolder().list((dir, s) -> s.endsWith(".dat")))
++                    .stream()
++                    .map((s) -> {
++                        try {
++                            return UUID.fromString(s.substring(0,s.length() - 4));
++                        } catch (IllegalArgumentException ex) {
++                            return null;
++                        }
++                    })
++                    .filter((s) -> s != null)
++                    .collect(Collectors.toList());
++        }
++        
++        @Override
++        public void loadPlayer(String name, UUID uuid, IOConsumer<DataInput> handler) {
++            // TODO: Dirty hack to check for old player saves with offline uuids.
++            try {
++                try (DataInputStream in = openGzipCompressedStream(new FileInputStream(getPlayerFile(uuid)))) {
++                    handler.accept(in);
++                }
++            } catch (IOException ex) {
++                handler.exception(ex);
++            }
++        }
++        
++        @Override
++        public void savePlayer(UUID uuid, IOConsumer<DataOutput> handler) {
++            try {
++                // TODO: Use rename to do a "safe" save.
++                try (DataOutputStream out = openGzipCompressedStream(new FileOutputStream(getPlayerFile(uuid)))) {
++                    handler.accept(out);
++                }
++            } catch (IOException ex) {
++                handler.exception(ex);
++            }
++        }
++
++        @Override
++        public long getLastModified(UUID uuid) {
++            File file = getPlayerFile(uuid);
++            return file.exists() ? file.lastModified() : 0L;
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilWorldPersistenceFactory.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilWorldPersistenceFactory.java
+new file mode 100644
+index 0000000..9e1ae8d
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilWorldPersistenceFactory.java
+@@ -0,0 +1,20 @@
++package org.bukkit.craftbukkit.chunkio2.anvil;
++
++import java.io.File;
++import java.io.IOException;
++import org.bukkit.World;
++import org.bukkit.craftbukkit.chunkio2.WorldPersistence;
++import org.bukkit.craftbukkit.chunkio2.WorldPersistenceFactory;
++
++/**
++ * Public API?
++ */
++public final class AnvilWorldPersistenceFactory implements WorldPersistenceFactory {
++
++    public static final AnvilWorldPersistenceFactory INSTANCE = new AnvilWorldPersistenceFactory();
++
++    @Override
++    public WorldPersistence createWorldPersistence(File folder, String name, World.Environment env, boolean primary) throws IOException {
++        return new AnvilWorldPersistence(folder, name, env, primary);
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/async/AsyncFileIO.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/async/AsyncFileIO.java
+new file mode 100644
+index 0000000..cece32e
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/async/AsyncFileIO.java
+@@ -0,0 +1,170 @@
++package org.bukkit.craftbukkit.chunkio2.async;
++
++import com.destroystokyo.paper.PaperConfig;
++import com.destroystokyo.paper.exception.ServerInternalException;
++import java.io.IOException;
++import java.util.HashMap;
++import java.util.Iterator;
++import java.util.LinkedHashMap;
++import java.util.Map;
++import java.util.concurrent.Executor;
++import java.util.concurrent.Executors;
++import java.util.concurrent.locks.Condition;
++import java.util.concurrent.locks.Lock;
++import java.util.concurrent.locks.ReentrantLock;
++import javax.annotation.concurrent.GuardedBy;
++import net.minecraft.server.NBTTagCompound;
++import org.apache.logging.log4j.LogManager;
++import org.apache.logging.log4j.Logger;
++import org.bukkit.craftbukkit.chunkio2.ChunkPersistence;
++import org.bukkit.craftbukkit.chunkio2.impl.NBTDataOutputConsumer;
++
++public class AsyncFileIO {
++    private static final Logger LOG = LogManager.getLogger();
++    public static final AsyncFileIO INSTANCE = new AsyncFileIO(); // TODO: Not static.
++    // Thanks Mr Thinky for help with locking.
++    private final Lock lock = new ReentrantLock(true);
++    private final Condition queueEmpty = lock.newCondition();
++    private final Condition queueNotEmpty = lock.newCondition();
++    private final Condition queueUnderMaxSize = lock.newCondition();
++    private final int maxSize;
++    @GuardedBy("lock")
++    private final Map<ChunkKey, NBTTagCompound> queue;
++    @GuardedBy("lock")
++    private final Map<ChunkKey, NBTTagCompound> saving;
++    private final Executor ioExec;
++    
++    public AsyncFileIO() {
++        LOG.info("Creating AsyncFileIO with threads: " + PaperConfig.paperIOAsyncChunkSaveQueueThreads + " and max queue size: " + PaperConfig.paperIOAsyncChunkSaveQueueSize);
++        maxSize = PaperConfig.paperIOAsyncChunkSaveQueueSize;
++        queue = new LinkedHashMap(maxSize > 0 ? maxSize + 1 : 1024, 0.75f, true);
++        saving = new HashMap(PaperConfig.paperIOAsyncChunkSaveQueueThreads);
++        ioExec = Executors.newFixedThreadPool(PaperConfig.paperIOAsyncChunkSaveQueueThreads,(Runnable r) -> {
++            Thread t = new Thread(r);
++            t.setPriority(Thread.MAX_PRIORITY);
++            return t;
++        });
++        for (int i = 0; i < PaperConfig.paperIOAsyncChunkSaveQueueThreads; i++) {
++            ioExec.execute(new AsyncFileIOTask());
++        }
++    }
++
++    public boolean chunkExists(ChunkPersistence p, int x, int z) {
++        return getChunk(p, x, z) != null;
++    }
++
++    public NBTTagCompound getChunk(ChunkPersistence persistence, int x, int z) {
++        ChunkKey key = new ChunkKey(persistence, x, z);
++        lock.lock();
++        try {
++            NBTTagCompound result = queue.get(key);
++            if (result != null) {
++                return result;
++            }
++            return saving.get(key);
++        } finally {
++            lock.unlock();
++        }
++    }
++
++    public void queue(ChunkPersistence persistence, int x, int z, NBTTagCompound data) {
++        lock.lock();
++        try {
++            while (maxSize > 0 && queue.size() > maxSize) {
++                queueUnderMaxSize.awaitUninterruptibly();
++            }
++            queue.put(new ChunkKey(persistence, x, z), data);
++            queueNotEmpty.signal();
++        } finally {
++            lock.unlock();
++        }
++    }
++
++    /**
++     * Block until all unsaved chunks are written.
++     */
++    public void flush() {
++        lock.lock();
++        try {
++            while (! (queue.isEmpty() && saving.isEmpty()) ) {
++                queueEmpty.awaitUninterruptibly();
++            }
++        } finally {
++            lock.unlock();
++        }
++    }
++
++    /**
++     * Block until all unsaved chunks for p are written.
++     * @param p
++     */
++    public void flush(ChunkPersistence p) {
++        // TODO: For now, just flush everything.
++        flush();
++    }
++
++    private class AsyncFileIOTask implements Runnable {
++        @Override
++        public void run() {
++            ChunkKey key = null;
++            NBTTagCompound data = null;
++            while (true) {
++                lock.lock();
++                try {
++                    if (key != null) {
++                        saving.remove(key);
++                    }
++                    while (queue.isEmpty()) {
++                        if (saving.isEmpty()) queueEmpty.signalAll();
++                        queueNotEmpty.awaitUninterruptibly();
++                    }
++                    Iterator<Map.Entry<ChunkKey,NBTTagCompound>> itr = queue.entrySet().iterator();
++                    Map.Entry<ChunkKey, NBTTagCompound> e = itr.next();
++                    itr.remove();
++                    key = e.getKey();
++                    data = e.getValue();
++                    if (maxSize > 0 && queue.size() == maxSize) {
++                        // Just signal once, if anyone is waiting
++                        // this will be reached again the next time
++                        // an item is removed from the queue.
++                        // If no one is waiting Kaikki on OK.
++                        queueUnderMaxSize.signal();
++                    }
++                } finally {
++                    lock.unlock();
++                }
++                NBTDataOutputConsumer result = new NBTDataOutputConsumer(data);
++                key.getChunkPersistence().saveChunk(key.getX(), key.getZ(), result);
++                if (result.hasException()) {
++                    IOException exception = result.getException();
++                    exception.printStackTrace();
++                    ServerInternalException.reportInternalException(exception);
++                }
++            }
++        }
++    }
++
++    private static class ChunkKey {
++        private final ChunkPersistence chunkPersistence;
++        private final int x;
++        private final int z;
++
++        public ChunkKey(ChunkPersistence chunkPersistence, int x, int z) {
++            this.chunkPersistence = chunkPersistence;
++            this.x = x;
++            this.z = z;
++        }
++
++        public ChunkPersistence getChunkPersistence() {
++            return chunkPersistence;
++        }
++
++        public int getX() {
++            return x;
++        }
++
++        public int getZ() {
++            return z;
++        }
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/BooleanIOConsumer.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/BooleanIOConsumer.java
+new file mode 100644
+index 0000000..e6761c0
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/BooleanIOConsumer.java
+@@ -0,0 +1,17 @@
++package org.bukkit.craftbukkit.chunkio2.impl;
++
++import java.io.IOException;
++import org.bukkit.craftbukkit.chunkio2.AbstractIOConsumer;
++
++public class BooleanIOConsumer extends AbstractIOConsumer<Boolean> {
++    private boolean result;
++
++    @Override
++    public void accept(Boolean t) throws IOException {
++        this.result = t;
++    }
++
++    public boolean getResult() {
++        return result;
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/CraftChunkRegionLoader.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/CraftChunkRegionLoader.java
+new file mode 100644
+index 0000000..5d9d2ff
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/CraftChunkRegionLoader.java
+@@ -0,0 +1,181 @@
++package org.bukkit.craftbukkit.chunkio2.impl;
++
++import java.io.IOException;
++import javax.annotation.CheckForNull;
++import javax.annotation.Nonnull;
++import net.minecraft.server.Chunk;
++import net.minecraft.server.ChunkRegionLoader;
++import net.minecraft.server.DataConverterManager;
++import net.minecraft.server.DataConverterTypes;
++import net.minecraft.server.ExceptionWorldConflict;
++import net.minecraft.server.IChunkLoader;
++import net.minecraft.server.NBTTagCompound;
++import net.minecraft.server.World;
++import org.apache.logging.log4j.LogManager;
++import org.apache.logging.log4j.Logger;
++import org.bukkit.craftbukkit.chunkio2.ChunkException;
++import org.bukkit.craftbukkit.chunkio2.WorldConflictException;
++import org.bukkit.craftbukkit.chunkio2.WorldPersistence;
++import org.bukkit.craftbukkit.chunkio2.async.AsyncFileIO;
++
++public class CraftChunkRegionLoader implements IChunkLoader {
++    private static final Logger LOG = LogManager.getLogger();
++    private final WorldPersistence persistence;
++    private final DataConverterManager dataConverterManager;
++    private final AsyncFileIO asyncFileIO;
++
++    CraftChunkRegionLoader(WorldPersistence persistence, DataConverterManager dataConverterManager, AsyncFileIO asyncFileIO) {
++        this.persistence = persistence;
++        this.dataConverterManager = dataConverterManager;
++        this.asyncFileIO = asyncFileIO;
++    }
++
++    /**
++     * Sync load a chunk.
++     * 
++     * @param world
++     * @param x X coordinate of chunk
++     * @param z Z coordinate of chunk
++     * @return The loaded chunk or null.
++     * @throws IOException
++     */
++    @Override
++    @CheckForNull
++    public Chunk a(@Nonnull World world, int x, int z) throws IOException {
++        world.timings.syncChunkLoadDataTimer.startTiming(); // Spigot
++        Object[] data = loadChunk(world, x, z);
++        world.timings.syncChunkLoadDataTimer.stopTiming(); // Spigot
++        if (data != null) {
++            Chunk chunk = (Chunk) data[0];
++            NBTTagCompound nbttagcompound = (NBTTagCompound) data[1];
++            ChunkRegionLoader.loadEntities(chunk, nbttagcompound.getCompound("Level"), world);
++            return chunk;
++        }
++
++        return null;
++    }
++
++    /**
++     * Save a chunk, may be async.
++     * 
++     * @param world Ignored
++     * @param chunk The chunk to save
++     * @throws IOException
++     * @throws ExceptionWorldConflict 
++     */
++    @Override
++    public void a(@Nonnull World world, Chunk chunk) throws IOException, ExceptionWorldConflict {
++        try {
++            persistence.checkSession();
++        } catch (WorldConflictException ex) {
++            throw new ExceptionWorldConflict(ex.getMessage());
++        }
++        NBTTagCompound root = new NBTTagCompound();
++        NBTTagCompound level = new NBTTagCompound();
++        
++        root.set("Level", level);
++        root.setInt("DataVersion", 176);
++        ChunkRegionLoader.a(chunk, world, level);
++        asyncFileIO.queue(persistence, chunk.locX, chunk.locZ, root);
++    }
++
++    /**
++     * Method empty, no idea what this is supposed to do other than it is 
++     * either no longer used, or was never used. CB refers to it as saveChunkNOP()
++     * in CraftWorld.
++     * 
++     * @param world Unused
++     * @param chunk Unused
++     * @throws IOException 
++     */
++    @Override
++    public void b(World world, Chunk chunk) throws IOException {}
++
++    /**
++     * Method empty, no idea what this is supposed to do other than it is
++     * no longer used, or was never used. It is called in one place
++     * in ChunkProviderServer.unloadChunks()
++     */
++    @Override
++    public void a() {}
++
++    /**
++     * Flush changes to disk.
++     */
++    @Override
++    public void b() {
++        asyncFileIO.flush(persistence);
++    }
++
++    /**
++     * This is called asynchronously to load chunks, and postpones adding the
++     * entities to the world.
++     * <p>
++     * Returns an object array containing two elements.
++     * <table>
++     * <tr><th>0</th><td>The reconstructed chunk</td></tr>
++     * <tr><th>1</th><td>The tag being used to reconstruct the chunk</td></tr>
++     * </table>
++     * 
++     * @param world Unused.
++     * @param x X coordinate of chunk
++     * @param z Z coordinate of chunk
++     * @return An object array with two elements, or null
++     * @throws IOException 
++     */
++    @Override
++    public Object[] loadChunk(World world, int x, int z) throws IOException {
++        NBTDataInputConsumer result = new NBTDataInputConsumer();
++        NBTTagCompound tag = asyncFileIO.getChunk(persistence, x, z);
++        if (tag == null) {
++            persistence.loadChunk(x, z, result);
++            if (result.hasException()) {
++                IOException exception = result.getException();
++                if (exception instanceof ChunkException) {
++                    ChunkException chException = (ChunkException) exception;
++                    if (!chException.isCorrupt()) {
++                        return null;
++                    }
++                }
++                result.getException().printStackTrace();
++                return null;
++            }
++            tag = dataConverterManager.a(DataConverterTypes.CHUNK, result.getResult());
++        }
++        return ChunkRegionLoader.a(world, x, z, tag);
++    }
++
++    /**
++     * Test if a chunk exists.
++     * 
++     * This method is possibly slow, if you don't care if a chunk exists and
++     * will load it anyway, you should just call load chunk.
++     * Only use this if you must know if a chunk exists or not without loading it.
++     * 
++     * @param world ignored
++     * @param x X coordinate of the chunk
++     * @param z Z coordinate of the chunk
++     * @return true if a chunk exists at the coordinates, false otherwise
++     */
++    @Override
++    public boolean chunkExists(World world, int x, int z) {
++        if (asyncFileIO.chunkExists(persistence, x, z)) {
++            return true;
++        }
++        BooleanIOConsumer result = new BooleanIOConsumer();
++        persistence.chunkExists(x, z, result);
++        if (result.hasException()) {
++            IOException exception = result.getException();
++            if (exception instanceof ChunkException) {
++                ChunkException chException = (ChunkException) exception;
++                if (!chException.isCorrupt()) {
++                    return false;
++                }
++            }
++            // Chunk is corrupt.
++            result.getException().printStackTrace();
++            return false;
++        }
++        return result.getResult();
++    }
++}
+\ No newline at end of file
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/CraftNBTStorage.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/CraftNBTStorage.java
+new file mode 100644
+index 0000000..160c934
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/CraftNBTStorage.java
+@@ -0,0 +1,204 @@
++package org.bukkit.craftbukkit.chunkio2.impl;
++
++import com.destroystokyo.paper.exception.ServerInternalException;
++import java.io.File;
++import java.io.FileNotFoundException;
++import java.io.IOException;
++import java.util.List;
++import java.util.UUID;
++import java.util.stream.Collectors;
++import net.minecraft.server.DataConverterManager;
++import net.minecraft.server.DataConverterType;
++import net.minecraft.server.DataConverterTypes;
++import net.minecraft.server.DefinedStructureManager;
++import net.minecraft.server.EntityHuman;
++import net.minecraft.server.EntityPlayer;
++import net.minecraft.server.ExceptionWorldConflict;
++import net.minecraft.server.IChunkLoader;
++import net.minecraft.server.IDataManager;
++import net.minecraft.server.IPlayerFileData;
++import net.minecraft.server.NBTTagCompound;
++import net.minecraft.server.WorldData;
++import net.minecraft.server.WorldProvider;
++import org.apache.logging.log4j.LogManager;
++import org.apache.logging.log4j.Logger;
++import org.bukkit.craftbukkit.chunkio2.WorldConflictException;
++import org.bukkit.craftbukkit.chunkio2.WorldPersistence;
++import org.bukkit.craftbukkit.chunkio2.async.AsyncFileIO;
++import org.bukkit.craftbukkit.entity.CraftPlayer;
++
++public class CraftNBTStorage implements IDataManager, IPlayerFileData {
++    private static final Logger log = LogManager.getLogger();
++    protected final WorldPersistence persistence;
++    private final DefinedStructureManager structureManager;
++    protected final DataConverterManager dataConverterManager;
++
++    public CraftNBTStorage(boolean primary, DataConverterManager dataconvertermanager, WorldPersistence persistence) {
++        this.persistence = persistence;
++        this.dataConverterManager = dataconvertermanager;
++        if (primary) {
++            this.structureManager = new DefinedStructureManager(persistence.getWorldFile("structures").toString());
++        } else {
++            this.structureManager = null;
++        }
++    }
++
++    @Override
++    public File getDirectory() {
++        return persistence.getWorldFolder();
++    }
++
++    @Override
++    public void checkSession() throws ExceptionWorldConflict {
++        try {
++            persistence.checkSession();
++        } catch (WorldConflictException ex) {
++            throw new ExceptionWorldConflict(ex.getMessage());
++        }
++    }
++
++    @Override
++    public IChunkLoader createChunkLoader(WorldProvider worldprovider) {
++        return new CraftChunkRegionLoader(persistence, dataConverterManager, AsyncFileIO.INSTANCE);
++    }
++
++    @Override
++    public WorldData getWorldData() {
++        NBTDataInputConsumer result = new NBTDataInputConsumer();
++        persistence.loadWorldData(result);
++        if (result.hasException()) {
++            IOException exception = result.getException();
++            if (exception instanceof FileNotFoundException) {
++                return null;
++            }
++            log.error("Exception reading world data for " + persistence.getWorldName(), result.getException());
++            ServerInternalException.reportInternalException(exception);
++            return null;
++        } else {
++            NBTTagCompound data = result.getResult().getCompound("Data");
++            return new WorldData(dataConverterManager.a(DataConverterTypes.LEVEL, data));
++        }
++    }
++
++    @Override
++    public void saveWorldData(WorldData worlddata, NBTTagCompound nbttagcompound) {
++        worlddata.e(19133); // From ServerNBTManager.saveWorldData
++        NBTTagCompound nbttagcompound1 = worlddata.a(nbttagcompound);
++        NBTTagCompound nbttagcompound2 = new NBTTagCompound();
++
++        nbttagcompound2.set("Data", nbttagcompound1);
++
++        NBTDataOutputConsumer result = new NBTDataOutputConsumer(nbttagcompound2);
++
++        persistence.saveWorldData(result);
++
++        if (result.hasException()) {
++            IOException exception = result.getException();
++            log.error("Exception saving world data for " + persistence.getWorldName(), exception);
++            ServerInternalException.reportInternalException(exception);
++        }
++    }
++
++    @Override
++    public void saveWorldData(WorldData worlddata) {
++        this.saveWorldData(worlddata, (NBTTagCompound) null);
++    }
++
++    @Override
++    public void save(EntityHuman entityhuman) {
++        NBTTagCompound nbttagcompound = new NBTTagCompound();
++        entityhuman.e(nbttagcompound);
++        NBTDataOutputConsumer result = new NBTDataOutputConsumer(nbttagcompound);
++        persistence.getPlayerPersistence().savePlayer(entityhuman.getUniqueID(), result);
++        if (result.hasException()) {
++            log.warn("Failed to save player data for " + entityhuman.getName());
++        }
++    }
++
++    @Override
++    public NBTTagCompound load(EntityHuman entityhuman) {
++        NBTDataInputConsumer result = new NBTDataInputConsumer();
++        persistence.getPlayerPersistence().loadPlayer(entityhuman.getName(), entityhuman.getUniqueID(), result);
++        if (result.hasException()) {
++            log.warn("Failed to load player data for " + entityhuman.getName());
++            return null;
++        }
++
++        NBTTagCompound nbttagcompound = result.getResult();
++
++        // Workaround for player saves from non-bukkit based servers
++        // Set the firstPlayed time to the lastModified date of the player save
++        // instead of System.currentTimeMillis() which is the default
++        // This must be done before restoring the player data, so that
++        // if there is a firstPlayed date in the save file it overwrites
++        // this value.
++        if (entityhuman instanceof EntityPlayer) {
++            CraftPlayer player = (CraftPlayer) entityhuman.getBukkitEntity();
++            // Only update first played if it is older than the one we have
++            long modified = persistence.getPlayerPersistence().getLastModified(entityhuman.getUniqueID());
++            if (modified < player.getFirstPlayed()) {
++                player.setFirstPlayed(modified);
++            }
++        }
++        entityhuman.f(this.dataConverterManager.a((DataConverterType) DataConverterTypes.PLAYER, nbttagcompound));
++
++        return nbttagcompound;
++    }
++
++    @Override
++    public NBTTagCompound getPlayerData(UUID s) {
++        NBTDataInputConsumer result = new NBTDataInputConsumer();
++        persistence.getPlayerPersistence().loadPlayer(null, s, result);
++        if (result.hasException()) {
++            log.warn("Failed to load player data for " + s);
++        }
++        return result.getResult();
++    }
++
++    @Override
++    public IPlayerFileData getPlayerFileData() {
++        return this;
++    }
++
++    @Override
++    public String[] getSeenPlayers() {
++        List<String> result = persistence.getPlayerPersistence().getPlayerUUIDs().stream().map((s) -> s.toString()).collect(Collectors.toList());
++        return result.toArray(new String[result.size()]);
++    }
++
++    @Override
++    public void a() {
++        AsyncFileIO.INSTANCE.flush();
++    }
++
++    @Override
++    public File getDataFile(String s) {
++        return persistence.getWorldDataFile(s + ".dat");
++    }
++
++    @Override
++    public DefinedStructureManager h() {
++        return this.structureManager;
++    }
++
++    @Override
++    public UUID getUUID() {
++        return persistence.getUUID();
++    }
++
++    @Override
++    public List<UUID> getSeenPlayerUUIDs() {
++        return persistence.getPlayerPersistence().getPlayerUUIDs();
++    }
++
++    @Override
++    public long getLastModified(UUID id) {
++        return persistence.getPlayerPersistence().getLastModified(id);
++    }
++
++    @Override
++    public void close() throws IOException {
++        a();
++        persistence.close();
++    }
++}
+\ No newline at end of file
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/NBTDataInputConsumer.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/NBTDataInputConsumer.java
+new file mode 100644
+index 0000000..7f3e2c3
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/NBTDataInputConsumer.java
+@@ -0,0 +1,21 @@
++package org.bukkit.craftbukkit.chunkio2.impl;
++
++import java.io.DataInput;
++import java.io.IOException;
++import net.minecraft.server.NBTCompressedStreamTools;
++import net.minecraft.server.NBTReadLimiter;
++import net.minecraft.server.NBTTagCompound;
++import org.bukkit.craftbukkit.chunkio2.AbstractIOConsumer;
++
++public class NBTDataInputConsumer extends AbstractIOConsumer<DataInput> {
++    private NBTTagCompound result;
++
++    @Override
++    public void accept(DataInput in) throws IOException {
++        this.result = NBTCompressedStreamTools.a(in, NBTReadLimiter.a);
++    }
++
++    public NBTTagCompound getResult() {
++        return result;
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/NBTDataOutputConsumer.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/NBTDataOutputConsumer.java
+new file mode 100644
+index 0000000..dd4b447
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/NBTDataOutputConsumer.java
+@@ -0,0 +1,20 @@
++package org.bukkit.craftbukkit.chunkio2.impl;
++
++import java.io.DataOutput;
++import java.io.IOException;
++import net.minecraft.server.NBTCompressedStreamTools;
++import net.minecraft.server.NBTTagCompound;
++import org.bukkit.craftbukkit.chunkio2.AbstractIOConsumer;
++
++public class NBTDataOutputConsumer extends AbstractIOConsumer<DataOutput> {
++    private final NBTTagCompound tag;
++
++    public NBTDataOutputConsumer(NBTTagCompound tag) {
++        this.tag = tag;
++    }
++
++    @Override
++    public void accept(DataOutput out) throws IOException {
++        NBTCompressedStreamTools.a(tag, out);
++    }
++}
+diff --git a/src/test/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilRegionFileTest.java b/src/test/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilRegionFileTest.java
+new file mode 100644
+index 0000000..c91ac06
+--- /dev/null
++++ b/src/test/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilRegionFileTest.java
+@@ -0,0 +1,74 @@
++package org.bukkit.craftbukkit.chunkio2.anvil;
++
++import it.unimi.dsi.fastutil.ints.IntArrayList;
++import static org.bukkit.craftbukkit.chunkio2.anvil.AnvilRegionFile.EMPTY;
++import org.bukkit.craftbukkit.chunkio2.anvil.AnvilRegionFile.FreeSpaceMap;
++import static org.junit.Assert.assertEquals;
++import org.junit.Test;
++
++public class AnvilRegionFileTest {
++    private static final int[] blockOwners = {
++        EMPTY,          // 0 (header)
++        EMPTY,          // 1 (header)
++        0,              // 2
++        EMPTY,          // 3
++        EMPTY,          // 4
++        EMPTY,          // 5
++        EMPTY,          // 6
++        EMPTY,          // 7
++        EMPTY,          // 8
++        1,              // 9
++        EMPTY,          // 10
++        EMPTY,          // 11
++        2,              // 12
++        EMPTY,          // 13
++        3,              // 14
++        EMPTY,          // 15
++        EMPTY,          // 16
++    };
++
++    private int o(int offset, int length){
++        return (offset << 8) | length;
++    }
++
++    @Test
++    public void testFreeSpace() {
++        IntArrayList blockOwner = new IntArrayList(blockOwners);
++        FreeSpaceMap fsm = new FreeSpaceMap(blockOwner);
++
++        // Allocate blocks which fit into the empty space.
++        assertEquals(o(13,1),fsm.allocate(1));
++        assertEquals(o(10,2), fsm.allocate(2));
++        assertEquals(o(3,3), fsm.allocate(3));
++        assertEquals(o(6,3), fsm.allocate(3));
++
++        // Free them again.
++        fsm.free(o(13,1));
++        fsm.free(o(10,2));
++        fsm.free(o(3,3));
++        fsm.free(o(6,3));
++
++        // Reallocate them at the same sizes.
++        assertEquals(o(13,1),fsm.allocate(1));
++        assertEquals(o(10,2), fsm.allocate(2));
++        assertEquals(o(3,3), fsm.allocate(3));
++        assertEquals(o(6,3), fsm.allocate(3));
++
++        // Allocate 3 blocks which require extending the file size.
++        assertEquals(o(15,1),fsm.allocate(1));
++        assertEquals(o(16,2),fsm.allocate(2));
++        assertEquals(o(18,3),fsm.allocate(3));
++
++        // Test free space region merging
++        fsm.free(o(2,1));
++        fsm.free(o(3,1)); // Left
++        assertEquals(o(2,2), fsm.allocate(2));
++        fsm.free(o(3,1));
++        fsm.free(o(2,1)); // Right
++        assertEquals(o(2,2), fsm.allocate(2));
++        fsm.free(o(2,1));
++        fsm.free(o(4,1));
++        fsm.free(o(3,1)); // Left and Right
++        assertEquals(o(2,3), fsm.allocate(3));
++    }
++}
+-- 
+1.9.1
+
