@@ -11,7 +11,7 @@ cb=src/main/java/net/minecraft/server
 paperjar="$basedir/Paper-Server/target/paper-${minecraftversion}.jar"
 vanillajar="${decompiledir}/${minecraftversion}.jar"
 
-echo -e "mcver=${minecraftversion}\npaperjar=${paperjar}\nvanillajar=${vanillajar}" > paperclip.properties
+echo -e "mcver=${minecraftversion}\r\npaperjar=${paperjar}\r\nvanillajar=${vanillajar}" > paperclip.properties
 
 patch=$(which patch 2>/dev/null)
 if [ "x$patch" == "x" ]; then
