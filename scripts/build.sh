@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-basedir="$1"
+basedir=$(realpath "$1")
 
 (git submodule update --init && ./scripts/remap.sh "$basedir" && ./scripts/decompile.sh "$basedir" && ./scripts/init.sh "$basedir" && ./scripts/applyPatches.sh "$basedir") || (
 	echo "Failed to build Paper"

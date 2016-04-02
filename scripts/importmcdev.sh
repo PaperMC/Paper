@@ -3,7 +3,7 @@
 nms="net/minecraft/server"
 export MODLOG=""
 PS1="$"
-basedir="$1"
+basedir=$(realpath "$1")
 
 workdir="$basedir/work"
 minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
