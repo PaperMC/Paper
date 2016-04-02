@@ -1,0 +1,46 @@
+From fe99af7b10b4fa0168b15e93249fdf4b3a8b2aff Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 4 Mar 2013 23:46:10 -0500
+Subject: [PATCH] Chunk Save Reattempt
+
+We commonly have "Stream Closed" errors on chunk saving, so this code should re-try to save the chunk in the event of failure and hopefully prevent rollbacks.
+
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index cbbf95f..778f8f5 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -170,11 +170,16 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+                 NBTTagCompound nbttagcompound = chunk.compound; // Paper - Chunk queue improvements
+ 
+                 if (nbttagcompound != null) {
++                    int attempts = 0; Exception laste = null; while (attempts++ < 5) { // Paper
+                     try {
+                         this.b(chunkcoordintpair, nbttagcompound);
++                        laste = null; break; // Paper
+                     } catch (Exception exception) {
+-                        ChunkRegionLoader.a.error("Failed to save chunk", exception);
++                        //ChunkRegionLoader.a.error("Failed to save chunk", exception); // Paper
++                        laste = exception; // Paper
+                     }
++                    try {Thread.sleep(10);} catch (InterruptedException e) {e.printStackTrace();} } // Paper
++                    if (laste != null) { com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(laste); laste.printStackTrace(); } // Paper
+                 }
+                 synchronized (lock) { if (this.b.get(chunkcoordintpair) == nbttagcompound) { this.b.remove(chunkcoordintpair); } }// Paper - This will not equal if a newer version is still pending
+ 
+diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
+index 2ca94a4..68dd17d 100644
+--- a/src/main/java/net/minecraft/server/RegionFile.java
++++ b/src/main/java/net/minecraft/server/RegionFile.java
+@@ -247,8 +247,7 @@ public class RegionFile {
+ 
+             this.b(i, j, (int) (MinecraftServer.av() / 1000L));
+         } catch (IOException ioexception) {
+-            ioexception.printStackTrace();
+-            ServerInternalException.reportInternalException(ioexception); // Paper
++            org.spigotmc.SneakyThrow.sneaky(ioexception); // Paper - we want the upper try/catch to retry this
+         }
+ 
+     }
+-- 
+2.8.0
+
