@@ -1,14 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PS1="$"
 
-workdir=work
-minecraftversion=$(cat BuildData/info.json | grep minecraftVersion | cut -d '"' -f 4)
-decompiledir=$workdir/$minecraftversion
-nms=$decompiledir/net/minecraft/server
-cb=src/main/java/net/minecraft/server
-papernms=Paper-Server/src/main/java/net/minecraft/server
-mcdevsrc=${decompiledir}/src/net/minecraft/server
+basedir="$1"
+workdir="$basedir/work"
+minecraftversion=$(cat "$basedir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
+decompiledir="$workdir/$minecraftversion"
+nms="$decompiledir/net/minecraft/server"
+papernms="Paper-Server/src/main/java/net/minecraft/server"
+mcdevsrc="${decompiledir}/src/net/minecraft/server"
 rm -rf "${mcdevsrc}"
 mkdir -p "${mcdevsrc}"
 cp ${nms}/*.java "${mcdevsrc}/"

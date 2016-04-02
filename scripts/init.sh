@@ -1,32 +1,27 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PS1="$"
-basedir=`pwd`
+basedir="$1"
 workdir="$basedir/work"
-minecraftversion=$(cat BuildData/info.json | grep minecraftVersion | cut -d '"' -f 4)
+minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
 decompiledir="$workdir/$minecraftversion"
 nms="$decompiledir/net/minecraft/server"
-cb=src/main/java/net/minecraft/server
-
-paperjar="Paper-Server/target/paper-${minecraftversion}.jar"
-vanillajar="work/${minecraftversion}/${minecraftversion}.jar"
-
-echo -e "mcver=${minecraftversion}\npaperjar=../${paperjar}\nvanillajar=../${vanillajar}\n" > paperclip.properties
+cb="src/main/java/net/minecraft/server"
 
 patch=$(which patch 2>/dev/null)
 if [ "x$patch" == "x" ]; then
-    patch=$basedir/hctap.exe
+    patch="$basedir/hctap.exe"
 fi
 
 echo "Applying CraftBukkit patches to NMS..."
-cd "$basedir/CraftBukkit"
+cd "$workdir/CraftBukkit"
 git checkout -B patched HEAD >/dev/null 2>&1
-rm -rf $cb
-mkdir -p $cb
+rm -rf "$cb"
+mkdir -p "$cb"
 for file in $(ls nms-patches)
 do
     patchFile="nms-patches/$file"
-    file="$(echo $file | cut -d. -f1).java"
+    file="$(echo "$file" | cut -d. -f1).java"
 
     echo "Patching $file < $patchFile"
     sed -i 's/\r//' "$nms/$file" > /dev/null
