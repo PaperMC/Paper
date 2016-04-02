@@ -48,7 +48,7 @@
  import net.minecraft.world.level.GameRules;
  import net.minecraft.world.level.GameType;
  import net.minecraft.world.level.Level;
-@@ -192,11 +196,71 @@
+@@ -192,12 +196,72 @@
  import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.phys.AABB;
  import net.minecraft.world.phys.BlockHitResult;
@@ -58,7 +58,7 @@
  import net.minecraft.world.phys.shapes.Shapes;
  import net.minecraft.world.phys.shapes.VoxelShape;
  import org.slf4j.Logger;
-+
+ 
 +// CraftBukkit start
 +import io.papermc.paper.adventure.ChatProcessor; // Paper
 +import io.papermc.paper.adventure.PaperAdventure; // Paper
@@ -117,9 +117,10 @@
 +import org.bukkit.inventory.InventoryView;
 +import org.bukkit.inventory.SmithingInventory;
 +// CraftBukkit end
- 
++
  public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl implements ServerGamePacketListener, ServerPlayerConnection, TickablePacketListener {
  
+     static final Logger LOGGER = LogUtils.getLogger();
 @@ -247,7 +311,7 @@
      private boolean waitingForSwitchToConfig;
  
@@ -129,14 +130,14 @@
          this.chunkSender = new PlayerChunkSender(connection.isMemoryConnection());
          this.player = player;
          player.connection = this;
-@@ -256,8 +320,24 @@
+@@ -256,9 +320,25 @@
  
          Objects.requireNonNull(server);
          this.signedMessageDecoder = SignedMessageChain.Decoder.unsigned(uuid, server::enforceSecureProfile);
 -        this.chatMessageChain = new FutureChain(server);
 +        this.chatMessageChain = new FutureChain(server.chatExecutor); // CraftBukkit - async chat
      }
-+
+ 
 +    // CraftBukkit start - add fields and methods
 +    private int lastTick = MinecraftServer.currentTick;
 +    private int allowedPlayerTicks = 1;
@@ -152,9 +153,10 @@
 +    private float lastYaw = Float.MAX_VALUE;
 +    private boolean justTeleported = false;
 +    // CraftBukkit end
- 
++
      @Override
      public void tick() {
+         if (this.ackBlockChangesUpTo > -1) {
 @@ -313,6 +393,7 @@
          this.chatSpamThrottler.tick();
          this.dropSpamThrottler.tick();
@@ -225,7 +227,7 @@
                      ServerGamePacketListenerImpl.LOGGER.warn("{} (vehicle of {}) moved too quickly! {},{},{}", new Object[]{entity.getName().getString(), this.player.getName().getString(), d6, d7, d8});
                      this.send(ClientboundMoveVehiclePacket.fromEntity(entity));
                      return;
-@@ -449,20 +569,73 @@
+@@ -449,19 +569,72 @@
                  d10 = d6 * d6 + d7 * d7 + d8 * d8;
                  boolean flag2 = false;
  
@@ -244,8 +246,8 @@
 +                    this.player.absMoveTo(d0, d1, d2, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
                      this.send(ClientboundMoveVehiclePacket.fromEntity(entity));
                      return;
-                 }
- 
++                }
++
 +                // CraftBukkit start - fire PlayerMoveEvent
 +                Player player = this.getCraftPlayer();
 +                if (!this.hasMoved) {
@@ -294,12 +296,11 @@
 +                        this.justTeleported = false;
 +                        return;
 +                    }
-+                }
+                 }
 +                // CraftBukkit end
-+
+ 
                  this.player.serverLevel().getChunkSource().move(this.player);
                  entity.recordMovementThroughBlocks(new Vec3(d0, d1, d2), entity.position());
-                 Vec3 vec3d = new Vec3(entity.getX() - d0, entity.getY() - d1, entity.getZ() - d2);
 @@ -499,6 +672,7 @@
              this.lastGoodZ = this.awaitingPositionFromClient.z;
              this.player.hasChangedDimension();
@@ -452,13 +453,13 @@
 +                                    this.allowedPlayerTicks -= 1;
 +                                } else {
 +                                    this.allowedPlayerTicks = 20;
-                                 }
++                                }
 +                                double speed;
 +                                if (this.player.getAbilities().flying) {
 +                                    speed = this.player.getAbilities().flyingSpeed * 20f;
 +                                } else {
 +                                    speed = this.player.getAbilities().walkingSpeed * 10f;
-+                                }
+                                 }
  
                                  if (this.shouldCheckPlayerMovement(flag)) {
                                      float f2 = flag ? 300.0F : 100.0F;
@@ -753,12 +754,10 @@
          if (this.player.hasClientLoaded()) {
              this.ackBlockChangesUpTo(packet.getSequence());
              ServerLevel worldserver = this.player.serverLevel();
-@@ -1294,8 +1705,49 @@
- 
-                 if (f1 != this.player.getXRot() || f != this.player.getYRot()) {
+@@ -1296,6 +1707,47 @@
                      this.player.absRotateTo(f, f1);
-+                }
-+
+                 }
+ 
 +                // CraftBukkit start
 +                // Raytrace to look for 'rogue armswings'
 +                double d0 = this.player.getX();
@@ -789,8 +788,8 @@
 +                        cancelled = event.useItemInHand() == Event.Result.DENY;
 +                    }
 +                    this.player.gameMode.firedInteract = false;
-                 }
- 
++                }
++
 +                if (cancelled) {
 +                    this.player.getBukkitEntity().updateInventory(); // SPIGOT-2524
 +                    return;
@@ -1017,10 +1016,12 @@
          }
      }
  
-@@ -1566,6 +2092,127 @@
-         return false;
-     }
+@@ -1564,8 +2090,129 @@
+         }
  
+         return false;
++    }
++
 +    // CraftBukkit start - add method
 +    public void chat(String s, PlayerChatMessage original, boolean async) {
 +        if (s.isEmpty() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) {
@@ -1113,8 +1114,8 @@
 +                this.server.console.sendMessage(s);
 +            }
 +        }
-+    }
-+
+     }
+ 
 +    private void handleCommand(String s) {
 +        org.spigotmc.AsyncCatcher.catchOp("Command Dispatched Async: " + s); // Paper - Add async catcher
 +        if ( org.spigotmc.SpigotConfig.logCommands ) // Spigot
@@ -1401,7 +1402,34 @@
                                      return;
                                  }
                              }
-@@ -1809,7 +2599,7 @@
+@@ -1795,7 +2585,26 @@
+                     });
+                 }
+             }
++            // Paper start - PlayerUseUnknownEntityEvent
++            else {
++                packet.dispatch(new net.minecraft.network.protocol.game.ServerboundInteractPacket.Handler() {
++                    @Override
++                    public void onInteraction(net.minecraft.world.InteractionHand hand) {
++                        CraftEventFactory.callPlayerUseUnknownEntityEvent(ServerGamePacketListenerImpl.this.player, packet, hand, null);
++                    }
+ 
++                    @Override
++                    public void onInteraction(net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.Vec3 pos) {
++                        CraftEventFactory.callPlayerUseUnknownEntityEvent(ServerGamePacketListenerImpl.this.player, packet, hand, pos);
++                    }
++
++                    @Override
++                    public void onAttack() {
++                        CraftEventFactory.callPlayerUseUnknownEntityEvent(ServerGamePacketListenerImpl.this.player, packet, net.minecraft.world.InteractionHand.MAIN_HAND, null);
++                    }
++                });
++            }
++            // Paper end - PlayerUseUnknownEntityEvent
+         }
+     }
+ 
+@@ -1809,7 +2618,7 @@
              case PERFORM_RESPAWN:
                  if (this.player.wonGame) {
                      this.player.wonGame = false;
@@ -1410,7 +1438,7 @@
                      this.resetPosition();
                      CriteriaTriggers.CHANGED_DIMENSION.trigger(this.player, Level.END, Level.OVERWORLD);
                  } else {
-@@ -1817,11 +2607,11 @@
+@@ -1817,11 +2626,11 @@
                          return;
                      }
  
@@ -1424,7 +1452,7 @@
                      }
                  }
                  break;
-@@ -1834,15 +2624,21 @@
+@@ -1834,15 +2643,21 @@
      @Override
      public void handleContainerClose(ServerboundContainerClosePacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -1448,7 +1476,7 @@
                  this.player.containerMenu.sendAllDataToRemote();
              } else if (!this.player.containerMenu.stillValid(this.player)) {
                  ServerGamePacketListenerImpl.LOGGER.debug("Player {} interacted with invalid menu {}", this.player, this.player.containerMenu);
-@@ -1855,7 +2651,284 @@
+@@ -1855,7 +2670,284 @@
                      boolean flag = packet.getStateId() != this.player.containerMenu.getStateId();
  
                      this.player.containerMenu.suppressRemoteUpdates();
@@ -1734,7 +1762,7 @@
                      ObjectIterator objectiterator = Int2ObjectMaps.fastIterable(packet.getChangedSlots()).iterator();
  
                      while (objectiterator.hasNext()) {
-@@ -1901,8 +2974,22 @@
+@@ -1901,8 +2993,22 @@
                                  return;
                              }
  
@@ -1758,7 +1786,7 @@
                              if (containerrecipebook_a == RecipeBookMenu.PostPlaceAction.PLACE_GHOST_RECIPE) {
                                  this.player.connection.send(new ClientboundPlaceGhostRecipePacket(this.player.containerMenu.containerId, craftingmanager_d.display().display()));
                              }
-@@ -1917,6 +3004,7 @@
+@@ -1917,6 +3023,7 @@
      @Override
      public void handleContainerButtonClick(ServerboundContainerButtonClickPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -1766,7 +1794,7 @@
          this.player.resetLastActionTime();
          if (this.player.containerMenu.containerId == packet.containerId() && !this.player.isSpectator()) {
              if (!this.player.containerMenu.stillValid(this.player)) {
-@@ -1945,6 +3033,43 @@
+@@ -1945,7 +3052,44 @@
  
              boolean flag1 = packet.slotNum() >= 1 && packet.slotNum() <= 45;
              boolean flag2 = itemstack.isEmpty() || itemstack.getCount() <= itemstack.getMaxStackSize();
@@ -1774,7 +1802,7 @@
 +                // CraftBukkit start - Call click event
 +                InventoryView inventory = this.player.inventoryMenu.getBukkitView();
 +                org.bukkit.inventory.ItemStack item = CraftItemStack.asBukkitCopy(packet.itemStack());
-+
+ 
 +                SlotType type = SlotType.QUICKBAR;
 +                if (flag) {
 +                    type = SlotType.OUTSIDE;
@@ -1807,10 +1835,11 @@
 +                }
 +            }
 +            // CraftBukkit end
- 
++
              if (flag1 && flag2) {
                  this.player.inventoryMenu.getSlot(packet.slotNum()).setByPlayer(itemstack);
-@@ -1972,6 +3097,7 @@
+                 this.player.inventoryMenu.setRemoteSlot(packet.slotNum(), itemstack);
+@@ -1972,6 +3116,7 @@
      }
  
      private void updateSignText(ServerboundSignUpdatePacket packet, List<FilteredText> signText) {
@@ -1818,7 +1847,7 @@
          this.player.resetLastActionTime();
          ServerLevel worldserver = this.player.serverLevel();
          BlockPos blockposition = packet.getPos();
-@@ -1993,7 +3119,17 @@
+@@ -1993,7 +3138,17 @@
      @Override
      public void handlePlayerAbilities(ServerboundPlayerAbilitiesPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -1837,7 +1866,7 @@
      }
  
      @Override
-@@ -2002,6 +3138,7 @@
+@@ -2002,6 +3157,7 @@
          boolean flag = this.player.isModelPartShown(PlayerModelPart.HAT);
  
          this.player.updateOptions(packet.information());
@@ -1845,7 +1874,7 @@
          if (this.player.isModelPartShown(PlayerModelPart.HAT) != flag) {
              this.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_HAT, this.player));
          }
-@@ -2058,7 +3195,7 @@
+@@ -2058,7 +3214,7 @@
          if (!this.waitingForSwitchToConfig) {
              throw new IllegalStateException("Client acknowledged config, but none was requested");
          } else {
@@ -1854,7 +1883,7 @@
          }
      }
  
-@@ -2083,8 +3220,10 @@
+@@ -2083,8 +3239,10 @@
          });
      }
  
