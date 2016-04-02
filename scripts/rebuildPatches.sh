@@ -1,7 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PS1="$"
-basedir=`pwd`
+basedir="$1"
+workdir="$basedir/work"
 echo "Rebuilding patch files from current fork state..."
 git config core.safecrlf false
 
@@ -9,8 +10,8 @@ function cleanupPatches {
     cd "$1"
     for patch in *.patch; do
         echo "$patch"
-        gitver=$(tail -n 2 $patch | grep -ve "^$" | tail -n 1)
-        diffs=$(git diff --staged $patch | grep -E "^(\+|\-)" | grep -Ev "(From [a-z0-9]{32,}|\-\-\- a|\+\+\+ b|.index)")
+        gitver=$(tail -n 2 "$patch" | grep -ve "^$" | tail -n 1)
+        diffs=$(git diff --staged "$patch" | grep -E "^(\+|\-)" | grep -Ev "(From [a-z0-9]{32,}|\-\-\- a|\+\+\+ b|.index)")
 
         testver=$(echo "$diffs" | tail -n 2 | grep -ve "^$" | tail -n 1 | grep "$gitver")
         if [ "x$testver" != "x" ]; then
@@ -18,15 +19,15 @@ function cleanupPatches {
         fi
 
         if [ "x$diffs" == "x" ] ; then
-            git reset HEAD $patch >/dev/null
-            git checkout -- $patch >/dev/null
+            git reset HEAD "$patch" >/dev/null
+            git checkout -- "$patch" >/dev/null
         fi
     done
 }
 
 function savePatches {
     what=$1
-    what_name=$(basename $what)
+    what_name=$(basename "$what")
     target=$2
     echo "Formatting patches for $what..."
 
@@ -42,5 +43,5 @@ function savePatches {
     echo "  Patches saved for $what to $what_name-Patches/"
 }
 
-savePatches Spigot/Spigot-API Paper-API
-savePatches Spigot/Spigot-Server Paper-Server
+savePatches "$workdir/Spigot/Spigot-API" "Paper-API"
+savePatches "$workdir/Spigot/Spigot-Server" "Paper-Server"

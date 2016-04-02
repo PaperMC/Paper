@@ -1,10 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PS1="$"
-basedir=`pwd`
+basedir="$1"
+workdir="$basedir/work"
 
 function update {
-    cd "$basedir/$1"
+    cd "$workdir/$1"
     git fetch && git reset --hard origin/master
     cd ../
     git add $1
