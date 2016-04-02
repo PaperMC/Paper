@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 PS1="$"
-basedir="$1"
+basedir=$(realpath "$1")
 workdir="$basedir/work"
 minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
 decompiledir="$workdir/$minecraftversion"

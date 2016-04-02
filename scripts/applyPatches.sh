@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 PS1="$"
-basedir="$1"
+basedir=$(realpath "$1")
 workdir="$basedir/work"
 echo "Rebuilding Forked projects.... "
 
