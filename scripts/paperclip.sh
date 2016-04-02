@@ -6,7 +6,7 @@ paperjar="../../Paper-Server/target/paper-$mcver.jar"
 vanillajar="../$mcver/$mcver.jar"
 
 cd "$workdir/Paperclip"
-mvn clean package "-Dmcver=$mcver" "-Dpaperjar=$paperjar" "-Dvanillajar=$vanillajar"
+mvn clean package "-Dmcver=$mcver" "-Dpaperjar=$paperjar" "-Dvanillajar=$vanillajar" || exit 1
 cd ..
 cp "$workdir/Paperclip/target/paperclip-${mcver}.jar" "$basedir/paperclip.jar"
 

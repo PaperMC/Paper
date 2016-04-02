@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+
+# get base dir regardless of execution location
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+SOURCE=$([[ "$SOURCE" = /* ]] && echo "$SOURCE" || echo "$PWD/${SOURCE#./}")
+basedir=$(dirname "$SOURCE")
+
+paperstash() {
+    STASHED=$(git stash)
+}
+
+paperunstash() {
+    if [[ "$STASHED" != "No local changes to save" ]] ; then
+        git stash pop
+    fi
+}
+
+case "$1" in
+    "rbp" | "rebuild")
+        (
+        cd "$basedir"
+        scripts/rebuildPatches.sh "$basedir"
+        )
+    ;;
+    "a" | "apply")
+        (
+        cd "$basedir"
+        scripts/build.sh "$basedir"
+        )
+    ;;
+    "j" | "jar")
+        (
+         cd "$basedir"
+        scripts/build.sh "$basedir" "--jar"
+        )
+    ;;
+    "r" | "root")
+        cd "$basedir"
+    ;;
+    "api")
+        cd "$basedir/Paper-API"
+    ;;
+    "serv" | "server")
+        cd "$basedir"
+    ;;
+    "e" | "edit")
+        if [[ "$2" = "server" ]] ; then
+            cd "$basedir/Paper-Server"
+            export LAST_EDIT=$(pwd)
+
+            paperstash
+            git rebase -i upstream/upstream
+            paperunstash
+        elif [[ "$2" = "api" ]] ; then
+            cd "$basedir/Paper-API"
+            export LAST_EDIT=$(pwd)
+
+            paperstash
+            git rebase -i upstream/upstream
+            paperunstash
+        elif [[ "$2" = "continue" ]] ; then
+            cd "$LAST_EDIT"
+            git add .
+            git rebase --continue
+            unset LAST_EDIT
+            scripts/rebuildPatches.sh "$basedir"
+        else
+            echo "You must edit either the api or server."
+        fi
+    ;;
+    "setup")
+        if [[ -f ~/.bashrc ]] ; then
+            (grep "alias paper=" ~/.bashrc > /dev/null) && (sed -i "s|alias paper=.*|alias paper='. $SOURCE'|g" ~/.bashrc) || (echo "alias paper='. $SOURCE'" >> ~/.bashrc)
+            alias paper=". $SOURCE"
+            echo "You can now just type 'paper' at any time to access the paper tool."
+        fi
+    ;;
+    *)
+        echo "rbp, rebuild | Rebuild patches, can be called from anywhere."
+        echo "p, patch     | Apply all patches to the project without building it. Can be run from anywhere."
+        echo "j, jar       | Apply all patches and build the project, paperclip.jar will be output. Can be run from anywhere."
+        echo "r, root      | Change directory to the root of the project."
+        echo "api          | Move to the Paper-API directory."
+        echo "serv, server | Move to the Paper-Server directory."
+        echo "e, edit      | Use to edit a specific patch, give it the argument \"server\" or \"api\""
+        echo "             | respectively to edit the correct project. Use the argument \"continue\" after"
+        echo "             | the changes have been made to finish and rebuild patches. Can be called from anywhere."
+        echo "setup        | Add an alias to .bashrc to allow full functionality of this script. Run as:"
+        echo "             |     . ./paper setup"
+        echo "             | After you run this command you'll be able to just run 'paper' from anywhere."
+    ;;
+esac
+
+unset -f paperstash
+unset -f paperunstash
