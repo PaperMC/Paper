@@ -1,14 +1,16 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
+(
+set -e
 PS1="$"
 
-workdir=work
-minecraftversion=$(cat BuildData/info.json | grep minecraftVersion | cut -d '"' -f 4)
-decompiledir=$workdir/$minecraftversion
-nms=$decompiledir/net/minecraft/server
-cb=src/main/java/net/minecraft/server
-papernms=Paper-Server/src/main/java/net/minecraft/server
-mcdevsrc=${decompiledir}/src/net/minecraft/server
+basedir="$(cd "$1" && pwd -P)"
+workdir="$basedir/work"
+minecraftversion=$(cat "$basedir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
+decompiledir="$workdir/$minecraftversion"
+nms="$decompiledir/net/minecraft/server"
+papernms="Paper-Server/src/main/java/net/minecraft/server"
+mcdevsrc="${decompiledir}/src/net/minecraft/server"
 rm -rf "${mcdevsrc}"
 mkdir -p "${mcdevsrc}"
 cp ${nms}/*.java "${mcdevsrc}/"
@@ -23,3 +25,4 @@ do
     fi
 done
 echo "Built $decompiledir/src to be included in your project for src access";
+)

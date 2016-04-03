@@ -1,11 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
+(
+set -e
 PS1="$"
-basedir=`pwd`
-workdir=$basedir/work
-minecraftversion=$(cat BuildData/info.json | grep minecraftVersion | cut -d '"' -f 4)
-decompiledir=$workdir/$minecraftversion
-classdir=$decompiledir/classes
+basedir="$(cd "$1" && pwd -P)"
+workdir="$basedir/work"
+minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
+decompiledir="$workdir/$minecraftversion"
+classdir="$decompiledir/classes"
 
 echo "Extracting NMS classes..."
 if [ ! -d "$classdir" ]; then
@@ -22,9 +24,10 @@ fi
 echo "Decompiling classes..."
 if [ ! -d "$decompiledir/net/minecraft/server" ]; then
     cd "$basedir"
-    java -jar BuildData/bin/fernflower.jar -dgs=1 -hdc=0 -asc=1 -udv=0 "$classdir" "$decompiledir"
+    java -jar "$workdir/BuildData/bin/fernflower.jar" -dgs=1 -hdc=0 -asc=1 -udv=0 "$classdir" "$decompiledir"
     if [ "$?" != "0" ]; then
         echo "Failed to decompile classes."
         exit 1
     fi
 fi
+)
