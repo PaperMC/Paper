@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+(
+set -e
 PS1="$"
 basedir=$(realpath "$1")
 workdir="$basedir/work"
@@ -67,4 +69,4 @@ cd "$basedir"
 	echo "Failed to apply Paper Patches"
 	exit 1
 ) || exit 1
-
+)

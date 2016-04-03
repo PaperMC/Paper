@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+(
+set -e
 PS1="$"
 
 basedir=$(realpath "$1")
@@ -23,3 +25,4 @@ do
     fi
 done
 echo "Built $decompiledir/src to be included in your project for src access";
+)

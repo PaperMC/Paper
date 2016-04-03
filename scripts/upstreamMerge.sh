@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+(
+set -e
 PS1="$"
 basedir=$(realpath "$1")
 workdir="$basedir/work"
@@ -14,3 +16,4 @@ function update {
 update Bukkit
 update CraftBukkit
 update Spigot
+)
