@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 (
-set -e
 PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
@@ -17,9 +16,7 @@ function cleanupPatches {
 
         testver=$(echo "$diffs" | tail -n 2 | grep -ve "^$" | tail -n 1 | grep "$gitver")
         if [ "x$testver" != "x" ]; then
-            set +e
             diffs=$(echo "$diffs" | sed 'N;$!P;$!D;$d')
-            set -e
         fi
 
         if [ "x$diffs" == "x" ] ; then
