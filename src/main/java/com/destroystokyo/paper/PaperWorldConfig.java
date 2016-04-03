@@ -241,4 +241,10 @@ public class PaperWorldConfig {
         }
         fixedInhabitedTime = getInt("fixed-chunk-inhabited-time", -1);
     }
+
+    public int grassUpdateRate = 1;
+    private void grassUpdateRate() {
+        grassUpdateRate = Math.max(0, getInt("grass-spread-tick-rate", grassUpdateRate));
+        log("Grass Spread Tick Rate: " + grassUpdateRate);
+    }
 }
