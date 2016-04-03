@@ -6,7 +6,7 @@ PS1="$"
 
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
-minecraftversion=$(cat "$basedir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
+minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
 decompiledir="$workdir/$minecraftversion"
 nms="$decompiledir/net/minecraft/server"
 papernms="Paper-Server/src/main/java/net/minecraft/server"
