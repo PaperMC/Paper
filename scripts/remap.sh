@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+(
+set -e
 PS1="$"
 basedir=$(realpath "$1")
 workdir="$basedir/work"
@@ -68,3 +70,4 @@ if [ "$?" != "0" ]; then
     echo "Failed to install remapped jar."
     exit 1
 fi
+)

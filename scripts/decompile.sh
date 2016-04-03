@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+(
+set -e
 PS1="$"
 basedir=$(realpath "$1")
 workdir="$basedir/work"
@@ -28,3 +30,4 @@ if [ ! -d "$decompiledir/net/minecraft/server" ]; then
         exit 1
     fi
 fi
+)

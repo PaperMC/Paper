@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+(
+set -e
 nms="net/minecraft/server"
 export MODLOG=""
 PS1="$"
@@ -59,8 +61,7 @@ import PathfinderGoalFloat
 import PersistentVillage
 import TileEntityEnderChest
 
-(
-	cd "$workdir/Spigot/Spigot-Server/"
-	git add src -A
-	echo -e "mc-dev Imports\n\n$MODLOG" | git commit src -F -
+cd "$workdir/Spigot/Spigot-Server/"
+git add src -A
+echo -e "mc-dev Imports\n\n$MODLOG" | git commit src -F -
 )

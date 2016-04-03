@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+(
+set -e
 PS1="$"
 basedir=$(realpath "$1")
 workdir="$basedir/work"
@@ -24,12 +26,15 @@ do
     file="$(echo "$file" | cut -d. -f1).java"
 
     echo "Patching $file < $patchFile"
+    set +e
     sed -i 's/\r//' "$nms/$file" > /dev/null
+    set -e
 
     cp "$nms/$file" "$cb/$file"
     "$patch" -s -d src/main/java/ "net/minecraft/server/$file" < "$patchFile"
 done
 
-git add src >/dev/null 2>&1 || exit 1
-git commit -m "CraftBukkit $ $(date)" >/dev/null 2>&1 || exit 1
-git checkout -f HEAD^ >/dev/null 2>&1 || exit 1
+git add src >/dev/null 2>&1
+git commit -m "CraftBukkit $ $(date)" >/dev/null 2>&1
+git checkout -f HEAD^ >/dev/null 2>&1
+)
