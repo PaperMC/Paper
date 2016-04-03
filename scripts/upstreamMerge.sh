@@ -1,10 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
+(
+set -e
 PS1="$"
-basedir=`pwd`
+basedir="$(cd "$1" && pwd -P)"
+workdir="$basedir/work"
 
 function update {
-    cd "$basedir/$1"
+    cd "$workdir/$1"
     git fetch && git reset --hard origin/master
     cd ../
     git add $1
@@ -13,3 +16,4 @@ function update {
 update Bukkit
 update CraftBukkit
 update Spigot
+)

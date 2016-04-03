@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+
+# get base dir regardless of execution location
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+SOURCE=$([[ "$SOURCE" = /* ]] && echo "$SOURCE" || echo "$PWD/${SOURCE#./}")
+basedir=$(dirname "$SOURCE")
+
+paperstash() {
+    STASHED=$(git stash)
+}
+
+paperunstash() {
+    if [[ "$STASHED" != "No local changes to save" ]] ; then
+        git stash pop
+    fi
+}
+
+case "$1" in
+    "rbp" | "rebuild")
+    (
+        set -e
+        cd "$basedir"
+        scripts/rebuildPatches.sh "$basedir"
+    )
+    ;;
+    "p" | "patch")
+    (
+        set -e
+        cd "$basedir"
+        scripts/build.sh "$basedir"
+    )
+    ;;
+    "j" | "jar")
+    (
+        set -e
+        cd "$basedir"
+        scripts/build.sh "$basedir" "--jar"
+    )
+    ;;
+    "make")
+    (
+        if [[ "$2" = "bacon" ]] ; then
+            set -e
+            cd "$basedir"
+            scripts/build.sh "$basedir" "--jar"
+        fi
+    )
+    ;;
+    "r" | "root")
+        cd "$basedir"
+    ;;
+    "a" | "api")
+        cd "$basedir/Paper-API"
+    ;;
+    "s" | "server")
+        cd "$basedir"
+    ;;
+    "e" | "edit")
+        case "$2" in
+            "s" | "server")
+            export LAST_EDIT="$basedir/Paper-Server"
+            cd "$basedir/Paper-Server"
+            (
+                set -e
+
+                paperstash
+                git rebase -i upstream/upstream
+                paperunstash
+            )
+            ;;
+            "a" | "api")
+            export LAST_EDIT="$basedir/Paper-API"
+            cd "$basedir/Paper-API"
+            (
+                set -e
+
+                paperstash
+                git rebase -i upstream/upstream
+                paperunstash
+            )
+            ;;
+            "c" | "continue")
+            cd "$LAST_EDIT"
+            unset LAST_EDIT
+            (
+                set -e
+
+                git add .
+                git commit --amend
+                git rebase --continue
+
+                cd "$basedir"
+                scripts/rebuildPatches.sh "$basedir"
+            )
+            ;;
+            *)
+                echo "You must edit either the api or server."
+            ;;
+        esac
+    ;;
+    "setup")
+        if [[ -f ~/.bashrc ]] ; then
+            NAME="paper"
+            if [[ ! -z "${2+x}" ]] ; then
+                NAME="$2"
+            fi
+            (grep "alias $NAME=" ~/.bashrc > /dev/null) && (sed -i "s|alias $NAME=.*|alias $NAME='. $SOURCE'|g" ~/.bashrc) || (echo "alias $NAME='. $SOURCE'" >> ~/.bashrc)
+            alias "$NAME=. $SOURCE"
+            echo "You can now just type '$NAME' at any time to access the paper tool."
+        fi
+    ;;
+    *)
+        echo "PaperMC build tool command. This provides a variety of commands to build and manage the PaperMC build"
+        echo "environment. For all of the functionality of this command to be available, you must first run the"
+        echo "'setup' command. View below for details. For essential building and patching, you do not need to do the setup."
+        echo ""
+        echo " Normal commands:"
+        echo "  * rbp, rebuild | Rebuild patches, can be called from anywhere."
+        echo "  * p, patch     | Apply all patches to the project without building it. Can be run from anywhere."
+        echo "  * j, jar       | Apply all patches and build the project, paperclip.jar will be output. Can be run from anywhere."
+        echo ""
+        echo " These commands require the setup command before use:"
+        echo "  * r, root      | Change directory to the root of the project."
+        echo "  * a. api       | Move to the Paper-API directory."
+        echo "  * s, server    | Move to the Paper-Server directory."
+        echo "  * e, edit      | Use to edit a specific patch, give it the argument \"server\" or \"api\""
+        echo "                 | respectively to edit the correct project. Use the argument \"continue\" after"
+        echo "                 | the changes have been made to finish and rebuild patches. Can be called from anywhere."
+        echo ""
+        echo "  * setup        | Add an alias to .bashrc to allow full functionality of this script. Run as:"
+        echo "                 |     . ./paper setup"
+        echo "                 | After you run this command you'll be able to just run 'paper' from anywhere."
+        echo "                 | The default name for the resulting alias is 'paper', you can give an argument to override"
+        echo "                 | this default, such as:"
+        echo "                 |     . ./paper setup example"
+        echo "                 | Which will allow you to run 'example' instead."
+    ;;
+esac
+
+unset -f paperstash
+unset -f paperunstash

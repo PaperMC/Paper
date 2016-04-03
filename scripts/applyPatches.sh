@@ -1,12 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
+(
+set -e
 PS1="$"
-basedir=`pwd`
+basedir="$(cd "$1" && pwd -P)"
+workdir="$basedir/work"
 echo "Rebuilding Forked projects.... "
 
 function applyPatch {
     what=$1
-    what_name=$(basename $what)
+    what_name=$(basename "$what")
     target=$2
     branch=$3
 
@@ -21,7 +24,7 @@ function applyPatch {
     cd "$basedir/$target"
     echo "Resetting $target to $what_name..."
     git remote rm upstream > /dev/null 2>&1
-    git remote add upstream $basedir/$what >/dev/null 2>&1
+    git remote add upstream "$basedir/$what" >/dev/null 2>&1
     git checkout master 2>/dev/null || git checkout -b master
     git fetch upstream >/dev/null 2>&1
     git reset --hard upstream/upstream
@@ -39,8 +42,8 @@ function applyPatch {
 }
 
 # Move into spigot dir
-pushd Spigot
-basedir=$basedir/Spigot
+cd "$workdir/Spigot"
+basedir=$(pwd)
 # Apply Spigot
 (
 	applyPatch ../Bukkit Spigot-API HEAD &&
@@ -50,19 +53,20 @@ basedir=$basedir/Spigot
 	exit 1
 ) || exit 1
 # Move out of Spigot
-popd
-basedir=$(dirname "$basedir")
+basedir="$1"
+cd "$basedir"
 
 echo "Importing MC Dev"
 
-./importmcdev.sh
+./scripts/importmcdev.sh "$basedir"
 
 # Apply paper
+cd "$basedir"
 (
-	applyPatch Spigot/Spigot-API Paper-API HEAD &&
-	applyPatch Spigot/Spigot-Server Paper-Server HEAD
+	applyPatch "work/Spigot/Spigot-API" Paper-API HEAD &&
+	applyPatch "work/Spigot/Spigot-Server" Paper-Server HEAD
 ) || (
 	echo "Failed to apply Paper Patches"
 	exit 1
 ) || exit 1
-
+)

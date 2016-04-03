@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
 
+(
+set -e
 nms="net/minecraft/server"
 export MODLOG=""
 PS1="$"
-basedir=`pwd`
+basedir="$(cd "$1" && pwd -P)"
 
-workdir=$basedir/work
-minecraftversion=$(cat BuildData/info.json | grep minecraftVersion | cut -d '"' -f 4)
-decompiledir=$workdir/$minecraftversion
+workdir="$basedir/work"
+minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
+decompiledir="$workdir/$minecraftversion"
 
 export importedmcdev=""
 function import {
 	export importedmcdev="$importedmcdev $1"
 	file="${1}.java"
-	target="$basedir/Spigot/Spigot-Server/src/main/java/$nms/$file"
+	target="$workdir/Spigot/Spigot-Server/src/main/java/$nms/$file"
 	base="$decompiledir/$nms/$file"
 
 	if [[ ! -f "$target" ]]; then
@@ -24,7 +26,7 @@ function import {
 }
 
 (
-	cd Spigot/Spigot-Server/
+	cd "$workdir/Spigot/Spigot-Server/"
 	lastlog=$(git log -1 --oneline)
 	if [[ "$lastlog" = *"mc-dev Imports"* ]]; then
 		git reset --hard HEAD^
@@ -59,8 +61,7 @@ import PathfinderGoalFloat
 import PersistentVillage
 import TileEntityEnderChest
 
-(
-	cd Spigot/Spigot-Server/
-	git add src -A
-	echo -e "mc-dev Imports\n\n$MODLOG" | git commit src -F -
+cd "$workdir/Spigot/Spigot-Server/"
+git add src -A
+echo -e "mc-dev Imports\n\n$MODLOG" | git commit src -F -
 )
