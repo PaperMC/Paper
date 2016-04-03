@@ -25,9 +25,7 @@ How To (Compiling Jar From Source)
 ------
 To compile Paper, you need JDK 8, maven, and an internet connection.
 
-Clone this repo, run `./build.sh --jar` from *bash*, get files.
-
-Leave off --jar if you only wish to resync your checkout and not create a paperclip jar file just yet.
+Clone this repo, run `./paper jar` from *bash*, get files.
 
 How To (Pull Request)
 ------

@@ -2,6 +2,8 @@ Contributing to Paper
 ==========================
 PaperMC has a very lenient policy towards PRs, but would prefer that you try and adhere to the following guidelines.
 
+# All of this needs to be re-done for the new build system
+
 ## Understanding Patches
 Patches to Paper are very simple, but center around the directories 'Paper-API' and 'Paper-Server'
 
