@@ -53,6 +53,7 @@ import EntitySquid
 import FileIOThread
 import ItemBlock
 import PacketPlayInResourcePackStatus
+import PacketPlayInUseEntity
 import PacketPlayOutPlayerListHeaderFooter
 import PacketPlayOutTitle
 import PacketPlayOutUpdateTime
