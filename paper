@@ -20,6 +20,20 @@ paperunstash() {
     fi
 }
 
+setup() {
+    FILE="~/.bashrc"
+    NAME="paper"
+    if [[ ! -z "${1+x}" ]] ; then
+        NAME="$1"
+    fi
+    if [[ ! -z "${2+x}" ]] ; then
+        FILE="$2"
+    fi
+    (grep "alias $NAME=" $FILE > /dev/null) && (sed -i "s|alias $NAME=.*|alias $NAME='. $SOURCE'|g" $FILE) || (echo "alias $NAME='. $SOURCE'" >> $FILE)
+    alias "$NAME=. $SOURCE"
+    echo "You can now just type '$NAME' at any time to access the paper tool."
+}
+
 case "$1" in
     "rbp" | "rebuild")
     (
@@ -58,7 +72,7 @@ case "$1" in
         cd "$basedir/Paper-API"
     ;;
     "s" | "server")
-        cd "$basedir"
+        cd "$basedir/Paper-Server"
     ;;
     "e" | "edit")
         case "$2" in
@@ -104,15 +118,17 @@ case "$1" in
         esac
     ;;
     "setup")
-        if [[ -f ~/.bashrc ]] ; then
-            NAME="paper"
-            if [[ ! -z "${2+x}" ]] ; then
-                NAME="$2"
-            fi
-            (grep "alias $NAME=" ~/.bashrc > /dev/null) && (sed -i "s|alias $NAME=.*|alias $NAME='. $SOURCE'|g" ~/.bashrc) || (echo "alias $NAME='. $SOURCE'" >> ~/.bashrc)
-            alias "$NAME=. $SOURCE"
-            echo "You can now just type '$NAME' at any time to access the paper tool."
+        if [[ -f ~/.bash_aliases ]] ; then
+            setup $2 ~/.bash_aliases
+            exit 0
         fi
+        if [[ -f ~/.bashrc ]] ; then
+            setup $2
+            exit 0
+        fi
+        echo "We were unable to setup the PaperMC build tool command alias: Both ~/.bash_aliases and ~/.bashrc are missing."
+        echo "You can either manually map the alias yourself, or just run it from the repository root"
+        exit 1
     ;;
     *)
         echo "PaperMC build tool command. This provides a variety of commands to build and manage the PaperMC build"
@@ -144,3 +160,4 @@ esac
 
 unset -f paperstash
 unset -f paperunstash
+unset -f setup
