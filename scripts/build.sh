@@ -2,7 +2,7 @@
 
 (
 set -e
-basedir=$(realpath "$1")
+basedir="$(cd "$1" && pwd -P)"
 
 (git submodule update --init && ./scripts/remap.sh "$basedir" && ./scripts/decompile.sh "$basedir" && ./scripts/init.sh "$basedir" && ./scripts/applyPatches.sh "$basedir") || (
 	echo "Failed to build Paper"

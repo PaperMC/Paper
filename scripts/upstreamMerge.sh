@@ -3,7 +3,7 @@
 (
 set -e
 PS1="$"
-basedir=$(realpath "$1")
+basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
 
 function update {
