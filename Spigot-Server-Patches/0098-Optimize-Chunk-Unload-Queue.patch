@@ -1,4 +1,4 @@
-From 8fd1f5dfead2200e93116763999f776de862a848 Mon Sep 17 00:00:00 2001
+From c9723ad854bc3dc21412e28c3a7914e9a97768fd Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 18 Mar 2016 17:57:25 -0400
 Subject: [PATCH] Optimize Chunk Unload Queue
@@ -36,7 +36,7 @@ index 8b11266..ac35cf4 100644
  
      // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 450bf9b..f5a2580 100644
+index 450bf9b..5485a66 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -21,7 +21,7 @@ import org.bukkit.event.world.ChunkUnloadEvent;
@@ -147,7 +147,7 @@ index 450bf9b..f5a2580 100644
                  if (chunk.hasLightUpdates()) continue; // Paper - Don't unload chunks with pending light updates.
  
                  ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
-@@ -320,7 +340,7 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -320,13 +340,18 @@ public class ChunkProviderServer implements IChunkProvider {
                                  continue;
                              }
  
@@ -156,7 +156,18 @@ index 450bf9b..f5a2580 100644
                              if (neighbor != null) {
                                  neighbor.setNeighborUnloaded(-x, -z);
                                  chunk.setNeighborUnloaded(x, z);
-@@ -362,4 +382,69 @@ public class ChunkProviderServer implements IChunkProvider {
+                             }
+                         }
+                     }
++                // Paper start
++                } else {
++                    // Unload event is cancelled, make sure this chunk is marked active
++                    markChunkActive(chunk);
++                // Paper end
+                 }
+             }
+             // CraftBukkit end
+@@ -362,4 +387,69 @@ public class ChunkProviderServer implements IChunkProvider {
      public boolean e(int i, int j) {
          return this.chunks.containsKey(LongHash.toLong(i, j)); // CraftBukkit
      }
@@ -240,7 +251,7 @@ index 63e118d..721bcae 100644
                  i += server.getChunkAt( x, z ).entityCount.get( oClass );
              }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index f76ff72..c1cb133 100644
+index d658fa2..0a3cfbc 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -159,9 +159,15 @@ public abstract class World implements IBlockAccess {
