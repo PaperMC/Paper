@@ -183,6 +183,10 @@ public class CraftWorld implements World {
             return false;
         }
 
+        return unloadChunk0(x, z, save, safe);
+    }
+
+    private boolean unloadChunk0(int x, int z, boolean save, boolean safe) {
         net.minecraft.server.Chunk chunk = world.getChunkProviderServer().getChunkAt(x, z);
         if (chunk.mustSave) {   // If chunk had previously been queued to save, must do save to avoid loss of that data
             save = true;
@@ -217,7 +221,7 @@ public class CraftWorld implements World {
     }
 
     public boolean regenerateChunk(int x, int z) {
-        unloadChunk(x, z, false, false);
+        unloadChunk0(x, z, false, false);
 
         world.getChunkProviderServer().unloadQueue.remove(x, z);
 
