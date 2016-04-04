@@ -1,4 +1,4 @@
-From c9723ad854bc3dc21412e28c3a7914e9a97768fd Mon Sep 17 00:00:00 2001
+From 0dce8356b0edff838a19e1b615fa18366af30563 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 18 Mar 2016 17:57:25 -0400
 Subject: [PATCH] Optimize Chunk Unload Queue
@@ -251,7 +251,7 @@ index 63e118d..721bcae 100644
                  i += server.getChunkAt( x, z ).entityCount.get( oClass );
              }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index d658fa2..0a3cfbc 100644
+index f76ff72..c1cb133 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -159,9 +159,15 @@ public abstract class World implements IBlockAccess {
@@ -272,19 +272,19 @@ index d658fa2..0a3cfbc 100644
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig( worlddata.getName() ); // Spigot
          this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(worlddata.getName(), this.spigotConfig); // Paper
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 3f2d83a..c81dfee 100644
+index dfa7e73..922ebaf 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -206,7 +206,7 @@ public class CraftWorld implements World {
-         }
+@@ -210,7 +210,7 @@ public class CraftWorld implements World {
  
+     private boolean unloadChunk0(int x, int z, boolean save, boolean safe) {
          // Paper start - Don't create a chunk just to unload it
 -        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().getChunkIfLoaded(x, z);
 +        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().getChunkIfActive(x, z); // Paper
          if (chunk == null) {
              return false;
          }
-@@ -232,7 +232,7 @@ public class CraftWorld implements World {
+@@ -237,7 +237,7 @@ public class CraftWorld implements World {
                      continue;
                  }
  
@@ -293,7 +293,7 @@ index 3f2d83a..c81dfee 100644
                  if (neighbor != null) {
                      neighbor.setNeighborUnloaded(-xx, -zz);
                      chunk.setNeighborUnloaded(xx, zz);
-@@ -294,6 +294,7 @@ public class CraftWorld implements World {
+@@ -299,6 +299,7 @@ public class CraftWorld implements World {
              // Use the default variant of loadChunk when generate == true.
              return world.getChunkProviderServer().getChunkAt(x, z) != null;
          }
@@ -301,7 +301,7 @@ index 3f2d83a..c81dfee 100644
  
          world.getChunkProviderServer().unloadQueue.remove(x, z);
          net.minecraft.server.Chunk chunk = world.getChunkProviderServer().chunks.get(LongHash.toLong(x, z));
-@@ -319,7 +320,7 @@ public class CraftWorld implements World {
+@@ -324,7 +325,7 @@ public class CraftWorld implements World {
                          continue;
                      }
  
@@ -310,7 +310,7 @@ index 3f2d83a..c81dfee 100644
                      if (neighbor != null) {
                          neighbor.setNeighborLoaded(-x, -z);
                          chunk.setNeighborLoaded(x, z);
-@@ -1536,7 +1537,7 @@ public class CraftWorld implements World {
+@@ -1541,7 +1542,7 @@ public class CraftWorld implements World {
              }
  
              // Already unloading?
@@ -359,5 +359,5 @@ index f0d3a19..c32b805 100644
          {
              isActive = false;
 -- 
-2.8.0
+2.8.0.windows.1
 
