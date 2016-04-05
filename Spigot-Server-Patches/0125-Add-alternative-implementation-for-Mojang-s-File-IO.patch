@@ -1,9 +1,9 @@
-From ace8a701f807d72e0fd3db7397fc813b60e03957 Mon Sep 17 00:00:00 2001
+From 4c991af76f0f0da56a17f62ccc047c9e40b8f45c Mon Sep 17 00:00:00 2001
 From: Antony Riley <antony@cyberiantiger.org>
 Date: Fri, 1 Apr 2016 09:42:31 +0300
 Subject: [PATCH] Add alternative implementation for Mojang's File IO.
 
-New IO implementation is entirely optional.
+IO implementation is entirely optional.
 Better locking.
 Better guarantees about closing region files on world unload.
 Better detection and handling of corrupt region files.
@@ -12,15 +12,79 @@ Better free space map implementation for region files.
 Fairly minimal diff.
 Configurable thread count for async chunk saving.
 Configurable limit to the async chunk saving queue size.
+Adds per world disk IO stats.
 
 Future: possibility of a plugin API to modify world persistence.
-Future: possibility of per world disk IO stats.
 
+diff --git a/src/main/java/com/destroystokyo/paper/IostatCommand.java b/src/main/java/com/destroystokyo/paper/IostatCommand.java
+new file mode 100644
+index 0000000..c3e9b65
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/IostatCommand.java
+@@ -0,0 +1,57 @@
++package com.destroystokyo.paper;
++
++import org.bukkit.Bukkit;
++import org.bukkit.ChatColor;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.CraftWorld;
++import org.bukkit.craftbukkit.chunkio2.PersistenceCounters;
++import org.bukkit.craftbukkit.chunkio2.WorldPersistence;
++
++public class IostatCommand extends Command {
++
++    public IostatCommand(String name) {
++        super(name);
++        this.description = "Get statistics on disk utilisation per world.";
++        this.usageMessage = "/iostat";
++        setPermission("bukkit.command.iostat");
++    }
++
++    @Override
++    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
++        if ( !testPermission(sender) ) {
++            return true;
++        }
++
++        if ( !PaperConfig.usePaperIO ) {
++            sender.sendMessage(ChatColor.RED + "Please enable settings.use-paper-io in order to use iostat.");
++            return true;
++        }
++
++        if ( !PaperConfig.paperIOStats ) {
++            sender.sendMessage(ChatColor.RED + "Please enable settings.paper-io-stats in order to use iostat.");
++            return true;
++        }
++
++        Bukkit.getServer().getWorlds().stream().map((w) -> w.getName()).sorted().forEach((w) -> {
++            WorldPersistence persistence = ((CraftWorld)Bukkit.getWorld(w)).getHandle().getDataManager().getPersistence();
++            sender.sendMessage(ChatColor.GREEN + w + ":");
++            if (persistence != null) {
++                PersistenceCounters counters = persistence.getCounters();
++                if (persistence.hasPlayerPersistence()) {
++                    sender.sendMessage(ChatColor.GOLD + "    Players loaded: " + counters.getPlayersRead());
++                    sender.sendMessage(ChatColor.GOLD + "    Players saved: " + counters.getPlayersWritten());
++                }
++                sender.sendMessage(ChatColor.GOLD + "    Chunks loaded: " + counters.getChunksRead());
++                sender.sendMessage(ChatColor.GOLD + "    Chunks saved: " + counters.getChunksWritten());
++                sender.sendMessage(ChatColor.GOLD + "    Bytes read: " + counters.getBytesRead());
++                sender.sendMessage(ChatColor.GOLD + "    Bytes written: " + counters.getBytesWritten());
++            } else {
++                sender.sendMessage(ChatColor.RED + "    (No stats)");
++            }
++        });
++
++        return true;
++    }
++    
++}
+\ No newline at end of file
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index cd25fb8..8f3bfe6 100644
+index cd25fb8..a5f9082 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -190,4 +190,26 @@ public class PaperConfig {
+@@ -190,4 +190,32 @@ public class PaperConfig {
      private static void regionFileCacheSize() {
          regionFileCacheSize = getInt("settings.region-file-cache-size", 256);
      }
@@ -29,6 +93,7 @@ index cd25fb8..8f3bfe6 100644
 +    public static int paperIORegionFileCacheSize = 256;
 +    public static int paperIOAsyncChunkSaveQueueSize = 0;
 +    public static int paperIOAsyncChunkSaveQueueThreads = 1;
++    public static boolean paperIOStats = true;
 +    private static void paperIO() {
 +        usePaperIO = getBoolean("settings.paper-io", false);
 +        // Region file cache size (per world). 
@@ -44,6 +109,11 @@ index cd25fb8..8f3bfe6 100644
 +        // Minimum value of 1.
 +        if (paperIOAsyncChunkSaveQueueSize < 1) {
 +            paperIOAsyncChunkSaveQueueSize = 1;
++        }
++        paperIOStats = getBoolean("settings.paper-io-stats", true);
++
++        if (usePaperIO && paperIOStats) {
++            commands.put("iostat", new IostatCommand("iostat"));
 +        }
 +    }
  }
@@ -156,20 +226,31 @@ index df4c1e0..726e42e 100644
 +    public boolean chunkExists(World world, int i, int j); // Paper
  }
 diff --git a/src/main/java/net/minecraft/server/IDataManager.java b/src/main/java/net/minecraft/server/IDataManager.java
-index dc638d9..44ac431 100644
+index dc638d9..1aa58c5 100644
 --- a/src/main/java/net/minecraft/server/IDataManager.java
 +++ b/src/main/java/net/minecraft/server/IDataManager.java
-@@ -1,8 +1,9 @@
- package net.minecraft.server;
+@@ -2,7 +2,12 @@ package net.minecraft.server;
  
-+import java.io.Closeable;
  import java.io.File;
  
 -public interface IDataManager {
++// Paper - Start
++import java.io.Closeable;
++import org.bukkit.craftbukkit.chunkio2.WorldPersistence;
++// Paper - End
++
 +public interface IDataManager extends Closeable { // Paper - Closing worlds would be nice!
  
      WorldData getWorldData();
  
+@@ -24,5 +29,7 @@ public interface IDataManager {
+ 
+     DefinedStructureManager h();
+ 
++    WorldPersistence getPersistence(); // Paper - expose WorldPersistence
++
+     java.util.UUID getUUID(); // CraftBukkit
+ }
 diff --git a/src/main/java/net/minecraft/server/IPlayerFileData.java b/src/main/java/net/minecraft/server/IPlayerFileData.java
 index 8b2d910..5d359c3 100644
 --- a/src/main/java/net/minecraft/server/IPlayerFileData.java
@@ -262,10 +343,10 @@ index 06dec17..bc7125a 100644
              for (i = 0; i < this.worldServer.length; ++i) {
                  if (this.worldServer[i] != null) {
 diff --git a/src/main/java/net/minecraft/server/WorldNBTStorage.java b/src/main/java/net/minecraft/server/WorldNBTStorage.java
-index c2d384c..820a815 100644
+index c2d384c..649b15d 100644
 --- a/src/main/java/net/minecraft/server/WorldNBTStorage.java
 +++ b/src/main/java/net/minecraft/server/WorldNBTStorage.java
-@@ -16,6 +16,12 @@ import java.util.UUID;
+@@ -16,6 +16,13 @@ import java.util.UUID;
  import org.bukkit.craftbukkit.entity.CraftPlayer;
  // CraftBukkit end
  
@@ -273,12 +354,13 @@ index c2d384c..820a815 100644
 +import java.util.Arrays;
 +import java.util.List;
 +import java.util.stream.Collectors;
++import org.bukkit.craftbukkit.chunkio2.WorldPersistence;
 +// Paper end
 +
  public class WorldNBTStorage implements IDataManager, IPlayerFileData {
  
      private static final Logger b = LogManager.getLogger();
-@@ -208,7 +214,7 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+@@ -208,7 +215,7 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
      }
  
      // CraftBukkit start
@@ -287,7 +369,7 @@ index c2d384c..820a815 100644
          try {
              File file1 = new File(this.playerDir, s + ".dat");
  
-@@ -298,4 +304,37 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+@@ -298,4 +305,41 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
          return playerDir;
      }
      // CraftBukkit end
@@ -321,6 +403,10 @@ index c2d384c..820a815 100644
 +    @Override
 +    public void close() throws IOException {
 +        a(); // This is more like flush() than close()
++    }
++
++    public WorldPersistence getPersistence() {
++        return null;
 +    }
 +    // Paper end
 +
@@ -403,7 +489,7 @@ index 4521786..ee4ef0b 100644
          } else {
              return 0;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 5b70d7a..98c8de5 100644
+index 5b70d7a..601d6ae 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -109,6 +109,7 @@ import com.avaje.ebean.config.DataSourceConfig;
@@ -414,7 +500,7 @@ index 5b70d7a..98c8de5 100644
  import com.google.common.base.Charsets;
  import com.google.common.base.Function;
  import com.google.common.collect.ImmutableList;
-@@ -120,8 +121,11 @@ import io.netty.buffer.ByteBuf;
+@@ -120,8 +121,12 @@ import io.netty.buffer.ByteBuf;
  import io.netty.buffer.ByteBufOutputStream;
  import io.netty.buffer.Unpooled;
  import io.netty.handler.codec.base64.Base64;
@@ -423,10 +509,26 @@ index 5b70d7a..98c8de5 100644
  import net.md_5.bungee.api.chat.BaseComponent;
 +import org.bukkit.craftbukkit.chunkio2.WorldPersistence;
 +import org.bukkit.craftbukkit.chunkio2.anvil.AnvilWorldPersistenceFactory;
++import org.bukkit.craftbukkit.chunkio2.impl.CraftNBTStorage;
  
  public final class CraftServer implements Server {
      private static final Player[] EMPTY_PLAYER_ARRAY = new Player[0];
-@@ -1040,6 +1044,15 @@ public final class CraftServer implements Server {
+@@ -911,7 +916,13 @@ public final class CraftServer implements Server {
+         } while(used);
+         boolean hardcore = false;
+ 
+-        IDataManager sdm = new ServerNBTManager(getWorldContainer(), name, true, getHandle().getServer().getDataConverterManager());
++        // Paper Start
++        org.bukkit.craftbukkit.chunkio2.WorldPersistence persistence = getPersistence(name, creator.environment(), false);
++
++        IDataManager sdm = persistence == null ? 
++                new ServerNBTManager(getWorldContainer(), name, true, getHandle().getServer().getDataConverterManager()) :
++                new CraftNBTStorage(false, getHandle().getServer().getDataConverterManager(), persistence);
++        // Paper End
+         WorldData worlddata = sdm.getWorldData();
+         WorldSettings worldSettings = null;
+         if (worlddata == null) {
+@@ -1040,6 +1051,15 @@ public final class CraftServer implements Server {
              }
          }
  
@@ -442,7 +544,7 @@ index 5b70d7a..98c8de5 100644
          return true;
      }
  
-@@ -1282,6 +1295,19 @@ public final class CraftServer implements Server {
+@@ -1282,6 +1302,19 @@ public final class CraftServer implements Server {
          return result;
      }
  
@@ -462,7 +564,7 @@ index 5b70d7a..98c8de5 100644
      @Override
      @Deprecated
      public CraftMapView getMap(short id) {
-@@ -1516,21 +1542,13 @@ public final class CraftServer implements Server {
+@@ -1516,21 +1549,13 @@ public final class CraftServer implements Server {
  
      @Override
      public OfflinePlayer[] getOfflinePlayers() {
@@ -620,6 +722,99 @@ index 0000000..746cf1e
 +        return ex;
 +    }
 +}
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/AtomicPersistenceCounters.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/AtomicPersistenceCounters.java
+new file mode 100644
+index 0000000..200f8b6
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/AtomicPersistenceCounters.java
+@@ -0,0 +1,87 @@
++package org.bukkit.craftbukkit.chunkio2;
++
++import java.util.concurrent.atomic.AtomicLong;
++
++public class AtomicPersistenceCounters implements PersistenceCounters {
++
++    private final AtomicLong bytesRead;
++    private final AtomicLong bytesWritten;
++    private final AtomicLong chunksRead;
++    private final AtomicLong chunksWritten;
++    private final AtomicLong playersRead;
++    private final AtomicLong playersWritten;
++
++    public AtomicPersistenceCounters() {
++        this(0L, 0L, 0L, 0L, 0L, 0L);
++    }
++
++    public AtomicPersistenceCounters(long bytesRead, long bytesWritten, long chunksRead, long chunksWritten, long playersRead, long playersWritten) {
++        this.bytesRead = new AtomicLong(bytesRead);
++        this.bytesWritten = new AtomicLong(bytesWritten);
++        this.chunksRead = new AtomicLong(chunksRead);
++        this.chunksWritten = new AtomicLong(chunksWritten);
++        this.playersRead = new AtomicLong(playersRead);
++        this.playersWritten = new AtomicLong(playersWritten);
++    }
++
++    @Override
++    public void bytesRead(long bytes) {
++        bytesRead.addAndGet(bytes);
++    }
++
++    @Override
++    public void bytesWritten(long bytes) {
++        bytesWritten.addAndGet(bytes);
++    }
++
++    @Override
++    public void chunksRead(long chunks) {
++        chunksRead.addAndGet(chunks);
++    }
++
++    @Override
++    public void chunksWritten(long chunks) {
++        chunksWritten.addAndGet(chunks);
++    }
++
++    @Override
++    public void playersRead(long players) {
++        playersRead.addAndGet(players);
++    }
++
++    @Override
++    public void playersWritten(long players) {
++        playersWritten.addAndGet(players);
++    }
++
++    @Override
++    public long getBytesRead() {
++        return bytesRead.get();
++    }
++
++    @Override
++    public long getBytesWritten() {
++        return bytesWritten.get();
++    }
++
++    @Override
++    public long getChunksRead() {
++        return chunksRead.get();
++    }
++
++    @Override
++    public long getChunksWritten() {
++        return chunksWritten.get();
++    }
++
++    @Override
++    public long getPlayersRead() {
++        return playersRead.get();
++    }
++
++    @Override
++    public long getPlayersWritten() {
++        return playersWritten.get();
++    }
++    
++}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/ChunkException.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/ChunkException.java
 new file mode 100644
 index 0000000..1165a64
@@ -698,6 +893,116 @@ index 0000000..257e6f5
 +    public void saveChunk(int x, int z, @Nonnull IOConsumer<DataOutput> handler);
 +}
 \ No newline at end of file
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/CountingInputStream.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/CountingInputStream.java
+new file mode 100644
+index 0000000..560333d
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/CountingInputStream.java
+@@ -0,0 +1,49 @@
++package org.bukkit.craftbukkit.chunkio2;
++
++import java.io.FilterInputStream;
++import java.io.IOException;
++import java.io.InputStream;
++
++public final class CountingInputStream extends FilterInputStream {
++    private final PersistenceCounters counters;
++    private long counter = 0L;
++
++    public CountingInputStream(InputStream in, PersistenceCounters counters) {
++        super(in);
++        this.counters = counters;
++    }
++
++    @Override
++    public int read(byte[] b, int off, int len) throws IOException {
++        int result = super.read(b, off, len);
++        if (result > 0) {
++            counter += result;
++        }
++        return result;
++    }
++
++    @Override
++    public int read(byte[] b) throws IOException {
++        int result = super.read(b);
++        if (result > 0) {
++            counter += result;
++        }
++        return result;
++    }
++
++    @Override
++    public int read() throws IOException {
++        int result = super.read();
++        if (result >= 0) {
++            counter++;
++        }
++        return result;
++    }
++
++    @Override
++    public void close() throws IOException {
++        counters.bytesRead(counter);
++        super.close();
++    }
++    
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/CountingOutputStream.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/CountingOutputStream.java
+new file mode 100644
+index 0000000..40774dd
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/CountingOutputStream.java
+@@ -0,0 +1,49 @@
++/*
++ * To change this license header, choose License Headers in Project Properties.
++ * To change this template file, choose Tools | Templates
++ * and open the template in the editor.
++ */
++package org.bukkit.craftbukkit.chunkio2;
++
++import java.io.FilterOutputStream;
++import java.io.IOException;
++import java.io.OutputStream;
++
++/**
++ *
++ * @author antony
++ */
++public final class CountingOutputStream extends FilterOutputStream {
++    private final PersistenceCounters counters;
++    private long counter = 0L;
++
++    public CountingOutputStream(OutputStream out, PersistenceCounters counters) {
++        super(out);
++        this.counters = counters;
++    }
++
++    @Override
++    public void close() throws IOException {
++        counters.bytesWritten(counter);
++        super.close();
++    }
++
++    @Override
++    public void write(byte[] b, int off, int len) throws IOException {
++        super.write(b, off, len);
++        counter += len;
++    }
++
++    @Override
++    public void write(byte[] b) throws IOException {
++        super.write(b);
++        counter += b.length;
++    }
++
++    @Override
++    public void write(int b) throws IOException {
++        super.write(b);
++        counter++;
++    }
++    
++}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/IOConsumer.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/IOConsumer.java
 new file mode 100644
 index 0000000..9d4fb9d
@@ -716,6 +1021,80 @@ index 0000000..9d4fb9d
 +    public void accept(T t) throws IOException;
 +
 +    public void exception(IOException ex);
++    
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/NullPersistenceCounters.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/NullPersistenceCounters.java
+new file mode 100644
+index 0000000..402ec5d
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/NullPersistenceCounters.java
+@@ -0,0 +1,68 @@
++/*
++ * To change this license header, choose License Headers in Project Properties.
++ * To change this template file, choose Tools | Templates
++ * and open the template in the editor.
++ */
++package org.bukkit.craftbukkit.chunkio2;
++
++/**
++ *
++ * @author antony
++ */
++public class NullPersistenceCounters implements PersistenceCounters {
++
++    @Override
++    public void bytesRead(long bytes) {
++    }
++
++    @Override
++    public void bytesWritten(long bytes) {
++    }
++
++    @Override
++    public void chunksRead(long chunks) {
++    }
++
++    @Override
++    public void chunksWritten(long chunks) {
++    }
++
++    @Override
++    public void playersRead(long players) {
++    }
++
++    @Override
++    public void playersWritten(long players) {
++    }
++
++    @Override
++    public long getBytesRead() {
++        return 0L;
++    }
++
++    @Override
++    public long getBytesWritten() {
++        return 0L;
++    }
++
++    @Override
++    public long getChunksRead() {
++        return 0L;
++    }
++
++    @Override
++    public long getChunksWritten() {
++        return 0L;
++    }
++
++    @Override
++    public long getPlayersRead() {
++        return 0L;
++    }
++
++    @Override
++    public long getPlayersWritten() {
++        return 0L;
++    }
 +    
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/NullPlayerPersistence.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/NullPlayerPersistence.java
@@ -763,19 +1142,40 @@ index 0000000..b1cc433
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/PersistenceCounters.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/PersistenceCounters.java
 new file mode 100644
-index 0000000..104c93a
+index 0000000..33d1029
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/PersistenceCounters.java
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,32 @@
 +package org.bukkit.craftbukkit.chunkio2;
 +
 +/**
 + * Intended to become public API
 + */
-+public class PersistenceCounters {
++public interface PersistenceCounters {
 +
-+    // TODO
-+    // Counters pertaining to world saving, so we can get per world stats on chunk io
++    public void bytesRead(long bytes);
++
++    public void bytesWritten(long bytes);
++
++    public void chunksRead(long chunks);
++
++    public void chunksWritten(long chunks);
++
++    public void playersRead(long players);
++
++    public void playersWritten(long players);
++
++    public long getBytesRead();
++
++    public long getBytesWritten();
++
++    public long getChunksRead();
++
++    public long getChunksWritten();
++
++    public long getPlayersRead();
++
++    public long getPlayersWritten();
 +    
 +}
 \ No newline at end of file
@@ -858,7 +1258,7 @@ index 0000000..d67c077
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/WorldPersistence.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/WorldPersistence.java
 new file mode 100644
-index 0000000..42c392c
+index 0000000..ff0098b
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/WorldPersistence.java
 @@ -0,0 +1,135 @@
@@ -968,7 +1368,7 @@ index 0000000..42c392c
 +     * This includes bytes and chunks read/written, and is intended for
 +     * monitoring disk usage per world.
 +     * 
-+     * @return A copy of the current counters
++     * @return The current counters
 +     */
 +    @Nonnull
 +    public PersistenceCounters getCounters();
@@ -1027,10 +1427,10 @@ index 0000000..eaa6ceb
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilRegionFile.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilRegionFile.java
 new file mode 100644
-index 0000000..5cc3db5
+index 0000000..2ef1e43
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilRegionFile.java
-@@ -0,0 +1,429 @@
+@@ -0,0 +1,441 @@
 +package org.bukkit.craftbukkit.chunkio2.anvil;
 +
 +import org.bukkit.craftbukkit.chunkio2.ChunkException;
@@ -1063,10 +1463,10 @@ index 0000000..5cc3db5
 +import org.apache.logging.log4j.LogManager;
 +import org.apache.logging.log4j.Logger;
 +import org.bukkit.craftbukkit.chunkio2.IOConsumer;
++import org.bukkit.craftbukkit.chunkio2.PersistenceCounters;
 +
 +class AnvilRegionFile implements Closeable {
 +    private static final Logger LOG = LogManager.getLogger();
-+    private final Object LOCK = new Object();
 +    private static final int BLOCK_SIZE = 4096;
 +    private static final int HEADER_SIZE = BLOCK_SIZE * 2;
 +    private static final int CHUNK_COUNT = 1024;
@@ -1077,6 +1477,8 @@ index 0000000..5cc3db5
 +    private final RandomAccessFile fd;
 +    private final MappedByteBuffer header;
 +    private final IntBuffer intHeader;
++    private final PersistenceCounters counters;
++    private final Object LOCK = new Object();
 +    private final Object REF_LOCK = new Object();
 +    private int inUseCount = 0;
 +    private final FreeSpaceMap freeSpaceMap;
@@ -1085,7 +1487,8 @@ index 0000000..5cc3db5
 +     */
 +    private final BitSet present = new BitSet(1024);
 +
-+    public AnvilRegionFile(File file, boolean create) throws IOException {
++    public AnvilRegionFile(File file, boolean create, PersistenceCounters counters) throws IOException {
++        this.counters = counters;
 +        if (create && !file.exists()) {
 +            throw new FileNotFoundException();
 +        }
@@ -1094,8 +1497,11 @@ index 0000000..5cc3db5
 +        if (this.fd.length() < HEADER_SIZE) {
 +            this.fd.setLength(HEADER_SIZE);
 +        }
-+        this.header = this.fd.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, 2 * BLOCK_SIZE);
++        this.header = this.fd.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, HEADER_SIZE);
 +        this.intHeader = header.asIntBuffer();
++        header.load();
++        counters.bytesRead(HEADER_SIZE);
++
 +        int blockCount = (int) ((this.fd.length() + BLOCK_SIZE - 1) >> 12);
 +        IntArrayList blockOwner = new IntArrayList(blockCount);
 +        for (int i = 0; i < blockCount; i++) {
@@ -1141,6 +1547,7 @@ index 0000000..5cc3db5
 +            }
 +            
 +            for (int i = 0; i < CHUNK_COUNT; i++) {
++                int bytesWritten = 0;
 +                if (corrupt.get(i)) {
 +                    // Warn about corrupted overlapping chunks and delete them.
 +                    int location = intHeader.get(i);
@@ -1148,7 +1555,9 @@ index 0000000..5cc3db5
 +                    int length = location & 0xFF;
 +                    LOG.warn("File: " + file.getPath() + " Invalid chunk (data region overlaps other chunks): " + (i&0x1f) + ", " + (i>>5) + " block location: " + length + "@" + offset);
 +                    intHeader.put(i, 0);
++                    bytesWritten += 4;
 +                }
++                counters.bytesWritten(bytesWritten);
 +            }
 +        }
 +        freeSpaceMap = new FreeSpaceMap(blockOwner);
@@ -1181,6 +1590,7 @@ index 0000000..5cc3db5
 +            intHeader.put(chunkId, location);
 +            intHeader.put(chunkId + CHUNK_COUNT, (int)(System.currentTimeMillis() / 1000)); // Y2k38 bug
 +        }
++        counters.bytesWritten(length + 8);
 +    }
 +
 +    private int allocateChunk(int chunkId, int length) throws IOException {
@@ -1225,6 +1635,7 @@ index 0000000..5cc3db5
 +            data = new byte[trueLength];
 +            fd.read(data, 0, trueLength);
 +        }
++        counters.bytesRead(data.length + 9); // 5 byte header, plus 4 bytes from main region file.
 +        switch (compressionType) {
 +            case COMPRESSION_GZIP:
 +                try (DataInputStream in = new DataInputStream(new GZIPInputStream(new ByteArrayInputStream(data)))) {
@@ -1277,6 +1688,7 @@ index 0000000..5cc3db5
 +            if (usedSpace < fd.length()) {
 +                fd.setLength(usedSpace);
 +            }
++            header.force(); // Probably not required.
 +            fd.close();
 +        }
 +    }
@@ -1463,12 +1875,14 @@ index 0000000..5cc3db5
 \ No newline at end of file
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilWorldPersistence.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilWorldPersistence.java
 new file mode 100644
-index 0000000..e34ac05
+index 0000000..27eb89d
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilWorldPersistence.java
-@@ -0,0 +1,451 @@
+@@ -0,0 +1,459 @@
 +package org.bukkit.craftbukkit.chunkio2.anvil;
 +
++import org.bukkit.craftbukkit.chunkio2.CountingOutputStream;
++import org.bukkit.craftbukkit.chunkio2.CountingInputStream;
 +import com.destroystokyo.paper.PaperConfig;
 +import java.io.DataInput;
 +import java.io.DataInputStream;
@@ -1523,6 +1937,7 @@ index 0000000..e34ac05
 +    private final Object SESSION_LOCK = new Object();
 +    private final File folder;
 +    private final boolean primary;
++    private final PersistenceCounters counters;
 +    private final File data;
 +    private final PlayerPersistence playerPersistence;
 +    private final File regionData;
@@ -1531,10 +1946,11 @@ index 0000000..e34ac05
 +
 +    private UUID uuid = null;
 +
-+    public AnvilWorldPersistence(File folder, String name, World.Environment env, boolean primary) throws IOException {
++    public AnvilWorldPersistence(File folder, String name, World.Environment env, boolean primary, PersistenceCounters counters) throws IOException {
 +        this.folder = folder;
 +        this.name = name;
 +        this.primary = primary;
++        this.counters = counters;
 +        this.data = getWorldFile("data");
 +        if (primary) {
 +            playerPersistence = new AnvilPlayerPersistence();
@@ -1562,12 +1978,12 @@ index 0000000..e34ac05
 +        writeSessionLock();
 +    }
 +
-+    private static DataInputStream openGzipCompressedStream(InputStream in) throws IOException {
-+        return new DataInputStream(new GZIPInputStream(in, 1<<12));
++    private DataInputStream openGzipCompressedStream(InputStream in) throws IOException {
++        return new DataInputStream(new GZIPInputStream(new CountingInputStream(in, counters), 1<<12));
 +    }
 +
-+    private static DataOutputStream openGzipCompressedStream(OutputStream out) throws IOException {
-+        return new DataOutputStream(new GZIPOutputStream(out, 1<<12));
++    private DataOutputStream openGzipCompressedStream(OutputStream out) throws IOException {
++        return new DataOutputStream(new GZIPOutputStream(new CountingOutputStream(out, counters), 1<<12));
 +    }
 +
 +    @Override
@@ -1589,7 +2005,7 @@ index 0000000..e34ac05
 +            File uuidFile = getWorldFile("uuid.dat");
 +            if (uuidFile.isFile()) {
 +                try {
-+                    try (DataInputStream in = new DataInputStream(new FileInputStream(uuidFile))) {
++                    try (DataInputStream in = new DataInputStream(new CountingInputStream(new FileInputStream(uuidFile), counters))) {
 +                        uuid = new UUID(in.readLong(), in.readLong());
 +                    }
 +                } catch (IOException ex) {
@@ -1609,7 +2025,7 @@ index 0000000..e34ac05
 +            this.uuid = uuid;
 +            File uuidFile = getWorldFile("uuid.dat");
 +            try {
-+                try (DataOutputStream out = new DataOutputStream(new FileOutputStream(uuidFile))) {
++                try (DataOutputStream out = new DataOutputStream(new CountingOutputStream(new FileOutputStream(uuidFile), counters))) {
 +                    out.writeLong(uuid.getMostSignificantBits());
 +                    out.writeLong(uuid.getLeastSignificantBits());
 +                }
@@ -1689,7 +2105,7 @@ index 0000000..e34ac05
 +                File file = getRegionFile(x, z);
 +                regionFile = regionFiles.get(file);
 +                if (regionFile == null) {
-+                    regionFile = new AnvilRegionFile(file, create);
++                    regionFile = new AnvilRegionFile(file, create, counters);
 +                    regionFiles.put(file, regionFile);
 +                }
 +                regionFile.ref();
@@ -1734,6 +2150,7 @@ index 0000000..e34ac05
 +            @Override
 +            public void accept(AnvilRegionFile t) throws IOException {
 +                t.loadChunk(x & 0x1f, z & 0x1f, handler);
++                counters.chunksRead(1L);
 +            }
 +
 +            @Override
@@ -1749,6 +2166,7 @@ index 0000000..e34ac05
 +            @Override
 +            public void accept(AnvilRegionFile t) throws IOException {
 +                t.saveChunk(x & 0x1f, z & 0x1f, handler);
++                counters.chunksWritten(1L);
 +            }
 +
 +            @Override
@@ -1764,7 +2182,7 @@ index 0000000..e34ac05
 +
 +    @Override
 +    public PersistenceCounters getCounters() {
-+        return new PersistenceCounters();
++        return counters;
 +    }
 +
 +    @Override
@@ -1780,7 +2198,7 @@ index 0000000..e34ac05
 +    private void writeSessionLock() throws IOException {
 +        synchronized (SESSION_LOCK) {
 +            try {
-+                try (DataOutputStream out = new DataOutputStream(new FileOutputStream(getWorldFile("session.lock")))) {
++                try (DataOutputStream out = new DataOutputStream(new CountingOutputStream(new FileOutputStream(getWorldFile("session.lock")),counters))) {
 +                    out.writeLong(sessionId);
 +                }
 +            } catch (IOException ex) {
@@ -1793,7 +2211,7 @@ index 0000000..e34ac05
 +    public void checkSession() throws WorldConflictException {
 +        synchronized (SESSION_LOCK) {
 +            try {
-+                try (DataInputStream in = new DataInputStream(new FileInputStream(getWorldFile("session.lock")))) {
++                try (DataInputStream in = new DataInputStream(new CountingInputStream(new FileInputStream(getWorldFile("session.lock")), counters))) {
 +                    if (sessionId != in.readLong())
 +                        throw new WorldConflictException("The save for world located at " + getWorldFolder() + " is being accessed from another location, aborting");
 +                }
@@ -1883,6 +2301,7 @@ index 0000000..e34ac05
 +                    // If this fails, it is non-fatal, so do not throw IOException
 +                    playerFile.renameTo(getOfflineReadFile(playerFile));
 +                }
++                counters.playersRead(1L);
 +            } catch (IOException ex) {
 +                handler.exception(ex);
 +            }
@@ -1906,6 +2325,7 @@ index 0000000..e34ac05
 +                    // This is fatal, so throw an IOException
 +                    throw new IOException("Could not rename temporary player save: " + playerFileNew + " to: " + playerFile);
 +                }
++                counters.playersWritten(1L);
 +            } catch (IOException ex) {
 +                handler.exception(ex);
 +            }
@@ -1921,15 +2341,18 @@ index 0000000..e34ac05
 \ No newline at end of file
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilWorldPersistenceFactory.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilWorldPersistenceFactory.java
 new file mode 100644
-index 0000000..9e1ae8d
+index 0000000..832767b
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilWorldPersistenceFactory.java
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,23 @@
 +package org.bukkit.craftbukkit.chunkio2.anvil;
 +
++import com.destroystokyo.paper.PaperConfig;
 +import java.io.File;
 +import java.io.IOException;
 +import org.bukkit.World;
++import org.bukkit.craftbukkit.chunkio2.AtomicPersistenceCounters;
++import org.bukkit.craftbukkit.chunkio2.NullPersistenceCounters;
 +import org.bukkit.craftbukkit.chunkio2.WorldPersistence;
 +import org.bukkit.craftbukkit.chunkio2.WorldPersistenceFactory;
 +
@@ -1942,7 +2365,7 @@ index 0000000..9e1ae8d
 +
 +    @Override
 +    public WorldPersistence createWorldPersistence(File folder, String name, World.Environment env, boolean primary) throws IOException {
-+        return new AnvilWorldPersistence(folder, name, env, primary);
++        return new AnvilWorldPersistence(folder, name, env, primary, PaperConfig.paperIOStats ? new AtomicPersistenceCounters() : new NullPersistenceCounters() );
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/async/AsyncFileIO.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/async/AsyncFileIO.java
@@ -2334,10 +2757,10 @@ index 0000000..5d9d2ff
 \ No newline at end of file
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/CraftNBTStorage.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/CraftNBTStorage.java
 new file mode 100644
-index 0000000..160c934
+index 0000000..9b4572c
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/CraftNBTStorage.java
-@@ -0,0 +1,204 @@
+@@ -0,0 +1,209 @@
 +package org.bukkit.craftbukkit.chunkio2.impl;
 +
 +import com.destroystokyo.paper.exception.ServerInternalException;
@@ -2540,6 +2963,11 @@ index 0000000..160c934
 +    public void close() throws IOException {
 +        a();
 +        persistence.close();
++    }
++
++    @Override
++    public WorldPersistence getPersistence() {
++        return persistence;
 +    }
 +}
 \ No newline at end of file
