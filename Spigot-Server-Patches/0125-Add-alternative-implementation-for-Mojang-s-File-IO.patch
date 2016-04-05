@@ -1,4 +1,4 @@
-From 4c991af76f0f0da56a17f62ccc047c9e40b8f45c Mon Sep 17 00:00:00 2001
+From db8003524bd41e43111708e9d04e8bc359806106 Mon Sep 17 00:00:00 2001
 From: Antony Riley <antony@cyberiantiger.org>
 Date: Fri, 1 Apr 2016 09:42:31 +0300
 Subject: [PATCH] Add alternative implementation for Mojang's File IO.
@@ -16,12 +16,12 @@ Adds per world disk IO stats.
 
 Future: possibility of a plugin API to modify world persistence.
 
-diff --git a/src/main/java/com/destroystokyo/paper/IostatCommand.java b/src/main/java/com/destroystokyo/paper/IostatCommand.java
+diff --git a/src/main/java/com/destroystokyo/paper/IOStatCommand.java b/src/main/java/com/destroystokyo/paper/IOStatCommand.java
 new file mode 100644
-index 0000000..c3e9b65
+index 0000000..6a02c7d
 --- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/IostatCommand.java
-@@ -0,0 +1,57 @@
++++ b/src/main/java/com/destroystokyo/paper/IOStatCommand.java
+@@ -0,0 +1,69 @@
 +package com.destroystokyo.paper;
 +
 +import org.bukkit.Bukkit;
@@ -31,10 +31,11 @@ index 0000000..c3e9b65
 +import org.bukkit.craftbukkit.CraftWorld;
 +import org.bukkit.craftbukkit.chunkio2.PersistenceCounters;
 +import org.bukkit.craftbukkit.chunkio2.WorldPersistence;
++import org.bukkit.craftbukkit.chunkio2.async.AsyncFileIO;
 +
-+public class IostatCommand extends Command {
++public class IOStatCommand extends Command {
 +
-+    public IostatCommand(String name) {
++    public IOStatCommand(String name) {
 +        super(name);
 +        this.description = "Get statistics on disk utilisation per world.";
 +        this.usageMessage = "/iostat";
@@ -43,23 +44,23 @@ index 0000000..c3e9b65
 +
 +    @Override
 +    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
-+        if ( !testPermission(sender) ) {
++        if (!testPermission(sender)) {
 +            return true;
 +        }
 +
-+        if ( !PaperConfig.usePaperIO ) {
++        if (!PaperConfig.usePaperIO) {
 +            sender.sendMessage(ChatColor.RED + "Please enable settings.use-paper-io in order to use iostat.");
 +            return true;
 +        }
 +
-+        if ( !PaperConfig.paperIOStats ) {
++        if (!PaperConfig.paperIOStats) {
 +            sender.sendMessage(ChatColor.RED + "Please enable settings.paper-io-stats in order to use iostat.");
 +            return true;
 +        }
 +
 +        Bukkit.getServer().getWorlds().stream().map((w) -> w.getName()).sorted().forEach((w) -> {
 +            WorldPersistence persistence = ((CraftWorld)Bukkit.getWorld(w)).getHandle().getDataManager().getPersistence();
-+            sender.sendMessage(ChatColor.GREEN + w + ":");
++            sender.sendMessage(ChatColor.BLUE + w + ":");
 +            if (persistence != null) {
 +                PersistenceCounters counters = persistence.getCounters();
 +                if (persistence.hasPlayerPersistence()) {
@@ -74,6 +75,17 @@ index 0000000..c3e9b65
 +                sender.sendMessage(ChatColor.RED + "    (No stats)");
 +            }
 +        });
++        int size = AsyncFileIO.INSTANCE.size();
++        ChatColor sizeColor;
++        int maxSize = PaperConfig.paperIOAsyncChunkSaveQueueSize > 0 ? PaperConfig.paperIOAsyncChunkSaveQueueSize : 10000;
++        if (size < maxSize * 1.0D / 3) {
++            sizeColor = ChatColor.GREEN;
++        } else if (size < maxSize * 2.0D / 3) {
++            sizeColor = ChatColor.YELLOW;
++        } else {
++            sizeColor = ChatColor.RED;
++        }
++        sender.sendMessage(ChatColor.BLUE + "Chunks currently in save queue: " + ChatColor.BOLD + sizeColor + size);
 +
 +        return true;
 +    }
@@ -81,7 +93,7 @@ index 0000000..c3e9b65
 +}
 \ No newline at end of file
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index cd25fb8..a5f9082 100644
+index cd25fb8..a949936 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -190,4 +190,32 @@ public class PaperConfig {
@@ -113,7 +125,7 @@ index cd25fb8..a5f9082 100644
 +        paperIOStats = getBoolean("settings.paper-io-stats", true);
 +
 +        if (usePaperIO && paperIOStats) {
-+            commands.put("iostat", new IostatCommand("iostat"));
++            commands.put("iostat", new IOStatCommand("iostat"));
 +        }
 +    }
  }
@@ -724,7 +736,7 @@ index 0000000..746cf1e
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/AtomicPersistenceCounters.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/AtomicPersistenceCounters.java
 new file mode 100644
-index 0000000..200f8b6
+index 0000000..e597e3f
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/AtomicPersistenceCounters.java
 @@ -0,0 +1,87 @@
@@ -732,7 +744,7 @@ index 0000000..200f8b6
 +
 +import java.util.concurrent.atomic.AtomicLong;
 +
-+public class AtomicPersistenceCounters implements PersistenceCounters {
++public final class AtomicPersistenceCounters implements PersistenceCounters {
 +
 +    private final AtomicLong bytesRead;
 +    private final AtomicLong bytesWritten;
@@ -950,25 +962,16 @@ index 0000000..560333d
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/CountingOutputStream.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/CountingOutputStream.java
 new file mode 100644
-index 0000000..40774dd
+index 0000000..6f342bb
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/CountingOutputStream.java
-@@ -0,0 +1,49 @@
-+/*
-+ * To change this license header, choose License Headers in Project Properties.
-+ * To change this template file, choose Tools | Templates
-+ * and open the template in the editor.
-+ */
+@@ -0,0 +1,40 @@
 +package org.bukkit.craftbukkit.chunkio2;
 +
 +import java.io.FilterOutputStream;
 +import java.io.IOException;
 +import java.io.OutputStream;
 +
-+/**
-+ *
-+ * @author antony
-+ */
 +public final class CountingOutputStream extends FilterOutputStream {
 +    private final PersistenceCounters counters;
 +    private long counter = 0L;
@@ -1025,22 +1028,13 @@ index 0000000..9d4fb9d
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/NullPersistenceCounters.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/NullPersistenceCounters.java
 new file mode 100644
-index 0000000..402ec5d
+index 0000000..de32662
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/NullPersistenceCounters.java
-@@ -0,0 +1,68 @@
-+/*
-+ * To change this license header, choose License Headers in Project Properties.
-+ * To change this template file, choose Tools | Templates
-+ * and open the template in the editor.
-+ */
+@@ -0,0 +1,59 @@
 +package org.bukkit.craftbukkit.chunkio2;
 +
-+/**
-+ *
-+ * @author antony
-+ */
-+public class NullPersistenceCounters implements PersistenceCounters {
++public final class NullPersistenceCounters implements PersistenceCounters {
 +
 +    @Override
 +    public void bytesRead(long bytes) {
@@ -1142,7 +1136,7 @@ index 0000000..b1cc433
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/PersistenceCounters.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/PersistenceCounters.java
 new file mode 100644
-index 0000000..33d1029
+index 0000000..00ef827
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/PersistenceCounters.java
 @@ -0,0 +1,32 @@
@@ -1152,30 +1146,30 @@ index 0000000..33d1029
 + * Intended to become public API
 + */
 +public interface PersistenceCounters {
-+
-+    public void bytesRead(long bytes);
-+
-+    public void bytesWritten(long bytes);
-+
-+    public void chunksRead(long chunks);
-+
-+    public void chunksWritten(long chunks);
-+
-+    public void playersRead(long players);
-+
-+    public void playersWritten(long players);
-+
-+    public long getBytesRead();
-+
-+    public long getBytesWritten();
-+
-+    public long getChunksRead();
-+
-+    public long getChunksWritten();
-+
-+    public long getPlayersRead();
-+
-+    public long getPlayersWritten();
++    
++    void bytesRead(long bytes);
++    
++    void bytesWritten(long bytes);
++    
++    void chunksRead(long chunks);
++    
++    void chunksWritten(long chunks);
++    
++    void playersRead(long players);
++    
++    void playersWritten(long players);
++    
++    long getBytesRead();
++    
++    long getBytesWritten();
++    
++    long getChunksRead();
++    
++    long getChunksWritten();
++    
++    long getPlayersRead();
++    
++    long getPlayersWritten();
 +    
 +}
 \ No newline at end of file
@@ -2370,10 +2364,10 @@ index 0000000..832767b
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/async/AsyncFileIO.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/async/AsyncFileIO.java
 new file mode 100644
-index 0000000..cece32e
+index 0000000..47c6089
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/async/AsyncFileIO.java
-@@ -0,0 +1,170 @@
+@@ -0,0 +1,179 @@
 +package org.bukkit.craftbukkit.chunkio2.async;
 +
 +import com.destroystokyo.paper.PaperConfig;
@@ -2438,6 +2432,15 @@ index 0000000..cece32e
 +                return result;
 +            }
 +            return saving.get(key);
++        } finally {
++            lock.unlock();
++        }
++    }
++
++    public int size() {
++        lock.lock();
++        try {
++            return queue.size() + saving.size();
 +        } finally {
 +            lock.unlock();
 +        }
