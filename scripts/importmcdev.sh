@@ -61,6 +61,7 @@ import PathfinderAbstract
 import PathfinderGoalFloat
 import PersistentVillage
 import TileEntityEnderChest
+import WorldProvider
 
 cd "$workdir/Spigot/Spigot-Server/"
 git add src -A
