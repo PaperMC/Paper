@@ -103,7 +103,11 @@ public class MemorySection implements ConfigurationSection {
     }
 
     public boolean contains(String path) {
-        return get(path) != null;
+        return contains(path, false);
+    }
+
+    public boolean contains(String path, boolean ignoreDefault) {
+        return ((ignoreDefault) ? get(path, null) : get(path)) != null;
     }
 
     public boolean isSet(String path) {

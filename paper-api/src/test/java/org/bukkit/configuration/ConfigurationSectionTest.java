@@ -91,6 +91,18 @@ public abstract class ConfigurationSectionTest {
 
         assertTrue(section.contains("exists"));
         assertFalse(section.contains("doesnt-exist"));
+
+        assertTrue(section.contains("exists", true));
+        assertTrue(section.contains("exists", false));
+
+        assertFalse(section.contains("doesnt-exist", true));
+        assertFalse(section.contains("doesnt-exist", false));
+
+        section.addDefault("doenst-exist-two", true);
+        section.set("doenst-exist-two", null);
+
+        assertFalse(section.contains("doenst-exist-two", true));
+        assertTrue(section.contains("doenst-exist-two", false));
     }
 
     @Test

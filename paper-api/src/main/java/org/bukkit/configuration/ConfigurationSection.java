@@ -59,6 +59,25 @@ public interface ConfigurationSection {
     public boolean contains(String path);
 
     /**
+     * Checks if this {@link ConfigurationSection} contains the given path.
+     * <p>
+     * If the value for the requested path does not exist, the boolean parameter
+     * of true has been specified, a default value for the path exists, this
+     * will return true.
+     * <p>
+     * If a boolean parameter of false has been specified, true will only be
+     * returned if there is a set value for the specified path.
+     *
+     * @param path Path to check for existence.
+     * @param ignoreDefault Whether or not to ignore if a default value for the
+     * specified path exists.
+     * @return True if this section contains the requested path, or if a default
+     * value exist and the boolean parameter for this method is true.
+     * @throws IllegalArgumentException Thrown when path is null.
+     */
+    public boolean contains(String path, boolean ignoreDefault);
+
+    /**
      * Checks if this {@link ConfigurationSection} has a value set for the
      * given path.
      * <p>
