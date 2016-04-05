@@ -1,4 +1,4 @@
-From db8003524bd41e43111708e9d04e8bc359806106 Mon Sep 17 00:00:00 2001
+From a8ee014921547253fc1697408217c6dd05cb497c Mon Sep 17 00:00:00 2001
 From: Antony Riley <antony@cyberiantiger.org>
 Date: Fri, 1 Apr 2016 09:42:31 +0300
 Subject: [PATCH] Add alternative implementation for Mojang's File IO.
@@ -18,12 +18,15 @@ Future: possibility of a plugin API to modify world persistence.
 
 diff --git a/src/main/java/com/destroystokyo/paper/IOStatCommand.java b/src/main/java/com/destroystokyo/paper/IOStatCommand.java
 new file mode 100644
-index 0000000..6a02c7d
+index 0000000..83f254e
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/IOStatCommand.java
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,115 @@
 +package com.destroystokyo.paper;
 +
++import java.text.DecimalFormat;
++import java.text.NumberFormat;
++import java.util.concurrent.TimeUnit;
 +import org.bukkit.Bukkit;
 +import org.bukkit.ChatColor;
 +import org.bukkit.command.Command;
@@ -34,6 +37,7 @@ index 0000000..6a02c7d
 +import org.bukkit.craftbukkit.chunkio2.async.AsyncFileIO;
 +
 +public class IOStatCommand extends Command {
++    public static final long SECOND = TimeUnit.SECONDS.toNanos(1);
 +
 +    public IOStatCommand(String name) {
 +        super(name);
@@ -60,17 +64,33 @@ index 0000000..6a02c7d
 +
 +        Bukkit.getServer().getWorlds().stream().map((w) -> w.getName()).sorted().forEach((w) -> {
 +            WorldPersistence persistence = ((CraftWorld)Bukkit.getWorld(w)).getHandle().getDataManager().getPersistence();
-+            sender.sendMessage(ChatColor.BLUE + w + ":");
++            sender.sendMessage(ChatColor.BLUE + w + ": (1m, 5m, 15m averages)");
 +            if (persistence != null) {
 +                PersistenceCounters counters = persistence.getCounters();
 +                if (persistence.hasPlayerPersistence()) {
-+                    sender.sendMessage(ChatColor.GOLD + "    Players loaded: " + counters.getPlayersRead());
-+                    sender.sendMessage(ChatColor.GOLD + "    Players saved: " + counters.getPlayersWritten());
++                    sender.sendMessage(ChatColor.GOLD + "    Players loaded: " + formatTotal(counters.getPlayersRead()));
++                    sender.sendMessage(ChatColor.GOLD + "    Players saved: " + formatTotal(counters.getPlayersWritten()));
 +                }
-+                sender.sendMessage(ChatColor.GOLD + "    Chunks loaded: " + counters.getChunksRead());
-+                sender.sendMessage(ChatColor.GOLD + "    Chunks saved: " + counters.getChunksWritten());
-+                sender.sendMessage(ChatColor.GOLD + "    Bytes read: " + counters.getBytesRead());
-+                sender.sendMessage(ChatColor.GOLD + "    Bytes written: " + counters.getBytesWritten());
++                sender.sendMessage(ChatColor.GOLD + "    Chunks loaded: " +
++                        formatRate(counters.getChunksReadPerSecondAverage(60*SECOND)) + " chunks/s " +
++                        formatRate(counters.getChunksReadPerSecondAverage(5*60*SECOND)) + " chunks/s " +
++                        formatRate(counters.getChunksReadPerSecondAverage(15*60*SECOND)) + " chunks/s (total: " +
++                        formatTotal(counters.getChunksRead()) + ")");
++                sender.sendMessage(ChatColor.GOLD + "    Chunks saved: " +
++                        formatRate(counters.getChunksWrittenPerSecondAverage(60*SECOND)) + " chunks/s " +
++                        formatRate(counters.getChunksWrittenPerSecondAverage(5*60*SECOND)) + " chunks/s " +
++                        formatRate(counters.getChunksWrittenPerSecondAverage(15*60*SECOND)) + " chunks/s (total: " +
++                        formatTotal(counters.getChunksWritten()) + ")");
++                sender.sendMessage(ChatColor.GOLD + "    Bytes read: " +
++                        formatBytes(counters.getBytesReadPerSecondAverage(60*SECOND)) + "/s " +
++                        formatBytes(counters.getBytesReadPerSecondAverage(5*60*SECOND)) + "/s " +
++                        formatBytes(counters.getBytesReadPerSecondAverage(15*60*SECOND)) + "/s (total: " +
++                        formatBytes(counters.getBytesRead()) + ")");
++                sender.sendMessage(ChatColor.GOLD + "    Bytes written: " +
++                        formatBytes(counters.getBytesWrittenPerSecondAverage(60*SECOND)) + "/s " +
++                        formatBytes(counters.getBytesWrittenPerSecondAverage(5*60*SECOND)) + "/s " +
++                        formatBytes(counters.getBytesWrittenPerSecondAverage(15*60*SECOND)) + "/s (total: " +
++                        formatBytes(counters.getBytesWritten()) + ")");
 +            } else {
 +                sender.sendMessage(ChatColor.RED + "    (No stats)");
 +            }
@@ -89,11 +109,37 @@ index 0000000..6a02c7d
 +
 +        return true;
 +    }
-+    
++
++    private NumberFormat totalFormat = DecimalFormat.getInstance();
++
++    private String formatTotal(long count) {
++        return totalFormat.format(count);
++    }
++
++    private NumberFormat rateFormat = DecimalFormat.getNumberInstance();
++    {
++        rateFormat.setMaximumFractionDigits(1);
++    }
++
++    private String formatRate(double rate) {
++        return rateFormat.format(rate);
++    }
++
++    private String formatBytes(double bytes) {
++        return formatBytes(bytes, false);
++    }
++
++    private String formatBytes(double bytes, boolean si) {
++        int unit = si ? 1000 : 1024;
++        if (bytes < unit) return formatRate(bytes) + " B";
++        int exp = (int) (Math.log(bytes) / Math.log(unit));
++        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp-1) + (si ? "" : "i");
++        return formatRate(bytes/Math.pow(unit,exp)) + " " + pre + "B";
++    }
 +}
 \ No newline at end of file
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index cd25fb8..a949936 100644
+index cd25fb8..22b99d4 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -190,4 +190,32 @@ public class PaperConfig {
@@ -122,7 +168,7 @@ index cd25fb8..a949936 100644
 +        if (paperIOAsyncChunkSaveQueueSize < 1) {
 +            paperIOAsyncChunkSaveQueueSize = 1;
 +        }
-+        paperIOStats = getBoolean("settings.paper-io-stats", true);
++        paperIOStats = usePaperIO && getBoolean("settings.paper-io-stats", true);
 +
 +        if (usePaperIO && paperIOStats) {
 +            commands.put("iostat", new IOStatCommand("iostat"));
@@ -354,6 +400,45 @@ index 06dec17..bc7125a 100644
              /* CraftBukkit start - Handled in saveChunks
              for (i = 0; i < this.worldServer.length; ++i) {
                  if (this.worldServer[i] != null) {
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index ea187f9..042a19e 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1,5 +1,7 @@
+ 	package net.minecraft.server;
+ 
++import com.destroystokyo.paper.IOStatCommand;
++import com.destroystokyo.paper.PaperConfig;
+ import com.destroystokyo.paper.event.server.ServerExceptionEvent;
+ import com.destroystokyo.paper.exception.ServerInternalException;
+ import com.google.common.base.Function;
+@@ -144,6 +146,10 @@ public abstract class World implements IBlockAccess {
+     private int tileTickPosition;
+     public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
+ 
++    // Paper - Start Peristence counters.
++    private long nextPersistenceCountersTick = System.nanoTime();
++    // Paper - End
++
+     public CraftWorld getWorld() {
+         return this.world;
+     }
+@@ -2193,6 +2199,15 @@ public abstract class World implements IBlockAccess {
+     }
+ 
+     public void doTick() {
++        // Paper - Start PersistenceCounters
++        if (PaperConfig.paperIOStats && System.nanoTime() > nextPersistenceCountersTick) {
++            nextPersistenceCountersTick += IOStatCommand.SECOND;
++            org.bukkit.craftbukkit.chunkio2.WorldPersistence p = getDataManager().getPersistence();
++            if (p != null) {
++                p.getCounters().tick();
++            }
++        }
++        // Paper - End
+         this.t();
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/WorldNBTStorage.java b/src/main/java/net/minecraft/server/WorldNBTStorage.java
 index c2d384c..649b15d 100644
 --- a/src/main/java/net/minecraft/server/WorldNBTStorage.java
@@ -736,13 +821,18 @@ index 0000000..746cf1e
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/AtomicPersistenceCounters.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/AtomicPersistenceCounters.java
 new file mode 100644
-index 0000000..e597e3f
+index 0000000..31ae441
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/AtomicPersistenceCounters.java
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,240 @@
 +package org.bukkit.craftbukkit.chunkio2;
 +
++import com.destroystokyo.paper.IOStatCommand;
++import java.lang.reflect.Array;
++import java.util.Arrays;
 +import java.util.concurrent.atomic.AtomicLong;
++import java.util.function.ToLongFunction;
++import org.bukkit.Bukkit;
 +
 +public final class AtomicPersistenceCounters implements PersistenceCounters {
 +
@@ -752,6 +842,7 @@ index 0000000..e597e3f
 +    private final AtomicLong chunksWritten;
 +    private final AtomicLong playersRead;
 +    private final AtomicLong playersWritten;
++    private final RollingAverage<Stats> rollingAverage;
 +
 +    public AtomicPersistenceCounters() {
 +        this(0L, 0L, 0L, 0L, 0L, 0L);
@@ -764,6 +855,7 @@ index 0000000..e597e3f
 +        this.chunksWritten = new AtomicLong(chunksWritten);
 +        this.playersRead = new AtomicLong(playersRead);
 +        this.playersWritten = new AtomicLong(playersWritten);
++        this.rollingAverage = new RollingAverage<>(60 * 15 + 1, Stats.class); // record 15 minutes.
 +    }
 +
 +    @Override
@@ -825,8 +917,155 @@ index 0000000..e597e3f
 +    public long getPlayersWritten() {
 +        return playersWritten.get();
 +    }
++
++    // Called once per second, from somewhere.
++    @Override
++    public void tick() {
++        rollingAverage.record(System.nanoTime(),
++                new Stats(
++                        getBytesRead(),
++                        getBytesWritten(),
++                        getChunksRead(),
++                        getChunksWritten()));
++    }
++
++    @Override
++    public double getBytesReadPerSecondAverage(long nanos) {
++        return rollingAverage.averageChange(nanos, (s) -> { return s.getBytesRead(); }) * IOStatCommand.SECOND;
++    }
++
++    @Override
++    public double getBytesWrittenPerSecondAverage(long nanos) {
++        return rollingAverage.averageChange(nanos, (s) -> { return s.getBytesWritten(); }) * IOStatCommand.SECOND;
++    }
++
++    @Override
++    public double getChunksReadPerSecondAverage(long nanos) {
++        return rollingAverage.averageChange(nanos, (s) -> { return s.getChunksRead(); }) * IOStatCommand.SECOND;
++    }
++
++    @Override
++    public double getChunksWrittenPerSecondAverage(long nanos) {
++        return rollingAverage.averageChange(nanos, (s) -> { return s.getChunksWritten(); }) * IOStatCommand.SECOND;
++    }
++
++    private static final class Stats {
++        private final long bytesRead;
++        private final long bytesWritten;
++        private final long chunksRead;
++        private final long chunksWritten;
++        public Stats(long bytesRead, long bytesWritten, long chunksRead, long chunksWritten) {
++            this.bytesRead = bytesRead;
++            this.bytesWritten = bytesWritten;
++            this.chunksRead = chunksRead;
++            this.chunksWritten = chunksWritten;
++        }
++
++        public long getBytesRead() {
++            return bytesRead;
++        }
++
++        public long getBytesWritten() {
++            return bytesWritten;
++        }
++
++        public long getChunksRead() {
++            return chunksRead;
++        }
++
++        public long getChunksWritten() {
++            return chunksWritten;
++        }
++    }
 +    
++    private static final class RollingAverage<T> {
++        private final int entries;
++        private final long[] timestamp;
++        private final T[] value;
++        private int newest = 0;
++
++        public RollingAverage(int entries, Class<T> valueClass) {
++            this.entries = entries;
++            this.timestamp = new long[entries];
++            this.value = (T[]) Array.newInstance(valueClass, entries);
++        }
++
++        public void record(long timestamp, T value) {
++            if (++newest >= entries) {
++                newest = 0;
++            }
++            this.timestamp[newest] = timestamp;
++            this.value[newest] = value;
++        }
++
++        public double averageChange(long period, ToLongFunction<T> f) {
++            T newestValue = value[newest];
++
++            long targetTime = timestamp[newest] - period;
++
++            long newValueLong = newestValue == null ? 0L : f.applyAsLong(newestValue);
++            long oldValueLong;
++
++            RESULT:
++            do {
++                int before;
++                int after;
++                if (timestamp[0] <= targetTime) {
++                    int search = Arrays.binarySearch(timestamp, 0, newest + 1, targetTime);
++                    if (search >= 0) {
++                        // exact match.
++                        T oldValue = value[search];
++                        oldValueLong = f.applyAsLong(oldValue);
++                        break RESULT;
++                    } else {
++                        // result is -insertionpoint-1;
++                        search = -(search+1);
++                        before = search - 1;
++                        after = search;
++                    }
++                } else {
++                    int search = Arrays.binarySearch(timestamp, newest + 1, entries, targetTime);
++                    if (search >= 0) {
++                        // exact match.
++                        T oldValue = value[search];
++                        oldValueLong = f.applyAsLong(oldValue);
++                        break RESULT;
++                    } else {
++                        search = -(search+1);
++                        before = search - 1;
++                        after = search;
++                    }
++                }
++                if (before < 0) {
++                    before = entries;
++                }
++                if (after >= entries) {
++                    after = 0;
++                }
++                if (before == newest) {
++                    oldValueLong = newValueLong;
++                } else {
++                    oldValueLong = interpolate(targetTime, timestamp[before], value[before], timestamp[after], value[after], f);
++                }
++            } while (false);
++
++            return (newValueLong - oldValueLong) * 1D / period;
++        }
++
++        private long interpolate(long when, long before, T beforeValue, long after, T afterValue, ToLongFunction<T> f) {
++            if (beforeValue == null || afterValue == null) {
++                return 0L;
++            }
++            long beforeValueLong = f.applyAsLong(beforeValue);
++            long afterValueLong = f.applyAsLong(afterValue);
++            long period = after - before;
++            long offset = when - before;
++            long diff = afterValueLong - beforeValueLong;
++            return beforeValueLong + ((long)(1D*offset/period)*diff);
++        }
++    }
 +}
+\ No newline at end of file
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/ChunkException.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/ChunkException.java
 new file mode 100644
 index 0000000..1165a64
@@ -1028,68 +1267,91 @@ index 0000000..9d4fb9d
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/NullPersistenceCounters.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/NullPersistenceCounters.java
 new file mode 100644
-index 0000000..de32662
+index 0000000..b373afe
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/NullPersistenceCounters.java
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,82 @@
 +package org.bukkit.craftbukkit.chunkio2;
 +
 +public final class NullPersistenceCounters implements PersistenceCounters {
-+
++    
 +    @Override
 +    public void bytesRead(long bytes) {
 +    }
-+
++    
 +    @Override
 +    public void bytesWritten(long bytes) {
 +    }
-+
++    
 +    @Override
 +    public void chunksRead(long chunks) {
 +    }
-+
++    
 +    @Override
 +    public void chunksWritten(long chunks) {
 +    }
-+
++    
 +    @Override
 +    public void playersRead(long players) {
 +    }
-+
++    
 +    @Override
 +    public void playersWritten(long players) {
 +    }
-+
++    
 +    @Override
 +    public long getBytesRead() {
 +        return 0L;
 +    }
-+
++    
 +    @Override
 +    public long getBytesWritten() {
 +        return 0L;
 +    }
-+
++    
 +    @Override
 +    public long getChunksRead() {
 +        return 0L;
 +    }
-+
++    
 +    @Override
 +    public long getChunksWritten() {
 +        return 0L;
 +    }
-+
++    
 +    @Override
 +    public long getPlayersRead() {
 +        return 0L;
 +    }
-+
++    
 +    @Override
 +    public long getPlayersWritten() {
 +        return 0L;
 +    }
-+    
++
++    @Override
++    public double getBytesReadPerSecondAverage(long nanos) {
++        return 0D;
++    }
++
++    @Override
++    public double getBytesWrittenPerSecondAverage(long nanos) {
++        return 0D;
++    }
++
++    @Override
++    public double getChunksReadPerSecondAverage(long nanos) {
++        return 0D;
++    }
++
++    @Override
++    public double getChunksWrittenPerSecondAverage(long nanos) {
++        return 0D;
++    }
++
++    @Override
++    public void tick() {
++    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/NullPlayerPersistence.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/NullPlayerPersistence.java
 new file mode 100644
@@ -1136,10 +1398,10 @@ index 0000000..b1cc433
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/PersistenceCounters.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/PersistenceCounters.java
 new file mode 100644
-index 0000000..00ef827
+index 0000000..ef427d4
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/PersistenceCounters.java
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,41 @@
 +package org.bukkit.craftbukkit.chunkio2;
 +
 +/**
@@ -1160,17 +1422,26 @@ index 0000000..00ef827
 +    void playersWritten(long players);
 +    
 +    long getBytesRead();
++
++    double getBytesReadPerSecondAverage(long nanos);
 +    
 +    long getBytesWritten();
++
++    double getBytesWrittenPerSecondAverage(long nanos);
 +    
 +    long getChunksRead();
 +    
++    double getChunksReadPerSecondAverage(long nanos);
++
 +    long getChunksWritten();
++
++    double getChunksWrittenPerSecondAverage(long nanos);
 +    
 +    long getPlayersRead();
 +    
 +    long getPlayersWritten();
-+    
++
++    void tick();
 +}
 \ No newline at end of file
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/PlayerPersistence.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/PlayerPersistence.java
