@@ -10,6 +10,9 @@ public class CraftEffect {
     public static <T> int getDataValue(Effect effect, T data) {
         int datavalue;
         switch(effect) {
+        case VILLAGER_PLANT_GROW:
+            datavalue = (Integer) data;
+            break;
         case POTION_BREAK:
             datavalue = ((Potion) data).toDamageValue() & 0x3F;
             break;
