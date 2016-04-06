@@ -24,13 +24,49 @@ public enum Effect {
      */
     BOW_FIRE(1002, Type.SOUND),
     /**
-     * Sound of a door opening/closing.
+     * Sound of a door opening.
      */
-    DOOR_TOGGLE(1003, Type.SOUND),
+    DOOR_TOGGLE(1006, Type.SOUND),
+    /**
+     * Sound of a door opening.
+     */
+    IRON_DOOR_TOGGLE(1005, Type.SOUND),
+    /**
+     * Sound of a trapdoor opening.
+     */
+    TRAPDOOR_TOGGLE(1007, Type.SOUND),
+    /**
+     * Sound of a door opening.
+     */
+    IRON_TRAPDOOR_TOGGLE(1037, Type.SOUND),
+    /**
+     * Sound of a door opening.
+     */
+    FENCE_GATE_TOGGLE(1008, Type.SOUND),
+    /**
+     * Sound of a door closing.
+     */
+    DOOR_CLOSE(1012, Type.SOUND),
+    /**
+     * Sound of a door closing.
+     */
+    IRON_DOOR_CLOSE(1011, Type.SOUND),
+    /**
+     * Sound of a trapdoor closing.
+     */
+    TRAPDOOR_CLOSE(1013, Type.SOUND),
+    /**
+     * Sound of a door closing.
+     */
+    IRON_TRAPDOOR_CLOSE(1036, Type.SOUND),
+    /**
+     * Sound of a door closing.
+     */
+    FENCE_GATE_CLOSE(1014, Type.SOUND),
     /**
      * Sound of fire being extinguished.
      */
-    EXTINGUISH(1004, Type.SOUND),
+    EXTINGUISH(1009, Type.SOUND),
     /**
      * A song from a record. Needs the record item ID as additional info
      */
@@ -38,23 +74,23 @@ public enum Effect {
     /**
      * Sound of ghast shrieking.
      */
-    GHAST_SHRIEK(1007, Type.SOUND),
+    GHAST_SHRIEK(1015, Type.SOUND),
     /**
      * Sound of ghast firing.
      */
-    GHAST_SHOOT(1008, Type.SOUND),
+    GHAST_SHOOT(1016, Type.SOUND),
     /**
      * Sound of blaze firing.
      */
-    BLAZE_SHOOT(1009, Type.SOUND),
+    BLAZE_SHOOT(1018, Type.SOUND),
     /**
      * Sound of zombies chewing on wooden doors.
      */
-    ZOMBIE_CHEW_WOODEN_DOOR(1012, Type.SOUND),
+    ZOMBIE_CHEW_WOODEN_DOOR(1019, Type.SOUND),
     /**
      * Sound of zombies chewing on iron doors.
      */
-    ZOMBIE_CHEW_IRON_DOOR(1011, Type.SOUND),
+    ZOMBIE_CHEW_IRON_DOOR(1020, Type.SOUND),
     /**
      * Sound of zombies destroying a door.
      */
@@ -79,7 +115,88 @@ public enum Effect {
     /**
      * The flames seen on a mobspawner; a visual effect.
      */
-    MOBSPAWNER_FLAMES(2004, Type.VISUAL);
+    MOBSPAWNER_FLAMES(2004, Type.VISUAL),
+    /**
+     * The sound played by brewing stands when brewing
+      */
+    BREWING_STAND_BREW(1035, Type.SOUND),
+    /**
+     * The sound played when a chorus flower grows
+     */
+    CHORUS_FLOWER_GROW(1033, Type.SOUND),
+    /**
+     * The sound played when a chorus flower dies
+     */
+    CHORUS_FLOWER_DEATH(1034, Type.SOUND),
+    /**
+     * The sound played when traveling through a portal
+     */
+    PORTAL_TRAVEL(1032, Type.SOUND),
+    /**
+     * The sound played when launching an endereye
+     */
+    ENDEREYE_LAUNCH(1003, Type.SOUND),
+    /**
+     * The sound played when launching a firework
+     */
+    FIREWORK_SHOOT(1004, Type.SOUND),
+    /**
+     * Particles displayed when a villager grows a plant, data
+     * is the number of particles
+     */
+    VILLAGER_PLANT_GROW(2005, Type.VISUAL, Integer.class),
+    /**
+     * The sound/particles used by the enderdragon's breath
+     * attack.
+     */
+    DRAGON_BREATH(2006, Type.VISUAL),
+    /**
+     * The sound played when an anvil breaks
+     */
+    ANVIL_BREAK(1029, Type.SOUND),
+    /**
+     * The sound played when an anvil is used
+     */
+    ANVIL_USE(1030, Type.SOUND),
+    /**
+     * The sound played when an anvil lands after
+     * falling
+     */
+    ANVIL_LAND(1031, Type.SOUND),
+    /**
+     * Sound of an enderdragon firing
+     */
+    ENDERDRAGON_SHOOT(1017, Type.SOUND),
+    /**
+     * The sound played when a wither breaks a block
+     */
+    WITHER_BREAK_BLOCK(1022, Type.SOUND),
+    /**
+     * Sound of a wither shooting
+     */
+    WITHER_SHOOT(1024, Type.SOUND),
+    /**
+     * The sound played when a zombie infects a target
+     */
+    ZOMBIE_INFECT(1026, Type.SOUND),
+    /**
+     * The sound played when a villager is converted by
+     * a zombie
+     */
+    ZOMBIE_CONVERTED_VILLAGER(1027, Type.SOUND),
+    /**
+     * Sound played by a bat taking off
+     */
+    BAT_TAKEOFF(1025, Type.SOUND),
+    /**
+     * The sound/particles caused by a end gateway spawning
+     */
+    END_GATEWAY_SPAWN(3000, Type.VISUAL),
+    /**
+     * The sound of an enderdragon growling
+     */
+    ENDERDRAGON_GROWL(3001, Type.SOUND),
+    ;
 
     private final int id;
     private final Type type;
