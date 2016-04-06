@@ -47,6 +47,7 @@ import ChunkProviderHell
 import CommandAbstract
 import CommandScoreboard
 import CommandWhitelist
+import DataPaletteBlock
 import DataBits
 import DataConverterMaterialId
 import EULA
