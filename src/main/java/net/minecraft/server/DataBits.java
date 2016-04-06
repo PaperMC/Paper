@@ -53,8 +53,8 @@ public class DataBits {
     }
 
     public int a(int i, int j) {
-        Validate.inclusiveBetween(0L, (long) (this.e - 1), (long) i);
-        Validate.inclusiveBetween(0L, this.d, (long) j);
+        //Validate.inclusiveBetween(0L, (long) (this.e - 1), (long) i); // Paper
+        //Validate.inclusiveBetween(0L, this.d, (long) j); // Paper
         int k = this.b(i);
         long l = this.b[k];
         int i1 = (i - k * this.f) * this.c;
@@ -65,8 +65,8 @@ public class DataBits {
     }
 
     public void b(int i, int j) {
-        Validate.inclusiveBetween(0L, (long) (this.e - 1), (long) i);
-        Validate.inclusiveBetween(0L, this.d, (long) j);
+        //Validate.inclusiveBetween(0L, (long) (this.e - 1), (long) i); // Paper
+        //Validate.inclusiveBetween(0L, this.d, (long) j); // Paper
         int k = this.b(i);
         long l = this.b[k];
         int i1 = (i - k * this.f) * this.c;
@@ -75,7 +75,7 @@ public class DataBits {
     }
 
     public int a(int i) {
-        Validate.inclusiveBetween(0L, (long) (this.e - 1), (long) i);
+        //Validate.inclusiveBetween(0L, (long) (this.e - 1), (long) i); // Paper
         int j = this.b(i);
         long k = this.b[j];
         int l = (i - j * this.f) * this.c;
