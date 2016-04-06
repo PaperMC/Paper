@@ -47,6 +47,7 @@ import ChunkProviderHell
 import CommandAbstract
 import CommandScoreboard
 import CommandWhitelist
+import DataBits
 import DataConverterMaterialId
 import EULA
 import EntitySquid
