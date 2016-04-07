@@ -23,9 +23,9 @@ ce() {
 }
 
 updateTest() {
-    git stash -u >/dev/null 2>&1
+    git stash -u >/dev/null 2>&1 || (return 0) # errors are ok
     git reset --hard origin/master
-    git stash pop >/dev/null 2>&1
+    git stash pop >/dev/null 2>&1 || (return 0) # errors are ok
 }
 
 papertestdir="${PAPER_TEST_DIR:-$workdir/test-server}"
@@ -57,7 +57,7 @@ fi
 # EULA CHECK
 #
 
-if [ -z "$(grep true eula.txt)" ]; then
+if [ -z "$(grep true eula.txt 2>/dev/null)" ]; then
     echo
     echo "$(c 32)  It appears you have not agreed to Mojangs EULA yet! Press $(c 1 33)y$(ce) $(c 32)to confirm agreement to"
     read -p "  Mojangs EULA found at:$(c 1 32) https://account.mojang.com/documents/minecraft_eula $(ce) " -n 1 -r
