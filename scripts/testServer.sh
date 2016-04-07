@@ -10,22 +10,12 @@ decompiledir="$workdir/$minecraftversion"
 #
 # FUNCTIONS
 #
-
-c() {
-    if [ $2 ]; then
-            echo -e "\e[$1;$2m"
-    else
-            echo -e "\e[$1m"
-    fi
-}
-ce() {
-    echo -e "\e[m"
-}
+. $basedir/scripts/functions.sh
 
 updateTest() {
-    git stash -u >/dev/null 2>&1 || (return 0) # errors are ok
+    paperstash
     git reset --hard origin/master
-    git stash pop >/dev/null 2>&1 || (return 0) # errors are ok
+    paperunstash
 }
 
 papertestdir="${PAPER_TEST_DIR:-$workdir/test-server}"
@@ -59,11 +49,11 @@ fi
 
 if [ -z "$(grep true eula.txt 2>/dev/null)" ]; then
     echo
-    echo "$(c 32)  It appears you have not agreed to Mojangs EULA yet! Press $(c 1 33)y$(ce) $(c 32)to confirm agreement to"
-    read -p "  Mojangs EULA found at:$(c 1 32) https://account.mojang.com/documents/minecraft_eula $(ce) " -n 1 -r
+    echo "$(color 32)  It appears you have not agreed to Mojangs EULA yet! Press $(color 1 33)y$(colorend) $(color 32)to confirm agreement to"
+    read -p "  Mojangs EULA found at:$(color 1 32) https://account.mojang.com/documents/minecraft_eula $(colorend) " -n 1 -r
     echo ""
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "$(c 1 31)Aborted$(ce)"
+        echo "$(color 1 31)Aborted$(colorend)"
         exit;
     fi
     echo "eula=true" > eula.txt
@@ -115,4 +105,4 @@ fi
 # START / LOG
 #
 
-$cmd | tee ${PAPER_TEST_OUTPUT_LOG:-logs/output.log}
+$cmd | tee -a ${PAPER_TEST_OUTPUT_LOG:-logs/output.log}
