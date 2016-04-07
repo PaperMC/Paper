@@ -68,7 +68,8 @@ if [ ! -f "$jar" ] || [ "$2" == "build" ] || [ "$3" == "build" ]; then
 (
     echo "Building Paper"
     cd "$basedir"
-    ./paper jar
+    ./paper patch
+    mvn clean install
 )
 fi
 
