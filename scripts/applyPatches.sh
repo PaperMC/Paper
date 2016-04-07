@@ -43,7 +43,6 @@ function applyPatch {
 
 function enableCommitSigningIfNeeded {
     if [[ "$gpgsign" == "true" ]]; then
-        # Yes, this has to be global
         git config --global commit.gpgsign true
     fi
 }
@@ -52,6 +51,7 @@ function enableCommitSigningIfNeeded {
 # There is also zero rational or logical reason to do so for these sub-repo AMs.
 # Calm down kids, it's re-enabled (if needed) immediately after, pass or fail.
 if [[ "$gpgsign" == "true" ]]; then
+    # Yes, this has to be global
     git config --global commit.gpgsign false
 fi
 
