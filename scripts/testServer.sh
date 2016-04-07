@@ -96,7 +96,7 @@ fi
 if [ "$multiplex" == "tmux" ] && [ ! -z "$(which tmux)" ]; then
     echo "tmux not supported"
 elif [ ! -z "$(which screen)" ]; then # default screen last as final fallback
-    cmd="screen -DURS papertest $cmd >> logs/screen.log 2>&1"
+    cmd="screen -DURS papertest $cmd"
 else
     echo "Screen not found - It is strongly recommended to install screen"
     sleep 3
@@ -106,4 +106,4 @@ fi
 # START / LOG
 #
 
-$cmd | tee -a ${PAPER_TEST_OUTPUT_LOG:-logs/output.log}
+$cmd 2>&1 | tee -a ${PAPER_TEST_OUTPUT_LOG:-logs/output.log}
