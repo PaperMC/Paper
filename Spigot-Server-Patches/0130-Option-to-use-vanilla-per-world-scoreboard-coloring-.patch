@@ -1,4 +1,4 @@
-From f46589b84ced4464830f16cc794803837e0c2573 Mon Sep 17 00:00:00 2001
+From 0c8ed02fba9f533947d868633af78e862a7b7ffb Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Wed, 6 Apr 2016 01:04:23 -0500
 Subject: [PATCH] Option to use vanilla per-world scoreboard coloring on names
@@ -19,35 +19,25 @@ index 275bf10..ad69ed3 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index ffbe81d..a9a908f 100644
+index ffbe81d..f0c04e5 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -1345,15 +1345,21 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -1345,7 +1345,14 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
                      return;
                  }
  
 -                s = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
--                minecraftServer.console.sendMessage(s);
-+                // Paper start - (Meh) Support for vanilla world scoreboard name coloring
-+                //s = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
-+                IChatBaseComponent baseComponent = new ChatMessage(String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage()));
++                // Paper Start - (Meh) Support for vanilla world scoreboard name coloring
++                String displayName = event.getPlayer().getDisplayName();
 +                if (this.player.getWorld().paperConfig.useVanillaScoreboardColoring) {
-+                    baseComponent = new ChatMessage(event.getFormat(), ScoreboardTeam.getPlayerDisplayName(this.player.aO(), player.getDisplayName()), event.getMessage());
++                    displayName = ScoreboardTeam.getPlayerDisplayName(this.player.aO(), player.getDisplayName());
 +                }
++
++                s = String.format(event.getFormat(), displayName, event.getMessage());
 +                // Paper end
-+                minecraftServer.console.sendMessage(baseComponent.toPlainText());
+                 minecraftServer.console.sendMessage(s);
                  if (((LazyPlayerSet) event.getRecipients()).isLazy()) {
                      for (Object recipient : minecraftServer.getPlayerList().players) {
--                        ((EntityPlayer) recipient).sendMessage(CraftChatMessage.fromString(s));
-+                        ((EntityPlayer) recipient).sendMessage(baseComponent); // Paper - (Meh) Support for vanilla world scoreboard name coloring
-                     }
-                 } else {
-                     for (Player recipient : event.getRecipients()) {
--                        recipient.sendMessage(s);
-+                        ((CraftPlayer) recipient).getHandle().sendMessage(baseComponent); // Paper - (Meh) Support for vanilla world scoreboard name coloring
-                     }
-                 }
-             }
 -- 
 2.8.0
 
