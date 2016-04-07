@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 (
-set -e
 PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
+gpgsign=$(git config commit.gpgsign)
 echo "Rebuilding Forked projects.... "
 
 function applyPatch {
@@ -41,6 +41,20 @@ function applyPatch {
     fi
 }
 
+function enableCommitSigningIfNeeded {
+    if [[ "$gpgsign" == "true" ]]; then
+        # Yes, this has to be global
+        git config --global commit.gpgsign true
+    fi
+}
+
+# Disable GPG signing before AM, slows things down and doesn't play nicely.
+# There is also zero rational or logical reason to do so for these sub-repo AMs.
+# Calm down kids, it's re-enabled (if needed) immediately after, pass or fail.
+if [[ "$gpgsign" == "true" ]]; then
+    git config --global commit.gpgsign false
+fi
+
 # Move into spigot dir
 cd "$workdir/Spigot"
 basedir=$(pwd)
@@ -50,6 +64,7 @@ basedir=$(pwd)
 	applyPatch ../CraftBukkit Spigot-Server patched
 ) || (
 	echo "Failed to apply Spigot Patches"
+	enableCommitSigningIfNeeded
 	exit 1
 ) || exit 1
 # Move out of Spigot
@@ -65,8 +80,10 @@ cd "$basedir"
 (
 	applyPatch "work/Spigot/Spigot-API" Paper-API HEAD &&
 	applyPatch "work/Spigot/Spigot-Server" Paper-Server HEAD
+	enableCommitSigningIfNeeded
 ) || (
 	echo "Failed to apply Paper Patches"
+	enableCommitSigningIfNeeded
 	exit 1
 ) || exit 1
 )
