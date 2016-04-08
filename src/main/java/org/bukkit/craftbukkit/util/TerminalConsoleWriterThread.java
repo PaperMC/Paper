@@ -7,6 +7,8 @@ import java.util.logging.Logger;
 import jline.console.ConsoleReader;
 import com.mojang.util.QueueLogAppender;
 import org.bukkit.craftbukkit.Main;
+import org.fusesource.jansi.Ansi;
+import org.fusesource.jansi.Ansi.Erase;
 
 public class TerminalConsoleWriterThread implements Runnable {
     final private ConsoleReader reader;
@@ -29,7 +31,7 @@ public class TerminalConsoleWriterThread implements Runnable {
 
             try {
                 if (Main.useJline) {
-                    reader.print(ConsoleReader.RESET_LINE + "");
+                    reader.print(Ansi.ansi().eraseLine(Erase.ALL).toString() + ConsoleReader.RESET_LINE);
                     reader.flush();
                     output.write(message.getBytes());
                     output.flush();
