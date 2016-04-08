@@ -104,7 +104,7 @@ public enum EntityType {
     /**
      * Mechanical entity with an inventory for placing weapons / armor into.
      */
-    ARMOR_STAND("ArmorStand", ArmorStand.class, 30, false),
+    ARMOR_STAND("ArmorStand", ArmorStand.class, 30),
     /**
      * @see CommandMinecart
      */
