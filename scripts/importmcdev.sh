@@ -60,6 +60,8 @@ import PacketPlayOutTitle
 import PacketPlayOutUpdateTime
 import PathfinderAbstract
 import PathfinderGoalFloat
+import PathfinderNormal
+import PathfinderWater
 import PersistentVillage
 import TileEntityEnderChest
 import WorldProvider
