@@ -68,9 +68,12 @@ public class CraftPotionUtil {
     }
 
     public static PotionData toBukkit(String type) {
-    	if (type.startsWith("minecraft:")) {
-    		type = type.substring(10);
-    	}
+        if (type == null) {
+            return new PotionData(PotionType.UNCRAFTABLE, false, false);
+        }
+        if (type.startsWith("minecraft:")) {
+            type = type.substring(10);
+        }
         PotionType potionType = null;
         potionType = extendable.inverse().get(type);
         if (potionType != null) {
