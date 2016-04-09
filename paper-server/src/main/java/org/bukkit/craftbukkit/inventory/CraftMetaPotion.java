@@ -32,7 +32,9 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     static final ItemMetaKey ID = new ItemMetaKey("Id", "potion-id");
     static final ItemMetaKey DEFAULT_POTION = new ItemMetaKey("Potion", "potion-type");
 
-    private String type;
+    // Having an initial "state" in ItemMeta seems bit dirty but the UNCRAFTABLE potion type
+    // is treated as the empty form of the meta because it represents an empty potion with no effect
+    private PotionData type = new PotionData(PotionType.UNCRAFTABLE, false, false);
     private List<PotionEffect> customEffects;
 
     CraftMetaPotion(CraftMetaItem meta) {
@@ -50,7 +52,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     CraftMetaPotion(NBTTagCompound tag) {
         super(tag);
         if (tag.hasKey(DEFAULT_POTION.NBT)) {
-            type = tag.getString(DEFAULT_POTION.NBT);
+            type = CraftPotionUtil.toBukkit(tag.getString(DEFAULT_POTION.NBT));
         }
         if (tag.hasKey(POTION_EFFECTS.NBT)) {
             NBTTagList list = tag.getList(POTION_EFFECTS.NBT, 10);
@@ -71,7 +73,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
 
     CraftMetaPotion(Map<String, Object> map) {
         super(map);
-        type = SerializableMeta.getString(map, DEFAULT_POTION.BUKKIT, true);
+        type = CraftPotionUtil.toBukkit(SerializableMeta.getString(map, DEFAULT_POTION.BUKKIT, true));
 
         Iterable<?> rawEffectList = SerializableMeta.getObject(Iterable.class, map, POTION_EFFECTS.BUKKIT, true);
         if (rawEffectList == null) {
@@ -89,9 +91,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     @Override
     void applyToItem(NBTTagCompound tag) {
         super.applyToItem(tag);
-        // NBT expects a PotionType under all circumstances,  but ItemMeta API contract expects that a fresh stack have blank meta
-        // As such we will equate the NMS default type of "Empty"/UNCRAFTABLE to be null
-        tag.setString(DEFAULT_POTION.NBT, type != null ? type : CraftPotionUtil.fromBukkit(new PotionData(PotionType.UNCRAFTABLE, false, false)));
+        tag.setString(DEFAULT_POTION.NBT, CraftPotionUtil.fromBukkit(type));
         if (customEffects != null) {
             NBTTagList effectList = new NBTTagList();
             tag.set(POTION_EFFECTS.NBT, effectList);
@@ -114,7 +114,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     }
 
     boolean isPotionEmpty() {
-        return (type == null) && !(hasCustomEffects());
+        return (type.getType() == PotionType.UNCRAFTABLE) && !(hasCustomEffects());
     }
 
     @Override
@@ -143,20 +143,12 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     @Override
     public void setBasePotionData(PotionData data) {
         Validate.notNull(data, "PotionData cannot be null");
-        PotionType type = data.getType();
-        if (type == PotionType.UNCRAFTABLE) {
-            this.type = null;
-            return;
-        }
-        this.type = CraftPotionUtil.fromBukkit(data);
+        this.type = data;
     }
 
     @Override
     public PotionData getBasePotionData() {
-        if (type == null) {
-            return new PotionData(PotionType.UNCRAFTABLE, false, false);
-        }
-        return CraftPotionUtil.toBukkit(type);
+        return type;
     }
 
     public boolean hasCustomEffects() {
@@ -257,7 +249,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     int applyHash() {
         final int original;
         int hash = original = super.applyHash();
-        if (type != null) {
+        if (type.getType() != PotionType.UNCRAFTABLE) {
         	hash = 73 * hash + type.hashCode();
         }
         if (hasCustomEffects()) {
@@ -274,7 +266,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
         if (meta instanceof CraftMetaPotion) {
             CraftMetaPotion that = (CraftMetaPotion) meta;
 
-            return ((type == null && that.type == null) || type.equals(that.type)) && (this.hasCustomEffects() ? that.hasCustomEffects() && this.customEffects.equals(that.customEffects) : !that.hasCustomEffects());
+            return type.equals(that.type) && (this.hasCustomEffects() ? that.hasCustomEffects() && this.customEffects.equals(that.customEffects) : !that.hasCustomEffects());
         }
         return true;
     }
@@ -287,7 +279,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     @Override
     Builder<String, Object> serialize(Builder<String, Object> builder) {
         super.serialize(builder);
-        if (type != null) {
+        if (type.getType() != PotionType.UNCRAFTABLE) {
         	builder.put(DEFAULT_POTION.BUKKIT, type);
         }
 
