@@ -1,4 +1,4 @@
-From 389b31bd3334c2ca28cb7fd6b7cab60b1d3c31b1 Mon Sep 17 00:00:00 2001
+From 9050388e9eb365a86d4bebc6b1d4064580d361ee Mon Sep 17 00:00:00 2001
 From: Antony Riley <antony@cyberiantiger.org>
 Date: Fri, 1 Apr 2016 09:42:31 +0300
 Subject: [PATCH] Add alternative implementation for Mojang's File IO.
@@ -139,37 +139,38 @@ index 0000000..83f254e
 +}
 \ No newline at end of file
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index cd25fb8..22b99d4 100644
+index cd25fb8..d2ba14b 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -190,4 +190,32 @@ public class PaperConfig {
+@@ -190,4 +190,33 @@ public class PaperConfig {
      private static void regionFileCacheSize() {
          regionFileCacheSize = getInt("settings.region-file-cache-size", 256);
      }
 +
 +    public static boolean usePaperIO = false;
 +    public static int paperIORegionFileCacheSize = 256;
-+    public static int paperIOAsyncChunkSaveQueueSize = 0;
-+    public static int paperIOAsyncChunkSaveQueueThreads = 1;
++    public static int paperIOAsyncChunkSaveQueueSize = -1;
++    public static int paperIOAsyncChunkSaveQueueThreads = 2;
++    public static boolean paperIODeleteCorruptChunks = true;
 +    public static boolean paperIOStats = true;
 +    private static void paperIO() {
-+        usePaperIO = getBoolean("settings.paper-io", false);
++        usePaperIO = getBoolean("paper-io.enabled", false);
 +        // Region file cache size (per world). 
 +        // TODO: Move to world settings.
-+        paperIORegionFileCacheSize = getInt("settings.paper-io-region-file-cache-size", 256);
++        paperIORegionFileCacheSize = getInt("paper-io.region-file-cache-size", 256);
 +        if (paperIORegionFileCacheSize < 1) {
 +            paperIORegionFileCacheSize = 1;
 +        }
 +        // Max size of async chunk save queue (global) , < 1 disabled.
-+        paperIOAsyncChunkSaveQueueSize = getInt("settings.paper-io-async-chunk-save-queue-size", -1);
++        paperIOAsyncChunkSaveQueueSize = getInt("paper-io.async-chunk-save-queue-size", -1);
 +        // Max size of async chunk save queue (global) , < 1 disabled.
-+        paperIOAsyncChunkSaveQueueThreads = getInt("settings.paper-io-async-chunk-save-queue-threads", 1);
++        paperIOAsyncChunkSaveQueueThreads = getInt("paper-io.async-chunk-save-queue-threads", 2);
 +        // Minimum value of 1.
 +        if (paperIOAsyncChunkSaveQueueSize < 1) {
 +            paperIOAsyncChunkSaveQueueSize = 1;
 +        }
-+        paperIOStats = usePaperIO && getBoolean("settings.paper-io-stats", true);
-+
++        paperIODeleteCorruptChunks = getBoolean("paper-io.delete-corrupt-chunks", true);
++        paperIOStats = usePaperIO && getBoolean("paper-io.stats", true);
 +        if (usePaperIO && paperIOStats) {
 +            commands.put("iostat", new IOStatCommand("iostat"));
 +        }
@@ -1080,33 +1081,27 @@ index 0000000..b23cc0f
 \ No newline at end of file
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/ChunkException.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/ChunkException.java
 new file mode 100644
-index 0000000..1165a64
+index 0000000..0ea7475
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/ChunkException.java
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,11 @@
 +package org.bukkit.craftbukkit.chunkio2;
 +
 +import java.io.IOException;
 +
 +public class ChunkException extends IOException {
-+    private final boolean corrupt;
 +
-+    public ChunkException(String message, boolean corrupt) {
++    public ChunkException(String message) {
 +        super(message);
-+        this.corrupt = corrupt;
 +    }
 +
-+    public boolean isCorrupt() {
-+        return corrupt;
-+    }
-+    
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/ChunkPersistence.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/ChunkPersistence.java
 new file mode 100644
-index 0000000..257e6f5
+index 0000000..1c27d00
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/ChunkPersistence.java
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,50 @@
 +package org.bukkit.craftbukkit.chunkio2;
 +
 +import java.io.Closeable;
@@ -1135,6 +1130,8 @@ index 0000000..257e6f5
 +     * handler is <b>not</b> expected to close the passed DataInput.
 +     * 
 +     * The implementation <b>must</b> be thread safe.
++     * 
++     * In the case the Chunk is not present, handler.accept(DataInput) will not be called.
 +     * 
 +     * @param x X coordinate of the Chunk
 +     * @param z Z coordinate of the Chunk
@@ -1704,12 +1701,13 @@ index 0000000..eaa6ceb
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilRegionFile.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilRegionFile.java
 new file mode 100644
-index 0000000..2ef1e43
+index 0000000..da6c7fa
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilRegionFile.java
-@@ -0,0 +1,441 @@
+@@ -0,0 +1,489 @@
 +package org.bukkit.craftbukkit.chunkio2.anvil;
 +
++import com.destroystokyo.paper.PaperConfig;
 +import org.bukkit.craftbukkit.chunkio2.ChunkException;
 +import it.unimi.dsi.fastutil.ints.IntArrayList;
 +import java.io.ByteArrayInputStream;
@@ -1719,14 +1717,13 @@ index 0000000..2ef1e43
 +import java.io.DataInputStream;
 +import java.io.DataOutput;
 +import java.io.DataOutputStream;
++import java.io.EOFException;
 +import java.io.File;
 +import java.io.FileNotFoundException;
 +import java.io.IOException;
 +import java.io.RandomAccessFile;
 +import java.nio.ByteBuffer;
 +import java.nio.IntBuffer;
-+import java.nio.MappedByteBuffer;
-+import java.nio.channels.FileChannel;
 +import java.util.BitSet;
 +import java.util.Map;
 +import java.util.NavigableMap;
@@ -1746,23 +1743,20 @@ index 0000000..2ef1e43
 +    private static final Logger LOG = LogManager.getLogger();
 +    private static final int BLOCK_SIZE = 4096;
 +    private static final int HEADER_SIZE = BLOCK_SIZE * 2;
++    private static final byte[] DEFAULT_HEADER = new byte[HEADER_SIZE];
 +    private static final int CHUNK_COUNT = 1024;
 +    private static final byte COMPRESSION_GZIP = 1;
 +    private static final byte COMPRESSION_DEFLATE = 2;
 +    static final int EMPTY = -1;
 +    private final File file;
 +    private final RandomAccessFile fd;
-+    private final MappedByteBuffer header;
-+    private final IntBuffer intHeader;
 +    private final PersistenceCounters counters;
 +    private final Object LOCK = new Object();
 +    private final Object REF_LOCK = new Object();
-+    private int inUseCount = 0;
-+    private final FreeSpaceMap freeSpaceMap;
-+    /**
-+     * A bitset representing which chunks are present in the region fd.
-+     */
-+    private final BitSet present = new BitSet(1024);
++    private final int[] chunkLocation = new int[CHUNK_COUNT];
++    private int refCount = 0;
++    
++    private FreeSpaceMap freeSpaceMap;
 +
 +    public AnvilRegionFile(File file, boolean create, PersistenceCounters counters) throws IOException {
 +        this.counters = counters;
@@ -1771,71 +1765,106 @@ index 0000000..2ef1e43
 +        }
 +        this.file = file;
 +        this.fd = new RandomAccessFile(file, "rw");
++        fd.seek(0);
 +        if (this.fd.length() < HEADER_SIZE) {
-+            this.fd.setLength(HEADER_SIZE);
++            fd.write(DEFAULT_HEADER);
++            counters.bytesWritten(HEADER_SIZE);
++            freeSpaceMap = new FreeSpaceMap();
++            return;
 +        }
-+        this.header = this.fd.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, HEADER_SIZE);
-+        this.intHeader = header.asIntBuffer();
-+        header.load();
-+        counters.bytesRead(HEADER_SIZE);
++        ByteBuffer header = ByteBuffer.allocate(BLOCK_SIZE);
++        while (header.hasRemaining())  {
++            if (this.fd.getChannel().read(header) < 0)  {
++                throw new EOFException();
++            }
++        }
++        header.clear();
++        IntBuffer intHeader = header.asIntBuffer();
++        while (intHeader.hasRemaining()) {
++            chunkLocation[intHeader.position()] = intHeader.get();
++        }
++        counters.bytesRead(BLOCK_SIZE);
 +
++        loadFreeSpaceMap(); // Technically can be postponed until a chunk is written or maybe even saved.
++    }
++
++    private void loadFreeSpaceMap() throws IOException {
++        if (freeSpaceMap != null) {
++            return;
++        }
++        boolean changed = false;
 +        int blockCount = (int) ((this.fd.length() + BLOCK_SIZE - 1) >> 12);
-+        IntArrayList blockOwner = new IntArrayList(blockCount);
++        int[] blockOwner = new int[blockCount];
 +        for (int i = 0; i < blockCount; i++) {
-+            blockOwner.add(EMPTY);
++            blockOwner[i] = EMPTY;
 +        }
 +
 +        BitSet corrupt = new BitSet(CHUNK_COUNT);
 +
 +        for (int i = 0; i < CHUNK_COUNT; i++) {
-+            int location = intHeader.get(i);
++            int location = chunkLocation[i];
 +            if (location == 0) {
 +                continue;
 +            }
 +            int offset = (location >> 8) & 0xFFFFFF;
 +            int length = location & 0xFF;
-+            if (offset < 2 || offset + length > blockOwner.size()) {
++            if (offset < 2 || offset + length > blockOwner.length) {
 +                // Invalid offset or offset + length
 +                LOG.warn("File: " + file.getPath() + " Invalid chunk (data region not in file): " + (i&0x1f) + ", " + (i>>5) + " block location: " + length + "@" + offset);
-+                // Delete the chunk to prevent further warnings.
-+                intHeader.put(i, 0);
++                if (PaperConfig.paperIODeleteCorruptChunks) {
++                    // Delete the chunk to prevent further warnings.
++                    chunkLocation[i] = 0;
++                    changed |= true;
++                }
 +                continue;
 +            }
 +            for (int j = offset; j < offset + length; j++) {
-+                int chunkId = blockOwner.getInt(j);
++                int chunkId = blockOwner[j];
 +                if (chunkId != EMPTY) {
 +                    corrupt.set(chunkId);
 +                    corrupt.set(i);
 +                }
-+                blockOwner.set(j, i);
++                blockOwner[j] = i;
 +            }
-+            present.set(i);
 +        }
 +
 +        if (!corrupt.isEmpty()) {
 +            // Cleanup corrupted chunks and warn.
-+            present.andNot(corrupt); // Means what it says
-+            for (int i = 0; i < blockOwner.size(); i++) {
-+                int chunkId = blockOwner.getInt(i);
-+                if (chunkId != EMPTY && corrupt.get(chunkId)) {
-+                    // Chunk was marked invalid due to overlapping other chunks.
-+                    blockOwner.set(i, EMPTY);
++            if (PaperConfig.paperIODeleteCorruptChunks) {
++                for (int i = 0; i < blockOwner.length; i++) {
++                    int chunkId = blockOwner[i];
++                    if (chunkId != EMPTY && corrupt.get(chunkId)) {
++                        // Chunk was marked invalid due to overlapping other chunks.
++                        blockOwner[i] = EMPTY;
++                    }
 +                }
 +            }
 +            
 +            for (int i = 0; i < CHUNK_COUNT; i++) {
-+                int bytesWritten = 0;
 +                if (corrupt.get(i)) {
-+                    // Warn about corrupted overlapping chunks and delete them.
-+                    int location = intHeader.get(i);
++                    // Warn about corrupted overlapping chunks
++                    int location = chunkLocation[i];
 +                    int offset = (location>>8) & 0xFFFFFF;
 +                    int length = location & 0xFF;
 +                    LOG.warn("File: " + file.getPath() + " Invalid chunk (data region overlaps other chunks): " + (i&0x1f) + ", " + (i>>5) + " block location: " + length + "@" + offset);
-+                    intHeader.put(i, 0);
-+                    bytesWritten += 4;
++                    if (PaperConfig.paperIODeleteCorruptChunks) {
++                        // Delete overlapping chunks
++                        // in practice one or more overalpping chunks is likely to be readable
++                        // safest to delete both, shouldn't happen except in a really bad crash.
++                        chunkLocation[i] = 0;
++                        changed |= true;
++                    }
 +                }
-+                counters.bytesWritten(bytesWritten);
 +            }
++        }
++        if (changed) {
++            ByteBuffer header = ByteBuffer.allocate(BLOCK_SIZE);
++            IntBuffer intHeader = header.asIntBuffer();
++            for (int i : chunkLocation) {
++                intHeader.put(i);
++            }
++            while (header.hasRemaining()) fd.getChannel().write(header);
++            counters.bytesRead(BLOCK_SIZE);
 +        }
 +        freeSpaceMap = new FreeSpaceMap(blockOwner);
 +    }
@@ -1859,21 +1888,25 @@ index 0000000..2ef1e43
 +        ByteBuffer.wrap(buffer).asIntBuffer().put(0, length - CHUNK_HEADER.length);
 +        synchronized (LOCK) {
 +            int location = allocateChunk(chunkId, length);
-+            // LOG.info("Allocated chunk file: " + file.getPath() + " id: " + chunkId + " length: " + length + " at block offset: " + ((location >> 8) & 0xFF) + " block length: " + (location & 0xFF));
 +            // Write chunk
 +            fd.seek((location & 0xFFFFFF00L) << 4);
 +            fd.write(buffer, 0, length);
 +            // Update header
-+            intHeader.put(chunkId, location);
-+            intHeader.put(chunkId + CHUNK_COUNT, (int)(System.currentTimeMillis() / 1000)); // Y2k38 bug
++            fd.seek(chunkId<<2);
++            fd.writeInt(location);
++            fd.seek((chunkId + CHUNK_COUNT)<<2);
++            fd.writeInt((int)(System.currentTimeMillis() / 1000)); // Y2k38 bug
++            // Update chunkLocation
++            chunkLocation[chunkId] = location;
 +        }
 +        counters.bytesWritten(length + 8);
 +    }
 +
 +    private int allocateChunk(int chunkId, int length) throws IOException {
 +        int blockLength = (length + BLOCK_SIZE - 1) >> 12;
-+        if (present.get(chunkId)) {
-+            int currentLocation = intHeader.get(chunkId);
++        if (present(chunkId)) {
++            fd.seek(chunkId<<2);
++            int currentLocation = fd.readInt();
 +            if (blockLength == (currentLocation & 0xFF)) {
 +                return currentLocation;
 +            } else {
@@ -1888,31 +1921,31 @@ index 0000000..2ef1e43
 +        byte[] data;
 +        int compressionType;
 +        synchronized (LOCK) {
-+            if (!present.get(chunkId)) {
-+                throw new ChunkException("Chunk not present in region file.", false);
++            if (!present(chunkId)) {
++                return;
 +            }
-+            int location = intHeader.get(chunkId);
++            int location = chunkLocation[chunkId];
 +            long fileOffset = (location & 0xFFFFFF00L) << 4;
 +            int chunkLength = (location & 0xFF) << 12;
 +            if (fileOffset + 5 > fd.length()) {
-+                throw new ChunkException("Chunk is located beyond EOF at: " + fileOffset + " EOF: " + fd.length(), true);
++                throw new ChunkException("Chunk is located beyond EOF at: " + fileOffset + " EOF: " + fd.length());
 +            }
 +            fd.seek(fileOffset);
 +            int trueLength = fd.readInt();
 +            compressionType = fd.read();
 +            if (trueLength < 0) {
-+                throw new ChunkException("Chunk length was negative: " + trueLength, true);
++                throw new ChunkException("Chunk length was negative: " + trueLength);
 +            }
 +            if (trueLength + 5 > chunkLength) {
-+                throw new ChunkException("Chunk length: " + (trueLength+5) +  " exceeds length in header: " + chunkLength, true);
++                throw new ChunkException("Chunk length: " + (trueLength+5) +  " exceeds length in header: " + chunkLength);
 +            }
 +            if (trueLength + fd.getFilePointer() > fd.length()) {
-+                throw new ChunkException("Chunk data " + (trueLength + 5) + "@" + fileOffset + " exceeds length of file: " + fd.length(), true);
++                throw new ChunkException("Chunk data " + (trueLength + 5) + "@" + fileOffset + " exceeds length of file: " + fd.length());
 +            }
 +            data = new byte[trueLength];
 +            fd.read(data, 0, trueLength);
 +        }
-+        counters.bytesRead(data.length + 9); // 5 byte header, plus 4 bytes from main region file.
++        counters.bytesRead(data.length + 5); // Include 5 byte header in counters.
 +        switch (compressionType) {
 +            case COMPRESSION_GZIP:
 +                try (DataInputStream in = new DataInputStream(new GZIPInputStream(new ByteArrayInputStream(data)))) {
@@ -1925,25 +1958,33 @@ index 0000000..2ef1e43
 +                }
 +                break;
 +            default:
-+                throw new ChunkException("Unknown compression type: " + compressionType, true);
++                throw new ChunkException("Unknown compression type: " + compressionType);
 +        }
++    }
++
++    private boolean present(int chunkId) {
++        return chunkLocation[chunkId] != 0;
++    }
++    
++    private boolean present(int x, int z) {
++        return present(getChunkId(x, z));
 +    }
 +
 +    public boolean chunkExists(int x, int z) {
 +        synchronized (LOCK) {
-+            return present.get(getChunkId(x, z));
++            return present(x, z);
 +        }
 +    }
 +
 +    public void ref() {
 +        synchronized (REF_LOCK) {
-+            inUseCount++;
++            refCount++;
 +        }
 +    }
 +    public void deref() {
 +        synchronized (REF_LOCK) {
-+            inUseCount--;
-+            if (inUseCount == 0) {
++            refCount--;
++            if (refCount == 0) {
 +                REF_LOCK.notify();
 +            }
 +        }
@@ -1953,7 +1994,7 @@ index 0000000..2ef1e43
 +    @Override
 +    public void close() throws IOException {
 +        synchronized (REF_LOCK) {
-+            while (inUseCount > 0) {
++            while (refCount > 0) {
 +                try {
 +                    REF_LOCK.wait();
 +                } catch (InterruptedException ex) {
@@ -1965,7 +2006,6 @@ index 0000000..2ef1e43
 +            if (usedSpace < fd.length()) {
 +                fd.setLength(usedSpace);
 +            }
-+            header.force(); // Probably not required.
 +            fd.close();
 +        }
 +    }
@@ -2014,12 +2054,17 @@ index 0000000..2ef1e43
 +        private int size;
 +        private int totalFree;
 +
-+        public FreeSpaceMap(IntArrayList blockOwners) {
-+            size = blockOwners.size();
++        public FreeSpaceMap() {
++            size = 2;
++            totalFree = 0;
++        }
++
++        public FreeSpaceMap(int[] blockOwners) {
++            size = blockOwners.length;
 +            int freeCount = 0;
 +            // First 2 blocks are never free
-+            for (int i = 2; i < blockOwners.size(); i++) {
-+                if (blockOwners.getInt(i) == EMPTY) {
++            for (int i = 2; i < blockOwners.length; i++) {
++                if (blockOwners[i] == EMPTY) {
 +                    freeCount++;
 +                } else {
 +                    if (freeCount != 0) {
@@ -2855,10 +2900,10 @@ index 0000000..e6761c0
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/CraftChunkRegionLoader.java b/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/CraftChunkRegionLoader.java
 new file mode 100644
-index 0000000..5d9d2ff
+index 0000000..e5ca6f1
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio2/impl/CraftChunkRegionLoader.java
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,173 @@
 +package org.bukkit.craftbukkit.chunkio2.impl;
 +
 +import java.io.IOException;
@@ -2992,16 +3037,14 @@ index 0000000..5d9d2ff
 +            persistence.loadChunk(x, z, result);
 +            if (result.hasException()) {
 +                IOException exception = result.getException();
-+                if (exception instanceof ChunkException) {
-+                    ChunkException chException = (ChunkException) exception;
-+                    if (!chException.isCorrupt()) {
-+                        return null;
-+                    }
-+                }
 +                result.getException().printStackTrace();
 +                return null;
 +            }
-+            tag = dataConverterManager.a(DataConverterTypes.CHUNK, result.getResult());
++            tag = result.getResult();
++            if (tag == null) {
++                return null;
++            }
++            tag = dataConverterManager.a(DataConverterTypes.CHUNK, tag);
 +        }
 +        return ChunkRegionLoader.a(world, x, z, tag);
 +    }
@@ -3027,12 +3070,6 @@ index 0000000..5d9d2ff
 +        persistence.chunkExists(x, z, result);
 +        if (result.hasException()) {
 +            IOException exception = result.getException();
-+            if (exception instanceof ChunkException) {
-+                ChunkException chException = (ChunkException) exception;
-+                if (!chException.isCorrupt()) {
-+                    return false;
-+                }
-+            }
 +            // Chunk is corrupt.
 +            result.getException().printStackTrace();
 +            return false;
@@ -3312,10 +3349,10 @@ index 0000000..dd4b447
 +}
 diff --git a/src/test/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilRegionFileTest.java b/src/test/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilRegionFileTest.java
 new file mode 100644
-index 0000000..c91ac06
+index 0000000..8c3d669
 --- /dev/null
 +++ b/src/test/java/org/bukkit/craftbukkit/chunkio2/anvil/AnvilRegionFileTest.java
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,73 @@
 +package org.bukkit.craftbukkit.chunkio2.anvil;
 +
 +import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -3351,8 +3388,7 @@ index 0000000..c91ac06
 +
 +    @Test
 +    public void testFreeSpace() {
-+        IntArrayList blockOwner = new IntArrayList(blockOwners);
-+        FreeSpaceMap fsm = new FreeSpaceMap(blockOwner);
++        FreeSpaceMap fsm = new FreeSpaceMap(blockOwners);
 +
 +        // Allocate blocks which fit into the empty space.
 +        assertEquals(o(13,1),fsm.allocate(1));
