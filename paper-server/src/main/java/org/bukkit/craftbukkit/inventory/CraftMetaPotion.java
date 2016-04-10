@@ -280,7 +280,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     Builder<String, Object> serialize(Builder<String, Object> builder) {
         super.serialize(builder);
         if (type.getType() != PotionType.UNCRAFTABLE) {
-        	builder.put(DEFAULT_POTION.BUKKIT, type);
+            builder.put(DEFAULT_POTION.BUKKIT, CraftPotionUtil.fromBukkit(type));
         }
 
         if (hasCustomEffects()) {
