@@ -11,7 +11,9 @@ public interface FishHook extends Projectile {
      * 1.0 = Instant catch.
      *
      * @return chance the bite chance
+     * @deprecated has no effect in newer Minecraft versions
      */
+    @Deprecated
     public double getBiteChance();
 
     /**
@@ -23,6 +25,8 @@ public interface FishHook extends Projectile {
      * @param chance the bite chance
      * @throws IllegalArgumentException if the bite chance is not between 0
      *     and 1
+     * @deprecated has no effect in newer Minecraft versions
      */
+    @Deprecated
     public void setBiteChance(double chance) throws IllegalArgumentException;
 }
