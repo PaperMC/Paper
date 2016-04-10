@@ -24,15 +24,7 @@ done
 SOURCE=$([[ "$SOURCE" = /* ]] && echo "$SOURCE" || echo "$PWD/${SOURCE#./}")
 basedir=$(dirname "$SOURCE")
 
-paperstash() {
-    STASHED=$(git stash)
-}
-
-paperunstash() {
-    if [[ "$STASHED" != "No local changes to save" ]] ; then
-        git stash pop
-    fi
-}
+. $basedir/scripts/functions.sh
 
 case "$1" in
     "rb" | "rbp" | "rebuild")
@@ -71,6 +63,16 @@ case "$1" in
         cd "$basedir"
         scripts/makemcdevsrc.sh "$basedir"
     )
+    ;;
+    "t" | "test" | "testserver")
+    (
+        cd "$basedir"
+        shift
+        scripts/testServer.sh "$basedir" "$@"
+    )
+    ;;
+    "td" | "testdir")
+        cd "${PAPER_TEST_DIR:-$basedir/work/test-server}"
     ;;
     "r" | "root")
         cd "$basedir"
@@ -169,5 +171,7 @@ esac
 unset RCPATH
 unset SOURCE
 unset basedir
+unset -f color
+unset -f colorend
 unset -f paperstash
 unset -f paperunstash
