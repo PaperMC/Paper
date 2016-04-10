@@ -769,6 +769,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         return true;
     }
 
+    // Paper start - Ugly workaround for SPIGOT-1915 & GH-114
+    @Override
+    public boolean setPassenger(org.bukkit.entity.Entity passenger) {
+        boolean wasSet = super.setPassenger(passenger);
+        if (wasSet) {
+            this.getHandle().playerConnection.sendPacket(new net.minecraft.server.PacketPlayOutMount(this.getHandle()));
+        }
+        return wasSet;
+    }
+    // Paper end
+
     @Override
     public void setSneaking(boolean sneak) {
         getHandle().setSneaking(sneak);
