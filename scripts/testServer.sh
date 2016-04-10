@@ -106,4 +106,8 @@ fi
 # START / LOG
 #
 
-$cmd 2>&1 | tee -a ${PAPER_TEST_OUTPUT_LOG:-logs/output.log}
+if [ ! -z "$PAPER_TEST_COMMAND_WRAPPER" ]; then
+	$PAPER_TEST_COMMAND_WRAPPER $cmd
+else
+	$cmd 2>&1 | tee -a ${PAPER_TEST_OUTPUT_LOG:-logs/output.log}
+fi
