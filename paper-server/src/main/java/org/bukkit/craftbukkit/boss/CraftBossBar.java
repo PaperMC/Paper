@@ -119,6 +119,7 @@ public class CraftBossBar implements BossBar {
 
     @Override
     public void setProgress(double progress) {
+    	Preconditions.checkArgument(progress >= 0.0 && progress <= 1.0, "Progress must be between 0.0 and 1.0 (%s)", progress);
         handle.setProgress((float) progress);
     }
 
