@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.boss;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import net.minecraft.server.BossBattle;
 import net.minecraft.server.BossBattleServer;
