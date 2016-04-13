@@ -432,6 +432,20 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
             this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(worldserver.getWorld()));
         }
 
+        // Paper start - Handle collideRule team for player collision toggle
+        final Scoreboard scoreboard = this.getScoreboard();
+        final java.util.Collection<String> toRemove = scoreboard.getTeams().stream().filter(team -> team.getName().startsWith("collideRule_")).map(ScoreboardTeam::getName).collect(java.util.stream.Collectors.toList());
+        for (String teamName : toRemove) {
+            scoreboard.removeTeam(scoreboard.getTeam(teamName)); // Clean up after ourselves
+        }
+
+        if (!com.destroystokyo.paper.PaperConfig.enablePlayerCollisions) {
+            this.getPlayerList().collideRuleTeamName = org.apache.commons.lang3.StringUtils.left("collideRule_" + java.util.concurrent.ThreadLocalRandom.current().nextInt(), 16);
+            ScoreboardTeam collideTeam = scoreboard.createTeam(this.getPlayerList().collideRuleTeamName);
+            collideTeam.setCanSeeFriendlyInvisibles(false); // Because we want to mimic them not being on a team at all
+        }
+        // Paper end
+
         this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
         this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
         this.serverConnection.acceptConnections();

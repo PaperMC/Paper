@@ -105,7 +105,7 @@ public class PacketPlayOutScoreboardTeam implements Packet<PacketListenerPlayOut
             packetdataserializer.a(this.b);
             packetdataserializer.writeByte(this.j);
             packetdataserializer.a(this.e);
-            packetdataserializer.a(this.f);
+            packetdataserializer.a(!com.destroystokyo.paper.PaperConfig.enablePlayerCollisions ? "never" : this.f); // Paper
             packetdataserializer.a((Enum) this.g);
             packetdataserializer.a(this.c);
             packetdataserializer.a(this.d);

@@ -224,4 +224,9 @@ public class PaperConfig {
     private static void regionFileCacheSize() {
         regionFileCacheSize = Math.max(getInt("settings.region-file-cache-size", 256), 4);
     }
+
+    public static boolean enablePlayerCollisions = true;
+    private static void enablePlayerCollisions() {
+        enablePlayerCollisions = getBoolean("settings.enable-player-collisions", true);
+    }
 }
