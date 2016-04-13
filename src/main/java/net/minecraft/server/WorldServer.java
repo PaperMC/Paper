@@ -1594,7 +1594,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
             }
 
             bufferedwriter.write(String.format("entities: %d\n", this.entitiesById.size()));
-            bufferedwriter.write(String.format("block_entities: %d\n", this.tileEntityList.size()));
+            bufferedwriter.write(String.format("block_entities: %d\n", this.tileEntityListTick.size())); // Paper - remove unused list
             bufferedwriter.write(String.format("block_ticks: %d\n", this.getBlockTickList().a()));
             bufferedwriter.write(String.format("fluid_ticks: %d\n", this.getFluidTickList().a()));
             bufferedwriter.write("distance_manager: " + playerchunkmap.e().c() + "\n");
@@ -1733,7 +1733,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
 
     private void a(Writer writer) throws IOException {
         CSVWriter csvwriter = CSVWriter.a().a("x").a("y").a("z").a("type").a(writer);
-        Iterator iterator = this.tileEntityList.iterator();
+        Iterator iterator = this.tileEntityListTick.iterator(); // Paper - remove unused list
 
         while (iterator.hasNext()) {
             TileEntity tileentity = (TileEntity) iterator.next();

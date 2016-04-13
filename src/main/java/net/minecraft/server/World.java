@@ -39,7 +39,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
     public static final ResourceKey<World> THE_NETHER = ResourceKey.a(IRegistry.L, new MinecraftKey("the_nether"));
     public static final ResourceKey<World> THE_END = ResourceKey.a(IRegistry.L, new MinecraftKey("the_end"));
     private static final EnumDirection[] a = EnumDirection.values();
-    public final List<TileEntity> tileEntityList = Lists.newArrayList();
+    //public final List<TileEntity> tileEntityList = Lists.newArrayList(); // Paper - remove unused list
     public final List<TileEntity> tileEntityListTick = Lists.newArrayList();
     protected final List<TileEntity> tileEntityListPending = Lists.newArrayList();
     protected final java.util.Set<TileEntity> tileEntityListUnload = com.google.common.collect.Sets.newHashSet();
@@ -631,9 +631,9 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
                     }, tileentity::getPosition});
         }
 
-        boolean flag = this.tileEntityList.add(tileentity);
+        boolean flag = true; // Paper - remove unused list
 
-        if (flag && tileentity instanceof ITickable) {
+        if (flag && tileentity instanceof ITickable && !this.tileEntityListTick.contains(tileentity)) { // Paper
             this.tileEntityListTick.add(tileentity);
         }
 
@@ -669,7 +669,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
         timings.tileEntityTick.startTiming(); // Spigot
         if (!this.tileEntityListUnload.isEmpty()) {
             this.tileEntityListTick.removeAll(this.tileEntityListUnload);
-            this.tileEntityList.removeAll(this.tileEntityListUnload);
+            //this.tileEntityList.removeAll(this.tileEntityListUnload); // Paper - remove unused list
             this.tileEntityListUnload.clear();
         }
 
@@ -730,7 +730,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
                 tilesThisCycle--;
                 this.tileEntityListTick.remove(tileTickPosition--);
                 // Spigot end
-                this.tileEntityList.remove(tileentity);
+                //this.tileEntityList.remove(tileentity); // Paper - remove unused list
                 if (this.isLoaded(tileentity.getPosition())) {
                     this.getChunkAtWorldCoords(tileentity.getPosition()).removeTileEntity(tileentity.getPosition());
                 }
@@ -760,7 +760,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
                         this.notify(tileentity1.getPosition(), iblockdata, iblockdata, 3);
                         // CraftBukkit start
                         // From above, don't screw this up - SPIGOT-1746
-                        if (!this.tileEntityList.contains(tileentity1)) {
+                        if (true) { // Paper - remove unused list
                             this.a(tileentity1);
                         }
                         // CraftBukkit end
@@ -902,7 +902,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
         } else {
             if (tileentity != null) {
                 this.tileEntityListPending.remove(tileentity);
-                this.tileEntityList.remove(tileentity);
+                //this.tileEntityList.remove(tileentity); // Paper - remove unused list
                 this.tileEntityListTick.remove(tileentity);
             }
 
