@@ -56,6 +56,7 @@ import ItemBlock
 import PacketPlayInResourcePackStatus
 import PacketPlayInUseEntity
 import PacketPlayOutPlayerListHeaderFooter
+import PacketPlayOutScoreboardTeam
 import PacketPlayOutTitle
 import PacketPlayOutUpdateTime
 import PathfinderAbstract
