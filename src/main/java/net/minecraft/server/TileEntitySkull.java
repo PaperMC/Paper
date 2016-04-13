@@ -24,7 +24,7 @@ import com.mojang.authlib.ProfileLookupCallback;
 import java.util.concurrent.Callable;
 // Spigot end
 
-public class TileEntitySkull extends TileEntity implements ITickable {
+public class TileEntitySkull extends TileEntity /*implements ITickable*/ { // Paper - remove tickable
 
     @Nullable
     private static UserCache userCache;
@@ -127,7 +127,7 @@ public class TileEntitySkull extends TileEntity implements ITickable {
 
     }
 
-    @Override
+    // Paper - remove override
     public void tick() {
         IBlockData iblockdata = this.getBlock();
 
