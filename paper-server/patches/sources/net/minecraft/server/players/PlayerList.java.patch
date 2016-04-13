@@ -63,13 +63,14 @@
      public final PlayerDataStorage playerIo;
      private boolean doWhiteList;
      private final LayeredRegistryAccess<RegistryLayer> registries;
-@@ -134,13 +156,23 @@
+@@ -134,13 +156,24 @@
      private static final boolean ALLOW_LOGOUTIVATOR = false;
      private int sendAllPlayerInfoIn;
  
 +    // CraftBukkit start
 +    private CraftServer cserver;
 +    private final Map<String,ServerPlayer> playersByName = new java.util.HashMap<>();
++    public @Nullable String collideRuleTeamName; // Paper - Configurable player collision
 +
      public PlayerList(MinecraftServer server, LayeredRegistryAccess<RegistryLayer> registryManager, PlayerDataStorage saveHandler, int maxPlayers) {
 +        this.cserver = server.server = new CraftServer((DedicatedServer) server, this);
@@ -89,7 +90,7 @@
          this.server = server;
          this.registries = registryManager;
          this.maxPlayers = maxPlayers;
-@@ -148,27 +180,37 @@
+@@ -148,27 +181,37 @@
      }
  
      public void placeNewPlayer(Connection connection, ServerPlayer player, CommonListenerCookie clientData) {
@@ -132,7 +133,7 @@
          ServerLevel worldserver = this.server.getLevel(resourcekey);
          ServerLevel worldserver1;
  
-@@ -182,10 +224,27 @@
+@@ -182,10 +225,27 @@
          player.setServerLevel(worldserver1);
          String s1 = connection.getLoggableAddress(this.server.logIPs());
  
@@ -162,7 +163,7 @@
          ServerGamePacketListenerImpl playerconnection = new ServerGamePacketListenerImpl(this.server, connection, player, clientData);
  
          connection.setupInboundProtocol(GameProtocols.SERVERBOUND_TEMPLATE.bind(RegistryFriendlyByteBuf.decorator(this.server.registryAccess())), playerconnection);
-@@ -194,7 +253,9 @@
+@@ -194,7 +254,9 @@
          boolean flag1 = gamerules.getBoolean(GameRules.RULE_REDUCEDDEBUGINFO);
          boolean flag2 = gamerules.getBoolean(GameRules.RULE_LIMITED_CRAFTING);
  
@@ -173,7 +174,7 @@
          playerconnection.send(new ClientboundChangeDifficultyPacket(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
          playerconnection.send(new ClientboundPlayerAbilitiesPacket(player.getAbilities()));
          playerconnection.send(new ClientboundSetHeldSlotPacket(player.getInventory().selected));
-@@ -213,8 +274,10 @@
+@@ -213,8 +275,10 @@
          } else {
              ichatmutablecomponent = Component.translatable("multiplayer.player.joined.renamed", player.getDisplayName(), s);
          }
@@ -185,7 +186,7 @@
          playerconnection.teleport(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
          ServerStatus serverping = this.server.getStatus();
  
-@@ -222,17 +285,70 @@
+@@ -222,17 +286,77 @@
              player.sendServerStatus(serverping);
          }
  
@@ -256,11 +257,18 @@
          player.loadAndSpawnParentVehicle(optional);
          player.initInventoryMenu();
 +        // CraftBukkit - Moved from above, added world
++        // Paper start - Configurable player collision; Add to collideRule team if needed
++        final net.minecraft.world.scores.Scoreboard scoreboard = this.getServer().getLevel(Level.OVERWORLD).getScoreboard();
++        final PlayerTeam collideRuleTeam = scoreboard.getPlayerTeam(this.collideRuleTeamName);
++        if (this.collideRuleTeamName != null && collideRuleTeam != null && player.getTeam() == null) {
++            scoreboard.addPlayerToTeam(player.getScoreboardName(), collideRuleTeam);
++        }
++        // Paper end - Configurable player collision
 +        PlayerList.LOGGER.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", player.getName().getString(), s1, player.getId(), worldserver1.serverLevelData.getLevelName(), player.getX(), player.getY(), player.getZ());
      }
  
      public void updateEntireScoreboard(ServerScoreboard scoreboard, ServerPlayer player) {
-@@ -269,30 +385,31 @@
+@@ -269,30 +393,31 @@
      }
  
      public void addWorldborderListener(ServerLevel world) {
@@ -297,7 +305,7 @@
              }
  
              @Override
-@@ -319,14 +436,15 @@
+@@ -319,14 +444,15 @@
      }
  
      protected void save(ServerPlayer player) {
@@ -315,7 +323,7 @@
  
          if (advancementdataplayer != null) {
              advancementdataplayer.save();
-@@ -334,95 +452,176 @@
+@@ -334,95 +460,186 @@
  
      }
  
@@ -342,6 +350,16 @@
 +
 +        entityplayer.doTick(); // SPIGOT-924
 +        // CraftBukkit end
++
++        // Paper start - Configurable player collision; Remove from collideRule team if needed
++        if (this.collideRuleTeamName != null) {
++            final net.minecraft.world.scores.Scoreboard scoreBoard = this.server.getLevel(Level.OVERWORLD).getScoreboard();
++            final PlayerTeam team = scoreBoard.getPlayersTeam(this.collideRuleTeamName);
++            if (entityplayer.getTeam() == team && team != null) {
++                scoreBoard.removePlayerFromTeam(entityplayer.getScoreboardName(), team);
++            }
++        }
++        // Paper end - Configurable player collision
 +
 +        this.save(entityplayer);
 +        if (entityplayer.isPassenger()) {
@@ -530,7 +548,7 @@
  
          if (entityplayer1 != null) {
              set.add(entityplayer1);
-@@ -431,30 +630,50 @@
+@@ -431,30 +648,50 @@
          Iterator iterator1 = set.iterator();
  
          while (iterator1.hasNext()) {
@@ -594,7 +612,7 @@
  
          while (iterator.hasNext()) {
              String s = (String) iterator.next();
-@@ -462,41 +681,88 @@
+@@ -462,41 +699,88 @@
              entityplayer1.addTag(s);
          }
  
@@ -691,7 +709,7 @@
          return entityplayer1;
      }
  
-@@ -524,7 +790,18 @@
+@@ -524,7 +808,18 @@
  
      public void tick() {
          if (++this.sendAllPlayerInfoIn > 600) {
@@ -711,14 +729,10 @@
              this.sendAllPlayerInfoIn = 0;
          }
  
-@@ -537,9 +814,28 @@
-             ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+@@ -541,6 +836,25 @@
  
-             entityplayer.connection.send(packet);
-+        }
-+
-+    }
-+
+     }
+ 
 +    // CraftBukkit start - add a world/entity limited version
 +    public void broadcastAll(Packet packet, net.minecraft.world.entity.player.Player entityhuman) {
 +        for (int i = 0; i < this.players.size(); ++i) {
@@ -733,14 +747,15 @@
 +    public void broadcastAll(Packet packet, Level world) {
 +        for (int i = 0; i < world.players().size(); ++i) {
 +            ((ServerPlayer) world.players().get(i)).connection.send(packet);
-         }
- 
-     }
++        }
++
++    }
 +    // CraftBukkit end
- 
++
      public void broadcastAll(Packet<?> packet, ResourceKey<Level> dimension) {
          Iterator iterator = this.players.iterator();
-@@ -554,7 +850,7 @@
+ 
+@@ -554,7 +868,7 @@
  
      }
  
@@ -749,7 +764,7 @@
          PlayerTeam scoreboardteam = source.getTeam();
  
          if (scoreboardteam != null) {
-@@ -573,7 +869,7 @@
+@@ -573,7 +887,7 @@
          }
      }
  
@@ -758,7 +773,7 @@
          PlayerTeam scoreboardteam = source.getTeam();
  
          if (scoreboardteam == null) {
-@@ -619,7 +915,7 @@
+@@ -619,7 +933,7 @@
      }
  
      public void deop(GameProfile profile) {
@@ -767,7 +782,7 @@
          ServerPlayer entityplayer = this.getPlayer(profile.getId());
  
          if (entityplayer != null) {
-@@ -643,6 +939,7 @@
+@@ -643,6 +957,7 @@
              player.connection.send(new ClientboundEntityEventPacket(player, b0));
          }
  
@@ -775,7 +790,7 @@
          this.server.getCommands().sendCommands(player);
      }
  
-@@ -656,23 +953,19 @@
+@@ -656,23 +971,19 @@
  
      @Nullable
      public ServerPlayer getPlayerByName(String name) {
@@ -807,7 +822,7 @@
              if (entityplayer != player && entityplayer.level().dimension() == worldKey) {
                  double d4 = x - entityplayer.getX();
                  double d5 = y - entityplayer.getY();
-@@ -712,15 +1005,19 @@
+@@ -712,15 +1023,19 @@
      public void reloadWhiteList() {}
  
      public void sendLevelInfo(ServerPlayer player, ServerLevel world) {
@@ -831,7 +846,7 @@
          }
  
          player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.LEVEL_CHUNKS_LOAD_START, 0.0F));
-@@ -729,8 +1026,16 @@
+@@ -729,8 +1044,16 @@
  
      public void sendAllPlayerInfo(ServerPlayer player) {
          player.inventoryMenu.sendAllDataToRemote();
@@ -849,7 +864,7 @@
      }
  
      public int getPlayerCount() {
-@@ -786,12 +1091,22 @@
+@@ -786,12 +1109,29 @@
      }
  
      public void removeAll() {
@@ -861,6 +876,13 @@
          }
 +        // CraftBukkit end
  
++        // Paper start - Configurable player collision; Remove collideRule team if it exists
++        if (this.collideRuleTeamName != null) {
++            final net.minecraft.world.scores.Scoreboard scoreboard = this.getServer().getLevel(Level.OVERWORLD).getScoreboard();
++            final PlayerTeam team = scoreboard.getPlayersTeam(this.collideRuleTeamName);
++            if (team != null) scoreboard.removePlayerTeam(team);
++        }
++        // Paper end - Configurable player collision
      }
  
 +    // CraftBukkit start
@@ -874,7 +896,7 @@
      public void broadcastSystemMessage(Component message, boolean overlay) {
          this.broadcastSystemMessage(message, (entityplayer) -> {
              return message;
-@@ -819,24 +1134,43 @@
+@@ -819,24 +1159,43 @@
      }
  
      public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound params) {
@@ -921,7 +943,7 @@
          }
  
          if (flag1 && sender != null) {
-@@ -845,20 +1179,27 @@
+@@ -845,20 +1204,27 @@
  
      }
  
@@ -954,7 +976,7 @@
                  Path path = file2.toPath();
  
                  if (FileUtil.isPathNormalized(path) && FileUtil.isPathPortable(path) && path.startsWith(file.getPath()) && file2.isFile()) {
-@@ -867,7 +1208,7 @@
+@@ -867,7 +1233,7 @@
              }
  
              serverstatisticmanager = new ServerStatsCounter(this.server, file1);
@@ -963,7 +985,7 @@
          }
  
          return serverstatisticmanager;
-@@ -875,13 +1216,13 @@
+@@ -875,13 +1241,13 @@
  
      public PlayerAdvancements getPlayerAdvancements(ServerPlayer player) {
          UUID uuid = player.getUUID();
@@ -979,7 +1001,7 @@
          }
  
          advancementdataplayer.setPlayer(player);
-@@ -932,15 +1273,28 @@
+@@ -932,15 +1298,28 @@
      }
  
      public void reloadResources() {
