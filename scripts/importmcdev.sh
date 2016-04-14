@@ -51,6 +51,7 @@ import DataBits
 import DataConverterMaterialId
 import EULA
 import EntitySquid
+import EntityWaterAnimal
 import FileIOThread
 import ItemBlock
 import PacketPlayInResourcePackStatus
