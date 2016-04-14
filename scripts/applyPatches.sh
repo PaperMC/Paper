@@ -22,13 +22,23 @@ function applyPatch {
         git clone "$what" "$target"
     fi
     cd "$basedir/$target"
+
+    # Disable GPG signing before AM, slows things down and doesn't play nicely.
+    # There is also zero rational or logical reason to do so for these sub-repo AMs.
+    # Calm down kids, it's re-enabled (if needed) immediately after, pass or fail.
+    if [[ "$gpgsign" == "true" ]]; then
+        git config commit.gpgsign false
+    fi
+
     echo "Resetting $target to $what_name..."
     git remote rm upstream > /dev/null 2>&1
     git remote add upstream "$basedir/$what" >/dev/null 2>&1
     git checkout master 2>/dev/null || git checkout -b master
     git fetch upstream >/dev/null 2>&1
     git reset --hard upstream/upstream
+
     echo "  Applying patches to $target..."
+
     git am --abort >/dev/null 2>&1
     git am --3way --ignore-whitespace "$basedir/${what_name}-Patches/"*.patch
     if [ "$?" != "0" ]; then
@@ -43,17 +53,9 @@ function applyPatch {
 
 function enableCommitSigningIfNeeded {
     if [[ "$gpgsign" == "true" ]]; then
-        git config --global commit.gpgsign true
+        git config commit.gpgsign true
     fi
 }
-
-# Disable GPG signing before AM, slows things down and doesn't play nicely.
-# There is also zero rational or logical reason to do so for these sub-repo AMs.
-# Calm down kids, it's re-enabled (if needed) immediately after, pass or fail.
-if [[ "$gpgsign" == "true" ]]; then
-    # Yes, this has to be global
-    git config --global commit.gpgsign false
-fi
 
 # Move into spigot dir
 cd "$workdir/Spigot"
@@ -64,7 +66,7 @@ basedir=$(pwd)
 	applyPatch ../CraftBukkit Spigot-Server patched
 ) || (
 	echo "Failed to apply Spigot Patches"
-	enableCommitSigningIfNeeded
+    enableCommitSigningIfNeeded
 	exit 1
 ) || exit 1
 # Move out of Spigot
@@ -80,10 +82,10 @@ cd "$basedir"
 (
 	applyPatch "work/Spigot/Spigot-API" Paper-API HEAD &&
 	applyPatch "work/Spigot/Spigot-Server" Paper-Server HEAD
-	enableCommitSigningIfNeeded
+    enableCommitSigningIfNeeded
 ) || (
 	echo "Failed to apply Paper Patches"
-	enableCommitSigningIfNeeded
+    enableCommitSigningIfNeeded
 	exit 1
 ) || exit 1
 )
