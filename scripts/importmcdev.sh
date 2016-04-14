@@ -52,6 +52,8 @@ import DataConverterMaterialId
 import EULA
 import EntitySquid
 import FileIOThread
+import IChunkLoader
+import IPlayerFileData
 import ItemBlock
 import PacketPlayInResourcePackStatus
 import PacketPlayInUseEntity
