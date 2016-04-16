@@ -180,6 +180,10 @@ public class MemorySection implements ConfigurationSection {
             String node = path.substring(i2, i1);
             ConfigurationSection subSection = section.getConfigurationSection(node);
             if (subSection == null) {
+                if (value == null) {
+                	// no need to create missing sub-sections if we want to remove the value:
+                    return;
+                }
                 section = section.createSection(node);
             } else {
                 section = subSection;
