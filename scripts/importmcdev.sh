@@ -64,6 +64,7 @@ import PathfinderAbstract
 import PathfinderGoalFloat
 import PathfinderWater
 import PersistentVillage
+import RemoteControlListener
 import TileEntityEnderChest
 import WorldProvider
 
