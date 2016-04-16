@@ -60,7 +60,7 @@ public class RemoteControlListener extends RemoteConnectionThread {
     @Nullable
     public static RemoteControlListener a(IMinecraftServer iminecraftserver) {
         DedicatedServerProperties dedicatedserverproperties = iminecraftserver.getDedicatedServerProperties();
-        String s = iminecraftserver.h_();
+        String s = dedicatedserverproperties.rconIp; // Paper - Configurable rcon ip
 
         if (s.isEmpty()) {
             s = "0.0.0.0";
