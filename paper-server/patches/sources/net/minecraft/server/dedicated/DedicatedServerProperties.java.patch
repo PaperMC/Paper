@@ -17,7 +17,7 @@
      public final boolean onlineMode = this.get("online-mode", true);
      public final boolean preventProxyConnections = this.get("prevent-proxy-connections", false);
      public final String serverIp = this.get("server-ip", "");
-@@ -100,13 +105,15 @@
+@@ -100,13 +105,17 @@
      public final Settings<DedicatedServerProperties>.MutableValue<Boolean> whiteList;
      public final boolean enforceSecureProfile;
      public final boolean logIPs;
@@ -29,6 +29,8 @@
  
 -    public DedicatedServerProperties(Properties properties) {
 -        super(properties);
++    public final String rconIp; // Paper - Configurable rcon ip
++
 +    // CraftBukkit start
 +    public DedicatedServerProperties(Properties properties, OptionSet optionset) {
 +        super(properties, optionset);
@@ -36,8 +38,14 @@
          this.difficulty = (Difficulty) this.get("difficulty", dispatchNumberOrString(Difficulty::byId, Difficulty::byName), Difficulty::getKey, Difficulty.EASY);
          this.gamemode = (GameType) this.get("gamemode", dispatchNumberOrString(GameType::byId, GameType::byName), GameType::getName, GameType.SURVIVAL);
          this.levelName = this.get("level-name", "world");
-@@ -167,13 +174,15 @@
+@@ -165,15 +174,21 @@
+         }, WorldPresets.NORMAL.location().toString()));
+         this.serverResourcePackInfo = DedicatedServerProperties.getServerPackInfo(this.get("resource-pack-id", ""), this.get("resource-pack", ""), this.get("resource-pack-sha1", ""), this.getLegacyString("resource-pack-hash"), this.get("require-resource-pack", false), this.get("resource-pack-prompt", ""));
          this.initialDataPackConfiguration = DedicatedServerProperties.getDatapackConfig(this.get("initial-enabled-packs", String.join(",", WorldDataConfiguration.DEFAULT.dataPacks().getEnabled())), this.get("initial-disabled-packs", String.join(",", WorldDataConfiguration.DEFAULT.dataPacks().getDisabled())));
++        // Paper start - Configurable rcon ip
++        final String rconIp = this.getStringRaw("rcon.ip");
++        this.rconIp = rconIp == null ? this.serverIp : rconIp;
++        // Paper end - Configurable rcon ip
      }
  
 -    public static DedicatedServerProperties fromFile(Path path) {
@@ -56,7 +64,7 @@
      }
  
      @Nullable
-@@ -254,10 +263,10 @@
+@@ -254,10 +269,10 @@
              }).orElseThrow(() -> {
                  return new IllegalStateException("Invalid datapack contents: can't find default preset");
              });
@@ -69,7 +77,7 @@
              });
  
              Objects.requireNonNull(holderlookup);
-@@ -269,7 +278,7 @@
+@@ -269,7 +284,7 @@
  
              if (holder.is(WorldPresets.FLAT)) {
                  RegistryOps<JsonElement> registryops = registries.createSerializationContext(JsonOps.INSTANCE);
