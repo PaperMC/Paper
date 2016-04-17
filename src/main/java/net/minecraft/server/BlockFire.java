@@ -115,7 +115,7 @@ public class BlockFire extends BlockFireAbstract {
                 BlockStateBoolean blockstateboolean = (BlockStateBoolean) BlockFire.h.get(enumdirection);
 
                 if (blockstateboolean != null) {
-                    iblockdata1 = (IBlockData) iblockdata1.set(blockstateboolean, this.e(iblockaccess.getType(blockposition.shift(enumdirection))));
+                    iblockdata1 = (IBlockData) iblockdata1.set(blockstateboolean, this.e(iblockaccess.getTypeIfLoaded(blockposition.shift(enumdirection)))); // Paper - prevent chunk loads
                 }
             }
 
@@ -195,6 +195,7 @@ public class BlockFire extends BlockFireAbstract {
                                 }
 
                                 blockposition_mutableblockposition.a((BaseBlockPosition) blockposition, l, j1, i1);
+                                if (blockposition_mutableblockposition.isInvalidYLocation() || !worldserver.isLoaded(blockposition_mutableblockposition)) continue; // Paper
                                 int l1 = this.a((IWorldReader) worldserver, (BlockPosition) blockposition_mutableblockposition);
 
                                 if (l1 > 0) {
@@ -240,10 +241,16 @@ public class BlockFire extends BlockFireAbstract {
     }
 
     private void trySpread(World world, BlockPosition blockposition, int i, Random random, int j, BlockPosition sourceposition) { // CraftBukkit add sourceposition
-        int k = this.getBurnChance(world.getType(blockposition));
+        // Paper start
+        final IBlockData iblockdata = world.getTypeIfLoaded(blockposition);
+        if (iblockdata == null) {
+            return;
+        }
+        int k = this.getBurnChance(iblockdata);
+        // Paper end
 
         if (random.nextInt(i) < k) {
-            IBlockData iblockdata = world.getType(blockposition);
+            //IBlockData iblockdata = world.getType(blockposition); // Paper
 
             // CraftBukkit start
             org.bukkit.block.Block theBlock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
@@ -289,7 +296,7 @@ public class BlockFire extends BlockFireAbstract {
         for (int j = 0; j < i; ++j) {
             EnumDirection enumdirection = aenumdirection[j];
 
-            if (this.e(iblockaccess.getType(blockposition.shift(enumdirection)))) {
+            if (this.e(iblockaccess.getTypeIfLoaded(blockposition.shift(enumdirection)))) { // Paper - prevent chunk loads
                 return true;
             }
         }
@@ -307,7 +314,12 @@ public class BlockFire extends BlockFireAbstract {
 
             for (int k = 0; k < j; ++k) {
                 EnumDirection enumdirection = aenumdirection[k];
-                IBlockData iblockdata = iworldreader.getType(blockposition.shift(enumdirection));
+                // Paper start
+                IBlockData iblockdata = iworldreader.getTypeIfLoaded(blockposition.shift(enumdirection));
+                if (iblockdata == null) {
+                    continue;
+                }
+                // Paper end
 
                 i = Math.max(this.getFlameChance(iblockdata), i);
             }
@@ -318,7 +330,7 @@ public class BlockFire extends BlockFireAbstract {
 
     @Override
     protected boolean e(IBlockData iblockdata) {
-        return this.getFlameChance(iblockdata) > 0;
+        return iblockdata != null && this.getFlameChance(iblockdata) > 0;  // Paper - iblockdata can be nullable if chunk is unloaded now
     }
 
     @Override
