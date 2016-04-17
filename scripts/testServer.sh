@@ -80,6 +80,7 @@ fi
 
 baseargs="-server -Xmx${PAPER_TEST_MEMORY:-2G} -Dfile.encoding=UTF-8 -XX:MaxGCPauseMillis=50 -XX:+UseG1GC"
 baseargs="$baseargs -XX:+UnlockExperimentalVMOptions -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=70 "
+baseargs="$baseargs -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
 
 cmd="java ${PAPER_TEST_BASE_JVM_ARGS:-$baseargs} ${PAPER_TEST_EXTRA_JVM_ARGS} -jar $jar"
 
