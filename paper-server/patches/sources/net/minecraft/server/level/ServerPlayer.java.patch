@@ -109,7 +109,7 @@
      private boolean disconnected;
      private int requestedViewDistance;
 -    public String language;
-+    public String language = "en_us"; // CraftBukkit - default
++    public String language = null; // CraftBukkit - default  // Paper - default to null
 +    public java.util.Locale adventure$locale = java.util.Locale.US; // Paper
      @Nullable
      private Vec3 startingToFallPosition;
@@ -139,6 +139,15 @@
      public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, ClientInformation clientOptions) {
          super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
          this.chatVisibility = ChatVisiblity.FULL;
+@@ -266,7 +319,7 @@
+         this.canChatColor = true;
+         this.lastActionTime = Util.getMillis();
+         this.requestedViewDistance = 2;
+-        this.language = "en_us";
++        this.language =  null; // Paper - default to null
+         this.lastSectionPos = SectionPos.of(0, 0, 0);
+         this.chunkTrackingView = ChunkTrackingView.EMPTY;
+         this.respawnDimension = Level.OVERWORLD;
 @@ -340,6 +393,13 @@
              public void sendSystemMessage(Component message) {
                  ServerPlayer.this.sendSystemMessage(message);
@@ -416,20 +425,19 @@
                  this.lastSentHealth = this.getHealth();
                  this.lastSentFood = this.foodData.getFoodLevel();
                  this.lastFoodSaturationZero = this.foodData.getSaturationLevel() == 0.0F;
-@@ -849,7 +1020,13 @@
-             if (this.totalExperience != this.lastRecordedExperience) {
-                 this.lastRecordedExperience = this.totalExperience;
+@@ -851,6 +1022,12 @@
                  this.updateScoreForCriteria(ObjectiveCriteria.EXPERIENCE, Mth.ceil((float) this.lastRecordedExperience));
-+            }
-+
+             }
+ 
 +            // CraftBukkit start - Force max health updates
 +            if (this.maxHealthCache != this.getMaxHealth()) {
 +                this.getBukkitEntity().updateScaledHealth();
-             }
++            }
 +            // CraftBukkit end
- 
++
              if (this.experienceLevel != this.lastRecordedLevel) {
                  this.lastRecordedLevel = this.experienceLevel;
+                 this.updateScoreForCriteria(ObjectiveCriteria.LEVEL, Mth.ceil((float) this.lastRecordedLevel));
 @@ -865,6 +1042,20 @@
                  CriteriaTriggers.LOCATION.trigger(this);
              }
@@ -1210,7 +1218,7 @@
 +            PlayerChangedMainHandEvent event = new PlayerChangedMainHandEvent(this.getBukkitEntity(), this.getMainArm() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT);
 +            this.server.server.getPluginManager().callEvent(event);
 +        }
-+        if (!this.language.equals(clientOptions.language())) {
++        if (this.language == null || !this.language.equals(clientOptions.language())) { // Paper
 +            PlayerLocaleChangeEvent event = new PlayerLocaleChangeEvent(this.getBukkitEntity(), clientOptions.language());
 +            this.server.server.getPluginManager().callEvent(event);
 +        }
@@ -1343,7 +1351,7 @@
                  }
  
                  this.awardStat(Stats.DROP);
-@@ -2375,10 +2850,12 @@
+@@ -2375,16 +2850,160 @@
          return TicketType.ENDER_PEARL.timeout();
      }
  
@@ -1359,10 +1367,11 @@
          }
  
          private static float calculateLookAtYaw(Vec3 respawnPos, BlockPos currentPos) {
-@@ -2387,4 +2864,146 @@
+             Vec3 vec3d1 = Vec3.atBottomCenterOf(currentPos).subtract(respawnPos).normalize();
+ 
              return (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
-         }
-     }
++        }
++    }
 +
 +    // CraftBukkit start - Add per-player time and weather.
 +    public long timeOffset = 0;
@@ -1414,7 +1423,7 @@
 +            if (this.pluginRainPositionPrevious != this.pluginRainPosition) {
 +                this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, this.pluginRainPosition));
 +            }
-+        }
+         }
 +
 +        if (oldThunder != newThunder) {
 +            if (this.weather == WeatherType.DOWNFALL || this.weather == null) {
@@ -1423,7 +1432,7 @@
 +                this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, 0));
 +            }
 +        }
-+    }
+     }
 +
 +    public void tickWeather() {
 +        if (this.weather == null) return;
