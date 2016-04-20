@@ -101,41 +101,47 @@
              super.collide(entity);
          }
  
-@@ -172,6 +228,10 @@
+@@ -151,6 +207,8 @@
+         return this.getDirection().e();
+     }
+ 
++    private Location lastLocation; // CraftBukkit
++
+     public void m() {
+         this.aG = this.aF;
+         this.aF = this.t();
+@@ -171,7 +229,6 @@
+         if (this.n() > 0.0F) {
              this.setDamage(this.n() - 1.0F);
          }
- 
-+        // CraftBukkit start
-+        float prevYaw = this.yaw;
-+        float prevPitch = this.pitch;
-+        // CraftBukkit end
+-
          this.lastX = this.locX;
          this.lastY = this.locY;
          this.lastZ = this.locZ;
-@@ -189,6 +249,22 @@
-             }
+@@ -195,6 +252,22 @@
+             this.motZ = 0.0D;
+         }
  
-             this.move(this.motX, this.motY, this.motZ);
-+            // CraftBukkit start
-+            // PAIL: CHECK ME
-+            org.bukkit.Server server = this.world.getServer();
-+            org.bukkit.World bworld = this.world.getWorld();
++        // CraftBukkit start
++        org.bukkit.Server server = this.world.getServer();
++        org.bukkit.World bworld = this.world.getWorld();
 +
-+            Location from = new Location(bworld, this.lastX, this.lastY, this.lastZ, prevYaw, prevPitch);
-+            Location to = new Location(bworld, this.locX, this.locY, this.locZ, this.yaw, this.pitch);
-+            Vehicle vehicle = (Vehicle) this.getBukkitEntity();
++        Location to = new Location(bworld, this.locX, this.locY, this.locZ, this.yaw, this.pitch);
++        Vehicle vehicle = (Vehicle) this.getBukkitEntity();
 +
-+            server.getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleUpdateEvent(vehicle));
++        server.getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleUpdateEvent(vehicle));
 +
-+            if (!from.equals(to)) {
-+                VehicleMoveEvent event = new VehicleMoveEvent(vehicle, from, to);
-+                server.getPluginManager().callEvent(event);
-+            }
-+            // CraftBukkit end
-         } else {
-             this.motX = 0.0D;
-             this.motY = 0.0D;
-@@ -591,6 +667,11 @@
++        if (lastLocation != null && !lastLocation.equals(to)) {
++            VehicleMoveEvent event = new VehicleMoveEvent(vehicle, lastLocation, to);
++            server.getPluginManager().callEvent(event);
++        }
++        lastLocation = vehicle.getLocation();
++        // CraftBukkit end
++
+         for (int i = 0; i <= 1; ++i) {
+             if (this.a(i)) {
+                 this.f[i] = (float) ((double) this.f[i] + 0.01D);
+@@ -591,6 +664,11 @@
  
                      this.e(this.fallDistance, 1.0F);
                      if (!this.world.isClientSide && !this.dead) {
@@ -147,7 +153,7 @@
                          this.die();
                          if (this.world.getGameRules().getBoolean("doEntityDrops")) {
                              int i;
-@@ -604,6 +685,7 @@
+@@ -604,6 +682,7 @@
                              }
                          }
                      }
