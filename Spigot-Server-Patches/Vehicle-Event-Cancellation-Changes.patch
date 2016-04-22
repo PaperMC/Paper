@@ -1,0 +1,92 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <1254957+zachbr@users.noreply.github.com>
+Date: Fri, 22 Apr 2016 18:20:05 -0500
+Subject: [PATCH] Vehicle Event Cancellation Changes
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
+     }
+ 
+     public boolean a(Entity entity, boolean flag) {
++        return this.a(entity, flag, false); // Paper
++    }
++
++    public boolean a(Entity entity, boolean flag, boolean suppressEvents) { // Paper - Add suppress
+         if (!flag && (!this.n(entity) || !entity.q(this))) {
+             return false;
+         } else {
+@@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
+             }
+ 
+             this.as = entity;
+-            this.as.o(this);
++            this.as.addRider(this, suppressEvents); // Paper
+             return true;
+         }
+     }
+@@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
+     }
+ 
+     protected void o(Entity entity) {
++        // Paper start - Forward
++        this.addRider(entity, false);
++    }
++
++    private void addRider(Entity entity, boolean suppressEvents) {
++        // Paper end
+         if (entity.by() != this) {
+             throw new IllegalStateException("Use x.startRiding(y), not y.addPassenger(x)");
+         } else {
+             // CraftBukkit start
+             com.google.common.base.Preconditions.checkState(!entity.passengers.contains(this), "Circular entity riding! %s %s", this, entity);
+ 
++            if (!suppressEvents) { // Paper - Make event calls suppressible
++            // =============================================================
+             CraftEntity craft = (CraftEntity) entity.getBukkitEntity().getVehicle();
+             Entity orig = craft == null ? null : craft.getHandle();
+             if (getBukkitEntity() instanceof Vehicle && entity.getBukkitEntity() instanceof LivingEntity && entity.world.isChunkLoaded((int) entity.locX >> 4, (int) entity.locZ >> 4, false)) { // Boolean not used
+@@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
+                 return;
+             }
+             // Spigot end
++            // =============================================================
++            } // Paper - end suppressible block
+             if (!this.world.isClientSide && entity instanceof EntityHuman && !(this.bt() instanceof EntityHuman)) {
+                 this.passengers.add(0, entity);
+             } else {
+@@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
+                 CraftEntity craftn = (CraftEntity) entity.getBukkitEntity().getVehicle();
+                 Entity n = craftn == null ? null : craftn.getHandle();
+                 if (event.isCancelled() || n != orig) {
++                    this.cancelDismount(entity); // Paper
+                     return;
+                 }
+             }
+             // CraftBukkit end
+-            Bukkit.getPluginManager().callEvent( new org.spigotmc.event.entity.EntityDismountEvent(entity.getBukkitEntity(), this.getBukkitEntity())); // Spigot
++            // Paper start - make EntityDismountEvent cancellable
++            if (!new org.spigotmc.event.entity.EntityDismountEvent(entity.getBukkitEntity(), this.getBukkitEntity()).callEvent()) {
++                this.cancelDismount(entity);
++                return;
++            }
++            // Paper end
+             this.passengers.remove(entity);
+             entity.j = 60;
+         }
+     }
+ 
++    // Paper start
++    private void cancelDismount(Entity dismounter) {
++        this.passengers.remove(dismounter);
++        dismounter.a(this, false, true);
++    }
++    // Paper end
++
+     protected boolean q(Entity entity) {
+         return this.bu().size() < 1;
+     }
+--
