@@ -1,0 +1,25 @@
+From acbc64e0d3be4b92b05dfb9cac09fd7d2f0f021a Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Fri, 22 Apr 2016 15:42:44 -0500
+Subject: [PATCH] Fix VehicleExitEvent cancellation
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 8512105..1f59225 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -1739,6 +1739,11 @@ public abstract class Entity implements ICommandListener {
+                 CraftEntity craftn = (CraftEntity) entity.getBukkitEntity().getVehicle();
+                 Entity n = craftn == null ? null : craftn.getHandle();
+                 if (event.isCancelled() || n != orig) {
++                    // Paper - Fix cancellation
++                    if (entity instanceof EntityPlayer) {
++                        ((EntityPlayer) entity).playerConnection.sendPacket(new net.minecraft.server.PacketPlayOutMount(this));
++                    }
++                    // Paper end
+                     return;
+                 }
+             }
+-- 
+2.8.0
+
