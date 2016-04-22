@@ -69,7 +69,7 @@ public class FoodMetaData {
             if (this.foodTickTimer >= 10) {
                 float f = Math.min(this.saturationLevel, 6.0F);
 
-                entityhuman.heal(f / 6.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED); // CraftBukkit - added RegainReason
+                entityhuman.heal(f / 6.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED, true); // CraftBukkit - added RegainReason // Paper - This is fast regen
                 this.a(f);
                 this.foodTickTimer = 0;
             }
