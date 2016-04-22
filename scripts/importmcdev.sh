@@ -40,6 +40,7 @@ import BlockChest
 import BlockFalling
 import BlockFluids
 import BlockFurnace
+import BlockIceFrost
 import BlockPosition
 import BlockStateList
 import ChunkProviderFlat
