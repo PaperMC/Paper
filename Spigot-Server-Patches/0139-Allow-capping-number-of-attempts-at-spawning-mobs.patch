@@ -1,0 +1,44 @@
+From ebaba6c7eb90259b93511de847a2857cc51957ee Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 15 Apr 2016 21:27:14 -0400
+Subject: [PATCH] Allow capping number of attempts at spawning mobs
+
+By default, this logic would loop endlessly trying to fill the world
+with entities until it hits the worlds spawn.
+
+This patch will cap the # of attempts to so that the tick does not spend
+extra long time on mob spawning
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index ad69ed3..77fb334 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -323,4 +323,10 @@ public class PaperWorldConfig {
+     private void useVanillaScoreboardColoring() {
+         useVanillaScoreboardColoring = getBoolean("use-vanilla-world-scoreboard-name-coloring", false);
+     }
++
++    public int maxMobSpawnAttempts;
++    private void maxMobSpawnAttempts() {
++        maxMobSpawnAttempts = getInt("max-mob-spawn-attempts", 50);
++        log( "Max Mob Spawn Attempts: " + maxMobSpawnAttempts);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
+index b47feb2..d97b7a2 100644
+--- a/src/main/java/net/minecraft/server/SpawnerCreature.java
++++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
+@@ -140,8 +140,9 @@ public final class SpawnerCreature {
+                         Iterator iterator1 = this.b.iterator();
+ 
+                         int moblimit = (limit * i / 256) - mobcnt + 1; // Spigot - up to 1 more than limit
++                        int maxMobSpawnAttempts = worldserver.paperConfig.maxMobSpawnAttempts; // Paper - max attempts
+                         label120:
+-                        while (iterator1.hasNext() && (moblimit > 0)) { // Spigot - while more allowed
++                        while (iterator1.hasNext() && (moblimit > 0) && maxMobSpawnAttempts-- > 0) { // Spigot - while more allowed // Paper - max attempts
+                             // CraftBukkit start = use LongHash and LongObjectHashMap
+                             long key = ((Long) iterator1.next()).longValue();
+                             BlockPosition blockposition1 = getRandomPosition(worldserver, LongHash.msw(key), LongHash.lsw(key));
+-- 
+2.8.0
+
