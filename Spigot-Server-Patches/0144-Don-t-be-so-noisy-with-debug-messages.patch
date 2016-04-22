@@ -1,0 +1,198 @@
+From ead326a4c09edf05f8a3f18f9eb6c5bb8c511fad Mon Sep 17 00:00:00 2001
+From: kashike <kashike@vq.lc>
+Date: Fri, 22 Apr 2016 01:11:01 -0700
+Subject: [PATCH] Don't be so noisy with debug messages
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index a07ee75..6432505 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -138,6 +138,7 @@ public class PaperConfig {
+         Timings.setHistoryInterval(timingHistoryInterval * 20);
+         Timings.setHistoryLength(timingHistoryLength * 20);
+ 
++        if (org.bukkit.Bukkit.getServer().isDebugLoggingEnabled()) // don't be so noisy
+         Bukkit.getLogger().log(Level.INFO, "Spigot Timings: " + timings +
+                 " - Verbose: " + verboseTimings +
+                 " - Interval: " + timeSummary(Timings.getHistoryInterval() / 20) +
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 77fb334..e6cfb4f 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -23,16 +23,20 @@ public class PaperWorldConfig {
+     public void init() {
+         this.verbose = getBoolean("verbose", false);
+ 
+-        log("-------- World Settings For [" + worldName + "] --------");
++        log("-------- World Settings For [" + worldName + "] --------", false);
+         PaperConfig.readConfig(PaperWorldConfig.class, this);
+     }
+ 
+-    private void log(String s) {
++    private void log(String s, boolean indent) {
+         if (verbose) {
+-            Bukkit.getLogger().info(s);
++            Bukkit.getLogger().info((indent ? "    " : "") + s);
+         }
+     }
+ 
++    private void log(String s) {
++        this.log(s, true);
++    }
++
+     private void set(String path, Object val) {
+         config.set("world-settings.default." + path, val);
+     }
+diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+index 0225a2e..d083d2c 100644
+--- a/src/main/java/net/minecraft/server/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -575,7 +575,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+     }
+ 
+     protected boolean aO() {
+-        server.getLogger().info( "**** Beginning UUID conversion, this may take A LONG time ****"); // Spigot, let the user know whats up!
++        //server.getLogger().info( "**** Beginning UUID conversion, this may take A LONG time ****"); // Spigot, let the user know whats up! // Paper - comment, move call to PaperConfig/NameReferencingFileConverter
+         boolean flag = false;
+ 
+         int i;
+diff --git a/src/main/java/net/minecraft/server/NameReferencingFileConverter.java b/src/main/java/net/minecraft/server/NameReferencingFileConverter.java
+index 6aad092..30ec227 100644
+--- a/src/main/java/net/minecraft/server/NameReferencingFileConverter.java
++++ b/src/main/java/net/minecraft/server/NameReferencingFileConverter.java
+@@ -85,6 +85,7 @@ public class NameReferencingFileConverter {
+         final GameProfileBanList gameprofilebanlist = new GameProfileBanList(PlayerList.a);
+ 
+         if (NameReferencingFileConverter.b.exists() && NameReferencingFileConverter.b.isFile()) {
++            uniqueIdConversionStarting(); // Paper - notify that the unique id conversion is starting
+             if (gameprofilebanlist.c().exists()) {
+                 try {
+                     gameprofilebanlist.load();
+@@ -144,6 +145,7 @@ public class NameReferencingFileConverter {
+         IpBanList ipbanlist = new IpBanList(PlayerList.b);
+ 
+         if (NameReferencingFileConverter.a.exists() && NameReferencingFileConverter.a.isFile()) {
++            uniqueIdConversionStarting(); // Paper - notify that the unique id conversion is starting
+             if (ipbanlist.c().exists()) {
+                 try {
+                     ipbanlist.load();
+@@ -186,6 +188,7 @@ public class NameReferencingFileConverter {
+         final OpList oplist = new OpList(PlayerList.c);
+ 
+         if (NameReferencingFileConverter.c.exists() && NameReferencingFileConverter.c.isFile()) {
++            uniqueIdConversionStarting(); // Paper - notify that the unique id conversion is starting
+             if (oplist.c().exists()) {
+                 try {
+                     oplist.load();
+@@ -231,6 +234,7 @@ public class NameReferencingFileConverter {
+         final WhiteList whitelist = new WhiteList(PlayerList.d);
+ 
+         if (NameReferencingFileConverter.d.exists() && NameReferencingFileConverter.d.isFile()) {
++            uniqueIdConversionStarting(); // Paper - notify that the unique id conversion is starting
+             if (whitelist.c().exists()) {
+                 try {
+                     whitelist.load();
+@@ -307,6 +311,7 @@ public class NameReferencingFileConverter {
+         final File file2 = new File(file.getParentFile(), "unknownplayers");
+ 
+         if (file.exists() && file.isDirectory()) {
++            uniqueIdConversionStarting(); // Paper - notify that the unique id conversion is starting
+             File[] afile = file.listFiles();
+             ArrayList arraylist = Lists.newArrayList();
+             File[] afile1 = afile;
+@@ -538,4 +543,14 @@ public class NameReferencingFileConverter {
+             this(s, throwable);
+         }
+     }
++
++    // Paper start
++    private static boolean uniqueIdConversionStarted = false;
++    public static void uniqueIdConversionStarting() {
++        if (!uniqueIdConversionStarted) {
++            org.bukkit.Bukkit.getLogger().info("**** Beginning UUID conversion, this may take A LONG time ****"); // Spigot, let the user know whats up!
++            uniqueIdConversionStarted = true;
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index e6a76cf..4e73f2a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1868,5 +1868,10 @@ public final class CraftServer implements Server {
+         }
+         return entity.getBukkitEntity();
+     }
++
++    @Override
++    public boolean isDebugLoggingEnabled() {
++        return ((DedicatedServer) this.console).propertyManager.getBoolean("debug", false);
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index 374dc38..7b98c00 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -236,6 +236,7 @@ public class SpigotConfig
+     {
+         int count = getInt( "settings.netty-threads", 4 );
+         System.setProperty( "io.netty.eventLoopThreads", Integer.toString( count ) );
++        if (org.bukkit.Bukkit.getServer().isDebugLoggingEnabled()) // Paper - don't be so noisy
+         Bukkit.getLogger().log( Level.INFO, "Using {0} threads for Netty based IO", count );
+     }
+ 
+@@ -280,6 +281,7 @@ public class SpigotConfig
+     private static void playerSample()
+     {
+         playerSample = getInt( "settings.sample-count", 12 );
++        if (org.bukkit.Bukkit.getServer().isDebugLoggingEnabled()) // Paper - don't be so noisy
+         System.out.println( "Server Ping Player Sample Count: " + playerSample );
+     }
+ 
+@@ -379,6 +381,7 @@ public class SpigotConfig
+             ctx.updateLoggers( conf );
+         }
+ 
++        if (org.bukkit.Bukkit.getServer().isDebugLoggingEnabled()) // Paper
+         if ( LogManager.getRootLogger().isTraceEnabled() )
+         {
+             Bukkit.getLogger().info( "Debug logging is enabled" );
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index 43242a8..6d7b2e7 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -22,16 +22,26 @@ public class SpigotWorldConfig
+     {
+         this.verbose = getBoolean( "verbose", true );
+ 
+-        log( "-------- World Settings For [" + worldName + "] --------" );
++        log( "-------- World Settings For [" + worldName + "] --------", false ); // Paper - pass false as second arg
+         SpigotConfig.readConfig( SpigotWorldConfig.class, this );
+     }
+ 
++    // Paper start
++    private void log(String s, boolean indent) {
++        if (verbose) {
++            Bukkit.getLogger().info((indent ? "    " : "") + s);
++        }
++    }
++    // Paper end
++
+     private void log(String s)
+     {
+-        if ( verbose )
++        // Paper start
++        /*if ( verbose )
+         {
+             Bukkit.getLogger().info( s );
+-        }
++        }*/
++        this.log(s, true);
+     }
+ 
+     private void set(String path, Object val)
+-- 
+2.7.4
+
