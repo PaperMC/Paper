@@ -252,4 +252,14 @@ public class PaperWorldConfig {
     private void useVanillaScoreboardColoring() {
         useVanillaScoreboardColoring = getBoolean("use-vanilla-world-scoreboard-name-coloring", false);
     }
+
+    public boolean frostedIceEnabled = true;
+    public int frostedIceDelayMin = 20;
+    public int frostedIceDelayMax = 40;
+    private void frostedIce() {
+        this.frostedIceEnabled = this.getBoolean("frosted-ice.enabled", this.frostedIceEnabled);
+        this.frostedIceDelayMin = this.getInt("frosted-ice.delay.min", this.frostedIceDelayMin);
+        this.frostedIceDelayMax = this.getInt("frosted-ice.delay.max", this.frostedIceDelayMax);
+        log("Frosted Ice: " + (this.frostedIceEnabled ? "enabled" : "disabled") + " / delay: min=" + this.frostedIceDelayMin + ", max=" + this.frostedIceDelayMax);
+    }
 }

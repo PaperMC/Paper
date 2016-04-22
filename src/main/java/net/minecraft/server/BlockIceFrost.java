@@ -18,6 +18,7 @@ public class BlockIceFrost extends BlockIce {
 
     @Override
     public void tickAlways(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, Random random) {
+        if (!worldserver.paperConfig.frostedIceEnabled) return; // Paper - add ability to disable frosted ice
         if ((random.nextInt(3) == 0 || this.a(worldserver, blockposition, 4)) && worldserver.getLightLevel(blockposition) > 11 - (Integer) iblockdata.get(BlockIceFrost.a) - iblockdata.b((IBlockAccess) worldserver, blockposition) && this.e(iblockdata, (World) worldserver, blockposition)) {
             BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
             EnumDirection[] aenumdirection = EnumDirection.values();
@@ -30,12 +31,12 @@ public class BlockIceFrost extends BlockIce {
                 IBlockData iblockdata1 = worldserver.getType(blockposition_mutableblockposition);
 
                 if (iblockdata1.a((Block) this) && !this.e(iblockdata1, (World) worldserver, blockposition_mutableblockposition)) {
-                    worldserver.getBlockTickList().a(blockposition_mutableblockposition, this, MathHelper.nextInt(random, 20, 40));
+                    worldserver.getBlockTickList().a(blockposition_mutableblockposition, this, MathHelper.nextInt(random, worldserver.paperConfig.frostedIceDelayMin, worldserver.paperConfig.frostedIceDelayMax)); // Paper - use configurable min/max delay
                 }
             }
 
         } else {
-            worldserver.getBlockTickList().a(blockposition, this, MathHelper.nextInt(random, 20, 40));
+            worldserver.getBlockTickList().a(blockposition, this, MathHelper.nextInt(random, worldserver.paperConfig.frostedIceDelayMin, worldserver.paperConfig.frostedIceDelayMax)); // Paper - use configurable min/max delay
         }
     }
 
