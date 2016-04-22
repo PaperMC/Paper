@@ -13,12 +13,31 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
     private boolean cancelled;
     private double amount;
     private final RegainReason regainReason;
+    private final boolean isFastRegen; // Paper
 
     public EntityRegainHealthEvent(@NotNull final Entity entity, final double amount, @NotNull final RegainReason regainReason) {
+        // Paper start - Forward
+        this(entity, amount, regainReason, false);
+    }
+
+    public EntityRegainHealthEvent(@NotNull final Entity entity, final double amount, @NotNull final RegainReason regainReason, boolean isFastRegen) {
+        // Paper end
         super(entity);
         this.amount = amount;
         this.regainReason = regainReason;
+        this.isFastRegen = isFastRegen; // Paper
     }
+
+    // Paper start - Add getter for isFastRegen
+    /**
+     * Is this event a result of the fast regeneration mechanic
+     *
+     * @return Whether the event is the result of a fast regeneration mechanic
+     */
+    public boolean isFastRegen() {
+        return isFastRegen;
+    }
+    // Paper end
 
     /**
      * Gets the amount of regained health
