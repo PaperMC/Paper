@@ -1,25 +1,22 @@
-From 99d1c2e73758c08e9fb578954fd2030c7a55098a Mon Sep 17 00:00:00 2001
+From 7f8a586e9507e91b1697b01cd5e4b7d9e8664fb8 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Fri, 22 Apr 2016 20:34:21 -0500
 Subject: [PATCH] Check entity count additions and mark entities removed
 
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 5c1685d..65e8c74 100644
+index 5c1685d..dff47c3 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -661,12 +661,39 @@ public class Chunk {
+@@ -661,12 +661,36 @@ public class Chunk {
              k = this.entitySlices.length - 1;
          }
  
 +        // Paper start - Try to catch plugins doing indecent things
 +        boolean ignoreAdd = false;
-+        if (entity.aa) {
-+            boolean thisChunk = entity.getChunkX() == this.locX && entity.getChunkY() == k && entity.getChunkZ() == this.locZ;
++        if (entity.aa && entity.getChunkX() == this.locX && entity.getChunkY() == k && entity.getChunkZ() == this.locZ) {
 +            String chunkName = entity.getWorld().getWorld().getName() + ":" + entity.getChunkX() + "," + entity.getChunkY() + "," + entity.getChunkZ();
-+            if (!thisChunk) {
-+                throw new IllegalStateException("Entity Already in another chunk: " + chunkName);
-+            } else if (this.entitySlices[k].contains(entity)) {
++            if (this.entitySlices[k].contains(entity)) {
 +                new Throwable("Double Chunk Add to: " + chunkName).printStackTrace();
 +                ignoreAdd = true;
 +            } else {
@@ -48,7 +45,7 @@ index 5c1685d..65e8c74 100644
          if (entity instanceof EntityItem) {
              itemCounts[k]++;
          } else if (entity instanceof IInventory) {
-@@ -711,6 +738,7 @@ public class Chunk {
+@@ -711,6 +735,7 @@ public class Chunk {
          } else if (entity instanceof IInventory) {
              inventoryEntityCounts[i]--;
          }
