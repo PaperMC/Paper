@@ -1,32 +1,39 @@
-From 7fb729ea5b3d71930bb208d8fc8156c0bae02f1f Mon Sep 17 00:00:00 2001
+From 99d1c2e73758c08e9fb578954fd2030c7a55098a Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Fri, 22 Apr 2016 20:34:21 -0500
 Subject: [PATCH] Check entity count additions and mark entities removed
 
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 5c1685d..137cbc6 100644
+index 5c1685d..65e8c74 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -661,6 +661,25 @@ public class Chunk {
+@@ -661,12 +661,39 @@ public class Chunk {
              k = this.entitySlices.length - 1;
          }
  
 +        // Paper start - Try to catch plugins doing indecent things
++        boolean ignoreAdd = false;
 +        if (entity.aa) {
 +            boolean thisChunk = entity.getChunkX() == this.locX && entity.getChunkY() == k && entity.getChunkZ() == this.locZ;
 +            String chunkName = entity.getWorld().getWorld().getName() + ":" + entity.getChunkX() + "," + entity.getChunkY() + "," + entity.getChunkZ();
 +            if (!thisChunk) {
 +                throw new IllegalStateException("Entity Already in another chunk: " + chunkName);
 +            } else if (this.entitySlices[k].contains(entity)) {
-+                throw new IllegalStateException("Double Chunk Add to: " + chunkName);
++                new Throwable("Double Chunk Add to: " + chunkName).printStackTrace();
++                ignoreAdd = true;
 +            } else {
++                boolean found = false;
 +                for (int i1 = 0; i1 < this.entitySlices.length; i1++) {
 +                    if (this.entitySlices[i1].contains(entity)) {
-+                        throw new IllegalStateException("Entity was found in another slice of this chunk, tried: " + k + ", was in: " + chunkName);
++                        new Throwable("Entity was found in another slice of this chunk, tried: " + k + ", was in: " + chunkName).printStackTrace();
++                        found = true;
++                        ignoreAdd = true;
 +                    }
 +                }
-+                new Throwable("Improperly detected double chunk add. Was not actually in this chunk.").printStackTrace();
++                if (!found) {
++                    new Throwable("Improperly detected double chunk add. Was not actually in this chunk.").printStackTrace();
++                }
 +            }
 +        }
 +        // Paper end
@@ -34,7 +41,14 @@ index 5c1685d..137cbc6 100644
          entity.aa = true;
          entity.ab = this.locX;
          entity.ac = k;
-@@ -711,6 +730,7 @@ public class Chunk {
+         entity.ad = this.locZ;
+         this.entitySlices[k].add(entity);
+         // Paper start - update count
++        if (ignoreAdd) return;
+         if (entity instanceof EntityItem) {
+             itemCounts[k]++;
+         } else if (entity instanceof IInventory) {
+@@ -711,6 +738,7 @@ public class Chunk {
          } else if (entity instanceof IInventory) {
              inventoryEntityCounts[i]--;
          }
@@ -42,6 +56,19 @@ index 5c1685d..137cbc6 100644
          // Paper end
          // Spigot start - decrement creature type count
          // Keep this synced up with World.a(Class)
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index b860c91..a8ea92c 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1750,7 +1750,7 @@ public abstract class World implements IBlockAccess {
+             }
+ 
+             int k = MathHelper.floor(entity.locX / 16.0D);
+-            int l = MathHelper.floor(entity.locY / 16.0D);
++            int l = Math.min(15, Math.max(0, MathHelper.floor(entity.locY / 16.0D))); // Paper - stay consistent with chunk add/remove behavior
+             int i1 = MathHelper.floor(entity.locZ / 16.0D);
+ 
+             if (!entity.aa || entity.ab != k || entity.ac != l || entity.ad != i1) {
 -- 
 2.8.1
 
