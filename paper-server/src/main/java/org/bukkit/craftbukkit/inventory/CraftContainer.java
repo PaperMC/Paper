@@ -143,6 +143,9 @@ public class CraftContainer extends Container {
             case HOPPER:
                 setupHopper(top, bottom);
                 break;
+            case ANVIL:
+                setupAnvil(top, bottom);
+                break;
         }
     }
 
@@ -241,7 +244,8 @@ public class CraftContainer extends Container {
 
     private void setupEnchanting(IInventory top, IInventory bottom) {
         // This code copied from ContainerEnchantTable
-        this.a((new Slot(top, 0, 25, 47)));
+        this.a((new Slot(top, 0, 15, 47)));
+        this.a((new Slot(top, 0, 35, 47)));
 
         int row;
 
@@ -298,6 +302,26 @@ public class CraftContainer extends Container {
             this.a(new Slot(bottom, i, 8 + i * 18, 58 + b0));
         }
         // End copy from ContainerHopper
+    }
+
+    private void setupAnvil(IInventory top, IInventory bottom) {
+        // This code copied from ContainerAnvil
+        this.a(new Slot(top, 0, 27, 47));
+        this.a(new Slot(top, 1, 76, 47));
+        this.a(new Slot(top, 2, 134, 47));
+
+        int i;
+
+        for (i = 0; i < 3; ++i) {
+            for (int j = 0; j < 9; ++j) {
+                this.a(new Slot(bottom, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
+            }
+        }
+
+        for (i = 0; i < 9; ++i) {
+            this.a(new Slot(bottom, i, 8 + i * 18, 142));
+        }
+        // End copy from ContainerAnvil
     }
 
     public boolean a(EntityHuman entity) {
