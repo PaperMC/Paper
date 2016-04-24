@@ -12,22 +12,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public boolean f;
      public int ping;
      public boolean viewingCredits;
-+    public int viewDistance; // Paper - Player view distance API
++    // Paper start - Player view distance API
++    private int viewDistance = -1;
++    public int getViewDistance() {
++        return viewDistance == -1 ? ((WorldServer) world).getPlayerChunkMap().getViewDistance() : viewDistance;
++    }
++    public void setViewDistance(int viewDistance) {
++        this.viewDistance = viewDistance;
++    }
++    // Paper end
  
      // CraftBukkit start
      public String displayName;
-@@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
- 
-     public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, PlayerInteractManager playerinteractmanager) {
-         super(worldserver, gameprofile);
-+        this.viewDistance = world.spigotConfig.viewDistance; // Paper - Player view distance API
-         playerinteractmanager.player = this;
-         this.playerInteractManager = playerinteractmanager;
-         BlockPosition blockposition = worldserver.getSpawn();
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -0,0 +0,0 @@ public class PlayerChunkMap {
+     private final List<PlayerChunk> g = Lists.newLinkedList();
+     private final List<PlayerChunk> h = Lists.newLinkedList();
+     private final List<PlayerChunk> i = Lists.newArrayList();
+-    private int j;
++    private int j;public int getViewDistance() { return j; } // Paper OBFHELPER
+     private long k;
+     private boolean l = true;
+     private boolean m = true;
 @@ -0,0 +0,0 @@ public class PlayerChunkMap {
          int i = (int) entityplayer.d >> 4;
          int j = (int) entityplayer.e >> 4;
@@ -35,8 +44,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        for (int k = i - this.j; k <= i + this.j; ++k) {
 -            for (int l = j - this.j; l <= j + this.j; ++l) {
 +        // Paper start - Player view distance API
-+        for (int k = i - entityplayer.viewDistance; k <= i + entityplayer.viewDistance; ++k) {
-+            for (int l = j - entityplayer.viewDistance; l <= j + entityplayer.viewDistance; ++l) {
++        int viewDistance = entityplayer.getViewDistance();
++        for (int k = i - viewDistance; k <= i + viewDistance; ++k) {
++            for (int l = j - viewDistance; l <= j + viewDistance; ++l) {
 +                // Paper end
                  PlayerChunk playerchunk = this.b(k, l);
  
@@ -46,23 +56,36 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              int k = (int) entityplayer.d >> 4;
              int l = (int) entityplayer.e >> 4;
 -            int i1 = this.j;
-+            int i1 = entityplayer.viewDistance; // Paper - Player view distance API
++            final int viewDistance = entityplayer.getViewDistance(); // Paper - Player view distance API
++            int i1 = Math.max(getViewDistance(), viewDistance); // Paper - Player view distance API
++
              int j1 = i - k;
              int k1 = j - l;
  
+@@ -0,0 +0,0 @@ public class PlayerChunkMap {
+             if (j1 != 0 || k1 != 0) {
+                 for (int l1 = i - i1; l1 <= i + i1; ++l1) {
+                     for (int i2 = j - i1; i2 <= j + i1; ++i2) {
+-                        if (!this.a(l1, i2, k, l, i1)) {
++                        if (!this.a(l1, i2, k, l, viewDistance)) { // Paper - Player view distance API
+                             // this.c(l1, i2).a(entityplayer);
+                             chunksToLoad.add(new ChunkCoordIntPair(l1, i2)); // CraftBukkit
+                         }
 @@ -0,0 +0,0 @@ public class PlayerChunkMap {
          }
      }
      // CraftBukkit end
 +
 +    // Paper start - Player view distance API
-+    public void updateViewDistance(EntityPlayer player, int viewDistance) {
-+        viewDistance = MathHelper.clamp(viewDistance, 3, 32);
-+        if (viewDistance != player.viewDistance) {
++    public void updateViewDistance(EntityPlayer player, int toSet) {
++        final int oldViewDistance = player.getViewDistance();
++
++        int viewDistance = MathHelper.clamp(toSet, 3, 32);
++        if (viewDistance != oldViewDistance) {
 +            int cx = (int) player.locX >> 4;
 +            int cz = (int) player.locZ >> 4;
 +
-+            if (viewDistance - player.viewDistance > 0) {
++            if (viewDistance - oldViewDistance > 0) {
 +                for (int x = cx - viewDistance; x <= cx + viewDistance; ++x) {
 +                    for (int z = cz - viewDistance; z <= cz + viewDistance; ++z) {
 +                        PlayerChunk playerchunkmap_playerchunk = this.c(x, z);
@@ -73,8 +96,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    }
 +                }
 +            } else {
-+                for (int x = cx - player.viewDistance; x <= cx + player.viewDistance; ++x) {
-+                    for (int z = cz - player.viewDistance; z <= cz + player.viewDistance; ++z) {
++                for (int x = cx - oldViewDistance; x <= cx + oldViewDistance; ++x) {
++                    for (int z = cz - oldViewDistance; z <= cz + oldViewDistance; ++z) {
 +                        if (!this.a(x, z, cx, cz, viewDistance)) {
 +                            this.c(x, z).b(player);
 +                        }
@@ -82,7 +105,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +            }
 +
-+            player.viewDistance = viewDistance;
++            player.setViewDistance(viewDistance);
++        }
++
++        if (toSet == -1) {
++            player.setViewDistance(-1);
 +        }
 +    }
 +    // Paper end
@@ -97,7 +124,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    @Override
 +    public int getViewDistance() {
-+        return getHandle().viewDistance;
++        return getHandle().getViewDistance();
 +    }
 +
 +    @Override
