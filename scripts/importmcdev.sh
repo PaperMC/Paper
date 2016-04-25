@@ -39,6 +39,7 @@ import BiomeMesa
 import BlockChest
 import BlockFalling
 import BlockFluids
+import BlockFurnace
 import BlockPosition
 import BlockStateList
 import ChunkProviderFlat
