@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Riley Park <rileysebastianpark@gmail.com>
+Date: Thu, 21 Apr 2016 23:51:55 -0700
+Subject: [PATCH] Add ability to configure frosted_ice properties
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -0,0 +0,0 @@ public class PaperWorldConfig {
+         maxMobSpawnAttempts = getInt("max-mob-spawn-attempts", 50);
+         log( "Max Mob Spawn Attempts: " + maxMobSpawnAttempts);
+     }
++
++    public boolean frostedIceEnabled = true;
++    public int frostedIceDelayMin = 20;
++    public int frostedIceDelayMax = 40;
++    private void frostedIce() {
++        this.frostedIceEnabled = this.getBoolean("frosted-ice.enabled", this.frostedIceEnabled);
++        this.frostedIceDelayMin = this.getInt("frosted-ice.delay.min", this.frostedIceDelayMin);
++        this.frostedIceDelayMax = this.getInt("frosted-ice.delay.max", this.frostedIceDelayMax);
++        this.log("Frosted Ice: " + (this.frostedIceEnabled ? "enabled" : "disabled") + " / delay: min=" + this.frostedIceDelayMin + ", max=" + this.frostedIceDelayMax);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/BlockIceFrost.java b/src/main/java/net/minecraft/server/BlockIceFrost.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/BlockIceFrost.java
++++ b/src/main/java/net/minecraft/server/BlockIceFrost.java
+@@ -0,0 +0,0 @@ public class BlockIceFrost extends BlockIce {
+     }
+ 
+     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
++        if (!world.paperConfig.frostedIceEnabled) return; // Paper - add ability to disable frosted ice
+         if ((random.nextInt(3) == 0 || this.c(world, blockposition) < 4) && world.getLightLevel(blockposition) > 11 - ((Integer) iblockdata.get(BlockIceFrost.a)).intValue() - iblockdata.c()) {
+             this.a(world, blockposition, iblockdata, random, true);
+         } else {
+-            world.a(blockposition, (Block) this, MathHelper.nextInt(random, 20, 40));
++            // Paper start - use configurable min/max delay
++            //world.a(blockposition, (Block) this, MathHelper.nextInt(random, 20, 40));
++            world.a(blockposition, this, MathHelper.nextInt(random, world.paperConfig.frostedIceDelayMin, world.paperConfig.frostedIceDelayMax));
++            // Paper end
+         }
+ 
+     }
+--
