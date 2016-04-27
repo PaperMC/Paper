@@ -1,0 +1,89 @@
+From 28dc0e6616aa92018560ce197d7b71f68170402c Mon Sep 17 00:00:00 2001
+From: willies952002 <admin@domnian.com>
+Date: Sat, 23 Apr 2016 19:51:19 -0400
+Subject: [PATCH] Reimplement PlayerEditBookEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index d2aec29..c2dfe72 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -2209,6 +2209,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+         ItemStack itemstack;
+         ItemStack itemstack1;
+ 
++        try { // Paper - Reimplement BookEditEvent
+         if ("MC|BEdit".equals(s)) {
+             packetdataserializer = new PacketDataSerializer(Unpooled.wrappedBuffer(packetplayincustompayload.b()));
+ 
+@@ -2226,12 +2227,14 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                 if (itemstack1 != null) {
+                     if (itemstack.getItem() == Items.WRITABLE_BOOK && itemstack.getItem() == itemstack1.getItem()) {
+                         itemstack1.a("pages", (NBTBase) itemstack.getTag().getList("pages", 8));
++                        CraftEventFactory.handleEditBookEvent(player, itemstack1); // Paper
+                     }
+ 
+                     return;
+                 }
+             } catch (Exception exception) {
+                 PlayerConnection.LOGGER.error("Couldn\'t handle book info", exception);
++                this.disconnect("Invalid Book Data!"); // Paper
+                 return;
+             } finally {
+                 packetdataserializer.release();
+@@ -2271,12 +2274,14 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+ 
+                             itemstack1.a("pages", (NBTBase) nbttaglist);
+                             itemstack1.setItem(Items.WRITTEN_BOOK);
++                            CraftEventFactory.handleEditBookEvent(player, itemstack1); // Paper
+                         }
+ 
+                         return;
+                     }
+                 } catch (Exception exception1) {
+                     PlayerConnection.LOGGER.error("Couldn\'t sign book", exception1);
++                    this.disconnect("Invalid Book Data!"); // Paper
+                     return;
+                 } finally {
+                     packetdataserializer.release();
+@@ -2342,6 +2347,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                         }
+                     } catch (Exception exception3) {
+                         PlayerConnection.LOGGER.error("Couldn\'t set command block", exception3);
++                        this.disconnect("Invalid Command Block Data!"); // Paper
+                     } finally {
+                         packetdataserializer.release();
+                     }
+@@ -2411,6 +2417,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                         }
+                     } catch (Exception exception4) {
+                         PlayerConnection.LOGGER.error("Couldn\'t set command block", exception4);
++                        this.disconnect("Invalid Command Block Data!"); // Paper
+                     } finally {
+                         packetdataserializer.release();
+                     }
+@@ -2436,6 +2443,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                                 }
+                             } catch (Exception exception5) {
+                                 PlayerConnection.LOGGER.error("Couldn\'t set beacon", exception5);
++                                this.disconnect("Invalid Beacon Data!"); // Paper
+                             }
+                         }
+                     } else if ("MC|ItemName".equals(s)) {
+@@ -2538,6 +2546,13 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                 }
+             }
+         }
++        // Paper start
++        } finally {
++            if (packetplayincustompayload.b().refCnt() > 0) {
++                packetplayincustompayload.b().release();
++            }
++        }
++        // Paper end
+ 
+     }
+ 
+-- 
+2.5.0
+
