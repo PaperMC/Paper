@@ -486,11 +486,12 @@ public final class ItemStack {
         return this.getItem().a(this, entityhuman, entityliving, enumhand);
     }
 
-    public ItemStack cloneItemStack() {
-        if (this.isEmpty()) {
+    public ItemStack cloneItemStack() { return cloneItemStack(false); } // Paper
+    public ItemStack cloneItemStack(boolean origItem) { // Paper
+        if (!origItem && this.isEmpty()) { // Paper
             return ItemStack.b;
         } else {
-            ItemStack itemstack = new ItemStack(this.getItem(), this.count);
+            ItemStack itemstack = new ItemStack(origItem ? this.item : this.getItem(), this.count); // Paper
 
             itemstack.d(this.D());
             if (this.tag != null) {

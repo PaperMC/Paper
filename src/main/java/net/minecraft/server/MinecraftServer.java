@@ -1245,6 +1245,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         while (iterator.hasNext()) {
             WorldServer worldserver = (WorldServer) iterator.next();
             worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
+            TileEntityHopper.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
 
             this.methodProfiler.a(() -> {
                 return worldserver + " " + worldserver.getDimensionKey().a();

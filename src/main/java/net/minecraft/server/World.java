@@ -1098,8 +1098,8 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
         return list;
     }
 
-    @Override
-    public <T extends Entity> List<T> a(Class<? extends T> oclass, AxisAlignedBB axisalignedbb, @Nullable Predicate<? super T> predicate) {
+    public <T extends Entity> List<T> getEntities(Class<? extends T> oclass, AxisAlignedBB axisalignedbb, @Nullable Predicate<? super T> predicate) { return a(oclass, axisalignedbb, predicate); } // Paper - OBFHELPER
+    @Override public <T extends Entity> List<T> a(Class<? extends T> oclass, AxisAlignedBB axisalignedbb, @Nullable Predicate<? super T> predicate) {
         this.getMethodProfiler().c("getEntities");
         int i = MathHelper.floor((axisalignedbb.minX - 2.0D) / 16.0D);
         int j = MathHelper.f((axisalignedbb.maxX + 2.0D) / 16.0D);

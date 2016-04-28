@@ -63,6 +63,7 @@ public abstract class TileEntity implements KeyedObject { // Paper
     public void setCurrentChunk(Chunk chunk) {
         this.currentChunk = chunk != null ? new java.lang.ref.WeakReference<>(chunk) : null;
     }
+    static boolean IGNORE_TILE_UPDATES = false;
     // Paper end
 
     @Nullable
@@ -141,6 +142,7 @@ public abstract class TileEntity implements KeyedObject { // Paper
 
     public void update() {
         if (this.world != null) {
+            if (IGNORE_TILE_UPDATES) return; // Paper
             this.c = this.world.getType(this.position);
             this.world.b(this.position, this);
             if (!this.c.isAir()) {

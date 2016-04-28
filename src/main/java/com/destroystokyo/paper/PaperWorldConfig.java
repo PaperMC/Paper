@@ -571,4 +571,13 @@ public class PaperWorldConfig {
     private void entitiesTargetWithFollowRange() {
         entitiesTargetWithFollowRange = getBoolean("entities-target-with-follow-range", entitiesTargetWithFollowRange);
     }
+
+    public boolean cooldownHopperWhenFull = true;
+    public boolean disableHopperMoveEvents = false;
+    private void hopperOptimizations() {
+        cooldownHopperWhenFull = getBoolean("hopper.cooldown-when-full", cooldownHopperWhenFull);
+        log("Cooldown Hoppers when Full: " + (cooldownHopperWhenFull ? "enabled" : "disabled"));
+        disableHopperMoveEvents = getBoolean("hopper.disable-move-event", disableHopperMoveEvents);
+        log("Hopper Move Item Events: " + (disableHopperMoveEvents ? "disabled" : "enabled"));
+    }
 }

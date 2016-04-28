@@ -12,12 +12,13 @@ public interface IHopper extends IInventory {
         return IHopper.c;
     }
 
-    @Nullable
+    //@Nullable // Paper - it's annoying
     World getWorld();
+    default BlockPosition getBlockPosition() { return new BlockPosition(getX(), getY(), getZ()); } // Paper
 
-    double x();
+    double x(); default double getX() { return this.x(); } // Paper - OBFHELPER
 
-    double z();
+    double z(); default double getY() { return this.z(); } // Paper - OBFHELPER
 
-    double A();
+    double A(); default double getZ() { return this.A(); } // Paper - OBFHELPER
 }
