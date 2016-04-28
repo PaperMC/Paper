@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 27 Apr 2016 22:09:52 -0400
+Subject: [PATCH] Improve Minecraft Hopper Performance
+
+Removes unnecessary extra calls to .update() that are very expensive
+Also reset cooldown each hopper tick that a hopper is full.
+
+diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/TileEntity.java
++++ b/src/main/java/net/minecraft/server/TileEntity.java
+@@ -0,0 +0,0 @@ public abstract class TileEntity {
+         }
+     }
+ 
++    static boolean IGNORE_TILE_UPDATES = false; // Paper
+     public World getWorld() {
+         return this.world;
+     }
+@@ -0,0 +0,0 @@ public abstract class TileEntity {
+ 
+     public void update() {
+         if (this.world != null) {
++            if (IGNORE_TILE_UPDATES) return; // Paper
+             IBlockData iblockdata = this.world.getType(this.position);
+ 
+             this.h = iblockdata.getBlock().toLegacyData(iblockdata);
+diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/TileEntityHopper.java
++++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
+@@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+                 }
+                 // Paper end
+             }
++
++            if (!isCooledDown() && isFull()) { setCooldown(world.spigotConfig.hopperTransfer); } // Paper
+             return false;
+         } else {
+             return false;
+         }
+     }
+ 
++    boolean isFull() { return q(); } // Paper // OBFHELPER
+     private boolean q() {
+         ItemStack[] aitemstack = this.items;
+         int i = aitemstack.length;
+@@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+             boolean flag = false;
+ 
+             if (itemstack1 == null) {
++                IGNORE_TILE_UPDATES = true; // Paper
+                 iinventory.setItem(i, itemstack);
++                IGNORE_TILE_UPDATES = false; // Paper
+                 itemstack = null;
+                 flag = true;
+             } else if (a(itemstack1, itemstack)) {
+@@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+                     iinventory.update();
+                 }
+ 
+-                iinventory.update();
++                //iinventory.update(); // Paper
+             }
+         }
+ 
+@@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+         this.g = i;
+     }
+ 
++    boolean isCooledDown() { return o(); } // Paper // OBFHELPER
+     public boolean o() {
+         return this.g > 0;
+     }
+--
