@@ -70,6 +70,7 @@ import org.spigotmc.SlackActivityAccountant; // Spigot
 
 public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTask> implements IMojangStatistics, ICommandListener, AutoCloseable {
 
+    private static MinecraftServer SERVER; // Paper
     public static final Logger LOGGER = LogManager.getLogger();
     public static final File b = new File("usercache.json");
     public static final WorldSettings c = new WorldSettings("Demo World", EnumGamemode.SURVIVAL, false, EnumDifficulty.NORMAL, false, new GameRules(), DataPackConfiguration.a);
@@ -176,6 +177,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
 
     public MinecraftServer(OptionSet options, DataPackConfiguration datapackconfiguration, Thread thread, IRegistryCustom.Dimension iregistrycustom_dimension, Convertable.ConversionSession convertable_conversionsession, SaveData savedata, ResourcePackRepository resourcepackrepository, Proxy proxy, DataFixer datafixer, DataPackResources datapackresources, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache, WorldLoadListenerFactory worldloadlistenerfactory) {
         super("Server");
+        SERVER = this; // Paper - better singleton
         this.m = new GameProfilerSwitcher(SystemUtils.a, this::ah);
         this.methodProfiler = GameProfilerDisabled.a;
         this.serverPing = new ServerPing();
@@ -2036,7 +2038,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
 
     @Deprecated
     public static MinecraftServer getServer() {
-        return (Bukkit.getServer() instanceof CraftServer) ? ((CraftServer) Bukkit.getServer()).getServer() : null;
+        return SERVER; // Paper
     }
     // CraftBukkit end
 
