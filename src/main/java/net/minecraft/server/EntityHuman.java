@@ -595,6 +595,12 @@ public abstract class EntityHuman extends EntityLiving {
                 return null;
             }
             // CraftBukkit end
+            // Paper start - remove player from map on drop
+            if (itemstack.getItem() == Items.FILLED_MAP) {
+                WorldMap worldmap = ItemWorldMap.getSavedMap(itemstack, this.world);
+                worldmap.updateSeenPlayers(this, itemstack);
+            }
+            // Paper end
 
             return entityitem;
         }

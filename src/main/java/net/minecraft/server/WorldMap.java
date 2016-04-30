@@ -36,6 +36,7 @@ public class WorldMap extends PersistentBase {
     private final Map<String, MapIconBanner> m = Maps.newHashMap();
     public final Map<String, MapIcon> decorations = Maps.newLinkedHashMap();
     private final Map<String, WorldMapFrame> n = Maps.newHashMap();
+    private org.bukkit.craftbukkit.map.RenderData vanillaRender = new org.bukkit.craftbukkit.map.RenderData(); // Paper
 
     // CraftBukkit start
     public final CraftMapView mapView;
@@ -48,6 +49,7 @@ public class WorldMap extends PersistentBase {
         // CraftBukkit start
         mapView = new CraftMapView(this);
         server = (CraftServer) org.bukkit.Bukkit.getServer();
+        vanillaRender.buffer = colors; // Paper
         // CraftBukkit end
     }
 
@@ -115,6 +117,7 @@ public class WorldMap extends PersistentBase {
             this.m.put(mapiconbanner.f(), mapiconbanner);
             this.a(mapiconbanner.c(), (GeneratorAccess) null, mapiconbanner.f(), (double) mapiconbanner.a().getX(), (double) mapiconbanner.a().getZ(), 180.0D, mapiconbanner.d());
         }
+        this.vanillaRender.buffer = colors; // Paper
 
         NBTTagList nbttaglist1 = nbttagcompound.getList("frames", 10);
 
@@ -195,6 +198,7 @@ public class WorldMap extends PersistentBase {
         this.b();
     }
 
+    public void updateSeenPlayers(EntityHuman entityhuman, ItemStack itemstack) { this.a(entityhuman, itemstack); } // Paper - OBFHELPER
     public void a(EntityHuman entityhuman, ItemStack itemstack) {
         if (!this.humans.containsKey(entityhuman)) {
             WorldMap.WorldMapHumanTracker worldmap_worldmaphumantracker = new WorldMap.WorldMapHumanTracker(entityhuman);
@@ -430,6 +434,21 @@ public class WorldMap extends PersistentBase {
 
     public class WorldMapHumanTracker {
 
+        // Paper start
+        private void addSeenPlayers(java.util.Collection<MapIcon> icons) {
+            org.bukkit.entity.Player player = (org.bukkit.entity.Player) trackee.getBukkitEntity();
+            WorldMap.this.decorations.forEach((name, mapIcon) -> {
+                // If this cursor is for a player check visibility with vanish system
+                org.bukkit.entity.Player other = org.bukkit.Bukkit.getPlayerExact(name); // Spigot
+                if (other == null || player.canSee(other)) {
+                    icons.add(mapIcon);
+                }
+            });
+        }
+        private boolean shouldUseVanillaMap() {
+            return mapView.getRenderers().size() == 1 && mapView.getRenderers().get(0).getClass() == org.bukkit.craftbukkit.map.CraftMapRenderer.class;
+        }
+        // Paper end
         public final EntityHuman trackee;
         private boolean d = true;
         private int e;
@@ -446,9 +465,12 @@ public class WorldMap extends PersistentBase {
         @Nullable
         public Packet<?> a(ItemStack itemstack) {
             // CraftBukkit start
-            org.bukkit.craftbukkit.map.RenderData render = WorldMap.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.trackee.getBukkitEntity()); // CraftBukkit
+            if (!this.d && this.i % 5 != 0) { this.i++; return null; } // Paper - this won't end up sending, so don't render it!
+            boolean vanillaMaps = shouldUseVanillaMap(); // Paper
+            org.bukkit.craftbukkit.map.RenderData render = !vanillaMaps ? WorldMap.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.trackee.getBukkitEntity()) : WorldMap.this.vanillaRender; // CraftBukkit // Paper
 
             java.util.Collection<MapIcon> icons = new java.util.ArrayList<MapIcon>();
+            if (vanillaMaps) addSeenPlayers(icons); // Paper
 
             for ( org.bukkit.map.MapCursor cursor : render.cursors) {
 
