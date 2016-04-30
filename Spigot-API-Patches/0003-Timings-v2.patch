@@ -1,4 +1,4 @@
-From 318744eb013e35f3f25e5195870f7dd649cbf5d2 Mon Sep 17 00:00:00 2001
+From b005a8e4ac2677606ef91377f4b4d66bc869b0ad Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
@@ -1921,10 +1921,10 @@ index 0000000..17f8c6f
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsManager.java b/src/main/java/co/aikar/timings/TimingsManager.java
 new file mode 100644
-index 0000000..67c39df
+index 0000000..58ed35e
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsManager.java
-@@ -0,0 +1,194 @@
+@@ -0,0 +1,196 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -2085,13 +2085,15 @@ index 0000000..67c39df
 +    public static Timing getCommandTiming(String pluginName, Command command) {
 +        Plugin plugin = null;
 +        final Server server = Bukkit.getServer();
-+        if (!("minecraft".equals(pluginName) || "bukkit".equals(pluginName) || "Spigot".equals(pluginName) ||
-+            server == null)) {
++        if (!(  server == null || pluginName == null ||
++                "minecraft".equals(pluginName) || "bukkit".equals(pluginName) ||
++                "spigot".equalsIgnoreCase(pluginName) || "paper".equals(pluginName)
++        )) {
 +            plugin = server.getPluginManager().getPlugin(pluginName);
-+            if (plugin == null) {
-+                // Plugin is passing custom fallback prefix, try to look up by class loader
-+                plugin = getPluginByClassloader(command.getClass());
-+            }
++        }
++        if (plugin == null) {
++            // Plugin is passing custom fallback prefix, try to look up by class loader
++            plugin = getPluginByClassloader(command.getClass());
 +        }
 +        if (plugin == null) {
 +            return Timings.ofSafe("Command: " + pluginName + ":" + command.getTimingName());
@@ -2871,7 +2873,7 @@ index 69720e9..f82cbaf 100644
           * Sends the component to the player
           *
 diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
-index 0ba9b1c..29762b0 100644
+index 0ba9b1c..b2684fc 100644
 --- a/src/main/java/org/bukkit/command/Command.java
 +++ b/src/main/java/org/bukkit/command/Command.java
 @@ -31,7 +31,8 @@ public abstract class Command {
@@ -2906,7 +2908,7 @@ index 0ba9b1c..29762b0 100644
              this.commandMap = commandMap;
 +            // Paper start - Some plugins do things the wrong way, try and account for that
 +            if (this.timings == null) {
-+                this.timings = co.aikar.timings.TimingsManager.getCommandTiming("unknown", this);
++                this.timings = co.aikar.timings.TimingsManager.getCommandTiming(null, this);
 +            }
 +            // Paper end
              return true;
@@ -3593,5 +3595,5 @@ index 8d98297..7e89b97 100644
 -    }
  }
 -- 
-2.8.0
+2.8.1
 
