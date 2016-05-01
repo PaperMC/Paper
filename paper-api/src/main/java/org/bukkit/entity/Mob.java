@@ -61,4 +61,12 @@ public interface Mob extends LivingEntity, Lootable {
      */
     @Nullable
     public Sound getAmbientSound();
+
+    // Paper start - LootTable API
+    @Override
+    default void setLootTable(final @Nullable org.bukkit.loot.LootTable table, final long seed) {
+        this.setLootTable(table);
+        this.setSeed(seed);
+    }
+    // Paper end - LootTable API
 }

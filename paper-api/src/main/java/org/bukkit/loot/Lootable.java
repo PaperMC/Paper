@@ -35,6 +35,31 @@ public interface Lootable {
     @Nullable
     LootTable getLootTable();
 
+    // Paper start
+    /**
+     * Set the loot table and seed for a container or entity at the same time.
+     *
+     * @param table the Loot Table this {@link org.bukkit.block.Container} or {@link org.bukkit.entity.Mob} will have.
+     * @param seed the seed to used to generate loot. Default is 0.
+     */
+    void setLootTable(final @Nullable LootTable table, final long seed);
+
+    /**
+     * Returns whether or not this object has a Loot Table
+     * @return Has a loot table
+     */
+    default boolean hasLootTable() {
+        return this.getLootTable() != null;
+    }
+
+    /**
+     * Clears the associated Loot Table to this object
+     */
+    default void clearLootTable() {
+        this.setLootTable(null);
+    }
+    // Paper end
+
     /**
      * Set the seed used when this Loot Table generates loot.
      *
