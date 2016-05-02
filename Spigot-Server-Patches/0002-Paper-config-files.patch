@@ -1,4 +1,4 @@
-From dd08779d7de95a6ad71760c8dae7a47b756e69aa Mon Sep 17 00:00:00 2001
+From 9ba541352fa628a6a285572dbbd59a83389b5d14 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Mon, 29 Feb 2016 21:02:09 -0600
 Subject: [PATCH] Paper config files
@@ -6,10 +6,10 @@ Subject: [PATCH] Paper config files
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 new file mode 100644
-index 0000000..dca7763
+index 0000000..4f4377e
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +1,122 @@
+@@ -0,0 +1,164 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.base.Throwables;
@@ -22,7 +22,9 @@ index 0000000..dca7763
 +import java.util.HashMap;
 +import java.util.List;
 +import java.util.Map;
++import java.util.concurrent.TimeUnit;
 +import java.util.logging.Level;
++import java.util.regex.Pattern;
 +
 +import net.minecraft.server.MinecraftServer;
 +import org.bukkit.Bukkit;
@@ -96,6 +98,46 @@ index 0000000..dca7763
 +        } catch (IOException ex) {
 +            Bukkit.getLogger().log(Level.SEVERE, "Could not save " + CONFIG_FILE, ex);
 +        }
++    }
++
++    private static final Pattern SPACE = Pattern.compile(" ");
++    private static final Pattern NOT_NUMERIC = Pattern.compile("[^-\\d.]");
++    public static int getSeconds(String str) {
++        str = SPACE.matcher(str).replaceAll("");
++        final char unit = str.charAt(str.length() - 1);
++        str = NOT_NUMERIC.matcher(str).replaceAll("");
++        double num;
++        try {
++            num = Double.parseDouble(str);
++        } catch (Exception e) {
++            num = 0D;
++        }
++        switch (unit) {
++            case 'd': num *= (double) 60*60*24; break;
++            case 'h': num *= (double) 60*60; break;
++            case 'm': num *= (double) 60; break;
++            default: case 's': break;
++        }
++        return (int) num;
++    }
++
++    protected static String timeSummary(int seconds) {
++        String time = "";
++
++        if (seconds > 60 * 60 * 24) {
++            time += TimeUnit.SECONDS.toDays(seconds) + "d";
++            seconds %= 60 * 60 * 24;
++        }
++
++        if (seconds > 60 * 60) {
++            time += TimeUnit.SECONDS.toHours(seconds) + "h";
++            seconds %= 60 * 60;
++        }
++
++        if (seconds > 0) {
++            time += TimeUnit.SECONDS.toMinutes(seconds) + "m";
++        }
++        return time;
 +    }
 +
 +    private static void set(String path, Object val) {
@@ -208,7 +250,7 @@ index 0000000..2d50237
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 8110780..dd3abb8 100644
+index b542536..328857d 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -180,6 +180,10 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
@@ -223,7 +265,7 @@ index 8110780..dd3abb8 100644
              DedicatedServer.LOGGER.info("Generating keypair");
              this.a(MinecraftEncryption.b());
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 0590c06..8c163ee 100644
+index c386a60..f38b256 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -125,6 +125,8 @@ public abstract class World implements IBlockAccess {
@@ -244,7 +286,7 @@ index 0590c06..8c163ee 100644
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 7831a12..7e5870f 100644
+index d9992f1..7fae554 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -692,6 +692,7 @@ public final class CraftServer implements Server {
@@ -290,5 +332,5 @@ index 337aa29..979adad 100644
          };
  
 -- 
-2.7.3
+2.8.2
 

@@ -56,6 +56,8 @@ import EntitySquid
 import EntityWaterAnimal
 import FileIOThread
 import ItemBlock
+import NBTTagCompound
+import NBTTagList
 import PacketPlayInResourcePackStatus
 import PacketPlayInUseEntity
 import PacketPlayOutPlayerListHeaderFooter
@@ -68,6 +70,7 @@ import PathfinderWater
 import PersistentVillage
 import RemoteControlListener
 import TileEntityEnderChest
+import TileEntityLootable
 import WorldProvider
 
 cd "$workdir/Spigot/Spigot-Server/"
