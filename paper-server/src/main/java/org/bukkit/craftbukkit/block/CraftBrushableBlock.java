@@ -58,7 +58,8 @@ public class CraftBrushableBlock extends CraftBlockEntityState<BrushableBlockEnt
         this.setLootTable(this.getLootTable(), seed);
     }
 
-    private void setLootTable(LootTable table, long seed) {
+    @Override // Paper - this is now an override
+    public void setLootTable(LootTable table, long seed) { // Paper - make public since it overrides a public method
         this.getSnapshot().setLootTable(CraftLootTable.bukkitToMinecraft(table), seed);
     }
 
