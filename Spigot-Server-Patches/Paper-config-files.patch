@@ -22,7 +22,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.HashMap;
 +import java.util.List;
 +import java.util.Map;
++import java.util.concurrent.TimeUnit;
 +import java.util.logging.Level;
++import java.util.regex.Pattern;
 +
 +import net.minecraft.server.MinecraftServer;
 +import org.bukkit.Bukkit;
@@ -96,6 +98,46 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } catch (IOException ex) {
 +            Bukkit.getLogger().log(Level.SEVERE, "Could not save " + CONFIG_FILE, ex);
 +        }
++    }
++
++    private static final Pattern SPACE = Pattern.compile(" ");
++    private static final Pattern NOT_NUMERIC = Pattern.compile("[^-\\d.]");
++    public static int getSeconds(String str) {
++        str = SPACE.matcher(str).replaceAll("");
++        final char unit = str.charAt(str.length() - 1);
++        str = NOT_NUMERIC.matcher(str).replaceAll("");
++        double num;
++        try {
++            num = Double.parseDouble(str);
++        } catch (Exception e) {
++            num = 0D;
++        }
++        switch (unit) {
++            case 'd': num *= (double) 60*60*24; break;
++            case 'h': num *= (double) 60*60; break;
++            case 'm': num *= (double) 60; break;
++            default: case 's': break;
++        }
++        return (int) num;
++    }
++
++    protected static String timeSummary(int seconds) {
++        String time = "";
++
++        if (seconds > 60 * 60 * 24) {
++            time += TimeUnit.SECONDS.toDays(seconds) + "d";
++            seconds %= 60 * 60 * 24;
++        }
++
++        if (seconds > 60 * 60) {
++            time += TimeUnit.SECONDS.toHours(seconds) + "h";
++            seconds %= 60 * 60;
++        }
++
++        if (seconds > 0) {
++            time += TimeUnit.SECONDS.toMinutes(seconds) + "m";
++        }
++        return time;
 +    }
 +
 +    private static void set(String path, Object val) {
