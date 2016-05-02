@@ -73,6 +73,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
     };
     // Paper end
 
+    public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData; // Paper
     private CraftEntity bukkitEntity;
 
     public CraftEntity getBukkitEntity() {

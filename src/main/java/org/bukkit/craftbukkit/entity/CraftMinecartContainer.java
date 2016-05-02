@@ -47,7 +47,7 @@ public abstract class CraftMinecartContainer extends CraftMinecart implements Lo
         return getHandle().lootTableSeed;
     }
 
-    private void setLootTable(LootTable table, long seed) {
+    public void setLootTable(LootTable table, long seed) { // Paper
         MinecraftKey newKey = (table == null) ? null : CraftNamespacedKey.toMinecraft(table.getKey());
         getHandle().setLootTable(newKey, seed);
     }

@@ -19,6 +19,7 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
     public long lootTableSeed;
 
     // CraftBukkit start
+    { this.lootableData = new com.destroystokyo.paper.loottable.PaperLootableInventoryData(new com.destroystokyo.paper.loottable.PaperMinecartLootableInventory(this)); } // Paper
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     private int maxStack = MAX_STACK;
 
@@ -176,12 +177,13 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
     @Override
     protected void saveData(NBTTagCompound nbttagcompound) {
         super.saveData(nbttagcompound);
+        this.lootableData.saveNbt(nbttagcompound); // Paper
         if (this.lootTable != null) {
             nbttagcompound.setString("LootTable", this.lootTable.toString());
             if (this.lootTableSeed != 0L) {
                 nbttagcompound.setLong("LootTableSeed", this.lootTableSeed);
             }
-        } else {
+        } if (true) { // Paper - Always save the items, Table may stick around
             ContainerUtil.a(nbttagcompound, this.items);
         }
 
@@ -190,11 +192,12 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
     @Override
     protected void loadData(NBTTagCompound nbttagcompound) {
         super.loadData(nbttagcompound);
+        this.lootableData.loadNbt(nbttagcompound); // Paper
         this.items = NonNullList.a(this.getSize(), ItemStack.b);
         if (nbttagcompound.hasKeyOfType("LootTable", 8)) {
             this.lootTable = new MinecraftKey(nbttagcompound.getString("LootTable"));
             this.lootTableSeed = nbttagcompound.getLong("LootTableSeed");
-        } else {
+        } if (true) { // Paper - always load the items, table may still remain
             ContainerUtil.b(nbttagcompound, this.items);
         }
 
@@ -225,14 +228,15 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
     }
 
     public void d(@Nullable EntityHuman entityhuman) {
-        if (this.lootTable != null && this.world.getMinecraftServer() != null) {
+        if (this.lootableData.shouldReplenish(entityhuman) && this.world.getMinecraftServer() != null) { // Paper
             LootTable loottable = this.world.getMinecraftServer().getLootTableRegistry().getLootTable(this.lootTable);
 
             if (entityhuman instanceof EntityPlayer) {
                 CriterionTriggers.N.a((EntityPlayer) entityhuman, this.lootTable);
             }
 
-            this.lootTable = null;
+            //this.lootTable = null; // Paper
+            this.lootableData.processRefill(entityhuman); // Paper
             LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.world)).set(LootContextParameters.ORIGIN, this.getPositionVector()).a(this.lootTableSeed);
 
             if (entityhuman != null) {
