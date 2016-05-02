@@ -43,7 +43,7 @@ public enum PotionType {
     public boolean isInstant() {
         return effect != null && effect.isInstant();
     }
-    
+
     /**
      * Checks if the potion type has an upgraded state.
      * This refers to whether or not the potion type can be Tier 2,
@@ -64,13 +64,13 @@ public enum PotionType {
     public boolean isExtendable() {
         return extendable;
     }
-    
+
     /**
      * @deprecated Non-functional
      */
     @Deprecated
     public int getDamageValue() {
-        return 0;
+        return this.ordinal();
     }
 
     public int getMaxLevel() {
