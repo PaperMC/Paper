@@ -43,6 +43,7 @@ import BlockFurnace
 import BlockIceFrost
 import BlockPosition
 import BlockStateList
+import ChunkCache
 import ChunkProviderFlat
 import ChunkProviderGenerate
 import ChunkProviderHell
