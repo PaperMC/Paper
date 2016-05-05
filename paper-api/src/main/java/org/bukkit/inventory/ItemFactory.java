@@ -220,4 +220,20 @@ public interface ItemFactory {
     @NotNull
     net.kyori.adventure.text.Component displayName(@NotNull ItemStack itemStack);
     // Paper end - Adventure
+
+    // Paper start - add getI18NDisplayName
+    /**
+     * Gets the Display name as seen in the Client.
+     * Currently, the server only supports the English language. To override this,
+     * You must replace the language file embedded in the server jar.
+     *
+     * @param item Item to return Display name of
+     * @return Display name of Item
+     * @deprecated {@link ItemStack} implements {@link net.kyori.adventure.translation.Translatable}; use that and
+     * {@link net.kyori.adventure.text.Component#translatable(net.kyori.adventure.translation.Translatable)} instead.
+     */
+    @Nullable
+    @Deprecated(since = "1.18.1", forRemoval = true)
+    String getI18NDisplayName(@Nullable ItemStack item);
+    // Paper end - add getI18NDisplayName
 }
