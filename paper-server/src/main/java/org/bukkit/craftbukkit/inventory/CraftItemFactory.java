@@ -236,4 +236,19 @@ public final class CraftItemFactory implements ItemFactory {
         return CraftItemStack.asCraftMirror(CraftItemStack.asNMSCopy(item));
     }
     // Paper end - ensure server conversions API
+
+    // Paper start - add getI18NDisplayName
+    @Override
+    public String getI18NDisplayName(ItemStack item) {
+        net.minecraft.world.item.ItemStack nms = null;
+        if (item instanceof CraftItemStack) {
+            nms = ((CraftItemStack) item).handle;
+        }
+        if (nms == null) {
+            nms = CraftItemStack.asNMSCopy(item);
+        }
+
+        return nms != null ? nms.getItem().getName(nms).getString() : null;
+    }
+    // Paper end - add getI18NDisplayName
 }
