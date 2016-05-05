@@ -29,7 +29,7 @@ public abstract class LocaleLanguage {
 
     private static LocaleLanguage c() {
         Builder<String, String> builder = ImmutableMap.builder();
-        BiConsumer biconsumer = builder::put;
+        BiConsumer<String, String> biconsumer = builder::put; // Paper - decompile fix
 
         try {
             InputStream inputstream = LocaleLanguage.class.getResourceAsStream("/assets/minecraft/lang/en_us.json");
@@ -86,10 +86,12 @@ public abstract class LocaleLanguage {
 
     }
 
+    public static LocaleLanguage getInstance() { return a(); } // Paper - OBFHELPER
     public static LocaleLanguage a() {
         return LocaleLanguage.d;
     }
 
+    public String translateKey(String key) { return a(key); } // Paper - OBFHELPER
     public abstract String a(String s);
 
     public abstract boolean b(String s);
