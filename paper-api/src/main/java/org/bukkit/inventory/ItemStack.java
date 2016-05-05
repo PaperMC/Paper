@@ -566,7 +566,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
             }
         }
 
-        return result;
+        return result.ensureServerConversions(); // Paper
     }
 
     /**
@@ -641,6 +641,19 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      */
     public net.kyori.adventure.text.@NotNull Component displayName() {
         return Bukkit.getServer().getItemFactory().displayName(this);
+    }
+
+    /**
+     * Minecraft updates are converting simple item stacks into more complex NBT oriented Item Stacks.
+     *
+     * Use this method to ensure any desired data conversions are processed.
+     * The input itemstack will not be the same as the returned itemstack.
+     *
+     * @return A potentially Data Converted ItemStack
+     */
+    @NotNull
+    public ItemStack ensureServerConversions() {
+        return Bukkit.getServer().getItemFactory().ensureServerConversions(this);
     }
 
     /**
