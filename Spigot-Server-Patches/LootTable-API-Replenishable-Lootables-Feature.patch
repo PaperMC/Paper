@@ -78,6 +78,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    TileEntityLootable getTileEntity();
 +
 +    @Override
++    default LootableInventory getAPILootableInventory() {
++        return this;
++    }
++
++    @Override
 +    default World getNMSWorld() {
 +        return getTileEntity().getWorld();
 +    }
@@ -107,6 +112,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +public interface CraftLootableEntityInventory extends LootableEntityInventory, CraftLootableInventory {
 +
 +    net.minecraft.server.Entity getHandle();
++
++    @Override
++    default LootableInventory getAPILootableInventory() {
++        return this;
++    }
 +
 +    default Entity getEntity() {
 +        return getHandle().getBukkitEntity();
@@ -140,6 +150,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +public interface CraftLootableInventory extends CraftLootable, LootableInventory {
 +
 +    CraftLootableInventoryData getLootableData();
++    LootableInventory getAPILootableInventory();
 +
 +    @Override
 +    default boolean isRefillEnabled() {
@@ -304,7 +315,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +
 +        final Player bukkitPlayer = (Player) player.getBukkitEntity();
-+        LootableInventoryReplenishEvent event = new LootableInventoryReplenishEvent(bukkitPlayer, lootable);
++        LootableInventoryReplenishEvent event = new LootableInventoryReplenishEvent(bukkitPlayer, lootable.getAPILootableInventory());
 +        if (paperConfig.restrictPlayerReloot && hasPlayerLooted(player.getUniqueID())) {
 +            event.setCancelled(true);
 +        }
@@ -414,6 +425,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.destroystokyo.paper.loottable.CraftLootableInventoryData; // Paper
 +import com.destroystokyo.paper.loottable.CraftLootableInventory; // Paper
++import com.destroystokyo.paper.loottable.LootableInventory; // Paper
  import org.bukkit.craftbukkit.entity.CraftHumanEntity;
  import org.bukkit.entity.HumanEntity;
  import org.bukkit.inventory.InventoryHolder;
@@ -476,11 +488,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
 +
 +    // Paper start
-+    private CraftLootableInventoryData lootableData = new CraftLootableInventoryData(this);
++    private final CraftLootableInventoryData lootableData = new CraftLootableInventoryData(this);
 +
 +    @Override
 +    public CraftLootableInventoryData getLootableData() {
 +        return lootableData;
++    }
++
++    @Override
++    public LootableInventory getAPILootableInventory() {
++        return (LootableInventory) this.getBukkitEntity();
 +    }
 +
 +    @Override
@@ -516,6 +533,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +import com.destroystokyo.paper.loottable.CraftLootableInventoryData; // Paper
 +import com.destroystokyo.paper.loottable.CraftLootableInventory; // Paper
++import com.destroystokyo.paper.loottable.LootableInventory; // Paper
 +
  import java.util.Random;
  
@@ -570,11 +588,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
 +
 +    // Paper start - LootTable API
-+    private CraftLootableInventoryData lootableData = new CraftLootableInventoryData(this);
++    private final CraftLootableInventoryData lootableData = new CraftLootableInventoryData(this);
 +
 +    @Override
 +    public CraftLootableInventoryData getLootableData() {
 +        return lootableData;
++    }
++
++    @Override
++    public LootableInventory getAPILootableInventory() {
++        return (LootableInventory) getBukkitWorld().getBlockAt(MCUtil.toLocation(world, getPosition())).getState();
 +    }
 +
 +    @Override
