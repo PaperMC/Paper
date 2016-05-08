@@ -1,4 +1,4 @@
-From a19f9f1576418e180545e27121f2667b0d74fbc5 Mon Sep 17 00:00:00 2001
+From 94597bcbc07975928e87c481635d37e922e351a2 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 1 May 2016 21:19:14 -0400
 Subject: [PATCH] LootTable API & Replenishable Lootables Feature
@@ -61,10 +61,10 @@ index 0000000..36c36d1
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/CraftLootableBlockInventory.java b/src/main/java/com/destroystokyo/paper/loottable/CraftLootableBlockInventory.java
 new file mode 100644
-index 0000000..042fc6f
+index 0000000..20d236c
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/CraftLootableBlockInventory.java
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,33 @@
 +package com.destroystokyo.paper.loottable;
 +
 +import net.minecraft.server.BlockPosition;
@@ -76,6 +76,11 @@ index 0000000..042fc6f
 +public interface CraftLootableBlockInventory extends LootableBlockInventory, CraftLootableInventory {
 +
 +    TileEntityLootable getTileEntity();
++
++    @Override
++    default LootableInventory getAPILootableInventory() {
++        return this;
++    }
 +
 +    @Override
 +    default World getNMSWorld() {
@@ -95,10 +100,10 @@ index 0000000..042fc6f
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/CraftLootableEntityInventory.java b/src/main/java/com/destroystokyo/paper/loottable/CraftLootableEntityInventory.java
 new file mode 100644
-index 0000000..6407c58
+index 0000000..1150dee
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/CraftLootableEntityInventory.java
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,31 @@
 +package com.destroystokyo.paper.loottable;
 +
 +import net.minecraft.server.World;
@@ -107,6 +112,11 @@ index 0000000..6407c58
 +public interface CraftLootableEntityInventory extends LootableEntityInventory, CraftLootableInventory {
 +
 +    net.minecraft.server.Entity getHandle();
++
++    @Override
++    default LootableInventory getAPILootableInventory() {
++        return this;
++    }
 +
 +    default Entity getEntity() {
 +        return getHandle().getBukkitEntity();
@@ -127,10 +137,10 @@ index 0000000..6407c58
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/CraftLootableInventory.java b/src/main/java/com/destroystokyo/paper/loottable/CraftLootableInventory.java
 new file mode 100644
-index 0000000..87917d5
+index 0000000..6680976
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/CraftLootableInventory.java
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,88 @@
 +package com.destroystokyo.paper.loottable;
 +
 +import org.apache.commons.lang.Validate;
@@ -140,6 +150,7 @@ index 0000000..87917d5
 +public interface CraftLootableInventory extends CraftLootable, LootableInventory {
 +
 +    CraftLootableInventoryData getLootableData();
++    LootableInventory getAPILootableInventory();
 +
 +    @Override
 +    default boolean isRefillEnabled() {
@@ -220,7 +231,7 @@ index 0000000..87917d5
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/CraftLootableInventoryData.java b/src/main/java/com/destroystokyo/paper/loottable/CraftLootableInventoryData.java
 new file mode 100644
-index 0000000..4b2c3fd
+index 0000000..353a4ff
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/CraftLootableInventoryData.java
 @@ -0,0 +1,179 @@
@@ -304,7 +315,7 @@ index 0000000..4b2c3fd
 +
 +
 +        final Player bukkitPlayer = (Player) player.getBukkitEntity();
-+        LootableInventoryReplenishEvent event = new LootableInventoryReplenishEvent(bukkitPlayer, lootable);
++        LootableInventoryReplenishEvent event = new LootableInventoryReplenishEvent(bukkitPlayer, lootable.getAPILootableInventory());
 +        if (paperConfig.restrictPlayerReloot && hasPlayerLooted(player.getUniqueID())) {
 +            event.setCancelled(true);
 +        }
@@ -404,16 +415,17 @@ index 0000000..4b2c3fd
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/EntityMinecartContainer.java b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
-index 56e7de8..4b3cf93 100644
+index 56e7de8..92f92b8 100644
 --- a/src/main/java/net/minecraft/server/EntityMinecartContainer.java
 +++ b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
-@@ -3,17 +3,20 @@ package net.minecraft.server;
+@@ -3,17 +3,21 @@ package net.minecraft.server;
  import java.util.Random;
  // CraftBukkit start
  import java.util.List;
 +
 +import com.destroystokyo.paper.loottable.CraftLootableInventoryData; // Paper
 +import com.destroystokyo.paper.loottable.CraftLootableInventory; // Paper
++import com.destroystokyo.paper.loottable.LootableInventory; // Paper
  import org.bukkit.craftbukkit.entity.CraftHumanEntity;
  import org.bukkit.entity.HumanEntity;
  import org.bukkit.inventory.InventoryHolder;
@@ -430,7 +442,7 @@ index 56e7de8..4b3cf93 100644
  
      // CraftBukkit start
      public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
-@@ -130,6 +133,7 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
+@@ -130,6 +134,7 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
  
      protected void b(NBTTagCompound nbttagcompound) {
          super.b(nbttagcompound);
@@ -438,7 +450,7 @@ index 56e7de8..4b3cf93 100644
          if (this.c != null) {
              nbttagcompound.setString("LootTable", this.c.toString());
              if (this.d != 0L) {
-@@ -156,6 +160,7 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
+@@ -156,6 +161,7 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
      protected void a(NBTTagCompound nbttagcompound) {
          super.a(nbttagcompound);
          this.items = new ItemStack[this.getSize()];
@@ -446,7 +458,7 @@ index 56e7de8..4b3cf93 100644
          if (nbttagcompound.hasKeyOfType("LootTable", 8)) {
              this.c = new MinecraftKey(nbttagcompound.getString("LootTable"));
              this.d = nbttagcompound.getLong("LootTableSeed");
-@@ -217,10 +222,10 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
+@@ -217,10 +223,10 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
      }
  
      public void f(EntityHuman entityhuman) {
@@ -459,7 +471,7 @@ index 56e7de8..4b3cf93 100644
              Random random;
  
              if (this.d == 0L) {
-@@ -249,12 +254,47 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
+@@ -249,12 +255,52 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
  
      }
  
@@ -476,11 +488,16 @@ index 56e7de8..4b3cf93 100644
      }
 +
 +    // Paper start
-+    private CraftLootableInventoryData lootableData = new CraftLootableInventoryData(this);
++    private final CraftLootableInventoryData lootableData = new CraftLootableInventoryData(this);
 +
 +    @Override
 +    public CraftLootableInventoryData getLootableData() {
 +        return lootableData;
++    }
++
++    @Override
++    public LootableInventory getAPILootableInventory() {
++        return (LootableInventory) this.getBukkitEntity();
 +    }
 +
 +    @Override
@@ -508,14 +525,15 @@ index 56e7de8..4b3cf93 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/TileEntityLootable.java b/src/main/java/net/minecraft/server/TileEntityLootable.java
-index 437ac1e..2df98ff 100644
+index 437ac1e..7b73c50 100644
 --- a/src/main/java/net/minecraft/server/TileEntityLootable.java
 +++ b/src/main/java/net/minecraft/server/TileEntityLootable.java
-@@ -1,15 +1,19 @@
+@@ -1,15 +1,20 @@
  package net.minecraft.server;
  
 +import com.destroystokyo.paper.loottable.CraftLootableInventoryData; // Paper
 +import com.destroystokyo.paper.loottable.CraftLootableInventory; // Paper
++import com.destroystokyo.paper.loottable.LootableInventory; // Paper
 +
  import java.util.Random;
  
@@ -533,7 +551,7 @@ index 437ac1e..2df98ff 100644
          if (nbttagcompound.hasKeyOfType("LootTable", 8)) {
              this.m = new MinecraftKey(nbttagcompound.getString("LootTable"));
              this.n = nbttagcompound.getLong("LootTableSeed");
-@@ -20,6 +24,7 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
+@@ -20,6 +25,7 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
      }
  
      protected boolean d(NBTTagCompound nbttagcompound) {
@@ -541,7 +559,7 @@ index 437ac1e..2df98ff 100644
          if (this.m != null) {
              nbttagcompound.setString("LootTable", this.m.toString());
              if (this.n != 0L) {
-@@ -33,10 +38,10 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
+@@ -33,10 +39,10 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
      }
  
      protected void d(EntityHuman entityhuman) {
@@ -554,7 +572,7 @@ index 437ac1e..2df98ff 100644
              Random random;
  
              if (this.n == 0L) {
-@@ -56,12 +61,46 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
+@@ -56,12 +62,51 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
  
      }
  
@@ -570,11 +588,16 @@ index 437ac1e..2df98ff 100644
      }
 +
 +    // Paper start - LootTable API
-+    private CraftLootableInventoryData lootableData = new CraftLootableInventoryData(this);
++    private final CraftLootableInventoryData lootableData = new CraftLootableInventoryData(this);
 +
 +    @Override
 +    public CraftLootableInventoryData getLootableData() {
 +        return lootableData;
++    }
++
++    @Override
++    public LootableInventory getAPILootableInventory() {
++        return (LootableInventory) getBukkitWorld().getBlockAt(MCUtil.toLocation(world, getPosition())).getState();
 +    }
 +
 +    @Override
