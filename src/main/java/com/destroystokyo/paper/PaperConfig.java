@@ -229,4 +229,9 @@ public class PaperConfig {
     private static void enablePlayerCollisions() {
         enablePlayerCollisions = getBoolean("settings.enable-player-collisions", true);
     }
+
+    public static boolean saveEmptyScoreboardTeams = false;
+    private static void saveEmptyScoreboardTeams() {
+        saveEmptyScoreboardTeams = getBoolean("settings.save-empty-scoreboard-teams", false);
+    }
 }

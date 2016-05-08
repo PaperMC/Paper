@@ -174,6 +174,7 @@ public class PersistentScoreboard extends PersistentBase {
 
         while (iterator.hasNext()) {
             ScoreboardTeam scoreboardteam = (ScoreboardTeam) iterator.next();
+            if (!com.destroystokyo.paper.PaperConfig.saveEmptyScoreboardTeams && scoreboardteam.getPlayerNameSet().isEmpty()) continue; // Paper
             NBTTagCompound nbttagcompound = new NBTTagCompound();
 
             nbttagcompound.setString("Name", scoreboardteam.getName());
