@@ -59,6 +59,7 @@ import FileIOThread
 import ItemBlock
 import NBTTagCompound
 import NBTTagList
+import PersistentScoreboard
 import PacketPlayInResourcePackStatus
 import PacketPlayInUseEntity
 import PacketPlayOutPlayerListHeaderFooter
