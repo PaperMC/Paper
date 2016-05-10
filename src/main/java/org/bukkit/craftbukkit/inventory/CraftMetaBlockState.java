@@ -192,7 +192,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         if (blockEntityTag != null && material == Material.SHIELD) {
             blockEntityTag.setString("id", "Banner"); // Hack
         }
-        TileEntity te = blockEntityTag == null ? null : TileEntity.a(MinecraftServer.getServer(), blockEntityTag);
+        TileEntity te = blockEntityTag == null ? null : TileEntity.c(blockEntityTag);
 
         switch (material) {
         case SIGN:

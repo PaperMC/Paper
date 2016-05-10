@@ -546,7 +546,7 @@ public class CraftEventFactory {
             cause = DamageCause.MAGIC;
         } else if (source == DamageSource.FALL) {
             cause = DamageCause.FALL;
-        } else if (source == DamageSource.j) { // PAIL: rename
+        } else if (source == DamageSource.FLY_INTO_WALL) {
             cause = DamageCause.FLY_INTO_WALL;
         } else if (source == DamageSource.GENERIC) {
             return new EntityDamageEvent(entity.getBukkitEntity(), null, modifiers, modifierFunctions);

@@ -41,6 +41,7 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.LongHash;
 import org.bukkit.entity.*;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.minecart.CommandMinecart;
 import org.bukkit.entity.minecart.ExplosiveMinecart;
 import org.bukkit.entity.minecart.HopperMinecart;
 import org.bukkit.entity.minecart.PoweredMinecart;
@@ -125,7 +126,7 @@ public class CraftWorld implements World {
     }
 
     public Chunk getChunkAt(int x, int z) {
-        return this.world.getChunkProviderServer().getOrCreateChunkFast(x, z).bukkitChunk;
+        return this.world.getChunkProviderServer().getChunkAt(x, z).bukkitChunk;
     }
 
     public Chunk getChunkAt(Block block) {
@@ -133,7 +134,7 @@ public class CraftWorld implements World {
     }
 
     public boolean isChunkLoaded(int x, int z) {
-        return world.getChunkProviderServer().isChunkLoaded(x, z);
+        return world.getChunkProviderServer().isLoaded(x, z);
     }
 
     public Chunk[] getLoadedChunks() {
@@ -173,7 +174,10 @@ public class CraftWorld implements World {
             return false;
         }
 
-        world.getChunkProviderServer().queueUnload(x, z);
+        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().getLoadedChunkAt(x, z);
+        if (chunk != null) {
+            world.getChunkProviderServer().unload(chunk);
+        }
 
         return true;
     }
@@ -200,7 +204,7 @@ public class CraftWorld implements World {
         }
 
         world.getChunkProviderServer().unloadQueue.remove(x, z);
-        world.getChunkProviderServer().chunks.remove(LongHash.toLong(x, z));
+        world.getChunkProviderServer().chunks.remove(ChunkCoordIntPair.a(x, z));
 
         // Update neighbor counts
         for (int xx = -2; xx < 3; xx++) {
@@ -209,7 +213,7 @@ public class CraftWorld implements World {
                     continue;
                 }
 
-                net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
+                net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getLoadedChunkAt(chunk.locX + x, chunk.locZ + z);
                 if (neighbor != null) {
                     neighbor.setNeighborUnloaded(-xx, -zz);
                     chunk.setNeighborUnloaded(xx, zz);
@@ -228,7 +232,7 @@ public class CraftWorld implements World {
         net.minecraft.server.Chunk chunk = null;
 
         chunk = world.getChunkProviderServer().chunkGenerator.getOrCreateChunk(x, z);
-        PlayerChunk playerChunk = world.getPlayerChunkMap().b/*PAIL: Rename*/(x, z);
+        PlayerChunk playerChunk = world.getPlayerChunkMap().getChunk(x, z);
         if (playerChunk != null) {
             playerChunk.chunk = chunk;
         }
@@ -272,7 +276,7 @@ public class CraftWorld implements World {
         }
 
         world.getChunkProviderServer().unloadQueue.remove(x, z);
-        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().chunks.get(LongHash.toLong(x, z));
+        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().chunks.get(ChunkCoordIntPair.a(x, z));
 
         if (chunk == null) {
             chunk = world.getChunkProviderServer().getOrLoadChunkAt(x, z);
@@ -282,7 +286,7 @@ public class CraftWorld implements World {
 
     private void chunkLoadPostProcess(net.minecraft.server.Chunk chunk, int cx, int cz) {
         if (chunk != null) {
-            world.getChunkProviderServer().chunks.put(LongHash.toLong(cx, cz), chunk);
+            world.getChunkProviderServer().chunks.put(ChunkCoordIntPair.a(cx, cz), chunk);
 
             chunk.addEntities();
 
@@ -293,7 +297,7 @@ public class CraftWorld implements World {
                         continue;
                     }
 
-                    net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
+                    net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getLoadedChunkAt(chunk.locX + x, chunk.locZ + z);
                     if (neighbor != null) {
                         neighbor.setNeighborLoaded(-x, -z);
                         chunk.setNeighborLoaded(x, z);
@@ -749,7 +753,7 @@ public class CraftWorld implements World {
         }
 
         AxisAlignedBB bb = new AxisAlignedBB(location.getX() - x, location.getY() - y, location.getZ() - z, location.getX() + x, location.getY() + y, location.getZ() + z);
-        List<net.minecraft.server.Entity> entityList = getHandle().a((net.minecraft.server.Entity) null, bb, null); // PAIL : rename
+        List<net.minecraft.server.Entity> entityList = getHandle().getEntities((net.minecraft.server.Entity) null, bb, null);
         List<Entity> bukkitEntityList = new ArrayList<org.bukkit.entity.Entity>(entityList.size());
         for (Object entity : entityList) {
             bukkitEntityList.add(((net.minecraft.server.Entity) entity).getBukkitEntity());
@@ -961,7 +965,7 @@ public class CraftWorld implements World {
                 entity = new EntityThrownExpBottle(world);
                 entity.setPositionRotation(x, y, z, 0, 0);
             } else if (EnderPearl.class.isAssignableFrom(clazz)) {
-                entity = new EntityEnderPearl(world, null);
+                entity = new EntityEnderPearl(world);
                 entity.setPositionRotation(x, y, z, 0, 0);
             } else if (ThrownPotion.class.isAssignableFrom(clazz)) {
                 if (LingeringPotion.class.isAssignableFrom(clazz)) {
@@ -997,6 +1001,8 @@ public class CraftWorld implements World {
                 entity = new EntityMinecartHopper(world, x, y, z);
             } else if (SpawnerMinecart.class.isAssignableFrom(clazz)) {
                 entity = new EntityMinecartMobSpawner(world, x, y, z);
+            } else if (CommandMinecart.class.isAssignableFrom(clazz)) {
+                entity = new EntityMinecartCommandBlock(world, x, y, z);
             } else { // Default to rideable minecart for pre-rideable compatibility
                 entity = new EntityMinecartRideable(world, x, y, z);
             }
@@ -1514,7 +1520,7 @@ public class CraftWorld implements World {
             }
 
             // Add unload request
-            cps.queueUnload(chunk.locX, chunk.locZ);
+            cps.unload(chunk);
         }
     }
 }

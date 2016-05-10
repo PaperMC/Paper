@@ -93,7 +93,7 @@ public class CraftVillager extends CraftAgeable implements Villager, InventoryHo
 
     @Override
     public HumanEntity getTrader() {
-        EntityHuman eh = getHandle().t_(); // PAIL: rename t_ -> getTrader
+        EntityHuman eh = getHandle().getTrader();
         return eh == null ? null : eh.getBukkitEntity();
     }
 

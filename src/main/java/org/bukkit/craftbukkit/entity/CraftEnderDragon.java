@@ -45,12 +45,12 @@ public class CraftEnderDragon extends CraftComplexLivingEntity implements EnderD
 
     @Override
     public Phase getPhase() {
-        return Phase.values()[getHandle().getDataWatcher().get(EntityEnderDragon.a)]; // PAIL: Rename PHASE 
+        return Phase.values()[getHandle().getDataWatcher().get(EntityEnderDragon.PHASE)];
     }
 
     @Override
     public void setPhase(Phase phase) {
-        getHandle().cT().a(getMinecraftPhase(phase)); // PAIL: Rename getDragonControllerManager setPhase
+        getHandle().getDragonControllerManager().setControllerPhase(getMinecraftPhase(phase));
     }
     
     public static Phase getBukkitPhase(DragonControllerPhase phase) {
@@ -58,6 +58,6 @@ public class CraftEnderDragon extends CraftComplexLivingEntity implements EnderD
     }
     
     public static DragonControllerPhase getMinecraftPhase(Phase phase) {
-        return DragonControllerPhase.a(phase.ordinal()); // PAIL: Rename getById
+        return DragonControllerPhase.getById(phase.ordinal());
     }
 }
