@@ -1,8 +1,8 @@
 --- a/net/minecraft/server/EntityInsentient.java
 +++ b/net/minecraft/server/EntityInsentient.java
-@@ -8,6 +8,15 @@
- import java.util.Random;
+@@ -9,6 +9,15 @@
  import java.util.UUID;
+ import javax.annotation.Nullable;
  
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -16,7 +16,7 @@
  public abstract class EntityInsentient extends EntityLiving {
  
      private static final DataWatcherObject<Byte> a = DataWatcher.a(EntityInsentient.class, DataWatcherRegistry.a);
-@@ -60,6 +69,9 @@
+@@ -61,6 +70,9 @@
              this.r();
          }
  
@@ -26,10 +26,23 @@
      }
  
      protected void r() {}
-@@ -110,7 +122,38 @@
+@@ -75,9 +87,10 @@
      }
  
-     public void setGoalTarget(EntityLiving entityliving) {
+     public float a(PathType pathtype) {
+-        Float float = (Float) this.bA.get(pathtype);
++        // CraftBukkit - decompile error
++        Float ofloat = (Float) this.bA.get(pathtype);
+ 
+-        return float == null ? pathtype.a() : float.floatValue();
++        return ofloat == null ? pathtype.a() : ofloat.floatValue();
+     }
+ 
+     public void a(PathType pathtype, float f) {
+@@ -114,7 +127,38 @@
+     }
+ 
+     public void setGoalTarget(@Nullable EntityLiving entityliving) {
 +        // CraftBukkit start - fire event
 +        setGoalTarget(entityliving, EntityTargetEvent.TargetReason.UNKNOWN, true);
 +    }
@@ -65,7 +78,7 @@
      }
  
      public boolean d(Class<? extends EntityLiving> oclass) {
-@@ -321,11 +364,20 @@
+@@ -327,11 +371,20 @@
  
      public void a(NBTTagCompound nbttagcompound) {
          super.a(nbttagcompound);
@@ -88,7 +101,7 @@
          NBTTagList nbttaglist;
          int i;
  
-@@ -549,11 +601,11 @@
+@@ -556,11 +609,11 @@
                  double d2 = entityhuman.locZ - this.locZ;
                  double d3 = d0 * d0 + d1 * d1 + d2 * d2;
  
@@ -102,9 +115,9 @@
                      this.die();
                  } else if (d3 < 1024.0D) {
                      this.ticksFarFromPlayer = 0;
-@@ -931,9 +983,21 @@
+@@ -940,9 +993,21 @@
  
-     public final boolean a(EntityHuman entityhuman, ItemStack itemstack, EnumHand enumhand) {
+     public final boolean a(EntityHuman entityhuman, @Nullable ItemStack itemstack, EnumHand enumhand) {
          if (this.isLeashed() && this.getLeashHolder() == entityhuman) {
 +            // CraftBukkit start - fire PlayerUnleashEntityEvent
 +            if (CraftEventFactory.callPlayerUnleashEntityEvent(this, entityhuman).isCancelled()) {
@@ -124,9 +137,9 @@
              this.setLeashHolder(entityhuman, true);
              --itemstack.count;
              return true;
-@@ -953,10 +1017,12 @@
+@@ -962,10 +1027,12 @@
  
-         if (this.bC) {
+         if (this.bD) {
              if (!this.isAlive()) {
 +                this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.PLAYER_UNLEASH)); // CraftBukkit
                  this.unleash(true, true);
@@ -137,8 +150,8 @@
                  this.unleash(true, true);
              }
          }
-@@ -967,7 +1033,9 @@
-             this.bC = false;
+@@ -976,7 +1043,9 @@
+             this.bD = false;
              this.leashHolder = null;
              if (!this.world.isClientSide && flag1) {
 +                this.forceDrops = true; // CraftBukkit
@@ -147,7 +160,7 @@
              }
  
              if (!this.world.isClientSide && flag && this.world instanceof WorldServer) {
-@@ -1037,6 +1105,7 @@
+@@ -1046,6 +1115,7 @@
  
                  this.leashHolder = entityleash;
              } else {

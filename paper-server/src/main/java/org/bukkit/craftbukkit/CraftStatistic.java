@@ -136,7 +136,7 @@ public class CraftStatistic {
                 return monsteregginfo.killEntityStatistic;
             }
             if (stat == org.bukkit.Statistic.ENTITY_KILLED_BY) {
-                return monsteregginfo.e; // PAIL: rename
+                return monsteregginfo.killedByEntityStatistic;
             }
         }
         return null;

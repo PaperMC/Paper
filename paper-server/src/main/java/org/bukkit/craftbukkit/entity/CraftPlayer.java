@@ -362,8 +362,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
 
         IChatBaseComponent[] components = CraftSign.sanitizeLines(lines);
+        TileEntitySign sign = new TileEntitySign();
+        sign.a(new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ())); // PAIL: rename
+        System.arraycopy(components, 0, sign.lines, 0, sign.lines.length);
 
-        getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateSign(getHandle().world, new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), components));
+        getHandle().playerConnection.sendPacket(sign.getUpdatePacket());
     }
 
     @Override

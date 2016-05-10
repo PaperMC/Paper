@@ -190,9 +190,9 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
             case NAME_TAG_VISIBILITY:
                 return OptionStatus.values()[team.getNameTagVisibility().ordinal()];
             case DEATH_MESSAGE_VISIBILITY:
-                return OptionStatus.values()[team.j().ordinal()]; // PAIL: rename
+                return OptionStatus.values()[team.getDeathMessageVisibility().ordinal()];
             case COLLISION_RULE:
-                return OptionStatus.values()[team.k().ordinal()]; // PAIL: rename
+                return OptionStatus.values()[team.getCollisionRule().ordinal()];
             default:
                 throw new IllegalArgumentException("Unrecognised option " + option);
         }
@@ -207,10 +207,10 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
                 team.setNameTagVisibility(EnumNameTagVisibility.values()[status.ordinal()]);
                 break;
             case DEATH_MESSAGE_VISIBILITY:
-                team.b(EnumNameTagVisibility.values()[status.ordinal()]); // PAIL: rename
+                team.setDeathMessageVisibility(EnumNameTagVisibility.values()[status.ordinal()]);
                 break;
             case COLLISION_RULE:
-                team.a(ScoreboardTeamBase.EnumTeamPush.values()[status.ordinal()]); // PAIL: rename
+                team.setCollisionRule(ScoreboardTeamBase.EnumTeamPush.values()[status.ordinal()]);
                 break;
             default:
                 throw new IllegalArgumentException("Unrecognised option " + option);

@@ -532,13 +532,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public void setAI(boolean ai) {
         if (this.getHandle() instanceof EntityInsentient) {
-            ((EntityInsentient) this.getHandle()).m(!ai); // PAIL: rename
+            ((EntityInsentient) this.getHandle()).setAI(!ai);
         }
     }
 
     @Override
     public boolean hasAI() {
-        return (this.getHandle() instanceof EntityInsentient) ? !((EntityInsentient) this.getHandle()).cR() : false; // PAIL: rename
+        return (this.getHandle() instanceof EntityInsentient) ? !((EntityInsentient) this.getHandle()).hasAI(): false;
     }
 
     @Override

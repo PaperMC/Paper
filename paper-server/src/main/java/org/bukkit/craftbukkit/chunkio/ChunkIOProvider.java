@@ -2,12 +2,12 @@ package org.bukkit.craftbukkit.chunkio;
 
 import java.io.IOException;
 import net.minecraft.server.Chunk;
+import net.minecraft.server.ChunkCoordIntPair;
 import net.minecraft.server.ChunkRegionLoader;
 import net.minecraft.server.NBTTagCompound;
 
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.util.AsynchronousExecutor;
-import org.bukkit.craftbukkit.util.LongHash;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -41,7 +41,7 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
 
         queuedChunk.loader.loadEntities(chunk, queuedChunk.compound.getCompound("Level"), queuedChunk.world);
         chunk.setLastSaved(queuedChunk.provider.world.getTime());
-        queuedChunk.provider.chunks.put(LongHash.toLong(queuedChunk.x, queuedChunk.z), chunk);
+        queuedChunk.provider.chunks.put(ChunkCoordIntPair.a(queuedChunk.x, queuedChunk.z), chunk);
         chunk.addEntities();
 
         if (queuedChunk.provider.chunkGenerator != null) {
@@ -60,7 +60,7 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
                     continue;
                 }
 
-                Chunk neighbor = queuedChunk.provider.getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
+                Chunk neighbor = queuedChunk.provider.getLoadedChunkAt(chunk.locX + x, chunk.locZ + z);
                 if (neighbor != null) {
                     neighbor.setNeighborLoaded(-x, -z);
                     chunk.setNeighborLoaded(x, z);

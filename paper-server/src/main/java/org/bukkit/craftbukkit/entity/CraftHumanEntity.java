@@ -62,7 +62,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     public MainHand getMainHand() {
-        return getHandle().cr() == EnumMainHand.LEFT ? MainHand.LEFT : MainHand.RIGHT; // PAIL Rename cr()->getMainHand()
+        return getHandle().getMainHand()== EnumMainHand.LEFT ? MainHand.LEFT : MainHand.RIGHT;
     }
 
     public ItemStack getItemInHand() {

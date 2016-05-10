@@ -28,29 +28,29 @@ public class CraftEndGateway extends CraftBlockState implements EndGateway {
     
     @Override
     public Location getExitLocation() {
-        BlockPosition pos = gateway.h; // PAIL: Rename exitLocation
+        BlockPosition pos = gateway.exitPortal;
         return pos == null ? null : new Location(world, pos.getX(), pos.getY(), pos.getZ());
     }
 
     @Override
     public void setExitLocation(Location location) {
         if (location == null) {
-            gateway.h = null;
+            gateway.exitPortal = null;
         } else if (location.getWorld() != world) {
             throw new IllegalArgumentException("Cannot set exit location to different world");
         } else {
-            gateway.h = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+            gateway.exitPortal = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
         }
     }
 
     @Override
     public boolean isExactTeleport() {
-        return gateway.i; // PAIL: Rename exactTeleport
+        return gateway.exactTeleport;
     }
 
     @Override
     public void setExactTeleport(boolean exact) {
-        gateway.i = exact;
+        gateway.exactTeleport = exact;
     }
 
     @Override
