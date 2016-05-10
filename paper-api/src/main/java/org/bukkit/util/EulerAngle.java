@@ -20,8 +20,8 @@ public class EulerAngle {
      * passed angle in radians
      *
      * @param x the angle for the x axis in radians
-     * @param y the angle for the x axis in radians
-     * @param z the angle for the x axis in radians
+     * @param y the angle for the y axis in radians
+     * @param z the angle for the z axis in radians
      */
     public EulerAngle(double x, double y, double z) {
         this.x = x;
