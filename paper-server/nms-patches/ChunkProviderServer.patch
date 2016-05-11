@@ -1,13 +1,12 @@
 --- a/net/minecraft/server/ChunkProviderServer.java
 +++ b/net/minecraft/server/ChunkProviderServer.java
-@@ -14,10 +14,17 @@
+@@ -14,10 +14,16 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
 +// CraftBukkit start
 +import org.bukkit.Server;
 +import org.bukkit.craftbukkit.chunkio.ChunkIOExecutor;
-+import org.bukkit.craftbukkit.util.LongHashSet;
 +import org.bukkit.event.world.ChunkUnloadEvent;
 +// CraftBukkit end
 +
@@ -15,27 +14,11 @@
  
      private static final Logger a = LogManager.getLogger();
 -    private final Set<Long> unloadQueue = Sets.newHashSet();
-+    public final LongHashSet unloadQueue = new LongHashSet(); // CraftBukkit - LongHashSet
++    public final it.unimi.dsi.fastutil.longs.LongSet unloadQueue = new it.unimi.dsi.fastutil.longs.LongArraySet(); // CraftBukkit Set -> LongSet
      public final ChunkGenerator chunkGenerator;
      private final IChunkLoader chunkLoader;
      public final Long2ObjectMap<Chunk> chunks = new Long2ObjectOpenHashMap(8192);
-@@ -35,7 +42,14 @@
- 
-     public void unload(Chunk chunk) {
-         if (this.world.worldProvider.c(chunk.locX, chunk.locZ)) {
--            this.unloadQueue.add(Long.valueOf(ChunkCoordIntPair.a(chunk.locX, chunk.locZ)));
-+            // CraftBukkit start
-+            this.unloadQueue.add(chunk.locX, chunk.locZ);
-+
-+            Chunk c = chunks.get(ChunkCoordIntPair.a(chunk.locX, chunk.locZ));
-+            if (c != null) {
-+                c.mustSave = true;
-+            }
-+            // CraftBukkit end
-             chunk.d = true;
-         }
- 
-@@ -69,19 +83,68 @@
+@@ -69,19 +75,68 @@
          Chunk chunk = this.getLoadedChunkAt(i, j);
  
          if (chunk == null) {
@@ -105,7 +88,7 @@
  
          if (chunk == null) {
              long k = ChunkCoordIntPair.a(i, j);
-@@ -97,9 +160,37 @@
+@@ -97,9 +152,37 @@
                  crashreportsystemdetails.a("Generator", (Object) this.chunkGenerator);
                  throw new ReportedException(crashreport);
              }
@@ -143,7 +126,7 @@
              chunk.loadNearby(this, this.chunkGenerator);
          }
  
-@@ -146,10 +237,12 @@
+@@ -146,10 +229,12 @@
  
      public boolean a(boolean flag) {
          int i = 0;
@@ -159,54 +142,33 @@
  
              if (flag) {
                  this.saveChunkNOP(chunk);
-@@ -174,22 +267,41 @@
+@@ -182,6 +267,29 @@
+                     Chunk chunk = (Chunk) this.chunks.get(olong);
  
-     public boolean unloadChunks() {
-         if (!this.world.savingDisabled) {
--            if (!this.unloadQueue.isEmpty()) {
--                Iterator iterator = this.unloadQueue.iterator();
--
--                for (int i = 0; i < 100 && iterator.hasNext(); iterator.remove()) {
--                    Long olong = (Long) iterator.next();
--                    Chunk chunk = (Chunk) this.chunks.get(olong);
-+            // CraftBukkit start
-+            Server server = this.world.getServer();
-+            for (int i = 0; i < 100 && !this.unloadQueue.isEmpty(); ++i) {
-+                long chunkcoordinates = this.unloadQueue.popFirst();
-+                Chunk chunk = this.chunks.get(chunkcoordinates);
-+                if (chunk == null) continue;
+                     if (chunk != null && chunk.d) {
++                        // CraftBukkit start
++                        ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
++                        this.world.getServer().getPluginManager().callEvent(event);
++                        if (event.isCancelled()) {
++                            continue;
++                        }
 +
-+                ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
-+                server.getPluginManager().callEvent(event);
-+                if (!event.isCancelled()) {
- 
--                    if (chunk != null && chunk.d) {
-+                    if (chunk != null) {
++                        // Update neighbor counts
++                        for (int x = -2; x < 3; x++) {
++                            for (int z = -2; z < 3; z++) {
++                                if (x == 0 && z == 0) {
++                                    continue;
++                                }
++
++                                Chunk neighbor = this.getLoadedChunkAt(chunk.locX + x, chunk.locZ + z);
++                                if (neighbor != null) {
++                                    neighbor.setNeighborUnloaded(-x, -z);
++                                    chunk.setNeighborUnloaded(x, z);
++                                }
++                            }
++                        }
++                        // CraftBukkit end
++
                          chunk.removeEntities();
                          this.saveChunk(chunk);
                          this.saveChunkNOP(chunk);
--                        this.chunks.remove(olong);
--                        ++i;
-+                        this.chunks.remove(chunkcoordinates); // CraftBukkit
-+                    }
-+
-+                    // Update neighbor counts
-+                    for (int x = -2; x < 3; x++) {
-+                        for (int z = -2; z < 3; z++) {
-+                            if (x == 0 && z == 0) {
-+                                continue;
-+                            }
-+
-+                            Chunk neighbor = this.getLoadedChunkAt(chunk.locX + x, chunk.locZ + z);
-+                            if (neighbor != null) {
-+                                neighbor.setNeighborUnloaded(-x, -z);
-+                                chunk.setNeighborUnloaded(x, z);
-+                            }
-+                        }
-                     }
-                 }
-             }
-+            // CraftBukkit end
- 
-             this.chunkLoader.a();
-         }
