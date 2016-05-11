@@ -203,7 +203,7 @@ public class CraftWorld implements World {
             world.getChunkProviderServer().saveChunkNOP(chunk);
         }
 
-        world.getChunkProviderServer().unloadQueue.remove(x, z);
+        world.getChunkProviderServer().unloadQueue.remove(ChunkCoordIntPair.a(x, z));
         world.getChunkProviderServer().chunks.remove(ChunkCoordIntPair.a(x, z));
 
         // Update neighbor counts
@@ -227,7 +227,7 @@ public class CraftWorld implements World {
     public boolean regenerateChunk(int x, int z) {
         unloadChunk0(x, z, false, false);
 
-        world.getChunkProviderServer().unloadQueue.remove(x, z);
+        world.getChunkProviderServer().unloadQueue.remove(ChunkCoordIntPair.a(x, z));
 
         net.minecraft.server.Chunk chunk = null;
 
@@ -275,7 +275,7 @@ public class CraftWorld implements World {
             return world.getChunkProviderServer().getChunkAt(x, z) != null;
         }
 
-        world.getChunkProviderServer().unloadQueue.remove(x, z);
+        world.getChunkProviderServer().unloadQueue.remove(ChunkCoordIntPair.a(x, z));
         net.minecraft.server.Chunk chunk = world.getChunkProviderServer().chunks.get(ChunkCoordIntPair.a(x, z));
 
         if (chunk == null) {
@@ -1515,7 +1515,7 @@ public class CraftWorld implements World {
             }
 
             // Already unloading?
-            if (cps.unloadQueue.contains(chunk.locX, chunk.locZ)) {
+            if (cps.unloadQueue.contains(ChunkCoordIntPair.a(chunk.locX, chunk.locZ))) {
                 continue;
             }
 
