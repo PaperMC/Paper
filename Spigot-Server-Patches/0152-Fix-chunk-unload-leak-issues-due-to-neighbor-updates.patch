@@ -1,0 +1,79 @@
+From 0e5163d49b0f3e4f8f0db6d6c65afd55256e7487 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 12 May 2016 01:55:17 -0400
+Subject: [PATCH] Fix chunk unload leak issues due to neighbor updates
+
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 8ee8e80..694f3d5 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -78,6 +78,12 @@ public class ChunkProviderServer implements IChunkProvider {
+         }
+ 
+     }
++    // Paper start
++    @Nullable
++    public Chunk getLoadedChunkAtWithoutMarkingActive(int i, int j) {
++        return this.chunks.get(ChunkCoordIntPair.a(i, j));
++    }
++    // Paper end
+ 
+     @Nullable
+     public Chunk getLoadedChunkAt(int i, int j) {
+@@ -197,7 +203,7 @@ public class ChunkProviderServer implements IChunkProvider {
+                         continue;
+                     }
+ 
+-                    Chunk neighbor = this.getLoadedChunkAt(chunk.locX + x, chunk.locZ + z);
++                    Chunk neighbor = this.getLoadedChunkAtWithoutMarkingActive(chunk.locX + x, chunk.locZ + z); // Paper
+                     if (neighbor != null) {
+                         neighbor.setNeighborLoaded(-x, -z);
+                         chunk.setNeighborLoaded(x, z);
+@@ -318,7 +324,7 @@ public class ChunkProviderServer implements IChunkProvider {
+                                     continue;
+                                 }
+ 
+-                                Chunk neighbor = this.chunks.get(ChunkCoordIntPair.a(chunk.locX + x, chunk.locZ + z));
++                                Chunk neighbor = this.getLoadedChunkAtWithoutMarkingActive(chunk.locX + x, chunk.locZ + z); // Paper
+                                 if (neighbor != null) {
+                                     neighbor.setNeighborUnloaded(-x, -z);
+                                     chunk.setNeighborUnloaded(x, z);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 1adfc03..8246964 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -241,7 +241,7 @@ public class CraftWorld implements World {
+                     continue;
+                 }
+ 
+-                net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getLoadedChunkAt(chunk.locX + x, chunk.locZ + z);
++                net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getLoadedChunkAtWithoutMarkingActive(chunk.locX + x, chunk.locZ + z); // Paper
+                 if (neighbor != null) {
+                     neighbor.setNeighborUnloaded(-xx, -zz);
+                     chunk.setNeighborUnloaded(xx, zz);
+@@ -328,7 +328,7 @@ public class CraftWorld implements World {
+                         continue;
+                     }
+ 
+-                    net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getLoadedChunkAt(chunk.locX + x, chunk.locZ + z);
++                    net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getLoadedChunkAtWithoutMarkingActive(chunk.locX + x, chunk.locZ + z); // Paper
+                     if (neighbor != null) {
+                         neighbor.setNeighborLoaded(-x, -z);
+                         chunk.setNeighborLoaded(x, z);
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
+index 7b61b14..a1668e2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
+@@ -62,7 +62,7 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
+                     continue;
+                 }
+ 
+-                Chunk neighbor = queuedChunk.provider.getLoadedChunkAt(chunk.locX + x, chunk.locZ + z);
++                Chunk neighbor = queuedChunk.provider.getLoadedChunkAtWithoutMarkingActive(chunk.locX + x, chunk.locZ + z); // Paper
+                 if (neighbor != null) {
+                     neighbor.setNeighborLoaded(-x, -z);
+                     chunk.setNeighborLoaded(x, z);
+-- 
+2.8.2
+
