@@ -1,0 +1,41 @@
+From 16c55fb0b6c3638b99225963274e14d316f6e411 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 18 Mar 2016 15:12:22 -0400
+Subject: [PATCH] Configurable Non Player Arrow Despawn Rate
+
+Can set a much shorter despawn rate for arrows that players can not pick up.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 8875559..50e891f 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -276,4 +276,13 @@ public class PaperWorldConfig {
+     private void allowLeashingUndeadHorse() {
+         allowLeashingUndeadHorse = getBoolean("allow-leashing-undead-horse", false);
+     }
++
++    public int nonPlayerArrowDespawnRate = -1;
++    private void nonPlayerArrowDespawnRate() {
++        nonPlayerArrowDespawnRate = getInt("non-player-arrow-despawn-rate", -1);
++        if (nonPlayerArrowDespawnRate == -1) {
++            nonPlayerArrowDespawnRate = spigotConfig.arrowDespawnRate;
++        }
++        log("Non Player Arrow Despawn Rate: " + nonPlayerArrowDespawnRate);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityArrow.java b/src/main/java/net/minecraft/server/EntityArrow.java
+index 29b6f16..c2ee9ce 100644
+--- a/src/main/java/net/minecraft/server/EntityArrow.java
++++ b/src/main/java/net/minecraft/server/EntityArrow.java
+@@ -145,7 +145,7 @@ public abstract class EntityArrow extends Entity implements IProjectile {
+ 
+             if (block == this.av && i == this.aw) {
+                 ++this.ax;
+-                if (this.ax >= world.spigotConfig.arrowDespawnRate) { // Spigot - First int after shooter
++                if (this.ax >= (fromPlayer != PickupStatus.DISALLOWED ? world.spigotConfig.arrowDespawnRate : world.paperConfig.nonPlayerArrowDespawnRate)) { // Spigot - First int after shooter // Paper
+                     this.die();
+                 }
+             } else {
+-- 
+2.8.2
+

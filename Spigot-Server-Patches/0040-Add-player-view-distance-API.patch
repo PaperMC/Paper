@@ -1,14 +1,14 @@
-From a957633c889b9135b6f3a6fc0c9cf28d30beeb4a Mon Sep 17 00:00:00 2001
+From 515d4a8639a67827a06af6b0d6d8dacb9f19d653 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Wed, 2 Mar 2016 14:35:27 -0600
 Subject: [PATCH] Add player view distance API
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index dffc6d9..184b9c2 100644
+index 48376e8..032c514 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
-@@ -53,6 +53,15 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -54,6 +54,15 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
      public boolean f;
      public int ping;
      public boolean viewingCredits;
@@ -25,10 +25,10 @@ index dffc6d9..184b9c2 100644
      // CraftBukkit start
      public String displayName;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 8ef7eb2..d7cbe31 100644
+index b0249ff..77e9187 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -43,7 +43,7 @@ public class PlayerChunkMap {
+@@ -46,7 +46,7 @@ public class PlayerChunkMap {
      private final List<PlayerChunk> g = Lists.newLinkedList();
      private final List<PlayerChunk> h = Lists.newLinkedList();
      private final List<PlayerChunk> i = Lists.newArrayList();
@@ -37,7 +37,7 @@ index 8ef7eb2..d7cbe31 100644
      private long k;
      private boolean l = true;
      private boolean m = true;
-@@ -284,8 +284,11 @@ public class PlayerChunkMap {
+@@ -288,8 +288,11 @@ public class PlayerChunkMap {
          int i = (int) entityplayer.d >> 4;
          int j = (int) entityplayer.e >> 4;
  
@@ -48,10 +48,10 @@ index 8ef7eb2..d7cbe31 100644
 +        for (int k = i - viewDistance; k <= i + viewDistance; ++k) {
 +            for (int l = j - viewDistance; l <= j + viewDistance; ++l) {
 +                // Paper end
-                 PlayerChunk playerchunk = this.b(k, l);
+                 PlayerChunk playerchunk = this.getChunk(k, l);
  
                  if (playerchunk != null) {
-@@ -315,7 +318,9 @@ public class PlayerChunkMap {
+@@ -319,7 +322,9 @@ public class PlayerChunkMap {
          if (d2 >= 64.0D) {
              int k = (int) entityplayer.d >> 4;
              int l = (int) entityplayer.e >> 4;
@@ -62,7 +62,7 @@ index 8ef7eb2..d7cbe31 100644
              int j1 = i - k;
              int k1 = j - l;
  
-@@ -324,7 +329,7 @@ public class PlayerChunkMap {
+@@ -328,7 +333,7 @@ public class PlayerChunkMap {
              if (j1 != 0 || k1 != 0) {
                  for (int l1 = i - i1; l1 <= i + i1; ++l1) {
                      for (int i2 = j - i1; i2 <= j + i1; ++i2) {
@@ -71,7 +71,7 @@ index 8ef7eb2..d7cbe31 100644
                              // this.c(l1, i2).a(entityplayer);
                              chunksToLoad.add(new ChunkCoordIntPair(l1, i2)); // CraftBukkit
                          }
-@@ -471,4 +476,42 @@ public class PlayerChunkMap {
+@@ -480,4 +485,20 @@ public class PlayerChunkMap {
          }
      }
      // CraftBukkit end
@@ -81,44 +81,22 @@ index 8ef7eb2..d7cbe31 100644
 +        final int oldViewDistance = player.getViewDistance();
 +
 +        int viewDistance = MathHelper.clamp(toSet, 3, 32);
-+        if (viewDistance != oldViewDistance) {
-+            int cx = (int) player.locX >> 4;
-+            int cz = (int) player.locZ >> 4;
-+
-+            if (viewDistance - oldViewDistance > 0) {
-+                for (int x = cx - viewDistance; x <= cx + viewDistance; ++x) {
-+                    for (int z = cz - viewDistance; z <= cz + viewDistance; ++z) {
-+                        PlayerChunk playerchunkmap_playerchunk = this.c(x, z);
-+
-+                        if (!playerchunkmap_playerchunk.c.contains(player)) {
-+                            playerchunkmap_playerchunk.a(player);
-+                        }
-+                    }
-+                }
-+            } else {
-+                for (int x = cx - oldViewDistance; x <= cx + oldViewDistance; ++x) {
-+                    for (int z = cz - oldViewDistance; z <= cz + oldViewDistance; ++z) {
-+                        if (!this.a(x, z, cx, cz, viewDistance)) {
-+                            this.c(x, z).b(player);
-+                        }
-+                    }
-+                }
-+            }
-+
-+            player.setViewDistance(viewDistance);
++        if (toSet < 0) {
++            viewDistance = -1;
 +        }
-+
-+        if (toSet == -1) {
-+            player.setViewDistance(-1);
++        if (viewDistance != oldViewDistance) {
++            removePlayer(player);
++            player.setViewDistance(viewDistance);
++            addPlayer(player);
 +        }
 +    }
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 64bd053..4abf441 100644
+index 5515958..9770c99 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1416,6 +1416,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1419,6 +1419,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return this.getHandle().affectsSpawning;
      }
  
@@ -136,5 +114,5 @@ index 64bd053..4abf441 100644
      private final Player.Spigot spigot = new Player.Spigot()
      {
 -- 
-2.8.1
+2.8.2
 

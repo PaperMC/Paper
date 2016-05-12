@@ -1,0 +1,28 @@
+From 0241d5c821cff01bc4ad9d4b1b3611338228a68a Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 2 Mar 2016 23:55:20 -0600
+Subject: [PATCH] Don't create a chunk just to unload it
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 898316f..46648bf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -213,7 +213,13 @@ public class CraftWorld implements World {
+     }
+ 
+     private boolean unloadChunk0(int x, int z, boolean save, boolean safe) {
+-        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().getChunkAt(x, z);
++        // Paper start - Don't create a chunk just to unload it
++        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().getLoadedChunkAt(x, z);
++        if (chunk == null) {
++            return false;
++        }
++        // Paper end
++
+         if (chunk.mustSave) {   // If chunk had previously been queued to save, must do save to avoid loss of that data
+             save = true;
+         }
+-- 
+2.8.2
+

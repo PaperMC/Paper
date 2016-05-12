@@ -1,0 +1,37 @@
+From 3bc455877e340f5305c1ef2a7280a3066f07a09f Mon Sep 17 00:00:00 2001
+From: Gabscap <sonstige.netzwerke@gabriel-paradzik.de>
+Date: Sat, 19 Mar 2016 22:25:11 +0100
+Subject: [PATCH] Waving banner workaround
+
+This patch is a workaround for MC-63720
+
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutUpdateTime.java b/src/main/java/net/minecraft/server/PacketPlayOutUpdateTime.java
+index c5c3f40..3ed2356 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutUpdateTime.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutUpdateTime.java
+@@ -4,7 +4,11 @@ import java.io.IOException;
+ 
+ public class PacketPlayOutUpdateTime implements Packet<PacketListenerPlayOut> {
+ 
++    // World Age in ticks
++    // Not changed by server commands
+     private long a;
++    // Time of Day in ticks
++    // If negative the sun will stop moving at the Math.abs of the time
+     private long b;
+ 
+     public PacketPlayOutUpdateTime() {}
+@@ -19,6 +23,10 @@ public class PacketPlayOutUpdateTime implements Packet<PacketListenerPlayOut> {
+             }
+         }
+ 
++        // Paper start
++        this.a = this.a % 192000; // World age must not be negative
++        this.b = this.b % 192000 - (this.b < 0 ? 192000 : 0); // Keep sign
++        // Paper end
+     }
+ 
+     public void a(PacketDataSerializer packetdataserializer) throws IOException {
+-- 
+2.8.2
+

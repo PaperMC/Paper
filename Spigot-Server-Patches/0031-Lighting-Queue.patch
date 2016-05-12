@@ -1,4 +1,4 @@
-From cf551879a447edab9e7fbbdbe01190b3663ad0dc Mon Sep 17 00:00:00 2001
+From 254eb4d02c98435ce53fc85794f9912f9b3c63e2 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Wed, 2 Mar 2016 00:52:31 -0600
 Subject: [PATCH] Lighting Queue
@@ -32,18 +32,18 @@ index 7c0e61f..8e3a0f3 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index cde4124..3b5e8c2 100644
+index 5690e81..3bcbbb9 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -44,6 +44,7 @@ public class Chunk {
-     private int w;
-     private ConcurrentLinkedQueue<BlockPosition> x;
+@@ -45,6 +45,7 @@ public class Chunk {
+     private ConcurrentLinkedQueue<BlockPosition> y;
+     public boolean d;
      protected gnu.trove.map.hash.TObjectIntHashMap<Class> entityCount = new gnu.trove.map.hash.TObjectIntHashMap<Class>(); // Spigot
 +    public int lightUpdates; // Paper - Number of queued light updates for this chunk
  
      // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
      private int neighbors = 0x1 << 12;
-@@ -226,6 +227,22 @@ public class Chunk {
+@@ -227,6 +228,22 @@ public class Chunk {
      private void h(boolean flag) {
          this.world.methodProfiler.a("recheckGaps");
          if (this.world.areChunksLoaded(new BlockPosition(this.locX * 16 + 8, 0, this.locZ * 16 + 8), 16)) {
@@ -65,8 +65,8 @@ index cde4124..3b5e8c2 100644
 +            // Paper end
              for (int i = 0; i < 16; ++i) {
                  for (int j = 0; j < 16; ++j) {
-                     if (this.h[i + j * 16]) {
-@@ -476,7 +493,7 @@ public class Chunk {
+                     if (this.i[i + j * 16]) {
+@@ -478,7 +495,7 @@ public class Chunk {
              } else {
                  if (flag) {
                      this.initLighting();
@@ -75,7 +75,7 @@ index cde4124..3b5e8c2 100644
                      int j1 = iblockdata.c();
                      int k1 = iblockdata1.c();
  
-@@ -491,6 +508,28 @@ public class Chunk {
+@@ -493,6 +510,28 @@ public class Chunk {
                      if (j1 != k1 && (j1 < k1 || this.getBrightness(EnumSkyBlock.SKY, blockposition) > 0 || this.getBrightness(EnumSkyBlock.BLOCK, blockposition) > 0)) {
                          this.d(i, k);
                      }
@@ -104,7 +104,7 @@ index cde4124..3b5e8c2 100644
                  }
  
                  TileEntity tileentity;
-@@ -1314,4 +1353,29 @@ public class Chunk {
+@@ -1318,4 +1357,29 @@ public class Chunk {
  
          private EnumTileEntityState() {}
      }
@@ -135,22 +135,22 @@ index cde4124..3b5e8c2 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 7d3adde..54c83f3 100644
+index de85bd5..20dccfb 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -288,6 +288,7 @@ public class ChunkProviderServer implements IChunkProvider {
-                 long chunkcoordinates = this.unloadQueue.popFirst();
-                 Chunk chunk = this.chunks.get(chunkcoordinates);
-                 if (chunk == null) continue;
-+                if (chunk.hasLightUpdates()) continue; // Paper - Don't unload chunks with pending light updates.
+@@ -269,6 +269,7 @@ public class ChunkProviderServer implements IChunkProvider {
+                     Chunk chunk = (Chunk) this.chunks.get(olong);
  
-                 ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
-                 server.getPluginManager().callEvent(event);
+                     if (chunk != null && chunk.d) {
++                        if (chunk.hasLightUpdates()) continue; // Paper - Don't unload chunks with pending light updates.
+                         // CraftBukkit start
+                         ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
+                         this.world.getServer().getPluginManager().callEvent(event);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index cd784a0..75f2605 100644
+index ebf6c48..fcc1214 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -47,6 +47,11 @@ import org.bukkit.craftbukkit.CraftServer;
+@@ -52,6 +52,11 @@ import org.bukkit.craftbukkit.CraftServer;
  // CraftBukkit end
  import co.aikar.timings.MinecraftTimings; // Paper
  
@@ -162,7 +162,7 @@ index cd784a0..75f2605 100644
  public abstract class MinecraftServer implements Runnable, ICommandListener, IAsyncTaskHandler, IMojangStatistics {
  
      public static final Logger LOGGER = LogManager.getLogger();
-@@ -113,6 +118,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -118,6 +123,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
      public final Thread primaryThread;
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
@@ -170,7 +170,7 @@ index cd784a0..75f2605 100644
      // CraftBukkit end
  
      public MinecraftServer(OptionSet options, Proxy proxy, DataConverterManager dataconvertermanager, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache) {
-@@ -760,6 +766,34 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -765,6 +771,34 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
          this.methodProfiler.b();
          this.methodProfiler.b();
  
@@ -206,10 +206,10 @@ index cd784a0..75f2605 100644
          co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Paper
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 3b84e27..1793995 100644
+index 362df8f..77cfd3f 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -379,7 +379,17 @@ public abstract class World implements IBlockAccess {
+@@ -384,7 +384,17 @@ public abstract class World implements IBlockAccess {
              } else {
                  if (iblockdata.c() != iblockdata1.c() || iblockdata.d() != iblockdata1.d()) {
                      this.methodProfiler.a("checkLight");
@@ -229,5 +229,5 @@ index 3b84e27..1793995 100644
                  }
  
 -- 
-2.8.1
+2.8.2
 

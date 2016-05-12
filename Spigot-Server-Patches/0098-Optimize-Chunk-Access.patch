@@ -1,0 +1,66 @@
+From 1917871be3d7d048b496022ef54eaf230ff2a900 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 27 Aug 2015 01:15:02 -0400
+Subject: [PATCH] Optimize Chunk Access
+
+getting a loaded chunk is one of the most hottest pieces of code in the game.
+getChunkAt is called for the same chunk multiple times in a row, often from getType();
+
+Optimize this look up by using a Last Access cache.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index eb60455..22e4728 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -30,6 +30,7 @@ public class Chunk {
+     private boolean j;
+     public final World world;
+     public final int[] heightMap;
++    public final long chunkKey; // Paper
+     public final int locX;
+     public final int locZ;
+     private boolean m;
+@@ -96,6 +97,7 @@ public class Chunk {
+         this.world = world;
+         this.locX = i;
+         this.locZ = j;
++        this.chunkKey = org.bukkit.craftbukkit.util.LongHash.toLong(this.locX, this.locZ); // Paper
+         this.heightMap = new int[256];
+ 
+         for (int k = 0; k < this.entitySlices.length; ++k) {
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 32b71c6..3d36d7a 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -27,7 +27,27 @@ public class ChunkProviderServer implements IChunkProvider {
+     public final Set<Long> unloadQueue = Sets.newHashSet(); // PAIL: private -> public
+     public final ChunkGenerator chunkGenerator;
+     private final IChunkLoader chunkLoader;
+-    public final Long2ObjectMap<Chunk> chunks = new Long2ObjectOpenHashMap(8192);
++    // Paper start
++    protected Chunk lastChunkByPos = null;
++    public Long2ObjectOpenHashMap<Chunk> chunks = new Long2ObjectOpenHashMap<Chunk>(8192) {
++
++        @Override
++        public Chunk get(long key) {
++            if (lastChunkByPos != null && key == lastChunkByPos.chunkKey) {
++                return lastChunkByPos;
++            }
++            return lastChunkByPos = super.get(key);
++        }
++
++        @Override
++        public Chunk remove(long key) {
++            if (lastChunkByPos != null && key == lastChunkByPos.chunkKey) {
++                lastChunkByPos = null;
++            }
++            return super.remove(key);
++        }
++    }; // CraftBukkit
++    // Paper end
+     public final WorldServer world;
+ 
+     public ChunkProviderServer(WorldServer worldserver, IChunkLoader ichunkloader, ChunkGenerator chunkgenerator) {
+-- 
+2.8.2
+

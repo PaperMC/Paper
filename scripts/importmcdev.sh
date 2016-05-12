@@ -22,6 +22,8 @@ function import {
 		export MODLOG="$MODLOG  Imported $file from mc-dev\n";
 		echo "Copying $base to $target"
 		cp "$base" "$target"
+	else
+		echo "UN-NEEDED IMPORT: $file"
 	fi
 }
 
@@ -42,7 +44,6 @@ import BlockFluids
 import BlockFurnace
 import BlockIceFrost
 import BlockPosition
-import BlockStateList
 import ChunkCache
 import ChunkProviderFlat
 import ChunkProviderGenerate
@@ -57,6 +58,7 @@ import EntitySquid
 import EntityWaterAnimal
 import FileIOThread
 import ItemBlock
+import NavigationAbstract
 import NBTTagCompound
 import NBTTagList
 import PersistentScoreboard

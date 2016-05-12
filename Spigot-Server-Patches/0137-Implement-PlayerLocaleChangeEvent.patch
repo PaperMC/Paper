@@ -1,0 +1,53 @@
+From 36de0ebaee44a6c862e91ce02328130379638d41 Mon Sep 17 00:00:00 2001
+From: Isaac Moore <rmsy@me.com>
+Date: Tue, 19 Apr 2016 14:09:31 -0500
+Subject: [PATCH] Implement PlayerLocaleChangeEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 723d40c..44df116 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -26,7 +26,7 @@ import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+ public class EntityPlayer extends EntityHuman implements ICrafting {
+ 
+     private static final Logger bR = LogManager.getLogger();
+-    public String locale = "en_US"; // Spigot private -> public
++    public String locale = null; // Spigot private -> public // Paper - default to null
+     public PlayerConnection playerConnection;
+     public final MinecraftServer server;
+     public final PlayerInteractManager playerInteractManager;
+@@ -1073,7 +1073,14 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     }
+ 
+     public void a(PacketPlayInSettings packetplayinsettings) {
++        // Paper start - add PlayerLocaleChangeEvent
++        // Since the field is initialized to null, this event should always fire the first time the packet is received
++        String oldLocale = this.locale;
+         this.locale = packetplayinsettings.a();
++        if (!this.locale.equals(oldLocale)) {
++            new com.destroystokyo.paper.event.player.PlayerLocaleChangeEvent(this.getBukkitEntity(), oldLocale, this.locale).callEvent();
++        }
++        // Paper end
+         this.cg = packetplayinsettings.c();
+         this.ch = packetplayinsettings.d();
+         this.getDataWatcher().set(EntityPlayer.bq, Byte.valueOf((byte) packetplayinsettings.e()));
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 7568fc8..d23cade 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1657,7 +1657,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         @Override
+         public String getLocale()
+         {
+-           return getHandle().locale;
++            // Paper start - Locale change event
++            final String locale = getHandle().locale;
++            return locale != null ? locale : "en_US";
++            // Paper end
+         }
+ 
+         @Override
+-- 
+2.8.2
+

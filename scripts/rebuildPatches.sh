@@ -33,7 +33,20 @@ function savePatches {
     echo "Formatting patches for $what..."
 
     cd "$basedir/${what_name}-Patches/"
-    rm -rf *.patch
+    if [ -d "$basedir/$target/.git/rebase-apply" ]; then
+        # in middle of a rebase, be smarter
+        echo "REBASE DETECTED - PARTIAL SAVE"
+        last=$(cat "$basedir/$target/.git/rebase-apply/last")
+        next=$(cat "$basedir/$target/.git/rebase-apply/next")
+        for i in $(seq -w 1 1 $last)
+        do
+            if [ $i -lt $next ]; then
+                rm 0$i-*
+            fi
+        done
+    else
+        rm -rf *.patch
+    fi
 
     cd "$basedir/$target"
 

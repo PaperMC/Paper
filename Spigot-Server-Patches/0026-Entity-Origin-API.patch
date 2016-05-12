@@ -1,14 +1,14 @@
-From 51306b297c90ec78be730733123a3e4be59904c7 Mon Sep 17 00:00:00 2001
+From 8c16d42fc8c678523d3198f8ba20fba2580ef0c3 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Tue, 1 Mar 2016 23:45:08 -0600
 Subject: [PATCH] Entity Origin API
 
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 54367ef..9a8d534 100644
+index 62ada23..2455b9c 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -142,6 +142,7 @@ public abstract class Entity implements ICommandListener {
+@@ -143,6 +143,7 @@ public abstract class Entity implements ICommandListener {
      public org.bukkit.projectiles.ProjectileSource projectileSource; // CraftBukkit - For projectiles only
      public boolean forceExplosionKnockback; // CraftBukkit - SPIGOT-949
      public Timing tickTimer = MinecraftTimings.getEntityTimings(this); // Paper
@@ -16,19 +16,19 @@ index 54367ef..9a8d534 100644
      // Spigot start
      public final byte activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
      public final boolean defaultActivationState;
-@@ -1347,6 +1348,11 @@ public abstract class Entity implements ICommandListener {
+@@ -1350,6 +1351,11 @@ public abstract class Entity implements ICommandListener {
                  }
              }
  
 +            // Paper start - Save the entity's origin location
 +            if (origin != null) {
-+                nbttagcompound.set("Paper.Origin", this.a(origin.getX(), origin.getY(), origin.getZ()));
++                nbttagcompound.set("Paper.Origin", this.createList(origin.getX(), origin.getY(), origin.getZ()));
 +            }
 +            // Paper end
+             return nbttagcompound;
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.a(throwable, "Saving entity NBT");
-             CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being saved");
-@@ -1480,6 +1486,13 @@ public abstract class Entity implements ICommandListener {
+@@ -1485,6 +1491,13 @@ public abstract class Entity implements ICommandListener {
              }
              // CraftBukkit end
  
@@ -42,11 +42,19 @@ index 54367ef..9a8d534 100644
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.a(throwable, "Loading entity NBT");
              CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being loaded");
+@@ -1508,6 +1521,7 @@ public abstract class Entity implements ICommandListener {
+ 
+     public void at() {}
+ 
++    protected NBTTagList createList(double... adouble) { return a(adouble); } // Paper // OBFHELPER
+     protected NBTTagList a(double... adouble) {
+         NBTTagList nbttaglist = new NBTTagList();
+         double[] adouble1 = adouble;
 diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
-index 6246c05..8f2b253 100644
+index 08a7969..4c14d75 100644
 --- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
 +++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
-@@ -242,6 +242,14 @@ public class EntityFallingBlock extends Entity {
+@@ -241,6 +241,14 @@ public class EntityFallingBlock extends Entity {
              this.block = Blocks.SAND.getBlockData();
          }
  
@@ -81,10 +89,10 @@ index 564ea37..1113b1c 100644
  
      public EntityLiving getSource() {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 60d658f..0e9cf7a 100644
+index 81f4a42..9bfabe0 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -949,6 +949,12 @@ public abstract class World implements IBlockAccess {
+@@ -958,6 +958,12 @@ public abstract class World implements IBlockAccess {
          int j = MathHelper.floor(entity.locZ / 16.0D);
          boolean flag = entity.attachedToPlayer;
  
@@ -98,7 +106,7 @@ index 60d658f..0e9cf7a 100644
              flag = true;
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 8a1df54..f61f6cd 100644
+index b5126d4..a6c0b45 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 @@ -604,4 +604,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
@@ -147,5 +155,5 @@ index c493c9c..93843aa 100644
 +    // Paper end
  }
 -- 
-2.8.1
+2.8.2
 

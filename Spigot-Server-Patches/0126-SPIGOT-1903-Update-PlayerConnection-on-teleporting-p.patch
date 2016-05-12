@@ -1,0 +1,36 @@
+From 97fb0cde3f2129a6111194d08bf4682b6b4fe754 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 10 Apr 2016 22:36:10 -0400
+Subject: [PATCH] SPIGOT-1903: Update PlayerConnection on teleporting players
+
+Otherwise the player will trigger a "moved too quickly" next movement packet
+and rubber band.
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index b03e9ee..b2dc764 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -290,6 +290,7 @@ public abstract class Entity implements ICommandListener {
+         this.locX = d0;
+         this.locY = d1;
+         this.locZ = d2;
++        if (this instanceof EntityPlayer && ((EntityPlayer) this).playerConnection != null) ((EntityPlayer) this).playerConnection.captureCurrentPosition(); // Paper
+         float f = this.width / 2.0F;
+         float f1 = this.length;
+ 
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 724569e..4d471ec 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -204,7 +204,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+ 
+     }
+ 
+-    private void d() {
++    public void captureCurrentPosition() { d(); } private void d() { // Paper // OBFHELPER
+         this.l = this.player.locX;
+         this.m = this.player.locY;
+         this.n = this.player.locZ;
+-- 
+2.8.2
+

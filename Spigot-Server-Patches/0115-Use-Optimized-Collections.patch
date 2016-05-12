@@ -1,0 +1,50 @@
+From ca605f00544babfb805f1f59e6b12f388bf26f99 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 30 Mar 2016 02:13:24 -0400
+Subject: [PATCH] Use Optimized Collections
+
+Swap out CraftBukkit LongObjectHashMap with Long2ObjectOpenHashMap
+Swap out Integer key HashMap for a Int2ObjectOpenHashMap For ChunkProviderServer
+
+Amaranth, the creator of LongObjectHashMap, tested it vs fastutil and determined fastutil to be 3x faster
+and could not create anything faster than fastutil.
+
+These collections are super fast as seen
+http://java-performance.info/hashmap-overview-jdk-fastutil-goldman-sachs-hppc-koloboke-trove-january-2015/
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 3d36d7a..8ee8e80 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -24,7 +24,7 @@ import org.bukkit.event.world.ChunkUnloadEvent;
+ public class ChunkProviderServer implements IChunkProvider {
+ 
+     private static final Logger a = LogManager.getLogger();
+-    public final Set<Long> unloadQueue = Sets.newHashSet(); // PAIL: private -> public
++    public final it.unimi.dsi.fastutil.longs.LongSet unloadQueue = new it.unimi.dsi.fastutil.longs.LongArraySet(); // PAIL: private -> public // Paper
+     public final ChunkGenerator chunkGenerator;
+     private final IChunkLoader chunkLoader;
+     // Paper start
+diff --git a/src/main/java/net/minecraft/server/DataWatcher.java b/src/main/java/net/minecraft/server/DataWatcher.java
+index ec77a5c..86ad41d 100644
+--- a/src/main/java/net/minecraft/server/DataWatcher.java
++++ b/src/main/java/net/minecraft/server/DataWatcher.java
+@@ -12,13 +12,14 @@ import java.util.Map;
+ import java.util.concurrent.locks.ReadWriteLock;
+ import java.util.concurrent.locks.ReentrantReadWriteLock;
+ import javax.annotation.Nullable;
++import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap; // Paper
+ import org.apache.commons.lang3.ObjectUtils;
+ 
+ public class DataWatcher {
+ 
+     private static final Map<Class<? extends Entity>, Integer> a = Maps.newHashMap();
+     private final Entity b;
+-    private final Map<Integer, DataWatcher.Item<?>> c = Maps.newHashMap();
++    private final Map<Integer, DataWatcher.Item<?>> c = new Int2ObjectOpenHashMap<>(); // Paper
+     private final ReadWriteLock d = new ReentrantReadWriteLock();
+     private boolean e = true;
+     private boolean f;
+-- 
+2.8.2
+

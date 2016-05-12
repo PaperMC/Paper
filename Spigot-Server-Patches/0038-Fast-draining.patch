@@ -1,4 +1,4 @@
-From 83f33bd21ad4907eed1e0903875bdb7e2b3b0a2a Mon Sep 17 00:00:00 2001
+From 772d424160249d441b16bf2be8fb59d5f607c182 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Wed, 2 Mar 2016 12:20:52 -0600
 Subject: [PATCH] Fast draining
@@ -21,7 +21,7 @@ index 54e31ca..f2babb1 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/BlockFlowing.java b/src/main/java/net/minecraft/server/BlockFlowing.java
-index 1f07f82..517c1e8 100644
+index 9e88d2d..de10bc4 100644
 --- a/src/main/java/net/minecraft/server/BlockFlowing.java
 +++ b/src/main/java/net/minecraft/server/BlockFlowing.java
 @@ -74,7 +74,7 @@ public class BlockFlowing extends BlockFluids {
@@ -42,16 +42,28 @@ index 1f07f82..517c1e8 100644
                      world.setAir(blockposition);
                  } else {
                      iblockdata = iblockdata.set(BlockFlowing.LEVEL, Integer.valueOf(i1));
-@@ -288,4 +288,52 @@ public class BlockFlowing extends BlockFluids {
+@@ -275,6 +275,7 @@ public class BlockFlowing extends BlockFluids {
+ 
+     }
+ 
++    // Paper start
+     /**
+      * Paper - Get flow speed. Throttle if its water and flowing adjacent to lava
+      */
+@@ -288,4 +289,57 @@ public class BlockFlowing extends BlockFluids {
          }
          return super.a(world);
      }
++
++    private int getFluidLevel(IBlockAccess iblockaccess, BlockPosition blockposition) {
++        return iblockaccess.getType(blockposition).getMaterial() == this.material ? iblockaccess.getType(blockposition).get(BlockFluids.LEVEL) : -1;
++    }
 +
 +    /**
 +     * Paper - Data check method for fast draining
 +     */
 +    public int getData(World world, BlockPosition position) {
-+        int data = this.c((IBlockAccess) world, position);
++        int data = this.getFluidLevel((IBlockAccess) world, position);
 +        return data < 8 ? data : 0;
 +    }
 +
@@ -94,7 +106,8 @@ index 1f07f82..517c1e8 100644
 +        }
 +        return result;
 +    }
++    // Paper end
  }
 -- 
-2.7.4
+2.8.2
 
