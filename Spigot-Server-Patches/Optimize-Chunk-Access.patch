@@ -13,13 +13,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -0,0 +0,0 @@ public class Chunk {
-     private boolean i;
+     private boolean j;
      public final World world;
      public final int[] heightMap;
 +    public final long chunkKey; // Paper
      public final int locX;
      public final int locZ;
-     private boolean l;
+     private boolean m;
 @@ -0,0 +0,0 @@ public class Chunk {
          this.world = world;
          this.locX = i;
@@ -33,13 +33,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer implements IChunkProvider {
-     public final ChunkUnloadQueue unloadQueue = new ChunkUnloadQueue(); // CraftBukkit - LongHashSet // Paper -> ChunkUnloadQueue
-     public final ChunkGenerator chunkGenerator; // CraftBukkit - public
+     public final Set<Long> unloadQueue = Sets.newHashSet(); // PAIL: private -> public
+     public final ChunkGenerator chunkGenerator;
      private final IChunkLoader chunkLoader;
--    public LongObjectHashMap<Chunk> chunks = new LongObjectHashMap<Chunk>(); // CraftBukkit
+-    public final Long2ObjectMap<Chunk> chunks = new Long2ObjectOpenHashMap(8192);
 +    // Paper start
 +    protected Chunk lastChunkByPos = null;
-+    public LongObjectHashMap<Chunk> chunks = new LongObjectHashMap<Chunk>() {
++    public Long2ObjectOpenHashMap<Chunk> chunks = new Long2ObjectOpenHashMap<Chunk>(8192) {
++
 +        @Override
 +        public Chunk get(long key) {
 +            if (lastChunkByPos != null && key == lastChunkByPos.chunkKey) {
@@ -57,7 +58,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }; // CraftBukkit
 +    // Paper end
-     // private final LongHashMap<Chunk> chunks = new LongHashMap();
-     // private final List<Chunk> chunkList = Lists.newArrayList();
      public final WorldServer world;
+ 
+     public ChunkProviderServer(WorldServer worldserver, IChunkLoader ichunkloader, ChunkGenerator chunkgenerator) {
 --

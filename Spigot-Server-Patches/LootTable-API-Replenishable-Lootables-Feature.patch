@@ -241,6 +241,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.server.*;
 +import org.bukkit.entity.Player;
 +
++import javax.annotation.Nullable;
 +import java.util.HashMap;
 +import java.util.Map;
 +import java.util.Random;
@@ -278,7 +279,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return lootable;
 +    }
 +
-+    public boolean shouldReplenish(EntityHuman player) {
++    public boolean shouldReplenish(@Nullable EntityHuman player) {
 +        String tableName = this.lootable.getLootTableName();
 +
 +        // No Loot Table associated
@@ -418,10 +419,10 @@ diff --git a/src/main/java/net/minecraft/server/EntityMinecartContainer.java b/s
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityMinecartContainer.java
 +++ b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
-@@ -0,0 +0,0 @@ package net.minecraft.server;
- import java.util.Random;
+@@ -0,0 +0,0 @@ import javax.annotation.Nullable;
  // CraftBukkit start
  import java.util.List;
+ import org.bukkit.Location;
 +
 +import com.destroystokyo.paper.loottable.CraftLootableInventoryData; // Paper
 +import com.destroystokyo.paper.loottable.CraftLootableInventory; // Paper
@@ -461,7 +462,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
      }
  
-     public void f(EntityHuman entityhuman) {
+     public void f(@Nullable EntityHuman entityhuman) {
 -        if (this.c != null) {
 +        if (lootableData.shouldReplenish(entityhuman)) { // Paper
              LootTable loottable = this.world.ak().a(this.c);
@@ -536,6 +537,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.destroystokyo.paper.loottable.LootableInventory; // Paper
 +
  import java.util.Random;
+ import javax.annotation.Nullable;
  
 -public abstract class TileEntityLootable extends TileEntityContainer implements ILootable {
 +public abstract class TileEntityLootable extends TileEntityContainer implements ILootable, CraftLootableInventory { // Paper
@@ -546,7 +548,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public TileEntityLootable() {}
  
-     protected boolean c(NBTTagCompound nbttagcompound) {
+     protected boolean d(NBTTagCompound nbttagcompound) {
 +        lootableData.loadNbt(nbttagcompound); // Paper
          if (nbttagcompound.hasKeyOfType("LootTable", 8)) {
              this.m = new MinecraftKey(nbttagcompound.getString("LootTable"));
@@ -554,7 +556,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
      }
  
-     protected boolean d(NBTTagCompound nbttagcompound) {
+     protected boolean e(NBTTagCompound nbttagcompound) {
 +        lootableData.saveNbt(nbttagcompound); // Paper
          if (this.m != null) {
              nbttagcompound.setString("LootTable", this.m.toString());
@@ -562,7 +564,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
      }
  
-     protected void d(EntityHuman entityhuman) {
+     protected void d(@Nullable EntityHuman entityhuman) {
 -        if (this.m != null) {
 +        if (lootableData.shouldReplenish(entityhuman)) { // Paper
              LootTable loottable = this.world.ak().a(this.m);

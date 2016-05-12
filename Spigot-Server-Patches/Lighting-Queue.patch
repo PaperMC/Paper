@@ -36,8 +36,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -0,0 +0,0 @@ public class Chunk {
-     private int w;
-     private ConcurrentLinkedQueue<BlockPosition> x;
+     private ConcurrentLinkedQueue<BlockPosition> y;
+     public boolean d;
      protected gnu.trove.map.hash.TObjectIntHashMap<Class> entityCount = new gnu.trove.map.hash.TObjectIntHashMap<Class>(); // Spigot
 +    public int lightUpdates; // Paper - Number of queued light updates for this chunk
  
@@ -65,7 +65,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end
              for (int i = 0; i < 16; ++i) {
                  for (int j = 0; j < 16; ++j) {
-                     if (this.h[i + j * 16]) {
+                     if (this.i[i + j * 16]) {
 @@ -0,0 +0,0 @@ public class Chunk {
              } else {
                  if (flag) {
@@ -139,13 +139,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer implements IChunkProvider {
-                 long chunkcoordinates = this.unloadQueue.popFirst();
-                 Chunk chunk = this.chunks.get(chunkcoordinates);
-                 if (chunk == null) continue;
-+                if (chunk.hasLightUpdates()) continue; // Paper - Don't unload chunks with pending light updates.
+                     Chunk chunk = (Chunk) this.chunks.get(olong);
  
-                 ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
-                 server.getPluginManager().callEvent(event);
+                     if (chunk != null && chunk.d) {
++                        if (chunk.hasLightUpdates()) continue; // Paper - Don't unload chunks with pending light updates.
+                         // CraftBukkit start
+                         ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
+                         this.world.getServer().getPluginManager().callEvent(event);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java

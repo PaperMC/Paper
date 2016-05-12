@@ -12,15 +12,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
 @@ -0,0 +0,0 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
-     protected int a;
-     protected int c;
-     protected int d;
+     private final int a;
+     private final int b;
+     private final int c;
++    // Paper start
 +    public boolean isValidLocation() {
-+        return a >= -30000000 && d >= -30000000 && a < 30000000 && d < 30000000 && c >= 0 && c < 256;
++        return a >= -30000000 && c >= -30000000 && a < 30000000 && c < 30000000 && b >= 0 && b < 256;
 +    }
-     // Paper end
++    // Paper end
  
      public BaseBlockPosition(int i, int j, int k) {
+         this.a = i;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/World.java
@@ -30,30 +32,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 -    private boolean isValidLocation(BlockPosition blockposition) {
--        return blockposition.getX() >= -30000000 && blockposition.getZ() >= -30000000 && blockposition.getX() < 30000000 && blockposition.getZ() < 30000000 && blockposition.getY() >= 0 && blockposition.getY() < 256;
+-        return !this.E(blockposition) && blockposition.getX() >= -30000000 && blockposition.getZ() >= -30000000 && blockposition.getX() < 30000000 && blockposition.getZ() < 30000000;
 +    private static boolean isValidLocation(BlockPosition blockposition) { // Paper
 +        return blockposition.isValidLocation(); // Paper
      }
  
-     public boolean isEmpty(BlockPosition blockposition) {
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-     }
- 
-     public boolean a(BlockPosition blockposition, boolean flag) {
--        return !this.isValidLocation(blockposition) ? false : this.isChunkLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4, flag);
-+        return !blockposition.isValidLocation() ? false : this.isChunkLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4, flag); // Paper
-     }
- 
-     public boolean areChunksLoaded(BlockPosition blockposition, int i) {
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-             return true;
-         }
-         // CraftBukkit end
--        if (!this.isValidLocation(blockposition)) {
-+        if (!blockposition.isValidLocation()) { // Paper
-             return false;
-         } else if (!this.isClientSide && this.worldData.getType() == WorldType.DEBUG_ALL_BLOCK_STATES) {
-             return false;
+     private boolean E(BlockPosition blockposition) {
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
      // Paper start - test if meets light level, return faster
      // logic copied from below
@@ -90,31 +74,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
          return null;
      }
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-             }
-         }
-         // CraftBukkit end
--        if (!this.isValidLocation(blockposition)) {
-+        if (!blockposition.isValidLocation()) { // Paper
-             return Blocks.AIR.getBlockData();
-         } else {
-             Chunk chunk = this.getChunkAtWorldCoords(blockposition);
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-     public Map<BlockPosition, TileEntity> capturedTileEntities = Maps.newHashMap();
- 
-     public TileEntity getTileEntity(BlockPosition blockposition) {
--        if (!this.isValidLocation(blockposition)) {
-+        if (!blockposition.isValidLocation()) { // Paper
-             return null;
-         } else {
-             // CraftBukkit start
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-     }
- 
-     public boolean d(BlockPosition blockposition, boolean flag) {
--        if (!this.isValidLocation(blockposition)) {
-+        if (!blockposition.isValidLocation()) { // Paper
-             return flag;
-         } else {
-             Chunk chunk = this.chunkProvider.getLoadedChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 --
