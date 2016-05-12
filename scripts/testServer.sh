@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 set -e
 PS1="$"
 basedir="$(cd "$1" && pwd -P)"
@@ -83,24 +84,38 @@ baseargs="$baseargs -XX:+UnlockExperimentalVMOptions -XX:G1NewSizePercent=30 -XX
 baseargs="$baseargs -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
 
 cmd="java ${PAPER_TEST_BASE_JVM_ARGS:-$baseargs} ${PAPER_TEST_EXTRA_JVM_ARGS} -jar $jar"
+screen_command="screen -DURS papertest $cmd"
+tmux_command="tmux new-session -A -s Paper -n 'Paper Test' -c '$(pwd)' '$cmd'"
 
 #
 # MULTIPLEXER CHOICE
 #
 
-multiplex=${PAPER_TEST_MULTIPLEXER:-screen}
-if [ "$multiplex" == "tmux" ]; then
-    echo "tmux is currently not supported. Please submit a PR to add tmux support if you need it.";
-    multiplex="screen"
-fi
+multiplex=${PAPER_TEST_MULTIPLEXER}
 
-if [ "$multiplex" == "tmux" ] && [ ! -z "$(which tmux)" ]; then
-    echo "tmux not supported"
-elif [ ! -z "$(which screen)" ]; then # default screen last as final fallback
-    cmd="screen -DURS papertest $cmd"
+if [ "$multiplex" == "screen" ]; then
+    if command -v "screen" >/dev/null 2>&1 ; then
+        cmd="$screen_command"
+    else
+        echo "screen not found"
+        exit 1
+    fi
+elif [ "$multiplex" == "tmux" ] ; then
+    if command -v "tmux" >/dev/null 2>&1 ; then
+        cmd="$tmux_command"
+    else
+        echo "tmux not found"
+        exit 1
+    fi
 else
-    echo "Screen not found - It is strongly recommended to install screen"
-    sleep 3
+    if command -v "screen" >/dev/null 2>&1 ; then
+        cmd="$screen_command"
+    elif command -v "tmux" >/dev/null 2>&1 ; then
+        cmd="$tmux_command"
+    else
+        echo "screen or tmux not found - it is strongly recommended to install either"
+        echo "No terminal multiplexer will be used"
+    fi
 fi
 
 #
@@ -108,7 +123,10 @@ fi
 #
 
 if [ ! -z "$PAPER_TEST_COMMAND_WRAPPER" ]; then
-	$PAPER_TEST_COMMAND_WRAPPER $cmd
+    $PAPER_TEST_COMMAND_WRAPPER $cmd
 else
-	$cmd 2>&1 | tee -a ${PAPER_TEST_OUTPUT_LOG:-logs/output.log}
+    echo "Running command: $cmd"
+    echo "In directory: $(pwd)"
+    sleep 1
+    /usr/bin/env bash -c "$cmd"
 fi
