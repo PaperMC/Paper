@@ -78,6 +78,7 @@ import TileEntityLootable
 import WorldProvider
 
 cd "$workdir/Spigot/Spigot-Server/"
-git add src -A
-echo -e "mc-dev Imports\n\n$MODLOG" | git commit src -F -
+rm -rf nms-patches applyPatches.sh makePatches.sh >/dev/null 2>&1
+git add . -A >/dev/null 2>&1
+echo -e "mc-dev Imports\n\n$MODLOG" | git commit . -F -
 )
