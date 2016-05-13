@@ -38,10 +38,10 @@ function savePatches {
         echo "REBASE DETECTED - PARTIAL SAVE"
         last=$(cat "$basedir/$target/.git/rebase-apply/last")
         next=$(cat "$basedir/$target/.git/rebase-apply/next")
-        for i in $(seq -w 1 1 $last)
+        for i in $(seq -f "%04g" 1 1 $last)
         do
             if [ $i -lt $next ]; then
-                rm 0${i}-*.patch
+                rm ${i}-*.patch
             fi
         done
     else
