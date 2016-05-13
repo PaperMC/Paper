@@ -41,7 +41,7 @@ function savePatches {
         for i in $(seq -w 1 1 $last)
         do
             if [ $i -lt $next ]; then
-                rm 0$i-*
+                rm 0${i}-*.patch
             fi
         done
     else
