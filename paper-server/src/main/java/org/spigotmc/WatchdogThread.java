@@ -61,7 +61,7 @@ public class WatchdogThread extends Thread
         while ( !this.stopping )
         {
             //
-            if ( this.lastTick != 0 && this.timeoutTime > 0 && WatchdogThread.monotonicMillis() > this.lastTick + this.timeoutTime )
+            if ( this.lastTick != 0 && this.timeoutTime > 0 && WatchdogThread.monotonicMillis() > this.lastTick + this.timeoutTime && !Boolean.getBoolean("disable.watchdog")) // Paper - Add property to disable
             {
                 Logger log = Bukkit.getServer().getLogger();
                 log.log( Level.SEVERE, "------------------------------" );
