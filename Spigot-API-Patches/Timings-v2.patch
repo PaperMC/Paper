@@ -2902,18 +2902,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.label = name;
              return true;
          }
-@@ -0,0 +0,0 @@ public abstract class Command {
-     public boolean register(CommandMap commandMap) {
-         if (allowChangesFrom(commandMap)) {
-             this.commandMap = commandMap;
-+            // Paper start - Some plugins do things the wrong way, try and account for that
-+            if (this.timings == null) {
-+                this.timings = co.aikar.timings.TimingsManager.getCommandTiming(null, this);
-+            }
-+            // Paper end
-             return true;
-         }
- 
 diff --git a/src/main/java/org/bukkit/command/FormattedCommandAlias.java b/src/main/java/org/bukkit/command/FormattedCommandAlias.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/command/FormattedCommandAlias.java
@@ -2957,6 +2945,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          label = label.toLowerCase().trim();
          fallbackPrefix = fallbackPrefix.toLowerCase().trim();
          boolean registered = register(label, command, false, fallbackPrefix);
+@@ -0,0 +0,0 @@ public class SimpleCommandMap implements CommandMap {
+             return false;
+         }
+ 
++        // Paper start - Plugins do weird things to workaround normal registration
++        if (target.timings == null) {
++            target.timings = co.aikar.timings.TimingsManager.getCommandTiming(null, target);
++        }
++        // Paper end
++
+         try {
+             target.timings.startTiming(); // Spigot
+             // Note: we don't return the result of target.execute as thats success / failure, we return handled (true) or not handled (false)
 diff --git a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java b/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
 deleted file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
