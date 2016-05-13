@@ -743,17 +743,17 @@ public class WorldServer extends World implements GeneratorAccessSeed {
             ++TimingHistory.entityTicks; // Paper - timings
             // Spigot start
             co.aikar.timings.Timing timer; // Paper
-            if (!org.spigotmc.ActivationRange.checkIfActive(entity)) {
+            /*if (!org.spigotmc.ActivationRange.checkIfActive(entity)) { // Paper - comment out - EAR 2, reimplement below
                 entity.ticksLived++;
                 timer =  entity.getEntityType().inactiveTickTimer.startTiming(); try { // Paper - timings
                 entity.inactiveTick();
                 } finally { timer.stopTiming(); } // Paper
                 return;
-            }
+            }*/ // Paper - comment out EAR 2
             // Spigot end
             // Paper start- timings
-            TimingHistory.activatedEntityTicks++;
-            timer = entity.getVehicle() != null ? entity.getEntityType().passengerTickTimer.startTiming() : entity.getEntityType().tickTimer.startTiming();
+            final boolean isActive = org.spigotmc.ActivationRange.checkIfActive(entity);
+            timer = isActive ? entity.getEntityType().tickTimer.startTiming() : entity.getEntityType().inactiveTickTimer.startTiming(); // Paper
             try {
             // Paper end - timings
             entity.g(entity.locX(), entity.locY(), entity.locZ());
@@ -767,12 +767,16 @@ public class WorldServer extends World implements GeneratorAccessSeed {
                     return IRegistry.ENTITY_TYPE.getKey(entity.getEntityType()).toString();
                 });
                 gameprofilerfiller.c("tickNonPassenger");
+                if (isActive) { // Paper - EAR 2
+                    TimingHistory.activatedEntityTicks++; // Paper
                 entity.tick();
                 entity.postTick(); // CraftBukkit
+                } else { entity.inactiveTick(); } // Paper - EAR 2
                 gameprofilerfiller.exit();
             }
 
             this.chunkCheck(entity);
+            } finally { timer.stopTiming(); } // Paper - timings
             if (entity.inChunk) {
                 Iterator iterator = entity.getPassengers().iterator();
 
@@ -782,7 +786,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
                     this.a(entity, entity1);
                 }
             }
-            } finally { timer.stopTiming(); } // Paper - timings
+            //} finally { timer.stopTiming(); } // Paper - timings - move up
 
         }
     }
@@ -790,6 +794,11 @@ public class WorldServer extends World implements GeneratorAccessSeed {
     public void a(Entity entity, Entity entity1) {
         if (!entity1.dead && entity1.getVehicle() == entity) {
             if (entity1 instanceof EntityHuman || this.getChunkProvider().a(entity1)) {
+                // Paper - EAR 2
+                final boolean isActive = org.spigotmc.ActivationRange.checkIfActive(entity1);
+                co.aikar.timings.Timing timer = isActive ? entity1.getEntityType().passengerTickTimer.startTiming() : entity1.getEntityType().passengerInactiveTickTimer.startTiming(); // Paper
+                try {
+                // Paper end
                 entity1.g(entity1.locX(), entity1.locY(), entity1.locZ());
                 entity1.lastYaw = entity1.yaw;
                 entity1.lastPitch = entity1.pitch;
@@ -801,7 +810,16 @@ public class WorldServer extends World implements GeneratorAccessSeed {
                         return IRegistry.ENTITY_TYPE.getKey(entity1.getEntityType()).toString();
                     });
                     gameprofilerfiller.c("tickPassenger");
+                    // Paper start - EAR 2
+                    if (isActive) {
                     entity1.passengerTick();
+                    } else {
+                        entity1.setMot(Vec3D.ORIGIN);
+                        entity1.inactiveTick();
+                        // copied from inside of if (isPassenger()) of passengerTick, but that ifPassenger is unnecessary
+                        entity.syncPositionOf(entity1);
+                    }
+                    // Paper end - EAR 2
                     gameprofilerfiller.exit();
                 }
 
@@ -814,7 +832,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
 
                         this.a(entity1, entity2);
                     }
-                }
+                } } finally { timer.stopTiming(); } // Paper - EAR2 timings
 
             }
         } else {

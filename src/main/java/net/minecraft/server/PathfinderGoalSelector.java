@@ -25,10 +25,11 @@ public class PathfinderGoalSelector {
         }
     };
     private final Map<PathfinderGoal.Type, PathfinderGoalWrapped> c = new EnumMap(PathfinderGoal.Type.class);
-    private final Set<PathfinderGoalWrapped> d = Sets.newLinkedHashSet();
+    private final Set<PathfinderGoalWrapped> d = Sets.newLinkedHashSet(); private Set<PathfinderGoalWrapped> getTasks() { return d; }// Paper - OBFHELPER
     private final Supplier<GameProfilerFiller> e;
     private final EnumSet<PathfinderGoal.Type> f = EnumSet.noneOf(PathfinderGoal.Type.class);
-    private int g = 3;
+    private int g = 3;private int getTickRate() { return g; } // Paper - OBFHELPER
+    private int curRate;private int getCurRate() { return curRate; } private void incRate() { this.curRate++; } // Paper TODO
 
     public PathfinderGoalSelector(Supplier<GameProfilerFiller> supplier) {
         this.e = supplier;
@@ -37,6 +38,25 @@ public class PathfinderGoalSelector {
     public void a(int i, PathfinderGoal pathfindergoal) {
         this.d.add(new PathfinderGoalWrapped(i, pathfindergoal));
     }
+
+    // Paper start
+    public boolean inactiveTick() {
+        if (getCurRate() % getTickRate() != 0) {
+            incRate();
+            return false;
+        } else {
+            return true;
+        }
+    }
+    public boolean hasTasks() {
+        for (PathfinderGoalWrapped task : getTasks()) {
+            if (task.isRunning()) {
+                return true;
+            }
+        }
+        return false;
+    }
+    // Paper end
 
     public void a(PathfinderGoal pathfindergoal) {
         this.d.stream().filter((pathfindergoalwrapped) -> {

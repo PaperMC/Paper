@@ -4,12 +4,12 @@ import java.util.EnumSet;
 
 public abstract class PathfinderGoalGotoTarget extends PathfinderGoal {
 
-    protected final EntityCreature a;
+    protected final EntityCreature a;public EntityCreature getEntity() { return a; } // Paper - OBFHELPER
     public final double b;
     protected int c;
     protected int d;
     private int g;
-    protected BlockPosition e;public final BlockPosition getTargetPosition() { return this.e; } // Paper - OBFHELPER
+    protected BlockPosition e; public final BlockPosition getTargetPosition() { return this.e; } public void setTargetPosition(BlockPosition pos) { this.e = pos; getEntity().movingTarget = pos != BlockPosition.ZERO ? pos : null; } // Paper - OBFHELPER
     private boolean h;
     private final int i;
     private final int j;
@@ -18,6 +18,13 @@ public abstract class PathfinderGoalGotoTarget extends PathfinderGoal {
     public PathfinderGoalGotoTarget(EntityCreature entitycreature, double d0, int i) {
         this(entitycreature, d0, i, 1);
     }
+    // Paper start - activation range improvements
+    @Override
+    public void onTaskReset() {
+        super.onTaskReset();
+        setTargetPosition(BlockPosition.ZERO);
+    }
+    // Paper end
 
     public PathfinderGoalGotoTarget(EntityCreature entitycreature, double d0, int i, int j) {
         this.e = BlockPosition.ZERO;
@@ -106,6 +113,7 @@ public abstract class PathfinderGoalGotoTarget extends PathfinderGoal {
                         blockposition_mutableblockposition.a((BaseBlockPosition) blockposition, i1, k - 1, j1);
                         if (this.a.a((BlockPosition) blockposition_mutableblockposition) && this.a(this.a.world, blockposition_mutableblockposition)) {
                             this.e = blockposition_mutableblockposition;
+                            setTargetPosition(blockposition_mutableblockposition.immutableCopy()); // Paper
                             return true;
                         }
                     }

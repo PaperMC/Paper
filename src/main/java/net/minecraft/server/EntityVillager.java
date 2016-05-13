@@ -144,17 +144,29 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
     @Override
     public void inactiveTick() {
         // SPIGOT-3874, SPIGOT-3894, SPIGOT-3846, SPIGOT-5286 :(
-        if (world.spigotConfig.tickInactiveVillagers && this.doAITick()) {
-            this.mobTick();
+        // Paper start
+        if (this.getUnhappy() > 0) {
+            this.setUnhappy(this.getUnhappy() - 1);
         }
+        if (this.doAITick()) {
+            if (world.spigotConfig.tickInactiveVillagers) {
+                this.mobTick();
+            } else {
+                this.mobTick(true);
+            }
+        }
+        doReputationTick();
+        // Paper end
+
         super.inactiveTick();
     }
     // Spigot End
 
     @Override
-    protected void mobTick() {
+    protected void mobTick() { mobTick(false); }
+    protected void mobTick(boolean inactive) {
         this.world.getMethodProfiler().enter("villagerBrain");
-        this.getBehaviorController().a((WorldServer) this.world, this); // CraftBukkit - decompile error
+        if (!inactive) this.getBehaviorController().a((WorldServer) this.world, this); // CraftBukkit - decompile error // Paper
         this.world.getMethodProfiler().exit();
         if (this.bF) {
             this.bF = false;
@@ -178,7 +190,7 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
             this.bv = null;
         }
 
-        if (!this.isNoAI() && this.random.nextInt(100) == 0) {
+        if (!inactive && !this.isNoAI() && this.random.nextInt(100) == 0) { // Paper
             Raid raid = ((WorldServer) this.world).b_(this.getChunkCoordinates());
 
             if (raid != null && raid.v() && !raid.a()) {
@@ -189,6 +201,7 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
         if (this.getVillagerData().getProfession() == VillagerProfession.NONE && this.eN()) {
             this.eT();
         }
+        if (inactive) return; // Paper
 
         super.mobTick();
     }
@@ -825,6 +838,7 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
         }
     }
 
+    private void doReputationTick() { fw(); } // Paper - OBFHELPER
     private void fw() {
         long i = this.world.getTime();
 

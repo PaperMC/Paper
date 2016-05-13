@@ -163,7 +163,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
     public boolean Y;
     public boolean impulse;
     public int portalCooldown;
-    protected boolean inPortal;
+    public boolean inPortal; // Paper - public
     protected int portalTicks;
     protected BlockPosition ac;
     private boolean invulnerable;
@@ -187,6 +187,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
     public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
     public final boolean defaultActivationState;
     public long activatedTick = Integer.MIN_VALUE;
+    public boolean isTemporarilyActive = false; // Paper
     public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
     protected int numCollisions = 0; // Paper
     public void inactiveTick() { }
@@ -576,6 +577,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
             this.recalcPosition();
         } else {
             if (enummovetype == EnumMoveType.PISTON) {
+                this.activatedTick = MinecraftServer.currentTick + 20; // Paper
                 vec3d = this.b(vec3d);
                 if (vec3d.equals(Vec3D.ORIGIN)) {
                     return;
@@ -588,6 +590,13 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
                 this.x = Vec3D.ORIGIN;
                 this.setMot(Vec3D.ORIGIN);
             }
+            // Paper start - ignore movement changes while inactive.
+            if (isTemporarilyActive && !(this instanceof EntityItem || this instanceof EntityMinecartAbstract) && vec3d == getMot() && enummovetype == EnumMoveType.SELF) {
+                setMot(Vec3D.ORIGIN);
+                this.world.getMethodProfiler().exit();
+                return;
+            }
+            // Paper end
 
             vec3d = this.a(vec3d, enummovetype);
             Vec3D vec3d1 = this.g(vec3d);
@@ -1918,6 +1927,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
         }
     }
 
+    public void syncPositionOf(Entity entity) { k(entity); } // Paper - OBFHELPER
     public void k(Entity entity) {
         this.a(entity, Entity::setPosition);
     }
@@ -2722,6 +2732,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
         return this.ae;
     }
 
+    public final boolean isPushedByWater() { return this.bU(); } // Paper - OBFHELPER - the below is not an obfhelper, don't use it!
     public boolean bU() {
         // Paper start
         return this.pushedByWater();

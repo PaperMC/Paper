@@ -98,7 +98,7 @@ public abstract class EntityLiving extends Entity {
     protected float aN;
     protected int aO;protected int getKillCount() { return this.aO; } // Paper - OBFHELPER
     public float lastDamage;
-    protected boolean jumping;
+    public boolean jumping; // Paper protected -> public
     public float aR;
     public float aS;
     public float aT;

@@ -20,7 +20,10 @@ public abstract class PathfinderGoal {
 
     public void c() {}
 
-    public void d() {}
+    public void d() {
+        onTaskReset(); // Paper
+    }
+    public void onTaskReset() {} // Paper
 
     public void e() {}
 

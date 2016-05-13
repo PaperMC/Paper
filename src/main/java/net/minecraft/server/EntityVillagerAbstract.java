@@ -44,10 +44,12 @@ public abstract class EntityVillagerAbstract extends EntityAgeable implements NP
         return super.prepare(worldaccess, difficultydamagescaler, enummobspawn, (GroupDataEntity) groupdataentity, nbttagcompound);
     }
 
+    public final int getUnhappy() { return eK(); } // Paper - OBFHELPER
     public int eK() {
         return (Integer) this.datawatcher.get(EntityVillagerAbstract.bp);
     }
 
+    public final void setUnhappy(int i) { s(i); } // Paper - OBFHELPER
     public void s(int i) {
         this.datawatcher.set(EntityVillagerAbstract.bp, i);
     }

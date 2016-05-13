@@ -47,7 +47,7 @@ public abstract class EntityInsentient extends EntityLiving {
     public MinecraftKey lootTableKey;
     public long lootTableSeed;
     @Nullable
-    private Entity leashHolder;
+    public Entity leashHolder; // Paper - private -> public
     private int bx;
     @Nullable
     private NBTTagCompound by;
@@ -127,6 +127,17 @@ public abstract class EntityInsentient extends EntityLiving {
     public ControllerLook getControllerLook() {
         return this.lookController;
     }
+
+    // Paper start
+    @Override
+    public void inactiveTick() {
+        super.inactiveTick();
+        this.goalSelector.inactiveTick();
+        if (this.targetSelector.inactiveTick()) {
+            this.targetSelector.doTick();
+        }
+    }
+    // Paper end
 
     public ControllerMove getControllerMove() {
         if (this.isPassenger() && this.getVehicle() instanceof EntityInsentient) {

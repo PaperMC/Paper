@@ -64,6 +64,7 @@ public class PathfinderGoalWrapped extends PathfinderGoal {
         return this.a.i();
     }
 
+    public boolean isRunning() { return this.g(); } // Paper - OBFHELPER
     public boolean g() {
         return this.c;
     }
