@@ -1,24 +1,24 @@
-From e5bd49a93687c1a4aed20c45b62283540017f6a0 Mon Sep 17 00:00:00 2001
+From 5a965808414b88283da8dc7aa36f9dcb6090311f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 12 May 2016 02:03:56 -0400
 Subject: [PATCH] Unmark chunk as unloading when unload is cancelled
 
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 1e172b8..f72b1f8 100644
+index d7b9581..40d4c9c 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -46,7 +46,7 @@ public class Chunk {
+@@ -47,7 +47,7 @@ public class Chunk {
      private long w;
      private int x;
      private ConcurrentLinkedQueue<BlockPosition> y;
 -    public boolean d;
 +    public boolean d;public void setShouldUnload(boolean unload) { this.d = unload; } // Paper // OBFHELPER
      protected gnu.trove.map.hash.TObjectIntHashMap<Class> entityCount = new gnu.trove.map.hash.TObjectIntHashMap<Class>(); // Spigot
-     public int lightUpdates; // Paper - Number of queued light updates for this chunk
  
+     // Paper start
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 1bc001d..7820ad9 100644
+index c2c6d3a..7427e6e 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -303,6 +303,7 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -26,9 +26,9 @@ index 1bc001d..7820ad9 100644
  
                      if (chunk != null && chunk.d) {
 +                        chunk.setShouldUnload(false); // Paper
-                         if (chunk.hasLightUpdates()) continue; // Paper - Don't unload chunks with pending light updates.
                          // CraftBukkit start
                          ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
+                         this.world.getServer().getPluginManager().callEvent(event);
 -- 
 2.8.2
 
