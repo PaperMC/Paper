@@ -27,13 +27,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public void startTiming() {
++    public Timing startTiming() {
 +        if (TimingsManager.needsFullReset) {
 +            TimingsManager.resetTimings();
 +        } else if (TimingsManager.needsRecheckEnabled) {
 +            TimingsManager.recheckEnabled();
 +        }
-+        super.startTiming();
++        return super.startTiming();
 +    }
 +
 +    @Override
@@ -122,8 +122,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +public final class NullTimingHandler implements Timing {
 +    @Override
-+    public void startTiming() {
-+
++    public Timing startTiming() {
++        return this;
 +    }
 +
 +    @Override
@@ -132,8 +132,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public void startTimingIfSync() {
-+
++    public Timing startTimingIfSync() {
++        return this;
 +    }
 +
 +    @Override
@@ -281,21 +281,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    /**
 +     * Starts timing the execution until {@link #stopTiming()} is called.
 +     */
-+    public void startTiming();
++    Timing startTiming();
 +
 +    /**
 +     * <p>Stops timing and records the data. Propagates the data up to group handlers.</p>
 +     *
 +     * Will automatically be called when this Timing is used with try-with-resources
 +     */
-+    public void stopTiming();
++    void stopTiming();
 +
 +    /**
 +     * Starts timing the execution until {@link #stopTiming()} is called.
 +     *
 +     * But only if we are on the primary thread.
 +     */
-+    public void startTimingIfSync();
++    Timing startTimingIfSync();
 +
 +    /**
 +     * <p>Stops timing and records the data. Propagates the data up to group handlers.</p>
@@ -304,12 +304,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * But only if we are on the primary thread.
 +     */
-+    public void stopTimingIfSync();
++    void stopTimingIfSync();
 +
 +    /**
 +     * Stops timing and disregards current timing data.
 +     */
-+    public void abort();
++    void abort();
 +
 +    /**
 +     * Used internally to get the actual backing Handler in the case of delegated Handlers
@@ -523,10 +523,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public void startTimingIfSync() {
++    public Timing startTimingIfSync() {
 +        if (Bukkit.isPrimaryThread()) {
 +            startTiming();
 +        }
++        return this;
 +    }
 +
 +    @Override
@@ -536,12 +537,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    public void startTiming() {
++    public Timing startTiming() {
 +        if (enabled && ++timingDepth == 1) {
 +            start = System.nanoTime();
 +            parent = TimingsManager.CURRENT;
 +            TimingsManager.CURRENT = this;
 +        }
++        return this;
 +    }
 +
 +    public void stopTiming() {
@@ -2167,9 +2169,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public void startTiming() {
++    public Timing startTiming() {
 +        checkThread();
-+        super.startTiming();
++        return super.startTiming();
 +    }
 +
 +    @Override
