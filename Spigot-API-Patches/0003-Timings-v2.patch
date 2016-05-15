@@ -1,4 +1,4 @@
-From 68eaefeb0f88b94668bf7b5a6ac302b3b753cb89 Mon Sep 17 00:00:00 2001
+From fac59bea72f76e7b47c2ba85690115c3bcf72d86 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
@@ -6,7 +6,7 @@ Subject: [PATCH] Timings v2
 
 diff --git a/src/main/java/co/aikar/timings/FullServerTickHandler.java b/src/main/java/co/aikar/timings/FullServerTickHandler.java
 new file mode 100644
-index 0000000..cb4e7ba
+index 0000000..007ab9c
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/FullServerTickHandler.java
 @@ -0,0 +1,79 @@
@@ -27,13 +27,13 @@ index 0000000..cb4e7ba
 +    }
 +
 +    @Override
-+    public void startTiming() {
++    public Timing startTiming() {
 +        if (TimingsManager.needsFullReset) {
 +            TimingsManager.resetTimings();
 +        } else if (TimingsManager.needsRecheckEnabled) {
 +            TimingsManager.recheckEnabled();
 +        }
-+        super.startTiming();
++        return super.startTiming();
 +    }
 +
 +    @Override
@@ -91,7 +91,7 @@ index 0000000..cb4e7ba
 +}
 diff --git a/src/main/java/co/aikar/timings/NullTimingHandler.java b/src/main/java/co/aikar/timings/NullTimingHandler.java
 new file mode 100644
-index 0000000..c73b617
+index 0000000..8c43e20
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/NullTimingHandler.java
 @@ -0,0 +1,61 @@
@@ -122,8 +122,8 @@ index 0000000..c73b617
 +
 +public final class NullTimingHandler implements Timing {
 +    @Override
-+    public void startTiming() {
-+
++    public Timing startTiming() {
++        return this;
 +    }
 +
 +    @Override
@@ -132,8 +132,8 @@ index 0000000..c73b617
 +    }
 +
 +    @Override
-+    public void startTimingIfSync() {
-+
++    public Timing startTimingIfSync() {
++        return this;
 +    }
 +
 +    @Override
@@ -245,7 +245,7 @@ index 0000000..96057fc
 +}
 diff --git a/src/main/java/co/aikar/timings/Timing.java b/src/main/java/co/aikar/timings/Timing.java
 new file mode 100644
-index 0000000..4d990b1
+index 0000000..8b2d1b8
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/Timing.java
 @@ -0,0 +1,72 @@
@@ -281,21 +281,21 @@ index 0000000..4d990b1
 +    /**
 +     * Starts timing the execution until {@link #stopTiming()} is called.
 +     */
-+    public void startTiming();
++    Timing startTiming();
 +
 +    /**
 +     * <p>Stops timing and records the data. Propagates the data up to group handlers.</p>
 +     *
 +     * Will automatically be called when this Timing is used with try-with-resources
 +     */
-+    public void stopTiming();
++    void stopTiming();
 +
 +    /**
 +     * Starts timing the execution until {@link #stopTiming()} is called.
 +     *
 +     * But only if we are on the primary thread.
 +     */
-+    public void startTimingIfSync();
++    Timing startTimingIfSync();
 +
 +    /**
 +     * <p>Stops timing and records the data. Propagates the data up to group handlers.</p>
@@ -304,12 +304,12 @@ index 0000000..4d990b1
 +     *
 +     * But only if we are on the primary thread.
 +     */
-+    public void stopTimingIfSync();
++    void stopTimingIfSync();
 +
 +    /**
 +     * Stops timing and disregards current timing data.
 +     */
-+    public void abort();
++    void abort();
 +
 +    /**
 +     * Used internally to get the actual backing Handler in the case of delegated Handlers
@@ -434,10 +434,10 @@ index 0000000..b62e428
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHandler.java b/src/main/java/co/aikar/timings/TimingHandler.java
 new file mode 100644
-index 0000000..46c4e13
+index 0000000..0914417
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHandler.java
-@@ -0,0 +1,190 @@
+@@ -0,0 +1,192 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -523,10 +523,11 @@ index 0000000..46c4e13
 +    }
 +
 +    @Override
-+    public void startTimingIfSync() {
++    public Timing startTimingIfSync() {
 +        if (Bukkit.isPrimaryThread()) {
 +            startTiming();
 +        }
++        return this;
 +    }
 +
 +    @Override
@@ -536,12 +537,13 @@ index 0000000..46c4e13
 +        }
 +    }
 +
-+    public void startTiming() {
++    public Timing startTiming() {
 +        if (enabled && ++timingDepth == 1) {
 +            start = System.nanoTime();
 +            parent = TimingsManager.CURRENT;
 +            TimingsManager.CURRENT = this;
 +        }
++        return this;
 +    }
 +
 +    public void stopTiming() {
@@ -2123,7 +2125,7 @@ index 0000000..58ed35e
 +}
 diff --git a/src/main/java/co/aikar/timings/UnsafeTimingHandler.java b/src/main/java/co/aikar/timings/UnsafeTimingHandler.java
 new file mode 100644
-index 0000000..e3b0ed8
+index 0000000..5edaba1
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/UnsafeTimingHandler.java
 @@ -0,0 +1,51 @@
@@ -2167,9 +2169,9 @@ index 0000000..e3b0ed8
 +    }
 +
 +    @Override
-+    public void startTiming() {
++    public Timing startTiming() {
 +        checkThread();
-+        super.startTiming();
++        return super.startTiming();
 +    }
 +
 +    @Override
