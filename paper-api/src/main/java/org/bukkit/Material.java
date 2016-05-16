@@ -279,8 +279,8 @@ public enum Material {
     BEETROOT_BLOCK(207, Crops.class),
     GRASS_PATH(208),
     END_GATEWAY(209),
-    COMMAND_REPEATING(210),
-    COMMAND_CHAIN(211),
+    COMMAND_REPEATING(210, Command.class),
+    COMMAND_CHAIN(211, Command.class),
     FROSTED_ICE(212),
     STRUCTURE_BLOCK(255),
     // ----- Item Separator -----
