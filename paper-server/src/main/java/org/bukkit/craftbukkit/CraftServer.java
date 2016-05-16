@@ -126,6 +126,7 @@ import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.base64.Base64;
 import jline.console.ConsoleReader;
+import org.bukkit.event.server.TabCompleteEvent;
 
 public final class CraftServer implements Server {
     private static final Player[] EMPTY_PLAYER_ARRAY = new Player[0];
@@ -1536,12 +1537,18 @@ public final class CraftServer implements Server {
             return ImmutableList.of();
         }
 
+        List<String> offers;
         Player player = ((EntityPlayer) sender).getBukkitEntity();
         if (message.startsWith("/")) {
-            return tabCompleteCommand(player, message);
+            offers = tabCompleteCommand(player, message);
         } else {
-            return tabCompleteChat(player, message);
+            offers = tabCompleteChat(player, message);
         }
+
+        TabCompleteEvent tabEvent = new TabCompleteEvent(player, message, offers);
+        getPluginManager().callEvent(tabEvent);
+
+        return tabEvent.isCancelled() ? Collections.EMPTY_LIST : tabEvent.getCompletions();
     }
 
     public List<String> tabCompleteCommand(Player player, String message) {
