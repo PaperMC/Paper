@@ -30,7 +30,6 @@ public class CraftBlockState implements BlockState {
     protected int type;
     protected MaterialData data;
     protected int flag;
-    protected final byte light;
 
     public CraftBlockState(final Block block) {
         this.world = (CraftWorld) block.getWorld();
@@ -38,7 +37,6 @@ public class CraftBlockState implements BlockState {
         this.y = block.getY();
         this.z = block.getZ();
         this.type = block.getTypeId();
-        this.light = block.getLightLevel();
         this.chunk = (CraftChunk) block.getChunk();
         this.flag = 3;
 
@@ -53,7 +51,6 @@ public class CraftBlockState implements BlockState {
     public CraftBlockState(Material material) {
         world = null;
         type = material.getId();
-        light = 0;
         chunk = null;
         x = y = z = 0;
     }
@@ -137,7 +134,7 @@ public class CraftBlockState implements BlockState {
     }
 
     public byte getLightLevel() {
-        return light;
+        return getBlock().getLightLevel();
     }
 
     public Block getBlock() {
