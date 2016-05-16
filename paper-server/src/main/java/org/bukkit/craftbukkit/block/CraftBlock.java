@@ -287,6 +287,8 @@ public class CraftBlock implements Block {
         case SKULL:
             return new CraftSkull(this);
         case COMMAND:
+        case COMMAND_CHAIN:
+        case COMMAND_REPEATING:
             return new CraftCommandBlock(this);
         case BEACON:
             return new CraftBeacon(this);
