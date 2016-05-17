@@ -1,4 +1,4 @@
-From bba590ef48a38b044e9e7ceb69af8f19015abd39 Mon Sep 17 00:00:00 2001
+From 665309dc76ad50bb5c79f50fcbf48cdcf5bc92f4 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 15 Apr 2016 21:27:14 -0400
 Subject: [PATCH] Allow capping number of attempts at spawning mobs
@@ -10,18 +10,26 @@ This patch will cap the # of attempts to so that the tick does not spend
 extra long time on mob spawning
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 4398814..4f3fc82 100644
+index 6a235d1..d470e75 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -317,4 +317,10 @@ public class PaperWorldConfig {
+@@ -320,4 +320,18 @@ public class PaperWorldConfig {
      private void useVanillaScoreboardColoring() {
          useVanillaScoreboardColoring = getBoolean("use-vanilla-world-scoreboard-name-coloring", false);
      }
 +
 +    public int maxMobSpawnAttempts;
 +    private void maxMobSpawnAttempts() {
-+        maxMobSpawnAttempts = getInt("max-mob-spawn-attempts", 50);
++        maxMobSpawnAttempts = getInt("max-mob-spawn-attempts", 250);
 +        log( "Max Mob Spawn Attempts: " + maxMobSpawnAttempts);
++        if (maxMobSpawnAttempts < 0) {
++            maxMobSpawnAttempts = Integer.MAX_VALUE;
++        } else {
++            if (maxMobSpawnAttempts < 250 && PaperConfig.version < 10) {
++                set("max-mob-spawn-attempts", 250);
++                maxMobSpawnAttempts = 250;
++            }
++        }
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
