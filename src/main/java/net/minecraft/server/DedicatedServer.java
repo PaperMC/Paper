@@ -210,7 +210,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
         }
 
         if (this.convertNames()) {
-            this.getUserCache().b();
+            this.getUserCache().b(false); // Paper
         }
 
         if (!NameReferencingFileConverter.e(this)) {

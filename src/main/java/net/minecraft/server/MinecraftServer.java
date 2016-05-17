@@ -786,7 +786,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         } catch (java.lang.InterruptedException ignored) {} // Paper
         if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
             LOGGER.info("Saving usercache.json");
-            this.getUserCache().b();
+            this.getUserCache().b(false); // Paper
         }
         // Spigot end
 
