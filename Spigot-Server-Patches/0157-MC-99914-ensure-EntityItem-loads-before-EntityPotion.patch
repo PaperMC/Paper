@@ -1,0 +1,33 @@
+From e7916ce21713f358b99e80754dac20434ec5120d Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 16 May 2016 22:54:36 -0400
+Subject: [PATCH] MC-99914 - ensure EntityItem loads before EntityPotion
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityItem.java b/src/main/java/net/minecraft/server/EntityItem.java
+index 9618eaf..0b11fd7 100644
+--- a/src/main/java/net/minecraft/server/EntityItem.java
++++ b/src/main/java/net/minecraft/server/EntityItem.java
+@@ -41,6 +41,7 @@ public class EntityItem extends Entity {
+         this.setItemStack(itemstack);
+     }
+ 
++    static int uglyHack = 1; // Paper - MC-99914 - ensure EntityItem loads before EntityPotion
+     protected boolean playStepSound() {
+         return false;
+     }
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 7e7ec23..8df9f38 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -136,6 +136,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+         this.dataConverterManager = dataconvertermanager;
+         // CraftBukkit start
+         this.options = options;
++        EntityItem.uglyHack++; // Paper - MC-99914 - ensure EntityItem loads before EntityPotion
+         // Try to see if we're actually running in a terminal, disable jline if not
+         if (System.console() == null && System.getProperty("jline.terminal") == null) {
+             System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
+-- 
+2.8.2
+
