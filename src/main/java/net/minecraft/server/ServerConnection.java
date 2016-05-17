@@ -39,6 +39,15 @@ public class ServerConnection {
     public volatile boolean c;
     private final List<ChannelFuture> listeningChannels = Collections.synchronizedList(Lists.newArrayList());
     private final List<NetworkManager> connectedChannels = Collections.synchronizedList(Lists.newArrayList());
+    // Paper start - prevent blocking on adding a new network manager while the server is ticking
+    private final java.util.Queue<NetworkManager> pending = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    private void addPending() {
+        NetworkManager manager = null;
+        while ((manager = pending.poll()) != null) {
+            connectedChannels.add(manager);
+        }
+    }
+    // Paper end
 
     public ServerConnection(MinecraftServer minecraftserver) {
         this.e = minecraftserver;
@@ -74,7 +83,8 @@ public class ServerConnection {
                     int j = ServerConnection.this.e.k();
                     Object object = j > 0 ? new NetworkManagerServer(j) : new NetworkManager(EnumProtocolDirection.SERVERBOUND);
 
-                    ServerConnection.this.connectedChannels.add((NetworkManager) object); // CraftBukkit - decompile error
+                    //ServerConnection.this.connectedChannels.add((NetworkManager) object); // CraftBukkit - decompile error
+                    pending.add((NetworkManager) object); // Paper
                     channel.pipeline().addLast("packet_handler", (ChannelHandler) object);
                     ((NetworkManager) object).setPacketListener(new HandshakeListener(ServerConnection.this.e, (NetworkManager) object));
                 }
@@ -113,6 +123,7 @@ public class ServerConnection {
 
         synchronized (this.connectedChannels) {
             // Spigot Start
+            this.addPending(); // Paper
             // This prevents players from 'gaming' the server, and strategically relogging to increase their position in the tick order
             if ( org.spigotmc.SpigotConfig.playerShuffle > 0 && MinecraftServer.currentTick % org.spigotmc.SpigotConfig.playerShuffle == 0 )
             {
