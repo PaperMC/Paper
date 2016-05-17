@@ -13,13 +13,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package net.minecraft.server;
 +
++import com.google.common.util.concurrent.ThreadFactoryBuilder;
 +import org.bukkit.Location;
 +
 +import javax.annotation.Nullable;
++import java.util.concurrent.Executor;
++import java.util.concurrent.Executors;
 +import java.util.regex.Pattern;
 +
 +public final class MCUtil {
 +    private static final Pattern REPLACE_QUOTES = Pattern.compile("\"");
++    private static final Executor asyncExecutor = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Paper Async Task Handler Thread - %1$d").build());
 +
 +    private MCUtil() {}
 +
@@ -151,6 +155,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    @Nullable public static Chunk getLoadedChunkWithoutMarkingActive(IChunkProvider provider, int x, int z) {
 +        return ((ChunkProviderServer)provider).chunks.get(ChunkCoordIntPair.a(x, z));
++    }
++
++    /**
++     * Posts a task to be executed asynchronously
++     * @param run
++     */
++    public static void scheduleAsyncTask(Runnable run) {
++        asyncExecutor.execute(run);
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/NBTTagCompound.java b/src/main/java/net/minecraft/server/NBTTagCompound.java
