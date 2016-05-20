@@ -1,4 +1,4 @@
-From 9a35dcacf6c7419e788d81e7704b177ab3c3c5ff Mon Sep 17 00:00:00 2001
+From 47467b9ed89eb4761a409425af0d77d513e98c60 Mon Sep 17 00:00:00 2001
 From: DemonWav <demonwav@gmail.com>
 Date: Thu, 3 Mar 2016 01:44:39 -0600
 Subject: [PATCH] Add Location support to tab completers (vanilla feature
@@ -33,7 +33,7 @@ index bbdb19a..3d2e0b6 100644
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index c6cee80..3a288bd 100644
+index 2b49d69..bc48cf6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -25,17 +25,11 @@ import javax.imageio.ImageIO;
@@ -56,7 +56,7 @@ index c6cee80..3a288bd 100644
  import org.bukkit.boss.BarColor;
  import org.bukkit.boss.BarFlag;
  import org.bukkit.boss.BarStyle;
-@@ -1606,21 +1600,38 @@ public final class CraftServer implements Server {
+@@ -1607,6 +1601,14 @@ public final class CraftServer implements Server {
      }
  
      public List<String> tabComplete(net.minecraft.server.ICommandListener sender, String message) {
@@ -71,14 +71,19 @@ index c6cee80..3a288bd 100644
          if (!(sender instanceof EntityPlayer)) {
              return ImmutableList.of();
          }
- 
+@@ -1614,7 +1616,7 @@ public final class CraftServer implements Server {
+         List<String> offers;
          Player player = ((EntityPlayer) sender).getBukkitEntity();
          if (message.startsWith("/")) {
--            return tabCompleteCommand(player, message);
-+            return tabCompleteCommand(player, message, blockPosition);
+-            offers = tabCompleteCommand(player, message);
++            offers = tabCompleteCommand(player, message, blockPosition);
          } else {
-             return tabCompleteChat(player, message);
+             offers = tabCompleteChat(player, message);
          }
+@@ -1623,11 +1625,20 @@ public final class CraftServer implements Server {
+         getPluginManager().callEvent(tabEvent);
+ 
+         return tabEvent.isCancelled() ? Collections.EMPTY_LIST : tabEvent.getCompletions();
 +        // Paper end
      }
  
@@ -97,7 +102,7 @@ index c6cee80..3a288bd 100644
          {
              return ImmutableList.of();
          }
-@@ -1628,7 +1639,14 @@ public final class CraftServer implements Server {
+@@ -1635,7 +1646,14 @@ public final class CraftServer implements Server {
  
          List<String> completions = null;
          try {
