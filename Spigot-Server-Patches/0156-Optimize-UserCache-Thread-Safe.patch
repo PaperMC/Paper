@@ -1,4 +1,4 @@
-From 594c3b6dba4fae26e7b1da595b77b23bc3cbacf8 Mon Sep 17 00:00:00 2001
+From a16fb3ba3001e1a330a3b2aeae75a89870d69d33 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 16 May 2016 20:47:41 -0400
 Subject: [PATCH] Optimize UserCache / Thread Safe
@@ -23,18 +23,9 @@ index ec9f037..7e7ec23 100644
          // Spigot end
      }
 diff --git a/src/main/java/net/minecraft/server/UserCache.java b/src/main/java/net/minecraft/server/UserCache.java
-index 5cc2731..f4bc9db 100644
+index 5cc2731..4fde2de 100644
 --- a/src/main/java/net/minecraft/server/UserCache.java
 +++ b/src/main/java/net/minecraft/server/UserCache.java
-@@ -108,7 +108,7 @@ public class UserCache {
-         this.a(gameprofile, (Date) null);
-     }
- 
--    private void a(GameProfile gameprofile, Date date) {
-+    private synchronized void a(GameProfile gameprofile, Date date) { // Paper - synchronize
-         UUID uuid = gameprofile.getId();
- 
-         if (date == null) {
 @@ -122,8 +122,9 @@ public class UserCache {
          String s = gameprofile.getName().toLowerCase(Locale.ROOT);
          UserCache.UserCacheEntry usercache_usercacheentry = new UserCache.UserCacheEntry(gameprofile, date, null);
@@ -46,24 +37,6 @@ index 5cc2731..f4bc9db 100644
  
              this.d.remove(usercache_usercacheentry1.a().getName().toLowerCase(Locale.ROOT));
              this.f.remove(gameprofile);
-@@ -136,7 +137,7 @@ public class UserCache {
-     }
- 
-     @Nullable
--    public GameProfile getProfile(String s) {
-+    public synchronized GameProfile getProfile(String s) { // Paper - synchronize
-         String s1 = s.toLowerCase(Locale.ROOT);
-         UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.d.get(s1);
- 
-@@ -165,7 +166,7 @@ public class UserCache {
-         return usercache_usercacheentry == null ? null : usercache_usercacheentry.a();
-     }
- 
--    public String[] a() {
-+    public synchronized String[] a() { // Paper - synchronize
-         ArrayList arraylist = Lists.newArrayList(this.d.keySet());
- 
-         return (String[]) arraylist.toArray(new String[arraylist.size()]);
 @@ -227,8 +228,15 @@ public class UserCache {
  
      }
@@ -75,7 +48,7 @@ index 5cc2731..f4bc9db 100644
 +    public void c(boolean asyncSave) {
 +        // Paper end
          String s = this.b.toJson(this.a(org.spigotmc.SpigotConfig.userCacheCap));
-+        Runnable save = () -> { synchronized (this.h) { // Paper - ensure only 1 file is writing at same time by syncing to the FD
++        Runnable save = () -> { // Paper - ensure only 1 file is writing at same time by syncing to the FD // ¯\_(ツ)_/¯
 +
          BufferedWriter bufferedwriter = null;
  
@@ -85,7 +58,7 @@ index 5cc2731..f4bc9db 100644
              IOUtils.closeQuietly(bufferedwriter);
          }
 +        // Paper start
-+        }};
++        };
 +        if (asyncSave) {
 +            MCUtil.scheduleAsyncTask(save);
 +        } else {
