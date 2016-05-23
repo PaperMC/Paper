@@ -2,7 +2,6 @@ package com.destroystokyo.paper;
 
 import java.util.List;
 
-import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.spigotmc.SpigotWorldConfig;
 
@@ -283,5 +282,15 @@ public class PaperWorldConfig {
                 (restrictPlayerReloot ? " (restricting reloot)" : "")
             );
         }
+    }
+
+    public boolean preventTntFromMovingInWater;
+    private void preventTntFromMovingInWater() {
+        if (PaperConfig.version < 13) {
+            boolean oldVal = getBoolean("enable-old-tnt-cannon-behaviors", false);
+            set("prevent-tnt-from-moving-in-water", oldVal);
+        }
+        preventTntFromMovingInWater = getBoolean("prevent-tnt-from-moving-in-water", false);
+        log("Prevent TNT from moving in water: " + preventTntFromMovingInWater);
     }
 }
