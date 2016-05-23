@@ -11,7 +11,7 @@ import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 public class BlockRedstoneTorch extends BlockTorch {
 
     public static final BlockStateBoolean LIT = BlockProperties.r;
-    private static final Map<IBlockAccess, List<BlockRedstoneTorch.RedstoneUpdateInfo>> b = new WeakHashMap();
+    // Paper - Move the mapped list to World
 
     protected BlockRedstoneTorch(BlockBase.Info blockbase_info) {
         super(blockbase_info, ParticleParamRedstone.a);
@@ -58,11 +58,15 @@ public class BlockRedstoneTorch extends BlockTorch {
     @Override
     public void tickAlways(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, Random random) {
         boolean flag = this.a((World) worldserver, blockposition, iblockdata);
-        List list = (List) BlockRedstoneTorch.b.get(worldserver);
-
-        while (list != null && !list.isEmpty() && worldserver.getTime() - ((BlockRedstoneTorch.RedstoneUpdateInfo) list.get(0)).b > 60L) {
-            list.remove(0);
+        // Paper start
+        java.util.ArrayDeque<BlockRedstoneTorch.RedstoneUpdateInfo> redstoneUpdateInfos = worldserver.redstoneUpdateInfos;
+        if (redstoneUpdateInfos != null) {
+            BlockRedstoneTorch.RedstoneUpdateInfo curr;
+            while ((curr = redstoneUpdateInfos.peek()) != null && worldserver.getTime() - curr.getTime() > 60L) {
+                redstoneUpdateInfos.poll();
+            }
         }
+        // Paper end
 
         // CraftBukkit start
         org.bukkit.plugin.PluginManager manager = worldserver.getServer().getPluginManager();
@@ -127,9 +131,12 @@ public class BlockRedstoneTorch extends BlockTorch {
     }
 
     private static boolean a(World world, BlockPosition blockposition, boolean flag) {
-        List<BlockRedstoneTorch.RedstoneUpdateInfo> list = (List) BlockRedstoneTorch.b.computeIfAbsent(world, (iblockaccess) -> {
-            return Lists.newArrayList();
-        });
+        // Paper start
+        java.util.ArrayDeque<BlockRedstoneTorch.RedstoneUpdateInfo> list = world.redstoneUpdateInfos;
+        if (list == null) {
+            list = world.redstoneUpdateInfos = new java.util.ArrayDeque<>();
+        }
+
 
         if (flag) {
             list.add(new BlockRedstoneTorch.RedstoneUpdateInfo(blockposition.immutableCopy(), world.getTime()));
@@ -137,9 +144,9 @@ public class BlockRedstoneTorch extends BlockTorch {
 
         int i = 0;
 
-        for (int j = 0; j < list.size(); ++j) {
-            BlockRedstoneTorch.RedstoneUpdateInfo blockredstonetorch_redstoneupdateinfo = (BlockRedstoneTorch.RedstoneUpdateInfo) list.get(j);
-
+        for (java.util.Iterator<BlockRedstoneTorch.RedstoneUpdateInfo> iterator = list.iterator(); iterator.hasNext();) {
+            BlockRedstoneTorch.RedstoneUpdateInfo blockredstonetorch_redstoneupdateinfo = iterator.next();
+            // Paper end
             if (blockredstonetorch_redstoneupdateinfo.a.equals(blockposition)) {
                 ++i;
                 if (i >= 8) {
@@ -154,7 +161,7 @@ public class BlockRedstoneTorch extends BlockTorch {
     public static class RedstoneUpdateInfo {
 
         private final BlockPosition a;
-        private final long b;
+        private final long b; final long getTime() { return this.b; } // Paper - OBFHELPER
 
         public RedstoneUpdateInfo(BlockPosition blockposition, long i) {
             this.a = blockposition;

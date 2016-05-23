@@ -90,6 +90,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
     private org.spigotmc.TickLimiter tileLimiter;
     private int tileTickPosition;
     public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
+    public java.util.ArrayDeque<BlockRedstoneTorch.RedstoneUpdateInfo> redstoneUpdateInfos; // Paper - Move from Map in BlockRedstoneTorch to here
 
     public CraftWorld getWorld() {
         return this.world;
