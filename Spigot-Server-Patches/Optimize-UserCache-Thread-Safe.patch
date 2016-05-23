@@ -27,6 +27,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/UserCache.java
 +++ b/src/main/java/net/minecraft/server/UserCache.java
 @@ -0,0 +0,0 @@ public class UserCache {
+         this.a(gameprofile, (Date) null);
+     }
+ 
+-    private void a(GameProfile gameprofile, Date date) {
++    private synchronized void a(GameProfile gameprofile, Date date) { // Paper - synchronize
+         UUID uuid = gameprofile.getId();
+ 
+         if (date == null) {
+@@ -0,0 +0,0 @@ public class UserCache {
          String s = gameprofile.getName().toLowerCase(Locale.ROOT);
          UserCache.UserCacheEntry usercache_usercacheentry = new UserCache.UserCacheEntry(gameprofile, date, null);
  
@@ -38,6 +47,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.d.remove(usercache_usercacheentry1.a().getName().toLowerCase(Locale.ROOT));
              this.f.remove(gameprofile);
 @@ -0,0 +0,0 @@ public class UserCache {
+     }
+ 
+     @Nullable
+-    public GameProfile getProfile(String s) {
++    public synchronized GameProfile getProfile(String s) { // Paper - synchronize
+         String s1 = s.toLowerCase(Locale.ROOT);
+         UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.d.get(s1);
+ 
+@@ -0,0 +0,0 @@ public class UserCache {
+         return usercache_usercacheentry == null ? null : usercache_usercacheentry.a();
+     }
+ 
+-    public String[] a() {
++    public synchronized String[] a() { // Paper - synchronize
+         ArrayList arraylist = Lists.newArrayList(this.d.keySet());
+ 
+         return (String[]) arraylist.toArray(new String[arraylist.size()]);
+@@ -0,0 +0,0 @@ public class UserCache {
  
      }
  
@@ -48,7 +75,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public void c(boolean asyncSave) {
 +        // Paper end
          String s = this.b.toJson(this.a(org.spigotmc.SpigotConfig.userCacheCap));
-+        Runnable save = () -> { // Paper - ensure only 1 file is writing at same time by syncing to the FD // ¯\_(ツ)_/¯
++        Runnable save = () -> { // Paper - ensure only 1 file is writing at same time by syncing to the FD
 +
          BufferedWriter bufferedwriter = null;
  
@@ -58,7 +85,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              IOUtils.closeQuietly(bufferedwriter);
          }
 +        // Paper start
-+        };
++        }};
 +        if (asyncSave) {
 +            MCUtil.scheduleAsyncTask(save);
 +        } else {
