@@ -213,7 +213,7 @@ public class CraftWorld implements World {
                     continue;
                 }
 
-                net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getLoadedChunkAt(chunk.locX + x, chunk.locZ + z);
+                net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
                 if (neighbor != null) {
                     neighbor.setNeighborUnloaded(-xx, -zz);
                     chunk.setNeighborUnloaded(xx, zz);
