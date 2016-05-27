@@ -373,4 +373,20 @@ public interface Entity extends Metadatable, CommandSender {
      * @return whether the entity is
      */
     public boolean isInvulnerable();
+
+    /**
+     * Gets whether the entity is silent or not.
+     *
+     * @return whether the entity is silent.
+     */
+    public boolean isSilent();
+
+    /**
+     * Sets whether the entity is silent or not.
+     * <p>
+     * When an entity is silent it will not produce any sound.
+     *
+     * @param flag if the entity is silent
+     */
+    public void setSilent(boolean flag);
 }
