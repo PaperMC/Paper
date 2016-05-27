@@ -1,0 +1,990 @@
+From 9535266c1d59420db27343bcf119313a783b19a9 Mon Sep 17 00:00:00 2001
+From: Techcable <Techcable@techcable.net>
+Date: Thu, 14 Apr 2016 11:21:49 -0700
+Subject: [PATCH] Cache uuid requests in memory
+
+Re-routes requests throught NMS throught the API.
+Avoids lookups for online players.
+Overrides authlib lookups with delegates.
+
+diff --git a/src/main/java/com/destroystokyo/paper/InternalListener.java b/src/main/java/com/destroystokyo/paper/InternalListener.java
+new file mode 100644
+index 0000000..a38da4e
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/InternalListener.java
+@@ -0,0 +1,43 @@
++package com.destroystokyo.paper;
++
++import com.destroystokyo.paper.profile.AccountProfile;
++import net.minecraft.server.EntityPlayer;
++
++import java.util.Set;
++import java.util.concurrent.CopyOnWriteArraySet;
++
++public interface InternalListener {
++
++    Set<InternalListener> LISTENERS = new CopyOnWriteArraySet<>();
++
++    /**
++     * Called before a player logs in
++     * <p>May be called from any thread.</p>
++     *
++     * @param profile the profile that is attempting to login
++     */
++    default void onAsyncPreLogin(AccountProfile profile) {}
++
++    /**
++     * Called if a player's login is attempt is cancelled
++     * <p>May be called from any thread.</p>
++     * <p>Always called after {@link #onAsyncPreLogin(AccountProfile)}.</p>
++     *
++     * @param profile the profile whose login was cancelled
++     */
++    default void onCancelledLogin(AccountProfile profile) {}
++
++    /**
++     * Called if a player quits the game
++     *
++     * @param player the player who quit the game
++     */
++    default void onQuit(EntityPlayer player) {}
++
++    /**
++     * Called if a player is kicked from the game
++     *
++     * @param player the player who was kicked
++     */
++    default void onKick(EntityPlayer player) {}
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/BukkitGameProfileRepository.java b/src/main/java/com/destroystokyo/paper/profile/BukkitGameProfileRepository.java
+new file mode 100644
+index 0000000..7387112
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/BukkitGameProfileRepository.java
+@@ -0,0 +1,39 @@
++package com.destroystokyo.paper.profile;
++
++import com.google.common.base.Preconditions;
++import com.google.common.collect.ImmutableSet;
++import com.mojang.authlib.Agent;
++import com.mojang.authlib.GameProfile;
++import com.mojang.authlib.GameProfileRepository;
++import com.mojang.authlib.ProfileLookupCallback;
++
++public class BukkitGameProfileRepository implements GameProfileRepository {
++    private final ProfileLookup lookup;
++
++    public BukkitGameProfileRepository(ProfileLookup lookup) {
++        this.lookup = lookup;
++    }
++
++    @Override
++    public void findProfilesByNames(String[] nameArray, Agent agent, ProfileLookupCallback nmsCallback) {
++        Preconditions.checkArgument(agent == Agent.MINECRAFT, "Unexpected agent: %s", agent);
++        ImmutableSet<String> names = ImmutableSet.copyOf(nameArray);
++        lookup.lookupNames(names, new com.destroystokyo.paper.profile.ProfileLookupCallback<String>() {
++            @Override
++            public void onLookup(AccountProfile profile, String original) {
++                nmsCallback.onProfileLookupSucceeded(ProfileUtils.toMojang(profile));
++            }
++
++            @Override
++            public void onLookupFailed(Throwable t, String original) {
++                Exception e;
++                if (t instanceof Exception) {
++                    e = (Exception) t;
++                } else {
++                    e = new RuntimeException("Throwable (not-exception) caught", t);
++                }
++                nmsCallback.onProfileLookupFailed(new GameProfile(null, original), e);
++            }
++        });
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/BukkitSessionService.java b/src/main/java/com/destroystokyo/paper/profile/BukkitSessionService.java
+new file mode 100644
+index 0000000..ecb55c1
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/BukkitSessionService.java
+@@ -0,0 +1,64 @@
++package com.destroystokyo.paper.profile;
++
++import com.google.common.collect.ImmutableMap;
++import com.mojang.authlib.GameProfile;
++import com.mojang.authlib.exceptions.AuthenticationException;
++import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
++import com.mojang.authlib.minecraft.InsecureTextureException;
++import com.mojang.authlib.minecraft.MinecraftProfileTexture;
++import com.mojang.authlib.minecraft.MinecraftSessionService;
++
++import java.util.Map;
++
++public class BukkitSessionService implements MinecraftSessionService {
++    private final MinecraftSessionService delegate;
++    private final ProfileLookup lookup;
++
++    public BukkitSessionService(MinecraftSessionService delegate, ProfileLookup lookup) {
++        this.delegate = delegate;
++        this.lookup = lookup;
++    }
++
++    @Override
++    public void joinServer(GameProfile gameProfile, String s, String s1) throws AuthenticationException {
++        delegate.joinServer(gameProfile, s, s1);
++    }
++
++    @Override
++    public GameProfile hasJoinedServer(GameProfile gameProfile, String s) throws AuthenticationUnavailableException {
++        return delegate.hasJoinedServer(gameProfile, s);
++    }
++
++    @Override
++    public Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> getTextures(GameProfile mojangProfile, boolean checkSignature) {
++        if (mojangProfile.getProperties().isEmpty()) return ImmutableMap.of();
++        AccountProfile profile = ProfileUtils.toPaperWithProperties(mojangProfile);
++        PlayerTextures texture = profile.getTextures();
++        if (texture == null) return ImmutableMap.of();
++        if (checkSignature) {
++            if (!texture.isSigned()) {
++                throw new InsecureTextureException("Unsigned texture");
++            }
++            if (!texture.isSignedByMojang()) {
++                throw new InsecureTextureException("Textures payload has been tampered with (signature invalid)");
++            }
++        }
++        ImmutableMap.Builder<MinecraftProfileTexture.Type, MinecraftProfileTexture> builder = ImmutableMap.builder();
++        if (texture.hasCape()) {
++            MinecraftProfileTexture cape = new MinecraftProfileTexture(texture.getCape().toString(), texture.getCapeData().getMetadata());
++            builder.put(MinecraftProfileTexture.Type.CAPE, cape);
++        }
++        if (texture.hasSkin()) {
++            MinecraftProfileTexture skin = new MinecraftProfileTexture(texture.getSkin().toString(), texture.getSkinData().getMetadata());
++            builder.put(MinecraftProfileTexture.Type.SKIN, skin);
++        }
++        return builder.build();
++    }
++
++    @Override
++    public GameProfile fillProfileProperties(GameProfile gameProfile, boolean b) {
++        AccountProfile profile = ProfileUtils.toPaper(gameProfile);
++        ProfileProperties properties = lookup.lookupProperties(profile);
++        return ProfileUtils.toMojang(profile.withProperties(properties));
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/EventProfileLookup.java b/src/main/java/com/destroystokyo/paper/profile/EventProfileLookup.java
+index f2ad29d..0ede303 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/EventProfileLookup.java
++++ b/src/main/java/com/destroystokyo/paper/profile/EventProfileLookup.java
+@@ -1,18 +1,17 @@
+ package com.destroystokyo.paper.profile;
+ 
++import com.destroystokyo.paper.profile.event.AsyncNamePreResolveEvent;
++import com.destroystokyo.paper.profile.event.AsyncProfileResolveEvent;
++import com.destroystokyo.paper.profile.event.AsyncPropertiesPreResolveEvent;
++import com.destroystokyo.paper.profile.event.AsyncUUIDPreResolveEvent;
++import com.google.common.base.Preconditions;
++import org.bukkit.Bukkit;
++
+ import java.util.ArrayList;
+ import java.util.Collection;
+ import java.util.List;
+ import java.util.UUID;
+ 
+-import com.destroystokyo.paper.profile.event.AsyncPropertiesPreResolveEvent;
+-import com.google.common.base.Preconditions;
+-
+-import org.bukkit.Bukkit;
+-import com.destroystokyo.paper.profile.event.AsyncNamePreResolveEvent;
+-import com.destroystokyo.paper.profile.event.AsyncProfileResolveEvent;
+-import com.destroystokyo.paper.profile.event.AsyncUUIDPreResolveEvent;
+-
+ public class EventProfileLookup implements ProfileLookup {
+     private final ProfileLookup delegate;
+ 
+@@ -28,12 +27,12 @@ public class EventProfileLookup implements ProfileLookup {
+         Bukkit.getPluginManager().callEvent(preResolveEvent);
+         AsyncProfileResolveEvent resolveEvent;
+         if (preResolveEvent.isResolved()) { // Plugin set result
+-            resolveEvent = new AsyncProfileResolveEvent(LookupCause.NAME_LOOKUP, preResolveEvent.getResult(), false);
++            resolveEvent = new AsyncProfileResolveEvent(LookupCause.NAME, preResolveEvent.getResult(), false);
+         } else {
+             // Lookup result from mojang
+             AccountProfile profile = delegate.lookup(name);
+             if (profile == null) return null; // Not found
+-            resolveEvent = new AsyncProfileResolveEvent(LookupCause.NAME_LOOKUP, profile, true);
++            resolveEvent = new AsyncProfileResolveEvent(LookupCause.NAME, profile, true);
+         }
+         Bukkit.getPluginManager().callEvent(resolveEvent);
+         return resolveEvent.getResult();
+@@ -46,12 +45,12 @@ public class EventProfileLookup implements ProfileLookup {
+         Bukkit.getPluginManager().callEvent(preResolveEvent);
+         AsyncProfileResolveEvent resolveEvent;
+         if (preResolveEvent.isResolved()) { // Plugin set result
+-            resolveEvent = new AsyncProfileResolveEvent(LookupCause.UUID_LOOKUP, preResolveEvent.getResult(), false);
++            resolveEvent = new AsyncProfileResolveEvent(LookupCause.UUID, preResolveEvent.getResult(), false);
+         } else {
+             // Lookup result from mojang
+             AccountProfile profile = delegate.lookup(id);
+             if (profile == null) return null; // Not found
+-            resolveEvent = new AsyncProfileResolveEvent(LookupCause.UUID_LOOKUP, profile, true);
++            resolveEvent = new AsyncProfileResolveEvent(LookupCause.UUID, profile, true);
+         }
+         Bukkit.getPluginManager().callEvent(resolveEvent);
+         return resolveEvent.getResult();
+@@ -65,7 +64,7 @@ public class EventProfileLookup implements ProfileLookup {
+             AsyncUUIDPreResolveEvent preResolveEvent = new AsyncUUIDPreResolveEvent(id);
+             Bukkit.getPluginManager().callEvent(preResolveEvent);
+             if (preResolveEvent.isResolved()) { // Plugin set result
+-                AsyncProfileResolveEvent resolveEvent = new AsyncProfileResolveEvent(LookupCause.UUID_LOOKUP, preResolveEvent.getResult(), false);
++                AsyncProfileResolveEvent resolveEvent = new AsyncProfileResolveEvent(LookupCause.UUID, preResolveEvent.getResult(), false);
+                 Bukkit.getPluginManager().callEvent(resolveEvent);
+                 callback.onLookup(resolveEvent.getResult(), id);
+             } else {
+@@ -76,7 +75,7 @@ public class EventProfileLookup implements ProfileLookup {
+             @Override
+             public void onLookup(AccountProfile profile, UUID original) {
+                 if (profile != null) {
+-                    AsyncProfileResolveEvent resolveEvent = new AsyncProfileResolveEvent(LookupCause.UUID_LOOKUP, profile, true);
++                    AsyncProfileResolveEvent resolveEvent = new AsyncProfileResolveEvent(LookupCause.UUID, profile, true);
+                     Bukkit.getPluginManager().callEvent(resolveEvent);
+                     profile = resolveEvent.getResult();
+                 }
+@@ -98,7 +97,7 @@ public class EventProfileLookup implements ProfileLookup {
+             AsyncNamePreResolveEvent preResolveEvent = new AsyncNamePreResolveEvent(name);
+             Bukkit.getPluginManager().callEvent(preResolveEvent);
+             if (preResolveEvent.isResolved()) { // Plugin set result
+-                AsyncProfileResolveEvent resolveEvent = new AsyncProfileResolveEvent(LookupCause.NAME_LOOKUP, preResolveEvent.getResult(), false);
++                AsyncProfileResolveEvent resolveEvent = new AsyncProfileResolveEvent(LookupCause.NAME, preResolveEvent.getResult(), false);
+                 Bukkit.getPluginManager().callEvent(resolveEvent);
+                 callback.onLookup(resolveEvent.getResult(), name);
+             } else {
+@@ -109,7 +108,7 @@ public class EventProfileLookup implements ProfileLookup {
+             @Override
+             public void onLookup(AccountProfile profile, String original) {
+                 if (profile != null) {
+-                    AsyncProfileResolveEvent resolveEvent = new AsyncProfileResolveEvent(LookupCause.NAME_LOOKUP, profile, true);
++                    AsyncProfileResolveEvent resolveEvent = new AsyncProfileResolveEvent(LookupCause.NAME, profile, true);
+                     Bukkit.getPluginManager().callEvent(resolveEvent);
+                     profile = resolveEvent.getResult();
+                 }
+@@ -129,11 +128,11 @@ public class EventProfileLookup implements ProfileLookup {
+         Bukkit.getPluginManager().callEvent(preResolveEvent);
+         AsyncProfileResolveEvent resolveEvent;
+         if (preResolveEvent.isResolved()) {
+-            resolveEvent = new AsyncProfileResolveEvent(LookupCause.PROPERTIES_LOOKUP, preResolveEvent.getResult(), false);
++            resolveEvent = new AsyncProfileResolveEvent(LookupCause.PROPERTIES, preResolveEvent.getResult(), false);
+         } else {
+             ProfileProperties properties = delegate.lookupProperties(profile);
+             if (properties == null) return null;
+-            resolveEvent = new AsyncProfileResolveEvent(LookupCause.PROPERTIES_LOOKUP, profile.withProperties(properties), true);
++            resolveEvent = new AsyncProfileResolveEvent(LookupCause.PROPERTIES, profile.withProperties(properties), true);
+         }
+         Bukkit.getPluginManager().callEvent(resolveEvent);
+         return resolveEvent.getResult().getProperties();
+diff --git a/src/main/java/com/destroystokyo/paper/profile/MemoryCachingProfileLookup.java b/src/main/java/com/destroystokyo/paper/profile/MemoryCachingProfileLookup.java
+new file mode 100644
+index 0000000..9e60111
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/MemoryCachingProfileLookup.java
+@@ -0,0 +1,286 @@
++package com.destroystokyo.paper.profile;
++
++import com.destroystokyo.paper.InternalListener;
++import com.google.common.base.Preconditions;
++import com.google.common.cache.CacheBuilder;
++import com.google.common.cache.CacheLoader;
++import com.google.common.cache.LoadingCache;
++import com.google.common.cache.RemovalCause;
++import com.google.common.cache.RemovalNotification;
++import com.google.common.collect.ImmutableCollection;
++import com.google.common.collect.ImmutableList;
++import com.google.common.collect.ImmutableSet;
++import com.google.common.util.concurrent.UncheckedExecutionException;
++import com.mojang.authlib.yggdrasil.ProfileNotFoundException;
++import net.minecraft.server.EntityPlayer;
++import org.spigotmc.SneakyThrow;
++
++import java.util.Collection;
++import java.util.Locale;
++import java.util.UUID;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.ConcurrentMap;
++import java.util.concurrent.ExecutionException;
++import java.util.concurrent.TimeUnit;
++
++public class MemoryCachingProfileLookup implements ProfileLookup, CachingProfileLookup, InternalListener {
++
++    private ProfileLookup backing;
++
++    public void setBacking(ProfileLookup backing) {
++        this.backing = backing;
++    }
++
++    private final LoadingCache<String, AccountProfile> nameCache;
++    private final LoadingCache<UUID, AccountProfile> idCache;
++
++    public MemoryCachingProfileLookup(ProfileLookup backing) {
++        InternalListener.LISTENERS.add(this);
++        this.backing = backing;
++        nameCache = CacheBuilder.<String, AccountProfile>newBuilder()
++                .build(new CacheLoader<String, AccountProfile>() {
++                    @Override
++                    public AccountProfile load(String name) throws Exception {
++                        AccountProfile profile = backing.lookup(name);
++                        if (profile == null) throw new ProfileNotFoundException();
++                        idCache.put(profile.getId(), profile);
++                        return profile;
++                    }
++                });
++        idCache = CacheBuilder.<UUID, AccountProfile>newBuilder()
++                .removalListener((RemovalNotification<UUID, AccountProfile> notification) -> {
++                    if (notification.getCause() == RemovalCause.REPLACED) return;
++                    final AccountProfile profile = notification.getValue();
++                    AccountProfile onlineProfile;
++                    if ((onlineProfile = onlinePlayers.get(notification.getKey())) != null) {
++                        // Eek, don't remove an online player!
++                        cache(onlineProfile);
++                    } else if (profile != null) {
++                        nameCache.invalidate(toLowerCase(profile.getName()));
++                    }
++                })
++                .expireAfterAccess(5, TimeUnit.HOURS)
++                .softValues() // Don't cause an OOME
++                .build(new CacheLoader<UUID, AccountProfile>() {
++                    @Override
++                    public AccountProfile load(UUID id) throws Exception {
++                        AccountProfile profile = backing.lookup(id);
++                        if (profile == null) throw new ProfileNotFoundException();
++                        nameCache.put(profile.getName(), profile);
++                        return profile;
++                    }
++                });
++    }
++
++    private final ConcurrentMap<UUID, AccountProfile> onlinePlayers = new ConcurrentHashMap<>();
++
++    @Override
++    public void onAsyncPreLogin(AccountProfile profile) {
++        onlinePlayers.put(profile.getId(), profile);
++    }
++
++    @Override
++    public void onCancelledLogin(AccountProfile profile) {
++        AccountProfile old = onlinePlayers.remove(profile.getId());
++        assert old != null : "Player not present for cancelled login";
++        assert old.equals(profile);
++    }
++
++    @Override
++    public void onQuit(EntityPlayer player) {
++        AccountProfile old = onlinePlayers.remove(player.getUniqueID());
++        assert old.equals(player.getBukkitProfile());
++    }
++
++    @Override
++    public void onKick(EntityPlayer player) {
++        AccountProfile old = onlinePlayers.remove(player.getUniqueID());
++        assert old.equals(player.getBukkitProfile());
++    }
++
++    @Override
++    public AccountProfile lookup(UUID id) {
++        AccountProfile online;
++        if ((online = onlinePlayers.get(id)) != null) {
++            assert nameCache.getIfPresent(toLowerCase(online.getName())) != null : "Online player not in name cache";
++            return online;
++        }
++        return lookup0(id);
++    }
++
++    private AccountProfile lookup0(UUID id) {
++        try {
++            return idCache.get(id);
++        } catch (ExecutionException | UncheckedExecutionException e) {
++            if (e.getCause() instanceof ProfileNotFoundException) return null;
++            SneakyThrow.sneaky(e.getCause());
++            throw new AssertionError("Couldn't throw", e);
++        }
++    }
++
++    @Override
++    public AccountProfile lookup(String name) {
++        try {
++            return nameCache.get(toLowerCase(name));
++        } catch (ExecutionException | UncheckedExecutionException e) {
++            if (e.getCause() instanceof ProfileNotFoundException) return null;
++            SneakyThrow.sneaky(e);
++            throw new AssertionError("Couldn't throw", e);
++        }
++    }
++
++    private AccountProfile lookup0(String name) {
++        try {
++            return nameCache.get(toLowerCase(name));
++        } catch (ExecutionException | UncheckedExecutionException e) {
++            if (e.getCause() instanceof ProfileNotFoundException) return null;
++            SneakyThrow.sneaky(e);
++            throw new AssertionError("Couldn't throw", e);
++        }
++    }
++
++    @Override
++    public void lookupNames(Collection<String> names, ProfileLookupCallback<String> callback) {
++        ImmutableList.Builder<String> toLookup = ImmutableList.builder();
++        for (String name : names) {
++            AccountProfile cached = getIfCached(name);
++            if (cached == null) {
++                toLookup.add(name);
++            } else {
++                callback.onLookup(cached, name);
++            }
++        }
++        backing.lookupNames(toLookup.build(), new ProfileLookupCallback<String>() {
++            @Override
++            public void onLookup(AccountProfile profile, String original) {
++                cache(profile);
++                callback.onLookup(profile, original);
++            }
++
++            @Override
++            public void onLookupFailed(Throwable t, String original) {
++                callback.onLookupFailed(t, original);
++            }
++        });
++    }
++
++    @Override
++    public void lookupIds(Collection<UUID> ids, ProfileLookupCallback<UUID> callback) {
++        ImmutableList.Builder<UUID> toLookup = ImmutableList.builder();
++        for (UUID id : ids) {
++            AccountProfile cached = getIfCached(id);
++            if (cached == null) {
++                toLookup.add(id);
++            } else {
++                callback.onLookup(cached, id);
++            }
++        }
++        backing.lookupIds(toLookup.build(), new ProfileLookupCallback<UUID>() {
++            @Override
++            public void onLookup(AccountProfile profile, UUID original) {
++                cache(profile);
++                callback.onLookup(profile, original);
++            }
++
++            @Override
++            public void onLookupFailed(Throwable t, UUID original) {
++                callback.onLookupFailed(t, original);
++            }
++        });
++    }
++
++    @Override
++    public ProfileProperties lookupProperties(AccountProfile profile) {
++        AccountProfile cached;
++        if ((cached = onlinePlayers.get(profile.getId())) != null) {
++            assert nameCache.getIfPresent(toLowerCase(cached.getName())) != null : "Online player not in name cache";
++            return cached.getProperties();
++        } else if (profile.hasProperties()) {
++            cache(profile);
++            return profile.getProperties();
++        } else if ((cached = getIfCached(profile.getId())).hasProperties()) {
++            return cached.getProperties();
++        } else {
++            return refreshProperties(profile);
++        }
++    }
++
++    @Override
++    public AccountProfile getIfCached(UUID id) {
++        AccountProfile profile;
++        if ((profile = onlinePlayers.get(id)) != null) {
++            assert nameCache.getIfPresent(toLowerCase(profile.getName())) != null : "Online player not in name cache";
++            return profile;
++        }
++        return idCache.getIfPresent(id);
++    }
++
++    @Override
++    public AccountProfile getIfCached(String name) {
++        return nameCache.getIfPresent(toLowerCase(name));
++    }
++
++    @Override
++    public void cache(AccountProfile profile) {
++        Preconditions.checkNotNull(profile, "Null entry");
++        if (onlinePlayers.containsKey(profile.getId())) {
++            assert nameCache.getIfPresent(toLowerCase(profile.getName())) != null : "Online player not in name cache";
++            return;
++        }
++        // Don't override the cache if we don't have profiles, but the existing entry does
++        AccountProfile cached;
++        if (!profile.hasProperties() && (cached = getIfCached(profile.getId())) != null && cached.hasProperties()) {
++            return;
++        }
++        idCache.put(profile.getId(), profile);
++        nameCache.put(toLowerCase(profile.getName()), profile);
++    }
++
++    @Override
++    public void clearProfile(AccountProfile profile) {
++        if (!onlinePlayers.containsKey(profile.getId())) {
++            idCache.invalidate(profile.getId());
++            nameCache.invalidate(toLowerCase(profile.getName()));
++        }
++    }
++
++    @Override
++    public AccountProfile refresh(UUID id) {
++        AccountProfile profile;
++        if ((profile = onlinePlayers.get(id)) != null) return profile;
++        idCache.invalidate(id);
++        return lookup0(id);
++    }
++
++    @Override
++    public AccountProfile refresh(String name) {
++        name = toLowerCase(name);
++        AccountProfile profile;
++        if ((profile = nameCache.getIfPresent(name)) != null) {
++            if (onlinePlayers.containsKey(profile.getId())) {
++                return profile;
++            } else {
++                nameCache.invalidate(name);
++            }
++        }
++        return lookup0(name);
++    }
++
++    @Override
++    public ProfileProperties refreshProperties(AccountProfile profile) {
++        AccountProfile online;
++        if ((online = onlinePlayers.get(profile.getId())) != null) return online.getProperties();
++        ProfileProperties properties = backing.lookupProperties(profile);
++        cache(profile.withProperties(properties));
++        return properties;
++    }
++
++    @Override
++    public ImmutableCollection<AccountProfile> getCachedProfiles() {
++        return ImmutableSet.copyOf(idCache.asMap().values());
++    }
++
++    private static String toLowerCase(final String original) {
++        return original.toLowerCase(Locale.ROOT);
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/MojangLookup.java b/src/main/java/com/destroystokyo/paper/profile/MojangLookup.java
+index f58b36a..9869429 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/MojangLookup.java
++++ b/src/main/java/com/destroystokyo/paper/profile/MojangLookup.java
+@@ -1,11 +1,11 @@
+ package com.destroystokyo.paper.profile;
+ 
+-import java.util.Collection;
+-import java.util.UUID;
+-
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.ImmutableList;
+ 
++import java.util.Collection;
++import java.util.UUID;
++
+ public final class MojangLookup implements ProfileLookup {
+ 
+     @Override
+diff --git a/src/main/java/com/destroystokyo/paper/profile/ProfileUtils.java b/src/main/java/com/destroystokyo/paper/profile/ProfileUtils.java
+index dc50aaf..57fcfa7 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/ProfileUtils.java
++++ b/src/main/java/com/destroystokyo/paper/profile/ProfileUtils.java
+@@ -1,17 +1,7 @@
+ package com.destroystokyo.paper.profile;
+ 
+-import java.io.BufferedReader;
+-import java.io.BufferedWriter;
+-import java.io.IOException;
+-import java.io.InputStreamReader;
+-import java.io.OutputStreamWriter;
+-import java.net.HttpURLConnection;
+-import java.net.MalformedURLException;
+-import java.net.URL;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.Optional;
+-import java.util.UUID;
++import static com.destroystokyo.paper.profile.UUIDUtils.fromString;
++import static com.destroystokyo.paper.profile.UUIDUtils.toMojangString;
+ 
+ import com.destroystokyo.paper.utils.json.ProfilePropertyTypeAdapter;
+ import com.destroystokyo.paper.utils.json.UUIDTypeAdapter;
+@@ -31,8 +21,18 @@ import com.mojang.authlib.GameProfile;
+ import com.mojang.authlib.properties.Property;
+ import com.mojang.authlib.properties.PropertyMap;
+ 
+-import static com.destroystokyo.paper.profile.UUIDUtils.fromString;
+-import static com.destroystokyo.paper.profile.UUIDUtils.toMojangString;
++import java.io.BufferedReader;
++import java.io.BufferedWriter;
++import java.io.IOException;
++import java.io.InputStreamReader;
++import java.io.OutputStreamWriter;
++import java.net.HttpURLConnection;
++import java.net.MalformedURLException;
++import java.net.URL;
++import java.util.List;
++import java.util.Map;
++import java.util.Optional;
++import java.util.UUID;
+ 
+ public class ProfileUtils {
+ 
+diff --git a/src/main/java/com/destroystokyo/paper/utils/json/ProfilePropertyTypeAdapter.java b/src/main/java/com/destroystokyo/paper/utils/json/ProfilePropertyTypeAdapter.java
+index 590a778..df016f5 100644
+--- a/src/main/java/com/destroystokyo/paper/utils/json/ProfilePropertyTypeAdapter.java
++++ b/src/main/java/com/destroystokyo/paper/utils/json/ProfilePropertyTypeAdapter.java
+@@ -1,12 +1,12 @@
+ package com.destroystokyo.paper.utils.json;
+ 
+-import java.io.IOException;
+-
+ import com.destroystokyo.paper.profile.ProfileProperty;
+ import com.google.gson.TypeAdapter;
+ import com.google.gson.stream.JsonReader;
+ import com.google.gson.stream.JsonWriter;
+ 
++import java.io.IOException;
++
+ public class ProfilePropertyTypeAdapter extends TypeAdapter<ProfileProperty> {
+     @Override
+     public void write(JsonWriter out, ProfileProperty property) throws IOException {
+diff --git a/src/main/java/com/destroystokyo/paper/utils/json/UUIDTypeAdapter.java b/src/main/java/com/destroystokyo/paper/utils/json/UUIDTypeAdapter.java
+index 908c7b4..147b9eb 100644
+--- a/src/main/java/com/destroystokyo/paper/utils/json/UUIDTypeAdapter.java
++++ b/src/main/java/com/destroystokyo/paper/utils/json/UUIDTypeAdapter.java
+@@ -1,14 +1,13 @@
+ package com.destroystokyo.paper.utils.json;
+ 
+-import java.io.IOException;
+-import java.util.UUID;
+-
++import com.destroystokyo.paper.profile.UUIDUtils;
+ import com.google.gson.TypeAdapter;
+ import com.google.gson.stream.JsonReader;
+ import com.google.gson.stream.JsonToken;
+ import com.google.gson.stream.JsonWriter;
+ 
+-import com.destroystokyo.paper.profile.UUIDUtils;
++import java.io.IOException;
++import java.util.UUID;
+ 
+ public class UUIDTypeAdapter extends TypeAdapter<UUID> {
+     private final boolean mojangStyle;
+diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
+index efa785f..0254ad9 100644
+--- a/src/main/java/net/minecraft/server/LoginListener.java
++++ b/src/main/java/net/minecraft/server/LoginListener.java
+@@ -5,7 +5,6 @@ import com.mojang.authlib.GameProfile;
+ import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
+ import io.netty.channel.ChannelFuture;
+ import io.netty.channel.ChannelFutureListener;
+-import io.netty.util.concurrent.Future;
+ import io.netty.util.concurrent.GenericFutureListener;
+ import java.math.BigInteger;
+ import java.security.PrivateKey;
+@@ -13,7 +12,6 @@ import java.util.Arrays;
+ import java.util.Random;
+ import java.util.UUID;
+ import java.util.concurrent.atomic.AtomicInteger;
+-import java.util.logging.Level;
+ import javax.crypto.SecretKey;
+ import org.apache.commons.lang3.Validate;
+ import org.apache.logging.log4j.LogManager;
+@@ -24,6 +22,11 @@ import org.bukkit.craftbukkit.util.Waitable;
+ import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
+ import org.bukkit.event.player.PlayerPreLoginEvent;
+ // CraftBukkit end
++// Paper start
++import com.destroystokyo.paper.InternalListener;
++import com.destroystokyo.paper.profile.AccountProfile;
++import com.destroystokyo.paper.profile.ProfileUtils;
++// Paper end
+ 
+ public class LoginListener implements PacketLoginInListener, ITickable {
+ 
+@@ -68,7 +71,13 @@ public class LoginListener implements PacketLoginInListener, ITickable {
+ 
+     }
+ 
++    private AccountProfile profile; // Paper - store bukkit profile (if pre-login fired)
+     public void disconnect(String s) {
++        // Paper start - fire internal login cancelled if pre login fired
++        if (profile != null) {
++            InternalListener.LISTENERS.forEach((listener) -> listener.onCancelledLogin(profile));
++        }
++        // Paper end
+         try {
+             LoginListener.c.info("Disconnecting " + this.d() + ": " + s);
+             ChatComponentText chatcomponenttext = new ChatComponentText(s);
+@@ -244,6 +253,11 @@ public class LoginListener implements PacketLoginInListener, ITickable {
+                             java.util.UUID uniqueId = i.getId();
+                             final org.bukkit.craftbukkit.CraftServer server = LoginListener.this.server.server;
+ 
++                            // Paper start - fire pre join for all our internal listeners
++                            LoginListener.this.profile = ProfileUtils.toPaperWithProperties(i); // Mark the pre login event as 'fired', so cancel event will fire if needed
++                            InternalListener.LISTENERS.forEach((listener) -> listener.onAsyncPreLogin(profile));
++                            // Paper end
++
+                             AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId);
+                             server.getPluginManager().callEvent(asyncEvent);
+ 
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 3b04681..eaaab7e 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -53,6 +53,8 @@ import org.bukkit.craftbukkit.CraftServer;
+ import co.aikar.timings.MinecraftTimings; // Paper
+ 
+ // Paper start
++import com.destroystokyo.paper.profile.BukkitGameProfileRepository;
++import com.destroystokyo.paper.profile.BukkitSessionService;
+ import java.util.LinkedList;
+ import java.util.Queue;
+ // Paper end
+@@ -132,8 +134,10 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+         io.netty.util.ResourceLeakDetector.setEnabled( false ); // Spigot - disable
+         this.e = proxy;
+         this.U = yggdrasilauthenticationservice;
+-        this.V = minecraftsessionservice;
+-        this.W = gameprofilerepository;
++        // Paper start - use our special wrappers
++        this.V = new BukkitSessionService(minecraftsessionservice, Bukkit.getProfileLookup());
++        this.W = new BukkitGameProfileRepository(Bukkit.getProfileLookup());
++        // Paper end
+         this.X = usercache;
+         // this.universe = file; // CraftBukkit
+         // this.p = new ServerConnection(this); // Spigot
+@@ -572,7 +576,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+         }
+     }
+     // Paper End
+- 
++
+     public void run() {
+         try {
+             if (this.init()) {
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index cf27086..5eca0e7 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -60,6 +60,10 @@ import org.bukkit.util.NumberConversions;
+ import co.aikar.timings.MinecraftTimings; // Paper
+ // CraftBukkit end
+ 
++// Paper start
++import com.destroystokyo.paper.InternalListener;
++// Paper end
++
+ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
+@@ -231,6 +235,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+             // Do not kick the player
+             return;
+         }
++        InternalListener.LISTENERS.forEach((listener) -> listener.onKick(player)); // Paper - fire internally
+         // Send the possibly modified leave message
+         s = event.getReason();
+         // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 9d25312..fbb3294 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -39,6 +39,7 @@ import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+ import org.bukkit.util.Vector;
+ import org.spigotmc.event.player.PlayerSpawnLocationEvent;
+ // CraftBukkit end
++import com.destroystokyo.paper.InternalListener; // Paper
+ 
+ public abstract class PlayerList {
+ 
+@@ -400,6 +401,8 @@ public abstract class PlayerList {
+         PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.getName() + " left the game.");
+         cserver.getPluginManager().callEvent(playerQuitEvent);
+         entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
++        InternalListener.LISTENERS.forEach((listener) -> listener.onQuit(entityplayer)); // Paper - fire internally
++
+         // CraftBukkit end
+         
+         this.savePlayerFile(entityplayer);
+diff --git a/src/main/java/net/minecraft/server/UserCache.java b/src/main/java/net/minecraft/server/UserCache.java
+index 5cc2731..2e97804 100644
+--- a/src/main/java/net/minecraft/server/UserCache.java
++++ b/src/main/java/net/minecraft/server/UserCache.java
+@@ -31,7 +31,6 @@ import java.util.ArrayList;
+ import java.util.Calendar;
+ import java.util.Date;
+ import java.util.Iterator;
+-import java.util.LinkedList;
+ import java.util.List;
+ import java.util.Locale;
+ import java.util.Map;
+@@ -39,6 +38,14 @@ import java.util.UUID;
+ import javax.annotation.Nullable;
+ import org.apache.commons.io.IOUtils;
+ 
++// Paper start
++import org.bukkit.Bukkit;
++
++import com.destroystokyo.paper.profile.CachingProfileLookup;
++import com.destroystokyo.paper.profile.ProfileUtils;
++import com.destroystokyo.paper.profile.AccountProfile;
++// Paper end
++
+ public class UserCache {
+ 
+     public static final SimpleDateFormat a = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+@@ -109,6 +116,11 @@ public class UserCache {
+     }
+ 
+     private void a(GameProfile gameprofile, Date date) {
++        // Paper start - add to our own cache
++        if (Bukkit.getProfileLookup() instanceof CachingProfileLookup) {
++            ((CachingProfileLookup) Bukkit.getProfileLookup()).cache(ProfileUtils.toPaper(gameprofile));
++        }
++        // Paper end
+         UUID uuid = gameprofile.getId();
+ 
+         if (date == null) {
+@@ -137,6 +149,12 @@ public class UserCache {
+ 
+     @Nullable
+     public GameProfile getProfile(String s) {
++        // Paper start - check our cache
++        if (Bukkit.getProfileLookup() instanceof CachingProfileLookup) {
++            AccountProfile cached = ((CachingProfileLookup) Bukkit.getProfileLookup()).getIfCached(s);
++            return ProfileUtils.toMojang(cached);
++        }
++        // Paper end
+         String s1 = s.toLowerCase(Locale.ROOT);
+         UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.d.get(s1);
+ 
+@@ -162,17 +180,37 @@ public class UserCache {
+         }
+ 
+         if( !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly ) this.c(); // Spigot - skip saving if disabled
++        // Paper start - add to our cache
++        if (usercache_usercacheentry != null && Bukkit.getProfileLookup() instanceof CachingProfileLookup) {
++            ((CachingProfileLookup) Bukkit.getProfileLookup()).cache(ProfileUtils.toPaper(usercache_usercacheentry.a()));
++        }
++        // Paper end
+         return usercache_usercacheentry == null ? null : usercache_usercacheentry.a();
+     }
+ 
+     public String[] a() {
+         ArrayList arraylist = Lists.newArrayList(this.d.keySet());
+-
++        // Paper start
++        if (Bukkit.getProfileLookup() instanceof CachingProfileLookup) {
++            for (AccountProfile profile : ((CachingProfileLookup) Bukkit.getProfileLookup()).getCachedProfiles()) {
++                arraylist.add(profile.getName());
++            }
++        }
++        // Paper end
+         return (String[]) arraylist.toArray(new String[arraylist.size()]);
+     }
+ 
+     @Nullable
+     public GameProfile a(UUID uuid) {
++        // Paper start
++        if (Bukkit.getProfileLookup() instanceof CachingProfileLookup) {
++            AccountProfile profile = ((CachingProfileLookup) Bukkit.getProfileLookup()).getIfCached(uuid);
++            // We'd normally return on not found, but its okay since its just checking the NMS cache
++            if (profile != null) {
++                return ProfileUtils.toMojang(profile);
++            }
++        }
++        // Paper end
+         UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.e.get(uuid);
+ 
+         return usercache_usercacheentry == null ? null : usercache_usercacheentry.a();
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index b12dfc2..3a014cd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -124,6 +124,7 @@ import jline.console.ConsoleReader;
+ import net.md_5.bungee.api.chat.BaseComponent;
+ // Paper start
+ import com.destroystokyo.paper.profile.EventProfileLookup;
++import com.destroystokyo.paper.profile.MemoryCachingProfileLookup;
+ import com.destroystokyo.paper.profile.MojangLookup;
+ import com.destroystokyo.paper.profile.AccountProfile;
+ import com.destroystokyo.paper.profile.ProfileLookup;
+@@ -1856,7 +1857,7 @@ public final class CraftServer implements Server {
+     }
+ 
+     // Paper start - uuid api
+-    private final ProfileLookup lookup = new EventProfileLookup(new MojangLookup());
++    private final ProfileLookup lookup = new MemoryCachingProfileLookup(new EventProfileLookup(new MojangLookup()));
+ 
+     @Override
+     public ProfileLookup getProfileLookup() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/MojangNameLookup.java b/src/main/java/org/bukkit/craftbukkit/util/MojangNameLookup.java
+index 93a8f0b..b2a1798 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/MojangNameLookup.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/MojangNameLookup.java
+@@ -1,17 +1,15 @@
+ package org.bukkit.craftbukkit.util;
+ 
+-import com.google.common.base.Charsets;
+-import com.google.gson.Gson;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+-import java.io.IOException;
+-import java.io.InputStream;
+-import java.net.MalformedURLException;
+-import java.net.URL;
+-import java.net.URLConnection;
+ import java.util.UUID;
+-import org.apache.commons.io.IOUtils;
++// Paper start
++import org.bukkit.Bukkit;
++
++import com.destroystokyo.paper.profile.LookupFailedException;
++import com.destroystokyo.paper.profile.AccountProfile;
++// Paper end
+ 
+ public class MojangNameLookup {
+     private static final Logger logger = LogManager.getFormatterLogger(MojangNameLookup.class);
+@@ -21,6 +19,20 @@ public class MojangNameLookup {
+             return null;
+         }
+ 
++        // Paper start - delegate to UUID api
++        try {
++            AccountProfile profile = Bukkit.getProfileLookup().lookup(id);
++            if (profile == null) {
++                logger.warn("Couldn't find a player with id: %s", id);
++                return null;
++            } else {
++                return profile.getName();
++            }
++        } catch (LookupFailedException e) {
++            logger.warn("Error getting name: " + id, e);
++            return null;
++        }
++        /*
+         InputStream inputStream = null;
+         try {
+             URL url = new URL("https://sessionserver.mojang.com/session/minecraft/profile/" + id.toString().replace("-", ""));
+@@ -53,6 +65,8 @@ public class MojangNameLookup {
+         }
+ 
+         return null;
++        */
++        // Paper end
+     }
+ 
+     private class Response {
+-- 
+2.8.3
+
