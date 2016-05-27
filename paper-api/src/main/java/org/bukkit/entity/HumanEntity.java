@@ -38,7 +38,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
     public Inventory getEnderChest();
 
     /**
-     * Gets the players selected main hand
+     * Gets the player's selected main hand
      *
      * @return the players main hand
      */
