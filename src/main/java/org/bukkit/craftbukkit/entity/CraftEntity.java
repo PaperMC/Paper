@@ -563,6 +563,16 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return getHandle().isInvulnerable(DamageSource.GENERIC);
     }
 
+    @Override
+	public boolean isSilent() {
+		return getHandle().ad(); // PAIL: Rename isSilent
+	}
+
+	@Override
+	public void setSilent(boolean flag) {
+		getHandle().c(flag); // PAIL: Rename setSilent
+	}
+
     private static PermissibleBase getPermissibleBase() {
         if (perm == null) {
             perm = new PermissibleBase(new ServerOperator() {
