@@ -137,6 +137,14 @@ public class Main {
                         .defaultsTo(new File("paper.yml"))
                         .describedAs("Yml file");
                 // Paper end
+
+                // Paper start
+                acceptsAll(asList("server-name"), "Name of the server")
+                        .withRequiredArg()
+                        .ofType(String.class)
+                        .defaultsTo("Unknown Server")
+                        .describedAs("Name");
+                // Paper end
             }
         };
 
