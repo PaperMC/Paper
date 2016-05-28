@@ -15,10 +15,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
 +import org.bukkit.Location;
++import org.bukkit.craftbukkit.util.Waitable;
++import org.spigotmc.AsyncCatcher;
 +
 +import javax.annotation.Nullable;
++import java.util.concurrent.ExecutionException;
 +import java.util.concurrent.Executor;
 +import java.util.concurrent.Executors;
++import java.util.function.Supplier;
 +import java.util.regex.Pattern;
 +
 +public final class MCUtil {
@@ -35,6 +39,33 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    public static IChatBaseComponent cmpFromMessage(String str) {
 +        return IChatBaseComponent.ChatSerializer.a("{\"text\":\"" + REPLACE_QUOTES.matcher(str).replaceAll("\\\"") + "\"}");
++    }
++
++    /**
++     * Ensures the target code is running on the main thread
++     * @param reason
++     * @param run
++     * @param <T>
++     * @return
++     */
++    public static <T> T ensureMain(String reason, Supplier<T> run) {
++        if (AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().primaryThread) {
++            new IllegalStateException( "Asynchronous " + reason + "! Blocking thread until it returns ").printStackTrace();
++            Waitable<T> wait = new Waitable<T>() {
++                @Override
++                protected T evaluate() {
++                    return run.get();
++                }
++            };
++            MinecraftServer.getServer().processQueue.add(wait);
++            try {
++                return wait.get();
++            } catch (InterruptedException | ExecutionException e) {
++                e.printStackTrace();
++            }
++            return null;
++        }
++        return run.get();
 +    }
 +
 +    /**
@@ -205,4 +236,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private byte type = 0;
  
      public NBTTagList() {}
---
+-- 
+2.7.4 (Apple Git-66)
+
