@@ -168,6 +168,14 @@ public class Main {
                         .defaultsTo(new File[] {})
                         .describedAs("Jar file");
                 // Paper end
+
+                // Paper start
+                acceptsAll(asList("server-name"), "Name of the server")
+                        .withRequiredArg()
+                        .ofType(String.class)
+                        .defaultsTo("Unknown Server")
+                        .describedAs("Name");
+                // Paper end
             }
         };
 
