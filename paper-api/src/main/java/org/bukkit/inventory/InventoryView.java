@@ -172,19 +172,69 @@ public abstract class InventoryView {
      */
     public final int convertSlot(int rawSlot) {
         int numInTop = getTopInventory().getSize();
+        // Index from the top inventory as having slots from [0,size]
         if (rawSlot < numInTop) {
             return rawSlot;
         }
+
+        // Move down the slot index by the top size
         int slot = rawSlot - numInTop;
+
+        // Creative mode players have one contiguous inventory dictated by the client
         if (getPlayer().getGameMode() == GameMode.CREATIVE && getType() == InventoryType.PLAYER) {
             return slot;
         }
+
+        // Player crafting slots are indexed differently. The matrix is caught by the first return.
         if (getType() == InventoryType.CRAFTING) {
-            if(slot < 4) return 39 - slot;
-            else slot -= 4;
+            /**
+             * Raw Slots:
+             *
+             * 5             1  2     0
+             * 6             3  4
+             * 7
+             * 8           45
+             * 9  10 11 12 13 14 15 16 17
+             * 18 19 20 21 22 23 24 25 26
+             * 27 28 29 30 31 32 33 34 35
+             * 36 37 38 39 40 41 42 43 44
+             */
+            
+            /**
+             * Converted Slots:
+             *
+             * 39             1  2     0
+             * 38             3  4
+             * 37
+             * 36          40
+             * 9  10 11 12 13 14 15 16 17
+             * 18 19 20 21 22 23 24 25 26
+             * 27 28 29 30 31 32 33 34 35
+             * 0  1  2  3  4  5  6  7  8
+             */
+
+            if (slot < 4) {
+                // Send [5,8] to [39,36]
+                return 39 - slot;
+            } else if (slot > 39) {
+                // Slot lives in the extra slot section
+                return slot;
+            } else {
+                // Reset index so 9 -> 0
+                slot -= 4;
+            }
         }
-        if (slot >= 27) slot -= 27;
-        else slot += 9;
+
+        // 27 = 36 - 9
+        if (slot >= 27) {
+            // Put into hotbar section
+            slot -= 27;
+        } else {
+            // Take out of hotbar section
+            // 9 = 36 - 27
+            slot += 9;
+        }
+
         return slot;
     }
 
