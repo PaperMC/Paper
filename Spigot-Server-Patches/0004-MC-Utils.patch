@@ -1,4 +1,4 @@
-From e4c4535575c0397de1e8a388e09428dd60947d13 Mon Sep 17 00:00:00 2001
+From 9e9204318a93e93baf42cab944f182a7d8c38d78 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 28 Mar 2016 20:55:47 -0400
 Subject: [PATCH] MC Utils
@@ -7,18 +7,22 @@ Collection of utils to help reduce NMS diff
 
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
 new file mode 100644
-index 0000000..bcc8ee7
+index 0000000..f059bc2
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
-@@ -0,0 +1,154 @@
+@@ -0,0 +1,185 @@
 +package net.minecraft.server;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
 +import org.bukkit.Location;
++import org.bukkit.craftbukkit.util.Waitable;
++import org.spigotmc.AsyncCatcher;
 +
 +import javax.annotation.Nullable;
++import java.util.concurrent.ExecutionException;
 +import java.util.concurrent.Executor;
 +import java.util.concurrent.Executors;
++import java.util.function.Supplier;
 +import java.util.regex.Pattern;
 +
 +public final class MCUtil {
@@ -35,6 +39,33 @@ index 0000000..bcc8ee7
 +     */
 +    public static IChatBaseComponent cmpFromMessage(String str) {
 +        return IChatBaseComponent.ChatSerializer.a("{\"text\":\"" + REPLACE_QUOTES.matcher(str).replaceAll("\\\"") + "\"}");
++    }
++
++    /**
++     * Ensures the target code is running on the main thread
++     * @param reason
++     * @param run
++     * @param <T>
++     * @return
++     */
++    public static <T> T ensureMain(String reason, Supplier<T> run) {
++        if (AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().primaryThread) {
++            new IllegalStateException( "Asynchronous " + reason + "! Blocking thread until it returns ").printStackTrace();
++            Waitable<T> wait = new Waitable<T>() {
++                @Override
++                protected T evaluate() {
++                    return run.get();
++                }
++            };
++            MinecraftServer.getServer().processQueue.add(wait);
++            try {
++                return wait.get();
++            } catch (InterruptedException | ExecutionException e) {
++                e.printStackTrace();
++            }
++            return null;
++        }
++        return run.get();
 +    }
 +
 +    /**
@@ -206,5 +237,5 @@ index 256614d..e86ca6c 100644
  
      public NBTTagList() {}
 -- 
-2.8.2
+2.7.4 (Apple Git-66)
 
