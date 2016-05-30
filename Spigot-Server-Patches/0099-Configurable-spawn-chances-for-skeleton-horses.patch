@@ -1,14 +1,14 @@
-From 3bb349b42d4ab8cfd618900eb2bfd6eeaf8cf288 Mon Sep 17 00:00:00 2001
+From a207b58ec71b1d845b1ee03aaa70387d4752259a Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Tue, 22 Mar 2016 12:04:28 -0500
 Subject: [PATCH] Configurable spawn chances for skeleton horses
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 3f8a47b..098eedd 100644
+index 3f8a47b..5652108 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -288,4 +288,9 @@ public class PaperWorldConfig {
+@@ -288,4 +288,12 @@ public class PaperWorldConfig {
          }
          log("Non Player Arrow Despawn Rate: " + nonPlayerArrowDespawnRate);
      }
@@ -16,24 +16,24 @@ index 3f8a47b..098eedd 100644
 +    public double skeleHorseSpawnChance;
 +    private void skeleHorseSpawnChance() {
 +        skeleHorseSpawnChance = getDouble("skeleton-horse-thunder-spawn-chance", -1.0D); // -1.0D represents a "vanilla" state
++        if (skeleHorseSpawnChance < 0) {
++            skeleHorseSpawnChance = 0.05D; // Vanilla
++        }
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index c7e5226..6447d7b 100644
+index c7e5226..0217d42 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -431,7 +431,10 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -431,7 +431,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
                      if (this.isRainingAt(blockposition)) {
                          DifficultyDamageScaler difficultydamagescaler = this.D(blockposition);
  
 -                        if (this.random.nextDouble() < (double) difficultydamagescaler.b() * 0.05D) {
-+                        // Paper start - Configurable skeleton horse spawn chance
-+                        double chance = this.paperConfig.skeleHorseSpawnChance == -1.0D ? (double) difficultydamagescaler.b() * 0.05D : this.paperConfig.skeleHorseSpawnChance;
-+                        if (this.random.nextDouble() < chance) {
-+                            // Paper end
++                        if (this.random.nextDouble() < difficultydamagescaler.b() * paperConfig.skeleHorseSpawnChance) { // Paper - Configurable skeleton horse spawn chance
                              EntityHorse entityhorse = new EntityHorse(this);
  
                              entityhorse.setType(EnumHorseType.SKELETON);
 -- 
-2.8.2
+2.8.3
 
