@@ -40,7 +40,11 @@ public class CraftZombie extends CraftMonster implements Zombie {
     }
 
     public void setVillager(boolean flag) {
-        getHandle().setVillagerType(0);
+        if (flag) {
+            getHandle().setVillagerType(0);
+        } else {
+            getHandle().clearVillagerType();
+        }
     }
 
     @Override
