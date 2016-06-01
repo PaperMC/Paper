@@ -296,6 +296,8 @@ public class CraftBlock implements Block {
         case WALL_BANNER:
         case STANDING_BANNER:
             return new CraftBanner(this);
+        case FLOWER_POT:
+            return new CraftFlowerPot(this);
         default:
             return new CraftBlockState(this);
         }
