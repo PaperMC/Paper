@@ -6,7 +6,11 @@ import org.bukkit.TreeSpecies;
 
 /**
  * Represents a flower pot.
+ *
+ * @deprecated Flower pots are now tile entities, use
+ * {@link org.bukkit.block.FlowerPot}.
  */
+@Deprecated
 public class FlowerPot extends MaterialData {
 
     /**
