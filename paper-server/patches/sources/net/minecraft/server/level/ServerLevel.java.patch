@@ -445,10 +445,9 @@
      @VisibleForTesting
      public void resetWeatherCycle() {
 -        this.serverLevelData.setRainTime(0);
--        this.serverLevelData.setRaining(false);
--        this.serverLevelData.setThunderTime(0);
 +        // CraftBukkit start
-+        this.serverLevelData.setRaining(false);
+         this.serverLevelData.setRaining(false);
+-        this.serverLevelData.setThunderTime(0);
 +        // If we stop due to everyone sleeping we should reset the weather duration to some other random value.
 +        // Not that everyone ever manages to get the whole server to sleep at the same time....
 +        if (!this.serverLevelData.isRaining()) {
@@ -674,6 +673,15 @@
                  if (d0 * d0 + d1 * d1 + d2 * d2 < 1024.0D) {
                      entityplayer.connection.send(new ClientboundBlockDestructionPacket(entityId, pos, progress));
                  }
+@@ -1030,7 +1311,7 @@
+ 
+     @Override
+     public void levelEvent(@Nullable Player player, int eventId, BlockPos pos, int data) {
+-        this.server.getPlayerList().broadcast(player, (double) pos.getX(), (double) pos.getY(), (double) pos.getZ(), 64.0D, this.dimension(), new ClientboundLevelEventPacket(eventId, pos, data, false));
++        this.server.getPlayerList().broadcast(player, (double) pos.getX(), (double) pos.getY(), (double) pos.getZ(), 64.0D, this.dimension(), new ClientboundLevelEventPacket(eventId, pos, data, false)); // Paper - diff on change (the 64.0 distance is used as defaults for sound ranges in spigot config for ender dragon, end portal and wither)
+     }
+ 
+     public int getLogicalHeight() {
 @@ -1060,7 +1341,18 @@
              Iterator iterator = this.navigatingMobs.iterator();
  
@@ -882,7 +890,25 @@
          return this.entityManager.getEntityGetter();
      }
  
-@@ -1836,6 +2171,7 @@
+@@ -1802,6 +2137,17 @@
+         return this.serverLevelData.getGameRules();
+     }
+ 
++    // Paper start - respect global sound events gamerule
++    public List<net.minecraft.server.level.ServerPlayer> getPlayersForGlobalSoundGamerule() {
++        return this.getGameRules().getBoolean(GameRules.RULE_GLOBAL_SOUND_EVENTS) ? ((ServerLevel) this).getServer().getPlayerList().players : ((ServerLevel) this).players();
++    }
++
++    public double getGlobalSoundRangeSquared(java.util.function.Function<org.spigotmc.SpigotWorldConfig, Integer> rangeFunction) {
++        final double range = rangeFunction.apply(this.spigotConfig);
++        return range <= 0 ? 64.0 * 64.0 : range * range; // 64 is taken from default in ServerLevel#levelEvent
++    }
++    // Paper end - respect global sound events gamerule
++
+     @Override
+     public CrashReportCategory fillReportDetails(CrashReport report) {
+         CrashReportCategory crashreportsystemdetails = super.fillReportDetails(report);
+@@ -1836,6 +2182,7 @@
          }
  
          public void onTrackingStart(Entity entity) {
@@ -890,7 +916,7 @@
              ServerLevel.this.getChunkSource().addEntity(entity);
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.add(entityplayer);
-@@ -1864,9 +2200,52 @@
+@@ -1864,9 +2211,52 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -943,7 +969,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.remove(entityplayer);
-@@ -1895,6 +2274,15 @@
+@@ -1895,6 +2285,15 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
