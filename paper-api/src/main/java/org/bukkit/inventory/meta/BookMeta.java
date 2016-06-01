@@ -11,6 +11,28 @@ import org.bukkit.Material;
 public interface BookMeta extends ItemMeta {
 
     /**
+     * Represents the generation (or level of copying) of a written book
+     */
+    enum Generation {
+        /**
+         * Book written into a book-and-quill. Can be copied. (Default value)
+         */
+        ORIGINAL,
+        /**
+         * Book that was copied from an original. Can be copied.
+         */
+        COPY_OF_ORIGINAL,
+        /**
+         * Book that was copied from a copy of an original. Can't be copied.
+         */
+        COPY_OF_COPY,
+        /**
+         * Unused; unobtainable by players. Can't be copied.
+         */
+        TATTERED;
+    }
+
+    /**
      * Checks for the existence of a title in the book.
      *
      * @return true if the book has a title
@@ -60,6 +82,22 @@ public interface BookMeta extends ItemMeta {
      * @param author the author of the book
      */
     void setAuthor(String author);
+
+    /**
+     * Gets the generation of the book, or null if it's out of bounds.
+     *
+     * @return the generation of the book or null
+     */
+    Generation getGeneration();
+
+    /**
+     * Sets the generation of the book.
+     * <p>
+     * Assumes Generation.ORIGINAL if given null.
+     *
+     * @param generation the generation of the book
+     */
+    void setGeneration(Generation generation);
 
     /**
      * Checks for the existence of pages in the book.
