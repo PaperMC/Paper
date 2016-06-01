@@ -1,9 +1,12 @@
 package org.bukkit.craftbukkit.block;
 
+import com.google.common.base.Preconditions;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TileEntitySkull;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 
 import org.bukkit.SkullType;
 import org.bukkit.block.Block;
@@ -174,6 +177,22 @@ public class CraftSkull extends CraftBlockState implements Skull {
 
         this.profile = profile;
         return true;
+    }
+
+    @Override
+    public OfflinePlayer getOwningPlayer() {
+        return hasOwner() ? Bukkit.getOfflinePlayer(profile.getId()) : null;
+    }
+
+    @Override
+    public void setOwningPlayer(OfflinePlayer player) {
+        Preconditions.checkNotNull(player, "player");
+
+        if (skullType != SkullType.PLAYER) {
+            skullType = SkullType.PLAYER;
+        }
+
+        this.profile = new GameProfile(player.getUniqueId(), player.getName());
     }
 
     public BlockFace getRotation() {
