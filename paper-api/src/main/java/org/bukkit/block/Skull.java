@@ -1,5 +1,7 @@
 package org.bukkit.block;
 
+import java.util.UUID;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.SkullType;
 
 /**
@@ -18,7 +20,9 @@ public interface Skull extends BlockState {
      * Gets the owner of the skull, if one exists
      *
      * @return the owner of the skull or null if the skull does not have an owner
+     * @deprecated See {@link #getOwningPlayer()}.
      */
+    @Deprecated
     public String getOwner();
 
     /**
@@ -29,8 +33,26 @@ public interface Skull extends BlockState {
      *
      * @param name the new owner of the skull
      * @return true if the owner was successfully set
+     * @deprecated see {@link #setOwningPlayer(org.bukkit.OfflinePlayer)}.
      */
+    @Deprecated
     public boolean setOwner(String name);
+
+    /**
+     * Get the player which owns the skull. This player may appear as the
+     * texture depending on skull type.
+     *
+     * @return owning player
+     */
+    public OfflinePlayer getOwningPlayer();
+
+    /**
+     * Set the player which owns the skull. This player may appear as the
+     * texture depending on skull type.
+     *
+     * @param player the owning player
+     */
+    public void setOwningPlayer(OfflinePlayer player);
 
     /**
      * Gets the rotation of the skull in the world
