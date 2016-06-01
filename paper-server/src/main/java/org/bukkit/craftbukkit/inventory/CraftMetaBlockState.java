@@ -16,6 +16,7 @@ import net.minecraft.server.TileEntityCommand;
 import net.minecraft.server.TileEntityDispenser;
 import net.minecraft.server.TileEntityDropper;
 import net.minecraft.server.TileEntityEndGateway;
+import net.minecraft.server.TileEntityFlowerPot;
 import net.minecraft.server.TileEntityFurnace;
 import net.minecraft.server.TileEntityHopper;
 import net.minecraft.server.TileEntityMobSpawner;
@@ -36,6 +37,7 @@ import org.bukkit.craftbukkit.block.CraftCreatureSpawner;
 import org.bukkit.craftbukkit.block.CraftDispenser;
 import org.bukkit.craftbukkit.block.CraftDropper;
 import org.bukkit.craftbukkit.block.CraftEndGateway;
+import org.bukkit.craftbukkit.block.CraftFlowerPot;
 import org.bukkit.craftbukkit.block.CraftFurnace;
 import org.bukkit.craftbukkit.block.CraftHopper;
 import org.bukkit.craftbukkit.block.CraftJukebox;
@@ -279,6 +281,11 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
                 te = new TileEntityBanner();
             }
             return new CraftBanner(material, (TileEntityBanner) te);
+        case FLOWER_POT_ITEM:
+            if (te == null) {
+                te = new TileEntityFlowerPot();
+            }
+            return new CraftFlowerPot(material, (TileEntityFlowerPot) te);
         default:
             throw new IllegalStateException("Missing blockState for " + material);
         }
@@ -345,6 +352,9 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         case WALL_BANNER:
         case STANDING_BANNER:
             valid = te instanceof TileEntityBanner;
+            break;
+        case FLOWER_POT_ITEM:
+            valid = te instanceof TileEntityFlowerPot;
             break;
         default:
             valid = false;
