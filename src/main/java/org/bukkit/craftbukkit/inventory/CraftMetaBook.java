@@ -199,6 +199,16 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
         this.author = author;
     }
 
+    @Override
+    public Generation getGeneration() {
+        return (generation == null) ? null : Generation.values()[generation];
+    }
+
+    @Override
+    public void setGeneration(Generation generation) {
+        this.generation = (generation == null) ? null : generation.ordinal();
+    }
+
     public String getPage(final int page) {
         Validate.isTrue(isValidPage(page), "Invalid page number");
         return CraftChatMessage.fromComponent(pages.get(page - 1));
