@@ -110,3 +110,48 @@ entity.getWorld().explode(new BlockPosition(spawnLocation.getX(), spawnLocation.
   - It is fine to go over 80 lines as long as it doesn't hurt readability
   - There are exceptions, especially in Spigot-related files
   - When in doubt, use the same style as the surrounding code
+
+## Obfuscation Helpers
+In an effort to make future updates easier on ourselves, Paper tries to use obfuscation helpers whenever possible. The purpose of these helpers is to make the code more readable. These helpers should be be made as easy to inline as possible by the JVM whenever possible.
+
+An obfuscation helper to get an obfuscated field may be as simple as something like this:
+```
+public final int getStuckArrows() { return this.bY(); } // Paper - OBFHELPER
+```
+Or it may be as compex as forwarding an entire method so that it can be overriden later:
+```
+public boolean be() {
+    // Paper start - OBFHELPER
+    return this.pushedByWater();
+}
+
+public boolean pushedByWater() {
+    // Paper end
+    return true;
+}
+```
+While they may not always be done in exactly the same way each time, the general goal is always to improve readability and maintainability, so use your best judgement.
+
+## Configuration files
+To use a configurable value in your patch, add a new entry in either ```PaperConfig``` or ```PaperWorldConfig```. Use the former if a value must remain the same throughout all worlds, or the latter if it can change between worlds. The latter is preferred whenever possible.
+
+###```PaperConfig``` example:
+```
+public static boolean saveEmptyScoreboardTeams = false;
+private static void saveEmptyScoreboardTeams() {
+    saveEmptyScoreboardTeams = getBoolean("settings.save-empty-scoreboard-teams", false);
+}
+```
+Notice that the field is always public, but the setter is always private. This is important to the way the configuration generation system works. To access this value, reference it as you would any other static value:
+```if (!PaperConfig.saveEmptyScoreboardTeams) {```
+
+###```PaperWorldConfig``` example:
+```
+public boolean useInhabitedTime = true;
+private void useInhabitedTime() {
+    useInhabitedTime = getBoolean("use-chunk-inhabited-timer", true);
+}
+```
+Again, notice that the field is always public, but the setter is always private. To access this value, you'll need an instance of the ```net.minecraft.World``` object:
+
+```return this.world.paperConfig.useInhabitedTime ? this.w : 0;```
