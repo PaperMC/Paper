@@ -57,6 +57,7 @@ import EULA
 import EntitySquid
 import EntityWaterAnimal
 import FileIOThread
+import IHopper
 import ItemBlock
 import NavigationAbstract
 import NBTTagCompound
