@@ -1,4 +1,4 @@
-From 9e115c48246a2acbf2458f3588aed38a1a9fc3ff Mon Sep 17 00:00:00 2001
+From 17f62a2d5120e7a8f964027b42043f8464c7efe1 Mon Sep 17 00:00:00 2001
 From: Techcable <Techcable@outlook.com>
 Date: Fri, 24 Jul 2015 16:20:18 -0700
 Subject: [PATCH] Fix hopper lag by making entities look for hoppers.
@@ -14,10 +14,10 @@ This patch may causes a decrease in the performance of dropped items, which is w
 
 diff --git a/src/main/java/com/destroystokyo/paper/HopperPusher.java b/src/main/java/com/destroystokyo/paper/HopperPusher.java
 new file mode 100644
-index 0000000..a03e94d
+index 0000000..5ff43e2
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/HopperPusher.java
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,59 @@
 +package com.destroystokyo.paper;
 +
 +import net.minecraft.server.AxisAlignedBB;
@@ -36,10 +36,11 @@ index 0000000..a03e94d
 +        int endY = Math.min(255, pos.getY() + 1);
 +        int startZ = pos.getZ() - 1;
 +        int endZ = pos.getZ() + 1;
++        BlockPosition.PooledBlockPosition adjacentPos = BlockPosition.PooledBlockPosition.aquire();
 +        for (int x = startX; x <= endX; x++) {
 +            for (int y = startY; y <= endY; y++) {
 +                for (int z = startZ; z <= endZ; z++) {
-+                    BlockPosition adjacentPos = new BlockPosition(x, y, z);
++                    adjacentPos.setValues(x, y, z);
 +                    TileEntityHopper hopper = MCUtil.getHopper(getWorld(), adjacentPos);
 +                    if (hopper == null) continue; // Avoid playing with the bounding boxes, if at all possible
 +                    AxisAlignedBB hopperBoundingBox = hopper.getHopperLookupBoundingBox();
@@ -54,6 +55,7 @@ index 0000000..a03e94d
 +                }
 +            }
 +        }
++        adjacentPos.free();
 +        return null;
 +    }
 +
@@ -89,19 +91,58 @@ index 40ede20..0d2af96 100644
 +        isHopperPushBased = getBoolean("hopper.push-based", true);
 +    }
  }
+diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
+index 2c60d6e..8730cf5 100644
+--- a/src/main/java/net/minecraft/server/BlockPosition.java
++++ b/src/main/java/net/minecraft/server/BlockPosition.java
+@@ -265,6 +265,7 @@ public class BlockPosition extends BaseBlockPosition {
+             super(i, j, k);
+         }
+ 
++        public static BlockPosition.PooledBlockPosition aquire() { return s(); } // Paper - OBFHELPER
+         public static BlockPosition.PooledBlockPosition s() {
+             return e(0, 0, 0);
+         }
+@@ -291,6 +292,7 @@ public class BlockPosition extends BaseBlockPosition {
+             return new BlockPosition.PooledBlockPosition(i, j, k);
+         }
+ 
++        public void free() { t(); } // Paper - OBFHELPER
+         public void t() {
+             List list = BlockPosition.PooledBlockPosition.g;
+ 
+@@ -388,6 +390,7 @@ public class BlockPosition extends BaseBlockPosition {
+             return this.d;
+         }
+ 
++        public void setValues(int x, int y, int z) { c(x, y, z); } // Paper - OBFHELPER
+         public BlockPosition.MutableBlockPosition c(int i, int j, int k) {
+             this.b = i;
+             this.c = j;
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 3f411df..32c56c2 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -742,7 +742,9 @@ public class Chunk {
+     }
+ 
+     @Nullable
+-    public final TileEntity getTileEntity(BlockPosition pos) { return a(pos, EnumTileEntityState.IMMEDIATE); } @Nullable public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) { // Paper - OBFHELPER
++    public final TileEntity getTileEntityImmediately(BlockPosition pos) { return a(pos, EnumTileEntityState.IMMEDIATE); } // Paper - OBFHELPER
++    @Nullable
++    public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
+         // CraftBukkit start
+         TileEntity tileentity = null;
+         if (world.captureBlockStates) {
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index d54a30b..2b81881 100644
+index d54a30b..70e6c8c 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -74,9 +74,23 @@ public abstract class Entity implements ICommandListener {
-     public double lastX;
-     public double lastY;
-     public double lastZ;
-+    // Paper start - getters to implement HopperPusher
+@@ -77,6 +77,19 @@ public abstract class Entity implements ICommandListener {
      public double locX;
      public double locY;
      public double locZ;
-+
++    // Paper start - getters to implement HopperPusher
 +    public double getX() {
 +        return locX;
 +    }
@@ -210,6 +251,19 @@ index 804215a..e830d83 100644
 -    double G();
 +    double G(); default double getZ() { return G(); } // Paper - OBFHELPER
  }
+diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
+index bb1fa40..2724678 100644
+--- a/src/main/java/net/minecraft/server/MCUtil.java
++++ b/src/main/java/net/minecraft/server/MCUtil.java
+@@ -187,7 +187,7 @@ public final class MCUtil {
+     public static TileEntityHopper getHopper(World world, BlockPosition pos) {
+         Chunk chunk = world.getChunkIfLoaded(pos.getX() >> 4, pos.getZ() >> 4);
+         if (chunk != null && chunk.getBlockData(pos).getBlock() == Blocks.HOPPER) {
+-            TileEntity tileEntity = chunk.getTileEntity(pos);
++            TileEntity tileEntity = chunk.getTileEntityImmediately(pos);
+             if (tileEntity instanceof TileEntityHopper) {
+                 return (TileEntityHopper) tileEntity;
+             }
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
 index a695207..64f783c 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
