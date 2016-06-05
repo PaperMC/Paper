@@ -1,11 +1,11 @@
-From 1e9a4f7eedf6ac49348969aa5e1337b0077065de Mon Sep 17 00:00:00 2001
+From fb2ea5754f6414174122a0d0186e402a0cbee9ca Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 04:00:11 -0600
 Subject: [PATCH] Timings v2
 
 
 diff --git a/pom.xml b/pom.xml
-index 90fde44..c31ee8f 100644
+index 00edfb5..79d2171 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -65,6 +65,12 @@
@@ -139,10 +139,10 @@ index 0000000..0f8315c
 +}
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 new file mode 100644
-index 0000000..11dd692
+index 0000000..741da72
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,85 @@
 +package co.aikar.timings;
 +
 +import net.minecraft.server.World;
@@ -161,6 +161,13 @@ index 0000000..11dd692
 +    public final Timing chunkTicksBlocks;
 +    public final Timing doVillages;
 +    public final Timing doChunkMap;
++    public final Timing doChunkMapUpdate;
++    public final Timing doChunkMapToUpdate;
++    public final Timing doChunkMapSortMissing;
++    public final Timing doChunkMapSortSendToPlayers;
++    public final Timing doChunkMapPlayersNeedingChunks;
++    public final Timing doChunkMapPendingSendToPlayers;
++    public final Timing doChunkMapUnloadChunks;
 +    public final Timing doChunkGC;
 +    public final Timing doSounds;
 +    public final Timing entityRemoval;
@@ -192,6 +199,13 @@ index 0000000..11dd692
 +        chunkTicksBlocks = Timings.ofSafe(name + "Chunk Ticks - Blocks");
 +        doVillages = Timings.ofSafe(name + "doVillages");
 +        doChunkMap = Timings.ofSafe(name + "doChunkMap");
++        doChunkMapUpdate = Timings.ofSafe(name + "doChunkMap - Update");
++        doChunkMapToUpdate = Timings.ofSafe(name + "doChunkMap - To Update");
++        doChunkMapSortMissing = Timings.ofSafe(name + "doChunkMap - Sort Missing");
++        doChunkMapSortSendToPlayers = Timings.ofSafe(name + "doChunkMap - Sort Send To Players");
++        doChunkMapPlayersNeedingChunks = Timings.ofSafe(name + "doChunkMap - Players Needing Chunks");
++        doChunkMapPendingSendToPlayers = Timings.ofSafe(name + "doChunkMap - Pending Send To Players");
++        doChunkMapUnloadChunks = Timings.ofSafe(name + "doChunkMap - Unload Chunks");
 +        doSounds = Timings.ofSafe(name + "doSounds");
 +        doChunkGC = Timings.ofSafe(name + "doChunkGC");
 +        doPortalForcer = Timings.ofSafe(name + "doPortalForcer");
@@ -595,6 +609,106 @@ index e17d5d3..8845ad2 100644
  
          this.methodProfiler.b();
      }
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index b0249ff..797a84f 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server;
+ 
++import co.aikar.timings.Timing;
+ import com.google.common.base.Predicate;
+ import com.google.common.collect.AbstractIterator;
+ import com.google.common.collect.ComparisonChain;
+@@ -106,6 +107,7 @@ public class PlayerChunkMap {
+         PlayerChunk playerchunk;
+ 
+         if (i - this.k > 8000L) {
++            try (Timing ignored = world.timings.doChunkMapUpdate.startTiming()) { // Paper
+             this.k = i;
+ 
+             for (j = 0; j < this.i.size(); ++j) {
+@@ -113,9 +115,11 @@ public class PlayerChunkMap {
+                 playerchunk.d();
+                 playerchunk.c();
+             }
++            } // Paper timing
+         }
+ 
+         if (!this.f.isEmpty()) {
++            try (Timing ignored = world.timings.doChunkMapToUpdate.startTiming()) { // Paper
+             Iterator iterator = this.f.iterator();
+ 
+             while (iterator.hasNext()) {
+@@ -124,10 +128,12 @@ public class PlayerChunkMap {
+             }
+ 
+             this.f.clear();
++            } // Paper timing
+         }
+ 
+         if (this.l && i % 4L == 0L) {
+             this.l = false;
++            try (Timing ignored = world.timings.doChunkMapSortMissing.startTiming()) { // Paper
+             Collections.sort(this.h, new Comparator() {
+                 public int a(PlayerChunk playerchunk, PlayerChunk playerchunk1) {
+                     return ComparisonChain.start().compare(playerchunk.g(), playerchunk1.g()).result();
+@@ -137,10 +143,12 @@ public class PlayerChunkMap {
+                     return this.a((PlayerChunk) object, (PlayerChunk) object1);
+                 }
+             });
++            } // Paper timing
+         }
+ 
+         if (this.m && i % 4L == 2L) {
+             this.m = false;
++            try (Timing ignored = world.timings.doChunkMapSortSendToPlayers.startTiming()) { // Paper
+             Collections.sort(this.g, new Comparator() {
+                 public int a(PlayerChunk playerchunk, PlayerChunk playerchunk1) {
+                     return ComparisonChain.start().compare(playerchunk.g(), playerchunk1.g()).result();
+@@ -150,9 +158,11 @@ public class PlayerChunkMap {
+                     return this.a((PlayerChunk) object, (PlayerChunk) object1);
+                 }
+             });
++            } // Paper timing
+         }
+ 
+         if (!this.h.isEmpty()) {
++            try (Timing ignored = world.timings.doChunkMapPlayersNeedingChunks.startTiming()) { // Paper
+             long k = System.nanoTime() + 50000000L;
+             int l = 49;
+             Iterator iterator1 = this.h.iterator();
+@@ -176,10 +186,12 @@ public class PlayerChunkMap {
+                     }
+                 }
+             }
++            } // Paper timing
+         }
+ 
+         if (!this.g.isEmpty()) {
+             j = 81;
++            try (Timing ignored = world.timings.doChunkMapPendingSendToPlayers.startTiming()) { // Paper
+             Iterator iterator2 = this.g.iterator();
+ 
+             while (iterator2.hasNext()) {
+@@ -193,14 +205,17 @@ public class PlayerChunkMap {
+                     }
+                 }
+             }
++            } // Paper timing
+         }
+ 
+         if (this.managedPlayers.isEmpty()) {
++            try (Timing ignored = world.timings.doChunkMapUnloadChunks.startTiming()) { // Paper
+             WorldProvider worldprovider = this.world.worldProvider;
+ 
+             if (!worldprovider.e()) {
+                 this.world.getChunkProviderServer().b();
+             }
++            } // Paper timing
+         }
+ 
+     }
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
 index 0a14dd2..7c52e15 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
@@ -664,7 +778,7 @@ index 0cb2e63..6d4f4e7 100644
      private static Map<String, Class<? extends TileEntity>> f = Maps.newHashMap();
      private static Map<Class<? extends TileEntity>, String> g = Maps.newHashMap();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 4dd6777..0c3ed2d 100644
+index 78045c5..7d1272b 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -18,11 +18,11 @@ import com.google.common.collect.Maps;
@@ -1298,5 +1412,5 @@ index a752376..8870607 100644
      }
  }
 -- 
-2.8.2
+2.8.3
 
