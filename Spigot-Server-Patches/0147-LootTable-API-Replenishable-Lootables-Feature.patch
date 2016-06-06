@@ -1,4 +1,4 @@
-From 83e8df21605fee2b292d84c84fd1d19f40db2794 Mon Sep 17 00:00:00 2001
+From fc136a9094e3abb4812ca3cbf1128166136460f2 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 1 May 2016 21:19:14 -0400
 Subject: [PATCH] LootTable API & Replenishable Lootables Feature
@@ -418,7 +418,7 @@ index 0000000..01c2713
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/EntityMinecartContainer.java b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
-index 19f9eb6..7216fa5 100644
+index 19f9eb6..9162348 100644
 --- a/src/main/java/net/minecraft/server/EntityMinecartContainer.java
 +++ b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
 @@ -5,17 +5,21 @@ import javax.annotation.Nullable;
@@ -445,7 +445,7 @@ index 19f9eb6..7216fa5 100644
  
      // CraftBukkit start
      public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
-@@ -141,6 +145,7 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
+@@ -141,12 +145,13 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
  
      protected void b(NBTTagCompound nbttagcompound) {
          super.b(nbttagcompound);
@@ -453,7 +453,14 @@ index 19f9eb6..7216fa5 100644
          if (this.c != null) {
              nbttagcompound.setString("LootTable", this.c.toString());
              if (this.d != 0L) {
-@@ -167,6 +172,7 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
+                 nbttagcompound.setLong("LootTableSeed", this.d);
+             }
+-        } else {
++        } if (true) { // Paper - Always save the items, Table may stick around
+             NBTTagList nbttaglist = new NBTTagList();
+ 
+             for (int i = 0; i < this.items.length; ++i) {
+@@ -167,10 +172,11 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
      protected void a(NBTTagCompound nbttagcompound) {
          super.a(nbttagcompound);
          this.items = new ItemStack[this.getSize()];
@@ -461,6 +468,11 @@ index 19f9eb6..7216fa5 100644
          if (nbttagcompound.hasKeyOfType("LootTable", 8)) {
              this.c = new MinecraftKey(nbttagcompound.getString("LootTable"));
              this.d = nbttagcompound.getLong("LootTableSeed");
+-        } else {
++        } if (true) { // Paper - always load the items, table may still remain
+             NBTTagList nbttaglist = nbttagcompound.getList("Items", 10);
+ 
+             for (int i = 0; i < nbttaglist.size(); ++i) {
 @@ -228,10 +234,10 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
      }
  
@@ -528,10 +540,10 @@ index 19f9eb6..7216fa5 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/TileEntityLootable.java b/src/main/java/net/minecraft/server/TileEntityLootable.java
-index 3dc58bf..7717316 100644
+index 3dc58bf..5a494d2 100644
 --- a/src/main/java/net/minecraft/server/TileEntityLootable.java
 +++ b/src/main/java/net/minecraft/server/TileEntityLootable.java
-@@ -1,16 +1,21 @@
+@@ -1,26 +1,32 @@
  package net.minecraft.server;
  
 +import com.destroystokyo.paper.loottable.CraftLootableInventoryData; // Paper
@@ -555,7 +567,11 @@ index 3dc58bf..7717316 100644
          if (nbttagcompound.hasKeyOfType("LootTable", 8)) {
              this.m = new MinecraftKey(nbttagcompound.getString("LootTable"));
              this.n = nbttagcompound.getLong("LootTableSeed");
-@@ -21,6 +26,7 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
+             return true;
+         } else {
+-            return false;
++            return true; // Paper - always load the items, table may still remain
+         }
      }
  
      protected boolean e(NBTTagCompound nbttagcompound) {
@@ -563,7 +579,13 @@ index 3dc58bf..7717316 100644
          if (this.m != null) {
              nbttagcompound.setString("LootTable", this.m.toString());
              if (this.n != 0L) {
-@@ -34,10 +40,10 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
+@@ -29,15 +35,15 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
+ 
+             return true;
+         } else {
+-            return false;
++            return true; // Paper - always save the items, table may still remain
+         }
      }
  
      protected void d(@Nullable EntityHuman entityhuman) {
