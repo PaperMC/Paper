@@ -1,0 +1,70 @@
+From 11580ee1b1f7b4c824750e7bc35e86acb15e21f5 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 12 May 2016 02:03:56 -0400
+Subject: [PATCH] Fix Chunk Unload Queue Issues
+
+Vanilla implemented similar logic as Paper had pre 1.9.4, but Spigot
+has not resolved all the bugs with the changes.
+
+This patch fixes known issues and really should be applied by Spigot team.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index d7b9581..e3cc816 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -47,7 +47,7 @@ public class Chunk {
+     private long w;
+     private int x;
+     private ConcurrentLinkedQueue<BlockPosition> y;
+-    public boolean d;
++    public boolean d;public void setShouldUnload(boolean unload) { this.d = unload; } public boolean isUnloading() { return d; } // Paper // OBFHELPER
+     protected gnu.trove.map.hash.TObjectIntHashMap<Class> entityCount = new gnu.trove.map.hash.TObjectIntHashMap<Class>(); // Spigot
+ 
+     // Paper start
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 6d1b98b..4a2cad6 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -309,6 +309,7 @@ public class ChunkProviderServer implements IChunkProvider {
+                     Chunk chunk = (Chunk) this.chunks.get(olong);
+ 
+                     if (chunk != null && chunk.d) {
++                        chunk.setShouldUnload(false); // Paper
+                         // CraftBukkit start
+                         ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
+                         this.world.getServer().getPluginManager().callEvent(event);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 03dae89..58f5141 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -303,6 +303,9 @@ public class CraftWorld implements World {
+             // Use the default variant of loadChunk when generate == true.
+             return world.getChunkProviderServer().getChunkAt(x, z) != null;
+         }
++        // Paper start - below is not updated for the new unload queue logic.
++        return world.getChunkProviderServer().getOrLoadChunkAt(x, z) != null;
++        /*
+ 
+         world.getChunkProviderServer().unloadQueue.remove(ChunkCoordIntPair.a(x, z));
+         net.minecraft.server.Chunk chunk = world.getChunkProviderServer().chunks.get(ChunkCoordIntPair.a(x, z));
+@@ -312,7 +315,7 @@ public class CraftWorld implements World {
+             chunk = world.getChunkProviderServer().getOrLoadChunkAt(x, z);
+             world.timings.syncChunkLoadTimer.stopTiming(); // Spigot
+         }
+-        return chunk != null;
++        return chunk != null;*/ // Paper end
+     }
+ 
+     private void chunkLoadPostProcess(net.minecraft.server.Chunk chunk, int cx, int cz) {
+@@ -1548,7 +1551,7 @@ public class CraftWorld implements World {
+             }
+ 
+             // Already unloading?
+-            if (cps.unloadQueue.contains(ChunkCoordIntPair.a(chunk.locX, chunk.locZ))) {
++            if (chunk.isUnloading()) { // Paper
+                 continue;
+             }
+ 
+-- 
+2.8.3
+
