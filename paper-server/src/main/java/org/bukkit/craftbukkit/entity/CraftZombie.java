@@ -51,7 +51,6 @@ public class CraftZombie extends CraftMonster implements Zombie {
 
     @Override
     public Villager.Profession getVillagerProfession() {
-        if (!isVillager()) return Villager.Profession.NORMAL;
         return Villager.Profession.values()[getHandle().getVillagerType().ordinal()];
     }
 }
