@@ -24,7 +24,7 @@ public class ConsoleCommandCompleter implements Completer {
             protected List<String> evaluate() {
                 List<String> offers = server.getCommandMap().tabComplete(server.getConsoleSender(), buffer);
 
-                TabCompleteEvent tabEvent = new TabCompleteEvent(server.getConsoleSender(), buffer, offers);
+                TabCompleteEvent tabEvent = new TabCompleteEvent(server.getConsoleSender(), buffer, (offers == null) ? Collections.EMPTY_LIST : offers);
                 server.getPluginManager().callEvent(tabEvent);
 
                 return tabEvent.isCancelled() ? Collections.EMPTY_LIST : tabEvent.getCompletions();
