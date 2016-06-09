@@ -9,59 +9,45 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
-         ItemStack itemstack;
-         ItemStack itemstack1;
  
-+        try { // Paper - Reimplement BookEditEvent
-         if ("MC|BEdit".equals(s)) {
-             packetdataserializer = new PacketDataSerializer(Unpooled.wrappedBuffer(packetplayincustompayload.b()));
- 
-@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
-                 if (itemstack1 != null) {
-                     if (itemstack.getItem() == Items.WRITABLE_BOOK && itemstack.getItem() == itemstack1.getItem()) {
-                         itemstack1.a("pages", (NBTBase) itemstack.getTag().getList("pages", 8));
-+                        CraftEventFactory.handleEditBookEvent(player, itemstack1); // Paper
-                     }
- 
-                     return;
+                 if (itemstack.getItem() == Items.WRITABLE_BOOK && itemstack.getItem() == itemstack1.getItem()) {
+                     itemstack1.a("pages", (NBTBase) itemstack.getTag().getList("pages", 8));
++                    CraftEventFactory.handleEditBookEvent(player, itemstack1); // Paper
                  }
              } catch (Exception exception) {
                  PlayerConnection.LOGGER.error("Couldn\'t handle book info", exception);
 +                this.disconnect("Invalid Book Data!"); // Paper
-                 return;
-             } finally {
-                 packetdataserializer.release();
+             }
+         } else {
+             String s1;
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
  
-                             itemstack1.a("pages", (NBTBase) nbttaglist);
-                             itemstack1.setItem(Items.WRITTEN_BOOK);
-+                            CraftEventFactory.handleEditBookEvent(player, itemstack1); // Paper
-                         }
- 
-                         return;
+                         itemstack1.a("pages", (NBTBase) nbttaglist);
+                         itemstack1.setItem(Items.WRITTEN_BOOK);
++                        CraftEventFactory.handleEditBookEvent(player, itemstack1); // Paper
                      }
                  } catch (Exception exception1) {
                      PlayerConnection.LOGGER.error("Couldn\'t sign book", exception1);
 +                    this.disconnect("Invalid Book Data!"); // Paper
-                     return;
-                 } finally {
-                     packetdataserializer.release();
+                 }
+             } else if ("MC|TrSel".equals(s)) {
+                 try {
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
                          }
                      } catch (Exception exception3) {
                          PlayerConnection.LOGGER.error("Couldn\'t set command block", exception3);
 +                        this.disconnect("Invalid Command Block Data!"); // Paper
-                     } finally {
-                         packetdataserializer.release();
                      }
+                 } else if ("MC|AutoCmd".equals(s)) {
+                     if (!this.minecraftServer.getEnableCommandBlock()) {
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
                          }
                      } catch (Exception exception4) {
                          PlayerConnection.LOGGER.error("Couldn\'t set command block", exception4);
 +                        this.disconnect("Invalid Command Block Data!"); // Paper
-                     } finally {
-                         packetdataserializer.release();
                      }
+                 } else {
+                     int k;
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
                                  }
                              } catch (Exception exception5) {
@@ -70,20 +56,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                              }
                          }
                      } else if ("MC|ItemName".equals(s)) {
-@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
-                 }
-             }
-         }
-+        // Paper start
-+        } finally {
-+            if (packetplayincustompayload.b().refCnt() > 0) {
-+                packetplayincustompayload.b().release();
-+            }
-+        }
-+        // Paper end
- 
-     }
- 
--- 
-2.7.4 (Apple Git-66)
-
+--

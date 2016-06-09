@@ -11,14 +11,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
      private static final DataWatcherObject<Boolean> aB = DataWatcher.a(Entity.class, DataWatcherRegistry.h);
      private static final DataWatcherObject<Boolean> aC = DataWatcher.a(Entity.class, DataWatcherRegistry.h);
-     public boolean aa;
--    public int ab;
+     private static final DataWatcherObject<Boolean> aD = DataWatcher.a(Entity.class, DataWatcherRegistry.h);
+-    public boolean ab;
 -    public int ac;
 -    public int ad;
-+    public int ab;public int getChunkX() { return ab; } // Paper
-+    public int ac;public int getChunkY() { return ac; } // Paper
-+    public int ad;public int getChunkZ() { return ad; } // Paper
-     public boolean ah;
+-    public int ae;
++    public boolean ab; public boolean isAddedToChunk() { return ab; } // Paper - OBFHELPER
++    public int ac; public int getChunkX() { return ac; } // Paper - OBFHELPER
++    public int ad; public int getChunkY() { return ad; } // Paper - OBFHELPER
++    public int ae; public int getChunkZ() { return ae; } // Paper - OBFHELPER
+     public boolean ai;
      public boolean impulse;
      public int portalCooldown;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
@@ -52,22 +54,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public final List<Entity> j = Lists.newArrayList();
      protected final IntHashMap<Entity> entitiesById = new IntHashMap();
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+         this.entityList.removeAll(this.f);
  
          int j;
++        // Paper start - Set based removal lists
++        for (Entity e : this.f) {
++            j = e.getChunkZ();
++            int k = e.getChunkX();
  
 -        for (i = 0; i < this.f.size(); ++i) {
 -            entity = (Entity) this.f.get(i);
--            int k = entity.ab;
-+        // Paper start - Set based removal lists
-+        for (Entity e : this.f) {
-+            j = e.getChunkX();
-+            int k = e.getChunkZ();
- 
--            j = entity.ad;
--            if (entity.aa && this.isChunkLoaded(k, j, true)) {
+-            int k = entity.ac;
+-
+-            j = entity.ae;
+-            if (entity.ab && this.isChunkLoaded(k, j, true)) {
 -                this.getChunkAt(k, j).b(entity);
-+            if (e.aa && this.isChunkLoaded(j, k, true)) {
-+                this.getChunkAt(j, k).b(e);
++            if (e.isAddedToChunk() && this.isChunkLoaded(k, j, true)) {
++                this.getChunkAt(k, j).b(e);
              }
          }
  

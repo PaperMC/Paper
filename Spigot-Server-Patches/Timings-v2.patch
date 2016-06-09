@@ -381,7 +381,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void m() {
 -        SpigotTimings.timerEntityBaseTick.startTiming(); // Spigot
          super.m();
-         this.cv();
+         this.cz();
          if (!this.world.isClientSide) {
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
              }
@@ -395,7 +395,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          float f = (float) (d0 * d0 + d1 * d1);
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
          } else {
-             this.bp = 0;
+             this.bq = 0;
          }
 -
 -        SpigotTimings.timerEntityTickRest.stopTiming(); // Spigot
@@ -407,9 +407,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          this.world.methodProfiler.a("ai");
 -        SpigotTimings.timerEntityAI.startTiming(); // Spigot
-         if (this.cg()) {
-             this.bd = false;
-             this.be = 0.0F;
+         if (this.cj()) {
+             this.be = false;
+             this.bf = 0.0F;
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
              this.doTick();
              this.world.methodProfiler.b();
@@ -419,16 +419,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.world.methodProfiler.b();
          this.world.methodProfiler.a("jump");
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
-         this.bf *= 0.98F;
-         this.bg *= 0.9F;
+         this.bg *= 0.98F;
+         this.bh *= 0.9F;
          this.r();
 -        SpigotTimings.timerEntityAIMove.startTiming(); // Spigot
-         this.g(this.be, this.bf);
+         this.g(this.bf, this.bg);
 -        SpigotTimings.timerEntityAIMove.stopTiming(); // Spigot
          this.world.methodProfiler.b();
          this.world.methodProfiler.a("push");
 -        SpigotTimings.timerEntityAICollision.startTiming(); // Spigot
-         this.co();
+         this.cs();
 -        SpigotTimings.timerEntityAICollision.stopTiming(); // Spigot
          this.world.methodProfiler.b();
      }
@@ -486,7 +486,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.server != null) {
              this.server.disablePlugins();
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
-     protected void B() {}
+     public void B() {}
  
      protected void C() throws ExceptionWorldConflict { // CraftBukkit - added throws
 -        SpigotTimings.serverTickTimer.startTiming(); // Spigot
@@ -602,7 +602,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        SpigotTimings.tickablesTimer.startTiming(); // Spigot
 +        MinecraftTimings.tickablesTimer.startTiming(); // Spigot
          for (i = 0; i < this.o.size(); ++i) {
-             ((ITickable) this.o.get(i)).c();
+             ((ITickable) this.o.get(i)).E_();
          }
 -        SpigotTimings.tickablesTimer.stopTiming(); // Spigot
 +        MinecraftTimings.tickablesTimer.stopTiming(); // Spigot
@@ -775,8 +775,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getTileEntityTimings(this); // Spigot
 +    public Timing tickTimer = MinecraftTimings.getTileEntityTimings(this); // Paper
      private static final Logger a = LogManager.getLogger();
-     private static Map<String, Class<? extends TileEntity>> f = Maps.newHashMap();
-     private static Map<Class<? extends TileEntity>, String> g = Maps.newHashMap();
+     private static final Map<String, Class<? extends TileEntity>> f = Maps.newHashMap();
+     private static final Map<Class<? extends TileEntity>, String> g = Maps.newHashMap();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/World.java
@@ -868,7 +868,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              entity.N = entity.locY;
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
              entity.lastPitch = entity.pitch;
-             if (flag && entity.aa) {
+             if (flag && entity.ab) {
                  ++entity.ticksLived;
 +                ++co.aikar.timings.TimingHistory.activatedEntityTicks; // Paper
                  if (entity.isPassenger()) {
@@ -944,7 +944,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  while (iterator.hasNext()) {
 @@ -0,0 +0,0 @@ public class WorldServer extends World implements IAsyncTaskHandler {
  
-                     if (this.areChunksLoadedBetween(nextticklistentry.a.a(-b0, -b0, -b0), nextticklistentry.a.a(b0, b0, b0))) {
+                     if (this.areChunksLoadedBetween(nextticklistentry.a.a(0, 0, 0), nextticklistentry.a.a(0, 0, 0))) {
                          IBlockData iblockdata = this.getType(nextticklistentry.a);
 +                        co.aikar.timings.Timing timing = iblockdata.getBlock().getTiming(); // Paper
 +                        timing.startTiming(); // Paper
@@ -1398,7 +1398,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        SpigotTimings.checkIfActiveTimer.startTiming();
          // Never safe to skip fireworks or entities not yet added to chunk
          // PAIL: inChunk
-         if ( !entity.aa || entity instanceof EntityFireworks ) {
+         if ( !entity.ab || entity instanceof EntityFireworks ) {
 -            SpigotTimings.checkIfActiveTimer.stopTiming();
              return true;
          }
