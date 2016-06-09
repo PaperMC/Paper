@@ -363,7 +363,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         IChatBaseComponent[] components = CraftSign.sanitizeLines(lines);
         TileEntitySign sign = new TileEntitySign();
-        sign.a(new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ())); // PAIL: rename
+        sign.setPosition(new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
         System.arraycopy(components, 0, sign.lines, 0, sign.lines.length);
 
         getHandle().playerConnection.sendPacket(sign.getUpdatePacket());
@@ -756,7 +756,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             }
             
             getHandle().setSpectatorTarget(getHandle());
-            getHandle().playerInteractManager.setGameMode(WorldSettings.EnumGamemode.getById(mode.getValue()));
+            getHandle().playerInteractManager.setGameMode(EnumGamemode.getById(mode.getValue()));
             getHandle().fallDistance = 0;
             getHandle().playerConnection.sendPacket(new PacketPlayOutGameStateChange(3, mode.getValue()));
         }

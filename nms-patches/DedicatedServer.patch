@@ -12,7 +12,7 @@
  import java.net.InetAddress;
  import java.net.Proxy;
  import java.util.Collections;
-@@ -17,10 +16,20 @@
+@@ -18,11 +17,21 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -29,14 +29,15 @@
  public class DedicatedServer extends MinecraftServer implements IMinecraftServer {
  
      private static final Logger LOGGER = LogManager.getLogger();
+     private static final Pattern l = Pattern.compile("^[a-fA-F0-9]{40}$");
 -    private final List<ServerCommand> serverCommandQueue = Collections.synchronizedList(Lists.newArrayList());
 +    private final List<ServerCommand> serverCommandQueue = Collections.synchronizedList(Lists.<ServerCommand>newArrayList()); // CraftBukkit - fix decompile error
-     private RemoteStatusListener m;
+     private RemoteStatusListener n;
      public final RemoteControlCommandListener remoteControlCommandListener = new RemoteControlCommandListener(this);
-     private RemoteControlListener o;
-@@ -30,8 +39,10 @@
-     private WorldSettings.EnumGamemode s;
-     private boolean t;
+     private RemoteControlListener p;
+@@ -32,8 +41,10 @@
+     private EnumGamemode t;
+     private boolean u;
  
 -    public DedicatedServer(File file, DataConverterManager dataconvertermanager, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache) {
 -        super(file, Proxy.NO_PROXY, dataconvertermanager, yggdrasilauthenticationservice, minecraftsessionservice, gameprofilerepository, usercache);
@@ -47,8 +48,12 @@
          Thread thread = new Thread("Server Infinisleeper") {
              {
                  this.setDaemon(true);
-@@ -53,13 +64,27 @@
-     protected boolean init() throws IOException {
+@@ -52,16 +63,30 @@
+         };
+     }
+ 
+-    protected boolean init() throws IOException {
++    public boolean init() throws IOException {
          Thread thread = new Thread("Server console handler") {
              public void run() {
 -                BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(System.in));
@@ -78,7 +83,7 @@
                      }
                  } catch (IOException ioexception) {
                      DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
-@@ -68,6 +93,27 @@
+@@ -70,6 +95,27 @@
              }
          };
  
@@ -105,17 +110,17 @@
 +
          thread.setDaemon(true);
          thread.start();
-         DedicatedServer.LOGGER.info("Starting minecraft server version 1.9.4");
-@@ -76,7 +122,7 @@
+         DedicatedServer.LOGGER.info("Starting minecraft server version 1.10");
+@@ -78,7 +124,7 @@
          }
  
          DedicatedServer.LOGGER.info("Loading properties");
 -        this.propertyManager = new PropertyManager(new File("server.properties"));
 +        this.propertyManager = new PropertyManager(this.options); // CraftBukkit - CLI argument support
-         this.q = new EULA(new File("eula.txt"));
-         if (!this.q.a()) {
+         this.r = new EULA(new File("eula.txt"));
+         if (!this.r.a()) {
              DedicatedServer.LOGGER.info("You need to agree to the EULA in order to run the server. Go to eula.txt for more info.");
-@@ -132,6 +178,8 @@
+@@ -134,6 +180,8 @@
                  return false;
              }
  
@@ -124,7 +129,7 @@
              if (!this.getOnlineMode()) {
                  DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
                  DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
-@@ -146,7 +194,7 @@
+@@ -148,7 +196,7 @@
              if (!NameReferencingFileConverter.a(this.propertyManager)) {
                  return false;
              } else {
@@ -133,10 +138,10 @@
                  long j = System.nanoTime();
  
                  if (this.S() == null) {
-@@ -204,7 +252,18 @@
+@@ -206,7 +254,18 @@
                      DedicatedServer.LOGGER.info("Starting remote control listener");
-                     this.o = new RemoteControlListener(this);
-                     this.o.a();
+                     this.p = new RemoteControlListener(this);
+                     this.p.a();
 +                    this.remoteConsole = new org.bukkit.craftbukkit.command.CraftRemoteConsoleCommandSender(this.remoteControlCommandListener); // CraftBukkit
 +                }
 +
@@ -152,7 +157,21 @@
  
                  if (this.aP() > 0L) {
                      Thread thread1 = new Thread(new ThreadWatchdog(this));
-@@ -297,7 +356,7 @@
+@@ -266,7 +325,7 @@
+         return this.propertyManager.getBoolean("hardcore", false);
+     }
+ 
+-    protected void a(CrashReport crashreport) {}
++    public void a(CrashReport crashreport) {}
+ 
+     public CrashReport b(CrashReport crashreport) {
+         crashreport = super.b(crashreport);
+@@ -293,11 +352,11 @@
+         return crashreport;
+     }
+ 
+-    protected void B() {
++    public void B() {
          System.exit(0);
      }
  

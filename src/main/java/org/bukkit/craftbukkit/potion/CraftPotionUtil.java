@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.potion;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 
@@ -58,13 +59,17 @@ public class CraftPotionUtil {
             .build();
 
     public static String fromBukkit(PotionData data) {
+        String type;
         if (data.isUpgraded()) {
-            return upgradeable.get(data.getType());
+            type = upgradeable.get(data.getType());
+        } else if (data.isExtended()) {
+            type = extendable.get(data.getType());
+        } else {
+            type = regular.get(data.getType());
         }
-        if (data.isExtended()) {
-            return extendable.get(data.getType());
-        }
-        return regular.get(data.getType());
+        Preconditions.checkNotNull(type, "Unknown potion type from data " + data);
+
+        return "minecraft:" + type;
     }
 
     public static PotionData toBukkit(String type) {
