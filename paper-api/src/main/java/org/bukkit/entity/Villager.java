@@ -111,48 +111,36 @@ public interface Villager extends Ageable, NPC, InventoryHolder {
 
     /**
      * Represents the various different Villager professions there may be.
+     * Villagers have different trading options depending on their profession,
      */
     public enum Profession {
-        FARMER(0),
-        LIBRARIAN(1),
-        PRIEST(2),
-        BLACKSMITH(3),
-        BUTCHER(4);
-
-        private static final Profession[] professions = new Profession[Profession.values().length];
-        private final int id;
-
-        static {
-            for (Profession type : values()) {
-                professions[type.getId()] = type;
-            }
-        }
-
-        private Profession(int id) {
-            this.id = id;
-        }
-
         /**
-         * Gets the ID of this profession.
-         *
-         * @return Profession ID.
-         * @deprecated Magic value
+         * Villager without a profession.
          */
-        @Deprecated
-        public int getId() {
-            return id;
-        }
-
+        NORMAL,
         /**
-         * Gets a profession by its ID.
-         *
-         * @param id ID of the profession to get.
-         * @return Resulting profession, or null if not found.
-         * @deprecated Magic value
+         * Farmer profession. Wears a brown robe.
          */
-        @Deprecated
-        public static Profession getProfession(int id) {
-            return (id >= professions.length) ? null : professions[id];
-        }
+        FARMER,
+        /**
+         * Librarian profession. Wears a white robe.
+         */
+        LIBRARIAN,
+        /**
+         * Priest profession. Wears a purple robe.
+         */
+        PRIEST,
+        /**
+         * Blacksmith profession. Wears a black apron.
+         */
+        BLACKSMITH,
+        /**
+         * Butcher profession. Wears a white apron.
+         */
+        BUTCHER,
+        /**
+         * Really a zombie.
+         */
+        HUSK;
     }
 }

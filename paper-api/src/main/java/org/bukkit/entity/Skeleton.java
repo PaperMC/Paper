@@ -23,43 +23,18 @@ public interface Skeleton extends Monster {
      * Represents the various different Skeleton types.
      */
     public enum SkeletonType {
-        NORMAL(0),
-        WITHER(1);
-
-        private static final SkeletonType[] types = new SkeletonType[SkeletonType.values().length];
-        private final int id;
-
-        static {
-            for (SkeletonType type : values()) {
-                types[type.getId()] = type;
-            }
-        }
-
-        private SkeletonType(int id) {
-            this.id = id;
-        }
 
         /**
-         * Gets the ID of this skeleton type.
-         *
-         * @return Skeleton type ID
-         * @deprecated Magic value
+         * Standard skeleton type.
          */
-        @Deprecated
-        public int getId() {
-            return id;
-        }
-
+        NORMAL,
         /**
-         * Gets a skeleton type by its ID.
-         *
-         * @param id ID of the skeleton type to get.
-         * @return Resulting skeleton type, or null if not found.
-         * @deprecated Magic value
+         * Wither skeleton. Generally found in Nether fortresses.
          */
-        @Deprecated
-        public static SkeletonType getType(int id) {
-            return (id >= types.length) ? null : types[id];
-        }
+        WITHER,
+        /**
+         * Stray skeleton. Generally found in ice biomes. Shoots tipped arrows.
+         */
+        STRAY;
     }
 }

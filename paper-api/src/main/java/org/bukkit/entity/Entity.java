@@ -389,4 +389,18 @@ public interface Entity extends Metadatable, CommandSender {
      * @param flag if the entity is silent
      */
     public void setSilent(boolean flag);
+
+    /**
+     * Returns whether gravity applies to this entity.
+     *
+     * @return whether gravity applies
+     */
+    boolean hasGravity();
+
+    /**
+     * Sets whether gravity applies to this entity.
+     *
+     * @param gravity whether gravity should apply
+     */
+    void setGravity(boolean gravity);
 }

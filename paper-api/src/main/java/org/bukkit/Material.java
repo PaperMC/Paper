@@ -282,6 +282,11 @@ public enum Material {
     COMMAND_REPEATING(210, Command.class),
     COMMAND_CHAIN(211, Command.class),
     FROSTED_ICE(212),
+    MAGMA(213),
+    NETHER_WART_BLOCK(214),
+    RED_NETHER_BRICK(215),
+    BONE_BLOCK(216),
+    STRUCTURE_VOID(217),
     STRUCTURE_BLOCK(255),
     // ----- Item Separator -----
     IRON_SPADE(256, 1, 250),
@@ -901,6 +906,10 @@ public enum Material {
             case COMMAND_REPEATING:
             case COMMAND_CHAIN:
             case FROSTED_ICE:
+            case MAGMA:
+            case NETHER_WART_BLOCK:
+            case RED_NETHER_BRICK:
+            case BONE_BLOCK:
                 return true;
             default:
                 return false;
@@ -966,6 +975,7 @@ public enum Material {
             case CHORUS_FLOWER:
             case BEETROOT_BLOCK:
             case END_GATEWAY:
+            case STRUCTURE_VOID:
                 return true;
             default:
                 return false;
@@ -1182,6 +1192,10 @@ public enum Material {
             case STRUCTURE_BLOCK:
             case COMMAND_REPEATING:
             case COMMAND_CHAIN:
+            case MAGMA:
+            case NETHER_WART_BLOCK:
+            case RED_NETHER_BRICK:
+            case BONE_BLOCK:
                 return true;
             default:
                 return false;

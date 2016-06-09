@@ -198,22 +198,6 @@ public interface ArmorStand extends LivingEntity {
     void setBasePlate(boolean basePlate);
 
     /**
-     * Returns whether gravity applies to
-     * this armor stand
-     *
-     * @return whether gravity applies
-     */
-    boolean hasGravity();
-
-    /**
-     * Sets whether gravity applies to
-     * this armor stand
-     *
-     * @param gravity whether gravity should apply
-     */
-    void setGravity(boolean gravity);
-
-    /**
      * Returns whether the armor stand should be
      * visible or not
      *

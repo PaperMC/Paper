@@ -169,6 +169,7 @@ public enum EntityType {
     IRON_GOLEM("VillagerGolem", IronGolem.class, 99),
     HORSE("EntityHorse", Horse.class, 100),
     RABBIT("Rabbit", Rabbit.class, 101),
+    POLAR_BEAR("PolarBear", PolarBear.class, 102),
     VILLAGER("Villager", Villager.class, 120),
     ENDER_CRYSTAL("EnderCrystal", EnderCrystal.class, 200),
     // These don't have an entity ID in nms.EntityTypes.
