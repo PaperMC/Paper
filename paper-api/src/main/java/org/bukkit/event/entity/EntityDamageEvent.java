@@ -4,6 +4,7 @@ import java.util.EnumMap;
 import java.util.Map;
 
 import org.apache.commons.lang.Validate;
+import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -424,6 +425,12 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          * <p>
          * Damage: variable
          */
-        FLY_INTO_WALL
+        FLY_INTO_WALL,
+        /**
+         * Damage caused when an entity steps on {@link Material#MAGMA}.
+         * <p>
+         * Damage: 1
+         */
+        HOT_FLOOR
     }
 }
