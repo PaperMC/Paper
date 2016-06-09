@@ -1,18 +1,18 @@
-From 1d7c79814eac0930e924fa43fb4f023faf315b96 Mon Sep 17 00:00:00 2001
+From 467701b9fae3fe6b53c2c3d46a4240f50ddc43ed Mon Sep 17 00:00:00 2001
 From: Jedediah Smith <jedediah@silencegreys.com>
 Date: Wed, 2 Mar 2016 23:13:07 -0600
 Subject: [PATCH] Send absolute position the first time an entity is seen
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
-index d820ba8..6c8da79 100644
+index af32116..413925e 100644
 --- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 +++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 @@ -41,7 +41,12 @@ public class EntityTrackerEntry {
      private boolean x;
      private boolean y;
      public boolean b;
--    public Set<EntityPlayer> trackedPlayers = Sets.newHashSet();
+-    public final Set<EntityPlayer> trackedPlayers = Sets.newHashSet();
 +    // Paper start
 +    // Replace trackedPlayers Set with a Map. The value is true until the player receives
 +    // their first update (which is forced to have absolute coordinates), false afterward.
@@ -22,40 +22,23 @@ index d820ba8..6c8da79 100644
  
      public EntityTrackerEntry(Entity entity, int i, int j, int k, boolean flag) {
          this.tracker = entity;
-@@ -126,20 +131,22 @@ public class EntityTrackerEntry {
-                 boolean flag = k1 * k1 + l1 * l1 + i2 * i2 >= 128L || this.a % 60 == 0;
-                 boolean flag1 = Math.abs(i1 - this.yRot) >= 1 || Math.abs(j1 - this.xRot) >= 1;
+@@ -142,6 +147,7 @@ public class EntityTrackerEntry {
+                 boolean flag1 = l1 * l1 + i2 * i2 + j2 * j2 >= 128L || this.a % 60 == 0;
+                 boolean flag2 = Math.abs(j1 - this.yRot) >= 1 || Math.abs(k1 - this.xRot) >= 1;
  
--                // CraftBukkit start - Code moved from below
--                if (flag) {
--                    this.xLoc = j;
--                    this.yLoc = k;
--                    this.zLoc = l;
--                }
 +                if (this.a > 0 || this.tracker instanceof EntityArrow) { // Paper - Moved up
-+                    // CraftBukkit start - Code moved from below
-+                    if (flag) {
-+                        this.xLoc = j;
-+                        this.yLoc = k;
-+                        this.zLoc = l;
-+                    }
- 
--                if (flag1) {
-+                    if (flag1) {
-+                        this.yRot = i1;
-+                        this.xRot = j1;
-+                    }
-+                    // CraftBukkit end
-                     this.yRot = i1;
-                     this.xRot = j1;
--                }
+                 // CraftBukkit start - Code moved from below
+                 if (flag1) {
+                     this.xLoc = k;
+@@ -155,7 +161,6 @@ public class EntityTrackerEntry {
+                 }
                  // CraftBukkit end
--
+ 
 -                if (this.a > 0 || this.tracker instanceof EntityArrow) {
-                     if (k1 >= -32768L && k1 < 32768L && l1 >= -32768L && l1 < 32768L && i2 >= -32768L && i2 < 32768L && this.v <= 400 && !this.x && this.y == this.tracker.onGround) {
-                         if ((!flag || !flag1) && !(this.tracker instanceof EntityArrow)) {
-                             if (flag) {
-@@ -185,7 +192,26 @@ public class EntityTrackerEntry {
+                     if (l1 >= -32768L && l1 < 32768L && i2 >= -32768L && i2 < 32768L && j2 >= -32768L && j2 < 32768L && this.v <= 400 && !this.x && this.y == this.tracker.onGround) {
+                         if ((!flag1 || !flag2) && !(this.tracker instanceof EntityArrow)) {
+                             if (flag1) {
+@@ -201,7 +206,26 @@ public class EntityTrackerEntry {
                  }
  
                  if (object != null) {
@@ -83,7 +66,7 @@ index d820ba8..6c8da79 100644
                  }
  
                  this.d();
-@@ -338,7 +364,7 @@ public class EntityTrackerEntry {
+@@ -338,7 +362,7 @@ public class EntityTrackerEntry {
  
                      entityplayer.removeQueue.remove(Integer.valueOf(this.tracker.getId()));
                      // CraftBukkit end
@@ -93,5 +76,5 @@ index d820ba8..6c8da79 100644
  
                      entityplayer.playerConnection.sendPacket(packet);
 -- 
-2.8.2
+2.8.3
 

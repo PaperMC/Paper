@@ -62,7 +62,6 @@ import NavigationAbstract
 import NBTTagCompound
 import NBTTagList
 import PersistentScoreboard
-import PacketPlayInResourcePackStatus
 import PacketPlayInUseEntity
 import PacketPlayOutPlayerListHeaderFooter
 import PacketPlayOutScoreboardTeam

@@ -1,4 +1,4 @@
-From eb751a1284762ac0d294c8609b57edc8fbaa85e9 Mon Sep 17 00:00:00 2001
+From 8d2b17317390f32c79ff90a3aece9ec4fed83d41 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 4 Mar 2016 18:18:37 -0600
 Subject: [PATCH] Chunk save queue improvements
@@ -41,7 +41,7 @@ index 9ab6445..d01bca1 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index da7d7fe..a5c4e95 100644
+index 24cb51b..f298692 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -12,14 +12,17 @@ import java.util.Map;
@@ -57,12 +57,12 @@ index da7d7fe..a5c4e95 100644
 +    private ConcurrentLinkedQueue<QueuedChunk> queue = new ConcurrentLinkedQueue<>(); // Paper - Chunk queue improvements
 +    private final Object lock = new Object(); // Paper - Chunk queue improvements
      private static final Logger a = LogManager.getLogger();
-     private Map<ChunkCoordIntPair, NBTTagCompound> b = new ConcurrentHashMap();
--    private Set<ChunkCoordIntPair> c = Collections.newSetFromMap(new ConcurrentHashMap());
-+    //private Set<ChunkCoordIntPair> c = Collections.newSetFromMap(new ConcurrentHashMap()); // Paper - Chunk queue improvements
+     private final Map<ChunkCoordIntPair, NBTTagCompound> b = new ConcurrentHashMap();
+-    private final Set<ChunkCoordIntPair> c = Collections.newSetFromMap(new ConcurrentHashMap());
++    //private final Set<ChunkCoordIntPair> c = Collections.newSetFromMap(new ConcurrentHashMap()); // Paper - Chunk queue improvements
      private final File d;
      private final DataConverterManager e;
-     private boolean f = false;
+     private boolean f;
 @@ -33,11 +36,11 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
      public boolean chunkExists(World world, int i, int j) {
          ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
@@ -128,7 +128,7 @@ index da7d7fe..a5c4e95 100644
              }
  
              return flag;
-@@ -508,4 +516,16 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -544,4 +552,16 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
              return entity;
          }
      }
@@ -146,7 +146,7 @@ index da7d7fe..a5c4e95 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/FileIOThread.java b/src/main/java/net/minecraft/server/FileIOThread.java
-index 4733f94..113aea2 100644
+index acfdd52..fdbaf5f 100644
 --- a/src/main/java/net/minecraft/server/FileIOThread.java
 +++ b/src/main/java/net/minecraft/server/FileIOThread.java
 @@ -39,11 +39,15 @@ public class FileIOThread implements Runnable {
@@ -170,5 +170,5 @@ index 4733f94..113aea2 100644
  
          if (this.b.isEmpty()) {
 -- 
-2.8.3.windows.1
+2.8.3
 

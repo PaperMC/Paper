@@ -1,28 +1,30 @@
-From acf9844949fec83fbc827beef334a584b9b28f2e Mon Sep 17 00:00:00 2001
+From 5a6370e213cbfefd2d2b8f3f1d7af85b490d8c7f Mon Sep 17 00:00:00 2001
 From: Joseph Hirschfeld <joe@ibj.io>
 Date: Thu, 3 Mar 2016 02:39:54 -0600
 Subject: [PATCH] Change implementation of (tile)entity removal list
 
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 751e07d..c6fe888 100644
+index 1b58f7d..1e092b0 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -119,9 +119,9 @@ public abstract class Entity implements ICommandListener {
+@@ -119,10 +119,10 @@ public abstract class Entity implements ICommandListener {
      private static final DataWatcherObject<Boolean> aB = DataWatcher.a(Entity.class, DataWatcherRegistry.h);
      private static final DataWatcherObject<Boolean> aC = DataWatcher.a(Entity.class, DataWatcherRegistry.h);
-     public boolean aa;
--    public int ab;
+     private static final DataWatcherObject<Boolean> aD = DataWatcher.a(Entity.class, DataWatcherRegistry.h);
+-    public boolean ab;
 -    public int ac;
 -    public int ad;
-+    public int ab;public int getChunkX() { return ab; } // Paper
-+    public int ac;public int getChunkY() { return ac; } // Paper
-+    public int ad;public int getChunkZ() { return ad; } // Paper
-     public boolean ah;
+-    public int ae;
++    public boolean ab; public boolean isAddedToChunk() { return ab; } // Paper - OBFHELPER
++    public int ac; public int getChunkX() { return ac; } // Paper - OBFHELPER
++    public int ad; public int getChunkY() { return ad; } // Paper - OBFHELPER
++    public int ae; public int getChunkZ() { return ae; } // Paper - OBFHELPER
+     public boolean ai;
      public boolean impulse;
      public int portalCooldown;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index b7f45b6..26352d2 100644
+index 0b3360c..47036e1 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -31,6 +31,11 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
@@ -51,23 +53,24 @@ index b7f45b6..26352d2 100644
      public final List<EntityHuman> players = Lists.newArrayList();
      public final List<Entity> j = Lists.newArrayList();
      protected final IntHashMap<Entity> entitiesById = new IntHashMap();
-@@ -1390,19 +1395,20 @@ public abstract class World implements IBlockAccess {
+@@ -1393,20 +1398,20 @@ public abstract class World implements IBlockAccess {
+         this.entityList.removeAll(this.f);
  
          int j;
++        // Paper start - Set based removal lists
++        for (Entity e : this.f) {
++            j = e.getChunkZ();
++            int k = e.getChunkX();
  
 -        for (i = 0; i < this.f.size(); ++i) {
 -            entity = (Entity) this.f.get(i);
--            int k = entity.ab;
-+        // Paper start - Set based removal lists
-+        for (Entity e : this.f) {
-+            j = e.getChunkX();
-+            int k = e.getChunkZ();
- 
--            j = entity.ad;
--            if (entity.aa && this.isChunkLoaded(k, j, true)) {
+-            int k = entity.ac;
+-
+-            j = entity.ae;
+-            if (entity.ab && this.isChunkLoaded(k, j, true)) {
 -                this.getChunkAt(k, j).b(entity);
-+            if (e.aa && this.isChunkLoaded(j, k, true)) {
-+                this.getChunkAt(j, k).b(e);
++            if (e.isAddedToChunk() && this.isChunkLoaded(k, j, true)) {
++                this.getChunkAt(k, j).b(e);
              }
          }
  
@@ -81,5 +84,5 @@ index b7f45b6..26352d2 100644
          this.f.clear();
          this.l();
 -- 
-2.8.2
+2.8.3
 

@@ -1,4 +1,4 @@
-From aa2f2c18d1a4ed846559046dc228aee45dbd3ee1 Mon Sep 17 00:00:00 2001
+From ecb2e5c1740f7325d86987a01a452fb9b49c5f77 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 13 Sep 2014 23:14:43 -0400
 Subject: [PATCH] Configurable Keep Spawn Loaded range per world
@@ -21,7 +21,7 @@ index 2374419..d6fef83 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 842e364..e1c0c0b 100644
+index 5aaec82..1347ce2 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -353,8 +353,9 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
@@ -37,20 +37,22 @@ index 842e364..e1c0c0b 100644
  
                      if (i1 - j > 1000L) {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 21fa43f..f160813 100644
+index 7e6b3e6..bf1ac49 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -3228,7 +3228,7 @@ public abstract class World implements IBlockAccess {
-         BlockPosition blockposition = this.getSpawn();
+@@ -3232,8 +3232,9 @@ public abstract class World implements IBlockAccess {
          int k = i * 16 + 8 - blockposition.getX();
          int l = j * 16 + 8 - blockposition.getZ();
--        short short0 = 128;
-+        short short0 = paperConfig.keepLoadedRange; // Paper
+         boolean flag = true;
++        short keepLoadedRange = paperConfig.keepLoadedRange; // Paper
  
-         return k >= -short0 && k <= short0 && l >= -short0 && l <= short0 && this.keepSpawnInMemory; // CraftBukkit - Added 'this.keepSpawnInMemory'
+-        return k >= -128 && k <= 128 && l >= -128 && l <= 128 && this.keepSpawnInMemory; // CraftBukkit - Added 'this.keepSpawnInMemory'
++        return k >= -keepLoadedRange && k <= keepLoadedRange && l >= -keepLoadedRange && l <= keepLoadedRange && this.keepSpawnInMemory; // CraftBukkit - Added 'this.keepSpawnInMemory' // Paper - Re-add range var
      }
+ 
+     public void a(Packet<?> packet) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index a0478f2..975a036 100644
+index 5cb0eba..8202800 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -946,7 +946,7 @@ public final class CraftServer implements Server {
@@ -63,10 +65,10 @@ index a0478f2..975a036 100644
              for (int j = -short1; j <= short1; j += 16) {
                  for (int k = -short1; k <= short1; k += 16) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 18b7da6..6a3e939 100644
+index d1385af..d822cb1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -1259,8 +1259,9 @@ public class CraftWorld implements World {
+@@ -1261,8 +1261,9 @@ public class CraftWorld implements World {
          int chunkCoordX = chunkcoordinates.getX() >> 4;
          int chunkCoordZ = chunkcoordinates.getZ() >> 4;
          // Cycle through the 25x25 Chunks around it to load/unload the chunks.
