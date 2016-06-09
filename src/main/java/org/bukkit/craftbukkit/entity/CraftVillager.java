@@ -39,12 +39,13 @@ public class CraftVillager extends CraftAgeable implements Villager, InventoryHo
     }
 
     public Profession getProfession() {
-        return Profession.values()[getHandle().getProfession()];
+        return Profession.values()[getHandle().getProfession() + 1]; // Offset by 1 from the zombie types
     }
 
     public void setProfession(Profession profession) {
         Validate.notNull(profession);
-        getHandle().setProfession(profession.ordinal());
+        Validate.isTrue(0 < profession.ordinal() && profession.ordinal() < Profession.HUSK.ordinal(), "This profession is reserved for Zombies: ", profession);
+        getHandle().setProfession(profession.ordinal() - 1);
     }
 
     @Override
