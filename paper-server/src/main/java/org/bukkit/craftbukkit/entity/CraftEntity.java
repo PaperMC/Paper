@@ -67,6 +67,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                     else if (entity instanceof EntitySheep) { return new CraftSheep(server, (EntitySheep) entity); }
                     else if (entity instanceof EntityHorse) { return new CraftHorse(server, (EntityHorse) entity); }
                     else if (entity instanceof EntityRabbit) { return new CraftRabbit(server, (EntityRabbit) entity); }
+                    else if (entity instanceof EntityPolarBear) { return new CraftPolarBear(server, (EntityPolarBear) entity); }
                     else  { return new CraftAnimals(server, (EntityAnimal) entity); }
                 }
                 // Monsters
@@ -564,14 +565,24 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
-	public boolean isSilent() {
-		return getHandle().ad(); // PAIL: Rename isSilent
-	}
+    public boolean isSilent() {
+        return getHandle().isSilent();
+    }
 
-	@Override
-	public void setSilent(boolean flag) {
-		getHandle().c(flag); // PAIL: Rename setSilent
-	}
+    @Override
+    public void setSilent(boolean flag) {
+        getHandle().setSilent(flag);
+    }
+
+    @Override
+    public boolean hasGravity() {
+        return !getHandle().isNoGravity();
+    }
+
+    @Override
+    public void setGravity(boolean gravity) {
+        getHandle().setNoGravity(!gravity);
+    }
 
     private static PermissibleBase getPermissibleBase() {
         if (perm == null) {

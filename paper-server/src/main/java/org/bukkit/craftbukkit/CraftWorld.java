@@ -1096,6 +1096,8 @@ public class CraftWorld implements World {
                 entity = new EntityGuardian(world);
             } else if (ArmorStand.class.isAssignableFrom(clazz)) {
                 entity = new EntityArmorStand(world, x, y, z);
+            } else if (PolarBear.class.isAssignableFrom(clazz)) {
+                entity = new EntityPolarBear(world);
             }
 
             if (entity != null) {

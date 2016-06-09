@@ -18,8 +18,8 @@ public class BiomeTest extends AbstractTestingBase {
 
     @Test
     public void testMinecraftToBukkit() {
-        for (BiomeBase biome : BiomeBase.REGISTRY_ID) {
-            Assert.assertNotNull("No Bukkit mapping for " + biome, CraftBlock.biomeBaseToBiome(biome));
+        for (Object biome : BiomeBase.REGISTRY_ID) {
+            Assert.assertNotNull("No Bukkit mapping for " + biome, CraftBlock.biomeBaseToBiome((BiomeBase) biome));
         }
     }
 }

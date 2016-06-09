@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityZombie;
+import net.minecraft.server.EnumZombieType;
 
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
@@ -40,25 +41,17 @@ public class CraftZombie extends CraftMonster implements Zombie {
     }
 
     public void setVillager(boolean flag) {
-        if (flag) {
-            getHandle().setVillagerType(0);
-        } else {
-            getHandle().clearVillagerType();
-        }
+        getHandle().setVillagerType(flag ? EnumZombieType.NORMAL : EnumZombieType.VILLAGER_FARMER);
     }
 
     @Override
     public void setVillagerProfession(Villager.Profession profession) {
-        if (profession == null) {
-            getHandle().clearVillagerType();
-        } else {
-            getHandle().setVillagerType(profession.getId());
-        }
+        getHandle().setVillagerType(profession == null ? EnumZombieType.NORMAL : EnumZombieType.a(profession.ordinal()));
     }
 
     @Override
     public Villager.Profession getVillagerProfession() {
-        if (!isVillager()) return null;
-        return Villager.Profession.getProfession(getHandle().getVillagerType());
+        if (!isVillager()) return Villager.Profession.NORMAL;
+        return Villager.Profession.values()[getHandle().getVillagerType().ordinal()];
     }
 }

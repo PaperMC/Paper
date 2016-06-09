@@ -493,10 +493,10 @@ public class CraftEventFactory {
             DamageCause cause = null;
             Block damager = blockDamage;
             blockDamage = null;
-            if (source == DamageSource.CACTUS) {
+            if (source == DamageSource.CACTUS || source == DamageSource.HOT_FLOOR) {
                 cause = DamageCause.CONTACT;
             } else {
-                throw new AssertionError(String.format("Unhandled damage of %s by %s from %s", entity, damager, source.translationIndex));
+                throw new IllegalStateException(String.format("Unhandled damage of %s by %s from %s", entity, damager, source.translationIndex));
             }
             EntityDamageEvent event = callEvent(new EntityDamageByBlockEvent(damager, entity.getBukkitEntity(), cause, modifiers, modifierFunctions));
             if (!event.isCancelled()) {
@@ -516,7 +516,7 @@ public class CraftEventFactory {
             } else if (source == DamageSource.DRAGON_BREATH) {
                 cause = DamageCause.DRAGON_BREATH;
             } else {
-                throw new AssertionError(String.format("Unhandled damage of %s by %s from %s", entity, damager.getHandle(), source.translationIndex));
+                throw new IllegalStateException(String.format("Unhandled damage of %s by %s from %s", entity, damager.getHandle(), source.translationIndex));
             }
             EntityDamageEvent event = callEvent(new EntityDamageByEntityEvent(damager, entity.getBukkitEntity(), cause, modifiers, modifierFunctions));
             if (!event.isCancelled()) {
@@ -556,7 +556,7 @@ public class CraftEventFactory {
             return callEntityDamageEvent(null, entity, cause, modifiers, modifierFunctions);
         }
 
-        throw new AssertionError(String.format("Unhandled damage of %s from %s", entity, source.translationIndex));
+        throw new IllegalStateException(String.format("Unhandled damage of %s from %s", entity, source.translationIndex));
     }
 
     private static EntityDamageEvent callEntityDamageEvent(Entity damager, Entity damagee, DamageCause cause, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions) {

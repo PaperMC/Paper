@@ -12,7 +12,7 @@
  public abstract class EntityHanging extends Entity {
  
      private static final Predicate<Entity> c = new Predicate() {
-@@ -40,30 +45,39 @@
+@@ -41,39 +46,44 @@
          this.updateBoundingBox();
      }
  
@@ -21,60 +21,63 @@
 -            double d0 = (double) this.blockPosition.getX() + 0.5D;
 -            double d1 = (double) this.blockPosition.getY() + 0.5D;
 -            double d2 = (double) this.blockPosition.getZ() + 0.5D;
-+    /* CraftBukkit start - bounding box calculation made static (for spawn usage)
-+
-+        l is from function l()
-+        m is from function m()
-+
-+        Placing here as it's more likely to be noticed as something which needs to be updated
-+        then something in a CraftBukkit file.
-+     */
-+    public static AxisAlignedBB calculateBoundingBox(Entity entity, BlockPosition blockPosition, EnumDirection direction, int width, int height) {
-+            double d0 = (double) blockPosition.getX() + 0.5D;
-+            double d1 = (double) blockPosition.getY() + 0.5D;
-+            double d2 = (double) blockPosition.getZ() + 0.5D;
-             double d3 = 0.46875D;
+-            double d3 = 0.46875D;
 -            double d4 = this.a(this.getWidth());
 -            double d5 = this.a(this.getHeight());
-+            double d4 = a(width);
-+            double d5 = a(height);
- 
+-
 -            d0 -= (double) this.direction.getAdjacentX() * 0.46875D;
 -            d2 -= (double) this.direction.getAdjacentZ() * 0.46875D;
-+            d0 -= (double) direction.getAdjacentX() * 0.46875D;
-+            d2 -= (double) direction.getAdjacentZ() * 0.46875D;
-             d1 += d5;
+-            d1 += d5;
 -            EnumDirection enumdirection = this.direction.f();
-+            EnumDirection enumdirection = direction.f();
++    // CraftBukkit start - break out BB calc into own method
++    public static AxisAlignedBB calculateBoundingBox(Entity entity, BlockPosition blockPosition, EnumDirection direction, int width, int height) {
++        double d0 = (double) blockPosition.getX() + 0.5D;
++        double d1 = (double) blockPosition.getY() + 0.5D;
++        double d2 = (double) blockPosition.getZ() + 0.5D;
++        double d3 = 0.46875D;
++        double d4 = width;
++        double d5 = height;
++
++        d0 -= (double) direction.getAdjacentX() * 0.46875D;
++        d2 -= (double) direction.getAdjacentZ() * 0.46875D;
++        d1 += d5;
++        EnumDirection enumdirection = direction.f();
++
++        d0 += d4 * (double) enumdirection.getAdjacentX();
++        d2 += d4 * (double) enumdirection.getAdjacentZ();
++
++        double d6 = (double) width;
++        double d7 = (double) height;
++        double d8 = (double) width;
  
-             d0 += d4 * (double) enumdirection.getAdjacentX();
-             d2 += d4 * (double) enumdirection.getAdjacentZ();
+-            d0 += d4 * (double) enumdirection.getAdjacentX();
+-            d2 += d4 * (double) enumdirection.getAdjacentZ();
 -            this.locX = d0;
 -            this.locY = d1;
 -            this.locZ = d2;
 -            double d6 = (double) this.getWidth();
 -            double d7 = (double) this.getHeight();
 -            double d8 = (double) this.getWidth();
-+        if (entity != null) {
-+            entity.locX = d0;
-+            entity.locY = d1;
-+            entity.locZ = d2;
-+        }
-+            double d6 = (double) width;
-+            double d7 = (double) height;
-+            double d8 = (double) width;
- 
+-
 -            if (this.direction.k() == EnumDirection.EnumAxis.Z) {
-+            if (direction.k() == EnumDirection.EnumAxis.Z) {
-                 d8 = 1.0D;
-             } else {
-                 d6 = 1.0D;
-@@ -72,11 +86,18 @@
-             d6 /= 32.0D;
-             d7 /= 32.0D;
-             d8 /= 32.0D;
+-                d8 = 1.0D;
+-            } else {
+-                d6 = 1.0D;
+-            }
++        if (direction.k() == EnumDirection.EnumAxis.Z) {
++            d8 = 1.0D;
++        } else {
++            d6 = 1.0D;
++        }
+ 
+-            d6 /= 32.0D;
+-            d7 /= 32.0D;
+-            d8 /= 32.0D;
 -            this.a(new AxisAlignedBB(d0 - d6, d1 - d7, d2 - d8, d0 + d6, d1 + d7, d2 + d8));
-+            return new AxisAlignedBB(d0 - d6, d1 - d7, d2 - d8, d0 + d6, d1 + d7, d2 + d8);
++        d6 /= 32.0D;
++        d7 /= 32.0D;
++        d8 /= 32.0D;
++        return new AxisAlignedBB(d0 - d6, d1 - d7, d2 - d8, d0 + d6, d1 + d7, d2 + d8);
 +    }
 +
 +    protected void updateBoundingBox() {
@@ -85,12 +88,7 @@
          }
      }
  
--    private double a(int i) {
-+    private static double a(int i) {
-         return i % 32 == 0 ? 0.5D : 0.0D;
-     }
- 
-@@ -87,6 +108,24 @@
+@@ -88,6 +98,24 @@
          if (this.d++ == 100 && !this.world.isClientSide) {
              this.d = 0;
              if (!this.dead && !this.survives()) {
@@ -115,7 +113,7 @@
                  this.die();
                  this.a((Entity) null);
              }
-@@ -137,6 +176,21 @@
+@@ -140,6 +168,21 @@
              return false;
          } else {
              if (!this.dead && !this.world.isClientSide) {
@@ -135,9 +133,9 @@
 +                // CraftBukkit end
 +
                  this.die();
-                 this.ao();
+                 this.ap();
                  this.a(damagesource.getEntity());
-@@ -148,6 +202,18 @@
+@@ -151,6 +194,18 @@
  
      public void move(double d0, double d1, double d2) {
          if (!this.world.isClientSide && !this.dead && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
@@ -156,7 +154,7 @@
              this.die();
              this.a((Entity) null);
          }
-@@ -155,7 +221,7 @@
+@@ -158,7 +213,7 @@
      }
  
      public void g(double d0, double d1, double d2) {

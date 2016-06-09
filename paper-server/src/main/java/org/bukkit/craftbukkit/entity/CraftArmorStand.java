@@ -150,17 +150,6 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
     }
 
     @Override
-    public boolean hasGravity() {
-        return !getHandle().hasGravity();
-    }
-
-    @Override
-    public void setGravity(boolean gravity) {
-        getHandle().setGravity(!gravity);
-        getHandle().noclip = !gravity;
-    }
-
-    @Override
     public boolean isVisible() {
         return !getHandle().isInvisible();
     }

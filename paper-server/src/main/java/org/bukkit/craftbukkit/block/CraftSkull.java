@@ -28,7 +28,7 @@ public class CraftSkull extends CraftBlockState implements Skull {
         skull = (TileEntitySkull) world.getTileEntityAt(getX(), getY(), getZ());
         profile = skull.getGameProfile();
         skullType = getSkullType(skull.getSkullType());
-        rotation = (byte) skull.getRotation();
+        rotation = (byte) skull.rotation;
     }
 
     public CraftSkull(final Material material, final TileEntitySkull te) {
@@ -36,7 +36,7 @@ public class CraftSkull extends CraftBlockState implements Skull {
         skull = te;
         profile = skull.getGameProfile();
         skullType = getSkullType(skull.getSkullType());
-        rotation = (byte) skull.getRotation();
+        rotation = (byte) skull.rotation;
     }
 
     static SkullType getSkullType(int id) {

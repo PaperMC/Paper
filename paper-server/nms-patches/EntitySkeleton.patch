@@ -11,12 +11,12 @@
      private static final DataWatcherObject<Integer> a = DataWatcher.a(EntitySkeleton.class, DataWatcherRegistry.b);
      private static final DataWatcherObject<Boolean> b = DataWatcher.a(EntitySkeleton.class, DataWatcherRegistry.h);
      private final PathfinderGoalBowShoot c = new PathfinderGoalBowShoot(this, 1.0D, 20, 15.0F);
--    private final PathfinderGoalMeleeAttack bw = new PathfinderGoalMeleeAttack(this, 1.2D, flag) {
-+    private final PathfinderGoalMeleeAttack bw = new PathfinderGoalMeleeAttack(this, 1.2D, false) { // CraftBukkit decompile error flag -> false
+-    private final PathfinderGoalMeleeAttack bx = new PathfinderGoalMeleeAttack(this, 1.2D, flag) {
++    private final PathfinderGoalMeleeAttack bx = new PathfinderGoalMeleeAttack(this, 1.2D, false) { // CraftBukkit decompile error flag -> false
          public void d() {
              super.d();
              EntitySkeleton.this.a(false);
-@@ -103,7 +104,14 @@
+@@ -105,7 +106,14 @@
                  }
  
                  if (flag) {
@@ -32,7 +32,7 @@
                  }
              }
          }
-@@ -126,7 +134,7 @@
+@@ -128,7 +136,7 @@
      }
  
      public void die(DamageSource damagesource) {
@@ -41,18 +41,18 @@
          if (damagesource.i() instanceof EntityArrow && damagesource.getEntity() instanceof EntityHuman) {
              EntityHuman entityhuman = (EntityHuman) damagesource.getEntity();
              double d0 = entityhuman.locX - this.locX;
-@@ -139,6 +147,7 @@
+@@ -141,6 +149,7 @@
              ((EntityCreeper) damagesource.getEntity()).setCausedHeadDrop();
-             this.a(new ItemStack(Items.SKULL, 1, this.getSkeletonType() == 1 ? 1 : 0), 0.0F);
+             this.a(new ItemStack(Items.SKULL, 1, this.getSkeletonType() == EnumSkeletonType.WITHER ? 1 : 0), 0.0F);
          }
 +        super.die(damagesource); // CraftBukkit - moved from above
  
      }
  
-@@ -222,11 +231,30 @@
-         }
+@@ -234,7 +243,14 @@
  
-         if (EnchantmentManager.a(Enchantments.ARROW_FIRE, (EntityLiving) this) > 0 || this.getSkeletonType() == 1) {
+         flag = flag || EnchantmentManager.a(Enchantments.ARROW_FIRE, (EntityLiving) this) > 0;
+         if (flag) {
 -            entitytippedarrow.setOnFire(100);
 +            // CraftBukkit start - call EntityCombustEvent
 +            EntityCombustEvent event = new EntityCombustEvent(entitytippedarrow.getBukkitEntity(), 100);
@@ -62,8 +62,13 @@
 +                entitytippedarrow.setOnFire(event.getDuration());
 +            }
 +            // CraftBukkit end
-+        }
-+
+         }
+ 
+         ItemStack itemstack = this.b(EnumHand.OFF_HAND);
+@@ -245,8 +261,20 @@
+             entitytippedarrow.a(new MobEffect(MobEffects.SLOWER_MOVEMENT, 600));
+         }
+ 
 +        // CraftBukkit start
 +        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getItemInMainHand(), entitytippedarrow, 0.8F);
 +        if (event.isCancelled()) {
@@ -73,12 +78,12 @@
 +
 +        if (event.getProjectile() == entitytippedarrow.getBukkitEntity()) {
 +            world.addEntity(entitytippedarrow);
-         }
++        }
 +        // CraftBukkit end
- 
-         this.a(SoundEffects.fo, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
++
+         this.a(SoundEffects.fz, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
 -        this.world.addEntity(entitytippedarrow);
 +        // this.world.addEntity(entitytippedarrow); // CraftBukkit - moved up
      }
  
-     public int getSkeletonType() {
+     public EnumSkeletonType getSkeletonType() {

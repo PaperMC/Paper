@@ -12,12 +12,12 @@ public class CraftSnowman extends CraftGolem implements Snowman {
 
     @Override
     public boolean isDerp() {
-        return getHandle().o(); // PAIL: Rename
+        return getHandle().isDerp();
     }
 
     @Override
     public void setDerp(boolean derpMode) {
-        getHandle().a(derpMode); // PAIL: Rename
+        getHandle().setDerp(derpMode);
     }
 
     @Override

@@ -44,10 +44,10 @@
 -    protected Chunk a(World world, int i, int j, NBTTagCompound nbttagcompound) {
 +    protected Object[] a(World world, int i, int j, NBTTagCompound nbttagcompound) { // CraftBukkit - return Chunk -> Object[]
          if (!nbttagcompound.hasKeyOfType("Level", 10)) {
-             ChunkRegionLoader.a.error("Chunk file at " + i + "," + j + " is missing level data, skipping");
+             ChunkRegionLoader.a.error("Chunk file at {},{} is missing level data, skipping", new Object[] { Integer.valueOf(i), Integer.valueOf(j)});
              return null;
 @@ -64,10 +92,28 @@
-                     ChunkRegionLoader.a.error("Chunk file at " + i + "," + j + " is in the wrong location; relocating. (Expected " + i + ", " + j + ", got " + chunk.locX + ", " + chunk.locZ + ")");
+                     ChunkRegionLoader.a.error("Chunk file at {},{} is in the wrong location; relocating. (Expected {}, {}, got {}, {})", new Object[] { Integer.valueOf(i), Integer.valueOf(j), Integer.valueOf(i), Integer.valueOf(j), Integer.valueOf(chunk.locX), Integer.valueOf(chunk.locZ)});
                      nbttagcompound1.setInt("xPos", i);
                      nbttagcompound1.setInt("zPos", j);
 +
@@ -76,7 +76,7 @@
              }
          }
      }
-@@ -296,6 +342,13 @@
+@@ -326,6 +372,13 @@
              chunk.a(nbttagcompound.getByteArray("Biomes"));
          }
  
@@ -90,7 +90,7 @@
          NBTTagList nbttaglist1 = nbttagcompound.getList("Entities", 10);
  
          if (nbttaglist1 != null) {
-@@ -339,7 +392,7 @@
+@@ -369,7 +422,7 @@
              }
          }
  
@@ -99,7 +99,29 @@
      }
  
      @Nullable
-@@ -403,8 +456,14 @@
+@@ -397,14 +450,20 @@
+     }
+ 
+     @Nullable
++    // CraftBukkit start
+     public static Entity a(NBTTagCompound nbttagcompound, World world, double d0, double d1, double d2, boolean flag) {
++        return spawnEntity(nbttagcompound, world, d0, d1, d2, flag, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++    }
++
++    public static Entity spawnEntity(NBTTagCompound nbttagcompound, World world, double d0, double d1, double d2, boolean flag, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++        // CraftBukkit end
+         Entity entity = a(nbttagcompound, world);
+ 
+         if (entity == null) {
+             return null;
+         } else {
+             entity.setPositionRotation(d0, d1, d2, entity.yaw, entity.pitch);
+-            if (flag && !world.addEntity(entity)) {
++            if (flag && !world.addEntity(entity, spawnReason)) { // CraftBukkit
+                 return null;
+             } else {
+                 if (nbttagcompound.hasKeyOfType("Passengers", 9)) {
+@@ -433,8 +492,14 @@
          }
      }
  
@@ -112,6 +134,6 @@
 +    public static void a(Entity entity, World world, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
 +        if (world.addEntity(entity, reason) && entity.isVehicle()) {
 +            // CraftBukkit end
-             Iterator iterator = entity.bv().iterator();
+             Iterator iterator = entity.bx().iterator();
  
              while (iterator.hasNext()) {

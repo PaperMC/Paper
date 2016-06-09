@@ -68,7 +68,6 @@ public abstract class AbstractTestingBase {
                     Material.PURPUR_DOUBLE_SLAB,
                     Material.BEETROOT_BLOCK,
                     Material.END_GATEWAY,
-                    Material.STRUCTURE_BLOCK,
                     Material.BURNING_FURNACE,
                     Material.FROSTED_ICE
             ).build();

@@ -26,7 +26,7 @@ public class CraftFlowerPot extends CraftBlockState implements FlowerPot {
 
     @Override
     public MaterialData getContents() {
-        return (pot.d() == null) ? null : CraftMagicNumbers.getMaterial(pot.d()).getNewData((byte) pot.e()); // PAIL: rename
+        return (pot.d() == null) ? null : CraftMagicNumbers.getMaterial(pot.getItem()).getNewData((byte) pot.getData()); // PAIL: rename
     }
 
     @Override

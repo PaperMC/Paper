@@ -230,10 +230,10 @@
          this.l();
 @@ -212,25 +337,38 @@
          this.b("menu.generatingTerrain");
-         byte b0 = 0;
+         boolean flag4 = false;
  
--        MinecraftServer.LOGGER.info("Preparing start region for level " + b0);
--        WorldServer worldserver = this.worldServer[b0];
+-        MinecraftServer.LOGGER.info("Preparing start region for level 0");
+-        WorldServer worldserver = this.worldServer[0];
 -        BlockPosition blockposition = worldserver.getSpawn();
 -        long j = av();
 -
@@ -344,21 +344,22 @@
          }
  
          if (this.worldServer != null) {
-@@ -315,11 +474,13 @@
- 
-             this.saveChunks(false);
+@@ -321,12 +480,14 @@
+             aworldserver = this.worldServer;
+             i = aworldserver.length;
  
 +            /* CraftBukkit start - Handled in saveChunks
-             for (i = 0; i < this.worldServer.length; ++i) {
-                 if (this.worldServer[i] != null) {
-                     this.worldServer[i].saveLevel();
+             for (j = 0; j < i; ++j) {
+                 worldserver = aworldserver[j];
+                 if (worldserver != null) {
+                     worldserver.saveLevel();
                  }
              }
 +            // CraftBukkit end */
          }
  
          if (this.m.d()) {
-@@ -359,6 +520,7 @@
+@@ -366,6 +527,7 @@
                      long k = j - this.aa;
  
                      if (k > 2000L && this.aa - this.Q >= 15000L) {
@@ -366,7 +367,7 @@
                          MinecraftServer.LOGGER.warn("Can\'t keep up! Did the system time change, or is the server overloaded? Running {}ms behind, skipping {} tick(s)", new Object[] { Long.valueOf(k), Long.valueOf(k / 50L)});
                          k = 2000L;
                          this.Q = this.aa;
-@@ -371,11 +533,12 @@
+@@ -378,11 +540,12 @@
  
                      i += k;
                      this.aa = j;
@@ -380,7 +381,7 @@
                              i -= 50L;
                              this.C();
                          }
-@@ -413,6 +576,12 @@
+@@ -420,6 +583,12 @@
              } catch (Throwable throwable1) {
                  MinecraftServer.LOGGER.error("Exception stopping the server", throwable1);
              } finally {
@@ -393,16 +394,16 @@
                  this.B();
              }
  
-@@ -456,7 +625,7 @@
+@@ -463,7 +632,7 @@
  
-     protected void B() {}
+     public void B() {}
  
 -    protected void C() {
 +    protected void C() throws ExceptionWorldConflict { // CraftBukkit - added throws
          long i = System.nanoTime();
  
          ++this.ticks;
-@@ -482,7 +651,7 @@
+@@ -489,7 +658,7 @@
              this.q.b().a(agameprofile);
          }
  
@@ -411,7 +412,7 @@
              this.methodProfiler.a("save");
              this.v.savePlayers();
              this.saveChunks(true);
-@@ -517,20 +686,40 @@
+@@ -524,20 +693,40 @@
  
          this.methodProfiler.c("levels");
  
@@ -455,7 +456,7 @@
  
                  this.methodProfiler.a("tick");
  
-@@ -557,9 +746,9 @@
+@@ -564,9 +753,9 @@
                  worldserver.getTracker().updatePlayers();
                  this.methodProfiler.b();
                  this.methodProfiler.b();
@@ -467,7 +468,7 @@
          }
  
          this.methodProfiler.c("connection");
-@@ -583,10 +772,11 @@
+@@ -590,10 +779,11 @@
          this.o.add(itickable);
      }
  
@@ -480,7 +481,7 @@
              boolean flag = true;
              String s = null;
              String s1 = ".";
-@@ -631,13 +821,16 @@
+@@ -638,13 +828,16 @@
                      ++j;
                  }
              }
@@ -498,7 +499,7 @@
              if (s != null) {
                  dedicatedserver.i(s);
              }
-@@ -668,6 +861,25 @@
+@@ -675,6 +868,25 @@
                      dedicatedserver.stop();
                  }
              });
@@ -524,7 +525,7 @@
          } catch (Exception exception) {
              MinecraftServer.LOGGER.fatal("Failed to start the minecraft server", exception);
          }
-@@ -675,8 +887,10 @@
+@@ -682,8 +894,10 @@
      }
  
      public void F() {
@@ -535,7 +536,7 @@
      }
  
      public File d(String s) {
-@@ -692,7 +906,14 @@
+@@ -699,7 +913,14 @@
      }
  
      public WorldServer getWorldServer(int i) {
@@ -551,7 +552,7 @@
      }
  
      public String getVersion() {
-@@ -716,7 +937,7 @@
+@@ -723,7 +944,7 @@
      }
  
      public boolean isDebugging() {
@@ -560,7 +561,7 @@
      }
  
      public void g(String s) {
-@@ -731,7 +952,7 @@
+@@ -738,7 +959,7 @@
      }
  
      public String getServerModName() {
@@ -569,7 +570,7 @@
      }
  
      public CrashReport b(CrashReport crashreport) {
-@@ -760,6 +981,7 @@
+@@ -767,6 +988,7 @@
      }
  
      public List<String> tabCompleteCommand(ICommandListener icommandlistener, String s, @Nullable BlockPosition blockposition, boolean flag) {
@@ -577,7 +578,7 @@
          ArrayList arraylist = Lists.newArrayList();
          boolean flag1 = s.startsWith("/");
  
-@@ -802,10 +1024,13 @@
+@@ -809,10 +1031,13 @@
  
              return arraylist;
          }
@@ -592,35 +593,42 @@
      }
  
      public String getName() {
-@@ -861,8 +1086,10 @@
+@@ -868,11 +1093,13 @@
      }
  
      public void a(EnumDifficulty enumdifficulty) {
--        for (int i = 0; i < this.worldServer.length; ++i) {
--            WorldServer worldserver = this.worldServer[i];
+-        WorldServer[] aworldserver = this.worldServer;
+-        int i = aworldserver.length;
 +        // CraftBukkit start
-+        for (int i = 0; i < this.worlds.size(); ++i) {
-+            WorldServer worldserver = this.worlds.get(i);
++        // WorldServer[] aworldserver = this.worldServer;
++        int i = this.worlds.size();
+ 
+         for (int j = 0; j < i; ++j) {
+-            WorldServer worldserver = aworldserver[j];
++            WorldServer worldserver = this.worlds.get(j);
 +            // CraftBukkit end
  
              if (worldserver != null) {
                  if (worldserver.getWorldData().isHardcore()) {
-@@ -929,9 +1156,11 @@
+@@ -939,13 +1166,11 @@
          int i = 0;
  
          if (this.worldServer != null) {
--            for (int j = 0; j < this.worldServer.length; ++j) {
--                if (this.worldServer[j] != null) {
--                    WorldServer worldserver = this.worldServer[j];
+-            WorldServer[] aworldserver = this.worldServer;
+-            int j = aworldserver.length;
+-
+-            for (int k = 0; k < j; ++k) {
+-                WorldServer worldserver = aworldserver[k];
+-
 +            // CraftBukkit start
 +            for (int j = 0; j < this.worlds.size(); ++j) {
 +                WorldServer worldserver = this.worlds.get(j);
-+                if (worldserver != null) {
+                 if (worldserver != null) {
 +                    // CraftBukkit end
                      WorldData worlddata = worldserver.getWorldData();
  
                      mojangstatisticsgenerator.a("world[" + i + "][dimension]", Integer.valueOf(worldserver.worldProvider.getDimensionManager().getDimensionID()));
-@@ -964,7 +1193,7 @@
+@@ -978,7 +1203,7 @@
      public abstract boolean aa();
  
      public boolean getOnlineMode() {
@@ -629,19 +637,24 @@
      }
  
      public void setOnlineMode(boolean flag) {
-@@ -1036,8 +1265,9 @@
+@@ -1050,13 +1275,9 @@
      }
  
-     public void setGamemode(WorldSettings.EnumGamemode worldsettings_enumgamemode) {
--        for (int i = 0; i < this.worldServer.length; ++i) {
--            this.worldServer[i].getWorldData().setGameType(worldsettings_enumgamemode);
+     public void setGamemode(EnumGamemode enumgamemode) {
+-        WorldServer[] aworldserver = this.worldServer;
+-        int i = aworldserver.length;
+-
+-        for (int j = 0; j < i; ++j) {
+-            WorldServer worldserver = aworldserver[j];
+-
+-            worldserver.getWorldData().setGameType(enumgamemode);
 +        // CraftBukkit start
 +        for (int i = 0; i < this.worlds.size(); ++i) {
-+            worlds.get(i).getWorldData().setGameType(worldsettings_enumgamemode);
++            worlds.get(i).getWorldData().setGameType(enumgamemode);
          }
  
      }
-@@ -1069,7 +1299,7 @@
+@@ -1088,7 +1309,7 @@
      }
  
      public World getWorld() {
@@ -650,7 +663,7 @@
      }
  
      public Entity f() {
-@@ -1141,8 +1371,10 @@
+@@ -1160,8 +1381,10 @@
          WorldServer[] aworldserver = this.worldServer;
          int i = aworldserver.length;
  
@@ -663,7 +676,7 @@
  
              if (worldserver != null) {
                  Entity entity = worldserver.getEntity(uuid);
-@@ -1157,7 +1389,7 @@
+@@ -1176,7 +1399,7 @@
      }
  
      public boolean getSendCommandFeedback() {
@@ -672,7 +685,7 @@
      }
  
      public void a(CommandObjectiveExecutor.EnumCommandResult commandobjectiveexecutor_enumcommandresult, int i) {}
-@@ -1172,7 +1404,7 @@
+@@ -1191,7 +1414,7 @@
  
      public <V> ListenableFuture<V> a(Callable<V> callable) {
          Validate.notNull(callable);
@@ -681,7 +694,7 @@
              ListenableFutureTask listenablefuturetask = ListenableFutureTask.create(callable);
              Queue queue = this.j;
  
-@@ -1217,4 +1449,11 @@
+@@ -1236,4 +1459,11 @@
      public int a(@Nullable WorldServer worldserver) {
          return worldserver != null ? worldserver.getGameRules().c("spawnRadius") : 10;
      }

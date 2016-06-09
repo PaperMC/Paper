@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntitySkeleton;
+import net.minecraft.server.EnumSkeletonType;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.CraftServer;
@@ -28,11 +29,11 @@ public class CraftSkeleton extends CraftMonster implements Skeleton {
     }
 
     public SkeletonType getSkeletonType() {
-        return SkeletonType.getType(getHandle().getSkeletonType());
+        return SkeletonType.values()[getHandle().getSkeletonType().ordinal()];
     }
 
     public void setSkeletonType(SkeletonType type) {
         Validate.notNull(type);
-        getHandle().setSkeletonType(type.getId());
+        getHandle().setSkeletonType(EnumSkeletonType.a(type.ordinal())); // PAIL: rename
     }
 }

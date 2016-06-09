@@ -69,9 +69,9 @@
              s1 = networkmanager.getSocketAddress().toString();
          }
  
--        PlayerList.f.info(entityplayer.getName() + "[" + s1 + "] logged in with entity id " + entityplayer.getId() + " at (" + entityplayer.locX + ", " + entityplayer.locY + ", " + entityplayer.locZ + ")");
+-        PlayerList.f.info("{}[{}] logged in with entity id {} at ({}, {}, {})", new Object[] { entityplayer.getName(), s1, Integer.valueOf(entityplayer.getId()), Double.valueOf(entityplayer.locX), Double.valueOf(entityplayer.locY), Double.valueOf(entityplayer.locZ)});
 +        // CraftBukkit - Moved message to after join
-+        // PlayerList.f.info(entityplayer.getName() + "[" + s1 + "] logged in with entity id " + entityplayer.getId() + " at (" + entityplayer.locX + ", " + entityplayer.locY + ", " + entityplayer.locZ + ")");
++        // PlayerList.f.info("{}[{}] logged in with entity id {} at ({}, {}, {})", new Object[] { entityplayer.getName(), s1, Integer.valueOf(entityplayer.getId()), Double.valueOf(entityplayer.locX), Double.valueOf(entityplayer.locY), Double.valueOf(entityplayer.locZ)});
          WorldServer worldserver = this.server.getWorldServer(entityplayer.dimension);
          WorldData worlddata = worldserver.getWorldData();
          BlockPosition blockposition = worldserver.getSpawn();
@@ -92,14 +92,14 @@
 +        // ChatMessage chatmessage;
  
 +        String joinMessage;
-         if (!entityplayer.getName().equalsIgnoreCase(s)) {
--            chatmessage = new ChatMessage("multiplayer.player.joined.renamed", new Object[] { entityplayer.getScoreboardDisplayName(), s});
-+            // chatmessage = new ChatMessage("multiplayer.player.joined.renamed", new Object[] { entityplayer.getScoreboardDisplayName(), s});
-+            joinMessage = "\u00A7e" + LocaleI18n.a("multiplayer.player.joined.renamed", entityplayer.getName(), s);
-         } else {
+         if (entityplayer.getName().equalsIgnoreCase(s)) {
 -            chatmessage = new ChatMessage("multiplayer.player.joined", new Object[] { entityplayer.getScoreboardDisplayName()});
 +            // chatmessage = new ChatMessage("multiplayer.player.joined", new Object[] { entityplayer.getScoreboardDisplayName()});
 +            joinMessage = "\u00A7e" + LocaleI18n.a("multiplayer.player.joined", entityplayer.getName());
+         } else {
+-            chatmessage = new ChatMessage("multiplayer.player.joined.renamed", new Object[] { entityplayer.getScoreboardDisplayName(), s});
++            // chatmessage = new ChatMessage("multiplayer.player.joined.renamed", new Object[] { entityplayer.getScoreboardDisplayName(), s});
++            joinMessage = "\u00A7e" + LocaleI18n.a("multiplayer.player.joined.renamed", entityplayer.getName(), s);
          }
  
 -        chatmessage.getChatModifier().setColor(EnumChatFormat.YELLOW);
@@ -391,7 +391,7 @@
  
          entityplayer1.playerConnection = entityplayer.playerConnection;
          entityplayer1.copyTo(entityplayer, flag);
-@@ -415,43 +578,157 @@
+@@ -415,43 +578,158 @@
              entityplayer1.a(s);
          }
  
@@ -422,13 +422,13 @@
 +                    entityplayer1.setRespawnPosition(null, true);
 +                    entityplayer1.playerConnection.sendPacket(new PacketPlayOutGameStateChange(0, 0.0F));
 +                }
-             }
++            }
 +
 +            if (location == null) {
 +                cworld = (CraftWorld) this.server.server.getWorlds().get(0);
 +                blockposition = cworld.getHandle().getSpawn();
 +                location = new Location(cworld, (double) ((float) blockposition.getX() + 0.5F), (double) ((float) blockposition.getY() + 0.1F), (double) ((float) blockposition.getZ() + 0.5F));
-+            }
+             }
 +
 +            Player respawnPlayer = cserver.getPlayer(entityplayer1);
 +            PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, location, isBedSpawn);
@@ -449,14 +449,14 @@
 +        while (avoidSuffocation && !worldserver.getCubes(entityplayer1, entityplayer1.getBoundingBox()).isEmpty() && entityplayer1.locY < 256.0D) {
              entityplayer1.setPosition(entityplayer1.locX, entityplayer1.locY + 1.0D, entityplayer1.locZ);
          }
--
--        entityplayer1.playerConnection.sendPacket(new PacketPlayOutRespawn(entityplayer1.dimension, entityplayer1.world.getDifficulty(), entityplayer1.world.getWorldData().getType(), entityplayer1.playerInteractManager.getGameMode()));
 +        // CraftBukkit start
 +        byte actualDimension = (byte) (worldserver.getWorld().getEnvironment().getId());
 +        // Force the client to refresh their chunk cache
 +        if (fromWorld.getEnvironment() == worldserver.getWorld().getEnvironment()) {
 +            entityplayer1.playerConnection.sendPacket(new PacketPlayOutRespawn((byte) (actualDimension >= 0 ? -1 : 0), worldserver.getDifficulty(), worldserver.getWorldData().getType(), entityplayer.playerInteractManager.getGameMode()));
 +        }
+ 
+-        entityplayer1.playerConnection.sendPacket(new PacketPlayOutRespawn(entityplayer1.dimension, entityplayer1.world.getDifficulty(), entityplayer1.world.getWorldData().getType(), entityplayer1.playerInteractManager.getGameMode()));
 +        entityplayer1.playerConnection.sendPacket(new PacketPlayOutRespawn(actualDimension, worldserver.getDifficulty(), worldserver.getWorldData().getType(), entityplayer1.playerInteractManager.getGameMode()));
 +        entityplayer1.spawnIn(worldserver);
 +        entityplayer1.dead = false;
@@ -557,7 +557,7 @@
 +        exitWorld.getTravelAgent().adjustExit(entityplayer, exit, velocity);
 +
 +       
-+        entityplayer.ck = true; // CraftBukkit - Set teleport invulnerability only if player changing worlds
++        entityplayer.worldChangeInvuln = true; // CraftBukkit - Set teleport invulnerability only if player changing worlds
 +        this.moveToWorld(entityplayer, exitWorld.dimension, true, exit, false); // Vanilla doesn't check for suffocation when handling portals, so neither should we
 +        if (entityplayer.motX != velocity.getX() || entityplayer.motY != velocity.getY() || entityplayer.motZ != velocity.getZ()) {
 +            entityplayer.getBukkitEntity().setVelocity(velocity);
@@ -567,7 +567,7 @@
      public void f(EntityPlayer entityplayer) {
          GameProfile gameprofile = entityplayer.getProfile();
          int i = this.isOp(gameprofile) ? this.operators.a(gameprofile) : 0;
-@@ -490,12 +767,111 @@
+@@ -490,12 +768,111 @@
      }
  
      public void changeWorld(Entity entity, int i, WorldServer worldserver, WorldServer worldserver1) {
@@ -677,9 +677,9 @@
 +        }
 +        /*
          if (entity.dimension == -1) {
-             d0 = MathHelper.a(d0 / d2, worldserver1.getWorldBorder().b() + 16.0D, worldserver1.getWorldBorder().d() - 16.0D);
-             d1 = MathHelper.a(d1 / d2, worldserver1.getWorldBorder().c() + 16.0D, worldserver1.getWorldBorder().e() - 16.0D);
-@@ -514,6 +890,8 @@
+             d0 = MathHelper.a(d0 / 8.0D, worldserver1.getWorldBorder().b() + 16.0D, worldserver1.getWorldBorder().d() - 16.0D);
+             d1 = MathHelper.a(d1 / 8.0D, worldserver1.getWorldBorder().c() + 16.0D, worldserver1.getWorldBorder().e() - 16.0D);
+@@ -514,6 +891,8 @@
              BlockPosition blockposition;
  
              if (i == 1) {
@@ -688,7 +688,7 @@
                  blockposition = worldserver1.getSpawn();
              } else {
                  blockposition = worldserver1.getDimensionSpawn();
-@@ -527,16 +905,27 @@
+@@ -527,16 +906,27 @@
                  worldserver.entityJoinedWorld(entity, false);
              }
          }
@@ -719,7 +719,7 @@
                  worldserver1.entityJoinedWorld(entity, false);
              }
  
-@@ -544,6 +933,7 @@
+@@ -544,6 +934,7 @@
          }
  
          entity.spawnIn(worldserver1);
@@ -727,7 +727,7 @@
      }
  
      public void tick() {
-@@ -561,6 +951,25 @@
+@@ -561,6 +952,25 @@
  
      }
  
@@ -753,7 +753,7 @@
      public void a(Packet<?> packet, int i) {
          for (int j = 0; j < this.players.size(); ++j) {
              EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
-@@ -659,11 +1068,23 @@
+@@ -659,11 +1069,23 @@
  
          this.operators.add(new OpListEntry(gameprofile, this.server.q(), this.operators.b(gameprofile)));
          this.b(this.a(gameprofile.getId()), i);
@@ -777,7 +777,7 @@
      }
  
      private void b(EntityPlayer entityplayer, int i) {
-@@ -688,7 +1109,7 @@
+@@ -688,7 +1110,7 @@
      }
  
      public boolean isOp(GameProfile gameprofile) {
@@ -786,7 +786,7 @@
      }
  
      @Nullable
-@@ -712,6 +1133,12 @@
+@@ -712,6 +1134,12 @@
          for (int j = 0; j < this.players.size(); ++j) {
              EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
  
@@ -799,7 +799,7 @@
              if (entityplayer != entityhuman && entityplayer.dimension == i) {
                  double d4 = d0 - entityplayer.locX;
                  double d5 = d1 - entityplayer.locY;
-@@ -759,21 +1186,26 @@
+@@ -759,21 +1187,26 @@
      public void reloadWhitelist() {}
  
      public void b(EntityPlayer entityplayer, WorldServer worldserver) {
@@ -831,7 +831,7 @@
          entityplayer.playerConnection.sendPacket(new PacketPlayOutHeldItemSlot(entityplayer.inventory.itemInHandIndex));
      }
  
-@@ -786,7 +1218,7 @@
+@@ -786,7 +1219,7 @@
      }
  
      public String[] getSeenPlayers() {
@@ -840,7 +840,7 @@
      }
  
      public boolean getHasWhitelist() {
-@@ -836,16 +1268,26 @@
+@@ -836,16 +1269,26 @@
  
      public void u() {
          for (int i = 0; i < this.players.size(); ++i) {
@@ -869,7 +869,7 @@
      }
  
      public void sendMessage(IChatBaseComponent ichatbasecomponent) {
-@@ -882,8 +1324,10 @@
+@@ -882,8 +1325,10 @@
              WorldServer[] aworldserver = this.server.worldServer;
              int j = aworldserver.length;
  
