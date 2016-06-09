@@ -115,7 +115,7 @@ public interface Villager extends Ageable, NPC, InventoryHolder {
      */
     public enum Profession {
         /**
-         * Villager without a profession.
+         * Normal. <b>Reserved for Zombies.</b>
          */
         NORMAL,
         /**
@@ -139,7 +139,7 @@ public interface Villager extends Ageable, NPC, InventoryHolder {
          */
         BUTCHER,
         /**
-         * Really a zombie.
+         * Husk. <b>Reserved for Zombies</b>
          */
         HUSK;
     }
