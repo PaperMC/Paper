@@ -242,6 +242,20 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public void playSound(Location location, String sound, float volume, float pitch);
 
     /**
+     * Stop the specified sound from playing.
+     *
+     * @param sound the sound to stop
+     */
+    public void stopSound(Sound sound);
+
+    /**
+     * Stop the specified sound from playing.
+     *
+     * @param sound the sound to stop
+     */
+    public void stopSound(String sound);
+
+    /**
      * Plays an effect to just this player.
      *
      * @param loc the location to play the effect at
