@@ -8,14 +8,13 @@ High performance Spigot fork that aims to fix gameplay and mechanics inconsisten
 
 Documentation
 ------
-Access the paper docs here: [paper.readthedocs.org](https://paper.readthedocs.org/)
+Access the paper docs here: [paper.readthedocs.io](https://paper.readthedocs.io/)
 
 How To (Server Admins)
 ------
 Paperclip is a jar file that you can download and run just like a normal jar file.
 
-Download a copy of Paperclip.jar from our buildserver here:
-https://ci.destroystokyo.com/job/PaperSpigot/
+Download a copy of paperclip.jar from [our build server, here](https://ci.destroystokyo.com/job/PaperSpigot/).
 
 Run the Paperclip jar directly from your server. Just like old times
 
