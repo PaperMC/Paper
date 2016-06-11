@@ -117,30 +117,44 @@ public interface Villager extends Ageable, NPC, InventoryHolder {
         /**
          * Normal. <b>Reserved for Zombies.</b>
          */
-        NORMAL,
+        NORMAL(true),
         /**
          * Farmer profession. Wears a brown robe.
          */
-        FARMER,
+        FARMER(false),
         /**
          * Librarian profession. Wears a white robe.
          */
-        LIBRARIAN,
+        LIBRARIAN(false),
         /**
          * Priest profession. Wears a purple robe.
          */
-        PRIEST,
+        PRIEST(false),
         /**
          * Blacksmith profession. Wears a black apron.
          */
-        BLACKSMITH,
+        BLACKSMITH(false),
         /**
          * Butcher profession. Wears a white apron.
          */
-        BUTCHER,
+        BUTCHER(false),
         /**
          * Husk. <b>Reserved for Zombies</b>
          */
-        HUSK;
+        HUSK(true);
+        private final boolean zombie;
+
+        private Profession(boolean zombie) {
+            this.zombie = zombie;
+        }
+
+        /**
+         * Returns if this profession can only be used by zombies.
+         *
+         * @return zombie profession status
+         */
+        public boolean isZombie() {
+            return zombie;
+        }
     }
 }
