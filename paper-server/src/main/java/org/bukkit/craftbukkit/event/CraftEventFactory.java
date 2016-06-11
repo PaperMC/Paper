@@ -483,8 +483,8 @@ public class CraftEventFactory {
                 event.getEntity().setLastDamageCause(event);
             }
             return event;
-        } else if (source == DamageSource.LAVA || source == DamageSource.HOT_FLOOR) {
-            EntityDamageEvent event = callEvent(new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), (source == DamageSource.LAVA) ? DamageCause.LAVA : DamageCause.HOT_FLOOR, modifiers, modifierFunctions));
+        } else if (source == DamageSource.LAVA) {
+            EntityDamageEvent event = callEvent(new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.LAVA, modifiers, modifierFunctions));
             if (!event.isCancelled()) {
                 event.getEntity().setLastDamageCause(event);
             }
@@ -495,6 +495,8 @@ public class CraftEventFactory {
             blockDamage = null;
             if (source == DamageSource.CACTUS) {
                 cause = DamageCause.CONTACT;
+            } else if (source == DamageSource.HOT_FLOOR) {
+                cause = DamageCause.HOT_FLOOR;
             } else {
                 throw new IllegalStateException(String.format("Unhandled damage of %s by %s from %s", entity, damager, source.translationIndex));
             }
