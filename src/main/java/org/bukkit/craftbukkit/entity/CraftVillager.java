@@ -44,7 +44,7 @@ public class CraftVillager extends CraftAgeable implements Villager, InventoryHo
 
     public void setProfession(Profession profession) {
         Validate.notNull(profession);
-        Validate.isTrue(0 < profession.ordinal() && profession.ordinal() < Profession.HUSK.ordinal(), "This profession is reserved for Zombies: ", profession);
+        Validate.isTrue(!profession.isZombie(), "Profession is reserved for Zombies: ", profession);
         getHandle().setProfession(profession.ordinal() - 1);
     }
 
