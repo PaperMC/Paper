@@ -1,0 +1,29 @@
+From ec3b207d21db5d5671b1c2b49e1bcd616c4cd339 Mon Sep 17 00:00:00 2001
+From: Jedediah Smith <jedediah@silencegreys.com>
+Date: Sat, 11 Jun 2016 19:09:16 -0500
+Subject: [PATCH] Resolve an ISE in MagmaBlock damage handling
+
+
+diff --git a/src/main/java/net/minecraft/server/BlockMagma.java b/src/main/java/net/minecraft/server/BlockMagma.java
+index 82c7436..418823a 100644
+--- a/src/main/java/net/minecraft/server/BlockMagma.java
++++ b/src/main/java/net/minecraft/server/BlockMagma.java
+@@ -17,8 +17,15 @@ public class BlockMagma extends Block {
+ 
+     public void stepOn(World world, BlockPosition blockposition, Entity entity) {
+         if (!entity.isFireProof() && entity instanceof EntityLiving && !EnchantmentManager.j((EntityLiving) entity)) {
++            final org.bukkit.block.Block oldBlockDamage = org.bukkit.craftbukkit.event.CraftEventFactory.blockDamage; // Paper
+             org.bukkit.craftbukkit.event.CraftEventFactory.blockDamage = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()); // CraftBukkit
++            // Paper start
++            try {
+             entity.damageEntity(DamageSource.HOT_FLOOR, 1.0F);
++            } finally {
++                org.bukkit.craftbukkit.event.CraftEventFactory.blockDamage = oldBlockDamage;
++            }
++            // Paper end
+         }
+ 
+         super.stepOn(world, blockposition, entity);
+-- 
+2.8.3
+
