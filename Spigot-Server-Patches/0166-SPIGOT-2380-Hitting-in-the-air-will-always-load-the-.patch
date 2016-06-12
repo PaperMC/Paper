@@ -1,0 +1,47 @@
+From 36f323685571e1dfa2056aea47c91f96bd1dae75 Mon Sep 17 00:00:00 2001
+From: md_5 <git@md-5.net>
+Date: Sat, 11 Jun 2016 22:33:51 -0500
+Subject: [PATCH] SPIGOT-2380: Hitting in the air will always load the chunk at
+ 0,0
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index f2d9461..fc5ba08 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -191,7 +191,7 @@ public class CraftEventFactory {
+         if (action != Action.LEFT_CLICK_AIR && action != Action.RIGHT_CLICK_AIR) {
+             throw new IllegalArgumentException(String.format("%s performing %s with %s", who, action, itemstack)); // Spigot
+         }
+-        return callPlayerInteractEvent(who, action, new BlockPosition(0, 256, 0), EnumDirection.SOUTH, itemstack, hand);
++        return callPlayerInteractEvent(who, action, null, EnumDirection.SOUTH, itemstack, hand);
+     }
+ 
+     public static PlayerInteractEvent callPlayerInteractEvent(EntityHuman who, Action action, BlockPosition position, EnumDirection direction, ItemStack itemstack, EnumHand hand) {
+@@ -205,11 +205,10 @@ public class CraftEventFactory {
+         CraftWorld craftWorld = (CraftWorld) player.getWorld();
+         CraftServer craftServer = (CraftServer) player.getServer();
+ 
+-        Block blockClicked = craftWorld.getBlockAt(position.getX(), position.getY(), position.getZ());
+-        BlockFace blockFace = CraftBlock.notchToBlockFace(direction);
+-
+-        if (position.getY() > 255) {
+-            blockClicked = null;
++        Block blockClicked = null;
++        if (position != null) {
++            blockClicked = craftWorld.getBlockAt(position.getX(), position.getY(), position.getZ());
++        } else {
+             switch (action) {
+             case LEFT_CLICK_BLOCK:
+                 action = Action.LEFT_CLICK_AIR;
+@@ -219,6 +218,7 @@ public class CraftEventFactory {
+                 break;
+             }
+         }
++        BlockFace blockFace = CraftBlock.notchToBlockFace(direction);
+ 
+         if (itemInHand.getType() == Material.AIR || itemInHand.getAmount() == 0) {
+             itemInHand = null;
+-- 
+2.8.3
+

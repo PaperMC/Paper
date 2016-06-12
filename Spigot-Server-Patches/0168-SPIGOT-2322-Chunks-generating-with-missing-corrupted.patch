@@ -1,0 +1,49 @@
+From 90a08c724d28636bbbd47a7364f66bc26111dd29 Mon Sep 17 00:00:00 2001
+From: md_5 <git@md-5.net>
+Date: Sat, 11 Jun 2016 22:41:13 -0500
+Subject: [PATCH] SPIGOT-2322: Chunks generating with missing / corrupted data.
+
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 4a2cad6..33b3db7 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -105,14 +105,23 @@ public class ChunkProviderServer implements IChunkProvider {
+             if (loader != null && loader.chunkExists(world, i, j)) {
+                 chunk = ChunkIOExecutor.syncChunkLoad(world, loader, this, i, j);
+             }
+-            /* chunk = this.loadChunk(i, j);
++        }
++
++        return chunk;
++    }
++
++    @Nullable
++    public Chunk originalGetOrLoadChunkAt(int i, int j) {
++        // CraftBukkit end
++        Chunk chunk = this.getLoadedChunkAt(i, j);
++
++        if (chunk == null) {
++            chunk = this.loadChunk(i, j);
+             if (chunk != null) {
+                 this.chunks.put(ChunkCoordIntPair.a(i, j), chunk);
+                 chunk.addEntities();
+                 chunk.loadNearby(this, this.chunkGenerator);
+             }
+-            */
+-            // CraftBukkit end
+         }
+ 
+         return chunk;
+@@ -161,7 +170,7 @@ public class ChunkProviderServer implements IChunkProvider {
+     }
+ 
+     public Chunk originalGetChunkAt(int i, int j) {
+-        Chunk chunk = this.getLoadedChunkAt(i, j);
++        Chunk chunk = this.originalGetOrLoadChunkAt(i, j);
+         boolean newChunk = false;
+         // CraftBukkit end
+ 
+-- 
+2.8.3
+

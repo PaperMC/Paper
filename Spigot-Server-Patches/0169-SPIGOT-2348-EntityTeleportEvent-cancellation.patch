@@ -1,0 +1,36 @@
+From 82c7ab1d2357cc85903cfd762d51fcede6a5fcd8 Mon Sep 17 00:00:00 2001
+From: md_5 <git@md-5.net>
+Date: Sat, 11 Jun 2016 22:47:52 -0500
+Subject: [PATCH] SPIGOT-2348: EntityTeleportEvent cancellation
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 129bca8..c4c0308 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -2348,16 +2348,14 @@ public abstract class EntityLiving extends Entity {
+                 // this.enderTeleportTo(this.locX, this.locY, this.locZ);
+                 EntityTeleportEvent teleport = new EntityTeleportEvent(this.getBukkitEntity(), new Location(this.world.getWorld(), d3, d4, d5), new Location(this.world.getWorld(), this.locX, this.locY, this.locZ));
+                 this.world.getServer().getPluginManager().callEvent(teleport);
+-                if (teleport.isCancelled()) {
+-                    return false;
++                if (!teleport.isCancelled()) {
++                    Location to = teleport.getTo();
++                    this.enderTeleportTo(to.getX(), to.getY(), to.getZ());
++                    if (world.getCubes(this, this.getBoundingBox()).isEmpty() && !world.containsLiquid(this.getBoundingBox())) {
++                        flag = true;
++                    }
+                 }
+-
+-                Location to = teleport.getTo();
+-                this.enderTeleportTo(to.getX(), to.getY(), to.getZ());
+                 // CraftBukkit end
+-                if (world.getCubes(this, this.getBoundingBox()).isEmpty() && !world.containsLiquid(this.getBoundingBox())) {
+-                    flag = true;
+-                }
+             }
+         }
+ 
+-- 
+2.8.3
+
