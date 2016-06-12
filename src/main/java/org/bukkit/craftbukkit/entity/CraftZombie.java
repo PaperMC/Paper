@@ -41,7 +41,7 @@ public class CraftZombie extends CraftMonster implements Zombie {
     }
 
     public void setVillager(boolean flag) {
-        getHandle().setVillagerType(flag ? EnumZombieType.NORMAL : EnumZombieType.VILLAGER_FARMER);
+        getHandle().setVillagerType(flag ? EnumZombieType.VILLAGER_FARMER : EnumZombieType.NORMAL);
     }
 
     @Override
