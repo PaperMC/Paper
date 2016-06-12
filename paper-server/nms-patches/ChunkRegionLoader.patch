@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/ChunkRegionLoader.java
 +++ b/net/minecraft/server/ChunkRegionLoader.java
-@@ -29,8 +29,36 @@
+@@ -29,25 +29,55 @@
          this.e = dataconvertermanager;
      }
  
@@ -37,7 +37,21 @@
          ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
          NBTTagCompound nbttagcompound = (NBTTagCompound) this.b.get(chunkcoordintpair);
  
-@@ -47,7 +75,7 @@
+         if (nbttagcompound == null) {
+-            DataInputStream datainputstream = RegionFileCache.c(this.d, i, j);
++            // CraftBukkit start
++            nbttagcompound = RegionFileCache.c(this.d, i, j);
+ 
+-            if (datainputstream == null) {
++            if (nbttagcompound == null) {
+                 return null;
+             }
+ 
+-            nbttagcompound = this.e.a((DataConverterType) DataConverterTypes.CHUNK, NBTCompressedStreamTools.a(datainputstream));
++            nbttagcompound = this.e.a((DataConverterType) DataConverterTypes.CHUNK, nbttagcompound);
++            // CraftBukkit end
+         }
+ 
          return this.a(world, i, j, nbttagcompound);
      }
  
@@ -46,7 +60,7 @@
          if (!nbttagcompound.hasKeyOfType("Level", 10)) {
              ChunkRegionLoader.a.error("Chunk file at {},{} is missing level data, skipping", new Object[] { Integer.valueOf(i), Integer.valueOf(j)});
              return null;
-@@ -64,10 +92,28 @@
+@@ -64,10 +94,28 @@
                      ChunkRegionLoader.a.error("Chunk file at {},{} is in the wrong location; relocating. (Expected {}, {}, got {}, {})", new Object[] { Integer.valueOf(i), Integer.valueOf(j), Integer.valueOf(i), Integer.valueOf(j), Integer.valueOf(chunk.locX), Integer.valueOf(chunk.locZ)});
                      nbttagcompound1.setInt("xPos", i);
                      nbttagcompound1.setInt("zPos", j);
@@ -76,7 +90,23 @@
              }
          }
      }
-@@ -326,6 +372,13 @@
+@@ -131,10 +179,14 @@
+     }
+ 
+     private void b(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException {
+-        DataOutputStream dataoutputstream = RegionFileCache.d(this.d, chunkcoordintpair.x, chunkcoordintpair.z);
++        // CraftBukkit start
++        RegionFileCache.d(this.d, chunkcoordintpair.x, chunkcoordintpair.z, nbttagcompound);
+ 
++        /*
+         NBTCompressedStreamTools.a(nbttagcompound, (DataOutput) dataoutputstream);
+         dataoutputstream.close();
++        */
++        // CraftBukkit end
+     }
+ 
+     public void b(World world, Chunk chunk) throws IOException {}
+@@ -326,6 +378,13 @@
              chunk.a(nbttagcompound.getByteArray("Biomes"));
          }
  
@@ -90,7 +120,7 @@
          NBTTagList nbttaglist1 = nbttagcompound.getList("Entities", 10);
  
          if (nbttaglist1 != null) {
-@@ -369,7 +422,7 @@
+@@ -369,7 +428,7 @@
              }
          }
  
@@ -99,7 +129,7 @@
      }
  
      @Nullable
-@@ -397,14 +450,20 @@
+@@ -397,14 +456,20 @@
      }
  
      @Nullable
@@ -121,7 +151,7 @@
                  return null;
              } else {
                  if (nbttagcompound.hasKeyOfType("Passengers", 9)) {
-@@ -433,8 +492,14 @@
+@@ -433,8 +498,14 @@
          }
      }
  

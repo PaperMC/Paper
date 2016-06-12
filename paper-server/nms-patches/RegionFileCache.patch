@@ -1,0 +1,32 @@
+--- a/net/minecraft/server/RegionFileCache.java
++++ b/net/minecraft/server/RegionFileCache.java
+@@ -53,15 +53,25 @@
+         RegionFileCache.a.clear();
+     }
+ 
+-    public static DataInputStream c(File file, int i, int j) {
++    // CraftBukkit start - call sites hoisted for synchronization
++    public static synchronized NBTTagCompound c(File file, int i, int j) throws IOException {
+         RegionFile regionfile = a(file, i, j);
+ 
+-        return regionfile.a(i & 31, j & 31);
++        DataInputStream datainputstream = regionfile.a(i & 31, j & 31);
++
++        if (datainputstream == null) {
++            return null;
++        }
++
++        return NBTCompressedStreamTools.a(datainputstream);
+     }
+ 
+-    public static DataOutputStream d(File file, int i, int j) {
++    public static synchronized void d(File file, int i, int j, NBTTagCompound nbttagcompound) throws IOException {
+         RegionFile regionfile = a(file, i, j);
+ 
+-        return regionfile.b(i & 31, j & 31);
++        DataOutputStream dataoutputstream = regionfile.b(i & 31, j & 31);
++        NBTCompressedStreamTools.a(nbttagcompound, (java.io.DataOutput) dataoutputstream);
++        dataoutputstream.close();
+     }
++    // CraftBukkit end
+ }
