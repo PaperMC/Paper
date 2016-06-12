@@ -50,7 +50,7 @@ public enum Particle {
     END_ROD,
     DAMAGE_INDICATOR,
     SWEEP_ATTACK,
-    FALLING_DUST;
+    FALLING_DUST(MaterialData.class);
 
     private final Class<?> dataType;
 
