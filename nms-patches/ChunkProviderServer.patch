@@ -13,11 +13,10 @@
  public class ChunkProviderServer implements IChunkProvider {
  
      private static final Logger a = LogManager.getLogger();
-@@ -69,19 +75,74 @@
+@@ -69,6 +75,26 @@
          Chunk chunk = this.getLoadedChunkAt(i, j);
  
          if (chunk == null) {
--            chunk = this.loadChunk(i, j);
 +            // CraftBukkit start
 +            ChunkRegionLoader loader = null;
 +
@@ -27,16 +26,21 @@
 +            if (loader != null && loader.chunkExists(world, i, j)) {
 +                chunk = ChunkIOExecutor.syncChunkLoad(world, loader, this, i, j);
 +            }
-+            /* chunk = this.loadChunk(i, j);
++        }
++
++        return chunk;
++    }
++
++    @Nullable
++    public Chunk originalGetOrLoadChunkAt(int i, int j) {
++        // CraftBukkit end
++        Chunk chunk = this.getLoadedChunkAt(i, j);
++
++        if (chunk == null) {
+             chunk = this.loadChunk(i, j);
              if (chunk != null) {
                  this.chunks.put(ChunkCoordIntPair.a(i, j), chunk);
-                 chunk.addEntities();
-                 chunk.loadNearby(this, this.chunkGenerator);
-             }
-+            */
-+            // CraftBukkit end
-         }
- 
+@@ -80,8 +106,52 @@
          return chunk;
      }
  
@@ -84,13 +88,13 @@
 +    }
 +
 +    public Chunk originalGetChunkAt(int i, int j) {
-+        Chunk chunk = this.getLoadedChunkAt(i, j);
++        Chunk chunk = this.originalGetOrLoadChunkAt(i, j);
 +        boolean newChunk = false;
 +        // CraftBukkit end
  
          if (chunk == null) {
              long k = ChunkCoordIntPair.a(i, j);
-@@ -97,9 +158,37 @@
+@@ -97,9 +167,37 @@
                  crashreportsystemdetails.a("Generator", (Object) this.chunkGenerator);
                  throw new ReportedException(crashreport);
              }
@@ -128,7 +132,7 @@
              chunk.loadNearby(this, this.chunkGenerator);
          }
  
-@@ -146,10 +235,12 @@
+@@ -146,10 +244,12 @@
  
      public boolean a(boolean flag) {
          int i = 0;
@@ -144,7 +148,7 @@
  
              if (flag) {
                  this.saveChunkNOP(chunk);
-@@ -182,6 +273,29 @@
+@@ -182,6 +282,29 @@
                      Chunk chunk = (Chunk) this.chunks.get(olong);
  
                      if (chunk != null && chunk.d) {
