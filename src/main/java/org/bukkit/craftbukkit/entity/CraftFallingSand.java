@@ -57,4 +57,12 @@ public class CraftFallingSand extends CraftEntity implements FallingSand {
     public void setHurtEntities(boolean hurtEntities) {
         getHandle().hurtEntities = hurtEntities;
     }
+
+    @Override
+    public void setTicksLived(int value) {
+        super.setTicksLived(value);
+
+        // Second field for EntityFallingBlock
+        getHandle().ticksLived = value;
+    }
 }
