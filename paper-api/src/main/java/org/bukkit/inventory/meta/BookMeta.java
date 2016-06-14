@@ -62,7 +62,7 @@ public interface BookMeta extends ItemMeta {
     /**
      * Checks for the existence of an author in the book.
      *
-     * @return the author of the book
+     * @return true if the book has an author
      */
     boolean hasAuthor();
 
@@ -79,23 +79,31 @@ public interface BookMeta extends ItemMeta {
     /**
      * Sets the author of the book. Removes author when given null.
      *
-     * @param author the author of the book
+     * @param author the author to set
      */
     void setAuthor(String author);
 
     /**
-     * Gets the generation of the book, or null if it's out of bounds.
+     * Checks for the existence of generation level in the book.
      *
-     * @return the generation of the book or null
+     * @return true if the book has a generation level
+     */
+    boolean hasGeneration();
+
+    /**
+     * Gets the generation of the book.
+     * <p>
+     * Plugins should check that hasGeneration() returns true before calling
+     * this method.
+     *
+     * @return the generation of the book
      */
     Generation getGeneration();
 
     /**
-     * Sets the generation of the book.
-     * <p>
-     * Assumes Generation.ORIGINAL if given null.
+     * Sets the generation of the book. Removes generation when given null.
      *
-     * @param generation the generation of the book
+     * @param generation the generation to set
      */
     void setGeneration(Generation generation);
 
