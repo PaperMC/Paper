@@ -1,0 +1,113 @@
+From 1709339783285de3f798208244bee7e699674ae4 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 12 May 2016 01:55:17 -0400
+Subject: [PATCH] Do not mark chunks as active for neighbor updates
+
+Fixes chunk unload issues
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index ffd2a26..bb8fe9c 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -967,25 +967,25 @@ public class Chunk {
+ 
+     public void loadNearby(IChunkProvider ichunkprovider, ChunkGenerator chunkgenerator) {
+         world.timings.syncChunkLoadPostTimer.startTiming(); // Spigot
+-        Chunk chunk = ichunkprovider.getLoadedChunkAt(this.locX, this.locZ - 1);
+-        Chunk chunk1 = ichunkprovider.getLoadedChunkAt(this.locX + 1, this.locZ);
+-        Chunk chunk2 = ichunkprovider.getLoadedChunkAt(this.locX, this.locZ + 1);
+-        Chunk chunk3 = ichunkprovider.getLoadedChunkAt(this.locX - 1, this.locZ);
++        Chunk chunk = MCUtil.getLoadedChunkWithoutMarkingActive(ichunkprovider,this.locX, this.locZ - 1); // Paper
++        Chunk chunk1 = MCUtil.getLoadedChunkWithoutMarkingActive(ichunkprovider,this.locX + 1, this.locZ); // Paper
++        Chunk chunk2 = MCUtil.getLoadedChunkWithoutMarkingActive(ichunkprovider,this.locX, this.locZ + 1); // Paper
++        Chunk chunk3 = MCUtil.getLoadedChunkWithoutMarkingActive(ichunkprovider,this.locX - 1, this.locZ); // Paper
+ 
+-        if (chunk1 != null && chunk2 != null && ichunkprovider.getLoadedChunkAt(this.locX + 1, this.locZ + 1) != null) {
++        if (chunk1 != null && chunk2 != null && MCUtil.getLoadedChunkWithoutMarkingActive(ichunkprovider,this.locX + 1, this.locZ + 1) != null) { // Paper
+             this.a(chunkgenerator);
+         }
+ 
+-        if (chunk3 != null && chunk2 != null && ichunkprovider.getLoadedChunkAt(this.locX - 1, this.locZ + 1) != null) {
++        if (chunk3 != null && chunk2 != null && MCUtil.getLoadedChunkWithoutMarkingActive(ichunkprovider,this.locX - 1, this.locZ + 1) != null) { // Paper
+             chunk3.a(chunkgenerator);
+         }
+ 
+-        if (chunk != null && chunk1 != null && ichunkprovider.getLoadedChunkAt(this.locX + 1, this.locZ - 1) != null) {
++        if (chunk != null && chunk1 != null && MCUtil.getLoadedChunkWithoutMarkingActive(ichunkprovider,this.locX + 1, this.locZ - 1) != null) { // Paper
+             chunk.a(chunkgenerator);
+         }
+ 
+         if (chunk != null && chunk3 != null) {
+-            Chunk chunk4 = ichunkprovider.getLoadedChunkAt(this.locX - 1, this.locZ - 1);
++            Chunk chunk4 = MCUtil.getLoadedChunkWithoutMarkingActive(ichunkprovider,this.locX - 1, this.locZ - 1); // Paper
+ 
+             if (chunk4 != null) {
+                 chunk4.a(chunkgenerator);
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 3dabfdb..8f29358 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -212,7 +212,7 @@ public class ChunkProviderServer implements IChunkProvider {
+                         continue;
+                     }
+ 
+-                    Chunk neighbor = this.getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
++                    Chunk neighbor = MCUtil.getLoadedChunkWithoutMarkingActive(this, chunk.locX + x, chunk.locZ + z); // Paper
+                     if (neighbor != null) {
+                         neighbor.setNeighborLoaded(-x, -z);
+                         chunk.setNeighborLoaded(x, z);
+@@ -333,7 +333,7 @@ public class ChunkProviderServer implements IChunkProvider {
+                                     continue;
+                                 }
+ 
+-                                Chunk neighbor = this.getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
++                                Chunk neighbor = MCUtil.getLoadedChunkWithoutMarkingActive(this, chunk.locX + x, chunk.locZ + z); // Paper
+                                 if (neighbor != null) {
+                                     neighbor.setNeighborUnloaded(-x, -z);
+                                     chunk.setNeighborUnloaded(x, z);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 4315653..4459e33 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -241,7 +241,7 @@ public class CraftWorld implements World {
+                     continue;
+                 }
+ 
+-                net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
++                net.minecraft.server.Chunk neighbor = net.minecraft.server.MCUtil.getLoadedChunkWithoutMarkingActive(world, chunk.locX + x, chunk.locZ + z); // Paper
+                 if (neighbor != null) {
+                     neighbor.setNeighborUnloaded(-xx, -zz);
+                     chunk.setNeighborUnloaded(xx, zz);
+@@ -328,7 +328,7 @@ public class CraftWorld implements World {
+                         continue;
+                     }
+ 
+-                    net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getLoadedChunkAt(chunk.locX + x, chunk.locZ + z);
++                    net.minecraft.server.Chunk neighbor = net.minecraft.server.MCUtil.getLoadedChunkWithoutMarkingActive(world, chunk.locX + x, chunk.locZ + z); // Paper
+                     if (neighbor != null) {
+                         neighbor.setNeighborLoaded(-x, -z);
+                         chunk.setNeighborLoaded(x, z);
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
+index 7b61b14..7752b50 100644
+--- a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
+@@ -5,7 +5,6 @@ import net.minecraft.server.Chunk;
+ import net.minecraft.server.ChunkCoordIntPair;
+ import net.minecraft.server.ChunkRegionLoader;
+ import net.minecraft.server.NBTTagCompound;
+-
+ import org.bukkit.Server;
+ import org.bukkit.craftbukkit.util.AsynchronousExecutor;
+ 
+@@ -62,7 +61,7 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
+                     continue;
+                 }
+ 
+-                Chunk neighbor = queuedChunk.provider.getLoadedChunkAt(chunk.locX + x, chunk.locZ + z);
++                Chunk neighbor = net.minecraft.server.MCUtil.getLoadedChunkWithoutMarkingActive(queuedChunk.provider, chunk.locX + x, chunk.locZ + z); // Paper
+                 if (neighbor != null) {
+                     neighbor.setNeighborLoaded(-x, -z);
+                     chunk.setNeighborLoaded(x, z);
+-- 
+2.7.4
+
