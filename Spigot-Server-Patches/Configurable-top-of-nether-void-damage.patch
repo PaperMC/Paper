@@ -24,26 +24,66 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
-         this.U();
+             this.fallDistance *= 0.5F;
+         }
+ 
++        // Paper start - Configurable nether ceiling damage
++        // Extracted to own function
++        /*
+         if (this.locY < -64.0D) {
+             this.Y();
+         }
++        */
++        this.checkAndDoHeightDamage();
++        // Paper end
+ 
+         if (!this.world.isClientSide) {
+             this.setFlag(0, this.fireTicks > 0);
+@@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
+         this.world.methodProfiler.b();
      }
  
-+    /**
-+     * Paper - Checks if the feature is enabled and the entity is above the nether world bedrock height
-+     */
++    // Paper start - Configurable top of nether void damage
 +    private boolean paperNetherCheck() {
 +        return this.world.paperConfig.netherVoidTopDamage && this.world.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER && this.locY >= 128.0D;
 +    }
 +
-     public void U() {
-         this.world.methodProfiler.a("entityBaseTick");
-         if (this.isPassenger() && this.bB().dead) {
++    protected void checkAndDoHeightDamage() {
++        if (this.locY < -64.0D || paperNetherCheck()) {
++            this.kill();
++        }
++    }
++    // Paper end
++
+     protected void H() {
+         if (this.portalCooldown > 0) {
+             --this.portalCooldown;
 @@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
-             this.fallDistance *= 0.5F;
+         this.fireTicks = 0;
+     }
+ 
++    protected final void kill() { this.Y(); } // Paper - OBFHELPER
+     protected void Y() {
+         this.die();
+     }
+diff --git a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
++++ b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
+@@ -0,0 +0,0 @@ public abstract class EntityMinecartAbstract extends Entity implements INamableT
+             this.setDamage(this.getDamage() - 1.0F);
          }
  
--        if (this.locY < -64.0D) {
-+        if (this.locY < -64.0D || paperNetherCheck()) { // Paper - Configurable top-of-nether void damage)
++        // Paper start - Configurable nether ceiling damage
++        // Extracted to own function
++        /*
+         if (this.locY < -64.0D) {
              this.Y();
          }
++        */
++        this.checkAndDoHeightDamage();
++        // Paper end
+ 
+         int i;
  
 --
