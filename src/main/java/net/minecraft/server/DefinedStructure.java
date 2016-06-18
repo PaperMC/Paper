@@ -242,9 +242,11 @@ public class DefinedStructure {
                                         definedstructure_blockinfo.c.setLong("LootTableSeed", random.nextLong());
                                     }
 
+                                    tileentity.isLoadingStructure = true; // Paper
                                     tileentity.load(definedstructure_blockinfo.b, definedstructure_blockinfo.c);
                                     tileentity.a(definedstructureinfo.c());
                                     tileentity.a(definedstructureinfo.d());
+                                    tileentity.isLoadingStructure = false; // Paper
                                 }
                             }
 

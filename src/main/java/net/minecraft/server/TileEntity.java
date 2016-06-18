@@ -20,6 +20,7 @@ public abstract class TileEntity implements KeyedObject { // Paper
     public CraftPersistentDataContainer persistentDataContainer;
     // CraftBukkit end
     private static final Logger LOGGER = LogManager.getLogger();
+    boolean isLoadingStructure = false; // Paper
     private final TileEntityTypes<?> tileType; public TileEntityTypes getTileEntityType() { return tileType; } // Paper - OBFHELPER
     @Nullable
     protected World world;
