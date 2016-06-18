@@ -4,6 +4,18 @@ Date: Mon, 28 Mar 2016 20:55:47 -0400
 Subject: [PATCH] MC Utils
 
 
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -0,0 +0,0 @@ public class Chunk {
+         return !block.isTileEntity() ? null : ((ITileEntity) block).a(this.world, iblockdata.getBlock().toLegacyData(iblockdata));
+     }
+ 
++    @Nullable public final TileEntity getTileEntityImmediately(BlockPosition pos) { return this.a(pos, EnumTileEntityState.IMMEDIATE); } // Paper - OBFHELPER
+     @Nullable
+     public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
+         // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -172,7 +184,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param z
 +     * @return
 +     */
-+    @Nullable public static Chunk getLoadedChunkWithoutMarkingActive(World world, int x, int z) {
++    @Nullable
++    public static Chunk getLoadedChunkWithoutMarkingActive(World world, int x, int z) {
 +        return ((ChunkProviderServer) world.chunkProvider).chunks.get(ChunkCoordIntPair.a(x, z));
 +    }
 +
@@ -183,7 +196,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param z
 +     * @return
 +     */
-+    @Nullable public static Chunk getLoadedChunkWithoutMarkingActive(IChunkProvider provider, int x, int z) {
++    @Nullable
++    public static Chunk getLoadedChunkWithoutMarkingActive(IChunkProvider provider, int x, int z) {
 +        return ((ChunkProviderServer)provider).chunks.get(ChunkCoordIntPair.a(x, z));
 +    }
 +
@@ -193,6 +207,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    public static void scheduleAsyncTask(Runnable run) {
 +        asyncExecutor.execute(run);
++    }
++
++    @Nullable
++    public static TileEntityHopper getHopper(World world, BlockPosition pos) {
++        Chunk chunk = world.getChunkIfLoaded(pos.getX() >> 4, pos.getZ() >> 4);
++        if (chunk != null && chunk.getBlockData(pos).getBlock() == Blocks.HOPPER) {
++            TileEntity tileEntity = chunk.getTileEntityImmediately(pos);
++            if (tileEntity instanceof TileEntityHopper) {
++                return (TileEntityHopper) tileEntity;
++            }
++        }
++        return null;
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/NBTTagCompound.java b/src/main/java/net/minecraft/server/NBTTagCompound.java
