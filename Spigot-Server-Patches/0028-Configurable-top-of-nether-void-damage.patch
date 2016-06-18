@@ -1,4 +1,4 @@
-From 7f3fc798c035b20cfaca5d6cffc6575ba19764a8 Mon Sep 17 00:00:00 2001
+From 62b72202a06a326fb3ad80b5fcff791500bd3df1 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Tue, 1 Mar 2016 23:58:50 -0600
 Subject: [PATCH] Configurable top of nether void damage
@@ -20,31 +20,71 @@ index 8fc2f6c..d78b688 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 8f88bc8..1b58f7d 100644
+index bb9be9b..18062df 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -305,6 +305,13 @@ public abstract class Entity implements ICommandListener {
-         this.U();
+@@ -385,9 +385,15 @@ public abstract class Entity implements ICommandListener {
+             this.fallDistance *= 0.5F;
+         }
+ 
++        // Paper start - Configurable nether ceiling damage
++        // Extracted to own function
++        /*
+         if (this.locY < -64.0D) {
+             this.Y();
+         }
++        */
++        this.checkAndDoHeightDamage();
++        // Paper end
+ 
+         if (!this.world.isClientSide) {
+             this.setFlag(0, this.fireTicks > 0);
+@@ -397,6 +403,18 @@ public abstract class Entity implements ICommandListener {
+         this.world.methodProfiler.b();
      }
  
-+    /**
-+     * Paper - Checks if the feature is enabled and the entity is above the nether world bedrock height
-+     */
++    // Paper start - Configurable top of nether void damage
 +    private boolean paperNetherCheck() {
 +        return this.world.paperConfig.netherVoidTopDamage && this.world.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER && this.locY >= 128.0D;
 +    }
 +
-     public void U() {
-         this.world.methodProfiler.a("entityBaseTick");
-         if (this.isPassenger() && this.bB().dead) {
-@@ -385,7 +392,7 @@ public abstract class Entity implements ICommandListener {
-             this.fallDistance *= 0.5F;
++    protected void checkAndDoHeightDamage() {
++        if (this.locY < -64.0D || paperNetherCheck()) {
++            this.kill();
++        }
++    }
++    // Paper end
++
+     protected void H() {
+         if (this.portalCooldown > 0) {
+             --this.portalCooldown;
+@@ -453,6 +471,7 @@ public abstract class Entity implements ICommandListener {
+         this.fireTicks = 0;
+     }
+ 
++    protected final void kill() { this.Y(); } // Paper - OBFHELPER
+     protected void Y() {
+         this.die();
+     }
+diff --git a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
+index 36ef2da..4438d83 100644
+--- a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
++++ b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
+@@ -210,9 +210,15 @@ public abstract class EntityMinecartAbstract extends Entity implements INamableT
+             this.setDamage(this.getDamage() - 1.0F);
          }
  
--        if (this.locY < -64.0D) {
-+        if (this.locY < -64.0D || paperNetherCheck()) { // Paper - Configurable top-of-nether void damage)
++        // Paper start - Configurable nether ceiling damage
++        // Extracted to own function
++        /*
+         if (this.locY < -64.0D) {
              this.Y();
          }
++        */
++        this.checkAndDoHeightDamage();
++        // Paper end
+ 
+         int i;
  
 -- 
 2.8.3
