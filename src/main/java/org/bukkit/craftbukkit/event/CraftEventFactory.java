@@ -1011,4 +1011,13 @@ public class CraftEventFactory {
 		cloud.world.getServer().getPluginManager().callEvent(event);
 		return event;
 	}
+
+    public static EntityBreedEvent callEntityBreedEvent(EntityLiving child, EntityLiving mother, EntityLiving father, EntityLiving breeder, ItemStack bredWith, int experience) {
+        org.bukkit.entity.LivingEntity breederEntity = (LivingEntity)(breeder == null ? null : breeder.getBukkitEntity());
+        CraftItemStack bredWithStack = bredWith == null ? null : CraftItemStack.asCraftMirror(bredWith).clone();
+
+        EntityBreedEvent event = new EntityBreedEvent((LivingEntity) child.getBukkitEntity(), (LivingEntity) mother.getBukkitEntity(), (LivingEntity) father.getBukkitEntity(), breederEntity, bredWithStack, experience);
+        child.world.getServer().getPluginManager().callEvent(event);
+        return event;
+    }
 }
