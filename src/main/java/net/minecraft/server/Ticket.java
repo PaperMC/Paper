@@ -9,11 +9,13 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
     public final T identifier; public final T getObjectReason() { return this.identifier; } // Paper - OBFHELPER
     private long d; public final long getCreationTick() { return this.d; } // Paper - OBFHELPER
     public int priority = 0; // Paper
+    public long delayUnloadBy; // Paper
 
     protected Ticket(TicketType<T> tickettype, int i, T t0) {
         this.a = tickettype;
         this.b = i;
         this.identifier = t0;
+        this.delayUnloadBy = tickettype.loadPeriod; // Paper
     }
 
     public int compareTo(Ticket<?> ticket) {
@@ -63,7 +65,7 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
     }
 
     protected boolean b(long i) {
-        long j = this.a.b();
+        long j = delayUnloadBy; // Paper
 
         return j != 0L && i - this.d > j;
     }

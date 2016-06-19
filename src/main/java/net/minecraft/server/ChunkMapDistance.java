@@ -176,6 +176,27 @@ public abstract class ChunkMapDistance {
         boolean removed = false; // CraftBukkit
         if (arraysetsorted.remove(ticket)) {
             removed = true; // CraftBukkit
+            // Paper start - delay chunk unloads for player tickets
+            long delayChunkUnloadsBy = chunkMap.world.paperConfig.delayChunkUnloadsBy;
+            if (ticket.getTicketType() == TicketType.PLAYER && delayChunkUnloadsBy > 0) {
+                boolean hasPlayer = false;
+                for (Ticket<?> ticket1 : arraysetsorted) {
+                    if (ticket1.getTicketType() == TicketType.PLAYER) {
+                        hasPlayer = true;
+                        break;
+                    }
+                }
+                PlayerChunk playerChunk = chunkMap.getUpdatingChunk(i);
+                if (!hasPlayer && playerChunk != null && playerChunk.isFullChunkReady()) {
+                    Ticket<Long> delayUnload = new Ticket<Long>(TicketType.DELAY_UNLOAD, 33, i);
+                    delayUnload.delayUnloadBy = delayChunkUnloadsBy;
+                    delayUnload.setCurrentTick(this.currentTick);
+                    arraysetsorted.remove(delayUnload);
+                    // refresh ticket
+                    arraysetsorted.add(delayUnload);
+                }
+            }
+            // Paper end
         }
 
         if (arraysetsorted.isEmpty()) {

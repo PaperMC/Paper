@@ -26,6 +26,7 @@ public class TicketType<T> {
     public static final TicketType<Long> ASYNC_LOAD = a("async_load", Long::compareTo); // Paper
     public static final TicketType<ChunkCoordIntPair> PRIORITY = a("priority", Comparator.comparingLong(ChunkCoordIntPair::pair), 300); // Paper
     public static final TicketType<ChunkCoordIntPair> URGENT = a("urgent", Comparator.comparingLong(ChunkCoordIntPair::pair), 300); // Paper
+    public static final TicketType<Long> DELAY_UNLOAD = a("delay_unload", Long::compareTo, 300); // Paper
 
     public static <T> TicketType<T> a(String s, Comparator<T> comparator) {
         return new TicketType<>(s, comparator, 0L);

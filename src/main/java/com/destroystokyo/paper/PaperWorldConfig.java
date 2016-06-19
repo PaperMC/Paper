@@ -623,4 +623,13 @@ public class PaperWorldConfig {
     private void viewDistance() {
         this.noTickViewDistance = this.getInt("viewdistances.no-tick-view-distance", -1);
     }
+
+    public long delayChunkUnloadsBy;
+    private void delayChunkUnloadsBy() {
+        delayChunkUnloadsBy = PaperConfig.getSeconds(getString("delay-chunk-unloads-by", "10s"));
+        if (delayChunkUnloadsBy > 0) {
+            log("Delaying chunk unloads by " + delayChunkUnloadsBy + " seconds");
+            delayChunkUnloadsBy *= 20;
+        }
+    }
 }
