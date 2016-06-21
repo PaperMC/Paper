@@ -187,47 +187,26 @@ public class CraftWorld implements World {
             return false;
         }
 
-        return unloadChunk0(x, z, save, safe);
+        return unloadChunk0(x, z, save);
     }
 
-    private boolean unloadChunk0(int x, int z, boolean save, boolean safe) {
-        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().getChunkAt(x, z);
-        if (chunk.mustSave) {   // If chunk had previously been queued to save, must do save to avoid loss of that data
-            save = true;
+    private boolean unloadChunk0(int x, int z, boolean save) {
+        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().getChunkIfLoaded(x, z);
+        if (chunk == null) {
+            return true;
         }
 
-        chunk.removeEntities(); // Always remove entities - even if discarding, need to get them out of world table
-
-        if (save) {
-            world.getChunkProviderServer().saveChunk(chunk);
-            world.getChunkProviderServer().saveChunkNOP(chunk);
-        }
-
-        world.getChunkProviderServer().unloadQueue.remove(ChunkCoordIntPair.a(x, z));
-        world.getChunkProviderServer().chunks.remove(ChunkCoordIntPair.a(x, z));
-
-        // Update neighbor counts
-        for (int xx = -2; xx < 3; xx++) {
-            for (int zz = -2; zz < 3; zz++) {
-                if (xx == 0 && zz == 0) {
-                    continue;
-                }
-
-                net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
-                if (neighbor != null) {
-                    neighbor.setNeighborUnloaded(-xx, -zz);
-                    chunk.setNeighborUnloaded(xx, zz);
-                }
-            }
-        }
-
-        return true;
+        // If chunk had previously been queued to save, must do save to avoid loss of that data
+        return world.getChunkProviderServer().unloadChunk(chunk, chunk.mustSave || save);
     }
 
     public boolean regenerateChunk(int x, int z) {
-        unloadChunk0(x, z, false, false);
+        if (!unloadChunk0(x, z, false)) {
+            return false;
+        }
 
-        world.getChunkProviderServer().unloadQueue.remove(ChunkCoordIntPair.a(x, z));
+        final long chunkKey = ChunkCoordIntPair.a(x, z);
+        world.getChunkProviderServer().unloadQueue.remove(chunkKey);
 
         net.minecraft.server.Chunk chunk = null;
 
@@ -237,9 +216,14 @@ public class CraftWorld implements World {
             playerChunk.chunk = chunk;
         }
 
-        chunkLoadPostProcess(chunk, x, z);
+        if (chunk != null) {
+            world.getChunkProviderServer().chunks.put(chunkKey, chunk);
 
-        refreshChunk(x, z);
+            chunk.addEntities();
+            chunk.loadNearby(world.getChunkProviderServer(), world.getChunkProviderServer().chunkGenerator, true);
+
+            refreshChunk(x, z);
+        }
 
         return chunk != null;
     }
@@ -275,39 +259,7 @@ public class CraftWorld implements World {
             return world.getChunkProviderServer().getChunkAt(x, z) != null;
         }
 
-        world.getChunkProviderServer().unloadQueue.remove(ChunkCoordIntPair.a(x, z));
-        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().chunks.get(ChunkCoordIntPair.a(x, z));
-
-        if (chunk == null) {
-            chunk = world.getChunkProviderServer().getOrLoadChunkAt(x, z);
-        }
-        return chunk != null;
-    }
-
-    private void chunkLoadPostProcess(net.minecraft.server.Chunk chunk, int cx, int cz) {
-        if (chunk != null) {
-            world.getChunkProviderServer().chunks.put(ChunkCoordIntPair.a(cx, cz), chunk);
-
-            chunk.addEntities();
-
-            // Update neighbor counts
-            for (int x = -2; x < 3; x++) {
-                for (int z = -2; z < 3; z++) {
-                    if (x == 0 && z == 0) {
-                        continue;
-                    }
-
-                    net.minecraft.server.Chunk neighbor = world.getChunkProviderServer().getLoadedChunkAt(chunk.locX + x, chunk.locZ + z);
-                    if (neighbor != null) {
-                        neighbor.setNeighborLoaded(-x, -z);
-                        chunk.setNeighborLoaded(x, z);
-                    }
-                }
-            }
-            // CraftBukkit end
-
-            chunk.loadNearby(world.getChunkProviderServer(), world.getChunkProviderServer().chunkGenerator);
-        }
+        return world.getChunkProviderServer().getOrLoadChunkAt(x, z) != null;
     }
 
     public boolean isChunkLoaded(Chunk chunk) {
