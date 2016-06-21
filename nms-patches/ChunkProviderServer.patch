@@ -1,11 +1,10 @@
 --- a/net/minecraft/server/ChunkProviderServer.java
 +++ b/net/minecraft/server/ChunkProviderServer.java
-@@ -14,6 +14,12 @@
+@@ -14,6 +14,11 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
 +// CraftBukkit start
-+import org.bukkit.Server;
 +import org.bukkit.craftbukkit.chunkio.ChunkIOExecutor;
 +import org.bukkit.event.world.ChunkUnloadEvent;
 +// CraftBukkit end
@@ -13,7 +12,7 @@
  public class ChunkProviderServer implements IChunkProvider {
  
      private static final Logger a = LogManager.getLogger();
-@@ -69,6 +75,26 @@
+@@ -69,19 +74,82 @@
          Chunk chunk = this.getLoadedChunkAt(i, j);
  
          if (chunk == null) {
@@ -40,7 +39,12 @@
              chunk = this.loadChunk(i, j);
              if (chunk != null) {
                  this.chunks.put(ChunkCoordIntPair.a(i, j), chunk);
-@@ -80,8 +106,52 @@
+                 chunk.addEntities();
+-                chunk.loadNearby(this, this.chunkGenerator);
++                chunk.loadNearby(this, this.chunkGenerator, false); // CraftBukkit
+             }
+         }
+ 
          return chunk;
      }
  
@@ -89,50 +93,21 @@
 +
 +    public Chunk originalGetChunkAt(int i, int j) {
 +        Chunk chunk = this.originalGetOrLoadChunkAt(i, j);
-+        boolean newChunk = false;
 +        // CraftBukkit end
  
          if (chunk == null) {
              long k = ChunkCoordIntPair.a(i, j);
-@@ -97,9 +167,37 @@
-                 crashreportsystemdetails.a("Generator", (Object) this.chunkGenerator);
-                 throw new ReportedException(crashreport);
-             }
-+            newChunk = true; // CraftBukkit
+@@ -100,7 +168,8 @@
  
              this.chunks.put(k, chunk);
              chunk.addEntities();
+-            chunk.loadNearby(this, this.chunkGenerator);
 +
-+            // CraftBukkit start
-+            Server server = world.getServer();
-+            if (server != null) {
-+                /*
-+                 * If it's a new world, the first few chunks are generated inside
-+                 * the World constructor. We can't reliably alter that, so we have
-+                 * no way of creating a CraftWorld/CraftServer at that point.
-+                 */
-+                server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(chunk.bukkitChunk, newChunk));
-+            }
-+
-+            // Update neighbor counts
-+            for (int x = -2; x < 3; x++) {
-+                for (int z = -2; z < 3; z++) {
-+                    if (x == 0 && z == 0) {
-+                        continue;
-+                    }
-+
-+                    Chunk neighbor = this.getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
-+                    if (neighbor != null) {
-+                        neighbor.setNeighborLoaded(-x, -z);
-+                        chunk.setNeighborLoaded(x, z);
-+                    }
-+                }
-+            }
-+            // CraftBukkit end
-             chunk.loadNearby(this, this.chunkGenerator);
++            chunk.loadNearby(this, this.chunkGenerator, true); // CraftBukkit
          }
  
-@@ -146,10 +244,12 @@
+         return chunk;
+@@ -146,10 +215,12 @@
  
      public boolean a(boolean flag) {
          int i = 0;
@@ -148,33 +123,60 @@
  
              if (flag) {
                  this.saveChunkNOP(chunk);
-@@ -182,6 +282,29 @@
+@@ -182,10 +253,12 @@
                      Chunk chunk = (Chunk) this.chunks.get(olong);
  
                      if (chunk != null && chunk.d) {
-+                        // CraftBukkit start
-+                        ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
-+                        this.world.getServer().getPluginManager().callEvent(event);
-+                        if (event.isCancelled()) {
+-                        chunk.removeEntities();
+-                        this.saveChunk(chunk);
+-                        this.saveChunkNOP(chunk);
+-                        this.chunks.remove(olong);
++                        // CraftBukkit start - move unload logic to own method
++                        if (!unloadChunk(chunk, true)) {
 +                            continue;
-+                        }
-+
-+                        // Update neighbor counts
-+                        for (int x = -2; x < 3; x++) {
-+                            for (int z = -2; z < 3; z++) {
-+                                if (x == 0 && z == 0) {
-+                                    continue;
-+                                }
-+
-+                                Chunk neighbor = this.getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
-+                                if (neighbor != null) {
-+                                    neighbor.setNeighborUnloaded(-x, -z);
-+                                    chunk.setNeighborUnloaded(x, z);
-+                                }
-+                            }
 +                        }
 +                        // CraftBukkit end
 +
-                         chunk.removeEntities();
-                         this.saveChunk(chunk);
-                         this.saveChunkNOP(chunk);
+                         ++i;
+                     }
+                 }
+@@ -197,6 +270,39 @@
+         return false;
+     }
+ 
++    // CraftBukkit start
++    public boolean unloadChunk(Chunk chunk, boolean save) {
++        ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
++        this.world.getServer().getPluginManager().callEvent(event);
++        if (event.isCancelled()) {
++            return false;
++        }
++
++        // Update neighbor counts
++        for (int x = -2; x < 3; x++) {
++            for (int z = -2; z < 3; z++) {
++                if (x == 0 && z == 0) {
++                    continue;
++                }
++
++                Chunk neighbor = this.getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
++                if (neighbor != null) {
++                    neighbor.setNeighborUnloaded(-x, -z);
++                    chunk.setNeighborUnloaded(x, z);
++                }
++            }
++        }
++        // Moved from unloadChunks above
++        chunk.removeEntities();
++        if (save) {
++            this.saveChunk(chunk);
++            this.saveChunkNOP(chunk);
++        }
++        this.chunks.remove(chunk.chunkKey);
++        return true;
++    }
++    // CraftBukkit end
++
+     public boolean e() {
+         return !this.world.savingDisabled;
+     }

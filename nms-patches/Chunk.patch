@@ -5,17 +5,18 @@
  import org.apache.logging.log4j.Logger;
  
 +import com.google.common.collect.Lists; // CraftBukkit
-+import org.bukkit.Bukkit; // CraftBukkit
++import org.bukkit.Server; // CraftBukkit
 +
  public class Chunk {
  
      private static final Logger e = LogManager.getLogger();
-@@ -42,6 +45,34 @@
+@@ -42,6 +45,35 @@
      private ConcurrentLinkedQueue<BlockPosition> y;
      public boolean d;
  
 +    // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
 +    private int neighbors = 0x1 << 12;
++    public long chunkKey;
 +
 +    public boolean areNeighborsLoaded(final int radius) {
 +        switch (radius) {
@@ -45,12 +46,13 @@
      public Chunk(World world, int i, int j) {
          this.sections = new ChunkSection[16];
          this.g = new byte[256];
-@@ -62,8 +93,14 @@
+@@ -62,8 +94,15 @@
  
          Arrays.fill(this.h, -999);
          Arrays.fill(this.g, (byte) -1);
 +        // CraftBukkit start
 +        this.bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
++        this.chunkKey = ChunkCoordIntPair.a(this.locX, this.locZ);
      }
  
 +    public org.bukkit.Chunk bukkitChunk;
@@ -60,7 +62,7 @@
      public Chunk(World world, ChunkSnapshot chunksnapshot, int i, int j) {
          this(world, i, j);
          boolean flag = true;
-@@ -467,7 +504,8 @@
+@@ -467,7 +506,8 @@
                      }
                  }
  
@@ -70,7 +72,7 @@
                      block.onPlace(this.world, blockposition, iblockdata);
                  }
  
-@@ -604,7 +642,15 @@
+@@ -604,7 +644,15 @@
  
      @Nullable
      public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
@@ -87,7 +89,7 @@
  
          if (tileentity == null) {
              if (chunk_enumtileentitystate == Chunk.EnumTileEntityState.IMMEDIATE) {
-@@ -639,6 +685,13 @@
+@@ -639,6 +687,13 @@
  
              tileentity.z();
              this.tileEntities.put(blockposition, tileentity);
@@ -101,7 +103,7 @@
          }
      }
  
-@@ -681,9 +734,21 @@
+@@ -681,9 +736,21 @@
          int i = aentityslice.length;
  
          for (int j = 0; j < i; ++j) {
@@ -111,21 +113,21 @@
 +            java.util.Iterator<Entity> iter = newList.iterator();
 +            while (iter.hasNext()) {
 +                Entity entity = iter.next();
- 
--            this.world.c((Collection) entityslice);
++
 +                // Do not pass along players, as doing so can get them stuck outside of time.
 +                // (which for example disables inventory icon updates and prevents block breaking)
 +                if (entity instanceof EntityPlayer) {
 +                    iter.remove();
 +                }
 +            }
-+
-+            this.world.c((Collection) newList);
+ 
+-            this.world.c((Collection) entityslice);
++            this.world.c(newList);
 +            // CraftBukkit end
          }
  
      }
-@@ -745,8 +810,8 @@
+@@ -745,8 +812,8 @@
              while (iterator.hasNext()) {
                  Entity entity = (Entity) iterator.next();
  
@@ -136,7 +138,43 @@
                  }
              }
          }
-@@ -809,6 +874,29 @@
+@@ -773,7 +840,34 @@
+         return false;
+     }
+ 
+-    public void loadNearby(IChunkProvider ichunkprovider, ChunkGenerator chunkgenerator) {
++    // CraftBukkit start
++    public void loadNearby(IChunkProvider ichunkprovider, ChunkGenerator chunkgenerator, boolean newChunk) {
++        Server server = world.getServer();
++        if (server != null) {
++            /*
++             * If it's a new world, the first few chunks are generated inside
++             * the World constructor. We can't reliably alter that, so we have
++             * no way of creating a CraftWorld/CraftServer at that point.
++             */
++            server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(bukkitChunk, newChunk));
++        }
++
++        // Update neighbor counts
++        for (int x = -2; x < 3; x++) {
++            for (int z = -2; z < 3; z++) {
++                if (x == 0 && z == 0) {
++                    continue;
++                }
++
++                Chunk neighbor = getWorld().getChunkIfLoaded(locX + x, locZ + z);
++                if (neighbor != null) {
++                    neighbor.setNeighborLoaded(-x, -z);
++                    setNeighborLoaded(x, z);
++                }
++            }
++        }
++        // CraftBukkit end
++
+         Chunk chunk = ichunkprovider.getLoadedChunkAt(this.locX, this.locZ - 1);
+         Chunk chunk1 = ichunkprovider.getLoadedChunkAt(this.locX + 1, this.locZ);
+         Chunk chunk2 = ichunkprovider.getLoadedChunkAt(this.locX, this.locZ + 1);
+@@ -809,6 +903,29 @@
          } else {
              this.o();
              chunkgenerator.recreateStructures(this.locX, this.locZ);
