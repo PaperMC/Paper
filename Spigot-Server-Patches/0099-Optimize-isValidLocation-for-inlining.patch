@@ -1,0 +1,96 @@
+From 5c67471847f9f1f0efc8f68a1675aeed56250f41 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 22 Mar 2016 23:41:34 -0400
+Subject: [PATCH] Optimize isValidLocation for inlining
+
+Move test to the blockPosition class so that it can access local variables.
+
+Replace all calls to the new place to the unnecessary forward.
+
+diff --git a/src/main/java/net/minecraft/server/BaseBlockPosition.java b/src/main/java/net/minecraft/server/BaseBlockPosition.java
+index d60e755..9114388 100644
+--- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
++++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
+@@ -10,6 +10,11 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
+     private final int a;
+     private final int b;
+     private final int c;
++    // Paper start
++    public boolean isValidLocation() {
++        return a >= -30000000 && c >= -30000000 && a < 30000000 && c < 30000000 && b >= 0 && b < 256;
++    }
++    // Paper end
+ 
+     public BaseBlockPosition(int i, int j, int k) {
+         this.a = i;
+diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
+index 8603d83..9ba987a 100644
+--- a/src/main/java/net/minecraft/server/BlockPosition.java
++++ b/src/main/java/net/minecraft/server/BlockPosition.java
+@@ -326,6 +326,12 @@ public class BlockPosition extends BaseBlockPosition {
+         protected int b;
+         protected int c;
+         protected int d;
++        // Paper start
++        @Override
++        public boolean isValidLocation() {
++            return this.getX() >= -30000000 && this.getZ() >= -30000000 && this.getX() < 30000000 && this.getZ() < 30000000 && this.getY() >= 0 && this.getY() < 256;
++        }
++        // Paper end
+ 
+         public MutableBlockPosition() {
+             this(0, 0, 0);
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 12f6761..8233ee7 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -274,8 +274,8 @@ public abstract class World implements IBlockAccess {
+         return this.getType(blockposition1);
+     }
+ 
+-    private boolean isValidLocation(BlockPosition blockposition) {
+-        return !this.E(blockposition) && blockposition.getX() >= -30000000 && blockposition.getZ() >= -30000000 && blockposition.getX() < 30000000 && blockposition.getZ() < 30000000;
++    private static boolean isValidLocation(BlockPosition blockposition) { // Paper
++        return blockposition.isValidLocation(); // Paper
+     }
+ 
+     private boolean E(BlockPosition blockposition) {
+@@ -639,7 +639,7 @@ public abstract class World implements IBlockAccess {
+     // Paper start - test if meets light level, return faster
+     // logic copied from below
+     public boolean isLightLevel(BlockPosition blockposition, int level) {
+-        if (isValidLocation(blockposition)) {
++        if (blockposition.isValidLocation()) {
+             if (this.getType(blockposition).f()) {
+                 if (this.c(blockposition.up(), false) >= level) {
+                     return true;
+@@ -757,7 +757,7 @@ public abstract class World implements IBlockAccess {
+             blockposition = new BlockPosition(blockposition.getX(), 0, blockposition.getZ());
+         }
+ 
+-        if (!this.isValidLocation(blockposition)) {
++        if (!blockposition.isValidLocation()) { // Paper
+             return enumskyblock.c;
+         } else if (!this.isLoaded(blockposition)) {
+             return enumskyblock.c;
+@@ -769,7 +769,7 @@ public abstract class World implements IBlockAccess {
+     }
+ 
+     public void a(EnumSkyBlock enumskyblock, BlockPosition blockposition, int i) {
+-        if (this.isValidLocation(blockposition)) {
++        if (blockposition.isValidLocation()) { // Paper
+             if (this.isLoaded(blockposition)) {
+                 Chunk chunk = this.getChunkAtWorldCoords(blockposition);
+ 
+@@ -805,7 +805,7 @@ public abstract class World implements IBlockAccess {
+         // CraftBukkit end
+         Chunk chunk = this.getChunkIfLoaded(blockposition);
+         if (chunk != null) {
+-            return this.isValidLocation(blockposition) ? chunk.getBlockData(blockposition) : Blocks.AIR.getBlockData();
++            return blockposition.isValidLocation() ? chunk.getBlockData(blockposition) : Blocks.AIR.getBlockData();
+         }
+         return null;
+     }
+-- 
+2.9.0
+
