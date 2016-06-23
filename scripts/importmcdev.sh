@@ -53,6 +53,7 @@ import CommandScoreboard
 import CommandWhitelist
 import DataBits
 import DataConverterMaterialId
+import DefinedStructure
 import EULA
 import EntitySquid
 import EntityWaterAnimal
