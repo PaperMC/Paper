@@ -26,43 +26,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer implements IChunkProvider {
-                     Chunk chunk = (Chunk) this.chunks.get(olong);
  
                      if (chunk != null && chunk.d) {
+                         // CraftBukkit start - move unload logic to own method
 +                        chunk.setShouldUnload(false); // Paper
-                         // CraftBukkit start
-                         ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
-                         this.world.getServer().getPluginManager().callEvent(event);
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -0,0 +0,0 @@ public class CraftWorld implements World {
-             // Use the default variant of loadChunk when generate == true.
-             return world.getChunkProviderServer().getChunkAt(x, z) != null;
-         }
-+        // Paper start - below is not updated for the new unload queue logic.
-+        return world.getChunkProviderServer().getOrLoadChunkAt(x, z) != null;
-+        /*
- 
-         world.getChunkProviderServer().unloadQueue.remove(ChunkCoordIntPair.a(x, z));
-         net.minecraft.server.Chunk chunk = world.getChunkProviderServer().chunks.get(ChunkCoordIntPair.a(x, z));
-@@ -0,0 +0,0 @@ public class CraftWorld implements World {
-             chunk = world.getChunkProviderServer().getOrLoadChunkAt(x, z);
-             world.timings.syncChunkLoadTimer.stopTiming(); // Spigot
-         }
--        return chunk != null;
-+        return chunk != null;*/ // Paper end
-     }
- 
-     private void chunkLoadPostProcess(net.minecraft.server.Chunk chunk, int cx, int cz) {
-@@ -0,0 +0,0 @@ public class CraftWorld implements World {
-             }
- 
-             // Already unloading?
--            if (cps.unloadQueue.contains(ChunkCoordIntPair.a(chunk.locX, chunk.locZ))) {
-+            if (chunk.isUnloading()) { // Paper
-                 continue;
-             }
- 
+                         if (!unloadChunk(chunk, true)) {
+                             continue;
+                         }
 --
