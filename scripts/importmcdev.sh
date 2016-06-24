@@ -65,6 +65,7 @@ import NBTTagCompound
 import NBTTagList
 import PersistentScoreboard
 import PacketPlayInUseEntity
+import PacketPlayOutMapChunk
 import PacketPlayOutPlayerListHeaderFooter
 import PacketPlayOutScoreboardTeam
 import PacketPlayOutTitle
