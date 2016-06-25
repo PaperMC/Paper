@@ -29,22 +29,22 @@ public class DoubleChest implements InventoryHolder {
     }
 
     public Location getLocation() {
-        return new Location(getWorld(), getX(), getY(), getZ());
+        return getInventory().getLocation();
     }
 
     public World getWorld() {
-        return ((Chest)getLeftSide()).getWorld();
+        return getLocation().getWorld();
     }
 
     public double getX() {
-        return 0.5 * (((Chest)getLeftSide()).getX() + ((Chest)getRightSide()).getX());
+        return getLocation().getX();
     }
 
     public double getY() {
-        return 0.5 * (((Chest)getLeftSide()).getY() + ((Chest)getRightSide()).getY());
+        return getLocation().getY();
     }
 
     public double getZ() {
-        return 0.5 * (((Chest)getLeftSide()).getZ() + ((Chest)getRightSide()).getZ());
+        return getLocation().getZ();
     }
 }
