@@ -8,6 +8,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import net.minecraft.server.InventoryLargeChest;
+import org.bukkit.Location;
 
 public class CraftInventoryDoubleChest extends CraftInventory implements DoubleChestInventory {
     private final CraftInventory left;
@@ -58,5 +59,10 @@ public class CraftInventoryDoubleChest extends CraftInventory implements DoubleC
     @Override
     public DoubleChest getHolder() {
         return new DoubleChest(this);
+    }
+
+    @Override
+    public Location getLocation() {
+        return getLeftSide().getLocation().add(getRightSide().getLocation()).multiply(0.5);
     }
 }
