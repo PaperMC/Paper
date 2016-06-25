@@ -222,7 +222,7 @@ public class SimpleCommandMap implements CommandMap {
         Map<String, String[]> values = server.getCommandAliases();
 
         for (String alias : values.keySet()) {
-            if (alias.contains(":") || alias.contains(" ")) {
+            if (alias.contains(" ")) {
                 server.getLogger().warning("Could not register alias " + alias + " because it contains illegal characters");
                 continue;
             }
