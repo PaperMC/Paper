@@ -398,10 +398,10 @@ public final class CraftServer implements Server {
             return found;
         }
 
-        String lowerName = name.toLowerCase();
+        String lowerName = name.toLowerCase(java.util.Locale.ENGLISH);
         int delta = Integer.MAX_VALUE;
         for (Player player : getOnlinePlayers()) {
-            if (player.getName().toLowerCase().startsWith(lowerName)) {
+            if (player.getName().toLowerCase(java.util.Locale.ENGLISH).startsWith(lowerName)) {
                 int curDelta = Math.abs(player.getName().length() - lowerName.length());
                 if (curDelta < delta) {
                     found = player;
@@ -458,7 +458,7 @@ public final class CraftServer implements Server {
                 matchedPlayers.add(iterPlayer);
                 break;
             }
-            if (iterPlayerName.toLowerCase().contains(partialName.toLowerCase())) {
+            if (iterPlayerName.toLowerCase(java.util.Locale.ENGLISH).contains(partialName.toLowerCase(java.util.Locale.ENGLISH))) {
                 // Partial match
                 matchedPlayers.add(iterPlayer);
             }
@@ -872,7 +872,7 @@ public final class CraftServer implements Server {
         worlddata.checkName(name); // CraftBukkit - Migration did not rewrite the level.dat; This forces 1.8 to take the last loaded world as respawn (in this case the end)
         WorldServer internal = (WorldServer) new WorldServer(console, sdm, worlddata, dimension, console.methodProfiler, creator.environment(), generator).b();
 
-        if (!(worlds.containsKey(name.toLowerCase()))) {
+        if (!(worlds.containsKey(name.toLowerCase(java.util.Locale.ENGLISH)))) {
             return null;
         }
 
@@ -963,7 +963,7 @@ public final class CraftServer implements Server {
             }
         }
 
-        worlds.remove(world.getName().toLowerCase());
+        worlds.remove(world.getName().toLowerCase(java.util.Locale.ENGLISH));
         console.worlds.remove(console.worlds.indexOf(handle));
         return true;
     }
@@ -976,7 +976,7 @@ public final class CraftServer implements Server {
     public World getWorld(String name) {
         Validate.notNull(name, "Name cannot be null");
 
-        return worlds.get(name.toLowerCase());
+        return worlds.get(name.toLowerCase(java.util.Locale.ENGLISH));
     }
 
     @Override
@@ -995,7 +995,7 @@ public final class CraftServer implements Server {
             System.out.println("World " + world.getName() + " is a duplicate of another world and has been prevented from loading. Please delete the uid.dat file from " + world.getName() + "'s world directory if you want to be able to load the duplicate world.");
             return;
         }
-        worlds.put(world.getName().toLowerCase(), world);
+        worlds.put(world.getName().toLowerCase(java.util.Locale.ENGLISH), world);
     }
 
     @Override

@@ -57,7 +57,7 @@ public final class CraftChatMessage {
                 appendNewComponent(matcher.start(groupId));
                 switch (groupId) {
                 case 1:
-                    EnumChatFormat format = formatMap.get(match.toLowerCase().charAt(1));
+                    EnumChatFormat format = formatMap.get(match.toLowerCase(java.util.Locale.ENGLISH).charAt(1));
                     if (format == EnumChatFormat.RESET) {
                         modifier = new ChatModifier();
                     } else if (format.isFormat()) {

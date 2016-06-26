@@ -322,7 +322,7 @@ public class CraftBlock implements Block {
             return null;
         }
 
-        return Biome.valueOf(BiomeBase.REGISTRY_ID.b(base).a().toUpperCase());
+        return Biome.valueOf(BiomeBase.REGISTRY_ID.b(base).a().toUpperCase(java.util.Locale.ENGLISH));
     }
 
     public static BiomeBase biomeToBiomeBase(Biome bio) {
@@ -330,7 +330,7 @@ public class CraftBlock implements Block {
             return null;
         }
 
-        return BiomeBase.REGISTRY_ID.get(new MinecraftKey(bio.name().toLowerCase()));
+        return BiomeBase.REGISTRY_ID.get(new MinecraftKey(bio.name().toLowerCase(java.util.Locale.ENGLISH)));
     }
 
     public double getTemperature() {
