@@ -26,7 +26,7 @@ public class CraftAttributeMap implements Attributable {
         int first = bukkit.indexOf('_');
         int second = bukkit.indexOf('_', first + 1);
 
-        StringBuilder sb = new StringBuilder(bukkit.toLowerCase());
+        StringBuilder sb = new StringBuilder(bukkit.toLowerCase(java.util.Locale.ENGLISH));
 
         sb.setCharAt(first, '.');
         if (second != -1) {

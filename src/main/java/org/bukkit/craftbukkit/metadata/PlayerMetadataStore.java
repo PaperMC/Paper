@@ -18,6 +18,6 @@ public class PlayerMetadataStore extends MetadataStoreBase<OfflinePlayer> implem
      */
     @Override
     protected String disambiguate(OfflinePlayer player, String metadataKey) {
-        return player.getName().toLowerCase() + ":" + metadataKey;
+        return player.getName().toLowerCase(java.util.Locale.ENGLISH) + ":" + metadataKey;
     }
 }
