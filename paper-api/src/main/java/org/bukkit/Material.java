@@ -707,7 +707,7 @@ public enum Material {
         } catch (NumberFormatException ex) {}
 
         if (result == null) {
-            String filtered = name.toUpperCase();
+            String filtered = name.toUpperCase(java.util.Locale.ENGLISH);
 
             filtered = filtered.replaceAll("\\s+", "_").replaceAll("\\W", "");
             result = BY_NAME.get(filtered);

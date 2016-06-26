@@ -398,11 +398,11 @@ public abstract class JavaPlugin extends PluginBase {
      * @return the plugin command if found, otherwise null
      */
     public PluginCommand getCommand(String name) {
-        String alias = name.toLowerCase();
+        String alias = name.toLowerCase(java.util.Locale.ENGLISH);
         PluginCommand command = getServer().getPluginCommand(alias);
 
         if (command == null || command.getPlugin() != this) {
-            command = getServer().getPluginCommand(description.getName().toLowerCase() + ":" + alias);
+            command = getServer().getPluginCommand(description.getName().toLowerCase(java.util.Locale.ENGLISH) + ":" + alias);
         }
 
         if (command != null && command.getPlugin() == this) {

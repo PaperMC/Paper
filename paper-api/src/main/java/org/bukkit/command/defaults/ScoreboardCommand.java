@@ -436,7 +436,7 @@ public class ScoreboardCommand extends VanillaCommand {
                     sender.sendMessage(ChatColor.RED + "No team was found by the name '" + teamName + "'");
                     return false;
                 }
-                String option = args[3].toLowerCase();
+                String option = args[3].toLowerCase(java.util.Locale.ENGLISH);
                 if (!option.equals("friendlyfire") && !option.equals("color") && !option.equals("seefriendlyinvisibles")) {
                     sender.sendMessage(ChatColor.RED + "/scoreboard teams option <team> <friendlyfire|color|seefriendlyinvisibles> <value>");
                     return false;
@@ -448,7 +448,7 @@ public class ScoreboardCommand extends VanillaCommand {
                         sender.sendMessage(ChatColor.RED + "Valid values for option " + option + " are: true and false");
                     }
                 } else {
-                    String value = args[4].toLowerCase();
+                    String value = args[4].toLowerCase(java.util.Locale.ENGLISH);
                     if (option.equals("color")) {
                         ChatColor color = TEAMS_OPTION_COLOR.get(value);
                         if (color == null) {

@@ -83,7 +83,7 @@ public class PermissionAttachment {
      * @param value New value of the permission
      */
     public void setPermission(String name, boolean value) {
-        permissions.put(name.toLowerCase(), value);
+        permissions.put(name.toLowerCase(java.util.Locale.ENGLISH), value);
         permissible.recalculatePermissions();
     }
 
@@ -106,7 +106,7 @@ public class PermissionAttachment {
      * @param name Name of the permission to remove
      */
     public void unsetPermission(String name) {
-        permissions.remove(name.toLowerCase());
+        permissions.remove(name.toLowerCase(java.util.Locale.ENGLISH));
         permissible.recalculatePermissions();
     }
 

@@ -99,13 +99,13 @@ public enum Art {
     public static Art getByName(String name) {
         Validate.notNull(name, "Name cannot be null");
 
-        return BY_NAME.get(name.toLowerCase().replaceAll("_", ""));
+        return BY_NAME.get(name.toLowerCase(java.util.Locale.ENGLISH).replaceAll("_", ""));
     }
 
     static {
         for (Art art : values()) {
             BY_ID.put(art.id, art);
-            BY_NAME.put(art.toString().toLowerCase().replaceAll("_", ""), art);
+            BY_NAME.put(art.toString().toLowerCase(java.util.Locale.ENGLISH).replaceAll("_", ""), art);
         }
     }
 }

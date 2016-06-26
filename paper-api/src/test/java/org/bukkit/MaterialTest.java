@@ -78,7 +78,7 @@ public class MaterialTest {
     @Test
     public void matchMaterialByLowerCaseAndSpaces() {
         for (Material material : Material.values()) {
-            String name = material.toString().replaceAll("_", " ").toLowerCase();
+            String name = material.toString().replaceAll("_", " ").toLowerCase(java.util.Locale.ENGLISH);
             assertThat(Material.matchMaterial(name), is(material));
         }
     }

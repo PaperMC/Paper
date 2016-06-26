@@ -64,9 +64,9 @@ public class VersionCommand extends BukkitCommand {
             }
 
             boolean found = false;
-            pluginName = pluginName.toLowerCase();
+            pluginName = pluginName.toLowerCase(java.util.Locale.ENGLISH);
             for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
-                if (plugin.getName().toLowerCase().contains(pluginName)) {
+                if (plugin.getName().toLowerCase(java.util.Locale.ENGLISH).contains(pluginName)) {
                     describeToSender(plugin, sender);
                     found = true;
                 }
@@ -131,7 +131,7 @@ public class VersionCommand extends BukkitCommand {
 
         if (args.length == 1) {
             List<String> completions = new ArrayList<String>();
-            String toComplete = args[0].toLowerCase();
+            String toComplete = args[0].toLowerCase(java.util.Locale.ENGLISH);
             for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
                 if (StringUtil.startsWithIgnoreCase(plugin.getName(), toComplete)) {
                     completions.add(plugin.getName());

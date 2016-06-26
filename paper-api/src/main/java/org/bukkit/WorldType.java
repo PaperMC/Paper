@@ -37,7 +37,7 @@ public enum WorldType {
      * @return Requested WorldType, or null if not found
      */
     public static WorldType getByName(String name) {
-        return BY_NAME.get(name.toUpperCase());
+        return BY_NAME.get(name.toUpperCase(java.util.Locale.ENGLISH));
     }
 
     static {

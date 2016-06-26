@@ -974,7 +974,7 @@ public final class PluginDescriptionFile {
 
         if (map.get("load") != null) {
             try {
-                order = PluginLoadOrder.valueOf(((String) map.get("load")).toUpperCase().replaceAll("\\W", ""));
+                order = PluginLoadOrder.valueOf(((String) map.get("load")).toUpperCase(java.util.Locale.ENGLISH).replaceAll("\\W", ""));
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "load is of wrong type");
             } catch (IllegalArgumentException ex) {

@@ -50,7 +50,7 @@ public class PermissibleBase implements Permissible {
             throw new IllegalArgumentException("Permission name cannot be null");
         }
 
-        return permissions.containsKey(name.toLowerCase());
+        return permissions.containsKey(name.toLowerCase(java.util.Locale.ENGLISH));
     }
 
     public boolean isPermissionSet(Permission perm) {
@@ -66,7 +66,7 @@ public class PermissibleBase implements Permissible {
             throw new IllegalArgumentException("Permission name cannot be null");
         }
 
-        String name = inName.toLowerCase();
+        String name = inName.toLowerCase(java.util.Locale.ENGLISH);
 
         if (isPermissionSet(name)) {
             return permissions.get(name).getValue();
@@ -86,7 +86,7 @@ public class PermissibleBase implements Permissible {
             throw new IllegalArgumentException("Permission cannot be null");
         }
 
-        String name = perm.getName().toLowerCase();
+        String name = perm.getName().toLowerCase(java.util.Locale.ENGLISH);
 
         if (isPermissionSet(name)) {
             return permissions.get(name).getValue();
@@ -151,7 +151,7 @@ public class PermissibleBase implements Permissible {
         Bukkit.getServer().getPluginManager().subscribeToDefaultPerms(isOp(), parent);
 
         for (Permission perm : defaults) {
-            String name = perm.getName().toLowerCase();
+            String name = perm.getName().toLowerCase(java.util.Locale.ENGLISH);
             permissions.put(name, new PermissionAttachmentInfo(parent, name, null, true));
             Bukkit.getServer().getPluginManager().subscribeToPermission(name, parent);
             calculateChildPermissions(perm.getChildren(), false, null);
@@ -181,7 +181,7 @@ public class PermissibleBase implements Permissible {
         for (String name : keys) {
             Permission perm = Bukkit.getServer().getPluginManager().getPermission(name);
             boolean value = children.get(name) ^ invert;
-            String lname = name.toLowerCase();
+            String lname = name.toLowerCase(java.util.Locale.ENGLISH);
 
             permissions.put(lname, new PermissionAttachmentInfo(parent, lname, attachment, value));
             Bukkit.getServer().getPluginManager().subscribeToPermission(name, parent);

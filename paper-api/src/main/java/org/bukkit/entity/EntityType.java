@@ -215,7 +215,7 @@ public enum EntityType {
     static {
         for (EntityType type : values()) {
             if (type.name != null) {
-                NAME_MAP.put(type.name.toLowerCase(), type);
+                NAME_MAP.put(type.name.toLowerCase(java.util.Locale.ENGLISH), type);
             }
             if (type.typeId > 0) {
                 ID_MAP.put(type.typeId, type);
@@ -272,7 +272,7 @@ public enum EntityType {
         if (name == null) {
             return null;
         }
-        return NAME_MAP.get(name.toLowerCase());
+        return NAME_MAP.get(name.toLowerCase(java.util.Locale.ENGLISH));
     }
 
     /**
