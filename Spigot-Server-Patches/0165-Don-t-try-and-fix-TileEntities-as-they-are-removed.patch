@@ -1,13 +1,16 @@
-From f957e361a8f39e1145bc6d53e21dc74c74a43577 Mon Sep 17 00:00:00 2001
+From 199cb45701fdd79ac7b6e3898ab6f3eff5f4c959 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Sat, 25 Jun 2016 23:55:56 -0500
-Subject: [PATCH] Move setBlock tile->tile transition workaround into TE
- removal code and out of setblock
+Subject: [PATCH] Don't try and fix TileEntities as they are removed
 
-Works around an issue in which running it in setBlock for all block changes could cause sign (and other?) data corruption.
-Also tells CB's TE fixer to ignore removals, as it would end up in a state in which it'd set the block, then
-call TE removal, which would get the TE to remove, then making CB's fixer run and get confused as to the current state of
-the block, but we don't care because that's the whole reason we're removing it.
+Currently, CraftBukkit tries to fix TEs that do not match the present block at the location. This is normally good,
+however, this same fixer runs when the TE removal functions go through to remove a TE after its block has been changed.
+So a block will be changed, the server will attempt to remove the TE present, but will then get caught up in CB's overzealous
+TE fixer. That fixer checks the block against the TE present, and throws a fit because it doesn't match. Which is why we're
+removing it in the first place.
+
+The 'fix' to this issue is to skip the fixer entirely when we're removing the TE, as it shouldn't ever need to run
+then anyway, we're removing it.
 
 diff --git a/src/main/java/net/minecraft/server/BlockChest.java b/src/main/java/net/minecraft/server/BlockChest.java
 index a5f2fc0..ef525ea 100644
@@ -61,18 +64,6 @@ index 404793a..0d4d29b 100644
  
                  if (tileentity instanceof TileEntitySkull) {
                      TileEntitySkull tileentityskull = (TileEntitySkull) tileentity;
-diff --git a/src/main/java/net/minecraft/server/BlockTileEntity.java b/src/main/java/net/minecraft/server/BlockTileEntity.java
-index dfddafb..25c21b4 100644
---- a/src/main/java/net/minecraft/server/BlockTileEntity.java
-+++ b/src/main/java/net/minecraft/server/BlockTileEntity.java
-@@ -26,6 +26,7 @@ public abstract class BlockTileEntity extends Block implements ITileEntity {
-     public void remove(World world, BlockPosition blockposition, IBlockData iblockdata) {
-         super.remove(world, blockposition, iblockdata);
-         world.s(blockposition);
-+        world.setTypeAndData(blockposition, Blocks.AIR.getBlockData(), 0); // Paper - SPIGOT-611 workaround moved from setBlock
-     }
- 
-     public boolean a(IBlockData iblockdata, World world, BlockPosition blockposition, int i, int j) {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index f7d9a7c..383eef2 100644
 --- a/src/main/java/net/minecraft/server/World.java
@@ -124,14 +115,14 @@ index 3377f97..269ae39 100644
  
          if (type == Blocks.CHEST || type == Blocks.TRAPPED_CHEST) { // Spigot
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
-index ed7e76f..a31475a 100644
+index ed7e76f..988101a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
 @@ -136,10 +136,14 @@ public class CraftBlock implements Block {
          IBlockData blockData = getNMSBlock(type).fromLegacyData(data);
          BlockPosition position = new BlockPosition(x, y, z);
  
-+        // Paper start - Moved to TileEntity removal
++        // Paper start - Unnecessary, root issue is CB TE's fixer getting too involved. Also potential data issues.
 +        /*
          // SPIGOT-611: need to do this to prevent glitchiness. Easier to handle this here (like /setblock) than to fix weirdness in tile entity cleanup
          if (type != 0) {
