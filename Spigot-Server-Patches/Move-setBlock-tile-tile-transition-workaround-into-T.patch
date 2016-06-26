@@ -1,0 +1,145 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <1254957+zachbr@users.noreply.github.com>
+Date: Sat, 25 Jun 2016 23:55:56 -0500
+Subject: [PATCH] Move setBlock tile->tile transition workaround into TE
+ removal code and out of setblock
+
+Works around an issue in which running it in setBlock for all block changes could cause sign (and other?) data corruption.
+Also tells CB's TE fixer to ignore removals, as it would end up in a state in which it'd set the block, then
+call TE removal, which would get the TE to remove, then making CB's fixer run and get confused as to the current state of
+the block, but we don't care because that's the whole reason we're removing it.
+
+diff --git a/src/main/java/net/minecraft/server/BlockChest.java b/src/main/java/net/minecraft/server/BlockChest.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/BlockChest.java
++++ b/src/main/java/net/minecraft/server/BlockChest.java
+@@ -0,0 +0,0 @@ public class BlockChest extends BlockTileEntity {
+     }
+ 
+     public void remove(World world, BlockPosition blockposition, IBlockData iblockdata) {
+-        TileEntity tileentity = world.getTileEntity(blockposition);
++        TileEntity tileentity = world.getTileEntity(blockposition, true); // Paper - This is being removed, don't fix
+ 
+         if (tileentity instanceof IInventory) {
+             InventoryUtils.dropInventory(world, blockposition, (IInventory) tileentity);
+diff --git a/src/main/java/net/minecraft/server/BlockDispenser.java b/src/main/java/net/minecraft/server/BlockDispenser.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/BlockDispenser.java
++++ b/src/main/java/net/minecraft/server/BlockDispenser.java
+@@ -0,0 +0,0 @@ public class BlockDispenser extends BlockTileEntity {
+     }
+ 
+     public void remove(World world, BlockPosition blockposition, IBlockData iblockdata) {
+-        TileEntity tileentity = world.getTileEntity(blockposition);
++        TileEntity tileentity = world.getTileEntity(blockposition, true); // Paper - This is being removed, don't fix
+ 
+         if (tileentity instanceof TileEntityDispenser) {
+             InventoryUtils.dropInventory(world, blockposition, (TileEntityDispenser) tileentity);
+diff --git a/src/main/java/net/minecraft/server/BlockFurnace.java b/src/main/java/net/minecraft/server/BlockFurnace.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/BlockFurnace.java
++++ b/src/main/java/net/minecraft/server/BlockFurnace.java
+@@ -0,0 +0,0 @@ public class BlockFurnace extends BlockTileEntity {
+ 
+     public void remove(World world, BlockPosition blockposition, IBlockData iblockdata) {
+         if (!BlockFurnace.c) {
+-            TileEntity tileentity = world.getTileEntity(blockposition);
++            TileEntity tileentity = world.getTileEntity(blockposition, true); // Paper - This is being removed, don't fix
+ 
+             if (tileentity instanceof TileEntityFurnace) {
+                 InventoryUtils.dropInventory(world, blockposition, (TileEntityFurnace) tileentity);
+diff --git a/src/main/java/net/minecraft/server/BlockSkull.java b/src/main/java/net/minecraft/server/BlockSkull.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/BlockSkull.java
++++ b/src/main/java/net/minecraft/server/BlockSkull.java
+@@ -0,0 +0,0 @@ public class BlockSkull extends BlockTileEntity {
+             // if (!((Boolean) iblockdata.get(BlockSkull.NODROP)).booleanValue()) {
+             if (false) {
+                 // CraftBukkit end
+-                TileEntity tileentity = world.getTileEntity(blockposition);
++                TileEntity tileentity = world.getTileEntity(blockposition, true); // Paper - This is being removed, don't fix
+ 
+                 if (tileentity instanceof TileEntitySkull) {
+                     TileEntitySkull tileentityskull = (TileEntitySkull) tileentity;
+diff --git a/src/main/java/net/minecraft/server/BlockTileEntity.java b/src/main/java/net/minecraft/server/BlockTileEntity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/BlockTileEntity.java
++++ b/src/main/java/net/minecraft/server/BlockTileEntity.java
+@@ -0,0 +0,0 @@ public abstract class BlockTileEntity extends Block implements ITileEntity {
+     public void remove(World world, BlockPosition blockposition, IBlockData iblockdata) {
+         super.remove(world, blockposition, iblockdata);
+         world.s(blockposition);
++        world.setTypeAndData(blockposition, Blocks.AIR.getBlockData(), 0); // Paper - SPIGOT-611 workaround moved from setBlock
+     }
+ 
+     public boolean a(IBlockData iblockdata, World world, BlockPosition blockposition, int i, int j) {
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+     }
+ 
+     public Map<BlockPosition, TileEntity> capturedTileEntities = Maps.newHashMap();
++    // Paper start - Add additional param so we can ignore fixing on removals
+     @Nullable
+     public TileEntity getTileEntity(BlockPosition blockposition) {
++        return getTileEntity(blockposition, false);
++    }
++
++    public TileEntity getTileEntity(BlockPosition blockposition, boolean isRemoving) {
++        // Paper end
+         if (blockposition.isInvalidYLocation()) { // Paper
+             return null;
+         } else {
+@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+     }
+ 
+     public void s(BlockPosition blockposition) {
+-        TileEntity tileentity = this.getTileEntity(blockposition);
++        TileEntity tileentity = this.getTileEntity(blockposition, true); // Paper - This is being removed, don't fix
+ 
+         if (tileentity != null && this.M) {
+             tileentity.y();
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+ 
+     // CraftBukkit start
+     @Override
++    // Paper start - Add additional param so we can ignore fixing on removals
+     public TileEntity getTileEntity(BlockPosition pos) {
+-        TileEntity result = super.getTileEntity(pos);
++        return getTileEntity(pos, false);
++    }
++
++    @Override
++    public TileEntity getTileEntity(BlockPosition pos, boolean isRemoving) {
++        TileEntity result = super.getTileEntity(pos, isRemoving);
++        if (isRemoving) return result;
++        // Paper end
+         Block type = getType(pos).getBlock();
+ 
+         if (type == Blocks.CHEST || type == Blocks.TRAPPED_CHEST) { // Spigot
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+@@ -0,0 +0,0 @@ public class CraftBlock implements Block {
+         IBlockData blockData = getNMSBlock(type).fromLegacyData(data);
+         BlockPosition position = new BlockPosition(x, y, z);
+ 
++        // Paper start - Moved to TileEntity removal
++        /*
+         // SPIGOT-611: need to do this to prevent glitchiness. Easier to handle this here (like /setblock) than to fix weirdness in tile entity cleanup
+         if (type != 0) {
+             chunk.getHandle().getWorld().setTypeAndData(position, Blocks.AIR.getBlockData(), 0);
+         }
++        */
++        // Paper end
+ 
+         if (applyPhysics) {
+             return chunk.getHandle().getWorld().setTypeAndData(position, blockData, 3);
+--
