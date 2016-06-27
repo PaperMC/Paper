@@ -137,7 +137,7 @@ public class CraftBlock implements Block {
         BlockPosition position = new BlockPosition(x, y, z);
 
         // SPIGOT-611: need to do this to prevent glitchiness. Easier to handle this here (like /setblock) than to fix weirdness in tile entity cleanup
-        if (type != 0) {
+        if (type != 0 && type != getTypeId()) {
             chunk.getHandle().getWorld().setTypeAndData(position, Blocks.AIR.getBlockData(), 0);
         }
 
