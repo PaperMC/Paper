@@ -1092,14 +1092,16 @@ public class CraftWorld implements World {
                 }
             }
 
-            EnumDirection dir = CraftBlock.blockFaceToNotch(face).opposite();
-            if (Painting.class.isAssignableFrom(clazz)) {
-                entity = new EntityPainting(world, new BlockPosition((int) x, (int) y, (int) z), dir);
-            } else if (ItemFrame.class.isAssignableFrom(clazz)) {
-                entity = new EntityItemFrame(world, new BlockPosition((int) x, (int) y, (int) z), dir);
-            } else if (LeashHitch.class.isAssignableFrom(clazz)) {
+            if (LeashHitch.class.isAssignableFrom(clazz)) {
                 entity = new EntityLeash(world, new BlockPosition((int) x, (int) y, (int) z));
                 entity.attachedToPlayer = true;
+            } else {
+                EnumDirection dir = CraftBlock.blockFaceToNotch(face).opposite();
+                if (Painting.class.isAssignableFrom(clazz)) {
+                    entity = new EntityPainting(world, new BlockPosition((int) x, (int) y, (int) z), dir);
+                } else if (ItemFrame.class.isAssignableFrom(clazz)) {
+                    entity = new EntityItemFrame(world, new BlockPosition((int) x, (int) y, (int) z), dir);
+                }
             }
 
             if (entity != null && !((EntityHanging) entity).survives()) {
