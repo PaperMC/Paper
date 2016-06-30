@@ -479,12 +479,12 @@
 +        if (set.contains(PacketPlayOutPosition.EnumPlayerTeleportFlags.X)) {
 +            this.teleportPos = this.teleportPos.add(this.player.locX, 0.0D, 0.0D);
 +        }
-+
+ 
+-        this.teleportPos = new Vec3D(d0 + d3, d1 + d4, d2 + d5);
 +        if (set.contains(PacketPlayOutPosition.EnumPlayerTeleportFlags.Y)) {
 +            this.teleportPos = this.teleportPos.add(0.0D, this.player.locY, 0.0D);
 +        }
- 
--        this.teleportPos = new Vec3D(d0 + d3, d1 + d4, d2 + d5);
++
 +        if (set.contains(PacketPlayOutPosition.EnumPlayerTeleportFlags.Z)) {
 +            this.teleportPos = this.teleportPos.add(0.0D, 0.0D, this.player.locZ);
 +        }
@@ -1188,7 +1188,7 @@
                  ArrayList arraylist = Lists.newArrayList();
  
                  for (int i = 0; i < this.player.activeContainer.c.size(); ++i) {
-@@ -848,8 +1584,275 @@
+@@ -848,8 +1584,279 @@
  
                  this.player.a(this.player.activeContainer, (List) arraylist);
              } else {
@@ -1200,7 +1200,7 @@
 +
 +                InventoryView inventory = this.player.activeContainer.getBukkitView();
 +                SlotType type = CraftInventoryView.getSlotType(inventory, packetplayinwindowclick.b());
-+
+ 
 +                InventoryClickEvent event;
 +                ClickType click = ClickType.UNKNOWN;
 +                InventoryAction action = InventoryAction.UNKNOWN;
@@ -1395,9 +1395,13 @@
 +                            }
 +                        }
 +                    }
- 
++
 +                    event.setCancelled(cancelled);
++                    Container oldContainer = this.player.activeContainer; // SPIGOT-1224
 +                    server.getPluginManager().callEvent(event);
++                    if (this.player.activeContainer != oldContainer) {
++                        return;
++                    }
 +
 +                    switch (event.getResult()) {
 +                        case ALLOW:
@@ -1465,7 +1469,7 @@
                  if (ItemStack.matches(packetplayinwindowclick.e(), itemstack)) {
                      this.player.playerConnection.sendPacket(new PacketPlayOutTransaction(packetplayinwindowclick.a(), packetplayinwindowclick.d(), true));
                      this.player.f = true;
-@@ -878,6 +1881,7 @@
+@@ -878,6 +1885,7 @@
  
      public void a(PacketPlayInEnchantItem packetplayinenchantitem) {
          PlayerConnectionUtils.ensureMainThread(packetplayinenchantitem, this, this.player.x());
@@ -1473,7 +1477,7 @@
          this.player.resetIdleTimer();
          if (this.player.activeContainer.windowId == packetplayinenchantitem.a() && this.player.activeContainer.c(this.player) && !this.player.isSpectator()) {
              this.player.activeContainer.a(this.player, packetplayinenchantitem.b());
-@@ -911,8 +1915,48 @@
+@@ -911,8 +1919,48 @@
              }
  
              boolean flag1 = packetplayinsetcreativeslot.a() >= 1 && packetplayinsetcreativeslot.a() <= 45;
@@ -1523,7 +1527,7 @@
  
              if (flag1 && flag2 && flag3) {
                  if (itemstack == null) {
-@@ -936,6 +1980,7 @@
+@@ -936,6 +1984,7 @@
  
      public void a(PacketPlayInTransaction packetplayintransaction) {
          PlayerConnectionUtils.ensureMainThread(packetplayintransaction, this, this.player.x());
@@ -1531,7 +1535,7 @@
          Short oshort = (Short) this.k.get(this.player.activeContainer.windowId);
  
          if (oshort != null && packetplayintransaction.b() == oshort.shortValue() && this.player.activeContainer.windowId == packetplayintransaction.a() && !this.player.activeContainer.c(this.player) && !this.player.isSpectator()) {
-@@ -946,6 +1991,7 @@
+@@ -946,6 +1995,7 @@
  
      public void a(PacketPlayInUpdateSign packetplayinupdatesign) {
          PlayerConnectionUtils.ensureMainThread(packetplayinupdatesign, this, this.player.x());
@@ -1539,7 +1543,7 @@
          this.player.resetIdleTimer();
          WorldServer worldserver = this.minecraftServer.getWorldServer(this.player.dimension);
          BlockPosition blockposition = packetplayinupdatesign.a();
-@@ -962,14 +2008,30 @@
+@@ -962,14 +2012,30 @@
  
              if (!tileentitysign.d() || tileentitysign.e() != this.player) {
                  this.minecraftServer.warning("Player " + this.player.getName() + " just tried to change non-editable sign");
@@ -1571,7 +1575,7 @@
  
              tileentitysign.update();
              worldserver.notify(blockposition, iblockdata, iblockdata, 3);
-@@ -992,11 +2054,27 @@
+@@ -992,11 +2058,27 @@
  
      public void a(PacketPlayInAbilities packetplayinabilities) {
          PlayerConnectionUtils.ensureMainThread(packetplayinabilities, this, this.player.x());
@@ -1600,7 +1604,7 @@
          ArrayList arraylist = Lists.newArrayList();
          Iterator iterator = this.minecraftServer.tabCompleteCommand(this.player, packetplayintabcomplete.a(), packetplayintabcomplete.b(), packetplayintabcomplete.c()).iterator();
  
-@@ -1040,10 +2118,13 @@
+@@ -1040,10 +2122,13 @@
                  }
  
                  if (itemstack.getItem() == Items.WRITABLE_BOOK && itemstack.getItem() == itemstack1.getItem()) {
@@ -1614,7 +1618,7 @@
              }
          } else {
              String s1;
-@@ -1067,6 +2148,7 @@
+@@ -1067,6 +2152,7 @@
                      }
  
                      if (itemstack.getItem() == Items.WRITABLE_BOOK && itemstack1.getItem() == Items.WRITABLE_BOOK) {
@@ -1622,7 +1626,7 @@
                          itemstack1.a("author", (NBTBase) (new NBTTagString(this.player.getName())));
                          itemstack1.a("title", (NBTBase) (new NBTTagString(itemstack.getTag().getString("title"))));
                          NBTTagList nbttaglist = itemstack.getTag().getList("pages", 8);
-@@ -1081,9 +2163,11 @@
+@@ -1081,9 +2167,11 @@
  
                          itemstack1.a("pages", (NBTBase) nbttaglist);
                          itemstack1.setItem(Items.WRITTEN_BOOK);
@@ -1634,7 +1638,7 @@
                  }
              } else if ("MC|TrSel".equals(s)) {
                  try {
-@@ -1095,6 +2179,7 @@
+@@ -1095,6 +2183,7 @@
                      }
                  } catch (Exception exception2) {
                      PlayerConnection.LOGGER.error("Couldn\'t select trade", exception2);
@@ -1642,7 +1646,7 @@
                  }
              } else {
                  TileEntity tileentity;
-@@ -1144,6 +2229,7 @@
+@@ -1144,6 +2233,7 @@
                          }
                      } catch (Exception exception3) {
                          PlayerConnection.LOGGER.error("Couldn\'t set command block", exception3);
@@ -1650,7 +1654,7 @@
                      }
                  } else if ("MC|AutoCmd".equals(s)) {
                      if (!this.minecraftServer.getEnableCommandBlock()) {
-@@ -1211,6 +2297,7 @@
+@@ -1211,6 +2301,7 @@
                          }
                      } catch (Exception exception4) {
                          PlayerConnection.LOGGER.error("Couldn\'t set command block", exception4);
@@ -1658,7 +1662,7 @@
                      }
                  } else {
                      int k;
-@@ -1234,6 +2321,7 @@
+@@ -1234,6 +2325,7 @@
                                  }
                              } catch (Exception exception5) {
                                  PlayerConnection.LOGGER.error("Couldn\'t set beacon", exception5);
@@ -1666,7 +1670,7 @@
                              }
                          }
                      } else if ("MC|ItemName".equals(s)) {
-@@ -1320,6 +2408,7 @@
+@@ -1320,6 +2412,7 @@
                              }
                          } catch (Exception exception6) {
                              PlayerConnection.LOGGER.error("Couldn\'t set structure block", exception6);
@@ -1674,7 +1678,7 @@
                          }
                      } else if ("MC|PickItem".equals(s)) {
                          packetdataserializer = packetplayincustompayload.b();
-@@ -1332,14 +2421,37 @@
+@@ -1332,14 +2425,37 @@
                              this.player.playerConnection.sendPacket(new PacketPlayOutHeldItemSlot(this.player.inventory.itemInHandIndex));
                          } catch (Exception exception7) {
                              PlayerConnection.LOGGER.error("Couldn\'t pick item", exception7);
