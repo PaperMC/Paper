@@ -15,7 +15,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import static co.aikar.timings.TimingsManager.*;
 +
 +public class FullServerTickHandler extends TimingHandler {
-+    static final TimingIdentifier IDENTITY = new TimingIdentifier("Minecraft", "Full Server Tick", null, false);
++    private static final TimingIdentifier IDENTITY = new TimingIdentifier("Minecraft", "Full Server Tick", null, false);
 +    final TimingData minuteData;
 +    double avgFreeMemory = -1D;
 +    double avgUsedMemory = -1D;
@@ -39,7 +39,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public void stopTiming() {
 +        super.stopTiming();
-+        if (!enabled) {
++        if (!isEnabled()) {
 +            return;
 +        }
 +        if (TimingHistory.timedTicks % 20 == 0) {
@@ -65,9 +65,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        CURRENT = TIMINGS_TICK;
 +        TIMINGS_TICK.addDiff(diff);
 +        // addDiff for TIMINGS_TICK incremented this, bring it back down to 1 per tick.
-+        record.curTickCount--;
-+        minuteData.curTickTotal = record.curTickTotal;
-+        minuteData.curTickCount = 1;
++        record.setCurTickCount(record.getCurTickCount()-1);
++
++        minuteData.setCurTickTotal(record.getCurTickTotal());
++        minuteData.setCurTickCount(1);
++
 +        boolean violated = isViolated();
 +        minuteData.processTick(violated);
 +        TIMINGS_TICK.processTick(violated);
@@ -86,7 +88,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    boolean isViolated() {
-+        return record.curTickTotal > 50000000;
++        return record.getCurTickTotal() > 50000000;
 +    }
 +}
 diff --git a/src/main/java/co/aikar/timings/NullTimingHandler.java b/src/main/java/co/aikar/timings/NullTimingHandler.java
@@ -352,8 +354,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + */
 +package co.aikar.timings;
 +
-+import com.google.common.base.Function;
-+
 +import java.util.List;
 +
 +import static co.aikar.util.JSONUtil.toArray;
@@ -364,26 +364,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * This is broken out to reduce memory usage
 + */
 +class TimingData {
-+    static Function<Integer, TimingData> LOADER = new Function<Integer, TimingData>() {
-+        @Override
-+        public TimingData apply(Integer input) {
-+            return new TimingData(input);
-+        }
-+    };
-+    int id;
-+    int count = 0;
-+    int lagCount = 0;
-+    long totalTime = 0;
-+    long lagTotalTime = 0;
-+
-+    int curTickCount = 0;
-+    int curTickTotal = 0;
++    private final int id;
++    private int count = 0;
++    private int lagCount = 0;
++    private long totalTime = 0;
++    private long lagTotalTime = 0;
++    private int curTickCount = 0;
++    private long curTickTotal = 0;
 +
 +    TimingData(int id) {
 +        this.id = id;
 +    }
 +
-+    TimingData(TimingData data) {
++    private TimingData(TimingData data) {
 +        this.id = data.id;
 +        this.totalTime = data.totalTime;
 +        this.lagTotalTime = data.lagTotalTime;
@@ -420,8 +413,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return new TimingData(this);
 +    }
 +
-+    public List export() {
-+        List list = toArray(
++    List<Object> export() {
++        List<Object> list = toArray(
 +            id,
 +            count,
 +            totalTime);
@@ -430,6 +423,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            list.add(lagTotalTime);
 +        }
 +        return list;
++    }
++
++    boolean hasData() {
++        return count > 0;
++    }
++
++    long getTotalTime() {
++        return totalTime;
++    }
++
++    int getCurTickCount() {
++        return curTickCount;
++    }
++
++    void setCurTickCount(int curTickCount) {
++        this.curTickCount = curTickCount;
++    }
++
++    long getCurTickTotal() {
++        return curTickTotal;
++    }
++
++    void setCurTickTotal(long curTickTotal) {
++        this.curTickTotal = curTickTotal;
 +    }
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHandler.java b/src/main/java/co/aikar/timings/TimingHandler.java
@@ -475,19 +492,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    final int id = idPool++;
 +
 +    final String name;
-+    final boolean verbose;
++    private final boolean verbose;
 +
-+    final Int2ObjectOpenHashMap<TimingData> children = new LoadingIntMap<>(TimingData.LOADER);
++    private final Int2ObjectOpenHashMap<TimingData> children = new LoadingIntMap<>(TimingData::new);
 +
 +    final TimingData record;
-+    final TimingHandler groupHandler;
++    private final TimingHandler groupHandler;
 +
-+    long start = 0;
-+    int timingDepth = 0;
-+    boolean added;
-+    boolean timed;
-+    boolean enabled;
-+    TimingHandler parent;
++    private long start = 0;
++    private int timingDepth = 0;
++    private boolean added;
++    private boolean timed;
++    private boolean enabled;
++    private TimingHandler parent;
 +
 +    TimingHandler(TimingIdentifier id) {
 +        if (id.name.startsWith("##")) {
@@ -510,7 +527,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    void processTick(boolean violated) {
-+        if (timingDepth != 0 || record.curTickCount == 0) {
++        if (timingDepth != 0 || record.getCurTickCount() == 0) {
 +            timingDepth = 0;
 +            start = 0;
 +            return;
@@ -629,6 +646,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public boolean isSpecial() {
 +        return this == TimingsManager.FULL_SERVER_TICK || this == TimingsManager.TIMINGS_TICK;
 +    }
++
++    boolean isTimed() {
++        return timed;
++    }
++
++    public boolean isEnabled() {
++        return enabled;
++    }
++
++    TimingData[] cloneChildren() {
++        final TimingData[] clonedChildren = new TimingData[children.size()];
++        int i = 0;
++        for (TimingData child : children.values()) {
++            clonedChildren[i++] = child.clone();
++        }
++        return clonedChildren;
++    }
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHistory.java b/src/main/java/co/aikar/timings/TimingHistory.java
 new file mode 100644
@@ -728,7 +762,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            ticks += mp.ticksRecord.timed;
 +        }
 +        this.totalTicks = ticks;
-+        this.totalTime = FULL_SERVER_TICK.record.totalTime;
++        this.totalTime = FULL_SERVER_TICK.record.getTotalTime();
 +        this.entries = new TimingHistoryEntry[TimingsManager.HANDLERS.size()];
 +
 +        int i = 0;
@@ -795,7 +829,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        });
 +    }
 +    static class RegionData {
-+        private final RegionId regionId;
++        final RegionId regionId;
 +        @SuppressWarnings("Guava")
 +        static Function<RegionId, RegionData> LOADER = new Function<RegionId, RegionData>() {
 +            @Override
@@ -809,8 +843,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        @Override
 +        public boolean equals(Object o) {
-+            if (this == o) return true;
-+            if (o == null || getClass() != o.getClass()) return false;
++            if (this == o) {
++                return true;
++            }
++            if (o == null || getClass() != o.getClass()) {
++                return false;
++            }
 +
 +            RegionData that = (RegionData) o;
 +
@@ -881,7 +919,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                @Override
 +                public Object apply(TimingHistoryEntry entry) {
 +                    TimingData record = entry.data;
-+                    if (record.count == 0) {
++                    if (!record.hasData()) {
 +                        return null;
 +                    }
 +                    return entry.export();
@@ -907,7 +945,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final double freeMemory = TimingsManager.FULL_SERVER_TICK.avgFreeMemory;
 +        final double loadAvg = ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage();
 +
-+        public List export() {
++        List<Object> export() {
 +            return toArray(
 +                time,
 +                Math.round(tps * 100D) / 100D,
@@ -956,9 +994,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    @SuppressWarnings("WeakerAccess")
-+    public static class Counter {
-+        int count = 0;
++
++    private static class Counter {
++        private int count = 0;
 +        @SuppressWarnings({"rawtypes", "SuppressionAnnotation", "Guava"})
 +        static Function LOADER = new LoadingMap.Feeder<Counter>() {
 +            @Override
@@ -1013,19 +1051,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +class TimingHistoryEntry {
 +    final TimingData data;
-+    final TimingData[] children;
++    private final TimingData[] children;
 +
 +    TimingHistoryEntry(TimingHandler handler) {
 +        this.data = handler.record.clone();
-+        children = new TimingData[handler.children.size()];
-+        int i = 0;
-+        for (TimingData child : handler.children.values()) {
-+            children[i++] = child.clone();
-+        }
++        children = handler.cloneChildren();
 +    }
 +
-+    List export() {
-+        List result = data.export();
++    List<Object> export() {
++        List<Object> result = data.export();
 +        if (children.length > 0) {
 +            result.add(
 +                toArrayMapper(children, new Function<TimingData, Object>() {
@@ -1595,7 +1629,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.io.OutputStream;
 +import java.lang.management.GarbageCollectorMXBean;
 +import java.lang.management.ManagementFactory;
-+import java.lang.management.OperatingSystemMXBean;
 +import java.lang.management.RuntimeMXBean;
 +import java.net.HttpURLConnection;
 +import java.net.InetAddress;
@@ -1616,7 +1649,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final Map out;
 +    private final TimingHistory[] history;
 +
-+    TimingsExport(CommandSender sender, Map out, TimingHistory[] history) {
++    private TimingsExport(CommandSender sender, Map out, TimingHistory[] history) {
 +        super("Timings paste thread");
 +        this.sender = sender;
 +        this.out = out;
@@ -1689,7 +1722,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        Map handlers = createObject();
 +        for (TimingIdentifier.TimingGroup group : TimingIdentifier.GROUP_MAP.values()) {
 +            for (TimingHandler id : group.handlers) {
-+                if (!id.timed && !id.isSpecial()) {
++                if (!id.isTimed() && !id.isSpecial()) {
 +                    continue;
 +                }
 +                handlers.put(id.id, toArray(
@@ -1856,7 +1889,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        try {
 +            HttpURLConnection con = (HttpURLConnection) new URL("http://timings.aikar.co/post").openConnection();
 +            con.setDoOutput(true);
-+            con.setRequestProperty("User-Agent", "Spigot/" + Bukkit.getServerName() + "/" + InetAddress.getLocalHost().getHostName());
++            String hostName = "BrokenHost";
++            try {
++                hostName = InetAddress.getLocalHost().getHostName();
++            } catch(Exception ignored) {}
++            con.setRequestProperty("User-Agent", "Paper/" + Bukkit.getServerName() + "/" + hostName);
 +            con.setRequestMethod("POST");
 +            con.setInstanceFollowRedirects(false);
 +
