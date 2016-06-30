@@ -442,7 +442,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return false;
         }
 
-        if (entity.playerConnection == null || entity.playerConnection.isDisconnected()) {
+        if (entity.playerConnection == null) {
            return false;
         }
 
