@@ -1304,10 +1304,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         injectScaledMaxHealth(set, true);
 
         getHandle().getDataWatcher().set(EntityLiving.HEALTH, (float) getScaledHealth());
-        getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateHealth(getScaledHealth(), getHandle().getFoodData().getFoodLevel(), getHandle().getFoodData().getSaturationLevel()));
+        sendHealthUpdate();
         getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateAttributes(getHandle().getId(), set));
 
         getHandle().maxHealthCache = getMaxHealth();
+    }
+
+    public void sendHealthUpdate() {
+        getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateHealth(getScaledHealth(), getHandle().getFoodData().getFoodLevel(), getHandle().getFoodData().getSaturationLevel()));
     }
 
     public void injectScaledMaxHealth(Collection collection, boolean force) {
