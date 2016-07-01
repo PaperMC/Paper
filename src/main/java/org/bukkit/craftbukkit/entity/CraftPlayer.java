@@ -430,7 +430,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             }
         }
 
-        PacketPlayOutMap packet = new PacketPlayOutMap(map.getId(), map.getScale().getValue(), true, icons, data.buffer, 0, 0, 0, 0);
+        PacketPlayOutMap packet = new PacketPlayOutMap(map.getId(), map.getScale().getValue(), true, icons, data.buffer, 0, 0, 128, 128);
         getHandle().playerConnection.sendPacket(packet);
     }
 
