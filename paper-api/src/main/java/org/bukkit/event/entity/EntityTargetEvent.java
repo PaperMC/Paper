@@ -143,6 +143,11 @@ public class EntityTargetEvent extends EntityEvent implements Cancellable {
          */
         CLOSEST_ENTITY,
         /**
+         * When another entity tempts this entity by having a desired item such
+         * as wheat in it's hand.
+         */
+        TEMPT,
+        /**
          * A currently unknown reason for the entity changing target.
          */
         UNKNOWN;
