@@ -169,6 +169,10 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
          */
         TRAP,
         /**
+         * When an entity is spawned as a result of ender pearl usage
+         */
+        ENDER_PEARL,
+        /**
          * When a creature is spawned by plugins
          */
         CUSTOM,
