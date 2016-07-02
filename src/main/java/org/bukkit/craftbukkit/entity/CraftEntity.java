@@ -275,7 +275,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public void remove() {
-        entity.dead = true;
+        entity.die();
     }
 
     public boolean isDead() {
