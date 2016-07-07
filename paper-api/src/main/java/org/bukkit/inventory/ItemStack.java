@@ -359,7 +359,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
 
     @Override
     @Utility
-    public final int hashCode() {
+    public int hashCode() {
         int hash = 1;
 
         hash = hash * 31 + getTypeId();
