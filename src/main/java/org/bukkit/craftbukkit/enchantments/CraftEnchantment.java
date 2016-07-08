@@ -47,6 +47,8 @@ public class CraftEnchantment extends Enchantment {
             return EnchantmentTarget.BOW;
         case FISHING_ROD:
             return EnchantmentTarget.FISHING_ROD;
+        case BREAKABLE:
+            return EnchantmentTarget.BREAKABLE;
         default:
             return null;
         }
