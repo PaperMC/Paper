@@ -150,6 +150,16 @@ public enum EnchantmentTarget {
         public boolean includes(Material item) {
             return item.equals(Material.FISHING_ROD);
         }
+    },
+
+    /**
+     * Allows the enchantment to be placed on items with durability.
+     */
+    BREAKABLE {
+        @Override
+        public boolean includes(Material item) {
+            return item.getMaxDurability() > 0 && item.getMaxStackSize() == 1;
+        }
     };
 
     /**
