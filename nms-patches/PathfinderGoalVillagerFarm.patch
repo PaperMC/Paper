@@ -1,0 +1,49 @@
+--- a/net/minecraft/server/PathfinderGoalVillagerFarm.java
++++ b/net/minecraft/server/PathfinderGoalVillagerFarm.java
+@@ -48,7 +48,11 @@
+             Block block = iblockdata.getBlock();
+ 
+             if (this.f == 0 && block instanceof BlockCrops && ((BlockCrops) block).y(iblockdata)) {
+-                world.setAir(blockposition, true);
++                // CraftBukkit start
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.c, blockposition, Blocks.AIR, 0).isCancelled()) {
++                    world.setAir(blockposition, true);
++                }
++                // CraftBukkit end
+             } else if (this.f == 1 && iblockdata.getMaterial() == Material.AIR) {
+                 InventorySubcontainer inventorysubcontainer = this.c.dj();
+ 
+@@ -57,19 +61,29 @@
+                     boolean flag = false;
+ 
+                     if (itemstack != null) {
++                        // CraftBukkit start
++                        Block planted = null;
++
+                         if (itemstack.getItem() == Items.WHEAT_SEEDS) {
+-                            world.setTypeAndData(blockposition, Blocks.WHEAT.getBlockData(), 3);
++                            planted = Blocks.WHEAT;
+                             flag = true;
+                         } else if (itemstack.getItem() == Items.POTATO) {
+-                            world.setTypeAndData(blockposition, Blocks.POTATOES.getBlockData(), 3);
++                            planted = Blocks.POTATOES;
+                             flag = true;
+                         } else if (itemstack.getItem() == Items.CARROT) {
+-                            world.setTypeAndData(blockposition, Blocks.CARROTS.getBlockData(), 3);
++                            planted = Blocks.CARROTS;
+                             flag = true;
+                         } else if (itemstack.getItem() == Items.BEETROOT_SEEDS) {
+-                            world.setTypeAndData(blockposition, Blocks.BEETROOT.getBlockData(), 3);
++                            planted = Blocks.BEETROOT;
+                             flag = true;
+                         }
++
++                        if (planted != null && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.c, blockposition, planted, 0).isCancelled()) {
++                            world.setTypeAndData(blockposition, planted.getBlockData(), 3);
++                        } else {
++                            flag = false;
++                        }
++                        // CraftBukkit end
+                     }
+ 
+                     if (flag) {

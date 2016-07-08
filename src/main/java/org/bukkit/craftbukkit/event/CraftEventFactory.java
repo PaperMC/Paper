@@ -686,8 +686,8 @@ public class CraftEventFactory {
         return callEntityChangeBlockEvent(entity.getBukkitEntity(), block, material, 0, cancelled);
     }
 
-    public static EntityChangeBlockEvent callEntityChangeBlockEvent(Entity entity, int x, int y, int z, net.minecraft.server.Block type, int data) {
-        Block block = entity.world.getWorld().getBlockAt(x, y, z);
+    public static EntityChangeBlockEvent callEntityChangeBlockEvent(Entity entity, BlockPosition position, net.minecraft.server.Block type, int data) {
+        Block block = entity.world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ());
         Material material = CraftMagicNumbers.getMaterial(type);
 
         return callEntityChangeBlockEvent(entity.getBukkitEntity(), block, material, data);
