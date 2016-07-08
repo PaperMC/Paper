@@ -27,6 +27,7 @@ import java.util.Map;
 import net.minecraft.server.Block;
 import net.minecraft.server.Blocks;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.enchantments.EnchantmentTarget;
 
 @RunWith(Parameterized.class)
 public class PerMaterialTest extends AbstractTestingBase {
@@ -144,6 +145,15 @@ public class PerMaterialTest extends AbstractTestingBase {
             assertThat(material.hasGravity(), is(CraftMagicNumbers.getBlock(material) instanceof BlockFalling));
         } else {
             assertFalse(material.hasGravity());
+        }
+    }
+
+    @Test
+    public void usesDurability() {
+        if (!material.isBlock()) {
+            assertThat(EnchantmentTarget.BREAKABLE.includes(material), is(CraftMagicNumbers.getItem(material).usesDurability()));
+        } else {
+            assertFalse(EnchantmentTarget.BREAKABLE.includes(material));
         }
     }
 }
