@@ -23,17 +23,21 @@ public abstract class InventoryView {
          */
         BREW_TIME(0, InventoryType.BREWING),
         /**
-         * The progress of the right-pointing arrow in a furnace inventory.
-         */
-        COOK_TIME(0, InventoryType.FURNACE),
-        /**
          * The progress of the flame in a furnace inventory.
          */
-        BURN_TIME(1, InventoryType.FURNACE),
+        BURN_TIME(0, InventoryType.FURNACE),
         /**
          * How many total ticks the current fuel should last.
          */
-        TICKS_FOR_CURRENT_FUEL(2, InventoryType.FURNACE),
+        TICKS_FOR_CURRENT_FUEL(1, InventoryType.FURNACE),
+        /**
+         * The progress of the right-pointing arrow in a furnace inventory.
+         */
+        COOK_TIME(2, InventoryType.FURNACE),
+        /**
+         * How many total ticks the current smelting should last.
+         */
+        TICKS_FOR_CURRENT_SMELTING(3, InventoryType.FURNACE),
         /**
          * In an enchanting inventory, the top button's experience level
          * value.
@@ -48,7 +52,51 @@ public abstract class InventoryView {
          * In an enchanting inventory, the bottom button's experience level
          * value.
          */
-        ENCHANT_BUTTON3(2, InventoryType.ENCHANTING);
+        ENCHANT_BUTTON3(2, InventoryType.ENCHANTING),
+        /**
+         * In an enchanting inventory, the first four bits of the player's xpSeed.
+         */
+        ENCHANT_XP_SEED(3, InventoryType.ENCHANTING),
+        /**
+         * In an enchanting inventory, the top button's enchantment's id
+         */
+        ENCHANT_ID1(4, InventoryType.ENCHANTING),
+        /**
+         * In an enchanting inventory, the middle button's enchantment's id
+         */
+        ENCHANT_ID2(5, InventoryType.ENCHANTING),
+        /**
+         * In an enchanting inventory, the bottom button's enchantment's id
+         */
+        ENCHANT_ID3(6, InventoryType.ENCHANTING),
+        /**
+         * In an enchanting inventory, the top button's level value.
+         */
+        ENCHANT_LEVEL1(7, InventoryType.ENCHANTING),
+        /**
+         * In an enchanting inventory, the middle button's level value.
+         */
+        ENCHANT_LEVEL2(8, InventoryType.ENCHANTING),
+        /**
+         * In an enchanting inventory, the bottom button's level value.
+         */
+        ENCHANT_LEVEL3(9, InventoryType.ENCHANTING),
+        /**
+         * In an beacon inventory, the levels of the beacon
+         */
+        LEVELS(0, InventoryType.BEACON),
+        /**
+         * In an beacon inventory, the primary potion effect
+         */
+        PRIMARY_EFFECT(1, InventoryType.BEACON),
+        /**
+         * In an beacon inventory, the secondary potion effect
+         */
+        SECONDARY_EFFECT(2, InventoryType.BEACON),
+        /**
+         * The repair's cost in xp levels
+         */
+        REPAIR_COST(0, InventoryType.ANVIL);
         int id;
         InventoryType style;
         private Property(int id, InventoryType appliesTo) {
