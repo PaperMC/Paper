@@ -10,9 +10,33 @@ import org.bukkit.event.HandlerList;
 public class ChunkUnloadEvent extends ChunkEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel = false;
+    private boolean saveChunk;
 
     public ChunkUnloadEvent(final Chunk chunk) {
+        this(chunk, true);
+    }
+
+    public ChunkUnloadEvent(Chunk chunk, boolean save) {
         super(chunk);
+        this.saveChunk = save;
+    }
+
+    /**
+     * Return whether this chunk will be saved to disk.
+     *
+     * @return chunk save status
+     */
+    public boolean isSaveChunk() {
+        return saveChunk;
+    }
+
+    /**
+     * Set whether this chunk will be saved to disk.
+     *
+     * @param saveChunk chunk save status
+     */
+    public void setSaveChunk(boolean saveChunk) {
+        this.saveChunk = saveChunk;
     }
 
     public boolean isCancelled() {
