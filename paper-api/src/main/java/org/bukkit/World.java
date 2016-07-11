@@ -475,6 +475,16 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public Location getSpawnLocation();
 
     /**
+     * Sets the spawn location of the world.
+     * <br>
+     * The location provided must be equal to this world.
+     *
+     * @param location The {@link Location} to set the spawn for this world at.
+     * @return True if it was successfully set.
+     */
+    public boolean setSpawnLocation(Location location);
+
+    /**
      * Sets the spawn location of the world
      *
      * @param x X coordinate
