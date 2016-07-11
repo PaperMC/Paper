@@ -112,6 +112,13 @@ public class CraftWorld implements World {
         return new Location(this, spawn.getX(), spawn.getY(), spawn.getZ());
     }
 
+    @Override
+    public boolean setSpawnLocation(Location location) {
+        Preconditions.checkArgument(location != null, "location");
+
+        return equals(location.getWorld()) ? setSpawnLocation(location.getBlockX(), location.getBlockY(), location.getBlockZ()) : false;
+    }
+
     public boolean setSpawnLocation(int x, int y, int z) {
         try {
             Location previousLocation = getSpawnLocation();
