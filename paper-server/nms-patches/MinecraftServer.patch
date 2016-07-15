@@ -1,42 +1,20 @@
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -14,7 +14,15 @@
- import io.netty.buffer.ByteBufOutputStream;
- import io.netty.buffer.Unpooled;
- import io.netty.handler.codec.base64.Base64;
--import java.awt.GraphicsEnvironment;
-+import jline.console.ConsoleReader;
-+import joptsimple.OptionSet;
-+import org.apache.commons.lang3.Validate;
-+import org.apache.logging.log4j.LogManager;
-+import org.apache.logging.log4j.Logger;
-+import org.bukkit.craftbukkit.Main;
-+
-+import javax.imageio.ImageIO;
-+import java.awt.*;
- import java.awt.image.BufferedImage;
- import java.io.File;
- import java.io.IOException;
-@@ -25,7 +33,6 @@
- import java.util.Arrays;
- import java.util.Collections;
- import java.util.Date;
--import java.util.Iterator;
- import java.util.List;
- import java.util.Queue;
- import java.util.Random;
-@@ -39,6 +46,10 @@
+@@ -38,6 +38,13 @@
+ import org.apache.commons.lang3.Validate;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
- 
 +// CraftBukkit start
++import jline.console.ConsoleReader;
++import joptsimple.OptionSet;
 +import org.bukkit.Bukkit;
 +import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.craftbukkit.Main;
 +// CraftBukkit end
+ 
  public abstract class MinecraftServer implements Runnable, ICommandListener, IAsyncTaskHandler, IMojangStatistics {
  
-     public static final Logger LOGGER = LogManager.getLogger();
-@@ -94,19 +105,61 @@
+@@ -94,19 +101,61 @@
      private Thread serverThread;
      private long aa = av();
  
@@ -101,7 +79,7 @@
      protected CommandDispatcher i() {
          return new CommandDispatcher(this);
      }
-@@ -144,6 +197,7 @@
+@@ -144,6 +193,7 @@
          this.a(s);
          this.b("menu.loadingLevel");
          this.worldServer = new WorldServer[3];
@@ -109,7 +87,7 @@
          this.i = new long[this.worldServer.length][100];
          IDataManager idatamanager = this.convertable.a(s, true);
  
-@@ -167,36 +221,108 @@
+@@ -167,36 +217,108 @@
              worlddata.a(s1);
              worldsettings = new WorldSettings(worlddata);
          }
@@ -229,7 +207,7 @@
          this.v.setPlayerFileData(this.worldServer);
          this.a(this.getDifficulty());
          this.l();
-@@ -212,25 +338,38 @@
+@@ -212,25 +334,38 @@
          this.b("menu.generatingTerrain");
          boolean flag4 = false;
  
@@ -283,7 +261,7 @@
          this.t();
      }
  
-@@ -266,14 +405,17 @@
+@@ -266,14 +401,17 @@
      protected void t() {
          this.f = null;
          this.g = 0;
@@ -303,7 +281,7 @@
  
              if (worldserver != null) {
                  if (!flag) {
-@@ -282,6 +424,7 @@
+@@ -282,6 +420,7 @@
  
                  try {
                      worldserver.save(true, (IProgressUpdate) null);
@@ -311,7 +289,7 @@
                  } catch (ExceptionWorldConflict exceptionworldconflict) {
                      MinecraftServer.LOGGER.warn(exceptionworldconflict.getMessage());
                  }
-@@ -290,8 +433,24 @@
+@@ -290,8 +429,24 @@
  
      }
  
@@ -337,7 +315,7 @@
          if (this.am() != null) {
              this.am().b();
          }
-@@ -300,6 +459,7 @@
+@@ -300,6 +455,7 @@
              MinecraftServer.LOGGER.info("Saving players");
              this.v.savePlayers();
              this.v.u();
@@ -345,7 +323,7 @@
          }
  
          if (this.worldServer != null) {
-@@ -321,12 +481,14 @@
+@@ -321,12 +477,14 @@
              aworldserver = this.worldServer;
              i = aworldserver.length;
  
@@ -360,7 +338,7 @@
          }
  
          if (this.m.d()) {
-@@ -366,6 +528,7 @@
+@@ -366,6 +524,7 @@
                      long k = j - this.aa;
  
                      if (k > 2000L && this.aa - this.Q >= 15000L) {
@@ -368,7 +346,7 @@
                          MinecraftServer.LOGGER.warn("Can\'t keep up! Did the system time change, or is the server overloaded? Running {}ms behind, skipping {} tick(s)", new Object[] { Long.valueOf(k), Long.valueOf(k / 50L)});
                          k = 2000L;
                          this.Q = this.aa;
-@@ -378,11 +541,12 @@
+@@ -378,11 +537,12 @@
  
                      i += k;
                      this.aa = j;
@@ -382,7 +360,7 @@
                              i -= 50L;
                              this.C();
                          }
-@@ -420,6 +584,12 @@
+@@ -420,6 +580,12 @@
              } catch (Throwable throwable1) {
                  MinecraftServer.LOGGER.error("Exception stopping the server", throwable1);
              } finally {
@@ -395,7 +373,7 @@
                  this.B();
              }
  
-@@ -463,7 +633,7 @@
+@@ -463,7 +629,7 @@
  
      public void B() {}
  
@@ -404,7 +382,7 @@
          long i = System.nanoTime();
  
          ++this.ticks;
-@@ -489,7 +659,7 @@
+@@ -489,7 +655,7 @@
              this.q.b().a(agameprofile);
          }
  
@@ -413,7 +391,7 @@
              this.methodProfiler.a("save");
              this.v.savePlayers();
              this.saveChunks(true);
-@@ -513,6 +683,7 @@
+@@ -513,6 +679,7 @@
      }
  
      public void D() {
@@ -421,7 +399,7 @@
          this.methodProfiler.a("jobs");
          Queue queue = this.j;
  
-@@ -524,20 +695,38 @@
+@@ -524,20 +691,38 @@
  
          this.methodProfiler.c("levels");
  
@@ -463,7 +441,7 @@
  
                  this.methodProfiler.a("tick");
  
-@@ -564,9 +753,9 @@
+@@ -564,9 +749,9 @@
                  worldserver.getTracker().updatePlayers();
                  this.methodProfiler.b();
                  this.methodProfiler.b();
@@ -475,7 +453,7 @@
          }
  
          this.methodProfiler.c("connection");
-@@ -590,10 +779,11 @@
+@@ -590,10 +775,11 @@
          this.o.add(itickable);
      }
  
@@ -488,7 +466,7 @@
              boolean flag = true;
              String s = null;
              String s1 = ".";
-@@ -638,13 +828,16 @@
+@@ -638,13 +824,16 @@
                      ++j;
                  }
              }
@@ -506,7 +484,7 @@
              if (s != null) {
                  dedicatedserver.i(s);
              }
-@@ -675,6 +868,25 @@
+@@ -675,6 +864,25 @@
                      dedicatedserver.stop();
                  }
              });
@@ -532,7 +510,7 @@
          } catch (Exception exception) {
              MinecraftServer.LOGGER.fatal("Failed to start the minecraft server", exception);
          }
-@@ -682,8 +894,10 @@
+@@ -682,8 +890,10 @@
      }
  
      public void F() {
@@ -543,7 +521,7 @@
      }
  
      public File d(String s) {
-@@ -699,7 +913,14 @@
+@@ -699,7 +909,14 @@
      }
  
      public WorldServer getWorldServer(int i) {
@@ -559,7 +537,7 @@
      }
  
      public String getVersion() {
-@@ -723,7 +944,7 @@
+@@ -723,7 +940,7 @@
      }
  
      public boolean isDebugging() {
@@ -568,7 +546,7 @@
      }
  
      public void g(String s) {
-@@ -738,7 +959,7 @@
+@@ -738,7 +955,7 @@
      }
  
      public String getServerModName() {
@@ -577,7 +555,7 @@
      }
  
      public CrashReport b(CrashReport crashreport) {
-@@ -767,6 +988,7 @@
+@@ -767,6 +984,7 @@
      }
  
      public List<String> tabCompleteCommand(ICommandListener icommandlistener, String s, @Nullable BlockPosition blockposition, boolean flag) {
@@ -585,7 +563,7 @@
          ArrayList arraylist = Lists.newArrayList();
          boolean flag1 = s.startsWith("/");
  
-@@ -809,10 +1031,13 @@
+@@ -809,10 +1027,13 @@
  
              return arraylist;
          }
@@ -600,7 +578,7 @@
      }
  
      public String getName() {
-@@ -868,11 +1093,13 @@
+@@ -868,11 +1089,13 @@
      }
  
      public void a(EnumDifficulty enumdifficulty) {
@@ -617,7 +595,7 @@
  
              if (worldserver != null) {
                  if (worldserver.getWorldData().isHardcore()) {
-@@ -939,13 +1166,11 @@
+@@ -939,13 +1162,11 @@
          int i = 0;
  
          if (this.worldServer != null) {
@@ -635,7 +613,7 @@
                      WorldData worlddata = worldserver.getWorldData();
  
                      mojangstatisticsgenerator.a("world[" + i + "][dimension]", Integer.valueOf(worldserver.worldProvider.getDimensionManager().getDimensionID()));
-@@ -978,7 +1203,7 @@
+@@ -978,7 +1199,7 @@
      public abstract boolean aa();
  
      public boolean getOnlineMode() {
@@ -644,7 +622,7 @@
      }
  
      public void setOnlineMode(boolean flag) {
-@@ -1050,13 +1275,9 @@
+@@ -1050,13 +1271,9 @@
      }
  
      public void setGamemode(EnumGamemode enumgamemode) {
@@ -661,7 +639,7 @@
          }
  
      }
-@@ -1088,7 +1309,7 @@
+@@ -1088,7 +1305,7 @@
      }
  
      public World getWorld() {
@@ -670,7 +648,7 @@
      }
  
      public Entity f() {
-@@ -1160,8 +1381,10 @@
+@@ -1160,8 +1377,10 @@
          WorldServer[] aworldserver = this.worldServer;
          int i = aworldserver.length;
  
@@ -683,7 +661,7 @@
  
              if (worldserver != null) {
                  Entity entity = worldserver.getEntity(uuid);
-@@ -1176,7 +1399,7 @@
+@@ -1176,7 +1395,7 @@
      }
  
      public boolean getSendCommandFeedback() {
@@ -692,7 +670,7 @@
      }
  
      public void a(CommandObjectiveExecutor.EnumCommandResult commandobjectiveexecutor_enumcommandresult, int i) {}
-@@ -1191,7 +1414,7 @@
+@@ -1191,7 +1410,7 @@
  
      public <V> ListenableFuture<V> a(Callable<V> callable) {
          Validate.notNull(callable);
@@ -701,7 +679,7 @@
              ListenableFutureTask listenablefuturetask = ListenableFutureTask.create(callable);
              Queue queue = this.j;
  
-@@ -1236,4 +1459,11 @@
+@@ -1236,4 +1455,11 @@
      public int a(@Nullable WorldServer worldserver) {
          return worldserver != null ? worldserver.getGameRules().c("spawnRadius") : 10;
      }
