@@ -1,0 +1,71 @@
+From 86f0e7cbd8a6e8dea5171f523e8e721b8e905d13 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 17 Jun 2016 20:50:11 -0400
+Subject: [PATCH] Fix Old Sign Conversion
+
+1) Sign loading code was trying to parse the JSON before the check for oldSign.
+   That code could then skip the old sign converting code if it triggers a JSON parse exception.
+2) New Mojang Schematic system has Tile Entities in the new converted format, but missing the Bukkit.isConverted flag
+   This causes Igloos and such to render broken signs. We fix this by ignoring sign conversion for Defined Structures
+
+diff --git a/src/main/java/net/minecraft/server/DefinedStructure.java b/src/main/java/net/minecraft/server/DefinedStructure.java
+index dc795bd..15c63c6 100644
+--- a/src/main/java/net/minecraft/server/DefinedStructure.java
++++ b/src/main/java/net/minecraft/server/DefinedStructure.java
+@@ -203,9 +203,11 @@ public class DefinedStructure {
+                                 definedstructure_blockinfo1.c.setInt("x", blockposition1.getX());
+                                 definedstructure_blockinfo1.c.setInt("y", blockposition1.getY());
+                                 definedstructure_blockinfo1.c.setInt("z", blockposition1.getZ());
++                                tileentity.isLoadingStructure = true; // Paper
+                                 tileentity.a(definedstructure_blockinfo1.c);
+                                 tileentity.a(definedstructureinfo.b());
+                                 tileentity.a(definedstructureinfo.c());
++                                tileentity.isLoadingStructure = false; // Paper
+                             }
+                         }
+                     }
+@@ -609,7 +611,7 @@ public class DefinedStructure {
+         public IBlockData a(int i) {
+             IBlockData iblockdata = (IBlockData) this.b.fromId(i);
+ 
+-            return iblockdata == null ? DefinedStructure.a.a : iblockdata;
++            return iblockdata == null ? a : iblockdata; // Paper - decompile error - Blocks.AIR.getBlockData()
+         }
+ 
+         public Iterator<IBlockData> iterator() {
+diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
+index cd39fe5..f4c84bf 100644
+--- a/src/main/java/net/minecraft/server/TileEntity.java
++++ b/src/main/java/net/minecraft/server/TileEntity.java
+@@ -13,6 +13,7 @@ import org.bukkit.inventory.InventoryHolder; // CraftBukkit
+ public abstract class TileEntity {
+ 
+     public Timing tickTimer = MinecraftTimings.getTileEntityTimings(this); // Paper
++    boolean isLoadingStructure = false; // Paper
+     private static final Logger a = LogManager.getLogger();
+     private static final Map<String, Class<? extends TileEntity>> f = Maps.newHashMap();
+     private static final Map<Class<? extends TileEntity>, String> g = Maps.newHashMap();
+diff --git a/src/main/java/net/minecraft/server/TileEntitySign.java b/src/main/java/net/minecraft/server/TileEntitySign.java
+index 5694ff7..f5ba2dd 100644
+--- a/src/main/java/net/minecraft/server/TileEntitySign.java
++++ b/src/main/java/net/minecraft/server/TileEntitySign.java
+@@ -93,13 +93,14 @@ public class TileEntitySign extends TileEntity {
+             }
+ 
+             try {
+-                IChatBaseComponent ichatbasecomponent = IChatBaseComponent.ChatSerializer.a(s);
++                //IChatBaseComponent ichatbasecomponent = IChatBaseComponent.ChatSerializer.a(s); // Paper - move down - the old format might throw a json error
+ 
+-                if (oldSign) {
++                if (oldSign && !isLoadingStructure) { // Paper - saved structures will be in the new format, but will not have isConverted
+                     lines[i] = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(s)[0];
+                     continue;
+                 }
+                 // CraftBukkit end
++                IChatBaseComponent ichatbasecomponent = IChatBaseComponent.ChatSerializer.a(s); // Paper - after old sign
+ 
+                 try {
+                     this.lines[i] = ChatComponentUtils.filterForDisplay(icommandlistener, ichatbasecomponent, (Entity) null);
+-- 
+2.9.0
+
