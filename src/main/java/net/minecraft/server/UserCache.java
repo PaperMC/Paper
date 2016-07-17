@@ -89,7 +89,7 @@ public class UserCache {
         gameprofilerepository.findProfilesByNames(new String[]{s}, Agent.MINECRAFT, profilelookupcallback);
         GameProfile gameprofile = (GameProfile) atomicreference.get();
 
-        if (!c() && gameprofile == null) {
+        if (!c() && gameprofile == null && !org.apache.commons.lang3.StringUtils.isBlank(s)) { // Paper - Don't lookup a profile with a blank name
             UUID uuid = EntityHuman.a(new GameProfile((UUID) null, s));
 
             gameprofile = new GameProfile(uuid, s);
