@@ -1,18 +1,27 @@
 --- a/net/minecraft/server/TileEntityBeacon.java
 +++ b/net/minecraft/server/TileEntityBeacon.java
-@@ -9,6 +9,11 @@
+@@ -9,19 +9,61 @@
  import java.util.Set;
  import javax.annotation.Nullable;
  
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.entity.CraftHumanEntity;
++import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 +import org.bukkit.entity.HumanEntity;
++import org.bukkit.potion.PotionEffect;
 +// CraftBukkit end
 +
  public class TileEntityBeacon extends TileEntityContainer implements ITickable, IWorldInventory {
  
      public static final MobEffectList[][] a = new MobEffectList[][] { { MobEffects.FASTER_MOVEMENT, MobEffects.FASTER_DIG}, { MobEffects.RESISTANCE, MobEffects.JUMP}, { MobEffects.INCREASE_DAMAGE}, { MobEffects.REGENERATION}};
-@@ -22,6 +27,30 @@
+     private static final Set<MobEffectList> f = Sets.newHashSet();
+     private final List<TileEntityBeacon.BeaconColorTracker> g = Lists.newArrayList();
+     private boolean j;
+-    private int k = -1;
++    public int k = -1; // PAIL: private -> public
+     @Nullable
+     private MobEffectList l;
+     @Nullable
      private MobEffectList m;
      private ItemStack inventorySlot;
      private String o;
@@ -39,7 +48,107 @@
 +    public void setMaxStackSize(int size) {
 +        maxStack = size;
 +    }
++
++    public PotionEffect getPrimaryEffect() {
++        return CraftPotionUtil.toBukkit(new MobEffect(this.l, getLevel(), getAmplification(), true, true));
++    }
++
++    public PotionEffect getSecondaryEffect() {
++        if (hasSecondaryEffect()) {
++            return CraftPotionUtil.toBukkit(new MobEffect(this.m, getLevel(), getAmplification(), true, true));
++        }
++        return null;
++    }
 +    // CraftBukkit end
  
      public TileEntityBeacon() {}
  
+@@ -40,41 +82,79 @@
+ 
+     }
+ 
+-    private void E() {
+-        if (this.j && this.k > 0 && !this.world.isClientSide && this.l != null) {
+-            double d0 = (double) (this.k * 10 + 10);
++    // CraftBukkit start - split into components
++    private byte getAmplification() {
++        {
+             byte b0 = 0;
+ 
+             if (this.k >= 4 && this.l == this.m) {
+                 b0 = 1;
+             }
+ 
++            return b0;
++        }
++    }
++
++    private int getLevel() {
++        {
+             int i = (9 + this.k * 2) * 20;
++            return i;
++        }
++    }
++
++    public List getHumansInRange() {
++        {
++            double d0 = (double) (this.k * 10 + 10);
++
+             int j = this.position.getX();
+             int k = this.position.getY();
+             int l = this.position.getZ();
+             AxisAlignedBB axisalignedbb = (new AxisAlignedBB((double) j, (double) k, (double) l, (double) (j + 1), (double) (k + 1), (double) (l + 1))).g(d0).a(0.0D, (double) this.world.getHeight(), 0.0D);
+             List list = this.world.a(EntityHuman.class, axisalignedbb);
++
++            return list;
++        }
++    }
++
++    private void applyEffect(List list, MobEffectList effects, int i, int b0) {
++        {
+             Iterator iterator = list.iterator();
+ 
+             EntityHuman entityhuman;
+ 
+             while (iterator.hasNext()) {
+                 entityhuman = (EntityHuman) iterator.next();
+-                entityhuman.addEffect(new MobEffect(this.l, i, b0, true, true));
++                entityhuman.addEffect(new MobEffect(effects, i, b0, true, true));
+             }
++        }
++    }
+ 
++    private boolean hasSecondaryEffect() {
++        {
+             if (this.k >= 4 && this.l != this.m && this.m != null) {
+-                iterator = list.iterator();
++                return true;
++            }
++
++            return false;
++        }
++    }
++
++    private void E() {
++        if (this.j && this.k > 0 && !this.world.isClientSide && this.l != null) {
++            byte b0 = getAmplification();
++
++            int i = getLevel();
++            List list = getHumansInRange();
++
++            applyEffect(list, this.l, i, b0);
+ 
+-                while (iterator.hasNext()) {
+-                    entityhuman = (EntityHuman) iterator.next();
+-                    entityhuman.addEffect(new MobEffect(this.m, i, 0, true, true));
+-                }
++            if (hasSecondaryEffect()) {
++                applyEffect(list, this.m, i, 0);
+             }
+         }
+ 
+     }
++    // CraftBukkit end
+ 
+     private void F() {
+         int i = this.k;

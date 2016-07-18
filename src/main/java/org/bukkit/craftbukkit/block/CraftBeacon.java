@@ -1,13 +1,17 @@
 package org.bukkit.craftbukkit.block;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import net.minecraft.server.EntityHuman;
 import net.minecraft.server.TileEntityBeacon;
 import org.bukkit.Material;
-
-import org.bukkit.block.Block;
 import org.bukkit.block.Beacon;
+import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventoryBeacon;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.potion.PotionEffect;
 
 public class CraftBeacon extends CraftBlockState implements Beacon {
     private final CraftWorld world;
@@ -45,5 +49,31 @@ public class CraftBeacon extends CraftBlockState implements Beacon {
     public TileEntityBeacon getTileEntity() {
         return beacon;
     }
-}
 
+    @Override
+    public Collection<LivingEntity> getEntitiesInRange() {
+        Collection<EntityHuman> nms = beacon.getHumansInRange();
+        Collection<LivingEntity> bukkit = new ArrayList<LivingEntity>(nms.size());
+
+        for (EntityHuman human : nms) {
+            bukkit.add(human.getBukkitEntity());
+        }
+
+        return bukkit;
+    }
+
+    @Override
+    public int getTier() {
+        return beacon.k;
+    }
+
+    @Override
+    public PotionEffect getPrimaryEffect() {
+        return beacon.getPrimaryEffect();
+    }
+
+    @Override
+    public PotionEffect getSecondaryEffect() {
+        return beacon.getSecondaryEffect();
+    }
+}
