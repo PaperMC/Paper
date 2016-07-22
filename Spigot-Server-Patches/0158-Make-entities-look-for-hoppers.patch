@@ -1,4 +1,4 @@
-From 383580daebc049ec250ab08834a38b4a99be07f6 Mon Sep 17 00:00:00 2001
+From c4306f7afe0f8ac12e6a8ab50bc198532fbdef1c Mon Sep 17 00:00:00 2001
 From: Techcable <Techcable@outlook.com>
 Date: Sat, 18 Jun 2016 01:01:37 -0500
 Subject: [PATCH] Make entities look for hoppers
@@ -14,7 +14,7 @@ This patch may causes a decrease in the performance of dropped items, which is w
 
 diff --git a/src/main/java/com/destroystokyo/paper/HopperPusher.java b/src/main/java/com/destroystokyo/paper/HopperPusher.java
 new file mode 100644
-index 0000000..5ff43e2
+index 0000000..aef7c2b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/HopperPusher.java
 @@ -0,0 +1,59 @@
@@ -49,7 +49,7 @@ index 0000000..5ff43e2
 +                     * This operation doesn't work both ways!
 +                     * Make sure you check if the entity's box intersects the hopper's box, not vice versa!
 +                     */
-+                    if (this.getBoundingBox().b(hopperBoundingBox)) {
++                    if (this.getBoundingBox().intersects(hopperBoundingBox)) {
 +                        return hopper;
 +                    }
 +                }
@@ -91,6 +91,18 @@ index cc5e299..b811775 100644
 +        isHopperPushBased = getBoolean("hopper.push-based", true);
 +    }
  }
+diff --git a/src/main/java/net/minecraft/server/AxisAlignedBB.java b/src/main/java/net/minecraft/server/AxisAlignedBB.java
+index 8c64279..39e63be 100644
+--- a/src/main/java/net/minecraft/server/AxisAlignedBB.java
++++ b/src/main/java/net/minecraft/server/AxisAlignedBB.java
+@@ -191,6 +191,7 @@ public class AxisAlignedBB {
+         }
+     }
+ 
++    public final boolean intersects(AxisAlignedBB intersecting) { return this.b(intersecting); }
+     public boolean b(AxisAlignedBB axisalignedbb) {
+         return this.a(axisalignedbb.a, axisalignedbb.b, axisalignedbb.c, axisalignedbb.d, axisalignedbb.e, axisalignedbb.f);
+     }
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
 index d6cc51b..5bbaa87 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
@@ -237,7 +249,7 @@ index 804215a..e830d83 100644
 +    double G(); default double getZ() { return G(); } // Paper - OBFHELPER
  }
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
-index 0d521ca..40cb778 100644
+index 0d521ca..54413cd 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
 +++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
 @@ -170,6 +170,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
@@ -261,7 +273,7 @@ index 0d521ca..40cb778 100644
      }
  
 +    // Paper start
-+    private boolean mayAcceptItems = true;
++    private boolean mayAcceptItems = false;
 +
 +    public boolean canAcceptItems() {
 +        return mayAcceptItems;
@@ -307,7 +319,7 @@ index 0d521ca..40cb778 100644
 +        // Paper start - don't search for entities in push mode
 +        World world = getWorld();
 +        return getInventory(world, this.E() + (double) enumdirection.getAdjacentX(), this.F() + (double) enumdirection.getAdjacentY(), this.G() + (double) enumdirection.getAdjacentZ(), !world.paperConfig.isHopperPushBased);
-+        // Paper endtcon
++        // Paper end
      }
  
 -    public static IInventory b(IHopper ihopper) {
@@ -358,5 +370,5 @@ index 0d521ca..40cb778 100644
  
              if (!list.isEmpty()) {
 -- 
-2.9.0
+2.9.2.windows.1
 
