@@ -181,7 +181,17 @@ public class CraftSkull extends CraftBlockState implements Skull {
 
     @Override
     public OfflinePlayer getOwningPlayer() {
-        return hasOwner() ? Bukkit.getOfflinePlayer(profile.getId()) : null;
+        if (profile != null) {
+            if (profile.getId() != null) {
+                return Bukkit.getOfflinePlayer(profile.getId());
+            }
+
+            if (profile.getName() != null) {
+                return Bukkit.getOfflinePlayer(profile.getName());
+            }
+        }
+
+        return null;
     }
 
     @Override
