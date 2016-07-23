@@ -857,11 +857,7 @@ public class CraftWorld implements World {
         Validate.notNull(material, "Material cannot be null");
         Validate.isTrue(material.isBlock(), "Material must be a block");
 
-        double x = location.getBlockX() + 0.5;
-        double y = location.getBlockY() + 0.5;
-        double z = location.getBlockZ() + 0.5;
-
-        EntityFallingBlock entity = new EntityFallingBlock(world, x, y, z, net.minecraft.server.Block.getById(material.getId()).fromLegacyData(data));
+        EntityFallingBlock entity = new EntityFallingBlock(world, location.getX(), location.getY(), location.getZ(), CraftMagicNumbers.getBlock(material).fromLegacyData(data));
         entity.ticksLived = 1;
 
         world.addEntity(entity, SpawnReason.CUSTOM);
@@ -890,14 +886,7 @@ public class CraftWorld implements World {
         if (Boat.class.isAssignableFrom(clazz)) {
             entity = new EntityBoat(world, x, y, z);
         } else if (FallingBlock.class.isAssignableFrom(clazz)) {
-            x = location.getBlockX();
-            y = location.getBlockY();
-            z = location.getBlockZ();
-            IBlockData blockData = world.getType(new BlockPosition(x, y, z));
-            int type = CraftMagicNumbers.getId(blockData.getBlock());
-            int data = blockData.getBlock().toLegacyData(blockData);
-
-            entity = new EntityFallingBlock(world, x + 0.5, y + 0.5, z + 0.5, net.minecraft.server.Block.getById(type).fromLegacyData(data));
+            entity = new EntityFallingBlock(world, x, y, z, world.getType(new BlockPosition(x, y, z)));
         } else if (Projectile.class.isAssignableFrom(clazz)) {
             if (Snowball.class.isAssignableFrom(clazz)) {
                 entity = new EntitySnowball(world, x, y, z);
