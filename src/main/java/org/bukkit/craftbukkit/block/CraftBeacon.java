@@ -3,15 +3,18 @@ package org.bukkit.craftbukkit.block;
 import java.util.ArrayList;
 import java.util.Collection;
 import net.minecraft.server.EntityHuman;
+import net.minecraft.server.MobEffectList;
 import net.minecraft.server.TileEntityBeacon;
 import org.bukkit.Material;
 import org.bukkit.block.Beacon;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventoryBeacon;
+import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 public class CraftBeacon extends CraftBlockState implements Beacon {
     private final CraftWorld world;
@@ -73,7 +76,17 @@ public class CraftBeacon extends CraftBlockState implements Beacon {
     }
 
     @Override
+    public void setPrimaryEffect(PotionEffectType effect) {
+        beacon.l = (effect != null) ? MobEffectList.fromId(effect.getId()) : null;
+    }
+
+    @Override
     public PotionEffect getSecondaryEffect() {
         return beacon.getSecondaryEffect();
+    }
+
+    @Override
+    public void setSecondaryEffect(PotionEffectType effect) {
+        beacon.m = (effect != null) ? MobEffectList.fromId(effect.getId()) : null;
     }
 }
