@@ -4,6 +4,7 @@ import java.util.Collection;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 /**
  * Represents a beacon.
@@ -29,9 +30,16 @@ public interface Beacon extends BlockState, InventoryHolder {
     /**
      * Returns the primary effect set on the beacon
      *
-     * @return the primary effect
+     * @return the primary effect or null if not set
      */
     PotionEffect getPrimaryEffect();
+
+    /**
+     * Set the primary effect on this beacon, or null to clear.
+     *
+     * @param effect new primary effect
+     */
+    void setPrimaryEffect(PotionEffectType effect);
 
     /**
      * Returns the secondary effect set on the beacon.
@@ -39,4 +47,12 @@ public interface Beacon extends BlockState, InventoryHolder {
      * @return the secondary effect or null if no secondary effect
      */
     PotionEffect getSecondaryEffect();
+
+    /**
+     * Set the secondary effect on this beacon, or null to clear. Note that tier
+     * must be >= 4 for this effect to be active.
+     *
+     * @param effect desired secondary effect
+     */
+    void setSecondaryEffect(PotionEffectType effect);
 }
