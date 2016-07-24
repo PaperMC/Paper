@@ -205,7 +205,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     /**
      * Gets the amount of items in this stack
      *
-     * @return Amount of items in this stick
+     * @return Amount of items in this stack
      */
     public int getAmount() {
         return amount;
