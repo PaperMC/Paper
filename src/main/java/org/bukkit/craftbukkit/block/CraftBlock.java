@@ -173,11 +173,11 @@ public class CraftBlock implements Block {
     }
 
     public byte getLightFromSky() {
-        return (byte) chunk.getHandle().getBrightness(EnumSkyBlock.SKY, new BlockPosition(this.x, this.y, this.z));
+        return (byte) chunk.getHandle().getWorld().b(EnumSkyBlock.SKY, new BlockPosition(this.x, this.y, this.z)); // PAIL: rename
     }
 
     public byte getLightFromBlocks() {
-        return (byte) chunk.getHandle().getBrightness(EnumSkyBlock.BLOCK, new BlockPosition(this.x, this.y, this.z));
+        return (byte) chunk.getHandle().getWorld().b(EnumSkyBlock.BLOCK, new BlockPosition(this.x, this.y, this.z)); // PAIL: rename
     }
 
 
