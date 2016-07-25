@@ -22,16 +22,9 @@ import org.bukkit.entity.minecart.CommandMinecart;
 public final class VanillaCommandWrapper extends VanillaCommand {
     protected final CommandAbstract vanillaCommand;
 
-    public VanillaCommandWrapper(CommandAbstract vanillaCommand) {
-        super(vanillaCommand.getCommand());
-        this.vanillaCommand = vanillaCommand;
-    }
-
     public VanillaCommandWrapper(CommandAbstract vanillaCommand, String usage) {
-        super(vanillaCommand.getCommand());
+        super(vanillaCommand.getCommand(), "A Mojang provided command.", usage, vanillaCommand.b()); // PAIL: rename
         this.vanillaCommand = vanillaCommand;
-        this.description = "A Mojang provided command.";
-        this.usageMessage = usage;
         this.setPermission("minecraft.command." + vanillaCommand.getCommand());
     }
 
