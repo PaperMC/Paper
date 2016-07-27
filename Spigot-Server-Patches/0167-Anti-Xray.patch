@@ -1,6 +1,6 @@
-From 00c7f062c72bbed69578cddf0f21e236afaadb0c Mon Sep 17 00:00:00 2001
+From 3fa431cbdb0f2f8aaeccc6b386d1e7f8791d7517 Mon Sep 17 00:00:00 2001
 From: BuildTools <unconfigured@null.spigotmc.org>
-Date: Mon, 27 Jun 2016 22:47:40 +0200
+Date: Wed, 27 Jul 2016 07:15:47 +0200
 Subject: [PATCH] Anti-Xray
 
 
@@ -764,7 +764,7 @@ index 0b9bc91..6a6e2ee 100644
                  if (flag) {
                      double d0 = (double) ((float) blockposition.getX() + this.world.random.nextFloat());
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index d59fca4..1da7390 100644
+index d59fca4..8d9f440 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
 @@ -138,8 +138,8 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
@@ -789,7 +789,7 @@ index d59fca4..1da7390 100644
              this.a(packet, (GenericFutureListener[]) ArrayUtils.add(agenericfuturelistener, 0, genericfuturelistener));
          } else {
              this.j.writeLock().lock();
-@@ -210,21 +210,28 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -210,21 +210,32 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
  
      }
  
@@ -801,14 +801,19 @@ index d59fca4..1da7390 100644
              try {
                  while (!this.i.isEmpty()) {
 -                    NetworkManager.QueuedPacket networkmanager_queuedpacket = (NetworkManager.QueuedPacket) this.i.poll();
-+                    NetworkManager.QueuedPacket networkmanager_queuedpacket = (NetworkManager.QueuedPacket) this.i.peek(); // Paper - Async-Anti-Xray - poll() -> peek()
- 
+-
 -                    this.a(networkmanager_queuedpacket.a, networkmanager_queuedpacket.b);
-+                    if (networkmanager_queuedpacket.a instanceof PacketPlayOutMapChunk && !((PacketPlayOutMapChunk) networkmanager_queuedpacket.a).isReady()) { // Paper - Async-Anti-Xray - Return false if the queue contains a not ready chunk packet
-+                        return false; // Paper - Aync-Anti-Xray
++                    NetworkManager.QueuedPacket networkmanager_queuedpacket = (NetworkManager.QueuedPacket) this.i.peek(); // Paper - Async-Anti-Xray - poll() -> peek()
++
++                    if (networkmanager_queuedpacket != null) { // Paper - Aync-Anti-Xray - Fix NPE (possible vanilla bug caused by handleDisconnection())
++                        if (networkmanager_queuedpacket.a instanceof PacketPlayOutMapChunk && !((PacketPlayOutMapChunk) networkmanager_queuedpacket.a).isReady()) { // Paper - Async-Anti-Xray - Return false if the queue contains a not ready chunk packet
++                            return false; // Paper - Aync-Anti-Xray
++                        } else {
++                            this.i.poll(); // Paper - Async-Anti-Xray - poll() here
++                            this.a(networkmanager_queuedpacket.a, networkmanager_queuedpacket.b);
++                        }
 +                    } else {
-+                        this.i.poll(); // Paper - Async-Anti-Xray - poll() here
-+                        this.a(networkmanager_queuedpacket.a, networkmanager_queuedpacket.b);
++                        this.i.poll(); // Paper - Aync-Anti-Xray - The queue is probably empty but if the queue really contains null, remove it to avoid an endless loop
 +                    }
                  }
              } finally {
