@@ -1,4 +1,4 @@
-From 285bc08b9e9f49e83e80fcc91de4b1111f2aadcf Mon Sep 17 00:00:00 2001
+From 0ea52d115bdd752a9fd11d10c804aca8a896cdfc Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Wed, 6 Apr 2016 01:04:23 -0500
 Subject: [PATCH] Option to use vanilla per-world scoreboard coloring on names
@@ -18,8 +18,20 @@ index 203dafc..66cd256 100644
 +        useVanillaScoreboardColoring = getBoolean("use-vanilla-world-scoreboard-name-coloring", false);
 +    }
  }
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 3ed3732..3821f28 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -1893,6 +1893,7 @@ public abstract class Entity implements ICommandListener {
+         return this.getFlag(5);
+     }
+ 
++    @Nullable public ScoreboardTeamBase getTeam() { return this.aQ(); } // Paper - OBFHELPER
+     @Nullable
+     public ScoreboardTeamBase aQ() {
+         if (!this.world.paperConfig.nonPlayerEntitiesOnScoreboards && !(this instanceof EntityHuman)) { return null; } // Paper
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index b983540..f7eaa6f 100644
+index b983540..999f381 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -1346,7 +1346,14 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
@@ -30,7 +42,7 @@ index b983540..f7eaa6f 100644
 +                // Paper Start - (Meh) Support for vanilla world scoreboard name coloring
 +                String displayName = event.getPlayer().getDisplayName();
 +                if (this.player.getWorld().paperConfig.useVanillaScoreboardColoring) {
-+                    displayName = ScoreboardTeam.getPlayerDisplayName(this.player.aQ(), player.getDisplayName());
++                    displayName = ScoreboardTeam.getPlayerDisplayName(this.player.getTeam(), player.getDisplayName());
 +                }
 +
 +                s = String.format(event.getFormat(), displayName, event.getMessage());
@@ -39,5 +51,5 @@ index b983540..f7eaa6f 100644
                  if (((LazyPlayerSet) event.getRecipients()).isLazy()) {
                      for (Object recipient : minecraftServer.getPlayerList().players) {
 -- 
-2.9.0
+2.9.2.windows.1
 
