@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
+import java.util.Arrays;
+
 import net.minecraft.server.IRecipe;
 import net.minecraft.server.IInventory;
 import net.minecraft.server.InventoryCrafting;
@@ -7,7 +9,6 @@ import net.minecraft.server.InventoryCrafting;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
-import org.bukkit.util.Java15Compat;
 
 public class CraftInventoryCrafting extends CraftInventory implements CraftingInventory {
     private final IInventory resultInventory;
@@ -37,7 +38,7 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
         if (len > items.length) {
             throw new IllegalArgumentException("Invalid inventory size; expected " + len + " or less");
         }
-        setContents(items[0], Java15Compat.Arrays_copyOfRange(items, 1, items.length));
+        setContents(items[0], Arrays.copyOfRange(items, 1, items.length));
     }
 
     @Override
