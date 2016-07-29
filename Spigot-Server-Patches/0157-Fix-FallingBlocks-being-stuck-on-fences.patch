@@ -1,4 +1,4 @@
-From d11bdc71163cd991a87f8268bbf0a7f9ac06a9ff Mon Sep 17 00:00:00 2001
+From 1dc4a1ddd3ac2e061a97fc046481082e8e9a9f07 Mon Sep 17 00:00:00 2001
 From: Martin Panzer <postremus1996@googlemail.com>
 Date: Fri, 3 Jun 2016 23:13:39 +0200
 Subject: [PATCH] Fix FallingBlocks being stuck on fences
@@ -10,6 +10,20 @@ resulted in them always thinking they would be on air.
 We now first check, if if we are already on the ground.
 if not, we check if the falling block is inside of the hitbox of the block at y - 1.
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index cc5e299..3500b6c 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -358,4 +358,9 @@ public class PaperWorldConfig {
+             log("Old Cannon Behaviors: This feature may not be working entirely properly at the moment");
+         }
+     }
++
++    public boolean altFallingBlockOnGround;
++    private void altFallingBlockOnGround() {
++        altFallingBlockOnGround = getBoolean("use-alternate-fallingblock-onGround-detection", false);
++    }
+ }
 diff --git a/src/main/java/net/minecraft/server/BlockFalling.java b/src/main/java/net/minecraft/server/BlockFalling.java
 index 8f22dab..d3a0d70 100644
 --- a/src/main/java/net/minecraft/server/BlockFalling.java
@@ -27,7 +41,7 @@ index 8f22dab..d3a0d70 100644
      public void a_(World world, BlockPosition blockposition) {}
  }
 diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
-index 4fd4371..c4d90b0 100644
+index 4fd4371..dcfdd31 100644
 --- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
 +++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
 @@ -2,7 +2,9 @@ package net.minecraft.server;
@@ -49,19 +63,21 @@ index 4fd4371..c4d90b0 100644
 +                    if (!isOnGround()) {
                          this.onGround = false;
 -                        // return; // CraftBukkit
-+                        return; // Paper
++                        if (this.world.paperConfig.altFallingBlockOnGround) return; // Paper
                      }
  
                      this.motX *= 0.699999988079071D;
-@@ -158,6 +159,30 @@ public class EntityFallingBlock extends Entity {
+@@ -158,6 +159,32 @@ public class EntityFallingBlock extends Entity {
          }
      }
  
 +    // Paper start
 +    private boolean isOnGround() {
 +        BlockPosition where = new BlockPosition(this.locX, this.locY - 0.009999999776482582D, this.locZ);
++        boolean cannotMoveThrough = !BlockFalling.canMoveThrough(this.world.getType(where));
++        if (!this.world.paperConfig.altFallingBlockOnGround) return cannotMoveThrough;
 +
-+        if (!BlockFalling.canMoveThrough(this.world.getType(where))) {
++        if (cannotMoveThrough) {
 +            return true;
 +        }
 +
