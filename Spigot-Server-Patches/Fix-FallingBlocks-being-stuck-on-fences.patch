@@ -10,6 +10,20 @@ resulted in them always thinking they would be on air.
 We now first check, if if we are already on the ground.
 if not, we check if the falling block is inside of the hitbox of the block at y - 1.
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -0,0 +0,0 @@ public class PaperWorldConfig {
+             log("Old Cannon Behaviors: This feature may not be working entirely properly at the moment");
+         }
+     }
++
++    public boolean altFallingBlockOnGround;
++    private void altFallingBlockOnGround() {
++        altFallingBlockOnGround = getBoolean("use-alternate-fallingblock-onGround-detection", false);
++    }
+ }
 diff --git a/src/main/java/net/minecraft/server/BlockFalling.java b/src/main/java/net/minecraft/server/BlockFalling.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/BlockFalling.java
@@ -49,7 +63,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    if (!isOnGround()) {
                          this.onGround = false;
 -                        // return; // CraftBukkit
-+                        return; // Paper
++                        if (this.world.paperConfig.altFallingBlockOnGround) return; // Paper
                      }
  
                      this.motX *= 0.699999988079071D;
@@ -60,8 +74,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start
 +    private boolean isOnGround() {
 +        BlockPosition where = new BlockPosition(this.locX, this.locY - 0.009999999776482582D, this.locZ);
++        boolean cannotMoveThrough = !BlockFalling.canMoveThrough(this.world.getType(where));
++        if (!this.world.paperConfig.altFallingBlockOnGround) return cannotMoveThrough;
 +
-+        if (!BlockFalling.canMoveThrough(this.world.getType(where))) {
++        if (cannotMoveThrough) {
 +            return true;
 +        }
 +
