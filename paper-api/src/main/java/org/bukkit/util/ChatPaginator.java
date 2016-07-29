@@ -2,6 +2,7 @@ package org.bukkit.util;
 
 import org.bukkit.ChatColor;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -46,7 +47,7 @@ public class ChatPaginator {
 
         int from = (actualPageNumber - 1) * pageHeight;
         int to = from + pageHeight <= lines.length  ? from + pageHeight : lines.length;
-        String[] selectedLines = Java15Compat.Arrays_copyOfRange(lines, from, to);
+        String[] selectedLines = Arrays.copyOfRange(lines, from, to);
 
         return new ChatPage(selectedLines, actualPageNumber, totalPages);
     }

@@ -2,6 +2,11 @@ package org.bukkit.util;
 
 import java.lang.reflect.Array;
 
+/**
+ * @deprecated Bukkit targets Java 1.6. This class will be removed in a
+ * subsequent release.
+ */
+@Deprecated
 public class Java15Compat {
     @SuppressWarnings("unchecked")
     public static <T> T[] Arrays_copyOfRange(T[] original, int start, int end) {
