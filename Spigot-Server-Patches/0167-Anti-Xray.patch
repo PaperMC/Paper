@@ -1,6 +1,6 @@
-From 3fa431cbdb0f2f8aaeccc6b386d1e7f8791d7517 Mon Sep 17 00:00:00 2001
+From 329f1b951edb798c49333c4e7c33c197ce379619 Mon Sep 17 00:00:00 2001
 From: BuildTools <unconfigured@null.spigotmc.org>
-Date: Wed, 27 Jul 2016 07:15:47 +0200
+Date: Fri, 29 Jul 2016 17:11:11 +0200
 Subject: [PATCH] Anti-Xray
 
 
@@ -55,10 +55,10 @@ index e3fe8f4..fbcc680 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/AntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/AntiXray.java
 new file mode 100644
-index 0000000..def27cf
+index 0000000..8650e0a
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/AntiXray.java
-@@ -0,0 +1,286 @@
+@@ -0,0 +1,290 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import java.util.HashSet;
@@ -196,13 +196,17 @@ index 0000000..def27cf
 +            long currentData = dataBitsArray[0];
 +            // Write the length of the dataBits-array to the packet as it is in vanilla
 +            packetDataSerializer.d(dataBitsArray.length);
-+            int xMin = nearbyChunks[0] == null ? 1 : 0;
-+            int xMax = nearbyChunks[1] == null ? 15 : 16;
-+            int zMin = nearbyChunks[2] == null ? 1 : 0;
-+            int zMax = nearbyChunks[3] == null ? 15 : 16;
++            // Optimization: Don't try to obfuscate edge blocks of this section if neighbor sections are not loaded or don't exist
++            // We can also add a check for ChunkSection#nonEmptyBlockCount == 0 here
++            int xMin = nearbyChunks[0] == null || nearbyChunks[0].getSections()[chunkY] == Chunk.a ? 1 : 0;
++            int xMax = nearbyChunks[1] == null || nearbyChunks[1].getSections()[chunkY] == Chunk.a ? 15 : 16;
++            int zMin = nearbyChunks[2] == null || nearbyChunks[2].getSections()[chunkY] == Chunk.a ? 1 : 0;
++            int zMax = nearbyChunks[3] == null || nearbyChunks[3].getSections()[chunkY] == Chunk.a ? 15 : 16;
++            int yMin = chunkY == 0 || chunk.getSections()[chunkY - 1] == Chunk.a ? 1 : 0;
++            int yMax = chunkY == chunk.getSections().length - 1 || chunk.getSections()[chunkY + 1] == Chunk.a ? 15 : 16;
 +            // Write the dataBits-array to the packet
 +            // Work through all blocks in the chunkSection
-+            for (int y = 0; y < 16; y++) {
++            for (int y = yMin; y < yMax; y++) {
 +                for (int z = zMin; z < zMax; z++) {
 +                    // Shift the initial value of x and increment by 3 in engine mode 3
 +                    int x;
