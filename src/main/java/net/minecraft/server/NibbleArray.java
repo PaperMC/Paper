@@ -32,29 +32,27 @@ public class NibbleArray {
         return j << 8 | k << 4 | i;
     }
 
-    private int b(int i) {
+    public int b(int i) { // PAIL: private -> public
         if (this.a == null) {
             return 0;
         } else {
             int j = this.d(i);
 
-            return this.c(i) ? this.a[j] & 15 : this.a[j] >> 4 & 15;
+            return this.a[j] >> ((i & 1) << 2) & 15; // Spigot
         }
     }
 
-    private void a(int i, int j) {
+    public void a(int i, int j) { // PAIL: private -> public
         if (this.a == null) {
             this.a = new byte[2048];
         }
 
         int k = this.d(i);
 
-        if (this.c(i)) {
-            this.a[k] = (byte) (this.a[k] & 240 | j & 15);
-        } else {
-            this.a[k] = (byte) (this.a[k] & 15 | (j & 15) << 4);
-        }
-
+        // Spigot start
+        int shift = (i & 1) << 2;
+        this.a[k] = (byte) (this.a[k] & ~(15 << shift) | (j & 15) << shift);
+        // Spigot end
     }
 
     private boolean c(int i) {
