@@ -1,0 +1,51 @@
+From fc93d64d5d166a12d0867f9a49c2902bac74e7af Mon Sep 17 00:00:00 2001
+From: Gabriele C <sgdc3.mail@gmail.com>
+Date: Fri, 5 Aug 2016 01:03:08 +0200
+Subject: [PATCH] Fix offline-mode bungee UUIDs
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 058720f..0397ec5 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -228,4 +228,9 @@ public class PaperConfig {
+     private static void saveEmptyScoreboardTeams() {
+         saveEmptyScoreboardTeams = getBoolean("settings.save-empty-scoreboard-teams", false);
+     }
++
++    public static boolean fixOfflineBungeeModeUUIDs = false;
++    private static void fixOfflineBungeeModeUUIDs() {
++        fixOfflineBungeeModeUUIDs = getBoolean("settings.fix-offline-bungee-uuids", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/NameReferencingFileConverter.java b/src/main/java/net/minecraft/server/NameReferencingFileConverter.java
+index e21a8c4..40d3a26 100644
+--- a/src/main/java/net/minecraft/server/NameReferencingFileConverter.java
++++ b/src/main/java/net/minecraft/server/NameReferencingFileConverter.java
+@@ -65,7 +65,8 @@ public class NameReferencingFileConverter {
+             }
+         }), String.class);
+ 
+-        if (minecraftserver.getOnlineMode() || org.spigotmc.SpigotConfig.bungee) { // Spigot: bungee = online mode, for now.
++        if (minecraftserver.getOnlineMode()
++                || (org.spigotmc.SpigotConfig.bungee && !com.destroystokyo.paper.PaperConfig.fixOfflineBungeeModeUUIDs)) { // Spigot: bungee = online mode, for now.  // Paper: fix offline UUIDs
+             minecraftserver.getGameProfileRepository().findProfilesByNames(astring, Agent.MINECRAFT, profilelookupcallback);
+         } else {
+             String[] astring1 = astring;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 7f1caa8..4692016 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1347,7 +1347,8 @@ public final class CraftServer implements Server {
+             // Spigot Start
+             GameProfile profile = null;
+             // Only fetch an online UUID in online mode
+-            if ( MinecraftServer.getServer().getOnlineMode() || org.spigotmc.SpigotConfig.bungee )
++            if ( MinecraftServer.getServer().getOnlineMode()
++                    || (org.spigotmc.SpigotConfig.bungee && !com.destroystokyo.paper.PaperConfig.fixOfflineBungeeModeUUIDs)) // Paper: fix offline UUIDs
+             {
+                 profile = console.getUserCache().getProfile( name );
+             }
+-- 
+2.5.2.windows.1
+
