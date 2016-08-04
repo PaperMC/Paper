@@ -23,6 +23,7 @@ import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import co.aikar.timings.Timings;
 import co.aikar.timings.TimingsManager;
+import org.spigotmc.SpigotConfig;
 
 public class PaperConfig {
 
@@ -233,5 +234,14 @@ public class PaperConfig {
     public static boolean saveEmptyScoreboardTeams = false;
     private static void saveEmptyScoreboardTeams() {
         saveEmptyScoreboardTeams = getBoolean("settings.save-empty-scoreboard-teams", false);
+    }
+
+    public static boolean bungeeOnlineMode = true;
+    private static void bungeeOnlineMode() {
+        bungeeOnlineMode = getBoolean("settings.bungee-online-mode", true);
+    }
+
+    public static boolean isProxyOnlineMode() {
+        return Bukkit.getOnlineMode() || (SpigotConfig.bungee && bungeeOnlineMode);
     }
 }
