@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/players/GameProfileCache.java
 +++ b/net/minecraft/server/players/GameProfileCache.java
-@@ -85,10 +85,11 @@
+@@ -85,10 +85,12 @@
                  }
  
                  public void onProfileLookupFailed(String s1, Exception exception) {
@@ -9,11 +9,21 @@
                  }
              };
  
-+        if (!org.apache.commons.lang3.StringUtils.isBlank(name)) // Paper - Don't lookup a profile with a blank name
++        if (!org.apache.commons.lang3.StringUtils.isBlank(name) // Paper - Don't lookup a profile with a blank name
++                && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()) // Paper - Add setting for proxy online mode status
              repository.findProfilesByNames(new String[]{name}, profilelookupcallback);
              GameProfile gameprofile = (GameProfile) atomicreference.get();
  
-@@ -117,7 +118,7 @@
+@@ -105,7 +107,7 @@
+     }
+ 
+     private static boolean usesAuthentication() {
+-        return GameProfileCache.usesAuthentication;
++        return io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode(); // Paper - Add setting for proxy online mode status
+     }
+ 
+     public void add(GameProfile profile) {
+@@ -117,7 +119,7 @@
          GameProfileCache.GameProfileInfo usercache_usercacheentry = new GameProfileCache.GameProfileInfo(profile, date);
  
          this.safeAdd(usercache_usercacheentry);
@@ -22,7 +32,7 @@
      }
  
      private long getNextOperation() {
-@@ -142,15 +143,15 @@
+@@ -142,15 +144,15 @@
              usercache_usercacheentry.setLastAccess(this.getNextOperation());
              optional = Optional.of(usercache_usercacheentry.getProfile());
          } else {
@@ -41,7 +51,7 @@
          }
  
          return optional;
-@@ -208,7 +209,7 @@
+@@ -208,7 +210,7 @@
  
              label54:
              {
@@ -50,7 +60,7 @@
  
                  try {
                      JsonArray jsonarray = (JsonArray) this.gson.fromJson(bufferedreader, JsonArray.class);
-@@ -217,7 +218,7 @@
+@@ -217,7 +219,7 @@
                          DateFormat dateformat = GameProfileCache.createDateFormat();
  
                          jsonarray.forEach((jsonelement) -> {
@@ -59,7 +69,7 @@
  
                              Objects.requireNonNull(list);
                              optional.ifPresent(list::add);
-@@ -250,6 +251,11 @@
+@@ -250,6 +252,11 @@
              }
          } catch (FileNotFoundException filenotfoundexception) {
              ;
@@ -71,7 +81,7 @@
          } catch (JsonParseException | IOException ioexception) {
              GameProfileCache.LOGGER.warn("Failed to load profile cache {}", this.file, ioexception);
          }
-@@ -257,14 +263,15 @@
+@@ -257,14 +264,15 @@
          return list;
      }
  
@@ -89,7 +99,7 @@
  
          try {
              BufferedWriter bufferedwriter = Files.newWriter(this.file, StandardCharsets.UTF_8);
-@@ -289,6 +296,14 @@
+@@ -289,6 +297,14 @@
          } catch (IOException ioexception) {
              ;
          }
