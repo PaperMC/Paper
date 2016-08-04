@@ -115,11 +115,11 @@ entity.getWorld().explode(new BlockPosition(spawnLocation.getX(), spawnLocation.
 In an effort to make future updates easier on ourselves, Paper tries to use obfuscation helpers whenever possible. The purpose of these helpers is to make the code more readable. These helpers should be be made as easy to inline as possible by the JVM whenever possible.
 
 An obfuscation helper to get an obfuscated field may be as simple as something like this:
-```
+```java
 public final int getStuckArrows() { return this.bY(); } // Paper - OBFHELPER
 ```
-Or it may be as compex as forwarding an entire method so that it can be overriden later:
-```
+Or it may be as complex as forwarding an entire method so that it can be overriden later:
+```java
 public boolean be() {
     // Paper start - OBFHELPER
     return this.pushedByWater();
@@ -136,7 +136,7 @@ While they may not always be done in exactly the same way each time, the general
 To use a configurable value in your patch, add a new entry in either ```PaperConfig``` or ```PaperWorldConfig```. Use the former if a value must remain the same throughout all worlds, or the latter if it can change between worlds. The latter is preferred whenever possible.
 
 ###```PaperConfig``` example:
-```
+```java
 public static boolean saveEmptyScoreboardTeams = false;
 private static void saveEmptyScoreboardTeams() {
     saveEmptyScoreboardTeams = getBoolean("settings.save-empty-scoreboard-teams", false);
@@ -146,7 +146,7 @@ Notice that the field is always public, but the setter is always private. This i
 ```if (!PaperConfig.saveEmptyScoreboardTeams) {```
 
 ###```PaperWorldConfig``` example:
-```
+```java
 public boolean useInhabitedTime = true;
 private void useInhabitedTime() {
     useInhabitedTime = getBoolean("use-chunk-inhabited-timer", true);
