@@ -50,7 +50,7 @@ public interface Beacon extends BlockState, InventoryHolder {
 
     /**
      * Set the secondary effect on this beacon, or null to clear. Note that tier
-     * must be >= 4 for this effect to be active.
+     * must be &gt;= 4 for this effect to be active.
      *
      * @param effect desired secondary effect
      */
