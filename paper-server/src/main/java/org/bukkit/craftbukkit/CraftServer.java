@@ -887,10 +887,6 @@ public final class CraftServer implements Server {
         internal.setSpawnFlags(true, true);
         console.worlds.add(internal);
 
-        if (generator != null) {
-            internal.getWorld().getPopulators().addAll(generator.getDefaultPopulators(internal.getWorld()));
-        }
-
         pluginManager.callEvent(new WorldInitEvent(internal.getWorld()));
         System.out.print("Preparing start region for level " + (console.worlds.size() - 1) + " (Seed: " + internal.getSeed() + ")");
 
