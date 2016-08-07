@@ -277,6 +277,16 @@ public interface LivingEntity extends Attributable, Entity, Damageable, Projecti
     public boolean hasPotionEffect(PotionEffectType type);
 
     /**
+     * Returns the active {@link PotionEffect} of the specified type.
+     * <p>
+     * If the effect is not present on the entity then null will be returned.
+     *
+     * @param type the potion type to check
+     * @return the effect active on this entity, or null if not active.
+     */
+    public PotionEffect getPotionEffect(PotionEffectType type);
+
+    /**
      * Removes any effects present of the given {@link PotionEffectType}.
      *
      * @param type the potion type to remove
