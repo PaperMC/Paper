@@ -313,6 +313,12 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return getHandle().hasEffect(MobEffectList.fromId(type.getId()));
     }
 
+    @Override
+    public PotionEffect getPotionEffect(PotionEffectType type) {
+        MobEffect handle = getHandle().getEffect(MobEffectList.fromId(type.getId()));
+        return (handle == null) ? null : new PotionEffect(PotionEffectType.getById(MobEffectList.getId(handle.getMobEffect())), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isShowParticles());
+    }
+
     public void removePotionEffect(PotionEffectType type) {
         getHandle().removeEffect(MobEffectList.fromId(type.getId()));
     }
