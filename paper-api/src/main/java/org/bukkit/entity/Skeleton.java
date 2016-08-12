@@ -9,14 +9,18 @@ public interface Skeleton extends Monster {
      * Gets the current type of this skeleton.
      *
      * @return Current type
+     * @deprecated Entity subtypes will be separate entities in a future Minecraft release
      */
+    @Deprecated
     public SkeletonType getSkeletonType();
 
     /**
      * Sets the new type of this skeleton.
      *
      * @param type New type
+     * @deprecated Entity subtypes will be separate entities in a future Minecraft release
      */
+    @Deprecated
     public void setSkeletonType(SkeletonType type);
 
     /*

@@ -5,7 +5,9 @@ import org.bukkit.inventory.InventoryHolder;
 
 /**
  * Represents a Horse.
+ * @deprecated Entity subtypes will be separate entities in a future Minecraft release
  */
+@Deprecated
 public interface Horse extends Animals, Vehicle, InventoryHolder, Tameable {
 
     /**
@@ -105,7 +107,9 @@ public interface Horse extends Animals, Vehicle, InventoryHolder, Tameable {
      * horse is determined using the variant.
      *
      * @return a {@link Variant} representing the horse's variant
+     * @deprecated Entity subtypes will be separate entities in a future Minecraft release
      */
+    @Deprecated
     public Variant getVariant();
 
     /**
@@ -121,7 +125,9 @@ public interface Horse extends Animals, Vehicle, InventoryHolder, Tameable {
      * will remove the chest and its contents.
      *
      * @param variant a {@link Variant} for this horse
+     * @deprecated Entity subtypes will be separate entities in a future Minecraft release
      */
+    @Deprecated
     public void setVariant(Variant variant);
 
     /**
