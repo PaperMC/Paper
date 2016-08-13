@@ -71,16 +71,19 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public int getBlockTypeIdAt(Location location);
 
     /**
-     * Gets the highest non-air coordinate at the given coordinates
+     * Gets the y coordinate of the lowest block at this position such that the
+     * block and all blocks above it are transparent for lighting purposes.
      *
      * @param x X-coordinate of the blocks
      * @param z Z-coordinate of the blocks
-     * @return Y-coordinate of the highest non-air block
+     * @return Y-coordinate of the described block
      */
     public int getHighestBlockYAt(int x, int z);
 
     /**
-     * Gets the highest non-air coordinate at the given {@link Location}
+     * Gets the y coordinate of the lowest block at the given {@link Location}
+     * such that the block and all blocks above it are transparent for lighting
+     * purposes.
      *
      * @param location Location of the blocks
      * @return Y-coordinate of the highest non-air block
@@ -88,7 +91,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public int getHighestBlockYAt(Location location);
 
     /**
-     * Gets the highest non-empty block at the given coordinates
+     * Gets the lowest block at the given coordinates such that the block and
+     * all blocks above it are transparent for lighting purposes.
      *
      * @param x X-coordinate of the block
      * @param z Z-coordinate of the block
@@ -97,7 +101,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public Block getHighestBlockAt(int x, int z);
 
     /**
-     * Gets the highest non-empty block at the given coordinates
+     * Gets the lowest block at the given {@link Location} such that the block
+     * and all blocks above it are transparent for lighting purposes.
      *
      * @param location Coordinates to get the highest block
      * @return Highest non-empty block
