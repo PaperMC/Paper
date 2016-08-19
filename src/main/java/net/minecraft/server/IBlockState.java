@@ -59,23 +59,17 @@ public abstract class IBlockState<T extends Comparable<T>> {
     }
 
     public boolean equals(Object object) {
-        if (this == object) {
-            return true;
-        } else if (!(object instanceof IBlockState)) {
-            return false;
-        } else {
-            IBlockState<?> iblockstate = (IBlockState) object;
-
-            return this.a.equals(iblockstate.a) && this.b.equals(iblockstate.b);
-        }
+        return this == object; // Paper - only one instance per configuration
     }
 
+    private static final java.util.concurrent.atomic.AtomicInteger hashId = new java.util.concurrent.atomic.AtomicInteger(1); // Paper - only one instance per configuration
+    private final int hashCode = 92821 * hashId.getAndIncrement(); // Paper - only one instance per configuration
     public final int hashCode() {
         if (this.c == null) {
             this.c = this.b();
         }
 
-        return this.c;
+        return this.hashCode; // Paper - only one instance per configuration
     }
 
     public int b() {
