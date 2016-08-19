@@ -16,4 +16,9 @@ function update {
 update Bukkit
 update CraftBukkit
 update Spigot
+
+if [[ "$2" = "all" ]] ; then
+	update BuildData
+	update Paperclip
+fi
 )
