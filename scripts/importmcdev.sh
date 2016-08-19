@@ -45,6 +45,7 @@ import BlockFluids
 import BlockFurnace
 import BlockIceFrost
 import BlockPosition
+import BlockStateEnum
 import ChunkCache
 import ChunkProviderFlat
 import ChunkProviderGenerate
