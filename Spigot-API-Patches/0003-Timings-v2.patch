@@ -1,4 +1,4 @@
-From 64bb83cd32c749108201aae7c8e4575a5ef0e4fe Mon Sep 17 00:00:00 2001
+From bb78dbc2059b4beee7c9d8a36ebcba8c5bd53e0b Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
@@ -1462,10 +1462,10 @@ index 0000000..0f7be03
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsCommand.java b/src/main/java/co/aikar/timings/TimingsCommand.java
 new file mode 100644
-index 0000000..3dba3aa
+index 0000000..1fa0eb5
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsCommand.java
-@@ -0,0 +1,110 @@
+@@ -0,0 +1,119 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1503,7 +1503,8 @@ index 0000000..3dba3aa
 +
 +
 +public class TimingsCommand extends BukkitCommand {
-+    public static final List<String> TIMINGS_SUBCOMMANDS = ImmutableList.of("report", "reset", "on", "off", "paste", "verbon", "verboff");
++    private static final List<String> TIMINGS_SUBCOMMANDS = ImmutableList.of("report", "reset", "on", "off", "paste", "verbon", "verboff");
++    private long lastResetAttempt = 0;
 +
 +    public TimingsCommand(String name) {
 +        super(name);
@@ -1536,6 +1537,8 @@ index 0000000..3dba3aa
 +            sender.sendMessage("Please enable timings by typing /timings on");
 +            return true;
 +        }
++
++        long now = System.currentTimeMillis();
 +        if ("verbon".equalsIgnoreCase(arg)) {
 +            Timings.setVerboseTimingsEnabled(true);
 +            sender.sendMessage("Enabled Verbose Timings");
@@ -1545,8 +1548,14 @@ index 0000000..3dba3aa
 +            sender.sendMessage("Disabled Verbose Timings");
 +            return true;
 +        } else if ("reset".equalsIgnoreCase(arg)) {
-+            TimingsManager.reset();
-+            sender.sendMessage("Timings reset");
++            if (now - lastResetAttempt < 30000) {
++                TimingsManager.reset();
++                sender.sendMessage(ChatColor.RED + "Timings reset. Please wait 5-10 minutes before using /timings report.");
++            } else {
++                lastResetAttempt = now;
++                sender.sendMessage(ChatColor.RED + "WARNING: Timings v2 should not be reset. If you are encountering lag, please wait 3 minutes and then issue a report. The best timings will include 10+ minutes, with data before and after your lag period. If you really want to reset, run this command again within 30 seconds.");
++            }
++
 +        } else if ("cost".equals(arg)) {
 +            sender.sendMessage("Timings cost: " + TimingsExport.getCost());
 +        } else  if (
@@ -1578,10 +1587,10 @@ index 0000000..3dba3aa
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
 new file mode 100644
-index 0000000..62cbd39
+index 0000000..a4a7fea
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsExport.java
-@@ -0,0 +1,376 @@
+@@ -0,0 +1,388 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1648,6 +1657,7 @@ index 0000000..62cbd39
 +    private final CommandSender sender;
 +    private final Map out;
 +    private final TimingHistory[] history;
++    private static long lastReport = 0;
 +
 +    private TimingsExport(CommandSender sender, Map out, TimingHistory[] history) {
 +        super("Timings paste thread");
@@ -1656,13 +1666,24 @@ index 0000000..62cbd39
 +        this.history = history;
 +    }
 +
-+
 +    /**
 +     * Builds an XML report of the timings to be uploaded for parsing.
 +     *
 +     * @param sender Who to report to
 +     */
 +    static void reportTimings(CommandSender sender) {
++        long now = System.currentTimeMillis();
++        final long lastReportDiff = now - lastReport;
++        if (lastReportDiff < 60000) {
++            sender.sendMessage(ChatColor.RED + "Please wait at least 1 minute in between Timings reports. (" + (int)((60000 - lastReportDiff) / 1000) + " seconds)");
++            return;
++        }
++        final long lastStartDiff = now - TimingsManager.timingStart;
++        if (lastStartDiff < 180000) {
++            sender.sendMessage(ChatColor.RED + "Please wait at least 3 minutes before generating a Timings report. Unlike Timings v1, v2 benefits from longer timings and is not as useful with short timings. (" + (int)((180000 - lastStartDiff) / 1000) + " seconds)");
++            return;
++        }
++        lastReport = now;
 +        Map parent = createObject(
 +            // Get some basic system details about the server
 +            pair("version", Bukkit.getVersion()),
@@ -3635,5 +3656,5 @@ index 8d98297..7e89b97 100644
 -    }
  }
 -- 
-2.9.2.windows.1
+2.9.3
 
