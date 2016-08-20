@@ -1503,7 +1503,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +
 +public class TimingsCommand extends BukkitCommand {
-+    public static final List<String> TIMINGS_SUBCOMMANDS = ImmutableList.of("report", "reset", "on", "off", "paste", "verbon", "verboff");
++    private static final List<String> TIMINGS_SUBCOMMANDS = ImmutableList.of("report", "reset", "on", "off", "paste", "verbon", "verboff");
++    private long lastResetAttempt = 0;
 +
 +    public TimingsCommand(String name) {
 +        super(name);
@@ -1536,6 +1537,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            sender.sendMessage("Please enable timings by typing /timings on");
 +            return true;
 +        }
++
++        long now = System.currentTimeMillis();
 +        if ("verbon".equalsIgnoreCase(arg)) {
 +            Timings.setVerboseTimingsEnabled(true);
 +            sender.sendMessage("Enabled Verbose Timings");
@@ -1545,8 +1548,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            sender.sendMessage("Disabled Verbose Timings");
 +            return true;
 +        } else if ("reset".equalsIgnoreCase(arg)) {
-+            TimingsManager.reset();
-+            sender.sendMessage("Timings reset");
++            if (now - lastResetAttempt < 30000) {
++                TimingsManager.reset();
++                sender.sendMessage(ChatColor.RED + "Timings reset. Please wait 5-10 minutes before using /timings report.");
++            } else {
++                lastResetAttempt = now;
++                sender.sendMessage(ChatColor.RED + "WARNING: Timings v2 should not be reset. If you are encountering lag, please wait 3 minutes and then issue a report. The best timings will include 10+ minutes, with data before and after your lag period. If you really want to reset, run this command again within 30 seconds.");
++            }
++
 +        } else if ("cost".equals(arg)) {
 +            sender.sendMessage("Timings cost: " + TimingsExport.getCost());
 +        } else  if (
@@ -1648,6 +1657,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final CommandSender sender;
 +    private final Map out;
 +    private final TimingHistory[] history;
++    private static long lastReport = 0;
 +
 +    private TimingsExport(CommandSender sender, Map out, TimingHistory[] history) {
 +        super("Timings paste thread");
@@ -1656,13 +1666,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.history = history;
 +    }
 +
-+
 +    /**
 +     * Builds an XML report of the timings to be uploaded for parsing.
 +     *
 +     * @param sender Who to report to
 +     */
 +    static void reportTimings(CommandSender sender) {
++        long now = System.currentTimeMillis();
++        final long lastReportDiff = now - lastReport;
++        if (lastReportDiff < 60000) {
++            sender.sendMessage(ChatColor.RED + "Please wait at least 1 minute in between Timings reports. (" + (int)((60000 - lastReportDiff) / 1000) + " seconds)");
++            return;
++        }
++        final long lastStartDiff = now - TimingsManager.timingStart;
++        if (lastStartDiff < 180000) {
++            sender.sendMessage(ChatColor.RED + "Please wait at least 3 minutes before generating a Timings report. Unlike Timings v1, v2 benefits from longer timings and is not as useful with short timings. (" + (int)((180000 - lastStartDiff) / 1000) + " seconds)");
++            return;
++        }
++        lastReport = now;
 +        Map parent = createObject(
 +            // Get some basic system details about the server
 +            pair("version", Bukkit.getVersion()),
