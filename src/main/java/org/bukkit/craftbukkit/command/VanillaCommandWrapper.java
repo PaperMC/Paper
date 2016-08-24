@@ -7,6 +7,7 @@ import net.minecraft.server.*;
 
 import org.apache.commons.lang.Validate;
 import org.apache.logging.log4j.Level;
+import org.bukkit.Location;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -38,11 +39,11 @@ public final class VanillaCommandWrapper extends VanillaCommand {
     }
 
     @Override
-    public List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
+    public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
         Validate.notNull(sender, "Sender cannot be null");
         Validate.notNull(args, "Arguments cannot be null");
         Validate.notNull(alias, "Alias cannot be null");
-        return (List<String>) vanillaCommand.tabComplete(MinecraftServer.getServer(), getListener(sender), args, new BlockPosition(0, 0, 0));
+        return (List<String>) vanillaCommand.tabComplete(MinecraftServer.getServer(), getListener(sender), args, new BlockPosition(location.getX(), location.getY(), location.getZ()));
     }
 
     public static CommandSender lastSender = null; // Nasty :(
@@ -72,7 +73,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
                 if (i > -1) {
                     List<Entity> list = ((List<Entity>)PlayerSelector.getPlayers(icommandlistener, as[i], Entity.class));
                     String s2 = as[i];
-                    
+
                     icommandlistener.a(CommandObjectiveExecutor.EnumCommandResult.AFFECTED_ENTITIES, list.size());
                     Iterator<Entity> iterator = list.iterator();
 

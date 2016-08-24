@@ -29,6 +29,7 @@ import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
 import org.bukkit.UnsafeValues;
@@ -1528,7 +1529,7 @@ public final class CraftServer implements Server {
         return warningState;
     }
 
-    public List<String> tabComplete(net.minecraft.server.ICommandListener sender, String message) {
+    public List<String> tabComplete(net.minecraft.server.ICommandListener sender, String message, BlockPosition pos) {
         if (!(sender instanceof EntityPlayer)) {
             return ImmutableList.of();
         }
@@ -1536,7 +1537,7 @@ public final class CraftServer implements Server {
         List<String> offers;
         Player player = ((EntityPlayer) sender).getBukkitEntity();
         if (message.startsWith("/")) {
-            offers = tabCompleteCommand(player, message);
+            offers = tabCompleteCommand(player, message, pos);
         } else {
             offers = tabCompleteChat(player, message);
         }
@@ -1547,10 +1548,14 @@ public final class CraftServer implements Server {
         return tabEvent.isCancelled() ? Collections.EMPTY_LIST : tabEvent.getCompletions();
     }
 
-    public List<String> tabCompleteCommand(Player player, String message) {
+    public List<String> tabCompleteCommand(Player player, String message, BlockPosition pos) {
         List<String> completions = null;
         try {
-            completions = getCommandMap().tabComplete(player, message.substring(1));
+            if (pos == null) {
+                completions = getCommandMap().tabComplete(player, message.substring(1));
+            } else {
+                completions = getCommandMap().tabComplete(player, message.substring(1), new Location(player.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
+            }
         } catch (CommandException ex) {
             player.sendMessage(ChatColor.RED + "An internal error occurred while attempting to tab-complete this command");
             getLogger().log(Level.SEVERE, "Exception when " + player.getName() + " attempted to tab complete " + message, ex);
