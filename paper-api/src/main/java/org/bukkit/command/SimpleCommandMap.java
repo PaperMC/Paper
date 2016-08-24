@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.Validate;
+import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.command.defaults.*;
 import org.bukkit.entity.Player;
@@ -161,6 +162,10 @@ public class SimpleCommandMap implements CommandMap {
     }
 
     public List<String> tabComplete(CommandSender sender, String cmdLine) {
+        return tabComplete(sender, cmdLine, null);
+    }
+
+    public List<String> tabComplete(CommandSender sender, String cmdLine, Location location) {
         Validate.notNull(sender, "Sender cannot be null");
         Validate.notNull(cmdLine, "Command line cannot null");
 
@@ -205,7 +210,7 @@ public class SimpleCommandMap implements CommandMap {
         String[] args = PATTERN_ON_SPACE.split(argLine, -1);
 
         try {
-            return target.tabComplete(sender, commandName, args);
+            return target.tabComplete(sender, commandName, args, location);
         } catch (CommandException ex) {
             throw ex;
         } catch (Throwable ex) {

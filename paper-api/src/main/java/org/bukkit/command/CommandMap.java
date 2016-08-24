@@ -1,6 +1,7 @@
 package org.bukkit.command;
 
 import java.util.List;
+import org.bukkit.Location;
 
 public interface CommandMap {
 
@@ -90,7 +91,6 @@ public interface CommandMap {
      */
     public Command getCommand(String name);
 
-
     /**
      * Looks for the requested command and executes an appropriate
      * tab-completer if found. This method will also tab-complete partial
@@ -106,4 +106,21 @@ public interface CommandMap {
      * @throws IllegalArgumentException if either sender or cmdLine are null
      */
     public List<String> tabComplete(CommandSender sender, String cmdLine) throws IllegalArgumentException;
+
+    /**
+     * Looks for the requested command and executes an appropriate
+     * tab-completer if found. This method will also tab-complete partial
+     * commands.
+     *
+     * @param sender The command's sender.
+     * @param cmdLine The entire command string to tab-complete, excluding
+     *     initial slash.
+     * @param location The position looked at by the sender, or null if none
+     * @return a list of possible tab-completions. This list may be immutable.
+     *     Will be null if no matching command of which sender has permission.
+     * @throws CommandException Thrown when the tab-completer for the given
+     *     command fails with an unhandled exception
+     * @throws IllegalArgumentException if either sender or cmdLine are null
+     */
+    public List<String> tabComplete(CommandSender sender, String cmdLine, Location location) throws IllegalArgumentException;
 }
