@@ -317,7 +317,7 @@ public final class CraftServer implements Server {
 
         for (Plugin plugin : plugins) {
             if ((!plugin.isEnabled()) && (plugin.getDescription().getLoad() == type)) {
-                loadPlugin(plugin);
+                enablePlugin(plugin);
             }
         }
 
@@ -343,10 +343,8 @@ public final class CraftServer implements Server {
         }
     }
 
-    private void loadPlugin(Plugin plugin) {
+    private void enablePlugin(Plugin plugin) {
         try {
-            pluginManager.enablePlugin(plugin);
-
             List<Permission> perms = plugin.getDescription().getPermissions();
 
             for (Permission perm : perms) {
@@ -356,6 +354,8 @@ public final class CraftServer implements Server {
                     getLogger().log(Level.WARNING, "Plugin " + plugin.getDescription().getFullName() + " tried to register permission '" + perm.getName() + "' but it's already registered", ex);
                 }
             }
+
+            pluginManager.enablePlugin(plugin);
         } catch (Throwable ex) {
             Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, ex.getMessage() + " loading " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
         }
