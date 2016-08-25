@@ -84,7 +84,7 @@ public abstract class Command {
      * @throws IllegalArgumentException if sender, alias, or args is null
      */
     public List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
-        return tabComplete(sender, alias, args, null);
+        return tabComplete0(sender, alias, args, null);
     }
 
     /**
@@ -100,6 +100,10 @@ public abstract class Command {
      * @throws IllegalArgumentException if sender, alias, or args is null
      */
     public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
+        return tabComplete(sender, alias, args);
+    }
+
+    private List<String> tabComplete0(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
         Validate.notNull(sender, "Sender cannot be null");
         Validate.notNull(args, "Arguments cannot be null");
         Validate.notNull(alias, "Alias cannot be null");
