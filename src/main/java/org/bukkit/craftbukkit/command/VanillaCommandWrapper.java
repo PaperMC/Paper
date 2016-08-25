@@ -43,7 +43,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
         Validate.notNull(sender, "Sender cannot be null");
         Validate.notNull(args, "Arguments cannot be null");
         Validate.notNull(alias, "Alias cannot be null");
-        return (List<String>) vanillaCommand.tabComplete(MinecraftServer.getServer(), getListener(sender), args, new BlockPosition(location.getX(), location.getY(), location.getZ()));
+        return (List<String>) vanillaCommand.tabComplete(MinecraftServer.getServer(), getListener(sender), args, (location) == null ? null : new BlockPosition(location.getX(), location.getY(), location.getZ()));
     }
 
     public static CommandSender lastSender = null; // Nasty :(
