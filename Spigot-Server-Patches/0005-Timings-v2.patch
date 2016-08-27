@@ -1,4 +1,4 @@
-From d1e7f412be2eb89f538516a4aad9605d3aedd7d4 Mon Sep 17 00:00:00 2001
+From a6eea0b71f9783fbe8c3d2faceb4c634a015b3e6 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 04:00:11 -0600
 Subject: [PATCH] Timings v2
@@ -23,10 +23,10 @@ index 4ae34c8..63aaa7a 100644
              <version>3.0.3</version>
 diff --git a/src/main/java/co/aikar/timings/MinecraftTimings.java b/src/main/java/co/aikar/timings/MinecraftTimings.java
 new file mode 100644
-index 0000000..2dff5e3
+index 0000000..0f8315c
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/MinecraftTimings.java
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,110 @@
 +package co.aikar.timings;
 +
 +import net.minecraft.server.*;
@@ -136,149 +136,13 @@ index 0000000..2dff5e3
 +    public static Timing getBlockTiming(Block block) {
 +        return Timings.ofSafe("## Scheduled Block: " + block.getName());
 +    }
-+
-+    public static Timing getStructureTiming(StructureGenerator structureGenerator) {
-+        return Timings.ofSafe("Structure Generator - " + structureGenerator.getName());
-+    }
-+}
-diff --git a/src/main/java/co/aikar/timings/TimedChunkGenerator.java b/src/main/java/co/aikar/timings/TimedChunkGenerator.java
-new file mode 100644
-index 0000000..2bf5b66
---- /dev/null
-+++ b/src/main/java/co/aikar/timings/TimedChunkGenerator.java
-@@ -0,0 +1,126 @@
-+/*
-+ * This file is licensed under the MIT License (MIT).
-+ *
-+ * Copyright (c) 2014-2016 Daniel Ennis <http://aikar.co>
-+ *
-+ * Permission is hereby granted, free of charge, to any person obtaining a copy
-+ * of this software and associated documentation files (the "Software"), to deal
-+ * in the Software without restriction, including without limitation the rights
-+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-+ * copies of the Software, and to permit persons to whom the Software is
-+ * furnished to do so, subject to the following conditions:
-+ *
-+ * The above copyright notice and this permission notice shall be included in
-+ * all copies or substantial portions of the Software.
-+ *
-+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-+ * THE SOFTWARE.
-+ */
-+
-+package co.aikar.timings;
-+
-+import net.minecraft.server.BiomeBase.BiomeMeta;
-+import net.minecraft.server.BlockPosition;
-+import net.minecraft.server.Chunk;
-+import net.minecraft.server.EnumCreatureType;
-+import net.minecraft.server.World;
-+import net.minecraft.server.WorldServer;
-+import org.bukkit.Location;
-+import org.bukkit.craftbukkit.generator.InternalChunkGenerator;
-+import org.bukkit.generator.BlockPopulator;
-+
-+import javax.annotation.Nullable;
-+import java.util.List;
-+import java.util.Random;
-+
-+public class TimedChunkGenerator extends InternalChunkGenerator {
-+    private final WorldServer world;
-+    private final InternalChunkGenerator timedGenerator;
-+
-+    public TimedChunkGenerator(WorldServer worldServer, InternalChunkGenerator gen) {
-+        world = worldServer;
-+        timedGenerator = gen;
-+    }
-+
-+    @Override
-+    @Deprecated
-+    public byte[] generate(org.bukkit.World world, Random random, int x, int z) {
-+        return timedGenerator.generate(world, random, x, z);
-+    }
-+
-+    @Override
-+    @Deprecated
-+    public short[][] generateExtBlockSections(org.bukkit.World world, Random random, int x, int z,
-+                                              BiomeGrid biomes) {
-+        return timedGenerator.generateExtBlockSections(world, random, x, z, biomes);
-+    }
-+
-+    @Override
-+    @Deprecated
-+    public byte[][] generateBlockSections(org.bukkit.World world, Random random, int x, int z,
-+                                          BiomeGrid biomes) {
-+        return timedGenerator.generateBlockSections(world, random, x, z, biomes);
-+    }
-+
-+    @Override
-+    public ChunkData generateChunkData(org.bukkit.World world, Random random, int x, int z, BiomeGrid biome) {
-+        return timedGenerator.generateChunkData(world, random, x, z, biome);
-+    }
-+
-+    @Override
-+    public boolean canSpawn(org.bukkit.World world, int x, int z) {
-+        return timedGenerator.canSpawn(world, x, z);
-+    }
-+
-+    @Override
-+    public List<BlockPopulator> getDefaultPopulators(org.bukkit.World world) {
-+        return timedGenerator.getDefaultPopulators(world);
-+    }
-+
-+    @Override
-+    public Location getFixedSpawnLocation(org.bukkit.World world, Random random) {
-+        return timedGenerator.getFixedSpawnLocation(world, random);
-+    }
-+
-+    @Override
-+    public Chunk getOrCreateChunk(int i, int j) {
-+        try (Timing ignored = world.timings.chunkGeneration.startTiming()) {
-+            return timedGenerator.getOrCreateChunk(i, j);
-+        }
-+    }
-+
-+    @Override
-+    public void recreateStructures(int i, int j) {
-+        try (Timing ignored = world.timings.syncChunkLoadStructuresTimer.startTiming()) {
-+            timedGenerator.recreateStructures(i, j);
-+        }
-+    }
-+
-+    @Override
-+    public boolean a(Chunk chunk, int i, int j) {
-+        return timedGenerator.a(chunk, i, j);
-+    }
-+
-+    @Override
-+    public List<BiomeMeta> getMobsFor(EnumCreatureType enumcreaturetype, BlockPosition blockposition) {
-+        return timedGenerator.getMobsFor(enumcreaturetype, blockposition);
-+    }
-+
-+    @Override
-+    @Nullable
-+    public BlockPosition findNearestMapFeature(World world, String s, BlockPosition blockposition) {
-+        return timedGenerator.findNearestMapFeature(world, s, blockposition);
-+    }
-+
-+    @Override
-+    public void recreateStructures(Chunk chunk, int i, int j) {
-+        try (Timing ignored = world.timings.syncChunkLoadStructuresTimer.startTiming()) {
-+            timedGenerator.recreateStructures(chunk, i, j);
-+        }
-+    }
 +}
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 new file mode 100644
-index 0000000..36aafb2
+index 0000000..741da72
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,85 @@
 +package co.aikar.timings;
 +
 +import net.minecraft.server.World;
@@ -294,7 +158,6 @@ index 0000000..36aafb2
 +    public final Timing scheduledBlocksCleanup;
 +    public final Timing scheduledBlocksTicking;
 +    public final Timing chunkTicks;
-+    public final Timing lightChunk;
 +    public final Timing chunkTicksBlocks;
 +    public final Timing doVillages;
 +    public final Timing doChunkMap;
@@ -319,12 +182,10 @@ index 0000000..36aafb2
 +    public final Timing syncChunkLoadTimer;
 +    public final Timing syncChunkLoadDataTimer;
 +    public final Timing syncChunkLoadStructuresTimer;
++    public final Timing syncChunkLoadEntitiesTimer;
++    public final Timing syncChunkLoadTileEntitiesTimer;
++    public final Timing syncChunkLoadTileTicksTimer;
 +    public final Timing syncChunkLoadPostTimer;
-+    public final Timing syncChunkLoadNBTTimer;
-+    public final Timing syncChunkLoadPopulateNeighbors;
-+    public final Timing chunkGeneration;
-+    public final Timing chunkIOStage1;
-+    public final Timing chunkIOStage2;
 +
 +    public WorldTimingsHandler(World server) {
 +        String name = server.worldData.getName() +" - ";
@@ -335,7 +196,6 @@ index 0000000..36aafb2
 +        scheduledBlocksCleanup = Timings.ofSafe(name + "Scheduled Blocks - Cleanup");
 +        scheduledBlocksTicking = Timings.ofSafe(name + "Scheduled Blocks - Ticking");
 +        chunkTicks = Timings.ofSafe(name + "Chunk Ticks");
-+        lightChunk = Timings.ofSafe(name + "Light Chunk");
 +        chunkTicksBlocks = Timings.ofSafe(name + "Chunk Ticks - Blocks");
 +        doVillages = Timings.ofSafe(name + "doVillages");
 +        doChunkMap = Timings.ofSafe(name + "doChunkMap");
@@ -356,13 +216,11 @@ index 0000000..36aafb2
 +
 +        syncChunkLoadTimer = Timings.ofSafe(name + "syncChunkLoad");
 +        syncChunkLoadDataTimer = Timings.ofSafe(name + "syncChunkLoad - Data");
-+        syncChunkLoadStructuresTimer = Timings.ofSafe(name + "chunkLoad - recreateStructures");
++        syncChunkLoadStructuresTimer = Timings.ofSafe(name + "chunkLoad - Structures");
++        syncChunkLoadEntitiesTimer = Timings.ofSafe(name + "chunkLoad - Entities");
++        syncChunkLoadTileEntitiesTimer = Timings.ofSafe(name + "chunkLoad - TileEntities");
++        syncChunkLoadTileTicksTimer = Timings.ofSafe(name + "chunkLoad - TileTicks");
 +        syncChunkLoadPostTimer = Timings.ofSafe(name + "chunkLoad - Post");
-+        syncChunkLoadNBTTimer = Timings.ofSafe(name + "chunkLoad - NBT");
-+        syncChunkLoadPopulateNeighbors = Timings.ofSafe(name + "chunkLoad - Populate Neighbors");
-+        chunkGeneration = Timings.ofSafe(name + "chunkGeneration");
-+        chunkIOStage1 = Timings.ofSafe(name + "ChunkIO Stage 1 - DiskIO");
-+        chunkIOStage2 = Timings.ofSafe(name + "ChunkIO Stage 2 - Post Load");
 +
 +        tracker1 = Timings.ofSafe(name + "tracker stage 1");
 +        tracker2 = Timings.ofSafe(name + "tracker stage 2");
@@ -434,94 +292,6 @@ index a106e44..d17160a 100644
  
      public static int getId(Block block) {
          return Block.REGISTRY.a(block); // CraftBukkit - decompile error
-diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index b651edc..5807bb8 100644
---- a/src/main/java/net/minecraft/server/Chunk.java
-+++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -900,7 +900,7 @@ public class Chunk {
- 
-     // CraftBukkit start
-     public void loadNearby(IChunkProvider ichunkprovider, ChunkGenerator chunkgenerator, boolean newChunk) {
--        world.timings.syncChunkLoadPostTimer.startTiming(); // Spigot
-+        world.timings.syncChunkLoadPostTimer.startTiming(); // Paper
-         Server server = world.getServer();
-         if (server != null) {
-             /*
-@@ -926,7 +926,8 @@ public class Chunk {
-             }
-         }
-         // CraftBukkit end
--
-+        world.timings.syncChunkLoadPostTimer.stopTiming(); // Paper
-+        world.timings.syncChunkLoadPopulateNeighbors.startTiming(); // Paper
-         Chunk chunk = ichunkprovider.getLoadedChunkAt(this.locX, this.locZ - 1);
-         Chunk chunk1 = ichunkprovider.getLoadedChunkAt(this.locX + 1, this.locZ);
-         Chunk chunk2 = ichunkprovider.getLoadedChunkAt(this.locX, this.locZ + 1);
-@@ -951,7 +952,7 @@ public class Chunk {
-                 chunk4.a(chunkgenerator);
-             }
-         }
--        world.timings.syncChunkLoadPostTimer.stopTiming(); // Spigot
-+        world.timings.syncChunkLoadPopulateNeighbors.stopTiming(); // Paper
- 
-     }
- 
-@@ -1164,6 +1165,7 @@ public class Chunk {
-     }
- 
-     public void o() {
-+        world.timings.lightChunk.startTiming(); // Paper
-         this.done = true;
-         this.lit = true;
-         BlockPosition blockposition = new BlockPosition(this.locX << 4, 0, this.locZ << 4);
-@@ -1197,6 +1199,7 @@ public class Chunk {
-             }
-         }
- 
-+        world.timings.lightChunk.stopTiming(); // Paper
-     }
- 
-     private void z() {
-diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 3de34be..31eb342 100644
---- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-+++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -387,7 +387,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
- 
-     public void loadEntities(Chunk chunk, NBTTagCompound nbttagcompound, World world) {
-         // CraftBukkit end
--        world.timings.syncChunkLoadEntitiesTimer.startTiming(); // Spigot
-+        world.timings.syncChunkLoadNBTTimer.startTiming(); // Spigot
-         NBTTagList nbttaglist1 = nbttagcompound.getList("Entities", 10);
- 
-         if (nbttaglist1 != null) {
-@@ -398,8 +398,6 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-                 chunk.g(true);
-             }
-         }
--        world.timings.syncChunkLoadEntitiesTimer.stopTiming(); // Spigot
--        world.timings.syncChunkLoadTileEntitiesTimer.startTiming(); // Spigot
-         NBTTagList nbttaglist2 = nbttagcompound.getList("TileEntities", 10);
- 
-         if (nbttaglist2 != null) {
-@@ -412,8 +410,6 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-                 }
-             }
-         }
--        world.timings.syncChunkLoadTileEntitiesTimer.stopTiming(); // Spigot
--        world.timings.syncChunkLoadTileTicksTimer.startTiming(); // Spigot
- 
-         if (nbttagcompound.hasKeyOfType("TileTicks", 9)) {
-             NBTTagList nbttaglist3 = nbttagcompound.getList("TileTicks", 10);
-@@ -433,7 +429,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-                 }
-             }
-         }
--        world.timings.syncChunkLoadTileTicksTimer.stopTiming(); // Spigot
-+        world.timings.syncChunkLoadNBTTimer.stopTiming(); // Spigot
- 
-         // return chunk; // CraftBukkit
-     }
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
 index 11a49a3..e70d5c5 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
@@ -695,7 +465,7 @@ index 5432e70..72cd51a 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 3d76e54..0024d3d 100644
+index 26f8467..891c7ea 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -45,7 +45,7 @@ import org.bukkit.Bukkit;
@@ -986,48 +756,6 @@ index d5dd29b..13a6cfe 100644
          // this.minecraftServer.getCommandHandler().a(this.player, s);
          // CraftBukkit end
      }
-diff --git a/src/main/java/net/minecraft/server/StructureGenerator.java b/src/main/java/net/minecraft/server/StructureGenerator.java
-index 8dd434c..c965af1 100644
---- a/src/main/java/net/minecraft/server/StructureGenerator.java
-+++ b/src/main/java/net/minecraft/server/StructureGenerator.java
-@@ -1,5 +1,7 @@
- package net.minecraft.server;
- 
-+import co.aikar.timings.MinecraftTimings;
-+import co.aikar.timings.Timing;
- import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
- import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
- import java.util.Iterator;
-@@ -8,11 +10,13 @@ import java.util.Random;
- 
- public abstract class StructureGenerator extends WorldGenBase {
- 
-+    private final Timing timing = MinecraftTimings.getStructureTiming(this); // Paper
-     private PersistentStructure a;
-     protected Long2ObjectMap<StructureStart> c = new Long2ObjectOpenHashMap(1024);
- 
-     public StructureGenerator() {}
- 
-+    public String getName() { return a(); } // Paper // OBF HELPER
-     public abstract String a();
- 
-     protected final synchronized void a(World world, final int i, final int j, int k, int l, ChunkSnapshot chunksnapshot) {
-@@ -68,6 +72,7 @@ public abstract class StructureGenerator extends WorldGenBase {
-     }
- 
-     public synchronized boolean a(World world, Random random, ChunkCoordIntPair chunkcoordintpair) {
-+        timing.startTiming(); // Paper
-         this.a(world);
-         int i = (chunkcoordintpair.x << 4) + 8;
-         int j = (chunkcoordintpair.z << 4) + 8;
-@@ -84,6 +89,7 @@ public abstract class StructureGenerator extends WorldGenBase {
-                 this.a(structurestart.e(), structurestart.f(), structurestart);
-             }
-         }
-+        timing.stopTiming(); // Paper
- 
-         return flag;
-     }
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
 index 42f37df..2b82312 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
@@ -1155,7 +883,7 @@ index e649435..b73f64e 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 0668887..94d07eb 100644
+index 0668887..e0f448d 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -245,13 +245,13 @@ public class WorldServer extends World implements IAsyncTaskHandler {
@@ -1235,20 +963,11 @@ index 0668887..94d07eb 100644
  
                  this.methodProfiler.b();
                  this.U.clear();
-@@ -842,7 +850,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
-             gen = new org.bukkit.craftbukkit.generator.NormalChunkGenerator(this, this.getSeed());
-         }
- 
--        return new ChunkProviderServer(this, ichunkloader, gen);
-+        return new ChunkProviderServer(this, ichunkloader, new co.aikar.timings.TimedChunkGenerator(this, gen)); // Paper
-         // CraftBukkit end
-     }
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 03169db..a519b71 100644
+index e7e9941..5f2a9b0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1722,6 +1722,7 @@ public final class CraftServer implements Server {
+@@ -1727,6 +1727,7 @@ public final class CraftServer implements Server {
      private final Spigot spigot = new Spigot()
      {
  
@@ -1256,7 +975,7 @@ index 03169db..a519b71 100644
          @Override
          public YamlConfiguration getConfig()
          {
-@@ -1729,6 +1730,24 @@ public final class CraftServer implements Server {
+@@ -1734,6 +1735,24 @@ public final class CraftServer implements Server {
          }
  
          @Override
@@ -1460,50 +1179,6 @@ index 41d2d87..0000000
 -        }
 -    }
 -}
-diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
-index 3a95b44..b5efb9c 100644
---- a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
-+++ b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
-@@ -1,6 +1,8 @@
- package org.bukkit.craftbukkit.chunkio;
- 
- import java.io.IOException;
-+
-+import co.aikar.timings.Timing;
- import net.minecraft.server.Chunk;
- import net.minecraft.server.ChunkCoordIntPair;
- import net.minecraft.server.ChunkRegionLoader;
-@@ -16,7 +18,7 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
- 
-     // async stuff
-     public Chunk callStage1(QueuedChunk queuedChunk) throws RuntimeException {
--        try {
-+        try (Timing ignored = queuedChunk.provider.world.timings.chunkIOStage1.startTimingIfSync()) { // Paper
-             ChunkRegionLoader loader = queuedChunk.loader;
-             Object[] data = loader.loadChunk(queuedChunk.world, queuedChunk.x, queuedChunk.z);
-             
-@@ -38,6 +40,7 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
-             queuedChunk.provider.originalGetChunkAt(queuedChunk.x, queuedChunk.z);
-             return;
-         }
-+        try (Timing ignored = queuedChunk.provider.world.timings.chunkIOStage2.startTimingIfSync()) { // Paper
- 
-         queuedChunk.loader.loadEntities(chunk, queuedChunk.compound.getCompound("Level"), queuedChunk.world);
-         chunk.setLastSaved(queuedChunk.provider.world.getTime());
-@@ -45,12 +48,11 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
-         chunk.addEntities();
- 
-         if (queuedChunk.provider.chunkGenerator != null) {
--            queuedChunk.provider.world.timings.syncChunkLoadStructuresTimer.startTiming(); // Spigot
-             queuedChunk.provider.chunkGenerator.recreateStructures(chunk, queuedChunk.x, queuedChunk.z);
--            queuedChunk.provider.world.timings.syncChunkLoadStructuresTimer.stopTiming(); // Spigot
-         }
- 
-         chunk.loadNearby(queuedChunk.provider, queuedChunk.provider.chunkGenerator, false);
-+        } // Paper
-     }
- 
-     public void callStage3(QueuedChunk queuedChunk, Chunk chunk, Runnable runnable) throws RuntimeException {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index 3c75538..5874554 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
@@ -1736,5 +1411,5 @@ index 30efc99..eb30abe 100644
      }
  }
 -- 
-2.9.3
+2.9.2.windows.1
 
