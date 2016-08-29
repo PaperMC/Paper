@@ -1,6 +1,6 @@
-From 8f824fb7809c11b2f512a13f5ba34661e9a4b82f Mon Sep 17 00:00:00 2001
+From 0b4d74f22c3d2f9cb147c3e165e7e3b207f8be5a Mon Sep 17 00:00:00 2001
 From: stonar96 <minecraft.stonar96@gmail.com>
-Date: Mon, 29 Aug 2016 17:26:14 +0200
+Date: Tue, 30 Aug 2016 00:26:46 +0200
 Subject: [PATCH] Anti-Xray
 
 
@@ -903,7 +903,7 @@ index 0000000..f5a91d5
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 30c3d6c..4870a3f 100644
+index 30c3d6c..1f6a44f 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -1,5 +1,6 @@
@@ -913,15 +913,15 @@ index 30c3d6c..4870a3f 100644
  import com.destroystokyo.paper.exception.ServerInternalException;
  import com.google.common.base.Predicate;
  import com.google.common.collect.Maps;
-@@ -21,6 +22,8 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers; // Paper
- 
- public class Chunk {
+@@ -50,6 +51,8 @@ public class Chunk {
+     public boolean d;public void setShouldUnload(boolean unload) { this.d = unload; } public boolean isUnloading() { return d; } // Paper // OBFHELPER
+     protected gnu.trove.map.hash.TObjectIntHashMap<Class> entityCount = new gnu.trove.map.hash.TObjectIntHashMap<Class>(); // Spigot
  
 +    public final Lock blocksLock; // Paper - Async-Anti-Xray - Locks blocks and sections and is applied before a packet of this chunk or a neighbor-chunk is added to the obfuscation-executor-service on the main-thread until the obfuscator-thread is finished to ensure "single-thread-behavior" and thread-safety
 +    public final Lock dataLock; // Paper - Async-Anti-Xray - Locks sky light, emitted light and biome index and is applied before a packet of this chunk is added to the obfuscation-executor-service on the main-thread until the obfuscator-thread is finished to ensure "single-thread-behavior" and thread-safety
-     private static final Logger e = LogManager.getLogger();
-     public static final ChunkSection a = null;
-     private final ChunkSection[] sections;
+     // Paper start
+     // Track the number of minecarts and items
+     // Keep this synced with entitySlices.add() and entitySlices.remove()
 @@ -96,6 +99,8 @@ public class Chunk {
          this.y = Queues.newConcurrentLinkedQueue();
          this.entitySlices = (List[]) (new List[16]); // Spigot
@@ -936,80 +936,31 @@ index 30c3d6c..4870a3f 100644
  
                          if (this.sections[j1] == Chunk.a) {
 -                            this.sections[j1] = new ChunkSection(j1 << 4, flag1);
-+                            this.sections[j1] = new ChunkSection(j1 << 4, flag1, world.blockPacketController.getPredefinedBlockData(this, j1)); // Paper - Anti-Xray - Add blocks used for obfuscation to the DataPalette
++                            this.sections[j1] = new ChunkSection(this, j1 << 4, flag1, world.blockPacketController.getPredefinedBlockData(this, j1)); // Paper - Anti-Xray - Add blocks used for obfuscation to the DataPalette
                          }
  
                          this.sections[j1].setType(k, i1 & 15, l, iblockdata);
-@@ -214,6 +219,7 @@ public class Chunk {
-                                 ChunkSection chunksection = this.sections[i1 >> 4];
- 
-                                 if (chunksection != Chunk.a) {
-+                                    this.dataLock.waitUntilUnlock(); // Paper - Async-Anti-Xray - Note: Lock is applied on the same thread (main thread) -> no race condition
-                                     chunksection.a(j, i1 & 15, k, l);
-                                     this.world.m(new BlockPosition((this.locX << 4) + j, i1, (this.locZ << 4) + k));
-                                 }
-@@ -334,6 +340,7 @@ public class Chunk {
-                     for (l1 = i1; l1 < l; ++l1) {
-                         chunksection = this.sections[l1 >> 4];
-                         if (chunksection != Chunk.a) {
-+                            this.dataLock.waitUntilUnlock(); // Paper - Async-Anti-Xray - Note: Lock is applied on the same thread (main thread) -> no race condition
-                             chunksection.a(i, l1 & 15, k, 15);
-                             this.world.m(new BlockPosition((this.locX << 4) + i, l1, (this.locZ << 4) + k));
-                         }
-@@ -342,6 +349,7 @@ public class Chunk {
-                     for (l1 = l; l1 < i1; ++l1) {
-                         chunksection = this.sections[l1 >> 4];
-                         if (chunksection != Chunk.a) {
-+                            this.dataLock.waitUntilUnlock(); // Paper - Async-Anti-Xray - Note: Lock is applied on the same thread (main thread) -> no race condition
-                             chunksection.a(i, l1 & 15, k, 0);
-                             this.world.m(new BlockPosition((this.locX << 4) + i, l1, (this.locZ << 4) + k));
-                         }
-@@ -365,6 +373,7 @@ public class Chunk {
-                     ChunkSection chunksection1 = this.sections[i1 >> 4];
- 
-                     if (chunksection1 != Chunk.a) {
-+                        this.dataLock.waitUntilUnlock(); // Paper - Async-Anti-Xray - Note: Lock is applied on the same thread (main thread) -> no race condition
-                         chunksection1.a(i, i1 & 15, k, l1);
-                     }
-                 }
-@@ -495,11 +504,13 @@ public class Chunk {
+@@ -495,7 +500,8 @@ public class Chunk {
                      return null;
                  }
  
 -                chunksection = new ChunkSection(j >> 4 << 4, !this.world.worldProvider.m());
-+                chunksection = new ChunkSection(j >> 4 << 4, !this.world.worldProvider.m(), this.world.blockPacketController.getPredefinedBlockData(this, j >> 4)); // Paper - Anti-Xray - Add blocks used for obfuscation to the DataPalette
++                chunksection = new ChunkSection(this, j >> 4 << 4, !this.world.worldProvider.m(), this.world.blockPacketController.getPredefinedBlockData(this, j >> 4)); // Paper - Anti-Xray - Add blocks used for obfuscation to the DataPalette
 +                this.blocksLock.waitUntilUnlock(); // Paper - Async-Anti-Xray - Note: Lock is applied on the same thread (main thread) -> no race condition
                  this.sections[j >> 4] = chunksection;
                  flag = j >= i1;
              }
- 
-+            this.blocksLock.waitUntilUnlock(); // Paper - Async-Anti-Xray - Note: Lock is applied on the same thread (main thread) -> no race condition
-             chunksection.setType(i, j & 15, k, iblockdata);
-             if (block1 != block) {
-                 if (!this.world.isClientSide) {
-@@ -580,7 +591,8 @@ public class Chunk {
+@@ -580,7 +586,8 @@ public class Chunk {
          ChunkSection chunksection = this.sections[k >> 4];
  
          if (chunksection == Chunk.a) {
 -            chunksection = new ChunkSection(k >> 4 << 4, !this.world.worldProvider.m());
-+            chunksection = new ChunkSection(k >> 4 << 4, !this.world.worldProvider.m(), this.world.blockPacketController.getPredefinedBlockData(this, k >> 4)); // Paper - Anti-Xray - Add blocks used for obfuscation to the DataPalette
++            chunksection = new ChunkSection(this, k >> 4 << 4, !this.world.worldProvider.m(), this.world.blockPacketController.getPredefinedBlockData(this, k >> 4)); // Paper - Anti-Xray - Add blocks used for obfuscation to the DataPalette
 +            this.blocksLock.waitUntilUnlock(); // Paper - Async-Anti-Xray - Note: Lock is applied on the same thread (main thread) -> no race condition
              this.sections[k >> 4] = chunksection;
              this.initLighting();
          }
-@@ -588,9 +600,11 @@ public class Chunk {
-         this.s = true;
-         if (enumskyblock == EnumSkyBlock.SKY) {
-             if (!this.world.worldProvider.m()) {
-+                this.dataLock.waitUntilUnlock(); // Paper - Async-Anti-Xray - Note: Lock is applied on the same thread (main thread) -> no race condition
-                 chunksection.a(j, k & 15, l, i);
-             }
-         } else if (enumskyblock == EnumSkyBlock.BLOCK) {
-+            this.dataLock.waitUntilUnlock(); // Paper - Async-Anti-Xray - Note: Lock is applied on the same thread (main thread) -> no race condition
-             chunksection.b(j, k & 15, l, i);
-         }
- 
-@@ -1177,6 +1191,7 @@ public class Chunk {
+@@ -1177,6 +1184,7 @@ public class Chunk {
          if (k == 255) {
              biomebase = worldchunkmanager.getBiome(blockposition, Biomes.c);
              k = BiomeBase.a(biomebase);
@@ -1017,7 +968,7 @@ index 30c3d6c..4870a3f 100644
              this.g[j << 4 | i] = (byte) (k & 255);
          }
  
-@@ -1192,6 +1207,7 @@ public class Chunk {
+@@ -1192,6 +1200,7 @@ public class Chunk {
          if (this.g.length != abyte.length) {
              Chunk.e.warn("Could not set level chunk biomes, array length is {} instead of {}", new Object[] { Integer.valueOf(abyte.length), Integer.valueOf(this.g.length)});
          } else {
@@ -1026,7 +977,7 @@ index 30c3d6c..4870a3f 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 584a77d..3be53dd 100644
+index 584a77d..7a53b8c 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -377,7 +377,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
@@ -1034,12 +985,12 @@ index 584a77d..3be53dd 100644
              NBTTagCompound nbttagcompound1 = nbttaglist.get(k);
              byte b0 = nbttagcompound1.getByte("Y");
 -            ChunkSection chunksection = new ChunkSection(b0 << 4, flag1);
-+            ChunkSection chunksection = new ChunkSection(b0 << 4, flag1, world.blockPacketController.getPredefinedBlockData(chunk, b0)); // Paper - Anti-Xray - Add blocks used for obfuscation to the DataPalette
++            ChunkSection chunksection = new ChunkSection(chunk, b0 << 4, flag1, world.blockPacketController.getPredefinedBlockData(chunk, b0)); // Paper - Anti-Xray - Add blocks used for obfuscation to the DataPalette
              byte[] abyte = nbttagcompound1.getByteArray("Blocks");
              NibbleArray nibblearray = new NibbleArray(nbttagcompound1.getByteArray("Data"));
              NibbleArray nibblearray1 = nbttagcompound1.hasKeyOfType("Add", 7) ? new NibbleArray(nbttagcompound1.getByteArray("Add")) : null;
 diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
-index 27d0f99..3d25a0d 100644
+index 27d0f99..aa8763b 100644
 --- a/src/main/java/net/minecraft/server/ChunkSection.java
 +++ b/src/main/java/net/minecraft/server/ChunkSection.java
 @@ -1,5 +1,7 @@
@@ -1050,42 +1001,108 @@ index 27d0f99..3d25a0d 100644
  public class ChunkSection {
  
      private final int yPos;
-@@ -9,9 +11,15 @@ public class ChunkSection {
+@@ -8,10 +10,18 @@ public class ChunkSection {
+     final DataPaletteBlock blockIds; // Paper - package
      private NibbleArray emittedLight;
      private NibbleArray skyLight;
++    private final Chunk chunk; // Paper - Async-Anti-Xray - Get access to Chunk#blocksLock and Chunk#dataLock
  
 +    // Paper start - Anti-Xray - Support default constructor
      public ChunkSection(int i, boolean flag) {
-+        this(i, flag, (IBlockData[]) null);
++        this(null, i, flag, (IBlockData[]) null);
 +    }
 +    // Paper end
 +
-+    public ChunkSection(int i, boolean flag, @Nullable IBlockData[] predefinedBlockData) { // Paper - Anti-Xray - Blocks used for obfuscation
++    public ChunkSection(Chunk chunk, int i, boolean flag, @Nullable IBlockData[] predefinedBlockData) { // Paper - (Async-)Anti-Xray - Chunk object used to access the lock objects and blocks used for obfuscation
++        this.chunk = chunk; // Paper - Async-Anti-Xray
          this.yPos = i;
 -        this.blockIds = new DataPaletteBlock();
 +        this.blockIds = new DataPaletteBlock(predefinedBlockData); // Paper - Anti-Xray - Add blocks used for obfuscation to the DataPalette
          this.emittedLight = new NibbleArray();
          if (flag) {
              this.skyLight = new NibbleArray();
-@@ -19,10 +27,16 @@ public class ChunkSection {
+@@ -19,10 +29,17 @@ public class ChunkSection {
  
      }
  
 -    // CraftBukkit start
 +    // Paper start - Anti-Xray - Support default constructor
      public ChunkSection(int y, boolean flag, char[] blockIds) {
-+        this(y, flag, blockIds, null);
++        this(null, y, flag, blockIds, null);
 +    }
 +    // Paper end
 +
 +    // CraftBukkit start
-+    public ChunkSection(int y, boolean flag, char[] blockIds, @Nullable IBlockData[] predefinedBlockData) { // Paper - Anti-Xray - Blocks used for obfuscation
++    public ChunkSection(Chunk chunk, int y, boolean flag, char[] blockIds, @Nullable IBlockData[] predefinedBlockData) { // Paper - (Async-)Anti-Xray - Chunk object used to access the lock objects and blocks used for obfuscation
++        this.chunk = chunk; // Paper - Async-Anti-Xray
          this.yPos = y;
 -        this.blockIds = new DataPaletteBlock();
 +        this.blockIds = new DataPaletteBlock(predefinedBlockData); // Paper - Anti-Xray - Add blocks used for obfuscation to the DataPalette
          for (int i = 0; i < blockIds.length; i++) {
              int xx = i & 15;
              int yy = (i >> 8) & 15;
+@@ -42,6 +59,12 @@ public class ChunkSection {
+     }
+ 
+     public void setType(int i, int j, int k, IBlockData iblockdata) {
++        // Paper start - Async-Anti-Xray - Note: Lock is applied on the same thread (main thread) -> no race condition
++        if (chunk != null) {
++            chunk.blocksLock.waitUntilUnlock();
++        }
++        // Paper end
++
+         IBlockData iblockdata1 = this.getType(i, j, k);
+         Block block = iblockdata1.getBlock();
+         Block block1 = iblockdata.getBlock();
+@@ -78,6 +101,12 @@ public class ChunkSection {
+     }
+ 
+     public void a(int i, int j, int k, int l) {
++        // Paper start - Async-Anti-Xray - Note: Lock is applied on the same thread (main thread) -> no race condition
++        if (chunk != null) {
++            chunk.dataLock.waitUntilUnlock();
++        }
++        // Paper end
++
+         this.skyLight.a(i, j, k, l);
+     }
+ 
+@@ -86,6 +115,12 @@ public class ChunkSection {
+     }
+ 
+     public void b(int i, int j, int k, int l) {
++        // Paper start - Async-Anti-Xray - Note: Lock is applied on the same thread (main thread) -> no race condition
++        if (chunk != null) {
++            chunk.dataLock.waitUntilUnlock();
++        }
++        // Paper end
++
+         this.emittedLight.a(i, j, k, l);
+     }
+ 
+@@ -127,10 +162,22 @@ public class ChunkSection {
+     }
+ 
+     public void a(NibbleArray nibblearray) {
++        // Paper start - Async-Anti-Xray - Note: Lock is applied on the same thread (main thread) -> no race condition
++        if (chunk != null) {
++            chunk.dataLock.waitUntilUnlock();
++        }
++        // Paper end
++
+         this.emittedLight = nibblearray;
+     }
+ 
+     public void b(NibbleArray nibblearray) {
++        // Paper start - Async-Anti-Xray - Note: Lock is applied on the same thread (main thread) -> no race condition
++        if (chunk != null) {
++            chunk.dataLock.waitUntilUnlock();
++        }
++        // Paper end
++
+         this.skyLight = nibblearray;
+     }
+ }
 diff --git a/src/main/java/net/minecraft/server/DataBits.java b/src/main/java/net/minecraft/server/DataBits.java
 index fa0fd8a..bb65bd6 100644
 --- a/src/main/java/net/minecraft/server/DataBits.java
@@ -1458,7 +1475,7 @@ index b3d4f86..d64c87b 100644
  
      public void a(BlockPosition blockposition, Block block, EnumDirection enumdirection) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
-index aa292e3..a1b6126 100644
+index aa292e3..d81fb92 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 @@ -73,7 +73,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
@@ -1466,7 +1483,7 @@ index aa292e3..a1b6126 100644
                  // Build chunk section
                  if (emptyTest != 0) {
 -                    csect[sec] = new ChunkSection(sec << 4, true, section);
-+                    csect[sec] = new ChunkSection(sec << 4, true, section, this.world.blockPacketController.getPredefinedBlockData(chunk, sec)); // Paper - Anti-Xray - Add blocks used for obfuscation to the DataPalette
++                    csect[sec] = new ChunkSection(chunk, sec << 4, true, section, this.world.blockPacketController.getPredefinedBlockData(chunk, sec)); // Paper - Anti-Xray - Add blocks used for obfuscation to the DataPalette
                  }
              }
          }
@@ -1475,7 +1492,7 @@ index aa292e3..a1b6126 100644
                      }
                      // Build chunk section
 -                    csect[sec] = new ChunkSection(sec << 4, true, secBlkID);
-+                    csect[sec] = new ChunkSection(sec << 4, true, secBlkID, this.world.blockPacketController.getPredefinedBlockData(chunk, sec)); // Paper - Anti-Xray - Add blocks used for obfuscation to the DataPalette
++                    csect[sec] = new ChunkSection(chunk, sec << 4, true, secBlkID, this.world.blockPacketController.getPredefinedBlockData(chunk, sec)); // Paper - Anti-Xray - Add blocks used for obfuscation to the DataPalette
                  }
              }
              else { // Else check for byte-per-block section data
@@ -1484,7 +1501,7 @@ index aa292e3..a1b6126 100644
                              secBlkID[i] = (char) Block.REGISTRY_ID.getId(b.getBlockData());
                          }
 -                        csect[sec] = new ChunkSection(sec << 4, true, secBlkID);
-+                        csect[sec] = new ChunkSection(sec << 4, true, secBlkID, this.world.blockPacketController.getPredefinedBlockData(chunk, sec)); // Paper - Anti-Xray - Add blocks used for obfuscation to the DataPalette
++                        csect[sec] = new ChunkSection(chunk, sec << 4, true, secBlkID, this.world.blockPacketController.getPredefinedBlockData(chunk, sec)); // Paper - Anti-Xray - Add blocks used for obfuscation to the DataPalette
                      }
                  }
                  else { // Else, fall back to pre 1.2 method
@@ -1493,7 +1510,7 @@ index aa292e3..a1b6126 100644
                          // If section built, finish prepping its state
                          if (csbytes != null) {
 -                            ChunkSection cs = csect[sec] = new ChunkSection(sec << 4, true, csbytes);
-+                            ChunkSection cs = csect[sec] = new ChunkSection(sec << 4, true, csbytes, this.world.blockPacketController.getPredefinedBlockData(chunk, sec)); // Paper - Anti-Xray - Add blocks used for obfuscation to the DataPalette
++                            ChunkSection cs = csect[sec] = new ChunkSection(chunk, sec << 4, true, csbytes, this.world.blockPacketController.getPredefinedBlockData(chunk, sec)); // Paper - Anti-Xray - Add blocks used for obfuscation to the DataPalette
                              cs.recalcBlockCounts();
                          }
                      }
