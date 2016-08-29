@@ -1,6 +1,6 @@
-From 02036efe20a914af7e66d9524544bcb6849ce9e5 Mon Sep 17 00:00:00 2001
+From 8f824fb7809c11b2f512a13f5ba34661e9a4b82f Mon Sep 17 00:00:00 2001
 From: stonar96 <minecraft.stonar96@gmail.com>
-Date: Mon, 29 Aug 2016 12:18:56 +0200
+Date: Mon, 29 Aug 2016 17:26:14 +0200
 Subject: [PATCH] Anti-Xray
 
 
@@ -44,7 +44,7 @@ index e3fe8f4..828812d 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/BlockPacketController.java b/src/main/java/com/destroystokyo/paper/antixray/BlockPacketController.java
 new file mode 100644
-index 0000000..dd8f781
+index 0000000..96a2eb2
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/BlockPacketController.java
 @@ -0,0 +1,152 @@
@@ -66,7 +66,7 @@ index 0000000..dd8f781
 +public class BlockPacketController implements IBlockPacketController {
 +
 +    private static BlockPacketController instance = null;
-+    private final Lock noOpLock;
++    protected final Lock noOpLock;
 +
 +    /**
 +     * Protected constructor for invocation by subclass constructors.
@@ -202,10 +202,10 @@ index 0000000..dd8f781
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/BlockPacketControllerObfuscate.java b/src/main/java/com/destroystokyo/paper/antixray/BlockPacketControllerObfuscate.java
 new file mode 100644
-index 0000000..e11d4dd
+index 0000000..c948fa6
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/BlockPacketControllerObfuscate.java
-@@ -0,0 +1,386 @@
+@@ -0,0 +1,405 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import java.util.HashSet;
@@ -233,23 +233,14 @@ index 0000000..e11d4dd
 +public class BlockPacketControllerObfuscate implements IBlockPacketController {
 +
 +    private static ExecutorService executorServiceInstance = null;
-+    protected ExecutorService executorService = null;
-+    protected Lock noOpLock = null;
-+    protected boolean asynchronous = true;
-+    protected int engineMode = 3;
-+    protected int neighborsMode = 1;
-+    protected int maxChunkY = 3;
-+    protected final boolean[] obfuscateBlocks = new boolean[Short.MAX_VALUE];
-+    protected IBlockData[] replacementOres = null;
-+
-+    /**
-+     * Protected constructor for invocation by subclass constructors.
-+     * Use this constructor to prevent unnecessary intantiation of the Lock and ExecutorService singletons
-+     * incase of overriding for example getChunkBlocksLock(Chunk chunk) and getChunkDataLock(Chunk chunk).
-+     */
-+    protected BlockPacketControllerObfuscate() {
-+
-+    }
++    protected final ExecutorService executorService;
++    protected final Lock noOpLock;
++    protected final boolean asynchronous;
++    protected final int engineMode;
++    protected final int neighborsMode;
++    protected final int maxChunkY;
++    protected final boolean[] obfuscateBlocks;
++    protected final IBlockData[] replacementOres;
 +
 +    /**
 +     * Public (normal) constructor.
@@ -261,10 +252,13 @@ index 0000000..e11d4dd
 +        engineMode = config.engineMode;
 +        neighborsMode = config.neighborsMode;
 +        maxChunkY = config.maxChunkY;
++        obfuscateBlocks = new boolean[Short.MAX_VALUE];
 +
 +        if (asynchronous) {
 +            executorService = getExecutorServiceInstance();
++            noOpLock = null;
 +        } else {
++            executorService = null;
 +            noOpLock = Lock.getNoOpInstance();
 +        }
 +
@@ -288,6 +282,31 @@ index 0000000..e11d4dd
 +        }
 +
 +        replacementOres = replacementOreList.toArray(new IBlockData[replacementOreList.size()]);
++    }
++
++    /**
++     * Protected constructor for invocation by subclass constructors.
++     * Use this constructor to prevent unnecessary intantiation of the Lock and ExecutorService singletons
++     * incase of overriding for example getChunkBlocksLock(Chunk chunk) and getChunkDataLock(Chunk chunk).
++     *
++     * @param executorService The executor service used by this class
++     * @param lock The lock instance used or returned by this class if asynchronous is false
++     * @param asynchronous Whether or not obfuscate asynchronous
++     * @param engineMode The engine mode (1 = replace ores, 2 = fake ores, 3 = fake ores every third block)
++     * @param neighborsMode The neighbors mode (1 = don't load, 2 = wait until loaded, 3 = load)
++     * @param maxChunkY The maximum chunk section coordinate for obfuscating (= (maxChunkY + 1) * 16 blocks)
++     * @param obfuscateBlocks The blocks which should be obfuscated
++     * @param replacementOres The blocks (ores) which are used in engine mode 2 and 3 to replace hidden blocks
++     */
++    protected BlockPacketControllerObfuscate(ExecutorService executorService, Lock lock, boolean asynchronous, int engineMode, int neighborsMode, int maxChunkY, boolean[] obfuscateBlocks, IBlockData[] replacementOres) {
++        this.executorService = executorService;
++        noOpLock = lock;
++        this.asynchronous = asynchronous;
++        this.engineMode = engineMode;
++        this.neighborsMode = neighborsMode;
++        this.maxChunkY = maxChunkY;
++		this.obfuscateBlocks = obfuscateBlocks;
++        this.replacementOres = replacementOres;
 +    }
 +
 +    /**
