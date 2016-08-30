@@ -44,8 +44,8 @@ import BlockFalling
 import BlockFluids
 import BlockFurnace
 import BlockIceFrost
-import BlockSnowBlock
 import BlockPosition
+import BlockSnowBlock
 import BlockStateEnum
 import ChunkCache
 import ChunkProviderFlat
