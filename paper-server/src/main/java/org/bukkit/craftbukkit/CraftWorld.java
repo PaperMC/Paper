@@ -1085,6 +1085,9 @@ public class CraftWorld implements World {
                 entity = new EntityLeash(world, new BlockPosition((int) x, (int) y, (int) z));
                 entity.attachedToPlayer = true;
             } else {
+                // No valid face found
+                Preconditions.checkArgument(face != BlockFace.SELF, "Cannot spawn hanging entity for %s at %s (no free face)", clazz.getName(), location);
+
                 EnumDirection dir = CraftBlock.blockFaceToNotch(face).opposite();
                 if (Painting.class.isAssignableFrom(clazz)) {
                     entity = new EntityPainting(world, new BlockPosition((int) x, (int) y, (int) z), dir);
