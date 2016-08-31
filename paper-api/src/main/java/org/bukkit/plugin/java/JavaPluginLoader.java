@@ -7,12 +7,12 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
@@ -49,7 +49,7 @@ public final class JavaPluginLoader implements PluginLoader {
     final Server server;
     private final Pattern[] fileFilters = new Pattern[] { Pattern.compile("\\.jar$"), };
     private final Map<String, Class<?>> classes = new HashMap<String, Class<?>>();
-    private final Map<String, PluginClassLoader> loaders = Collections.synchronizedMap(new LinkedHashMap<String, PluginClassLoader>());
+    private final List<PluginClassLoader> loaders = new CopyOnWriteArrayList<PluginClassLoader>();
 
     /**
      * This class was not meant to be constructed explicitly
@@ -115,7 +115,7 @@ public final class JavaPluginLoader implements PluginLoader {
         }
 
         for (final String pluginName : description.getDepend()) {
-            PluginClassLoader current = loaders.get(pluginName);
+            Plugin current = server.getPluginManager().getPlugin(pluginName);
 
             if (current == null) {
                 throw new UnknownDependencyException(pluginName);
@@ -131,7 +131,7 @@ public final class JavaPluginLoader implements PluginLoader {
             throw new InvalidPluginException(ex);
         }
 
-        loaders.put(description.getName(), loader);
+        loaders.add(loader);
 
         return loader.plugin;
     }
@@ -184,14 +184,12 @@ public final class JavaPluginLoader implements PluginLoader {
         if (cachedClass != null) {
             return cachedClass;
         } else {
-            synchronized (loaders) {
-                for (PluginClassLoader loader : loaders.values()) {
-                    try {
-                        cachedClass = loader.findClass(name, false);
-                    } catch (ClassNotFoundException cnfe) {}
-                    if (cachedClass != null) {
-                        return cachedClass;
-                    }
+            for (PluginClassLoader loader : loaders) {
+                try {
+                    cachedClass = loader.findClass(name, false);
+                } catch (ClassNotFoundException cnfe) {}
+                if (cachedClass != null) {
+                    return cachedClass;
                 }
             }
         }
@@ -320,10 +318,11 @@ public final class JavaPluginLoader implements PluginLoader {
 
             JavaPlugin jPlugin = (JavaPlugin) plugin;
 
-            String pluginName = jPlugin.getDescription().getName();
+            PluginClassLoader pluginLoader = (PluginClassLoader) jPlugin.getClassLoader();
 
-            if (!loaders.containsKey(pluginName)) {
-                loaders.put(pluginName, (PluginClassLoader) jPlugin.getClassLoader());
+            if (!loaders.contains(pluginLoader)) {
+                loaders.add(pluginLoader);
+                server.getLogger().log(Level.WARNING, "Enabled plugin with unregistered PluginClassLoader " + plugin.getDescription().getFullName());
             }
 
             try {
@@ -356,10 +355,10 @@ public final class JavaPluginLoader implements PluginLoader {
                 server.getLogger().log(Level.SEVERE, "Error occurred while disabling " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
             }
 
-            loaders.remove(jPlugin.getDescription().getName());
-
             if (cloader instanceof PluginClassLoader) {
                 PluginClassLoader loader = (PluginClassLoader) cloader;
+                loaders.remove(loader);
+
                 Set<String> names = loader.getClasses();
 
                 for (String name : names) {
