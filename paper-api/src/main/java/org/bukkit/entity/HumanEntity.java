@@ -189,11 +189,19 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
     public void setGameMode(GameMode mode);
 
     /**
-     * Check if the player is currently blocking (ie with a sword).
+     * Check if the player is currently blocking (ie with a shield).
      *
      * @return Whether they are blocking.
      */
     public boolean isBlocking();
+
+    /**
+     * Check if the player currently has their hand raised (ie about to begin
+     * blocking).
+     *
+     * @return Whether their hand is raised
+     */
+    public boolean isHandRaised();
 
     /**
      * Get the total amount of experience required for the player to level
