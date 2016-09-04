@@ -379,6 +379,11 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return getHandle().isBlocking();
     }
 
+    @Override
+    public boolean isHandRaised() {
+        return getHandle().cx(); // PAIL: rename
+    }
+
     public boolean setWindowProperty(InventoryView.Property prop, int value) {
         return false;
     }
