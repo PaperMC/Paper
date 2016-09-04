@@ -3,7 +3,7 @@ Paper [![CI Status](http://ci.destroystokyo.com/buildStatus/icon?job=PaperSpigot
 
 High performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.
 
-[IRC Support and Project Discussion](http://irc.spi.gt/iris/?channels=PaperSpigot)
+[IRC Support and Project Discussion](http://irc.spi.gt/iris/?channels=paper)
 
 
 Documentation
