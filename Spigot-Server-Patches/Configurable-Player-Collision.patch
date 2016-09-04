@@ -18,6 +18,37 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        enablePlayerCollisions = getBoolean("settings.enable-player-collisions", true);
 +    }
  }
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+         this.v.setPlayerFileData(this.worldServer);
+         this.a(this.getDifficulty());
+         this.l();
++
++        // Paper start - Handle collideRule team for player collision toggle
++        if (!com.destroystokyo.paper.PaperConfig.enablePlayerCollisions) {
++            this.getPlayerList().collideRuleTeamName = org.apache.commons.lang3.StringUtils.left("collideRule_" + this.getWorld().random.nextInt(), 16);
++            this.getWorld().getScoreboard().createTeam(this.getPlayerList().collideRuleTeamName);
++        }
++        // Paper end
+     }
+ 
+     protected void l() {
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+             hasStopped = true;
+         }
+         // CraftBukkit end
++        // Paper start - Remove collideRule team if it exists
++        if (this.getPlayerList().collideRuleTeamName != null) {
++            ScoreboardTeam team = this.getWorld().getScoreboard().getTeam(this.getPlayerList().collideRuleTeamName);
++            this.getWorld().scoreboard.removeTeam(team);
++        }
++        // Paper end
+         MinecraftServer.LOGGER.info("Stopping server");
+         MinecraftTimings.stopServer(); // Paper
+         // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java b/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java
@@ -31,4 +62,42 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              packetdataserializer.writeByte(this.g);
          }
  
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+     // CraftBukkit start
+     private CraftServer cserver;
+     private final Map<String,EntityPlayer> playersByName = new org.spigotmc.CaseInsensitiveMap<EntityPlayer>();
++    @Nullable String collideRuleTeamName; // Paper - Team name used for collideRule
+ 
+     public PlayerList(MinecraftServer minecraftserver) {
+         this.cserver = minecraftserver.server = new CraftServer(minecraftserver, this);
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+         }
+ 
+         entityplayer.syncInventory();
++        // Paper start - Add to collideRule team if needed
++        if (this.collideRuleTeamName != null) {
++            this.server.getWorld().getScoreboard().addPlayerToTeam(entityplayer.getName(), collideRuleTeamName);
++        }
++        // Paper end
+         // CraftBukkit - Moved from above, added world
+         PlayerList.f.info(entityplayer.getName() + "[" + s1 + "] logged in with entity id " + entityplayer.getId() + " at ([" + entityplayer.world.worldData.getName() + "]" + entityplayer.locX + ", " + entityplayer.locY + ", " + entityplayer.locZ + ")");
+     }
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+         entityplayer.k_();// SPIGOT-924 // PAIL: rename - playerTick
+         // CraftBukkit end
+ 
++        // Paper start - Remove from collideRule team if needed
++        if (this.collideRuleTeamName != null) {
++            Scoreboard scoreBoard = this.server.getWorld().getScoreboard();
++            scoreBoard.removePlayerFromTeam(entityplayer.getName(), scoreBoard.getTeam(collideRuleTeamName));
++        }
++        // Paper end
++
+         this.savePlayerFile(entityplayer);
+         if (entityplayer.isPassenger()) {
+             Entity entity = entityplayer.getVehicle();
 --
