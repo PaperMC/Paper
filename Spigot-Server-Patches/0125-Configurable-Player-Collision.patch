@@ -1,4 +1,4 @@
-From df938c2cb1bb037fdddd539367bfb658a79809a1 Mon Sep 17 00:00:00 2001
+From 298ae9e91ce8416d2942e74a935e11b6764c3e84 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 13 Apr 2016 02:10:49 -0400
 Subject: [PATCH] Configurable Player Collision
@@ -19,7 +19,7 @@ index 17c05f8..d9d8904 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 8e364de..544d601 100644
+index 8e364de..90cce4a 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -324,6 +324,13 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
@@ -36,19 +36,6 @@ index 8e364de..544d601 100644
      }
  
      protected void l() {
-@@ -444,6 +451,12 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
-             hasStopped = true;
-         }
-         // CraftBukkit end
-+        // Paper start - Remove collideRule team if it exists
-+        if (this.getPlayerList().collideRuleTeamName != null) {
-+            ScoreboardTeam team = this.getWorld().getScoreboard().getTeam(this.getPlayerList().collideRuleTeamName);
-+            this.getWorld().scoreboard.removeTeam(team);
-+        }
-+        // Paper end
-         MinecraftServer.LOGGER.info("Stopping server");
-         MinecraftTimings.stopServer(); // Paper
-         // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java b/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java
 index d8ec504..eb45d3c 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java
@@ -63,7 +50,7 @@ index d8ec504..eb45d3c 100644
          }
  
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index a41bc5f..606f022 100644
+index a41bc5f..6dc0abb 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -67,6 +67,7 @@ public abstract class PlayerList {
@@ -86,20 +73,36 @@ index a41bc5f..606f022 100644
          // CraftBukkit - Moved from above, added world
          PlayerList.f.info(entityplayer.getName() + "[" + s1 + "] logged in with entity id " + entityplayer.getId() + " at ([" + entityplayer.world.worldData.getName() + "]" + entityplayer.locX + ", " + entityplayer.locY + ", " + entityplayer.locZ + ")");
      }
-@@ -404,6 +410,13 @@ public abstract class PlayerList {
+@@ -404,6 +410,14 @@ public abstract class PlayerList {
          entityplayer.k_();// SPIGOT-924 // PAIL: rename - playerTick
          // CraftBukkit end
  
 +        // Paper start - Remove from collideRule team if needed
 +        if (this.collideRuleTeamName != null) {
 +            Scoreboard scoreBoard = this.server.getWorld().getScoreboard();
-+            scoreBoard.removePlayerFromTeam(entityplayer.getName(), scoreBoard.getTeam(collideRuleTeamName));
++            ScoreboardTeam team = scoreBoard.getTeam(this.collideRuleTeamName);
++            if (team != null) scoreBoard.removePlayerFromTeam(entityplayer.getName(), team);
 +        }
 +        // Paper end
 +
          this.savePlayerFile(entityplayer);
          if (entityplayer.isPassenger()) {
              Entity entity = entityplayer.getVehicle();
+@@ -1302,7 +1316,13 @@ public abstract class PlayerList {
+             player.playerConnection.disconnect(this.server.server.getShutdownMessage()); // CraftBukkit - add custom shutdown message
+         }
+         // CraftBukkit end
+-
++        // Paper start - Remove collideRule team if it exists
++        if (this.collideRuleTeamName != null) {
++            Scoreboard scoreboard = this.getServer().getWorld().getScoreboard();
++            ScoreboardTeam team = scoreboard.getTeam(this.collideRuleTeamName);
++            if (team != null) scoreboard.removeTeam(team);
++        }
++        // Paper end
+     }
+ 
+     // CraftBukkit start
 -- 
-2.10.0.windows.1
+2.9.3
 
