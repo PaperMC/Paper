@@ -89,7 +89,7 @@ While we will fix minor formatting issues, you should stick to the guide below w
 ## Formatting
 All modifications to non-Paper files should be marked
 - Multi line changes start with `// Paper start` and end with `// Paper end`
-- You can put a messages with a change if it isn't obvious, like this: `// Paper start - reason
+- You can put a messages with a change if it isn't obvious, like this: `// Paper start - reason`
   - Should generally be about the reason the change was made, what it was before, or what the change is
   - Multi-line messages should start with `// Paper start` and use `/* Multi line message here */` for the message itself
 - Single line changes should have `// Paper` or `// Paper - reason`
