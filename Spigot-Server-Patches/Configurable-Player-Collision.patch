@@ -36,19 +36,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      protected void l() {
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
-             hasStopped = true;
-         }
-         // CraftBukkit end
-+        // Paper start - Remove collideRule team if it exists
-+        if (this.getPlayerList().collideRuleTeamName != null) {
-+            ScoreboardTeam team = this.getWorld().getScoreboard().getTeam(this.getPlayerList().collideRuleTeamName);
-+            this.getWorld().scoreboard.removeTeam(team);
-+        }
-+        // Paper end
-         MinecraftServer.LOGGER.info("Stopping server");
-         MinecraftTimings.stopServer(); // Paper
-         // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java b/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java
@@ -93,11 +80,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - Remove from collideRule team if needed
 +        if (this.collideRuleTeamName != null) {
 +            Scoreboard scoreBoard = this.server.getWorld().getScoreboard();
-+            scoreBoard.removePlayerFromTeam(entityplayer.getName(), scoreBoard.getTeam(collideRuleTeamName));
++            ScoreboardTeam team = scoreBoard.getTeam(this.collideRuleTeamName);
++            if (team != null) scoreBoard.removePlayerFromTeam(entityplayer.getName(), team);
 +        }
 +        // Paper end
 +
          this.savePlayerFile(entityplayer);
          if (entityplayer.isPassenger()) {
              Entity entity = entityplayer.getVehicle();
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+             player.playerConnection.disconnect(this.server.server.getShutdownMessage()); // CraftBukkit - add custom shutdown message
+         }
+         // CraftBukkit end
+-
++        // Paper start - Remove collideRule team if it exists
++        if (this.collideRuleTeamName != null) {
++            Scoreboard scoreboard = this.getServer().getWorld().getScoreboard();
++            ScoreboardTeam team = scoreboard.getTeam(this.collideRuleTeamName);
++            if (team != null) scoreboard.removeTeam(team);
++        }
++        // Paper end
+     }
+ 
+     // CraftBukkit start
 --
