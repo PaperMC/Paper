@@ -1,4 +1,4 @@
-From 298ae9e91ce8416d2942e74a935e11b6764c3e84 Mon Sep 17 00:00:00 2001
+From da5892eee2a2ac6740883752a020de6c4a06d355 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 13 Apr 2016 02:10:49 -0400
 Subject: [PATCH] Configurable Player Collision
@@ -50,7 +50,7 @@ index d8ec504..eb45d3c 100644
          }
  
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index a41bc5f..6dc0abb 100644
+index a41bc5f..ea4c7ee 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -67,6 +67,7 @@ public abstract class PlayerList {
@@ -61,42 +61,45 @@ index a41bc5f..6dc0abb 100644
  
      public PlayerList(MinecraftServer minecraftserver) {
          this.cserver = minecraftserver.server = new CraftServer(minecraftserver, this);
-@@ -234,6 +235,11 @@ public abstract class PlayerList {
+@@ -234,6 +235,12 @@ public abstract class PlayerList {
          }
  
          entityplayer.syncInventory();
 +        // Paper start - Add to collideRule team if needed
-+        if (this.collideRuleTeamName != null) {
-+            this.server.getWorld().getScoreboard().addPlayerToTeam(entityplayer.getName(), collideRuleTeamName);
++        final Scoreboard scoreboard = this.getServer().getWorld().getScoreboard();
++        if (this.collideRuleTeamName != null && scoreboard.getTeam(collideRuleTeamName) != null && entityplayer.getTeam() == null) {
++            scoreboard.addPlayerToTeam(entityplayer.getName(), collideRuleTeamName);
 +        }
 +        // Paper end
          // CraftBukkit - Moved from above, added world
          PlayerList.f.info(entityplayer.getName() + "[" + s1 + "] logged in with entity id " + entityplayer.getId() + " at ([" + entityplayer.world.worldData.getName() + "]" + entityplayer.locX + ", " + entityplayer.locY + ", " + entityplayer.locZ + ")");
      }
-@@ -404,6 +410,14 @@ public abstract class PlayerList {
+@@ -404,6 +411,16 @@ public abstract class PlayerList {
          entityplayer.k_();// SPIGOT-924 // PAIL: rename - playerTick
          // CraftBukkit end
  
 +        // Paper start - Remove from collideRule team if needed
 +        if (this.collideRuleTeamName != null) {
-+            Scoreboard scoreBoard = this.server.getWorld().getScoreboard();
-+            ScoreboardTeam team = scoreBoard.getTeam(this.collideRuleTeamName);
-+            if (team != null) scoreBoard.removePlayerFromTeam(entityplayer.getName(), team);
++            final Scoreboard scoreBoard = this.server.getWorld().getScoreboard();
++            final ScoreboardTeam team = scoreBoard.getTeam(this.collideRuleTeamName);
++            if (entityplayer.getTeam() == team && team != null) {
++                scoreBoard.removePlayerFromTeam(entityplayer.getName(), team);
++            }
 +        }
 +        // Paper end
 +
          this.savePlayerFile(entityplayer);
          if (entityplayer.isPassenger()) {
              Entity entity = entityplayer.getVehicle();
-@@ -1302,7 +1316,13 @@ public abstract class PlayerList {
+@@ -1302,7 +1319,13 @@ public abstract class PlayerList {
              player.playerConnection.disconnect(this.server.server.getShutdownMessage()); // CraftBukkit - add custom shutdown message
          }
          // CraftBukkit end
 -
 +        // Paper start - Remove collideRule team if it exists
 +        if (this.collideRuleTeamName != null) {
-+            Scoreboard scoreboard = this.getServer().getWorld().getScoreboard();
-+            ScoreboardTeam team = scoreboard.getTeam(this.collideRuleTeamName);
++            final Scoreboard scoreboard = this.getServer().getWorld().getScoreboard();
++            final ScoreboardTeam team = scoreboard.getTeam(this.collideRuleTeamName);
 +            if (team != null) scoreboard.removeTeam(team);
 +        }
 +        // Paper end
