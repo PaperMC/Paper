@@ -1,0 +1,70 @@
+From 157978a4e7f41c7540c9775c0402c625cf1e04d2 Mon Sep 17 00:00:00 2001
+From: AlphaBlend <whizkid3000@hotmail.com>
+Date: Thu, 8 Sep 2016 08:48:33 -0700
+Subject: [PATCH] Hook up source to PlayerExpChangeEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityExperienceOrb.java b/src/main/java/net/minecraft/server/EntityExperienceOrb.java
+index e8162b2..6e43257 100644
+--- a/src/main/java/net/minecraft/server/EntityExperienceOrb.java
++++ b/src/main/java/net/minecraft/server/EntityExperienceOrb.java
+@@ -173,7 +173,7 @@ public class EntityExperienceOrb extends Entity {
+                 }
+ 
+                 if (this.value > 0) {
+-                    entityhuman.giveExp(CraftEventFactory.callPlayerExpChangeEvent(entityhuman, this.value).getAmount()); // CraftBukkit - this.value -> event.getAmount()
++                    entityhuman.giveExp(CraftEventFactory.callPlayerExpChangeEvent(entityhuman, this).getAmount()); // CraftBukkit - this.value -> event.getAmount() Paper - supply experience orb object
+                 }
+ 
+                 this.die();
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index e39de2b..c752d4a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -35,6 +35,7 @@ import org.bukkit.entity.AreaEffectCloud;
+ import org.bukkit.entity.Arrow;
+ import org.bukkit.entity.Creeper;
+ import org.bukkit.entity.EntityType;
++import org.bukkit.entity.ExperienceOrb; // Paper
+ import org.bukkit.entity.Firework;
+ import org.bukkit.entity.Horse;
+ import org.bukkit.entity.LightningStrike;
+@@ -197,7 +198,7 @@ public class CraftEventFactory {
+     public static PlayerInteractEvent callPlayerInteractEvent(EntityHuman who, Action action, BlockPosition position, EnumDirection direction, ItemStack itemstack, EnumHand hand) {
+         return callPlayerInteractEvent(who, action, position, direction, itemstack, false, hand);
+     }
+-    
++
+     public static PlayerInteractEvent callPlayerInteractEvent(EntityHuman who, Action action, BlockPosition position, EnumDirection direction, ItemStack itemstack, boolean cancelledBlock, EnumHand hand) {
+         Player player = (who == null) ? null : (Player) who.getBukkitEntity();
+         CraftItemStack itemInHand = CraftItemStack.asCraftMirror(itemstack);
+@@ -640,6 +641,17 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
++    // Paper start
++    public static PlayerExpChangeEvent callPlayerExpChangeEvent(EntityHuman entity, EntityExperienceOrb entityOrb) {
++        Player player = (Player) entity.getBukkitEntity();
++        ExperienceOrb source = (ExperienceOrb) entityOrb.getBukkitEntity();
++        int expAmount = source.getExperience();
++        PlayerExpChangeEvent event = new PlayerExpChangeEvent(player, source, expAmount);
++        Bukkit.getPluginManager().callEvent(event);
++        return event;
++    }
++    // Paper end
++
+     public static boolean handleBlockGrowEvent(World world, int x, int y, int z, net.minecraft.server.Block type, int data) {
+         Block block = world.getWorld().getBlockAt(x, y, z);
+         CraftBlockState state = (CraftBlockState) block.getState();
+@@ -652,7 +664,7 @@ public class CraftEventFactory {
+         if (!event.isCancelled()) {
+             state.update(true);
+         }
+-        
++
+         return !event.isCancelled();
+     }
+ 
+-- 
+2.9.3.windows.2
+
