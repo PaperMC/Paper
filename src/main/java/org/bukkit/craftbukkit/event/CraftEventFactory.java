@@ -123,6 +123,7 @@ import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Villager.Profession;
+import org.bukkit.entity.ExperienceOrb; // Paper
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Result;
@@ -1042,6 +1043,17 @@ public class CraftEventFactory {
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
+
+    // Paper start - Add orb
+    public static PlayerExpChangeEvent callPlayerExpChangeEvent(EntityHuman entity, EntityExperienceOrb entityOrb) {
+        Player player = (Player) entity.getBukkitEntity();
+        ExperienceOrb source = (ExperienceOrb) entityOrb.getBukkitEntity();
+        int expAmount = source.getExperience();
+        PlayerExpChangeEvent event = new PlayerExpChangeEvent(player, source, expAmount);
+        Bukkit.getPluginManager().callEvent(event);
+        return event;
+    }
+    // Paper end
 
     public static boolean handleBlockGrowEvent(World world, BlockPosition pos, IBlockData block) {
         return handleBlockGrowEvent(world, pos, block, 3);

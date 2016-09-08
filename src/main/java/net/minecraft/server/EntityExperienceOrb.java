@@ -188,7 +188,7 @@ public class EntityExperienceOrb extends Entity {
                 }
 
                 if (this.value > 0) {
-                    entityhuman.giveExp(CraftEventFactory.callPlayerExpChangeEvent(entityhuman, this.value).getAmount()); // CraftBukkit - this.value -> event.getAmount()
+                    entityhuman.giveExp(CraftEventFactory.callPlayerExpChangeEvent(entityhuman, this).getAmount()); // CraftBukkit - this.value -> event.getAmount() // Paper - supply experience orb object
                 }
 
                 this.die();
