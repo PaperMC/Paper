@@ -32,7 +32,7 @@ import org.bukkit.scheduler.BukkitWorker;
  * <li>Changing the period on a task is delicate.
  *     Any future task needs to notify waiting threads.
  *     Async tasks must be synchronized to make sure that any thread that's finishing will remove itself from {@link #runners}.
- *     Another utility method is provided for this, {@link #cancelTask(CraftTask)}</li>
+ *     Another utility method is provided for this, {@link #cancelTask(int)}</li>
  * <li>{@link #runners} provides a moderately up-to-date view of active tasks.
  *     If the linked head to tail set is read, all remaining tasks that were active at the time execution started will be located in runners.</li>
  * <li>Async tasks are responsible for removing themselves from runners</li>
@@ -60,7 +60,10 @@ public class CraftScheduler implements BukkitScheduler {
     private final PriorityQueue<CraftTask> pending = new PriorityQueue<CraftTask>(10,
             new Comparator<CraftTask>() {
                 public int compare(final CraftTask o1, final CraftTask o2) {
-                    return (int) (o1.getNextRun() - o2.getNextRun());
+                    int value = (int) (o1.getNextRun() - o2.getNextRun());
+
+                    // If the tasks should run on the same tick they should be run FIFO
+                    return value != 0 ? value : o1.getTaskId() - o2.getTaskId();
                 }
             });
     /**
