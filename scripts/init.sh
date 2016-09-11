@@ -46,7 +46,7 @@ git add src >/dev/null 2>&1
 # We don't need to sign an automated commit
 # All it does is make you input your key passphrase mid-patch
 git config commit.gpgsign false
-git commit -m "CraftBukkit $ $(date)" >/dev/null 2>&1
+git commit -m "CraftBukkit $ $(date)" --author="Auto <auto@mated.null>" >/dev/null 2>&1
 enableCommitSigningIfNeeded
 git checkout -f HEAD^ >/dev/null 2>&1
 )
