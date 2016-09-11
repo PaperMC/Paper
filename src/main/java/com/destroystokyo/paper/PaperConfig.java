@@ -244,4 +244,13 @@ public class PaperConfig {
     public static boolean isProxyOnlineMode() {
         return Bukkit.getOnlineMode() || (SpigotConfig.bungee && bungeeOnlineMode);
     }
+
+    public static int packetInSpamThreshold = 300;
+    private static void packetInSpamThreshold() {
+        if (version < 11) {
+            int oldValue = getInt("settings.play-in-use-item-spam-threshold", 300);
+            set("settings.incoming-packet-spam-threshold", oldValue);
+        }
+        packetInSpamThreshold = getInt("settings.incoming-packet-spam-threshold", 300);
+    }
 }

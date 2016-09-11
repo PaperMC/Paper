@@ -1235,13 +1235,14 @@ public class PlayerConnection implements PacketListenerPlayIn {
     // Spigot start - limit place/interactions
     private int limitedPackets;
     private long lastLimitedPacket = -1;
+    private static final int THRESHOLD = com.destroystokyo.paper.PaperConfig.packetInSpamThreshold; // Paper - Configurable threshold
 
     private boolean checkLimit(long timestamp) {
-        if (lastLimitedPacket != -1 && timestamp - lastLimitedPacket < 30 && limitedPackets++ >= 4) {
+        if (lastLimitedPacket != -1 && timestamp - lastLimitedPacket < THRESHOLD && limitedPackets++ >= 8) { // Paper - Use threshold, raise packet limit to 8
             return false;
         }
 
-        if (lastLimitedPacket == -1 || timestamp - lastLimitedPacket >= 30) {
+        if (lastLimitedPacket == -1 || timestamp - lastLimitedPacket >= THRESHOLD) { // Paper
             lastLimitedPacket = timestamp;
             limitedPackets = 0;
             return true;
