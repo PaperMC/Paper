@@ -1,4 +1,4 @@
-From 204b7b7e3cf0ed14e88407f662f7418c6fb4a1cf Mon Sep 17 00:00:00 2001
+From 7d5d1e68148e2a526c03aeadffcda93ff8787394 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Sat, 10 Sep 2016 21:40:51 -0500
 Subject: [PATCH] Rate limit PacketPlayInUseItem
@@ -33,7 +33,7 @@ index 82e09c1..88ac278 100644
  
      public void a(PacketListenerPlayIn packetlistenerplayin) {
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 3d04119..2f6d58c 100644
+index 3d04119..a299f4f 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -865,6 +865,10 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
@@ -47,15 +47,14 @@ index 3d04119..2f6d58c 100644
      public void a(PacketPlayInUseItem packetplayinuseitem) {
          PlayerConnectionUtils.ensureMainThread(packetplayinuseitem, this, this.player.x());
          if (this.player.cj()) return; // CraftBukkit
-@@ -875,12 +879,22 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -875,6 +879,16 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
          EnumDirection enumdirection = packetplayinuseitem.b();
  
          this.player.resetIdleTimer();
 +
 +        // Paper start - Rate limit UseItem as well, copied from Spigot implementation below in BlockPlace
-+        boolean throttled = false;
 +        if (lastPlaceUse != -1 && packetplayinuseitem.timestamp - lastPlaceUse < 30 && packetsUse++ >= 4) {
-+            throttled = true;
++            return;
 +        } else if (packetplayinuseitem.timestamp - lastPlaceUse >= 30 || lastPlaceUse == -1) {
 +            lastPlaceUse = packetplayinuseitem.timestamp;
 +            packetsUse = 0;
@@ -65,14 +64,6 @@ index 3d04119..2f6d58c 100644
          if (blockposition.getY() >= this.minecraftServer.getMaxBuildHeight() - 1 && (enumdirection == EnumDirection.UP || blockposition.getY() >= this.minecraftServer.getMaxBuildHeight())) {
              ChatMessage chatmessage = new ChatMessage("build.tooHigh", new Object[] { Integer.valueOf(this.minecraftServer.getMaxBuildHeight())});
  
-             chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
-             this.player.playerConnection.sendPacket(new PacketPlayOutChat(chatmessage));
--        } else if (this.teleportPos == null && this.player.e((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && !this.minecraftServer.a(worldserver, blockposition, this.player) && worldserver.getWorldBorder().a(blockposition)) {
-+        // Paper - Ignore if throttled
-+        } else if (!throttled && this.teleportPos == null && this.player.e((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && !this.minecraftServer.a(worldserver, blockposition, this.player) && worldserver.getWorldBorder().a(blockposition)) {
-             // CraftBukkit start - Check if we can actually do something over this large a distance
-             Location eyeLoc = this.getPlayer().getEyeLocation();
-             double reachDistance = NumberConversions.square(eyeLoc.getX() - blockposition.getX()) + NumberConversions.square(eyeLoc.getY() - blockposition.getY()) + NumberConversions.square(eyeLoc.getZ() - blockposition.getZ());
 -- 
 2.10.0.windows.1
 
