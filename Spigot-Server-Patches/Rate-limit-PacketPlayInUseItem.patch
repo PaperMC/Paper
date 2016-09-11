@@ -53,9 +53,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.player.resetIdleTimer();
 +
 +        // Paper start - Rate limit UseItem as well, copied from Spigot implementation below in BlockPlace
-+        boolean throttled = false;
 +        if (lastPlaceUse != -1 && packetplayinuseitem.timestamp - lastPlaceUse < 30 && packetsUse++ >= 4) {
-+            throttled = true;
++            return;
 +        } else if (packetplayinuseitem.timestamp - lastPlaceUse >= 30 || lastPlaceUse == -1) {
 +            lastPlaceUse = packetplayinuseitem.timestamp;
 +            packetsUse = 0;
@@ -65,12 +64,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (blockposition.getY() >= this.minecraftServer.getMaxBuildHeight() - 1 && (enumdirection == EnumDirection.UP || blockposition.getY() >= this.minecraftServer.getMaxBuildHeight())) {
              ChatMessage chatmessage = new ChatMessage("build.tooHigh", new Object[] { Integer.valueOf(this.minecraftServer.getMaxBuildHeight())});
  
-             chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
-             this.player.playerConnection.sendPacket(new PacketPlayOutChat(chatmessage));
--        } else if (this.teleportPos == null && this.player.e((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && !this.minecraftServer.a(worldserver, blockposition, this.player) && worldserver.getWorldBorder().a(blockposition)) {
-+        // Paper - Ignore if throttled
-+        } else if (!throttled && this.teleportPos == null && this.player.e((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && !this.minecraftServer.a(worldserver, blockposition, this.player) && worldserver.getWorldBorder().a(blockposition)) {
-             // CraftBukkit start - Check if we can actually do something over this large a distance
-             Location eyeLoc = this.getPlayer().getEyeLocation();
-             double reachDistance = NumberConversions.square(eyeLoc.getX() - blockposition.getX()) + NumberConversions.square(eyeLoc.getY() - blockposition.getY()) + NumberConversions.square(eyeLoc.getZ() - blockposition.getZ());
 --
