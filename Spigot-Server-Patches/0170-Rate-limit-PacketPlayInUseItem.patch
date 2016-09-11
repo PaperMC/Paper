@@ -1,0 +1,78 @@
+From a0ec9a7743d2349b280cd1d91559a659e61e7b08 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sat, 10 Sep 2016 21:40:51 -0500
+Subject: [PATCH] Rate limit PacketPlayInUseItem
+
+
+diff --git a/src/main/java/net/minecraft/server/PacketPlayInUseItem.java b/src/main/java/net/minecraft/server/PacketPlayInUseItem.java
+index 82e09c1..88ac278 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayInUseItem.java
++++ b/src/main/java/net/minecraft/server/PacketPlayInUseItem.java
+@@ -10,6 +10,7 @@ public class PacketPlayInUseItem implements Packet<PacketListenerPlayIn> {
+     private float d;
+     private float e;
+     private float f;
++    public long timestamp; // Paper - Used for rate limiting
+ 
+     public PacketPlayInUseItem() {}
+ 
+@@ -20,6 +21,7 @@ public class PacketPlayInUseItem implements Packet<PacketListenerPlayIn> {
+         this.d = (float) packetdataserializer.readUnsignedByte() / 16.0F;
+         this.e = (float) packetdataserializer.readUnsignedByte() / 16.0F;
+         this.f = (float) packetdataserializer.readUnsignedByte() / 16.0F;
++        this.timestamp = System.currentTimeMillis(); // Paper
+     }
+ 
+     public void b(PacketDataSerializer packetdataserializer) throws IOException {
+@@ -29,6 +31,7 @@ public class PacketPlayInUseItem implements Packet<PacketListenerPlayIn> {
+         packetdataserializer.writeByte((int) (this.d * 16.0F));
+         packetdataserializer.writeByte((int) (this.e * 16.0F));
+         packetdataserializer.writeByte((int) (this.f * 16.0F));
++        this.timestamp = System.currentTimeMillis(); // Paper
+     }
+ 
+     public void a(PacketListenerPlayIn packetlistenerplayin) {
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 3d04119..1e01951 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -865,6 +865,10 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+         // CraftBukkit end
+     }
+ 
++    // Paper start - Rate limit UseItem as well, copied from Spigot implementation below in BlockPlace
++    private long lastPlaceUse = -1;
++    private int packetsUse = 0;
++    // Paper end
+     public void a(PacketPlayInUseItem packetplayinuseitem) {
+         PlayerConnectionUtils.ensureMainThread(packetplayinuseitem, this, this.player.x());
+         if (this.player.cj()) return; // CraftBukkit
+@@ -875,12 +879,24 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+         EnumDirection enumdirection = packetplayinuseitem.b();
+ 
+         this.player.resetIdleTimer();
++
++        // Paper start - Rate limit UseItem as well, copied from Spigot implementation below in BlockPlace
++        boolean throttled = false;
++        if (lastPlaceUse != -1 && packetplayinuseitem.timestamp - lastPlaceUse < 30 && packetsUse++ >= 4) {
++            throttled = true;
++        } else if (packetplayinuseitem.timestamp - lastPlaceUse >= 30 || lastPlaceUse == -1) {
++            lastPlaceUse = packetplayinuseitem.timestamp;
++            packetsUse = 0;
++        }
++        // Paper end
++        
+         if (blockposition.getY() >= this.minecraftServer.getMaxBuildHeight() - 1 && (enumdirection == EnumDirection.UP || blockposition.getY() >= this.minecraftServer.getMaxBuildHeight())) {
+             ChatMessage chatmessage = new ChatMessage("build.tooHigh", new Object[] { Integer.valueOf(this.minecraftServer.getMaxBuildHeight())});
+ 
+             chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
+             this.player.playerConnection.sendPacket(new PacketPlayOutChat(chatmessage));
+-        } else if (this.teleportPos == null && this.player.e((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && !this.minecraftServer.a(worldserver, blockposition, this.player) && worldserver.getWorldBorder().a(blockposition)) {
++        // Paper - Ignore if throttled
++        } else if (!throttled && this.teleportPos == null && this.player.e((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && !this.minecraftServer.a(worldserver, blockposition, this.player) && worldserver.getWorldBorder().a(blockposition)) {
+             // CraftBukkit start - Check if we can actually do something over this large a distance
+             Location eyeLoc = this.getPlayer().getEyeLocation();
+             double reachDistance = NumberConversions.square(eyeLoc.getX() - blockposition.getX()) + NumberConversions.square(eyeLoc.getY() - blockposition.getY()) + NumberConversions.square(eyeLoc.getZ() - blockposition.getZ());
+-- 
+2.10.0.windows.1
+
