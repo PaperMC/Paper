@@ -1,11 +1,11 @@
-From 73ca36d4eb5cce121347d7379071a5bca7da2027 Mon Sep 17 00:00:00 2001
+From 67f26ad0e1b64b12230b9fdd7dfd2374f7b88707 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 13 Apr 2016 02:10:49 -0400
 Subject: [PATCH] Configurable Player Collision
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index d5ee3ae..e6e7739 100644
+index 1b9c852..a3f4c1f 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -210,4 +210,9 @@ public class PaperConfig {
@@ -18,11 +18,29 @@ index d5ee3ae..e6e7739 100644
 +        enablePlayerCollisions = getBoolean("settings.enable-player-collisions", true);
 +    }
  }
+diff --git a/src/main/java/net/minecraft/server/CommandScoreboard.java b/src/main/java/net/minecraft/server/CommandScoreboard.java
+index 8e5419d..64a3495 100644
+--- a/src/main/java/net/minecraft/server/CommandScoreboard.java
++++ b/src/main/java/net/minecraft/server/CommandScoreboard.java
+@@ -182,6 +182,13 @@ public class CommandScoreboard extends CommandAbstract {
+                             throw new ExceptionUsage("commands.scoreboard.teams.option.usage", new Object[0]);
+                         }
+ 
++                        // Paper start - Block setting options on our collideRule team as it is not persistent
++                        if (astring[2].equals(MinecraftServer.getServer().getPlayerList().collideRuleTeamName)) {
++                            icommandlistener.sendMessage(new ChatMessage("You cannot set team options on the collideRule team"));
++                            return;
++                        }
++                        // Paper  end
++
+                         this.c(icommandlistener, astring, 2, minecraftserver);
+                     }
+                 }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 8e364de..90cce4a 100644
+index 8e364de..a5ebb17 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -324,6 +324,13 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -324,6 +324,14 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
          this.v.setPlayerFileData(this.worldServer);
          this.a(this.getDifficulty());
          this.l();
@@ -30,7 +48,8 @@ index 8e364de..90cce4a 100644
 +        // Paper start - Handle collideRule team for player collision toggle
 +        if (!com.destroystokyo.paper.PaperConfig.enablePlayerCollisions) {
 +            this.getPlayerList().collideRuleTeamName = org.apache.commons.lang3.StringUtils.left("collideRule_" + this.getWorld().random.nextInt(), 16);
-+            this.getWorld().getScoreboard().createTeam(this.getPlayerList().collideRuleTeamName);
++            ScoreboardTeam collideTeam = this.getWorld().getScoreboard().createTeam(this.getPlayerList().collideRuleTeamName);
++            collideTeam.setCanSeeFriendlyInvisibles(false); // Because we want to mimic them not being on a team at all
 +        }
 +        // Paper end
      }
