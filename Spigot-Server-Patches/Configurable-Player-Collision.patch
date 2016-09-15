@@ -18,6 +18,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        enablePlayerCollisions = getBoolean("settings.enable-player-collisions", true);
 +    }
  }
+diff --git a/src/main/java/net/minecraft/server/CommandScoreboard.java b/src/main/java/net/minecraft/server/CommandScoreboard.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/CommandScoreboard.java
++++ b/src/main/java/net/minecraft/server/CommandScoreboard.java
+@@ -0,0 +0,0 @@ public class CommandScoreboard extends CommandAbstract {
+                             throw new ExceptionUsage("commands.scoreboard.teams.option.usage", new Object[0]);
+                         }
+ 
++                        // Paper start - Block setting options on our collideRule team as it is not persistent
++                        if (astring[2].equals(MinecraftServer.getServer().getPlayerList().collideRuleTeamName)) {
++                            icommandlistener.sendMessage(new ChatMessage("You cannot set team options on the collideRule team"));
++                            return;
++                        }
++                        // Paper  end
++
+                         this.c(icommandlistener, astring, 2, minecraftserver);
+                     }
+                 }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -30,7 +48,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - Handle collideRule team for player collision toggle
 +        if (!com.destroystokyo.paper.PaperConfig.enablePlayerCollisions) {
 +            this.getPlayerList().collideRuleTeamName = org.apache.commons.lang3.StringUtils.left("collideRule_" + this.getWorld().random.nextInt(), 16);
-+            this.getWorld().getScoreboard().createTeam(this.getPlayerList().collideRuleTeamName);
++            ScoreboardTeam collideTeam = this.getWorld().getScoreboard().createTeam(this.getPlayerList().collideRuleTeamName);
++            collideTeam.setCanSeeFriendlyInvisibles(false); // Because we want to mimic them not being on a team at all
 +        }
 +        // Paper end
      }
