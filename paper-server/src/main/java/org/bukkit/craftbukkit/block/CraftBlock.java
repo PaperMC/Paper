@@ -304,6 +304,8 @@ public class CraftBlock implements Block {
             return new CraftBanner(this);
         case FLOWER_POT:
             return new CraftFlowerPot(this);
+        case STRUCTURE_BLOCK:
+            return new CraftStructureBlock(this);
         default:
             return new CraftBlockState(this);
         }

@@ -113,6 +113,7 @@ public final class CraftItemFactory implements ItemFactory {
         case REDSTONE_COMPARATOR:
         case FLOWER_POT_ITEM:
         case SHIELD:
+        case STRUCTURE_BLOCK:
             return new CraftMetaBlockState(meta, material);
         default:
             return new CraftMetaItem(meta);
