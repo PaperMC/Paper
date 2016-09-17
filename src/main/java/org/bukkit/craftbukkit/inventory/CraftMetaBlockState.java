@@ -4,7 +4,6 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import net.minecraft.server.BlockJukeBox;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.TileEntity;
@@ -23,6 +22,7 @@ import net.minecraft.server.TileEntityMobSpawner;
 import net.minecraft.server.TileEntityNote;
 import net.minecraft.server.TileEntitySign;
 import net.minecraft.server.TileEntitySkull;
+import net.minecraft.server.TileEntityStructure;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.block.BlockState;
@@ -44,14 +44,15 @@ import org.bukkit.craftbukkit.block.CraftJukebox;
 import org.bukkit.craftbukkit.block.CraftNoteBlock;
 import org.bukkit.craftbukkit.block.CraftSign;
 import org.bukkit.craftbukkit.block.CraftSkull;
+import org.bukkit.craftbukkit.block.CraftStructureBlock;
 import org.bukkit.inventory.meta.BlockStateMeta;
 
 @DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
 public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta {
-    
+
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKey BLOCK_ENTITY_TAG = new ItemMetaKey("BlockEntityTag");
-    
+
     final Material material;
     NBTTagCompound blockEntityTag;
 
@@ -72,7 +73,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
     CraftMetaBlockState(NBTTagCompound tag, Material material) {
         super(tag);
         this.material = material;
-        
+
         if (tag.hasKeyOfType(BLOCK_ENTITY_TAG.NBT, 10)) {
             blockEntityTag = tag.getCompound(BLOCK_ENTITY_TAG.NBT);
         } else {
@@ -94,7 +95,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
     @Override
     void applyToItem(NBTTagCompound tag) {
         super.applyToItem(tag);
-        
+
         if (blockEntityTag != null) {
             tag.set(BLOCK_ENTITY_TAG.NBT, blockEntityTag);
         }
@@ -179,6 +180,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             case REDSTONE_COMPARATOR:
             case FLOWER_POT_ITEM:
             case SHIELD:
+            case STRUCTURE_BLOCK:
                 return true;
         }
         return false;
@@ -286,6 +288,11 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
                 te = new TileEntityFlowerPot();
             }
             return new CraftFlowerPot(material, (TileEntityFlowerPot) te);
+        case STRUCTURE_BLOCK:
+            if (te == null) {
+                te = new TileEntityStructure();
+            }
+            return new CraftStructureBlock(material, (TileEntityStructure) te);
         default:
             throw new IllegalStateException("Missing blockState for " + material);
         }
@@ -355,6 +362,9 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             break;
         case FLOWER_POT_ITEM:
             valid = te instanceof TileEntityFlowerPot;
+            break;
+        case STRUCTURE_BLOCK:
+            valid = te instanceof TileEntityStructure;
             break;
         default:
             valid = false;
