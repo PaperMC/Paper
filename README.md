@@ -9,7 +9,7 @@ High performance Spigot fork that aims to fix gameplay and mechanics inconsisten
 Documentation
 ------
 Access the paper docs here: [paper.readthedocs.io](https://paper.readthedocs.io/)  
-Access the paper api javadocs here: https://ci.destroystokyo.com/userContent/apidocs/index.html
+Access the paper api javadocs here: [javadocs.destroystokyo.com](http://javadocs.destroystokyo.com/)
 
 How To (Server Admins)
 ------
