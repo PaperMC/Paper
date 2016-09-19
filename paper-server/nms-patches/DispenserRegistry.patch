@@ -361,7 +361,69 @@
                  return itemstack;
              }
          });
-@@ -437,12 +677,40 @@
+@@ -296,6 +536,30 @@
+                 BlockPosition blockposition = isourceblock.getBlockPosition().shift(enumdirection);
+                 BlockSkull blockskull = Blocks.SKULL;
+ 
++                // CraftBukkit start
++                org.bukkit.block.Block bukkitBlock = world.getWorld().getBlockAt(isourceblock.getBlockPosition().getX(), isourceblock.getBlockPosition().getY(), isourceblock.getBlockPosition().getZ());
++                CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack);
++
++                BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
++                if (!BlockDispenser.eventFired) {
++                    world.getServer().getPluginManager().callEvent(event);
++                }
++
++                if (event.isCancelled()) {
++                    return itemstack;
++                }
++
++                if (!event.getItem().equals(craftItem)) {
++                    // Chain to handler for new item
++                    ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
++                    IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.REGISTRY.get(eventStack.getItem());
++                    if (idispensebehavior != IDispenseBehavior.NONE && idispensebehavior != this) {
++                        idispensebehavior.a(isourceblock, eventStack);
++                        return itemstack;
++                    }
++                }
++                // CraftBukkit end
++
+                 if (world.isEmpty(blockposition) && blockskull.b(world, blockposition, itemstack)) {
+                     if (!world.isClientSide) {
+                         world.setTypeAndData(blockposition, blockskull.getBlockData().set(BlockSkull.FACING, EnumDirection.UP), 3);
+@@ -354,6 +618,30 @@
+                 BlockPosition blockposition = isourceblock.getBlockPosition().shift((EnumDirection) isourceblock.e().get(BlockDispenser.FACING));
+                 BlockPumpkin blockpumpkin = (BlockPumpkin) Blocks.PUMPKIN;
+ 
++                // CraftBukkit start
++                org.bukkit.block.Block bukkitBlock = world.getWorld().getBlockAt(isourceblock.getBlockPosition().getX(), isourceblock.getBlockPosition().getY(), isourceblock.getBlockPosition().getZ());
++                CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack);
++
++                BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
++                if (!BlockDispenser.eventFired) {
++                    world.getServer().getPluginManager().callEvent(event);
++                }
++
++                if (event.isCancelled()) {
++                    return itemstack;
++                }
++
++                if (!event.getItem().equals(craftItem)) {
++                    // Chain to handler for new item
++                    ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
++                    IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.REGISTRY.get(eventStack.getItem());
++                    if (idispensebehavior != IDispenseBehavior.NONE && idispensebehavior != this) {
++                        idispensebehavior.a(isourceblock, eventStack);
++                        return itemstack;
++                    }
++                }
++                // CraftBukkit end
++
+                 if (world.isEmpty(blockposition) && blockpumpkin.b(world, blockposition)) {
+                     if (!world.isClientSide) {
+                         world.setTypeAndData(blockposition, blockpumpkin.getBlockData(), 3);
+@@ -437,12 +725,40 @@
                  d3 = 0.0D;
              }
  
