@@ -1,6 +1,6 @@
-From 84eff0d4ae247585674c337387fba7c6d62bc9a0 Mon Sep 17 00:00:00 2001
+From 16e0de9913201467615ad9493f8e43765a4e5cec Mon Sep 17 00:00:00 2001
 From: stonar96 <minecraft.stonar96@gmail.com>
-Date: Sat, 17 Sep 2016 18:50:43 +0200
+Date: Mon, 19 Sep 2016 14:10:23 +0200
 Subject: [PATCH] Anti-Xray
 
 
@@ -199,10 +199,10 @@ index 0000000..199cb45
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/BlockPacketControllerObfuscate.java b/src/main/java/com/destroystokyo/paper/antixray/BlockPacketControllerObfuscate.java
 new file mode 100644
-index 0000000..3368a52
+index 0000000..dcd6207
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/BlockPacketControllerObfuscate.java
-@@ -0,0 +1,407 @@
+@@ -0,0 +1,415 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import java.util.HashSet;
@@ -439,7 +439,7 @@ index 0000000..3368a52
 +     */
 +    @Override
 +    public void writeBlocks(PacketDataSerializer packetDataSerializer, Chunk chunk, int chunkY, DataPaletteBlock dataPaletteBlock, DataBits dataBits, Chunk[] nearbyChunks) {
-+        long[] dataBitsArray = dataBits.a();
++        long[] dataBitsArray = dataBits.getDataBitsArray();
 +
 +        if (chunkY <= maxChunkY && dataPaletteBlock.getCurrentPredefinedBlockData() != null && dataPaletteBlock.getCurrentPredefinedBlockData().length > 0 && nearbyChunks != null) {
 +            // The iterator marking which random ore we should use next
@@ -449,9 +449,12 @@ index 0000000..3368a52
 +            // Increment the inner loop by 3 in engine mode 3 for more efficiency
 +            int increment = engineMode3 ? 3 : 1;
 +            // Stores the last array index of the data bits array which was obfuscated
-+            int dataBitsIndex = 0;
++            int dataBitsArrayIndex = 0;
 +            // Stores the last data which was obfuscated but not written to the packet
-+            long currentData = dataBitsArray[0];
++            long currentData = dataBitsArray[dataBitsArrayIndex];
++            // Bits used for one block in the data bits array
++            int bitsPerBlock = dataBits.getBitsPerElement();
++            long blockBitMask = (1L << bitsPerBlock) - 1L;
 +            // Write the length of the data bits array to the packet as it is in vanilla
 +            packetDataSerializer.d(dataBitsArray.length);
 +            // Optimization: Don't try to obfuscate edge blocks of this section if neighbor sections are not loaded or don't exist
@@ -479,8 +482,8 @@ index 0000000..3368a52
 +                    }
 +
 +                    for (; x < xMax; x += increment) {
-+                        // Calculate the blockIndex from y, z, x and get the blockData from dataPaletteBlock
-+                        // More efficient because we may use the blockIndex again later
++                        // Calculate the blockIndex from y, z and x and get the blockData from the dataPaletteBlock with the blockIndex
++                        // More efficient because we may use the blockIndex later again
 +                        int blockIndex = y << 8 | z << 4 | x;
 +                        IBlockData blockData = dataPaletteBlock.a(blockIndex);
 +                        // Check if the block should be obfuscated
@@ -492,33 +495,38 @@ index 0000000..3368a52
 +                                    randomOre = 0;
 +                                }
 +
-+                                int newBlockData = dataPaletteBlock.getCurrentPredefinedBlockData()[randomOre++];
-+                                // Get the current index of the block in the data bits array
-+                                int currentDataBitsIndex = dataBits.getArrayIndex(blockIndex);
-+                                // Check if it has been changed
-+                                if (currentDataBitsIndex != dataBitsIndex) {
++                                long newBlockData = dataPaletteBlock.getCurrentPredefinedBlockData()[randomOre++];
++                                // Calculate the current index of the block in the data bits array
++                                int bitIndex = blockIndex * bitsPerBlock;
++                                int currentDataBitsArrayIndex = bitIndex / 64;
++                                // And check if it has changed
++                                if (currentDataBitsArrayIndex != dataBitsArrayIndex) {
 +                                    // If so, we can write the last obfuscated data to the packet because it is finished with the obfuscation
 +                                    packetDataSerializer.writeLong(currentData);
-+                                    dataBitsIndex++;
-+                                    // We can also write all further content of the data bits array to the packet (until currentDataBitsIndex is reached) because it didn't change
-+                                    while (dataBitsIndex < currentDataBitsIndex) {
-+                                        packetDataSerializer.writeLong(dataBitsArray[dataBitsIndex]);
-+                                        dataBitsIndex++;
++                                    dataBitsArrayIndex++;
++                                    // We can also write all further content of the data bits array to the packet (until currentDataBitsArrayIndex is reached) because it didn't change
++                                    while (dataBitsArrayIndex < currentDataBitsArrayIndex) {
++                                        packetDataSerializer.writeLong(dataBitsArray[dataBitsArrayIndex]);
++                                        dataBitsArrayIndex++;
 +                                    }
 +                                    // Now we get the data which has to be obfuscated
-+                                    currentData = dataBitsArray[dataBitsIndex];
++                                    currentData = dataBitsArray[dataBitsArrayIndex];
 +                                }
 +                                // Obfuscate currentData
-+                                currentData = dataBits.obfuscate(blockIndex, newBlockData, currentData);
++                                int bitIndexInArrayValue = bitIndex % 64;
++                                currentData = currentData & ~(blockBitMask << bitIndexInArrayValue) | (newBlockData & blockBitMask) << bitIndexInArrayValue;
 +                                // Check if the data of the current block is splitted to the next index of the data bits array
-+                                if (dataBits.isSplitted(blockIndex, dataBitsIndex)) {
++                                int nextBlockBitIndexInArrayValue = bitIndexInArrayValue + bitsPerBlock;
++
++                                if (nextBlockBitIndexInArrayValue > 64) {
 +                                    // If so, we can write currentData to the packet because it is finished with the obfuscation
 +                                    packetDataSerializer.writeLong(currentData);
-+                                    dataBitsIndex++;
++                                    dataBitsArrayIndex++;
 +                                    // Get the data at the next index
-+                                    currentData = dataBitsArray[dataBitsIndex];
++                                    currentData = dataBitsArray[dataBitsArrayIndex];
 +                                    // And obfuscate it
-+                                    currentData = dataBits.obfuscateSplittedPart(blockIndex, newBlockData, currentData);
++                                    nextBlockBitIndexInArrayValue -= 64;
++                                    currentData = currentData >>> nextBlockBitIndexInArrayValue << nextBlockBitIndexInArrayValue | (newBlockData & blockBitMask) >> (bitsPerBlock - nextBlockBitIndexInArrayValue);
 +                                }
 +                            }
 +                        }
@@ -527,11 +535,11 @@ index 0000000..3368a52
 +            }
 +            // Write the rest of the data bits array to the packet
 +            packetDataSerializer.writeLong(currentData);
-+            dataBitsIndex++;
++            dataBitsArrayIndex++;
 +
-+            while (dataBitsIndex < dataBitsArray.length) {
-+                packetDataSerializer.writeLong(dataBitsArray[dataBitsIndex]);
-+                dataBitsIndex++;
++            while (dataBitsArrayIndex < dataBitsArray.length) {
++                packetDataSerializer.writeLong(dataBitsArray[dataBitsArrayIndex]);
++                dataBitsArrayIndex++;
 +            }
 +        } else {
 +            packetDataSerializer.a(dataBitsArray);
@@ -1131,37 +1139,23 @@ index 27d0f99..5f4c0e9 100644
      }
  }
 diff --git a/src/main/java/net/minecraft/server/DataBits.java b/src/main/java/net/minecraft/server/DataBits.java
-index fa0fd8a..6e21351 100644
+index fa0fd8a..4e9cc0e 100644
 --- a/src/main/java/net/minecraft/server/DataBits.java
 +++ b/src/main/java/net/minecraft/server/DataBits.java
-@@ -35,6 +35,27 @@ public class DataBits {
- 
+@@ -51,6 +51,13 @@ public class DataBits {
+         }
      }
  
-+    // Paper start - Anti-Xray - Add methods which are used for obfuscation to set blocks to a copy of a value of the data bits array
-+    public long obfuscate(int blockIndex, int bits, long data) { // First part of a(int i, int j) but modifies the data parameter instead of the data bits array
-+        int j1 = (blockIndex * this.b) % 64;
-+        return data & ~(this.c << j1) | ((long) bits & this.c) << j1;
-+    }
-+
-+    public long obfuscateSplittedPart(int blockIndex, int bits, long data) { // Second part of a(int i, int j) but modifies the data parameter instead of the data bits array
-+        int k1 = 64 - (blockIndex * this.b) % 64;
-+        int l1 = this.b - k1;
-+        return data >>> l1 << l1 | ((long) bits & this.c) >> k1;
-+    }
-+
-+    public int getArrayIndex(int blockIndex) { // The blockIndex is y << 8 | z << 4 | x and this method returns the index of the value in the data bits array which contains the LSB of this block
-+        return (blockIndex * this.b) / 64;
-+    }
-+
-+    public boolean isSplitted(int blockIndex, int arrayIndex) { // Returns true if and only if the data bits of the block is splitted over two array indexes
-+        return arrayIndex != ((blockIndex + 1) * this.b - 1) / 64;
++    // Paper start - Anti-Xray
++    public int getBitsPerElement() {
++        return this.b;
 +    }
 +    // Paper end
 +
-     public int a(int i) {
-         //Validate.inclusiveBetween(0L, (long) (this.d - 1), (long) i); // Paper
-         int j = i * this.b;
++    public long[] getDataBitsArray() { return this.a(); } // Paper - OBFHELPER
+     public long[] a() {
+         return this.a;
+     }
 diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
 index 1f2fe87..6fb51d0 100644
 --- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
