@@ -253,4 +253,11 @@ public class PaperConfig {
         }
         packetInSpamThreshold = getInt("settings.incoming-packet-spam-threshold", 300);
     }
+
+    public static String flyingKickPlayerMessage = "Flying is not enabled on this server";
+    public static String flyingKickVehicleMessage = "Flying is not enabled on this server";
+    private static void flyingKickMessages() {
+        flyingKickPlayerMessage = getString("messages.kick.flying-player", flyingKickPlayerMessage);
+        flyingKickVehicleMessage = getString("messages.kick.flying-vehicle", flyingKickVehicleMessage);
+    }
 }
