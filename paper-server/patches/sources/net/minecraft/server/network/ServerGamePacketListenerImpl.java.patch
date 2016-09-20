@@ -157,6 +157,24 @@
      @Override
      public void tick() {
          if (this.ackBlockChangesUpTo > -1) {
+@@ -277,7 +357,7 @@
+         if (this.clientIsFloating && !this.player.isSleeping() && !this.player.isPassenger() && !this.player.isDeadOrDying()) {
+             if (++this.aboveGroundTickCount > this.getMaximumFlyingTicks(this.player)) {
+                 ServerGamePacketListenerImpl.LOGGER.warn("{} was kicked for floating too long!", this.player.getName().getString());
+-                this.disconnect((Component) Component.translatable("multiplayer.disconnect.flying"));
++                this.disconnect(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.flyingPlayer); // Paper - use configurable kick message
+                 return;
+             }
+         } else {
+@@ -296,7 +376,7 @@
+             if (this.clientVehicleIsFloating && this.lastVehicle.getControllingPassenger() == this.player) {
+                 if (++this.aboveGroundVehicleTickCount > this.getMaximumFlyingTicks(this.lastVehicle)) {
+                     ServerGamePacketListenerImpl.LOGGER.warn("{} was kicked for floating a vehicle too long!", this.player.getName().getString());
+-                    this.disconnect((Component) Component.translatable("multiplayer.disconnect.flying"));
++                    this.disconnect(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.flyingVehicle); // Paper - use configurable kick message
+                     return;
+                 }
+             } else {
 @@ -313,6 +393,7 @@
          this.chatSpamThrottler.tick();
          this.dropSpamThrottler.tick();
@@ -227,7 +245,7 @@
                      ServerGamePacketListenerImpl.LOGGER.warn("{} (vehicle of {}) moved too quickly! {},{},{}", new Object[]{entity.getName().getString(), this.player.getName().getString(), d6, d7, d8});
                      this.send(ClientboundMoveVehiclePacket.fromEntity(entity));
                      return;
-@@ -449,19 +569,72 @@
+@@ -449,20 +569,73 @@
                  d10 = d6 * d6 + d7 * d7 + d8 * d8;
                  boolean flag2 = false;
  
@@ -246,8 +264,8 @@
 +                    this.player.absMoveTo(d0, d1, d2, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
                      this.send(ClientboundMoveVehiclePacket.fromEntity(entity));
                      return;
-+                }
-+
+                 }
+ 
 +                // CraftBukkit start - fire PlayerMoveEvent
 +                Player player = this.getCraftPlayer();
 +                if (!this.hasMoved) {
@@ -296,11 +314,12 @@
 +                        this.justTeleported = false;
 +                        return;
 +                    }
-                 }
++                }
 +                // CraftBukkit end
- 
++
                  this.player.serverLevel().getChunkSource().move(this.player);
                  entity.recordMovementThroughBlocks(new Vec3(d0, d1, d2), entity.position());
+                 Vec3 vec3d = new Vec3(entity.getX() - d0, entity.getY() - d1, entity.getZ() - d2);
 @@ -499,6 +672,7 @@
              this.lastGoodZ = this.awaitingPositionFromClient.z;
              this.player.hasChangedDimension();
@@ -447,8 +466,8 @@
 +                                if (i > Math.max(this.allowedPlayerTicks, 5)) {
                                      ServerGamePacketListenerImpl.LOGGER.debug("{} is sending move packets too frequently ({} packets since last tick)", this.player.getName().getString(), i);
                                      i = 1;
-+                                }
-+
+                                 }
+ 
 +                                if (packet.hasRot || d10 > 0) {
 +                                    this.allowedPlayerTicks -= 1;
 +                                } else {
@@ -459,8 +478,8 @@
 +                                    speed = this.player.getAbilities().flyingSpeed * 20f;
 +                                } else {
 +                                    speed = this.player.getAbilities().walkingSpeed * 10f;
-                                 }
- 
++                                }
++
                                  if (this.shouldCheckPlayerMovement(flag)) {
                                      float f2 = flag ? 300.0F : 100.0F;
  
