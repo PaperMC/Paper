@@ -205,6 +205,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     @Override
     public void loadData(NBTTagCompound nbttagcompound) {
         super.loadData(nbttagcompound);
+        if (this.locY() > 300) this.setPositionRaw(locX(), 257, locZ()); // Paper - bring down to a saner Y level if out of world
         if (nbttagcompound.hasKeyOfType("playerGameType", 99)) {
             if (this.getMinecraftServer().getForceGamemode()) {
                 this.playerInteractManager.a(this.getMinecraftServer().getGamemode(), EnumGamemode.NOT_SET);
