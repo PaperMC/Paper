@@ -731,7 +731,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         if (entity.ck()) {
             this.getMethodProfiler().enter("chunkCheck");
             int i = MathHelper.floor(entity.locX() / 16.0D);
-            int j = MathHelper.floor(entity.locY() / 16.0D);
+            int j =  Math.min(15, Math.max(0, MathHelper.floor(entity.locY() / 16.0D))); // Paper - stay consistent with chunk add/remove behavior
             int k = MathHelper.floor(entity.locZ() / 16.0D);
 
             if (!entity.inChunk || entity.chunkX != i || entity.chunkY != j || entity.chunkZ != k) {
