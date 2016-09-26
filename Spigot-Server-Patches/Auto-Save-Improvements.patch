@@ -79,6 +79,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+     public final Thread primaryThread;
+     public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
+     public int autosavePeriod;
++    public boolean serverAutoSave = false; // Paper
+     // CraftBukkit end
+ 
+     public MinecraftServer(OptionSet options, Proxy proxy, DataConverterManager dataconvertermanager, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache) {
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
              this.q.b().a(agameprofile);
          }
  
@@ -86,7 +94,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              MinecraftTimings.worldSaveTimer.startTiming(); // Spigot
              this.methodProfiler.a("save");
 +
-+        if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit
++        serverAutoSave = (autosavePeriod > 0 && this.ticks % autosavePeriod == 0); // Paper
++        if (serverAutoSave) { // CraftBukkit // Paper
              this.v.savePlayers();
              // Spigot Start
 +        } // Paper - Incremental Auto Saving
@@ -121,5 +130,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (flag) org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit // Paper - Incremental Auto Saving - Only fire event on full save
              if (iprogressupdate != null) {
                  iprogressupdate.a("Saving level");
+             }
+ 
+-            this.a();
++            if (flag || server.serverAutoSave) this.a(); // Paper
+             if (iprogressupdate != null) {
+                 iprogressupdate.c("Saving chunks");
              }
 --
