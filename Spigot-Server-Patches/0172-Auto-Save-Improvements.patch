@@ -1,4 +1,4 @@
-From 174325d842704ca0cdfdd21586234f2426246090 Mon Sep 17 00:00:00 2001
+From 32c1bb9c17914f7cc61e21e39f1fa31520ac069a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 19 Sep 2016 23:16:39 -0400
 Subject: [PATCH] Auto Save Improvements
@@ -75,10 +75,18 @@ index 1ba02f1..65de280 100644
                  }
              }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 8ca8fbf..2f9ce91 100644
+index 8ca8fbf..c19bde9 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -745,24 +745,27 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -114,6 +114,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+     public final Thread primaryThread;
+     public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
+     public int autosavePeriod;
++    public boolean serverAutoSave = false; // Paper
+     // CraftBukkit end
+ 
+     public MinecraftServer(OptionSet options, Proxy proxy, DataConverterManager dataconvertermanager, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache) {
+@@ -745,24 +746,28 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
              this.q.b().a(agameprofile);
          }
  
@@ -86,7 +94,8 @@ index 8ca8fbf..2f9ce91 100644
              MinecraftTimings.worldSaveTimer.startTiming(); // Spigot
              this.methodProfiler.a("save");
 +
-+        if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit
++        serverAutoSave = (autosavePeriod > 0 && this.ticks % autosavePeriod == 0); // Paper
++        if (serverAutoSave) { // CraftBukkit // Paper
              this.v.savePlayers();
              // Spigot Start
 +        } // Paper - Incremental Auto Saving
@@ -110,10 +119,10 @@ index 8ca8fbf..2f9ce91 100644
          this.methodProfiler.a("tallying");
          this.h[this.ticks % 100] = System.nanoTime() - i;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 5ed6d3e..a47bfee 100644
+index 5ed6d3e..26ab536 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -1024,7 +1024,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -1024,12 +1024,12 @@ public class WorldServer extends World implements IAsyncTaskHandler {
          ChunkProviderServer chunkproviderserver = this.getChunkProviderServer();
  
          if (chunkproviderserver.e()) {
@@ -122,6 +131,12 @@ index 5ed6d3e..a47bfee 100644
              if (iprogressupdate != null) {
                  iprogressupdate.a("Saving level");
              }
+ 
+-            this.a();
++            if (flag || server.serverAutoSave) this.a(); // Paper
+             if (iprogressupdate != null) {
+                 iprogressupdate.c("Saving chunks");
+             }
 -- 
-2.9.3
+1.9.1
 
