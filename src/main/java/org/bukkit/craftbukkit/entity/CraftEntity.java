@@ -584,6 +584,16 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         getHandle().setNoGravity(!gravity);
     }
 
+    @Override
+    public int getPortalCooldown() {
+        return getHandle().portalCooldown;
+    }
+
+    @Override
+    public void setPortalCooldown(int cooldown) {
+        getHandle().portalCooldown = cooldown;
+    }
+
     private static PermissibleBase getPermissibleBase() {
         if (perm == null) {
             perm = new PermissibleBase(new ServerOperator() {
