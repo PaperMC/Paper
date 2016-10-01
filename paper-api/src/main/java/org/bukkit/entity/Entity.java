@@ -403,4 +403,18 @@ public interface Entity extends Metadatable, CommandSender {
      * @param gravity whether gravity should apply
      */
     void setGravity(boolean gravity);
+
+    /**
+     * Gets the period of time (in ticks) before this entity can use a portal.
+     *
+     * @return portal cooldown ticks
+     */
+    int getPortalCooldown();
+
+    /**
+     * Sets the period of time (in ticks) before this entity can use a portal.
+     *
+     * @param cooldown portal cooldown ticks
+     */
+    void setPortalCooldown(int cooldown);
 }
