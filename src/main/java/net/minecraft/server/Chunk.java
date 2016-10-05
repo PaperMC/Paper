@@ -637,6 +637,12 @@ public class Chunk implements IChunkAccess {
                             "Chunk coordinates: " + (this.loc.x * 16) + "," + (this.loc.z * 16));
             e.printStackTrace();
             ServerInternalException.reportInternalException(e);
+
+            if (this.world.paperConfig.removeCorruptTEs) {
+                this.removeTileEntity(tileentity.getPosition());
+                this.markDirty();
+                org.bukkit.Bukkit.getLogger().info("Removing corrupt tile entity");
+            }
             // Paper end
             // CraftBukkit end
         }

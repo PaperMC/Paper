@@ -293,4 +293,9 @@ public class PaperWorldConfig {
         preventTntFromMovingInWater = getBoolean("prevent-tnt-from-moving-in-water", false);
         log("Prevent TNT from moving in water: " + preventTntFromMovingInWater);
     }
+
+    public boolean removeCorruptTEs = false;
+    private void removeCorruptTEs() {
+        removeCorruptTEs = getBoolean("remove-corrupt-tile-entities", false);
+    }
 }
