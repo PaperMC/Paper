@@ -1,5 +1,5 @@
-From ef1214ac0a2db20304cff77bdfb5e5c355dae95e Mon Sep 17 00:00:00 2001
-From: Max Lee <Phoenix616@users.noreply.github.com>
+From 671aae6f79d707f67aab8b362a61beaab5cc7b23 Mon Sep 17 00:00:00 2001
+From: Max Lee <mail@moep.tv>
 Date: Thu, 13 Oct 2016 01:01:06 +0200
 Subject: [PATCH] InventoryMoveItemEvent improvements
 
@@ -18,34 +18,27 @@ There are also options to disable the event entirely or just don't fire it
 when no move will occur.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 51b34d9..7fe62b0 100644
+index 51b34d9..0e3ad6b 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -365,6 +365,22 @@ public class PaperWorldConfig {
+@@ -365,6 +365,15 @@ public class PaperWorldConfig {
          isHopperPushBased = getBoolean("hopper.push-based", false);
      }
  
 +    public boolean callMoveItemEvent = true;
-+    private void callMoveItemEvent() {
-+        callMoveItemEvent = getBoolean("move-item-event.enabled", true);
-+    }
-+
 +    public boolean callMoveItemEventWithoutMove = true;
-+    private void callMoveItemEventWithoutMove() {
-+        callMoveItemEventWithoutMove = getBoolean("move-item-event.call-without-move", true);
-+    }
-+
 +    public boolean callMoveEventCancelled = true;
-+    private void callMoveItemEventCancelled() {
++    private void moveItemEventImprovements() {
++        callMoveItemEvent = getBoolean("move-item-event.enabled", true);
++        callMoveItemEventWithoutMove = getBoolean("move-item-event.call-without-move", true);
 +        callMoveEventCancelled = getBoolean("move-item-event.call-cancelled-without-move", true);
 +    }
-+
 +
      public long delayChunkUnloadsBy;
      private void delayChunkUnloadsBy() {
          delayChunkUnloadsBy = PaperConfig.getSeconds(getString("delay-chunk-unloads-by", "10s"));
 diff --git a/src/main/java/net/minecraft/server/BlockDropper.java b/src/main/java/net/minecraft/server/BlockDropper.java
-index c6f318d..041695d 100644
+index c6f318d..99124f6 100644
 --- a/src/main/java/net/minecraft/server/BlockDropper.java
 +++ b/src/main/java/net/minecraft/server/BlockDropper.java
 @@ -56,7 +56,18 @@ public class BlockDropper extends BlockDispenser {
@@ -53,7 +46,7 @@ index c6f318d..041695d 100644
  
                          InventoryMoveItemEvent event = new InventoryMoveItemEvent(tileentitydispenser.getOwner().getInventory(), oitemstack.clone(), destinationInventory, true);
 -                        world.getServer().getPluginManager().callEvent(event);
-+                        // Paper start - Fire event cancelled if Vanilla would not move it
++                        // Paper start - InventoryMoveItemEvent improvements
 +                        if (world.paperConfig.callMoveItemEvent) {
 +                            boolean acceptsItem = TileEntityHopper.willAcceptItem(iinventory, CraftItemStack.asNMSCopy(oitemstack), enumdirection.opposite());
 +                            if (world.paperConfig.callMoveItemEventWithoutMove || acceptsItem) {
@@ -69,7 +62,7 @@ index c6f318d..041695d 100644
                              return;
                          }
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
-index 1f5de89..87648d1 100644
+index 1f5de89..f23369e 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
 +++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
 @@ -263,7 +263,18 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
@@ -77,7 +70,7 @@ index 1f5de89..87648d1 100644
  
                          InventoryMoveItemEvent event = new InventoryMoveItemEvent(this.getOwner().getInventory(), oitemstack.clone(), destinationInventory, true);
 -                        this.getWorld().getServer().getPluginManager().callEvent(event);
-+                        // Paper start - call event as cancelled when inventory wont accept item in Vanilla
++                        // Paper start - InventoryMoveItemEvent improvements
 +                        if (world.paperConfig.callMoveItemEvent) {
 +                            boolean acceptsItem = willAcceptItem(iinventory, CraftItemStack.asNMSCopy(oitemstack), enumdirection);
 +                            if (world.paperConfig.callMoveItemEventWithoutMove || acceptsItem) {
@@ -98,7 +91,7 @@ index 1f5de89..87648d1 100644
              InventoryMoveItemEvent event = new InventoryMoveItemEvent(sourceInventory, oitemstack.clone(), ihopper.getOwner().getInventory(), false);
 -
 -            ihopper.getWorld().getServer().getPluginManager().callEvent(event);
-+            // Paper start - call event as cancelled when inventory wont accept item in Vanilla
++            // Paper start - InventoryMoveItemEvent improvements
 +            if (ihopper.getWorld().paperConfig.callMoveItemEvent) {
 +                boolean acceptsItem = willAcceptItem(iinventory, CraftItemStack.asNMSCopy(oitemstack), enumdirection);
 +                if (ihopper.getWorld().paperConfig.callMoveItemEventWithoutMove || acceptsItem) {
