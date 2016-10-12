@@ -1,0 +1,165 @@
+From ef1214ac0a2db20304cff77bdfb5e5c355dae95e Mon Sep 17 00:00:00 2001
+From: Max Lee <Phoenix616@users.noreply.github.com>
+Date: Thu, 13 Oct 2016 01:01:06 +0200
+Subject: [PATCH] InventoryMoveItemEvent improvements
+
+The handling of the InventoryMoveItemEvent in CraftBukkit is extremely
+resource hungry when dealing with a lot of Hoppers. Especially the fact
+that it even fires when the Vanilla behaviour would be to not move items
+at all because the targetted inventory is full results in a lot of useless
+event calls.
+
+This adds three world config options whith which the behaviour can be
+tweaked to your liking. By default it will call events that wouldn't
+result in a move as cancelled so that plugins can still listen for it but
+pure observing once can ignore it easily.
+
+There are also options to disable the event entirely or just don't fire it
+when no move will occur.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 51b34d9..7fe62b0 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -365,6 +365,22 @@ public class PaperWorldConfig {
+         isHopperPushBased = getBoolean("hopper.push-based", false);
+     }
+ 
++    public boolean callMoveItemEvent = true;
++    private void callMoveItemEvent() {
++        callMoveItemEvent = getBoolean("move-item-event.enabled", true);
++    }
++
++    public boolean callMoveItemEventWithoutMove = true;
++    private void callMoveItemEventWithoutMove() {
++        callMoveItemEventWithoutMove = getBoolean("move-item-event.call-without-move", true);
++    }
++
++    public boolean callMoveEventCancelled = true;
++    private void callMoveItemEventCancelled() {
++        callMoveEventCancelled = getBoolean("move-item-event.call-cancelled-without-move", true);
++    }
++
++
+     public long delayChunkUnloadsBy;
+     private void delayChunkUnloadsBy() {
+         delayChunkUnloadsBy = PaperConfig.getSeconds(getString("delay-chunk-unloads-by", "10s"));
+diff --git a/src/main/java/net/minecraft/server/BlockDropper.java b/src/main/java/net/minecraft/server/BlockDropper.java
+index c6f318d..041695d 100644
+--- a/src/main/java/net/minecraft/server/BlockDropper.java
++++ b/src/main/java/net/minecraft/server/BlockDropper.java
+@@ -56,7 +56,18 @@ public class BlockDropper extends BlockDispenser {
+                         }
+ 
+                         InventoryMoveItemEvent event = new InventoryMoveItemEvent(tileentitydispenser.getOwner().getInventory(), oitemstack.clone(), destinationInventory, true);
+-                        world.getServer().getPluginManager().callEvent(event);
++                        // Paper start - Fire event cancelled if Vanilla would not move it
++                        if (world.paperConfig.callMoveItemEvent) {
++                            boolean acceptsItem = TileEntityHopper.willAcceptItem(iinventory, CraftItemStack.asNMSCopy(oitemstack), enumdirection.opposite());
++                            if (world.paperConfig.callMoveItemEventWithoutMove || acceptsItem) {
++                                if (world.paperConfig.callMoveEventCancelled && !acceptsItem) {
++                                    event.setCancelled(true);
++                                }
++                                world.getServer().getPluginManager().callEvent(event);
++                            }
++                        }
++                        //world.getServer().getPluginManager().callEvent(event);
++                        // Paper end
+                         if (event.isCancelled()) {
+                             return;
+                         }
+diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
+index 1f5de89..87648d1 100644
+--- a/src/main/java/net/minecraft/server/TileEntityHopper.java
++++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
+@@ -263,7 +263,18 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+                         }
+ 
+                         InventoryMoveItemEvent event = new InventoryMoveItemEvent(this.getOwner().getInventory(), oitemstack.clone(), destinationInventory, true);
+-                        this.getWorld().getServer().getPluginManager().callEvent(event);
++                        // Paper start - call event as cancelled when inventory wont accept item in Vanilla
++                        if (world.paperConfig.callMoveItemEvent) {
++                            boolean acceptsItem = willAcceptItem(iinventory, CraftItemStack.asNMSCopy(oitemstack), enumdirection);
++                            if (world.paperConfig.callMoveItemEventWithoutMove || acceptsItem) {
++                                if (world.paperConfig.callMoveEventCancelled && !acceptsItem) {
++                                    event.setCancelled(true);
++                                }
++                                this.getWorld().getServer().getPluginManager().callEvent(event);
++                            }
++                        }
++                        // this.getWorld().getServer().getPluginManager().callEvent(event);
++                        // Paper end
+                         if (event.isCancelled()) {
+                             this.setItem(i, itemstack);
+                             this.setCooldown(world.spigotConfig.hopperTransfer); // Spigot
+@@ -420,8 +431,18 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+             }
+ 
+             InventoryMoveItemEvent event = new InventoryMoveItemEvent(sourceInventory, oitemstack.clone(), ihopper.getOwner().getInventory(), false);
+-
+-            ihopper.getWorld().getServer().getPluginManager().callEvent(event);
++            // Paper start - call event as cancelled when inventory wont accept item in Vanilla
++            if (ihopper.getWorld().paperConfig.callMoveItemEvent) {
++                boolean acceptsItem = willAcceptItem(iinventory, CraftItemStack.asNMSCopy(oitemstack), enumdirection);
++                if (ihopper.getWorld().paperConfig.callMoveItemEventWithoutMove || acceptsItem) {
++                    if (ihopper.getWorld().paperConfig.callMoveEventCancelled && !acceptsItem) {
++                        event.setCancelled(true);
++                    }
++                    ihopper.getWorld().getServer().getPluginManager().callEvent(event);
++                }
++            }
++            //ihopper.getWorld().getServer().getPluginManager().callEvent(event);
++            // Paper end
+             if (event.isCancelled()) {
+                 iinventory.setItem(i, itemstack1);
+ 
+@@ -452,6 +473,46 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+         return false;
+     }
+ 
++    // Paper start - method to check whether or not an inventory will accept the provided item. This should match Vanilla behaviour
++    // Vanilla method: addItem(IInventory, ItemsStack, EnumDirection)
++    static boolean willAcceptItem(IInventory iinventory, ItemStack itemstack, EnumDirection enumdirection) {
++        if (iinventory instanceof IWorldInventory && enumdirection != null) {
++            IWorldInventory iworldinventory = (IWorldInventory) iinventory;
++            int[] aint = iworldinventory.getSlotsForFace(enumdirection);
++
++            for (int i = 0; i < aint.length; ++i) {
++                if (enoughRoomInSlot(iinventory, itemstack, aint[i], enumdirection)) {
++                    return true;
++                }
++            }
++        } else {
++            int j = iinventory.getSize();
++
++            for (int k = 0; k < j; ++k) {
++                if (enoughRoomInSlot(iinventory, itemstack, k, enumdirection)) {
++                    return true;
++                }
++            }
++        }
++        return false;
++    }
++
++    // Vanilla method: c(IInventory, ItemStack, int, EnumDirection)
++    private static boolean enoughRoomInSlot(IInventory iinventory, ItemStack itemstack, int i, EnumDirection enumdirection) {
++        if (a(iinventory, itemstack, i, enumdirection)) {
++            ItemStack itemstack1 = iinventory.getItem(i);
++            if (itemstack1 == null) {
++                return true;
++            } else if (a(itemstack1, itemstack)) {
++                int j = itemstack.getMaxStackSize() - itemstack1.count;
++                int k = Math.min(itemstack.count, j);
++                return k > 0;
++            }
++        }
++        return false;
++    }
++    // Paper end
++
+     public static boolean a(IInventory iinventory, EntityItem entityitem) {
+         boolean flag = false;
+ 
+-- 
+1.9.4.msysgit.2
+
