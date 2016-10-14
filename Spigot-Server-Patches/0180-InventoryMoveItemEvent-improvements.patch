@@ -1,4 +1,4 @@
-From 671aae6f79d707f67aab8b362a61beaab5cc7b23 Mon Sep 17 00:00:00 2001
+From 3158d498a83ae20858403c5108d6ae2f19d2647d Mon Sep 17 00:00:00 2001
 From: Max Lee <mail@moep.tv>
 Date: Thu, 13 Oct 2016 01:01:06 +0200
 Subject: [PATCH] InventoryMoveItemEvent improvements
@@ -62,7 +62,7 @@ index c6f318d..99124f6 100644
                              return;
                          }
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
-index 1f5de89..f23369e 100644
+index 1f5de89..09a5547 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
 +++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
 @@ -263,7 +263,18 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
@@ -106,53 +106,100 @@ index 1f5de89..f23369e 100644
              if (event.isCancelled()) {
                  iinventory.setItem(i, itemstack1);
  
-@@ -452,6 +473,46 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
-         return false;
+@@ -480,18 +501,47 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
      }
  
-+    // Paper start - method to check whether or not an inventory will accept the provided item. This should match Vanilla behaviour
-+    // Vanilla method: addItem(IInventory, ItemsStack, EnumDirection)
-+    static boolean willAcceptItem(IInventory iinventory, ItemStack itemstack, EnumDirection enumdirection) {
-+        if (iinventory instanceof IWorldInventory && enumdirection != null) {
-+            IWorldInventory iworldinventory = (IWorldInventory) iinventory;
-+            int[] aint = iworldinventory.getSlotsForFace(enumdirection);
-+
-+            for (int i = 0; i < aint.length; ++i) {
-+                if (enoughRoomInSlot(iinventory, itemstack, aint[i], enumdirection)) {
-+                    return true;
-+                }
-+            }
-+        } else {
-+            int j = iinventory.getSize();
-+
-+            for (int k = 0; k < j; ++k) {
-+                if (enoughRoomInSlot(iinventory, itemstack, k, enumdirection)) {
-+                    return true;
-+                }
-+            }
-+        }
-+        return false;
+     public static ItemStack addItem(IInventory iinventory, ItemStack itemstack, @Nullable EnumDirection enumdirection) {
++        // Paper start - InventoryMoveItemEvent improvements
++        return checkOrAddToInventory(iinventory, itemstack, enumdirection, true);
 +    }
 +
-+    // Vanilla method: c(IInventory, ItemStack, int, EnumDirection)
-+    private static boolean enoughRoomInSlot(IInventory iinventory, ItemStack itemstack, int i, EnumDirection enumdirection) {
-+        if (a(iinventory, itemstack, i, enumdirection)) {
-+            ItemStack itemstack1 = iinventory.getItem(i);
-+            if (itemstack1 == null) {
-+                return true;
-+            } else if (a(itemstack1, itemstack)) {
-+                int j = itemstack.getMaxStackSize() - itemstack1.count;
-+                int k = Math.min(itemstack.count, j);
-+                return k > 0;
-+            }
-+        }
-+        return false;
++    static boolean willAcceptItem(IInventory iinventory, ItemStack itemstack, @Nullable EnumDirection enumdirection) {
++        return checkOrAddToInventory(iinventory, itemstack, enumdirection, false) == null;
 +    }
-+    // Paper end
 +
-     public static boolean a(IInventory iinventory, EntityItem entityitem) {
-         boolean flag = false;
++    /**
++     * Check whether or not an inventory can accept a new item (and add it)
++     * @param addItem Set whether or not to add the checked item to that inventory
++     * @return The overflowing itemstack; null if all where added or could be added
++     */
++    private static ItemStack checkOrAddToInventory(IInventory iinventory, ItemStack itemstack, @Nullable EnumDirection enumdirection, boolean addItem) {
++        // Paper end
+         if (iinventory instanceof IWorldInventory && enumdirection != null) {
+             IWorldInventory iworldinventory = (IWorldInventory) iinventory;
+             int[] aint = iworldinventory.getSlotsForFace(enumdirection);
  
+             for (int i = 0; i < aint.length && itemstack != null && itemstack.count > 0; ++i) {
+-                itemstack = c(iinventory, itemstack, aint[i], enumdirection);
++                //itemstack = c(iinventory, itemstack, aint[i], enumdirection);
++                // Paper start - InventoryMoveItemEvent improvements
++                if (addItem) {
++                    itemstack = c(iinventory, itemstack, aint[i], enumdirection);
++                } else if (enoughRoomInSlot(iinventory, itemstack, aint[i], enumdirection)) {
++                    return null;
++                }
++                // Paper end
+             }
+         } else {
+             int j = iinventory.getSize();
+ 
+             for (int k = 0; k < j && itemstack != null && itemstack.count > 0; ++k) {
+-                itemstack = c(iinventory, itemstack, k, enumdirection);
++                //itemstack = c(iinventory, itemstack, k, enumdirection);
++                // Paper start - InventoryMoveItemEvent improvements
++                if (addItem) {
++                    itemstack = c(iinventory, itemstack, k, enumdirection);
++                } else if (enoughRoomInSlot(iinventory, itemstack, k, enumdirection)) {
++                    return null;
++                }
++                // Paper end
+             }
+         }
+ 
+@@ -511,12 +561,28 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+     }
+ 
+     private static ItemStack c(IInventory iinventory, ItemStack itemstack, int i, EnumDirection enumdirection) {
++        // Paper start - InventoryMoveItemEvent improvements
++        return checkOrAddToSlot(iinventory, itemstack, i, enumdirection, true);
++    }
++
++    private static boolean enoughRoomInSlot(IInventory iinventory, ItemStack itemstack, int i, EnumDirection enumdirection) {
++        return checkOrAddToSlot(iinventory, itemstack, i, enumdirection, false) == null;
++    }
++
++    /**
++     * Check whether or not a slot can accept a new item (and add it)
++     * @param addItem Set whether or not to add the checked item to that slot
++     * @return The overflowing itemstack; null if all where added or could be added
++     */
++    private static ItemStack checkOrAddToSlot(IInventory iinventory, ItemStack itemstack, int i, EnumDirection enumdirection, boolean addItem) {
++        // Paper end
+         ItemStack itemstack1 = iinventory.getItem(i);
+ 
+         if (a(iinventory, itemstack, i, enumdirection)) {
+             boolean flag = false;
+ 
+             if (itemstack1 == null) {
++                if (!addItem) return null; // Paper - InventoryMoveItemEvent improvements
+                 IGNORE_TILE_UPDATES = true; // Paper
+                 iinventory.setItem(i, itemstack);
+                 IGNORE_TILE_UPDATES = false; // Paper
+@@ -525,12 +591,12 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+             } else if (a(itemstack1, itemstack)) {
+                 int j = itemstack.getMaxStackSize() - itemstack1.count;
+                 int k = Math.min(itemstack.count, j);
+-
++                if (!addItem) return (k > 0) ? null : itemstack; // Paper - InventoryMoveItemEvent improvements
+                 itemstack.count -= k;
+                 itemstack1.count += k;
+                 flag = k > 0;
+             }
+-
++            if (!addItem) return itemstack; // Paper - InventoryMoveItemEvent improvements
+             if (flag) {
+                 if (iinventory instanceof TileEntityHopper) {
+                     TileEntityHopper tileentityhopper = (TileEntityHopper) iinventory;
 -- 
 1.9.4.msysgit.2
 
