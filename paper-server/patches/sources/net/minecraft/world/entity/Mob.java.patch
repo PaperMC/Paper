@@ -26,15 +26,15 @@
      public GoalSelector targetSelector;
      @Nullable
      private LivingEntity target;
-@@ -132,6 +144,8 @@
+@@ -131,6 +143,8 @@
+     private Leashable.LeashData leashData;
      private BlockPos restrictCenter;
      private float restrictRadius;
- 
-+    public boolean aware = true; // CraftBukkit
 +
++    public boolean aware = true; // CraftBukkit
+ 
      protected Mob(EntityType<? extends Mob> type, Level world) {
          super(type, world);
-         this.handItems = NonNullList.withSize(2, ItemStack.EMPTY);
 @@ -160,6 +174,12 @@
  
      }
@@ -48,7 +48,7 @@
      protected void registerGoals() {}
  
      public static AttributeSupplier.Builder createMobAttributes() {
-@@ -264,11 +284,42 @@
+@@ -264,13 +284,44 @@
  
      @Nullable
      protected final LivingEntity getTargetFromBrain() {
@@ -60,8 +60,8 @@
 -        this.target = target;
 +        // CraftBukkit start - fire event
 +        this.setTarget(target, EntityTargetEvent.TargetReason.UNKNOWN, true);
-+    }
-+
+     }
+ 
 +    public boolean setTarget(LivingEntity entityliving, EntityTargetEvent.TargetReason reason, boolean fireEvent) {
 +        if (this.getTarget() == entityliving) return false;
 +        if (fireEvent) {
@@ -90,9 +90,11 @@
 +        this.target = entityliving;
 +        return true;
 +        // CraftBukkit end
-     }
- 
++    }
++
      @Override
+     public boolean canAttackType(EntityType<?> type) {
+         return type != EntityType.GHAST;
 @@ -399,6 +450,12 @@
          return null;
      }
@@ -276,7 +278,7 @@
  
                  optional.ifPresent((entityinsentient) -> {
                      this.onOffspringSpawnedFromEgg(player, entityinsentient);
-@@ -1389,28 +1490,45 @@
+@@ -1389,28 +1490,51 @@
          return this.restrictRadius != -1.0F;
      }
  
@@ -288,6 +290,12 @@
 +
 +    @Nullable
 +    public <T extends Mob> T convertTo(EntityType<T> entitytypes, ConversionParams conversionparams, EntitySpawnReason entityspawnreason, ConversionParams.AfterConversion<T> conversionparams_a, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason spawnReason) {
++    // Paper start - entity zap event - allow cancellation of conversion post creation
++        return this.convertTo(entitytypes, conversionparams, entityspawnreason, e -> { conversionparams_a.finalizeConversion(e); return true; }, transformReason, spawnReason);
++    }
++    @Nullable
++    public <T extends Mob> T convertTo(EntityType<T> entitytypes, ConversionParams conversionparams, EntitySpawnReason entityspawnreason, ConversionParams.CancellingAfterConversion<T> conversionparams_a, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason spawnReason) {
++    // Paper end - entity zap event - allow cancellation of conversion post creation
 +        // CraftBukkit end
          if (this.isRemoved()) {
              return null;
@@ -301,7 +309,7 @@
 -                context.type().convert(this, t0, context);
 -                finalizer.finalizeConversion(t0);
 +                conversionparams.type().convert(this, t0, conversionparams);
-+                conversionparams_a.finalizeConversion(t0);
++                if (!conversionparams_a.finalizeConversionOrCancel(t0)) return null; // Paper - entity zap event - return null if conversion was cancelled
                  Level world = this.level();
  
 +                // CraftBukkit start
@@ -328,7 +336,7 @@
                  }
  
                  return t0;
-@@ -1420,10 +1538,17 @@
+@@ -1420,10 +1544,22 @@
  
      @Nullable
      public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams context, ConversionParams.AfterConversion<T> finalizer) {
@@ -339,6 +347,11 @@
  
      @Nullable
 +    public <T extends Mob> T convertTo(EntityType<T> entitytypes, ConversionParams conversionparams, ConversionParams.AfterConversion<T> conversionparams_a, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason spawnReason) {
++    // Paper start - entity zap event - allow cancellation of conversion post creation
++        return this.convertTo(entitytypes, conversionparams, e -> { conversionparams_a.finalizeConversion(e); return true; }, transformReason, spawnReason);
++    }
++    public <T extends Mob> T convertTo(EntityType<T> entitytypes, ConversionParams conversionparams, ConversionParams.CancellingAfterConversion<T> conversionparams_a, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason spawnReason) {
++    // Paper start - entity zap event - allow cancellation of conversion post creation
 +        return this.convertTo(entitytypes, conversionparams, EntitySpawnReason.CONVERSION, conversionparams_a, transformReason, spawnReason);
 +        // CraftBukkit end
 +    }
@@ -347,7 +360,7 @@
      @Override
      public Leashable.LeashData getLeashData() {
          return this.leashData;
-@@ -1458,6 +1583,7 @@
+@@ -1458,6 +1594,7 @@
          boolean flag1 = super.startRiding(entity, force);
  
          if (flag1 && this.isLeashed()) {
@@ -355,7 +368,7 @@
              this.dropLeash();
          }
  
-@@ -1542,7 +1668,7 @@
+@@ -1542,7 +1679,7 @@
  
              if (f1 > 0.0F && target instanceof LivingEntity) {
                  entityliving = (LivingEntity) target;

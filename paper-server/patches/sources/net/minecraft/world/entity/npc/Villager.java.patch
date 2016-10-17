@@ -109,16 +109,29 @@
          Entity entity = damageSource.getEntity();
  
          if (entity != null) {
-@@ -808,7 +839,7 @@
+@@ -803,12 +834,19 @@
+     @Override
+     public void thunderHit(ServerLevel world, LightningBolt lightning) {
+         if (world.getDifficulty() != Difficulty.PEACEFUL) {
+-            Villager.LOGGER.info("Villager {} was struck by lightning {}.", this, lightning);
++            // Paper - Add EntityZapEvent; move log down, event can cancel
+             Witch entitywitch = (Witch) this.convertTo(EntityType.WITCH, ConversionParams.single(this, false, false), (entitywitch1) -> {
++               // Paper start - Add EntityZapEvent
++               if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityZapEvent(this, lightning, entitywitch1).isCancelled()) {
++                   return false;
++               }
++               if (org.spigotmc.SpigotConfig.logVillagerDeaths) Villager.LOGGER.info("Villager {} was struck by lightning {}.", this, lightning); // Move down
++               // Paper end - Add EntityZapEvent
                  entitywitch1.finalizeSpawn(world, world.getCurrentDifficultyAt(entitywitch1.blockPosition()), EntitySpawnReason.CONVERSION, (SpawnGroupData) null);
                  entitywitch1.setPersistenceRequired();
                  this.releaseAllPois();
 -            });
++                return true; // Paper start - Add EntityZapEvent
 +            }, EntityTransformEvent.TransformReason.LIGHTNING, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING); // CraftBukkit
  
              if (entitywitch == null) {
                  super.thunderHit(world, lightning);
-@@ -906,7 +937,7 @@
+@@ -906,7 +944,7 @@
              }).limit(5L).toList();
  
              if (list1.size() >= requiredCount) {
@@ -127,7 +140,7 @@
                      list.forEach(GolemSensor::golemDetected);
                  }
              }
-@@ -963,7 +994,7 @@
+@@ -963,7 +1001,7 @@
      @Override
      public void startSleeping(BlockPos pos) {
          super.startSleeping(pos);
@@ -136,7 +149,7 @@
          this.brain.eraseMemory(MemoryModuleType.WALK_TARGET);
          this.brain.eraseMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
      }
-@@ -971,7 +1002,7 @@
+@@ -971,7 +1009,7 @@
      @Override
      public void stopSleeping() {
          super.stopSleeping();
