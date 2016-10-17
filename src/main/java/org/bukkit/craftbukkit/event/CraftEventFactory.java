@@ -1084,6 +1084,14 @@ public class CraftEventFactory {
         return event;
     }
 
+    // Paper start
+    public static com.destroystokyo.paper.event.entity.EntityZapEvent callEntityZapEvent (Entity entity, Entity lightning, Entity changedEntity) {
+        com.destroystokyo.paper.event.entity.EntityZapEvent event = new com.destroystokyo.paper.event.entity.EntityZapEvent(entity.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), changedEntity.getBukkitEntity());
+        entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
+        return event;
+    }
+    // Paper end
+
     public static HorseJumpEvent callHorseJumpEvent(Entity horse, float power) {
         HorseJumpEvent event = new HorseJumpEvent((AbstractHorse) horse.getBukkitEntity(), power);
         horse.getBukkitEntity().getServer().getPluginManager().callEvent(event);

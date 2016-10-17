@@ -208,6 +208,11 @@ public class EntityPig extends EntityAnimal implements ISteerable, ISaddleable {
             }
 
             entitypigzombie.setPersistent();
+            // Paper start
+            if (CraftEventFactory.callEntityZapEvent(this, entitylightning, entitypigzombie).isCancelled()) {
+                return;
+            }
+            // Paper end
             // CraftBukkit start
             if (CraftEventFactory.callPigZapEvent(this, entitylightning, entitypigzombie).isCancelled()) {
                 return;

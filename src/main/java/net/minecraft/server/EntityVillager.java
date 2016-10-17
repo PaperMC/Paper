@@ -719,6 +719,12 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
             EntityVillager.LOGGER.info("Villager {} was struck by lightning {}.", this, entitylightning);
             EntityWitch entitywitch = (EntityWitch) EntityTypes.WITCH.a((World) worldserver);
 
+            // Paper start
+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityZapEvent(this, entitylightning, entitywitch).isCancelled()) {
+                return;
+            }
+            // Paper end
+
             entitywitch.setPositionRotation(this.locX(), this.locY(), this.locZ(), this.yaw, this.pitch);
             entitywitch.prepare(worldserver, worldserver.getDamageScaler(entitywitch.getChunkCoordinates()), EnumMobSpawn.CONVERSION, (GroupDataEntity) null, (NBTTagCompound) null);
             entitywitch.setNoAI(this.isNoAI());
