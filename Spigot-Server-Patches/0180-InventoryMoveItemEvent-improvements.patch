@@ -1,4 +1,4 @@
-From 7616914d21d239cec6545ee26c19e894cbaf837b Mon Sep 17 00:00:00 2001
+From 6eb71b879d2b377390325b8c640e8933826af609 Mon Sep 17 00:00:00 2001
 From: Max Lee <mail@moep.tv>
 Date: Thu, 13 Oct 2016 01:01:06 +0200
 Subject: [PATCH] InventoryMoveItemEvent improvements
@@ -61,7 +61,7 @@ index c6f318d..56ed0f9 100644
                              return;
                          }
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
-index 1f5de89..38f80b9 100644
+index 1f5de89..ba6e8a4 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
 +++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
 @@ -254,6 +254,8 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
@@ -104,7 +104,7 @@ index 1f5de89..38f80b9 100644
              if (event.isCancelled()) {
                  iinventory.setItem(i, itemstack1);
  
-@@ -479,19 +488,92 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -479,19 +488,91 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
          }
      }
  
@@ -136,19 +136,18 @@ index 1f5de89..38f80b9 100644
 +            destinationInventory = nmsDestinationInventory.getOwner().getInventory();
 +        }
 +
++        InventoryMoveItemEvent event = new InventoryMoveItemEvent(sourceInventory, oitemstack, destinationInventory, didSourceInitiate);
 +        if (world.paperConfig.callMoveItemEvent) {
 +            if (world.paperConfig.callMoveItemEventWithoutMove) {
-+                InventoryMoveItemEvent event = new InventoryMoveItemEvent(sourceInventory, oitemstack.clone(), destinationInventory, didSourceInitiate);
 +                if (world.paperConfig.callMoveEventCancelledWithoutMove && !willAcceptItem(nmsDestinationInventory, CraftItemStack.asNMSCopy(oitemstack), enumdirection)) {
 +                    event.setCancelled(true);
 +                }
 +                world.getServer().getPluginManager().callEvent(event);
 +            } else if (willAcceptItem(nmsDestinationInventory, CraftItemStack.asNMSCopy(oitemstack), enumdirection)) {
-+                InventoryMoveItemEvent event = new InventoryMoveItemEvent(sourceInventory, oitemstack.clone(), destinationInventory, didSourceInitiate);
 +                world.getServer().getPluginManager().callEvent(event);
 +            }
 +        }
-+        return new InventoryMoveItemEvent(sourceInventory, oitemstack, destinationInventory, didSourceInitiate);
++        return event;
 +    }
 +    // Paper end
 +
@@ -199,7 +198,7 @@ index 1f5de89..38f80b9 100644
              }
          }
  
-@@ -511,12 +593,28 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -511,12 +592,28 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
      }
  
      private static ItemStack c(IInventory iinventory, ItemStack itemstack, int i, EnumDirection enumdirection) {
@@ -228,7 +227,7 @@ index 1f5de89..38f80b9 100644
                  IGNORE_TILE_UPDATES = true; // Paper
                  iinventory.setItem(i, itemstack);
                  IGNORE_TILE_UPDATES = false; // Paper
-@@ -525,12 +623,12 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -525,12 +622,12 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
              } else if (a(itemstack1, itemstack)) {
                  int j = itemstack.getMaxStackSize() - itemstack1.count;
                  int k = Math.min(itemstack.count, j);
