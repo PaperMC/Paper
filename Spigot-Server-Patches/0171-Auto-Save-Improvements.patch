@@ -1,4 +1,4 @@
-From efc5e2a80cc31881a2438fdf57211cb36aadd74d Mon Sep 17 00:00:00 2001
+From 288acc02847ff43dfa0ba7a8e0bb91767b14c6a2 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 19 Sep 2016 23:16:39 -0400
 Subject: [PATCH] Auto Save Improvements
@@ -55,7 +55,7 @@ index 683a6dd..547628a 100644
          }
  
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 3828da7..7e53fee 100644
+index 1ba02f1..65de280 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -1,5 +1,6 @@
@@ -75,7 +75,7 @@ index 3828da7..7e53fee 100644
                  }
              }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index a4f7e4d..fb06496 100644
+index 8ca8fbf..c19bde9 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -114,6 +114,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
@@ -86,11 +86,12 @@ index a4f7e4d..fb06496 100644
      // CraftBukkit end
  
      public MinecraftServer(OptionSet options, Proxy proxy, DataConverterManager dataconvertermanager, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache) {
-@@ -745,22 +746,26 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -745,24 +746,28 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
              this.q.b().a(agameprofile);
          }
  
 -        if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit
+             MinecraftTimings.worldSaveTimer.startTiming(); // Spigot
              this.methodProfiler.a("save");
 +
 +        serverAutoSave = (autosavePeriod > 0 && this.ticks % autosavePeriod == 0); // Paper
@@ -111,34 +112,31 @@ index a4f7e4d..fb06496 100644
              // this.saveChunks(true);
              // Spigot End
              this.methodProfiler.b();
+             MinecraftTimings.worldSaveTimer.stopTiming(); // Spigot
 -        }
 +        //} // Paper - Incremental Auto Saving
  
          this.methodProfiler.a("tallying");
          this.h[this.ticks % 100] = System.nanoTime() - i;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index fc33575..81712ff 100644
+index 24b79d3..9e38304 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -1017,8 +1017,9 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -1017,12 +1017,12 @@ public class WorldServer extends World implements IAsyncTaskHandler {
          ChunkProviderServer chunkproviderserver = this.getChunkProviderServer();
  
          if (chunkproviderserver.e()) {
 -            org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit
 +            if (flag) org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit // Paper - Incremental Auto Saving - Only fire event on full save
-             timings.worldSave.startTiming(); // Paper
-+            if (flag || server.serverAutoSave) { // Paper
              if (iprogressupdate != null) {
                  iprogressupdate.a("Saving level");
              }
-@@ -1027,6 +1028,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+ 
+-            this.a();
++            if (flag || server.serverAutoSave) this.a(); // Paper
              if (iprogressupdate != null) {
                  iprogressupdate.c("Saving chunks");
              }
-+            } // Paper
- 
-             timings.worldSaveChunks.startTiming(); // Paper
-             chunkproviderserver.a(flag);
 -- 
-2.10.1
+2.9.3
 
