@@ -9,7 +9,7 @@ import org.bukkit.potion.PotionEffectType;
 /**
  * Represents a beacon.
  */
-public interface Beacon extends BlockState, InventoryHolder {
+public interface Beacon extends BlockState, InventoryHolder, Lockable {
 
     /**
      * Returns the list of players within the beacon's range of effect.

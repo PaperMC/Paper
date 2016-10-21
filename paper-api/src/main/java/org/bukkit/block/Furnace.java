@@ -6,7 +6,7 @@ import org.bukkit.inventory.InventoryHolder;
 /**
  * Represents a furnace.
  */
-public interface Furnace extends BlockState, InventoryHolder {
+public interface Furnace extends BlockState, InventoryHolder, Lockable {
 
     /**
      * Get burn time.
