@@ -1,0 +1,53 @@
+From 357d59ccd264fde423f99502fe7d00776940003f Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 2 Mar 2016 23:51:51 -0600
+Subject: [PATCH] Don't create Region File's when checking if chunk exists
+
+Plugins like Dynmap can end up creating tons of emtpy Region Files
+when using chunkExists.
+
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index 17dd7bb..162cdd6 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -39,7 +39,10 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+             }
+         }
+ 
+-        return RegionFileCache.a(this.d, i, j).chunkExists(i & 31, j & 31);
++        // Paper start - Don't create region files when checking that they exist
++        final RegionFile region = RegionFileCache.a(this.d, i, j, false);
++        return region != null && region.chunkExists(i & 31, j & 31);
++        // Paper end
+     }
+     // CraftBukkit end
+ 
+diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
+index 01b54e7..49fa5e4 100644
+--- a/src/main/java/net/minecraft/server/RegionFileCache.java
++++ b/src/main/java/net/minecraft/server/RegionFileCache.java
+@@ -12,7 +12,13 @@ public class RegionFileCache {
+ 
+     public static final Map<File, RegionFile> a = Maps.newHashMap(); // Spigot - private -> public
+ 
++    // Paper start
+     public static synchronized RegionFile a(File file, int i, int j) {
++        return a(file, i, j, true);
++    }
++
++    public static synchronized RegionFile a(File file, int i, int j, boolean create) {
++        // Paper end
+         File file1 = new File(file, "region");
+         File file2 = new File(file1, "r." + (i >> 5) + "." + (j >> 5) + ".mca");
+         RegionFile regionfile = (RegionFile) RegionFileCache.a.get(file2);
+@@ -20,6 +26,7 @@ public class RegionFileCache {
+         if (regionfile != null) {
+             return regionfile;
+         } else {
++            if (!create && !file2.exists()) { return null; } // Paper
+             if (!file1.exists()) {
+                 file1.mkdirs();
+             }
+-- 
+2.9.3
+
