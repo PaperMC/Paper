@@ -1,0 +1,65 @@
+From 757ec2bb90744f04fce7b35c7e93e16ddb95a538 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 4 May 2016 22:31:18 -0400
+Subject: [PATCH] Process NMS Data Conversion post ItemMeta on Copy
+
+ItemMeta apply is a destructive process that expects to be the authority on
+what the items NBT data is.
+
+When CraftItemStack.asNMSCopy was called, the conversion ran, potentially setting
+the converted data into the ItemStacks tag.
+
+Then if that item had ItemMeta, it would completely undo that conversion by
+erasing the NBT Tag.
+
+On copy, run conversion post ItemMeta apply.
+
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index d45a9ec..a8874d2 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -53,7 +53,12 @@ public final class ItemStack {
+         this(item, i, 0);
+     }
+ 
++    // Paper start
+     public ItemStack(Item item, int i, int j) {
++        this(item, i, j, true);
++    }
++    public ItemStack(Item item, int i, int j, boolean convert) {
++        // Paper end
+         this.item = item;
+         this.count = i;
+ 
+@@ -63,6 +68,11 @@ public final class ItemStack {
+         //if (this.damage < 0) {
+         //    this.damage = 0;
+         //}
++        // Paper start
++        if (convert) convertData();
++    }
++    public final void convertData() {
++        // Paper end
+         if (MinecraftServer.getServer() != null) {
+             NBTTagCompound savedStack = new NBTTagCompound();
+             this.save(savedStack);
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index 88f0292..7f77d44 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -45,10 +45,11 @@ public final class CraftItemStack extends ItemStack {
+             return null;
+         }
+ 
+-        net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(item, original.getAmount(), original.getDurability());
++        net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(item, original.getAmount(), original.getDurability(), false); // Paper
+         if (original.hasItemMeta()) {
+             setItemMeta(stack, original.getItemMeta());
+         }
++        stack.convertData(); // Paper
+         return stack;
+     }
+ 
+-- 
+2.9.3
+
