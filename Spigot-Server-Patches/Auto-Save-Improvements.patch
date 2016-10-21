@@ -91,7 +91,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
 -        if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit
-             MinecraftTimings.worldSaveTimer.startTiming(); // Spigot
              this.methodProfiler.a("save");
 +
 +        serverAutoSave = (autosavePeriod > 0 && this.ticks % autosavePeriod == 0); // Paper
@@ -112,7 +111,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // this.saveChunks(true);
              // Spigot End
              this.methodProfiler.b();
-             MinecraftTimings.worldSaveTimer.stopTiming(); // Spigot
 -        }
 +        //} // Paper - Incremental Auto Saving
  
@@ -128,13 +126,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (chunkproviderserver.e()) {
 -            org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit
 +            if (flag) org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit // Paper - Incremental Auto Saving - Only fire event on full save
+             timings.worldSave.startTiming(); // Paper
++            if (flag || server.serverAutoSave) { // Paper
              if (iprogressupdate != null) {
                  iprogressupdate.a("Saving level");
              }
- 
--            this.a();
-+            if (flag || server.serverAutoSave) this.a(); // Paper
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements IAsyncTaskHandler {
              if (iprogressupdate != null) {
                  iprogressupdate.c("Saving chunks");
              }
++            } // Paper
+ 
+             timings.worldSaveChunks.startTiming(); // Paper
+             chunkproviderserver.a(flag);
 --
