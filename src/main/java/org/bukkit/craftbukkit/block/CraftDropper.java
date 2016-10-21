@@ -12,7 +12,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.inventory.Inventory;
 
-public class CraftDropper extends CraftBlockState implements Dropper {
+public class CraftDropper extends CraftContainer implements Dropper {
     private final CraftWorld world;
     private final TileEntityDropper dropper;
 
@@ -24,7 +24,7 @@ public class CraftDropper extends CraftBlockState implements Dropper {
     }
 
     public CraftDropper(final Material material, TileEntityDropper te) {
-        super(material);
+        super(material, te);
         world = null;
         dropper = te;
     }

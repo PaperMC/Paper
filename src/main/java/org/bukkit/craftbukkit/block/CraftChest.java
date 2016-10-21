@@ -11,7 +11,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest;
 import org.bukkit.inventory.Inventory;
 
-public class CraftChest extends CraftBlockState implements Chest {
+public class CraftChest extends CraftContainer implements Chest {
     private final CraftWorld world;
     private final TileEntityChest chest;
 
@@ -23,7 +23,7 @@ public class CraftChest extends CraftBlockState implements Chest {
     }
 
     public CraftChest(final Material material, final TileEntityChest te) {
-        super(material);
+        super(material, te);
         chest = te;
         world = null;
     }
