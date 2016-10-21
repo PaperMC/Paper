@@ -8,7 +8,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventoryBrewer;
 import org.bukkit.inventory.BrewerInventory;
 
-public class CraftBrewingStand extends CraftBlockState implements BrewingStand {
+public class CraftBrewingStand extends CraftContainer implements BrewingStand {
     private final TileEntityBrewingStand brewingStand;
 
     public CraftBrewingStand(Block block) {
@@ -18,7 +18,7 @@ public class CraftBrewingStand extends CraftBlockState implements BrewingStand {
     }
 
     public CraftBrewingStand(final Material material, final TileEntityBrewingStand te) {
-        super(material);
+        super(material, te);
         brewingStand = te;
     }
 

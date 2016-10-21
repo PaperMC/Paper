@@ -10,13 +10,12 @@ import org.bukkit.block.Beacon;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventoryBeacon;
-import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-public class CraftBeacon extends CraftBlockState implements Beacon {
+public class CraftBeacon extends CraftContainer implements Beacon {
     private final CraftWorld world;
     private final TileEntityBeacon beacon;
 
@@ -28,7 +27,7 @@ public class CraftBeacon extends CraftBlockState implements Beacon {
     }
 
     public CraftBeacon(final Material material, final TileEntityBeacon te) {
-        super(material);
+        super(material, te);
         world = null;
         beacon = te;
     }
