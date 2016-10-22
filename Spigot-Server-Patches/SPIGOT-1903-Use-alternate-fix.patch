@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 22 Oct 2016 15:32:31 -0500
+Subject: [PATCH] SPIGOT-1903: Use alternate fix
+
+Prevents rubber banding and moved too quickly issues
+
+Removes Spigot's fix in favor of the one previously in Paper
+See GH-453 for rationale
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
+         this.locX = d0;
+         this.locY = d1;
+         this.locZ = d2;
++        if (this instanceof EntityPlayer && ((EntityPlayer) this).playerConnection != null) ((EntityPlayer) this).playerConnection.captureCurrentPosition(); // Paper
+         float f = this.width / 2.0F;
+         float f1 = this.length;
+ 
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+     // CraftBukkit end
+ 
+     public void E_() {
++        // Paper start - Unreverse the order of location update, GH-453
++        this.d();
+         // CraftBukkit start - SPIGOT-1903: reverse order of location update
+         this.player.k_();
+-        this.d();
++        //this.d();
++        // Paper end
+         // CraftBukkit end
+         this.player.setLocation(this.l, this.m, this.n, this.player.yaw, this.player.pitch);
+         ++this.e;
+@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+ 
+     }
+ 
+-    private void d() {
++    public void captureCurrentPosition() { d(); } private void d() { // Paper - OBFHELPER
+         this.l = this.player.locX;
+         this.m = this.player.locY;
+         this.n = this.player.locZ;
+--
