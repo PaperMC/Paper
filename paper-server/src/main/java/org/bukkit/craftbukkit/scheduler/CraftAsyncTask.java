@@ -3,11 +3,10 @@ package org.bukkit.craftbukkit.scheduler;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.logging.Level;
 
-import org.apache.commons.lang.UnhandledException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitWorker;
-
 
 class CraftAsyncTask extends CraftTask {
 
@@ -53,7 +52,8 @@ class CraftAsyncTask extends CraftTask {
             super.run();
         } catch (final Throwable t) {
             thrown = t;
-            throw new UnhandledException(
+            getOwner().getLogger().log(
+                    Level.WARNING,
                     String.format(
                         "Plugin %s generated an exception while executing task %s",
                         getOwner().getDescription().getFullName(),
