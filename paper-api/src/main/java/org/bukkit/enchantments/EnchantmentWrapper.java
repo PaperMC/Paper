@@ -45,6 +45,11 @@ public class EnchantmentWrapper extends Enchantment {
     }
 
     @Override
+    public boolean isTreasure() {
+        return getEnchantment().isTreasure();
+    }
+
+    @Override
     public boolean conflictsWith(Enchantment other) {
         return getEnchantment().conflictsWith(other);
     }

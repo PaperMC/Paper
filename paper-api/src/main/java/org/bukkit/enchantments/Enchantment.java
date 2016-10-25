@@ -195,6 +195,16 @@ public abstract class Enchantment {
     public abstract EnchantmentTarget getItemTarget();
 
     /**
+     * Checks if this enchantment is a treasure enchantment.
+     * <br>
+     * Treasure enchantments can only be received via looting, trading, or
+     * fishing.
+     *
+     * @return true if the enchantment is a treasure enchantment
+     */
+    public abstract boolean isTreasure();
+
+    /**
      * Check if this enchantment conflicts with another enchantment.
      *
      * @param other The enchantment to check against
