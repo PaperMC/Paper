@@ -55,6 +55,11 @@ public class CraftEnchantment extends Enchantment {
     }
 
     @Override
+    public boolean isTreasure() {
+        return target.e(); // PAIL: isTreasure
+    }
+
+    @Override
     public boolean canEnchantItem(ItemStack item) {
         return target.canEnchant(CraftItemStack.asNMSCopy(item));
     }
