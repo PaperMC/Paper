@@ -1,0 +1,48 @@
+From 5b011605906059b3d7fbd31206ba146c866300ea Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 3 Nov 2016 21:52:22 -0400
+Subject: [PATCH] Auto Save Cap
+
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 7e53fee..0f529e6 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -253,6 +253,13 @@ public class ChunkProviderServer implements IChunkProvider {
+         int i = 0;
+ 
+         // CraftBukkit start
++        // Paper start
++        final ChunkRegionLoader chunkLoader = (ChunkRegionLoader) world.getChunkProviderServer().chunkLoader;
++        final int autoSaveLimit = world.paperConfig.maxAutoSaveChunksPerTick - chunkLoader.getQueueSize();
++        if (autoSaveLimit < 1) {
++            return false;
++        }
++        // Paper end
+         Iterator iterator = this.chunks.values().iterator();
+         while (iterator.hasNext()) {
+             Chunk chunk = (Chunk) iterator.next();
+@@ -266,7 +273,7 @@ public class ChunkProviderServer implements IChunkProvider {
+                 this.saveChunk(chunk);
+                 chunk.f(false);
+                 ++i;
+-                if (!flag && i >= world.paperConfig.maxAutoSaveChunksPerTick) { // Spigot - // Paper - Incremental Auto Save - cap max per tick
++                if (!flag && i >= autoSaveLimit) { // Spigot - // Paper - Incremental Auto Save - cap max per tick
+                     return false;
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index b672a38..70e71cc 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -33,6 +33,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+     }
+ 
+     // CraftBukkit start
++    public int getQueueSize() { return queue.size(); } // Paper
+     public boolean chunkExists(World world, int i, int j) {
+         ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
+ 
+-- 
+2.10.2
+
