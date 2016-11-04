@@ -117,7 +117,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public void resetMaxHealth() {
-        setMaxHealth(getHandle().getMaxHealth());
+        setMaxHealth(getHandle().getAttributeInstance(GenericAttributes.maxHealth).getAttribute().b()); // PAIL: getDefault
     }
 
     public double getEyeHeight() {
