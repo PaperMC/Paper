@@ -1,4 +1,4 @@
-From 55150e10ff8e9ecfc60e5f3fe405b2e198ac923a Mon Sep 17 00:00:00 2001
+From b422187190500a2c81f4ef240839151357180fae Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 13 Apr 2016 02:10:49 -0400
 Subject: [PATCH] Configurable Player Collision
@@ -37,18 +37,24 @@ index 8e5419d..64a3495 100644
                      }
                  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index e35341b..01325b3 100644
+index e35341b..01044c8 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -324,6 +324,14 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -324,6 +324,20 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
          this.v.setPlayerFileData(this.worldServer);
          this.a(this.getDifficulty());
          this.l();
 +
 +        // Paper start - Handle collideRule team for player collision toggle
++        final Scoreboard scoreboard = this.getWorld().getScoreboard();
++        final java.util.Collection<String> toRemove = scoreboard.getTeams().stream().filter(team -> team.getName().startsWith("collideRule_")).map(ScoreboardTeam::getName).collect(java.util.stream.Collectors.toList());
++        for (String teamName : toRemove) {
++            scoreboard.removeTeam(scoreboard.getTeam(teamName)); // Clean up after ourselves
++        }
++
 +        if (!com.destroystokyo.paper.PaperConfig.enablePlayerCollisions) {
 +            this.getPlayerList().collideRuleTeamName = org.apache.commons.lang3.StringUtils.left("collideRule_" + this.getWorld().random.nextInt(), 16);
-+            ScoreboardTeam collideTeam = this.getWorld().getScoreboard().createTeam(this.getPlayerList().collideRuleTeamName);
++            ScoreboardTeam collideTeam = scoreboard.createTeam(this.getPlayerList().collideRuleTeamName);
 +            collideTeam.setCanSeeFriendlyInvisibles(false); // Because we want to mimic them not being on a team at all
 +        }
 +        // Paper end
@@ -69,7 +75,7 @@ index d8ec504..eb45d3c 100644
          }
  
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index d26da3a..eb846cf 100644
+index e044c40..0661974 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -68,6 +68,7 @@ public abstract class PlayerList {
@@ -126,5 +132,5 @@ index d26da3a..eb846cf 100644
  
      // CraftBukkit start
 -- 
-2.9.3
+2.10.2
 
