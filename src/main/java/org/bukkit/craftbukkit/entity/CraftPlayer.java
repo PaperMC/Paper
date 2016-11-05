@@ -320,8 +320,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (getHandle().playerConnection == null) return;
         PacketDataSerializer packetdataserializer = new PacketDataSerializer(Unpooled.buffer());
 
-        packetdataserializer.a(sound);
         packetdataserializer.a("");
+        packetdataserializer.a(sound);
         getHandle().playerConnection.sendPacket(new PacketPlayOutCustomPayload("MC|StopSound", packetdataserializer));
     }
 
