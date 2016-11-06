@@ -594,6 +594,21 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         getHandle().portalCooldown = cooldown;
     }
 
+    @Override
+    public Set<String> getScoreboardTags() {
+        return getHandle().P(); // PAIL: getScoreboardTags
+    }
+
+    @Override
+    public boolean addScoreboardTag(String tag) {
+        return getHandle().a(tag); // PAIL: addScoreboardTag
+    }
+
+    @Override
+    public boolean removeScoreboardTag(String tag) {
+        return getHandle().b(tag); // PAIL: removeScoreboardTag
+    }
+
     private static PermissibleBase getPermissibleBase() {
         if (perm == null) {
             perm = new PermissibleBase(new ServerOperator() {
