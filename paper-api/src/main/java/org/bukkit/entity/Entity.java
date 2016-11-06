@@ -9,6 +9,7 @@ import org.bukkit.metadata.Metadatable;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
@@ -417,4 +418,31 @@ public interface Entity extends Metadatable, CommandSender {
      * @param cooldown portal cooldown ticks
      */
     void setPortalCooldown(int cooldown);
+
+    /**
+     * Returns a set of tags for this entity.
+     * <br>
+     * Entities can have no more than 1024 tags.
+     *
+     * @return a set of tags for this entity
+     */
+    Set<String> getScoreboardTags();
+
+    /**
+     * Add a tag to this entity.
+     * <br>
+     * Entities can have no more than 1024 tags.
+     *
+     * @param tag the tag to add
+     * @return true if the tag was successfully added
+     */
+    boolean addScoreboardTag(String tag);
+
+    /**
+     * Removes a given tag from this entity.
+     *
+     * @param tag the tag to remove
+     * @return true if the tag was successfully removed
+     */
+    boolean removeScoreboardTag(String tag);
 }
