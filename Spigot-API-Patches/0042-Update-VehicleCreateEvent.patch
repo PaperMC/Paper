@@ -1,0 +1,117 @@
+From c6b00dc252bceb3226cef8088b3a73774f327113 Mon Sep 17 00:00:00 2001
+From: AlphaBlend <whizkid3000@hotmail.com>
+Date: Sun, 6 Nov 2016 12:28:24 -0800
+Subject: [PATCH] Update VehicleCreateEvent
+
+
+diff --git a/src/main/java/org/bukkit/event/vehicle/VehicleCreateEvent.java b/src/main/java/org/bukkit/event/vehicle/VehicleCreateEvent.java
+index 22eda72..ec15e38 100644
+--- a/src/main/java/org/bukkit/event/vehicle/VehicleCreateEvent.java
++++ b/src/main/java/org/bukkit/event/vehicle/VehicleCreateEvent.java
+@@ -3,16 +3,70 @@ package org.bukkit.event.vehicle;
+ import org.bukkit.entity.Vehicle;
+ import org.bukkit.event.HandlerList;
+ 
++// Paper start
++import javax.annotation.Nonnull;
++import org.bukkit.block.Block;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++// Paper end
++
+ /**
+  * Raised when a vehicle is created.
+  */
+-public class VehicleCreateEvent extends VehicleEvent {
++public class VehicleCreateEvent extends VehicleEvent implements Cancellable { // Paper - implements cancellable
+     private static final HandlerList handlers = new HandlerList();
++    // Paper start
++    private static final Object DUMMY_OBJECT = new Object();
++    @Nonnull
++    private final VehicleCreateReason reason;
++    @Nonnull
++    private Object source;
++    private boolean cancel;
+ 
++    @Deprecated
+     public VehicleCreateEvent(final Vehicle vehicle) {
++        this(vehicle, DUMMY_OBJECT, VehicleCreateReason.NONE);
++    }
++
++    public VehicleCreateEvent(final Vehicle vehicle, @Nonnull final Object source, @Nonnull final VehicleCreateReason reason) {
+         super(vehicle);
++        this.source = source;
++        this.reason = reason;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancel = cancel;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return cancel;
+     }
+ 
++    /**
++     * Gets the source that created this vehicle.
++     * <p>
++     * The source returned can be determined by {@link VehicleCreateReason}.
++     * {@link org.bukkit.entity.Player} if the {@link VehicleCreateReason} is PLAYER
++     * or {@link org.bukkit.block.Block} if the {@link VehicleCreateReason} is DISPENSER.
++     * @return The source of the vehicle's creation
++     */
++    @Nonnull
++    public <T extends Object> T getSource() {
++        return (T) reason.getBukkitClass().cast(source);
++    }
++
++    /**
++     * Gets the reason this vehicle was created.
++     * @return the reason this vehicle was created
++     */
++    @Nonnull
++    public VehicleCreateReason getReason() {
++        return reason;
++    }
++    // Paper end
++
+     @Override
+     public HandlerList getHandlers() {
+         return handlers;
+@@ -21,4 +75,31 @@ public class VehicleCreateEvent extends VehicleEvent {
+     public static HandlerList getHandlerList() {
+         return handlers;
+     }
++
++    // Paper start
++    public enum VehicleCreateReason {
++        /**
++         * A dispenser created this vehicle
++         */
++        DISPENSER(Block.class),
++        /**
++         * A player created this vehicle by using an item
++         */
++        PLAYER(Player.class),
++        /**
++         * None, dummy reason
++         */
++        NONE(Object.class);
++
++        private final Class clazz;
++
++        private VehicleCreateReason(Class clazz) {
++            this.clazz = clazz;
++        }
++
++        public Class getBukkitClass() {
++            return clazz;
++        }
++    }
++    // Paper end
+ }
+-- 
+2.10.0.windows.1
+
