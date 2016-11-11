@@ -42,11 +42,11 @@ do
     "$patch" -s -d src/main/java/ "net/minecraft/server/$file" < "$patchFile"
 done
 
-git add src >/dev/null 2>&1
+git add src
 # We don't need to sign an automated commit
 # All it does is make you input your key passphrase mid-patch
 git config commit.gpgsign false
-git commit -m "CraftBukkit $ $(date)" --author="Auto <auto@mated.null>" >/dev/null 2>&1
+git commit -m "CraftBukkit $ $(date)" --author="Auto <auto@mated.null>"
 enableCommitSigningIfNeeded
-git checkout -f HEAD^ >/dev/null 2>&1
+git checkout -f HEAD^
 )
