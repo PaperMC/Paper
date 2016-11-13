@@ -63,6 +63,7 @@ import EntityWaterAnimal
 import FileIOThread
 import IHopper
 import ItemBlock
+import ItemMonsterEgg
 import NavigationAbstract
 import NBTTagCompound
 import NBTTagList
