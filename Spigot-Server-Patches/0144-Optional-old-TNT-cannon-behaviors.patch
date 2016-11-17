@@ -1,0 +1,393 @@
+From caa2532ecdeb24407bbd2d4e2af544fc888fb1ac Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sun, 22 May 2016 20:20:55 -0500
+Subject: [PATCH] Optional old TNT cannon behaviors
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 4d6a309..2a4d1da 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -333,4 +333,12 @@ public class PaperWorldConfig {
+             );
+         }
+     }
++
++    public boolean oldCannonBehaviors;
++    private void oldCannonBehaviors() {
++        oldCannonBehaviors = getBoolean("enable-old-tnt-cannon-behaviors", false);
++        if (oldCannonBehaviors) {
++            log("Old Cannon Behaviors: This feature may not be working entirely properly at the moment");
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/BlockDiodeAbstract.java b/src/main/java/net/minecraft/server/BlockDiodeAbstract.java
+index 59ee13d..40c9f18 100644
+--- a/src/main/java/net/minecraft/server/BlockDiodeAbstract.java
++++ b/src/main/java/net/minecraft/server/BlockDiodeAbstract.java
+@@ -76,6 +76,17 @@ public abstract class BlockDiodeAbstract extends BlockFacingHorizontal {
+         } else {
+             this.b(world, blockposition, iblockdata, 0);
+             world.setAir(blockposition);
++            // Paper start - Old TNT cannon behaviors
++            if (world.paperConfig.oldCannonBehaviors) {
++                world.applyPhysics(blockposition.shift(EnumDirection.EAST), this, false);
++                world.applyPhysics(blockposition.shift(EnumDirection.WEST), this, false);
++                world.applyPhysics(blockposition.shift(EnumDirection.SOUTH), this, false);
++                world.applyPhysics(blockposition.shift(EnumDirection.NORTH), this, false);
++                world.applyPhysics(blockposition.shift(EnumDirection.DOWN), this, false);
++                world.applyPhysics(blockposition.shift(EnumDirection.UP), this, false);
++                return;
++            }
++            // Paper end
+             EnumDirection[] aenumdirection = EnumDirection.values();
+             int i = aenumdirection.length;
+ 
+@@ -173,6 +184,17 @@ public abstract class BlockDiodeAbstract extends BlockFacingHorizontal {
+ 
+     public void postBreak(World world, BlockPosition blockposition, IBlockData iblockdata) {
+         if (this.d) {
++            // Paper start - Old TNT cannon behaviors
++            if (world.paperConfig.oldCannonBehaviors) {
++                world.applyPhysics(blockposition.shift(EnumDirection.EAST), this, false);
++                world.applyPhysics(blockposition.shift(EnumDirection.WEST), this, false);
++                world.applyPhysics(blockposition.shift(EnumDirection.NORTH), this, false);
++                world.applyPhysics(blockposition.shift(EnumDirection.SOUTH), this, false);
++                world.applyPhysics(blockposition.shift(EnumDirection.DOWN), this, false);
++                world.applyPhysics(blockposition.shift(EnumDirection.UP), this, false);
++                return;
++            }
++            // Paper end
+             EnumDirection[] aenumdirection = EnumDirection.values();
+             int i = aenumdirection.length;
+ 
+diff --git a/src/main/java/net/minecraft/server/BlockRedstoneTorch.java b/src/main/java/net/minecraft/server/BlockRedstoneTorch.java
+index c7e095a..7412362 100644
+--- a/src/main/java/net/minecraft/server/BlockRedstoneTorch.java
++++ b/src/main/java/net/minecraft/server/BlockRedstoneTorch.java
+@@ -52,6 +52,12 @@ public class BlockRedstoneTorch extends BlockTorch {
+ 
+     public void onPlace(World world, BlockPosition blockposition, IBlockData iblockdata) {
+         if (this.isOn) {
++            // Paper start - Old TNT cannon behaviors
++            if (world.paperConfig.oldCannonBehaviors) {
++                this.shiftPositions(world, blockposition);
++                return;
++            }
++            // Paper end
+             EnumDirection[] aenumdirection = EnumDirection.values();
+             int i = aenumdirection.length;
+ 
+@@ -66,6 +72,12 @@ public class BlockRedstoneTorch extends BlockTorch {
+ 
+     public void remove(World world, BlockPosition blockposition, IBlockData iblockdata) {
+         if (this.isOn) {
++            // Paper start - Old TNT cannon behaviors
++            if (world.paperConfig.oldCannonBehaviors) {
++                this.shiftPositions(world, blockposition);
++                return;
++            }
++            // Paper end
+             EnumDirection[] aenumdirection = EnumDirection.values();
+             int i = aenumdirection.length;
+ 
+@@ -78,6 +90,17 @@ public class BlockRedstoneTorch extends BlockTorch {
+ 
+     }
+ 
++    // Paper start - Old TNT cannon behaviors
++    private void shiftPositions(World world, BlockPosition blockposition) {
++        world.applyPhysics(blockposition.shift(EnumDirection.DOWN), this, false);
++        world.applyPhysics(blockposition.shift(EnumDirection.UP), this, false);
++        world.applyPhysics(blockposition.shift(EnumDirection.WEST), this, false);
++        world.applyPhysics(blockposition.shift(EnumDirection.EAST), this, false);
++        world.applyPhysics(blockposition.shift(EnumDirection.SOUTH), this, false);
++        world.applyPhysics(blockposition.shift(EnumDirection.NORTH), this, false);
++    }
++    // Paper end
++
+     public int b(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition, EnumDirection enumdirection) {
+         return this.isOn && iblockdata.get(BlockRedstoneTorch.FACING) != enumdirection ? 15 : 0;
+     }
+diff --git a/src/main/java/net/minecraft/server/BlockRedstoneWire.java b/src/main/java/net/minecraft/server/BlockRedstoneWire.java
+index 5a0f026..20b9465 100644
+--- a/src/main/java/net/minecraft/server/BlockRedstoneWire.java
++++ b/src/main/java/net/minecraft/server/BlockRedstoneWire.java
+@@ -20,7 +20,7 @@ public class BlockRedstoneWire extends Block {
+     public static final BlockStateInteger POWER = BlockStateInteger.of("power", 0, 15);
+     protected static final AxisAlignedBB[] f = new AxisAlignedBB[] { new AxisAlignedBB(0.1875D, 0.0D, 0.1875D, 0.8125D, 0.0625D, 0.8125D), new AxisAlignedBB(0.1875D, 0.0D, 0.1875D, 0.8125D, 0.0625D, 1.0D), new AxisAlignedBB(0.0D, 0.0D, 0.1875D, 0.8125D, 0.0625D, 0.8125D), new AxisAlignedBB(0.0D, 0.0D, 0.1875D, 0.8125D, 0.0625D, 1.0D), new AxisAlignedBB(0.1875D, 0.0D, 0.0D, 0.8125D, 0.0625D, 0.8125D), new AxisAlignedBB(0.1875D, 0.0D, 0.0D, 0.8125D, 0.0625D, 1.0D), new AxisAlignedBB(0.0D, 0.0D, 0.0D, 0.8125D, 0.0625D, 0.8125D), new AxisAlignedBB(0.0D, 0.0D, 0.0D, 0.8125D, 0.0625D, 1.0D), new AxisAlignedBB(0.1875D, 0.0D, 0.1875D, 1.0D, 0.0625D, 0.8125D), new AxisAlignedBB(0.1875D, 0.0D, 0.1875D, 1.0D, 0.0625D, 1.0D), new AxisAlignedBB(0.0D, 0.0D, 0.1875D, 1.0D, 0.0625D, 0.8125D), new AxisAlignedBB(0.0D, 0.0D, 0.1875D, 1.0D, 0.0625D, 1.0D), new AxisAlignedBB(0.1875D, 0.0D, 0.0D, 1.0D, 0.0625D, 0.8125D), new AxisAlignedBB(0.1875D, 0.0D, 0.0D, 1.0D, 0.0625D, 1.0D), new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 0.0625D, 0.8125D), new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 0.0625D, 1.0D)};
+     private boolean g = true;
+-    private final Set<BlockPosition> B = Sets.newHashSet();
++    private final Set<BlockPosition> B = Sets.newHashSet(); private final Set<BlockPosition> blocksToUpdate = B; // Paper - OBFHELPER
+ 
+     public BlockRedstoneWire() {
+         super(Material.ORIENTABLE);
+@@ -186,6 +186,19 @@ public class BlockRedstoneWire extends Block {
+             }
+ 
+             this.B.add(blockposition);
++            // Paper start - Old TNT cannon behaviors
++            if (world.paperConfig.oldCannonBehaviors) {
++                this.blocksToUpdate.add(blockposition.shift(EnumDirection.WEST));
++                this.blocksToUpdate.add(blockposition.shift(EnumDirection.EAST));
++                this.blocksToUpdate.add(blockposition.shift(EnumDirection.DOWN));
++                this.blocksToUpdate.add(blockposition.shift(EnumDirection.UP));
++                this.blocksToUpdate.add(blockposition.shift(EnumDirection.NORTH));
++                this.blocksToUpdate.add(blockposition.shift(EnumDirection.SOUTH));
++                return iblockdata;
++            }
++            // Paper end
++
++
+             EnumDirection[] aenumdirection = EnumDirection.values();
+             int i1 = aenumdirection.length;
+ 
+@@ -202,6 +215,16 @@ public class BlockRedstoneWire extends Block {
+     private void b(World world, BlockPosition blockposition) {
+         if (world.getType(blockposition).getBlock() == this) {
+             world.applyPhysics(blockposition, this, false);
++            if (world.paperConfig.oldCannonBehaviors) {
++                world.applyPhysics(blockposition.shift(EnumDirection.WEST), this, false);
++                world.applyPhysics(blockposition.shift(EnumDirection.EAST), this, false);
++                world.applyPhysics(blockposition.shift(EnumDirection.NORTH), this, false);
++                world.applyPhysics(blockposition.shift(EnumDirection.SOUTH), this, false);
++                world.applyPhysics(blockposition.shift(EnumDirection.DOWN), this, false);
++                world.applyPhysics(blockposition.shift(EnumDirection.UP), this, false);
++                return;
++            }
++            // Paper end
+             EnumDirection[] aenumdirection = EnumDirection.values();
+             int i = aenumdirection.length;
+ 
+diff --git a/src/main/java/net/minecraft/server/BlockTNT.java b/src/main/java/net/minecraft/server/BlockTNT.java
+index 6b6aa89..5cec416 100644
+--- a/src/main/java/net/minecraft/server/BlockTNT.java
++++ b/src/main/java/net/minecraft/server/BlockTNT.java
+@@ -29,7 +29,11 @@ public class BlockTNT extends Block {
+ 
+     public void wasExploded(World world, BlockPosition blockposition, Explosion explosion) {
+         if (!world.isClientSide) {
+-            EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F), explosion.getSource());
++            // Paper start - Old TNT cannon behaviors
++            double y = blockposition.getY();
++            if (!world.paperConfig.oldCannonBehaviors) y += 0.5;
++            EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) blockposition.getX() + 0.5F), y, (double) ((float) blockposition.getZ() + 0.5F), explosion.getSource());
++            // Paper end
+ 
+             entitytntprimed.setFuseTicks((short) (world.random.nextInt(entitytntprimed.getFuseTicks() / 4) + entitytntprimed.getFuseTicks() / 8));
+             world.addEntity(entitytntprimed);
+@@ -43,7 +47,11 @@ public class BlockTNT extends Block {
+     public void a(World world, BlockPosition blockposition, IBlockData iblockdata, EntityLiving entityliving) {
+         if (!world.isClientSide) {
+             if (((Boolean) iblockdata.get(BlockTNT.EXPLODE)).booleanValue()) {
+-                EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F), entityliving);
++                // Paper start - Old TNT cannon behaviors
++                double y = blockposition.getY();
++                if (!world.paperConfig.oldCannonBehaviors) y += 0.5;
++                EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) blockposition.getX() + 0.5F), y, (double) ((float) blockposition.getZ() + 0.5F), entityliving);
++                // Paper end
+ 
+                 world.addEntity(entitytntprimed);
+                 world.a((EntityHuman) null, entitytntprimed.locX, entitytntprimed.locY, entitytntprimed.locZ, SoundEffects.gV, SoundCategory.BLOCKS, 1.0F, 1.0F);
+diff --git a/src/main/java/net/minecraft/server/DispenserRegistry.java b/src/main/java/net/minecraft/server/DispenserRegistry.java
+index dbfb8ab..537408a 100644
+--- a/src/main/java/net/minecraft/server/DispenserRegistry.java
++++ b/src/main/java/net/minecraft/server/DispenserRegistry.java
+@@ -481,7 +481,11 @@ public class DispenserRegistry {
+                 org.bukkit.block.Block block = world.getWorld().getBlockAt(isourceblock.getBlockPosition().getX(), isourceblock.getBlockPosition().getY(), isourceblock.getBlockPosition().getZ());
+                 CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
+ 
+-                BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector((double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D));
++                // Paper start - Old TNT cannon behaviors
++                double y = blockposition.getY();
++                if (!world.paperConfig.oldCannonBehaviors) y += 0.5;
++                BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector((double) blockposition.getX() + 0.5D, y, (double) blockposition.getZ() + 0.5D));
++                // Paper end
+                 if (!BlockDispenser.eventFired) {
+                    world.getServer().getPluginManager().callEvent(event);
+                 }
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 5675757..a262eda 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -994,6 +994,12 @@ public abstract class Entity implements ICommandListener {
+     }
+ 
+     public boolean ak() {
++        // Paper start - OBFHELPER
++        return this.doWaterMovement();
++    }
++
++    public boolean doWaterMovement() {
++        // Paper end
+         if (this.bB() instanceof EntityBoat) {
+             this.inWater = false;
+         } else if (this.world.a(this.getBoundingBox().grow(0.0D, -0.4000000059604645D, 0.0D).shrink(0.001D), Material.WATER, this)) {
+@@ -1195,6 +1201,12 @@ public abstract class Entity implements ICommandListener {
+     }
+ 
+     public double e(double d0, double d1, double d2) {
++        // Paper start - OBFHELPER
++        return this.getDistance(d0, d1, d2);
++    }
++
++    public double getDistance(double d0, double d1, double d2) {
++        // Paper end
+         double d3 = this.locX - d0;
+         double d4 = this.locY - d1;
+         double d5 = this.locZ - d2;
+@@ -1249,6 +1261,11 @@ public abstract class Entity implements ICommandListener {
+     }
+ 
+     public void f(double d0, double d1, double d2) {
++        // Paper start - OBFHELPER
++        this.addVelocity(d0, d1, d2);
++    }
++
++    public void addVelocity(double d0, double d1, double d2) {
+         this.motX += d0;
+         this.motY += d1;
+         this.motZ += d2;
+@@ -2424,6 +2441,12 @@ public abstract class Entity implements ICommandListener {
+     }
+ 
+     public boolean bg() {
++        // Paper start - OBFHELPER
++        return this.pushedByWater();
++    }
++
++    public boolean pushedByWater() {
++        // Paper end
+         return true;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+index 042670b..613af99 100644
+--- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
++++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+@@ -280,4 +280,19 @@ public class EntityFallingBlock extends Entity {
+     public boolean bu() {
+         return true;
+     }
++
++    // Paper start - Old TNT cannon behaviors
++    @Override
++    public double getDistance(double d0, double d1, double d2) {
++        if (!world.paperConfig.oldCannonBehaviors) return super.getDistance(d0, d1, d2);
++
++        double newX = this.locX - d0;
++        double newY = this.locY + this.getHeadHeight() - d1;
++        double newZ = this.locZ - d2;
++
++        return (double) MathHelper.sqrt(newX * newX + newY * newY + newZ * newZ);
++    }
++
++
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+index 25e471d..e796ade 100644
+--- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
++++ b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+@@ -32,6 +32,7 @@ public class EntityTNTPrimed extends Entity {
+         this.lastY = d1;
+         this.lastZ = d2;
+         this.source = entityliving;
++        if (world.paperConfig.oldCannonBehaviors) this.motX = this.motZ = 0.0F; // Paper - Old TNT cannon behaviors
+     }
+ 
+     protected void i() {
+@@ -124,7 +125,7 @@ public class EntityTNTPrimed extends Entity {
+     }
+ 
+     public float getHeadHeight() {
+-        return 0.0F;
++        return world.paperConfig.oldCannonBehaviors ? this.length / 16F : 0.0F; // Paper - Old TNT cannon behaviors
+     }
+ 
+     public void setFuseTicks(int i) {
+@@ -146,4 +147,58 @@ public class EntityTNTPrimed extends Entity {
+     public int getFuseTicks() {
+         return this.c;
+     }
++
++    // Paper start - Old TNT cannon behaviors
++    @Override
++    public double getDistance(double d0, double d1, double d2) {
++        if (!world.paperConfig.oldCannonBehaviors) return super.getDistance(d0, d1, d2);
++
++        double newX = this.locX - d0;
++        double newY = this.locY + this.getHeadHeight() - d1;
++        double newZ = this.locZ - d2;
++
++        return (double) MathHelper.sqrt(newX * newX + newY * newY + newZ * newZ);
++    }
++
++    @Override
++    public boolean pushedByWater() {
++        return !world.paperConfig.oldCannonBehaviors && super.pushedByWater();
++    }
++
++    /**
++     * Author: Jedediah Smith <jedediah@silencegreys.com>
++     */
++    @Override
++    public boolean doWaterMovement() {
++        if (!world.paperConfig.oldCannonBehaviors) return super.doWaterMovement();
++
++        // Preserve velocity while calling the super method
++        double oldMotX = this.motX;
++        double oldMotY = this.motY;
++        double oldMotZ = this.motZ;
++
++        super.doWaterMovement();
++
++        this.motX = oldMotX;
++        this.motY = oldMotY;
++        this.motZ = oldMotZ;
++
++        if (this.inWater) {
++            // Send position and velocity updates to nearby players on every tick while the TNT is in water.
++            // This does pretty well at keeping their clients in sync with the server.
++            EntityTrackerEntry ete = ((WorldServer) this.getWorld()).getTracker().trackedEntities.get(this.getId());
++            if (ete != null) {
++                PacketPlayOutEntityVelocity velocityPacket = new PacketPlayOutEntityVelocity(this);
++                PacketPlayOutEntityTeleport positionPacket = new PacketPlayOutEntityTeleport(this);
++
++                ete.trackedPlayers.stream().filter(viewer -> (viewer.locX - this.locX) * (viewer.locY - this.locY) * (viewer.locZ - this.locZ) < 16 * 16).forEach(viewer -> {
++                    viewer.playerConnection.sendPacket(velocityPacket);
++                    viewer.playerConnection.sendPacket(positionPacket);
++                });
++            }
++        }
++
++        return this.inWater;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/Explosion.java b/src/main/java/net/minecraft/server/Explosion.java
+index d7bc6a0..f2785d8 100644
+--- a/src/main/java/net/minecraft/server/Explosion.java
++++ b/src/main/java/net/minecraft/server/Explosion.java
+@@ -149,9 +149,15 @@ public class Explosion {
+                             d14 = entity instanceof EntityHuman && world.paperConfig.disableExplosionKnockback ? 0 : EnchantmentProtection.a((EntityLiving) entity, d13); // Paper - Disable explosion knockback
+                         }
+ 
+-                        entity.motX += d8 * d14;
+-                        entity.motY += d9 * d14;
+-                        entity.motZ += d10 * d14;
++                        // Paper start - Fix cannons
++                        /*
++                         entity.motX += d8 * d14;
++                         entity.motY += d9 * d14;
++                         entity.motZ += d10 * d14;
++                          */
++                        // This impulse method sets the dirty flag, so clients will get an immediate velocity update
++                        entity.addVelocity(d8 * d14, d9 * d14, d10 * d14);
++                        // Paper end
+                         if (entity instanceof EntityHuman) {
+                             EntityHuman entityhuman = (EntityHuman) entity;
+ 
+-- 
+2.10.2
+

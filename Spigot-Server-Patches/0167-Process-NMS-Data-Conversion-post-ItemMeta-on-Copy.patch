@@ -1,0 +1,66 @@
+From 20ef4d01bb477b3675c0a68d71e8850634d67ce9 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 4 May 2016 22:31:18 -0400
+Subject: [PATCH] Process NMS Data Conversion post ItemMeta on Copy
+
+ItemMeta apply is a destructive process that expects to be the authority on
+what the items NBT data is.
+
+When CraftItemStack.asNMSCopy was called, the conversion ran, potentially setting
+the converted data into the ItemStacks tag.
+
+Then if that item had ItemMeta, it would completely undo that conversion by
+erasing the NBT Tag.
+
+On copy, run conversion post ItemMeta apply.
+
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index dbe9a9c..394a877 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -55,13 +55,24 @@ public final class ItemStack {
+         this(item, i, 0);
+     }
+ 
++    // Paper start
+     public ItemStack(Item item, int i, int j) {
++        this(item, i, j, true);
++    }
++    public ItemStack(Item item, int i, int j, boolean convert) {
++        // Paper end
+         this.item = item;
+         this.damage = j;
+         this.count = i;
+         // CraftBukkit start - Pass to setData to do filtering
++        // Paper start
++        if (convert) convertData(j);
++    }
++
++    public final void convertData(int data) {
++        // Paper end
+         if (MinecraftServer.getServer() != null) {
+-            this.setData(j);
++            this.setData(data);
+             NBTTagCompound savedStack = new NBTTagCompound();
+             this.save(savedStack);
+             MinecraftServer.getServer().getDataConverterManager().a(DataConverterTypes.ITEM_INSTANCE, savedStack); // PAIL: convert
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index 9ae05b3..18451fd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -41,10 +41,11 @@ public final class CraftItemStack extends ItemStack {
+             return net.minecraft.server.ItemStack.a;
+         }
+ 
+-        net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(item, original.getAmount(), original.getDurability());
++        net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(item, original.getAmount(), original.getDurability(), false); // Paper
+         if (original.hasItemMeta()) {
+             setItemMeta(stack, original.getItemMeta());
+         }
++        stack.convertData(original.getDurability()); // Paper
+         return stack;
+     }
+ 
+-- 
+2.10.2
+

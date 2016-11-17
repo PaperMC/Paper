@@ -1,0 +1,75 @@
+From 3c03eaa436c6bba260c5bde3eb2acaf58476e1ef Mon Sep 17 00:00:00 2001
+From: Jedediah Smith <jedediah@silencegreys.com>
+Date: Tue, 1 Mar 2016 14:47:52 -0600
+Subject: [PATCH] Player affects spawning API
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index 9f115d1..ae86ebc 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -63,6 +63,7 @@ public abstract class EntityHuman extends EntityLiving {
+     private final ItemCooldown bV;
+     @Nullable
+     public EntityFishingHook hookedFish;
++    public boolean affectsSpawning = true; // Paper - AffectsSpawning API
+ 
+     // CraftBukkit start
+     public boolean fauxSleeping;
+diff --git a/src/main/java/net/minecraft/server/IEntitySelector.java b/src/main/java/net/minecraft/server/IEntitySelector.java
+index dc0ffd8..f04aecb 100644
+--- a/src/main/java/net/minecraft/server/IEntitySelector.java
++++ b/src/main/java/net/minecraft/server/IEntitySelector.java
+@@ -44,13 +44,14 @@ public final class IEntitySelector {
+     };
+     public static final Predicate<Entity> e = new Predicate() {
+         public boolean a(@Nullable Entity entity) {
+-            return !(entity instanceof EntityHuman) || !((EntityHuman) entity).isSpectator();
++            return !(entity instanceof EntityHuman) || !((EntityHuman) entity).isSpectator() || !((EntityHuman) entity).affectsSpawning; // Paper - Affects Spawning API
+         }
+ 
+         public boolean apply(@Nullable Object object) {
+             return this.a((Entity) object);
+         }
+     };
++    public static final Predicate<Entity> CAN_MOBS_TARGET = e; // Paper - OBFHELPER
+ 
+     public static <T extends Entity> Predicate<T> a(final double d0, final double d1, final double d2, double d3) {
+         final double d4 = d3 * d3;
+diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
+index bec25e4..171410e 100644
+--- a/src/main/java/net/minecraft/server/SpawnerCreature.java
++++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
+@@ -52,7 +52,7 @@ public final class SpawnerCreature {
+             while (iterator.hasNext()) {
+                 EntityHuman entityhuman = (EntityHuman) iterator.next();
+ 
+-                if (!entityhuman.isSpectator()) {
++                if (!entityhuman.isSpectator() && entityhuman.affectsSpawning) { // Paper - AffectsSpawning API
+                     int l = MathHelper.floor(entityhuman.locX / 16.0D);
+ 
+                     j = MathHelper.floor(entityhuman.locZ / 16.0D);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 3784c32..3bda255 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1427,6 +1427,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+     }
+ 
++    @Override
++    public void setAffectsSpawning(boolean affects) {
++        this.getHandle().affectsSpawning = affects;
++    }
++
++    @Override
++    public boolean getAffectsSpawning() {
++        return this.getHandle().affectsSpawning;
++    }
++
+     // Spigot start
+     private final Player.Spigot spigot = new Player.Spigot()
+     {
+-- 
+2.10.2
+

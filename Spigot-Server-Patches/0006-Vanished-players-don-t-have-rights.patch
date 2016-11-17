@@ -1,14 +1,14 @@
-From e5ce005823f066b5c88dfc06184f878f7d301501 Mon Sep 17 00:00:00 2001
+From 70093c6d868924d6d2947cd7a5e952144c9cb44d Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Mon, 29 Feb 2016 21:20:21 -0600
 Subject: [PATCH] Vanished players don't have rights
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityArrow.java b/src/main/java/net/minecraft/server/EntityArrow.java
-index 8d52140..ccbf47e 100644
+index ca84d92..287566c 100644
 --- a/src/main/java/net/minecraft/server/EntityArrow.java
 +++ b/src/main/java/net/minecraft/server/EntityArrow.java
-@@ -189,6 +189,14 @@ public abstract class EntityArrow extends Entity implements IProjectile {
+@@ -190,6 +190,14 @@ public abstract class EntityArrow extends Entity implements IProjectile {
                  }
              }
  
@@ -24,26 +24,27 @@ index 8d52140..ccbf47e 100644
                  this.a(movingobjectposition);
              }
 diff --git a/src/main/java/net/minecraft/server/EntityFishingHook.java b/src/main/java/net/minecraft/server/EntityFishingHook.java
-index 5a62881..da4eaf1 100644
+index 0b28c88..91702f2 100644
 --- a/src/main/java/net/minecraft/server/EntityFishingHook.java
 +++ b/src/main/java/net/minecraft/server/EntityFishingHook.java
-@@ -198,6 +198,14 @@ public class EntityFishingHook extends Entity {
-                     movingobjectposition = new MovingObjectPosition(entity);
-                 }
+@@ -224,6 +224,15 @@ public class EntityFishingHook extends Entity {
  
-+                // Paper start - Allow fishing hooks to fly through vanished players the shooter can't see
-+                if (movingobjectposition != null && movingobjectposition.entity instanceof EntityPlayer && owner != null && owner instanceof EntityPlayer) {
-+                    if (!((EntityPlayer) owner).getBukkitEntity().canSee(((EntityPlayer) movingobjectposition.entity).getBukkitEntity())) {
-+                        movingobjectposition = null;
-+                    }
-+                }
-+                // Paper end
+         vec3d = new Vec3D(this.locX, this.locY, this.locZ);
+         vec3d1 = new Vec3D(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
 +
-                 if (movingobjectposition != null) {
-                     org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this); // Craftbukkit - Call event
-                     if (movingobjectposition.entity != null) {
++        // Paper start - Allow fishing hooks to fly through vanished players the shooter can't see
++        if (movingobjectposition != null && movingobjectposition.entity instanceof EntityPlayer && owner != null && owner instanceof EntityPlayer) {
++            if (!((EntityPlayer) owner).getBukkitEntity().canSee(((EntityPlayer) movingobjectposition.entity).getBukkitEntity())) {
++                movingobjectposition = null;
++            }
++        }
++        // Paper end
++
+         if (movingobjectposition != null) {
+             org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this); // Craftbukkit - Call event
+             vec3d1 = new Vec3D(movingobjectposition.pos.x, movingobjectposition.pos.y, movingobjectposition.pos.z);
 diff --git a/src/main/java/net/minecraft/server/EntityProjectile.java b/src/main/java/net/minecraft/server/EntityProjectile.java
-index 07dc5cc..770f130 100644
+index 40ac335..3d5548f 100644
 --- a/src/main/java/net/minecraft/server/EntityProjectile.java
 +++ b/src/main/java/net/minecraft/server/EntityProjectile.java
 @@ -160,6 +160,14 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
@@ -62,23 +63,23 @@ index 07dc5cc..770f130 100644
              if (movingobjectposition.type == MovingObjectPosition.EnumMovingObjectType.BLOCK && this.world.getType(movingobjectposition.a()).getBlock() == Blocks.PORTAL) {
                  this.e(movingobjectposition.a());
 diff --git a/src/main/java/net/minecraft/server/ItemBlock.java b/src/main/java/net/minecraft/server/ItemBlock.java
-index 3b6feb7..1450483 100644
+index eb32871..58ec8b5 100644
 --- a/src/main/java/net/minecraft/server/ItemBlock.java
 +++ b/src/main/java/net/minecraft/server/ItemBlock.java
-@@ -23,7 +23,7 @@ public class ItemBlock extends Item {
-             blockposition = blockposition.shift(enumdirection);
-         }
+@@ -20,7 +20,7 @@ public class ItemBlock extends Item {
  
--        if (itemstack.count != 0 && entityhuman.a(blockposition, enumdirection, itemstack) && world.a(this.a, blockposition, false, enumdirection, (Entity) null, itemstack)) {
-+        if (itemstack.count != 0 && entityhuman.a(blockposition, enumdirection, itemstack) && world.a(this.a, blockposition, false, enumdirection, entityhuman, itemstack)) { // Paper - Pass entityhuman instead of null
+         ItemStack itemstack = entityhuman.b(enumhand);
+ 
+-        if (!itemstack.isEmpty() && entityhuman.a(blockposition, enumdirection, itemstack) && world.a(this.a, blockposition, false, enumdirection, (Entity) null)) {
++        if (!itemstack.isEmpty() && entityhuman.a(blockposition, enumdirection, itemstack) && world.a(this.a, blockposition, false, enumdirection, entityhuman)) {  // Paper - Pass entityhuman instead of null
              int i = this.filterData(itemstack.getData());
              IBlockData iblockdata1 = this.a.getPlacedState(world, blockposition, enumdirection, f, f1, f2, i, entityhuman);
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index b73f64e..932e826 100644
+index 78b5a3c..2a38b1c 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1702,6 +1702,14 @@ public abstract class World implements IBlockAccess {
+@@ -1725,6 +1725,14 @@ public abstract class World implements IBlockAccess {
          for (int i = 0; i < list.size(); ++i) {
              Entity entity1 = (Entity) list.get(i);
  
@@ -94,5 +95,5 @@ index b73f64e..932e826 100644
                  return false;
              }
 -- 
-2.9.0
+2.10.2
 

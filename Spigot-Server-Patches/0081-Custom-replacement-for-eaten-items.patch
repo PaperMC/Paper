@@ -1,0 +1,34 @@
+From 7ef822ff5f73057b05d269b49105de4dfa773c86 Mon Sep 17 00:00:00 2001
+From: Jedediah Smith <jedediah@silencegreys.com>
+Date: Sun, 21 Jun 2015 15:07:20 -0400
+Subject: [PATCH] Custom replacement for eaten items
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 97eac7a..4cc89ec 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -2337,7 +2337,20 @@ public abstract class EntityLiving extends Entity {
+             ItemStack itemstack = (craftItem.equals(event.getItem())) ? this.activeItem.a(this.world, this) : CraftItemStack.asNMSCopy(event.getItem()).a(world, this);
+             this.a(this.cz(), itemstack);
+             // CraftBukkit end
++
++            // Paper start - save the default replacement item and change it if necessary
++            final ItemStack defaultReplacement = itemstack;
++            if (event.getReplacement() != null) {
++                itemstack = CraftItemStack.asNMSCopy(event.getReplacement());
++            }
++            // Paper end
++
+             this.cF();
++
++            // Paper start - if the replacement is anything but the default, update the client inventory
++            if (this instanceof EntityPlayer && !com.google.common.base.Objects.equal(defaultReplacement, itemstack)) {
++                ((EntityPlayer) this).getBukkitEntity().updateInventory();
++            }
+         }
+ 
+     }
+-- 
+2.10.2
+
