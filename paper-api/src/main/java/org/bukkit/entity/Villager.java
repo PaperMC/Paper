@@ -139,6 +139,10 @@ public interface Villager extends Ageable, NPC, InventoryHolder {
          */
         BUTCHER(false),
         /**
+         * Nitwit profession. Wears a green apron, cannot trade.
+         */
+        NITWIT(false),
+        /**
          * Husk. <b>Reserved for Zombies</b>
          */
         HUSK(true);
