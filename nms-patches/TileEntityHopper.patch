@@ -15,15 +15,15 @@
 +
  public class TileEntityHopper extends TileEntityLootable implements IHopper, ITickable {
  
-     private ItemStack[] items = new ItemStack[5];
-     private String f;
-     private int g = -1;
+     private NonNullList<ItemStack> items;
+     private int f;
+     private long g;
  
 +    // CraftBukkit start - add fields and methods
 +    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
 +    private int maxStack = MAX_STACK;
 +
-+    public ItemStack[] getContents() {
++    public List<ItemStack> getContents() {
 +        return this.items;
 +    }
 +
@@ -44,10 +44,10 @@
 +    }
 +    // CraftBukkit end
 +
-     public TileEntityHopper() {}
- 
-     public static void a(DataConverterManager dataconvertermanager) {
-@@ -109,7 +143,7 @@
+     public TileEntityHopper() {
+         this.items = NonNullList.a(5, ItemStack.a);
+         this.f = -1;
+@@ -72,7 +106,7 @@
      }
  
      public int getMaxStackSize() {
@@ -55,13 +55,13 @@
 +        return maxStack; // CraftBukkit
      }
  
-     public boolean a(EntityHuman entityhuman) {
-@@ -205,10 +239,35 @@
+     public void F_() {
+@@ -163,10 +197,35 @@
                  for (int i = 0; i < this.getSize(); ++i) {
-                     if (this.getItem(i) != null) {
+                     if (!this.getItem(i).isEmpty()) {
                          ItemStack itemstack = this.getItem(i).cloneItemStack();
--                        ItemStack itemstack1 = addItem(iinventory, this.splitStack(i, 1), enumdirection);
-+                        // ItemStack itemstack1 = addItem(iinventory, this.splitStack(i, 1), enumdirection);
+-                        ItemStack itemstack1 = addItem(this, iinventory, this.splitStack(i, 1), enumdirection);
++                        // ItemStack itemstack1 = addItem(this, iinventory, this.splitStack(i, 1), enumdirection);
 +
 +                        // CraftBukkit start - Call event when pushing items into other inventories
 +                        CraftItemStack oitemstack = CraftItemStack.asCraftMirror(this.splitStack(i, 1));
@@ -81,9 +81,9 @@
 +                            this.setCooldown(8); // Delay hopper checks
 +                            return false;
 +                        }
-+                        ItemStack itemstack1 = addItem(iinventory, CraftItemStack.asNMSCopy(event.getItem()), enumdirection);
++                        ItemStack itemstack1 = addItem(this, iinventory, CraftItemStack.asNMSCopy(event.getItem()), enumdirection);
  
-                         if (itemstack1 == null || itemstack1.count == 0) {
+                         if (itemstack1.isEmpty()) {
 -                            iinventory.update();
 +                            if (event.getItem().equals(oitemstack)) {
 +                                iinventory.update();
@@ -94,12 +94,12 @@
                              return true;
                          }
  
-@@ -330,10 +389,41 @@
+@@ -288,10 +347,41 @@
  
-         if (itemstack != null && b(iinventory, itemstack, i, enumdirection)) {
+         if (!itemstack.isEmpty() && b(iinventory, itemstack, i, enumdirection)) {
              ItemStack itemstack1 = itemstack.cloneItemStack();
--            ItemStack itemstack2 = addItem(ihopper, iinventory.splitStack(i, 1), (EnumDirection) null);
-+            // ItemStack itemstack2 = addItem(ihopper, iinventory.splitStack(i, 1), (EnumDirection) null);
+-            ItemStack itemstack2 = addItem(iinventory, ihopper, iinventory.splitStack(i, 1), (EnumDirection) null);
++            // ItemStack itemstack2 = addItem(iinventory, ihopper, iinventory.splitStack(i, 1), (EnumDirection) null);
 +            // CraftBukkit start - Call event on collection of items from inventories into the hopper
 +            CraftItemStack oitemstack = CraftItemStack.asCraftMirror(iinventory.splitStack(i, 1));
 +
@@ -125,9 +125,9 @@
 +
 +                return false;
 +            }
-+            ItemStack itemstack2 = addItem(ihopper, CraftItemStack.asNMSCopy(event.getItem()), null);
++            ItemStack itemstack2 = addItem(iinventory, ihopper, CraftItemStack.asNMSCopy(event.getItem()), null);
  
-             if (itemstack2 == null || itemstack2.count == 0) {
+             if (itemstack2.isEmpty()) {
 -                iinventory.update();
 +                if (event.getItem().equals(oitemstack)) {
 +                    iinventory.update();
@@ -138,17 +138,17 @@
                  return true;
              }
  
-@@ -349,6 +439,13 @@
+@@ -307,6 +397,13 @@
          if (entityitem == null) {
              return false;
          } else {
 +            // CraftBukkit start
-+            InventoryPickupItemEvent event = new InventoryPickupItemEvent(iinventory.getOwner().getInventory(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
++            InventoryPickupItemEvent event = new InventoryPickupItemEvent(iinventory1.getOwner().getInventory(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
 +            entityitem.world.getServer().getPluginManager().callEvent(event);
 +            if (event.isCancelled()) {
 +                return false;
 +            }
 +            // CraftBukkit end
              ItemStack itemstack = entityitem.getItemStack().cloneItemStack();
-             ItemStack itemstack1 = addItem(iinventory, itemstack, (EnumDirection) null);
+             ItemStack itemstack1 = addItem(iinventory, iinventory1, itemstack, (EnumDirection) null);
  

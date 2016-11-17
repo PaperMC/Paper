@@ -1,13 +1,12 @@
 --- a/net/minecraft/server/EntityHuman.java
 +++ b/net/minecraft/server/EntityHuman.java
-@@ -10,6 +10,19 @@
+@@ -9,6 +9,18 @@
  import java.util.UUID;
  import javax.annotation.Nullable;
  
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 +import org.bukkit.craftbukkit.entity.CraftItem;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.entity.EntityCombustByEntityEvent;
 +import org.bukkit.event.player.PlayerBedEnterEvent;
@@ -20,17 +19,21 @@
  public abstract class EntityHuman extends EntityLiving {
  
      private static final DataWatcherObject<Float> a = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.c);
-@@ -20,7 +33,7 @@
-     private InventoryEnderChest enderChest = new InventoryEnderChest();
+@@ -16,10 +28,10 @@
+     protected static final DataWatcherObject<Byte> bq = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.a);
+     protected static final DataWatcherObject<Byte> br = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.a);
+     public PlayerInventory inventory = new PlayerInventory(this);
+-    private InventoryEnderChest enderChest = new InventoryEnderChest();
++    private InventoryEnderChest enderChest = new InventoryEnderChest(this); // CraftBukkit - add "this" to constructor
      public Container defaultContainer;
      public Container activeContainer;
 -    protected FoodMetaData foodData = new FoodMetaData();
 +    protected FoodMetaData foodData = new FoodMetaData(this); // CraftBukkit - add "this" to constructor
-     protected int bx;
+     protected int bw;
+     public float bx;
      public float by;
-     public float bz;
-@@ -52,6 +65,17 @@
-     private final ItemCooldown bW = this.l();
+@@ -52,6 +64,17 @@
+     @Nullable
      public EntityFishingHook hookedFish;
  
 +    // CraftBukkit start
@@ -47,7 +50,7 @@
      protected ItemCooldown l() {
          return new ItemCooldown();
      }
-@@ -307,7 +331,8 @@
+@@ -312,7 +335,8 @@
  
          if (this.world.getDifficulty() == EnumDifficulty.PEACEFUL && this.world.getGameRules().getBoolean("naturalRegeneration")) {
              if (this.getHealth() < this.getMaxHealth() && this.ticksLived % 20 == 0) {
@@ -57,7 +60,7 @@
              }
  
              if (this.foodData.c() && this.ticksLived % 10 == 0) {
-@@ -331,7 +356,7 @@
+@@ -336,7 +360,7 @@
  
          this.l((float) attributeinstance.getValue());
          float f = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
@@ -66,7 +69,7 @@
  
          if (f > 0.1F) {
              f = 0.1F;
-@@ -423,28 +448,34 @@
+@@ -442,28 +466,34 @@
      public void b(Entity entity, int i) {
          if (entity != this) {
              this.addScore(i);
@@ -107,7 +110,7 @@
          String s = entity instanceof EntityHuman ? entity.getName() : entity.bf();
          ScoreboardTeam scoreboardteam = this.getScoreboard().getPlayerTeam(this.getName());
  
-@@ -469,7 +500,10 @@
+@@ -488,7 +518,10 @@
              int j = scoreboardteam1.m().b();
  
              if (j >= 0 && j < IScoreboardCriteria.m.length) {
@@ -119,15 +122,15 @@
              }
          }
  
-@@ -478,6 +512,7 @@
+@@ -497,6 +530,7 @@
  
      @Nullable
      public EntityItem a(boolean flag) {
 +        // Called only when dropped by Q or CTRL-Q
-         return this.a(this.inventory.splitStack(this.inventory.itemInHandIndex, flag && this.inventory.getItemInHand() != null ? this.inventory.getItemInHand().count : 1), false, true);
+         return this.a(this.inventory.splitStack(this.inventory.itemInHandIndex, flag && !this.inventory.getItemInHand().isEmpty() ? this.inventory.getItemInHand().getCount() : 1), false, true);
      }
  
-@@ -522,6 +557,30 @@
+@@ -539,6 +573,30 @@
                  entityitem.motZ += Math.sin((double) f1) * (double) f;
              }
  
@@ -158,7 +161,7 @@
              ItemStack itemstack1 = this.a(entityitem);
  
              if (flag1) {
-@@ -630,6 +689,13 @@
+@@ -646,6 +704,13 @@
              this.a(true, true, false);
          }
  
@@ -172,20 +175,15 @@
          if (nbttagcompound.hasKeyOfType("SpawnX", 99) && nbttagcompound.hasKeyOfType("SpawnY", 99) && nbttagcompound.hasKeyOfType("SpawnZ", 99)) {
              this.e = new BlockPosition(nbttagcompound.getInt("SpawnX"), nbttagcompound.getInt("SpawnY"), nbttagcompound.getInt("SpawnZ"));
              this.f = nbttagcompound.getBoolean("SpawnForced");
-@@ -667,6 +733,12 @@
+@@ -683,6 +748,7 @@
          this.foodData.b(nbttagcompound);
          this.abilities.a(nbttagcompound);
-         nbttagcompound.set("EnderItems", this.enderChest.h());
-+        ItemStack itemstack = this.inventory.getItemInHand();
-+
-+        if (itemstack != null && itemstack.getItem() != null) {
-+            nbttagcompound.set("SelectedItem", itemstack.save(new NBTTagCompound()));
-+        }
+         nbttagcompound.set("EnderItems", this.enderChest.i());
 +        nbttagcompound.setString("SpawnWorld", spawnWorld); // CraftBukkit - fixes bed spawns for multiworld worlds
      }
  
      public boolean damageEntity(DamageSource damagesource, float f) {
-@@ -685,7 +757,7 @@
+@@ -701,7 +767,7 @@
  
                  if (damagesource.r()) {
                      if (this.world.getDifficulty() == EnumDifficulty.PEACEFUL) {
@@ -194,7 +192,7 @@
                      }
  
                      if (this.world.getDifficulty() == EnumDifficulty.EASY) {
-@@ -697,16 +769,35 @@
+@@ -713,7 +779,7 @@
                      }
                  }
  
@@ -202,6 +200,8 @@
 +                return super.damageEntity(damagesource, f); // CraftBukkit - Don't filter out 0 damage
              }
          }
+     }
+@@ -727,10 +793,29 @@
      }
  
      public boolean a(EntityHuman entityhuman) {
@@ -234,8 +234,8 @@
      }
  
      protected void damageArmor(float f) {
-@@ -750,7 +841,12 @@
-         return (float) i / (float) this.inventory.armor.length;
+@@ -773,7 +858,12 @@
+         return (float) i / (float) this.inventory.armor.size();
      }
  
 -    protected void damageEntity0(DamageSource damagesource, float f) {
@@ -248,7 +248,7 @@
          if (!this.isInvulnerable(damagesource)) {
              f = this.applyArmorModifier(damagesource, f);
              f = this.applyMagicModifier(damagesource, f);
-@@ -770,6 +866,7 @@
+@@ -793,6 +883,7 @@
  
              }
          }
@@ -256,7 +256,7 @@
      }
  
      public void openSign(TileEntitySign tileentitysign) {}
-@@ -894,8 +991,15 @@
+@@ -914,8 +1005,15 @@
                      if (entity instanceof EntityLiving) {
                          f3 = ((EntityLiving) entity).getHealth();
                          if (j > 0 && !entity.isBurning()) {
@@ -274,7 +274,7 @@
                          }
                      }
  
-@@ -925,8 +1029,11 @@
+@@ -945,8 +1043,11 @@
                                  EntityLiving entityliving = (EntityLiving) iterator.next();
  
                                  if (entityliving != this && entityliving != entity && !this.r(entityliving) && this.h(entityliving) < 9.0D) {
@@ -287,7 +287,7 @@
                                  }
                              }
  
-@@ -935,11 +1042,28 @@
+@@ -955,11 +1056,28 @@
                          }
  
                          if (entity instanceof EntityPlayer && entity.velocityChanged) {
@@ -316,19 +316,9 @@
                          }
  
                          if (flag2) {
-@@ -1001,7 +1125,8 @@
+@@ -1012,7 +1130,14 @@
  
-                         if (itemstack3 != null && object instanceof EntityLiving) {
-                             itemstack3.a((EntityLiving) object, this);
--                            if (itemstack3.count <= 0) {
-+                            // CraftBukkit - bypass infinite items; <= 0 -> == 0
-+                            if (itemstack3.count == 0) {
-                                 this.a(EnumHand.MAIN_HAND, (ItemStack) null);
-                             }
-                         }
-@@ -1011,7 +1136,14 @@
- 
-                             this.a(StatisticList.y, Math.round(f5 * 10.0F));
+                             this.a(StatisticList.y, Math.round(f4 * 10.0F));
                              if (j > 0) {
 -                                entity.setOnFire(j * 4);
 +                                // CraftBukkit start - Call a combust event when somebody hits with a fire enchanted item
@@ -341,8 +331,8 @@
 +                                // CraftBukkit end
                              }
  
-                             if (this.world instanceof WorldServer && f5 > 2.0F) {
-@@ -1100,6 +1232,20 @@
+                             if (this.world instanceof WorldServer && f4 > 2.0F) {
+@@ -1118,6 +1243,20 @@
              this.stopRiding();
          }
  
@@ -362,8 +352,8 @@
 +
          this.setSize(0.2F, 0.2F);
          if (this.world.isLoaded(blockposition)) {
-             EnumDirection enumdirection = (EnumDirection) this.world.getType(blockposition).get(BlockFacingHorizontal.FACING);
-@@ -1184,6 +1330,23 @@
+             float f = 0.5F + (float) enumdirection.getAdjacentX() * 0.4F;
+@@ -1177,6 +1316,23 @@
              this.world.everyoneSleeping();
          }
  
@@ -387,7 +377,7 @@
          this.sleepTicks = flag ? 0 : 100;
          if (flag2) {
              this.setRespawnPosition(this.bedPosition, false);
-@@ -1235,9 +1398,11 @@
+@@ -1228,9 +1384,11 @@
          if (blockposition != null) {
              this.e = blockposition;
              this.f = flag;

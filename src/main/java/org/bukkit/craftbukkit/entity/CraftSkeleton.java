@@ -1,22 +1,20 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntitySkeleton;
-import net.minecraft.server.EnumSkeletonType;
+import net.minecraft.server.EntitySkeletonAbstract;
 
-import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Skeleton;
 
 public class CraftSkeleton extends CraftMonster implements Skeleton {
 
-    public CraftSkeleton(CraftServer server, EntitySkeleton entity) {
+    public CraftSkeleton(CraftServer server, EntitySkeletonAbstract entity) {
         super(server, entity);
     }
 
     @Override
-    public EntitySkeleton getHandle() {
-        return (EntitySkeleton) entity;
+    public EntitySkeletonAbstract getHandle() {
+        return (EntitySkeletonAbstract) entity;
     }
 
     @Override
@@ -28,12 +26,13 @@ public class CraftSkeleton extends CraftMonster implements Skeleton {
         return EntityType.SKELETON;
     }
 
+    @Override
     public SkeletonType getSkeletonType() {
-        return SkeletonType.values()[getHandle().getSkeletonType().ordinal()];
+       return SkeletonType.NORMAL;
     }
 
+    @Override
     public void setSkeletonType(SkeletonType type) {
-        Validate.notNull(type);
-        getHandle().setSkeletonType(EnumSkeletonType.a(type.ordinal())); // PAIL: rename
+        throw new UnsupportedOperationException("Not supported.");
     }
 }

@@ -66,7 +66,7 @@ public class CraftBeacon extends CraftContainer implements Beacon {
 
     @Override
     public int getTier() {
-        return beacon.k;
+        return beacon.levels;
     }
 
     @Override
@@ -76,7 +76,7 @@ public class CraftBeacon extends CraftContainer implements Beacon {
 
     @Override
     public void setPrimaryEffect(PotionEffectType effect) {
-        beacon.l = (effect != null) ? MobEffectList.fromId(effect.getId()) : null;
+        beacon.primaryEffect = (effect != null) ? MobEffectList.fromId(effect.getId()) : null;
     }
 
     @Override
@@ -86,6 +86,6 @@ public class CraftBeacon extends CraftContainer implements Beacon {
 
     @Override
     public void setSecondaryEffect(PotionEffectType effect) {
-        beacon.m = (effect != null) ? MobEffectList.fromId(effect.getId()) : null;
+        beacon.secondaryEffect = (effect != null) ? MobEffectList.fromId(effect.getId()) : null;
     }
 }

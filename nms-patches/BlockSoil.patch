@@ -1,8 +1,8 @@
 --- a/net/minecraft/server/BlockSoil.java
 +++ b/net/minecraft/server/BlockSoil.java
 @@ -4,6 +4,11 @@
+ import java.util.List;
  import java.util.Random;
- import javax.annotation.Nullable;
  
 +// CraftBukkit start
 +import org.bukkit.event.entity.EntityInteractEvent;
@@ -15,23 +15,22 @@
 @@ -35,6 +40,12 @@
              if (i > 0) {
                  world.setTypeAndData(blockposition, iblockdata.set(BlockSoil.MOISTURE, Integer.valueOf(i - 1)), 2);
-             } else if (!this.b(world, blockposition)) {
+             } else if (!this.c(world, blockposition)) {
 +                // CraftBukkit start
 +                org.bukkit.block.Block block = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
 +                if (CraftEventFactory.callBlockFadeEvent(block, Blocks.DIRT).isCancelled()) {
 +                    return;
 +                }
 +                // CraftBukkit end
-                 world.setTypeUpdate(blockposition, Blocks.DIRT.getBlockData());
+                 this.b(world, blockposition);
              }
          } else if (i < 7) {
-@@ -44,11 +55,31 @@
+@@ -44,11 +55,29 @@
      }
  
      public void fallOn(World world, BlockPosition blockposition, Entity entity, float f) {
 +        super.fallOn(world, blockposition, entity, f); // CraftBukkit - moved here as game rules / events shouldn't affect fall damage.
          if (!world.isClientSide && world.random.nextFloat() < f - 0.5F && entity instanceof EntityLiving && (entity instanceof EntityHuman || world.getGameRules().getBoolean("mobGriefing")) && entity.width * entity.width * entity.length > 0.512F) {
-+
 +            // CraftBukkit start - Interact soil
 +            org.bukkit.event.Cancellable cancellable;
 +            if (entity instanceof EntityHuman) {
@@ -49,12 +48,11 @@
 +                return;
 +            }
 +            // CraftBukkit end
-+
-             world.setTypeUpdate(blockposition, Blocks.DIRT.getBlockData());
+             this.b(world, blockposition);
          }
  
 -        super.fallOn(world, blockposition, entity, f);
 +        // super.fallOn(world, blockposition, entity, f); // CraftBukkit - moved up
      }
  
-     private boolean b(World world, BlockPosition blockposition) {
+     private void b(World world, BlockPosition blockposition) {

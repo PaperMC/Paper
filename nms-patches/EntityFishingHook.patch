@@ -1,52 +1,51 @@
 --- a/net/minecraft/server/EntityFishingHook.java
 +++ b/net/minecraft/server/EntityFishingHook.java
-@@ -3,6 +3,12 @@
+@@ -2,6 +2,11 @@
+ 
  import java.util.Iterator;
  import java.util.List;
- 
 +// CraftBukkit start
 +import org.bukkit.entity.Player;
 +import org.bukkit.entity.Fish;
 +import org.bukkit.event.player.PlayerFishEvent;
 +// CraftBukkit end
-+
+ 
  public class EntityFishingHook extends Entity {
  
-     private static final DataWatcherObject<Integer> c = DataWatcher.a(EntityFishingHook.class, DataWatcherRegistry.b);
-@@ -193,6 +199,7 @@
-                 }
+@@ -220,6 +225,7 @@
+         vec3d = new Vec3D(this.locX, this.locY, this.locZ);
+         vec3d1 = new Vec3D(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+         if (movingobjectposition != null) {
++            org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this); // Craftbukkit - Call event
+             vec3d1 = new Vec3D(movingobjectposition.pos.x, movingobjectposition.pos.y, movingobjectposition.pos.z);
+         }
  
-                 if (movingobjectposition != null) {
-+                    org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this); // Craftbukkit - Call event
-                     if (movingobjectposition.entity != null) {
-                         this.hooked = movingobjectposition.entity;
-                         this.getDataWatcher().set(EntityFishingHook.c, Integer.valueOf(this.hooked.getId() + 1));
-@@ -266,6 +273,10 @@
-                         if (this.au <= 0) {
-                             this.av = 0;
-                             this.aw = 0;
-+                            // CraftBukkit start
-+                            PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) this.owner.getBukkitEntity(), null, (Fish) this.getBukkitEntity(), PlayerFishEvent.State.FAILED_ATTEMPT);
-+                            this.world.getServer().getPluginManager().callEvent(playerFishEvent);
-+                            // CraftBukkit end
-                         }
-                     } else {
-                         double d10;
-@@ -278,6 +289,13 @@
-                         if (this.aw > 0) {
-                             this.aw -= l;
-                             if (this.aw <= 0) {
-+                                // CraftBukkit start
-+                                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) this.owner.getBukkitEntity(), null, (Fish) this.getBukkitEntity(), PlayerFishEvent.State.BITE);
-+                                this.world.getServer().getPluginManager().callEvent(playerFishEvent);
-+                                if (playerFishEvent.isCancelled()) {
-+                                    return;
-+                                }
-+                                // CraftBukkit end
-                                 this.motY -= 0.20000000298023224D;
-                                 this.a(SoundEffects.G, 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
-                                 f2 = (float) MathHelper.floor(this.getBoundingBox().b);
-@@ -390,6 +408,14 @@
+@@ -283,6 +289,10 @@
+             if (this.g <= 0) {
+                 this.h = 0;
+                 this.at = 0;
++                // CraftBukkit start
++                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) this.owner.getBukkitEntity(), null, (Fish) this.getBukkitEntity(), PlayerFishEvent.State.FAILED_ATTEMPT);
++                this.world.getServer().getPluginManager().callEvent(playerFishEvent);
++                // CraftBukkit end
+             } else {
+                 this.motY -= 0.2D * (double) this.random.nextFloat() * (double) this.random.nextFloat();
+             }
+@@ -318,6 +328,13 @@
+                         worldserver.a(EnumParticle.WATER_WAKE, d0, d1, d2, 0, (double) (-f4), 0.01D, (double) f3, 1.0D, new int[0]);
+                     }
+                 } else {
++                    // CraftBukkit start
++                    PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) this.owner.getBukkitEntity(), null, (Fish) this.getBukkitEntity(), PlayerFishEvent.State.BITE);
++                    this.world.getServer().getPluginManager().callEvent(playerFishEvent);
++                    if (playerFishEvent.isCancelled()) {
++                        return;
++                    }
++                    // CraftBukkit end
+                     this.motY = (double) (-0.4F * MathHelper.a(this.random, 0.6F, 1.0F));
+                     this.a(SoundEffects.H, 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
+                     double d3 = this.getBoundingBox().b + 0.5D;
+@@ -374,6 +391,14 @@
              int i = 0;
  
              if (this.hooked != null) {
@@ -61,7 +60,7 @@
                  this.k();
                  this.world.broadcastEntityEffect(this, (byte) 31);
                  i = this.hooked instanceof EntityItem ? 3 : 5;
-@@ -402,6 +428,15 @@
+@@ -386,6 +411,15 @@
                  while (iterator.hasNext()) {
                      ItemStack itemstack = (ItemStack) iterator.next();
                      EntityItem entityitem = new EntityItem(this.world, this.locX, this.locY, this.locZ, itemstack);
@@ -77,7 +76,7 @@
                      double d0 = this.owner.locX - this.locX;
                      double d1 = this.owner.locY - this.locY;
                      double d2 = this.owner.locZ - this.locZ;
-@@ -412,15 +447,36 @@
+@@ -396,15 +430,36 @@
                      entityitem.motY = d1 * 0.1D + (double) MathHelper.sqrt(d3) * 0.08D;
                      entityitem.motZ = d2 * 0.1D;
                      this.world.addEntity(entityitem);
@@ -86,7 +85,7 @@
 +                    if (playerFishEvent.getExpToDrop() > 0) {
 +                        this.owner.world.addEntity(new EntityExperienceOrb(this.owner.world, this.owner.locX, this.owner.locY + 0.5D, this.owner.locZ + 0.5D, playerFishEvent.getExpToDrop()));
 +                    }
-+                    // CraftBukkit end                
++                    // CraftBukkit end
                  }
  
                  i = 1;
@@ -114,4 +113,4 @@
 +            // CraftBukkit end
  
              this.die();
-             this.owner.hookedFish = null;
+             return i;

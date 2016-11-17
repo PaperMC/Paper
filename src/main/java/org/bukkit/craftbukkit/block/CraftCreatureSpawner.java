@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
+import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.TileEntityMobSpawner;
 import org.bukkit.Material;
 
@@ -23,7 +24,7 @@ public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpa
     }
 
     public EntityType getSpawnedType() {
-        return EntityType.fromName(spawner.getSpawner().getMobName());
+        return EntityType.fromName(spawner.getSpawner().getMobName().a());
     }
 
     public void setSpawnedType(EntityType entityType) {
@@ -31,21 +32,11 @@ public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpa
             throw new IllegalArgumentException("Can't spawn EntityType " + entityType + " from mobspawners!");
         }
 
-        spawner.getSpawner().setMobName(entityType.getName());
-    }
-
-    @Deprecated
-    public String getCreatureTypeId() {
-        return spawner.getSpawner().getMobName();
-    }
-
-    @Deprecated
-    public void setCreatureTypeId(String creatureName) {
-        setCreatureTypeByName(creatureName);
+        spawner.getSpawner().setMobName(new MinecraftKey(entityType.getName()));
     }
 
     public String getCreatureTypeName() {
-        return spawner.getSpawner().getMobName();
+        return spawner.getSpawner().getMobName().a();
     }
 
     public void setCreatureTypeByName(String creatureType) {

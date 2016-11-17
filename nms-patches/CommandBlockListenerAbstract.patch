@@ -33,12 +33,25 @@
                  } catch (Throwable throwable) {
                      CrashReport crashreport = CrashReport.a(throwable, "Executing command block");
                      CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Command to be executed");
-@@ -124,6 +134,125 @@
+@@ -124,6 +134,138 @@
          }
      }
  
++    public static int executeSafely(ICommandListener sender, org.bukkit.command.CommandSender bSender, String command) {
++        try {
++            return executeCommand(sender, bSender, command);
++        } catch (CommandException commandexception) {
++            // Taken from CommandHandler
++            ChatMessage chatmessage = new ChatMessage(commandexception.getMessage(), commandexception.getArgs());
++            chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
++            sender.sendMessage(chatmessage);
++        }
++
++        return 0;
++    }
++
 +    // CraftBukkit start
-+    public static int executeCommand(ICommandListener sender, org.bukkit.command.CommandSender bSender, String command) {
++    public static int executeCommand(ICommandListener sender, org.bukkit.command.CommandSender bSender, String command) throws CommandException {
 +        org.bukkit.command.SimpleCommandMap commandMap = sender.getWorld().getServer().getCommandMap();
 +        Joiner joiner = Joiner.on(" ");
 +        if (command.startsWith("/")) {
@@ -137,7 +150,7 @@
 +        return completed;
 +    }
 +
-+    private static ArrayList<String[]> buildCommands(ICommandListener sender, String[] args, int pos) {
++    private static ArrayList<String[]> buildCommands(ICommandListener sender, String[] args, int pos) throws CommandException {
 +        ArrayList<String[]> commands = new ArrayList<String[]>();
 +        java.util.List<EntityPlayer> players = (java.util.List<EntityPlayer>)PlayerSelector.getPlayers(sender, args[pos], EntityPlayer.class);
 +

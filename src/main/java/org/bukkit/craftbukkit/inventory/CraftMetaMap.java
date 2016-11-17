@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.inventory;
 import java.util.Map;
 
 import net.minecraft.server.NBTTagCompound;
+import net.minecraft.server.NBTTagString;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
@@ -14,11 +15,15 @@ import com.google.common.collect.ImmutableMap;
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaMap extends CraftMetaItem implements MapMeta {
     static final ItemMetaKey MAP_SCALING = new ItemMetaKey("map_is_scaling", "scaling");
+    static final ItemMetaKey MAP_LOC_NAME = new ItemMetaKey("LocName", "display-loc-name");
+    static final ItemMetaKey MAP_COLOR = new ItemMetaKey("Mapcolor", "display-map-color");
     static final byte SCALING_EMPTY = (byte) 0;
     static final byte SCALING_TRUE = (byte) 1;
     static final byte SCALING_FALSE = (byte) 2;
 
     private byte scaling = SCALING_EMPTY;
+    private String locName;
+    private String mapColor;
 
     CraftMetaMap(CraftMetaItem meta) {
         super(meta);
@@ -37,6 +42,18 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
         if (tag.hasKey(MAP_SCALING.NBT)) {
             this.scaling = tag.getBoolean(MAP_SCALING.NBT) ? SCALING_TRUE : SCALING_FALSE;
         }
+        
+        if (tag.hasKey(DISPLAY.NBT)) {
+            NBTTagCompound display = tag.getCompound(DISPLAY.NBT);
+
+            if (display.hasKey(MAP_LOC_NAME.NBT)) {
+                locName = display.getString(MAP_LOC_NAME.NBT);
+            }
+
+            if (display.hasKey(MAP_COLOR.NBT)) {
+                mapColor = display.getString(MAP_COLOR.NBT);
+            }
+        }
     }
 
     CraftMetaMap(Map<String, Object> map) {
@@ -54,6 +71,14 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
         if (hasScaling()) {
             tag.setBoolean(MAP_SCALING.NBT, isScaling());
+        }
+
+        if (hasLocationName()) {
+            setDisplayTag(tag, MAP_LOC_NAME.NBT, new NBTTagString(getLocationName()));
+        }
+
+        if (hasMapColor()) {
+            setDisplayTag(tag, MAP_COLOR.NBT, new NBTTagString(mapColor));
         }
     }
 
@@ -89,6 +114,25 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
     }
 
     @Override
+    public boolean hasLocationName() {
+        return this.locName != null;
+    }
+
+    @Override
+    public String getLocationName() {
+        return this.locName;
+    }
+
+    @Override
+    public void setLocationName(String name) {
+        this.locName = name;
+    }
+
+    public boolean hasMapColor() {
+        return this.mapColor != null;
+    }
+
+    @Override
     boolean equalsCommon(CraftMetaItem meta) {
         if (!super.equalsCommon(meta)) {
             return false;
@@ -96,7 +140,9 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
         if (meta instanceof CraftMetaMap) {
             CraftMetaMap that = (CraftMetaMap) meta;
 
-            return (this.scaling == that.scaling);
+            return (this.scaling == that.scaling)
+                    && (hasLocationName() ? that.hasLocationName() && this.getLocationName().equals(that.getLocationName()) : !that.hasLocationName())
+                    && (hasMapColor() ? that.hasMapColor() && this.mapColor.equals(that.mapColor) : !that.hasMapColor());
         }
         return true;
     }
@@ -128,6 +174,14 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
         if (hasScaling()) {
             builder.put(MAP_SCALING.BUKKIT, isScaling());
+        }
+
+        if (hasLocationName()) {
+            builder.put(MAP_LOC_NAME.BUKKIT, getLocationName());
+        }
+
+        if (hasMapColor()) {
+            builder.put(MAP_COLOR.BUKKIT, mapColor);
         }
 
         return builder;

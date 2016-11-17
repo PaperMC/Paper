@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/TileEntityBeacon.java
 +++ b/net/minecraft/server/TileEntityBeacon.java
-@@ -9,19 +9,58 @@
+@@ -9,6 +9,13 @@
  import java.util.Set;
  import javax.annotation.Nullable;
  
@@ -14,25 +14,16 @@
  public class TileEntityBeacon extends TileEntityContainer implements ITickable, IWorldInventory {
  
      public static final MobEffectList[][] a = new MobEffectList[][] { { MobEffects.FASTER_MOVEMENT, MobEffects.FASTER_DIG}, { MobEffects.RESISTANCE, MobEffects.JUMP}, { MobEffects.INCREASE_DAMAGE}, { MobEffects.REGENERATION}};
-     private static final Set<MobEffectList> f = Sets.newHashSet();
-     private final List<TileEntityBeacon.BeaconColorTracker> g = Lists.newArrayList();
-     private boolean j;
--    private int k = -1;
-+    public int k = -1; // PAIL: private -> public
-     @Nullable
--    private MobEffectList l;
-+    public MobEffectList l; // PAIL: private -> public
-     @Nullable
--    private MobEffectList m;
-+    public MobEffectList m; // PAIL: private -> public
+@@ -22,6 +29,38 @@
+     public MobEffectList secondaryEffect;
      private ItemStack inventorySlot;
      private String o;
 +    // CraftBukkit start - add fields and methods
 +    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
 +    private int maxStack = MAX_STACK;
 +
-+    public ItemStack[] getContents() {
-+        return new ItemStack[] { this.inventorySlot };
++    public List<ItemStack> getContents() {
++        return Arrays.asList(this.inventorySlot);
 +    }
 +
 +    public void onOpen(CraftHumanEntity who) {
@@ -52,29 +43,29 @@
 +    }
 +
 +    public PotionEffect getPrimaryEffect() {
-+        return (this.l != null) ? CraftPotionUtil.toBukkit(new MobEffect(this.l, getLevel(), getAmplification(), true, true)) : null;
++        return (this.primaryEffect != null) ? CraftPotionUtil.toBukkit(new MobEffect(this.primaryEffect, getLevel(), getAmplification(), true, true)) : null;
 +    }
 +
 +    public PotionEffect getSecondaryEffect() {
-+        return (hasSecondaryEffect()) ? CraftPotionUtil.toBukkit(new MobEffect(this.m, getLevel(), getAmplification(), true, true)) : null;
++        return (hasSecondaryEffect()) ? CraftPotionUtil.toBukkit(new MobEffect(this.secondaryEffect, getLevel(), getAmplification(), true, true)) : null;
 +    }
 +    // CraftBukkit end
  
-     public TileEntityBeacon() {}
- 
-@@ -40,41 +79,79 @@
+     public TileEntityBeacon() {
+         this.inventorySlot = ItemStack.a;
+@@ -42,41 +81,79 @@
  
      }
  
 -    private void E() {
--        if (this.j && this.k > 0 && !this.world.isClientSide && this.l != null) {
--            double d0 = (double) (this.k * 10 + 10);
+-        if (this.j && this.levels > 0 && !this.world.isClientSide && this.primaryEffect != null) {
+-            double d0 = (double) (this.levels * 10 + 10);
 +    // CraftBukkit start - split into components
 +    private byte getAmplification() {
 +        {
              byte b0 = 0;
  
-             if (this.k >= 4 && this.l == this.m) {
+             if (this.levels >= 4 && this.primaryEffect == this.secondaryEffect) {
                  b0 = 1;
              }
  
@@ -84,19 +75,19 @@
 +
 +    private int getLevel() {
 +        {
-             int i = (9 + this.k * 2) * 20;
+             int i = (9 + this.levels * 2) * 20;
 +            return i;
 +        }
 +    }
 +
 +    public List getHumansInRange() {
 +        {
-+            double d0 = (double) (this.k * 10 + 10);
++            double d0 = (double) (this.levels * 10 + 10);
 +
              int j = this.position.getX();
              int k = this.position.getY();
              int l = this.position.getZ();
-             AxisAlignedBB axisalignedbb = (new AxisAlignedBB((double) j, (double) k, (double) l, (double) (j + 1), (double) (k + 1), (double) (l + 1))).g(d0).a(0.0D, (double) this.world.getHeight(), 0.0D);
+             AxisAlignedBB axisalignedbb = (new AxisAlignedBB((double) j, (double) k, (double) l, (double) (j + 1), (double) (k + 1), (double) (l + 1))).g(d0).b(0.0D, (double) this.world.getHeight(), 0.0D);
              List list = this.world.a(EntityHuman.class, axisalignedbb);
 +
 +            return list;
@@ -111,7 +102,7 @@
  
              while (iterator.hasNext()) {
                  entityhuman = (EntityHuman) iterator.next();
--                entityhuman.addEffect(new MobEffect(this.l, i, b0, true, true));
+-                entityhuman.addEffect(new MobEffect(this.primaryEffect, i, b0, true, true));
 +                entityhuman.addEffect(new MobEffect(effects, i, b0, true, true));
              }
 +        }
@@ -119,7 +110,7 @@
  
 +    private boolean hasSecondaryEffect() {
 +        {
-             if (this.k >= 4 && this.l != this.m && this.m != null) {
+             if (this.levels >= 4 && this.primaryEffect != this.secondaryEffect && this.secondaryEffect != null) {
 -                iterator = list.iterator();
 +                return true;
 +            }
@@ -129,20 +120,20 @@
 +    }
 +
 +    private void E() {
-+        if (this.j && this.k > 0 && !this.world.isClientSide && this.l != null) {
++        if (this.j && this.levels > 0 && !this.world.isClientSide && this.primaryEffect != null) {
 +            byte b0 = getAmplification();
 +
 +            int i = getLevel();
 +            List list = getHumansInRange();
 +
-+            applyEffect(list, this.l, i, b0);
++            applyEffect(list, this.primaryEffect, i, b0);
  
 -                while (iterator.hasNext()) {
 -                    entityhuman = (EntityHuman) iterator.next();
--                    entityhuman.addEffect(new MobEffect(this.m, i, 0, true, true));
+-                    entityhuman.addEffect(new MobEffect(this.secondaryEffect, i, 0, true, true));
 -                }
 +            if (hasSecondaryEffect()) {
-+                applyEffect(list, this.m, i, 0);
++                applyEffect(list, this.secondaryEffect, i, 0);
              }
          }
  
@@ -150,4 +141,4 @@
 +    // CraftBukkit end
  
      private void F() {
-         int i = this.k;
+         int i = this.levels;

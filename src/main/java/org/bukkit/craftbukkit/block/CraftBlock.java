@@ -145,7 +145,7 @@ public class CraftBlock implements Block {
             return chunk.getHandle().getWorld().setTypeAndData(position, blockData, 3);
         } else {
             IBlockData old = chunk.getHandle().getBlockData(position);
-            boolean success = chunk.getHandle().getWorld().setTypeAndData(position, blockData, 2);
+            boolean success = chunk.getHandle().getWorld().setTypeAndData(position, blockData, 18); // NOTIFY | NO_OBSERVER
             if (success) {
                 chunk.getHandle().getWorld().notify(
                         position,
@@ -173,11 +173,11 @@ public class CraftBlock implements Block {
     }
 
     public byte getLightFromSky() {
-        return (byte) chunk.getHandle().getWorld().b(EnumSkyBlock.SKY, new BlockPosition(this.x, this.y, this.z)); // PAIL: rename
+        return (byte) chunk.getHandle().getWorld().getBrightness(EnumSkyBlock.SKY, new BlockPosition(this.x, this.y, this.z));
     }
 
     public byte getLightFromBlocks() {
-        return (byte) chunk.getHandle().getWorld().b(EnumSkyBlock.BLOCK, new BlockPosition(this.x, this.y, this.z)); // PAIL: rename
+        return (byte) chunk.getHandle().getWorld().getBrightness(EnumSkyBlock.BLOCK, new BlockPosition(this.x, this.y, this.z));
     }
 
 
@@ -306,6 +306,23 @@ public class CraftBlock implements Block {
             return new CraftFlowerPot(this);
         case STRUCTURE_BLOCK:
             return new CraftStructureBlock(this);
+        case WHITE_SHULKER_BOX:
+        case ORANGE_SHULKER_BOX:
+        case MAGENTA_SHULKER_BOX:
+        case LIGHT_BLUE_SHULKER_BOX:
+        case YELLOW_SHULKER_BOX:
+        case LIME_SHULKER_BOX:
+        case PINK_SHULKER_BOX:
+        case GRAY_SHULKER_BOX:
+        case SILVER_SHULKER_BOX:
+        case CYAN_SHULKER_BOX:
+        case PURPLE_SHULKER_BOX:
+        case BLUE_SHULKER_BOX:
+        case BROWN_SHULKER_BOX:
+        case GREEN_SHULKER_BOX:
+        case RED_SHULKER_BOX:
+        case BLACK_SHULKER_BOX:
+            return new CraftShulkerBox(this);
         default:
             return new CraftBlockState(this);
         }

@@ -26,12 +26,12 @@ public class CraftContainer extends CraftBlockState implements Lockable {
 
     @Override
     public boolean isLocked() {
-        return container.x_(); // PAIL: isLocked
+        return container.isLocked();
     }
 
     @Override
     public String getLock() {
-        return container.y_().b(); // PAIL: getLock, getKey
+        return container.getLock().b(); // PAIL: getKey
     }
 
     @Override
