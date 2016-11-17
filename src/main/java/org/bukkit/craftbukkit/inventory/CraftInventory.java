@@ -85,7 +85,7 @@ public class CraftInventory implements Inventory {
     }
 
     public void setItem(int index, ItemStack item) {
-        getInventory().setItem(index, ((item == null || item.getTypeId() == 0) ? net.minecraft.server.ItemStack.a : CraftItemStack.asNMSCopy(item)));
+        getInventory().setItem(index, CraftItemStack.asNMSCopy(item));
     }
 
     public boolean contains(int materialId) {
