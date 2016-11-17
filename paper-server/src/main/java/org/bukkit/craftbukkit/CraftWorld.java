@@ -1149,7 +1149,7 @@ public class CraftWorld implements World {
                 // what is this, I don't even
             }
         } else if (Firework.class.isAssignableFrom(clazz)) {
-            entity = new EntityFireworks(world, x, y, z, null);
+            entity = new EntityFireworks(world, x, y, z, net.minecraft.server.ItemStack.a);
         } else if (AreaEffectCloud.class.isAssignableFrom(clazz)) {
             entity = new EntityAreaEffectCloud(world, x, y, z);
         } else if (EvokerFangs.class.isAssignableFrom(clazz)) {
