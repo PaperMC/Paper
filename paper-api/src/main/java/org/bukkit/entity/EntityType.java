@@ -38,7 +38,7 @@ public enum EntityType {
      */
     ELDER_GUARDIAN("elder_guardian", ElderGuardian.class, 4),
     /**
-     * @see WitherSkull
+     * @see WitherSkeleton
      */
     WITHER_SKELETON("wither_skeleton", WitherSkeleton.class, 5),
     /**
