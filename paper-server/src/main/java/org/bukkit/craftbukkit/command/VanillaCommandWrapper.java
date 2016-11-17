@@ -24,7 +24,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
     protected final CommandAbstract vanillaCommand;
 
     public VanillaCommandWrapper(CommandAbstract vanillaCommand, String usage) {
-        super(vanillaCommand.getCommand(), "A Mojang provided command.", usage, vanillaCommand.b()); // PAIL: rename
+        super(vanillaCommand.getCommand(), "A Mojang provided command.", usage, vanillaCommand.getAliases());
         this.vanillaCommand = vanillaCommand;
         this.setPermission("minecraft.command." + vanillaCommand.getCommand());
     }
@@ -34,7 +34,14 @@ public final class VanillaCommandWrapper extends VanillaCommand {
         if (!testPermission(sender)) return true;
 
         ICommandListener icommandlistener = getListener(sender);
-        dispatchVanillaCommand(sender, icommandlistener, args);
+        try {
+            dispatchVanillaCommand(sender, icommandlistener, args);
+        } catch (CommandException commandexception) {
+            // Taken from CommandHandler
+            ChatMessage chatmessage = new ChatMessage(commandexception.getMessage(), commandexception.getArgs());
+            chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
+            icommandlistener.sendMessage(chatmessage);
+        }
         return true;
     }
 
@@ -48,7 +55,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
 
     public static CommandSender lastSender = null; // Nasty :(
 
-    public final int dispatchVanillaCommand(CommandSender bSender, ICommandListener icommandlistener, String[] as) {
+    public final int dispatchVanillaCommand(CommandSender bSender, ICommandListener icommandlistener, String[] as) throws CommandException {
         // Copied from net.minecraft.server.CommandHandler
         int i = getPlayerListSize(as);
         int j = 0;
@@ -154,7 +161,7 @@ public final class VanillaCommandWrapper extends VanillaCommand {
         throw new IllegalArgumentException("Cannot make " + sender + " a vanilla command listener");
     }
 
-    private int getPlayerListSize(String as[]) {
+    private int getPlayerListSize(String as[]) throws CommandException {
         for (int i = 0; i < as.length; i++) {
             if (vanillaCommand.isListStart(as, i) && PlayerSelector.isList(as[i])) {
                 return i;

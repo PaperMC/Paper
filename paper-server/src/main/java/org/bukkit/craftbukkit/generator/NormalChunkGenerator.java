@@ -52,8 +52,8 @@ public class NormalChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
-    public BlockPosition findNearestMapFeature(World world, String s, BlockPosition blockPosition) {
-        return generator.findNearestMapFeature(world, s, blockPosition);
+    public BlockPosition findNearestMapFeature(World world, String s, BlockPosition blockPosition, boolean flag) {
+        return generator.findNearestMapFeature(world, s, blockPosition, flag);
     }
 
     @Override

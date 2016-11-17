@@ -61,11 +61,11 @@ public class CraftInventory implements Inventory {
 
     public ItemStack[] getContents() {
         ItemStack[] items = new ItemStack[getSize()];
-        net.minecraft.server.ItemStack[] mcItems = getInventory().getContents();
+        List<net.minecraft.server.ItemStack> mcItems = getInventory().getContents();
 
-        int size = Math.min(items.length, mcItems.length);
+        int size = Math.min(items.length, mcItems.size());
         for (int i = 0; i < size; i++) {
-            items[i] = mcItems[i] == null ? null : CraftItemStack.asCraftMirror(mcItems[i]);
+            items[i] = (mcItems.get(i) == net.minecraft.server.ItemStack.a) ? null : CraftItemStack.asCraftMirror(mcItems.get(i));
         }
         return items;
     }
@@ -85,7 +85,7 @@ public class CraftInventory implements Inventory {
     }
 
     public void setItem(int index, ItemStack item) {
-        getInventory().setItem(index, ((item == null || item.getTypeId() == 0) ? null : CraftItemStack.asNMSCopy(item)));
+        getInventory().setItem(index, ((item == null || item.getTypeId() == 0) ? net.minecraft.server.ItemStack.a : CraftItemStack.asNMSCopy(item)));
     }
 
     public boolean contains(int materialId) {

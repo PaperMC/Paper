@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/EntityItem.java
 +++ b/net/minecraft/server/EntityItem.java
-@@ -5,6 +5,7 @@
+@@ -4,6 +4,7 @@
  import javax.annotation.Nullable;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -8,7 +8,7 @@
  
  public class EntityItem extends Entity {
  
-@@ -16,6 +17,7 @@
+@@ -15,6 +16,7 @@
      private String g;
      private String h;
      public float a;
@@ -16,7 +16,7 @@
  
      public EntityItem(World world, double d0, double d1, double d2) {
          super(world);
-@@ -31,6 +33,11 @@
+@@ -30,6 +32,11 @@
  
      public EntityItem(World world, double d0, double d1, double d2, ItemStack itemstack) {
          this(world, d0, d1, d2);
@@ -28,10 +28,10 @@
          this.setItemStack(itemstack);
      }
  
-@@ -55,9 +62,12 @@
+@@ -54,9 +61,12 @@
              this.die();
          } else {
-             super.m();
+             super.A_();
 -            if (this.pickupDelay > 0 && this.pickupDelay != 32767) {
 -                --this.pickupDelay;
 -            }
@@ -44,7 +44,7 @@
  
              this.lastX = this.locX;
              this.lastY = this.locY;
-@@ -96,12 +106,20 @@
+@@ -104,9 +114,11 @@
                  this.motY *= -0.5D;
              }
  
@@ -55,6 +55,10 @@
 +            // Craftbukkit end */
  
              this.ak();
+             if (!this.world.isClientSide) {
+@@ -121,6 +133,12 @@
+             }
+ 
              if (!this.world.isClientSide && this.age >= 6000) {
 +                // CraftBukkit start - fire ItemDespawnEvent
 +                if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
@@ -65,16 +69,16 @@
                  this.die();
              }
  
-@@ -143,6 +161,7 @@
-                     } else if (itemstack1.count + itemstack.count > itemstack1.getMaxStackSize()) {
+@@ -162,6 +180,7 @@
+                     } else if (itemstack1.getCount() + itemstack.getCount() > itemstack1.getMaxStackSize()) {
                          return false;
                      } else {
 +                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemMergeEvent(this, entityitem).isCancelled()) return false; // CraftBukkit
-                         itemstack1.count += itemstack.count;
+                         itemstack1.add(itemstack.getCount());
                          entityitem.pickupDelay = Math.max(entityitem.pickupDelay, this.pickupDelay);
                          entityitem.age = Math.min(entityitem.age, this.age);
-@@ -189,6 +208,11 @@
-         } else if (this.getItemStack() != null && this.getItemStack().getItem() == Items.NETHER_STAR && damagesource.isExplosion()) {
+@@ -208,6 +227,11 @@
+         } else if (!this.getItemStack().isEmpty() && this.getItemStack().getItem() == Items.NETHER_STAR && damagesource.isExplosion()) {
              return false;
          } else {
 +            // CraftBukkit start
@@ -85,40 +89,33 @@
              this.ap();
              this.f = (int) ((float) this.f - f);
              if (this.f <= 0) {
-@@ -238,7 +262,18 @@
+@@ -257,6 +281,12 @@
  
          NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("Item");
  
--        this.setItemStack(ItemStack.createStack(nbttagcompound1));
 +        // CraftBukkit start - Handle missing "Item" compounds
-+        if (nbttagcompound1 != null) {
-+            ItemStack itemstack = ItemStack.createStack(nbttagcompound1);
-+            if (itemstack != null) {
-+                this.setItemStack(itemstack);
-+            } else {
-+                this.die();
-+            }
-+        } else {
++        if (nbttagcompound1 == null) {
 +            this.die();
++            return;
 +        }
 +        // CraftBukkit end
-         if (this.getItemStack() == null) {
+         this.setItemStack(new ItemStack(nbttagcompound1));
+         if (this.getItemStack().isEmpty()) {
              this.die();
-         }
-@@ -250,6 +285,26 @@
-             ItemStack itemstack = this.getItemStack();
-             int i = itemstack.count;
+@@ -270,6 +300,26 @@
+             Item item = itemstack.getItem();
+             int i = itemstack.getCount();
  
 +            // CraftBukkit start - fire PlayerPickupItemEvent
 +            int canHold = entityhuman.inventory.canHold(itemstack);
-+            int remaining = itemstack.count - canHold;
++            int remaining = i - canHold;
 +
 +            if (this.pickupDelay <= 0 && canHold > 0) {
-+                itemstack.count = canHold;
++                itemstack.setCount(canHold);
 +                PlayerPickupItemEvent event = new PlayerPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
 +                // event.setCancelled(!entityhuman.canPickUpLoot); TODO
 +                this.world.getServer().getPluginManager().callEvent(event);
-+                itemstack.count = canHold + remaining;
++                itemstack.setCount(canHold + remaining);
 +
 +                if (event.isCancelled()) {
 +                    return;
@@ -130,5 +127,5 @@
 +            // CraftBukkit end
 +
              if (this.pickupDelay == 0 && (this.h == null || 6000 - this.age <= 200 || this.h.equals(entityhuman.getName())) && entityhuman.inventory.pickup(itemstack)) {
-                 if (itemstack.getItem() == Item.getItemOf(Blocks.LOG)) {
+                 if (item == Item.getItemOf(Blocks.LOG)) {
                      entityhuman.b((Statistic) AchievementList.g);

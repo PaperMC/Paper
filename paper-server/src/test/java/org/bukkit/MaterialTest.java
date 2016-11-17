@@ -27,7 +27,6 @@ public class MaterialTest extends AbstractTestingBase {
 
             materials.put(material.getId(), material);
         }
-        materials.remove(0); // Purge air.
 
         Iterator<Item> items = Item.REGISTRY.iterator();
 

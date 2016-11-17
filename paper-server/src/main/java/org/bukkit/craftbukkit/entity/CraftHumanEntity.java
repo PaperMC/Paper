@@ -381,7 +381,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public boolean isHandRaised() {
-        return getHandle().cx(); // PAIL: rename
+        return getHandle().isHandRaised();
     }
 
     public boolean setWindowProperty(InventoryView.Property prop, int value) {

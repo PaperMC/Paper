@@ -56,7 +56,7 @@ public class CraftEnchantment extends Enchantment {
 
     @Override
     public boolean isTreasure() {
-        return target.e(); // PAIL: isTreasure
+        return target.isTreasure();
     }
 
     @Override

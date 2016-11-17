@@ -172,7 +172,7 @@ public class CraftBlockState implements BlockState {
 
         // Update levers etc
         if (applyPhysics && getData() instanceof Attachable) {
-            world.getHandle().applyPhysics(pos.shift(CraftBlock.blockFaceToNotch(((Attachable) getData()).getAttachedFace())), newBlock.getBlock());
+            world.getHandle().applyPhysics(pos.shift(CraftBlock.blockFaceToNotch(((Attachable) getData()).getAttachedFace())), newBlock.getBlock(), false);
         }
 
         return true;

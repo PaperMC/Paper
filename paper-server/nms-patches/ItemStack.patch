@@ -19,38 +19,67 @@
 +
  public final class ItemStack {
  
-     public static final DecimalFormat a = new DecimalFormat("#.##");
-@@ -43,10 +56,20 @@
-     public ItemStack(Item item, int i, int j) {
+     public static final ItemStack a = new ItemStack((Item) null);
+@@ -46,6 +59,15 @@
          this.item = item;
+         this.damage = j;
          this.count = i;
--        this.damage = j;
--        if (this.damage < 0) {
--            this.damage = 0;
-+
 +        // CraftBukkit start - Pass to setData to do filtering
-+        this.setData(j);
-+        //this.damage = j;
-+        //if (this.damage < 0) {
-+        //    this.damage = 0;
-+        //}
 +        if (MinecraftServer.getServer() != null) {
++            this.setData(j);
 +            NBTTagCompound savedStack = new NBTTagCompound();
 +            this.save(savedStack);
 +            MinecraftServer.getServer().getDataConverterManager().a(DataConverterTypes.ITEM_INSTANCE, savedStack); // PAIL: convert
-+            this.c(savedStack); // PAIL: load
-         }
++            this.load(savedStack);
++        }
 +        // CraftBukkit end
- 
+         if (this.damage < 0) {
+             this.damage = 0;
+         }
+@@ -54,20 +76,32 @@
      }
  
-@@ -81,11 +104,137 @@
+     private void F() {
++        if (this.g && this == ItemStack.a) throw new AssertionError("TRAP"); // CraftBukkit
+         this.g = this.isEmpty();
+     }
+ 
+-    public ItemStack(NBTTagCompound nbttagcompound) {
++    // CraftBukkit - break into own method
++    public void load(NBTTagCompound nbttagcompound) {
+         this.item = Item.b(nbttagcompound.getString("id"));
+         this.count = nbttagcompound.getByte("Count");
+-        this.damage = Math.max(0, nbttagcompound.getShort("Damage"));
++        // CraftBukkit start - Route through setData for filtering
++        // this.damage = Math.max(0, nbttagcompound.getShort("Damage"));
++        this.setData(Math.max(0, nbttagcompound.getShort("Damage")));
++        // CraftBukkit end
++
+         if (nbttagcompound.hasKeyOfType("tag", 10)) {
+-            this.tag = nbttagcompound.getCompound("tag");
++            // CraftBukkit start - make defensive copy as this data may be coming from the save thread
++            this.tag = (NBTTagCompound) nbttagcompound.getCompound("tag").clone();
+             if (this.item != null) {
+-                this.item.a(nbttagcompound);
++                this.item.a(this.tag);
++                // CraftBukkit end
+             }
+         }
++    }
+ 
++    public ItemStack(NBTTagCompound nbttagcompound) {
++        this.load(nbttagcompound);
++        // CraftBukkit end
+         this.F();
+     }
+ 
+@@ -94,11 +128,137 @@
      }
  
      public EnumInteractionResult placeItem(EntityHuman entityhuman, World world, BlockPosition blockposition, EnumHand enumhand, EnumDirection enumdirection, float f, float f1, float f2) {
 +        // CraftBukkit start - handle all block place event logic here
-+        int data = this.getData();
-+        int count = this.count;
++        int oldData = this.getData();
++        int oldCount = this.getCount();
 +
 +        if (!(this.getItem() instanceof ItemBucket)) { // if not bucket
 +            world.captureBlockStates = true;
@@ -62,11 +91,11 @@
 +                }
 +            }
 +        }
-         EnumInteractionResult enuminteractionresult = this.getItem().a(this, entityhuman, world, blockposition, enumhand, enumdirection, f, f1, f2);
+         EnumInteractionResult enuminteractionresult = this.getItem().a(entityhuman, world, blockposition, enumhand, enumdirection, f, f1, f2);
 +        int newData = this.getData();
-+        int newCount = this.count;
-+        this.count = count;
-+        this.setData(data);
++        int newCount = this.getCount();
++        this.setCount(oldCount);
++        this.setData(oldData);
 +        world.captureBlockStates = false;
 +        if (enuminteractionresult == EnumInteractionResult.SUCCESS && world.captureTreeGeneration && world.capturedBlockStates.size() > 0) {
 +            world.captureTreeGeneration = false;
@@ -77,15 +106,15 @@
 +            world.capturedBlockStates.clear();
 +            StructureGrowEvent event = null;
 +            if (treeType != null) {
-+                boolean isBonemeal = getItem() == Items.DYE && data == 15;
++                boolean isBonemeal = getItem() == Items.DYE && oldData == 15;
 +                event = new StructureGrowEvent(location, treeType, isBonemeal, (Player) entityhuman.getBukkitEntity(), blocks);
 +                org.bukkit.Bukkit.getPluginManager().callEvent(event);
 +            }
 +            if (event == null || !event.isCancelled()) {
 +                // Change the stack to its new contents if it hasn't been tampered with.
-+                if (this.count == count && this.getData() == data) {
++                if (this.getCount() == oldCount && this.getData() == oldData) {
 +                    this.setData(newData);
-+                    this.count = newCount;
++                    this.setCount(newCount);
 +                }
 +                for (BlockState blockstate : blocks) {
 +                    blockstate.update(true);
@@ -117,9 +146,9 @@
 +                }
 +            } else {
 +                // Change the stack to its new contents if it hasn't been tampered with.
-+                if (this.count == count && this.getData() == data) {
++                if (this.getCount() == oldCount && this.getData() == oldData) {
 +                    this.setData(newData);
-+                    this.count = newCount;
++                    this.setCount(newCount);
 +                }
 +                for (BlockState blockstate : blocks) {
 +                    int x = blockstate.getX();
@@ -147,7 +176,7 @@
 +                if (this.getItem() instanceof ItemRecord) {
 +                    ((BlockJukeBox) Blocks.JUKEBOX).a(world, blockposition, world.getType(blockposition), this);
 +                    world.a((EntityHuman) null, 1010, blockposition, Item.getId(this.item));
-+                    --this.count;
++                    this.subtract(1);
 +                    entityhuman.b(StatisticList.Z);
 +                }
 +
@@ -170,7 +199,7 @@
 +
 +                // SPIGOT-1288 - play sound stripped from ItemBlock
 +                if (this.getItem() instanceof ItemBlock) {
-+                    SoundEffectType soundeffecttype = ((ItemBlock) this.getItem()).d().w(); // PAIL: rename
++                    SoundEffectType soundeffecttype = ((ItemBlock) this.getItem()).getBlock().getStepSound();
 +                    world.a(entityhuman, blockposition, soundeffecttype.e(), SoundCategory.BLOCKS, (soundeffecttype.a() + 1.0F) / 2.0F, soundeffecttype.b() * 0.8F);
 +                }
 +
@@ -183,7 +212,7 @@
  
          return enuminteractionresult;
      }
-@@ -110,7 +259,7 @@
+@@ -122,7 +282,7 @@
          nbttagcompound.setByte("Count", (byte) this.count);
          nbttagcompound.setShort("Damage", (short) this.damage);
          if (this.tag != null) {
@@ -192,27 +221,7 @@
          }
  
          return nbttagcompound;
-@@ -119,13 +268,18 @@
-     public void c(NBTTagCompound nbttagcompound) {
-         this.item = Item.d(nbttagcompound.getString("id"));
-         this.count = nbttagcompound.getByte("Count");
-+        /* CraftBukkit start - Route through setData for filtering
-         this.damage = nbttagcompound.getShort("Damage");
-         if (this.damage < 0) {
-             this.damage = 0;
-         }
-+        */
-+        this.setData(nbttagcompound.getShort("Damage"));
-+        // CraftBukkit end
- 
-         if (nbttagcompound.hasKeyOfType("tag", 10)) {
--            this.tag = nbttagcompound.getCompound("tag");
-+            // CraftBukkit - make defensive copy as this data may be coming from the save thread
-+            this.tag = (NBTTagCompound) nbttagcompound.getCompound("tag").clone();
-             if (this.item != null) {
-                 this.item.a(this.tag);
-             }
-@@ -162,11 +316,30 @@
+@@ -157,11 +317,30 @@
      }
  
      public void setData(int i) {
@@ -238,15 +247,14 @@
 +        // CraftBukkit end
          this.damage = i;
          if (this.damage < 0) {
--            this.damage = 0;
-+            // this.damage = 0; // CraftBukkit - remove this.
+             this.damage = 0;
          }
 -
      }
  
-     public int j() {
-@@ -214,6 +387,12 @@
-                         this.count = 0;
+     public int k() {
+@@ -205,6 +384,11 @@
+                         entityhuman.b(StatisticList.c(this.item));
                      }
  
 +                    // CraftBukkit start - Check for item breaking
@@ -254,15 +262,19 @@
 +                        org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent((EntityHuman) entityliving, this);
 +                    }
 +                    // CraftBukkit end
-+
                      this.damage = 0;
                  }
  
-@@ -514,6 +693,7 @@
-     @Deprecated
-     public void setItem(Item item) {
-         this.item = item;
-+        this.setData(this.getData()); // CraftBukkit - Set data again to ensure it is filtered properly
+@@ -509,6 +693,12 @@
+         nbttaglist.add(nbttagcompound);
      }
  
-     public IChatBaseComponent B() {
++    @Deprecated
++    public void setItem(Item item) {
++        this.item = item;
++        this.setData(this.getData()); // CraftBukkit - Set data again to ensure it is filtered properly
++    }
++
+     public IChatBaseComponent C() {
+         ChatComponentText chatcomponenttext = new ChatComponentText(this.getName());
+ 

@@ -221,8 +221,8 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
-    public BlockPosition findNearestMapFeature(World world, String type, BlockPosition position) {
-        return "Stronghold".equals(type) && this.strongholdGen != null ? this.strongholdGen.getNearestGeneratedFeature(world, position) : null;
+    public BlockPosition findNearestMapFeature(World world, String type, BlockPosition position, boolean flag) {
+        return "Stronghold".equals(type) && this.strongholdGen != null ? this.strongholdGen.getNearestGeneratedFeature(world, position, flag) : null;
     }
 
     @Override

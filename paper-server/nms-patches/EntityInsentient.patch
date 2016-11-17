@@ -16,7 +16,7 @@
  public abstract class EntityInsentient extends EntityLiving {
  
      private static final DataWatcherObject<Byte> a = DataWatcher.a(EntityInsentient.class, DataWatcherRegistry.a);
-@@ -52,6 +61,9 @@
+@@ -57,6 +66,9 @@
              this.r();
          }
  
@@ -26,20 +26,7 @@
      }
  
      protected void r() {}
-@@ -66,9 +78,10 @@
-     }
- 
-     public float a(PathType pathtype) {
--        Float float = (Float) this.bB.get(pathtype);
-+        // CraftBukkit - decompile error
-+        Float ofloat = (Float) this.bB.get(pathtype);
- 
--        return float == null ? pathtype.a() : float.floatValue();
-+        return ofloat == null ? pathtype.a() : ofloat.floatValue();
-     }
- 
-     public void a(PathType pathtype, float f) {
-@@ -105,7 +118,38 @@
+@@ -110,7 +122,38 @@
      }
  
      public void setGoalTarget(@Nullable EntityLiving entityliving) {
@@ -78,7 +65,7 @@
      }
  
      public boolean d(Class<? extends EntityLiving> oclass) {
-@@ -350,11 +394,20 @@
+@@ -340,11 +383,20 @@
  
      public void a(NBTTagCompound nbttagcompound) {
          super.a(nbttagcompound);
@@ -101,7 +88,7 @@
          NBTTagList nbttaglist;
          int i;
  
-@@ -579,11 +632,11 @@
+@@ -569,11 +621,11 @@
                  double d2 = entityhuman.locZ - this.locZ;
                  double d3 = d0 * d0 + d1 * d1 + d2 * d2;
  
@@ -115,9 +102,9 @@
                      this.die();
                  } else if (d3 < 1024.0D) {
                      this.ticksFarFromPlayer = 0;
-@@ -965,9 +1018,21 @@
+@@ -942,12 +994,24 @@
  
-     public final boolean a(EntityHuman entityhuman, @Nullable ItemStack itemstack, EnumHand enumhand) {
+     public final boolean b(EntityHuman entityhuman, EnumHand enumhand) {
          if (this.isLeashed() && this.getLeashHolder() == entityhuman) {
 +            // CraftBukkit start - fire PlayerUnleashEntityEvent
 +            if (CraftEventFactory.callPlayerUnleashEntityEvent(this, entityhuman).isCancelled()) {
@@ -127,19 +114,22 @@
 +            // CraftBukkit end
              this.unleash(true, !entityhuman.abilities.canInstantlyBuild);
              return true;
-         } else if (itemstack != null && itemstack.getItem() == Items.LEAD && this.a(entityhuman)) {
-+            // CraftBukkit start - fire PlayerLeashEntityEvent
-+            if (CraftEventFactory.callPlayerLeashEntityEvent(this, entityhuman, entityhuman).isCancelled()) {
-+                ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutAttachEntity(this, this.getLeashHolder()));
-+                return false;
-+            }
-+            // CraftBukkit end
-             this.setLeashHolder(entityhuman, true);
-             --itemstack.count;
-             return true;
-@@ -987,10 +1052,12 @@
+         } else {
+             ItemStack itemstack = entityhuman.b(enumhand);
  
-         if (this.bE) {
+             if (itemstack.getItem() == Items.LEAD && this.a(entityhuman)) {
++                // CraftBukkit start - fire PlayerLeashEntityEvent
++                if (CraftEventFactory.callPlayerLeashEntityEvent(this, entityhuman, entityhuman).isCancelled()) {
++                    ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutAttachEntity(this, this.getLeashHolder()));
++                    return false;
++                }
++                // CraftBukkit end
+                 this.setLeashHolder(entityhuman, true);
+                 itemstack.subtract(1);
+                 return true;
+@@ -968,10 +1032,12 @@
+ 
+         if (this.bD) {
              if (!this.isAlive()) {
 +                this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.PLAYER_UNLEASH)); // CraftBukkit
                  this.unleash(true, true);
@@ -150,8 +140,8 @@
                  this.unleash(true, true);
              }
          }
-@@ -1001,7 +1068,9 @@
-             this.bE = false;
+@@ -982,7 +1048,9 @@
+             this.bD = false;
              this.leashHolder = null;
              if (!this.world.isClientSide && flag1) {
 +                this.forceDrops = true; // CraftBukkit
@@ -160,9 +150,9 @@
              }
  
              if (!this.world.isClientSide && flag && this.world instanceof WorldServer) {
-@@ -1071,6 +1140,7 @@
+@@ -1052,6 +1120,7 @@
  
-                 this.leashHolder = entityleash;
+                 this.setLeashHolder(entityleash, true);
              } else {
 +                this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN)); // CraftBukkit
                  this.unleash(false, true);

@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
+import com.google.common.base.Predicates;
+import com.google.common.collect.Iterables;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.server.EntityHuman;
@@ -40,12 +42,12 @@ public class InventoryWrapper implements IInventory {
         if (stack == null) {
             return null;
         }
-        if (stack.count <= j) {
+        if (stack.getCount() <= j) {
             this.setItem(i, null);
             result = stack;
         } else {
             result = CraftItemStack.copyNMSStack(stack, j);
-            stack.count -= j;
+            stack.subtract(j);
         }
         this.update();
         return result;
@@ -59,12 +61,12 @@ public class InventoryWrapper implements IInventory {
         if (stack == null) {
             return null;
         }
-        if (stack.count <= 1) {
+        if (stack.getCount() <= 1) {
             this.setItem(i, null);
             result = stack;
         } else {
             result = CraftItemStack.copyNMSStack(stack, 1);
-            stack.count -= 1;
+            stack.subtract(1);
         }
         return result;
     }
@@ -111,22 +113,22 @@ public class InventoryWrapper implements IInventory {
     }
 
     @Override
-    public int g() {
+    public int h() {
         return 0;
     }
 
     @Override
-    public void l() {
+    public void clear() {
         inventory.clear();
     }
 
     @Override
-    public ItemStack[] getContents() {
+    public List<ItemStack> getContents() {
         int size = getSize();
-        ItemStack[] items = new ItemStack[size];
+        List<ItemStack> items = new ArrayList<ItemStack>(size);
 
         for (int i = 0; i < size; i++) {
-            items[i] = getItem(i);
+            items.set(i, getItem(i));
         }
 
         return items;
@@ -175,5 +177,10 @@ public class InventoryWrapper implements IInventory {
     @Override
     public Location getLocation() {
         return inventory.getLocation();
+    }
+
+    @Override
+    public boolean w_() {
+        return Iterables.any(inventory, Predicates.notNull());
     }
 }

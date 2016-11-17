@@ -3,7 +3,7 @@
 @@ -1,6 +1,15 @@
  package net.minecraft.server;
  
- import javax.annotation.Nullable;
+ import java.util.Iterator;
 +// CraftBukkit start
 +import java.util.List;
 +
@@ -25,7 +25,7 @@
 +    private int maxStack = MAX_STACK;
 +    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
 +
-+    public ItemStack[] getContents() {
++    public List<ItemStack> getContents() {
 +        return this.items;
 +    }
 +
@@ -46,13 +46,13 @@
 +    }
 +    // CraftBukkit end
 +
-     public TileEntityFurnace() {}
- 
-     public int getSize() {
-@@ -126,11 +161,29 @@
+     public TileEntityFurnace() {
+         this.items = NonNullList.a(3, ItemStack.a);
+     }
+@@ -119,11 +154,29 @@
      }
  
-     public void E_() {
+     public void F_() {
 -        boolean flag = this.isBurning();
 +        boolean flag = (this.getBlock() == Blocks.LIT_FURNACE); // CraftBukkit - SPIGOT-844 - Check if furnace block is lit using the block instead of burn time
          boolean flag1 = false;
@@ -61,12 +61,12 @@
 +        int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
 +        this.lastTick = MinecraftServer.currentTick;
 +
-+        // CraftBukkit - moved from below
++        // CraftBukkit - moved from below - edited for wall time
 +        if (this.isBurning() && this.canBurn()) {
 +            this.cookTime += elapsedTicks;
 +            if (this.cookTime >= this.cookTimeTotal) {
 +                this.cookTime = 0;
-+                this.cookTimeTotal = this.a(this.items[0]);
++                this.cookTimeTotal = this.a((ItemStack) this.items.get(0));
 +                this.burn();
 +                flag1 = true;
 +            }
@@ -81,19 +81,19 @@
          }
  
          if (!this.world.isClientSide) {
-@@ -139,10 +192,21 @@
+@@ -134,10 +187,21 @@
                      this.cookTime = MathHelper.clamp(this.cookTime - 2, 0, this.cookTimeTotal);
                  }
              } else {
 -                if (!this.isBurning() && this.canBurn()) {
--                    this.burnTime = fuelTime(this.items[1]);
+-                    this.burnTime = fuelTime(itemstack);
 -                    this.ticksForCurrentFuel = this.burnTime;
 -                    if (this.isBurning()) {
 +                // CraftBukkit start - Handle multiple elapsed ticks
 +                if (this.burnTime <= 0 && this.canBurn()) { // CraftBukkit - == to <=
-+                    CraftItemStack fuel = CraftItemStack.asCraftMirror(this.items[1]);
++                    CraftItemStack fuel = CraftItemStack.asCraftMirror(itemstack);
 +
-+                    FurnaceBurnEvent furnaceBurnEvent = new FurnaceBurnEvent(this.world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()), fuel, fuelTime(this.items[1]));
++                    FurnaceBurnEvent furnaceBurnEvent = new FurnaceBurnEvent(this.world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()), fuel, fuelTime(itemstack));
 +                    this.world.getServer().getPluginManager().callEvent(furnaceBurnEvent);
 +
 +                    if (furnaceBurnEvent.isCancelled()) {
@@ -105,9 +105,9 @@
 +                    if (this.burnTime > 0 && furnaceBurnEvent.isBurning()) {
 +                        // CraftBukkit end
                          flag1 = true;
-                         if (this.items[1] != null) {
-                             --this.items[1].count;
-@@ -155,6 +219,7 @@
+                         if (!itemstack.isEmpty()) {
+                             Item item = itemstack.getItem();
+@@ -152,6 +216,7 @@
                      }
                  }
  
@@ -115,7 +115,7 @@
                  if (this.isBurning() && this.canBurn()) {
                      ++this.cookTime;
                      if (this.cookTime == this.cookTimeTotal) {
-@@ -166,11 +231,13 @@
+@@ -163,11 +228,13 @@
                  } else {
                      this.cookTime = 0;
                  }
@@ -129,23 +129,23 @@
              }
          }
  
-@@ -190,7 +257,8 @@
-         } else {
-             ItemStack itemstack = RecipesFurnace.getInstance().getResult(this.items[0]);
+@@ -192,7 +259,8 @@
+             } else {
+                 ItemStack itemstack1 = (ItemStack) this.items.get(2);
  
--            return itemstack == null ? false : (this.items[2] == null ? true : (!this.items[2].doMaterialsMatch(itemstack) ? false : (this.items[2].count < this.getMaxStackSize() && this.items[2].count < this.items[2].getMaxStackSize() ? true : this.items[2].count < itemstack.getMaxStackSize())));
-+            // CraftBukkit - consider resultant count instead of current count
-+            return itemstack == null ? false : (this.items[2] == null ? true : (!this.items[2].doMaterialsMatch(itemstack) ? false : (this.items[2].count + itemstack.count <= this.getMaxStackSize() && this.items[2].count < this.items[2].getMaxStackSize() ? true : this.items[2].count + itemstack.count <= itemstack.getMaxStackSize())));
+-                return itemstack1.isEmpty() ? true : (!itemstack1.doMaterialsMatch(itemstack) ? false : (itemstack1.getCount() < this.getMaxStackSize() && itemstack1.getCount() < itemstack1.getMaxStackSize() ? true : itemstack1.getCount() < itemstack.getMaxStackSize()));
++                // CraftBukkit - consider resultant count instead of current count
++                return itemstack1.isEmpty() ? true : (!itemstack1.doMaterialsMatch(itemstack) ? false : (itemstack1.getCount() + itemstack.getCount() < this.getMaxStackSize() && itemstack1.getCount() + itemstack.getCount() < itemstack1.getMaxStackSize() ? true : itemstack1.getCount() + itemstack.getCount() < itemstack.getMaxStackSize()));
+             }
          }
      }
- 
-@@ -198,11 +266,38 @@
-         if (this.canBurn()) {
-             ItemStack itemstack = RecipesFurnace.getInstance().getResult(this.items[0]);
+@@ -203,11 +271,38 @@
+             ItemStack itemstack1 = RecipesFurnace.getInstance().getResult(itemstack);
+             ItemStack itemstack2 = (ItemStack) this.items.get(2);
  
 +            // CraftBukkit start - fire FurnaceSmeltEvent
-+            CraftItemStack source = CraftItemStack.asCraftMirror(this.items[0]);
-+            org.bukkit.inventory.ItemStack result = CraftItemStack.asBukkitCopy(itemstack);
++            CraftItemStack source = CraftItemStack.asCraftMirror(itemstack);
++            org.bukkit.inventory.ItemStack result = CraftItemStack.asBukkitCopy(itemstack1);
 +
 +            FurnaceSmeltEvent furnaceSmeltEvent = new FurnaceSmeltEvent(this.world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()), source, result);
 +            this.world.getServer().getPluginManager().callEvent(furnaceSmeltEvent);
@@ -155,26 +155,26 @@
 +            }
 +
 +            result = furnaceSmeltEvent.getResult();
-+            itemstack = CraftItemStack.asNMSCopy(result);
++            itemstack1 = CraftItemStack.asNMSCopy(result);
 +
-+            if (itemstack != null) {
-+                if (this.items[2] == null) {
-+                    this.items[2] = itemstack;
-+                } else if (CraftItemStack.asCraftMirror(this.items[2]).isSimilar(result)) {
-+                    this.items[2].count += itemstack.count;
++            if (!itemstack1.isEmpty()) {
++                if (itemstack2.isEmpty()) {
++                    this.items.set(2, itemstack1.cloneItemStack());
++                } else if (CraftItemStack.asCraftMirror(itemstack2).isSimilar(result)) {
++                    itemstack2.add(itemstack1.getCount());
 +                } else {
 +                    return;
 +                }
 +            }
 +
 +            /*
-             if (this.items[2] == null) {
-                 this.items[2] = itemstack.cloneItemStack();
-             } else if (this.items[2].getItem() == itemstack.getItem()) {
-                 ++this.items[2].count;
+             if (itemstack2.isEmpty()) {
+                 this.items.set(2, itemstack1.cloneItemStack());
+             } else if (itemstack2.getItem() == itemstack1.getItem()) {
+                 itemstack2.add(1);
              }
 +            */
 +            // CraftBukkit end
  
-             if (this.items[0].getItem() == Item.getItemOf(Blocks.SPONGE) && this.items[0].getData() == 1 && this.items[1] != null && this.items[1].getItem() == Items.BUCKET) {
-                 this.items[1] = new ItemStack(Items.WATER_BUCKET);
+             if (itemstack.getItem() == Item.getItemOf(Blocks.SPONGE) && itemstack.getData() == 1 && !((ItemStack) this.items.get(1)).isEmpty() && ((ItemStack) this.items.get(1)).getItem() == Items.BUCKET) {
+                 this.items.set(1, new ItemStack(Items.WATER_BUCKET));

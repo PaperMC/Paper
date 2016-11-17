@@ -1,8 +1,8 @@
 --- a/net/minecraft/server/ContainerEnchantTable.java
 +++ b/net/minecraft/server/ContainerEnchantTable.java
-@@ -4,9 +4,22 @@
+@@ -3,9 +3,22 @@
+ import java.util.List;
  import java.util.Random;
- import javax.annotation.Nullable;
  
 +// CraftBukkit start
 +import java.util.Map;
@@ -24,7 +24,7 @@
          public int getMaxStackSize() {
              return 64;
          }
-@@ -15,6 +28,11 @@
+@@ -14,6 +27,11 @@
              super.update();
              ContainerEnchantTable.this.a((IInventory) this);
          }
@@ -36,7 +36,7 @@
      };
      public World world;
      private final BlockPosition position;
-@@ -23,6 +41,10 @@
+@@ -22,6 +40,10 @@
      public int[] costs = new int[3];
      public int[] h = new int[] { -1, -1, -1};
      public int[] i = new int[] { -1, -1, -1};
@@ -47,7 +47,7 @@
  
      public ContainerEnchantTable(PlayerInventory playerinventory, World world, BlockPosition blockposition) {
          this.world = world;
-@@ -55,6 +77,9 @@
+@@ -54,6 +76,9 @@
              this.a(new Slot(playerinventory, i, 8 + i * 18, 142));
          }
  
@@ -57,23 +57,23 @@
      }
  
      protected void c(ICrafting icrafting) {
-@@ -91,7 +116,7 @@
+@@ -90,7 +115,7 @@
              ItemStack itemstack = iinventory.getItem(0);
              int i;
  
--            if (itemstack != null && itemstack.v()) {
-+            if (itemstack != null) { // CraftBukkit - relax condition
+-            if (!itemstack.isEmpty() && itemstack.canEnchant()) {
++            if (!itemstack.isEmpty()) { // CraftBukkit - relax condition
                  if (!this.world.isClientSide) {
                      i = 0;
  
-@@ -140,6 +165,20 @@
+@@ -139,6 +164,20 @@
                          }
                      }
  
 +                    // CraftBukkit start
 +                    CraftItemStack item = CraftItemStack.asCraftMirror(itemstack);
 +                    PrepareItemEnchantEvent event = new PrepareItemEnchantEvent(player, this.getBukkitView(), this.world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()), item, this.costs, i);
-+                    event.setCancelled(!itemstack.v());
++                    event.setCancelled(!itemstack.canEnchant());
 +                    this.world.getServer().getPluginManager().callEvent(event);
 +
 +                    if (event.isCancelled()) {
@@ -87,8 +87,8 @@
                      for (j = 0; j < 3; ++j) {
                          if (this.costs[j] > 0) {
                              List list = this.a(itemstack, j, this.costs[j]);
-@@ -176,24 +215,55 @@
-         } else if (this.costs[i] > 0 && itemstack != null && (entityhuman.expLevel >= j && entityhuman.expLevel >= this.costs[i] || entityhuman.abilities.canInstantlyBuild)) {
+@@ -175,26 +214,56 @@
+         } else if (this.costs[i] > 0 && !itemstack.isEmpty() && (entityhuman.expLevel >= j && entityhuman.expLevel >= this.costs[i] || entityhuman.abilities.canInstantlyBuild)) {
              if (!this.world.isClientSide) {
                  List list = this.a(itemstack, i, this.costs[i]);
 +                // CraftBukkit start - Provide an empty enchantment list
@@ -96,10 +96,12 @@
 +                    list = new java.util.ArrayList<WeightedRandomEnchant>();
 +                }
 +                // CraftBukkit end
-                 boolean flag = itemstack.getItem() == Items.BOOK;
++                boolean flag = itemstack.getItem() == Items.BOOK;
  
-                 if (list != null) {
+-                if (!list.isEmpty()) {
 -                    entityhuman.enchantDone(j);
+-                    boolean flag = itemstack.getItem() == Items.BOOK;
++                if (list != null) {
 +                    // CraftBukkit start
 +                    Map<org.bukkit.enchantments.Enchantment, Integer> enchants = new java.util.HashMap<org.bukkit.enchantments.Enchantment, Integer>();
 +                    for (Object obj : list) {
@@ -110,13 +112,14 @@
 +
 +                    EnchantItemEvent event = new EnchantItemEvent((Player) entityhuman.getBukkitEntity(), this.getBukkitView(), this.world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()), item, this.costs[i], enchants, i);
 +                    this.world.getServer().getPluginManager().callEvent(event);
-+
+ 
 +                    int level = event.getExpLevelCost();
 +                    if (event.isCancelled() || (level > entityhuman.expLevel && !entityhuman.abilities.canInstantlyBuild) || event.getEnchantsToAdd().isEmpty()) {
 +                        return false;
 +                    }
                      if (flag) {
-                         itemstack.setItem(Items.ENCHANTED_BOOK);
+                         itemstack = new ItemStack(Items.ENCHANTED_BOOK);
+                         this.enchantSlots.setItem(0, itemstack);
                      }
  
 -                    for (int k = 0; k < list.size(); ++k) {
@@ -148,9 +151,9 @@
 +
 +                    // CraftBukkit - TODO: let plugins change this
                      if (!entityhuman.abilities.canInstantlyBuild) {
-                         itemstack1.count -= j;
-                         if (itemstack1.count <= 0) {
-@@ -228,6 +298,11 @@
+                         itemstack1.subtract(j);
+                         if (itemstack1.isEmpty()) {
+@@ -229,6 +298,11 @@
  
      public void b(EntityHuman entityhuman) {
          super.b(entityhuman);
@@ -162,15 +165,15 @@
          if (!this.world.isClientSide) {
              for (int i = 0; i < this.enchantSlots.getSize(); ++i) {
                  ItemStack itemstack = this.enchantSlots.splitWithoutUpdate(i);
-@@ -241,6 +316,7 @@
+@@ -242,6 +316,7 @@
      }
  
      public boolean a(EntityHuman entityhuman) {
 +        if (!this.checkReachable) return true; // CraftBukkit
-         return this.world.getType(this.position).getBlock() != Blocks.ENCHANTING_TABLE ? false : entityhuman.e((double) this.position.getX() + 0.5D, (double) this.position.getY() + 0.5D, (double) this.position.getZ() + 0.5D) <= 64.0D;
+         return this.world.getType(this.position).getBlock() != Blocks.ENCHANTING_TABLE ? false : entityhuman.d((double) this.position.getX() + 0.5D, (double) this.position.getY() + 0.5D, (double) this.position.getZ() + 0.5D) <= 64.0D;
      }
  
-@@ -294,4 +370,17 @@
+@@ -294,4 +369,17 @@
  
          return itemstack;
      }

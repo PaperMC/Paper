@@ -41,7 +41,6 @@ public class CraftMapRenderer extends MapRenderer {
                 continue;
             }
 
-      
             MapIcon decoration = (MapIcon) worldMap.decorations.get(key);
             cursors.addCursor(decoration.getX(), decoration.getY(), (byte) (decoration.getRotation() & 15), decoration.getType());
         }

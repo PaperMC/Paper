@@ -160,4 +160,13 @@ public final class CraftMapView implements MapView {
         return render;
     }
 
+    @Override
+    public boolean isUnlimitedTracking() {
+        return worldMap.unlimitedTracking;
+    }
+
+    @Override
+    public void setUnlimitedTracking(boolean unlimited) {
+        worldMap.unlimitedTracking = unlimited;
+    }
 }

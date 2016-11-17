@@ -1,10 +1,12 @@
 package org.bukkit.craftbukkit.block;
 
+import net.minecraft.server.ItemStack;
 import net.minecraft.server.TileEntityFlowerPot;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.FlowerPot;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.material.MaterialData;
 
@@ -32,9 +34,9 @@ public class CraftFlowerPot extends CraftBlockState implements FlowerPot {
     @Override
     public void setContents(MaterialData item) {
         if (item == null) {
-            pot.a(null, 0);
+            pot.setContents(ItemStack.a);
         } else {
-            pot.a(CraftMagicNumbers.getItem(item.getItemType()), item.getData()); // PAIL: rename
+            pot.setContents(CraftItemStack.asNMSCopy(item.toItemStack()));
         }
     }
 }

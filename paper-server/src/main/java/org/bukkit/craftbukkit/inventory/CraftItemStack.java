@@ -20,11 +20,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import com.google.common.collect.ImmutableMap;
-import net.minecraft.server.IChatBaseComponent.ChatSerializer;
-import net.minecraft.server.Items;
-import net.minecraft.server.NBTTagString;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
-import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 @DelegateDeserialization(ItemStack.class)
 public final class CraftItemStack extends ItemStack {
@@ -32,16 +28,16 @@ public final class CraftItemStack extends ItemStack {
     public static net.minecraft.server.ItemStack asNMSCopy(ItemStack original) {
         if (original instanceof CraftItemStack) {
             CraftItemStack stack = (CraftItemStack) original;
-            return stack.handle == null ? null : stack.handle.cloneItemStack();
+            return stack.handle == null ? net.minecraft.server.ItemStack.a : stack.handle.cloneItemStack();
         }
         if (original == null || original.getTypeId() <= 0) {
-            return null;
+            return net.minecraft.server.ItemStack.a;
         }
 
         Item item = CraftMagicNumbers.getItem(original.getType());
 
         if (item == null) {
-            return null;
+            return net.minecraft.server.ItemStack.a;
         }
 
         net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(item, original.getAmount(), original.getDurability());
@@ -53,7 +49,7 @@ public final class CraftItemStack extends ItemStack {
 
     public static net.minecraft.server.ItemStack copyNMSStack(net.minecraft.server.ItemStack original, int amount) {
         net.minecraft.server.ItemStack stack = original.cloneItemStack();
-        stack.count = amount;
+        stack.setCount(amount);
         return stack;
     }
 
@@ -61,10 +57,10 @@ public final class CraftItemStack extends ItemStack {
      * Copies the NMS stack to return as a strictly-Bukkit stack
      */
     public static ItemStack asBukkitCopy(net.minecraft.server.ItemStack original) {
-        if (original == null) {
+        if (original == net.minecraft.server.ItemStack.a) {
             return new ItemStack(Material.AIR);
         }
-        ItemStack stack = new ItemStack(CraftMagicNumbers.getMaterial(original.getItem()), original.count, (short) original.getData());
+        ItemStack stack = new ItemStack(CraftMagicNumbers.getMaterial(original.getItem()), original.getCount(), (short) original.getData());
         if (hasItemMeta(original)) {
             stack.setItemMeta(getItemMeta(original));
         }
@@ -143,7 +139,7 @@ public final class CraftItemStack extends ItemStack {
 
     @Override
     public int getAmount() {
-        return handle != null ? handle.count : 0;
+        return handle != null ? handle.getCount() : 0;
     }
 
     @Override
@@ -154,7 +150,7 @@ public final class CraftItemStack extends ItemStack {
         if (amount == 0) {
             handle = null;
         } else {
-            handle.count = amount;
+            handle.setCount(amount);
         }
     }
 
@@ -375,6 +371,22 @@ public final class CraftItemStack extends ItemStack {
             case FLOWER_POT_ITEM:
             case SHIELD:
             case STRUCTURE_BLOCK:
+            case WHITE_SHULKER_BOX:
+            case ORANGE_SHULKER_BOX:
+            case MAGENTA_SHULKER_BOX:
+            case LIGHT_BLUE_SHULKER_BOX:
+            case YELLOW_SHULKER_BOX:
+            case LIME_SHULKER_BOX:
+            case PINK_SHULKER_BOX:
+            case GRAY_SHULKER_BOX:
+            case SILVER_SHULKER_BOX:
+            case CYAN_SHULKER_BOX:
+            case PURPLE_SHULKER_BOX:
+            case BLUE_SHULKER_BOX:
+            case BROWN_SHULKER_BOX:
+            case GREEN_SHULKER_BOX:
+            case RED_SHULKER_BOX:
+            case BLACK_SHULKER_BOX:
                 return new CraftMetaBlockState(item.getTag(), CraftMagicNumbers.getMaterial(item.getItem()));
             default:
                 return new CraftMetaItem(item.getTag());

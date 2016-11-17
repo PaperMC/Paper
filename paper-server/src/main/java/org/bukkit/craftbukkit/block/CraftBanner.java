@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.block;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.server.EnumColor;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.NBTTagList;
 import net.minecraft.server.TileEntityBanner;
@@ -25,7 +26,7 @@ public class CraftBanner extends CraftBlockState implements Banner {
         CraftWorld world = (CraftWorld) block.getWorld();
         banner = (TileEntityBanner) world.getTileEntityAt(getX(), getY(), getZ());
 
-        base = DyeColor.getByDyeData((byte) banner.color);
+        base = DyeColor.getByDyeData((byte) banner.color.getColorIndex());
 
         if (banner.patterns != null) {
             for (int i = 0; i < banner.patterns.size(); i++) {
@@ -39,7 +40,7 @@ public class CraftBanner extends CraftBlockState implements Banner {
         super(material);
         banner = te;
 
-        base = DyeColor.getByDyeData((byte) banner.color);
+        base = DyeColor.getByDyeData((byte) banner.color.getColorIndex());
 
         if (banner.patterns != null) {
             for (int i = 0; i < banner.patterns.size(); i++) {
@@ -99,7 +100,7 @@ public class CraftBanner extends CraftBlockState implements Banner {
         boolean result = (isPlaced()) ? super.update(force, applyPhysics) : true;
 
         if (result) {
-            banner.color = base.getDyeData();
+            banner.color = EnumColor.fromColorIndex(base.getDyeData());
 
             NBTTagList newPatterns = new NBTTagList();
 

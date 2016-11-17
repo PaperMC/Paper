@@ -1,10 +1,11 @@
 --- a/net/minecraft/server/PlayerInventory.java
 +++ b/net/minecraft/server/PlayerInventory.java
-@@ -3,6 +3,14 @@
- import java.util.Arrays;
+@@ -5,6 +5,15 @@
+ import java.util.List;
  import javax.annotation.Nullable;
  
 +// CraftBukkit start
++import java.util.ArrayList;
 +import java.util.List;
 +import org.bukkit.Location;
 +
@@ -14,8 +15,8 @@
 +
  public class PlayerInventory implements IInventory {
  
-     public final ItemStack[] items = new ItemStack[36];
-@@ -14,6 +22,48 @@
+     public final NonNullList<ItemStack> items;
+@@ -16,11 +25,54 @@
      private ItemStack carried;
      public boolean f;
  
@@ -23,15 +24,16 @@
 +    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
 +    private int maxStack = MAX_STACK;
 +
-+    public ItemStack[] getContents() {
-+        ItemStack[] combined = new ItemStack[items.length + armor.length + extraSlots.length];
-+        System.arraycopy(items, 0, combined, 0, items.length);
-+        System.arraycopy(armor, 0, combined, items.length, armor.length);
-+        System.arraycopy(extraSlots, 0, combined, items.length + armor.length, extraSlots.length);
++    public List<ItemStack> getContents() {
++        List<ItemStack> combined = new ArrayList<ItemStack>(items.size() + armor.size() + extraSlots.size());
++        for (List<net.minecraft.server.ItemStack> sub : this.g) {
++            combined.addAll(sub);
++        }
++
 +        return combined;
 +    }
 +
-+    public ItemStack[] getArmorContents() {
++    public List<ItemStack> getArmorContents() {
 +        return this.armor;
 +    }
 +
@@ -62,32 +64,39 @@
 +    // CraftBukkit end
 +
      public PlayerInventory(EntityHuman entityhuman) {
-         this.g = new ItemStack[][] { this.items, this.armor, this.extraSlots};
+         this.items = NonNullList.a(36, ItemStack.a);
+         this.armor = NonNullList.a(4, ItemStack.a);
+         this.extraSlots = NonNullList.a(1, ItemStack.a);
+-        this.g = Arrays.asList(new NonNullList[] { this.items, this.armor, this.extraSlots});
++        this.g = (List) Arrays.asList(new NonNullList[] { this.items, this.armor, this.extraSlots}); // CraftBukkit - decompile error
+         this.carried = ItemStack.a;
          this.player = entityhuman;
-@@ -36,6 +86,22 @@
+     }
+@@ -41,6 +93,23 @@
          return itemstack.getItem() == itemstack1.getItem() && (!itemstack.usesData() || itemstack.getData() == itemstack1.getData()) && ItemStack.equals(itemstack, itemstack1);
      }
  
 +    // CraftBukkit start - Watch method above! :D
 +    public int canHold(ItemStack itemstack) {
-+        int remains = itemstack.count;
-+        for (int i = 0; i < this.items.length; ++i) {
-+            if (this.items[i] == null) return itemstack.count;
++        int remains = itemstack.getCount();
++        for (int i = 0; i < this.items.size(); ++i) {
++            ItemStack itemstack1 = this.getItem(i);
++            if (itemstack1.isEmpty()) return itemstack.getCount();
 +
 +            // Taken from firstPartial(ItemStack)
-+            if (this.items[i] != null && this.items[i].getItem() == itemstack.getItem() && this.items[i].isStackable() && this.items[i].count < this.items[i].getMaxStackSize() && this.items[i].count < this.getMaxStackSize() && (!this.items[i].usesData() || this.items[i].getData() == itemstack.getData()) && ItemStack.equals(this.items[i], itemstack)) {
-+                remains -= (this.items[i].getMaxStackSize() < this.getMaxStackSize() ? this.items[i].getMaxStackSize() : this.getMaxStackSize()) - this.items[i].count;
++            if (!itemstack1.isEmpty() && itemstack1.getItem() == itemstack.getItem() && itemstack1.isStackable() && itemstack1.getCount() < itemstack1.getMaxStackSize() && itemstack1.getCount() < this.getMaxStackSize() && (!itemstack1.usesData() || itemstack1.getData() == itemstack.getData()) && ItemStack.equals(itemstack1, itemstack)) {
++                remains -= (itemstack1.getMaxStackSize() < this.getMaxStackSize() ? itemstack1.getMaxStackSize() : this.getMaxStackSize()) - itemstack1.getCount();
 +            }
-+            if (remains <= 0) return itemstack.count;
++            if (remains <= 0) return itemstack.getCount();
 +        }
-+        return itemstack.count - remains;
++        return itemstack.getCount() - remains;
 +    }
 +    // CraftBukkit end
 +
      public int getFirstEmptySlotIndex() {
-         for (int i = 0; i < this.items.length; ++i) {
-             if (this.items[i] == null) {
-@@ -462,7 +528,7 @@
+         for (int i = 0; i < this.items.size(); ++i) {
+             if (((ItemStack) this.items.get(i)).isEmpty()) {
+@@ -477,7 +546,7 @@
      }
  
      public int getMaxStackSize() {
@@ -96,13 +105,13 @@
      }
  
      public boolean b(IBlockData iblockdata) {
-@@ -519,6 +585,11 @@
+@@ -533,6 +602,11 @@
+     }
  
-     @Nullable
      public ItemStack getCarried() {
 +        // CraftBukkit start
-+        if (this.carried != null && this.carried.count == 0) {
-+            this.setCarried(null);
++        if (this.carried.isEmpty()) {
++            this.setCarried(ItemStack.a);
 +        }
 +        // CraftBukkit end
          return this.carried;

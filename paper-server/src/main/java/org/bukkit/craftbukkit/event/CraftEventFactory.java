@@ -36,7 +36,6 @@ import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Creeper;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Firework;
-import org.bukkit.entity.Horse;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Pig;
@@ -62,6 +61,7 @@ import org.bukkit.event.server.ServerListPingEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.meta.BookMeta;
+import org.bukkit.entity.AbstractHorse;
 
 public class CraftEventFactory {
     public static final DamageSource MELTING = CraftDamageSource.copyOf(DamageSource.BURN);
@@ -550,6 +550,8 @@ public class CraftEventFactory {
             cause = DamageCause.FALL;
         } else if (source == DamageSource.FLY_INTO_WALL) {
             cause = DamageCause.FLY_INTO_WALL;
+        } else if (source == DamageSource.CRAMMING) {
+            cause = DamageCause.CRAMMING;
         } else if (source == DamageSource.GENERIC) {
             cause = DamageCause.CUSTOM;
         }
@@ -669,7 +671,7 @@ public class CraftEventFactory {
     }
 
     public static HorseJumpEvent callHorseJumpEvent(Entity horse, float power) {
-        HorseJumpEvent event = new HorseJumpEvent((Horse) horse.getBukkitEntity(), power);
+        HorseJumpEvent event = new HorseJumpEvent((AbstractHorse) horse.getBukkitEntity(), power);
         horse.getBukkitEntity().getServer().getPluginManager().callEvent(event);
         return event;
     }
