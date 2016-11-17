@@ -57,7 +57,7 @@ public final class CraftItemStack extends ItemStack {
      * Copies the NMS stack to return as a strictly-Bukkit stack
      */
     public static ItemStack asBukkitCopy(net.minecraft.server.ItemStack original) {
-        if (original == net.minecraft.server.ItemStack.a) {
+        if (original.isEmpty()) {
             return new ItemStack(Material.AIR);
         }
         ItemStack stack = new ItemStack(CraftMagicNumbers.getMaterial(original.getItem()), original.getCount(), (short) original.getData());
@@ -68,7 +68,7 @@ public final class CraftItemStack extends ItemStack {
     }
 
     public static CraftItemStack asCraftMirror(net.minecraft.server.ItemStack original) {
-        return new CraftItemStack(original);
+        return (original.isEmpty()) ? null : new CraftItemStack(original);
     }
 
     public static CraftItemStack asCraftCopy(ItemStack original) {
