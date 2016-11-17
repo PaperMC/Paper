@@ -220,10 +220,6 @@ public class CraftEventFactory {
         }
         BlockFace blockFace = CraftBlock.notchToBlockFace(direction);
 
-        if (itemInHand.getType() == Material.AIR || itemInHand.getAmount() == 0) {
-            itemInHand = null;
-        }
-
         PlayerInteractEvent event = new PlayerInteractEvent(player, action, itemInHand, blockClicked, blockFace, (hand == null) ? null : ((hand == EnumHand.OFF_HAND) ? EquipmentSlot.OFF_HAND : EquipmentSlot.HAND));
         if (cancelledBlock) {
             event.setUseInteractedBlock(Event.Result.DENY);
