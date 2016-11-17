@@ -437,8 +437,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -public abstract class EntityMinecartContainer extends EntityMinecartAbstract implements ITileInventory, ILootable {
 +public abstract class EntityMinecartContainer extends EntityMinecartAbstract implements ITileInventory, ILootable, CraftLootableInventory { // Paper
  
-     private ItemStack[] items = new ItemStack[27]; // CraftBukkit - 36 -> 27
-     private boolean b = true;
+     private NonNullList<ItemStack> items;
+     private boolean b;
      private MinecraftKey c;
 -    private long d;
 +    private long d;public long getLootTableSeed() { return d; } // Paper - OBFHELPER
@@ -457,22 +457,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
 -        } else {
 +        } if (true) { // Paper - Always save the items, Table may stick around
-             NBTTagList nbttaglist = new NBTTagList();
+             ContainerUtil.a(nbttagcompound, this.items);
+         }
  
-             for (int i = 0; i < this.items.length; ++i) {
 @@ -0,0 +0,0 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
-     protected void a(NBTTagCompound nbttagcompound) {
-         super.a(nbttagcompound);
-         this.items = new ItemStack[this.getSize()];
-+        lootableData.loadNbt(nbttagcompound); // Paper
          if (nbttagcompound.hasKeyOfType("LootTable", 8)) {
              this.c = new MinecraftKey(nbttagcompound.getString("LootTable"));
              this.d = nbttagcompound.getLong("LootTableSeed");
 -        } else {
 +        } if (true) { // Paper - always load the items, table may still remain
-             NBTTagList nbttaglist = nbttagcompound.getList("Items", 10);
+             ContainerUtil.b(nbttagcompound, this.items);
+         }
  
-             for (int i = 0; i < nbttaglist.size(); ++i) {
 @@ -0,0 +0,0 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
      }
  
@@ -487,7 +483,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              if (this.d == 0L) {
 @@ -0,0 +0,0 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
- 
+         this.items.clear();
      }
  
 +    public void setLootTable(MinecraftKey key, long seed) { a(key, seed);} // Paper - OBFHELPER
@@ -559,6 +555,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected MinecraftKey m;
 -    protected long n;
 +    protected long n; public long getLootTableSeed() { return n; } // Paper - OBFHELPER
+     protected String o;
  
      public TileEntityLootable() {}
  
@@ -589,7 +586,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
  
-     protected void d(@Nullable EntityHuman entityhuman) {
+     public void d(@Nullable EntityHuman entityhuman) {
 -        if (this.m != null) {
 +        if (lootableData.shouldReplenish(entityhuman)) { // Paper
              LootTable loottable = this.world.ak().a(this.m);
@@ -612,7 +609,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void a(MinecraftKey minecraftkey, long i) {
          this.m = minecraftkey;
          this.n = i;
+@@ -0,0 +0,0 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
      }
+ 
+     protected abstract NonNullList<ItemStack> q();
 +
 +    // Paper start - LootTable API
 +    private final CraftLootableInventoryData lootableData = new CraftLootableInventoryData(this);
@@ -650,6 +650,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.m = (MinecraftKey) null;
 +    }
 +    // Paper end
++
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -722,7 +723,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.server.EntityMinecartChest;
  
  import org.bukkit.craftbukkit.CraftServer;
-@@ -0,0 +0,0 @@ import org.bukkit.entity.StorageMinecart;
+@@ -0,0 +0,0 @@ import org.bukkit.entity.minecart.StorageMinecart;
  import org.bukkit.inventory.Inventory;
  
  @SuppressWarnings("deprecation")

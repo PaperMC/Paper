@@ -99,8 +99,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
  
-+    public final boolean intersects(AxisAlignedBB intersecting) { return this.b(intersecting); } // Paper - OBFHELPER
-     public boolean b(AxisAlignedBB axisalignedbb) {
++    public final boolean intersects(AxisAlignedBB intersecting) { return this.c(intersecting); } // Paper - OBFHELPER
+     public boolean c(AxisAlignedBB axisalignedbb) {
          return this.a(axisalignedbb.a, axisalignedbb.b, axisalignedbb.c, axisalignedbb.d, axisalignedbb.e, axisalignedbb.f);
      }
 diff --git a/src/main/java/net/minecraft/server/BlockPortal.java b/src/main/java/net/minecraft/server/BlockPortal.java
@@ -182,16 +182,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +public class EntityItem extends Entity implements HopperPusher {
 +    @Override
 +    public boolean acceptItem(TileEntityHopper hopper) {
-+        return TileEntityHopper.a(hopper, this);
++        return TileEntityHopper.putDropInInventory(null, hopper, this);
 +    }
 +// Paper end
  
      private static final Logger b = LogManager.getLogger();
-     private static final DataWatcherObject<Optional<ItemStack>> c = DataWatcher.a(EntityItem.class, DataWatcherRegistry.f);
+     private static final DataWatcherObject<ItemStack> c = DataWatcher.a(EntityItem.class, DataWatcherRegistry.f);
 @@ -0,0 +0,0 @@ public class EntityItem extends Entity {
              this.die();
          } else {
-             super.m();
+             super.A_();
 +            if (tryPutInHopper()) return; // Paper
              // CraftBukkit start - Use wall time for pickup and despawn timers
              int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
@@ -229,8 +229,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public void m() {
-+        super.m();
++    public void A_() {
++        super.A_();
 +        tryPutInHopper();
 +    }
 +
@@ -241,8 +241,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
  
-     private ItemStack[] items = new ItemStack[27]; // CraftBukkit - 36 -> 27
-     private boolean b = true;
+     private NonNullList<ItemStack> items;
+     private boolean b;
 diff --git a/src/main/java/net/minecraft/server/IHopper.java b/src/main/java/net/minecraft/server/IHopper.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/IHopper.java
@@ -267,10 +267,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
      }
  
-     public boolean m() {
+     private boolean o() {
 +        mayAcceptItems = false; // Paper - at the beginning of a tick, assume we can't accept items
          if (this.world != null && !this.world.isClientSide) {
-             if (!this.o() && BlockHopper.f(this.u())) {
+             if (!this.J() && BlockHopper.f(this.v())) {
                  boolean flag = false;
 @@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
                  }
@@ -292,9 +292,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
 +
-     private boolean q() {
-         ItemStack[] aitemstack = this.items;
-         int i = aitemstack.length;
+     private boolean p() {
+         Iterator iterator = this.items.iterator();
+ 
 @@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
          return true;
      }
@@ -324,8 +324,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              while (iterator.hasNext()) {
                  EntityItem entityitem = (EntityItem) iterator.next();
 @@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+         return false;
+     }
+ 
++    public static boolean putDropInInventory(IInventory iinventory, IInventory iinventory1, EntityItem entityitem) { return a(iinventory, iinventory1, entityitem); } // Paper - OBFHELPER
+     public static boolean a(IInventory iinventory, IInventory iinventory1, EntityItem entityitem) {
+         boolean flag = false;
+ 
+@@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
      private IInventory I() {
-         EnumDirection enumdirection = BlockHopper.e(this.u());
+         EnumDirection enumdirection = BlockHopper.e(this.v());
  
 -        return b(this.getWorld(), this.E() + (double) enumdirection.getAdjacentX(), this.F() + (double) enumdirection.getAdjacentY(), this.G() + (double) enumdirection.getAdjacentZ());
 +        // Paper start - don't search for entities in push mode

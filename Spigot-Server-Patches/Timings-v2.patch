@@ -262,8 +262,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    @Nullable
-+    public BlockPosition findNearestMapFeature(World world, String s, BlockPosition blockposition) {
-+        return timedGenerator.findNearestMapFeature(world, s, blockposition);
++    public BlockPosition findNearestMapFeature(World world, String s, BlockPosition blockposition, boolean flag) {
++        return timedGenerator.findNearestMapFeature(world, s, blockposition, flag);
 +    }
 +
 +    @Override
@@ -526,18 +526,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        world.timings.syncChunkLoadNBTTimer.startTiming(); // Spigot
          NBTTagList nbttaglist1 = nbttagcompound.getList("Entities", 10);
  
-         if (nbttaglist1 != null) {
+         for (int l = 0; l < nbttaglist1.size(); ++l) {
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-                 chunk.g(true);
-             }
+             a(nbttagcompound2, world, chunk);
+             chunk.g(true);
          }
 -        world.timings.syncChunkLoadEntitiesTimer.stopTiming(); // Spigot
 -        world.timings.syncChunkLoadTileEntitiesTimer.startTiming(); // Spigot
          NBTTagList nbttaglist2 = nbttagcompound.getList("TileEntities", 10);
  
-         if (nbttaglist2 != null) {
+         for (int i1 = 0; i1 < nbttaglist2.size(); ++i1) {
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-                 }
+                 chunk.a(tileentity);
              }
          }
 -        world.timings.syncChunkLoadTileEntitiesTimer.stopTiming(); // Spigot
@@ -546,7 +546,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (nbttagcompound.hasKeyOfType("TileTicks", 9)) {
              NBTTagList nbttaglist3 = nbttagcompound.getList("TileTicks", 10);
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-                 }
+                 world.b(new BlockPosition(nbttagcompound4.getInt("x"), nbttagcompound4.getInt("y"), nbttagcompound4.getInt("z")), block, nbttagcompound4.getInt("t"), nbttagcompound4.getInt("p"));
              }
          }
 -        world.timings.syncChunkLoadTileTicksTimer.stopTiming(); // Spigot
@@ -570,7 +570,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
      }
  
-     public void aL() {
+     public void aM() {
 -        SpigotTimings.serverCommandTimer.startTiming(); // Spigot
 +        MinecraftTimings.serverCommandTimer.startTiming(); // Spigot
          while (!this.serverCommandQueue.isEmpty()) {
@@ -611,10 +611,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
      }
  
-     public void move(double d0, double d1, double d2) {
+     public void move(EnumMoveType enummovetype, double d0, double d1, double d2) {
 -        org.bukkit.craftbukkit.SpigotTimings.entityMoveTimer.startTiming(); // Spigot
          if (this.noclip) {
-             this.a(this.getBoundingBox().c(d0, d1, d2));
+             this.a(this.getBoundingBox().d(d0, d1, d2));
              this.recalcPosition();
 @@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
  
@@ -640,10 +640,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
      }
  
-     public void m() {
+     public void A_() {
 -        SpigotTimings.timerEntityBaseTick.startTiming(); // Spigot
-         super.m();
-         this.cz();
+         super.A_();
+         this.cA();
          if (!this.world.isClientSide) {
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
              }
@@ -657,7 +657,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          float f = (float) (d0 * d0 + d1 * d1);
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
          } else {
-             this.bq = 0;
+             this.bp = 0;
          }
 -
 -        SpigotTimings.timerEntityTickRest.stopTiming(); // Spigot
@@ -669,9 +669,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          this.world.methodProfiler.a("ai");
 -        SpigotTimings.timerEntityAI.startTiming(); // Spigot
-         if (this.cj()) {
-             this.be = false;
-             this.bf = 0.0F;
+         if (this.isFrozen()) {
+             this.bd = false;
+             this.be = 0.0F;
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
              this.doTick();
              this.world.methodProfiler.b();
@@ -681,16 +681,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.world.methodProfiler.b();
          this.world.methodProfiler.a("jump");
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
-         this.bg *= 0.98F;
-         this.bh *= 0.9F;
+         this.bf *= 0.98F;
+         this.bg *= 0.9F;
          this.r();
 -        SpigotTimings.timerEntityAIMove.startTiming(); // Spigot
-         this.g(this.bf, this.bg);
+         this.g(this.be, this.bf);
 -        SpigotTimings.timerEntityAIMove.stopTiming(); // Spigot
          this.world.methodProfiler.b();
          this.world.methodProfiler.a("push");
 -        SpigotTimings.timerEntityAICollision.startTiming(); // Spigot
-         this.cs();
+         this.ct();
 -        SpigotTimings.timerEntityAICollision.stopTiming(); // Spigot
          this.world.methodProfiler.b();
      }
@@ -847,7 +847,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.methodProfiler.c("connection");
 -        SpigotTimings.connectionTimer.startTiming(); // Spigot
 +        MinecraftTimings.connectionTimer.startTiming(); // Spigot
-         this.am().c();
+         this.an().c();
 -        SpigotTimings.connectionTimer.stopTiming(); // Spigot
 +        MinecraftTimings.connectionTimer.stopTiming(); // Spigot
          this.methodProfiler.c("players");
@@ -861,7 +861,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        SpigotTimings.tickablesTimer.startTiming(); // Spigot
 +        MinecraftTimings.tickablesTimer.startTiming(); // Spigot
          for (i = 0; i < this.o.size(); ++i) {
-             ((ITickable) this.o.get(i)).E_();
+             ((ITickable) this.o.get(i)).F_();
          }
 -        SpigotTimings.tickablesTimer.stopTiming(); // Spigot
 +        MinecraftTimings.tickablesTimer.stopTiming(); // Spigot
@@ -1051,8 +1051,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import co.aikar.timings.Timing;
  import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
  import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
- import java.util.Iterator;
-@@ -0,0 +0,0 @@ import java.util.Random;
+ import it.unimi.dsi.fastutil.objects.ObjectIterator;
+@@ -0,0 +0,0 @@ import javax.annotation.Nullable;
  
  public abstract class StructureGenerator extends WorldGenBase {
  
@@ -1100,8 +1100,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getTileEntityTimings(this); // Spigot
 +    public Timing tickTimer = MinecraftTimings.getTileEntityTimings(this); // Paper
      private static final Logger a = LogManager.getLogger();
-     private static final Map<String, Class<? extends TileEntity>> f = Maps.newHashMap();
-     private static final Map<Class<? extends TileEntity>, String> g = Maps.newHashMap();
+     private static final RegistryMaterials<MinecraftKey, Class<? extends TileEntity>> f = new RegistryMaterials();
+     protected World world;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/World.java
@@ -1193,7 +1193,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              entity.N = entity.locY;
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
              entity.lastPitch = entity.pitch;
-             if (flag && entity.ab) {
+             if (flag && entity.aa) {
                  ++entity.ticksLived;
 +                ++co.aikar.timings.TimingHistory.activatedEntityTicks; // Paper
                  if (entity.isPassenger()) {
@@ -1818,8 +1818,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      {
 -        SpigotTimings.checkIfActiveTimer.startTiming();
          // Never safe to skip fireworks or entities not yet added to chunk
-         // PAIL: inChunk
-         if ( !entity.ab || entity instanceof EntityFireworks ) {
+         // PAIL: inChunk - boolean under datawatchers
+         if ( !entity.aa || entity instanceof EntityFireworks ) {
 -            SpigotTimings.checkIfActiveTimer.stopTiming();
              return true;
          }

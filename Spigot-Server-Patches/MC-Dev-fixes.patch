@@ -54,8 +54,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            return (Entity) object;
 +            return (T) object; // Paper - fix decompile error
          } else {
-             throw new ExceptionEntityNotFound();
+             throw new ExceptionEntityNotFound(s);
          }
+@@ -0,0 +0,0 @@ public abstract class CommandAbstract implements ICommand {
+     }
+ 
+     private static <T extends Comparable<T>> IBlockData a(IBlockData iblockdata, IBlockState<T> iblockstate, Comparable<?> comparable) {
+-        return iblockdata.set(iblockstate, comparable);
++        return iblockdata.set(iblockstate, (T) comparable); // Paper - fix decompiler error
+     }
+ 
+     public static Predicate<IBlockData> b(final Block block, String s) throws ExceptionInvalidBlockState {
+@@ -0,0 +0,0 @@ public abstract class CommandAbstract implements ICommand {
+ 
+     @Nullable
+     private static <T extends Comparable<T>> T a(IBlockState<T> iblockstate, String s) {
+-        return (Comparable) iblockstate.b(s).orNull();
++        return iblockstate.b(s).orNull(); // Paper - fix decompiler error
+     }
+ 
+     public static String a(Object[] aobject) {
 @@ -0,0 +0,0 @@ public abstract class CommandAbstract implements ICommand {
          return this.getCommand().compareTo(icommand.getCommand());
      }
@@ -65,6 +83,66 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return this.a((ICommand) object);
      }
  
+diff --git a/src/main/java/net/minecraft/server/IEntitySelector.java b/src/main/java/net/minecraft/server/IEntitySelector.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/IEntitySelector.java
++++ b/src/main/java/net/minecraft/server/IEntitySelector.java
+@@ -0,0 +0,0 @@ public final class IEntitySelector {
+             }
+ 
+             public boolean apply(@Nullable Object object) {
+-                return this.a((Entity) object);
++                return this.a((T) object); // Paper - Fix decompile error
+             }
+         };
+     }
+@@ -0,0 +0,0 @@ public final class IEntitySelector {
+         final ScoreboardTeamBase.EnumTeamPush scoreboardteambase_enumteampush = scoreboardteambase == null ? ScoreboardTeamBase.EnumTeamPush.ALWAYS : scoreboardteambase.getCollisionRule();
+ 
+         return scoreboardteambase_enumteampush == ScoreboardTeamBase.EnumTeamPush.NEVER ? Predicates.alwaysFalse() : Predicates.and(IEntitySelector.e, new Predicate() {
+-            public boolean a(@Nullable Entity entity) {
++            public boolean a(@Nullable Entity entity1) { // Paper - fix decompile error
+                 if (!entity.isCollidable()) {
+                     return false;
+                 } else if (entity1.world.isClientSide && (!(entity instanceof EntityHuman) || !((EntityHuman) entity).cR())) {
+@@ -0,0 +0,0 @@ public final class IEntitySelector {
+                     if (scoreboardteambase_enumteampush == ScoreboardTeamBase.EnumTeamPush.NEVER) {
+                         return false;
+                     } else {
+-                        boolean flag = scoreboardteambase1 != null && scoreboardteambase1.isAlly(scoreboardteambase);
++                        boolean flag = scoreboardteambase != null && scoreboardteambase.isAlly(scoreboardteambase); // Paper - fix decompile error
+ 
+-                        return (scoreboardteambase_enumteampush1 == ScoreboardTeamBase.EnumTeamPush.HIDE_FOR_OWN_TEAM || scoreboardteambase_enumteampush == ScoreboardTeamBase.EnumTeamPush.HIDE_FOR_OWN_TEAM) && flag ? false : scoreboardteambase_enumteampush1 != ScoreboardTeamBase.EnumTeamPush.HIDE_FOR_OTHER_TEAMS && scoreboardteambase_enumteampush != ScoreboardTeamBase.EnumTeamPush.HIDE_FOR_OTHER_TEAMS || flag;
++                        // Paper - fix decompiler error
++                        return (scoreboardteambase_enumteampush == ScoreboardTeamBase.EnumTeamPush.HIDE_FOR_OWN_TEAM || scoreboardteambase_enumteampush == ScoreboardTeamBase.EnumTeamPush.HIDE_FOR_OWN_TEAM) && flag ? false : scoreboardteambase_enumteampush != ScoreboardTeamBase.EnumTeamPush.HIDE_FOR_OTHER_TEAMS && scoreboardteambase_enumteampush != ScoreboardTeamBase.EnumTeamPush.HIDE_FOR_OTHER_TEAMS || flag;
+                     }
+                 }
+             }
+@@ -0,0 +0,0 @@ public final class IEntitySelector {
+ 
+     public static Predicate<Entity> b(final Entity entity) {
+         return new Predicate() {
+-            public boolean a(@Nullable Entity entity) {
++            public boolean a(@Nullable Entity entity1) { // Paper - fix decompile error
+                 while (true) {
+-                    if (entity.isPassenger()) {
+-                        entity = entity.bB();
++                    // Paper start - fix decompile error - entity -> entity1 - double check this
++                    if (entity1.isPassenger()) {
++                        entity1 = entity.bB();
++                        // Paper end
+                         if (entity != entity1) {
+                             continue;
+                         }
+@@ -0,0 +0,0 @@ public final class IEntitySelector {
+             }
+         }
+ 
+-        public boolean apply(@Nullable Object object) {
++        public boolean apply(@Nullable Entity object) {
+             return this.a((Entity) object);
+         }
+     }
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemFactoryTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemFactoryTest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemFactoryTest.java
@@ -78,6 +156,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          final Collection<String> names = new HashSet<String>();
          for (ZipEntry clazzEntry; (clazzEntry = nmsZipStream.getNextEntry()) != null; ) {
              final String entryName = clazzEntry.getName();
--- 
-2.7.4 (Apple Git-66)
-
+--

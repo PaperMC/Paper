@@ -61,6 +61,7 @@ import EULA
 import EntitySquid
 import EntityWaterAnimal
 import FileIOThread
+import IEntitySelector
 import IHopper
 import ItemBlock
 import ItemMonsterEgg
