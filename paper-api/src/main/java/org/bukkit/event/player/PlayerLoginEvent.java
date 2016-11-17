@@ -16,25 +16,6 @@ public class PlayerLoginEvent extends PlayerEvent {
     private String message = "";
 
     /**
-     * @deprecated Address should be provided in other constructor
-     * @param player The {@link Player} for this event
-     */
-    @Deprecated
-    public PlayerLoginEvent(final Player player) {
-        this(player, "", null);
-    }
-
-    /**
-     * @deprecated Address should be provided in other constructor
-     * @param player The {@link Player} for this event
-     * @param hostname The hostname that was used to connect to the server
-     */
-    @Deprecated
-    public PlayerLoginEvent(final Player player, final String hostname) {
-        this(player, hostname, null);
-    }
-
-    /**
      * This constructor defaults message to an empty string, and result to
      * ALLOWED
      *
@@ -47,18 +28,6 @@ public class PlayerLoginEvent extends PlayerEvent {
         super(player);
         this.hostname = hostname;
         this.address = address;
-    }
-
-    /**
-     * @deprecated Address and hostname should be provided in other
-     *     constructor
-     * @param player The {@link Player} for this event
-     * @param result The result status for this event
-     * @param message The message to be displayed if result denies login
-     */
-    @Deprecated
-    public PlayerLoginEvent(final Player player, final Result result, final String message) {
-        this(player, "", null, result, message);
     }
 
     /**

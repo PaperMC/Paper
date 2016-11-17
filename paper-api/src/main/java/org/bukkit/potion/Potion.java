@@ -34,33 +34,6 @@ public class Potion {
     }
 
     /**
-     * @deprecated In favour of {@link #Potion(PotionType, int)}
-     */
-    @Deprecated
-    public Potion(PotionType type, Tier tier) {
-        this(type, tier == Tier.TWO ? 2 : 1);
-        Validate.notNull(type, "Type cannot be null");
-    }
-
-    /**
-     * @deprecated In favour of {@link #Potion(PotionType, int, boolean)}
-     */
-    @Deprecated
-    public Potion(PotionType type, Tier tier, boolean splash) {
-        this(type, tier == Tier.TWO ? 2 : 1, splash);
-    }
-
-    /**
-     * @deprecated In favour of {@link #Potion(PotionType, int, boolean,
-     *     boolean)}
-     */
-    @Deprecated
-    public Potion(PotionType type, Tier tier, boolean splash, boolean extended) {
-        this(type, tier, splash);
-        this.extended = extended;
-    }
-
-    /**
      * Create a new potion of the given type and level.
      *
      * @param type The type of potion.
@@ -193,17 +166,6 @@ public class Potion {
     }
 
     /**
-     * Returns the {@link Tier} of this potion.
-     *
-     * @return The tier of this potion
-     * @deprecated
-     */
-    @Deprecated
-    public Tier getTier() {
-        return level == 2 ? Tier.TWO : Tier.ONE;
-    }
-
-    /**
      * Returns the {@link PotionType} of this potion.
      *
      * @return The type of this potion
@@ -262,18 +224,6 @@ public class Potion {
     }
 
     /**
-     * Sets the {@link Tier} of this potion.
-     *
-     * @param tier The new tier of this potion
-     * @deprecated In favour of {@link #setLevel(int)}
-     */
-    @Deprecated
-    public void setTier(Tier tier) {
-        Validate.notNull(tier, "tier cannot be null");
-        this.level = (tier == Tier.TWO ? 2 : 1);
-    }
-
-    /**
      * Sets the {@link PotionType} of this potion.
      *
      * @param type The new type of this potion
@@ -324,30 +274,6 @@ public class Potion {
         meta.setBasePotionData(new PotionData(type, level == 2, extended));
         itemStack.setItemMeta(meta);
         return itemStack;
-    }
-
-    @Deprecated
-    public enum Tier {
-        ONE(0),
-        TWO(0x20);
-
-        private int damageBit;
-
-        Tier(int bit) {
-            damageBit = bit;
-        }
-
-        public int getDamageBit() {
-            return damageBit;
-        }
-
-        public static Tier getByDamageBit(int damageBit) {
-            for (Tier tier : Tier.values()) {
-                if (tier.damageBit == damageBit)
-                    return tier;
-            }
-            return null;
-        }
     }
 
     private static PotionBrewer brewer;

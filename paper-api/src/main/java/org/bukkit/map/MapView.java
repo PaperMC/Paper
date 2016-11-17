@@ -154,4 +154,19 @@ public interface MapView {
      */
     public boolean removeRenderer(MapRenderer renderer);
 
+    /**
+     * Whether the map will show a smaller position cursor (true), or no
+     * position cursor (false) when cursor is outside of map's range.
+     *
+     * @return unlimited tracking state
+     */
+    boolean isUnlimitedTracking();
+
+    /**
+     * Whether the map will show a smaller position cursor (true), or no
+     * position cursor (false) when cursor is outside of map's range.
+     *
+     * @param unlimited tracking state
+     */
+    void setUnlimitedTracking(boolean unlimited);
 }

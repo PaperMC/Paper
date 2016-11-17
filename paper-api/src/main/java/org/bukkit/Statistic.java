@@ -61,7 +61,8 @@ public enum Statistic {
     FURNACE_INTERACTION,
     CRAFTING_TABLE_INTERACTION,
     CHEST_OPENED,
-    SLEEP_IN_BED;
+    SLEEP_IN_BED,
+    SHULKER_BOX_OPENED;
 
     private final Type type;
 

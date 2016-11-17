@@ -53,11 +53,6 @@ public class InventoryClickEvent extends InventoryInteractEvent {
     private ItemStack current = null;
     private int hotbarKey = -1;
 
-    @Deprecated
-    public InventoryClickEvent(InventoryView view, SlotType type, int slot, boolean right, boolean shift) {
-        this(view, type, slot, right ? (shift ? ClickType.SHIFT_RIGHT : ClickType.RIGHT) : (shift ? ClickType.SHIFT_LEFT : ClickType.LEFT), InventoryAction.SWAP_WITH_CURSOR);
-    }
-
     public InventoryClickEvent(InventoryView view, SlotType type, int slot, ClickType click, InventoryAction action) {
         super(view);
         this.slot_type = type;

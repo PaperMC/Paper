@@ -61,6 +61,11 @@ public abstract class Enchantment {
     public static final Enchantment FROST_WALKER = new EnchantmentWrapper(9);
 
     /**
+     * Item cannot be removed
+     */
+    public static final Enchantment BINDING_CURSE = new EnchantmentWrapper(10);
+
+    /**
      * Increases damage against all targets
      */
     public static final Enchantment DAMAGE_ALL = new EnchantmentWrapper(16);
@@ -145,6 +150,11 @@ public abstract class Enchantment {
      * Allows mending the item using experience orbs
      */
     public static final Enchantment MENDING = new EnchantmentWrapper(70);
+
+    /**
+     * Item disappears instead of dropping
+     */
+    public static final Enchantment VANISHING_CURSE = new EnchantmentWrapper(71);
 
     private static final Map<Integer, Enchantment> byId = new HashMap<Integer, Enchantment>();
     private static final Map<String, Enchantment> byName = new HashMap<String, Enchantment>();

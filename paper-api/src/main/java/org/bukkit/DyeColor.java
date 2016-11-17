@@ -91,20 +91,6 @@ public enum DyeColor {
     }
 
     /**
-     * Gets the associated (wool) data value representing this color.
-     *
-     * @return A byte containing the (wool) data value of this color
-     * @deprecated The name is misleading. It would imply {@link
-     *     Material#INK_SACK} but uses {@link Material#WOOL}
-     * @see #getWoolData()
-     * @see #getDyeData()
-     */
-    @Deprecated
-    public byte getData() {
-        return getWoolData();
-    }
-
-    /**
      * Gets the associated wool data value representing this color.
      *
      * @return A byte containing the wool data value of this color
@@ -144,22 +130,6 @@ public enum DyeColor {
      */
     public Color getFireworkColor() {
         return firework;
-    }
-
-    /**
-     * Gets the DyeColor with the given (wool) data value.
-     *
-     * @param data (wool) data value to fetch
-     * @return The {@link DyeColor} representing the given value, or null if
-     *     it doesn't exist
-     * @deprecated The name is misleading. It would imply {@link
-     *     Material#INK_SACK} but uses {@link Material#WOOL}
-     * @see #getByDyeData(byte)
-     * @see #getByWoolData(byte)
-     */
-    @Deprecated
-    public static DyeColor getByData(final byte data) {
-        return getByWoolData(data);
     }
 
     /**

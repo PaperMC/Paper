@@ -49,7 +49,6 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel = false;
     private String message;
-    private String format = "<%1$s> %2$s";
     private final Set<Player> recipients;
 
     public PlayerCommandPreprocessEvent(final Player player, final String message) {
@@ -108,38 +107,6 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
     public void setPlayer(final Player player) throws IllegalArgumentException {
         Validate.notNull(player, "Player cannot be null");
         this.player = player;
-    }
-
-    /**
-     * Gets the format to use to display this chat message
-     *
-     * @deprecated This method is provided for backward compatibility with no
-     *     guarantee to the use of the format.
-     * @return String.Format compatible format string
-     */
-    @Deprecated
-    public String getFormat() {
-        return format;
-    }
-
-    /**
-     * Sets the format to use to display this chat message
-     *
-     * @deprecated This method is provided for backward compatibility with no
-     *     guarantee to the effect of modifying the format.
-     * @param format String.Format compatible format string
-     */
-    @Deprecated
-    public void setFormat(final String format) {
-        // Oh for a better way to do this!
-        try {
-            String.format(format, player, message);
-        } catch (RuntimeException ex) {
-            ex.fillInStackTrace();
-            throw ex;
-        }
-
-        this.format = format;
     }
 
     /**

@@ -32,9 +32,9 @@ public class DyeColorTest {
     @Test
     @SuppressWarnings("deprecation")
     public void getByData() {
-        byte data = dye.getData();
+        byte data = dye.getWoolData();
 
-        DyeColor byData = DyeColor.getByData(data);
+        DyeColor byData = DyeColor.getByWoolData(data);
         assertThat(byData, is(dye));
     }
 

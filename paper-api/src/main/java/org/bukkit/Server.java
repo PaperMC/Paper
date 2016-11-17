@@ -570,23 +570,6 @@ public interface Server extends PluginMessageRecipient {
     public boolean isHardcore();
 
     /**
-     * Gets whether to use vanilla (false) or exact behaviour (true).
-     *
-     * <ul>
-     * <li>Vanilla behaviour: check for collisions and move the player if
-     *     needed.
-     * <li>Exact behaviour: spawn players exactly where they should be.
-     * </ul>
-     *
-     * @return true if exact location locations are used for spawning, false
-     *     for vanilla collision detection or otherwise
-     *
-     * @deprecated non standard and unused feature.
-     */
-    @Deprecated
-    public boolean useExactLoginLocation();
-
-    /**
      * Shutdowns the server, stopping everything.
      */
     public void shutdown();

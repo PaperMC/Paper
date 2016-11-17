@@ -19,11 +19,6 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
     private final Block ignitingBlock;
     private boolean cancel;
 
-    @Deprecated
-    public BlockIgniteEvent(final Block theBlock, final IgniteCause cause, final Player thePlayer) {
-        this(theBlock, cause, (Entity) thePlayer);
-    }
-
     public BlockIgniteEvent(final Block theBlock, final IgniteCause cause, final Entity ignitingEntity) {
         this(theBlock, cause, ignitingEntity, null);
     }
