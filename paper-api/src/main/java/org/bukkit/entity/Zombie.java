@@ -43,7 +43,7 @@ public interface Zombie extends Monster {
     public void setVillagerProfession(Villager.Profession profession);
 
     /**
-     * @return 
+     * @return profession
      * @see ZombieVillager#getVillagerProfession()
      */
     @Deprecated

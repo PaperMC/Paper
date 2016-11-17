@@ -14,7 +14,7 @@ public interface AbstractHorse extends Animals, Vehicle, InventoryHolder, Tameab
      * Whether a horse is a regular horse, donkey, mule, or other kind of horse
      * is determined using the variant.
      *
-     * @return a {@link Variant} representing the horse's variant
+     * @return a {@link Horse.Variant} representing the horse's variant
      * @deprecated different variants are different classes
      */
     @Deprecated

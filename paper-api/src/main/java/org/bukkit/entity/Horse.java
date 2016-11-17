@@ -144,7 +144,7 @@ public interface Horse extends AbstractHorse {
     public void setStyle(Style style);
 
     /**
-     * @return
+     * @return carrying chest status
      * @deprecated see {@link ChestedHorse}
      */
     @Deprecated

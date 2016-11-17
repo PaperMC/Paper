@@ -42,7 +42,7 @@ public enum EntityType {
      */
     WITHER_SKELETON("wither_skeleton", WitherSkeleton.class, 5),
     /**
-     * @See Stray
+     * @see Stray
      */
     STRAY("stray", Stray.class, 6),
     /**
