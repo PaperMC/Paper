@@ -12,7 +12,6 @@ import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.inventory.meta.MapMeta;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 
 @DelegateDeserialization(SerializableMeta.class)
@@ -140,8 +139,6 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
     @Override
     public void setLocationName(String name) {
-        Preconditions.checkArgument(name != null, "name");
-
         this.locName = name;
     }
 
@@ -157,8 +154,6 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
     @Override
     public void setColor(Color color) {
-        Preconditions.checkArgument(color != null, "color");
-
         this.color = color;
     }
 
