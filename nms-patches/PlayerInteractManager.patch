@@ -224,7 +224,7 @@
                  return flag;
              }
          }
-@@ -280,63 +419,81 @@
+@@ -280,63 +419,85 @@
          }
      }
  
@@ -238,16 +238,36 @@
 +        EnumInteractionResult enuminteractionresult = EnumInteractionResult.FAIL;
 +        if (blockdata.getBlock() != Blocks.AIR) {
 +            boolean cancelledBlock = false;
-+
+ 
+-            if (tileentity instanceof ITileInventory) {
+-                Block block = world.getType(blockposition).getBlock();
+-                ITileInventory itileinventory = (ITileInventory) tileentity;
 +            if (this.gamemode == EnumGamemode.SPECTATOR) {
 +                TileEntity tileentity = world.getTileEntity(blockposition);
 +                cancelledBlock = !(tileentity instanceof ITileInventory || tileentity instanceof IInventory);
 +            }
-+
-+            if (!entityhuman.getBukkitEntity().isOp() && Block.asBlock(itemstack.getItem()) instanceof BlockCommand) {
-+                cancelledBlock = true;
-+            }
-+
+ 
+-                if (itileinventory instanceof TileEntityChest && block instanceof BlockChest) {
+-                    itileinventory = ((BlockChest) block).c(world, blockposition);
+-                }
++            if (itemstack.getItem() instanceof ItemBlock && !entityhuman.dk()) { // PAIL: creativeAndOp
++                Block block1 = ((ItemBlock) itemstack.getItem()).getBlock();
+ 
+-                if (itileinventory != null) {
+-                    entityhuman.openContainer(itileinventory);
+-                    return EnumInteractionResult.SUCCESS;
++                if (block1 instanceof BlockCommand || block1 instanceof BlockStructure) {
++                    cancelledBlock = true;
+                 }
+-            } else if (tileentity instanceof IInventory) {
+-                entityhuman.openContainer((IInventory) tileentity);
+-                return EnumInteractionResult.SUCCESS;
+             }
+ 
+-            return EnumInteractionResult.PASS;
+-        } else {
+-            if (!entityhuman.isSneaking() || entityhuman.getItemInMainHand().isEmpty() && entityhuman.getItemInOffHand().isEmpty()) {
+-                IBlockData iblockdata = world.getType(blockposition);
 +            PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(entityhuman, Action.RIGHT_CLICK_BLOCK, blockposition, enumdirection, itemstack, cancelledBlock, enumhand);
 +            firedInteract = true;
 +            interactResult = event.useItemInHand() == Event.Result.DENY;
@@ -268,19 +288,11 @@
 +                    Block block = world.getType(blockposition).getBlock();
 +                    ITileInventory itileinventory = (ITileInventory) tileentity;
  
--            if (tileentity instanceof ITileInventory) {
--                Block block = world.getType(blockposition).getBlock();
--                ITileInventory itileinventory = (ITileInventory) tileentity;
--
--                if (itileinventory instanceof TileEntityChest && block instanceof BlockChest) {
--                    itileinventory = ((BlockChest) block).c(world, blockposition);
--                }
+-                if (iblockdata.getBlock().interact(world, blockposition, iblockdata, entityhuman, enumhand, enumdirection, f, f1, f2)) {
 +                    if (itileinventory instanceof TileEntityChest && block instanceof BlockChest) {
 +                        itileinventory = ((BlockChest) block).c(world, blockposition); // PAIL: rename
 +                    }
- 
--                if (itileinventory != null) {
--                    entityhuman.openContainer(itileinventory);
++
 +                    if (itileinventory != null) {
 +                        entityhuman.openContainer(itileinventory);
 +                        return EnumInteractionResult.SUCCESS;
@@ -289,49 +301,37 @@
 +                    entityhuman.openContainer((IInventory) tileentity);
                      return EnumInteractionResult.SUCCESS;
                  }
--            } else if (tileentity instanceof IInventory) {
--                entityhuman.openContainer((IInventory) tileentity);
--                return EnumInteractionResult.SUCCESS;
 -            }
- 
--            return EnumInteractionResult.PASS;
--        } else {
--            if (!entityhuman.isSneaking() || entityhuman.getItemInMainHand().isEmpty() && entityhuman.getItemInOffHand().isEmpty()) {
--                IBlockData iblockdata = world.getType(blockposition);
-+                return EnumInteractionResult.PASS;
-+            } else {
-+                if (!entityhuman.isSneaking() || entityhuman.getItemInMainHand().isEmpty() && entityhuman.getItemInOffHand().isEmpty()) {
-+                    IBlockData iblockdata = world.getType(blockposition);
- 
--                if (iblockdata.getBlock().interact(world, blockposition, iblockdata, entityhuman, enumhand, enumdirection, f, f1, f2)) {
--                    return EnumInteractionResult.SUCCESS;
-+                    enuminteractionresult = iblockdata.getBlock().interact(world, blockposition, iblockdata, entityhuman, enumhand, enumdirection, f, f1, f2) ? EnumInteractionResult.SUCCESS : EnumInteractionResult.PASS;
-                 }
-             }
  
 -            if (itemstack.isEmpty()) {
 -                return EnumInteractionResult.PASS;
 -            } else if (entityhuman.di().a(itemstack.getItem())) {
--                return EnumInteractionResult.PASS;
--            } else {
+                 return EnumInteractionResult.PASS;
+             } else {
 -                if (itemstack.getItem() instanceof ItemBlock && !entityhuman.dk()) {
 -                    Block block1 = ((ItemBlock) itemstack.getItem()).getBlock();
-+            if (!itemstack.isEmpty() && enuminteractionresult != EnumInteractionResult.SUCCESS && !interactResult) { // add !interactResult SPIGOT-764
-+                int i = itemstack.getData();
-+                int j = itemstack.getCount();
++                if (!entityhuman.isSneaking() || entityhuman.getItemInMainHand().isEmpty() && entityhuman.getItemInOffHand().isEmpty()) {
++                    IBlockData iblockdata = world.getType(blockposition);
  
 -                    if (block1 instanceof BlockCommand || block1 instanceof BlockStructure) {
 -                        return EnumInteractionResult.FAIL;
 -                    }
--                }
-+                enuminteractionresult = itemstack.placeItem(entityhuman, world, blockposition, enumhand, enumdirection, f, f1, f2);
++                    enuminteractionresult = iblockdata.getBlock().interact(world, blockposition, iblockdata, entityhuman, enumhand, enumdirection, f, f1, f2) ? EnumInteractionResult.SUCCESS : EnumInteractionResult.PASS;
+                 }
++            }
  
-+                // The item count should not decrement in Creative mode.
-                 if (this.isCreative()) {
+-                if (this.isCreative()) {
 -                    int i = itemstack.getData();
 -                    int j = itemstack.getCount();
 -                    EnumInteractionResult enuminteractionresult = itemstack.placeItem(entityhuman, world, blockposition, enumhand, enumdirection, f, f1, f2);
--
++            if (!itemstack.isEmpty() && enuminteractionresult != EnumInteractionResult.SUCCESS && !interactResult) { // add !interactResult SPIGOT-764
++                int i = itemstack.getData();
++                int j = itemstack.getCount();
+ 
++                enuminteractionresult = itemstack.placeItem(entityhuman, world, blockposition, enumhand, enumdirection, f, f1, f2);
++
++                // The item count should not decrement in Creative mode.
++                if (this.isCreative()) {
                      itemstack.setData(i);
                      itemstack.setCount(j);
 -                    return enuminteractionresult;
