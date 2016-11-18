@@ -54,6 +54,16 @@ public class CraftFurnace extends CraftContainer implements Furnace {
     }
 
     @Override
+    public String getCustomName() {
+        return furnace.hasCustomName() ? furnace.getName() : null;
+    }
+
+    @Override
+    public void setCustomName(String name) {
+        furnace.a(name); // PAIL: setCustomName
+    }
+
+    @Override
     public TileEntityFurnace getTileEntity() {
         return furnace;
     }
