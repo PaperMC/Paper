@@ -8,7 +8,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventoryFurnace;
 import org.bukkit.inventory.FurnaceInventory;
 
-public class CraftFurnace extends CraftContainer implements Furnace {
+public class CraftFurnace extends CraftLootable implements Furnace {
     private final TileEntityFurnace furnace;
 
     public CraftFurnace(final Block block) {
