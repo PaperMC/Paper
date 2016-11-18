@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.BlockShulkerBox;
+import net.minecraft.server.TileEntity;
 import net.minecraft.server.TileEntityShulkerBox;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
@@ -27,6 +28,11 @@ public class CraftShulkerBox extends CraftLootable implements ShulkerBox {
 
         box = te;
         world = null;
+    }
+
+    @Override
+    public TileEntity getTileEntity() {
+        return box;
     }
 
     @Override
