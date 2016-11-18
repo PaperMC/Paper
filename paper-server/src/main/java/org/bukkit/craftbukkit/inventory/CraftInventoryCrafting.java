@@ -70,10 +70,10 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
     public CraftItemStack getItem(int index) {
         if (index < getResultInventory().getSize()) {
             net.minecraft.server.ItemStack item = getResultInventory().getItem(index);
-            return CraftItemStack.asCraftMirror(item);
+            return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
         } else {
             net.minecraft.server.ItemStack item = getMatrixInventory().getItem(index - getResultInventory().getSize());
-            return CraftItemStack.asCraftMirror(item);
+            return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
         }
     }
 
@@ -99,7 +99,8 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
 
     public ItemStack getResult() {
         net.minecraft.server.ItemStack item = getResultInventory().getItem(0);
-        return CraftItemStack.asCraftMirror(item);
+        if (!item.isEmpty()) return CraftItemStack.asCraftMirror(item);
+        return null;
     }
 
     public void setMatrix(ItemStack[] contents) {

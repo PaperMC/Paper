@@ -25,4 +25,12 @@ public class NMSCraftItemStackTest extends AbstractTestingBase {
         assertThat(clone.getData(), is(itemStack.getData()));
         assertThat(clone, is(itemStack));
     }
+
+    @Test
+    public void testCloneNullItem() throws Exception {
+        net.minecraft.server.ItemStack nmsItemStack = null;
+        ItemStack itemStack = CraftItemStack.asCraftMirror(nmsItemStack);
+        ItemStack clone = itemStack.clone();
+        assertThat(clone, is(itemStack));
+    }
 }
