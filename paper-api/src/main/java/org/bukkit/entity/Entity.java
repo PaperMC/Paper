@@ -2,7 +2,6 @@ package org.bukkit.entity;
 
 import org.bukkit.Location;
 import org.bukkit.EntityEffect;
-import org.bukkit.Nameable;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -18,7 +17,7 @@ import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 /**
  * Represents a base entity in the world
  */
-public interface Entity extends Metadatable, CommandSender, Nameable {
+public interface Entity extends Metadatable, CommandSender {
 
     /**
      * Gets the entity's current position
@@ -299,6 +298,30 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * @return The current vehicle.
      */
     public Entity getVehicle();
+
+    /**
+     * Sets a custom name on a mob. This name will be used in death messages
+     * and can be sent to the client as a nameplate over the mob.
+     * <p>
+     * Setting the name to null or an empty string will clear it.
+     * <p>
+     * This value has no effect on players, they will always use their real
+     * name.
+     *
+     * @param name the name to set
+     */
+    public void setCustomName(String name);
+
+    /**
+     * Gets the custom name on a mob. If there is no name this method will
+     * return null.
+     * <p>
+     * This value has no effect on players, they will always use their real
+     * name.
+     *
+     * @return name of the mob or null
+     */
+    public String getCustomName();
 
     /**
      * Sets whether or not to display the mob's custom name client side. The
