@@ -88,4 +88,14 @@ public class CraftBeacon extends CraftContainer implements Beacon {
     public void setSecondaryEffect(PotionEffectType effect) {
         beacon.secondaryEffect = (effect != null) ? MobEffectList.fromId(effect.getId()) : null;
     }
+
+    @Override
+    public String getCustomName() {
+        return beacon.hasCustomName() ? beacon.getName() : null;
+    }
+
+    @Override
+    public void setCustomName(String name) {
+        beacon.a(name); // PAIL: setCustomName
+    }
 }

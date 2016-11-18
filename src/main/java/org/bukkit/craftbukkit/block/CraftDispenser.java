@@ -14,7 +14,7 @@ import org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.projectiles.BlockProjectileSource;
 
-public class CraftDispenser extends CraftContainer implements Dispenser {
+public class CraftDispenser extends CraftLootable implements Dispenser {
     private final CraftWorld world;
     private final TileEntityDispenser dispenser;
 

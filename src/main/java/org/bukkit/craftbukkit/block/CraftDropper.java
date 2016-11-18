@@ -12,7 +12,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.inventory.Inventory;
 
-public class CraftDropper extends CraftContainer implements Dropper {
+public class CraftDropper extends CraftLootable implements Dropper {
     private final CraftWorld world;
     private final TileEntityDropper dropper;
 

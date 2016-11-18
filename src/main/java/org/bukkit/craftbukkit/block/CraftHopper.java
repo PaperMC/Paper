@@ -8,7 +8,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.inventory.Inventory;
 
-public class CraftHopper extends CraftContainer implements Hopper {
+public class CraftHopper extends CraftLootable implements Hopper {
     private final TileEntityHopper hopper;
 
     public CraftHopper(final Block block) {
