@@ -24,7 +24,8 @@ public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpa
     }
 
     public EntityType getSpawnedType() {
-        return EntityType.fromName(spawner.getSpawner().getMobName().a());
+        MinecraftKey key = spawner.getSpawner().getMobName();
+        return (key == null) ? EntityType.PIG : EntityType.fromName(key.a());
     }
 
     public void setSpawnedType(EntityType entityType) {
