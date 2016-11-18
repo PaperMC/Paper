@@ -15,7 +15,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-public class CraftBeacon extends CraftLootable implements Beacon {
+public class CraftBeacon extends CraftContainer implements Beacon {
     private final CraftWorld world;
     private final TileEntityBeacon beacon;
 

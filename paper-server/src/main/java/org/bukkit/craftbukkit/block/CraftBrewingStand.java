@@ -59,14 +59,4 @@ public class CraftBrewingStand extends CraftContainer implements BrewingStand {
     public void setFuelLevel(int level) {
         brewingStand.setProperty(1, level);
     }
-
-    @Override
-    public String getCustomName() {
-        return brewingStand.hasCustomName() ? brewingStand.getName() : null;
-    }
-
-    @Override
-    public void setCustomName(String name) {
-        brewingStand.a(name); // PAIL: setCustomName
-    }
 }

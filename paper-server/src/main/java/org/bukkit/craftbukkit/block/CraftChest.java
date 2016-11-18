@@ -11,7 +11,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest;
 import org.bukkit.inventory.Inventory;
 
-public class CraftChest extends CraftLootable implements Chest {
+public class CraftChest extends CraftContainer implements Chest {
     private final CraftWorld world;
     private final TileEntityChest chest;
 
