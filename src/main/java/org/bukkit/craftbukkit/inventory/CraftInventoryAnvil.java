@@ -28,10 +28,10 @@ public class CraftInventoryAnvil extends CraftInventory implements AnvilInventor
     public ItemStack getItem(int slot) {
         if (slot < getIngredientsInventory().getSize()) {
             net.minecraft.server.ItemStack item = getIngredientsInventory().getItem(slot);
-            return CraftItemStack.asCraftMirror(item);
+            return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
         } else {
             net.minecraft.server.ItemStack item = getResultInventory().getItem(slot - getIngredientsInventory().getSize());
-            return CraftItemStack.asCraftMirror(item);
+            return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
         }
     }
 
