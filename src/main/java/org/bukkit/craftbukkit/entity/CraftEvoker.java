@@ -25,4 +25,14 @@ public class CraftEvoker extends CraftMonster implements Evoker {
     public EntityType getType() {
         return EntityType.EVOKER;
     }
+
+    @Override
+    public Spell getCurrentSpell() {
+        return Spell.values()[getHandle().getSpell()];
+    }
+
+    @Override
+    public void setCurrentSpell(Spell spell) {
+        getHandle().a(spell == null ? 0 : spell.ordinal());
+    }
 }
