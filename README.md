@@ -27,6 +27,6 @@ Once you have performed these steps you can create a fork, push your code change
 
 If you submit a PR involving both Bukkit and CraftBukkit, it's appreciated if each PR links the other. Additionally, every reference to an obfuscated field/method in NMS should be marked with `// PAIL: Rename` and optionally a suggested name, to make mapping creation easier. E.g.:
 ```
-    entity.k.get(i).f(); // PAIL Rename pathfinders, navigateToHome 
+    entity.k.get(i).f(); // PAIL pathfinders, navigateToHome 
 ```
 Also, make sure to include `// Craftbukkit` comments to indicate modified NMS sources.
