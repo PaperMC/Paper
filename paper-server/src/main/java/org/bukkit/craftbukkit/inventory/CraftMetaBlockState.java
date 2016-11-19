@@ -443,6 +443,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         case RED_SHULKER_BOX:
         case BLACK_SHULKER_BOX:
             valid = te instanceof TileEntityShulkerBox;
+            break;
         default:
             valid = false;
             break;
