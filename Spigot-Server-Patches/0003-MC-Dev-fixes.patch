@@ -1,4 +1,4 @@
-From 3feb3accfd0afbeb9d2896bf9f1561dab0959fb7 Mon Sep 17 00:00:00 2001
+From ac03240e79862b55067a1317bea4ab1a14ab9a95 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 30 Mar 2016 19:36:20 -0400
 Subject: [PATCH] MC Dev fixes
@@ -83,66 +83,6 @@ index fe74068..b669884 100644
          return this.a((ICommand) object);
      }
  
-diff --git a/src/main/java/net/minecraft/server/IEntitySelector.java b/src/main/java/net/minecraft/server/IEntitySelector.java
-index dc0ffd8..ec75cf3 100644
---- a/src/main/java/net/minecraft/server/IEntitySelector.java
-+++ b/src/main/java/net/minecraft/server/IEntitySelector.java
-@@ -61,7 +61,7 @@ public final class IEntitySelector {
-             }
- 
-             public boolean apply(@Nullable Object object) {
--                return this.a((Entity) object);
-+                return this.a((T) object); // Paper - Fix decompile error
-             }
-         };
-     }
-@@ -71,7 +71,7 @@ public final class IEntitySelector {
-         final ScoreboardTeamBase.EnumTeamPush scoreboardteambase_enumteampush = scoreboardteambase == null ? ScoreboardTeamBase.EnumTeamPush.ALWAYS : scoreboardteambase.getCollisionRule();
- 
-         return scoreboardteambase_enumteampush == ScoreboardTeamBase.EnumTeamPush.NEVER ? Predicates.alwaysFalse() : Predicates.and(IEntitySelector.e, new Predicate() {
--            public boolean a(@Nullable Entity entity) {
-+            public boolean a(@Nullable Entity entity1) { // Paper - fix decompile error
-                 if (!entity.isCollidable()) {
-                     return false;
-                 } else if (entity1.world.isClientSide && (!(entity instanceof EntityHuman) || !((EntityHuman) entity).cR())) {
-@@ -83,9 +83,10 @@ public final class IEntitySelector {
-                     if (scoreboardteambase_enumteampush == ScoreboardTeamBase.EnumTeamPush.NEVER) {
-                         return false;
-                     } else {
--                        boolean flag = scoreboardteambase1 != null && scoreboardteambase1.isAlly(scoreboardteambase);
-+                        boolean flag = scoreboardteambase != null && scoreboardteambase.isAlly(scoreboardteambase); // Paper - fix decompile error
- 
--                        return (scoreboardteambase_enumteampush1 == ScoreboardTeamBase.EnumTeamPush.HIDE_FOR_OWN_TEAM || scoreboardteambase_enumteampush == ScoreboardTeamBase.EnumTeamPush.HIDE_FOR_OWN_TEAM) && flag ? false : scoreboardteambase_enumteampush1 != ScoreboardTeamBase.EnumTeamPush.HIDE_FOR_OTHER_TEAMS && scoreboardteambase_enumteampush != ScoreboardTeamBase.EnumTeamPush.HIDE_FOR_OTHER_TEAMS || flag;
-+                        // Paper - fix decompiler error
-+                        return (scoreboardteambase_enumteampush == ScoreboardTeamBase.EnumTeamPush.HIDE_FOR_OWN_TEAM || scoreboardteambase_enumteampush == ScoreboardTeamBase.EnumTeamPush.HIDE_FOR_OWN_TEAM) && flag ? false : scoreboardteambase_enumteampush != ScoreboardTeamBase.EnumTeamPush.HIDE_FOR_OTHER_TEAMS && scoreboardteambase_enumteampush != ScoreboardTeamBase.EnumTeamPush.HIDE_FOR_OTHER_TEAMS || flag;
-                     }
-                 }
-             }
-@@ -98,10 +99,12 @@ public final class IEntitySelector {
- 
-     public static Predicate<Entity> b(final Entity entity) {
-         return new Predicate() {
--            public boolean a(@Nullable Entity entity) {
-+            public boolean a(@Nullable Entity entity1) { // Paper - fix decompile error
-                 while (true) {
--                    if (entity.isPassenger()) {
--                        entity = entity.bB();
-+                    // Paper start - fix decompile error - entity -> entity1 - double check this
-+                    if (entity1.isPassenger()) {
-+                        entity1 = entity.bB();
-+                        // Paper end
-                         if (entity != entity1) {
-                             continue;
-                         }
-@@ -139,7 +142,7 @@ public final class IEntitySelector {
-             }
-         }
- 
--        public boolean apply(@Nullable Object object) {
-+        public boolean apply(@Nullable Entity object) {
-             return this.a((Entity) object);
-         }
-     }
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemFactoryTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemFactoryTest.java
 index f5bcbdb..3190cad 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemFactoryTest.java
