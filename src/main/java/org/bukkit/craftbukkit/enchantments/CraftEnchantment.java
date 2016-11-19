@@ -60,6 +60,11 @@ public class CraftEnchantment extends Enchantment {
     }
 
     @Override
+    public boolean isCursed() {
+        return target.d(); // PAIL isCursed
+    }
+
+    @Override
     public boolean canEnchantItem(ItemStack item) {
         return target.canEnchant(CraftItemStack.asNMSCopy(item));
     }
@@ -87,6 +92,8 @@ public class CraftEnchantment extends Enchantment {
             return "DEPTH_STRIDER";
         case 9:
             return "FROST_WALKER";
+        case 10:
+            return "BINDING_CURSE";
         case 16:
             return "DAMAGE_ALL";
         case 17:
@@ -121,6 +128,8 @@ public class CraftEnchantment extends Enchantment {
             return "LURE";
         case 70:
             return "MENDING";
+        case 71:
+            return "VANISHING_CURSE";
         default:
             return "UNKNOWN_ENCHANT_" + getId();
         }
