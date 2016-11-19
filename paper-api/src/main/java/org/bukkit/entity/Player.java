@@ -13,6 +13,7 @@ import org.bukkit.Note;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.Statistic;
 import org.bukkit.WeatherType;
 import org.bukkit.command.CommandSender;
@@ -240,6 +241,34 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * @param pitch the pitch of the sound
      */
     public void playSound(Location location, String sound, float volume, float pitch);
+
+    /**
+     * Play a sound for a player at the location.
+     * <p>
+     * This function will fail silently if Location or Sound are null.
+     *
+     * @param location The location to play the sound
+     * @param sound The sound to play
+     * @param category The category of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     */
+    public void playSound(Location location, Sound sound, SoundCategory category, float volume, float pitch);
+
+    /**
+     * Play a sound for a player at the location.
+     * <p>
+     * This function will fail silently if Location or Sound are null. No sound
+     * will be heard by the player if their client does not have the respective
+     * sound for the value passed.
+     *
+     * @param location the location to play the sound
+     * @param sound the internal sound name to play
+     * @param category The category of the sound
+     * @param volume the volume of the sound
+     * @param pitch the pitch of the sound
+     */
+    public void playSound(Location location, String sound, SoundCategory category, float volume, float pitch);
 
     /**
      * Stop the specified sound from playing.
