@@ -215,6 +215,15 @@ public abstract class Enchantment {
     public abstract boolean isTreasure();
 
     /**
+     * Checks if this enchantment is a cursed enchantment
+     * <br>
+     * Cursed enchantments are found the same way treasure enchantments are
+     *
+     * @return true if the enchantment is cursed
+     */
+    public abstract boolean isCursed();
+
+    /**
      * Check if this enchantment conflicts with another enchantment.
      *
      * @param other The enchantment to check against
