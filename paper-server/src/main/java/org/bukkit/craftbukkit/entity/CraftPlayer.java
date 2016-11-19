@@ -322,15 +322,25 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void stopSound(Sound sound) {
-        stopSound(CraftSound.getSound(sound));
+        stopSound(sound, null);
     }
 
     @Override
     public void stopSound(String sound) {
+        stopSound(sound, null);
+    }
+
+    @Override
+    public void stopSound(Sound sound, org.bukkit.SoundCategory category) {
+        stopSound(CraftSound.getSound(sound), category);
+    }
+
+    @Override
+    public void stopSound(String sound, org.bukkit.SoundCategory category) {
         if (getHandle().playerConnection == null) return;
         PacketDataSerializer packetdataserializer = new PacketDataSerializer(Unpooled.buffer());
 
-        packetdataserializer.a("");
+        packetdataserializer.a(category == null ? "" : net.minecraft.server.SoundCategory.valueOf(category.name()).a());
         packetdataserializer.a(sound);
         getHandle().playerConnection.sendPacket(new PacketPlayOutCustomPayload("MC|StopSound", packetdataserializer));
     }
