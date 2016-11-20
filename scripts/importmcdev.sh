@@ -41,6 +41,7 @@ import BiomeBase
 import BiomeMesa
 import BlockChest
 import BlockFalling
+import BlockFlowerPot
 import BlockFluids
 import BlockFurnace
 import BlockIceFrost
