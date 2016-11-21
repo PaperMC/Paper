@@ -19,8 +19,8 @@ public class CraftMerchantRecipe extends MerchantRecipe {
     public CraftMerchantRecipe(ItemStack result, int uses, int maxUses, boolean experienceReward) {
         super(result, uses, maxUses, experienceReward);
         this.handle = new net.minecraft.server.MerchantRecipe(
-                null,
-                null,
+                net.minecraft.server.ItemStack.a,
+                net.minecraft.server.ItemStack.a,
                 CraftItemStack.asNMSCopy(result),
                 uses,
                 maxUses,

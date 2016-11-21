@@ -8,8 +8,10 @@ import net.minecraft.server.*;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.inventory.MainHand;
+import org.bukkit.inventory.Merchant;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
+import org.bukkit.entity.Villager;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
@@ -22,8 +24,8 @@ import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.inventory.CraftMerchant;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.Villager;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.permissions.Permission;
@@ -357,16 +359,32 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     public InventoryView openMerchant(Villager villager, boolean force) {
         Preconditions.checkNotNull(villager, "villager cannot be null");
-        if (!force && villager.isTrading()) {
+
+        return this.openMerchant(villager, force);
+    }
+
+    @Override
+    public InventoryView openMerchant(Merchant merchant, boolean force) {
+        Preconditions.checkNotNull(merchant, "merchant cannot be null");
+
+        if (!force && merchant.isTrading()) {
             return null;
-        } else if (villager.isTrading()) {
-            // we're not supposed to have multiple people using the same villager, so we have to close it.
-            villager.getTrader().closeInventory();
+        } else if (merchant.isTrading()) {
+            // we're not supposed to have multiple people using the same merchant, so we have to close it.
+            merchant.getTrader().closeInventory();
         }
 
-        EntityVillager ev = ((CraftVillager) villager).getHandle();
-        ev.setTradingPlayer(this.getHandle());
-        this.getHandle().openTrade(ev);
+        IMerchant mcMerchant;
+        if (merchant instanceof CraftVillager) {
+            mcMerchant = ((CraftVillager) merchant).getHandle();
+        } else if (merchant instanceof CraftMerchant) {
+            mcMerchant = ((CraftMerchant) merchant).getMerchant();
+        } else {
+            throw new IllegalArgumentException("Can't open merchant " + merchant.toString());
+        }
+
+        mcMerchant.setTradingPlayer(this.getHandle());
+        this.getHandle().openTrade(mcMerchant);
 
         return this.getHandle().activeContainer.getBukkitView();
     }
