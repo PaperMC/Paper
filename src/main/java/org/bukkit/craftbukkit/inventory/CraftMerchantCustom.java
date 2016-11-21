@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
 import net.minecraft.server.BlockPosition;
+import net.minecraft.server.ChatComponentText;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.IMerchant;
@@ -8,7 +9,6 @@ import net.minecraft.server.ItemStack;
 import net.minecraft.server.MerchantRecipe;
 import net.minecraft.server.MerchantRecipeList;
 import net.minecraft.server.World;
-import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 public class CraftMerchantCustom extends CraftMerchant {
 
@@ -58,7 +58,7 @@ public class CraftMerchantCustom extends CraftMerchant {
 
         @Override
         public IChatBaseComponent getScoreboardDisplayName() {
-            return CraftChatMessage.fromString(title)[0];
+            return new ChatComponentText(title);
         }
 
         @Override
