@@ -29,6 +29,7 @@ import org.bukkit.help.HelpMap;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.map.MapView;
 import org.bukkit.permissions.Permissible;
@@ -929,6 +930,17 @@ public final class Bukkit {
      */
     public static Inventory createInventory(InventoryHolder owner, int size, String title) throws IllegalArgumentException {
         return server.createInventory(owner, size, title);
+    }
+
+    /**
+     * Creates an empty merchant.
+     *
+     * @param title the title of the corresponding merchant inventory, displayed
+     * when the merchant inventory is viewed
+     * @return a new merchant
+     */
+    public static Merchant createMerchant(String title) {
+        return server.createMerchant(title);
     }
 
     /**

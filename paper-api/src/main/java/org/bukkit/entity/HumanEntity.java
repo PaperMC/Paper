@@ -3,6 +3,7 @@ package org.bukkit.entity;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.inventory.MainHand;
+import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.InventoryView;
@@ -116,6 +117,19 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
      * opened.
      */
     public InventoryView openMerchant(Villager trader, boolean force);
+
+    /**
+     * Starts a trade between the player and the merchant.
+     *
+     * Note that only one player may trade with a merchant at once. You must use
+     * the force parameter for this.
+     *
+     * @param merchant The merchant to trade with. Cannot be null.
+     * @param force whether to force the trade even if another player is trading
+     * @return The newly opened inventory view, or null if it could not be
+     * opened.
+     */
+    public InventoryView openMerchant(Merchant merchant, boolean force);
 
     /**
      * Force-closes the currently open inventory view for this player, if any.

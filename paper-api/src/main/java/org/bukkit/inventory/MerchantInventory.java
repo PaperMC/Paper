@@ -1,9 +1,10 @@
 package org.bukkit.inventory;
 
 /**
- * Represents a trading inventory between a player and a villager.
+ * Represents a trading inventory between a player and a merchant.
  * <br>
- * The holder of this Inventory is the owning Villager.
+ * The holder of this Inventory is the owning Villager, or null if the player is
+ * trading with a merchant created by a plugin.
  */
 public interface MerchantInventory extends Inventory {
 

@@ -29,6 +29,7 @@ import org.bukkit.help.HelpMap;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.map.MapView;
 import org.bukkit.permissions.Permissible;
@@ -760,6 +761,15 @@ public interface Server extends PluginMessageRecipient {
      * @throws IllegalArgumentException if the size is not a multiple of 9
      */
     Inventory createInventory(InventoryHolder owner, int size, String title) throws IllegalArgumentException;
+
+    /**
+     * Creates an empty merchant.
+     *
+     * @param title the title of the corresponding merchant inventory, displayed
+     * when the merchant inventory is viewed
+     * @return a new merchant
+     */
+    Merchant createMerchant(String title);
 
     /**
      * Gets user-specified limit for number of monsters that can spawn in a

@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a Villager's trade.
+ * Represents a merchant's trade.
  *
  * Trades can take one or two ingredients, and provide one result. The
  * ingredients' Itemstack amounts are respected in the trade.
@@ -43,7 +43,7 @@ public class MerchantRecipe implements Recipe {
     }
 
     public void addIngredient(ItemStack item) {
-        Preconditions.checkState(ingredients.size() < 2, "Merchant can only have 2 ingredients");
+        Preconditions.checkState(ingredients.size() < 2, "MerchantRecipe can only have 2 ingredients");
         ingredients.add(item.clone());
     }
 
@@ -88,7 +88,7 @@ public class MerchantRecipe implements Recipe {
      * Get the maximum number of uses this trade has.
      * <br>
      * The maximum uses of this trade may increase when a player trades with the
-     * owning villager.
+     * owning merchant.
      *
      * @return the maximum number of uses
      */
