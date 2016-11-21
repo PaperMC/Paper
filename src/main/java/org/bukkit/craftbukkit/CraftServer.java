@@ -1484,7 +1484,7 @@ public final class CraftServer implements Server {
 
     @Override
     public Merchant createMerchant(String title) {
-        return new CraftMerchantCustom(title);
+        return new CraftMerchantCustom(title == null ? InventoryType.MERCHANT.getDefaultTitle() : title);
     }
 
     @Override
