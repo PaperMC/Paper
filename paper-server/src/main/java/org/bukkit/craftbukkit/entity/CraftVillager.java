@@ -1,16 +1,11 @@
 package org.bukkit.craftbukkit.entity;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
-import java.util.Collections;
 import java.util.List;
-import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityVillager;
-import net.minecraft.server.MerchantRecipeList;
 import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
-import org.bukkit.craftbukkit.inventory.CraftMerchantRecipe;
+import org.bukkit.craftbukkit.inventory.CraftMerchant;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Villager;
@@ -19,6 +14,8 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.MerchantRecipe;
 
 public class CraftVillager extends CraftAgeable implements Villager, InventoryHolder {
+
+    private CraftMerchant merchant;
 
     public CraftVillager(CraftServer server, EntityVillager entity) {
         super(server, entity);
@@ -53,38 +50,33 @@ public class CraftVillager extends CraftAgeable implements Villager, InventoryHo
         return new CraftInventory(getHandle().inventory);
     }
 
-    @Override
-    public List<MerchantRecipe> getRecipes() {
-        return Collections.unmodifiableList(Lists.transform(getHandle().getOffers(null), new Function<net.minecraft.server.MerchantRecipe, MerchantRecipe>() {
-            @Override
-            public MerchantRecipe apply(net.minecraft.server.MerchantRecipe recipe) {
-                return recipe.asBukkit();
-            }
-        }));
+    private CraftMerchant getMerchant() {
+        return (merchant == null) ? merchant = new CraftMerchant(getHandle()) : merchant;
     }
 
     @Override
-    public void setRecipes(List<MerchantRecipe> list) {
-        MerchantRecipeList recipes = getHandle().getOffers(null);
-        recipes.clear();
-        for (MerchantRecipe m : list) {
-            recipes.add(CraftMerchantRecipe.fromBukkit(m).toMinecraft());
-        }
+    public List<MerchantRecipe> getRecipes() {
+        return getMerchant().getRecipes();
+    }
+
+    @Override
+    public void setRecipes(List<MerchantRecipe> recipes) {
+        this.getMerchant().setRecipes(recipes);
     }
 
     @Override
     public MerchantRecipe getRecipe(int i) {
-        return getHandle().getOffers(null).get(i).asBukkit();
+        return getMerchant().getRecipe(i);
     }
 
     @Override
     public void setRecipe(int i, MerchantRecipe merchantRecipe) {
-        getHandle().getOffers(null).set(i, CraftMerchantRecipe.fromBukkit(merchantRecipe).toMinecraft());
+        getMerchant().setRecipe(i, merchantRecipe);
     }
 
     @Override
     public int getRecipeCount() {
-        return getHandle().getOffers(null).size();
+        return getMerchant().getRecipeCount();
     }
 
     @Override
@@ -94,8 +86,7 @@ public class CraftVillager extends CraftAgeable implements Villager, InventoryHo
 
     @Override
     public HumanEntity getTrader() {
-        EntityHuman eh = getHandle().getTrader();
-        return eh == null ? null : eh.getBukkitEntity();
+        return getMerchant().getTrader();
     }
 
     @Override
