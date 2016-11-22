@@ -31,19 +31,36 @@ public interface Llama extends ChestedHorse {
     }
 
     /**
-     * Gets the llamas's color.
+     * Gets the llama's color.
      *
      * @return a {@link Color} representing the llama's color
      */
-    public Color getColor();
+    Color getColor();
 
     /**
      * Sets the llama's color.
      *
      * @param color a {@link Color} for this llama
      */
-    public void setColor(Color color);
+    void setColor(Color color);
+
+    /**
+     * Gets the llama's strength. A higher strength llama will have more
+     * inventory slots and be more threatening to entities.
+     *
+     * @return llama strength [1,5]
+     */
+    int getStrength();
+
+    /**
+     * Gets the llama's strength. A higher strength llama will have more
+     * inventory slots and be more threatening to entities. Inventory slots are
+     * equal to strength * 3.
+     *
+     * @param strength llama strength [1,5]
+     */
+    void setStrength(int strength);
 
     @Override
-    public LlamaInventory getInventory();
+    LlamaInventory getInventory();
 }
