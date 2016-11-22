@@ -155,6 +155,21 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      */
     boolean hasItemFlag(ItemFlag flag);
 
+    /**
+     * Return if the unbreakable tag is true. An unbreakable item will not lose
+     * durability.
+     *
+     * @return true if the unbreakable tag is true
+     */
+    boolean isUnbreakable();
+
+    /**
+     * Sets the unbreakable tag. An unbreakable item will not lose durability.
+     *
+     * @param unbreakable true if set unbreakable
+     */
+    void setUnbreakable(boolean unbreakable);
+
     @SuppressWarnings("javadoc")
     ItemMeta clone();
 }
