@@ -38,6 +38,19 @@ public class CraftLlama extends CraftChestedHorse implements Llama {
     }
 
     @Override
+    public int getStrength() {
+       return getHandle().dL();
+    }
+
+    @Override
+    public void setStrength(int strength) {
+        Preconditions.checkArgument(1 <= strength && strength <= 5, "strength must be [1,5]");
+        if (strength == getStrength()) return;
+        getHandle().p(strength);
+        getHandle().dx();
+    }
+
+    @Override
     public Horse.Variant getVariant() {
         return Horse.Variant.LLAMA;
     }
