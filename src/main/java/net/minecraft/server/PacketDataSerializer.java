@@ -284,9 +284,18 @@ public class PacketDataSerializer extends ByteBuf {
             if (item.usesDurability() || item.n()) {
                 // Spigot start - filter
                 itemstack = itemstack.cloneItemStack();
-                CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
+                //CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack)); // Paper - This is no longer needed due to NBT being supported
                 // Spigot end
                 nbttagcompound = itemstack.getTag();
+                // Paper start
+                if (nbttagcompound != null && nbttagcompound.hasKeyOfType("SkullOwner", 10)) {
+                    NBTTagCompound owner = nbttagcompound.getCompound("SkullOwner");
+                    if (owner.hasUUID("Id")) {
+                        nbttagcompound.setUUID("SkullOwnerOrig", owner.getUUID("Id"));
+                        TileEntitySkull.sanitizeUUID(owner);
+                    }
+                }
+                // Paper end
             }
 
             this.a(nbttagcompound);
@@ -306,7 +315,16 @@ public class PacketDataSerializer extends ByteBuf {
             itemstack.setTag(this.l());
             // CraftBukkit start
             if (itemstack.getTag() != null) {
-                CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
+                // Paper start - Fix skulls of same owner - restore orig ID since we changed it on send to client
+                if (itemstack.tag.hasKey("SkullOwnerOrig")) {
+                    NBTTagCompound owner = itemstack.tag.getCompound("SkullOwner");
+                    if (itemstack.tag.hasKey("SkullOwnerOrig")) {
+                        owner.map.put("Id", itemstack.tag.map.get("SkullOwnerOrig"));
+                        itemstack.tag.remove("SkullOwnerOrig");
+                    }
+                }
+                // Paper end
+                // CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack)); // Paper - This is no longer needed due to NBT being supported
             }
             // CraftBukkit end
             return itemstack;
