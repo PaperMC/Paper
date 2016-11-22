@@ -211,12 +211,15 @@ class CraftMetaItem implements ItemMeta, Repairable {
     static final ItemMetaKey ATTRIBUTES_UUID_LOW = new ItemMetaKey("UUIDLeast");
     @Specific(Specific.To.NBT)
     static final ItemMetaKey HIDEFLAGS = new ItemMetaKey("HideFlags", "ItemFlags");
+    @Specific(Specific.To.NBT)
+    static final ItemMetaKey UNBREAKABLE = new ItemMetaKey("Unbreakable");
 
     private String displayName;
     private List<String> lore;
     private Map<Enchantment, Integer> enchantments;
     private int repairCost;
     private int hideFlag;
+    private boolean unbreakable;
 
     private static final Set<String> HANDLED_TAGS = Sets.newHashSet();
 
@@ -239,6 +242,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
         this.repairCost = meta.repairCost;
         this.hideFlag = meta.hideFlag;
+        this.unbreakable = meta.unbreakable;
         this.unhandledTags.putAll(meta.unhandledTags);
     }
 
@@ -269,6 +273,9 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
         if (tag.hasKey(HIDEFLAGS.NBT)) {
             hideFlag = tag.getInt(HIDEFLAGS.NBT);
+        }
+        if (tag.hasKey(UNBREAKABLE.NBT)) {
+            unbreakable = tag.getBoolean(UNBREAKABLE.NBT);
         }
 
         if (tag.get(ATTRIBUTES.NBT) instanceof NBTTagList) {
@@ -371,6 +378,11 @@ class CraftMetaItem implements ItemMeta, Repairable {
             }
         }
 
+        Boolean unbreakable = SerializableMeta.getObject(Boolean.class, map, UNBREAKABLE.BUKKIT, true);
+        if (unbreakable != null) {
+            setUnbreakable(unbreakable);
+        }
+
         String internal = SerializableMeta.getString(map, "internal", true);
         if (internal != null) {
             ByteArrayInputStream buf = new ByteArrayInputStream(Base64.decodeBase64(internal));
@@ -430,6 +442,10 @@ class CraftMetaItem implements ItemMeta, Repairable {
             itemTag.setInt(REPAIR.NBT, repairCost);
         }
 
+        if (isUnbreakable()) {
+            itemTag.setBoolean(UNBREAKABLE.NBT, unbreakable);
+        }
+
         for (Map.Entry<String, NBTBase> e : unhandledTags.entrySet()) {
             itemTag.set(e.getKey(), e.getValue());
         }
@@ -484,7 +500,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
     @Overridden
     boolean isEmpty() {
-        return !(hasDisplayName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0);
+        return !(hasDisplayName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0 || isUnbreakable());
     }
 
     public String getDisplayName() {
@@ -610,6 +626,16 @@ class CraftMetaItem implements ItemMeta, Repairable {
     }
 
     @Override
+    public boolean isUnbreakable() {
+        return unbreakable;
+    }
+
+    @Override
+    public void setUnbreakable(boolean unbreakable) {
+        this.unbreakable = unbreakable;
+    }
+
+    @Override
     public final boolean equals(Object object) {
         if (object == null) {
             return false;
@@ -635,7 +661,8 @@ class CraftMetaItem implements ItemMeta, Repairable {
                 && (this.hasLore() ? that.hasLore() && this.lore.equals(that.lore) : !that.hasLore())
                 && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost())
                 && (this.unhandledTags.equals(that.unhandledTags))
-                && (this.hideFlag == that.hideFlag);
+                && (this.hideFlag == that.hideFlag)
+                && (this.isUnbreakable() == that.isUnbreakable());
     }
 
     /**
@@ -662,6 +689,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
         hash = 61 * hash + (hasRepairCost() ? this.repairCost : 0);
         hash = 61 * hash + unhandledTags.hashCode();
         hash = 61 * hash + hideFlag;
+        hash = 61 * hash + (isUnbreakable() ? 1231 : 1237);
         return hash;
     }
 
@@ -677,6 +705,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
                 clone.enchantments = new HashMap<Enchantment, Integer>(this.enchantments);
             }
             clone.hideFlag = this.hideFlag;
+            clone.unbreakable = this.unbreakable;
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new Error(e);
@@ -712,6 +741,10 @@ class CraftMetaItem implements ItemMeta, Repairable {
         }
         if (!hideFlags.isEmpty()) {
             builder.put(HIDEFLAGS.BUKKIT, hideFlags);
+        }
+
+        if (isUnbreakable()) {
+            builder.put(UNBREAKABLE.BUKKIT, unbreakable);
         }
 
         final Map<String, NBTBase> internalTags = new HashMap<String, NBTBase>(unhandledTags);
@@ -800,6 +833,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
                         REPAIR.NBT,
                         ENCHANTMENTS.NBT,
                         HIDEFLAGS.NBT,
+                        UNBREAKABLE.NBT,
                         CraftMetaMap.MAP_SCALING.NBT,
                         CraftMetaPotion.POTION_EFFECTS.NBT,
                         CraftMetaPotion.DEFAULT_POTION.NBT,
