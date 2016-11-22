@@ -265,7 +265,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             return new CraftDispenser(material, (TileEntityDispenser) te);
         case DROPPER:
             if (te == null) {
-                te = new TileEntityDispenser();
+                te = new TileEntityDropper();
             }
             return new CraftDropper(material, (TileEntityDropper) te);
         case END_GATEWAY:
