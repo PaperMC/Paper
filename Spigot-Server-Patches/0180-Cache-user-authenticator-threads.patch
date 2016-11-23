@@ -1,0 +1,79 @@
+From 2e8dd217d3839574879f4db1f0a79e321aec23a9 Mon Sep 17 00:00:00 2001
+From: vemacs <d@nkmem.es>
+Date: Wed, 23 Nov 2016 08:31:45 -0500
+Subject: [PATCH] Cache user authenticator threads
+
+
+diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
+index fe390fe..f4735a8 100644
+--- a/src/main/java/net/minecraft/server/LoginListener.java
++++ b/src/main/java/net/minecraft/server/LoginListener.java
+@@ -15,6 +15,9 @@ import java.security.PrivateKey;
+ import java.util.Arrays;
+ import java.util.Random;
+ import java.util.UUID;
++import java.util.concurrent.ExecutorService;
++import java.util.concurrent.Executors;
++import java.util.concurrent.ThreadFactory;
+ import java.util.concurrent.atomic.AtomicInteger;
+ import javax.annotation.Nullable;
+ import javax.crypto.SecretKey;
+@@ -43,6 +46,14 @@ public class LoginListener implements PacketLoginInListener, ITickable {
+     private SecretKey loginKey;
+     private EntityPlayer l;
+     public String hostname = ""; // CraftBukkit - add field
++    private static final ExecutorService authenticatorPool = Executors.newCachedThreadPool(
++            new ThreadFactory() {
++                @Override
++                public Thread newThread(Runnable r) {
++                    return new Thread(r, "User Authenticator #" + LoginListener.b.incrementAndGet());
++                }
++            }
++    ); // Paper - Cache authenticator threads
+ 
+     public LoginListener(MinecraftServer minecraftserver, NetworkManager networkmanager) {
+         this.g = LoginListener.EnumProtocolState.HELLO;
+@@ -166,8 +177,8 @@ public class LoginListener implements PacketLoginInListener, ITickable {
+             this.networkManager.sendPacket(new PacketLoginOutEncryptionBegin("", this.server.O().getPublic(), this.e));
+         } else {
+             // Spigot start
+-            new Thread("User Authenticator #" + LoginListener.b.incrementAndGet()) {
+-
++            // Paper start - Cache authenticator threads
++            authenticatorPool.execute(new Runnable() {
+                 @Override
+                 public void run() {
+                     try {
+@@ -179,7 +190,8 @@ public class LoginListener implements PacketLoginInListener, ITickable {
+                         server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + i.getName(), ex);
+                     }
+                 }
+-            }.start();
++            });
++            // Paper end
+             // Spigot end
+         }
+ 
+@@ -195,7 +207,8 @@ public class LoginListener implements PacketLoginInListener, ITickable {
+             this.loginKey = packetlogininencryptionbegin.a(privatekey);
+             this.g = LoginListener.EnumProtocolState.AUTHENTICATING;
+             this.networkManager.a(this.loginKey);
+-            (new Thread("User Authenticator #" + LoginListener.b.incrementAndGet()) {
++            // Paper start - Cache authenticator threads
++            authenticatorPool.execute(new Runnable() {
+                 public void run() {
+                     GameProfile gameprofile = LoginListener.this.i;
+ 
+@@ -242,7 +255,8 @@ public class LoginListener implements PacketLoginInListener, ITickable {
+ 
+                     return LoginListener.this.server.ac() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
+                 }
+-            }).start();
++            });
++            // Paper end
+         }
+     }
+ 
+-- 
+2.8.3.windows.1
+
