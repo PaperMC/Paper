@@ -1,0 +1,66 @@
+From 192329a698045a8bbb2dd694c7275eac54a0d6f1 Mon Sep 17 00:00:00 2001
+From: Alfie Cleveland <alfeh@me.com>
+Date: Wed, 23 Nov 2016 19:03:00 +0000
+Subject: [PATCH] Optimise recalcBlockCounts
+
+
+diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
+index afdc4a7..56d5b34 100644
+--- a/src/main/java/net/minecraft/server/ChunkSection.java
++++ b/src/main/java/net/minecraft/server/ChunkSection.java
+@@ -91,6 +91,8 @@ public class ChunkSection {
+         return this.emittedLight.a(i, j, k);
+     }
+ 
++    // Paper start
++    /*
+     public void recalcBlockCounts() {
+         this.nonEmptyBlockCount = 0;
+         this.tickingBlockCount = 0;
+@@ -111,6 +113,24 @@ public class ChunkSection {
+         }
+ 
+     }
++    */
++
++    public void recalcBlockCounts() {
++        this.nonEmptyBlockCount = 0;
++        this.tickingBlockCount = 0;
++        
++        for (int i = 0; i < 4096; i ++) {
++            Block block = this.blockIds.getBlockData(i).getBlock();
++
++            if (block != Blocks.AIR) {
++                ++this.nonEmptyBlockCount;
++                if (block.isTicking()) {
++                    ++this.tickingBlockCount;
++                }
++            }
++        }
++    }
++    // Paper end
+ 
+     public DataPaletteBlock getBlocks() {
+         return this.blockIds;
+diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+index 1f2fe87..7a7735e 100644
+--- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
++++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+@@ -17,6 +17,14 @@ public class DataPaletteBlock implements DataPaletteExpandable {
+     private static int b(int i, int j, int k) {
+         return j << 8 | k << 4 | i;
+     }
++    
++    // Paper start
++    public IBlockData getBlockData(int position) {
++        IBlockData iblockdata = this.c.a(this.b.a(position));
++
++        return iblockdata == null ? DataPaletteBlock.a : iblockdata;
++    }
++    // Paper end
+ 
+     private void b(int i) {
+         if (i != this.e) {
+-- 
+2.9.3 (Apple Git-75)
+
