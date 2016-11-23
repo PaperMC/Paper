@@ -78,6 +78,7 @@ import PathfinderGoalFloat
 import PathfinderWater
 import PersistentVillage
 import RemoteControlListener
+import ScoreboardTeam
 import TileEntityEnderChest
 import TileEntityLootable
 import WorldProvider

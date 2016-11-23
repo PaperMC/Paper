@@ -1,0 +1,292 @@
+From 275c3c0f18255b8aa9f18b255b01026e8f3f6961 Mon Sep 17 00:00:00 2001
+From: Alfie Cleveland <alfeh@me.com>
+Date: Wed, 23 Nov 2016 18:48:38 +0000
+Subject: [PATCH] Scoreboard batch update API and optimisations
+
+
+diff --git a/src/main/java/net/minecraft/server/ScoreboardTeam.java b/src/main/java/net/minecraft/server/ScoreboardTeam.java
+index b42ca77..132bc8d 100644
+--- a/src/main/java/net/minecraft/server/ScoreboardTeam.java
++++ b/src/main/java/net/minecraft/server/ScoreboardTeam.java
+@@ -19,6 +19,7 @@ public class ScoreboardTeam extends ScoreboardTeamBase {
+     private ScoreboardTeamBase.EnumNameTagVisibility j;
+     private EnumChatFormat k;
+     private ScoreboardTeamBase.EnumTeamPush l;
++    private boolean dirty; // Paper
+ 
+     public ScoreboardTeam(Scoreboard scoreboard, String s) {
+         this.i = ScoreboardTeamBase.EnumNameTagVisibility.ALWAYS;
+@@ -30,6 +31,15 @@ public class ScoreboardTeam extends ScoreboardTeamBase {
+         this.d = s;
+     }
+ 
++    // Paper start
++    public void update() {
++        if (dirty) {
++            this.a.handleTeamChanged(this);
++            dirty = false;
++        }
++    }
++    // Paper end
++
+     public String getName() {
+         return this.b;
+     }
+@@ -38,14 +48,23 @@ public class ScoreboardTeam extends ScoreboardTeamBase {
+         return this.d;
+     }
+ 
++    // Paper start
+     public void setDisplayName(String s) {
++        setDisplayName(s, true);
++    }
++
++    public void setDisplayName(String s, boolean update) {
+         if (s == null) {
+             throw new IllegalArgumentException("Name cannot be null");
+         } else {
++            this.dirty |= this.d == null || !this.d.equals(s);
+             this.d = s;
+-            this.a.handleTeamChanged(this);
++            if (dirty && update) {
++                update();
++            }
+         }
+     }
++    // Paper end
+ 
+     public Collection<String> getPlayerNameSet() {
+         return this.c;
+@@ -55,23 +74,42 @@ public class ScoreboardTeam extends ScoreboardTeamBase {
+         return this.e;
+     }
+ 
++    // Paper start
++
+     public void setPrefix(String s) {
++        setPrefix(s, true);
++    }
++
++    public void setPrefix(String s, boolean update) {
+         if (s == null) {
+             throw new IllegalArgumentException("Prefix cannot be null");
+         } else {
++            this.dirty |= this.e == null || !this.e.equals(s);
+             this.e = s;
+-            this.a.handleTeamChanged(this);
++            if (dirty && update) {
++                update();
++            }
+         }
+     }
++    // Paper end
+ 
+     public String getSuffix() {
+         return this.f;
+     }
+ 
++    // Paper start
+     public void setSuffix(String s) {
++        setSuffix(s, true);
++    }
++
++    public void setSuffix(String s, boolean update) {
++        this.dirty |= this.f == null || !this.f.equals(s);
+         this.f = s;
+-        this.a.handleTeamChanged(this);
++        if (dirty && update) {
++            update();
++        }
+     }
++    // Paper end
+ 
+     public String getFormattedName(String s) {
+         return this.getPrefix() + s + this.getSuffix();
+@@ -85,19 +123,37 @@ public class ScoreboardTeam extends ScoreboardTeamBase {
+         return this.g;
+     }
+ 
++    // Paper start
+     public void setAllowFriendlyFire(boolean flag) {
++        setAllowFriendlyFire(flag, true);
++    }
++
++    public void setAllowFriendlyFire(boolean flag, boolean update) {
++        this.dirty |= this.g != flag;
+         this.g = flag;
+-        this.a.handleTeamChanged(this);
++        if (dirty && update) {
++            update();
++        }
+     }
++    // Paper end
+ 
+     public boolean canSeeFriendlyInvisibles() {
+         return this.h;
+     }
+ 
++    // Paper start
+     public void setCanSeeFriendlyInvisibles(boolean flag) {
++        setCanSeeFriendlyInvisibles(flag, true);
++    }
++
++    public void setCanSeeFriendlyInvisibles(boolean flag, boolean update) {
++        this.dirty |= this.h != flag;
+         this.h = flag;
+-        this.a.handleTeamChanged(this);
++        if (dirty && update) {
++            update();
++        }
+     }
++    // Paper end
+ 
+     public ScoreboardTeamBase.EnumNameTagVisibility getNameTagVisibility() {
+         return this.i;
+@@ -109,12 +165,12 @@ public class ScoreboardTeam extends ScoreboardTeamBase {
+ 
+     public void setNameTagVisibility(ScoreboardTeamBase.EnumNameTagVisibility scoreboardteambase_enumnametagvisibility) {
+         this.i = scoreboardteambase_enumnametagvisibility;
+-        this.a.handleTeamChanged(this);
++        update(); // Paper
+     }
+ 
+     public void setDeathMessageVisibility(ScoreboardTeamBase.EnumNameTagVisibility scoreboardteambase_enumnametagvisibility) {
+         this.j = scoreboardteambase_enumnametagvisibility;
+-        this.a.handleTeamChanged(this);
++        update(); // Paper
+     }
+ 
+     public ScoreboardTeamBase.EnumTeamPush getCollisionRule() {
+@@ -123,7 +179,7 @@ public class ScoreboardTeam extends ScoreboardTeamBase {
+ 
+     public void setCollisionRule(ScoreboardTeamBase.EnumTeamPush scoreboardteambase_enumteampush) {
+         this.l = scoreboardteambase_enumteampush;
+-        this.a.handleTeamChanged(this);
++        update(); // Paper
+     }
+ 
+     public int packOptionData() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
+index e768834..2f721f3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
+@@ -34,12 +34,17 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+         return team.getDisplayName();
+     }
+ 
++    // Paper start
+     public void setDisplayName(String displayName) throws IllegalStateException {
++        setDisplayName(displayName, true);
++    }
++
++    public void setDisplayName(String displayName, boolean update) throws IllegalStateException {
+         Validate.notNull(displayName, "Display name cannot be null");
+         Validate.isTrue(displayName.length() <= 32, "Display name '" + displayName + "' is longer than the limit of 32 characters");
+         CraftScoreboard scoreboard = checkState();
+ 
+-        team.setDisplayName(displayName);
++        team.setDisplayName(displayName, update);
+     }
+ 
+     public String getPrefix() throws IllegalStateException {
+@@ -48,13 +53,19 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+         return team.getPrefix();
+     }
+ 
++    // Paper start
+     public void setPrefix(String prefix) throws IllegalStateException, IllegalArgumentException {
++        setPrefix(prefix, true);
++    }
++
++    public void setPrefix(String prefix, boolean update) throws IllegalStateException, IllegalArgumentException {
+         Validate.notNull(prefix, "Prefix cannot be null");
+         Validate.isTrue(prefix.length() <= 32, "Prefix '" + prefix + "' is longer than the limit of 32 characters");
+         CraftScoreboard scoreboard = checkState();
+ 
+-        team.setPrefix(prefix);
++        team.setPrefix(prefix, update);
+     }
++    // Paper end
+ 
+     public String getSuffix() throws IllegalStateException {
+         CraftScoreboard scoreboard = checkState();
+@@ -62,13 +73,19 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+         return team.getSuffix();
+     }
+ 
++    // Paper start
+     public void setSuffix(String suffix) throws IllegalStateException, IllegalArgumentException {
++        setSuffix(suffix, true);
++    }
++
++    public void setSuffix(String suffix, boolean update) throws IllegalStateException, IllegalArgumentException {
+         Validate.notNull(suffix, "Suffix cannot be null");
+         Validate.isTrue(suffix.length() <= 32, "Suffix '" + suffix + "' is longer than the limit of 32 characters");
+         CraftScoreboard scoreboard = checkState();
+ 
+         team.setSuffix(suffix);
+     }
++    // Paper end
+ 
+     public boolean allowFriendlyFire() throws IllegalStateException {
+         CraftScoreboard scoreboard = checkState();
+@@ -76,11 +93,17 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+         return team.allowFriendlyFire();
+     }
+ 
++    // Paper start
+     public void setAllowFriendlyFire(boolean enabled) throws IllegalStateException {
++        setAllowFriendlyFire(enabled, true);
++    }
++
++    public void setAllowFriendlyFire(boolean enabled, boolean update) throws IllegalStateException {
+         CraftScoreboard scoreboard = checkState();
+ 
+-        team.setAllowFriendlyFire(enabled);
++        team.setAllowFriendlyFire(enabled, update);
+     }
++    // Paper end
+ 
+     public boolean canSeeFriendlyInvisibles() throws IllegalStateException {
+         CraftScoreboard scoreboard = checkState();
+@@ -88,7 +111,12 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+         return team.canSeeFriendlyInvisibles();
+     }
+ 
++    // Paper start
+     public void setCanSeeFriendlyInvisibles(boolean enabled) throws IllegalStateException {
++        setCanSeeFriendlyInvisibles(enabled, true);
++    }
++
++    public void setCanSeeFriendlyInvisibles(boolean enabled, boolean update) throws IllegalStateException {
+         CraftScoreboard scoreboard = checkState();
+ 
+         team.setCanSeeFriendlyInvisibles(enabled);
+@@ -265,6 +293,12 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+ 
+     @Override
+     public boolean equals(Object obj) {
++        // Paper start
++        if (this == obj) {
++            return true;
++        }
++        // Paper end
++
+         if (obj == null) {
+             return false;
+         }
+@@ -274,5 +308,11 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+         final CraftTeam other = (CraftTeam) obj;
+         return !(this.team != other.team && (this.team == null || !this.team.equals(other.team)));
+     }
++    
++    public void update() throws IllegalStateException {
++        CraftScoreboard scoreboard = checkState();
++
++        team.update();
++    }
+ 
+ }
+-- 
+2.9.3 (Apple Git-75)
+
