@@ -257,8 +257,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         entity.stopRiding();
 
         entity.world = ((CraftWorld) location.getWorld()).getHandle();
-        entity.setLocation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         // entity.setLocation() throws no event, and so cannot be cancelled
+        entity.setLocation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+        // SPIGOT-619: Force sync head rotation also
+        entity.h(location.getYaw()); // PAIL: setHeadRotation
+
         return true;
     }
 
