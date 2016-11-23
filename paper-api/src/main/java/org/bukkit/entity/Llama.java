@@ -53,7 +53,7 @@ public interface Llama extends ChestedHorse {
     int getStrength();
 
     /**
-     * Gets the llama's strength. A higher strength llama will have more
+     * Sets the llama's strength. A higher strength llama will have more
      * inventory slots and be more threatening to entities. Inventory slots are
      * equal to strength * 3.
      *
