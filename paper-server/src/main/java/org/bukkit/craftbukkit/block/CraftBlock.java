@@ -465,7 +465,7 @@ public class CraftBlock implements Block {
             int count = block.getDropCount(0, chunk.getHandle().getWorld().random);
             for (int i = 0; i < count; ++i) {
                 Item item = block.getDropType(data, chunk.getHandle().getWorld().random, 0);
-                if (item != null) {
+                if (item != Items.a) {
                     // Skulls are special, their data is based on the tile entity
                     if (Blocks.SKULL == block) {
                         net.minecraft.server.ItemStack nmsStack = new net.minecraft.server.ItemStack(item, 1, block.getDropData(data));
