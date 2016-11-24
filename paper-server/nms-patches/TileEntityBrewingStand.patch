@@ -1,20 +1,22 @@
 --- a/net/minecraft/server/TileEntityBrewingStand.java
 +++ b/net/minecraft/server/TileEntityBrewingStand.java
-@@ -3,6 +3,13 @@
+@@ -3,6 +3,15 @@
  import java.util.Arrays;
  import java.util.Iterator;
  
 +// CraftBukkit start
 +import java.util.List;
 +import org.bukkit.craftbukkit.entity.CraftHumanEntity;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.entity.HumanEntity;
 +import org.bukkit.event.inventory.BrewEvent;
++import org.bukkit.event.inventory.BrewingStandFuelEvent;
 +// CraftBukkit end
 +
  public class TileEntityBrewingStand extends TileEntityContainer implements ITickable, IWorldInventory {
  
      private static final int[] a = new int[] { 3};
-@@ -14,6 +21,31 @@
+@@ -14,6 +23,31 @@
      private Item k;
      private String l;
      private int m;
@@ -46,7 +48,29 @@
  
      public TileEntityBrewingStand() {
          this.items = NonNullList.a(5, ItemStack.a);
-@@ -64,9 +96,14 @@
+@@ -55,8 +89,19 @@
+         ItemStack itemstack = (ItemStack) this.items.get(4);
+ 
+         if (this.m <= 0 && itemstack.getItem() == Items.BLAZE_POWDER) {
+-            this.m = 20;
+-            itemstack.subtract(1);
++            // CraftBukkit start
++            BrewingStandFuelEvent event = new BrewingStandFuelEvent(world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()), CraftItemStack.asCraftMirror(itemstack), 20);
++            this.world.getServer().getPluginManager().callEvent(event);
++
++            if (event.isCancelled()) {
++                return;
++            }
++
++            this.m = event.getFuelPower(); // PAIL fuelLevel
++            if (this.m > 0 && event.isConsuming()) {
++                itemstack.subtract(1);
++            }
++            // CraftBukkit end
+             this.update();
+         }
+ 
+@@ -64,9 +109,14 @@
          boolean flag1 = this.brewTime > 0;
          ItemStack itemstack1 = (ItemStack) this.items.get(3);
  
@@ -63,13 +87,13 @@
  
              if (flag2 && flag) {
                  this.p();
-@@ -140,6 +177,15 @@
+@@ -140,6 +190,15 @@
  
      private void p() {
          ItemStack itemstack = (ItemStack) this.items.get(3);
 +        // CraftBukkit start
 +        if (getOwner() != null) {
-+            BrewEvent event = new BrewEvent(world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()), (org.bukkit.inventory.BrewerInventory) this.getOwner().getInventory());
++            BrewEvent event = new BrewEvent(world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()), (org.bukkit.inventory.BrewerInventory) this.getOwner().getInventory(), this.m);
 +            org.bukkit.Bukkit.getPluginManager().callEvent(event);
 +            if (event.isCancelled()) {
 +                return;
@@ -79,7 +103,7 @@
  
          for (int i = 0; i < 3; ++i) {
              this.items.set(i, PotionBrewer.d(itemstack, (ItemStack) this.items.get(i)));
-@@ -210,7 +256,7 @@
+@@ -210,7 +269,7 @@
      }
  
      public int getMaxStackSize() {
