@@ -96,6 +96,12 @@ public class LoginListener implements PacketLoginInListener {
 
     }
 
+    // Paper start - Cache authenticator threads
+    private static final AtomicInteger threadId = new AtomicInteger(0);
+    private static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newCachedThreadPool(
+            r -> new Thread(r, "User Authenticator #" + threadId.incrementAndGet())
+    );
+    // Paper end
     // Spigot start
     public void initUUID()
     {
@@ -174,8 +180,8 @@ public class LoginListener implements PacketLoginInListener {
             this.networkManager.sendPacket(new PacketLoginOutEncryptionBegin("", this.server.getKeyPair().getPublic(), this.e));
         } else {
             // Spigot start
-            new Thread("User Authenticator #" + LoginListener.b.incrementAndGet()) {
-
+            // Paper start - Cache authenticator threads
+            authenticatorPool.execute(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -186,7 +192,8 @@ public class LoginListener implements PacketLoginInListener {
                         server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + i.getName(), ex);
                     }
                 }
-            }.start();
+            });
+            // Paper end
             // Spigot end
         }
 
@@ -203,7 +210,8 @@ public class LoginListener implements PacketLoginInListener {
             this.loginKey = packetlogininencryptionbegin.a(privatekey);
             this.g = LoginListener.EnumProtocolState.AUTHENTICATING;
             this.networkManager.a(this.loginKey);
-            Thread thread = new Thread("User Authenticator #" + LoginListener.b.incrementAndGet()) {
+            // Paper start - Cache authenticator threads
+            authenticatorPool.execute(new Runnable() {
                 public void run() {
                     GameProfile gameprofile = LoginListener.this.i;
 
@@ -250,10 +258,8 @@ public class LoginListener implements PacketLoginInListener {
 
                     return LoginListener.this.server.V() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
                 }
-            };
-
-            thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LoginListener.LOGGER));
-            thread.start();
+            });
+            // Paper end
         }
     }
 
