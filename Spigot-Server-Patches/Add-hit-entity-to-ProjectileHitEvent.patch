@@ -35,14 +35,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/EntityFishingHook.java
 +++ b/src/main/java/net/minecraft/server/EntityFishingHook.java
 @@ -0,0 +0,0 @@ public class EntityFishingHook extends Entity {
-         // Paper end
- 
-         if (movingobjectposition != null) {
--            org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this); // Craftbukkit - Call event
-+            org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, movingobjectposition.entity); // Craftbukkit - Call event // Paper - Include entity in movingobjectposition
-             vec3d1 = new Vec3D(movingobjectposition.pos.x, movingobjectposition.pos.y, movingobjectposition.pos.z);
          }
  
+         if (movingobjectposition != null && movingobjectposition.type != MovingObjectPosition.EnumMovingObjectType.MISS) {
+-            org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this); // Craftbukkit - Call event
++            org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, movingobjectposition.entity); // Craftbukkit - Call event
+             if (movingobjectposition.type == MovingObjectPosition.EnumMovingObjectType.ENTITY) {
+                 this.hooked = movingobjectposition.entity;
+                 this.s();
 diff --git a/src/main/java/net/minecraft/server/EntityProjectile.java b/src/main/java/net/minecraft/server/EntityProjectile.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityProjectile.java
@@ -61,9 +61,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -0,0 +0,0 @@ public class CraftEventFactory {
+         child.world.getServer().getPluginManager().callEvent(event);
          return event;
      }
- 
++
 +    // Paper start
 +    public static ProjectileHitEvent callProjectileHitEvent(Entity entity, Entity hitEntity) {
 +        ProjectileHitEvent event = new ProjectileHitEvent((Projectile) entity.getBukkitEntity(), (hitEntity == null ? null : hitEntity.getBukkitEntity()));
@@ -72,8 +73,5 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return event;
 +    }
 +    // Paper end
-+
-     public static ExpBottleEvent callExpBottleEvent(Entity entity, int exp) {
-         ThrownExpBottle bottle = (ThrownExpBottle) entity.getBukkitEntity();
-         ExpBottleEvent event = new ExpBottleEvent(bottle, exp);
+ }
 --
