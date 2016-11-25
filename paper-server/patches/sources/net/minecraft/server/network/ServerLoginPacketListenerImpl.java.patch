@@ -16,7 +16,7 @@
  import net.minecraft.server.players.PlayerList;
  import net.minecraft.util.Crypt;
  import net.minecraft.util.CryptException;
-@@ -43,9 +45,35 @@
+@@ -43,11 +45,38 @@
  import net.minecraft.util.StringUtil;
  import org.apache.commons.lang3.Validate;
  import org.slf4j.Logger;
@@ -52,8 +52,11 @@
 +    // CraftBukkit end
      private static final AtomicInteger UNIQUE_THREAD_ID = new AtomicInteger(0);
      static final Logger LOGGER = LogUtils.getLogger();
++    private static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newCachedThreadPool(new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("User Authenticator #%d").setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).build()); // Paper - Cache authenticator threads
      private static final int MAX_TICKS_BEFORE_LOGIN = 600;
-@@ -60,6 +88,7 @@
+     private final byte[] challenge;
+     final MinecraftServer server;
+@@ -60,6 +89,7 @@
      private GameProfile authenticatedProfile;
      private final String serverId;
      private final boolean transferred;
@@ -61,7 +64,7 @@
  
      public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection, boolean transferred) {
          this.state = ServerLoginPacketListenerImpl.State.HELLO;
-@@ -76,6 +105,12 @@
+@@ -76,6 +106,12 @@
              this.verifyLoginAndFinishConnectionSetup((GameProfile) Objects.requireNonNull(this.authenticatedProfile));
          }
  
@@ -74,7 +77,7 @@
          if (this.state == ServerLoginPacketListenerImpl.State.WAITING_FOR_DUPE_DISCONNECT && !this.isPlayerAlreadyInWorld((GameProfile) Objects.requireNonNull(this.authenticatedProfile))) {
              this.finishLoginAndWaitForClient(this.authenticatedProfile);
          }
-@@ -86,6 +121,13 @@
+@@ -86,6 +122,13 @@
  
      }
  
@@ -88,13 +91,14 @@
      @Override
      public boolean isAcceptingMessages() {
          return this.connection.isConnected();
-@@ -131,7 +173,27 @@
+@@ -131,7 +174,26 @@
                  this.state = ServerLoginPacketListenerImpl.State.KEY;
                  this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.challenge, true));
              } else {
 -                this.startClientVerification(UUIDUtil.createOfflineProfile(this.requestedUsername));
 +                // CraftBukkit start
-+                Thread thread = new Thread("User Authenticator #" + ServerLoginPacketListenerImpl.UNIQUE_THREAD_ID.incrementAndGet()) {
++                // Paper start - Cache authenticator threads
++                authenticatorPool.execute(new Runnable() {
 +
 +                    @Override
 +                    public void run() {
@@ -109,10 +113,8 @@
 +                            ServerLoginPacketListenerImpl.this.server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + ServerLoginPacketListenerImpl.this.requestedUsername, ex);
 +                        }
 +                    }
-+                };
-+
-+                thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(ServerLoginPacketListenerImpl.LOGGER));
-+                thread.start();
++                });
++                // Paper end - Cache authenticator threads
 +                // CraftBukkit end
              }
  
@@ -160,7 +162,17 @@
              }
          }
  
-@@ -205,11 +281,17 @@
+@@ -195,7 +271,8 @@
+             throw new IllegalStateException("Protocol error", cryptographyexception);
+         }
+ 
+-        Thread thread = new Thread("User Authenticator #" + ServerLoginPacketListenerImpl.UNIQUE_THREAD_ID.incrementAndGet()) {
++        // Paper start - Cache authenticator threads
++        authenticatorPool.execute(new Runnable() {
+             public void run() {
+                 String s1 = (String) Objects.requireNonNull(ServerLoginPacketListenerImpl.this.requestedUsername, "Player name not initialized");
+ 
+@@ -205,11 +282,17 @@
                      if (profileresult != null) {
                          GameProfile gameprofile = profileresult.profile();
  
@@ -179,7 +191,7 @@
                      } else {
                          ServerLoginPacketListenerImpl.this.disconnect(Component.translatable("multiplayer.disconnect.unverified_username"));
                          ServerLoginPacketListenerImpl.LOGGER.error("Username '{}' tried to join with an invalid session", s1);
-@@ -217,11 +299,16 @@
+@@ -217,11 +300,16 @@
                  } catch (AuthenticationUnavailableException authenticationunavailableexception) {
                      if (ServerLoginPacketListenerImpl.this.server.isSingleplayer()) {
                          ServerLoginPacketListenerImpl.LOGGER.warn("Authentication servers are down but will let them in anyway!");
@@ -197,10 +209,17 @@
                  }
  
              }
-@@ -238,6 +325,43 @@
-         thread.start();
-     }
+@@ -232,11 +320,46 @@
  
+                 return ServerLoginPacketListenerImpl.this.server.getPreventProxyConnections() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
+             }
+-        };
++        });
++        // Paper end - Cache authenticator threads
++    }
+ 
+-        thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(ServerLoginPacketListenerImpl.LOGGER));
+-        thread.start();
 +    // CraftBukkit start
 +    private void callPlayerPreLoginEvents(GameProfile gameprofile) throws Exception {
 +        String playerName = gameprofile.getName();
@@ -235,13 +254,12 @@
 +                return;
 +            }
 +        }
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      @Override
      public void handleCustomQueryPacket(ServerboundCustomQueryAnswerPacket packet) {
-         this.disconnect(ServerCommonPacketListenerImpl.DISCONNECT_UNEXPECTED_QUERY);
-@@ -245,10 +369,11 @@
+@@ -245,10 +368,11 @@
  
      @Override
      public void handleLoginAcknowledgement(ServerboundLoginAcknowledgedPacket packet) {
@@ -254,7 +272,7 @@
  
          this.connection.setupInboundProtocol(ConfigurationProtocols.SERVERBOUND, serverconfigurationpacketlistenerimpl);
          serverconfigurationpacketlistenerimpl.startConfiguration();
-@@ -264,12 +389,44 @@
+@@ -264,12 +388,44 @@
  
      @Override
      public void handleCookieResponse(ServerboundCookieResponsePacket packet) {
