@@ -1,0 +1,96 @@
+From d2374b6257ad5d1aa24289572ec3f6ef21006759 Mon Sep 17 00:00:00 2001
+From: Alfie Cleveland <alfeh@me.com>
+Date: Fri, 25 Nov 2016 20:35:05 +0000
+Subject: [PATCH] Optimise NetworkManager
+
+
+diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
+index 184ef32..cca3237 100644
+--- a/src/main/java/net/minecraft/server/NetworkManager.java
++++ b/src/main/java/net/minecraft/server/NetworkManager.java
+@@ -62,8 +62,8 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+         }
+     };
+     private final EnumProtocolDirection h;
+-    private final Queue<NetworkManager.QueuedPacket> i = Queues.newConcurrentLinkedQueue();
+-    private final ReentrantReadWriteLock j = new ReentrantReadWriteLock();
++    // private final Queue<NetworkManager.QueuedPacket> i = Queues.newConcurrentLinkedQueue(); // Paper
++    // private final ReentrantReadWriteLock j = new ReentrantReadWriteLock(); // Paper
+     public Channel channel;
+     // Spigot Start // PAIL
+     public SocketAddress l;
+@@ -141,7 +141,9 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+         if (this.isConnected()) {
+             this.m();
+             this.a(packet, (GenericFutureListener[]) null);
+-        } else {
++        }
++        // Paper start
++        /* else {
+             this.j.writeLock().lock();
+ 
+             try {
+@@ -149,15 +151,18 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+             } finally {
+                 this.j.writeLock().unlock();
+             }
+-        }
+-
++        }*/
++        // Paper end
+     }
+ 
+     public void sendPacket(Packet<?> packet, GenericFutureListener<? extends Future<? super Void>> genericfuturelistener, GenericFutureListener<? extends Future<? super Void>>... agenericfuturelistener) {
+         if (this.isConnected()) {
+             this.m();
+             this.a(packet, (GenericFutureListener[]) ArrayUtils.add(agenericfuturelistener, 0, genericfuturelistener));
+-        } else {
++        }
++        // Paper start
++        /*
++        else {
+             this.j.writeLock().lock();
+ 
+             try {
+@@ -166,7 +171,8 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+                 this.j.writeLock().unlock();
+             }
+         }
+-
++        */
++        // Paper end
+     }
+ 
+     private void a(final Packet<?> packet, @Nullable final GenericFutureListener<? extends Future<? super Void>>[] agenericfuturelistener) {
+@@ -211,7 +217,8 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+     }
+ 
+     private void m() {
+-        if (this.channel != null && this.channel.isOpen()) {
++        // Paper start
++        /* if (this.channel != null && this.channel.isOpen()) {
+             this.j.readLock().lock();
+ 
+             try {
+@@ -224,7 +231,8 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+                 this.j.readLock().unlock();
+             }
+ 
+-        }
++        }*/
++        // Paper end
+     }
+ 
+     public void a() {
+@@ -317,7 +325,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+                 } else if (this.i() != null) {
+                     this.i().a(new ChatComponentText("Disconnected"));
+                 }
+-                this.i.clear(); // Free up packet queue.
++                 // this.i.clear(); // Free up packet queue. // Paper - remove unneeded packet queue
+             }
+ 
+         }
+-- 
+2.9.3 (Apple Git-75)
+
