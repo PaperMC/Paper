@@ -26,7 +26,7 @@ public class CraftBanner extends CraftBlockState implements Banner {
         CraftWorld world = (CraftWorld) block.getWorld();
         banner = (TileEntityBanner) world.getTileEntityAt(getX(), getY(), getZ());
 
-        base = DyeColor.getByDyeData((byte) banner.color.getColorIndex());
+        base = DyeColor.getByDyeData((byte) banner.color.getInvColorIndex());
 
         if (banner.patterns != null) {
             for (int i = 0; i < banner.patterns.size(); i++) {
@@ -40,7 +40,7 @@ public class CraftBanner extends CraftBlockState implements Banner {
         super(material);
         banner = te;
 
-        base = DyeColor.getByDyeData((byte) banner.color.getColorIndex());
+        base = DyeColor.getByDyeData((byte) banner.color.getInvColorIndex());
 
         if (banner.patterns != null) {
             for (int i = 0; i < banner.patterns.size(); i++) {
@@ -100,7 +100,7 @@ public class CraftBanner extends CraftBlockState implements Banner {
         boolean result = (isPlaced()) ? super.update(force, applyPhysics) : true;
 
         if (result) {
-            banner.color = EnumColor.fromColorIndex(base.getDyeData());
+            banner.color = EnumColor.fromInvColorIndex(base.getDyeData());
 
             NBTTagList newPatterns = new NBTTagList();
 
