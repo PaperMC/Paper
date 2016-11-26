@@ -13,6 +13,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.material.MaterialData;
 import org.bukkit.metadata.Metadatable;
 import org.bukkit.plugin.messaging.PluginMessageRecipient;
 import org.bukkit.util.Vector;
@@ -699,6 +700,22 @@ public interface World extends PluginMessageRecipient, Metadatable {
      *     {@link Entity} requested cannot be spawned
      */
     public <T extends Entity> T spawn(Location location, Class<T> clazz) throws IllegalArgumentException;
+
+    /**
+     * Spawn a {@link FallingBlock} entity at the given {@link Location} of
+     * the specified {@link Material}. The material dictates what is falling.
+     * When the FallingBlock hits the ground, it will place that block.
+     * <p>
+     * The Material must be a block type, check with {@link Material#isBlock()
+     * material.isBlock()}. The Material may not be air.
+     *
+     * @param location The {@link Location} to spawn the FallingBlock
+     * @param data The block data
+     * @return The spawned {@link FallingBlock} instance
+     * @throws IllegalArgumentException if {@link Location} or {@link
+     *     MaterialData} are null or {@link Material} of the {@link MaterialData} is not a block
+     */
+    public FallingBlock spawnFallingBlock(Location location, MaterialData data) throws IllegalArgumentException;
 
     /**
      * Spawn a {@link FallingBlock} entity at the given {@link Location} of
