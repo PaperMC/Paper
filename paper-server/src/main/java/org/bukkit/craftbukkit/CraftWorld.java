@@ -52,6 +52,7 @@ import org.bukkit.event.world.SpawnChangeEvent;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.material.MaterialData;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.StandardMessenger;
@@ -850,6 +851,12 @@ public class CraftWorld implements World {
 
     public <T extends Entity> T spawn(Location location, Class<T> clazz) throws IllegalArgumentException {
         return spawn(location, clazz, SpawnReason.CUSTOM);
+    }
+
+    @Override
+    public FallingBlock spawnFallingBlock(Location location, MaterialData data) throws IllegalArgumentException {
+        Validate.notNull(data, "MaterialData cannot be null");
+        return spawnFallingBlock(location, data.getItemType(), data.getData());
     }
 
     public FallingBlock spawnFallingBlock(Location location, org.bukkit.Material material, byte data) throws IllegalArgumentException {
