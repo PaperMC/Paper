@@ -112,25 +112,16 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
 
         for (int i = 0; i < mcItems.size(); i++) {
             if (i < contents.length) {
-                ItemStack item = contents[i];
-                if (item == null || item.getTypeId() <= 0) {
-                    getMatrixInventory().setItem(i, null);
-                } else {
-                    getMatrixInventory().setItem(i, CraftItemStack.asNMSCopy(item));
-                }
+                getMatrixInventory().setItem(i, CraftItemStack.asNMSCopy(contents[i]));
             } else {
-                getMatrixInventory().setItem(i, null);
+                getMatrixInventory().setItem(i, net.minecraft.server.ItemStack.a);
             }
         }
     }
 
     public void setResult(ItemStack item) {
         List<net.minecraft.server.ItemStack> contents = getResultInventory().getContents();
-        if (item == null || item.getTypeId() <= 0) {
-            contents.set(0, net.minecraft.server.ItemStack.a);
-        } else {
-            contents.set(0, CraftItemStack.asNMSCopy(item));
-        }
+        contents.set(0, CraftItemStack.asNMSCopy(item));
     }
 
     public Recipe getRecipe() {
