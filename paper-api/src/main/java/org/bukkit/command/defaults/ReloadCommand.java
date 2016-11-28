@@ -13,7 +13,7 @@ public class ReloadCommand extends BukkitCommand {
     public ReloadCommand(@NotNull String name) {
         super(name);
         this.description = "Reloads the server configuration and plugins";
-        this.usageMessage = "/reload [permissions]"; // Paper
+        this.usageMessage = "/reload [permissions|commands|confirm]"; // Paper
         this.setPermission("bukkit.command.reload");
         this.setAliases(Arrays.asList("rl"));
     }
@@ -28,6 +28,13 @@ public class ReloadCommand extends BukkitCommand {
             if (args[0].equalsIgnoreCase("permissions")) {
                 Bukkit.getServer().reloadPermissions();
                 Command.broadcastCommandMessage(sender, net.kyori.adventure.text.Component.text("Permissions successfully reloaded.", net.kyori.adventure.text.format.NamedTextColor.GREEN));
+                return true;
+            } else if ("commands".equalsIgnoreCase(args[0])) {
+                if (Bukkit.getServer().reloadCommandAliases()) {
+                    Command.broadcastCommandMessage(sender, net.kyori.adventure.text.Component.text("Command aliases successfully reloaded.", net.kyori.adventure.text.format.NamedTextColor.GREEN));
+                } else {
+                    Command.broadcastCommandMessage(sender, net.kyori.adventure.text.Component.text("An error occurred while trying to reload command aliases.", net.kyori.adventure.text.format.NamedTextColor.RED));
+                }
                 return true;
             } else if ("confirm".equalsIgnoreCase(args[0])) {
                 confirmed = true;
@@ -53,6 +60,6 @@ public class ReloadCommand extends BukkitCommand {
     @NotNull
     @Override
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
-        return java.util.Collections.singletonList("permissions"); // Paper
+        return com.google.common.collect.Lists.newArrayList("permissions", "commands"); // Paper
     }
 }
