@@ -1,0 +1,247 @@
+From 6eb71b879d2b377390325b8c640e8933826af609 Mon Sep 17 00:00:00 2001
+From: Max Lee <mail@moep.tv>
+Date: Thu, 13 Oct 2016 01:01:06 +0200
+Subject: [PATCH] InventoryMoveItemEvent improvements
+
+The handling of the InventoryMoveItemEvent in CraftBukkit is extremely
+resource hungry when dealing with a lot of Hoppers. Especially the fact
+that it even fires when the Vanilla behaviour would be to not move items
+at all because the targetted inventory is full results in a lot of useless
+event calls.
+
+This adds three world config options whith which the behaviour can be
+tweaked to your liking. By default it will call events that wouldn't
+result in a move as cancelled so that plugins can still listen for it but
+pure observing once can ignore it easily.
+
+There are also options to disable the event entirely or just don't fire it
+when no move will occur.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 51b34d9..3c63c68 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -365,6 +365,15 @@ public class PaperWorldConfig {
+         isHopperPushBased = getBoolean("hopper.push-based", false);
+     }
+ 
++    public boolean callMoveItemEvent = true;
++    public boolean callMoveItemEventWithoutMove = true;
++    public boolean callMoveEventCancelledWithoutMove = true;
++    private void moveItemEventImprovements() {
++        callMoveItemEvent = getBoolean("move-item-event.enabled", true);
++        callMoveItemEventWithoutMove = getBoolean("move-item-event.call-without-move", true);
++        callMoveEventCancelledWithoutMove = getBoolean("move-item-event.call-cancelled-without-move", true);
++    }
++
+     public long delayChunkUnloadsBy;
+     private void delayChunkUnloadsBy() {
+         delayChunkUnloadsBy = PaperConfig.getSeconds(getString("delay-chunk-unloads-by", "10s"));
+diff --git a/src/main/java/net/minecraft/server/BlockDropper.java b/src/main/java/net/minecraft/server/BlockDropper.java
+index c6f318d..56ed0f9 100644
+--- a/src/main/java/net/minecraft/server/BlockDropper.java
++++ b/src/main/java/net/minecraft/server/BlockDropper.java
+@@ -47,6 +47,8 @@ public class BlockDropper extends BlockDispenser {
+                         // CraftBukkit start - Fire event when pushing items into other inventories
+                         CraftItemStack oitemstack = CraftItemStack.asCraftMirror(itemstack.cloneItemStack().cloneAndSubtract(1));
+ 
++                        // Paper start - InventoryMoveItemEvent improvements
++                        /*
+                         org.bukkit.inventory.Inventory destinationInventory;
+                         // Have to special case large chests as they work oddly
+                         if (iinventory instanceof InventoryLargeChest) {
+@@ -57,6 +59,9 @@ public class BlockDropper extends BlockDispenser {
+ 
+                         InventoryMoveItemEvent event = new InventoryMoveItemEvent(tileentitydispenser.getOwner().getInventory(), oitemstack.clone(), destinationInventory, true);
+                         world.getServer().getPluginManager().callEvent(event);
++                        */
++                        InventoryMoveItemEvent event = TileEntityHopper.callMoveEvent(world, tileentitydispenser, oitemstack, iinventory, true, enumdirection.opposite());
++                        // Paper end
+                         if (event.isCancelled()) {
+                             return;
+                         }
+diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
+index 1f5de89..ba6e8a4 100644
+--- a/src/main/java/net/minecraft/server/TileEntityHopper.java
++++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
+@@ -254,6 +254,8 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+                         // CraftBukkit start - Call event when pushing items into other inventories
+                         CraftItemStack oitemstack = CraftItemStack.asCraftMirror(this.splitStack(i, world.spigotConfig.hopperAmount)); // Spigot
+ 
++                        // Paper start - InventoryMoveItemEvent improvements
++                        /*
+                         Inventory destinationInventory;
+                         // Have to special case large chests as they work oddly
+                         if (iinventory instanceof InventoryLargeChest) {
+@@ -264,6 +266,9 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+ 
+                         InventoryMoveItemEvent event = new InventoryMoveItemEvent(this.getOwner().getInventory(), oitemstack.clone(), destinationInventory, true);
+                         this.getWorld().getServer().getPluginManager().callEvent(event);
++                        */
++                        InventoryMoveItemEvent event = callMoveEvent(this.getWorld(), this, oitemstack, iinventory, true, enumdirection);
++                        // Paper end
+                         if (event.isCancelled()) {
+                             this.setItem(i, itemstack);
+                             this.setCooldown(world.spigotConfig.hopperTransfer); // Spigot
+@@ -411,6 +416,8 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+             // CraftBukkit start - Call event on collection of items from inventories into the hopper
+             CraftItemStack oitemstack = CraftItemStack.asCraftMirror(iinventory.splitStack(i, ihopper.getWorld().spigotConfig.hopperAmount)); // Spigot
+ 
++            // Paper start - InventoryMoveItemEvent improvements
++            /*
+             Inventory sourceInventory;
+             // Have to special case large chests as they work oddly
+             if (iinventory instanceof InventoryLargeChest) {
+@@ -420,8 +427,10 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+             }
+ 
+             InventoryMoveItemEvent event = new InventoryMoveItemEvent(sourceInventory, oitemstack.clone(), ihopper.getOwner().getInventory(), false);
+-
+             ihopper.getWorld().getServer().getPluginManager().callEvent(event);
++            */
++            InventoryMoveItemEvent event = callMoveEvent(ihopper.getWorld(), iinventory, oitemstack, ihopper, false, enumdirection);
++            // Paper end
+             if (event.isCancelled()) {
+                 iinventory.setItem(i, itemstack1);
+ 
+@@ -479,19 +488,91 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+         }
+     }
+ 
++    // Paper start - InventoryMoveItemEvent improvements
++    /**
++     * Create and calculate how the InventoryMoveItemEvent should be called
++     * depending on the paper InventoryMoveItemEvent settings of the world
++     * @param world The world it is called in
++     * @param nmsSourceInventory From which inventory it is moved from
++     * @param oitemstack The itemstack that should be moved
++     * @param nmsDestinationInventory To which inventory is the itemstack moved to
++     * @param didSourceInitiate  Did the source started the move action?
++     * @param enumdirection In which direction is the destination's block from the source
++     * @return The (called if the settings allow it) InventoryMoveItemEvent
++     */
++    static InventoryMoveItemEvent callMoveEvent(World world, IInventory nmsSourceInventory, CraftItemStack oitemstack, IInventory nmsDestinationInventory, boolean didSourceInitiate, EnumDirection enumdirection) {
++        // Have to special case large chests as they work oddly
++        Inventory sourceInventory;
++        if (nmsSourceInventory instanceof InventoryLargeChest) {
++            sourceInventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest((InventoryLargeChest) nmsSourceInventory);
++        } else {
++            sourceInventory = nmsSourceInventory.getOwner().getInventory();
++        }
++
++        Inventory destinationInventory;
++        if (nmsDestinationInventory instanceof InventoryLargeChest) {
++            destinationInventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest((InventoryLargeChest) nmsDestinationInventory);
++        } else {
++            destinationInventory = nmsDestinationInventory.getOwner().getInventory();
++        }
++
++        InventoryMoveItemEvent event = new InventoryMoveItemEvent(sourceInventory, oitemstack, destinationInventory, didSourceInitiate);
++        if (world.paperConfig.callMoveItemEvent) {
++            if (world.paperConfig.callMoveItemEventWithoutMove) {
++                if (world.paperConfig.callMoveEventCancelledWithoutMove && !willAcceptItem(nmsDestinationInventory, CraftItemStack.asNMSCopy(oitemstack), enumdirection)) {
++                    event.setCancelled(true);
++                }
++                world.getServer().getPluginManager().callEvent(event);
++            } else if (willAcceptItem(nmsDestinationInventory, CraftItemStack.asNMSCopy(oitemstack), enumdirection)) {
++                world.getServer().getPluginManager().callEvent(event);
++            }
++        }
++        return event;
++    }
++    // Paper end
++
+     public static ItemStack addItem(IInventory iinventory, ItemStack itemstack, @Nullable EnumDirection enumdirection) {
++        // Paper start - InventoryMoveItemEvent improvements
++        return checkOrAddToInventory(iinventory, itemstack, enumdirection, true);
++    }
++
++    static boolean willAcceptItem(IInventory iinventory, ItemStack itemstack, @Nullable EnumDirection enumdirection) {
++        return checkOrAddToInventory(iinventory, itemstack, enumdirection, false) == null;
++    }
++
++    /**
++     * Check whether or not an inventory can accept a new item (and add it)
++     * @param addItem Set whether or not to add the checked item to that inventory
++     * @return The overflowing itemstack; null if all where added or could be added
++     */
++    private static ItemStack checkOrAddToInventory(IInventory iinventory, ItemStack itemstack, @Nullable EnumDirection enumdirection, boolean addItem) {
++        // Paper end
+         if (iinventory instanceof IWorldInventory && enumdirection != null) {
+             IWorldInventory iworldinventory = (IWorldInventory) iinventory;
+             int[] aint = iworldinventory.getSlotsForFace(enumdirection);
+ 
+             for (int i = 0; i < aint.length && itemstack != null && itemstack.count > 0; ++i) {
+-                itemstack = c(iinventory, itemstack, aint[i], enumdirection);
++                //itemstack = c(iinventory, itemstack, aint[i], enumdirection);
++                // Paper start - InventoryMoveItemEvent improvements
++                if (addItem) {
++                    itemstack = c(iinventory, itemstack, aint[i], enumdirection);
++                } else if (enoughRoomInSlot(iinventory, itemstack, aint[i], enumdirection)) {
++                    return null;
++                }
++                // Paper end
+             }
+         } else {
+             int j = iinventory.getSize();
+ 
+             for (int k = 0; k < j && itemstack != null && itemstack.count > 0; ++k) {
+-                itemstack = c(iinventory, itemstack, k, enumdirection);
++                //itemstack = c(iinventory, itemstack, k, enumdirection);
++                // Paper start - InventoryMoveItemEvent improvements
++                if (addItem) {
++                    itemstack = c(iinventory, itemstack, k, enumdirection);
++                } else if (enoughRoomInSlot(iinventory, itemstack, k, enumdirection)) {
++                    return null;
++                }
++                // Paper end
+             }
+         }
+ 
+@@ -511,12 +592,28 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+     }
+ 
+     private static ItemStack c(IInventory iinventory, ItemStack itemstack, int i, EnumDirection enumdirection) {
++        // Paper start - InventoryMoveItemEvent improvements
++        return checkOrAddToSlot(iinventory, itemstack, i, enumdirection, true);
++    }
++
++    private static boolean enoughRoomInSlot(IInventory iinventory, ItemStack itemstack, int i, EnumDirection enumdirection) {
++        return checkOrAddToSlot(iinventory, itemstack, i, enumdirection, false) == null;
++    }
++
++    /**
++     * Check whether or not a slot can accept a new item (and add it)
++     * @param addItem Set whether or not to add the checked item to that slot
++     * @return The overflowing itemstack; null if all where added or could be added
++     */
++    private static ItemStack checkOrAddToSlot(IInventory iinventory, ItemStack itemstack, int i, EnumDirection enumdirection, boolean addItem) {
++        // Paper end
+         ItemStack itemstack1 = iinventory.getItem(i);
+ 
+         if (a(iinventory, itemstack, i, enumdirection)) {
+             boolean flag = false;
+ 
+             if (itemstack1 == null) {
++                if (!addItem) return null; // Paper - InventoryMoveItemEvent improvements
+                 IGNORE_TILE_UPDATES = true; // Paper
+                 iinventory.setItem(i, itemstack);
+                 IGNORE_TILE_UPDATES = false; // Paper
+@@ -525,12 +622,12 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+             } else if (a(itemstack1, itemstack)) {
+                 int j = itemstack.getMaxStackSize() - itemstack1.count;
+                 int k = Math.min(itemstack.count, j);
+-
++                if (!addItem) return (k > 0) ? null : itemstack; // Paper - InventoryMoveItemEvent improvements
+                 itemstack.count -= k;
+                 itemstack1.count += k;
+                 flag = k > 0;
+             }
+-
++            if (!addItem) return itemstack; // Paper - InventoryMoveItemEvent improvements
+             if (flag) {
+                 if (iinventory instanceof TileEntityHopper) {
+                     TileEntityHopper tileentityhopper = (TileEntityHopper) iinventory;
+-- 
+1.9.4.msysgit.2
+
