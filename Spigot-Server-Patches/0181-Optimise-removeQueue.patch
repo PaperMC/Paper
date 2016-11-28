@@ -1,0 +1,103 @@
+From 337674a9e0ca569b478a84892e8cb6ae8b5b2e7d Mon Sep 17 00:00:00 2001
+From: Alfie Cleveland <alfeh@me.com>
+Date: Fri, 25 Nov 2016 13:22:40 +0000
+Subject: [PATCH] Optimise removeQueue
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index ec06d8e..63f273a 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -1,17 +1,15 @@
+ package net.minecraft.server;
+ 
+-import com.google.common.collect.Lists;
+-import com.google.common.collect.Sets;
+-import com.mojang.authlib.GameProfile;
+-import io.netty.buffer.Unpooled;
++import java.util.ArrayDeque; // Paper
+ import java.util.Collection;
++import java.util.Deque;
+ import java.util.HashSet;
+ import java.util.Iterator;
+-import java.util.List;
++
+ import javax.annotation.Nullable;
++
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+-
+ // CraftBukkit start
+ import org.bukkit.Bukkit;
+ import org.bukkit.WeatherType;
+@@ -25,6 +23,11 @@ import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+ import org.bukkit.inventory.MainHand;
+ // CraftBukkit end
+ 
++import com.google.common.collect.Sets;
++import com.mojang.authlib.GameProfile;
++
++import io.netty.buffer.Unpooled;
++
+ public class EntityPlayer extends EntityHuman implements ICrafting {
+ 
+     private static final Logger bR = LogManager.getLogger();
+@@ -34,7 +37,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public final PlayerInteractManager playerInteractManager;
+     public double d;
+     public double e;
+-    public final List<Integer> removeQueue = Lists.newLinkedList();
++    // public final List<Integer> removeQueue = Lists.newLinkedList(); // Paper
++    public final Deque<Integer> removeQueue = new ArrayDeque<>(); // Paper
+     private final ServerStatisticManager bU;
+     private float bV = Float.MIN_VALUE;
+     private int bW = Integer.MIN_VALUE;
+@@ -144,7 +148,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             nbttagcompound1.set("Entity", nbttagcompound2);
+             nbttagcompound.set("RootVehicle", nbttagcompound1);
+         }
+-		this.getBukkitEntity().setExtraData(nbttagcompound); // CraftBukkit
++        this.getBukkitEntity().setExtraData(nbttagcompound); // CraftBukkit
+     }
+ 
+     // CraftBukkit start - World fallback code, either respawn location or global spawn
+@@ -229,11 +233,21 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             Iterator iterator = this.removeQueue.iterator();
+             int j = 0;
+ 
+-            while (iterator.hasNext() && j < i) {
++            // Paper start
++
++            /* while (iterator.hasNext() && j < i) {
+                 aint[j++] = ((Integer) iterator.next()).intValue();
+                 iterator.remove();
++            } */
++
++            Integer integer;
++
++            while (j < i && (integer = this.removeQueue.poll()) != null) {
++                aint[j++] = integer.intValue();
+             }
+ 
++            // Paper end
++
+             this.playerConnection.sendPacket(new PacketPlayOutEntityDestroy(aint));
+         }
+ 
+@@ -969,7 +983,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         this.lastSentExp = -1;
+         this.lastHealthSent = -1.0F;
+         this.cc = -1;
+-        this.removeQueue.addAll(((EntityPlayer) entityhuman).removeQueue);
++        // this.removeQueue.addAll(((EntityPlayer) entityhuman).removeQueue); // Paper
++        // Paper start
++        if (this.removeQueue != ((EntityPlayer) entityhuman).removeQueue) {
++            this.removeQueue.addAll(((EntityPlayer) entityhuman).removeQueue);
++        }
++        // Paper end
+     }
+ 
+     protected void a(MobEffect mobeffect) {
+-- 
+2.9.3 (Apple Git-75)
+
