@@ -778,8 +778,8 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static ProjectileHitEvent callProjectileHitEvent(Entity entity) {
-        ProjectileHitEvent event = new ProjectileHitEvent((Projectile) entity.getBukkitEntity());
+    public static ProjectileHitEvent callProjectileHitEvent(Entity entity, MovingObjectPosition position) {
+        ProjectileHitEvent event = new ProjectileHitEvent((Projectile) entity.getBukkitEntity(), position.entity == null ? null : position.entity.getBukkitEntity());
         entity.world.getServer().getPluginManager().callEvent(event);
         return event;
     }
