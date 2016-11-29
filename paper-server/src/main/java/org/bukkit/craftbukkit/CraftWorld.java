@@ -1160,7 +1160,7 @@ public class CraftWorld implements World {
         } else if (AreaEffectCloud.class.isAssignableFrom(clazz)) {
             entity = new EntityAreaEffectCloud(world, x, y, z);
         } else if (EvokerFangs.class.isAssignableFrom(clazz)) {
-            entity = new EntityEvokerFangs(world, x, y, z, yaw, 0, null);
+            entity = new EntityEvokerFangs(world, x, y, z, (float) Math.toRadians(yaw), 0, null);
         }
 
         if (entity != null) {
