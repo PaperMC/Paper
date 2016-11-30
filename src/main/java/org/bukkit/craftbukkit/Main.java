@@ -173,12 +173,12 @@ public class Main {
                     Date buildDate = new SimpleDateFormat("yyyyMMdd-HHmm").parse(Main.class.getPackage().getImplementationVendor());
 
                     Calendar deadline = Calendar.getInstance();
-                    deadline.add(Calendar.DAY_OF_YEAR, -7);
+                    deadline.add(Calendar.DAY_OF_YEAR, -10);
                     if (buildDate.before(deadline.getTime())) {
                         System.err.println("*** Error, this build is outdated ***");
                         System.err.println("*** Please download a new build as per instructions from https://www.spigotmc.org/ ***");
-                        System.err.println("*** Server will start in 30 seconds ***");
-                        Thread.sleep(TimeUnit.SECONDS.toMillis(30));
+                        System.err.println("*** Server will start in 15 seconds ***");
+                        Thread.sleep(TimeUnit.SECONDS.toMillis(15));
                     }
                 }
 
