@@ -5,6 +5,11 @@ import static org.hamcrest.Matchers.*;
 
 import java.util.Arrays;
 import java.util.List;
+import net.minecraft.server.Block;
+import net.minecraft.server.ITileEntity;
+import net.minecraft.server.Item;
+import net.minecraft.server.ItemBlock;
+import net.minecraft.server.ItemReed;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -21,6 +26,7 @@ import org.bukkit.craftbukkit.inventory.ItemStackTest.CraftWrapper;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
+import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
@@ -128,6 +134,38 @@ public class ItemMetaTest extends AbstractTestingBase {
     }
 
     @Test
+    public void testBlockStateMeta() {
+        for (Item item : (Iterable<Item>) Item.REGISTRY) {
+            Block block = null;
+
+            if (item instanceof ItemBlock) {
+                block = ((ItemBlock) item).getBlock();
+            } else if (item instanceof ItemReed) {
+                block = ((ItemReed) item).a;
+            }
+
+            if (block != null) {
+                if (block instanceof ITileEntity) {
+                    ItemStack stack = CraftItemStack.asNewCraftStack(Item.getItemOf(block));
+
+                    // Command blocks aren't unit testable atm
+                    if (stack.getType() == Material.AIR || stack.getType() == Material.COMMAND || stack.getType() == Material.COMMAND_CHAIN || stack.getType() == Material.COMMAND_REPEATING) {
+                        return;
+                    }
+
+                    ItemMeta meta = stack.getItemMeta();
+                    assertTrue(stack + " has meta of type " + meta + " expected BlockStateMeta", meta instanceof BlockStateMeta);
+
+                    BlockStateMeta blockState = (BlockStateMeta) meta;
+                    assertNotNull(stack + " has null block state", blockState.getBlockState());
+
+                    blockState.setBlockState(blockState.getBlockState());
+                }
+            }
+        }
+    }
+
+    @Test
     public void testEachExtraData() {
         final List<StackProvider> providers = Arrays.asList(
             new StackProvider(Material.BOOK_AND_QUILL) {
@@ -209,7 +247,7 @@ public class ItemMetaTest extends AbstractTestingBase {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.BANNER) {                    
+            new StackProvider(Material.BANNER) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final BannerMeta meta = (BannerMeta) cleanStack.getItemMeta();
                     meta.setBaseColor(DyeColor.CYAN);

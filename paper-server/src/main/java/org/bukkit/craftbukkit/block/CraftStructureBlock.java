@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
+import net.minecraft.server.TileEntity;
 import net.minecraft.server.TileEntityStructure;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -19,5 +20,10 @@ public class CraftStructureBlock extends CraftBlockState {
         super(material);
 
         this.structure = structure;
+    }
+
+    @Override
+    public TileEntity getTileEntity() {
+        return structure;
     }
 }
