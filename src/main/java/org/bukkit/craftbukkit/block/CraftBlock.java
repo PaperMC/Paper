@@ -323,6 +323,16 @@ public class CraftBlock implements Block {
         case RED_SHULKER_BOX:
         case BLACK_SHULKER_BOX:
             return new CraftShulkerBox(this);
+        case ENCHANTMENT_TABLE:
+            return new CraftEnchantingTable(this);
+        case ENDER_CHEST:
+            return new CraftEnderChest(this);
+        case DAYLIGHT_DETECTOR:
+        case DAYLIGHT_DETECTOR_INVERTED:
+            return new CraftDaylightDetector(this);
+        case REDSTONE_COMPARATOR_OFF:
+        case REDSTONE_COMPARATOR_ON:
+            return new CraftComparator(this);
         default:
             return new CraftBlockState(this);
         }

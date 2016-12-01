@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.ItemStack;
+import net.minecraft.server.TileEntity;
 import net.minecraft.server.TileEntityFlowerPot;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -24,6 +25,11 @@ public class CraftFlowerPot extends CraftBlockState implements FlowerPot {
         super(material);
 
         this.pot = pot;
+    }
+
+    @Override
+    public TileEntity getTileEntity() {
+        return pot;
     }
 
     @Override

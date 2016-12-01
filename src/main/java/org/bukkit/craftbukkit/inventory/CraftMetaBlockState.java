@@ -12,12 +12,16 @@ import net.minecraft.server.TileEntityBeacon;
 import net.minecraft.server.TileEntityBrewingStand;
 import net.minecraft.server.TileEntityChest;
 import net.minecraft.server.TileEntityCommand;
+import net.minecraft.server.TileEntityComparator;
 import net.minecraft.server.TileEntityDispenser;
 import net.minecraft.server.TileEntityDropper;
+import net.minecraft.server.TileEntityEnchantTable;
 import net.minecraft.server.TileEntityEndGateway;
+import net.minecraft.server.TileEntityEnderChest;
 import net.minecraft.server.TileEntityFlowerPot;
 import net.minecraft.server.TileEntityFurnace;
 import net.minecraft.server.TileEntityHopper;
+import net.minecraft.server.TileEntityLightDetector;
 import net.minecraft.server.TileEntityMobSpawner;
 import net.minecraft.server.TileEntityNote;
 import net.minecraft.server.TileEntityShulkerBox;
@@ -34,10 +38,14 @@ import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.CraftBrewingStand;
 import org.bukkit.craftbukkit.block.CraftChest;
 import org.bukkit.craftbukkit.block.CraftCommandBlock;
+import org.bukkit.craftbukkit.block.CraftComparator;
 import org.bukkit.craftbukkit.block.CraftCreatureSpawner;
+import org.bukkit.craftbukkit.block.CraftDaylightDetector;
 import org.bukkit.craftbukkit.block.CraftDispenser;
 import org.bukkit.craftbukkit.block.CraftDropper;
+import org.bukkit.craftbukkit.block.CraftEnchantingTable;
 import org.bukkit.craftbukkit.block.CraftEndGateway;
+import org.bukkit.craftbukkit.block.CraftEnderChest;
 import org.bukkit.craftbukkit.block.CraftFlowerPot;
 import org.bukkit.craftbukkit.block.CraftFurnace;
 import org.bukkit.craftbukkit.block.CraftHopper;
@@ -199,6 +207,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             case GREEN_SHULKER_BOX:
             case RED_SHULKER_BOX:
             case BLACK_SHULKER_BOX:
+            case ENDER_CHEST:
                 return true;
         }
         return false;
@@ -293,7 +302,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
                 te = new BlockJukeBox.TileEntityRecordPlayer();
             }
             return new CraftJukebox(material, (BlockJukeBox.TileEntityRecordPlayer) te);
-        case BREWING_STAND:
+        case BREWING_STAND_ITEM:
             if (te == null) {
                 te = new TileEntityBrewingStand();
             }
@@ -353,6 +362,27 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
                 te = new TileEntityShulkerBox();
             }
             return new CraftShulkerBox(material, (TileEntityShulkerBox) te);
+        case ENCHANTMENT_TABLE:
+            if (te == null) {
+                te = new TileEntityEnchantTable();
+            }
+            return new CraftEnchantingTable(material, (TileEntityEnchantTable) te);
+        case ENDER_CHEST:
+            if (te == null){
+                te = new TileEntityEnderChest();
+            }
+            return new CraftEnderChest(material, (TileEntityEnderChest) te);
+        case DAYLIGHT_DETECTOR:
+        case DAYLIGHT_DETECTOR_INVERTED:
+            if (te == null){
+                te = new TileEntityLightDetector();
+            }
+            return new CraftDaylightDetector(material, (TileEntityLightDetector) te);
+        case REDSTONE_COMPARATOR:
+            if (te == null){
+                te = new TileEntityComparator();
+            }
+            return new CraftComparator(material, (TileEntityComparator) te);
         default:
             throw new IllegalStateException("Missing blockState for " + material);
         }
@@ -362,7 +392,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
     public void setBlockState(BlockState blockState) {
         Validate.notNull(blockState, "blockState must not be null");
         TileEntity te = ((CraftBlockState) blockState).getTileEntity();
-        Validate.notNull(te, "Invalid blockState");
+        Validate.notNull(te, "Invalid tile for " + blockState);
 
         boolean valid;
         switch (material) {
@@ -400,7 +430,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         case JUKEBOX:
             valid = te instanceof BlockJukeBox.TileEntityRecordPlayer;
             break;
-        case BREWING_STAND:
+        case BREWING_STAND_ITEM:
             valid = te instanceof TileEntityBrewingStand;
             break;
         case SKULL:
@@ -443,6 +473,19 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         case RED_SHULKER_BOX:
         case BLACK_SHULKER_BOX:
             valid = te instanceof TileEntityShulkerBox;
+            break;
+        case ENCHANTMENT_TABLE:
+            valid = te instanceof TileEntityEnchantTable;
+            break;
+        case ENDER_CHEST:
+            valid = te instanceof TileEntityEnderChest;
+            break;
+        case DAYLIGHT_DETECTOR:
+        case DAYLIGHT_DETECTOR_INVERTED:
+            valid = te instanceof TileEntityLightDetector;
+            break;
+        case REDSTONE_COMPARATOR:
+            valid = te instanceof TileEntityComparator;
             break;
         default:
             valid = false;

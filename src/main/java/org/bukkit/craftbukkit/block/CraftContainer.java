@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.ChestLock;
-import net.minecraft.server.TileEntity;
+import net.minecraft.server.ITileInventory;
 import net.minecraft.server.TileEntityContainer;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -10,7 +10,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 
 public class CraftContainer extends CraftBlockState implements Lockable {
 
-    private final TileEntityContainer container;
+    private final ITileInventory container;
 
     public CraftContainer(Block block) {
         super(block);
@@ -18,10 +18,10 @@ public class CraftContainer extends CraftBlockState implements Lockable {
         container = (TileEntityContainer) ((CraftWorld) block.getWorld()).getTileEntityAt(block.getX(), block.getY(), block.getZ());
     }
 
-    public CraftContainer(final Material material, TileEntity tileEntity) {
+    public CraftContainer(final Material material, ITileInventory tileEntity) {
         super(material);
 
-        container = (TileEntityContainer) tileEntity;
+        container = tileEntity;
     }
 
     @Override

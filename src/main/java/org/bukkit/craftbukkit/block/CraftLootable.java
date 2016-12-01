@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.server.TileEntity;
 import net.minecraft.server.TileEntityLootable;
 import org.bukkit.Material;
 import org.bukkit.Nameable;
@@ -17,10 +16,10 @@ public class CraftLootable extends CraftContainer implements Nameable {
         te = (TileEntityLootable) ((CraftWorld) block.getWorld()).getTileEntityAt(getX(), getY(), getZ());
     }
 
-    public CraftLootable(Material material, TileEntity tileEntity) {
+    public CraftLootable(Material material, TileEntityLootable tileEntity) {
         super(material, tileEntity);
 
-        te = (TileEntityLootable) tileEntity;
+        te = tileEntity;
     }
 
     @Override

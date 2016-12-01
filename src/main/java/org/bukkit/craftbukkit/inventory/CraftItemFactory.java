@@ -130,6 +130,7 @@ public final class CraftItemFactory implements ItemFactory {
         case GREEN_SHULKER_BOX:
         case RED_SHULKER_BOX:
         case BLACK_SHULKER_BOX:
+        case ENDER_CHEST:
             return new CraftMetaBlockState(meta, material);
         default:
             return new CraftMetaItem(meta);
