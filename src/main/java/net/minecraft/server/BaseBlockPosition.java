@@ -39,7 +39,7 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
         this(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2));
     }
 
-    public boolean equals(Object object) {
+    public final boolean equals(Object object) { // Paper
         if (this == object) {
             return true;
         } else if (!(object instanceof BaseBlockPosition)) {
@@ -51,7 +51,7 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
         }
     }
 
-    public int hashCode() {
+    public final int hashCode() { // Paper
         return (this.getY() + this.getZ() * 31) * 31 + this.getX();
     }
 
@@ -59,15 +59,15 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
         return this.getY() == baseblockposition.getY() ? (this.getZ() == baseblockposition.getZ() ? this.getX() - baseblockposition.getX() : this.getZ() - baseblockposition.getZ()) : this.getY() - baseblockposition.getY();
     }
 
-    public int getX() {
+    public final int getX() { // Paper
         return this.a;
     }
 
-    public int getY() {
+    public final int getY() { // Paper
         return this.b;
     }
 
-    public int getZ() {
+    public final int getZ() { // Paper
         return this.e;
     }
 

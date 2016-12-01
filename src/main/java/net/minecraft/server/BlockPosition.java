@@ -82,6 +82,7 @@ public class BlockPosition extends BaseBlockPosition {
         return a(this.getX(), this.getY(), this.getZ());
     }
 
+    public static long asLong(int x, int y, int z) { return a(x, y, z); } // Paper - OBFHELPER
     public static long a(int i, int j, int k) {
         long l = 0L;
 
