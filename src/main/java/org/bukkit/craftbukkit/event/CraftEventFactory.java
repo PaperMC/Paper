@@ -779,7 +779,13 @@ public class CraftEventFactory {
     }
 
     public static ProjectileHitEvent callProjectileHitEvent(Entity entity, MovingObjectPosition position) {
-        ProjectileHitEvent event = new ProjectileHitEvent((Projectile) entity.getBukkitEntity(), position.entity == null ? null : position.entity.getBukkitEntity());
+        Block hitBlock = null;
+        if (position.type == MovingObjectPosition.EnumMovingObjectType.BLOCK) {
+            BlockPosition blockposition = position.a();
+            hitBlock = entity.getBukkitEntity().getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
+        }
+
+        ProjectileHitEvent event = new ProjectileHitEvent((Projectile) entity.getBukkitEntity(), position.entity == null ? null : position.entity.getBukkitEntity(), hitBlock);
         entity.world.getServer().getPluginManager().callEvent(event);
         return event;
     }
