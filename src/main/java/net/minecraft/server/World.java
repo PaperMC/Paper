@@ -252,6 +252,10 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
         return chunk == null ? null : chunk.getFluid(blockposition);
     }
 
+    public final boolean isLoaded(BlockPosition blockposition) {
+        return getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null; // Paper
+    }
+
     public final boolean isLoadedAndInBounds(BlockPosition blockposition) { // Paper - final for inline
         return getWorldBorder().isInBounds(blockposition) && getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null;
     }
