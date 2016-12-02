@@ -56,6 +56,7 @@ import CommandScoreboard
 import CommandWhitelist
 import DataBits
 import DataConverterMaterialId
+import DataInspectorBlockEntity
 import DefinedStructure
 import EULA
 import EntitySquid
