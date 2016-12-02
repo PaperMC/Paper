@@ -20,18 +20,15 @@
  public final class ItemStack {
  
      public static final ItemStack a = new ItemStack((Item) null);
-@@ -46,28 +59,49 @@
+@@ -46,28 +59,56 @@
          this.item = item;
          this.damage = j;
          this.count = i;
 +        // CraftBukkit start - Pass to setData to do filtering
 +        if (MinecraftServer.getServer() != null) {
 +            this.setData(j);
-+            NBTTagCompound savedStack = new NBTTagCompound();
-+            this.save(savedStack);
-+            MinecraftServer.getServer().getDataConverterManager().a(DataConverterTypes.ITEM_INSTANCE, savedStack); // PAIL: convert
-+            this.load(savedStack);
 +        }
++        this.convertStack();
 +        // CraftBukkit end
          if (this.damage < 0) {
 -            this.damage = 0;
@@ -41,6 +38,16 @@
          this.F();
      }
  
++    // Called to run this stack through the data converter to handle older storage methods and serialized items
++    public void convertStack() {
++        if (MinecraftServer.getServer() != null) {
++            NBTTagCompound savedStack = new NBTTagCompound();
++            this.save(savedStack);
++            MinecraftServer.getServer().getDataConverterManager().a(DataConverterTypes.ITEM_INSTANCE, savedStack); // PAIL: convert
++            this.load(savedStack);
++        }
++    }
++
      private void F() {
 +        if (this.g && this == ItemStack.a) throw new AssertionError("TRAP"); // CraftBukkit
          this.g = this.isEmpty();
@@ -75,7 +82,7 @@
          this.F();
      }
  
-@@ -94,11 +128,138 @@
+@@ -94,11 +135,138 @@
      }
  
      public EnumInteractionResult placeItem(EntityHuman entityhuman, World world, BlockPosition blockposition, EnumHand enumhand, EnumDirection enumdirection, float f, float f1, float f2) {
@@ -215,7 +222,7 @@
  
          return enuminteractionresult;
      }
-@@ -122,7 +283,7 @@
+@@ -122,7 +290,7 @@
          nbttagcompound.setByte("Count", (byte) this.count);
          nbttagcompound.setShort("Damage", (short) this.damage);
          if (this.tag != null) {
@@ -224,7 +231,7 @@
          }
  
          return nbttagcompound;
-@@ -157,11 +318,30 @@
+@@ -157,11 +325,30 @@
      }
  
      public void setData(int i) {
@@ -257,7 +264,7 @@
      }
  
      public int k() {
-@@ -205,6 +385,11 @@
+@@ -205,6 +392,11 @@
                          entityhuman.b(StatisticList.c(this.item));
                      }
  
@@ -269,7 +276,7 @@
                      this.damage = 0;
                  }
  
-@@ -509,6 +694,12 @@
+@@ -509,6 +701,12 @@
          nbttaglist.add(nbttagcompound);
      }
  

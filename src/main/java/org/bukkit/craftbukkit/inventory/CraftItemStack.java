@@ -423,6 +423,7 @@ public final class CraftItemStack extends ItemStack {
         item.setTag(tag);
 
         ((CraftMetaItem) itemMeta).applyToItem(tag);
+        item.convertStack();
 
         return true;
     }
