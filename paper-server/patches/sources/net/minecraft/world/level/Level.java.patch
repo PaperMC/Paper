@@ -210,7 +210,7 @@
      public boolean isInWorldBounds(BlockPos pos) {
          return !this.isOutsideBuildHeight(pos) && Level.isInWorldBoundsHorizontal(pos);
      }
-@@ -179,18 +298,68 @@
+@@ -179,18 +298,73 @@
          return y < -20000000 || y >= 20000000;
      }
  
@@ -228,7 +228,7 @@
  
 +    // Paper start - if loaded
      @Nullable
-     @Override
++    @Override
 +    public final ChunkAccess getChunkIfLoadedImmediately(int x, int z) {
 +        return ((ServerLevel)this).chunkSource.getChunkAtIfLoadedImmediately(x, z);
 +    }
@@ -260,6 +260,11 @@
 +        return chunk == null ? null : chunk.getFluidState(blockposition);
 +    }
 +
++    @Override
++    public final boolean hasChunkAt(BlockPos pos) {
++        return getChunkIfLoaded(pos.getX() >> 4, pos.getZ() >> 4) != null; // Paper - Perf: Optimize Level.hasChunkAt(BlockPosition)Z
++    }
++
 +    public final boolean isLoadedAndInBounds(BlockPos blockposition) { // Paper - final for inline
 +        return getWorldBorder().isWithinBounds(blockposition) && getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null;
 +    }
@@ -276,13 +281,13 @@
 +        return getWorldBorder().isWithinBounds(blockposition) ? getBlockStateIfLoaded(blockposition) : null;
 +    }
 +
-+    @Override
+     @Override
      public ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
 +        // Paper end
          ChunkAccess ichunkaccess = this.getChunkSource().getChunk(chunkX, chunkZ, leastStatus, create);
  
          if (ichunkaccess == null && create) {
-@@ -207,6 +376,18 @@
+@@ -207,6 +381,18 @@
  
      @Override
      public boolean setBlock(BlockPos pos, BlockState state, int flags, int maxUpdateDepth) {
@@ -301,7 +306,7 @@
          if (this.isOutsideBuildHeight(pos)) {
              return false;
          } else if (!this.isClientSide && this.isDebug()) {
-@@ -214,45 +395,124 @@
+@@ -214,45 +400,124 @@
          } else {
              LevelChunk chunk = this.getChunkAt(pos);
              Block block = state.getBlock();
@@ -441,7 +446,7 @@
      public void onBlockStateChange(BlockPos pos, BlockState oldBlock, BlockState newBlock) {}
  
      @Override
-@@ -340,10 +600,18 @@
+@@ -340,10 +605,18 @@
  
      @Override
      public BlockState getBlockState(BlockPos pos) {
@@ -461,7 +466,7 @@
  
              return chunk.getBlockState(pos);
          }
-@@ -446,14 +714,21 @@
+@@ -446,14 +719,21 @@
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -487,7 +492,7 @@
              } else if (flag && this.shouldTickBlocksAt(tickingblockentity.getPos())) {
                  tickingblockentity.tick();
              }
-@@ -461,17 +736,19 @@
+@@ -461,17 +741,19 @@
  
          this.tickingBlockEntities = false;
          gameprofilerfiller.pop();
@@ -512,7 +517,7 @@
          }
      }
  
-@@ -510,13 +787,29 @@
+@@ -510,13 +792,29 @@
      @Nullable
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
@@ -543,7 +548,7 @@
              this.getChunkAt(blockposition).addAndRegisterBlockEntity(blockEntity);
          }
      }
-@@ -643,7 +936,7 @@
+@@ -643,7 +941,7 @@
  
                  for (int k = 0; k < j; ++k) {
                      EnderDragonPart entitycomplexpart = aentitycomplexpart[k];
@@ -552,7 +557,7 @@
  
                      if (t0 != null && predicate.test(t0)) {
                          result.add(t0);
-@@ -912,7 +1205,7 @@
+@@ -912,7 +1210,7 @@
  
      public static enum ExplosionInteraction implements StringRepresentable {
  
