@@ -38,7 +38,7 @@
  
                  if (entityhuman.abilities.canInstantlyBuild && itemstack1.isEmpty() && !itemstack.isEmpty()) {
                      itemstack2 = itemstack.cloneItemStack();
-@@ -385,6 +409,11 @@
+@@ -385,14 +409,19 @@
      }
  
      public boolean damageEntity(DamageSource damagesource, float f) {
@@ -49,4 +49,84 @@
 +        // CraftBukkit end
          if (!this.world.isClientSide && !this.dead) {
              if (DamageSource.OUT_OF_WORLD.equals(damagesource)) {
-                 this.die();
+-                this.die();
++                this.Q(); // CraftBukkit - this.die() -> this.Q()
+                 return false;
+             } else if (!this.isInvulnerable(damagesource) && !this.bz && !this.isMarker()) {
+                 if (damagesource.isExplosion()) {
+                     this.G();
+-                    this.die();
++                    this.Q(); // CraftBukkit - this.die() -> this.Q()
+                     return false;
+                 } else if (DamageSource.FIRE.equals(damagesource)) {
+                     if (this.isBurning()) {
+@@ -421,7 +450,7 @@
+                         } else if (damagesource.u()) {
+                             this.I();
+                             this.D();
+-                            this.die();
++                            this.Q(); // CraftBukkit - this.die() -> this.Q()
+                             return false;
+                         } else {
+                             long i = this.world.getTime();
+@@ -432,7 +461,7 @@
+                             } else {
+                                 this.E();
+                                 this.D();
+-                                this.die();
++                                this.Q(); // CraftBukkit - this.die() -> this.Q()
+                             }
+ 
+                             return false;
+@@ -460,19 +489,19 @@
+         f1 -= f;
+         if (f1 <= 0.5F) {
+             this.G();
+-            this.die();
++            this.Q(); // CraftBukkit - this.die() -> this.Q()
+         } else {
+             this.setHealth(f1);
+         }
+ 
+     }
+ 
+-    private void E() {
+-        Block.a(this.world, new BlockPosition(this), new ItemStack(Items.ARMOR_STAND));
++    private void E() { // PAIL: Rename dropLoot
++        drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(new ItemStack(Items.ARMOR_STAND))); // CraftBukkit - add to drops
+         this.G();
+     }
+ 
+-    private void G() {
++    private void G() { // PAIL: Rename dropEquippedItems
+         this.I();
+ 
+         int i;
+@@ -481,7 +510,7 @@
+         for (i = 0; i < this.bx.size(); ++i) {
+             itemstack = (ItemStack) this.bx.get(i);
+             if (!itemstack.isEmpty()) {
+-                Block.a(this.world, (new BlockPosition(this)).up(), itemstack);
++                drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack)); // CraftBukkit - add to drops
+                 this.bx.set(i, ItemStack.a);
+             }
+         }
+@@ -489,7 +518,7 @@
+         for (i = 0; i < this.by.size(); ++i) {
+             itemstack = (ItemStack) this.by.get(i);
+             if (!itemstack.isEmpty()) {
+-                Block.a(this.world, (new BlockPosition(this)).up(), itemstack);
++                drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack)); // CraftBukkit - add to drops
+                 this.by.set(i, ItemStack.a);
+             }
+         }
+@@ -600,7 +629,8 @@
+         return this.isSmall();
+     }
+ 
+-    public void Q() {
++    public void Q() { // PAIL: Rename killEntity (super)
++        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, drops); // CraftBukkit - call event
+         this.die();
+     }
+ 
