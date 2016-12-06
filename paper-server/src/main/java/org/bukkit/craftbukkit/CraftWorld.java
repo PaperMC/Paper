@@ -58,6 +58,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.StandardMessenger;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionType;
+import org.bukkit.util.Consumer;
 import org.bukkit.util.Vector;
 
 public class CraftWorld implements World {
@@ -852,7 +853,12 @@ public class CraftWorld implements World {
     }
 
     public <T extends Entity> T spawn(Location location, Class<T> clazz) throws IllegalArgumentException {
-        return spawn(location, clazz, SpawnReason.CUSTOM);
+        return spawn(location, clazz, null, SpawnReason.CUSTOM);
+    }
+
+    @Override
+    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<T> function) throws IllegalArgumentException {
+        return spawn(location, clazz, function, SpawnReason.CUSTOM);
     }
 
     @Override
@@ -1174,20 +1180,29 @@ public class CraftWorld implements World {
 
     @SuppressWarnings("unchecked")
     public <T extends Entity> T addEntity(net.minecraft.server.Entity entity, SpawnReason reason) throws IllegalArgumentException {
+        return addEntity(entity, reason, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Entity> T addEntity(net.minecraft.server.Entity entity, SpawnReason reason, Consumer<T> function) throws IllegalArgumentException {
         Preconditions.checkArgument(entity != null, "Cannot spawn null entity");
 
         if (entity instanceof EntityInsentient) {
             ((EntityInsentient) entity).prepare(getHandle().D(new BlockPosition(entity)), (GroupDataEntity) null);
         }
 
+        if (function != null) {
+            function.accept((T) entity.getBukkitEntity());
+        }
+
         world.addEntity(entity, reason);
         return (T) entity.getBukkitEntity();
     }
 
-    public <T extends Entity> T spawn(Location location, Class<T> clazz, SpawnReason reason) throws IllegalArgumentException {
+    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<T> function, SpawnReason reason) throws IllegalArgumentException {
         net.minecraft.server.Entity entity = createEntity(location, clazz);
 
-        return addEntity(entity, reason);
+        return addEntity(entity, reason, function);
     }
 
     public ChunkSnapshot getEmptyChunkSnapshot(int x, int z, boolean includeBiome, boolean includeBiomeTempRain) {
