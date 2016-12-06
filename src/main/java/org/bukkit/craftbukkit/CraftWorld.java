@@ -597,6 +597,8 @@ public class CraftWorld implements World {
             if (chunk != null) {
                 byte[] biomevals = chunk.getBiomeIndex();
                 biomevals[((z & 0xF) << 4) | (x & 0xF)] = (byte) BiomeBase.REGISTRY_ID.a(bb);
+
+                chunk.e(); // SPIGOT-2890 // PAIL: markDirty
             }
         }
     }
