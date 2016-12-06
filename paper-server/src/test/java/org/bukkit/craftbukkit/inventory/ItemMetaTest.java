@@ -24,6 +24,7 @@ import org.bukkit.craftbukkit.inventory.ItemStackTest.StackWrapper;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.BukkitWrapper;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.CraftWrapper;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.inventory.meta.BlockStateMeta;
@@ -35,6 +36,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.inventory.meta.SpawnEggMeta;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionType;
@@ -252,6 +254,14 @@ public class ItemMetaTest extends AbstractTestingBase {
                     final BannerMeta meta = (BannerMeta) cleanStack.getItemMeta();
                     meta.setBaseColor(DyeColor.CYAN);
                     meta.addPattern(new Pattern(DyeColor.WHITE, PatternType.BRICKS));
+                    cleanStack.setItemMeta(meta);
+                    return cleanStack;
+                }
+            }, 
+            new StackProvider(Material.MONSTER_EGG) {
+                @Override ItemStack operate(ItemStack cleanStack) {
+                    final SpawnEggMeta meta = (SpawnEggMeta) cleanStack.getItemMeta();
+                    meta.setSpawnedType(EntityType.ZOMBIE);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }

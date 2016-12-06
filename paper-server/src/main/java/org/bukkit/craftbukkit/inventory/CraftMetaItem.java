@@ -115,6 +115,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
                     .put(CraftMetaLeatherArmor.class, "LEATHER_ARMOR")
                     .put(CraftMetaMap.class, "MAP")
                     .put(CraftMetaPotion.class, "POTION")
+                    .put(CraftMetaSpawnEgg.class, "SPAWN_EGG")
                     .put(CraftMetaEnchantedBook.class, "ENCHANTED")
                     .put(CraftMetaFirework.class, "FIREWORK")
                     .put(CraftMetaCharge.class, "FIREWORK_EFFECT")
@@ -839,6 +840,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
                         CraftMetaPotion.DEFAULT_POTION.NBT,
                         CraftMetaSkull.SKULL_OWNER.NBT,
                         CraftMetaSkull.SKULL_PROFILE.NBT,
+                        CraftMetaSpawnEgg.ENTITY_TAG.NBT,
                         CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT,
                         CraftMetaBook.BOOK_TITLE.NBT,
                         CraftMetaBook.BOOK_AUTHOR.NBT,
