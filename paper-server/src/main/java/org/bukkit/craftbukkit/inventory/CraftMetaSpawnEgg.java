@@ -18,6 +18,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
     static final ItemMetaKey ENTITY_ID = new ItemMetaKey("id");
 
     private EntityType spawnedType;
+    private NBTTagCompound entityTag;
 
     CraftMetaSpawnEgg(CraftMetaItem meta) {
         super(meta);
@@ -34,7 +35,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
         super(tag);
 
         if (tag.hasKey(ENTITY_TAG.NBT)) {
-            NBTTagCompound entityTag = tag.getCompound(ENTITY_TAG.NBT);
+            entityTag = tag.getCompound(ENTITY_TAG.NBT);
 
             if (entityTag.hasKey(ENTITY_ID.NBT)) {
                 this.spawnedType = EntityType.fromName(new MinecraftKey(entityTag.getString(ENTITY_ID.NBT)).a()); // PAIL: rename
@@ -53,12 +54,15 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
     void applyToItem(NBTTagCompound tag) {
         super.applyToItem(tag);
 
-        if (hasSpawnedType()) {
-            NBTTagCompound entityTag = new NBTTagCompound();
-            entityTag.setString(ENTITY_ID.NBT, new MinecraftKey(spawnedType.getName()).toString());
-
-            tag.set(ENTITY_TAG.NBT, entityTag);
+        if (entityTag == null) {
+            entityTag = new NBTTagCompound();
         }
+
+        if (hasSpawnedType()) {
+            entityTag.setString(ENTITY_ID.NBT, new MinecraftKey(spawnedType.getName()).toString());
+        }
+
+        tag.set(ENTITY_TAG.NBT, entityTag);
     }
 
     @Override
@@ -77,7 +81,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
     }
 
     boolean isSpawnEggEmpty() {
-        return !hasSpawnedType();
+        return !(hasSpawnedType() || entityTag != null);
     }
 
     boolean hasSpawnedType() {
@@ -104,7 +108,8 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
         if (meta instanceof CraftMetaSpawnEgg) {
             CraftMetaSpawnEgg that = (CraftMetaSpawnEgg) meta;
 
-            return hasSpawnedType() ? that.hasSpawnedType() && this.spawnedType.equals(that.spawnedType) : !that.hasSpawnedType();
+            return hasSpawnedType() ? that.hasSpawnedType() && this.spawnedType.equals(that.spawnedType) : !that.hasSpawnedType()
+                    && entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : entityTag == null;
         }
         return true;
     }
@@ -121,6 +126,9 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
 
         if (hasSpawnedType()) {
             hash = 73 * hash + spawnedType.hashCode();
+        }
+        if (entityTag != null) {
+            hash = 73 * hash + entityTag.hashCode();
         }
 
         return original != hash ? CraftMetaSpawnEgg.class.hashCode() ^ hash : hash;
