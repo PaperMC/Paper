@@ -1,0 +1,186 @@
+From db132f197f8d483beb0faaf21739a319643c60f1 Mon Sep 17 00:00:00 2001
+From: Techcable <Techcable@techcable.net>
+Date: Wed, 6 Apr 2016 09:19:00 -0700
+Subject: [PATCH] Optimize getType
+
+Removes mojang's new 'DataBits', which are stupidly inneficent
+
+Hopefully improve inlining
+
+diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+index e29298e..c6e8718 100644
+--- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
++++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+@@ -2,11 +2,13 @@ package net.minecraft.server;
+ 
+ public class DataPaletteBlock implements DataPaletteExpandable {
+ 
++
+     private static final DataPalette d = new DataPaletteGlobal();
+     protected static final IBlockData a = Blocks.AIR.getBlockData();
+-    protected DataBits b;
++    // protected DataBits b; // Paper - nope
+     protected DataPalette c;
+     private int e = 0;
++    private final short[] data = new short[4096]; // Paper
+ 
+     public DataPaletteBlock() {
+         this.b(4);
+@@ -30,18 +32,20 @@ public class DataPaletteBlock implements DataPaletteExpandable {
+             }
+ 
+             this.c.a(DataPaletteBlock.a);
+-            this.b = new DataBits(this.e, 4096);
++            // this.b = new DataBits(this.e, 4096); // Paper
+         }
+     }
+ 
+     public int a(int i, IBlockData iblockdata) {
+-        DataBits databits = this.b;
++        // DataBits databits = this.b; // Paper - nope
+         DataPalette datapalette = this.c;
+ 
+         this.b(i);
+ 
+-        for (int j = 0; j < databits.b(); ++j) {
+-            IBlockData iblockdata1 = datapalette.a(databits.a(j));
++        // Paper start - DataBits -> data
++        for (int j = 0; j < 4096; ++j) {
++            IBlockData iblockdata1 = datapalette.a(data[j]);
++            // Paper end
+ 
+             if (iblockdata1 != null) {
+                 this.setBlockIndex(j, iblockdata1);
+@@ -56,9 +60,14 @@ public class DataPaletteBlock implements DataPaletteExpandable {
+     }
+ 
+     protected void setBlockIndex(int i, IBlockData iblockdata) {
++        // Paper start - performance sanity
++        /*
+         int j = this.c.a(iblockdata);
+ 
+         this.b.a(i, j);
++        */
++        data[i] = (short) Block.REGISTRY_ID.getId(iblockdata);
++        // Paper end
+     }
+ 
+     public IBlockData a(int i, int j, int k) {
+@@ -66,15 +75,26 @@ public class DataPaletteBlock implements DataPaletteExpandable {
+     }
+ 
+     protected IBlockData a(int i) {
+-        IBlockData iblockdata = this.c.a(this.b.a(i));
++        IBlockData iblockdata = Block.REGISTRY_ID.fromId(data[i]); // Paper - performance sanity
+ 
+         return iblockdata == null ? DataPaletteBlock.a : iblockdata;
+     }
+ 
++    // Paper start - serialization method
++    public DataBits toMojangBits() {
++        DataBits bits = new DataBits(this.e, 4096);
++        for (int i = 0; i < 4096; i++) {
++            bits.a(i, this.c.a(Block.REGISTRY_ID.fromId(data[i])));
++        }
++        return bits;
++    }
++    // Paper end
++
+     public void b(PacketDataSerializer packetdataserializer) {
+         packetdataserializer.writeByte(this.e);
+         this.c.b(packetdataserializer);
+-        packetdataserializer.a(this.b.a());
++        packetdataserializer.a(toMojangBits().a()); // Paper - serialize
++
+     }
+ 
+     public NibbleArray exportData(byte[] abyte, NibbleArray nibblearray) {
+@@ -129,6 +149,7 @@ public class DataPaletteBlock implements DataPaletteExpandable {
+     }
+ 
+     public int a() {
+-        return 1 + this.c.a() + PacketDataSerializer.a(this.b.b()) + this.b.a().length * 8;
++        return 1 + this.c.a() + PacketDataSerializer.a(this.toMojangBits().b()) + this.toMojangBits().a().length * 8;
++        // Paper end
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 220a942..3b7093d 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -799,17 +799,7 @@ public abstract class World implements IBlockAccess {
+ 
+     // Paper start - reduces need to do isLoaded before getType
+     public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
+-        // CraftBukkit start - tree generation
+-        if (captureTreeGeneration) {
+-            Iterator<BlockState> it = capturedBlockStates.iterator();
+-            while (it.hasNext()) {
+-                BlockState previous = it.next();
+-                if (previous.getX() == blockposition.getX() && previous.getY() == blockposition.getY() && previous.getZ() == blockposition.getZ()) {
+-                    return CraftMagicNumbers.getBlock(previous.getTypeId()).fromLegacyData(previous.getRawData());
+-                }
+-            }
+-        }
+-        // CraftBukkit end
++        if (captureTreeGeneration) return findCaptured(blockposition); // use seperate findCaptured() method
+         Chunk chunk = this.getChunkIfLoaded(blockposition);
+         if (chunk != null) {
+             return blockposition.isValidLocation() ? chunk.getBlockData(blockposition) : Blocks.AIR.getBlockData();
+@@ -818,26 +808,39 @@ public abstract class World implements IBlockAccess {
+     }
+     // Paper end
+ 
+-    public IBlockData getType(BlockPosition blockposition) {
++    // Paper start - optimize getType
++    // hoist tree generation into a seperate method to assist inlining
++    public IBlockData getType(BlockPosition pos) {
++        return getType(pos, this.captureTreeGeneration);
++    }
++
++    private IBlockData findCaptured(BlockPosition blockposition) {
+         // CraftBukkit start - tree generation
+-        if (captureTreeGeneration) {
+-            Iterator<BlockState> it = capturedBlockStates.iterator();
+-            while (it.hasNext()) {
+-                BlockState previous = it.next();
+-                if (previous.getX() == blockposition.getX() && previous.getY() == blockposition.getY() && previous.getZ() == blockposition.getZ()) {
+-                    return CraftMagicNumbers.getBlock(previous.getTypeId()).fromLegacyData(previous.getRawData());
+-                }
++        Iterator<BlockState> it = capturedBlockStates.iterator();
++        while (it.hasNext()) {
++            BlockState previous = it.next();
++            if (previous.getX() == blockposition.getX() && previous.getY() == blockposition.getY() && previous.getZ() == blockposition.getZ()) {
++                return CraftMagicNumbers.getBlock(previous.getTypeId()).fromLegacyData(previous.getRawData());
+             }
+         }
+-        // CraftBukkit end
+-        if (!blockposition.isValidLocation()) { // Paper
+-            return Blocks.AIR.getBlockData();
+-        } else {
+-            Chunk chunk = this.getChunkAtWorldCoords(blockposition);
++        return getType(blockposition, captureTreeGeneration);
++    }
+ 
+-            return chunk.getBlockData(blockposition);
++    public IBlockData getType(BlockPosition blockposition, boolean captureTreeGeneration) {
++        if (captureTreeGeneration) {
++            // CraftBukkit end
++            return findCaptured(blockposition); // Move into seperate method to assist inlining
+         }
++        if (blockposition.isValidLocation()) { // Paper
++            Chunk chunk = this.getChunkAtWorldCoords(blockposition);
++            ChunkSection chunksection = chunk.getSections()[blockposition.getY() >> 4];
++            if (chunksection != null) {
++                return chunksection.getType(blockposition.getX() & 15, blockposition.getY() & 15, blockposition.getZ() & 15);
++            }
++        }
++        return Blocks.AIR.getBlockData();
+     }
++    // Paper end
+ 
+     public boolean B() {
+         return this.J < 4;
+-- 
+2.8.0
+
