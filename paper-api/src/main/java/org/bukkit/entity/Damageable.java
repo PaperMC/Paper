@@ -1,5 +1,7 @@
 package org.bukkit.entity;
 
+import org.bukkit.attribute.Attribute;
+
 /**
  * Represents an {@link Entity} that has health and can take damage.
  */
@@ -84,7 +86,9 @@ public interface Damageable extends Entity {
      * Gets the maximum health this entity has.
      *
      * @return Maximum health
+     * @deprecated use {@link Attribute#GENERIC_MAX_HEALTH}.
      */
+    @Deprecated
     double getMaxHealth();
 
     /**
@@ -107,7 +111,9 @@ public interface Damageable extends Entity {
      * {@link Wither}, etc...} will have their bar scaled accordingly.
      *
      * @param health amount of health to set the maximum to
+     * @deprecated use {@link Attribute#GENERIC_MAX_HEALTH}.
      */
+    @Deprecated
     void setMaxHealth(double health);
 
     /**
@@ -122,6 +128,8 @@ public interface Damageable extends Entity {
 
     /**
      * Resets the max health to the original amount.
+     * @deprecated use {@link Attribute#GENERIC_MAX_HEALTH}.
      */
+    @Deprecated
     void resetMaxHealth();
 }
