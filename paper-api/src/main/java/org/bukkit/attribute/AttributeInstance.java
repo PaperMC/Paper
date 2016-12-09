@@ -57,4 +57,11 @@ public interface AttributeInstance {
      * @return the total attribute value
      */
     double getValue();
+
+    /**
+     * Gets the default value of the Attribute attached to this instance.
+     *
+     * @return server default value
+     */
+    double getDefaultValue();
 }
