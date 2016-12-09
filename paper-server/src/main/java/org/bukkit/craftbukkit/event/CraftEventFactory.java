@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -1027,5 +1028,19 @@ public class CraftEventFactory {
         EntityBreedEvent event = new EntityBreedEvent((LivingEntity) child.getBukkitEntity(), (LivingEntity) mother.getBukkitEntity(), (LivingEntity) father.getBukkitEntity(), breederEntity, bredWithStack, experience);
         child.world.getServer().getPluginManager().callEvent(event);
         return event;
+    }
+
+    public static boolean handleBlockFormEvent(World world, BlockPosition pos, net.minecraft.server.Block block, @Nullable Entity entity) {
+        BlockState blockState = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()).getState();
+        blockState.setType(CraftMagicNumbers.getMaterial(block));
+
+        BlockFormEvent event = (entity == null) ? new BlockFormEvent(blockState.getBlock(), blockState) : new EntityBlockFormEvent(entity.getBukkitEntity(), blockState.getBlock(), blockState);
+        world.getServer().getPluginManager().callEvent(event);
+
+        if (!event.isCancelled()) {
+            blockState.update(true);
+        }
+
+        return !event.isCancelled();
     }
 }
