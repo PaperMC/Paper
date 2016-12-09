@@ -60,6 +60,11 @@ public class CraftAttributeInstance implements AttributeInstance {
         return handle.getValue();
     }
 
+    @Override
+    public double getDefaultValue() {
+       return handle.getAttribute().getDefault();
+    }
+
     private static net.minecraft.server.AttributeModifier convert(AttributeModifier bukkit) {
         return new net.minecraft.server.AttributeModifier(bukkit.getUniqueId(), bukkit.getName(), bukkit.getAmount(), bukkit.getOperation().ordinal());
     }
