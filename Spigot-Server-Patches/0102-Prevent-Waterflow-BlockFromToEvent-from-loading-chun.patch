@@ -1,4 +1,4 @@
-From fe206616818e3c39b87dcb2d1039d49bd437ccff Mon Sep 17 00:00:00 2001
+From 6164cfed01bee6e1ec4ae381b1e20451d45ae423 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 28 Mar 2016 22:03:09 -0400
 Subject: [PATCH] Prevent Waterflow BlockFromToEvent from loading chunks
@@ -12,26 +12,26 @@ of unloaded chunks anyways.
 This keeps behavior consistent, vs inconsistent flowing based on plugin triggered loads.
 
 diff --git a/src/main/java/net/minecraft/server/BlockFlowing.java b/src/main/java/net/minecraft/server/BlockFlowing.java
-index 3174326..009a757 100644
+index 765a37160..6939ac2cc 100644
 --- a/src/main/java/net/minecraft/server/BlockFlowing.java
 +++ b/src/main/java/net/minecraft/server/BlockFlowing.java
-@@ -99,6 +99,7 @@ public class BlockFlowing extends BlockFluids {
-         IBlockData iblockdata2 = world.getType(blockposition.down());
+@@ -96,6 +96,7 @@ public class BlockFlowing extends BlockFluids {
  
          if (this.h(world, blockposition.down(), iblockdata2)) {
+             // CraftBukkit start
 +            if (!canFlowTo(world, source, BlockFace.DOWN)) { return; } // Paper
-             // CraftBukkit start - Send "down" to the server
              BlockFromToEvent event = new BlockFromToEvent(source, BlockFace.DOWN);
-             if (server != null) {
+             world.getServer().getPluginManager().callEvent(event);
+ 
 @@ -136,6 +137,7 @@ public class BlockFlowing extends BlockFluids {
                  EnumDirection enumdirection1 = (EnumDirection) iterator1.next();
  
                  // CraftBukkit start
 +                if (!canFlowTo(world, source, org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(enumdirection1))) { continue; } // Paper
                  BlockFromToEvent event = new BlockFromToEvent(source, org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(enumdirection1));
-                 if (server != null) {
-                     server.getPluginManager().callEvent(event);
-@@ -150,8 +152,14 @@ public class BlockFlowing extends BlockFluids {
+                 world.getServer().getPluginManager().callEvent(event);
+ 
+@@ -148,8 +150,14 @@ public class BlockFlowing extends BlockFluids {
  
      }
  
@@ -48,5 +48,5 @@ index 3174326..009a757 100644
                  if (this.material == Material.LAVA) {
                      this.fizz(world, blockposition);
 -- 
-2.10.2
+2.11.0.windows.1
 
