@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * An interface to the inventory of a {@link Llama}.
  */
-public interface LlamaInventory extends AbstractHorseInventory {
+public interface LlamaInventory extends SaddledHorseInventory {
 
     /**
      * Gets the item in the llama's decor slot.
