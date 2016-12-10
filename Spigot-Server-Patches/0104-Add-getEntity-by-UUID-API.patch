@@ -1,0 +1,57 @@
+From 9612faedc986c334b3f3b434b1b41e6b27f6d440 Mon Sep 17 00:00:00 2001
+From: DemonWav <demonwav@gmail.com>
+Date: Wed, 30 Mar 2016 01:20:11 -0500
+Subject: [PATCH] Add getEntity by UUID API
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index a872e76..3339985 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1521,6 +1521,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+         this.Z = 0L;
+     }
+ 
++    public Entity getEntity(UUID uuid) { return this.a(uuid); } // Paper - OBFHELPER
+     @Nullable
+     public Entity a(UUID uuid) {
+         WorldServer[] aworldserver = this.worldServer;
+@@ -1534,7 +1535,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+             if (worldserver != null) {
+                 Entity entity = worldserver.getEntity(uuid);
+ 
+-                if (entity != null) {
++                if (entity != null && !entity.dead) {
+                     return entity;
+                 }
+             }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index f154248..5614147 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -53,6 +53,7 @@ import org.bukkit.configuration.serialization.ConfigurationSerialization;
+ import org.bukkit.conversations.Conversable;
+ import org.bukkit.craftbukkit.boss.CraftBossBar;
+ import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
++import org.bukkit.craftbukkit.entity.CraftEntity;
+ import org.bukkit.craftbukkit.entity.CraftPlayer;
+ import org.bukkit.craftbukkit.generator.CraftChunkData;
+ import org.bukkit.craftbukkit.help.SimpleHelpMap;
+@@ -1850,5 +1851,14 @@ public final class CraftServer implements Server {
+             });
+         }
+     }
++
++    @Override
++    public CraftEntity getEntity(UUID uuid) {
++        Entity entity = getHandle().getServer().getEntity(uuid);
++        if (entity == null) {
++            return null;
++        }
++        return entity.getBukkitEntity();
++    }
+     // Paper end
+ }
+-- 
+2.9.3
+
