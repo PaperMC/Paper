@@ -946,7 +946,7 @@ public class CraftWorld implements World {
                 entity = new EntityShulkerBullet(world);
                 entity.setPositionRotation(x, y, z, yaw, pitch);
             } else if (LlamaSpit.class.isAssignableFrom(clazz)) {
-                entity = new EntityLlama(world);
+                entity = new EntityLlamaSpit(world);
                 entity.setPositionRotation(x, y, z, yaw, pitch);
             }
         } else if (Minecart.class.isAssignableFrom(clazz)) {
