@@ -1,0 +1,83 @@
+From 7a95a9a77bdbaf9c0e9a11f909b45a22a32abbfb Mon Sep 17 00:00:00 2001
+From: kashike <kashike@vq.lc>
+Date: Wed, 14 Dec 2016 08:28:07 -0800
+Subject: [PATCH] Add API methods to control if armour stands can move and
+ perform entity lookups
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityArmorStand.java b/src/main/java/net/minecraft/server/EntityArmorStand.java
+index d37e52c..7a3567f 100644
+--- a/src/main/java/net/minecraft/server/EntityArmorStand.java
++++ b/src/main/java/net/minecraft/server/EntityArmorStand.java
+@@ -763,4 +763,13 @@ public class EntityArmorStand extends EntityLiving {
+     public boolean cK() {
+         return false;
+     }
++
++    // Paper start
++    @Override
++    public void move(EnumMoveType moveType, double x, double y, double z) {
++        if(((ArmorStand) this.getBukkitEntity()).canMove()) {
++            super.move(moveType, x, y, z);
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 51e05f4..79e0327 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1311,6 +1311,7 @@ public abstract class World implements IBlockAccess {
+ 
+         blockposition_pooledblockposition.t();
+         if (entity != null) {
++            if (entity instanceof EntityArmorStand && !((org.bukkit.entity.ArmorStand) entity.getBukkitEntity()).canPerformEntityLookups()) return arraylist; // Paper
+             List list = this.getEntities(entity, axisalignedbb.g(0.25D));
+ 
+             for (k1 = 0; k1 < list.size(); ++k1) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
+index 2b66a08..7f34e6a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
+@@ -10,6 +10,11 @@ import org.bukkit.util.EulerAngle;
+ 
+ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
+ 
++    // Paper start
++    private boolean canMove = true;
++    private boolean canPerformEntityLookups = true;
++    // Paper end
++
+     public CraftArmorStand(CraftServer server, EntityArmorStand entity) {
+         super(server, entity);
+     }
+@@ -211,4 +216,26 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
+     public void setMarker(boolean marker) {
+         getHandle().setMarker(marker);
+     }
++
++    // Paper start
++    @Override
++    public boolean canMove() {
++        return this.canMove;
++    }
++
++    @Override
++    public void setCanMove(boolean flag) {
++        this.canMove = flag;
++    }
++
++    @Override
++    public boolean canPerformEntityLookups() {
++        return this.canPerformEntityLookups;
++    }
++
++    @Override
++    public void setCanPerformEntityLookups(boolean flag) {
++        this.canPerformEntityLookups = flag;
++    }
++// Paper end
+ }
+-- 
+2.10.2
+
