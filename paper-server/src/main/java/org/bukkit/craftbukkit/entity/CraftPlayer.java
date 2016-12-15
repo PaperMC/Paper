@@ -1364,6 +1364,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void sendTitle(String title, String subtitle) {
+        sendTitle(title, subtitle, 10, 70, 20);
+    }
+
+    @Override
+    public void sendTitle(String title, String subtitle, int fadeIn, int stay, int fadeOut) {
         if (title != null) {
             PacketPlayOutTitle packetTitle = new PacketPlayOutTitle(EnumTitleAction.TITLE, CraftChatMessage.fromString(title)[0]);
             getHandle().playerConnection.sendPacket(packetTitle);
@@ -1373,6 +1378,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             PacketPlayOutTitle packetSubtitle = new PacketPlayOutTitle(EnumTitleAction.SUBTITLE, CraftChatMessage.fromString(subtitle)[0]);
             getHandle().playerConnection.sendPacket(packetSubtitle);
         }
+
+        PacketPlayOutTitle times = new PacketPlayOutTitle(fadeIn, stay, fadeOut);
+        getHandle().playerConnection.sendPacket(times);
     }
 
     @Override
