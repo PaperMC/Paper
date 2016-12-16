@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.potion;
 
 import net.minecraft.server.MobEffectList;
 
+import org.bukkit.Color;
 import org.bukkit.potion.PotionEffectType;
 
 public class CraftPotionEffectType extends PotionEffectType {
@@ -86,5 +87,10 @@ public class CraftPotionEffectType extends PotionEffectType {
     @Override
     public boolean isInstant() {
         return handle.isInstant();
+    }
+
+    @Override
+    public Color getColor() {
+        return Color.fromRGB(handle.getColor());
     }
 }
