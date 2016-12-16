@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.lang.Validate;
+import org.bukkit.Color;
 
 /**
  * Represents a type of potion and its effect on an entity.
@@ -196,6 +197,13 @@ public abstract class PotionEffectType {
      * @return whether this type is normally instant
      */
     public abstract boolean isInstant();
+
+    /**
+     * Returns the color of this effect type.
+     *
+     * @return the color
+     */
+    public abstract Color getColor();
 
     @Override
     public boolean equals(Object obj) {

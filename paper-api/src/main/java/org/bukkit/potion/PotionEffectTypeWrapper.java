@@ -1,5 +1,7 @@
 package org.bukkit.potion;
 
+import org.bukkit.Color;
+
 public class PotionEffectTypeWrapper extends PotionEffectType {
     protected PotionEffectTypeWrapper(int id) {
         super(id);
@@ -27,5 +29,10 @@ public class PotionEffectTypeWrapper extends PotionEffectType {
     @Override
     public boolean isInstant() {
         return getType().isInstant();
+    }
+
+    @Override
+    public Color getColor() {
+        return getType().getColor();
     }
 }
