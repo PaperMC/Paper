@@ -191,6 +191,11 @@ public class EntityFishingHook extends IProjectile {
 
             this.setMot(this.getMot().a(0.92D));
             this.ae();
+            // Paper start - These shouldn't be going through portals
+            if (this.inPortal) {
+                this.die();
+            }
+            // Paper end
         }
     }
 
