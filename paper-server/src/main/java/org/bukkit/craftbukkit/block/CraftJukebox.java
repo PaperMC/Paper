@@ -29,7 +29,7 @@ public class CraftJukebox extends CraftBlockState implements Jukebox {
     @Override
     public Material getPlaying() {
         ItemStack record = jukebox.getRecord();
-        if (record == null) {
+        if (record.isEmpty()) {
             return Material.AIR;
         }
         return CraftMagicNumbers.getMaterial(record.getItem());
@@ -39,10 +39,9 @@ public class CraftJukebox extends CraftBlockState implements Jukebox {
     public void setPlaying(Material record) {
         if (record == null || CraftMagicNumbers.getItem(record) == null) {
             record = Material.AIR;
-            jukebox.setRecord(null);
-        } else {
-            jukebox.setRecord(new ItemStack(CraftMagicNumbers.getItem(record), 1));
         }
+
+        jukebox.setRecord(new ItemStack(CraftMagicNumbers.getItem(record), 1));
         if (!isPlaced()) {
             return;
         }
