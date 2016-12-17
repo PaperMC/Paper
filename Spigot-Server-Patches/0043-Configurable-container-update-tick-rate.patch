@@ -1,0 +1,49 @@
+From a0d114ddff46e2250c3550301b1aa355ef9366c9 Mon Sep 17 00:00:00 2001
+From: Sudzzy <originmc@outlook.com>
+Date: Wed, 2 Mar 2016 23:34:44 -0600
+Subject: [PATCH] Configurable container update tick rate
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 57480f5..b2b94b8 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -225,4 +225,9 @@ public class PaperWorldConfig {
+     private void mobSpawnerTickRate() {
+         mobSpawnerTickRate = getInt("mob-spawner-tick-rate", 1);
+     }
++
++    public int containerUpdateTickRate;
++    private void containerUpdateTickRate() {
++        containerUpdateTickRate = getInt("container-update-tick-rate", 1);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 1982749..9662ea0 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -65,6 +65,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         this.viewDistance = viewDistance;
+     }
+     // Paper end
++    private int containerUpdateDelay; // Paper
+ 
+     // CraftBukkit start
+     public String displayName;
+@@ -210,7 +211,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             --this.noDamageTicks;
+         }
+ 
+-        this.activeContainer.b();
++        // Paper start - Configurable container update tick rate
++        if (--containerUpdateDelay <= 0) {
++            this.activeContainer.b();
++            containerUpdateDelay = world.paperConfig.containerUpdateTickRate;
++        }
++        // Paper end
+         if (!this.world.isClientSide && !this.activeContainer.a((EntityHuman) this)) {
+             this.closeInventory();
+             this.activeContainer = this.defaultContainer;
+-- 
+2.9.3
+

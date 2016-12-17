@@ -1,0 +1,56 @@
+From c0b4ee8d6319a0fa582a082b881713ff96d27b2b Mon Sep 17 00:00:00 2001
+From: DoctorDark <doctordark11@gmail.com>
+Date: Wed, 16 Mar 2016 02:21:39 -0500
+Subject: [PATCH] Configurable end credits
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index f7a0c18..31503e7 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -155,4 +155,10 @@ public class PaperWorldConfig {
+         queueLightUpdates = getBoolean("queue-light-updates", false);
+         log("Lighting Queue enabled: " + queueLightUpdates);
+     }
++
++    public boolean disableEndCredits;
++    private void disableEndCredits() {
++        disableEndCredits = getBoolean("game-mechanics.disable-end-credits", false);
++        log("End credits disabled: " + disableEndCredits);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 5b88b7a..ca9e94a 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -495,6 +495,15 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         return this.world.pvpMode;
+     }
+ 
++
++    // Paper start - Give "theEnd2" achievement if the player doesn't already have it
++    private void giveTheEnd2() {
++        if (!this.a(AchievementList.D)) {
++            this.b(AchievementList.D);
++        }
++    }
++    // Paper end
++
+     @Nullable
+     public Entity c(int i) {
+         // this.worldChangeInvuln = true; // CraftBukkit - Moved down and into PlayerList#changeDimension
+@@ -503,7 +512,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             this.world.kill(this);
+             if (!this.viewingCredits) {
+                 this.viewingCredits = true;
+-                if (this.a(AchievementList.D)) {
++                // Paper start - Allow configurable end portal credits
++                if (world.paperConfig.disableEndCredits || this.a(AchievementList.D)) {
++                    this.giveTheEnd2();
++                    // Paper end
+                     this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(4, 0.0F));
+                 } else {
+                     this.b((Statistic) AchievementList.D);
+-- 
+2.9.3
+
