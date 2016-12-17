@@ -1188,6 +1188,16 @@ public class CraftEventFactory {
         return CraftItemStack.asNMSCopy(bitem);
     }
 
+    // Paper start
+    public static com.destroystokyo.paper.event.entity.ProjectileCollideEvent callProjectileCollideEvent(Entity entity, MovingObjectPositionEntity position) {
+        Projectile projectile = (Projectile) entity.getBukkitEntity();
+        org.bukkit.entity.Entity collided = position.getEntity().getBukkitEntity();
+        com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = new com.destroystokyo.paper.event.entity.ProjectileCollideEvent(projectile, collided);
+        Bukkit.getPluginManager().callEvent(event);
+        return event;
+    }
+    // Paper end
+
     public static ProjectileLaunchEvent callProjectileLaunchEvent(Entity entity) {
         Projectile bukkitEntity = (Projectile) entity.getBukkitEntity();
         ProjectileLaunchEvent event = new ProjectileLaunchEvent(bukkitEntity);

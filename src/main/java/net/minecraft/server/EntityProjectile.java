@@ -41,7 +41,17 @@ public abstract class EntityProjectile extends IProjectile {
         }
 
         if (movingobjectposition.getType() != MovingObjectPosition.EnumMovingObjectType.MISS && !flag) {
+            // Paper start - Call ProjectileCollideEvent
+            if (movingobjectposition instanceof MovingObjectPositionEntity) {
+                com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileCollideEvent(this, (MovingObjectPositionEntity)movingobjectposition);
+                if (event.isCancelled()) {
+                    movingobjectposition = null;
+                }
+            }
+            if (movingobjectposition != null) {
+            // Paper end
             this.a(movingobjectposition);
+            } // Paper
         }
 
         this.checkBlockCollisions();
