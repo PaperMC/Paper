@@ -106,6 +106,8 @@ public class CraftEnchantment extends Enchantment {
             return "FIRE_ASPECT";
         case 21:
             return "LOOT_BONUS_MOBS";
+        case 22:
+            return "SWEEPING";
         case 32:
             return "DIG_SPEED";
         case 33:
@@ -156,7 +158,7 @@ public class CraftEnchantment extends Enchantment {
             return false;
         }
         CraftEnchantment ench = (CraftEnchantment) other;
-        return !target.a(ench.target);
+        return !target.c(ench.target);
     }
 
     public net.minecraft.server.Enchantment getHandle() {
