@@ -1,0 +1,95 @@
+From b315acf6f03fd6fd14a9dfbcff844eae1fbf2d19 Mon Sep 17 00:00:00 2001
+From: willies952002 <admin@domnian.com>
+Date: Mon, 28 Nov 2016 10:16:39 -0500
+Subject: [PATCH] Allow Reloading of Command Aliases
+
+Reload the aliases stored in commands.yml
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index eb6fb2c..e16a02c 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1192,6 +1192,13 @@ public final class Bukkit {
+     public static Entity getEntity(UUID uuid) {
+         return server.getEntity(uuid);
+     }
++
++    /**
++     * Reload the Command Aliases in commands.yml
++     */
++    public static void reloadCommandAliases() {
++        server.reloadCommandAliases();
++    }
+     // Paper end
+ 
+     public static Server.Spigot spigot()
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index c2b61f1..09f3e20 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1025,4 +1025,6 @@ public interface Server extends PluginMessageRecipient {
+      * @return The entity that is identified by the given UUID, or null if one isn't found
+      */
+     Entity getEntity(UUID uuid); // Paper
++
++    void reloadCommandAliases(); // Paper
+ }
+diff --git a/src/main/java/org/bukkit/command/CommandMap.java b/src/main/java/org/bukkit/command/CommandMap.java
+index 30d6024..d8a7560 100644
+--- a/src/main/java/org/bukkit/command/CommandMap.java
++++ b/src/main/java/org/bukkit/command/CommandMap.java
+@@ -123,4 +123,12 @@ public interface CommandMap {
+      * @throws IllegalArgumentException if either sender or cmdLine are null
+      */
+     public List<String> tabComplete(CommandSender sender, String cmdLine, Location location) throws IllegalArgumentException;
++
++    // Paper start - Expose Known Commands
++    /**
++     * Return a Map (String -> Command) of Known Commands
++     * @return Known Commands
++     */
++    public java.util.Map<String, Command> getKnownCommands();
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
+index 08976cd..2e232fd 100644
+--- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
++++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
+@@ -280,4 +280,10 @@ public class SimpleCommandMap implements CommandMap {
+             }
+         }
+     }
++
++    // Paper start - Expose Known Commands
++    public Map<String, Command> getKnownCommands() {
++        return knownCommands;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+index 040509c..585bac7 100644
+--- a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+@@ -11,7 +11,7 @@ public class ReloadCommand extends BukkitCommand {
+     public ReloadCommand(String name) {
+         super(name);
+         this.description = "Reloads the server configuration and plugins";
+-        this.usageMessage = "/reload [permissions]"; // Paper
++        this.usageMessage = "/reload [permissions|commands|confirm]"; // Paper
+         this.setPermission("bukkit.command.reload");
+         this.setAliases(Arrays.asList("rl"));
+     }
+@@ -28,6 +28,10 @@ public class ReloadCommand extends BukkitCommand {
+                 Bukkit.getServer().reloadPermissions();
+                 Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Permissions successfully reloaded.");
+                 return true;
++            } else if ("commands".equalsIgnoreCase(args[0])) {
++                Bukkit.getServer().reloadCommandAliases();
++                Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Command aliases successfully reloaded.");
++                return true;
+             } else if ("confirm".equalsIgnoreCase(args[0])) {
+                 confirmed = true;
+             } else {
+-- 
+2.9.3
+
