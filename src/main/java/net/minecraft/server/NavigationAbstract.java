@@ -127,7 +127,7 @@ public abstract class NavigationAbstract {
             // Paper start - Pathfind event
             boolean copiedSet = false;
             for (BlockPosition possibleTarget : set) {
-                if (!new com.destroystokyo.paper.event.entity.EntityPathfindEvent(getEntity().getBukkitEntity(),
+                if (!getEntity().getWorld().getWorldBorder().isInBounds(possibleTarget) || !new com.destroystokyo.paper.event.entity.EntityPathfindEvent(getEntity().getBukkitEntity(), // Paper - don't path out of world border
                     MCUtil.toLocation(getEntity().world, possibleTarget), target == null ? null : target.getBukkitEntity()).callEvent()) {
                     if (!copiedSet) {
                         copiedSet = true;
