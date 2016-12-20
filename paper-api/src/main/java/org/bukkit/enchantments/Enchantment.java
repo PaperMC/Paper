@@ -96,6 +96,11 @@ public abstract class Enchantment {
     public static final Enchantment LOOT_BONUS_MOBS = new EnchantmentWrapper(21);
 
     /**
+     * Increases damage against targets when using a sweep attack
+     */
+    public static final Enchantment SWEEPING_EDGE = new EnchantmentWrapper(22);
+
+    /**
      * Increases the rate at which you mine/dig
      */
     public static final Enchantment DIG_SPEED = new EnchantmentWrapper(32);

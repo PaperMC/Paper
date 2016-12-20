@@ -503,6 +503,7 @@ public enum Material {
     BOAT_DARK_OAK(448, 1),
     TOTEM(449, 1),
     SHULKER_SHELL(450),
+    IRON_NUGGET(452),
     GOLD_RECORD(2256, 1),
     GREEN_RECORD(2257, 1),
     RECORD_3(2258, 1),

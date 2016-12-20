@@ -11,8 +11,6 @@ public enum Statistic {
     PLAYER_KILLS,
     FISH_CAUGHT,
     ANIMALS_BRED,
-    TREASURE_FISHED,
-    JUNK_FISHED,
     LEAVE_GAME,
     JUMP,
     DROP(Type.ITEM),
