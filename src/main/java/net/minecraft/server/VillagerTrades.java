@@ -91,7 +91,8 @@ public class VillagerTrades {
                 return null;
             } else {
                 WorldServer worldserver = (WorldServer) entity.world;
-                BlockPosition blockposition = worldserver.a(this.b, entity.getChunkCoordinates(), 100, true);
+                if (!worldserver.paperConfig.enableTreasureMaps) return null; // Paper
+                BlockPosition blockposition = worldserver.a(this.b, entity.getChunkCoordinates(), 100, !worldserver.paperConfig.treasureMapsAlreadyDiscovered); // Paper
 
                 if (blockposition != null) {
                     ItemStack itemstack = ItemWorldMap.createFilledMapView(worldserver, blockposition.getX(), blockposition.getZ(), (byte) 2, true, true);

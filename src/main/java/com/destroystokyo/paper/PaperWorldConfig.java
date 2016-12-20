@@ -307,4 +307,14 @@ public class PaperWorldConfig {
             Bukkit.getLogger().warning("Spawn Egg and Armor Stand NBT filtering disabled, this is a potential security risk");
         }
     }
+
+    public boolean enableTreasureMaps = true;
+    public boolean treasureMapsAlreadyDiscovered = false;
+    private void treasureMapsAlreadyDiscovered() {
+        enableTreasureMaps = getBoolean("enable-treasure-maps", true);
+        treasureMapsAlreadyDiscovered = getBoolean("treasure-maps-return-already-discovered", false);
+        if (treasureMapsAlreadyDiscovered) {
+            log("Treasure Maps will return already discovered locations");
+        }
+    }
 }
