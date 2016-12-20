@@ -33,52 +33,33 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private final int c;
 -    // Paper start
 -    public boolean isValidLocation() {
--        return a >= -30000000 && c >= -30000000 && a < 30000000 && c < 30000000 && b >= 0 && b < 256;
 +    // Paper start - Make mutable and protected for MutableBlockPos and PooledBlockPos
-+    protected int x;
-+    protected int y;
-+    protected int z;
++    protected int a;
++    protected int b;
++    protected int c;
 +
 +    public final boolean isValidLocation() {
-+        return x >= -30000000 && z >= -30000000 && x < 30000000 && z < 30000000 && y >= 0 && y < 256;
+         return a >= -30000000 && c >= -30000000 && a < 30000000 && c < 30000000 && b >= 0 && b < 256;
      }
      public boolean isInvalidYLocation() {
--        return b < 0 || b >= 256;
-+        return y < 0 || y >= 256;
-     }
-     // Paper end
- 
-     public BaseBlockPosition(int i, int j, int k) {
--        this.a = i;
--        this.b = j;
--        this.c = k;
-+        this.x = i;
-+        this.y = j;
-+        this.z = k;
-     }
- 
-     public BaseBlockPosition(double d0, double d1, double d2) {
 @@ -0,0 +0,0 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
          return this.getY() == baseblockposition.getY() ? (this.getZ() == baseblockposition.getZ() ? this.getX() - baseblockposition.getX() : this.getZ() - baseblockposition.getZ()) : this.getY() - baseblockposition.getY();
      }
  
 -    public int getX() {
--        return this.a;
 +    // Paper start - Only allow a single implementation
 +    public final int getX() {
-+        return this.x;
+         return this.a;
      }
  
 -    public int getY() {
--        return this.b;
 +    public final int getY() {
-+        return this.y;
+         return this.b;
      }
  
 -    public int getZ() {
--        return this.c;
 +    public final int getZ() {
-+        return this.z;
+         return this.c;
      }
 +    // Paper end
  
@@ -89,18 +70,37 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
 @@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition {
+                         if (this.b == null) {
+                             this.b = new BlockPosition.MutableBlockPosition(i, j, k);
+                             return this.b;
+-                        } else if (this.b.b == l && this.b.c == i1 && this.b.d == j1) {
++                        // Paper start - b, c, d, refer to x, y, z, and as such, a, b, c of BaseBlockPosition
++                        } else if (((BaseBlockPosition)this.b).a == l && ((BaseBlockPosition)this.b).b == i1 && ((BaseBlockPosition)this.b).c == j1) {
+                             return (BlockPosition.MutableBlockPosition) this.endOfData();
+                         } else {
+-                            if (this.b.b < l) {
+-                                ++this.b.b;
+-                            } else if (this.b.c < i1) {
+-                                this.b.b = i;
+-                                ++this.b.c;
+-                            } else if (this.b.d < j1) {
+-                                this.b.b = i;
+-                                this.b.c = j;
+-                                ++this.b.d;
++                            if (((BaseBlockPosition)this.b).a < l) {
++                                ++((BaseBlockPosition)this.b).a;
++                            } else if (((BaseBlockPosition)this.b).b < i1) {
++                                ((BaseBlockPosition)this.b).a = i;
++                                ++((BaseBlockPosition)this.b).b;
++                            } else if (((BaseBlockPosition)this.b).c < j1) {
++                                ((BaseBlockPosition) this.b).a = i;
++                                ((BaseBlockPosition) this.b).b = j;
++                                ++((BaseBlockPosition) this.b).c;
                              }
-                             // Paper end
++                            // Paper end
  
--                            this.b.b = i;
--                            this.b.c = j;
--                            this.b.d = k;
-+                            ((BaseBlockPosition) this.b).x = i;
-+                            ((BaseBlockPosition) this.b).y = j;
-+                            ((BaseBlockPosition) this.b).z = k;
                              return this.b;
                          }
-                     }
 @@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition {
  
      public static class MutableBlockPosition extends BlockPosition {
@@ -126,9 +126,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.c = j;
 -            this.d = k;
 +            // Paper start - Modify base position variables
-+            ((BaseBlockPosition) this).x = i;
-+            ((BaseBlockPosition) this).y = j;
-+            ((BaseBlockPosition) this).z = k;
++            ((BaseBlockPosition) this).a = i;
++            ((BaseBlockPosition) this).b = j;
++            ((BaseBlockPosition) this).c = k;
 +            // Paper end
          }
  
@@ -155,9 +155,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.c = j;
 -            this.d = k;
 +            // Paper start - Modify base position variables
-+            ((BaseBlockPosition) this).x = i;
-+            ((BaseBlockPosition) this).y = j;
-+            ((BaseBlockPosition) this).z = k;
++            ((BaseBlockPosition) this).a = i;
++            ((BaseBlockPosition) this).b = j;
++            ((BaseBlockPosition) this).c = k;
 +            // Paper end
              return this;
          }
@@ -172,7 +172,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          public void p(int i) {
 -            this.c = i;
-+            ((BaseBlockPosition) this).y = i; // Paper - Modify base variable
++            ((BaseBlockPosition) this).b = i; // Paper - Modify base variable
          }
  
          public BlockPosition h() {
