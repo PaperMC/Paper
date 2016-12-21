@@ -1,0 +1,53 @@
+From 40667ff98170c1e7b5ff68d32697433cf707c3f1 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 20 Dec 2016 23:09:21 -0600
+Subject: [PATCH] Add option to remove invalid statistics
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 3161dad..9e6071e 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -241,4 +241,9 @@ public class PaperConfig {
+         flyingKickPlayerMessage = getString("messages.kick.flying-player", flyingKickPlayerMessage);
+         flyingKickVehicleMessage = getString("messages.kick.flying-vehicle", flyingKickVehicleMessage);
+     }
++
++    public static boolean removeInvalidStatistics = false;
++    private static void removeInvalidStatistics() {
++        removeInvalidStatistics = getBoolean("remove-invalid-statistics", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/ServerStatisticManager.java b/src/main/java/net/minecraft/server/ServerStatisticManager.java
+index 99466db..d1bee02 100644
+--- a/src/main/java/net/minecraft/server/ServerStatisticManager.java
++++ b/src/main/java/net/minecraft/server/ServerStatisticManager.java
+@@ -104,6 +104,7 @@ public class ServerStatisticManager extends StatisticManager {
+             JsonObject jsonobject = jsonelement.getAsJsonObject();
+             HashMap hashmap = Maps.newHashMap();
+             Iterator iterator = jsonobject.entrySet().iterator();
++            java.util.List<String> invalidStats = com.google.common.collect.Lists.newArrayList(); // Paper
+ 
+             while (iterator.hasNext()) {
+                 Entry entry = (Entry) iterator.next();
+@@ -137,9 +138,17 @@ public class ServerStatisticManager extends StatisticManager {
+                     hashmap.put(statistic, statisticwrapper);
+                 } else {
+                     ServerStatisticManager.b.warn("Invalid statistic in {}: Don\'t know what {} is", new Object[] { this.d, entry.getKey()});
++                    if (com.destroystokyo.paper.PaperConfig.removeInvalidStatistics) invalidStats.add((String) entry.getKey()); // Paper
+                 }
+             }
+ 
++            // Paper start - Remove invalid statistics
++            for (String invalid : invalidStats) {
++                jsonobject.remove(invalid);
++                ServerStatisticManager.b.info("Removing invalid statistic: " + invalid);
++            }
++            // Paper end
++
+             return hashmap;
+         }
+     }
+-- 
+2.9.3
+
