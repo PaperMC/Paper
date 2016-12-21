@@ -31,7 +31,15 @@
  
  public class ArmorStand extends LivingEntity {
  
-@@ -123,7 +129,14 @@
+@@ -101,6 +107,7 @@
+     public Rotations rightArmPose;
+     public Rotations leftLegPose;
+     public Rotations rightLegPose;
++    public boolean canMove = true; // Paper
+ 
+     public ArmorStand(EntityType<? extends ArmorStand> type, Level world) {
+         super(type, world);
+@@ -123,7 +130,14 @@
          return createLivingAttributes().add(Attributes.STEP_HEIGHT, 0.0D);
      }
  
@@ -46,7 +54,7 @@
      public void refreshDimensions() {
          double d0 = this.getX();
          double d1 = this.getY();
-@@ -165,7 +178,7 @@
+@@ -165,7 +179,7 @@
      }
  
      @Override
@@ -55,7 +63,7 @@
          switch (slot.getType()) {
              case HAND:
                  return (ItemStack) this.handItems.get(slot.getIndex());
-@@ -177,19 +190,26 @@
+@@ -177,19 +191,26 @@
      }
  
      @Override
@@ -89,7 +97,7 @@
          }
  
      }
-@@ -341,7 +361,7 @@
+@@ -341,7 +362,7 @@
      }
  
      @Override
@@ -98,7 +106,7 @@
          ItemStack itemstack = player.getItemInHand(hand);
  
          if (!this.isMarker() && !itemstack.is(Items.NAME_TAG)) {
-@@ -350,11 +370,11 @@
+@@ -350,11 +371,11 @@
              } else if (player.level().isClientSide) {
                  return InteractionResult.SUCCESS_SERVER;
              } else {
@@ -113,7 +121,7 @@
  
                      if (this.hasItemInSlot(enumitemslot2) && this.swapItem(player, enumitemslot2, itemstack, hand)) {
                          return InteractionResult.SUCCESS_SERVER;
-@@ -364,7 +384,7 @@
+@@ -364,7 +385,7 @@
                          return InteractionResult.FAIL;
                      }
  
@@ -122,7 +130,7 @@
                          return InteractionResult.FAIL;
                      }
  
-@@ -380,39 +400,57 @@
+@@ -380,39 +401,57 @@
          }
      }
  
@@ -196,7 +204,7 @@
              this.setItemSlot(slot, stack.copyWithCount(1));
              return true;
          } else if (!stack.isEmpty() && stack.getCount() > 1) {
-@@ -427,6 +465,7 @@
+@@ -427,6 +466,7 @@
              player.setItemInHand(hand, itemstack1);
              return true;
          }
@@ -204,7 +212,7 @@
      }
  
      @Override
-@@ -436,12 +475,22 @@
+@@ -436,12 +476,22 @@
          } else if (!world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && source.getEntity() instanceof Mob) {
              return false;
          } else if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
@@ -230,7 +238,7 @@
                  return false;
              } else if (source.is(DamageTypeTags.IGNITES_ARMOR_STANDS)) {
                  if (this.isOnFire()) {
-@@ -463,8 +512,8 @@
+@@ -463,8 +513,8 @@
                  } else {
                      Entity entity = source.getEntity();
  
@@ -241,7 +249,7 @@
  
                          if (!entityhuman.getAbilities().mayBuild) {
                              return false;
-@@ -474,7 +523,7 @@
+@@ -474,7 +524,7 @@
                      if (source.isCreativePlayer()) {
                          this.playBrokenSound();
                          this.showBreakingParticles();
@@ -250,7 +258,7 @@
                          return true;
                      } else {
                          long i = world.getGameTime();
-@@ -486,7 +535,7 @@
+@@ -486,7 +536,7 @@
                          } else {
                              this.brokenByPlayer(world, source);
                              this.showBreakingParticles();
@@ -259,7 +267,7 @@
                          }
  
                          return true;
-@@ -536,7 +585,7 @@
+@@ -536,7 +586,7 @@
          f1 -= amount;
          if (f1 <= 0.5F) {
              this.brokenByAnything(world, damageSource);
@@ -268,7 +276,7 @@
          } else {
              this.setHealth(f1);
              this.gameEvent(GameEvent.ENTITY_DAMAGE, damageSource.getEntity());
-@@ -548,13 +597,13 @@
+@@ -548,13 +598,13 @@
          ItemStack itemstack = new ItemStack(Items.ARMOR_STAND);
  
          itemstack.set(DataComponents.CUSTOM_NAME, this.getCustomName());
@@ -284,7 +292,7 @@
  
          ItemStack itemstack;
          int i;
-@@ -562,7 +611,7 @@
+@@ -562,7 +612,7 @@
          for (i = 0; i < this.handItems.size(); ++i) {
              itemstack = (ItemStack) this.handItems.get(i);
              if (!itemstack.isEmpty()) {
@@ -293,7 +301,7 @@
                  this.handItems.set(i, ItemStack.EMPTY);
              }
          }
-@@ -570,15 +619,16 @@
+@@ -570,15 +620,16 @@
          for (i = 0; i < this.armorItems.size(); ++i) {
              itemstack = (ItemStack) this.armorItems.get(i);
              if (!itemstack.isEmpty()) {
@@ -312,18 +320,19 @@
      }
  
      @Override
-@@ -664,9 +714,23 @@
+@@ -663,10 +714,24 @@
+     public boolean isBaby() {
          return this.isSmall();
      }
- 
++
 +    // CraftBukkit start
-     @Override
++    @Override
 +    public boolean shouldDropExperience() {
 +        return true; // MC-157395, SPIGOT-5193 even baby (small) armor stands should drop
 +    }
 +    // CraftBukkit end
-+
-+    @Override
+ 
+     @Override
      public void kill(ServerLevel world) {
 -        this.remove(Entity.RemovalReason.KILLED);
 +        // CraftBukkit start - pass DamageSource for kill
@@ -337,7 +346,7 @@
          this.gameEvent(GameEvent.ENTITY_DIE);
      }
  
-@@ -788,7 +852,7 @@
+@@ -788,7 +853,7 @@
  
      @Override
      public boolean skipAttackInteraction(Entity attacker) {
@@ -346,3 +355,17 @@
      }
  
      @Override
+@@ -882,4 +947,13 @@
+     public boolean canBeSeenByAnyone() {
+         return !this.isInvisible() && !this.isMarker();
+     }
++
++    // Paper start
++    @Override
++    public void move(net.minecraft.world.entity.MoverType type, Vec3 movement) {
++        if (this.canMove) {
++            super.move(type, movement);
++        }
++    }
++    // Paper end
+ }
