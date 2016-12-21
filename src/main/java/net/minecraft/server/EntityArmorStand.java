@@ -45,6 +45,7 @@ public class EntityArmorStand extends EntityLiving {
     public Vector3f rightArmPose;
     public Vector3f leftLegPose;
     public Vector3f rightLegPose;
+    public boolean canMove = true; // Paper
 
     public EntityArmorStand(EntityTypes<? extends EntityArmorStand> entitytypes, World world) {
         super(entitytypes, world);
@@ -821,4 +822,13 @@ public class EntityArmorStand extends EntityLiving {
     private EntitySize s(boolean flag) {
         return flag ? EntityArmorStand.bp : (this.isBaby() ? EntityArmorStand.bq : this.getEntityType().l());
     }
+
+    // Paper start
+    @Override
+    public void move(EnumMoveType moveType, Vec3D vec3d) {
+        if (this.canMove) {
+            super.move(moveType, vec3d);
+        }
+    }
+    // Paper end
 }
