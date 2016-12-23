@@ -464,7 +464,7 @@ public class CraftEventFactory {
             return event;
         } else if (source instanceof EntityDamageSource) {
             Entity damager = source.getEntity();
-            DamageCause cause = DamageCause.ENTITY_ATTACK;
+            DamageCause cause = (source.isSweep()) ? DamageCause.ENTITY_SWEEP_ATTACK : DamageCause.ENTITY_ATTACK;
 
             if (source instanceof EntityDamageSourceIndirect) {
                 damager = ((EntityDamageSourceIndirect) source).getProximateDamageSource();
