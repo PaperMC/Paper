@@ -288,6 +288,12 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         ENTITY_ATTACK,
         /**
+         * Damage caused when an entity attacks another entity in a sweep attack.
+         * <p>
+         * Damage: variable
+         */
+        ENTITY_SWEEP_ATTACK,
+        /**
          * Damage caused when attacked by a projectile.
          * <p>
          * Damage: variable
