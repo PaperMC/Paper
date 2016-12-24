@@ -11,7 +11,9 @@ import org.bukkit.event.block.Action;
 import org.bukkit.inventory.EquipmentSlot;
 
 /**
- * Called when a player interacts with an object or air.
+ * Represents an event that is called when a player interacts with an object or
+ * air, potentially fired once for each hand. The hand can be determined using
+ * {@link #getHand()}.
  * <p>
  * This event will fire as cancelled if the vanilla behavior
  * is to do nothing (e.g interacting with air)
