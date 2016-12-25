@@ -1226,7 +1226,7 @@ public class CraftWorld implements World {
     }
 
     public int getSeaLevel() {
-        return 64;
+        return world.K(); // PAIL: rename
     }
 
     public boolean getKeepSpawnInMemory() {
