@@ -360,7 +360,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     public InventoryView openMerchant(Villager villager, boolean force) {
         Preconditions.checkNotNull(villager, "villager cannot be null");
 
-        return this.openMerchant(villager, force);
+        return this.openMerchant((Merchant) villager, force);
     }
 
     @Override
