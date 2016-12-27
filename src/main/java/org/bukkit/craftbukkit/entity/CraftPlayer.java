@@ -222,6 +222,24 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     // Paper start
     @Override
+    public void sendActionBar(BaseComponent[] message) {
+        if (getHandle().playerConnection == null) return;
+        getHandle().playerConnection.sendPacket(new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.ACTIONBAR, message, -1, -1, -1));
+    }
+
+    @Override
+    public void sendActionBar(String message) {
+        if (getHandle().playerConnection == null || message == null || message.isEmpty()) return;
+        getHandle().playerConnection.sendPacket(new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.ACTIONBAR, CraftChatMessage.fromStringOrNull(message)));
+    }
+
+    @Override
+    public void sendActionBar(char alternateChar, String message) {
+        if (message == null || message.isEmpty()) return;
+        sendActionBar(org.bukkit.ChatColor.translateAlternateColorCodes(alternateChar, message));
+    }
+
+    @Override
     public void setPlayerListHeaderFooter(BaseComponent[] header, BaseComponent[] footer) {
          if (header != null) {
              String headerJson = net.md_5.bungee.chat.ComponentSerializer.toString(header);

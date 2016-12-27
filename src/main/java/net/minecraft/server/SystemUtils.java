@@ -52,7 +52,7 @@ public class SystemUtils {
     private static final ExecutorService e = a("Main");
     private static final ExecutorService f = n();
     public static LongSupplier a = System::nanoTime;
-    public static final UUID b = new UUID(0L, 0L);
+    public static final UUID b = new UUID(0L, 0L); public static final UUID getNullUUID() {return b;} // Paper OBFHELPER
     private static final Logger LOGGER = LogManager.getLogger();
 
     public static <K, V> Collector<Entry<? extends K, ? extends V>, ?, Map<K, V>> a() {
