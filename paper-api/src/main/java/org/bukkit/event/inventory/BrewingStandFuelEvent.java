@@ -16,7 +16,7 @@ public class BrewingStandFuelEvent extends BlockEvent implements Cancellable {
     private final ItemStack fuel;
     private int fuelPower;
     private boolean cancelled;
-    private boolean consuming;
+    private boolean consuming = true;
 
     public BrewingStandFuelEvent(Block brewingStand, ItemStack fuel, int fuelPower) {
         super(brewingStand);
