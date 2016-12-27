@@ -1,10 +1,11 @@
-From 8021c1dc974999e3f717f4f181a3623f188be45b Mon Sep 17 00:00:00 2001
+From 8920ccc3b08ca7c3c6174681d49207bd5a685f17 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 27 Apr 2016 22:09:52 -0400
 Subject: [PATCH] Improve Minecraft Hopper Performance
 
 Removes unnecessary extra calls to .update() that are very expensive
 Also reset cooldown each hopper tick that a hopper is full.
+Also don't constantly clone ItemStacks without merit
 
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
 index d0c0371..d2662ae 100644
@@ -27,10 +28,46 @@ index d0c0371..d2662ae 100644
  
              this.g = iblockdata.getBlock().toLegacyData(iblockdata);
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
-index f12bc70..7154776 100644
+index f12bc70..c21c63e 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
 +++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
-@@ -455,7 +455,9 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -216,11 +216,13 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+                             this.setCooldown(world.spigotConfig.hopperTransfer); // Spigot
+                             return false;
+                         }
+-                        int origCount = event.getItem().getAmount(); // Spigot
+-                        ItemStack itemstack1 = addItem(this, iinventory, CraftItemStack.asNMSCopy(event.getItem()), enumdirection);
+-
++                        // Paper start
++                        org.bukkit.inventory.ItemStack eventStack = event.getItem();
++                        int origCount = eventStack.getAmount(); // Spigot
++                        ItemStack itemstack1 = addItem(this, iinventory, CraftItemStack.asNMSCopy(eventStack), enumdirection);
++                        // Paper end
+                         if (itemstack1.isEmpty()) {
+-                            if (event.getItem().equals(oitemstack)) {
++                            if (eventStack.equals(oitemstack)) { // Paper
+                                 iinventory.update();
+                             } else {
+                                 this.setItem(i, itemstack);
+@@ -373,11 +375,13 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+                 }
+                 return false;
+             }
+-            int origCount = event.getItem().getAmount(); // Spigot
+-            ItemStack itemstack2 = addItem(iinventory, ihopper, CraftItemStack.asNMSCopy(event.getItem()), null);
+-
++            // Paper start
++            org.bukkit.inventory.ItemStack eventStack = event.getItem();
++            int origCount = eventStack.getAmount(); // Spigot
++            ItemStack itemstack2 = addItem(iinventory, ihopper, CraftItemStack.asNMSCopy(eventStack), null);
++            // Paper end
+             if (itemstack2.isEmpty()) {
+-                if (event.getItem().equals(oitemstack)) {
++                if (eventStack.equals(oitemstack)) { // Paper
+                     iinventory.update();
+                 } else {
+                     iinventory.setItem(i, itemstack1);
+@@ -455,7 +459,9 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
              boolean flag1 = iinventory1.w_();
  
              if (itemstack1.isEmpty()) {
@@ -40,7 +77,7 @@ index f12bc70..7154776 100644
                  itemstack = ItemStack.a;
                  flag = true;
              } else if (a(itemstack1, itemstack)) {
-@@ -558,6 +560,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -558,6 +564,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
          this.f = i;
      }
  
@@ -49,5 +86,5 @@ index f12bc70..7154776 100644
          return this.f > 0;
      }
 -- 
-2.9.3
+2.9.3 (Apple Git-75)
 
