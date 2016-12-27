@@ -14,7 +14,7 @@ big slowdown in execution but throwing an exception at same time to raise awaren
 that it is happening so that plugin authors can fix their code to stop executing commands async.
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 2e5e0b4a7..8147b5e3c 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
@@ -22,7 +22,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          if (!async && s.startsWith("/")) {
 +            // Paper Start
-+            if (!org.bukkit.Bukkit.isPrimaryThread()) {
++            if (org.spigotmc.AsyncCatcher.enabled && !org.bukkit.Bukkit.isPrimaryThread()) {
 +                final String fCommandLine = s;
 +                MinecraftServer.LOGGER.log(org.apache.logging.log4j.Level.ERROR, "Command Dispatched Async: " + fCommandLine);
 +                MinecraftServer.LOGGER.log(org.apache.logging.log4j.Level.ERROR, "Please notify author of plugin causing this execution to fix this bug! see: http://bit.ly/1oSiM6C", new Throwable());
@@ -48,7 +48,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } else if (this.player.getChatFlags() == EntityHuman.EnumChatVisibility.SYSTEM) {
              // Do nothing, this is coming from a plugin
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 7e7be864b..63545ce40 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
@@ -56,7 +56,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Validate.notNull(commandLine, "CommandLine cannot be null");
  
 +        // Paper Start
-+        if (!Bukkit.isPrimaryThread()) {
++        if (org.spigotmc.AsyncCatcher.enabled && !Bukkit.isPrimaryThread()) {
 +            final CommandSender fSender = sender;
 +            final String fCommandLine = commandLine;
 +            Bukkit.getLogger().log(Level.SEVERE, "Command Dispatched Async: " + commandLine);
