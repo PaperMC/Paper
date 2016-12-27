@@ -1,4 +1,4 @@
-From dd5d1ed559dd433fe9651af7c83591e1a9b08efd Mon Sep 17 00:00:00 2001
+From a57aee2b24023bd4c1e0c17e153cc87832faf7b2 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 19 Sep 2016 23:16:39 -0400
 Subject: [PATCH] Auto Save Improvements
@@ -9,8 +9,24 @@ Process auto save every tick instead of once per auto tick interval, so that chu
 
 Re-introduce a cap per tick for auto save (Spigot disabled the vanilla cap) and make it configurable.
 
+Adds incremental player auto saving too
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 3161dad45..668b375e1 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -241,4 +241,9 @@ public class PaperConfig {
+         flyingKickPlayerMessage = getString("messages.kick.flying-player", flyingKickPlayerMessage);
+         flyingKickVehicleMessage = getString("messages.kick.flying-vehicle", flyingKickVehicleMessage);
+     }
++
++    public static int playerAutoSaveRate = -1;
++    private static void playerAutoSaveRate() {
++        playerAutoSaveRate = getInt("settings.player-auto-save-rate", -1);
++    }
+ }
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 965edc9..da530f9 100644
+index 965edc99c..da530f9aa 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -2,6 +2,7 @@ package com.destroystokyo.paper;
@@ -42,7 +58,7 @@ index 965edc9..da530f9 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 88437d7..9f7f32d 100644
+index 88437d77a..9f7f32dc2 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -960,11 +960,9 @@ public class Chunk {
@@ -60,7 +76,7 @@ index 88437d7..9f7f32d 100644
  
      public Random a(long i) {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 7a56a64..5c5a56c 100644
+index 7a56a6416..5c5a56c51 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -1,5 +1,6 @@
@@ -79,8 +95,20 @@ index 7a56a64..5c5a56c 100644
                      return false;
                  }
              }
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index de2d4394b..4ad336e38 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -29,6 +29,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+ 
+     private static final Logger bR = LogManager.getLogger();
+     public String locale = null; // Spigot private -> public // Paper - default to null
++    public long lastSave = MinecraftServer.currentTick; // Paper
+     public PlayerConnection playerConnection;
+     public final MinecraftServer server;
+     public final PlayerInteractManager playerInteractManager;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 184cb72..b307b2b 100644
+index 03185f789..85fd972bb 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -117,6 +117,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
@@ -91,16 +119,21 @@ index 184cb72..b307b2b 100644
      // CraftBukkit end
  
      public MinecraftServer(OptionSet options, Proxy proxy, DataConverterManager dataconvertermanager, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache) {
-@@ -760,22 +761,26 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -760,22 +761,30 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
              this.q.b().a(agameprofile);
          }
  
 -        if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit
              this.methodProfiler.a("save");
+-            this.v.savePlayers();
 +
 +        serverAutoSave = (autosavePeriod > 0 && this.ticks % autosavePeriod == 0); // Paper
-+        if (serverAutoSave) { // CraftBukkit // Paper
-             this.v.savePlayers();
++        int playerSaveInterval = com.destroystokyo.paper.PaperConfig.playerAutoSaveRate;
++        if (playerSaveInterval < 0) {
++            playerSaveInterval = autosavePeriod;
++        }
++        if (playerSaveInterval > 0) { // CraftBukkit // Paper
++            this.v.savePlayers(playerSaveInterval);
              // Spigot Start
 +        } // Paper - Incremental Auto Saving
 +
@@ -121,8 +154,45 @@ index 184cb72..b307b2b 100644
  
          this.methodProfiler.a("tallying");
          this.h[this.ticks % 100] = System.nanoTime() - i;
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index b14d4cb7f..2f527f6ce 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -330,6 +330,7 @@ public abstract class PlayerList {
+     }
+ 
+     protected void savePlayerFile(EntityPlayer entityplayer) {
++        entityplayer.lastSave = MinecraftServer.currentTick; // Paper
+         this.playerFileData.save(entityplayer);
+         ServerStatisticManager serverstatisticmanager = (ServerStatisticManager) this.o.get(entityplayer.getUniqueID());
+ 
+@@ -1205,13 +1206,23 @@ public abstract class PlayerList {
+ 
+     }
+ 
++    // Paper start
+     public void savePlayers() {
++        savePlayers(null);
++    }
++
++    public void savePlayers(Integer interval) {
++        long now = MinecraftServer.currentTick;
+         MinecraftTimings.savePlayers.startTiming(); // Paper
+         for (int i = 0; i < this.players.size(); ++i) {
+-            this.savePlayerFile((EntityPlayer) this.players.get(i));
++            EntityPlayer entityplayer = this.players.get(i);
++            if (interval == null || now - entityplayer.lastSave >= interval) {
++                this.savePlayerFile(entityplayer);
++            }
+         }
+         MinecraftTimings.savePlayers.stopTiming(); // Paper
+     }
++    // Paper end
+ 
+     public void addWhitelist(GameProfile gameprofile) {
+         this.whitelist.add(new WhiteListEntry(gameprofile));
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 5bf7df7..bfa87d7 100644
+index 5bf7df7ee..bfa87d73d 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -1002,8 +1002,9 @@ public class WorldServer extends World implements IAsyncTaskHandler {
@@ -145,5 +215,5 @@ index 5bf7df7..bfa87d7 100644
              timings.worldSaveChunks.startTiming(); // Paper
              chunkproviderserver.a(flag);
 -- 
-2.9.3
+2.11.0
 
