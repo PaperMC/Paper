@@ -111,4 +111,20 @@ public interface Firework extends Projectile {
      * @param shotAtAngle the new shotAtAngle
      */
     void setShotAtAngle(boolean shotAtAngle);
+
+    // Paper start
+    @org.jetbrains.annotations.Nullable
+    public java.util.UUID getSpawningEntity();
+    /**
+     * If this firework is boosting an entity, return it
+     * @deprecated use {@link #getAttachedTo()}
+     * @see #setAttachedTo(LivingEntity)
+     * @return The entity being boosted
+     */
+    @org.jetbrains.annotations.Nullable
+    @Deprecated
+    default LivingEntity getBoostedEntity() {
+        return getAttachedTo();
+    }
+    // Paper end
 }
