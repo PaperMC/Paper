@@ -75,7 +75,9 @@ import PacketPlayOutScoreboardTeam
 import PacketPlayOutTitle
 import PacketPlayOutUpdateTime
 import PathfinderAbstract
+import PathfinderGoal
 import PathfinderGoalFloat
+import PathfinderGoalGotoTarget
 import PathfinderWater
 import PersistentVillage
 import RemoteControlListener
