@@ -13,7 +13,8 @@ public class EntityFireworks extends IProjectile {
     public static final DataWatcherObject<Boolean> SHOT_AT_ANGLE = DataWatcher.a(EntityFireworks.class, DataWatcherRegistry.i);
     private int ticksFlown;
     public int expectedLifespan;
-    private EntityLiving ridingEntity;
+    public EntityLiving ridingEntity; // Paper - public
+    public java.util.UUID spawningEntity; // Paper
 
     public EntityFireworks(EntityTypes<? extends EntityFireworks> entitytypes, World world) {
         super(entitytypes, world);
@@ -258,6 +259,11 @@ public class EntityFireworks extends IProjectile {
         }
 
         nbttagcompound.setBoolean("ShotAtAngle", (Boolean) this.datawatcher.get(EntityFireworks.SHOT_AT_ANGLE));
+        // Paper start
+        if (this.spawningEntity != null) {
+            nbttagcompound.setUUID("SpawningEntity", this.spawningEntity);
+        }
+        // Paper end
     }
 
     @Override
@@ -274,7 +280,11 @@ public class EntityFireworks extends IProjectile {
         if (nbttagcompound.hasKey("ShotAtAngle")) {
             this.datawatcher.set(EntityFireworks.SHOT_AT_ANGLE, nbttagcompound.getBoolean("ShotAtAngle"));
         }
-
+        // Paper start
+        if (nbttagcompound.hasUUID("SpawningEntity")) {
+            this.spawningEntity = nbttagcompound.getUUID("SpawningEntity");
+        }
+        // Paper end
     }
 
     @Override

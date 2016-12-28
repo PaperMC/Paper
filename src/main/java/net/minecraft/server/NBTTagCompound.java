@@ -145,6 +145,7 @@ public class NBTTagCompound implements NBTBase {
         return GameProfileSerializer.a(this.get(s));
     }
 
+    public final boolean hasUUID(String s) { return this.b(s); } // Paper - OBFHELPER
     public boolean b(String s) {
         NBTBase nbtbase = this.get(s);
 

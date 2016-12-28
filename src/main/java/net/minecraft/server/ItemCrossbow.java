@@ -183,6 +183,7 @@ public class ItemCrossbow extends ItemProjectileWeapon implements ItemVanishable
 
             if (flag1) {
                 object = new EntityFireworks(world, itemstack1, entityliving, entityliving.locX(), entityliving.getHeadY() - 0.15000000596046448D, entityliving.locZ(), true);
+                ((EntityFireworks) object).spawningEntity = entityliving.getUniqueID(); // Paper
             } else {
                 object = a(world, entityliving, itemstack, itemstack1);
                 if (flag || f3 != 0.0F) {
