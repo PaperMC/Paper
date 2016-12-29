@@ -154,7 +154,10 @@ public interface Plugin extends TabExecutor {
      * </a></i>
      *
      * @return ebean server instance or null if not enabled
+     * @deprecated all EBean related methods will be removed with Minecraft 1.12
+     * - see https://www.spigotmc.org/threads/194144/
      */
+    @Deprecated
     public EbeanServer getDatabase();
 
     /**
