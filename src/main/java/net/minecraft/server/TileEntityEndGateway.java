@@ -155,7 +155,7 @@ public class TileEntityEndGateway extends TileEntityEnderPortal implements ITick
                     location.setPitch(player.getLocation().getPitch());
                     location.setYaw(player.getLocation().getYaw());
 
-                    PlayerTeleportEvent teleEvent = new PlayerTeleportEvent(player, player.getLocation(), location, PlayerTeleportEvent.TeleportCause.END_GATEWAY);
+                    PlayerTeleportEvent teleEvent = new com.destroystokyo.paper.event.player.PlayerTeleportEndGatewayEvent(player, player.getLocation(), location, new org.bukkit.craftbukkit.block.CraftEndGateway(MCUtil.toLocation(world, this.getPosition()).getBlock())); // Paper
                     Bukkit.getPluginManager().callEvent(teleEvent);
                     if (teleEvent.isCancelled()) {
                         return;
