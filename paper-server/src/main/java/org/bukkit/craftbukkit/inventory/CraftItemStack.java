@@ -147,10 +147,10 @@ public final class CraftItemStack extends ItemStack {
         if (handle == null) {
             return;
         }
+
+        handle.setCount(amount);
         if (amount == 0) {
             handle = null;
-        } else {
-            handle.setCount(amount);
         }
     }
 
