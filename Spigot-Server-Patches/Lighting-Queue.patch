@@ -6,7 +6,7 @@ Subject: [PATCH] Lighting Queue
 This provides option to queue lighting updates to ensure they do not cause the server lag
 
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index e7789117b..f90f5bf84 100644
 --- a/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 +++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 @@ -0,0 +0,0 @@ public class WorldTimingsHandler {
@@ -27,7 +27,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  }
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 2767ffb78..f7a0c18a8 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
@@ -42,7 +42,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 1c0108ef1..b80f95159 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -0,0 +0,0 @@ public class Chunk {
@@ -85,7 +85,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                  TileEntity tileentity;
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 17d39bb0f..df3ce72e2 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -97,7 +97,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // Update neighbor counts
          for (int x = -2; x < 3; x++) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 6a1c7b7f0..538745e7d 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
@@ -119,13 +119,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 diff --git a/src/main/java/net/minecraft/server/PaperLightingQueue.java b/src/main/java/net/minecraft/server/PaperLightingQueue.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+index 000000000..d8d3e1efd
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperLightingQueue.java
 @@ -0,0 +0,0 @@
 +package net.minecraft.server;
 +
 +import co.aikar.timings.Timing;
++import it.unimi.dsi.fastutil.objects.ObjectCollection;
++
 +import java.util.ArrayDeque;
 +
 +class PaperLightingQueue {
@@ -145,7 +147,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                continue;
 +            }
 +
-+            for (Chunk chunk : ((WorldServer) world).getChunkProviderServer().chunks.values()) {
++            ObjectCollection<Chunk> loadedChunks = ((WorldServer) world).getChunkProviderServer().chunks.values();
++            for (Chunk chunk : loadedChunks.toArray(new Chunk[loadedChunks.size()])) {
 +                if (chunk.lightingQueue.processQueue(startTime, maxTickTime)) {
 +                    break START;
 +                }
@@ -222,7 +225,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 1143b3e01..63a6a9855 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
