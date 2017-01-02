@@ -40,9 +40,12 @@ public final class CraftItemStack extends ItemStack {
             return net.minecraft.server.ItemStack.a;
         }
 
-        net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(item, original.getAmount(), original.getDurability());
+        net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(item, original.getAmount(), original.getDurability(), false);
         if (original.hasItemMeta()) {
             setItemMeta(stack, original.getItemMeta());
+        } else {
+            // Converted after setItemMeta
+            stack.convertStack();
         }
         return stack;
     }

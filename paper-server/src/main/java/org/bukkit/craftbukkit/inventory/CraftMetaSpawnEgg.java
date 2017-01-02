@@ -70,7 +70,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
     void applyToItem(NBTTagCompound tag) {
         super.applyToItem(tag);
 
-        if (entityTag == null) {
+        if (!isSpawnEggEmpty() && entityTag == null) {
             entityTag = new NBTTagCompound();
         }
 
@@ -78,7 +78,9 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
             entityTag.setString(ENTITY_ID.NBT, new MinecraftKey(spawnedType.getName()).toString());
         }
 
-        tag.set(ENTITY_TAG.NBT, entityTag);
+        if (entityTag != null) {
+            tag.set(ENTITY_TAG.NBT, entityTag);
+        }
     }
 
     @Override
