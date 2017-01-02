@@ -224,6 +224,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
     private static final Set<String> HANDLED_TAGS = Sets.newHashSet();
 
+    private NBTTagCompound internalTag;
     private final Map<String, NBTBase> unhandledTags = new HashMap<String, NBTBase>();
 
     CraftMetaItem(CraftMetaItem meta) {
@@ -245,6 +246,11 @@ class CraftMetaItem implements ItemMeta, Repairable {
         this.hideFlag = meta.hideFlag;
         this.unbreakable = meta.unbreakable;
         this.unhandledTags.putAll(meta.unhandledTags);
+
+        this.internalTag = meta.internalTag;
+        if (this.internalTag != null) {
+            deserializeInternal(internalTag);
+        }
     }
 
     CraftMetaItem(NBTTagCompound tag) {
@@ -388,12 +394,12 @@ class CraftMetaItem implements ItemMeta, Repairable {
         if (internal != null) {
             ByteArrayInputStream buf = new ByteArrayInputStream(Base64.decodeBase64(internal));
             try {
-                NBTTagCompound tag = NBTCompressedStreamTools.a(buf);
-                deserializeInternal(tag);
-                Set<String> keys = tag.c();
+                internalTag = NBTCompressedStreamTools.a(buf);
+                deserializeInternal(internalTag);
+                Set<String> keys = internalTag.c();
                 for (String key : keys) {
                     if (!getHandledTags().contains(key)) {
-                        unhandledTags.put(key, tag.get(key));
+                        unhandledTags.put(key, internalTag.get(key));
                     }
                 }
             } catch (IOException ex) {
