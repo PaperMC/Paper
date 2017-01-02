@@ -3,7 +3,9 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap.Builder;
 import java.util.Map;
+import net.minecraft.server.DataConverterTypes;
 import net.minecraft.server.MinecraftKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.NBTTagCompound;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
@@ -48,6 +50,20 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
 
         String entityType = SerializableMeta.getString(map, ENTITY_ID.BUKKIT, true);
         setSpawnedType(EntityType.fromName(entityType));
+    }
+
+    @Override
+    void deserializeInternal(NBTTagCompound tag) {
+        super.deserializeInternal(tag);
+
+        if (tag.hasKey(ENTITY_TAG.NBT)) {
+            entityTag = tag.getCompound(ENTITY_TAG.NBT);
+            MinecraftServer.getServer().getDataConverterManager().a(DataConverterTypes.ENTITY, entityTag); // PAIL: convert
+
+            if (entityTag.hasKey(ENTITY_ID.NBT)) {
+                this.spawnedType = EntityType.fromName(new MinecraftKey(entityTag.getString(ENTITY_ID.NBT)).a()); // PAIL: rename
+            }
+        }
     }
 
     @Override
