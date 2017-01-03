@@ -179,30 +179,62 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * multiple passengers, this will only return the primary passenger.
      *
      * @return an entity
+     * @deprecated entities may have multiple passengers, use
+     * {@link #getPassengers()}
      */
-    public abstract Entity getPassenger();
+    @Deprecated
+    public Entity getPassenger();
 
     /**
      * Set the passenger of a vehicle.
      *
      * @param passenger The new passenger.
      * @return false if it could not be done for whatever reason
+     * @deprecated entities may have multiple passengers, use
+     * {@link #getPassengers()}
      */
-    public abstract boolean setPassenger(Entity passenger);
+    @Deprecated
+    public boolean setPassenger(Entity passenger);
+
+    /**
+     * Gets a list of passengers of this vehicle.
+     * <p>
+     * The returned list will not be directly linked to the entity's current
+     * passengers, and no guarantees are made as to its mutability.
+     *
+     * @return list of entities corresponding to current passengers.
+     */
+    public List<Entity> getPassengers();
+
+    /**
+     * Add a passenger to the vehicle.
+     *
+     * @param passenger The passenger to add
+     * @return false if it could not be done for whatever reason
+     */
+    public boolean addPassenger(Entity passenger);
+
+    /**
+     * Remove a passenger from the vehicle.
+     *
+     * @param passenger The passenger to remove
+     * @return false if it could not be done for whatever reason
+     */
+    public boolean removePassenger(Entity passenger);
 
     /**
      * Check if a vehicle has passengers.
      *
      * @return True if the vehicle has no passengers.
      */
-    public abstract boolean isEmpty();
+    public boolean isEmpty();
 
     /**
      * Eject any passenger.
      *
      * @return True if there was a passenger.
      */
-    public abstract boolean eject();
+    public boolean eject();
 
     /**
      * Returns the distance this entity has fallen
