@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -331,11 +333,35 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         Preconditions.checkArgument(!this.equals(passenger), "Entity cannot ride itself.");
         if (passenger instanceof CraftEntity) {
             eject();
-            ((CraftEntity) passenger).getHandle().startRiding(getHandle());
-            return true;
+            return ((CraftEntity) passenger).getHandle().startRiding(getHandle());
         } else {
             return false;
         }
+    }
+
+    @Override
+    public List<org.bukkit.entity.Entity> getPassengers() {
+        return Lists.newArrayList(Lists.transform(getHandle().passengers, new Function<Entity, org.bukkit.entity.Entity>() {
+            @Override
+            public org.bukkit.entity.Entity apply(Entity input) {
+                return input.getBukkitEntity();
+            }
+        }));
+    }
+
+    @Override
+    public boolean addPassenger(org.bukkit.entity.Entity passenger) {
+        Preconditions.checkArgument(passenger != null, "passenger == null");
+
+        return ((CraftEntity) passenger).getHandle().a(getHandle(), true);
+    }
+
+    @Override
+    public boolean removePassenger(org.bukkit.entity.Entity passenger) {
+        Preconditions.checkArgument(passenger != null, "passenger == null");
+
+        ((CraftEntity) passenger).getHandle().stopRiding();
+        return true;
     }
 
     public boolean isEmpty() {
@@ -347,7 +373,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             return false;
         }
 
-        getPassenger().leaveVehicle();
+        getHandle().az(); // PAIL: rename
         return true;
     }
 
