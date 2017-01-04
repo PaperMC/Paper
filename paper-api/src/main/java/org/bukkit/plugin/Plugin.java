@@ -58,9 +58,9 @@ public interface Plugin extends TabExecutor {
 
     /**
      * Saves the raw contents of the default config.yml file to the location
-     * retrievable by {@link #getConfig()}. If there is no default config.yml
-     * embedded in the plugin, an empty config.yml file is saved. This should
-     * fail silently if the config.yml already exists.
+     * retrievable by {@link #getConfig()}.
+     * <p>
+     * This should fail silently if the config.yml already exists.
      */
     public void saveDefaultConfig();
 
