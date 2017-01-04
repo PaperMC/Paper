@@ -936,6 +936,14 @@ public interface Server extends PluginMessageRecipient {
     BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag ...flags);
 
     /**
+     * Gets an entity on the server by its UUID
+     *
+     * @param uuid the UUID of the entity
+     * @return the entity with the given UUID, or null if it isn't found
+     */
+    Entity getEntity(UUID uuid);
+
+    /**
      * @see UnsafeValues
      * @return the unsafe values instance
      */

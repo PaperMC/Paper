@@ -1142,6 +1142,16 @@ public final class Bukkit {
     }
 
     /**
+     * Gets an entity on the server by its UUID
+     *
+     * @param uuid the UUID of the entity
+     * @return the entity with the given UUID, or null if it isn't found
+     */
+    public static Entity getEntity(UUID uuid) {
+        return server.getEntity(uuid);
+    }
+
+    /**
      * @see UnsafeValues
      * @return the unsafe values instance
      */
