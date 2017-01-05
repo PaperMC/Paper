@@ -76,6 +76,7 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.DatFileFilter;
 import org.bukkit.craftbukkit.util.Versioning;
 import org.bukkit.craftbukkit.util.permissions.CraftDefaultPermissions;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerChatTabCompleteEvent;
@@ -1660,6 +1661,13 @@ public final class CraftServer implements Server {
     @Override
     public BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag... flags) {
         return new CraftBossBar(title, color, style, flags);
+    }
+
+    @Override
+    public Entity getEntity(UUID uuid) {
+        Validate.notNull(uuid, "UUID cannot be null");
+        net.minecraft.server.Entity entity = console.a(uuid); // PAIL: getEntity
+        return entity == null ? null : entity.getBukkitEntity();
     }
 
     @Deprecated
