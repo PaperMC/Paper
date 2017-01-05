@@ -1,0 +1,34 @@
+--- a/net/minecraft/server/PathfinderGoalFollowOwner.java
++++ b/net/minecraft/server/PathfinderGoalFollowOwner.java
+@@ -1,5 +1,11 @@
+ package net.minecraft.server;
+ 
++// CraftBukkit start
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.entity.CraftEntity;
++import org.bukkit.event.entity.EntityTeleportEvent;
++// CraftBukkit end
++
+ public class PathfinderGoalFollowOwner extends PathfinderGoal {
+ 
+     private final EntityTameableAnimal d;
+@@ -79,7 +85,18 @@
+                             for (int l = 0; l <= 4; ++l) {
+                                 for (int i1 = 0; i1 <= 4; ++i1) {
+                                     if ((l < 1 || i1 < 1 || l > 3 || i1 > 3) && this.a.getType(new BlockPosition(i + l, k - 1, j + i1)).r() && this.a(new BlockPosition(i + l, k, j + i1)) && this.a(new BlockPosition(i + l, k + 1, j + i1))) {
+-                                        this.d.setPositionRotation((double) ((float) (i + l) + 0.5F), (double) k, (double) ((float) (j + i1) + 0.5F), this.d.yaw, this.d.pitch);
++                                        // CraftBukkit start
++                                        CraftEntity entity = this.d.getBukkitEntity();
++                                        Location to = new Location(entity.getWorld(), (double) ((float) (i + l) + 0.5F), (double) k, (double) ((float) (j + i1) + 0.5F), this.d.yaw, this.d.pitch);
++                                        EntityTeleportEvent event = new EntityTeleportEvent(entity, entity.getLocation(), to);
++                                        this.d.world.getServer().getPluginManager().callEvent(event);
++                                        if (event.isCancelled()) {
++                                            return;
++                                        }
++                                        to = event.getTo();
++
++                                        this.d.setPositionRotation(to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch());
++                                        // CraftBukkit end
+                                         this.g.o();
+                                         return;
+                                     }
