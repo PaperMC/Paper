@@ -1,0 +1,95 @@
+From 9942e2dbb75147e6fe06aec8405f1f221fa802d8 Mon Sep 17 00:00:00 2001
+From: willies952002 <admin@domnian.com>
+Date: Mon, 28 Nov 2016 10:16:39 -0500
+Subject: [PATCH] Allow Reloading of Command Aliases
+
+Reload the aliases stored in commands.yml
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index f5af400..2255551 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1194,6 +1194,13 @@ public final class Bukkit {
+     public static void reloadPermissions() {
+         server.reloadPermissions();
+     }
++
++    /**
++     * Reload the Command Aliases in commands.yml
++     */
++    public static void reloadCommandAliases() {
++        server.reloadCommandAliases();
++    }
+     // Paper end
+ 
+     public static Server.Spigot spigot()
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 2df8324..179e08d 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1027,4 +1027,6 @@ public interface Server extends PluginMessageRecipient {
+     Spigot spigot();
+ 
+     void reloadPermissions(); // Paper
++
++    void reloadCommandAliases(); // Paper
+ }
+diff --git a/src/main/java/org/bukkit/command/CommandMap.java b/src/main/java/org/bukkit/command/CommandMap.java
+index 30d6024..d8a7560 100644
+--- a/src/main/java/org/bukkit/command/CommandMap.java
++++ b/src/main/java/org/bukkit/command/CommandMap.java
+@@ -123,4 +123,12 @@ public interface CommandMap {
+      * @throws IllegalArgumentException if either sender or cmdLine are null
+      */
+     public List<String> tabComplete(CommandSender sender, String cmdLine, Location location) throws IllegalArgumentException;
++
++    // Paper start - Expose Known Commands
++    /**
++     * Return a Map (String -> Command) of Known Commands
++     * @return Known Commands
++     */
++    public java.util.Map<String, Command> getKnownCommands();
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
+index 08976cd..2e232fd 100644
+--- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
++++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
+@@ -280,4 +280,10 @@ public class SimpleCommandMap implements CommandMap {
+             }
+         }
+     }
++
++    // Paper start - Expose Known Commands
++    public Map<String, Command> getKnownCommands() {
++        return knownCommands;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+index 040509c..585bac7 100644
+--- a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+@@ -11,7 +11,7 @@ public class ReloadCommand extends BukkitCommand {
+     public ReloadCommand(String name) {
+         super(name);
+         this.description = "Reloads the server configuration and plugins";
+-        this.usageMessage = "/reload [permissions]"; // Paper
++        this.usageMessage = "/reload [permissions|commands|confirm]"; // Paper
+         this.setPermission("bukkit.command.reload");
+         this.setAliases(Arrays.asList("rl"));
+     }
+@@ -28,6 +28,10 @@ public class ReloadCommand extends BukkitCommand {
+                 Bukkit.getServer().reloadPermissions();
+                 Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Permissions successfully reloaded.");
+                 return true;
++            } else if ("commands".equalsIgnoreCase(args[0])) {
++                Bukkit.getServer().reloadCommandAliases();
++                Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Command aliases successfully reloaded.");
++                return true;
+             } else if ("confirm".equalsIgnoreCase(args[0])) {
+                 confirmed = true;
+             } else {
+-- 
+2.9.3
+

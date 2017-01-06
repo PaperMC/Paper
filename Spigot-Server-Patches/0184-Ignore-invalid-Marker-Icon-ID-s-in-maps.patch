@@ -1,0 +1,27 @@
+From 7602bc325e3af639d1128709d22ce4fa5e77cd8b Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 19 Dec 2016 23:38:57 -0500
+Subject: [PATCH] Ignore invalid Marker Icon ID's in maps
+
+Replace with the red marker. Should of only happened by creative abuse.
+
+diff --git a/src/main/java/net/minecraft/server/WorldMap.java b/src/main/java/net/minecraft/server/WorldMap.java
+index dbe6a80..dfd8e4d 100644
+--- a/src/main/java/net/minecraft/server/WorldMap.java
++++ b/src/main/java/net/minecraft/server/WorldMap.java
+@@ -194,7 +194,11 @@ public class WorldMap extends PersistentBase {
+                 // Spigot - start
+                 UUID uuid = UUID.nameUUIDFromBytes(nbttagcompound.getString("id").getBytes(Charsets.US_ASCII));
+                 if (!this.decorations.containsKey(uuid)) {
+-                    this.a(MapIcon.Type.a(nbttagcompound.getByte("type")), entityhuman.world, uuid, nbttagcompound.getDouble("x"), nbttagcompound.getDouble("z"), nbttagcompound.getDouble("rot"));
++                    // Paper start - protect against bad map icon indexes
++                    byte iconId = nbttagcompound.getByte("type");
++                    MapIcon.Type[] values = MapIcon.Type.values();
++                    this.a(values.length > iconId ? values[iconId] : values[2], entityhuman.world, uuid, nbttagcompound.getDouble("x"), nbttagcompound.getDouble("z"), nbttagcompound.getDouble("rot"));
++                    // Paper end
+                     // Spigot - end
+                 }
+             }
+-- 
+2.9.3
+
