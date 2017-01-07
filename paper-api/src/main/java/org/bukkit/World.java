@@ -49,6 +49,33 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable, PersistentDataHolder, Keyed, net.kyori.adventure.audience.ForwardingAudience { // Paper
 
+    // Paper start
+    /**
+     * @return The amount of Entities in this world
+     */
+    int getEntityCount();
+
+    /**
+     * @return The amount of Tile Entities in this world
+     */
+    int getTileEntityCount();
+
+    /**
+     * @return The amount of Tickable Tile Entities in this world
+     */
+    int getTickableTileEntityCount();
+
+    /**
+     * @return The amount of Chunks in this world
+     */
+    int getChunkCount();
+
+    /**
+     * @return The amount of Players in this world
+     */
+    int getPlayerCount();
+    // Paper end
+
     /**
      * Gets the {@link Block} at the given coordinates
      *
