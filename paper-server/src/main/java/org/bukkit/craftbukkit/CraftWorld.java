@@ -169,6 +169,48 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftWorld.DATA_TYPE_REGISTRY);
     private net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
 
+    // Paper start - Provide fast information methods
+    @Override
+    public int getEntityCount() {
+        int ret = 0;
+        for (net.minecraft.world.entity.Entity entity : world.getEntities().getAll()) {
+            if (entity.isChunkLoaded()) {
+                ++ret;
+            }
+        }
+        return ret;
+    }
+
+    @Override
+    public int getTileEntityCount() {
+        // We don't use the full world tile entity list, so we must iterate chunks
+        int size = 0;
+        for (ChunkHolder playerchunk : ca.spottedleaf.moonrise.common.util.ChunkSystem.getVisibleChunkHolders(this.world)) {
+            net.minecraft.world.level.chunk.LevelChunk chunk = playerchunk.getTickingChunk();
+            if (chunk == null) {
+                continue;
+            }
+            size += chunk.blockEntities.size();
+        }
+        return size;
+    }
+
+    @Override
+    public int getTickableTileEntityCount() {
+        return world.blockEntityTickers.size();
+    }
+
+    @Override
+    public int getChunkCount() {
+        return this.world.getChunkSource().getFullChunksCount();
+    }
+
+    @Override
+    public int getPlayerCount() {
+        return world.players().size();
+    }
+    // Paper end
+
     private static final Random rand = new Random();
 
     public CraftWorld(ServerLevel world, ChunkGenerator gen, BiomeProvider biomeProvider, Environment env) {
