@@ -975,11 +975,13 @@ public abstract class PlayerList {
     }
 
     public void savePlayers() {
+        MCUtil.ensureMain("Save Players" , () -> { // Paper - Ensure main
         MinecraftTimings.savePlayers.startTiming(); // Paper
         for (int i = 0; i < this.players.size(); ++i) {
             this.savePlayerFile((EntityPlayer) this.players.get(i));
         }
         MinecraftTimings.savePlayers.stopTiming(); // Paper
+        return null; }); // Paper - ensure main
     }
 
     public WhiteList getWhitelist() {
