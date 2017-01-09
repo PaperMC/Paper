@@ -107,14 +107,14 @@
  
 -            if (!this.world.isClientSide && (this.alwaysGivesExp() || this.lastDamageByPlayerTime > 0 && this.isDropExperience() && this.world.getGameRules().getBoolean("doMobLoot"))) {
 -                i = this.getExpValue(this.killer);
--
--                while (i > 0) {
--                    int j = EntityExperienceOrb.getOrbValue(i);
 +            // CraftBukkit start - Update getExpReward() above if the removed if() changes!
 +            i = this.expToDrop;
 +            while (i > 0) {
 +                int j = EntityExperienceOrb.getOrbValue(i);
  
+-                while (i > 0) {
+-                    int j = EntityExperienceOrb.getOrbValue(i);
+-
 -                    i -= j;
 -                    this.world.addEntity(new EntityExperienceOrb(this.world, this.locX, this.locY, this.locZ, j));
 -                }
@@ -575,32 +575,36 @@
      }
  
      protected void ap() {
-@@ -2036,7 +2309,23 @@
+@@ -2036,7 +2309,27 @@
      protected void v() {
          if (!this.activeItem.isEmpty() && this.isHandRaised()) {
              this.a(this.activeItem, 16);
 -            this.a(this.cz(), this.activeItem.a(this.world, this));
 +            // CraftBukkit start - fire PlayerItemConsumeEvent
-+            org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.activeItem);
-+            PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem);
-+            world.getServer().getPluginManager().callEvent(event);
++            ItemStack itemstack;
++            if (this instanceof EntityPlayer) {
++                org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.activeItem);
++                PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem);
++                world.getServer().getPluginManager().callEvent(event);
 +
-+            if (event.isCancelled()) {
-+                // Update client
-+                if (this instanceof EntityPlayer) {
++                if (event.isCancelled()) {
++                    // Update client
 +                    ((EntityPlayer) this).getBukkitEntity().updateInventory();
 +                    ((EntityPlayer) this).getBukkitEntity().updateScaledHealth();
++                    return;
 +                }
-+                return;
++
++                itemstack = (craftItem.equals(event.getItem())) ? this.activeItem.a(this.world, this) : CraftItemStack.asNMSCopy(event.getItem()).a(world, this);
++            } else {
++                itemstack = this.activeItem.a(this.world, this);
 +            }
 +
-+            ItemStack itemstack = (craftItem.equals(event.getItem())) ? this.activeItem.a(this.world, this) : CraftItemStack.asNMSCopy(event.getItem()).a(world, this);
 +            this.a(this.cz(), itemstack);
 +            // CraftBukkit end
              this.cF();
          }
  
-@@ -2115,10 +2404,18 @@
+@@ -2115,10 +2408,18 @@
              }
  
              if (flag1) {
