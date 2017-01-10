@@ -125,6 +125,7 @@ public class CraftContainer extends Container {
                 setupChest(top, bottom);
                 break;
             case DISPENSER:
+            case DROPPER:
                 setupDispenser(top, bottom);
                 break;
             case FURNACE:
@@ -145,6 +146,9 @@ public class CraftContainer extends Container {
                 break;
             case ANVIL:
                 setupAnvil(top, bottom);
+                break;
+            case BEACON:
+                setupBeacon(top, bottom);
                 break;
         }
     }
@@ -322,6 +326,24 @@ public class CraftContainer extends Container {
             this.a(new Slot(bottom, i, 8 + i * 18, 142));
         }
         // End copy from ContainerAnvil
+    }
+
+    private void setupBeacon(IInventory top, IInventory bottom) {
+        // This code is copied from ContainerBeacon
+        this.a(new Slot(top, 0, 136, 110));
+
+        int i;
+
+        for (i = 0; i < 3; ++i) {
+            for (int j = 0; j < 9; ++j) {
+                this.a(new Slot(bottom, j + i * 9 + 9, 36 + j * 18, 137 + i * 18));
+            }
+        }
+
+        for (i = 0; i < 9; ++i) {
+            this.a(new Slot(bottom, i, 36 + i * 18, 195));
+        }
+        // End copy from ContainerBeacon
     }
 
     public boolean a(EntityHuman entity) {
