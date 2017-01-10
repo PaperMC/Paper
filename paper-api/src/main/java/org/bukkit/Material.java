@@ -63,6 +63,7 @@ import org.bukkit.material.Wool;
 import com.google.common.collect.Maps;
 
 import org.bukkit.material.Banner;
+import org.bukkit.material.Observer;
 
 /**
  * An enum of all material IDs accepted by the official server and client
@@ -286,7 +287,7 @@ public enum Material {
     RED_NETHER_BRICK(215),
     BONE_BLOCK(216),
     STRUCTURE_VOID(217),
-    OBSERVER(218),
+    OBSERVER(218, Observer.class),
     WHITE_SHULKER_BOX(219, 1),
     ORANGE_SHULKER_BOX(220, 1),
     MAGENTA_SHULKER_BOX(221, 1),
