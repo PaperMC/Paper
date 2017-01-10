@@ -1,0 +1,119 @@
+From f244a63b4e434eefd441e33b8643f5317c7b301d Mon Sep 17 00:00:00 2001
+From: Alfie Cleveland <alfeh@me.com>
+Date: Tue, 10 Jan 2017 19:25:02 +0000
+Subject: [PATCH] Optimise DataWatcher
+
+
+diff --git a/src/main/java/net/minecraft/server/DataWatcher.java b/src/main/java/net/minecraft/server/DataWatcher.java
+index 820c152..18c406b 100644
+--- a/src/main/java/net/minecraft/server/DataWatcher.java
++++ b/src/main/java/net/minecraft/server/DataWatcher.java
+@@ -22,7 +22,7 @@ public class DataWatcher {
+     private static final Logger a = LogManager.getLogger();
+     private static final Map<Class<? extends Entity>, Integer> b = Maps.newHashMap();
+     private final Entity c;
+-    private final Map<Integer, DataWatcher.Item<?>> d = new Int2ObjectOpenHashMap<>(); // Paper
++    private final DataWatcher.Item<?>[] items = new DataWatcher.Item<?>[19]; // Paper - amount of Item IDs. TODO: check this every version
+     private final ReadWriteLock e = new ReentrantReadWriteLock();
+     private boolean f = true;
+     private boolean g;
+@@ -76,7 +76,7 @@ public class DataWatcher {
+ 
+         if (i > 254) {
+             throw new IllegalArgumentException("Data value id is too big with " + i + "! (Max is " + 254 + ")");
+-        } else if (this.d.containsKey(Integer.valueOf(i))) {
++        } else if (this.items[i] != null) { // Paper
+             throw new IllegalArgumentException("Duplicate id value for " + i + "!");
+         } else if (DataWatcherRegistry.b(datawatcherobject.b()) < 0) {
+             throw new IllegalArgumentException("Unregistered serializer " + datawatcherobject.b() + " for " + i + "!");
+@@ -89,7 +89,7 @@ public class DataWatcher {
+         DataWatcher.Item datawatcher_item = new DataWatcher.Item(datawatcherobject, t0);
+ 
+         this.e.writeLock().lock();
+-        this.d.put(Integer.valueOf(datawatcherobject.a()), datawatcher_item);
++        this.items[datawatcherobject.a()] = datawatcher_item; // Paper
+         this.f = false;
+         this.e.writeLock().unlock();
+     }
+@@ -100,7 +100,7 @@ public class DataWatcher {
+         DataWatcher.Item datawatcher_item;
+ 
+         try {
+-            datawatcher_item = (DataWatcher.Item) this.d.get(Integer.valueOf(datawatcherobject.a()));
++            datawatcher_item = this.items[datawatcherobject.a()];
+         } catch (Throwable throwable) {
+             CrashReport crashreport = CrashReport.a(throwable, "Getting synched entity data");
+             CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Synched entity data");
+@@ -158,10 +158,10 @@ public class DataWatcher {
+ 
+         if (this.g) {
+             this.e.readLock().lock();
+-            Iterator iterator = this.d.values().iterator();
+-
+-            while (iterator.hasNext()) {
+-                DataWatcher.Item datawatcher_item = (DataWatcher.Item) iterator.next();
++            // Paper start
++            for (DataWatcher.Item datawatcher_item : items) {
++                if (datawatcher_item == null) continue;
++                // Paper end
+ 
+                 if (datawatcher_item.c()) {
+                     datawatcher_item.a(false);
+@@ -182,11 +182,10 @@ public class DataWatcher {
+ 
+     public void a(PacketDataSerializer packetdataserializer) throws IOException {
+         this.e.readLock().lock();
+-        Iterator iterator = this.d.values().iterator();
+-
+-        while (iterator.hasNext()) {
+-            DataWatcher.Item datawatcher_item = (DataWatcher.Item) iterator.next();
+-
++        // Paper start
++        for (DataWatcher.Item datawatcher_item : items) {
++            if (datawatcher_item == null) continue;
++            // Paper end
+             a(packetdataserializer, datawatcher_item);
+         }
+ 
+@@ -200,14 +199,13 @@ public class DataWatcher {
+ 
+         this.e.readLock().lock();
+ 
+-        DataWatcher.Item datawatcher_item;
+-
+-        for (Iterator iterator = this.d.values().iterator(); iterator.hasNext(); arraylist.add(datawatcher_item)) {
+-            datawatcher_item = (DataWatcher.Item) iterator.next();
+-            if (arraylist == null) {
+-                arraylist = Lists.newArrayList();
+-            }
++        // Paper start
++        for (DataWatcher.Item datawatcher_item : items) {
++            if (datawatcher_item == null) continue;
++            if (arraylist == null) arraylist = Lists.newArrayList();
++            arraylist.add(datawatcher_item);
+         }
++        // Paper end
+ 
+         this.e.readLock().unlock();
+         return arraylist;
+@@ -257,13 +255,12 @@ public class DataWatcher {
+     public void e() {
+         this.g = false;
+         this.e.readLock().lock();
+-        Iterator iterator = this.d.values().iterator();
+-
+-        while (iterator.hasNext()) {
+-            DataWatcher.Item datawatcher_item = (DataWatcher.Item) iterator.next();
+-
++        // Paper start
++        for (DataWatcher.Item datawatcher_item : items) {
++            if (datawatcher_item == null) continue;
+             datawatcher_item.a(false);
+         }
++        // Paper end
+ 
+         this.e.readLock().unlock();
+     }
+-- 
+2.9.3 (Apple Git-75)
+
