@@ -84,6 +84,7 @@ import PersistentVillage
 import RemoteControlListener
 import TileEntityEnderChest
 import TileEntityLootable
+import WorldGenStronghold
 import WorldProvider
 
 cd "$workdir/Spigot/Spigot-Server/"
