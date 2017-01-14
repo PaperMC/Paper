@@ -1,0 +1,148 @@
+From d04465edca838af39d50087545326169c1cf36d0 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 14 Jan 2017 15:42:36 -0600
+Subject: [PATCH] Add fromBottle flag to Experience Orbs
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityExperienceOrb.java b/src/main/java/net/minecraft/server/EntityExperienceOrb.java
+index 14431b8a..2dafcdd0 100644
+--- a/src/main/java/net/minecraft/server/EntityExperienceOrb.java
++++ b/src/main/java/net/minecraft/server/EntityExperienceOrb.java
+@@ -15,6 +15,14 @@ public class EntityExperienceOrb extends Entity {
+     public int value;
+     private EntityHuman targetPlayer;
+     private int targetTime;
++    // Paper start
++    private boolean fromBottle = false;
++
++    public EntityExperienceOrb(World world, double d0, double d1, double d2, int i, boolean fromBottle) {
++        this(world, d0, d1, d2, i);
++        this.fromBottle = fromBottle;
++    }
++    // Paper end
+ 
+     public EntityExperienceOrb(World world, double d0, double d1, double d2, int i) {
+         super(world);
+@@ -27,6 +35,12 @@ public class EntityExperienceOrb extends Entity {
+         this.value = i;
+     }
+ 
++    // Paper start
++    public boolean isFromBottle() {
++        return fromBottle;
++    }
++    // Paper end
++
+     protected boolean playStepSound() {
+         return false;
+     }
+@@ -38,8 +52,8 @@ public class EntityExperienceOrb extends Entity {
+ 
+     protected void i() {}
+ 
+-    public void A_() {
+-        super.A_();
++    public void m() {
++        super.m();
+         EntityHuman prevTarget = this.targetPlayer;// CraftBukkit - store old target
+         if (this.c > 0) {
+             --this.c;
+@@ -56,10 +70,10 @@ public class EntityExperienceOrb extends Entity {
+             this.motY = 0.20000000298023224D;
+             this.motX = (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
+             this.motZ = (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
+-            this.a(SoundEffects.bL, 0.4F, 2.0F + this.random.nextFloat() * 0.4F);
++            this.a(SoundEffects.bB, 0.4F, 2.0F + this.random.nextFloat() * 0.4F);
+         }
+ 
+-        this.i(this.locX, (this.getBoundingBox().b + this.getBoundingBox().e) / 2.0D, this.locZ);
++        this.j(this.locX, (this.getBoundingBox().b + this.getBoundingBox().e) / 2.0D, this.locZ);
+         double d0 = 8.0D;
+ 
+         if (this.targetTime < this.a - 20 + this.getId() % 100) {
+@@ -101,7 +115,7 @@ public class EntityExperienceOrb extends Entity {
+             // CraftBukkit end
+         }
+ 
+-        this.move(EnumMoveType.SELF, this.motX, this.motY, this.motZ);
++        this.move(this.motX, this.motY, this.motZ);
+         float f = 0.98F;
+ 
+         if (this.onGround) {
+@@ -159,20 +173,21 @@ public class EntityExperienceOrb extends Entity {
+ 
+     public void d(EntityHuman entityhuman) {
+         if (!this.world.isClientSide) {
+-            if (this.c == 0 && entityhuman.bz == 0) {
+-                entityhuman.bz = 2;
++            if (this.c == 0 && entityhuman.bA == 0) {
++                entityhuman.bA = 2;
++                this.world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.bk, SoundCategory.PLAYERS, 0.1F, 0.5F * ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.8F));
+                 entityhuman.receive(this, 1);
+-                ItemStack itemstack = EnchantmentManager.b(Enchantments.C, (EntityLiving) entityhuman);
++                ItemStack itemstack = EnchantmentManager.b(Enchantments.A, (EntityLiving) entityhuman);
+ 
+-                if (!itemstack.isEmpty() && itemstack.h()) {
+-                    int i = Math.min(this.d(this.value), itemstack.i());
++                if (itemstack != null && itemstack.g()) {
++                    int i = Math.min(this.d(this.value), itemstack.h());
+ 
+                     this.value -= this.b(i);
+-                    itemstack.setData(itemstack.i() - i);
++                    itemstack.setData(itemstack.h() - i);
+                 }
+ 
+                 if (this.value > 0) {
+-                    entityhuman.giveExp(CraftEventFactory.callPlayerExpChangeEvent(entityhuman, this).getAmount()); // CraftBukkit - this.value -> event.getAmount() // Paper - supply experience orb object
++                    entityhuman.giveExp(CraftEventFactory.callPlayerExpChangeEvent(entityhuman, this.value).getAmount()); // CraftBukkit - this.value -> event.getAmount()
+                 }
+ 
+                 this.die();
+diff --git a/src/main/java/net/minecraft/server/EntityThrownExpBottle.java b/src/main/java/net/minecraft/server/EntityThrownExpBottle.java
+index 0255986f..f33cbf99 100644
+--- a/src/main/java/net/minecraft/server/EntityThrownExpBottle.java
++++ b/src/main/java/net/minecraft/server/EntityThrownExpBottle.java
+@@ -25,14 +25,14 @@ public class EntityThrownExpBottle extends EntityProjectile {
+     protected void a(MovingObjectPosition movingobjectposition) {
+         if (!this.world.isClientSide) {
+             // CraftBukkit - moved to after event
+-            // this.world.triggerEffect(2002, new BlockPosition(this), PotionUtil.a(Potions.b));
++            // this.world.triggerEffect(2002, new BlockPosition(this), 0);
+             int i = 3 + this.world.random.nextInt(5) + this.world.random.nextInt(5);
+ 
+             // CraftBukkit start
+             org.bukkit.event.entity.ExpBottleEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callExpBottleEvent(this, i);
+             i = event.getExperience();
+             if (event.getShowEffect()) {
+-                this.world.triggerEffect(2002, new BlockPosition(this), PotionUtil.a(Potions.b));
++                this.world.triggerEffect(2002, new BlockPosition(this), 0);
+             }
+             // CraftBukkit end
+ 
+@@ -40,7 +40,7 @@ public class EntityThrownExpBottle extends EntityProjectile {
+                 int j = EntityExperienceOrb.getOrbValue(i);
+ 
+                 i -= j;
+-                this.world.addEntity(new EntityExperienceOrb(this.world, this.locX, this.locY, this.locZ, j));
++                this.world.addEntity(new EntityExperienceOrb(this.world, this.locX, this.locY, this.locZ, j, true)); // Paper - add fromBottle flag
+             }
+ 
+             this.die();
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftExperienceOrb.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftExperienceOrb.java
+index 3a09cab3..f992019e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftExperienceOrb.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftExperienceOrb.java
+@@ -18,6 +18,10 @@ public class CraftExperienceOrb extends CraftEntity implements ExperienceOrb {
+         getHandle().value = value;
+     }
+ 
++    public boolean isFromBottle() {
++        return getHandle().isFromBottle();
++    }
++
+     @Override
+     public EntityExperienceOrb getHandle() {
+         return (EntityExperienceOrb) entity;
+-- 
+2.11.0
+
