@@ -39,4 +39,36 @@ public interface Arrow extends Projectile {
      * @param critical whether or not it should be critical
      */
     public void setCritical(boolean critical);
+
+    /**
+     * Gets the current pickup status of this arrow.
+     *
+     * @return the pickup status of this arrow.
+     */
+    public PickupStatus getPickupStatus();
+
+    /**
+     * Sets the current pickup status of this arrow.
+     *
+     * @param status new pickup status of this arrow.
+     */
+    public void setPickupStatus(PickupStatus status);
+
+    /**
+     * Represents the pickup status of this arrow.
+     */
+    public enum PickupStatus {
+        /**
+         * The arrow cannot be picked up.
+         */
+        DISALLOWED,
+        /**
+         * The arrow can be picked up.
+         */
+        ALLOWED,
+        /**
+         * The arrow can only be picked up by players in creative mode.
+         */
+        CREATIVE_ONLY
+    }
 }
