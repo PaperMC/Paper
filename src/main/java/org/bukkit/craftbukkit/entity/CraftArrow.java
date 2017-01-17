@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.server.EntityArrow;
 
 import org.apache.commons.lang.Validate;
@@ -33,7 +34,7 @@ public class CraftArrow extends AbstractProjectile implements Arrow {
     }
 
     public ProjectileSource getShooter() {
-        return getHandle().projectileSource;   
+        return getHandle().projectileSource;
     }
 
     public void setShooter(ProjectileSource shooter) {
@@ -43,6 +44,17 @@ public class CraftArrow extends AbstractProjectile implements Arrow {
             getHandle().shooter = null;
         }
         getHandle().projectileSource = shooter;
+    }
+
+    @Override
+    public PickupStatus getPickupStatus() {
+        return PickupStatus.values()[getHandle().fromPlayer.ordinal()];
+    }
+
+    @Override
+    public void setPickupStatus(PickupStatus status) {
+        Preconditions.checkNotNull(status, "status");
+        getHandle().fromPlayer = EntityArrow.PickupStatus.a(status.ordinal());
     }
 
     @Override
