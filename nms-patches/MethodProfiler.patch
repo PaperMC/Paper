@@ -1,140 +1,60 @@
 --- a/net/minecraft/server/MethodProfiler.java
 +++ b/net/minecraft/server/MethodProfiler.java
-@@ -10,130 +10,30 @@
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
+@@ -12,6 +12,7 @@
  
-+// CraftBukkit start - Strip down to empty methods, performance cost
  public class MethodProfiler {
  
--    private static final Logger b = LogManager.getLogger();
--    private final List<String> c = Lists.newArrayList();
--    private final List<Long> d = Lists.newArrayList();
-     public boolean a;
--    private String e = "";
--    private final Map<String, Long> f = Maps.newHashMap();
--
++    public static final boolean ENABLED = Boolean.getBoolean("enableDebugMethodProfiler"); // CraftBukkit - disable unless specified in JVM arguments
+     private static final Logger b = LogManager.getLogger();
+     private final List<String> c = Lists.newArrayList();
+     private final List<Long> d = Lists.newArrayList();
+@@ -22,12 +23,14 @@
      public MethodProfiler() {}
  
      public void a() {
--        this.f.clear();
--        this.e = "";
--        this.c.clear();
++        if (!ENABLED) return;  // CraftBukkit
+         this.f.clear();
+         this.e = "";
+         this.c.clear();
      }
  
      public void a(String s) {
--        if (this.a) {
--            if (this.e.length() > 0) {
--                this.e = this.e + ".";
--            }
--
--            this.e = this.e + s;
--            this.c.add(this.e);
--            this.d.add(Long.valueOf(System.nanoTime()));
--        }
++        if (!ENABLED) return;  // CraftBukkit
+         if (this.a) {
+             if (this.e.length() > 0) {
+                 this.e = this.e + ".";
+@@ -40,6 +43,7 @@
      }
  
      public void b() {
--        if (this.a) {
--            long i = System.nanoTime();
--            long j = ((Long) this.d.remove(this.d.size() - 1)).longValue();
--
--            this.c.remove(this.c.size() - 1);
--            long k = i - j;
--
--            if (this.f.containsKey(this.e)) {
--                this.f.put(this.e, Long.valueOf(((Long) this.f.get(this.e)).longValue() + k));
--            } else {
--                this.f.put(this.e, Long.valueOf(k));
--            }
--
--            if (k > 100000000L) {
--                MethodProfiler.b.warn("Something\'s taking too long! \'{}\' took aprox {} ms", new Object[] { this.e, Double.valueOf((double) k / 1000000.0D)});
--            }
--
--            this.e = this.c.isEmpty() ? "" : (String) this.c.get(this.c.size() - 1);
--        }
++        if (!ENABLED) return;  // CraftBukkit
+         if (this.a) {
+             long i = System.nanoTime();
+             long j = ((Long) this.d.remove(this.d.size() - 1)).longValue();
+@@ -62,7 +66,7 @@
      }
  
      public List<MethodProfiler.ProfilerInfo> b(String s) {
 -        if (!this.a) {
--            return Collections.emptyList();
--        } else {
--            long i = this.f.containsKey("root") ? ((Long) this.f.get("root")).longValue() : 0L;
--            long j = this.f.containsKey(s) ? ((Long) this.f.get(s)).longValue() : -1L;
--            ArrayList arraylist = Lists.newArrayList();
--
--            if (s.length() > 0) {
--                s = s + ".";
--            }
--
--            long k = 0L;
--            Iterator iterator = this.f.keySet().iterator();
--
--            while (iterator.hasNext()) {
--                String s1 = (String) iterator.next();
--
--                if (s1.length() > s.length() && s1.startsWith(s) && s1.indexOf(".", s.length() + 1) < 0) {
--                    k += ((Long) this.f.get(s1)).longValue();
--                }
--            }
--
--            float f = (float) k;
--
--            if (k < j) {
--                k = j;
--            }
--
--            if (i < k) {
--                i = k;
--            }
--
--            Iterator iterator1 = this.f.keySet().iterator();
--
--            String s2;
--
--            while (iterator1.hasNext()) {
--                s2 = (String) iterator1.next();
--                if (s2.length() > s.length() && s2.startsWith(s) && s2.indexOf(".", s.length() + 1) < 0) {
--                    long l = ((Long) this.f.get(s2)).longValue();
--                    double d0 = (double) l * 100.0D / (double) k;
--                    double d1 = (double) l * 100.0D / (double) i;
--                    String s3 = s2.substring(s.length());
--
--                    arraylist.add(new MethodProfiler.ProfilerInfo(s3, d0, d1));
--                }
--            }
--
--            iterator1 = this.f.keySet().iterator();
--
--            while (iterator1.hasNext()) {
--                s2 = (String) iterator1.next();
--                this.f.put(s2, Long.valueOf(((Long) this.f.get(s2)).longValue() * 999L / 1000L));
--            }
--
--            if ((float) k > f) {
--                arraylist.add(new MethodProfiler.ProfilerInfo("unspecified", (double) ((float) k - f) * 100.0D / (double) k, (double) ((float) k - f) * 100.0D / (double) i));
--            }
--
--            Collections.sort(arraylist);
--            arraylist.add(0, new MethodProfiler.ProfilerInfo(s, 100.0D, (double) k * 100.0D / (double) i));
--            return arraylist;
--        }
-+        return null;
++        if (!ENABLED || !this.a) {  // CraftBukkit
+             return Collections.emptyList();
+         } else {
+             long i = this.f.containsKey("root") ? ((Long) this.f.get("root")).longValue() : 0L;
+@@ -128,11 +132,13 @@
      }
  
      public void c(String s) {
--        this.b();
--        this.a(s);
++        if (!ENABLED) return;  // CraftBukkit
+         this.b();
+         this.a(s);
      }
  
      public String c() {
--        return this.c.size() == 0 ? "[UNKNOWN]" : (String) this.c.get(this.c.size() - 1);
-+        return "";
++        if (!ENABLED) return "[DISABLED]";  // CraftBukkit
+         return this.c.size() == 0 ? "[UNKNOWN]" : (String) this.c.get(this.c.size() - 1);
      }
  
-     public static final class ProfilerInfo implements Comparable<MethodProfiler.ProfilerInfo> {
-@@ -152,7 +52,7 @@
+@@ -152,7 +158,7 @@
              return methodprofiler_profilerinfo.a < this.a ? -1 : (methodprofiler_profilerinfo.a > this.a ? 1 : methodprofiler_profilerinfo.c.compareTo(this.c));
          }
  
