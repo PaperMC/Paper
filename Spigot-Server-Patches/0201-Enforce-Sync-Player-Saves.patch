@@ -1,0 +1,31 @@
+From 8662d21eec7cf0a245afa76c2bb97f5aa46b622a Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 7 Jan 2017 15:41:58 -0500
+Subject: [PATCH] Enforce Sync Player Saves
+
+Saving players async is extremely dangerous. This will force it to main
+the same way we handle async chunk loads.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index f675a70..a9d59bb 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -1212,6 +1212,7 @@ public abstract class PlayerList {
+     }
+ 
+     public void savePlayers(Integer interval) {
++        MCUtil.ensureMain("Save Players", () -> { // Paper - ensure main
+         long now = MinecraftServer.currentTick;
+         MinecraftTimings.savePlayers.startTiming(); // Paper
+         for (int i = 0; i < this.players.size(); ++i) {
+@@ -1221,6 +1222,7 @@ public abstract class PlayerList {
+             }
+         }
+         MinecraftTimings.savePlayers.stopTiming(); // Paper
++        return null; }); // Paper - ensure main
+     }
+     // Paper end
+ 
+-- 
+2.9.3
+
