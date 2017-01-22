@@ -161,24 +161,23 @@
      }
  
      public void onEquipItem(EquipmentSlot slot, ItemStack oldStack, ItemStack newStack) {
--        if (!this.level().isClientSide() && !this.isSpectator()) {
--            boolean flag = newStack.isEmpty() && oldStack.isEmpty();
 +        // CraftBukkit start
 +        this.onEquipItem(slot, oldStack, newStack, false);
 +    }
++
++    public void onEquipItem(EquipmentSlot enumitemslot, ItemStack itemstack, ItemStack itemstack1, boolean silent) {
++        // CraftBukkit end
+         if (!this.level().isClientSide() && !this.isSpectator()) {
+-            boolean flag = newStack.isEmpty() && oldStack.isEmpty();
++            boolean flag = itemstack1.isEmpty() && itemstack.isEmpty();
  
 -            if (!flag && !ItemStack.isSameItemSameComponents(oldStack, newStack) && !this.firstTick) {
 -                Equippable equippable = (Equippable) newStack.get(DataComponents.EQUIPPABLE);
-+    public void onEquipItem(EquipmentSlot enumitemslot, ItemStack itemstack, ItemStack itemstack1, boolean silent) {
-+        // CraftBukkit end
-+        if (!this.level().isClientSide() && !this.isSpectator()) {
-+            boolean flag = itemstack1.isEmpty() && itemstack.isEmpty();
++            if (!flag && !ItemStack.isSameItemSameComponents(itemstack, itemstack1) && !this.firstTick) {
++                Equippable equippable = (Equippable) itemstack1.get(DataComponents.EQUIPPABLE);
  
 -                if (!this.isSilent() && equippable != null && slot == equippable.slot()) {
 -                    this.level().playSeededSound((Player) null, this.getX(), this.getY(), this.getZ(), equippable.equipSound(), this.getSoundSource(), 1.0F, 1.0F, this.random.nextLong());
-+            if (!flag && !ItemStack.isSameItemSameComponents(itemstack, itemstack1) && !this.firstTick) {
-+                Equippable equippable = (Equippable) itemstack1.get(DataComponents.EQUIPPABLE);
-+
 +                if (!this.isSilent() && equippable != null && enumitemslot == equippable.slot() && !silent) { // CraftBukkit
 +                    this.level().playSeededSound((net.minecraft.world.entity.player.Player) null, this.getX(), this.getY(), this.getZ(), equippable.equipSound(), this.getSoundSource(), 1.0F, 1.0F, this.random.nextLong());
                  }
@@ -311,11 +310,10 @@
                          iterator.remove();
                          this.onEffectsRemoved(List.of(mobeffect));
                      }
-@@ -840,7 +955,18 @@
-             }
+@@ -841,6 +956,17 @@
          } catch (ConcurrentModificationException concurrentmodificationexception) {
              ;
-+        }
+         }
 +        // CraftBukkit start
 +        this.isTickingEffects = false;
 +        for (ProcessableEffect e : this.effectsToProcess) {
@@ -324,7 +322,7 @@
 +            } else {
 +                this.removeEffect(e.type, e.cause);
 +            }
-         }
++        }
 +        this.effectsToProcess.clear();
 +        // CraftBukkit end
  
@@ -936,7 +934,7 @@
 +        };
 +        float freezingModifier = freezing.apply((double) f).floatValue();
 +        f += freezingModifier;
-+
+ 
 +        com.google.common.base.Function<Double, Double> hardHat = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
@@ -957,7 +955,7 @@
 +        };
 +        float blockingModifier = blocking.apply((double) f).floatValue();
 +        f += blockingModifier;
- 
++
 +        com.google.common.base.Function<Double, Double> armor = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
@@ -1116,26 +1114,27 @@
      }
  
      public CombatTracker getCombatTracker() {
-@@ -1935,8 +2432,18 @@
+@@ -1935,9 +2432,19 @@
      }
  
      public final void setArrowCount(int stuckArrowCount) {
 -        this.entityData.set(LivingEntity.DATA_ARROW_COUNT_ID, stuckArrowCount);
 +        // CraftBukkit start
 +        this.setArrowCount(stuckArrowCount, false);
-+    }
-+
+     }
+ 
 +    public final void setArrowCount(int i, boolean flag) {
 +        ArrowBodyCountChangeEvent event = CraftEventFactory.callArrowBodyCountChangeEvent(this, this.getArrowCount(), i, flag);
 +        if (event.isCancelled()) {
 +            return;
 +        }
 +        this.entityData.set(LivingEntity.DATA_ARROW_COUNT_ID, event.getNewAmount());
-     }
++    }
 +    // CraftBukkit end
- 
++
      public final int getStingerCount() {
          return (Integer) this.entityData.get(LivingEntity.DATA_STINGER_COUNT_ID);
+     }
 @@ -1999,7 +2506,7 @@
                      this.playSound(soundeffect, this.getSoundVolume(), (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
                  }
@@ -1246,7 +1245,22 @@
          } else {
              List list = this.level().getEntities((Entity) this, this.getBoundingBox(), EntitySelector.pushableBy(this));
  
-@@ -3305,15 +3819,22 @@
+@@ -3138,10 +3652,12 @@
+                 }
+ 
+                 Iterator iterator1 = list.iterator();
++                this.numCollisions = Math.max(0, this.numCollisions - this.level().paperConfig().collisions.maxEntityCollisions); // Paper - Cap entity collisions
+ 
+-                while (iterator1.hasNext()) {
++                while (iterator1.hasNext() && this.numCollisions < this.level().paperConfig().collisions.maxEntityCollisions) { // Paper - Cap entity collisions
+                     Entity entity1 = (Entity) iterator1.next();
+-
++                    entity1.numCollisions++; // Paper - Cap entity collisions
++                    this.numCollisions++; // Paper - Cap entity collisions
+                     this.doPush(entity1);
+                 }
+             }
+@@ -3305,15 +3821,22 @@
  
      @Override
      public boolean isPickable() {
@@ -1271,7 +1285,7 @@
      public float getYHeadRot() {
          return this.yHeadRot;
      }
-@@ -3342,7 +3863,7 @@
+@@ -3342,7 +3865,7 @@
      }
  
      public final void setAbsorptionAmount(float absorptionAmount) {
@@ -1280,7 +1294,7 @@
      }
  
      protected void internalSetAbsorptionAmount(float absorptionAmount) {
-@@ -3483,13 +4004,48 @@
+@@ -3483,13 +4006,48 @@
                  this.releaseUsingItem();
              } else {
                  if (!this.useItem.isEmpty() && this.isUsingItem()) {
@@ -1330,7 +1344,7 @@
                  }
  
              }
-@@ -3568,12 +4124,18 @@
+@@ -3568,12 +4126,18 @@
      }
  
      public boolean randomTeleport(double x, double y, double z, boolean particleEffects) {
@@ -1351,7 +1365,7 @@
          Level world = this.level();
  
          if (world.hasChunkAt(blockposition)) {
-@@ -3592,18 +4154,43 @@
+@@ -3592,18 +4156,43 @@
              }
  
              if (flag2) {
@@ -1399,7 +1413,7 @@
                  world.broadcastEntityEvent(this, (byte) 46);
              }
  
-@@ -3613,7 +4200,7 @@
+@@ -3613,7 +4202,7 @@
                  entitycreature.getNavigation().stop();
              }
  
@@ -1408,7 +1422,7 @@
          }
      }
  
-@@ -3706,7 +4293,7 @@
+@@ -3706,7 +4295,7 @@
      }
  
      public void stopSleeping() {
@@ -1417,7 +1431,7 @@
          Level world = this.level();
  
          java.util.Objects.requireNonNull(world);
-@@ -3718,9 +4305,9 @@
+@@ -3718,9 +4307,9 @@
  
                  this.level().setBlock(blockposition, (BlockState) iblockdata.setValue(BedBlock.OCCUPIED, false), 3);
                  Vec3 vec3d = (Vec3) BedBlock.findStandUpPosition(this.getType(), this.level(), blockposition, enumdirection, this.getYRot()).orElseGet(() -> {
@@ -1429,7 +1443,7 @@
                  });
                  Vec3 vec3d1 = Vec3.atBottomCenterOf(blockposition).subtract(vec3d).normalize();
                  float f = (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
-@@ -3740,7 +4327,7 @@
+@@ -3740,7 +4329,7 @@
  
      @Nullable
      public Direction getBedOrientation() {
@@ -1438,7 +1452,7 @@
  
          return blockposition != null ? BedBlock.getBedOrientation(this.level(), blockposition) : null;
      }
-@@ -3905,7 +4492,7 @@
+@@ -3905,7 +4494,7 @@
      public float maxUpStep() {
          float f = (float) this.getAttributeValue(Attributes.STEP_HEIGHT);
  
