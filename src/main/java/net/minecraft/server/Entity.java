@@ -183,6 +183,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
     public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
     public final boolean defaultActivationState;
     public long activatedTick = Integer.MIN_VALUE;
+    protected int numCollisions = 0; // Paper
     public void inactiveTick() { }
     // Spigot end
 

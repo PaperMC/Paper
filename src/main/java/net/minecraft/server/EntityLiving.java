@@ -2791,8 +2791,11 @@ public abstract class EntityLiving extends Entity {
                 }
             }
 
-            for (j = 0; j < list.size(); ++j) {
+            numCollisions = Math.max(0, numCollisions - world.paperConfig.maxCollisionsPerEntity); // Paper
+            for (j = 0; j < list.size() && numCollisions < world.paperConfig.maxCollisionsPerEntity; ++j) { // Paper
                 Entity entity = (Entity) list.get(j);
+                entity.numCollisions++; // Paper
+                numCollisions++; // Paper
 
                 this.C(entity);
             }

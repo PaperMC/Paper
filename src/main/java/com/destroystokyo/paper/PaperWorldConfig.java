@@ -317,4 +317,10 @@ public class PaperWorldConfig {
             log("Treasure Maps will return already discovered locations");
         }
     }
+
+    public int maxCollisionsPerEntity;
+    private void maxEntityCollision() {
+        maxCollisionsPerEntity = getInt( "max-entity-collisions", this.spigotConfig.getInt("max-entity-collisions", 8) );
+        log( "Max Entity Collisions: " + maxCollisionsPerEntity );
+    }
 }
