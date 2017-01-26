@@ -340,6 +340,9 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
         }
 
     }
+
+    private static final double UNLOAD_QUEUE_RESIZE_FACTOR = 0.96; // Spigot
+
     protected void unloadChunks(BooleanSupplier booleansupplier) {
         GameProfilerFiller gameprofilerfiller = this.world.getMethodProfiler();
 
@@ -355,18 +358,28 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
 
     private void b(BooleanSupplier booleansupplier) {
         LongIterator longiterator = this.unloadQueue.iterator();
-
-        for (int i = 0; longiterator.hasNext() && (booleansupplier.getAsBoolean() || i < 200 || this.unloadQueue.size() > 2000); longiterator.remove()) {
+        // Spigot start
+        org.spigotmc.SlackActivityAccountant activityAccountant = this.world.getMinecraftServer().slackActivityAccountant;
+        activityAccountant.startActivity(0.5);
+        int targetSize = (int) (this.unloadQueue.size() * UNLOAD_QUEUE_RESIZE_FACTOR);
+        // Spigot end
+        while (longiterator.hasNext()) { // Spigot
             long j = longiterator.nextLong();
+            longiterator.remove(); // Spigot
             PlayerChunk playerchunk = (PlayerChunk) this.updatingChunks.remove(j);
 
             if (playerchunk != null) {
                 this.pendingUnload.put(j, playerchunk);
                 this.updatingChunksModified = true;
-                ++i;
+                // Spigot start
+                if (!booleansupplier.getAsBoolean() && this.unloadQueue.size() <= targetSize && activityAccountant.activityTimeIsExhausted()) {
+                    break;
+                }
+                // Spigot end
                 this.a(j, playerchunk);
             }
         }
+        activityAccountant.endActivity(); // Spigot
 
         Runnable runnable;
 
