@@ -106,4 +106,12 @@ public interface WorldBorder {
      * @param distance The distance in blocks. (The default is 5 blocks.)
      */
     public void setWarningDistance(int distance);
+
+    /**
+     * Check if the specified location is inside this border.
+     *
+     * @param location the location to check
+     * @return if this location is inside the border or not
+     */
+    public boolean isInside(Location location);
 }
