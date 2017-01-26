@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit;
 
+import com.google.common.base.Preconditions;
+import net.minecraft.server.BlockPosition;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
@@ -107,5 +109,12 @@ public class CraftWorldBorder implements WorldBorder {
     @Override
     public void setWarningDistance(int distance) {
         this.handle.setWarningDistance(distance); 
+    }
+
+    @Override
+    public boolean isInside(Location location) {
+        Preconditions.checkArgument(location != null, "location");
+
+        return location.getWorld().equals(this.world) && this.handle.a(new BlockPosition(location.getX(), location.getY(), location.getZ()));
     }
 }
