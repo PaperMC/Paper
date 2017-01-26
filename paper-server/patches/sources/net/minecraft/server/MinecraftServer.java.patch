@@ -107,10 +107,11 @@
      private static final int OVERLOADED_TICKS_THRESHOLD = 20;
      private static final long OVERLOADED_WARNING_INTERVAL_NANOS = 10L * TimeUtil.NANOSECONDS_PER_SECOND;
      private static final int OVERLOADED_TICKS_WARNING_INTERVAL = 100;
-@@ -277,6 +302,19 @@
+@@ -276,6 +301,25 @@
+     private static final AtomicReference<RuntimeException> fatalException = new AtomicReference();
      private final SuppressedExceptionCollector suppressedExceptions;
      private final DiscontinuousFrame tickFrame;
- 
++
 +    // CraftBukkit start
 +    public final WorldLoader.DataLoadContext worldLoader;
 +    public org.bukkit.craftbukkit.CraftServer server;
@@ -123,11 +124,16 @@
 +    public Commands vanillaCommandDispatcher;
 +    private boolean forceTicks;
 +    // CraftBukkit end
-+
++    // Spigot start
++    public static final int TPS = 20;
++    public static final int TICK_TIME = 1000000000 / MinecraftServer.TPS;
++    private static final int SAMPLE_INTERVAL = 100;
++    public final double[] recentTps = new double[ 3 ];
++    // Spigot end
+ 
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-         Thread thread = new Thread(() -> {
-@@ -290,14 +328,14 @@
+@@ -290,14 +334,14 @@
              thread.setPriority(8);
          }
  
@@ -144,7 +150,7 @@
          super("Server");
          this.metricsRecorder = InactiveMetricsRecorder.INSTANCE;
          this.onMetricsRecordingStopped = (methodprofilerresults) -> {
-@@ -319,36 +357,63 @@
+@@ -319,36 +363,63 @@
          this.scoreboard = new ServerScoreboard(this);
          this.customBossEvents = new CustomBossEvents();
          this.suppressedExceptions = new SuppressedExceptionCollector();
@@ -223,7 +229,7 @@
      }
  
      private void readScoreboard(DimensionDataStorage persistentStateManager) {
-@@ -357,7 +422,7 @@
+@@ -357,7 +428,7 @@
  
      protected abstract boolean initServer() throws IOException;
  
@@ -232,7 +238,7 @@
          if (!JvmProfiler.INSTANCE.isRunning()) {
              ;
          }
-@@ -365,12 +430,8 @@
+@@ -365,12 +436,8 @@
          boolean flag = false;
          ProfiledDuration profiledduration = JvmProfiler.INSTANCE.onWorldLoadedStarted();
  
@@ -246,7 +252,7 @@
          if (profiledduration != null) {
              profiledduration.finish(true);
          }
-@@ -387,23 +448,217 @@
+@@ -387,23 +454,217 @@
  
      protected void forceDifficulty() {}
  
@@ -478,10 +484,12 @@
  
          if (!iworlddataserver.isInitialized()) {
              try {
-@@ -427,30 +682,8 @@
-             iworlddataserver.setInitialized(true);
-         }
+@@ -425,32 +686,10 @@
+             }
  
+             iworlddataserver.setInitialized(true);
+-        }
+-
 -        this.getPlayerList().addWorldborderListener(worldserver);
 -        if (this.worldData.getCustomBossEvents() != null) {
 -            this.getCustomBossEvents().load(this.worldData.getCustomBossEvents(), this.registryAccess());
@@ -502,15 +510,15 @@
 -                worldborder.addListener(new BorderChangeListener.DelegateBorderChangeListener(worldserver1.getWorldBorder()));
 -                this.levels.put(resourcekey1, worldserver1);
 -            }
--        }
--
+         }
+ 
 -        worldborder.applySettings(iworlddataserver.getWorldBorder());
      }
 +    // CraftBukkit end
  
      private static void setInitialSpawn(ServerLevel world, ServerLevelData worldProperties, boolean bonusChest, boolean debugWorld) {
          if (debugWorld) {
-@@ -458,6 +691,21 @@
+@@ -458,6 +697,21 @@
          } else {
              ServerChunkCache chunkproviderserver = world.getChunkSource();
              ChunkPos chunkcoordintpair = new ChunkPos(chunkproviderserver.randomState().sampler().findSpawnPosition());
@@ -532,7 +540,7 @@
              int i = chunkproviderserver.getGenerator().getSpawnHeight(world);
  
              if (i < world.getMinY()) {
-@@ -516,31 +764,36 @@
+@@ -516,31 +770,36 @@
          iworlddataserver.setGameType(GameType.SPECTATOR);
      }
  
@@ -580,7 +588,7 @@
              ForcedChunksSavedData forcedchunk = (ForcedChunksSavedData) worldserver1.getDataStorage().get(ForcedChunksSavedData.factory(), "chunks");
  
              if (forcedchunk != null) {
-@@ -555,10 +808,17 @@
+@@ -555,10 +814,17 @@
              }
          }
  
@@ -602,7 +610,7 @@
      }
  
      public GameType getDefaultGameType() {
-@@ -588,12 +848,16 @@
+@@ -588,12 +854,16 @@
              worldserver.save((ProgressListener) null, flush, worldserver.noSave && !force);
          }
  
@@ -621,7 +629,7 @@
          if (flush) {
              Iterator iterator1 = this.getAllLevels().iterator();
  
-@@ -628,18 +892,40 @@
+@@ -628,18 +898,40 @@
          this.stopServer();
      }
  
@@ -662,7 +670,21 @@
          }
  
          MinecraftServer.LOGGER.info("Saving worlds");
-@@ -727,7 +1013,7 @@
+@@ -720,6 +1012,13 @@
+ 
+     }
+ 
++    // Spigot Start
++    private static double calcTps(double avg, double exp, double tps)
++    {
++        return ( avg * exp ) + ( tps * ( 1 - exp ) );
++    }
++    // Spigot End
++
+     protected void runServer() {
+         try {
+             if (!this.initServer()) {
+@@ -727,9 +1026,12 @@
              }
  
              this.nextTickTimeNanos = Util.getNanos();
@@ -670,8 +692,13 @@
 +            this.statusIcon = (ServerStatus.Favicon) this.loadStatusIcon().orElse(null); // CraftBukkit - decompile error
              this.status = this.buildServerStatus();
  
++            // Spigot start
++            Arrays.fill( this.recentTps, 20 );
++            long tickSection = Util.getMillis(), tickCount = 1;
              while (this.running) {
-@@ -744,6 +1030,7 @@
+                 long i;
+ 
+@@ -744,11 +1046,23 @@
                      if (j > MinecraftServer.OVERLOADED_THRESHOLD_NANOS + 20L * i && this.nextTickTimeNanos - this.lastOverloadWarningNanos >= MinecraftServer.OVERLOADED_WARNING_INTERVAL_NANOS + 100L * i) {
                          long k = j / i;
  
@@ -679,7 +706,23 @@
                          MinecraftServer.LOGGER.warn("Can't keep up! Is the server overloaded? Running {}ms or {} ticks behind", j / TimeUtil.NANOSECONDS_PER_MILLISECOND, k);
                          this.nextTickTimeNanos += k * i;
                          this.lastOverloadWarningNanos = this.nextTickTimeNanos;
-@@ -757,6 +1044,7 @@
+                     }
+                 }
++                // Spigot start
++                if ( tickCount++ % MinecraftServer.SAMPLE_INTERVAL == 0 )
++                {
++                    long curTime = Util.getMillis();
++                    double currentTps = 1E3 / ( curTime - tickSection ) * MinecraftServer.SAMPLE_INTERVAL;
++                    this.recentTps[0] = MinecraftServer.calcTps( this.recentTps[0], 0.92, currentTps ); // 1/exp(5sec/1min)
++                    this.recentTps[1] = MinecraftServer.calcTps( this.recentTps[1], 0.9835, currentTps ); // 1/exp(5sec/5min)
++                    this.recentTps[2] = MinecraftServer.calcTps( this.recentTps[2], 0.9945, currentTps ); // 1/exp(5sec/15min)
++                    tickSection = curTime;
++                }
++                // Spigot end
+ 
+                 boolean flag = i == 0L;
+ 
+@@ -757,6 +1071,7 @@
                      this.debugCommandProfiler = new MinecraftServer.TimeProfiler(Util.getNanos(), this.tickCount);
                  }
  
@@ -687,7 +730,7 @@
                  this.nextTickTimeNanos += i;
  
                  try {
-@@ -830,6 +1118,13 @@
+@@ -830,6 +1145,13 @@
                      this.services.profileCache().clearExecutor();
                  }
  
@@ -701,7 +744,7 @@
                  this.onServerExit();
              }
  
-@@ -889,9 +1184,16 @@
+@@ -889,9 +1211,16 @@
      }
  
      private boolean haveTime() {
@@ -719,7 +762,7 @@
      public static boolean throwIfFatalException() {
          RuntimeException runtimeexception = (RuntimeException) MinecraftServer.fatalException.get();
  
-@@ -903,7 +1205,7 @@
+@@ -903,7 +1232,7 @@
      }
  
      public static void setFatalException(RuntimeException exception) {
@@ -728,7 +771,7 @@
      }
  
      @Override
-@@ -977,7 +1279,7 @@
+@@ -977,7 +1306,7 @@
          }
      }
  
@@ -737,7 +780,7 @@
          Profiler.get().incrementCounter("runTask");
          super.doRunTask(ticktask);
      }
-@@ -1025,6 +1327,7 @@
+@@ -1025,6 +1354,7 @@
      }
  
      public void tickServer(BooleanSupplier shouldKeepTicking) {
@@ -745,7 +788,7 @@
          long i = Util.getNanos();
          int j = this.pauseWhileEmptySeconds() * 20;
  
-@@ -1041,11 +1344,13 @@
+@@ -1041,11 +1371,13 @@
                      this.autoSave();
                  }
  
@@ -759,7 +802,7 @@
          ++this.tickCount;
          this.tickRateManager.tick();
          this.tickChildren(shouldKeepTicking);
-@@ -1055,7 +1360,7 @@
+@@ -1055,7 +1387,7 @@
          }
  
          --this.ticksUntilAutosave;
@@ -768,7 +811,7 @@
              this.autoSave();
          }
  
-@@ -1071,10 +1376,13 @@
+@@ -1071,10 +1403,13 @@
          this.smoothedTickTimeMillis = this.smoothedTickTimeMillis * 0.8F + (float) k / (float) TimeUtil.NANOSECONDS_PER_MILLISECOND * 0.19999999F;
          this.logTickMethodTime(i);
          gameprofilerfiller.pop();
@@ -783,7 +826,7 @@
          MinecraftServer.LOGGER.debug("Autosave started");
          ProfilerFiller gameprofilerfiller = Profiler.get();
  
-@@ -1082,6 +1390,7 @@
+@@ -1082,6 +1417,7 @@
          this.saveEverything(true, false, false);
          gameprofilerfiller.pop();
          MinecraftServer.LOGGER.debug("Autosave finished");
@@ -791,7 +834,7 @@
      }
  
      private void logTickMethodTime(long tickStartTime) {
-@@ -1154,11 +1463,34 @@
+@@ -1154,11 +1490,34 @@
          this.getPlayerList().getPlayers().forEach((entityplayer) -> {
              entityplayer.connection.suspendFlushing();
          });
@@ -804,7 +847,7 @@
 +        SpigotTimings.commandFunctionsTimer.stopTiming(); // Spigot
          gameprofilerfiller.popPush("levels");
          Iterator iterator = this.getAllLevels().iterator();
- 
++
 +        // CraftBukkit start
 +        // Run tasks that are waiting on processing
 +        SpigotTimings.processQueueTimer.startTiming(); // Spigot
@@ -812,7 +855,7 @@
 +            this.processQueue.remove().run();
 +        }
 +        SpigotTimings.processQueueTimer.stopTiming(); // Spigot
-+
+ 
 +        SpigotTimings.timeUpdateTimer.startTiming(); // Spigot
 +        // Send time updates to everyone, it will get the right time from the world the player is in.
 +        if (this.tickCount % 20 == 0) {
@@ -826,7 +869,7 @@
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
  
-@@ -1167,16 +1499,20 @@
+@@ -1167,16 +1526,20 @@
  
                  return s + " " + String.valueOf(worldserver.dimension().location());
              });
@@ -847,7 +890,7 @@
              } catch (Throwable throwable) {
                  CrashReport crashreport = CrashReport.forThrowable(throwable, "Exception ticking world");
  
-@@ -1189,18 +1525,24 @@
+@@ -1189,18 +1552,24 @@
          }
  
          gameprofilerfiller.popPush("connection");
@@ -872,10 +915,12 @@
  
          gameprofilerfiller.popPush("send chunks");
          iterator = this.playerList.getPlayers().iterator();
-@@ -1267,6 +1609,22 @@
+@@ -1265,7 +1634,23 @@
+     @Nullable
+     public ServerLevel getLevel(ResourceKey<Level> key) {
          return (ServerLevel) this.levels.get(key);
-     }
- 
++    }
++
 +    // CraftBukkit start
 +    public void addLevel(ServerLevel level) {
 +        Map<ResourceKey<Level>, ServerLevel> oldLevels = this.levels;
@@ -889,13 +934,12 @@
 +        Map<ResourceKey<Level>, ServerLevel> newLevels = Maps.newLinkedHashMap(oldLevels);
 +        newLevels.remove(level.dimension());
 +        this.levels = Collections.unmodifiableMap(newLevels);
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      public Set<ResourceKey<Level>> levelKeys() {
          return this.levels.keySet();
-     }
-@@ -1296,7 +1654,7 @@
+@@ -1296,7 +1681,7 @@
  
      @DontObfuscate
      public String getServerModName() {
@@ -904,7 +948,7 @@
      }
  
      public SystemReport fillSystemReport(SystemReport details) {
-@@ -1507,7 +1865,7 @@
+@@ -1507,7 +1892,7 @@
      }
  
      public ServerConnectionListener getConnection() {
@@ -913,7 +957,7 @@
      }
  
      public boolean isReady() {
-@@ -1634,11 +1992,11 @@
+@@ -1634,11 +2019,11 @@
  
      public CompletableFuture<Void> reloadResources(Collection<String> dataPacks) {
          CompletableFuture<Void> completablefuture = CompletableFuture.supplyAsync(() -> {
@@ -927,7 +971,7 @@
          }, this).thenCompose((immutablelist) -> {
              MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
              List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess());
-@@ -1654,6 +2012,7 @@
+@@ -1654,6 +2039,7 @@
          }).thenAcceptAsync((minecraftserver_reloadableresources) -> {
              this.resources.close();
              this.resources = minecraftserver_reloadableresources;
@@ -935,7 +979,7 @@
              this.packRepository.setSelected(dataPacks);
              WorldDataConfiguration worlddataconfiguration = new WorldDataConfiguration(MinecraftServer.getSelectedPacks(this.packRepository, true), this.worldData.enabledFeatures());
  
-@@ -1952,7 +2311,7 @@
+@@ -1952,7 +2338,7 @@
              final List<String> list = Lists.newArrayList();
              final GameRules gamerules = this.getGameRules();
  
@@ -944,7 +988,7 @@
                  @Override
                  public <T extends GameRules.Value<T>> void visit(GameRules.Key<T> key, GameRules.Type<T> type) {
                      list.add(String.format(Locale.ROOT, "%s=%s\n", key.getId(), gamerules.getRule(key)));
-@@ -2058,7 +2417,7 @@
+@@ -2058,7 +2444,7 @@
              try {
                  label51:
                  {
@@ -953,23 +997,20 @@
  
                      try {
                          arraylist = Lists.newArrayList(NativeModuleLister.listModules());
-@@ -2105,9 +2464,25 @@
-         if (bufferedwriter != null) {
-             bufferedwriter.close();
-         }
-+
-+    }
-+
+@@ -2108,6 +2494,22 @@
+ 
+     }
+ 
 +    // CraftBukkit start
 +    public boolean isDebugging() {
 +        return false;
 +    }
- 
++
 +    @Deprecated
 +    public static MinecraftServer getServer() {
 +        return (Bukkit.getServer() instanceof CraftServer) ? ((CraftServer) Bukkit.getServer()).getServer() : null;
-     }
- 
++    }
++
 +    @Deprecated
 +    public static RegistryAccess getDefaultRegistryAccess() {
 +        return CraftRegistry.getMinecraftRegistry();
@@ -979,7 +1020,7 @@
      private ProfilerFiller createProfiler() {
          if (this.willStartRecordingMetrics) {
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(Util.timeSource, this.isDedicatedServer()), Util.timeSource, Util.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -2234,6 +2609,11 @@
+@@ -2234,6 +2636,11 @@
          }
  
      }
