@@ -91,8 +91,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public void setHealth(double health) {
+        health = (float) health;
         if ((health < 0) || (health > getMaxHealth())) {
-            throw new IllegalArgumentException("Health must be between 0 and " + getMaxHealth());
+            throw new IllegalArgumentException("Health must be between 0 and " + getMaxHealth() + "(" + health + ")");
         }
 
         if (health == 0) {
