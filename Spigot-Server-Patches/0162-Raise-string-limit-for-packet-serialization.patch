@@ -1,0 +1,27 @@
+From 2b6337e1d5a45c92453d836b6081080dfc22e13d Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 21 Sep 2016 23:54:20 -0400
+Subject: [PATCH] Raise string limit for packet serialization
+
+The default limit is possible to hit with 50 page books with color codes, causing clients to disconnect.
+
+Bump the limit up a hair to above currently seen sizes.
+
+diff --git a/src/main/java/net/minecraft/server/PacketDataSerializer.java b/src/main/java/net/minecraft/server/PacketDataSerializer.java
+index 7a6619595..68e8c4671 100644
+--- a/src/main/java/net/minecraft/server/PacketDataSerializer.java
++++ b/src/main/java/net/minecraft/server/PacketDataSerializer.java
+@@ -297,8 +297,8 @@ public class PacketDataSerializer extends ByteBuf {
+     public PacketDataSerializer a(String s) {
+         byte[] abyte = s.getBytes(Charsets.UTF_8);
+ 
+-        if (abyte.length > 32767) {
+-            throw new EncoderException("String too big (was " + abyte.length + " bytes encoded, max " + 32767 + ")");
++        if (abyte.length > 44767) { // Paper - raise limit a bit more as normal means can trigger this
++            throw new EncoderException("String too big (was " + s.length() + " bytes encoded, max " + 44767 + ")"); // Paper
+         } else {
+             this.d(abyte.length);
+             this.writeBytes(abyte);
+-- 
+2.11.0
+

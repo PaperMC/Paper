@@ -1,0 +1,67 @@
+From 9a8322a9eab3f68a0b6396656bfdfa917a8936d2 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 3 Nov 2016 21:52:22 -0400
+Subject: [PATCH] Prevent Auto Save if Save Queue is full
+
+If the save queue already has 50 (configurable) of chunks pending,
+then avoid processing auto save (which would add more)
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 376b9eda3..4ad072ad8 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -382,6 +382,11 @@ public class PaperWorldConfig {
+         maxAutoSaveChunksPerTick = getInt("max-auto-save-chunks-per-tick", 24);
+     }
+ 
++    public int queueSizeAutoSaveThreshold = 50;
++    private void queueSizeAutoSaveThreshold() {
++        queueSizeAutoSaveThreshold = getInt("save-queue-limit-for-auto-save", 50);
++    }
++
+     public boolean removeCorruptTEs = false;
+     private void removeCorruptTEs() {
+         removeCorruptTEs = getBoolean("remove-corrupt-tile-entities", false);
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 5c5a56c51..b7afcb204 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -254,6 +254,14 @@ public class ChunkProviderServer implements IChunkProvider {
+         int i = 0;
+ 
+         // CraftBukkit start
++        // Paper start
++        final ChunkRegionLoader chunkLoader = (ChunkRegionLoader) world.getChunkProviderServer().chunkLoader;
++        final int queueSize = chunkLoader.getQueueSize();
++        if (queueSize > world.paperConfig.queueSizeAutoSaveThreshold){
++            return false;
++        }
++        final int autoSaveLimit = world.paperConfig.maxAutoSaveChunksPerTick;
++        // Paper end
+         Iterator iterator = this.chunks.values().iterator();
+         while (iterator.hasNext()) {
+             Chunk chunk = (Chunk) iterator.next();
+@@ -267,7 +275,7 @@ public class ChunkProviderServer implements IChunkProvider {
+                 this.saveChunk(chunk);
+                 chunk.f(false);
+                 ++i;
+-                if (!flag && i >= world.paperConfig.maxAutoSaveChunksPerTick) { // Spigot - // Paper - Incremental Auto Save - cap max per tick
++                if (!flag && i >= autoSaveLimit) { // Spigot - // Paper - Incremental Auto Save - cap max per tick
+                     return false;
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index 19411212a..139f2799c 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -33,6 +33,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+     }
+ 
+     // CraftBukkit start
++    public int getQueueSize() { return queue.size(); } // Paper
+     public boolean chunkExists(World world, int i, int j) {
+         ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
+ 
+-- 
+2.11.0
+
