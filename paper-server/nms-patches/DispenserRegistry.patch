@@ -430,7 +430,38 @@
                  this.b = true;
                  if (world.isEmpty(blockposition) && blockpumpkin.b(world, blockposition)) {
                      if (!world.isClientSide) {
-@@ -456,12 +751,40 @@
+@@ -388,6 +683,30 @@
+             EnumDirection enumdirection = (EnumDirection) isourceblock.e().get(BlockDispenser.FACING);
+             BlockPosition blockposition = isourceblock.getBlockPosition().shift(enumdirection);
+ 
++            // CraftBukkit start
++            org.bukkit.block.Block bukkitBlock = world.getWorld().getBlockAt(isourceblock.getBlockPosition().getX(), isourceblock.getBlockPosition().getY(), isourceblock.getBlockPosition().getZ());
++            CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack);
++
++            BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
++            if (!BlockDispenser.eventFired) {
++                world.getServer().getPluginManager().callEvent(event);
++            }
++
++            if (event.isCancelled()) {
++                return itemstack;
++            }
++
++            if (!event.getItem().equals(craftItem)) {
++                // Chain to handler for new item
++                ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
++                IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.REGISTRY.get(eventStack.getItem());
++                if (idispensebehavior != IDispenseBehavior.NONE && idispensebehavior != this) {
++                    idispensebehavior.a(isourceblock, eventStack);
++                    return itemstack;
++                }
++            }
++            // CraftBukkit end
++
+             this.b = world.a(block, blockposition, false, EnumDirection.DOWN, (Entity) null);
+             if (this.b) {
+                 EnumDirection enumdirection1 = world.isEmpty(blockposition.down()) ? enumdirection : EnumDirection.UP;
+@@ -456,12 +775,40 @@
                  d3 = 0.0D;
              }
  
