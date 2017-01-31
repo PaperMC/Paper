@@ -1,4 +1,4 @@
-From 805d931e0371a7a349240c4430923f5f77fb4cca Mon Sep 17 00:00:00 2001
+From 8d76310982f39f70536a847c399e66923667d6f5 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 18 Jun 2016 23:22:12 -0400
 Subject: [PATCH] Delay Chunk Unloads based on Player Movement
@@ -17,7 +17,7 @@ This allows servers with smaller worlds who do less long distance exploring to s
 wasting cpu cycles on saving/unloading/reloading chunks repeatedly.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index b9b0f74..cda516f 100644
+index b9b0f7479..cda516f6a 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -351,4 +351,13 @@ public class PaperWorldConfig {
@@ -35,7 +35,7 @@ index b9b0f74..cda516f 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 98f2cff..88437d7 100644
+index 98f2cff15..88437d77a 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -30,6 +30,7 @@ public class Chunk {
@@ -47,12 +47,12 @@ index 98f2cff..88437d7 100644
      public final int locZ;
      private boolean m;
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index bd44764..7a56a64 100644
+index 279ef5de5..25deecc4d 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -300,6 +300,19 @@ public class ChunkProviderServer implements IChunkProvider {
-                     }
-                 }
+@@ -312,6 +312,19 @@ public class ChunkProviderServer implements IChunkProvider {
+ 
+                 activityAccountant.endActivity(); // Spigot
              }
 +            // Paper start - delayed chunk unloads
 +            long now = System.currentTimeMillis();
@@ -71,7 +71,7 @@ index bd44764..7a56a64 100644
              this.chunkLoader.a();
          }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index dd40e98..f109e98 100644
+index dd40e98c8..f109e986d 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -32,8 +32,16 @@ public class PlayerChunk {
@@ -108,10 +108,10 @@ index dd40e98..f109e98 100644
              // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index d970e2f..d3c454c 100644
+index 5b27bd1c5..b163346be 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -483,7 +483,13 @@ public class PlayerChunkMap {
+@@ -487,7 +487,13 @@ public class PlayerChunkMap {
          Chunk chunk = playerchunk.f();
  
          if (chunk != null) {
@@ -127,7 +127,7 @@ index d970e2f..d3c454c 100644
  
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 73aee9b..5a44a9f 100644
+index 73aee9b0d..5a44a9f38 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -1557,7 +1557,7 @@ public class CraftWorld implements World {
@@ -140,5 +140,5 @@ index 73aee9b..5a44a9f 100644
              }
  
 -- 
-2.9.3
+2.11.0.windows.3
 

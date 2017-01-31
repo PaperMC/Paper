@@ -1,4 +1,4 @@
-From 4c820d01b5348a632a806b270fc93f2d5ae2b02b Mon Sep 17 00:00:00 2001
+From bfa96ef58792ce8ee38410f4338d7860aa503a4b Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 1 Mar 2016 23:09:29 -0600
 Subject: [PATCH] Further improve server tick loop
@@ -12,10 +12,10 @@ Previous implementation did not calculate TPS correctly.
 Switch to a realistic rolling average and factor in std deviation as an extra reporting variable
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2638f03..6a1c7b7 100644
+index 7539bb215..91fb12128 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -112,17 +112,11 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -113,16 +113,12 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
      public org.bukkit.command.ConsoleCommandSender console;
      public org.bukkit.command.RemoteConsoleCommandSender remoteConsole;
      public ConsoleReader reader;
@@ -25,16 +25,15 @@ index 2638f03..6a1c7b7 100644
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
      // CraftBukkit end
--    // Spigot start
--    private static final int TPS = 20;
--    private static final int TICK_TIME = 1000000000 / TPS;
+     // Spigot start
+-    public static final int TPS = 20;
+-    public static final int TICK_TIME = 1000000000 / TPS;
 -    private static final int SAMPLE_INTERVAL = 100;
 -    public final double[] recentTps = new double[ 3 ];
--    // Spigot end
+     public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
+     // Spigot end
  
-     public MinecraftServer(OptionSet options, Proxy proxy, DataConverterManager dataconvertermanager, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache) {
-         io.netty.util.ResourceLeakDetector.setEnabled( false ); // Spigot - disable
-@@ -531,12 +525,54 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -533,12 +529,54 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
          this.isRunning = false;
      }
  
@@ -45,7 +44,7 @@ index 2638f03..6a1c7b7 100644
 +    // Paper start - Further improve server tick loop
 +    private static final int TPS = 20;
 +    private static final long SEC_IN_NANO = 1000000000;
-+    private static final long TICK_TIME = SEC_IN_NANO / TPS;
++    public static final long TICK_TIME = SEC_IN_NANO / TPS;
 +    private static final long MAX_CATCHUP_BUFFER = TICK_TIME * TPS * 60L;
 +    private static final int SAMPLE_INTERVAL = 20;
 +    public final RollingAverage tps1 = new RollingAverage(60);
@@ -91,10 +90,10 @@ index 2638f03..6a1c7b7 100644
      }
 -    // Spigot End
 +    // Paper End
-  
+ 
      public void run() {
          try {
-@@ -550,24 +586,41 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -552,24 +590,41 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
  
                  // Spigot start
                  Arrays.fill( recentTps, 20 );
@@ -148,7 +147,7 @@ index 2638f03..6a1c7b7 100644
                      }
                      lastTick = curTime;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 24fd62b..30ed3ad 100644
+index 24fd62b53..30ed3ad58 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1734,6 +1734,17 @@ public final class CraftServer implements Server {
@@ -170,7 +169,7 @@ index 24fd62b..30ed3ad 100644
      {
  
 diff --git a/src/main/java/org/spigotmc/TicksPerSecondCommand.java b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
-index be2e31d..6d21c32 100644
+index be2e31dea..6d21c3269 100644
 --- a/src/main/java/org/spigotmc/TicksPerSecondCommand.java
 +++ b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
 @@ -1,8 +1,5 @@
@@ -211,5 +210,5 @@ index be2e31d..6d21c32 100644
          return ( ( tps > 18.0 ) ? ChatColor.GREEN : ( tps > 16.0 ) ? ChatColor.YELLOW : ChatColor.RED ).toString()
                  + ( ( tps > 20.0 ) ? "*" : "" ) + Math.min( Math.round( tps * 100.0 ) / 100.0, 20.0 );
 -- 
-2.9.3
+2.11.0.windows.3
 
