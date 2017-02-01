@@ -19,6 +19,8 @@ import net.minecraft.server.EntityFireball;
 import net.minecraft.server.EntityInsentient;
 import net.minecraft.server.EntityLargeFireball;
 import net.minecraft.server.EntityLiving;
+import net.minecraft.server.EntityLlama;
+import net.minecraft.server.EntityLlamaSpit;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPotion;
 import net.minecraft.server.EntityProjectile;
@@ -55,6 +57,7 @@ import org.bukkit.entity.Fish;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LingeringPotion;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.LlamaSpit;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.SmallFireball;
@@ -388,6 +391,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
             ((EntityFireball) launch).projectileSource = this;
             launch.setPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+        } else if (LlamaSpit.class.isAssignableFrom(projectile) && getHandle() instanceof EntityLlama) {
+            launch = new EntityLlamaSpit(world, (EntityLlama) getHandle());
+            ((EntityProjectile) launch).a(getHandle(), getHandle().pitch, getHandle().yaw, 0.0F, 1.5F, 10.0F); // EntityLlama
         }
 
         Validate.notNull(launch, "Projectile not supported");
