@@ -432,7 +432,7 @@ public class CraftScheduler implements BukkitScheduler {
                 }
                 this.parsePending();
             } else {
-                this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(this.currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass()));
+                // this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(this.currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
                 this.executor.execute(new com.destroystokyo.paper.ServerSchedulerReportingWrapper(task)); // Paper
                 // We don't need to parse pending
                 // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
@@ -447,7 +447,7 @@ public class CraftScheduler implements BukkitScheduler {
         }
         this.pending.addAll(temp);
         temp.clear();
-        this.debugHead = this.debugHead.getNextHead(this.currentTick);
+        //this.debugHead = this.debugHead.getNextHead(this.currentTick); // Paper
     }
 
     private void addTask(final CraftTask task) {
@@ -505,10 +505,15 @@ public class CraftScheduler implements BukkitScheduler {
 
     @Override
     public String toString() {
+        // Paper start
+        return "";
+        /*
         int debugTick = this.currentTick;
         StringBuilder string = new StringBuilder("Recent tasks from ").append(debugTick - CraftScheduler.RECENT_TICKS).append('-').append(debugTick).append('{');
         this.debugHead.debugTo(string);
         return string.append('}').toString();
+        */
+        // Paper end
     }
 
     @Deprecated
