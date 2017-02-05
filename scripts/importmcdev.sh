@@ -82,6 +82,7 @@ import PathfinderGoalFloat
 import PathfinderGoalGotoTarget
 import PathfinderWater
 import PersistentVillage
+import PlayerConnectionUtils
 import RemoteControlListener
 import TileEntityEnderChest
 import TileEntityLootable

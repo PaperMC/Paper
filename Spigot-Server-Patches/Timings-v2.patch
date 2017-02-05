@@ -23,7 +23,7 @@ index 8b96966d8..8d1e8680b 100644
              <version>3.0.3</version>
 diff --git a/src/main/java/co/aikar/timings/MinecraftTimings.java b/src/main/java/co/aikar/timings/MinecraftTimings.java
 new file mode 100644
-index 000000000..29838de47
+index 000000000..4b4b77a5c
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/MinecraftTimings.java
 @@ -0,0 +0,0 @@
@@ -42,6 +42,8 @@ index 000000000..29838de47
 +    public static final Timing tickablesTimer = Timings.ofSafe("Tickables");
 +    public static final Timing minecraftSchedulerTimer = Timings.ofSafe("Minecraft Scheduler");
 +    public static final Timing bukkitSchedulerTimer = Timings.ofSafe("Bukkit Scheduler");
++    public static final Timing bukkitSchedulerPendingTimer = Timings.ofSafe("Bukkit Scheduler - Pending");
++    public static final Timing bukkitSchedulerFinishTimer = Timings.ofSafe("Bukkit Scheduler - Finishing");
 +    public static final Timing chunkIOTickTimer = Timings.ofSafe("ChunkIOTick");
 +    public static final Timing timeUpdateTimer = Timings.ofSafe("Time Update");
 +    public static final Timing serverCommandTimer = Timings.ofSafe("Server Command");
@@ -49,6 +51,9 @@ index 000000000..29838de47
 +
 +    public static final Timing tickEntityTimer = Timings.ofSafe("## tickEntity");
 +    public static final Timing tickTileEntityTimer = Timings.ofSafe("## tickTileEntity");
++    public static final Timing packetProcessTimer = Timings.ofSafe("## Packet Processing");
++    public static final Timing scheduledBlocksTimer = Timings.ofSafe("## Scheduled Blocks");
++    public static final Timing structureGenerationTimer = Timings.ofSafe("Structure Generation");
 +
 +    public static final Timing processQueueTimer = Timings.ofSafe("processQueue");
 +
@@ -89,18 +94,19 @@ index 000000000..29838de47
 +            taskname = taskClass.getCanonicalName();
 +        }
 +
-+        String name = "Task: " +taskname;
++        StringBuilder name = new StringBuilder(64);
++        name.append("Task: ").append(taskname);
 +        if (period > 0) {
-+            name += " (interval:" + period +")";
++            name.append(" (interval:").append(period).append(")");
 +        } else {
-+            name += " (Single)";
++            name.append(" (Single)");
 +        }
 +
 +        if (plugin == null) {
-+            return Timings.ofSafe(null, name, TimingsManager.PLUGIN_GROUP_HANDLER);
++            return Timings.ofSafe(null, name.toString());
 +        }
 +
-+        return Timings.ofSafe(plugin, name);
++        return Timings.ofSafe(plugin, name.toString());
 +    }
 +
 +    /**
@@ -134,11 +140,15 @@ index 000000000..29838de47
 +    }
 +
 +    public static Timing getBlockTiming(Block block) {
-+        return Timings.ofSafe("## Scheduled Block: " + block.getName());
++        return Timings.ofSafe("## Scheduled Block: " + block.getName(), scheduledBlocksTimer);
 +    }
 +
 +    public static Timing getStructureTiming(StructureGenerator structureGenerator) {
-+        return Timings.ofSafe("Structure Generator - " + structureGenerator.getName());
++        return Timings.ofSafe("Structure Generator - " + structureGenerator.getName(), structureGenerationTimer);
++    }
++
++    public static Timing getPacketTiming(Packet packet) {
++        return Timings.ofSafe("## Packet - " + packet.getClass().getSimpleName(), packetProcessTimer);
 +    }
 +}
 diff --git a/src/main/java/co/aikar/timings/TimedChunkGenerator.java b/src/main/java/co/aikar/timings/TimedChunkGenerator.java
@@ -1037,6 +1047,36 @@ index dc630c536..12486135d 100644
          // this.minecraftServer.getCommandHandler().a(this.player, s);
          // CraftBukkit end
      }
+diff --git a/src/main/java/net/minecraft/server/PlayerConnectionUtils.java b/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
+index f74b06794..1fc632e0c 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
++++ b/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
+@@ -0,0 +0,0 @@
+ package net.minecraft.server;
+ 
++import co.aikar.timings.MinecraftTimings; // Paper
++import co.aikar.timings.Timing; // Paper
++
+ public class PlayerConnectionUtils {
+ 
+-    public static <T extends PacketListener> void ensureMainThread(final Packet<T> packet, final T t0, IAsyncTaskHandler iasynctaskhandler) throws CancelledPacketHandleException {
++    // Paper start, fix decompile and add timings
++    public static <T extends PacketListener> void ensureMainThread(final Packet<T> packet, final T listener, IAsyncTaskHandler iasynctaskhandler) throws CancelledPacketHandleException {
+         if (!iasynctaskhandler.isMainThread()) {
+-            iasynctaskhandler.postToMainThread(new Runnable() {
+-                public void run() {
+-                    packet.a(packetlistener);
++            Timing timing = MinecraftTimings.getPacketTiming(packet);
++            iasynctaskhandler.postToMainThread(() -> {
++                try (Timing ignored = timing.startTiming()) {
++                    packet.a(listener);
+                 }
+             });
+             throw CancelledPacketHandleException.INSTANCE;
+         }
+     }
++    // Paper end
+ }
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
 index c0af82b48..676cc3f3e 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
@@ -1657,9 +1697,17 @@ index d057cce36..877a0c88d 100644
  
      public Player.Spigot spigot()
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index 92d217bce..198c37c3c 100644
+index 92d217bce..9952b64be 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+@@ -0,0 +0,0 @@ import java.util.concurrent.atomic.AtomicInteger;
+ import java.util.concurrent.atomic.AtomicReference;
+ import java.util.logging.Level;
+ 
++import co.aikar.timings.MinecraftTimings; // Paper
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.plugin.IllegalPluginAccessException;
+ import org.bukkit.plugin.Plugin;
 @@ -0,0 +0,0 @@ public class CraftScheduler implements BukkitScheduler {
                              }
                          }
@@ -1697,6 +1745,33 @@ index 92d217bce..198c37c3c 100644
                  } catch (final Throwable throwable) {
                      task.getOwner().getLogger().log(
                              Level.WARNING,
+@@ -0,0 +0,0 @@ public class CraftScheduler implements BukkitScheduler {
+                 runners.remove(task.getTaskId());
+             }
+         }
++        MinecraftTimings.bukkitSchedulerFinishTimer.startTiming();
+         pending.addAll(temp);
+         temp.clear();
++        MinecraftTimings.bukkitSchedulerFinishTimer.stopTiming();
+         debugHead = debugHead.getNextHead(currentTick);
+     }
+ 
+@@ -0,0 +0,0 @@ public class CraftScheduler implements BukkitScheduler {
+     }
+ 
+     private void parsePending() {
++        MinecraftTimings.bukkitSchedulerPendingTimer.startTiming();
+         CraftTask head = this.head;
+         CraftTask task = head.getNext();
+         CraftTask lastTask = head;
+@@ -0,0 +0,0 @@ public class CraftScheduler implements BukkitScheduler {
+            task.setNext(null);
+         }
+         this.head = lastTask;
++        MinecraftTimings.bukkitSchedulerPendingTimer.stopTiming();
+     }
+ 
+     private boolean isReady(final int currentTick) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
 index 220e39abe..afc6c17e6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
