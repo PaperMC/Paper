@@ -1,11 +1,11 @@
-From fab6746b634e849bb0effc92deb503dc84e72eac Mon Sep 17 00:00:00 2001
+From f6a0b22a39ad826143911fdb4e4127297e1cf862 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 04:00:11 -0600
 Subject: [PATCH] Timings v2
 
 
 diff --git a/pom.xml b/pom.xml
-index 0e88ae2a7..31b8401aa 100644
+index 8b96966d8..8d1e8680b 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -66,6 +66,12 @@
@@ -493,7 +493,7 @@ index 81fc04ed3..bd3b16025 100644
  
      private void z() {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 87c07f2be..e18fb875f 100644
+index daf2c0a67..3ba489d4f 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -195,7 +195,7 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -555,7 +555,7 @@ index a97e7d3c2..4890023d7 100644
          // return chunk; // CraftBukkit
      }
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index cb83e4f56..4dab9e962 100644
+index cb83e4f56..e6819139f 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -23,7 +23,7 @@ import java.io.PrintStream;
@@ -585,6 +585,28 @@ index cb83e4f56..4dab9e962 100644
      }
  
      public boolean aa() {
+@@ -692,7 +692,20 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+                 return remoteControlCommandListener.getMessages();
+             }
+         };
+-        processQueue.add(waitable);
++        // Paper start
++        if (s.toLowerCase().startsWith("timings") && s.toLowerCase().matches("timings (report|paste|get|merged|seperate)")) {
++            org.bukkit.command.BufferedCommandSender sender = new org.bukkit.command.BufferedCommandSender();
++            waitable = new Waitable<String>() {
++                @Override
++                protected String evaluate() {
++                    return sender.getBuffer();
++                }
++            };
++            co.aikar.timings.Timings.generateReport(new co.aikar.timings.TimingsReportListener(sender, waitable));
++        } else {
++            processQueue.add(waitable);
++        }
++        // Paper end
+         try {
+             return waitable.get();
+         } catch (java.util.concurrent.ExecutionException e) {
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
 index e7b1ebbe3..05312c6ac 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
@@ -1832,5 +1854,5 @@ index c32d44df0..5c2fb0058 100644
      }
  }
 -- 
-2.11.0.windows.3
+2.11.0
 
