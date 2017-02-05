@@ -1599,7 +1599,7 @@ index 00000000..56b10e89
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
 new file mode 100644
-index 00000000..23a3daa8
+index 00000000..df7f4259
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsExport.java
 @@ -0,0 +0,0 @@
@@ -1873,6 +1873,7 @@ index 00000000..23a3daa8
 +
 +
 +        String response = null;
++        String timingsURL = null;
 +        try {
 +            HttpURLConnection con = (HttpURLConnection) new URL("http://timings.aikar.co/post").openConnection();
 +            con.setDoOutput(true);
@@ -1903,8 +1904,8 @@ index 00000000..23a3daa8
 +                return;
 +            }
 +
-+            String location = con.getHeaderField("Location");
-+            listeners.sendMessage(ChatColor.GREEN + "View Timings Report: " + location);
++            timingsURL = con.getHeaderField("Location");
++            listeners.sendMessage(ChatColor.GREEN + "View Timings Report: " + timingsURL);
 +
 +            if (response != null && !response.isEmpty()) {
 +                Bukkit.getLogger().log(Level.INFO, "Timing Response: " + response);
@@ -1916,7 +1917,7 @@ index 00000000..23a3daa8
 +            }
 +            Bukkit.getLogger().log(Level.SEVERE, "Could not paste timings", ex);
 +        } finally {
-+            this.listeners.done();
++            this.listeners.done(timingsURL);
 +        }
 +    }
 +
@@ -2148,7 +2149,7 @@ index 00000000..58ed35e0
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsReportListener.java b/src/main/java/co/aikar/timings/TimingsReportListener.java
 new file mode 100644
-index 00000000..4d492d4b
+index 00000000..e7c389c0
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsReportListener.java
 @@ -0,0 +0,0 @@
@@ -2168,6 +2169,7 @@ index 00000000..4d492d4b
 +public class TimingsReportListener implements MessageCommandSender {
 +    private final List<CommandSender> senders;
 +    private final Runnable onDone;
++    private String timingsURL;
 +
 +    public TimingsReportListener(CommandSender senders) {
 +        this(senders, null);
@@ -2186,7 +2188,16 @@ index 00000000..4d492d4b
 +        this.onDone = onDone;
 +    }
 +
++    public String getTimingsURL() {
++        return timingsURL;
++    }
++
 +    public void done() {
++        done(null);
++    }
++
++    public void done(String url) {
++        this.timingsURL = url;
 +        if (onDone != null) {
 +            onDone.run();
 +        }
