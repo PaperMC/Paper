@@ -900,6 +900,7 @@ public class CraftWorld implements World {
         // order is important for some of these
         if (Boat.class.isAssignableFrom(clazz)) {
             entity = new EntityBoat(world, x, y, z);
+            entity.setPositionRotation(x, y, z, yaw, pitch);
         } else if (FallingBlock.class.isAssignableFrom(clazz)) {
             entity = new EntityFallingBlock(world, x, y, z, world.getType(new BlockPosition(x, y, z)));
         } else if (Projectile.class.isAssignableFrom(clazz)) {
