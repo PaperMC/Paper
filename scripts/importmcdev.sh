@@ -40,6 +40,7 @@ import BaseBlockPosition
 import BiomeBase
 import BiomeJungle
 import BiomeMesa
+import BlockBeacon
 import BlockChest
 import BlockFalling
 import BlockFurnace
