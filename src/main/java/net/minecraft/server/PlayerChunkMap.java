@@ -75,7 +75,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
     private final PlayerMap playerMap;
     public final Int2ObjectMap<PlayerChunkMap.EntityTracker> trackedEntities;
     private final Long2ByteMap z;
-    private final Queue<Runnable> A;
+    private final Queue<Runnable> A; private final Queue<Runnable> getUnloadQueueTasks() { return this.A; } // Paper - OBFHELPER
     private int viewDistance;
 
     // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
@@ -133,7 +133,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
         this.playerMap = new PlayerMap();
         this.trackedEntities = new Int2ObjectOpenHashMap();
         this.z = new Long2ByteOpenHashMap();
-        this.A = Queues.newConcurrentLinkedQueue();
+        this.A = new com.destroystokyo.paper.utils.CachedSizeConcurrentLinkedQueue<>(); // Paper - need constant-time size()
         this.definedStructureManager = definedstructuremanager;
         this.w = convertable_conversionsession.a(worldserver.getDimensionKey());
         this.world = worldserver;
@@ -391,7 +391,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
         // Spigot start
         org.spigotmc.SlackActivityAccountant activityAccountant = this.world.getMinecraftServer().slackActivityAccountant;
         activityAccountant.startActivity(0.5);
-        int targetSize = (int) (this.unloadQueue.size() * UNLOAD_QUEUE_RESIZE_FACTOR);
+        int targetSize = Math.min(this.unloadQueue.size() - 100,  (int) (this.unloadQueue.size() * UNLOAD_QUEUE_RESIZE_FACTOR)); // Paper - Make more aggressive
         // Spigot end
         while (longiterator.hasNext()) { // Spigot
             long j = longiterator.nextLong();
@@ -413,7 +413,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
 
         Runnable runnable;
 
-        while ((booleansupplier.getAsBoolean() || this.A.size() > 2000) && (runnable = (Runnable) this.A.poll()) != null) {
+        int queueTarget = Math.min(this.getUnloadQueueTasks().size() - 100, (int) (this.getUnloadQueueTasks().size() * UNLOAD_QUEUE_RESIZE_FACTOR)); // Paper - Target this queue as well
+        while ((booleansupplier.getAsBoolean() || this.getUnloadQueueTasks().size() > queueTarget) && (runnable = (Runnable)this.getUnloadQueueTasks().poll()) != null) { // Paper - Target this queue as well
             runnable.run();
         }
 
