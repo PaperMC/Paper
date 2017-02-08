@@ -391,9 +391,15 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
             ((EntityFireball) launch).projectileSource = this;
             launch.setPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
-        } else if (LlamaSpit.class.isAssignableFrom(projectile) && getHandle() instanceof EntityLlama) {
-            launch = new EntityLlamaSpit(world, (EntityLlama) getHandle());
-            ((EntityProjectile) launch).a(getHandle(), getHandle().pitch, getHandle().yaw, 0.0F, 1.5F, 10.0F); // EntityLlama
+        } else if (LlamaSpit.class.isAssignableFrom(projectile)) {
+            Location location = getEyeLocation();
+            Vector direction = location.getDirection();
+
+            launch = new EntityLlamaSpit(world);
+
+            ((EntityLlamaSpit) launch).shooter = getHandle();
+            ((EntityLlamaSpit) launch).shoot(direction.getX(), direction.getY(), direction.getZ(), 1.5F, 10.0F); // EntityLlama
+            launch.setPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         }
 
         Validate.notNull(launch, "Projectile not supported");
