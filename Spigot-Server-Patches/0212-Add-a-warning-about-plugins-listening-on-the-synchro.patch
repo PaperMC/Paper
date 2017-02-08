@@ -1,0 +1,54 @@
+From 6e4b069ce0cc3aea45bda60dd9b20081591ecd52 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Wed, 8 Feb 2017 02:41:31 +0000
+Subject: [PATCH] Add a warning about plugins listening on the synchronous
+ PlayerChatEvent
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 7e0f6705..90a132c3 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -255,4 +255,9 @@ public class PaperConfig {
+         }
+         removeInvalidStatistics = getBoolean("settings.remove-invalid-statistics", false);
+     }
++
++    public static Boolean warnOnSyncChatListener = true;
++    private static void warnOnSyncChatListener(){
++        warnOnSyncChatListener = getBoolean("settings.warn-on-sync-chat-listener", true);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index f153e58e..c52b782e 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -99,6 +99,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+     private int receivedMovePackets;
+     private int processedMovePackets;
+     private boolean processedDisconnect; // CraftBukkit - Added
++    private boolean hasWarnedSyncChat; // Paper
+ 
+     public PlayerConnection(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer) {
+         this.minecraftServer = minecraftserver;
+@@ -1300,6 +1301,17 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+ 
+             if (PlayerChatEvent.getHandlerList().getRegisteredListeners().length != 0) {
+                 // Evil plugins still listening to deprecated event
++                // Paper Start
++                if (com.destroystokyo.paper.PaperConfig.warnOnSyncChatListener && !hasWarnedSyncChat) {
++                    hasWarnedSyncChat = true;
++                    MinecraftServer.LOGGER.log(org.apache.logging.log4j.Level.WARN, "Warning! The following plugins are listening on PlayerChatEvent:");
++                    for (org.bukkit.plugin.RegisteredListener registeredListener : PlayerChatEvent.getHandlerList().getRegisteredListeners()) {
++                        MinecraftServer.LOGGER.log(org.apache.logging.log4j.Level.WARN, registeredListener.getPlugin().getName() + " (" + registeredListener.getListener().getClass()+")" );
++                    }
++                    MinecraftServer.LOGGER.log(org.apache.logging.log4j.Level.WARN, "This will cause chat to become synchronous with the main thread, which is generally needless and wasteful. Please notify the author of the plugins to resolve this issue!");
++                }
++                // Paper End
++
+                 final PlayerChatEvent queueEvent = new PlayerChatEvent(player, event.getMessage(), event.getFormat(), event.getRecipients());
+                 queueEvent.setCancelled(event.isCancelled());
+                 Waitable waitable = new Waitable() {
+-- 
+2.11.0
+
