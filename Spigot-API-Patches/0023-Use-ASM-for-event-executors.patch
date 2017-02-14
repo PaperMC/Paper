@@ -1,4 +1,4 @@
-From fc030252b9016bc9ab114383c13d6e1ddc5e347e Mon Sep 17 00:00:00 2001
+From 600abe27eed00e0954178da02627af00e14c9e89 Mon Sep 17 00:00:00 2001
 From: Techcable <Techcable@outlook.com>
 Date: Thu, 3 Mar 2016 13:20:33 -0700
 Subject: [PATCH] Use ASM for event executors.
@@ -6,7 +6,7 @@ Subject: [PATCH] Use ASM for event executors.
 Uses method handles for private or static methods.
 
 diff --git a/pom.xml b/pom.xml
-index 93e3c3b..b0eba81 100644
+index a40cfb4..f5f62b4 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -134,6 +134,12 @@
@@ -115,7 +115,7 @@ index 0000000..f60f010
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/executor/asm/ASMEventExecutorGenerator.java b/src/main/java/com/destroystokyo/paper/event/executor/asm/ASMEventExecutorGenerator.java
 new file mode 100644
-index 0000000..45c2330
+index 0000000..140cf0a
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/executor/asm/ASMEventExecutorGenerator.java
 @@ -0,0 +1,44 @@
@@ -147,7 +147,7 @@ index 0000000..45c2330
 +        methodGenerator.checkCast(Type.getType(m.getDeclaringClass()));
 +        methodGenerator.loadArg(1);
 +        methodGenerator.checkCast(Type.getType(m.getParameterTypes()[0]));
-+        methodGenerator.visitMethodInsn(INVOKEVIRTUAL, Type.getInternalName(m.getDeclaringClass()), m.getName(), Type.getMethodDescriptor(m), m.getDeclaringClass().isInterface());
++        methodGenerator.visitMethodInsn(m.getDeclaringClass().isInterface() ? INVOKEINTERFACE : INVOKEVIRTUAL, Type.getInternalName(m.getDeclaringClass()), m.getName(), Type.getMethodDescriptor(m), m.getDeclaringClass().isInterface());
 +        if (m.getReturnType() != void.class) {
 +            methodGenerator.pop();
 +        }
@@ -395,5 +395,5 @@ index d8b9c24..40fd71d 100644
                  eventSet.add(new TimedRegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
              } else {
 -- 
-2.10.2
+2.7.4
 
