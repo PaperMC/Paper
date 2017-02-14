@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.io.BaseEncoding;
 import com.mojang.authlib.GameProfile;
 import io.netty.buffer.Unpooled;
 
@@ -14,6 +15,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -1092,6 +1094,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         Validate.notNull(url, "Resource pack URL cannot be null");
 
         getHandle().setResourcePack(url, "null");
+    }
+
+    @Override
+    public void setResourcePack(String url, byte[] hash) {
+        Validate.notNull(url, "Resource pack URL cannot be null");
+        Validate.notNull(hash, "Resource pack hash cannot be null");
+        Validate.isTrue(hash.length == 20, "Resource pack hash should be 20 bytes long but was " + hash.length);
+
+        getHandle().setResourcePack(url, BaseEncoding.base16().lowerCase().encode(hash));
     }
 
     public void addChannel(String channel) {
