@@ -41,6 +41,30 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
     void setDisplayName(String name);
 
     /**
+     * Checks for existence of a localized name.
+     *
+     * @return true if this has a localized name
+     */
+    boolean hasLocalizedName();
+
+    /**
+     * Gets the localized display name that is set.
+     * <p>
+     * Plugins should check that hasLocalizedName() returns <code>true</code>
+     * before calling this method.
+     *
+     * @return the localized name that is set
+     */
+    String getLocalizedName();
+
+    /**
+     * Sets the localized name.
+     *
+     * @param name the name to set
+     */
+    void setLocalizedName(String name);
+
+    /**
      * Checks for existence of lore.
      *
      * @return true if this has lore
