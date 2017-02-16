@@ -40,7 +40,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -187,6 +186,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
     }
 
     static final ItemMetaKey NAME = new ItemMetaKey("Name", "display-name");
+    static final ItemMetaKey LOCNAME = new ItemMetaKey("LocName", "loc-name");
     @Specific(Specific.To.NBT)
     static final ItemMetaKey DISPLAY = new ItemMetaKey("display");
     static final ItemMetaKey LORE = new ItemMetaKey("Lore", "lore");
@@ -216,6 +216,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
     static final ItemMetaKey UNBREAKABLE = new ItemMetaKey("Unbreakable");
 
     private String displayName;
+    private String locName;
     private List<String> lore;
     private Map<Enchantment, Integer> enchantments;
     private int repairCost;
@@ -233,6 +234,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
         }
 
         this.displayName = meta.displayName;
+        this.locName = meta.locName;
 
         if (meta.hasLore()) {
             this.lore = new ArrayList<String>(meta.lore);
@@ -259,6 +261,10 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
             if (display.hasKey(NAME.NBT)) {
                 displayName = display.getString(NAME.NBT);
+            }
+
+            if (display.hasKey(LOCNAME.NBT)) {
+                locName = display.getString(LOCNAME.NBT);
             }
 
             if (display.hasKey(LORE.NBT)) {
@@ -359,6 +365,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
     CraftMetaItem(Map<String, Object> map) {
         setDisplayName(SerializableMeta.getString(map, NAME.BUKKIT, true));
+        setLocalizedName(SerializableMeta.getString(map, LOCNAME.BUKKIT, true));
 
         Iterable<?> lore = SerializableMeta.getObject(Iterable.class, map, LORE.BUKKIT, true);
         if (lore != null) {
@@ -434,6 +441,9 @@ class CraftMetaItem implements ItemMeta, Repairable {
         if (hasDisplayName()) {
             setDisplayTag(itemTag, NAME.NBT, new NBTTagString(displayName));
         }
+        if (hasLocalizedName()){
+            setDisplayTag(itemTag, LOCNAME.NBT, new NBTTagString(locName));
+        }
 
         if (hasLore()) {
             setDisplayTag(itemTag, LORE.NBT, createStringList(lore));
@@ -507,7 +517,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
     @Overridden
     boolean isEmpty() {
-        return !(hasDisplayName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0 || isUnbreakable());
+        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0 || isUnbreakable());
     }
 
     public String getDisplayName() {
@@ -520,6 +530,21 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
     public boolean hasDisplayName() {
         return !Strings.isNullOrEmpty(displayName);
+    }
+
+    @Override
+    public String getLocalizedName() {
+        return locName;
+    }
+
+    @Override
+    public void setLocalizedName(String name) {
+        this.locName = name;
+    }
+
+    @Override
+    public boolean hasLocalizedName() {
+        return !Strings.isNullOrEmpty(locName);
     }
 
     public boolean hasLore() {
@@ -664,6 +689,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
     @Overridden
     boolean equalsCommon(CraftMetaItem that) {
         return ((this.hasDisplayName() ? that.hasDisplayName() && this.displayName.equals(that.displayName) : !that.hasDisplayName()))
+                && (this.hasLocalizedName()? that.hasLocalizedName()&& this.locName.equals(that.locName) : !that.hasLocalizedName())
                 && (this.hasEnchants() ? that.hasEnchants() && this.enchantments.equals(that.enchantments) : !that.hasEnchants())
                 && (this.hasLore() ? that.hasLore() && this.lore.equals(that.lore) : !that.hasLore())
                 && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost())
@@ -691,6 +717,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
     int applyHash() {
         int hash = 3;
         hash = 61 * hash + (hasDisplayName() ? this.displayName.hashCode() : 0);
+        hash = 61 * hash + (hasLocalizedName()? this.locName.hashCode() : 0);
         hash = 61 * hash + (hasLore() ? this.lore.hashCode() : 0);
         hash = 61 * hash + (hasEnchants() ? this.enchantments.hashCode() : 0);
         hash = 61 * hash + (hasRepairCost() ? this.repairCost : 0);
@@ -730,6 +757,9 @@ class CraftMetaItem implements ItemMeta, Repairable {
     ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
         if (hasDisplayName()) {
             builder.put(NAME.BUKKIT, displayName);
+        }
+        if (hasLocalizedName()) {
+            builder.put(LOCNAME.BUKKIT, locName);
         }
 
         if (hasLore()) {
