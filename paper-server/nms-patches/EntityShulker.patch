@@ -1,0 +1,78 @@
+--- a/net/minecraft/server/EntityShulker.java
++++ b/net/minecraft/server/EntityShulker.java
+@@ -6,6 +6,10 @@
+ import java.util.List;
+ import java.util.UUID;
+ import javax.annotation.Nullable;
++// CraftBukkit start
++import org.bukkit.Location;
++import org.bukkit.event.entity.EntityTeleportEvent;
++// CraftBukkit end
+ 
+ public class EntityShulker extends EntityGolem implements IMonster {
+ 
+@@ -65,7 +69,7 @@
+     }
+ 
+     public void D() {
+-        if (!this.do()) {
++        if (!this.do_()) {
+             super.D();
+         }
+ 
+@@ -76,7 +80,7 @@
+     }
+ 
+     protected SoundEffect bW() {
+-        return this.do() ? SoundEffects.fH : SoundEffects.fG;
++        return this.do_() ? SoundEffects.fH : SoundEffects.fG;
+     }
+ 
+     protected void i() {
+@@ -112,7 +116,7 @@
+ 
+             this.datawatcher.set(EntityShulker.b, Optional.of(new BlockPosition(i, j, k)));
+         } else {
+-            this.datawatcher.set(EntityShulker.b, Optional.absent());
++            this.datawatcher.set(EntityShulker.b, Optional.<BlockPosition>absent());
+         }
+ 
+     }
+@@ -331,8 +335,17 @@
+                         EnumDirection enumdirection = aenumdirection[k];
+ 
+                         if (this.world.d(blockposition1.shift(enumdirection), false)) {
+-                            this.datawatcher.set(EntityShulker.a, enumdirection);
+-                            flag = true;
++                            // CraftBukkit start
++                            EntityTeleportEvent teleport = new EntityTeleportEvent(this.getBukkitEntity(), this.getBukkitEntity().getLocation(), new Location(this.world.getWorld(), blockposition1.getX(), blockposition1.getY(), blockposition1.getZ()));
++                            this.world.getServer().getPluginManager().callEvent(teleport);
++                            if (!teleport.isCancelled()) {
++                                Location to = teleport.getTo();
++                                blockposition1 = new BlockPosition(to.getX(), to.getY(), to.getZ());
++
++                                this.datawatcher.set(EntityShulker.a, enumdirection);
++                                flag = true;
++                            }
++                            // CraftBukkit end
+                             break;
+                         }
+                     }
+@@ -390,7 +403,7 @@
+     }
+ 
+     public boolean damageEntity(DamageSource damagesource, float f) {
+-        if (this.do()) {
++        if (this.do_()) {
+             Entity entity = damagesource.i();
+ 
+             if (entity instanceof EntityArrow) {
+@@ -409,7 +422,7 @@
+         }
+     }
+ 
+-    private boolean do() {
++    private boolean do_() {
+         return this.dj() == 0;
+     }
+ 
