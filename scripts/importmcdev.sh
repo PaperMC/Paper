@@ -65,6 +65,7 @@ import EntitySquid
 import EntityWaterAnimal
 import FileIOThread
 import IHopper
+import ItemArmorStand
 import ItemBlock
 import ItemFireworks
 import ItemMonsterEgg
