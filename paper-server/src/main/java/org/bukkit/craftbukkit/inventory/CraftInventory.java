@@ -15,6 +15,7 @@ import net.minecraft.server.TileEntityBrewingStand;
 import net.minecraft.server.TileEntityDispenser;
 import net.minecraft.server.TileEntityDropper;
 import net.minecraft.server.TileEntityFurnace;
+import net.minecraft.server.TileEntityShulkerBox;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
@@ -462,6 +463,8 @@ public class CraftInventory implements Inventory {
            return InventoryType.ANVIL;
         } else if (inventory instanceof IHopper) {
             return InventoryType.HOPPER;
+        } else if (inventory instanceof TileEntityShulkerBox) {
+            return InventoryType.SHULKER_BOX;
         } else {
             return InventoryType.CHEST;
         }

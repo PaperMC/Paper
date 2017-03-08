@@ -250,6 +250,13 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
                     openCustomInventory(inventory, player, "minecraft:anvil");
                 }
                 break;
+            case SHULKER_BOX:
+                if (iinventory instanceof TileEntityShulkerBox) {
+                    getHandle().openTileEntity((TileEntityShulkerBox) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:shulker_box");
+                }
+                break;
             case CREATIVE:
             case CRAFTING:
                 throw new IllegalArgumentException("Can't open a " + type + " inventory!");
