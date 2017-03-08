@@ -48,7 +48,28 @@
                          return;
                      }
                  }
-@@ -172,7 +178,26 @@
+@@ -138,12 +144,14 @@
+                     b0 = -50;
+                 }
+ 
+-                this.a(world, blockposition.east(), 300 + b0, random, i);
+-                this.a(world, blockposition.west(), 300 + b0, random, i);
+-                this.a(world, blockposition.down(), 250 + b0, random, i);
+-                this.a(world, blockposition.up(), 250 + b0, random, i);
+-                this.a(world, blockposition.north(), 300 + b0, random, i);
+-                this.a(world, blockposition.south(), 300 + b0, random, i);
++                // CraftBukkit start - add source blockposition to burn calls
++                this.a(world, blockposition.east(), 300 + b0, random, i, blockposition);
++                this.a(world, blockposition.west(), 300 + b0, random, i, blockposition);
++                this.a(world, blockposition.down(), 250 + b0, random, i, blockposition);
++                this.a(world, blockposition.up(), 250 + b0, random, i, blockposition);
++                this.a(world, blockposition.north(), 300 + b0, random, i, blockposition);
++                this.a(world, blockposition.south(), 300 + b0, random, i, blockposition);
++                // CraftBukkit end
+ 
+                 for (int j = -1; j <= 1; ++j) {
+                     for (int k = -1; k <= 1; ++k) {
+@@ -172,7 +180,26 @@
                                              l1 = 15;
                                          }
  
@@ -76,14 +97,22 @@
                                      }
                                  }
                              }
-@@ -210,6 +235,17 @@
+@@ -204,12 +231,24 @@
+         return integer == null ? 0 : integer.intValue();
+     }
+ 
+-    private void a(World world, BlockPosition blockposition, int i, Random random, int j) {
++    private void a(World world, BlockPosition blockposition, int i, Random random, int j, BlockPosition sourceposition) { // CraftBukkit add sourceposition
+         int k = this.c(world.getType(blockposition).getBlock());
+ 
          if (random.nextInt(i) < k) {
              IBlockData iblockdata = world.getType(blockposition);
  
 +            // CraftBukkit start
 +            org.bukkit.block.Block theBlock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++            org.bukkit.block.Block sourceBlock = world.getWorld().getBlockAt(sourceposition.getX(), sourceposition.getY(), sourceposition.getZ());
 +
-+            BlockBurnEvent event = new BlockBurnEvent(theBlock);
++            BlockBurnEvent event = new BlockBurnEvent(theBlock, sourceBlock);
 +            world.getServer().getPluginManager().callEvent(event);
 +
 +            if (event.isCancelled()) {
@@ -94,7 +123,7 @@
              if (random.nextInt(j + 10) < 5 && !world.isRainingAt(blockposition)) {
                  int l = j + random.nextInt(5) / 4;
  
-@@ -276,7 +312,7 @@
+@@ -276,7 +315,7 @@
  
      public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Block block, BlockPosition blockposition1) {
          if (!world.getType(blockposition.down()).r() && !this.c(world, blockposition)) {
@@ -103,7 +132,7 @@
          }
  
      }
-@@ -284,7 +320,7 @@
+@@ -284,7 +323,7 @@
      public void onPlace(World world, BlockPosition blockposition, IBlockData iblockdata) {
          if (world.worldProvider.getDimensionManager().getDimensionID() > 0 || !Blocks.PORTAL.b(world, blockposition)) {
              if (!world.getType(blockposition.down()).r() && !this.c(world, blockposition)) {
@@ -112,7 +141,7 @@
              } else {
                  world.a(blockposition, (Block) this, this.a(world) + world.random.nextInt(10));
              }
-@@ -306,4 +342,12 @@
+@@ -306,4 +345,12 @@
      protected BlockStateList getStateList() {
          return new BlockStateList(this, new IBlockState[] { BlockFire.AGE, BlockFire.NORTH, BlockFire.EAST, BlockFire.SOUTH, BlockFire.WEST, BlockFire.UPPER});
      }
