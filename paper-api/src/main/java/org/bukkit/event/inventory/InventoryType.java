@@ -70,6 +70,10 @@ public enum InventoryType {
      * A hopper inventory, with 5 slots of type CONTAINER.
      */
     HOPPER(5, "Item Hopper"),
+    /**
+     * A shulker box inventory, with 27 slots of type CONTAINER.
+     */
+    SHULKER_BOX(27, "container.shulkerBox"),
     ;
 
     private final int size;
