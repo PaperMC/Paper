@@ -71,7 +71,7 @@ public final class CraftItemStack extends ItemStack {
     }
 
     public static CraftItemStack asCraftMirror(net.minecraft.server.ItemStack original) {
-        return new CraftItemStack(original);
+        return new CraftItemStack((original == null || original.isEmpty()) ? null : original);
     }
 
     public static CraftItemStack asCraftCopy(ItemStack original) {
