@@ -112,6 +112,10 @@ public class CraftContainer extends Container {
                 return "minecraft:anvil";
             case HOPPER:
                 return "minecraft:hopper";
+            case DROPPER:
+                return "minecraft:dropper";
+            case SHULKER_BOX:
+                return "minecraft:shulker_box";
             default:
                 return "minecraft:chest";
         }
