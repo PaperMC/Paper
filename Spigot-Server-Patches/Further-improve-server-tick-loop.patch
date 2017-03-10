@@ -12,7 +12,7 @@ Previous implementation did not calculate TPS correctly.
 Switch to a realistic rolling average and factor in std deviation as an extra reporting variable
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 7539bb215..91fb12128 100644
+index 7539bb215..4476799d8 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
@@ -107,13 +107,12 @@ index 7539bb215..91fb12128 100644
 +                    if (wait > 0) {
 +                        if (catchupTime < 2E6) {
 +                            wait += Math.abs(catchupTime);
-+                        }
-+                        if (wait < catchupTime) {
++                        } else if (wait < catchupTime) {
 +                            catchupTime -= wait;
 +                            wait = 0;
-+                        } else if (catchupTime > 2E6) {
++                        } else {
 +                            wait -= catchupTime;
-+                            catchupTime -= catchupTime;
++                            catchupTime = 0;
 +                        }
 +                    }
                      if (wait > 0) {
@@ -122,6 +121,7 @@ index 7539bb215..91fb12128 100644
 -                        continue;
 -                    } else {
 -                        catchupTime = Math.min(1000000000, Math.abs(wait));
++                        curTime = System.nanoTime();
 +                        wait = TICK_TIME - (curTime - lastTick);
                      }
  
