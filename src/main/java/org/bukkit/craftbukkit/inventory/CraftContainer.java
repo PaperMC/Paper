@@ -12,6 +12,7 @@ import net.minecraft.server.EntityHuman;
 import net.minecraft.server.IInventory;
 import net.minecraft.server.PacketPlayOutOpenWindow;
 import net.minecraft.server.Slot;
+import net.minecraft.server.SlotShulkerBox;
 
 public class CraftContainer extends Container {
 
@@ -149,6 +150,9 @@ public class CraftContainer extends Container {
                 break;
             case BEACON:
                 setupBeacon(top, bottom);
+                break;
+            case SHULKER_BOX:
+                setupShulkerBox(top, bottom);
                 break;
         }
     }
@@ -344,6 +348,29 @@ public class CraftContainer extends Container {
             this.a(new Slot(bottom, i, 36 + i * 18, 195));
         }
         // End copy from ContainerBeacon
+    }
+
+    private void setupShulkerBox(IInventory top, IInventory bottom) {
+        // This code is copied from ContainerShulkerBox
+        int i;
+        int j;
+
+        for (i = 0; i < 3; ++i) {
+            for (j = 0; j < 9; ++j) {
+                this.a((Slot) (new SlotShulkerBox(top, j + i * 9, 8 + j * 18, 18 + i * 18)));
+            }
+        }
+
+        for (i = 0; i < 3; ++i) {
+            for (j = 0; j < 9; ++j) {
+                this.a(new Slot(bottom, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
+            }
+        }
+
+        for (i = 0; i < 9; ++i) {
+            this.a(new Slot(bottom, i, 8 + i * 18, 142));
+        }
+        // End copy from ContainerShulkerBox
     }
 
     public boolean a(EntityHuman entity) {
