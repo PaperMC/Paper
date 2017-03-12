@@ -6,7 +6,7 @@ Subject: [PATCH] Allow Reloading of Command Aliases
 Reload the aliases stored in commands.yml
 
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index f5af400d..1f663fa1 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
 @@ -0,0 +0,0 @@ public final class Bukkit {
@@ -17,14 +17,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    /**
 +     * Reload the Command Aliases in commands.yml
 +     */
-+    public static void reloadCommandAliases() {
-+        server.reloadCommandAliases();
++    public static boolean reloadCommandAliases() {
++        return server.reloadCommandAliases();
 +    }
      // Paper end
  
      public static Server.Spigot spigot()
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 2df83245..4a90d581 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
 @@ -0,0 +0,0 @@ public interface Server extends PluginMessageRecipient {
@@ -32,10 +32,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      void reloadPermissions(); // Paper
 +
-+    void reloadCommandAliases(); // Paper
++    boolean reloadCommandAliases(); // Paper
  }
 diff --git a/src/main/java/org/bukkit/command/CommandMap.java b/src/main/java/org/bukkit/command/CommandMap.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 30d60247..d8a75607 100644
 --- a/src/main/java/org/bukkit/command/CommandMap.java
 +++ b/src/main/java/org/bukkit/command/CommandMap.java
 @@ -0,0 +0,0 @@ public interface CommandMap {
@@ -52,7 +52,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 08976cd4..2e232fd1 100644
 --- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
 +++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
 @@ -0,0 +0,0 @@ public class SimpleCommandMap implements CommandMap {
@@ -67,7 +67,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 040509c1..0069bcc0 100644
 --- a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
 @@ -0,0 +0,0 @@ public class ReloadCommand extends BukkitCommand {
@@ -84,8 +84,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Permissions successfully reloaded.");
                  return true;
 +            } else if ("commands".equalsIgnoreCase(args[0])) {
-+                Bukkit.getServer().reloadCommandAliases();
-+                Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Command aliases successfully reloaded.");
++                if (Bukkit.getServer().reloadCommandAliases()) {
++                    Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Command aliases successfully reloaded.");
++                } else {
++                    Command.broadcastCommandMessage(sender, ChatColor.RED + "An error occurred while trying to reload command aliases.");
++                }
 +                return true;
              } else if ("confirm".equalsIgnoreCase(args[0])) {
                  confirmed = true;
