@@ -1,4 +1,4 @@
-From fc71852806d0c70c3300d5bb6055c1de552842e4 Mon Sep 17 00:00:00 2001
+From 1a43c3c56d5e7aa343c4ead1342df0dc0546b656 Mon Sep 17 00:00:00 2001
 From: willies952002 <admin@domnian.com>
 Date: Mon, 28 Nov 2016 10:21:52 -0500
 Subject: [PATCH] Allow Reloading of Command Aliases
@@ -6,22 +6,31 @@ Subject: [PATCH] Allow Reloading of Command Aliases
 Reload the aliases stored in commands.yml
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 1bbce7a78..31c9a66b6 100644
+index 1bbce7a78..225e118dc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1848,5 +1848,15 @@ public final class CraftServer implements Server {
+@@ -1848,5 +1848,24 @@ public final class CraftServer implements Server {
              });
          }
      }
 +
 +    @Override
-+    public void reloadCommandAliases() {
++    public boolean reloadCommandAliases() {
 +        Set<String> removals = getCommandAliases().keySet().stream()
 +                .map(key -> key.toLowerCase(java.util.Locale.ENGLISH))
 +                .collect(java.util.stream.Collectors.toSet());
 +        getCommandMap().getKnownCommands().keySet().removeIf(removals::contains);
-+        commandsConfiguration = YamlConfiguration.loadConfiguration(getCommandsConfigFile());
++        File file = getCommandsConfigFile();
++        try {
++            commandsConfiguration.load(file);
++        } catch (FileNotFoundException ex) {
++            return false;
++        } catch (IOException | org.bukkit.configuration.InvalidConfigurationException ex) {
++            Bukkit.getLogger().log(Level.SEVERE, "Cannot load " + file, ex);
++            return false;
++        }
 +        commandMap.registerServerAliases();
++        return true;
 +    }
      // Paper end
  }
