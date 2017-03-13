@@ -1,0 +1,41 @@
+From dcba6116a11d3d2b3bd2b33477de40466b6be18c Mon Sep 17 00:00:00 2001
+From: Techcable <Techcable@outlook.com>
+Date: Sun, 10 Apr 2016 03:23:32 -0500
+Subject: [PATCH] Forcibly broadcast passenger changes
+
+Sometimes players don't get sent packets when a plugin causes a mount or dismount.
+SPIGOT-1915 & GH-114
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 49e6661..2a555f7 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -1659,6 +1659,12 @@ public abstract class Entity implements ICommandListener {
+ 
+             this.as = entity;
+             this.as.o(this);
++            // Paper start - tell everyone about the passenger
++            net.minecraft.server.Packet packet = new net.minecraft.server.PacketPlayOutMount(this);
++            for (EntityHuman player : world.players) {
++                ((EntityPlayer) player).playerConnection.sendPacket(packet);
++            }
++            // Paper end
+             return true;
+         }
+     }
+@@ -1747,6 +1753,12 @@ public abstract class Entity implements ICommandListener {
+             // Paper end
+             this.passengers.remove(entity);
+             entity.j = 60;
++            // Paper start - tell everyone we don't have a passenger
++            net.minecraft.server.Packet packet = new net.minecraft.server.PacketPlayOutMount(this);
++            for (EntityHuman player : world.players) {
++                ((EntityPlayer) player).playerConnection.sendPacket(packet);
++            }
++            // Paper end
+         }
+     }
+ 
+-- 
+2.8.0
+
