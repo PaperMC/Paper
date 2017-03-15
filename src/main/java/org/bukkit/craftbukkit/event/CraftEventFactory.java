@@ -63,6 +63,8 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.entity.AbstractHorse;
+import org.bukkit.entity.Vehicle;
+import org.bukkit.event.vehicle.VehicleCreateEvent;
 
 public class CraftEventFactory {
     public static final DamageSource MELTING = CraftDamageSource.copyOf(DamageSource.BURN);
@@ -1015,11 +1017,18 @@ public class CraftEventFactory {
         return event;
     }
 
-	public static AreaEffectCloudApplyEvent callAreaEffectCloudApplyEvent(EntityAreaEffectCloud cloud, List<LivingEntity> entities) {
-		AreaEffectCloudApplyEvent event = new AreaEffectCloudApplyEvent((AreaEffectCloud) cloud.getBukkitEntity(), entities);
-		cloud.world.getServer().getPluginManager().callEvent(event);
-		return event;
-	}
+    public static AreaEffectCloudApplyEvent callAreaEffectCloudApplyEvent(EntityAreaEffectCloud cloud, List<LivingEntity> entities) {
+        AreaEffectCloudApplyEvent event = new AreaEffectCloudApplyEvent((AreaEffectCloud) cloud.getBukkitEntity(), entities);
+        cloud.world.getServer().getPluginManager().callEvent(event);
+        return event;
+    }
+
+    public static VehicleCreateEvent callVehicleCreateEvent(Entity entity) {
+        Vehicle bukkitEntity = (Vehicle) entity.getBukkitEntity();
+        VehicleCreateEvent event = new VehicleCreateEvent(bukkitEntity);
+        Bukkit.getPluginManager().callEvent(event);
+        return event;
+    }
 
     public static EntityBreedEvent callEntityBreedEvent(EntityLiving child, EntityLiving mother, EntityLiving father, EntityLiving breeder, ItemStack bredWith, int experience) {
         org.bukkit.entity.LivingEntity breederEntity = (LivingEntity)(breeder == null ? null : breeder.getBukkitEntity());
