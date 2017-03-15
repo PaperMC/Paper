@@ -1,4 +1,4 @@
-From 7c16eb68a4f367726dcc39715d2ff66b9e13d18f Mon Sep 17 00:00:00 2001
+From d2497d7d2334e93387915c5f82cbb9c68d72a8f1 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 17 Apr 2016 17:27:09 -0400
 Subject: [PATCH] Prevent Fire from loading chunks
@@ -7,10 +7,10 @@ This causes the nether to spam unload/reload chunks, plus overall
 bad behavior.
 
 diff --git a/src/main/java/net/minecraft/server/BlockFire.java b/src/main/java/net/minecraft/server/BlockFire.java
-index 20eb42d..1f2bc1e 100644
+index 94cb9d46..dfc32885 100644
 --- a/src/main/java/net/minecraft/server/BlockFire.java
 +++ b/src/main/java/net/minecraft/server/BlockFire.java
-@@ -162,6 +162,7 @@ public class BlockFire extends Block {
+@@ -164,6 +164,7 @@ public class BlockFire extends Block {
                                  }
  
                                  BlockPosition blockposition1 = blockposition.a(j, l, k);
@@ -18,14 +18,16 @@ index 20eb42d..1f2bc1e 100644
                                  int j1 = this.d(world, blockposition1);
  
                                  if (j1 > 0) {
-@@ -230,10 +231,12 @@ public class BlockFire extends Block {
+@@ -232,10 +233,14 @@ public class BlockFire extends Block {
      }
  
-     private void a(World world, BlockPosition blockposition, int i, Random random, int j) {
+     private void a(World world, BlockPosition blockposition, int i, Random random, int j, BlockPosition sourceposition) { // CraftBukkit add sourceposition
 -        int k = this.c(world.getType(blockposition).getBlock());
-+        final IBlockData iblockdata = world.getTypeIfLoaded(blockposition); // Paper
-+        if (iblockdata == null) return; // Paper
-+        int k = this.c(iblockdata.getBlock()); // Paper
++        // Paper start
++        final IBlockData iblockdata = world.getTypeIfLoaded(blockposition);
++        if (iblockdata == null) return;
++        int k = this.c(iblockdata.getBlock());
++        // Paper end
  
          if (random.nextInt(i) < k) {
 -            IBlockData iblockdata = world.getType(blockposition);
@@ -33,7 +35,7 @@ index 20eb42d..1f2bc1e 100644
  
              // CraftBukkit start
              org.bukkit.block.Block theBlock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-@@ -291,7 +294,9 @@ public class BlockFire extends Block {
+@@ -294,7 +299,9 @@ public class BlockFire extends Block {
              for (int k = 0; k < j; ++k) {
                  EnumDirection enumdirection = aenumdirection[k];
  
@@ -45,5 +47,5 @@ index 20eb42d..1f2bc1e 100644
  
              return i;
 -- 
-2.9.3
+2.12.0.windows.1
 
