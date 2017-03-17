@@ -5,7 +5,7 @@ Subject: [PATCH] Fix a duplicate alive entity on second world
 
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 0e1d9817b..92ba4fcb5 100644
+index 0e1d9817b..385329774 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
@@ -17,28 +17,26 @@ index 0e1d9817b..92ba4fcb5 100644
              this.world.methodProfiler.a("reposition");
              /* CraftBukkit start - Handled in calculateTarget
              BlockPosition blockposition;
-diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index a9d59bbf5..4ba4d527e 100644
---- a/src/main/java/net/minecraft/server/PlayerList.java
-+++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -0,0 +0,0 @@ public abstract class PlayerList {
-             d0 = (double) MathHelper.clamp((int) d0, -29999872, 29999872);
-             d1 = (double) MathHelper.clamp((int) d1, -29999872, 29999872);
-             */
--            if (entity.isAlive()) {
-+            //if (entity.isAlive()) { // Paper - Moved down
-                 // entity.setPositionRotation(d0, entity.locY, d1, entity.yaw, entity.pitch);
-                 // worldserver1.getTravelAgent().a(entity, f);
-                 if (portal) {
-@@ -0,0 +0,0 @@ public abstract class PlayerList {
-                     }
+@@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
+                     entity.setPositionRotation(blockposition, entity.yaw, entity.pitch);
                  }
-                 // worldserver1.addEntity(entity);
--                worldserver1.entityJoinedWorld(entity, false);
--            }
-+                if (entity.isAlive()) worldserver1.entityJoinedWorld(entity, false); // Paper - Moved down from above
-+            //} // Paper
+                 // CraftBukkit end */
+-
++                // Paper Start - relocate code to modify the entities exit in a portal
++                if (portal) {
++                    org.bukkit.util.Vector velocity = entity.getBukkitEntity().getVelocity();
++                    worldserver1.getTravelAgent().adjustExit(entity, exit, velocity);
++                    entity.setPositionRotation(exit.getX(), exit.getY(), exit.getZ(), exit.getYaw(), exit.getPitch());
++                    if (entity.motX != velocity.getX() || entity.motY != velocity.getY() || entity.motZ != velocity.getZ()) {
++                        //entity.getBukkitEntity().setVelocity(velocity); // We don't have a CraftEntity yet, set these manually...
++                        entity.motX = velocity.getX();
++                        entity.motY = velocity.getY();
++                        entity.motZ = velocity.getZ();
++                        entity.velocityChanged = true;
++                    }
++                }
++                // Paper end
+                 boolean flag = entity.attachedToPlayer;
  
-             worldserver.methodProfiler.b();
-         }
+                 entity.attachedToPlayer = true;
 --
