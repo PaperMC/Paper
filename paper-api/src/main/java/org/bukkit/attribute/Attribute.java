@@ -34,6 +34,10 @@ public enum Attribute {
      */
     GENERIC_ARMOR,
     /**
+     * Armor durability bonus of an Entity.
+     */
+    GENERIC_ARMOR_TOUGHNESS,
+    /**
      * Luck bonus of an Entity.
      */
     GENERIC_LUCK,
