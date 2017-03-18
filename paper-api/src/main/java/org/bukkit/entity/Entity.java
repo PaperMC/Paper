@@ -53,6 +53,20 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
     public Vector getVelocity();
 
     /**
+     * Gets the entity's height
+     *
+     * @return height of entity
+     */
+    public double getHeight();
+
+    /**
+     * Gets the entity's width
+     *
+     * @return width of entity
+     */
+    public double getWidth();
+
+    /**
      * Returns true if the entity is supported by a block. This value is a
      * state updated by the server and is not recalculated unless the entity
      * moves.
