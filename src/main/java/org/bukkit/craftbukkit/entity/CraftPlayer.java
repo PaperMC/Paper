@@ -821,6 +821,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void setExp(float exp) {
+        Preconditions.checkArgument(exp >= 0.0 && exp <= 1.0, "Experience progress must be between 0.0 and 1.0 (%s)", exp);
         getHandle().exp = exp;
         getHandle().lastSentExp = -1;
     }
