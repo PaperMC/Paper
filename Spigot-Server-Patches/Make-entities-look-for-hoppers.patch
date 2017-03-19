@@ -14,7 +14,7 @@ This patch may causes a decrease in the performance of dropped items, which is w
 
 diff --git a/src/main/java/com/destroystokyo/paper/HopperPusher.java b/src/main/java/com/destroystokyo/paper/HopperPusher.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+index 000000000..aef7c2be9
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/HopperPusher.java
 @@ -0,0 +0,0 @@
@@ -78,7 +78,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    double getZ();
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index a57a3971f..b9b0f7479 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
@@ -92,7 +92,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/AxisAlignedBB.java b/src/main/java/net/minecraft/server/AxisAlignedBB.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 1eb9c2da8..c88b76a79 100644
 --- a/src/main/java/net/minecraft/server/AxisAlignedBB.java
 +++ b/src/main/java/net/minecraft/server/AxisAlignedBB.java
 @@ -0,0 +0,0 @@ public class AxisAlignedBB {
@@ -103,20 +103,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public boolean c(AxisAlignedBB axisalignedbb) {
          return this.a(axisalignedbb.a, axisalignedbb.b, axisalignedbb.c, axisalignedbb.d, axisalignedbb.e, axisalignedbb.f);
      }
-diff --git a/src/main/java/net/minecraft/server/BlockPortal.java b/src/main/java/net/minecraft/server/BlockPortal.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/BlockPortal.java
-+++ b/src/main/java/net/minecraft/server/BlockPortal.java
-@@ -0,0 +0,0 @@ public class BlockPortal extends BlockHalfTransparent {
- 
-     public void a(World world, BlockPosition blockposition, IBlockData iblockdata, Entity entity) {
-         if (!entity.isPassenger() && !entity.isVehicle() && entity.aX()) {
-+            if (entity.getWorld().paperConfig.isHopperPushBased && entity instanceof EntityMinecartAbstract) return; // Paper - Mitigates GH-373
-             // CraftBukkit start - Entity in portal
-             EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ()));
-             world.getServer().getPluginManager().callEvent(event);
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 008ed206d..b3c1f550c 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
 @@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition {
@@ -144,7 +132,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.b = i;
              this.c = j;
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 40a7df117..916d5e266 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
@@ -168,7 +156,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public double motY;
      public double motZ;
 diff --git a/src/main/java/net/minecraft/server/EntityItem.java b/src/main/java/net/minecraft/server/EntityItem.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 9742afc65..95ca1b8e4 100644
 --- a/src/main/java/net/minecraft/server/EntityItem.java
 +++ b/src/main/java/net/minecraft/server/EntityItem.java
 @@ -0,0 +0,0 @@ import javax.annotation.Nullable;
@@ -205,7 +193,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
          if (this.pickupDelay != 32767) this.pickupDelay -= elapsedTicks;
 diff --git a/src/main/java/net/minecraft/server/EntityMinecartContainer.java b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 965aa5c23..04256898b 100644
 --- a/src/main/java/net/minecraft/server/EntityMinecartContainer.java
 +++ b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
 @@ -0,0 +0,0 @@ import javax.annotation.Nullable;
@@ -244,7 +232,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private NonNullList<ItemStack> items;
      private boolean b;
 diff --git a/src/main/java/net/minecraft/server/IHopper.java b/src/main/java/net/minecraft/server/IHopper.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 804215a1c..e830d8390 100644
 --- a/src/main/java/net/minecraft/server/IHopper.java
 +++ b/src/main/java/net/minecraft/server/IHopper.java
 @@ -0,0 +0,0 @@ public interface IHopper extends IInventory {
@@ -261,7 +249,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    double G(); default double getZ() { return G(); } // Paper - OBFHELPER
  }
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 44b6ecc5d..022e64520 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
 +++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
 @@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
