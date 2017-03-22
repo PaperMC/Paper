@@ -123,4 +123,11 @@ public interface Chunk {
      * @return true if the chunk has unloaded successfully, otherwise false
      */
     boolean unload();
+
+    /**
+     * Checks if this chunk can spawn slimes without being a swamp biome.
+     *
+     * @return true if slimes are able to spawn in this chunk
+     */
+    boolean isSlimeChunk();
 }
