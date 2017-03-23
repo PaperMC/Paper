@@ -10,6 +10,7 @@ import net.minecraft.server.BlockFire;
 import net.minecraft.server.Item;
 import net.minecraft.server.ItemFood;
 import net.minecraft.server.ItemRecord;
+import net.minecraft.server.TileEntityFurnace;
 
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
@@ -128,6 +129,11 @@ public class PerMaterialTest extends AbstractTestingBase {
         } else {
             assertFalse(material.isBurnable());
         }
+    }
+
+    @Test
+    public void isFuel() {
+        assertThat(material.isFuel(), is(TileEntityFurnace.isFuel(new net.minecraft.server.ItemStack(CraftMagicNumbers.getItem(material)))));
     }
 
     @Test
