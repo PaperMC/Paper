@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 
+import java.util.Random;
 import net.minecraft.server.*;
 
 import org.bukkit.Chunk;
@@ -127,6 +128,12 @@ public class CraftChunk implements Chunk {
 
     public boolean unload() {
         return getWorld().unloadChunk(getX(), getZ());
+    }
+
+    @Override
+    public boolean isSlimeChunk() {
+        // 987234911L is deterimined in EntitySlime when seeing if a slime can spawn in a chunk
+        return getHandle().a(987234911L).nextInt(10) == 0;
     }
 
     public boolean unload(boolean save) {
