@@ -1143,6 +1143,84 @@ public enum Material {
     }
 
     /**
+     * Checks if this Material can be used as fuel in a Furnace
+     *
+     * @return true if this Material can be used as fuel.
+     */
+    public boolean isFuel() {
+        switch (this) {
+            case LAVA_BUCKET:
+            case COAL_BLOCK:
+            case BLAZE_ROD:
+            case COAL:
+            case BOAT:
+            case BOAT_ACACIA:
+            case BOAT_BIRCH:
+            case BOAT_DARK_OAK:
+            case BOAT_JUNGLE:
+            case BOAT_SPRUCE:
+            case LOG:
+            case LOG_2:
+            case WOOD:
+            case WOOD_PLATE:
+            case FENCE:
+            case ACACIA_FENCE:
+            case BIRCH_FENCE:
+            case DARK_OAK_FENCE:
+            case JUNGLE_FENCE:
+            case SPRUCE_FENCE:
+            case FENCE_GATE:
+            case ACACIA_FENCE_GATE:
+            case BIRCH_FENCE_GATE:
+            case DARK_OAK_FENCE_GATE:
+            case JUNGLE_FENCE_GATE:
+            case SPRUCE_FENCE_GATE:
+            case WOOD_STAIRS:
+            case ACACIA_STAIRS:
+            case BIRCH_WOOD_STAIRS:
+            case DARK_OAK_STAIRS:
+            case JUNGLE_WOOD_STAIRS:
+            case SPRUCE_WOOD_STAIRS:
+            case TRAP_DOOR:
+            case WORKBENCH:
+            case BOOKSHELF:
+            case CHEST:
+            case TRAPPED_CHEST:
+            case DAYLIGHT_DETECTOR:
+            case JUKEBOX:
+            case NOTE_BLOCK:
+            case HUGE_MUSHROOM_1:
+            case HUGE_MUSHROOM_2:
+            case BANNER:
+            case FISHING_ROD:
+            case LADDER:
+            case WOOD_SWORD:
+            case WOOD_PICKAXE:
+            case WOOD_AXE:
+            case WOOD_SPADE:
+            case WOOD_HOE:
+            case BOW:
+            case SIGN:
+            case WOOD_DOOR:
+            case ACACIA_DOOR_ITEM:
+            case BIRCH_DOOR_ITEM:
+            case DARK_OAK_DOOR_ITEM:
+            case JUNGLE_DOOR_ITEM:
+            case SPRUCE_DOOR_ITEM:
+            case WOOD_STEP:
+            case SAPLING:
+            case BOWL:
+            case STICK:
+            case WOOD_BUTTON:
+            case WOOL:
+            case CARPET:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
      * Check if the material is a block and completely blocks vision
      *
      * @return True if this material is a block and completely blocks vision
