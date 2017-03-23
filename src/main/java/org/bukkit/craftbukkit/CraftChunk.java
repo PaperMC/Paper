@@ -170,10 +170,10 @@ public class CraftChunk implements Chunk {
                 // Copy base IDs
                 for (int j = 0; j < 4096; j++) {
                     blockids[j] = (short) (rawIds[j] & 0xFF);
-                }               
+                }
 
                 sectionBlockIDs[i] = blockids;
-                
+
                 if (cs[i].getSkyLightArray() == null) {
                     sectionSkyLights[i] = emptyData;
                 } else {
