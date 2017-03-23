@@ -109,7 +109,9 @@ public interface ChunkSnapshot {
      * @param x X-coordinate
      * @param z Z-coordinate
      * @return rainfall at given coordinate
+     * @deprecated this is not a chunk property in current Minecraft versions
      */
+    @Deprecated
     double getRawBiomeRainfall(int x, int z);
 
     /**
