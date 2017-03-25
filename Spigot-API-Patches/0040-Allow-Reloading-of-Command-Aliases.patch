@@ -1,4 +1,4 @@
-From 9942e2dbb75147e6fe06aec8405f1f221fa802d8 Mon Sep 17 00:00:00 2001
+From 9b40254808daac69e7657b3c20e4316de8cfac6b Mon Sep 17 00:00:00 2001
 From: willies952002 <admin@domnian.com>
 Date: Mon, 28 Nov 2016 10:16:39 -0500
 Subject: [PATCH] Allow Reloading of Command Aliases
@@ -6,7 +6,7 @@ Subject: [PATCH] Allow Reloading of Command Aliases
 Reload the aliases stored in commands.yml
 
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index f5af400..2255551 100644
+index f5af400d..1f663fa1 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
 @@ -1194,6 +1194,13 @@ public final class Bukkit {
@@ -17,14 +17,14 @@ index f5af400..2255551 100644
 +    /**
 +     * Reload the Command Aliases in commands.yml
 +     */
-+    public static void reloadCommandAliases() {
-+        server.reloadCommandAliases();
++    public static boolean reloadCommandAliases() {
++        return server.reloadCommandAliases();
 +    }
      // Paper end
  
      public static Server.Spigot spigot()
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 2df8324..179e08d 100644
+index 2df83245..4a90d581 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
 @@ -1027,4 +1027,6 @@ public interface Server extends PluginMessageRecipient {
@@ -32,10 +32,10 @@ index 2df8324..179e08d 100644
  
      void reloadPermissions(); // Paper
 +
-+    void reloadCommandAliases(); // Paper
++    boolean reloadCommandAliases(); // Paper
  }
 diff --git a/src/main/java/org/bukkit/command/CommandMap.java b/src/main/java/org/bukkit/command/CommandMap.java
-index 30d6024..d8a7560 100644
+index 30d60247..d8a75607 100644
 --- a/src/main/java/org/bukkit/command/CommandMap.java
 +++ b/src/main/java/org/bukkit/command/CommandMap.java
 @@ -123,4 +123,12 @@ public interface CommandMap {
@@ -52,7 +52,7 @@ index 30d6024..d8a7560 100644
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-index 08976cd..2e232fd 100644
+index 08976cd4..2e232fd1 100644
 --- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
 +++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
 @@ -280,4 +280,10 @@ public class SimpleCommandMap implements CommandMap {
@@ -67,7 +67,7 @@ index 08976cd..2e232fd 100644
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
-index 040509c..585bac7 100644
+index 040509c1..0069bcc0 100644
 --- a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
 @@ -11,7 +11,7 @@ public class ReloadCommand extends BukkitCommand {
@@ -79,17 +79,20 @@ index 040509c..585bac7 100644
          this.setPermission("bukkit.command.reload");
          this.setAliases(Arrays.asList("rl"));
      }
-@@ -28,6 +28,10 @@ public class ReloadCommand extends BukkitCommand {
+@@ -28,6 +28,13 @@ public class ReloadCommand extends BukkitCommand {
                  Bukkit.getServer().reloadPermissions();
                  Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Permissions successfully reloaded.");
                  return true;
 +            } else if ("commands".equalsIgnoreCase(args[0])) {
-+                Bukkit.getServer().reloadCommandAliases();
-+                Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Command aliases successfully reloaded.");
++                if (Bukkit.getServer().reloadCommandAliases()) {
++                    Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Command aliases successfully reloaded.");
++                } else {
++                    Command.broadcastCommandMessage(sender, ChatColor.RED + "An error occurred while trying to reload command aliases.");
++                }
 +                return true;
              } else if ("confirm".equalsIgnoreCase(args[0])) {
                  confirmed = true;
              } else {
 -- 
-2.9.3
+2.11.0
 
