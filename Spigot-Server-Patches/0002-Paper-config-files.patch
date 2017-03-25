@@ -1,15 +1,70 @@
-From 20b7319640b3687ea5e7b422e478eb1576ff10a7 Mon Sep 17 00:00:00 2001
+From 6c3465d75b4745ffa054704f456e983a86564e4a Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Mon, 29 Feb 2016 21:02:09 -0600
 Subject: [PATCH] Paper config files
 
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+new file mode 100644
+index 000000000..13d5a8ef3
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+@@ -0,0 +1,49 @@
++package com.destroystokyo.paper;
++
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.WorldServer;
++import org.bukkit.ChatColor;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++
++import java.io.File;
++
++public class PaperCommand extends Command {
++
++    public PaperCommand(String name) {
++        super(name);
++        this.description = "Paper related commands";
++        this.usageMessage = "/paper [reload | version]";
++        this.setPermission("bukkit.command.paper");
++    }
++
++    @Override
++    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
++        if (!testPermission(sender)) return true;
++
++        if (args.length != 1) {
++            sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
++            return false;
++        }
++
++        if (args[0].equals("reload")) {
++            Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues.");
++            Command.broadcastCommandMessage(sender, ChatColor.RED + "If you encounter any issues please use the /stop command to restart your server.");
++
++            MinecraftServer console = MinecraftServer.getServer();
++            com.destroystokyo.paper.PaperConfig.init((File) console.options.valueOf("paper-settings"));
++            for (WorldServer world : console.worlds) {
++                world.paperConfig.init();
++            }
++            console.server.reloadCount++;
++
++            Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Paper config reload complete.");
++        }
++
++        if (args[0].equals("version")) {
++            org.bukkit.Bukkit.getServer().getCommandMap().getCommand("version").execute(sender, commandLabel, new String[0]);
++        }
++
++        return true;
++    }
++}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 new file mode 100644
-index 000000000..c009c5f12
+index 000000000..328ff012b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +1,164 @@
+@@ -0,0 +1,173 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.base.Throwables;
@@ -49,7 +104,8 @@ index 000000000..c009c5f12
 +    public static YamlConfiguration config;
 +    static int version;
 +    static Map<String, Command> commands;
-+            /*========================================================================*/
++    private static boolean verbose;
++    /*========================================================================*/
 +
 +    public static void init(File configFile) {
 +        CONFIG_FILE = configFile;
@@ -63,12 +119,20 @@ index 000000000..c009c5f12
 +        }
 +        config.options().header(HEADER);
 +        config.options().copyDefaults(true);
++        verbose = getBoolean("verbose", false);
 +
 +        commands = new HashMap<String, Command>();
++        commands.put("paper", new PaperCommand("paper"));
 +
 +        version = getInt("config-version", 12);
 +        set("config-version", 12);
 +        readConfig(PaperConfig.class, null);
++    }
++
++    protected static void log(String s) {
++        if (verbose) {
++            Bukkit.getLogger().info(s);
++        }
 +    }
 +
 +    public static void registerCommands() {
@@ -176,10 +240,10 @@ index 000000000..c009c5f12
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 new file mode 100644
-index 000000000..dae60dcce
+index 000000000..621bf7051
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,66 @@
 +package com.destroystokyo.paper;
 +
 +import java.util.List;
@@ -187,6 +251,8 @@ index 000000000..dae60dcce
 +import org.bukkit.Bukkit;
 +import org.bukkit.configuration.file.YamlConfiguration;
 +import org.spigotmc.SpigotWorldConfig;
++
++import static com.destroystokyo.paper.PaperConfig.log;
 +
 +public class PaperWorldConfig {
 +
@@ -203,16 +269,8 @@ index 000000000..dae60dcce
 +    }
 +
 +    public void init() {
-+        this.verbose = getBoolean("verbose", false);
-+
 +        log("-------- World Settings For [" + worldName + "] --------");
 +        PaperConfig.readConfig(PaperWorldConfig.class, this);
-+    }
-+
-+    private void log(String s) {
-+        if (verbose) {
-+            Bukkit.getLogger().info(s);
-+        }
 +    }
 +
 +    private void set(String path, Object val) {
@@ -268,7 +326,7 @@ index 31756b80d..cb83e4f56 100644
              DedicatedServer.LOGGER.info("Generating keypair");
              this.a(MinecraftEncryption.b());
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index d7cc8b60f..b29375a0c 100644
+index eab11685c..758962e67 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -125,6 +125,8 @@ public abstract class World implements IBlockAccess {
@@ -316,7 +374,7 @@ index 312260764..791383fb3 100644
          overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index b931cd5c3..788bf6617 100644
+index ee8ec5a68..4399faf69 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -126,6 +126,14 @@ public class Main {
@@ -335,7 +393,7 @@ index b931cd5c3..788bf6617 100644
          };
  
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index fd859f1a6..be003ce65 100644
+index 01e73eb89..0b66f5e35 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -39,31 +39,31 @@ public class SpigotWorldConfig
@@ -376,5 +434,5 @@ index fd859f1a6..be003ce65 100644
          config.addDefault( "world-settings.default." + path, def );
          return config.getString( "world-settings." + worldName + "." + path, config.getString( "world-settings.default." + path ) );
 -- 
-2.11.0
+2.12.0.windows.1
 
