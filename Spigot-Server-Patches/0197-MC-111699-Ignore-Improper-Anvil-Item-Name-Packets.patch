@@ -1,0 +1,28 @@
+From 79e01e8729076dc628257287f9f4856ddd913c1c Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 2 Jan 2017 02:07:24 -0500
+Subject: [PATCH] MC-111699: Ignore Improper Anvil Item Name Packets
+
+The client is improperly sending Item Name Packets to the server BEFORE
+the click event. This causes the server to reset before the click event is processed
+
+This breaks the ability to rename more than 1 item at a time.
+
+See: https://bugs.mojang.com/browse/MC-111699
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 964de593b..87683b20b 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -2434,7 +2434,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                                 String s4 = SharedConstants.a(packetplayincustompayload.b().e(32767));
+ 
+                                 if (s4.length() <= 30) {
+-                                    containeranvil.a(s4);
++                                    if (!s4.isEmpty() || containeranvil.getSlot(2).getItem().isEmpty()) containeranvil.a(s4); // Paper - Hack Fix for MC-111699
+                                 }
+                             } else {
+                                 containeranvil.a("");
+-- 
+2.12.0.windows.1
+

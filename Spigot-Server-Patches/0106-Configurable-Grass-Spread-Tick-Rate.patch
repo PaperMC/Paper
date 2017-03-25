@@ -1,0 +1,36 @@
+From ce7d0b024535acff9b1f9613aafee35d0560b7a5 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 3 Apr 2016 16:28:17 -0400
+Subject: [PATCH] Configurable Grass Spread Tick Rate
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 2c682ccf7..74a49a5fb 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -278,4 +278,10 @@ public class PaperWorldConfig {
+     private void useInhabitedTime() {
+         useInhabitedTime = getBoolean("use-chunk-inhabited-timer", true);
+     }
++
++    public int grassUpdateRate = 1;
++    private void grassUpdateRate() {
++        grassUpdateRate = Math.max(0, getInt("grass-spread-tick-rate", grassUpdateRate));
++        log("Grass Spread Tick Rate: " + grassUpdateRate);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/BlockGrass.java b/src/main/java/net/minecraft/server/BlockGrass.java
+index 8b43e6070..5cbc95f7c 100644
+--- a/src/main/java/net/minecraft/server/BlockGrass.java
++++ b/src/main/java/net/minecraft/server/BlockGrass.java
+@@ -28,6 +28,7 @@ public class BlockGrass extends Block implements IBlockFragilePlantElement {
+     }
+ 
+     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
++        if (world.paperConfig.grassUpdateRate != 1 && (world.paperConfig.grassUpdateRate < 1 || (MinecraftServer.currentTick + blockposition.hashCode()) % world.paperConfig.grassUpdateRate != 0)) { return; } // Paper
+         if (!world.isClientSide) {
+             int lightLevel = -1; // Paper
+             if (world.getType(blockposition.up()).c() > 2 && (lightLevel = world.getLightLevel(blockposition.up())) < 4) { // Paper - move light check to end to avoid unneeded light lookups
+-- 
+2.12.0.windows.1
+

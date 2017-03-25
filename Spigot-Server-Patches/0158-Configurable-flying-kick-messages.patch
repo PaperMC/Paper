@@ -1,0 +1,47 @@
+From 8558acf638ad270e7c80e9125a33db09b00c9389 Mon Sep 17 00:00:00 2001
+From: kashike <kashike@vq.lc>
+Date: Tue, 20 Sep 2016 00:58:01 +0000
+Subject: [PATCH] Configurable flying kick messages
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 2f17b9013..468095a44 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -248,4 +248,11 @@ public class PaperConfig {
+         }
+         packetInSpamThreshold = getInt("settings.incoming-packet-spam-threshold", 300);
+     }
++
++    public static String flyingKickPlayerMessage = "Flying is not enabled on this server";
++    public static String flyingKickVehicleMessage = "Flying is not enabled on this server";
++    private static void flyingKickMessages() {
++        flyingKickPlayerMessage = getString("messages.kick.flying-player", flyingKickPlayerMessage);
++        flyingKickVehicleMessage = getString("messages.kick.flying-vehicle", flyingKickVehicleMessage);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index ef88d568b..b7e1d84d4 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -142,7 +142,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+         if (this.B) {
+             if (++this.C > 80) {
+                 PlayerConnection.LOGGER.warn("{} was kicked for floating too long!", new Object[] { this.player.getName()});
+-                this.disconnect("Flying is not enabled on this server");
++                this.disconnect(com.destroystokyo.paper.PaperConfig.flyingKickPlayerMessage); // Paper - use configurable kick message
+                 return;
+             }
+         } else {
+@@ -161,7 +161,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+             if (this.D && this.player.getVehicle().bw() == this.player) {
+                 if (++this.E > 80) {
+                     PlayerConnection.LOGGER.warn("{} was kicked for floating a vehicle too long!", new Object[] { this.player.getName()});
+-                    this.disconnect("Flying is not enabled on this server");
++                    this.disconnect(com.destroystokyo.paper.PaperConfig.flyingKickVehicleMessage); // Paper - use configurable kick message
+                     return;
+                 }
+             } else {
+-- 
+2.12.0.windows.1
+

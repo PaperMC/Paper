@@ -1,0 +1,159 @@
+From 16134083d0eea50c8ec22f6a7421d056d58d3292 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Tue, 1 Mar 2016 23:45:08 -0600
+Subject: [PATCH] Entity Origin API
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 14d23556f..313100aed 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -147,6 +147,7 @@ public abstract class Entity implements ICommandListener {
+     public org.bukkit.projectiles.ProjectileSource projectileSource; // CraftBukkit - For projectiles only
+     public boolean forceExplosionKnockback; // CraftBukkit - SPIGOT-949
+     public Timing tickTimer = MinecraftTimings.getEntityTimings(this); // Paper
++    public Location origin; // Paper
+     // Spigot start
+     public final byte activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
+     public final boolean defaultActivationState;
+@@ -1513,6 +1514,11 @@ public abstract class Entity implements ICommandListener {
+                 }
+             }
+ 
++            // Paper start - Save the entity's origin location
++            if (origin != null) {
++                nbttagcompound.set("Paper.Origin", this.createList(origin.getX(), origin.getY(), origin.getZ()));
++            }
++            // Paper end
+             return nbttagcompound;
+         } catch (Throwable throwable) {
+             CrashReport crashreport = CrashReport.a(throwable, "Saving entity NBT");
+@@ -1657,6 +1663,13 @@ public abstract class Entity implements ICommandListener {
+             }
+             // CraftBukkit end
+ 
++            // Paper start - Restore the entity's origin location
++            NBTTagList originTag = nbttagcompound.getList("Paper.Origin", 6);
++            if (!originTag.isEmpty()) {
++                origin = new Location(world.getWorld(), originTag.e(0), originTag.e(1), originTag.e(2));
++            }
++            // Paper end
++
+         } catch (Throwable throwable) {
+             CrashReport crashreport = CrashReport.a(throwable, "Loading entity NBT");
+             CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being loaded");
+@@ -1681,6 +1694,7 @@ public abstract class Entity implements ICommandListener {
+ 
+     protected abstract void b(NBTTagCompound nbttagcompound);
+ 
++    protected NBTTagList createList(double... adouble) { return a(adouble); } // Paper - OBFHELPER
+     protected NBTTagList a(double... adouble) {
+         NBTTagList nbttaglist = new NBTTagList();
+         double[] adouble1 = adouble;
+diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+index 4c168d333..307a44c85 100644
+--- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
++++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+@@ -247,6 +247,14 @@ public class EntityFallingBlock extends Entity {
+             this.block = Blocks.SAND.getBlockData();
+         }
+ 
++        // Paper start - Try and load origin location from the old NBT tags for backwards compatibility
++        if (nbttagcompound.hasKey("SourceLoc_x")) {
++            int srcX = nbttagcompound.getInt("SourceLoc_x");
++            int srcY = nbttagcompound.getInt("SourceLoc_y");
++            int srcZ = nbttagcompound.getInt("SourceLoc_z");
++            origin = new org.bukkit.Location(world.getWorld(), srcX, srcY, srcZ);
++        }
++        // Paper end
+     }
+ 
+     public void a(boolean flag) {
+diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+index fd0735611..25e471d37 100644
+--- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
++++ b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+@@ -108,6 +108,14 @@ public class EntityTNTPrimed extends Entity {
+ 
+     protected void a(NBTTagCompound nbttagcompound) {
+         this.setFuseTicks(nbttagcompound.getShort("Fuse"));
++        // Paper start - Try and load origin location from the old NBT tags for backwards compatibility
++        if (nbttagcompound.hasKey("SourceLoc_x")) {
++            int srcX = nbttagcompound.getInt("SourceLoc_x");
++            int srcY = nbttagcompound.getInt("SourceLoc_y");
++            int srcZ = nbttagcompound.getInt("SourceLoc_z");
++            origin = new org.bukkit.Location(world.getWorld(), srcX, srcY, srcZ);
++        }
++        // Paper end
+     }
+ 
+     @Nullable
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 751fc01d1..39919ab1c 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1021,6 +1021,12 @@ public abstract class World implements IBlockAccess {
+         int j = MathHelper.floor(entity.locZ / 16.0D);
+         boolean flag = entity.attachedToPlayer;
+ 
++        // Paper start - Set origin location when the entity is being added to the world
++        if (entity.origin == null) {
++            entity.origin = entity.getBukkitEntity().getLocation();
++        }
++        // Paper end
++
+         if (entity instanceof EntityHuman) {
+             flag = true;
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index b3cd6ec17..6497905b9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -711,4 +711,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         return spigot;
+     }
+     // Spigot end
++
++    // Paper start
++    @Override
++    public Location getOrigin() {
++        Location origin = getHandle().origin;
++        return origin == null ? null : origin.clone();
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
+index b0a7f6392..56666f1f8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
+@@ -65,4 +65,11 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
+         // Second field for EntityFallingBlock
+         getHandle().ticksLived = value;
+     }
++
++    // Paper start
++    @Override
++    public org.bukkit.Location getSourceLoc() {
++        return getOrigin();
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTNTPrimed.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTNTPrimed.java
+index c493c9c0c..93843aa50 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTNTPrimed.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTNTPrimed.java
+@@ -65,4 +65,11 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
+ 
+         return null;
+     }
++
++    // Paper start
++    @Override
++    public org.bukkit.Location getSourceLoc() {
++        return getOrigin();
++    }
++    // Paper end
+ }
+-- 
+2.12.0.windows.1
+
