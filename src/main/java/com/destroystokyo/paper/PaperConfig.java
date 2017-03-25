@@ -42,6 +42,7 @@ public class PaperConfig {
     private static boolean verbose;
     private static boolean fatalError;
     /*========================================================================*/
+    private static boolean metricsStarted;
 
     public static void init(File configFile) {
         CONFIG_FILE = configFile;
@@ -83,6 +84,11 @@ public class PaperConfig {
     public static void registerCommands() {
         for (Map.Entry<String, Command> entry : commands.entrySet()) {
             MinecraftServer.getServer().server.getCommandMap().register(entry.getKey(), "Paper", entry.getValue());
+        }
+
+        if (!metricsStarted) {
+            Metrics.PaperMetrics.startMetrics();
+            metricsStarted = true;
         }
     }
 

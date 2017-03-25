@@ -83,6 +83,7 @@ public class SpigotConfig
             MinecraftServer.getServer().server.getCommandMap().register( entry.getKey(), "Spigot", entry.getValue() );
         }
 
+        /* // Paper - Replace with our own
         if ( metrics == null )
         {
             try
@@ -94,6 +95,7 @@ public class SpigotConfig
                 Bukkit.getServer().getLogger().log( Level.SEVERE, "Could not start metrics service", ex );
             }
         }
+        */ // Paper end
     }
 
     static void readConfig(Class<?> clazz, Object instance)
