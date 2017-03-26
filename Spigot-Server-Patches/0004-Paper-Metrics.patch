@@ -1,4 +1,4 @@
-From ea94e6568f1ff9bef562641eaab57d42f586e927 Mon Sep 17 00:00:00 2001
+From 2902500d723cf936cc974c37000b24330a44954d Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Fri, 24 Mar 2017 23:56:01 -0500
 Subject: [PATCH] Paper Metrics
@@ -15,7 +15,7 @@ decisions on behalf of the project.
 
 diff --git a/src/main/java/com/destroystokyo/paper/Metrics.java b/src/main/java/com/destroystokyo/paper/Metrics.java
 new file mode 100644
-index 000000000..3084096c0
+index 000000000..585260697
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/Metrics.java
 @@ -0,0 +1,985 @@
@@ -45,9 +45,10 @@ index 000000000..3084096c0
 +import java.util.List;
 +import java.util.Locale;
 +import java.util.Map;
-+import java.util.Timer;
-+import java.util.TimerTask;
 +import java.util.UUID;
++import java.util.concurrent.Executors;
++import java.util.concurrent.ScheduledExecutorService;
++import java.util.concurrent.TimeUnit;
 +import java.util.logging.Level;
 +import java.util.zip.GZIPOutputStream;
 +
@@ -56,7 +57,7 @@ index 000000000..3084096c0
 + *
 + * Check out https://bStats.org/ to learn more about bStats!
 + */
-+public class Metrics {
++class Metrics {
 +
 +    static {
 +        // Maven's Relocate is clever and changes strings, too. So we have to use this little "trick" ... :D
@@ -82,6 +83,9 @@ index 000000000..3084096c0
 +
 +    // A list with all custom charts
 +    private final List<CustomChart> charts = new ArrayList<>();
++    
++    // Executor for use in scheduling work and submitting data
++    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 +
 +    /**
 +     * Class constructor.
@@ -138,15 +142,11 @@ index 000000000..3084096c0
 +     * Starts the Scheduler which submits our data every 30 minutes.
 +     */
 +    private void startSubmitting() {
-+        final Timer timer = new Timer(true); // We use a timer cause the Bukkit scheduler is affected by server lags
-+        timer.scheduleAtFixedRate(new TimerTask() {
-+            @Override
-+            public void run() {
-+                // Nevertheless we want our code to run in the Bukkit main thread, so we have to use the Bukkit scheduler
++        executor.scheduleAtFixedRate(() -> {
++                // Nevertheless we want our code to run in the main thread, so we have to use the MC scheduler
 +                // Don't be afraid! The connection to the bStats server is still async, only the stats collection is sync ;)
-+                MinecraftServer.getServer().postToMainThread(() -> submitData());
-+            }
-+        }, 1000*60*5, 1000*60*30);
++                MinecraftServer.getServer().postToMainThread(this::submitData);
++        }, 5, 30, TimeUnit.MINUTES);
 +        // Submit the data every 30 minutes, first time after 5 minutes to give other plugins enough time to start
 +        // WARNING: Changing the frequency has no effect but your plugin WILL be blocked/deleted!
 +        // WARNING: Just don't do it!
@@ -225,8 +225,8 @@ index 000000000..3084096c0
 +        pluginData.add(this.getPluginData());
 +        data.put("plugins", pluginData);
 +
-+        // Create a new thread for the connection to the bStats server
-+        new Thread(() -> {
++        // Post to separate thread for the connection to the bStats server
++        executor.execute(() -> {
 +            try {
 +                // Send the data
 +                sendData(data);
@@ -236,7 +236,7 @@ index 000000000..3084096c0
 +                    Bukkit.getLogger().log(Level.WARNING, "Could not submit stats for Paper", e);
 +                }
 +            }
-+        }, "Paper Metrics Submission Thread").start();
++        });
 +    }
 +
 +    /**
@@ -1050,5 +1050,5 @@ index d386a876b..ba51303b2 100644
  
      static void readConfig(Class<?> clazz, Object instance)
 -- 
-2.12.0.windows.1
+2.12.1.windows.1
 
