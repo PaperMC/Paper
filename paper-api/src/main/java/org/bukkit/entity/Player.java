@@ -406,7 +406,9 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      *
      * @param achievement Achievement to award
      * @throws IllegalArgumentException if achievement is null
+     * @deprecated future versions of Minecraft do not have achievements
      */
+    @Deprecated
     public void awardAchievement(Achievement achievement);
 
     /**
@@ -415,7 +417,9 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      *
      * @param achievement Achievement to remove
      * @throws IllegalArgumentException if achievement is null
+     * @deprecated future versions of Minecraft do not have achievements
      */
+    @Deprecated
     public void removeAchievement(Achievement achievement);
 
     /**
@@ -424,7 +428,9 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * @param achievement the achievement to check
      * @return whether the player has the achievement
      * @throws IllegalArgumentException if achievement is null
+     * @deprecated future versions of Minecraft do not have achievements
      */
+    @Deprecated
     public boolean hasAchievement(Achievement achievement);
 
     /**

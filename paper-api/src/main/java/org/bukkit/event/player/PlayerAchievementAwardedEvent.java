@@ -7,7 +7,9 @@ import org.bukkit.event.HandlerList;
 
 /**
  * Called when a player earns an achievement.
+ * @deprecated future versions of Minecraft do not have achievements
  */
+@Deprecated
 public class PlayerAchievementAwardedEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final Achievement achievement;
